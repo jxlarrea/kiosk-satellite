@@ -33,7 +33,7 @@ const _actionGroups = <(String, List<(String, String, IconData)>)>[
       ('navigate', 'Go to a dashboard view', Icons.dashboard_outlined),
       ('url', 'Open a web page', Icons.public),
       ('camera_view', 'Show a camera view', Icons.videocam_outlined),
-      ('sendspin_player', 'Show the Sendspin player', Icons.speaker_outlined),
+      ('sendspin_player', 'Show the floating player', Icons.speaker_outlined),
       ('app_launcher', 'Open the app launcher', Icons.apps_outlined),
       ('screensaver', 'Start the screensaver', Icons.nightlight_outlined),
       ('screensaver_stop', 'Stop the screensaver', Icons.light_mode_outlined),

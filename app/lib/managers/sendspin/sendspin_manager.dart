@@ -10,10 +10,12 @@ import '../../core/logging.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'ha_remote_player.dart';
 import 'lrclib.dart';
 import 'lyrics.dart';
 import 'ma_remote_player.dart';
 import 'music_assistant_api.dart';
+import 'remote_player.dart';
 
 /// The device as a synchronized Sendspin audio player.
 ///
@@ -77,9 +79,12 @@ class SendspinManager extends Manager {
   /// the number beside the panel's Up next heading.
   final queueUpNext = ValueNotifier<int>(0);
 
-  /// Whether the queue panel is on, the persisted setting behind the
-  /// view's queue button.
-  bool get queueOpen => _settings.get(defs.sendspinFullscreenQueue);
+  /// Whether the queue panel is on: the persisted setting behind the
+  /// view's queue button, for a source that has a queue to show. A
+  /// followed player without one leaves the slot to the lyrics, and the
+  /// setting waits for a source that can use it.
+  bool get queueOpen =>
+      _settings.get(defs.sendspinFullscreenQueue) && queueAvailable;
   String _queueId = '';
 
   /// The track the favorite and queue lookups belong to, so an answer
@@ -195,11 +200,40 @@ class SendspinManager extends Manager {
   })
   remoteFactory = MaRemotePlayer.new;
 
-  /// Live while a remote Music Assistant player is followed instead of
-  /// this device's own (sendspin.ma_player): it feeds [nowPlaying] and
-  /// takes the transport commands; the local player keeps playing audio
-  /// but stops speaking to the UI.
-  MaRemotePlayer? _remote;
+  /// Builds the Home Assistant follower. Swapped in tests for the same
+  /// reason.
+  @visibleForTesting
+  RemotePlayer Function({
+    required String baseUrl,
+    required String token,
+    required String entityId,
+    required void Function(Map<String, Object?>?) onSnapshot,
+    required Logger log,
+  })
+  haRemoteFactory = HaRemotePlayer.new;
+
+  /// Live while another player is followed instead of this device's own
+  /// (sendspin.player): it feeds [nowPlaying] and takes the transport
+  /// commands; the local player never runs in that mode.
+  RemotePlayer? _remote;
+
+  /// The followed player's display name, empty for this device's own.
+  /// The Now Playing view's chip: it names the pick, whether or not the
+  /// follower is connected at the moment.
+  String get followedPlayerName =>
+      _remotePicked ? _settings.get(defs.sendspinPlayerName) : '';
+
+  /// Whether the Now Playing view can list a queue: Music Assistant holds
+  /// one for the local player and for any player it drives; a Home
+  /// Assistant player has none.
+  bool get queueAvailable => _maConfigured && (_remote?.hasQueue ?? true);
+
+  /// Whether the playing track can be marked a favorite: Music
+  /// Assistant's library, so the same sources as the queue.
+  bool get favoriteAvailable => queueAvailable;
+
+  /// Whether lyrics can follow the music for the current source.
+  bool get lyricsAvailable => _remote?.lyricsSynced ?? true;
 
   /// What [_syncRemote] last built a follower for, so an unrelated
   /// settings burst does not tear a healthy connection down.
@@ -215,40 +249,48 @@ class SendspinManager extends Manager {
   /// lyrics is remembered as such by its key, so it is not asked for again
   /// every few seconds for the length of the song.
   Future<void> _refreshLyrics() async {
-    // No lyrics while following a remote player: Music Assistant reports
-    // its position too coarsely to sing along with, and lyrics that lag
-    // the music are worse than none.
-    if (!_settings.get(defs.sendspinLyrics) || _remote != null) {
+    // No lyrics for a followed player whose position is too coarse to
+    // sing along with: lyrics that lag the music are worse than none.
+    final remote = _remote;
+    if (!_settings.get(defs.sendspinLyrics) ||
+        (remote != null && !remote.lyricsSynced)) {
       if (lyrics.value.isNotEmpty) lyrics.value = const [];
       _lyricsKey = '';
       return;
     }
-    final title = '${_status['title'] ?? ''}';
-    final artist = '${_status['artist'] ?? ''}';
+    // The local player's track lives in the merged status; a followed
+    // player's in its snapshot.
+    final track = remote == null ? _status : (nowPlaying.value ?? const {});
+    final title = '${track['title'] ?? ''}';
+    final artist = '${track['artist'] ?? ''}';
     final key = '$artist|$title';
     if (key == _lyricsKey) return;
     _lyricsKey = key;
     lyrics.value = const [];
     if (title.isEmpty) return;
     lyricsPending.value = true;
-    final api = apiFactory(
-      baseUrl: _settings.get(defs.sendspinMaUrl),
-      token: _settings.get(defs.sendspinMaToken),
-    );
-    var lrc = await api.fetchLyrics(
-      title: title,
-      artist: artist,
-      album: '${_status['album'] ?? ''}',
-    );
-    // The song may have moved on while Music Assistant was looking.
-    if (_lyricsKey != key) return;
+    String? lrc;
     var source = 'Music Assistant';
+    if (_maConfigured) {
+      final api = apiFactory(
+        baseUrl: _settings.get(defs.sendspinMaUrl),
+        token: _settings.get(defs.sendspinMaToken),
+      );
+      lrc = await api.fetchLyrics(
+        title: title,
+        artist: artist,
+        album: '${track['album'] ?? ''}',
+      );
+      // The song may have moved on while Music Assistant was looking.
+      if (_lyricsKey != key) return;
+    }
     if (lrc == null || lrc.trim().isEmpty) {
       // Music Assistant's providers found nothing — often strict matching
-      // losing to a lyrics database's sloppy credits (issue #90). Ask
-      // LRCLIB's own, looser search directly before giving up; the user's
-      // local .lrc files stayed authoritative above.
-      final durationMs = (_status['durationMs'] as num?)?.toInt() ?? 0;
+      // losing to a lyrics database's sloppy credits (issue #90) — or
+      // there is no Music Assistant to ask. Ask LRCLIB's own, looser
+      // search directly before giving up; the user's local .lrc files
+      // stayed authoritative above.
+      final durationMs = (track['durationMs'] as num?)?.toInt() ?? 0;
       lrc = await LrclibApi().fetchSyncedLyrics(
         title: title,
         artist: artist,
@@ -542,7 +584,7 @@ class SendspinManager extends Manager {
 
     bus.on<SettingChanged>().listen((e) {
       // The card-surface flag rides the two settings that decide it.
-      if (e.key == defs.sendspinMaPlayer.key ||
+      if (e.key == defs.sendspinPlayer.key ||
           e.key == defs.sendspinEnabled.key) {
         _syncFlags();
       }
@@ -571,9 +613,11 @@ class SendspinManager extends Manager {
       // The remote follower has its own lifecycle, deliberately not tied
       // to the local player's enable switch: following a remote player is
       // what the device does INSTEAD of being a player.
-      if (e.key == defs.sendspinMaPlayer.key ||
+      if (e.key == defs.sendspinPlayer.key ||
           e.key == defs.sendspinMaUrl.key ||
-          e.key == defs.sendspinMaToken.key) {
+          e.key == defs.sendspinMaToken.key ||
+          e.key == defs.haUrl.key ||
+          e.key == defs.haToken.key) {
         _syncRemote();
         _syncWatcher();
       }
@@ -618,10 +662,10 @@ class SendspinManager extends Manager {
         'sendspin.ma_hide_close',
         'sendspin.player_shortcut',
         // The follower's display name and the bookkeeping flag: neither
-        // touches the audio client. The pick itself (sendspin.ma_player)
+        // touches the audio client. The pick itself (sendspin.player)
         // is deliberately NOT here — it decides whether the local player
         // runs at all, so it goes through the restart below.
-        'sendspin.ma_player_name',
+        'sendspin.player_name',
         'sendspin.player_active',
         'sendspin.local_player_name',
       ];
@@ -659,10 +703,13 @@ class SendspinManager extends Manager {
           return CommandResult.ok({
             'enabled': _settings.get(defs.sendspinEnabled),
             'running': _running,
-            'playing': _playing,
+            // The shown player's: the followed one while there is one.
+            'playing': _remote == null
+                ? _playing
+                : nowPlaying.value?['playing'] == true,
             'fullscreenActive': fullscreenActive.value,
             if (_remote != null)
-              'remotePlayer': _settings.get(defs.sendspinMaPlayerName),
+              'remotePlayer': _settings.get(defs.sendspinPlayerName),
             ..._status,
             ...live,
           });
@@ -693,8 +740,8 @@ class SendspinManager extends Manager {
         name: 'sendspinControl',
         description:
             'Send a transport command to the Sendspin group this player '
-            'belongs to, or to the followed Music Assistant player when one '
-            'is set (play, pause, next, previous).',
+            'belongs to, or to the followed player when one is set (play, '
+            'pause, next, previous).',
         params: const {'command': 'play | pause | next | previous'},
         handler: (p) async {
           final ok = await control('${p['command'] ?? ''}');
@@ -760,50 +807,36 @@ class SendspinManager extends Manager {
 
     commands.register(
       Command(
-        name: 'maPlayers',
+        name: 'mediaPlayers',
         description:
-            'List the players Music Assistant knows, for picking which one '
-            'the Now Playing card follows. Returns id, name and '
-            'availability per player.',
+            'The players the Now Playing surfaces can follow, grouped by '
+            'source: Music Assistant players, Home Assistant media players. '
+            'Returns id, name, group and availability per player, and a '
+            'note per group that could not be listed.',
         handler: (_) async {
-          final api = apiFactory(
-            baseUrl: _settings.get(defs.sendspinMaUrl),
-            token: _settings.get(defs.sendspinMaToken),
-          );
-          final result = await api.call('players/all');
-          if (!result.ok) return CommandResult.fail(result.error!);
-          // This device's own player has no business in the list: "This
-          // device" already is that choice, and picking it remotely would
-          // take offline the very player being followed. Music Assistant
-          // knows it by the Sendspin client id — bare, or embedded in a
-          // wrapper's id (universal players prefix it).
-          final selfId = _settings.get(defs.sendspinClientId).trim();
-          final players =
-              ((result.result as List?) ?? const [])
-                  .whereType<Map>()
-                  .where((p) => p['enabled'] != false)
-                  .where(
-                    (p) =>
-                        selfId.isEmpty ||
-                        !'${p['player_id']}'.toLowerCase().contains(
-                          selfId.toLowerCase(),
-                        ),
-                  )
-                  .map(
-                    (p) => <String, Object?>{
-                      'id': '${p['player_id'] ?? ''}',
-                      'name':
-                          '${p['display_name'] ?? p['name'] ?? p['player_id']}',
-                      'available': p['available'] == true,
-                    },
-                  )
-                  .toList()
-                ..sort(
-                  (a, b) => '${a['name']}'.toLowerCase().compareTo(
-                    '${b['name']}'.toLowerCase(),
-                  ),
-                );
-          return CommandResult.ok(players);
+          final players = <Map<String, Object?>>[];
+          final notes = <String, String>{};
+          if (_maConfigured) {
+            try {
+              players.addAll(await _maPlayers());
+            } catch (e) {
+              notes['ma'] = '$e';
+            }
+          } else {
+            notes['ma'] = 'Set up Music Assistant to list its players.';
+          }
+          final haUrl = defs.normalizeBaseUrl(_settings.get(defs.haUrl));
+          final haToken = _settings.get(defs.haToken).trim();
+          if (haUrl.isEmpty || haToken.isEmpty) {
+            notes['ha'] = 'Connect Home Assistant to list its media players.';
+          } else {
+            try {
+              players.addAll(await _haPlayers(haUrl, haToken));
+            } catch (e) {
+              notes['ha'] = 'Home Assistant did not answer: $e';
+            }
+          }
+          return CommandResult.ok({'players': players, 'notes': notes});
         },
       ),
     );
@@ -818,9 +851,74 @@ class SendspinManager extends Manager {
     _syncRemote();
   }
 
-  /// A remote player is picked, whether or not the server is reachable.
-  bool get _remotePicked =>
-      _settings.get(defs.sendspinMaPlayer).trim().isNotEmpty;
+  /// The player the surfaces are set to follow.
+  PlayerSource get _source =>
+      PlayerSource.parse(_settings.get(defs.sendspinPlayer));
+
+  /// Another player is picked, whether or not its system is reachable.
+  bool get _remotePicked => !_source.isLocal;
+
+  /// Music Assistant's players, for the picker. This device's own player
+  /// has no business in the list: "This device" already is that choice,
+  /// and picking it remotely would take offline the very player being
+  /// followed. Music Assistant knows it by the Sendspin client id — bare,
+  /// or embedded in a wrapper's id (universal players prefix it).
+  Future<List<Map<String, Object?>>> _maPlayers() async {
+    final result = await _api().call('players/all');
+    if (!result.ok) throw StateError(result.error ?? 'no answer');
+    final selfId = _settings.get(defs.sendspinClientId).trim();
+    return ((result.result as List?) ?? const [])
+        .whereType<Map>()
+        .where((p) => p['enabled'] != false)
+        .where(
+          (p) =>
+              selfId.isEmpty ||
+              !'${p['player_id']}'.toLowerCase().contains(selfId.toLowerCase()),
+        )
+        .map(
+          (p) => <String, Object?>{
+            'id': 'ma:${p['player_id'] ?? ''}',
+            'name': '${p['display_name'] ?? p['name'] ?? p['player_id']}',
+            'group': 'ma',
+            'available': p['available'] == true,
+          },
+        )
+        .toList()
+      ..sort(
+        (a, b) => '${a['name']}'.toLowerCase().compareTo(
+          '${b['name']}'.toLowerCase(),
+        ),
+      );
+  }
+
+  /// Home Assistant's media players, for the picker, every one of them
+  /// treated alike. This device's own entities stay out: the Voice
+  /// Satellite player and the Music Assistant wrapper of the local
+  /// player both wear the device's name.
+  Future<List<Map<String, Object?>>> _haPlayers(
+    String baseUrl,
+    String token,
+  ) async {
+    final own = {
+      _settings.get(defs.deviceName).trim().toLowerCase(),
+      _settings.get(defs.sendspinLocalPlayerName).trim().toLowerCase(),
+    }..remove('');
+    final players = await HaRemotePlayer.listMediaPlayers(
+      baseUrl: baseUrl,
+      token: token,
+    );
+    return [
+      for (final p in players)
+        if (!own.contains('${p['name']}'.toLowerCase()))
+          {
+            'id': 'ha:${p['id']}',
+            'name': p['name'],
+            'sub': p['id'],
+            'group': 'ha',
+            'available': p['available'],
+          },
+    ];
+  }
 
   /// Keep the card-surface flag (sendspin.player_active) true whenever the
   /// card has a source — the local player enabled, or a remote player
@@ -837,11 +935,27 @@ class SendspinManager extends Manager {
   /// the pick is cleared, rebuild it when the pick or the credentials
   /// change — and never touch a healthy one otherwise.
   void _syncRemote() {
-    final playerId = _settings.get(defs.sendspinMaPlayer).trim();
-    final baseUrl = _settings.get(defs.sendspinMaUrl).trim();
-    final token = _settings.get(defs.sendspinMaToken).trim();
-    final want = playerId.isNotEmpty && baseUrl.isNotEmpty && token.isNotEmpty;
-    final key = want ? '$playerId|$baseUrl|$token' : '';
+    final source = _source;
+    final maUrl = _settings.get(defs.sendspinMaUrl).trim();
+    final maToken = _settings.get(defs.sendspinMaToken).trim();
+    final haUrl = defs.normalizeBaseUrl(_settings.get(defs.haUrl));
+    final haToken = _settings.get(defs.haToken).trim();
+    final want = switch (source.kind) {
+      PlayerSourceKind.local => false,
+      PlayerSourceKind.musicAssistant =>
+        source.id.isNotEmpty && maUrl.isNotEmpty && maToken.isNotEmpty,
+      PlayerSourceKind.homeAssistant =>
+        source.id.isNotEmpty && haUrl.isNotEmpty && haToken.isNotEmpty,
+      PlayerSourceKind.sonos => false,
+    };
+    final key = want
+        ? switch (source.kind) {
+            PlayerSourceKind.musicAssistant =>
+              'ma|${source.id}|$maUrl|$maToken',
+            PlayerSourceKind.homeAssistant => 'ha|${source.id}|$haUrl|$haToken',
+            _ => '',
+          }
+        : '';
     if (key == _remoteKey) return;
     _remoteKey = key;
     final old = _remote;
@@ -854,24 +968,35 @@ class SendspinManager extends Manager {
       _publishNowPlaying();
     }
     if (!want) return;
-    log.info(name, 'following Music Assistant player $playerId');
     // The local card hands the screen over to the remote one.
     _setNowPlaying(null);
     lyrics.value = const [];
     _lyricsKey = '';
-    _remote = remoteFactory(
-      baseUrl: baseUrl,
-      token: token,
-      playerId: playerId,
-      onSnapshot: _onRemoteSnapshot,
-      log: log,
-    )..start();
+    _remote = switch (source.kind) {
+      PlayerSourceKind.homeAssistant => haRemoteFactory(
+        baseUrl: haUrl,
+        token: haToken,
+        entityId: source.id,
+        onSnapshot: _onRemoteSnapshot,
+        log: log,
+      ),
+      _ => remoteFactory(
+        baseUrl: maUrl,
+        token: maToken,
+        playerId: source.id,
+        onSnapshot: _onRemoteSnapshot,
+        log: log,
+      ),
+    }..start();
+    log.info(name, 'following player ${source.value}');
   }
 
   void _onRemoteSnapshot(Map<String, Object?>? snapshot) {
     // A follower being torn down may answer one last time.
     if (_remote == null) return;
     _setNowPlaying(snapshot);
+    _syncQueuePoll();
+    unawaited(_refreshLyrics());
   }
 
   @override
@@ -977,9 +1102,10 @@ class SendspinManager extends Manager {
   /// through the player's active source, a wrapping universal player
   /// included).
   Future<Map<String, Object?>?> _activeQueue() async {
+    if (_remote case final remote? when !remote.hasQueue) return null;
     final String playerId =
         _remote?.playerId ?? _settings.get(defs.sendspinClientId);
-    if (playerId.isEmpty) return null;
+    if (playerId.isEmpty || !_maConfigured) return null;
     final res = await _api().call(
       'player_queues/get_active_queue',
       args: {'player_id': playerId},
@@ -1052,15 +1178,21 @@ class SendspinManager extends Manager {
   }
 
   /// Keep the queue poll running exactly while the local player plays
-  /// with the watcher up.
+  /// with the watcher up, or a followed Music Assistant player plays: the
+  /// server sends no time events for a queue of its own accord, and the
+  /// queue's live elapsed time is what keeps the bar and the lyrics on
+  /// the audio either way.
   void _syncQueuePoll() {
-    final want = _watcher != null && _playing;
+    final remote = _remote;
+    final want = remote == null
+        ? _watcher != null && _playing
+        : remote.hasQueue && nowPlaying.value?['playing'] == true;
     if (want == (_queuePoll != null)) return;
     _queuePoll?.cancel();
     _queuePoll = null;
     if (!want) return;
     _queuePoll = Timer.periodic(const Duration(seconds: 5), (_) {
-      unawaited(_watcher?.refresh());
+      unawaited((_remote ?? _watcher)?.refresh());
     });
   }
 
@@ -1295,10 +1427,18 @@ class SendspinManager extends Manager {
 
   /// Shuffle the queue on or off: the Now Playing view's shuffle toggle.
   /// Locally the controller role's shuffle and unshuffle commands; for a
-  /// followed player Music Assistant's queue setting.
+  /// followed player its own system's queue setting.
   Future<bool> setShuffle(bool on) async {
     if (_remote case final remote?) return remote.setShuffle(on);
     return control(on ? 'shuffle' : 'unshuffle');
+  }
+
+  /// Set the volume, 0 to 100: the followed player's own, or this
+  /// device's media volume for the local player.
+  Future<bool> setVolume(int percent) async {
+    if (_remote case final remote?) return remote.setVolume(percent);
+    await _settings.set(defs.mediaVolume, percent.clamp(0, 100));
+    return true;
   }
 
   /// Jump the playing track to [positionMs]: the Now Playing view's

@@ -208,6 +208,11 @@ const Map<String, String> subpageHints = {
       "Dismiss or postpone the screensaver on the device's person sensor",
   'Scheduled Screensavers':
       'Switch to a different screensaver at set times of day.',
+  // Media Player.
+  'Sendspin Player': 'Make this device a synchronized Music Assistant player',
+  'Music Assistant': 'Server, token, kiosk menu shortcut',
+  'Floating Player': 'The small card over the dashboard',
+  'Now Playing': 'Full-screen view while music plays',
   // ESPHome.
   'Notifications': 'Transparency, blur, notification sound, test notification',
   'Bluetooth Proxy': 'Relay nearby Bluetooth devices to Home Assistant',
@@ -836,8 +841,8 @@ const kioskAllowSendspinPlayer = SettingDef<bool>(
   key: 'kiosk.allow_sendspin_player',
   type: SettingType.boolean,
   defaultValue: true,
-  title: 'Sendspin Player',
-  description: 'Show or hide the floating Sendspin player.',
+  title: 'Floating Player',
+  description: 'Show or hide the floating player and open Now Playing.',
   category: 'Kiosk',
   section: 'Allowed Actions',
   subpage: 'Allowed Actions',
@@ -4386,17 +4391,54 @@ const cameraConfig = SettingDef<String>(
   secret: true,
 );
 
-// ── Sendspin ───────────────────────────────────────────────────────────
-// The device as a synchronized Sendspin audio player (the Music Assistant
-// native protocol). The native client lives in Kotlin (sendspin/); these
-// settings drive its lifecycle through SendspinManager.
+// ── Media Player ───────────────────────────────────────────────────────
+// The Now Playing surfaces (the floating card, the full-screen view, the
+// kiosk menu entries) and the players they can follow: this device as a
+// synchronized Sendspin audio player (the Music Assistant native protocol,
+// whose client lives in Kotlin under sendspin/), a Music Assistant player,
+// a Home Assistant media player, or a Sonos speaker followed directly.
+// The category keeps its Sendspin id and keys from when it was only the
+// local player.
+
+/// Which player the floating card, the full-screen view and the transport
+/// controls follow: empty is this device's own Sendspin player, otherwise
+/// `ma:<player id>` for a Music Assistant player, `ha:<entity id>` for a
+/// Home Assistant media player or `sonos:<player id>` for a Sonos speaker
+/// followed directly. Visible so both settings surfaces place it first,
+/// but its row is hand-built on each: a grouped picker fed by the live
+/// player lists, never a text field.
+const sendspinPlayer = SettingDef<String>(
+  key: 'sendspin.player',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Player',
+  description:
+      'What the floating player and Now Playing show and control: this '
+      'device, or a player elsewhere.',
+  category: 'Sendspin',
+  section: 'Player',
+);
+
+/// The picked player's display name: what the settings rows show and what
+/// the Now Playing view's chip says. Stored beside the id so neither
+/// surface needs the player's system just to say what is selected.
+const sendspinPlayerName = SettingDef<String>(
+  key: 'sendspin.player_name',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Controlled player name',
+  description: 'Internal display name of the controlled player.',
+  category: 'Sendspin',
+  hidden: true,
+);
 
 const sendspinEnabled = SettingDef<bool>(
   key: 'sendspin.enabled',
-  // Gone while a remote player is followed (issue #265): the local player
+  // Gone while another player is followed (issue #265): the local player
   // never runs in that mode, so the switch could not do anything. The
-  // local-audio rows below ride this dependsOn transitively.
-  dependsOn: 'sendspin.ma_player',
+  // local-audio rows below ride this dependsOn transitively, and the
+  // page entry goes with them.
+  dependsOn: 'sendspin.player',
   dependsOnValue: '',
   type: SettingType.boolean,
   defaultValue: false,
@@ -4406,7 +4448,8 @@ const sendspinEnabled = SettingDef<bool>(
       'in Music Assistant under the device name, in sync with every '
       'other Sendspin speaker.',
   category: 'Sendspin',
-  section: 'Sendspin player',
+  subpage: 'Sendspin Player',
+  section: 'Sendspin Player',
 );
 
 const sendspinServer = SettingDef<String>(
@@ -4418,7 +4461,8 @@ const sendspinServer = SettingDef<String>(
       'Sendspin server address, for example 192.168.1.10:8927. Leave '
       'empty to find the server on the network automatically.',
   category: 'Sendspin',
-  section: 'Sendspin player',
+  subpage: 'Sendspin Player',
+  section: 'Sendspin Player',
   dependsOn: 'sendspin.enabled',
 );
 
@@ -4431,7 +4475,8 @@ const sendspinCodec = SettingDef<String>(
       'FLAC is lossless and ideal on WiFi or ethernet. The server makes '
       'the final choice from what this device offers.',
   category: 'Sendspin',
-  section: 'Sendspin player',
+  subpage: 'Sendspin Player',
+  section: 'Sendspin Player',
   options: ['flac', 'opus', 'pcm'],
   optionLabels: {
     'flac': 'FLAC (lossless)',
@@ -4441,70 +4486,27 @@ const sendspinCodec = SettingDef<String>(
   dependsOn: 'sendspin.enabled',
 );
 
-const sendspinShowPlayer = SettingDef<bool>(
-  key: 'sendspin.show_player',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Show the floating media player',
-  description:
-      'While music plays, show a small now-playing window over the '
-      'dashboard with artwork, track info and progress. Drag it anywhere; '
-      'the position is remembered.',
-  category: 'Sendspin',
-  section: 'Sendspin player',
-  dependsOn: 'sendspin.player_active',
-);
-
-/// The floating player's own menu entry (issue #257): show or hide the
-/// card without a gesture to configure or remember. Deliberately
-/// independent of `sendspin.show_player` — a player configured not to pop
-/// up on its own can still be summoned from the menu, for this session
-/// only, without that setting changing underneath its owner.
-const sendspinPlayerShortcut = SettingDef<bool>(
-  key: 'sendspin.player_shortcut',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: 'Show in the kiosk menu',
-  description:
-      'Add an entry in the kiosk menu that shows or hides the floating '
-      "Sendspin player. WARNING: If nothing is playing or there is no "
-      "queue for this player, it won't show up.",
-  category: 'Sendspin',
-  section: 'Sendspin player',
-  dependsOn: 'sendspin.player_active',
-);
-
-const sendspinPlayerSize = SettingDef<String>(
-  key: 'sendspin.player_size',
-  type: SettingType.select,
-  defaultValue: 'compact',
-  title: 'Player size',
-  description:
-      'Compact is a small, unobtrusive now-playing window. Large adds '
-      'previous, play/pause and next buttons sized for touch, controlling '
-      'the whole playback group.',
-  category: 'Sendspin',
-  section: 'Sendspin player',
-  options: ['compact', 'large'],
-  optionLabels: {'compact': 'Compact', 'large': 'Large with controls'},
-  dependsOn: 'sendspin.show_player',
-);
-
-const sendspinPausedHideMinutes = SettingDef<num>(
-  key: 'sendspin.paused_hide_minutes',
+/// Per-device playback offset (issue: Bluetooth speakers). The sync engine
+/// can only align what it can measure, and a Bluetooth speaker's own buffer
+/// sits past the DAC where Android's timestamps cannot see it — so that one
+/// endpoint lags the group and the only remedy used to be delaying twenty
+/// others. Negative plays this device earlier by the same amount instead.
+const sendspinSyncOffset = SettingDef<num>(
+  key: 'sendspin.sync_offset_ms',
   type: SettingType.number,
-  defaultValue: 3,
-  title: 'Hide the paused player after',
+  defaultValue: 0,
+  min: -1000,
+  max: 1000,
+  step: 10,
+  unit: 'ms',
+  title: 'Audio sync offset (ms)',
   description:
-      'How long a paused player stays on screen. It applies to both the '
-      'floating player and the Now Playing view.',
+      'Negative plays this device earlier, for speakers that lag behind '
+      'the group (Bluetooth). Tune by ear; applies live.',
   category: 'Sendspin',
-  section: 'Sendspin player',
-  min: 1,
-  max: 10,
-  step: 1,
-  unit: 'min',
-  dependsOn: 'sendspin.show_player',
+  subpage: 'Sendspin Player',
+  section: 'Sendspin Player',
+  dependsOn: 'sendspin.enabled',
 );
 
 const sendspinDuckPercent = SettingDef<num>(
@@ -4517,7 +4519,8 @@ const sendspinDuckPercent = SettingDef<num>(
       'fraction of its volume so the microphone hears you. Capped at '
       '25% to keep detection reliable.',
   category: 'Sendspin',
-  section: 'Sendspin player',
+  subpage: 'Sendspin Player',
+  section: 'Sendspin Player',
   min: 0,
   max: 25,
   step: 5,
@@ -4525,168 +4528,12 @@ const sendspinDuckPercent = SettingDef<num>(
   dependsOn: 'sendspin.enabled',
 );
 
-// ── Now Playing (Sendspin section) ─────────────────────────────────────
-// The full-screen music display that stands in for the screensaver. Its
-// own group: the rows decide what the screen does while music plays, not
-// how the player plays it.
-
-const sendspinFullscreen = SettingDef<bool>(
-  key: 'sendspin.fullscreen',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: '"Now Playing" instead of the screensaver',
-  description:
-      'While music plays, the screensaver becomes a full-screen Now '
-      'Playing view with album art. With nothing playing, the regular '
-      'screensaver runs.',
-  category: 'Sendspin',
-  section: 'Now Playing',
-  dependsOn: 'sendspin.player_active',
-);
-
-/// The transport on the full-screen view: the same previous, play/pause
-/// and next buttons the large floating card carries, plus a progress bar
-/// that seeks where the server allows it. With controls on screen a tap
-/// can no longer mean "dismiss", so the view grows a close button and the
-/// screensaver's touch dismissal stands down for it (the back button and
-/// the motion policy are unchanged).
-const sendspinFullscreenControls = SettingDef<bool>(
-  key: 'sendspin.fullscreen_controls',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Show media controls',
-  description:
-      'Previous, play/pause and next buttons and a progress bar on the '
-      'Now Playing view. With controls on, a close button dismisses it '
-      'instead of a tap anywhere.',
-  category: 'Sendspin',
-  section: 'Now Playing',
-  dependsOn: 'sendspin.fullscreen',
-);
-
-/// The queue panel in the lyrics' slot, persisted like the lyrics are:
-/// the view's queue button flips it and keeps the two exclusive. No
-/// settings row, for the same reason the lyrics have none.
-const sendspinFullscreenQueue = SettingDef<bool>(
-  key: 'sendspin.fullscreen_queue',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: 'Show queue',
-  description:
-      'The queue from the playing track on, in place of the lyrics on the '
-      'Now Playing view.',
-  category: 'Sendspin',
-  section: 'Now Playing',
-  hidden: true,
-);
-
-/// The kiosk menu's way to the Now Playing view on demand, the twin of
-/// the floating player's entry: the entry shows while a track is loaded
-/// and brings the view up, paused with its play button if the music is.
-const sendspinFullscreenShortcut = SettingDef<bool>(
-  key: 'sendspin.fullscreen_shortcut',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: 'Show in the kiosk menu',
-  description:
-      'Add an entry in the kiosk menu that shows the Now Playing view. '
-      "WARNING: If nothing is playing or there is no queue for this "
-      "player, it won't show up.",
-  category: 'Sendspin',
-  section: 'Now Playing',
-  dependsOn: 'sendspin.fullscreen',
-);
-
-/// Dismiss the view with a double tap anywhere on it instead of the close
-/// button, which goes away (issue #409: hunting for the button on a
-/// screen everyone is used to tapping). Taps on the transport, the
-/// toggles and the queue rows never count, so a quick double press on
-/// Next skips twice rather than closing the view.
-const sendspinFullscreenDoubleTap = SettingDef<bool>(
-  key: 'sendspin.fullscreen_double_tap',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: 'Double tap to dismiss',
-  description:
-      'A double tap anywhere on the Now Playing view dismisses it. The '
-      "close button won't be shown.",
-  category: 'Sendspin',
-  section: 'Now Playing',
-  dependsOn: 'sendspin.fullscreen_controls',
-);
-
-/// Bring the view up the moment playback starts rather than waiting for
-/// the idle timeout: the display is the point of the music, and someone
-/// who queued a song from their phone expects the wall to show it now.
-const sendspinFullscreenOnPlay = SettingDef<bool>(
-  key: 'sendspin.fullscreen_on_play',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Launch Now Playing when music starts playing',
-  description:
-      'Open the Now Playing view as soon as playback starts instead of '
-      'waiting for the screensaver timeout.',
-  category: 'Sendspin',
-  section: 'Now Playing',
-  dependsOn: 'sendspin.fullscreen',
-);
-
-const sendspinFullscreenMotion = SettingDef<bool>(
-  key: 'sendspin.fullscreen_motion',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: 'Dismiss "Now Playing" on motion',
-  description:
-      'Let motion dismiss Now Playing like a regular screensaver. Off, '
-      'only touch dismisses it, so a walk-past does not interrupt the '
-      'music display.',
-  category: 'Sendspin',
-  section: 'Now Playing',
-  dependsOn: 'sendspin.fullscreen',
-);
-
-const sendspinDismissKeepsPlaying = SettingDef<bool>(
-  key: 'sendspin.dismiss_keeps_playing',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: 'Keep playing when dismissed',
-  description:
-      'Flinging the floating player away hides it without stopping the '
-      'music.',
-  category: 'Sendspin',
-  section: 'Sendspin player',
-  dependsOn: 'sendspin.player_active',
-);
-
-/// The floating player's position as "x,y" fractions of the free area.
-/// Hidden: owned by the drag gesture, not a settings row.
-const sendspinPlayerPos = SettingDef<String>(
-  key: 'sendspin.player_pos',
-  type: SettingType.string,
-  defaultValue: '0.98,0.98',
-  title: 'Floating player position',
-  description: 'Internal position of the floating media player.',
-  category: 'Sendspin',
-  hidden: true,
-);
-
-/// Stable per-install player identity, so Music Assistant sees the same
-/// player across restarts. Generated on first start; never shown.
-const sendspinClientId = SettingDef<String>(
-  key: 'sendspin.client_id',
-  type: SettingType.string,
-  defaultValue: '',
-  title: 'Sendspin client id',
-  description: 'Internal identity for the Sendspin player.',
-  category: 'Sendspin',
-  hidden: true,
-);
-
 // ── Music Assistant (Sendspin section) ─────────────────────────────────
 // The Sendspin player speaks Music Assistant's player protocol, which
 // carries the track but nothing about it beyond title, artist and album.
-// Anything richer — lyrics today — comes from Music Assistant's own API,
-// which is a separate connection with its own address and token.
+// Anything richer — lyrics, the queue, favorites — comes from Music
+// Assistant's own API, which is a separate connection with its own
+// address and token.
 
 const sendspinMaUrl = SettingDef<String>(
   key: 'sendspin.ma_url',
@@ -4697,6 +4544,7 @@ const sendspinMaUrl = SettingDef<String>(
       "The Music Assistant server's address, as its web interface shows "
       'it. Usually https and port 8095.',
   category: 'Sendspin',
+  subpage: 'Music Assistant',
   section: 'Music Assistant',
   placeholder: 'https://192.168.1.10:8095',
 );
@@ -4711,43 +4559,12 @@ const sendspinMaToken = SettingDef<String>(
       'Read access is enough for lyrics; the kiosk menu shortcut opens '
       'the web interface as whoever the token belongs to.',
   category: 'Sendspin',
+  subpage: 'Music Assistant',
   section: 'Music Assistant',
   // As with the Home Assistant token: masks the row on a wall-mounted
   // screen, and keeps the token out of a configuration export unless the
   // export was explicitly asked to carry secrets.
   secret: true,
-);
-
-/// Which Music Assistant player the Now Playing card, full-screen view and
-/// transport controls follow: empty is this device's own Sendspin player,
-/// anything else a player id from the server (issue #265). Hidden: a
-/// hand-built picker row owns it on both settings surfaces, offering the
-/// server's live player list.
-const sendspinMaPlayer = SettingDef<String>(
-  key: 'sendspin.ma_player',
-  type: SettingType.string,
-  defaultValue: '',
-  title: 'Player to control',
-  description:
-      'Show and control another Music Assistant player instead of this '
-      "device's own.",
-  category: 'Sendspin',
-  section: 'Music Assistant',
-  hidden: true,
-);
-
-/// The picked player's display name: what the settings rows show and what
-/// the web interface's player= parameter wants. Stored beside the id so
-/// neither surface needs the server just to say what is selected.
-const sendspinMaPlayerName = SettingDef<String>(
-  key: 'sendspin.ma_player_name',
-  type: SettingType.string,
-  defaultValue: '',
-  title: 'Controlled player name',
-  description: 'Internal display name of the controlled player.',
-  category: 'Sendspin',
-  section: 'Music Assistant',
-  hidden: true,
 );
 
 /// The name the local player last registered with in Music Assistant —
@@ -4766,8 +4583,8 @@ const sendspinLocalPlayerName = SettingDef<String>(
 );
 
 /// Whether the player surface (the card, the full-screen view, the menu
-/// entries) has anything to show for: the local player is enabled, or a
-/// remote player is followed. A bookkeeping flag maintained by
+/// entries) has anything to show for: the local player is enabled, or
+/// another player is followed. A bookkeeping flag maintained by
 /// SendspinManager, existing so the card rows can gate on "either mode"
 /// — dependsOn can express a chain of ANDs but not an OR.
 const sendspinPlayerActive = SettingDef<bool>(
@@ -4794,7 +4611,8 @@ const sendspinMaShortcut = SettingDef<bool>(
       "Add a Music Assistant entry to the kiosk menu, opening the server's "
       'web interface over the dashboard. Needs the server address above.',
   category: 'Sendspin',
-  section: 'Music Assistant',
+  subpage: 'Music Assistant',
+  section: 'Kiosk menu',
 );
 
 /// A wall tablet's way back to the dashboard when whoever queued a song
@@ -4810,7 +4628,8 @@ const sendspinMaAutoClose = SettingDef<num>(
       'Return to the dashboard when nobody has touched the Music Assistant '
       'page for this long. Zero leaves it open until it is closed.',
   category: 'Sendspin',
-  section: 'Music Assistant',
+  subpage: 'Music Assistant',
+  section: 'Kiosk menu',
   dependsOn: 'sendspin.ma_shortcut',
   min: 0,
   max: 60,
@@ -4833,8 +4652,207 @@ const sendspinMaHideClose = SettingDef<bool>(
       'controls, like the Now Playing menu. Without it, dismiss with the '
       "back button or by using the kiosk's drawer menu.",
   category: 'Sendspin',
-  section: 'Music Assistant',
+  subpage: 'Music Assistant',
+  section: 'Kiosk menu',
   dependsOn: 'sendspin.ma_shortcut',
+);
+
+// ── Floating Player (Sendspin section) ─────────────────────────────────
+// The small now-playing card over the dashboard, whichever player it
+// follows.
+
+const sendspinShowPlayer = SettingDef<bool>(
+  key: 'sendspin.show_player',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show the floating player',
+  description:
+      'While music plays, show a small now-playing window over the '
+      'dashboard with artwork, track info and progress. Drag it anywhere; '
+      'the position is remembered.',
+  category: 'Sendspin',
+  subpage: 'Floating Player',
+  section: 'Floating Player',
+  dependsOn: 'sendspin.player_active',
+);
+
+const sendspinPlayerSize = SettingDef<String>(
+  key: 'sendspin.player_size',
+  type: SettingType.select,
+  defaultValue: 'compact',
+  title: 'Player size',
+  description:
+      'Compact is a small, unobtrusive now-playing window. Large adds '
+      'previous, play/pause and next buttons sized for touch, controlling '
+      'the whole playback group.',
+  category: 'Sendspin',
+  subpage: 'Floating Player',
+  section: 'Floating Player',
+  options: ['compact', 'large'],
+  optionLabels: {'compact': 'Compact', 'large': 'Large with controls'},
+  dependsOn: 'sendspin.show_player',
+);
+
+const sendspinPausedHideMinutes = SettingDef<num>(
+  key: 'sendspin.paused_hide_minutes',
+  type: SettingType.number,
+  defaultValue: 3,
+  title: 'Hide the paused player after',
+  description:
+      'How long a paused player stays on screen. It applies to both the '
+      'floating player and the Now Playing view.',
+  category: 'Sendspin',
+  subpage: 'Floating Player',
+  section: 'Floating Player',
+  min: 1,
+  max: 10,
+  step: 1,
+  unit: 'min',
+  dependsOn: 'sendspin.show_player',
+);
+
+const sendspinDismissKeepsPlaying = SettingDef<bool>(
+  key: 'sendspin.dismiss_keeps_playing',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Keep playing when dismissed',
+  description:
+      'Flinging the floating player away hides it without stopping the '
+      'music.',
+  category: 'Sendspin',
+  subpage: 'Floating Player',
+  section: 'Floating Player',
+  dependsOn: 'sendspin.player_active',
+);
+
+/// The floating player's own menu entry (issue #257): show or hide the
+/// card without a gesture to configure or remember. Deliberately
+/// independent of `sendspin.show_player` — a player configured not to pop
+/// up on its own can still be summoned from the menu, for this session
+/// only, without that setting changing underneath its owner.
+const sendspinPlayerShortcut = SettingDef<bool>(
+  key: 'sendspin.player_shortcut',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show in the kiosk menu',
+  description:
+      'Add an entry in the kiosk menu that shows or hides the floating '
+      "player. WARNING: If nothing is playing or there is no queue for "
+      "this player, it won't show up.",
+  category: 'Sendspin',
+  subpage: 'Floating Player',
+  section: 'Floating Player',
+  dependsOn: 'sendspin.player_active',
+);
+
+// ── Now Playing (Sendspin section) ─────────────────────────────────────
+// The full-screen music display that stands in for the screensaver. Its
+// own page: the rows decide what the screen does while music plays, not
+// how the player plays it.
+
+const sendspinFullscreen = SettingDef<bool>(
+  key: 'sendspin.fullscreen',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: '"Now Playing" instead of the screensaver',
+  description:
+      'While music plays, the screensaver becomes a full-screen Now '
+      'Playing view with album art. With nothing playing, the regular '
+      'screensaver runs.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.player_active',
+);
+
+/// The transport on the full-screen view: the same previous, play/pause
+/// and next buttons the large floating card carries, plus a progress bar
+/// that seeks where the server allows it. With controls on screen a tap
+/// can no longer mean "dismiss", so the view grows a close button and the
+/// screensaver's touch dismissal stands down for it (the back button and
+/// the motion policy are unchanged).
+const sendspinFullscreenControls = SettingDef<bool>(
+  key: 'sendspin.fullscreen_controls',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show media controls',
+  description:
+      'Previous, play/pause and next buttons and a progress bar on the '
+      'Now Playing view. With controls on, a close button dismisses it '
+      'instead of a tap anywhere.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
+);
+
+/// Dismiss the view with a double tap anywhere on it instead of the close
+/// button, which goes away (issue #409: hunting for the button on a
+/// screen everyone is used to tapping). Taps on the transport, the
+/// toggles and the queue rows never count, so a quick double press on
+/// Next skips twice rather than closing the view.
+const sendspinFullscreenDoubleTap = SettingDef<bool>(
+  key: 'sendspin.fullscreen_double_tap',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Double tap to dismiss',
+  description:
+      'A double tap anywhere on the Now Playing view dismisses it. The '
+      "close button won't be shown.",
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen_controls',
+);
+
+/// Bring the view up the moment playback starts rather than waiting for
+/// the idle timeout: the display is the point of the music, and someone
+/// who queued a song from their phone expects the wall to show it now.
+const sendspinFullscreenOnPlay = SettingDef<bool>(
+  key: 'sendspin.fullscreen_on_play',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Launch Now Playing when music starts playing',
+  description:
+      'Open the Now Playing view as soon as playback starts instead of '
+      'waiting for the screensaver timeout.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
+);
+
+const sendspinFullscreenMotion = SettingDef<bool>(
+  key: 'sendspin.fullscreen_motion',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Dismiss "Now Playing" on motion',
+  description:
+      'Let motion dismiss Now Playing like a regular screensaver. Off, '
+      'only touch dismisses it, so a walk-past does not interrupt the '
+      'music display.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
+);
+
+/// The kiosk menu's way to the Now Playing view on demand, the twin of
+/// the floating player's entry: the entry shows while a track is loaded
+/// and brings the view up, paused with its play button if the music is.
+const sendspinFullscreenShortcut = SettingDef<bool>(
+  key: 'sendspin.fullscreen_shortcut',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show in the kiosk menu',
+  description:
+      'Add an entry in the kiosk menu that shows the Now Playing view. '
+      "WARNING: If nothing is playing or there is no queue for this "
+      "player, it won't show up.",
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
 );
 
 const sendspinLyrics = SettingDef<bool>(
@@ -4844,41 +4862,16 @@ const sendspinLyrics = SettingDef<bool>(
   title: 'Show lyrics',
   description:
       'Show the current track\'s lyrics on the Now Playing screen, in time '
-      'with the music. Music Assistant supplies them (local .lrc files '
-      'included); tracks it cannot match are looked up on LRCLIB directly.',
+      'with the music. Music Assistant supplies them when it is set up '
+      '(local .lrc files included); other tracks are looked up on LRCLIB.',
   category: 'Sendspin',
-  section: 'Music Assistant',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
   // The Now Playing view's own lyrics button flips this and the choice
   // sticks, so no settings row: two places to flip one thing only invite
-  // confusion. Off while a remote player is followed (the position
-  // reporting is too coarse to sing along with), which the button
-  // honors by staying out; the timing row rides this dependsOn
-  // transitively, so it shows only while lyrics are on.
+  // confusion. The timing row rides this dependsOn, so it shows only
+  // while lyrics are on.
   hidden: true,
-  dependsOn: 'sendspin.ma_player',
-  dependsOnValue: '',
-);
-
-/// Per-device playback offset (issue: Bluetooth speakers). The sync engine
-/// can only align what it can measure, and a Bluetooth speaker's own buffer
-/// sits past the DAC where Android's timestamps cannot see it — so that one
-/// endpoint lags the group and the only remedy used to be delaying twenty
-/// others. Negative plays this device earlier by the same amount instead.
-const sendspinSyncOffset = SettingDef<num>(
-  key: 'sendspin.sync_offset_ms',
-  type: SettingType.number,
-  defaultValue: 0,
-  min: -1000,
-  max: 1000,
-  step: 10,
-  unit: 'ms',
-  title: 'Audio sync offset (ms)',
-  description:
-      'Negative plays this device earlier, for speakers that lag behind '
-      'the group (Bluetooth). Tune by ear; applies live.',
-  category: 'Sendspin',
-  section: 'Sendspin player',
-  dependsOn: 'sendspin.enabled',
 );
 
 const sendspinLyricsOffset = SettingDef<num>(
@@ -4891,12 +4884,54 @@ const sendspinLyricsOffset = SettingDef<num>(
       'earlier, negative later. Worth a nudge on tracks that read '
       'consistently off.',
   category: 'Sendspin',
-  section: 'Music Assistant',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
   dependsOn: 'sendspin.lyrics',
   min: -3,
   max: 3,
   step: 0.1,
   unit: 's',
+);
+
+/// The queue panel in the lyrics' slot, persisted like the lyrics are:
+/// the view's queue button flips it and keeps the two exclusive. No
+/// settings row, for the same reason the lyrics have none.
+const sendspinFullscreenQueue = SettingDef<bool>(
+  key: 'sendspin.fullscreen_queue',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show queue',
+  description:
+      'The queue from the playing track on, in place of the lyrics on the '
+      'Now Playing view.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  hidden: true,
+);
+
+/// The floating player's position as "x,y" fractions of the free area.
+/// Hidden: owned by the drag gesture, not a settings row.
+const sendspinPlayerPos = SettingDef<String>(
+  key: 'sendspin.player_pos',
+  type: SettingType.string,
+  defaultValue: '0.98,0.98',
+  title: 'Floating player position',
+  description: 'Internal position of the floating media player.',
+  category: 'Sendspin',
+  hidden: true,
+);
+
+/// Stable per-install player identity, so Music Assistant sees the same
+/// player across restarts. Generated on first start; never shown.
+const sendspinClientId = SettingDef<String>(
+  key: 'sendspin.client_id',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Sendspin client id',
+  description: 'Internal identity for the Sendspin player.',
+  category: 'Sendspin',
+  hidden: true,
 );
 
 // ── DLNA renderer ──────────────────────────────────────────────────────
@@ -5843,36 +5878,32 @@ const List<SettingDef<Object>> allSettings = [
   // Music Assistant leads the page it names: the server is what the kiosk
   // browses, asks for lyrics and hands people through the menu, and the
   // Sendspin player below is one of the things it drives.
-  sendspinMaUrl,
-  sendspinMaToken,
-  sendspinMaPlayer,
-  sendspinMaPlayerName,
-  sendspinMaShortcut,
-  sendspinMaAutoClose,
-  sendspinMaHideClose,
-  sendspinLyrics,
-  sendspinLyricsOffset,
+  sendspinPlayer,
+  sendspinPlayerName,
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
   sendspinSyncOffset,
   sendspinDuckPercent,
+  sendspinMaUrl,
+  sendspinMaToken,
+  sendspinMaShortcut,
+  sendspinMaAutoClose,
+  sendspinMaHideClose,
   sendspinShowPlayer,
-  sendspinPlayerShortcut,
   sendspinPlayerSize,
   sendspinPausedHideMinutes,
   sendspinDismissKeepsPlaying,
-  // The order the group reads in, the user's call: the launch first,
-  // the controls and the menu entry, then the view's own switch and the
-  // two dismissal rows. Every row but the switch gates on the switch;
-  // the gating does not care where the gate sits.
-  sendspinFullscreenOnPlay,
-  sendspinFullscreenControls,
-  sendspinFullscreenQueue,
-  sendspinFullscreenShortcut,
+  sendspinPlayerShortcut,
   sendspinFullscreen,
+  sendspinFullscreenControls,
   sendspinFullscreenDoubleTap,
+  sendspinFullscreenOnPlay,
   sendspinFullscreenMotion,
+  sendspinFullscreenShortcut,
+  sendspinLyrics,
+  sendspinLyricsOffset,
+  sendspinFullscreenQueue,
   sendspinPlayerPos,
   sendspinClientId,
   sendspinPlayerActive,

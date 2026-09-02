@@ -36,7 +36,7 @@ export const GESTURE_ACTION_GROUPS = [
     ['navigate', 'Go to a dashboard view', 'grid'],
     ['url', 'Open a web page', 'globe'],
     ['camera_view', 'Show a camera view', 'video'],
-    ['sendspin_player', 'Show the Sendspin player', 'speaker'],
+    ['sendspin_player', 'Show the floating player', 'speaker'],
     ['app_launcher', 'Open the app launcher', 'apps'],
     ['screensaver', 'Start the screensaver', 'moon'],
     ['screensaver_stop', 'Stop the screensaver', 'sun'],
@@ -91,7 +91,7 @@ export function describeGestureAction(a) {
     case 'camera_view':
       if (a.mode === 'hide') return 'Close the camera view';
       return a.viewName ? `Toggle camera view ${a.viewName}` : 'Toggle the camera view';
-    case 'sendspin_player': return 'Show the Sendspin player';
+    case 'sendspin_player': return 'Show the floating player';
     case 'app_launcher': return 'Open the app launcher';
     case 'screensaver': return 'Start the screensaver';
     case 'screensaver_stop': return 'Stop the screensaver';

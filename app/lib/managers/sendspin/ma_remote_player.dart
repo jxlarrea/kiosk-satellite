@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/logging.dart';
 import 'music_assistant_api.dart';
+import 'remote_player.dart';
 
 /// The Now Playing surface following a player that is not this device
 /// (issue #265): a wall tablet showing and controlling the kitchen Sonos
@@ -24,7 +25,7 @@ import 'music_assistant_api.dart';
 /// 'supportedCommands'), or null when there is nothing to show — so the
 /// floating card, the full-screen view and the screensaver takeover all
 /// work unchanged.
-class MaRemotePlayer {
+class MaRemotePlayer implements RemotePlayer {
   MaRemotePlayer({
     required String baseUrl,
     required String token,
@@ -44,13 +45,36 @@ class MaRemotePlayer {
   /// Every transport the card can render. Not read from the player's own
   /// supported_features: transport acts on the queue, which Music
   /// Assistant drives for any player (a pause it cannot pass through
-  /// becomes a stop server-side).
-  static const commands = ['play', 'pause', 'stop', 'next', 'previous', 'seek'];
+  /// becomes a stop server-side). Shuffle is the queue's, volume the
+  /// player's; both are Music Assistant commands for any player.
+  static const commands = [
+    'play',
+    'pause',
+    'stop',
+    'next',
+    'previous',
+    'seek',
+    'shuffle',
+    'volume',
+  ];
+
+  /// The transport commands, the ones [control] can send.
+  static const _transport = ['play', 'pause', 'stop', 'next', 'previous'];
 
   final MusicAssistantApi _api;
   final Logger log;
+  @override
   final String playerId;
   final void Function(Map<String, Object?>? snapshot) onSnapshot;
+
+  /// Music Assistant keeps a queue for every player it drives.
+  @override
+  bool get hasQueue => true;
+
+  /// The queue's live elapsed time, read every few seconds while playing,
+  /// keeps the position within a moment of the audio.
+  @override
+  bool get lyricsSynced => true;
 
   bool _stopped = false;
   HttpClient? _client;
@@ -76,14 +100,17 @@ class MaRemotePlayer {
   /// track: a cleared queue, as opposed to a connection that dropped. The
   /// local player's watcher reads it to tell a stop from a pause, which
   /// the Sendspin stream alone cannot.
+  @override
   bool queueEmpty = false;
 
   Map<String, Object?>? _snapshot;
 
+  @override
   void start() {
     unawaited(_connect());
   }
 
+  @override
   Future<void> stop() async {
     _stopped = true;
     _retry?.cancel();
@@ -94,12 +121,14 @@ class MaRemotePlayer {
   /// The "Show the Sendspin player" reveal with nothing on screen: surface
   /// the queue's last track as a paused card even before any playback has
   /// been seen, mirroring the local player's queue recovery (issue #178).
+  @override
   void reveal() {
     _sawPlayback = true;
     unawaited(refresh());
   }
 
   /// Ask for the player's active queue and republish from the answer.
+  @override
   Future<void> refresh() async {
     final session = _session;
     if (session == null) return;
@@ -115,9 +144,10 @@ class MaRemotePlayer {
 
   /// Send a transport command for the followed player. False when the
   /// connection is down or the server refuses it.
+  @override
   Future<bool> control(String command) async {
     final session = _session;
-    if (session == null || !commands.contains(command)) return false;
+    if (session == null || !_transport.contains(command)) return false;
     try {
       await session.send('players/cmd/$command', {'player_id': playerId});
       return true;
@@ -129,6 +159,7 @@ class MaRemotePlayer {
 
   /// Shuffle the followed player's queue on or off: a queue setting in
   /// Music Assistant, not a player command, echoed back by queue_updated.
+  @override
   Future<bool> setShuffle(bool on) async {
     final session = _session;
     if (session == null || _queueId.isEmpty) return false;
@@ -146,6 +177,7 @@ class MaRemotePlayer {
 
   /// Seek the followed player's queue: Music Assistant takes the position
   /// in whole seconds and answers with a queue_time_updated for the bar.
+  @override
   Future<bool> seek(int positionMs) async {
     final session = _session;
     if (session == null) return false;
@@ -157,6 +189,24 @@ class MaRemotePlayer {
       return true;
     } catch (e) {
       log.warn(_name, 'remote seek failed: $e');
+      return false;
+    }
+  }
+
+  /// Set the followed player's volume: a player command in Music
+  /// Assistant, echoed back by player_updated.
+  @override
+  Future<bool> setVolume(int percent) async {
+    final session = _session;
+    if (session == null) return false;
+    try {
+      await session.send('players/cmd/volume_set', {
+        'player_id': playerId,
+        'volume_level': percent.clamp(0, 100),
+      });
+      return true;
+    } catch (e) {
+      log.warn(_name, 'remote volume failed: $e');
       return false;
     }
   }

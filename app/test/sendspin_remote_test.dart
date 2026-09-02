@@ -292,15 +292,15 @@ void main() {
     late List<MethodCall> nativeCalls;
     _FakeRemote? fake;
 
-    Future<void> build({String player = 'p1', bool enabled = true}) async {
+    Future<void> build({String player = 'ma:p1', bool enabled = true}) async {
       SharedPreferences.setMockInitialValues({
         'ks.${defs.deviceName.key}': 'Wall Tablet',
         'ks.${defs.sendspinEnabled.key}': enabled,
         'ks.${defs.sendspinClientId.key}': 'abc123',
         'ks.${defs.sendspinMaUrl.key}': 'ma.local',
         'ks.${defs.sendspinMaToken.key}': 'token',
-        'ks.${defs.sendspinMaPlayer.key}': player,
-        'ks.${defs.sendspinMaPlayerName.key}': 'Kitchen',
+        'ks.${defs.sendspinPlayer.key}': player,
+        'ks.${defs.sendspinPlayerName.key}': 'Kitchen',
         'ks.${defs.sendspinLyrics.key}': true,
       });
       nativeCalls = [];
@@ -385,7 +385,7 @@ void main() {
       fake!.onSnapshot({'title': 'Song', 'playing': true});
       final started = fake!;
 
-      await settings.set(defs.sendspinMaPlayer, '');
+      await settings.set(defs.sendspinPlayer, '');
       await Future<void>.delayed(Duration.zero);
       expect(started.stopped, isTrue);
       expect(sendspin.nowPlaying.value, isNull);
@@ -441,10 +441,10 @@ void main() {
 
     test('the local-player rows leave the settings while following', () async {
       await build();
-      // Gone with a remote player picked: the lyrics rows, the enable
-      // switch, and every local-audio row riding it transitively.
-      expect(settings.visible(defs.sendspinLyrics), isFalse);
-      expect(settings.visible(defs.sendspinLyricsOffset), isFalse);
+      // Gone with a remote player picked: the enable switch and every
+      // local-audio row riding it transitively. Lyrics stay: a followed
+      // player's position is read closely enough to sing along with.
+      expect(settings.visible(defs.sendspinLyrics), isTrue);
       expect(settings.visible(defs.sendspinEnabled), isFalse);
       expect(settings.visible(defs.sendspinServer), isFalse);
       expect(settings.visible(defs.sendspinCodec), isFalse);
@@ -457,11 +457,10 @@ void main() {
       expect(settings.visible(defs.sendspinFullscreen), isTrue);
       expect(settings.visible(defs.sendspinDismissKeepsPlaying), isTrue);
 
-      await settings.set(defs.sendspinMaPlayer, '');
+      await settings.set(defs.sendspinPlayer, '');
       // The manager recomputes the surface flag over the async bus.
       await Future<void>.delayed(Duration.zero);
       expect(settings.visible(defs.sendspinLyrics), isTrue);
-      expect(settings.visible(defs.sendspinLyricsOffset), isTrue);
       expect(settings.visible(defs.sendspinEnabled), isTrue);
       expect(settings.visible(defs.sendspinServer), isTrue);
       expect(settings.get(defs.sendspinPlayerActive), isTrue);
@@ -472,14 +471,14 @@ void main() {
       await build(enabled: false);
       expect(settings.get(defs.sendspinPlayerActive), isTrue);
 
-      await settings.set(defs.sendspinMaPlayer, '');
+      await settings.set(defs.sendspinPlayer, '');
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
       expect(settings.get(defs.sendspinPlayerActive), isFalse);
       expect(settings.visible(defs.sendspinShowPlayer), isFalse);
     });
 
-    test('maPlayers lists, filters and sorts the server players', () async {
+    test('mediaPlayers lists, filters and sorts the server players', () async {
       await build();
       sendspin.apiFactory = ({required baseUrl, required token}) => _FakeApi([
         {
@@ -501,11 +500,17 @@ void main() {
         {'player_id': 'abc123', 'display_name': 'Me', 'available': true},
         {'player_id': 'upabc123', 'display_name': 'Me Too', 'available': true},
       ]);
-      final result = await sendspin.commands.execute('maPlayers', const {});
+      final result = await sendspin.commands.execute('mediaPlayers', const {});
       expect(result.ok, isTrue);
-      final players = (result.data as List).cast<Map>();
+      final data = result.data as Map;
+      final players = (data['players'] as List).cast<Map>();
       expect(players.map((p) => p['name']), ['Attic', 'Kitchen']);
+      expect(players.map((p) => p['id']), ['ma:a', 'ma:b']);
+      expect(players.every((p) => p['group'] == 'ma'), isTrue);
       expect(players.first['available'], isFalse);
+      // No Home Assistant connection here: its group says so instead of
+      // hiding.
+      expect((data['notes'] as Map)['ha'], isNotNull);
     });
   });
 }

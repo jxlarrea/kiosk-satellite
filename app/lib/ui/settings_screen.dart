@@ -168,11 +168,9 @@ const _categories = <(String, String, Object, String)>[
   ),
   (
     'Sendspin',
-    'Music Assistant',
-    // The one category that answers to a product rather than a feature, so
-    // it wears that product's mark instead of a Material glyph.
-    'assets/svg/music-assistant.svg',
-    'Configuration, Sendspin, Now Playing',
+    'Media Player',
+    Icons.play_circle_outline,
+    'Player, floating player, Now Playing',
   ),
   (
     'Cameras',
@@ -2274,6 +2272,17 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// key and handed to every render of the category, the pages below it
   /// included, so a replacement follows its row onto its page.
   Map<String, Widget> _rowReplacements(AppContainer container) => {
+    // The player pick (issue #265): a grouped picker fed by the live
+    // player lists, in the place of the plain text field its definition
+    // would draw.
+    if (widget.category == 'Sendspin')
+      sendspinPlayer.key: SearchLandingTarget(
+        id: sendspinPlayer.key,
+        child: _PlayerRow(
+          container: container,
+          onChanged: () => setState(() {}),
+        ),
+      ),
     // Scanning cannot work on this build (issue #326: Android starts no
     // GATT service without the Bluetooth LE feature declared): the switch
     // says so instead of offering a proxy that fails every scan.
@@ -2551,28 +2560,16 @@ class _CategoryContentState extends State<_CategoryContent> {
     if (widget.category == 'MQTT')
       mqttPassword.key: _MqttValidateRow(container: container),
     if (widget.category == 'Sendspin')
-      sendspinMaToken.key: Column(
-        children: [
-          _MaValidateRow(container: container),
-          // The remote-player pick (issue #265), right under
-          // the credentials that make its list possible.
-          SearchLandingTarget(
-            id: 'x:ma_player',
-            child: _MaPlayerRow(
-              container: container,
-              onChanged: () => setState(() {}),
-            ),
-          ),
-          // Say what the pick just did to this device: its
-          // own player is gone from the server, and the
-          // rows about it are gone from this page.
-          if (container.settings.get(sendspinMaPlayer).trim().isNotEmpty)
-            const WarnRow(
-              "This device's own player is disconnected from "
-              'Music Assistant while another player is '
-              'controlled.',
-            ),
-        ],
+      sendspinMaToken.key: _MaValidateRow(container: container),
+    // Say what the pick just did to this device: its own player is gone
+    // from Music Assistant, and the rows about it are gone from this
+    // page.
+    if (widget.category == 'Sendspin' &&
+        container.settings.get(sendspinPlayer).trim().isNotEmpty)
+      sendspinPlayer.key: WarnRow(
+        "This device's own Sendspin player stays offline while "
+        '${container.settings.get(sendspinPlayerName).trim().isEmpty ? 'another player' : container.settings.get(sendspinPlayerName)} '
+        'is controlled.',
       ),
     // The live list right under the sort picker that orders it.
     // Rides the section's dependsOn: with the proxy off there is
@@ -5060,97 +5057,36 @@ class _MaValidateRowState extends State<_MaValidateRow> {
   );
 }
 
-/// Which Music Assistant player the Now Playing card follows (issue #265):
-/// this device's own Sendspin player, or any player the server offers — a
-/// wall tablet showing and controlling the kitchen speakers instead of
-/// itself. The list is the server's, fetched when the row is tapped.
-class _MaPlayerRow extends StatefulWidget {
-  const _MaPlayerRow({required this.container, required this.onChanged});
+/// Which player the Now Playing surfaces follow (issue #265): this
+/// device's own Sendspin player, a Music Assistant player, or a Home
+/// Assistant media player — a wall tablet showing and controlling the
+/// kitchen speakers instead of itself. The lists are live, fetched when
+/// the row is tapped.
+class _PlayerRow extends StatefulWidget {
+  const _PlayerRow({required this.container, required this.onChanged});
 
   final AppContainer container;
 
-  /// Rebuilds the pane: the lyrics rows gate on this pick and must come
-  /// and go with it.
+  /// Rebuilds the pane: the local player's page entry and the warning
+  /// under this row come and go with the pick.
   final VoidCallback onChanged;
 
   @override
-  State<_MaPlayerRow> createState() => _MaPlayerRowState();
+  State<_PlayerRow> createState() => _PlayerRowState();
 }
 
-class _MaPlayerRowState extends State<_MaPlayerRow> {
+class _PlayerRowState extends State<_PlayerRow> {
   Future<void> _pick() async {
     final container = widget.container;
-    final current = container.settings.get(sendspinMaPlayer);
+    final current = container.settings.get(sendspinPlayer);
     final result = await showDialog<List<String>>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Player to control'),
-        contentPadding: const EdgeInsets.fromLTRB(0, 20, 0, 8),
-        content: SizedBox(
-          width: 420,
-          child: FutureBuilder(
-            future: container.commands.execute('maPlayers', const {}),
-            builder: (ctx, snapshot) {
-              final result = snapshot.data;
-              if (result == null) {
-                return const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (!result.ok) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  child: Text('${result.error}'),
-                );
-              }
-              final players = (result.data as List? ?? const [])
-                  .whereType<Map>()
-                  .toList();
-              return RadioGroup<String>(
-                groupValue: current,
-                onChanged: (value) {
-                  final id = value ?? '';
-                  final name = id.isEmpty
-                      ? ''
-                      : '${players.firstWhere((p) => '${p['id']}' == id, orElse: () => const {})['name'] ?? ''}';
-                  Navigator.pop(ctx, [id, name]);
-                },
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    const RadioListTile<String>(
-                      value: '',
-                      title: Text('This device'),
-                    ),
-                    for (final p in players)
-                      RadioListTile<String>(
-                        value: '${p['id']}',
-                        title: Text('${p['name']}'),
-                        subtitle: p['available'] == false
-                            ? const Text('Offline')
-                            : null,
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
+      builder: (ctx) =>
+          _PlayerPickerDialog(container: container, current: current),
     );
     if (result == null) return;
-    await container.settings.set(sendspinMaPlayer, result[0]);
-    await container.settings.set(sendspinMaPlayerName, result[1]);
+    await container.settings.set(sendspinPlayer, result[0]);
+    await container.settings.set(sendspinPlayerName, result[1]);
     // The manager maintains this flag from the same inputs, but over the
     // async bus — write it here too so the pane rebuild below already
     // sees the rows it should.
@@ -5164,22 +5100,176 @@ class _MaPlayerRowState extends State<_MaPlayerRow> {
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.container.settings.get(sendspinMaPlayerName);
-    final remote = widget.container.settings
-        .get(sendspinMaPlayer)
-        .trim()
-        .isNotEmpty;
-    return ListTile(
-      title: const Text('Player to control'),
-      subtitle: Text(
-        remote
-            ? 'The player this screen shows and controls. This device stops '
-                  'being a player itself.'
-            : 'Show and control another Music Assistant player instead of '
-                  'this device.',
+    final settings = widget.container.settings;
+    final name = settings.get(sendspinPlayerName).trim();
+    final remote = settings.get(sendspinPlayer).trim().isNotEmpty;
+    final label = remote && name.isNotEmpty ? name : 'This device';
+    return SettingsRow(
+      title: Text(sendspinPlayer.title),
+      subtitle: Text(sendspinPlayer.description),
+      trailing: ControlBox(
+        onTap: _pick,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 200),
+              child: Text(label, overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(width: 6),
+            const Icon(Icons.arrow_drop_down, size: 22),
+          ],
+        ),
       ),
-      trailing: Text(remote ? name : 'This device'),
       onTap: _pick,
+    );
+  }
+}
+
+/// The grouped player list: this device first, then every source's
+/// players under its own caption, each fetched live. A source that
+/// cannot be listed says why in its group instead of hiding. Past a
+/// handful of rows a search field filters by name and id.
+class _PlayerPickerDialog extends StatefulWidget {
+  const _PlayerPickerDialog({required this.container, required this.current});
+
+  final AppContainer container;
+  final String current;
+
+  @override
+  State<_PlayerPickerDialog> createState() => _PlayerPickerDialogState();
+}
+
+class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
+  List<Map<String, Object?>>? _players;
+  Map<String, String> _notes = const {};
+  String? _error;
+  String _query = '';
+
+  static const _groups = <(String, String)>[
+    ('ma', 'Music Assistant'),
+    ('ha', 'Home Assistant'),
+    ('sonos', 'Sonos'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    widget.container.commands.execute('mediaPlayers', const {}).then((result) {
+      if (!mounted) return;
+      setState(() {
+        if (!result.ok) {
+          _error = result.error;
+          _players = const [];
+          return;
+        }
+        final data = result.data;
+        final list = data is Map ? data['players'] : null;
+        _players = [
+          for (final p in (list as List? ?? const []))
+            if (p is Map) p.cast<String, Object?>(),
+        ];
+        final notes = data is Map ? data['notes'] : null;
+        _notes = {
+          if (notes is Map)
+            for (final e in notes.entries) '${e.key}': '${e.value}',
+        };
+      });
+    });
+  }
+
+  bool _matches(Map<String, Object?> p) {
+    if (_query.isEmpty) return true;
+    final q = _query.toLowerCase();
+    return '${p['name']}'.toLowerCase().contains(q) ||
+        '${p['sub'] ?? ''}'.toLowerCase().contains(q);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final players = _players;
+    final scheme = theme.colorScheme;
+    Widget caption(String text) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 4),
+      child: Text(
+        text.toUpperCase(),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: scheme.onSurfaceVariant,
+          letterSpacing: 0.6,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+    Widget note(String text) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 10),
+      child: Text(
+        text,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
+      ),
+    );
+    final body = players == null
+        ? const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        : RadioGroup<String>(
+            groupValue: widget.current,
+            onChanged: (value) {
+              final id = value ?? '';
+              final name = id.isEmpty
+                  ? ''
+                  : '${players.firstWhere((p) => '${p['id']}' == id, orElse: () => const {})['name'] ?? ''}';
+              Navigator.pop(context, [id, name]);
+            },
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                if (players.length > 8)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                    child: TextField(
+                      autofocus: false,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search players',
+                        isDense: true,
+                      ),
+                      onChanged: (v) => setState(() => _query = v.trim()),
+                    ),
+                  ),
+                if (_error != null) note(_error!),
+                const RadioListTile<String>(
+                  value: '',
+                  title: Text('This device'),
+                  subtitle: Text('Sendspin player'),
+                ),
+                for (final (group, label) in _groups)
+                  if (_notes.containsKey(group) ||
+                      players.any((p) => p['group'] == group)) ...[
+                    caption(label),
+                    if (_notes.containsKey(group)) note(_notes[group]!),
+                    for (final p in players)
+                      if (p['group'] == group && _matches(p))
+                        RadioListTile<String>(
+                          value: '${p['id']}',
+                          title: Text('${p['name']}'),
+                          subtitle: p['available'] == false
+                              ? const Text('Offline')
+                              : p['sub'] != null
+                              ? Text('${p['sub']}')
+                              : null,
+                        ),
+                  ],
+              ],
+            ),
+          );
+    return AlertDialog(
+      title: const Text('Player'),
+      contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+      content: SizedBox(width: 440, child: body),
     );
   }
 }

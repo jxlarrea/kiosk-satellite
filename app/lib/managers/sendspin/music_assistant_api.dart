@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../settings/definitions.dart' as defs;
+import '../settings/settings_manager.dart';
+import 'remote_player.dart';
+
 /// The primary artist of a Sendspin slash-joined credit, or null when
 /// [artist] offers no different name to retry a track lookup with.
 String? lyricsRetryArtist(String artist) {
@@ -47,6 +51,14 @@ String? musicAssistantWebUrl(String raw, {String player = ''}) {
 /// player — provided it is enabled, since selecting a player that is not
 /// registered does nothing. Empty means leave the interface on whatever
 /// it showed last.
+/// The followed player's name when it is a Music Assistant player, empty
+/// otherwise: the web interface can only land on its own players.
+String maFollowedPlayerName(SettingsManager settings) =>
+    PlayerSource.parse(settings.get(defs.sendspinPlayer)).kind ==
+        PlayerSourceKind.musicAssistant
+    ? settings.get(defs.sendspinPlayerName)
+    : '';
+
 String maLandingPlayer({
   required String remotePlayerName,
   required String localPlayerName,

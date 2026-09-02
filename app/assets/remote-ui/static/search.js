@@ -51,8 +51,6 @@ export const SEARCH_EXTRAS = [
     desc: 'Serve a plain-http Home Assistant through a secure proxy inside the app.' },
   { tab: 'homeassistant', title: 'Dashboard',
     desc: 'Pick the dashboard and view the kiosk shows.', heading: 'Dashboard' },
-  { tab: 'sendspin', title: 'Player to control',
-    desc: 'Show and control another Music Assistant player instead of this device.' },
   { tab: 'voicesatellite', title: 'Assigned satellite',
     desc: 'The assist_satellite entity this kiosk identifies as in Home Assistant.' },
   { tab: 'voicesatellite', title: 'Auto start',

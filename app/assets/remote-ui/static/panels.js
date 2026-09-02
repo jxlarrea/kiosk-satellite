@@ -1,5 +1,6 @@
 import { $, api, cmd, state } from './core.js';
 import { readOnlyRow } from './device.js';
+import { hintRow } from './widgets.js';
 import { loadSettings } from './settings.js';
 import { radioRow } from './views.js';
 import { messageBox, modalShell } from './widgets.js';
@@ -140,80 +141,85 @@ export function updateMaValidateRow() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
-/* Which Music Assistant player the Now Playing card follows (issue #265):
-   this device's own Sendspin player, or any player the server offers.
-   Mirror of the device's picker row, under the validate row; the list is
-   the server's, fetched through the maPlayers command. */
-export async function updateMaPlayerRow() {
+/* Which player the Now Playing surfaces follow (issue #265): this device's
+   own Sendspin player, a Music Assistant player or a Home Assistant media
+   player. The definition renders as a text field; this swaps in the
+   grouped select the device's picker dialog offers, fed by the
+   mediaPlayers command, and puts the device's warning under it while
+   another player is followed. */
+export async function updatePlayerRow() {
   const tab = document.getElementById('tab-sendspin');
   if (!tab) return;
-  const anchor = tab.querySelector('.ma-validate-row');
-  if (!anchor || tab.querySelector('.ma-player-row')) return;
+  const row = tab.querySelector('[data-key="sendspin.player"]');
+  if (!row || row.querySelector('select')) return;
   const byKey = Object.fromEntries(
     (state.settings || []).map((s) => [s.key, s]));
-  const currentId = byKey['sendspin.ma_player']?.value || '';
-  const currentName = byKey['sendspin.ma_player_name']?.value || '';
-  const row = readOnlyRow('Player to control',
-    'Show and control another Music Assistant player instead of this device.',
-    '');
-  row.classList.add('ma-player-row');
-  row.querySelector('span')?.remove();
+  const currentId = byKey['sendspin.player']?.value || '';
+  const currentName = byKey['sendspin.player_name']?.value || '';
+  row.querySelectorAll('input, select').forEach((el) => el.remove());
   const sel = document.createElement('select');
   sel.className = 'field';
-  sel.style.cssText = 'flex-shrink:0; max-width:220px;';
-  const add = (value, label) => {
+  sel.style.cssText = 'flex-shrink:0; max-width:240px;';
+  const add = (parent, value, label) => {
     const option = document.createElement('option');
     option.value = value; option.textContent = label;
     option.selected = value === currentId;
-    sel.appendChild(option);
+    parent.appendChild(option);
     return option;
   };
-  add('', 'This device');
-  if (currentId) add(currentId, currentName || currentId);
+  add(sel, '', 'This device');
+  if (currentId) add(sel, currentId, currentName || currentId);
   row.appendChild(sel);
-  anchor.insertAdjacentElement('afterend', row);
-  // Say what the pick just did to this device, mirroring the device's
-  // warning row. The full re-render on change rebuilds it as the pick
-  // comes and goes.
   if (currentId) {
-    const note = document.createElement('div');
-    note.className = 'row ma-player-warn';
-    note.style.cssText = 'font-size:12.5px; color:var(--warn);';
-    note.textContent = "WARNING: This device's own player is disconnected "
-      + 'from Music Assistant while another player is controlled.';
+    const note = hintRow(`This device's own Sendspin player stays offline `
+      + `while ${currentName || 'another player'} is controlled.`, { warn: true });
+    note.classList.add('player-warn');
     row.insertAdjacentElement('afterend', note);
   }
   let res;
-  try { res = await (await api('/api/commands/maPlayers', { method: 'POST', body: '{}' })).json(); }
+  try { res = await (await api('/api/commands/mediaPlayers', { method: 'POST', body: '{}' })).json(); }
   catch (_) { res = { ok: false }; }
-  if (res.ok && Array.isArray(res.data)) {
-    // Rebuild from the live list, keeping the selection.
+  const players = res.ok && Array.isArray(res.data?.players) ? res.data.players : null;
+  if (players) {
+    // Rebuild from the live lists, keeping the selection.
     sel.textContent = '';
-    add('', 'This device');
+    add(sel, '', 'This device');
+    const notes = res.data.notes || {};
     let seen = false;
-    for (const p of res.data) {
-      if (p.id === currentId) seen = true;
-      add(p.id, p.available === false ? `${p.name} (offline)` : p.name);
+    for (const [group, label] of [['ma', 'Music Assistant'], ['ha', 'Home Assistant'], ['sonos', 'Sonos']]) {
+      const rows = players.filter((p) => p.group === group);
+      if (!rows.length && !notes[group]) continue;
+      const og = document.createElement('optgroup');
+      og.label = label;
+      if (notes[group] && !rows.length) {
+        const o = add(og, `note:${group}`, notes[group]);
+        o.disabled = true;
+      }
+      for (const p of rows) {
+        if (p.id === currentId) seen = true;
+        add(og, p.id, p.available === false ? `${p.name} (offline)` : p.name);
+      }
+      sel.appendChild(og);
     }
-    if (currentId && !seen) add(currentId, currentName || currentId);
+    if (currentId && !seen) add(sel, currentId, currentName || currentId);
   }
   sel.addEventListener('change', async () => {
     const name = sel.value
-      ? (res.ok && (res.data.find((p) => p.id === sel.value) || {}).name)
+      ? ((players || []).find((p) => p.id === sel.value) || {}).name
         || sel.options[sel.selectedIndex].textContent
       : '';
     // player_active mirrors what the device computes: the card rows gate
-    // on it (local enabled OR remote followed).
+    // on it (local enabled OR another player followed).
     const active = sel.value !== ''
       || byKey['sendspin.enabled']?.value === true;
     await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
-      'sendspin.ma_player': sel.value,
-      'sendspin.ma_player_name': name,
+      'sendspin.player': sel.value,
+      'sendspin.player_name': name,
       'sendspin.player_active': active,
     }) });
-    // The pick flips rows across cards (lyrics here, the whole local
-    // player group next door), which syncGatedRows cannot place; take
-    // the full re-render.
+    // The pick flips rows across pages (the whole local player page
+    // next door), which syncGatedRows cannot place; take the full
+    // re-render.
     await loadSettings();
   });
 }

@@ -54,7 +54,7 @@ class KioskDrawer extends StatelessWidget {
           // Land on the player this kiosk represents (issue #265): the
           // followed remote player, or this device's own.
           player: maLandingPlayer(
-            remotePlayerName: c.settings.get(defs.sendspinMaPlayerName),
+            remotePlayerName: maFollowedPlayerName(c.settings),
             localPlayerName: c.settings.get(defs.sendspinLocalPlayerName),
             localPlayerEnabled: c.settings.get(defs.sendspinEnabled),
           ),
@@ -579,7 +579,7 @@ class KioskDrawer extends StatelessWidget {
           divided: divided,
           context,
           Icons.play_circle_outlined,
-          shown ? 'Hide Sendspin Player' : 'Show Sendspin Player',
+          shown ? 'Hide Floating Player' : 'Show Floating Player',
           () {
             onClose();
             if (shown) {

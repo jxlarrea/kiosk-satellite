@@ -132,25 +132,29 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('definitions', () {
-    test('the rows form the Now Playing group under Music Assistant', () {
+    test('the rows form the Now Playing page under Media Player', () {
       for (final def in [
         defs.sendspinFullscreen,
         defs.sendspinFullscreenControls,
         defs.sendspinFullscreenOnPlay,
         defs.sendspinFullscreenMotion,
+        defs.sendspinLyricsOffset,
       ]) {
         expect(def.category, 'Sendspin');
+        expect(def.subpage, 'Now Playing');
         expect(def.section, 'Now Playing');
       }
-      // The group renders as one card only while its defs sit together.
+      // The page renders as one card only while its defs sit together.
       final keys = defs.allSettings.map((d) => d.key).toList();
-      final first = keys.indexOf(defs.sendspinFullscreenOnPlay.key);
+      final first = keys.indexOf(defs.sendspinFullscreen.key);
       expect(keys[first + 1], defs.sendspinFullscreenControls.key);
-      expect(keys[first + 2], defs.sendspinFullscreenQueue.key);
-      expect(keys[first + 3], defs.sendspinFullscreenShortcut.key);
-      expect(keys[first + 4], defs.sendspinFullscreen.key);
-      expect(keys[first + 5], defs.sendspinFullscreenDoubleTap.key);
-      expect(keys[first + 6], defs.sendspinFullscreenMotion.key);
+      expect(keys[first + 2], defs.sendspinFullscreenDoubleTap.key);
+      expect(keys[first + 3], defs.sendspinFullscreenOnPlay.key);
+      expect(keys[first + 4], defs.sendspinFullscreenMotion.key);
+      expect(keys[first + 5], defs.sendspinFullscreenShortcut.key);
+      expect(keys[first + 6], defs.sendspinLyrics.key);
+      expect(keys[first + 7], defs.sendspinLyricsOffset.key);
+      expect(keys[first + 8], defs.sendspinFullscreenQueue.key);
       expect(defs.sendspinFullscreenDoubleTap.defaultValue, isFalse);
       expect(
         defs.sendspinFullscreenDoubleTap.dependsOn,
@@ -350,8 +354,8 @@ void main() {
       SharedPreferences.setMockInitialValues({
         'ks.sendspin.ma_url': 'ma.local',
         'ks.sendspin.ma_token': 'token',
-        'ks.sendspin.ma_player': 'p1',
-        'ks.sendspin.ma_player_name': 'Kitchen',
+        'ks.sendspin.player': 'ma:p1',
+        'ks.sendspin.player_name': 'Kitchen',
         'ks.sendspin.fullscreen': true,
         ...extra,
       });
@@ -396,7 +400,7 @@ void main() {
         // pointed at this device's own player as a watcher.
         await build(
           extra: {
-            'ks.sendspin.ma_player': '',
+            'ks.sendspin.player': '',
             'ks.sendspin.enabled': true,
             'ks.sendspin.client_id': 'abc123',
           },
@@ -416,7 +420,7 @@ void main() {
     test('the watcher re-bases a position the engine ran away with', () async {
       await build(
         extra: {
-          'ks.sendspin.ma_player': '',
+          'ks.sendspin.player': '',
           'ks.sendspin.enabled': true,
           'ks.sendspin.client_id': 'abc123',
         },
@@ -525,7 +529,7 @@ void main() {
         // and the card stayed; the server's empty queue says otherwise.
         await build(
           extra: {
-            'ks.sendspin.ma_player': '',
+            'ks.sendspin.player': '',
             'ks.sendspin.enabled': true,
             'ks.sendspin.client_id': 'abc123',
           },
@@ -937,15 +941,23 @@ void main() {
       expect(find.text('Next'), findsOneWidget);
     });
 
-    testWidgets('a followed player keeps the lyrics toggle out', (
+    testWidgets('a followed player keeps the lyrics toggle and wears a chip', (
       tester,
     ) async {
-      await pump(tester, settings: {'ks.sendspin.ma_player': 'p1'});
-      expect(find.byIcon(Icons.lyrics_outlined), findsNothing);
-      expect(find.byIcon(Icons.lyrics_rounded), findsNothing);
-      // The transport is still there and still centered: the blank
-      // stands in for the toggle.
+      await pump(
+        tester,
+        settings: {
+          'ks.sendspin.player': 'ma:p1',
+          'ks.sendspin.player_name': 'Kitchen',
+        },
+      );
+      // A Music Assistant player's position is polled closely enough to
+      // sing along with, so the toggle stays.
+      expect(find.byIcon(Icons.lyrics_outlined), findsOneWidget);
       expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
+      // Whose music it is, in the chip opposite the close button.
+      expect(find.text('Kitchen'), findsOneWidget);
+      expect(find.byIcon(Icons.speaker_outlined), findsOneWidget);
     });
 
     testWidgets('double tap to dismiss takes the close button away', (

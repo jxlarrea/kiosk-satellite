@@ -29,7 +29,7 @@ export const TAB_TITLES = {
   voicesatellite: 'Voice Satellite',
   mqtt: 'MQTT Settings',
   cameras: 'Camera Streams',
-  sendspin: 'Music Assistant',
+  sendspin: 'Media Player',
   dlna: 'DLNA Renderer', esphome: 'ESPHome',
   files: 'File Manager', gestures: 'Gestures',
   device: 'Device', about: 'About', logs: 'Logs',

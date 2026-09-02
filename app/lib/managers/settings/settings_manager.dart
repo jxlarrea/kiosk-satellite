@@ -259,6 +259,27 @@ class SettingsManager extends Manager {
       await _prefs.setString('${_prefix}ha.url', normalizeBaseUrl(ha));
       log.info(name, 'migrated ha.url to its origin form');
     }
+    // The Now Playing surfaces can follow a Home Assistant media player
+    // or a Sonos as well as a Music Assistant player now, so the pick is
+    // one key with a source prefix. A Music Assistant pick stored under
+    // the old key carries over with its name.
+    final maPlayer = _prefs.getString('${_prefix}sendspin.ma_player');
+    if (maPlayer != null) {
+      if (maPlayer.trim().isNotEmpty &&
+          (_prefs.getString('${_prefix}sendspin.player') ?? '').isEmpty) {
+        await _prefs.setString(
+          '${_prefix}sendspin.player',
+          'ma:${maPlayer.trim()}',
+        );
+        final maName = _prefs.getString('${_prefix}sendspin.ma_player_name');
+        if (maName != null && maName.isNotEmpty) {
+          await _prefs.setString('${_prefix}sendspin.player_name', maName);
+        }
+        log.info(name, 'migrated sendspin.ma_player -> sendspin.player');
+      }
+      await _prefs.remove('${_prefix}sendspin.ma_player');
+      await _prefs.remove('${_prefix}sendspin.ma_player_name');
+    }
     // The wake word master switch is retired (hidden, forced on): with the
     // switch gone from the UI, a stored false would strand detection off
     // with no way back, so it is rewritten once.

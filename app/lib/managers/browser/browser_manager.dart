@@ -300,7 +300,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
               // The same landing the kiosk menu entry uses: the followed
               // remote player, or this device's own.
               player: maLandingPlayer(
-                remotePlayerName: _settings.get(defs.sendspinMaPlayerName),
+                remotePlayerName: maFollowedPlayerName(_settings),
                 localPlayerName: _settings.get(defs.sendspinLocalPlayerName),
                 localPlayerEnabled: _settings.get(defs.sendspinEnabled),
               ),

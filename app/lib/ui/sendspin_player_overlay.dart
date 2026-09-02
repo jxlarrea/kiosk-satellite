@@ -424,6 +424,46 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
               ),
           ],
         ),
+        // Whose music this is, when it is not this device's: the
+        // followed player's name in a chip opposite the close button.
+        if (c.sendspin.followedPlayerName.isNotEmpty)
+          Positioned(
+            top: 12,
+            left: 12,
+            child: SafeArea(
+              child: Material(
+                color: Colors.black45,
+                shape: const StadiumBorder(),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.speaker_outlined,
+                        color: Colors.white70,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 240),
+                        child: Text(
+                          c.sendspin.followedPlayerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         // With the transport up a tap is a button press, so the way out is
         // explicit: the same floating close the page overlays wear. It
         // reports its own source so the manager can tell it from the
@@ -1023,14 +1063,11 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     // cover either way.
     const toggleSize = 24.0;
     final toggleBlank = SizedBox(width: (toggleSize + 16) * scale);
-    final maConfigured =
-        c.settings.get(defs.sendspinMaUrl).trim().isNotEmpty &&
-        c.settings.get(defs.sendspinMaToken).trim().isNotEmpty;
     // The heart: unknown (the lookup still out) draws faint and inert,
-    // and without a Music Assistant server there is nothing to favorite
-    // into.
+    // and without a Music Assistant library behind the source there is
+    // nothing to favorite into.
     final favorite = c.sendspin.favorite.value;
-    final heart = maConfigured
+    final heart = c.sendspin.favoriteAvailable
         ? btn(
             favorite == true
                 ? Icons.favorite_rounded
@@ -1053,13 +1090,13 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
             color: shuffleOn ? Colors.white : Colors.white38,
           )
         : toggleBlank;
-    // Lyrics belong to the local player only: a followed player's
-    // position is too coarse to sing along with, and the setting hides.
-    // Lit only while they are actually the panel: the queue outranks
-    // them while it is open.
+    // Lyrics need a position close enough to sing along with, which
+    // every source but a coarsely reported one gives. Lit only while
+    // they are actually the panel: the queue outranks them while it is
+    // open.
     final queueOpen = c.sendspin.queueOpen;
     final lyricsOn = c.settings.get(defs.sendspinLyrics) && !queueOpen;
-    final lyrics = c.settings.get(defs.sendspinMaPlayer).isEmpty
+    final lyrics = c.sendspin.lyricsAvailable
         ? btn(
             lyricsOn ? Icons.lyrics_rounded : Icons.lyrics_outlined,
             c.sendspin.toggleLyrics,
@@ -1067,7 +1104,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
             color: lyricsOn ? Colors.white : Colors.white38,
           )
         : toggleBlank;
-    final queue = maConfigured
+    final queue = c.sendspin.queueAvailable
         ? btn(
             Icons.queue_music_rounded,
             c.sendspin.toggleQueue,

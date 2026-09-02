@@ -43,6 +43,12 @@ const Map<String, Object> subpageIcons = {
   'Proximity Detection': Icons.sensors,
   'Person Detection': Icons.sensor_occupied_outlined,
   'Scheduled Screensavers': Icons.calendar_today_outlined,
+  // Media Player. Music Assistant is the one page named after a product
+  // here; it wears the mark the category rail used to.
+  'Sendspin Player': Icons.speaker_group_outlined,
+  'Music Assistant': 'assets/svg/music-assistant.svg',
+  'Floating Player': Icons.picture_in_picture_alt_outlined,
+  'Now Playing': Icons.fullscreen,
   // ESPHome.
   'Notifications': Icons.notifications_outlined,
   'Bluetooth Proxy': Icons.bluetooth,

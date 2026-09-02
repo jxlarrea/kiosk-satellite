@@ -191,7 +191,7 @@ String describeGestureAction(Map<String, Object?> action) {
           ? 'Toggle the camera view'
           : 'Toggle camera view $name';
     case 'sendspin_player':
-      return 'Show the Sendspin player';
+      return 'Show the floating player';
     case 'app_launcher':
       return 'Open the app launcher';
     case 'screensaver':

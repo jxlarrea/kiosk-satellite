@@ -361,14 +361,6 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     anchorId: 'x:service_permissions',
     subpage: 'Kiosk Satellite Service',
   ),
-  SettingsSearchEntry(
-    category: 'Sendspin',
-    title: 'Player to control',
-    description:
-        'Show and control another Music Assistant player instead of this '
-        'device.',
-    anchorId: 'x:ma_player',
-  ),
 ];
 
 /// The full index: the category pages, every non-hidden definition whose

@@ -1,95 +1,141 @@
-# Kiosk Satellite Sendspin Player
+# Kiosk Satellite Media Player
 
-Kiosk Satellite can act as a [Sendspin](https://www.sendspin-audio.com/)
-player: the synchronized multi-room audio protocol native to
+Kiosk Satellite shows and controls music on screen: a floating now-playing
+card over the dashboard and an optional full-screen "Now Playing" view that
+stands in for the screensaver while music plays, with artwork, transport
+controls, lyrics and the queue. The music can be the tablet's own or
+another player's.
+
+The tablet's own player is [Sendspin](https://www.sendspin-audio.com/),
+the synchronized multi-room audio protocol native to
 [Music Assistant](https://www.music-assistant.io/). Enable it and the
 tablet appears as a player in Music Assistant automatically, named after
-the device name, playing in sample-accurate sync with every other
-Sendspin speaker in the house. Through the Music Assistant integration it
-also shows up in Home Assistant as a `media_player` entity with full
-metadata, artwork and volume control.
+the device name, playing in sample-accurate sync with every other Sendspin
+speaker in the house. Through the Music Assistant integration it also
+shows up in Home Assistant as a `media_player` entity with full metadata,
+artwork and volume control.
+
+Or the surfaces follow a player elsewhere: any Music Assistant player, or
+any Home Assistant media player, for the wall tablet whose job is to show
+and steer the kitchen speakers without making any music itself.
 
 Browsing and queueing happen in Music Assistant (or its dashboard card),
-voice control through Voice Satellite. On screen, the kiosk provides a
-floating now-playing card and an optional full-screen "Now Playing" view
-that stands in for the screensaver while music plays.
+voice control through Voice Satellite.
 
 ## Setup
 
-Settings → **Music Assistant** on the device, or the matching tab in the
-remote admin. The page opens on the Music Assistant group described
-further down; the **Sendspin player** group below it holds the settings in
-this table, and the **Now Playing** group after that the full-screen
-view's.
+Settings → **Media Player** on the device, or the matching tab in the
+remote admin. The page opens on the **Player** picker, then one entry per
+page: Sendspin Player, Music Assistant, Floating Player and Now Playing.
+
+### Player
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Player | This device | What the floating player and Now Playing show and control: this device's own Sendspin player, a Music Assistant player, or a Home Assistant media player. Described under Following another player. |
+
+### Sendspin Player
+
+The tablet as a synchronized Music Assistant player. The page leaves the
+settings while another player is followed, since the local player never
+runs in that mode.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Enable Sendspin player | off | The master switch. |
 | Server | | `host:port` of the Sendspin server (Music Assistant listens on port 8927). Leave empty to discover the server via mDNS; note that mDNS does not cross subnets, so set the address explicitly when the tablet and the server live on different networks. |
 | Preferred audio codec | FLAC | FLAC (lossless), Opus (efficient) or PCM (uncompressed). The server makes the final choice from what the device offers. |
+| Audio sync offset | 0 ms | Negative plays this device earlier, for speakers that lag behind the group (Bluetooth). Applies live. |
 | Duck volume during voice interactions | 10% | While the voice assistant listens or speaks, music drops to this fraction of its volume. Capped at 25% so wake word and speech detection stay reliable. |
-| Show the floating media player | on | The now-playing card described below. |
-| Player size | Compact | Compact is display-only; Large adds previous, play/pause and next buttons sized for touch. |
-| Hide the paused player after | 3 min | How long a paused player stays on screen, the floating card and the Now Playing view alike. |
 
-### Now Playing
-
-The full-screen music display described further down, in its own group
-under the player.
-
-| Setting | Default | Notes |
-| --- | --- | --- |
-| Launch Now Playing when music starts playing | on | Open the view as soon as playback starts instead of waiting for the screensaver timeout. |
-| Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
-| Show in the kiosk menu | off | Add a Now Playing entry to the kiosk menu that brings the view up. A paused track opens paused, with its play button. With nothing playing and no queue for this player, the entry stays out. |
-| "Now Playing" instead of the screensaver | off | The full-screen view described below. |
-| Double tap to dismiss | off | A double tap anywhere on the view dismisses it, and the close button is not shown. Taps on the buttons and the queue rows never count. |
-| Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
+Music Assistant's Sendspin provider is built in and always enabled, and
+players register themselves on connection: there is nothing to add on the
+server side.
 
 ### Music Assistant
 
 The Sendspin protocol carries the audio and the track's name, artist and
 album, and nothing beyond that. Anything richer comes from Music Assistant's
-own API, which is a separate address with its own token.
+own API, which is a separate address with its own token: lyrics, the queue,
+favorites, the list of its players for the picker, and the kiosk menu
+shortcut.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Server address | | The Music Assistant server's address as its web interface shows it, usually https on port 8095. A self-signed certificate is accepted. |
 | Auth token | | A long-lived token from Music Assistant, under Settings then Users. Read access is enough for lyrics; the shortcut below browses as whoever the token belongs to. |
 | Validate connection | | Opens the API and authenticates, so a wrong port and a wrong token report differently. |
-| Player to control | This device | Follow and control another Music Assistant player instead of this device's own, described below. |
 | Show in the kiosk menu | on | The shortcut described below. |
 | Close after inactivity | 0s | Seconds without a touch on the Music Assistant page before it closes itself and the dashboard returns. Zero leaves it open until someone closes it. |
 | Hide the close button | off | Remove the floating close button from the Music Assistant page, for the corner it shares with the page's own controls. The back button and the inactivity timer still close it. |
+
+### Floating Player
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Show the floating player | on | The now-playing card described below. |
+| Player size | Compact | Compact is display-only; Large adds previous, play/pause and next buttons sized for touch. |
+| Hide the paused player after | 3 min | How long a paused player stays on screen, the floating card and the Now Playing view alike. |
+| Keep playing when dismissed | off | Flinging the card away hides it without stopping the music. |
+| Show in the kiosk menu | off | A Show or Hide Floating Player entry in the kiosk menu. With nothing playing and no queue for this player, the entry stays out. |
+
+### Now Playing
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| "Now Playing" instead of the screensaver | off | The full-screen view described below. |
+| Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
+| Double tap to dismiss | off | A double tap anywhere on the view dismisses it, and the close button is not shown. Taps on the buttons and the queue rows never count. |
+| Launch Now Playing when music starts playing | on | Open the view as soon as playback starts instead of waiting for the screensaver timeout. |
+| Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
+| Show in the kiosk menu | off | Add a Now Playing entry to the kiosk menu that brings the view up. A paused track opens paused, with its play button. With nothing playing and no queue for this player, the entry stays out. |
 | Lyrics timing | +0.3s | Shifts the lyrics against the music. Positive shows each line earlier. Shown while the view's lyrics toggle is on. |
 
-Music Assistant's Sendspin provider is built in and always enabled, and
-players register themselves on connection: there is nothing to add on the
-server side.
-
-## Controlling another player
+## Following another player
 
 By default the floating card and the "Now Playing" screen belong to this
-device's own player: what plays here is what they show. **Player to
-control** points them at any other Music Assistant player instead (the
-kitchen speakers, a Sonos, a whole sync group), for the wall tablet whose
-job is to show and steer the music without making any of it. Pick a player
-from the list (it is the server's own, fetched live) and the card, the
-full-screen view and the transport buttons all follow that player: its
-track, its artwork, its progress, its play and pause. The kiosk menu's
-Music Assistant shortcut opens on that player too.
+device's own player: what plays here is what they show. **Player** points
+them at a player elsewhere instead, for the wall tablet whose job is to
+show and steer the music without making any of it. The picker lists every
+source it can reach:
 
-With a remote player picked the device is a remote control, not a player:
+- **This device**, the Sendspin player above.
+- **Music Assistant** players, the server's own list, when its address and
+  token are set. Offline players are marked.
+- **Home Assistant** media players, every `media_player` entity by name
+  with the entity id beneath, over the Home Assistant connection the kiosk
+  already has. This device's own entities stay out of the list.
+
+Pick a player and the card, the full-screen view and the transport buttons
+all follow it: its track, its artwork, its progress, its play and pause,
+shuffle and seek where the player allows them. The full-screen view wears
+a chip with the player's name so the room knows whose music it is. Lyrics
+follow a followed player too, timed from the position its own system
+reports.
+
+What each source offers differs a little:
+
+| | Track, art, transport | Lyrics | Queue panel | Favorite |
+| --- | --- | --- | --- | --- |
+| This device | yes | yes | yes | yes |
+| Music Assistant player | yes | yes | yes | yes |
+| Home Assistant media player | yes | yes | no | no |
+
+Every Home Assistant media player is treated the same, whatever integration
+stands behind it. Buttons a player cannot honor stay out of the view: a
+player that reports no seeking has no thumb on its progress bar, one
+without previous and next has no skip buttons.
+
+With another player picked the device is a remote control, not a player:
 its own Sendspin player shuts down and shows as offline in Music
 Assistant, so nobody queues music to a screen that was never meant to make
-any. The settings follow suit: everything about the local player (the
-enable switch, server, codec, sync offset, voice ducking, lyrics) leaves
-the settings for the duration, while the card and Now Playing rows stay,
+any. The settings follow suit: the Sendspin Player page leaves the settings
+for the duration, while the Floating Player and Now Playing pages stay,
 since they are what the mode is for. Pick **This device** and the player
-comes back online with all of its rows.
+comes back online with its page.
 
 One behavior carries over unchanged: flinging the card away stops the
-remote player's music, exactly as it does locally, unless "Keep playing
+followed player's music, exactly as it does locally, unless "Keep playing
 when dismissed" says otherwise.
 
 ## The Music Assistant shortcut
@@ -105,8 +151,8 @@ The interface is Music Assistant's, not a copy of it, so browsing and
 queueing stay whatever the server's current version makes them. Playback
 itself needs nothing more than the Sendspin player above: queue to this
 device and it plays here. The page opens with the right player already
-selected: this device's own, or the controlled player when **Player to
-control** points elsewhere.
+selected: this device's own, or the followed Music Assistant player when
+**Player** points at one.
 
 **Close after inactivity** puts the dashboard back on its own, for the wall
 tablet whose visitor queued a song and walked away: up to a minute without a
@@ -140,7 +186,7 @@ certificate is accepted the same way the dashboard's is, through **Ignore SSL
 errors** in the Browser settings. In kiosk mode the entry follows **Allowed
 Actions**, where it can be left out of the restricted quick-actions menu.
 
-## The floating media player
+## The floating player
 
 ![Compact player card](../assets/screenshots/sendspin-cards.png)
 
@@ -152,7 +198,7 @@ light/dark theme.
 The Large size adds previous, play/pause and next buttons sized for
 touch. They act on the whole playback group through the Sendspin
 controller role, so skipping a track here skips it on every speaker in
-the group.
+the group, or on the followed player when there is one.
 
 Card behavior:
 
@@ -165,6 +211,10 @@ Card behavior:
   screen for the duration) and returns after.
 - Track changes hold the previous card through the stream rebuild, so
   nothing flickers between songs.
+
+The kiosk menu's **Show Floating Player** entry summons the card on demand
+and **Hide Floating Player** puts it away without stopping the music. In
+kiosk mode both follow the **Floating Player** row under Allowed Actions.
 
 ## "Now Playing" full screen
 
@@ -187,16 +237,15 @@ pause swaps the view back to the regular screensaver live.
 **Show media controls**, on by default, puts the floating card's transport
 under the cover: previous, play/pause and next sized for touch, acting on
 the whole playback group exactly as the Large card's buttons do, and a
-progress bar with the elapsed and total time. Where the server allows
-seeking (Music Assistant does) the bar carries a thumb and dragging it
-jumps the track; elsewhere it is the card's progress line at full size.
-Music Assistant sends no fresh progress report after a seek or a queue
-jump, so the player carries a seek's target itself and otherwise reads
-the server's own queue time every few seconds, re-basing the moment the
-two drift apart, which keeps the bar, the floating card and the lyrics
-on the audio. The
-buttons and the bar stay put between songs while the cover and the title
-cross-fade behind them.
+progress bar with the elapsed and total time. Where the player allows
+seeking the bar carries a thumb and dragging it jumps the track; elsewhere
+it is the card's progress line at full size. Music Assistant sends no
+fresh progress report after a seek or a queue jump, so the player carries
+a seek's target itself and otherwise reads the server's own queue time
+every few seconds, re-basing the moment the two drift apart, which keeps
+the bar, the floating card and the lyrics on the audio. The buttons and
+the bar stay put between songs while the cover and the title cross-fade
+behind them.
 
 Four smaller toggles flank the transport the way Music Assistant's own
 player lays them out. On the left, a **heart** adds the playing track to
@@ -204,17 +253,19 @@ the Music Assistant favorites or takes it out again, lit while it is one,
 and **shuffle**, lit while the queue is shuffled and following a shuffle
 set from Music Assistant itself within a moment. On the right, **lyrics** and
 **queue**, each lit while it is the panel. The choice sticks across
-sessions, and the two keep each other exclusive: lyrics and the queue share one slot, beside the cover on
-a landscape screen and under it on a portrait one. The queue is laid
-out the way Music Assistant's own is: what already played, faded, above
-a Now Playing heading, the playing track under it, then an Up next
-heading with the count of what follows and the rest. It opens on the Now
-Playing heading and goes back there at each track change, follows the
-queue as Music Assistant changes it (a queue cleared there takes the
-last track off the card and the view), and a tap on any row jumps the
-queue there, the row spinning until this device is actually playing it. The heart and the queue need the Music
-Assistant server address and token; the lyrics toggle stays out while
-another player is controlled, where lyrics are off by design.
+sessions, and the two keep each other exclusive: lyrics and the queue
+share one slot, beside the cover on a landscape screen and under it on a
+portrait one. The queue is laid out the way Music Assistant's own is: what
+already played, faded, above a Now Playing heading, the playing track
+under it, then an Up next heading with the count of what follows and the
+rest. It opens on the Now Playing heading and goes back there at each
+track change, follows the queue as Music Assistant changes it (a queue
+cleared there takes the last track off the card and the view), and a tap
+on any row jumps the queue there, the row spinning until the player is
+actually playing it. The heart and the queue need the Music Assistant
+server address and token, and a source with a Music Assistant queue behind
+it: a followed Home Assistant player has neither, and its toggles stay
+out, with a blank keeping the transport centered.
 
 The transport keeps its place along the bottom of the screen whatever
 the layout does: the lyrics or the queue appearing rearranges the cover
@@ -225,8 +276,8 @@ long as **Hide the paused player after** keeps the floating card: the
 person who pressed pause on that screen is not done with it. Once the
 view is dismissed, the time runs out or the track goes away, the regular
 screensaver takes the slot back, and a pause made while the view is not
-on screen never holds it. With the controls off a pause swaps the view back to the
-regular screensaver at once, as before.
+on screen never holds it. With the controls off a pause swaps the view
+back to the regular screensaver at once, as before.
 
 With controls on screen a tap can no longer mean "dismiss", so the view
 carries a close button in the top right corner, the same floating close
@@ -234,10 +285,10 @@ the Music Assistant page wears, and touches anywhere else do nothing but
 press what they land on. **Double tap to dismiss** trades the button for
 a double tap anywhere on the view, for the screen everyone is used to
 tapping: a tap on the transport, the toggles or a queue row never counts,
-so a quick double press on Next skips twice. The back button dismisses it as it does any
-screensaver, and the motion setting is unchanged. With the controls off
-the view is the control-free display it always was: a tap anywhere
-dismisses it.
+so a quick double press on Next skips twice. The back button dismisses it
+as it does any screensaver, and the motion setting is unchanged. With the
+controls off the view is the control-free display it always was: a tap
+anywhere dismisses it.
 
 Lyrics and the At a Glance row keep their layouts, with the transport
 under the cover in each: beside the lyrics on a landscape screen, above
@@ -246,16 +297,21 @@ cover gives back a little size so everything fits a short screen.
 
 ### Lyrics
 
-With the view's lyrics toggle on, the view splits: the cover and track to one side,
-the song's lyrics to the other, the current line lit and the rest receding as
-it scrolls itself in time with the music. The line follows Sendspin's own
-synced position, the same one that keeps the audio aligned, so it tracks what
-is coming out of the speaker.
+With the view's lyrics toggle on, the view splits: the cover and track to
+one side, the song's lyrics to the other, the current line lit and the
+rest receding as it scrolls itself in time with the music. For this
+device's own player the line follows Sendspin's own synced position, the
+same one that keeps the audio aligned. For a followed player it follows
+the position that player's system reports: Music Assistant's queue time,
+read every few seconds, or the Home Assistant entity's last position plus
+the time since, refreshed at every transport event.
 
-Lyrics come from Music Assistant, so **Music Assistant needs a lyrics
-provider of its own** — add one under its Settings, then Providers; LRCLIB is
-free and needs no account. Kiosk Satellite asks Music Assistant for the
-playing track and its lyrics; nothing is fetched from anywhere else.
+Lyrics come from Music Assistant when it is set up, so **Music Assistant
+needs a lyrics provider of its own** for that: add one under its
+Settings, then Providers; LRCLIB is free and needs no account. Tracks
+Music Assistant cannot match, and every track when no Music Assistant
+server is configured, are looked up on LRCLIB directly by title, artist
+and length.
 
 **Lyrics timing** nudges the lines against the music, and defaults to
 showing them 0.3 seconds early: an LRC timestamp marks where a line starts
@@ -304,6 +360,13 @@ uses Android's MediaCodec (no bundled codec libraries). Volume commands
 map to the device's media volume, and hardware volume changes are
 reported back to the server.
 
+A followed Music Assistant player is read over Music Assistant's own API
+on one long-lived socket: the active queue on connect, then the queue and
+player events the server pushes. A followed Home Assistant player is one
+`subscribe_entities` subscription on the Home Assistant websocket, with
+the transport sent back as `media_player` service calls on the same
+socket.
+
 The implementation is adapted from
 [SendspinDroid](https://github.com/chrisuthe/SendspinDroid) (MIT), whose
 license and attribution ship in the source tree.
@@ -325,3 +388,7 @@ license and attribution ship in the source tree.
   sends its now-playing snapshots on its own schedule, after the audio
   boundary. The card keeps the previous song on screen and cross-fades
   when the update arrives.
+- **A followed Home Assistant player shows no track**: the entity has to
+  report a `media_title`. Players that only stream line-in or a TV input
+  carry none, and the card stays empty until something with metadata
+  plays.
