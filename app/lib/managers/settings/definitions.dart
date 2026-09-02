@@ -4429,7 +4429,9 @@ const sendspinPlayerSource = SettingDef<String>(
 /// followed directly, always of the source picked above. Visible so both
 /// settings surfaces place it under the source, but its row is
 /// hand-built on each: a picker fed by that source's live player list,
-/// never a text field.
+/// never a text field. Always on the page, so a source change never
+/// moves the rows around: with this device as the source it reads
+/// Sendspin Player and takes no pick.
 const sendspinPlayer = SettingDef<String>(
   key: 'sendspin.player',
   type: SettingType.string,
@@ -4437,8 +4439,6 @@ const sendspinPlayer = SettingDef<String>(
   title: 'Player',
   description: 'The player of that source to show and control.',
   category: 'Sendspin',
-  dependsOn: 'sendspin.player_source',
-  dependsOnValue: ['ha', 'ma', 'sonos'],
 );
 
 /// The picked player's display name: what the settings rows show and what

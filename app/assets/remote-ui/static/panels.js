@@ -176,11 +176,22 @@ export async function updatePlayerRow() {
     note.classList.add('player-warn', 'divided');
     row.insertAdjacentElement('afterend', note);
   }
-  if (!row || !source || row.querySelector('select')) return;
+  if (!row || row.querySelector('select')) return;
   row.querySelectorAll('input, select').forEach((el) => el.remove());
   const sel = document.createElement('select');
   sel.className = 'field';
   sel.dataset.source = source;
+  if (!source) {
+    // This device as the source: the one player there is, nothing to
+    // pick, so the row stays put and reads its name.
+    sel.style.cssText = 'flex-shrink:0; max-width:240px;';
+    const only = document.createElement('option');
+    only.value = ''; only.textContent = 'Sendspin Player'; only.selected = true;
+    sel.appendChild(only);
+    sel.disabled = true;
+    row.appendChild(sel);
+    return;
+  }
   sel.style.cssText = 'flex-shrink:0; max-width:240px;';
   const add = (value, label) => {
     const option = document.createElement('option');

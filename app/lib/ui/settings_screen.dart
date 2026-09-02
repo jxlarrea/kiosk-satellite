@@ -5139,14 +5139,21 @@ class _PlayerRowState extends State<_PlayerRow> {
   @override
   Widget build(BuildContext context) {
     final settings = widget.container.settings;
+    // This device as the source: the one player there is, nothing to
+    // pick, so the box reads its name and stays put.
+    final local = settings.get(sendspinPlayerSource).isEmpty;
     final name = settings.get(sendspinPlayerName).trim();
-    final picked = settings.get(sendspinPlayer).trim().isNotEmpty;
-    final label = picked && name.isNotEmpty ? name : 'Pick a player';
+    final picked = local || settings.get(sendspinPlayer).trim().isNotEmpty;
+    final label = local
+        ? 'Sendspin Player'
+        : picked && name.isNotEmpty
+        ? name
+        : 'Pick a player';
     return SettingsRow(
       title: Text(sendspinPlayer.title),
       subtitle: Text(sendspinPlayer.description),
       trailing: ControlBox(
-        onTap: _pick,
+        onTap: local ? null : _pick,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -5167,7 +5174,7 @@ class _PlayerRowState extends State<_PlayerRow> {
           ],
         ),
       ),
-      onTap: _pick,
+      onTap: local ? null : _pick,
     );
   }
 }

@@ -34,7 +34,7 @@ Sendspin Player, Music Assistant, Sonos, Floating Player and Now Playing.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Player source | This device | What the floating player and Now Playing show and control: this device's own Sendspin player or a player in Home Assistant, Music Assistant or a Sonos household. Anything but this device takes the local player offline. |
-| Player | | Shown for any source but this device: that source's players, described under Following another player. |
+| Player | Sendspin Player | With this device as the source, its own Sendspin player and nothing to pick. For any other source, that source's players, described under Following another player. |
 
 ### Sendspin Player
 
