@@ -938,8 +938,9 @@ class SendspinManager extends Manager {
         handler: (p) async {
           final id = '${p['id'] ?? ''}'.trim();
           final hosts = _sonosHosts;
-          if (!hosts.containsKey(id))
+          if (!hosts.containsKey(id)) {
             return const CommandResult.fail('unknown');
+          }
           hosts.remove(id);
           await _settings.set(defs.sendspinSonosHosts, jsonEncode(hosts));
           return CommandResult.ok(_sonosSpeakerRows());

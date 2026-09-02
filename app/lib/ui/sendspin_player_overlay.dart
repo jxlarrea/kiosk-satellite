@@ -702,20 +702,51 @@ class _QueueViewState extends State<_QueueView> {
   /// on open and again when a track change re-lists it, with half of the
   /// row that just played showing above it: a hint that there is a past
   /// to scroll up to, and a glimpse of what that was.
-  void _scrollToNowPlaying(List<Map<String, Object?>> items) {
-    if (identical(_scrolledFor, items)) return;
+  void _scrollToNowPlaying(List<Map<String, Object?>> items, int current) {
+    // A listing with no playing row yet (the position not read, the
+    // track just changed) has nothing to land on; the next listing gets
+    // its turn.
+    if (current < 0 || identical(_scrolledFor, items)) return;
     _scrolledFor = items;
+    _landOnNowPlaying(items, current, 0);
+  }
+
+  void _landOnNowPlaying(
+    List<Map<String, Object?>> items,
+    int current,
+    int attempt,
+  ) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !identical(_scrolledFor, items) || !_scroll.hasClients) {
+        return;
+      }
+      final position = _scroll.position;
       final heading = _nowPlayingKey.currentContext?.findRenderObject();
-      if (!mounted || heading is! RenderBox || !_scroll.hasClients) return;
+      if (heading is! RenderBox) {
+        // The list builds only the rows around the viewport, so a heading
+        // far down has no context yet. Jump to where the rows built so
+        // far say it should sit; that builds the rows around it and the
+        // next frame lands on it exactly.
+        if (attempt >= 8) return;
+        final guess = position.maxScrollExtent * current / items.length;
+        _scroll.jumpTo(
+          guess.clamp(position.minScrollExtent, position.maxScrollExtent),
+        );
+        _landOnNowPlaying(items, current, attempt + 1);
+        return;
+      }
       final viewport = RenderAbstractViewport.of(heading);
       final top = viewport.getOffsetToReveal(heading, 0).offset;
       final played = _lastPlayedKey.currentContext?.findRenderObject();
       final peek = played is RenderBox ? played.size.height / 2 : 0.0;
       final target = (top - peek).clamp(
-        _scroll.position.minScrollExtent,
-        _scroll.position.maxScrollExtent,
+        position.minScrollExtent,
+        position.maxScrollExtent,
       );
+      if (attempt > 0) {
+        _scroll.jumpTo(target);
+        return;
+      }
       _scroll.animateTo(
         target,
         duration: const Duration(milliseconds: 350),
@@ -874,7 +905,7 @@ class _QueueViewState extends State<_QueueView> {
             ? const <Map<String, Object?>>[]
             : items.sublist(0, current);
         final upcoming = current < 0 ? items : items.sublist(current + 1);
-        _scrollToNowPlaying(items);
+        _scrollToNowPlaying(items, current);
         return ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
             begin: Alignment.topCenter,
@@ -888,8 +919,6 @@ class _QueueViewState extends State<_QueueView> {
             stops: [0.0, 0.06, 0.94, 1.0],
           ).createShader(bounds),
           blendMode: BlendMode.dstIn,
-          // Every row is built, not just the visible ones, so the Now
-          // Playing heading has a context to scroll to wherever it sits.
           child: ValueListenableBuilder<int>(
             valueListenable: container.sendspin.queueUpNext,
             builder: (context, upNext, _) => ListView(
