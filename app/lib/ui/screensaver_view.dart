@@ -403,10 +403,14 @@ class _Dismissable extends StatelessWidget {
   final AppContainer container;
   final Widget child;
 
+  /// 'tap', not 'touch': the kiosk screen's raw pointer Listener has
+  /// already reported this finger on its way down, and this fires as it
+  /// lifts. The manager takes it as that touch's echo, so the double-tap
+  /// chain counts one tap per finger rather than one per phase.
   @override
   Widget build(BuildContext context) => GestureDetector(
     behavior: HitTestBehavior.opaque,
-    onTap: () => container.screensaver.notifyActivity('touch'),
+    onTap: () => container.screensaver.notifyActivity('tap'),
     child: child,
   );
 }

@@ -203,13 +203,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   bool _sendspinPlaying = false;
 
   /// The double-tap dismiss chain (discussion #248). One physical tap
-  /// reports here twice — the kiosk screen's raw pointer Listener
-  /// ('touch') and the screensaver WebView's JS bridge ('touch_page') —
-  /// and timing cannot tell that echo from a genuinely fast double tap,
-  /// so only the Listener's reports count for the chain and the bridge's
-  /// are dropped while the gate holds. Reports faster than [_tapDebounce]
-  /// after the chain opened are the other fingers of one gesture (a
-  /// pinch), not a second tap.
+  /// reports here twice: the kiosk screen's raw pointer Listener
+  /// ('touch') on the way down, then either the screensaver WebView's JS
+  /// bridge ('touch_page') or the view's own gesture detector ('tap') as
+  /// the finger lifts. Timing cannot tell that echo from a genuinely fast
+  /// double tap (a finger held past the debounce lifts inside the
+  /// window), so only the Listener's reports count for the chain and the
+  /// echoes are dropped while the gate holds. Reports faster than
+  /// [_tapDebounce] after the chain opened are the other fingers of one
+  /// gesture (a pinch), not a second tap.
   DateTime? _tapChainStart;
   static const _tapDebounce = Duration(milliseconds: 120);
   static const _doubleTapWindow = Duration(milliseconds: 400);
@@ -711,7 +713,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // the back button, the motion policy and every other source still
     // land below.
     if (_nowPlayingHoldsTouch &&
-        (source == 'touch' || source == 'touch_page' || source == 'key')) {
+        (source == 'touch' ||
+            source == 'touch_page' ||
+            source == 'tap' ||
+            source == 'key')) {
       // Unless a double tap anywhere is the way out (issue #409): then a
       // touch off the controls runs the chain below, the same one the
       // website screensaver uses.
@@ -723,9 +728,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     }
     if (_active &&
         _doubleTapToDismiss &&
-        (source == 'touch' || source == 'touch_page')) {
-      // The bridge echoes taps the Listener already delivered.
-      if (source == 'touch_page') return;
+        (source == 'touch' || source == 'touch_page' || source == 'tap')) {
+      // The bridge and the gesture detector echo taps the Listener
+      // already delivered.
+      if (source == 'touch_page' || source == 'tap') return;
       final now = clock();
       final start = _tapChainStart;
       if (start == null || now.difference(start) > _doubleTapWindow) {

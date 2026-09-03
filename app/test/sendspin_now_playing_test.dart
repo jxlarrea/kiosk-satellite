@@ -232,6 +232,26 @@ void main() {
       expect(saver.isActive, isFalse);
     });
 
+    test('double tap to dismiss: a slow tap is one tap, not two', () async {
+      // One finger reports twice, the kiosk screen's Listener as it lands
+      // and the view's gesture detector as it lifts; held past the
+      // debounce, the lift used to pass for the second tap.
+      await build({'ks.sendspin.fullscreen_double_tap': true});
+      var now = DateTime(2026, 9, 2, 1);
+      saver.clock = () => now;
+      await showNowPlaying();
+      saver.notifyActivity('touch');
+      now = now.add(const Duration(milliseconds: 250));
+      saver.notifyActivity('tap');
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+      // A second finger inside the window still closes it.
+      now = now.add(const Duration(milliseconds: 100));
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
     test('double tap to dismiss leaves the controls alone', () async {
       // A quick double press on Next: the view's control listener marks
       // each touch before the kiosk screen reports it.
