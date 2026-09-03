@@ -814,14 +814,11 @@ const kioskAllowDashboard = SettingDef<bool>(
   dependsOn: 'kiosk.allow_drawer',
 );
 
-// Off by default, unlike its neighbors: the row brings the Home
-// Assistant header and sidebar back, which is the navigation the owner
-// hid on purpose, so a restricted menu already in use does not grow a
-// way around it on update (issue #422).
+// The menu's HA Kiosk Mode row (issue #422).
 const kioskAllowHaKiosk = SettingDef<bool>(
   key: 'kiosk.allow_ha_kiosk',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'HA Kiosk Mode',
   description: 'Show or hide the Home Assistant header and sidebar.',
   category: 'Kiosk',
