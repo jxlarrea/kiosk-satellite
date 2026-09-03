@@ -86,7 +86,7 @@ Synchronized lyrics for every player source, on a page of their own.
 | --- | --- | --- |
 | Enable lyrics | on | The master switch. Off, the Now Playing view has no lyrics button and nothing is looked up. |
 | Lyrics source | LRCLIB | Where the words come from. **LRCLIB** asks the public database directly, with the track's title, artist and duration. **Music Assistant** asks its providers, the user's own .lrc files among them, and needs the server address and token on the Music Assistant page. |
-| Fallback to Music Assistant | on | Shown with LRCLIB as the source. If LRCLIB is unreachable, Music Assistant is asked instead, when a connection is configured. Useful for devices that have no internet access: the words then come from Music Assistant on the local network. A track LRCLIB has no lyrics for is not retried there. |
+| Fallback to Music Assistant | on | Shown with LRCLIB as the source. If LRCLIB is unreachable, Music Assistant is asked instead, when a connection is configured. Useful for devices that have no internet access: the lyrics then come from Music Assistant on the local network. A track LRCLIB has no lyrics for is not retried there. |
 | Lyrics timing | +0.3s | Adjusts lyric line synchronization relative to audio. Positive values display lyric lines earlier. |
 
 ## Following Another Player
