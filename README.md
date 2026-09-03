@@ -80,7 +80,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   its music with artwork, lyrics, the queue and volume on screen.
 
 <p align="center">
- <img src="assets/screenshots/now-playing.png" alt="Now Playing Sendspin" width="650"/>
+ <img src="assets/screenshots/now-playing.png" alt="Now Playing" width="650"/>
 </p>
 
 &bull; **Screensavers**: dim, black, clock, Home Assistant media, local
@@ -218,7 +218,7 @@ from the default HACS repository.
 - [Screen](docs/screen.md): keep-awake, default brightness, and adaptive brightness from the device's own light sensor.
 - [Screensavers](docs/screensavers.md): the modes, schedule, brightness, motion wake, and what starts and dismisses them.
 - [Device camera](docs/camera.md): the tablet's own camera as a Home Assistant still camera and motion detector.
-- [Sendspin](docs/sendspin.md): the built-in synchronized Music Assistant audio player
+- [Media Player](docs/sendspin.md): the floating player and Now Playing view for the tablet's own Sendspin player, any Music Assistant or Home Assistant media player or a Sonos speaker followed directly.
 - [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 - [At a Glance](docs/at-a-glance.md): a row of entity states on the screensaver.
