@@ -233,6 +233,73 @@ class SendspinManager extends Manager {
   String get followedPlayerName =>
       _remotePicked ? _settings.get(defs.sendspinPlayerName) : '';
 
+  /// What the Now Playing chip calls the player: the followed one by
+  /// name, or this device's own player by the name Music Assistant knows
+  /// it under, the device's name failing that.
+  String get playerChipName {
+    if (_remotePicked) return _settings.get(defs.sendspinPlayerName);
+    final own = _settings.get(defs.sendspinLocalPlayerName).trim();
+    return own.isNotEmpty ? own : _settings.get(defs.deviceName);
+  }
+
+  /// Whether the chip's menu can put other players in the shown player's
+  /// group: a followed Music Assistant player or Sonos room says so
+  /// itself; this device's own player groups through Music Assistant, so
+  /// it needs that connection.
+  bool get groupAvailable {
+    final remote = _remote;
+    if (remote != null) return remote.hasGrouping;
+    return _remotePicked
+        ? false
+        : _maConfigured &&
+              _settings.get(defs.sendspinClientId).trim().isNotEmpty;
+  }
+
+  /// The shown player's group and its candidates, for the chip's menu.
+  Future<RemoteGroup?> fetchGroup() async {
+    final remote = _remote;
+    if (remote != null) return remote.fetchGroup();
+    if (!groupAvailable) return null;
+    final group = await _api().fetchGroup(
+      _settings.get(defs.sendspinClientId).trim(),
+    );
+    // Titled the way the chip names this device, not the way Music
+    // Assistant happens to.
+    return group == null
+        ? null
+        : RemoteGroup(
+            leaderId: group.leaderId,
+            leaderName: playerChipName,
+            members: group.members,
+          );
+  }
+
+  /// Put [id] in the shown player's group or take it out. This device's
+  /// own player is grouped under whichever player it is synced to, read
+  /// from the group first.
+  Future<bool> setGrouped(String id, bool grouped) async {
+    final remote = _remote;
+    if (remote != null) return remote.setGrouped(id, grouped);
+    if (!groupAvailable) return false;
+    final self = _settings.get(defs.sendspinClientId).trim();
+    final group = await _api().fetchGroup(self);
+    final leader = group?.leaderId ?? self;
+    final error = await _api().setGrouped(
+      leaderId: leader,
+      memberId: id,
+      grouped: grouped,
+    );
+    if (error != null) {
+      log.warn(
+        name,
+        '${grouped ? 'group' : 'ungroup'} $id under $leader: $error',
+      );
+      return false;
+    }
+    log.info(name, '${grouped ? 'grouped' : 'ungrouped'} $id under $leader');
+    return true;
+  }
+
   /// Whether the Now Playing view can list a queue: Music Assistant holds
   /// one for the local player and for any player it drives, a Sonos has
   /// its own, a Home Assistant player has none.

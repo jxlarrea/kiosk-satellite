@@ -58,6 +58,58 @@ abstract interface class RemotePlayer {
   /// Jump the queue to the row [id] a [fetchQueue] answer carried. False
   /// when the source handles it elsewhere or refused.
   Future<bool> playQueueItem(String id);
+
+  /// Whether the source can put other players in the followed player's
+  /// group and take them out again, for the Now Playing chip's menu.
+  bool get hasGrouping;
+
+  /// The group the followed player plays in and every player that could
+  /// join it, or null when the source cannot say.
+  Future<RemoteGroup?> fetchGroup();
+
+  /// Put the player [id] (a [RemoteGroup] member) in the group or take
+  /// it out. False when the source refused.
+  Future<bool> setGrouped(String id, bool grouped);
+}
+
+/// A player's group as the Now Playing chip lists it: who leads it and
+/// every player that is in it or could be, the members first, each in
+/// alphabetical order.
+class RemoteGroup {
+  const RemoteGroup({
+    required this.leaderId,
+    required this.leaderName,
+    required this.members,
+  });
+
+  final String leaderId;
+  final String leaderName;
+  final List<GroupMember> members;
+
+  /// [members] in the chip's order: the grouped ones first, then the
+  /// rest, by name within each.
+  static List<GroupMember> ordered(Iterable<GroupMember> members) {
+    final list = members.toList()
+      ..sort((a, b) {
+        if (a.inGroup != b.inGroup) return a.inGroup ? -1 : 1;
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      });
+    return list;
+  }
+}
+
+class GroupMember {
+  const GroupMember({
+    required this.id,
+    required this.name,
+    required this.inGroup,
+    this.available = true,
+  });
+
+  final String id;
+  final String name;
+  final bool inGroup;
+  final bool available;
 }
 
 /// A queue as the Now Playing panel lists it: rows with index, id, title,

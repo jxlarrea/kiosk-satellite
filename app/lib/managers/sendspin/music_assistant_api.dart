@@ -182,6 +182,101 @@ class MusicAssistantApi {
     return '${uri.host}:${uri.port}';
   }
 
+  /// The group [playerId] plays in and every player it could group with,
+  /// from one read of the player list. Null when the server cannot be
+  /// reached or knows no such player.
+  Future<RemoteGroup?> fetchGroup(String playerId) async {
+    final res = await call('players/all');
+    final players = res.result;
+    if (!res.ok || players is! List) return null;
+    return groupFrom(players, playerId);
+  }
+
+  /// Put [memberId] in [leaderId]'s group, or take it out of whatever
+  /// group it is in. Null when the server took it, its refusal otherwise.
+  Future<String?> setGrouped({
+    required String leaderId,
+    required String memberId,
+    required bool grouped,
+  }) async {
+    final res = grouped
+        ? await call(
+            'players/cmd/group',
+            args: {'player_id': memberId, 'target_player': leaderId},
+          )
+        : await call('players/cmd/ungroup', args: {'player_id': memberId});
+    return res.ok ? null : (res.error ?? 'refused');
+  }
+
+  /// [playerId]'s group out of a `players/all` answer: the player it is
+  /// synced to leads, or it leads itself; the leader's children are in
+  /// the group; every enabled, visible, plain player the leader can
+  /// group with (by id, or by belonging to a provider the leader names)
+  /// is a candidate. The leader is not listed: it is the chip. A bare
+  /// Sendspin client id answers for the wrapper Music Assistant lists it
+  /// under when the bare player is not in the list itself (a universal
+  /// player prefixes the id it wraps).
+  static RemoteGroup? groupFrom(List<Object?> players, String playerId) {
+    final byId = <String, Map<Object?, Object?>>{
+      for (final p in players)
+        if (p is Map) '${p['player_id'] ?? ''}': p,
+    };
+    var myId = playerId;
+    var me = byId[myId];
+    if (me == null && playerId.isNotEmpty) {
+      final wanted = playerId.toLowerCase();
+      myId = byId.keys.firstWhere(
+        (id) => id.toLowerCase().contains(wanted),
+        orElse: () => '',
+      );
+      me = byId[myId];
+    }
+    if (me == null) return null;
+    final syncedTo = '${me['synced_to'] ?? ''}';
+    final leaderId = syncedTo.isNotEmpty ? syncedTo : myId;
+    final leader = byId[leaderId] ?? me;
+    String nameOf(Map<Object?, Object?> p) =>
+        '${p['display_name'] ?? p['name'] ?? p['player_id'] ?? ''}';
+    final children = (leader['group_members'] ?? leader['group_childs']);
+    final inGroup = {
+      leaderId,
+      if (children is List) ...children.map((c) => '$c'),
+    };
+    final canGroup = {
+      if (leader['can_group_with'] is List)
+        ...(leader['can_group_with'] as List).map((c) => '$c'),
+    };
+    final members = <GroupMember>[];
+    for (final entry in byId.entries) {
+      final id = entry.key;
+      final p = entry.value;
+      if (id == leaderId || id.isEmpty) continue;
+      if (p['enabled'] == false ||
+          p['hidden'] == true ||
+          p['hide_in_ui'] == true) {
+        continue;
+      }
+      if ('${p['type'] ?? ''}' == 'group') continue;
+      final grouped = inGroup.contains(id);
+      final candidate =
+          canGroup.contains(id) || canGroup.contains('${p['provider'] ?? ''}');
+      if (!grouped && !candidate) continue;
+      members.add(
+        GroupMember(
+          id: id,
+          name: nameOf(p),
+          inGroup: grouped,
+          available: p['available'] != false,
+        ),
+      );
+    }
+    return RemoteGroup(
+      leaderId: leaderId,
+      leaderName: nameOf(leader),
+      members: RemoteGroup.ordered(members),
+    );
+  }
+
   /// The current track of the player's active queue, or null when there is
   /// no queue, the queue is empty, or the server cannot be reached.
   ///

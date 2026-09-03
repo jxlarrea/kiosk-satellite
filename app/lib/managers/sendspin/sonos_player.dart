@@ -174,6 +174,7 @@ class SonosPlayer implements RemotePlayer {
 
   Future<void> _refreshTopology() async {
     final groups = await _room.zoneGroups();
+    _household = groups;
     final mine = groups.where((g) => g.contains(uuid)).firstOrNull;
     if (mine != null && (mine.leader.uuid != _group?.leader.uuid)) {
       log.info(
@@ -182,6 +183,76 @@ class SonosPlayer implements RemotePlayer {
       );
     }
     _group = mine;
+  }
+
+  /// Every group of the household as of the last topology read, for the
+  /// chip's menu: the rooms not in this one are the ones it could take.
+  List<SonosGroup> _household = const [];
+
+  /// Rooms join and leave over the speaker's own transport.
+  @override
+  bool get hasGrouping => true;
+
+  @override
+  Future<RemoteGroup?> fetchGroup() async {
+    try {
+      await _refreshTopology();
+      _topologyAt = DateTime.now().millisecondsSinceEpoch;
+    } catch (e) {
+      log.warn(_name, 'Sonos topology read failed: $e');
+      return null;
+    }
+    return groupFrom(_household, uuid);
+  }
+
+  /// [uuid]'s group out of the household's [groups]: its coordinator
+  /// leads, its other rooms are in, every room of the other groups could
+  /// join. The coordinator is not listed: it is the chip.
+  static RemoteGroup? groupFrom(List<SonosGroup> groups, String uuid) {
+    final mine = groups.where((g) => g.contains(uuid)).firstOrNull;
+    if (mine == null) return null;
+    final leader = mine.leader;
+    return RemoteGroup(
+      leaderId: leader.uuid,
+      leaderName: leader.name,
+      members: RemoteGroup.ordered([
+        for (final g in groups)
+          for (final m in g.members)
+            if (m.uuid != leader.uuid)
+              GroupMember(id: m.uuid, name: m.name, inGroup: g == mine),
+      ]),
+    );
+  }
+
+  /// A room joins this group by pointing its transport at the coordinator
+  /// and leaves by becoming a coordinator of its own; either way the
+  /// topology is read back at once so the chip and the queue follow.
+  @override
+  Future<bool> setGrouped(String id, bool grouped) async {
+    final leader = _group?.leader;
+    SonosMember? room;
+    for (final g in _household) {
+      for (final m in g.members) {
+        if (m.uuid == id) room = m;
+      }
+    }
+    if (leader == null || room == null) return false;
+    final client = clientFactory(room.host);
+    try {
+      if (grouped) {
+        await client.join(leader.uuid);
+      } else {
+        await client.leaveGroup();
+      }
+      await _refreshTopology();
+      _topologyAt = DateTime.now().millisecondsSinceEpoch;
+      return true;
+    } catch (e) {
+      log.warn(_name, 'Sonos ${grouped ? 'join' : 'leave'} failed: $e');
+      return false;
+    } finally {
+      client.close();
+    }
   }
 
   void _publish(Map<String, String> transport, Map<String, String> position) {

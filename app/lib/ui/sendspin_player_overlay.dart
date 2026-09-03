@@ -12,6 +12,7 @@ import 'theme.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
+import '../managers/sendspin/remote_player.dart';
 import '../managers/sendspin/music_assistant_api.dart';
 import '../managers/settings/definitions.dart' as defs;
 
@@ -429,45 +430,14 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
               ),
           ],
         ),
-        // Whose music this is, when it is not this device's: the
-        // followed player's name in a chip opposite the close button.
-        if (c.sendspin.followedPlayerName.isNotEmpty)
+        // Whose music this is: the shown player's name in a chip opposite
+        // the close button, and the way into its group where the source
+        // can put other players in it.
+        if (c.sendspin.playerChipName.isNotEmpty)
           Positioned(
             top: 12,
             left: 12,
-            child: SafeArea(
-              child: Material(
-                color: Colors.black45,
-                shape: const StadiumBorder(),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.speaker_outlined,
-                        color: Colors.white70,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 240),
-                        child: Text(
-                          c.sendspin.followedPlayerName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            child: SafeArea(child: _PlayerChip(container: c)),
           ),
         // With the transport up a tap is a button press, so the way out is
         // explicit: the same floating close the page overlays wear. It
@@ -947,6 +917,320 @@ class _QueueViewState extends State<_QueueView> {
           ),
         );
       },
+    );
+  }
+}
+
+/// The chip naming the shown player. Where the source can group players
+/// (Music Assistant, a Sonos household) a tap opens the group menu: the
+/// players in the group first, then every one that could join, each with
+/// a checkbox. Reports its touches as control touches so a tap on it is
+/// never a step of the double-tap dismiss chain.
+class _PlayerChip extends StatelessWidget {
+  const _PlayerChip({required this.container});
+
+  final AppContainer container;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = container;
+    final grouping = c.sendspin.groupAvailable;
+    return _ControlTouch(
+      container: c,
+      child: Material(
+        color: Colors.black45,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: grouping ? () => _GroupMenu.show(context, c) : null,
+          focusColor: Colors.white24,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(12, 8, grouping ? 10 : 16, 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.speaker_outlined,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 240),
+                  child: Text(
+                    c.sendspin.playerChipName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                if (grouping) ...[
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.expand_more_rounded,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The group menu under the chip: the leader's name as its title, then
+/// the players in the group and the ones that could join, checkboxes
+/// each, the grouped ones first and alphabetical within. A toggle sends
+/// the command, spins on its row until the source reports the group back
+/// and puts the box back if the source refused.
+class _GroupMenu extends StatefulWidget {
+  const _GroupMenu({required this.container});
+
+  final AppContainer container;
+
+  static Future<void> show(BuildContext context, AppContainer container) =>
+      showDialog<void>(
+        context: context,
+        barrierColor: Colors.black26,
+        builder: (_) => _GroupMenu(container: container),
+      );
+
+  @override
+  State<_GroupMenu> createState() => _GroupMenuState();
+}
+
+class _GroupMenuState extends State<_GroupMenu> {
+  RemoteGroup? _group;
+  bool _loading = true;
+  bool _failed = false;
+  final _pending = <String>{};
+
+  /// What a toggle just asked for, shown until the source reports it:
+  /// Music Assistant's player list can lag its own group command by a
+  /// moment, and a box that snapped back would read as a refusal.
+  final _asked = <String, bool>{};
+  Timer? _recheck;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  @override
+  void dispose() {
+    _recheck?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    RemoteGroup? group;
+    try {
+      group = await widget.container.sendspin.fetchGroup();
+    } catch (_) {
+      group = null;
+    }
+    if (!mounted) return;
+    setState(() {
+      _group = group;
+      _loading = false;
+      _failed = group == null;
+      // An ask the source now agrees with is settled.
+      if (group != null) {
+        for (final m in group.members) {
+          if (_asked[m.id] == m.inGroup) _asked.remove(m.id);
+        }
+      }
+    });
+    // Asks still unsettled: look again shortly.
+    if (_asked.isNotEmpty) {
+      _recheck?.cancel();
+      _recheck = Timer(const Duration(seconds: 2), () => unawaited(_load()));
+    }
+  }
+
+  Future<void> _toggle(GroupMember member) async {
+    if (_pending.contains(member.id)) return;
+    final want = !member.inGroup;
+    setState(() => _pending.add(member.id));
+    final ok = await widget.container.sendspin.setGrouped(member.id, want);
+    if (!mounted) return;
+    if (ok) {
+      _asked[member.id] = want;
+      await _load();
+    }
+    if (!mounted) return;
+    setState(() => _pending.remove(member.id));
+  }
+
+  /// The members as shown: the source's word, with a fresh ask laid
+  /// over it, in the chip's order.
+  List<GroupMember> get _members => RemoteGroup.ordered([
+    for (final m in _group?.members ?? const <GroupMember>[])
+      _asked.containsKey(m.id)
+          ? GroupMember(
+              id: m.id,
+              name: m.name,
+              inGroup: _asked[m.id]!,
+              available: m.available,
+            )
+          : m,
+  ]);
+
+  @override
+  Widget build(BuildContext context) {
+    final screen = MediaQuery.sizeOf(context);
+    final group = _group;
+    final members = _members;
+    const titleStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+    );
+    const rowStyle = TextStyle(color: Colors.white, fontSize: 15);
+    Widget note(String text) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white54, fontSize: 14),
+      ),
+    );
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 12,
+          top: 12 + MediaQuery.paddingOf(context).top + 48,
+        ),
+        child: Material(
+          color: const Color(0xF0202020),
+          elevation: 8,
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAlias,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: 260,
+              maxWidth: 340,
+              maxHeight: screen.height * 0.7,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.speaker_group_outlined,
+                        color: Colors.white70,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          group?.leaderName ??
+                              widget.container.sendspin.playerChipName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: titleStyle,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: Colors.white12),
+                if (_loading)
+                  const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ),
+                  )
+                else if (_failed)
+                  note('The group could not be read.')
+                else if (members.isEmpty)
+                  note('No other players to group with.')
+                else
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      children: [
+                        for (final (i, m) in members.indexed)
+                          InkWell(
+                            autofocus: i == 0,
+                            focusColor: Colors.white12,
+                            onTap: () => _toggle(m),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: _pending.contains(m.id)
+                                        ? const Padding(
+                                            padding: EdgeInsets.all(3),
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white70,
+                                            ),
+                                          )
+                                        : Icon(
+                                            m.inGroup
+                                                ? Icons.check_box_rounded
+                                                : Icons
+                                                      .check_box_outline_blank_rounded,
+                                            color: m.inGroup
+                                                ? Colors.white
+                                                : Colors.white54,
+                                          ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      m.available
+                                          ? m.name
+                                          : '${m.name} (offline)',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: rowStyle.copyWith(
+                                        color: m.available
+                                            ? Colors.white
+                                            : Colors.white38,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

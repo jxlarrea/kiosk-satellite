@@ -149,6 +149,25 @@ class SonosClient {
         'CurrentURIMetaData': '',
       });
 
+  // ── Grouping ───────────────────────────────────────────────────────
+
+  /// Join the group [coordinatorUuid] leads: the room's transport points
+  /// at the coordinator and plays whatever it plays.
+  Future<void> join(String coordinatorUuid) =>
+      call(avTransport, 'SetAVTransportURI', {
+        'InstanceID': '0',
+        'CurrentURI': 'x-rincon:$coordinatorUuid',
+        'CurrentURIMetaData': '',
+      });
+
+  /// Leave the group: the room becomes the coordinator of a group of its
+  /// own, silent until told to play something.
+  Future<void> leaveGroup() => call(
+    avTransport,
+    'BecomeCoordinatorOfStandaloneGroup',
+    {'InstanceID': '0'},
+  );
+
   // ── Volume ─────────────────────────────────────────────────────────
 
   Future<int?> volume() async {

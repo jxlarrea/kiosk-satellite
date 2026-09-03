@@ -65,6 +65,17 @@ class HaRemotePlayer implements RemotePlayer {
   @override
   Future<bool> playQueueItem(String id) async => false;
 
+  /// Grouping stays with the integration behind the entity; the kiosk
+  /// leaves it alone.
+  @override
+  bool get hasGrouping => false;
+
+  @override
+  Future<RemoteGroup?> fetchGroup() async => null;
+
+  @override
+  Future<bool> setGrouped(String id, bool grouped) async => false;
+
   @override
   bool get lyricsSynced => true;
 

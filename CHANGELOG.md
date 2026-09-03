@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Speaker groups from the Now Playing view.** The chip naming the player in the top left corner opens a group menu on a tap: the players already in the group first, then every player that could join, alphabetical within each and a checkbox on every row, so another speaker can be put on what is playing or taken off it without leaving the view. This device's own player groups through Music Assistant with the players it can sync with, a followed Music Assistant player with whatever Music Assistant lets it sync with and a Sonos room followed directly with the other rooms of its household over the speakers' own interface. A Home Assistant media player keeps its grouping with the integration behind it and shows no menu. The chip now names this device's own player too, where it only named a followed one.
+
 ## v2026.9.11 - 2026-09-03
 
 ### Added

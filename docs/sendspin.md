@@ -156,6 +156,17 @@ When **Show media controls** is enabled, transport buttons, a progress bar, and 
 * **Right Toggles**: Controls synchronized lyrics and queue panels. Side-by-side or stacked layouts adapt dynamically based on screen orientation. The queue panel displays past tracks, the current track, and upcoming items, allowing direct track jumping by tapping any row.
 * **Dismissal**: When media controls are enabled, tapping the background does not dismiss the view; users must tap the top-right close button, use a double tap gesture (if **Double tap to dismiss** is on), or press the physical back button.
 
+### Speaker groups
+
+The chip in the top left corner names the player the view shows. Where the source can group players, the chip carries a caret and a tap opens the group menu: the players already in the group first, then every player that could join, alphabetical within each, a checkbox on every row. Checking a row puts that player in the group, unchecking takes it out, and the row spins until the source reports the group back.
+
+| Source | Who can join |
+| --- | --- |
+| This device | Other players Music Assistant can sync with it, over the Music Assistant connection, so the Music Assistant page's server address and token are needed. |
+| Music Assistant player | Whatever Music Assistant lets that player sync with. |
+| Sonos, direct | Every other room of the household, over the speakers' own interface. |
+| Home Assistant media player | No menu: grouping stays with the integration behind the entity. |
+
 ### Lyrics
 
 Enabling the lyrics toggle splits the screen to display synchronized lyric lines alongside album artwork. The active line highlights and auto-scrolls in sync with audio playback. For the local Sendspin player, timing relies on Sendspin position timestamps. For external players, timing relies on progress data reported by Music Assistant or Home Assistant.

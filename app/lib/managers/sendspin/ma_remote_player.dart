@@ -78,6 +78,34 @@ class MaRemotePlayer implements RemotePlayer {
   @override
   Future<bool> playQueueItem(String id) async => false;
 
+  /// Music Assistant groups (syncs) players of one kind on command.
+  @override
+  bool get hasGrouping => true;
+
+  /// The leader of the last group read, so a member is grouped under the
+  /// player this one is actually synced to.
+  String _leaderId = '';
+
+  @override
+  Future<RemoteGroup?> fetchGroup() async {
+    final group = await _api.fetchGroup(playerId);
+    if (group != null) _leaderId = group.leaderId;
+    return group;
+  }
+
+  @override
+  Future<bool> setGrouped(String id, bool grouped) async {
+    final error = await _api.setGrouped(
+      leaderId: _leaderId.isNotEmpty ? _leaderId : playerId,
+      memberId: id,
+      grouped: grouped,
+    );
+    if (error != null) {
+      log.warn(_name, '$label ${grouped ? 'group' : 'ungroup'} $id: $error');
+    }
+    return error == null;
+  }
+
   /// The queue's live elapsed time, read every few seconds while playing,
   /// keeps the position within a moment of the audio.
   @override
