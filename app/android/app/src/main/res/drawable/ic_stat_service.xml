@@ -1,19 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The status bar icon for the Kiosk Satellite Service notification. The
-     same mark as assets/icons/svg/mark-monochrome.svg drawn at full size:
-     the adaptive icon's monochrome layer scales the mark to 56% for the
-     launcher's safe zone, and used as a small icon that left the house at
-     about 13dp in a 24dp slot, half the size of every icon beside it. The
-     path spans 3 to 96 of the viewport, so the mark fills the slot with
-     about 1dp of air, the way the platform's own status icons do. The
-     color is a placeholder; the status bar tints it. -->
+     mark from assets/icons/svg/mark-monochrome.svg turned inside out: the
+     house is a 2dp outline and the four bars are solid, so at 24dp it reads
+     as a line icon the way the platform's status icons do rather than a
+     solid block. The adaptive icon's monochrome layer, which the notification
+     used before, scales the mark to 56% for the launcher's safe zone and left
+     the house at about 13dp in a 24dp slot. The group scales the mark down
+     just enough for the outline's outer edge to stay inside the viewport
+     (viewport units are 24dp / 100, so a 2dp stroke is 8.3 units, 4.2 of
+     them outside the path). The color is a placeholder; the status bar tints
+     it. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="100"
     android:viewportHeight="100">
-    <path
-        android:fillColor="#FF000000"
-        android:fillType="evenOdd"
-        android:pathData="M42.4 3.1A12.4 12.4 0 0 1 57.6 3.1L90.6 26.8A12.4 12.4 0 0 1 96 37V83.8A12.4 12.4 0 0 1 83.6 96.2H16.4A12.4 12.4 0 0 1 4 83.8V37A12.4 12.4 0 0 1 9.4 26.8ZM26.8 51.7A4.3 4.3 0 0 1 35.4 51.7V69.7A4.3 4.3 0 0 1 26.8 69.7ZM39.4 54A4.3 4.3 0 0 1 48 54V67.4A4.3 4.3 0 0 1 39.4 67.4ZM52 43.7A4.3 4.3 0 0 1 60.6 43.7V77.7A4.3 4.3 0 0 1 52 77.7ZM64.6 53.7A4.3 4.3 0 0 1 73.2 53.7V67.7A4.3 4.3 0 0 1 64.6 67.7Z"/>
+    <group
+        android:scaleX="0.91"
+        android:scaleY="0.91"
+        android:pivotX="50"
+        android:pivotY="50">
+        <path
+            android:strokeColor="#FF000000"
+            android:strokeWidth="8.3"
+            android:strokeLineJoin="round"
+            android:pathData="M42.4 3.1A12.4 12.4 0 0 1 57.6 3.1L90.6 26.8A12.4 12.4 0 0 1 96 37V83.8A12.4 12.4 0 0 1 83.6 96.2H16.4A12.4 12.4 0 0 1 4 83.8V37A12.4 12.4 0 0 1 9.4 26.8Z"/>
+        <path
+            android:fillColor="#FF000000"
+            android:pathData="M26.8 51.7A4.3 4.3 0 0 1 35.4 51.7V69.7A4.3 4.3 0 0 1 26.8 69.7ZM39.4 54A4.3 4.3 0 0 1 48 54V67.4A4.3 4.3 0 0 1 39.4 67.4ZM52 43.7A4.3 4.3 0 0 1 60.6 43.7V77.7A4.3 4.3 0 0 1 52 77.7ZM64.6 53.7A4.3 4.3 0 0 1 73.2 53.7V67.7A4.3 4.3 0 0 1 64.6 67.7Z"/>
+    </group>
 </vector>
