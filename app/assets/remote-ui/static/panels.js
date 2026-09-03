@@ -272,19 +272,6 @@ export async function updatePlayerRow() {
 export async function updateSonosPage() {
   const panel = document.querySelector('#tab-sendspin > .subpage[data-subpage="Sonos"]');
   if (!panel) return;
-  // The lyrics switch means nothing without Music Assistant, where the
-  // lyrics come from: disabled, saying what it needs, as on the device.
-  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
-  const maConfigured = (byKey['sendspin.ma_url']?.value || '').trim() !== ''
-    && byKey['sendspin.ma_token']?.value === '__set__';
-  const lyricsRow = panel.querySelector('[data-key="sendspin.sonos_lyrics"]');
-  if (lyricsRow && !maConfigured && !lyricsRow.dataset.gated) {
-    lyricsRow.dataset.gated = '1';
-    const box = lyricsRow.querySelector('input[type="checkbox"]');
-    if (box) { box.checked = false; box.disabled = true; }
-    lyricsRow.querySelector('.desc').textContent = 'Needs a Music Assistant '
-      + 'connection. Set the server address and token on the Music Assistant page.';
-  }
   if (panel.querySelector('.sonos-speakers')) return;
   const h = document.createElement('h2');
   h.className = 'card-title';

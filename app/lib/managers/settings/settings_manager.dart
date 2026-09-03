@@ -242,6 +242,9 @@ class SettingsManager extends Manager {
     // one design now, so the rows are gone and stored values with them.
     await _prefs.remove('${_prefix}launcher.layout');
     await _prefs.remove('${_prefix}launcher.show_icons');
+    // The Sonos page's own lyrics switch: the Lyrics page's Enable lyrics
+    // covers every source now.
+    await _prefs.remove('${_prefix}sendspin.sonos_lyrics');
     // The Bluetooth proxy toggle used to be the master switch for the whole
     // ESPHome server; now esphome.enabled is. An install that ran the proxy
     // must keep its server (and its Home Assistant config entry) across the

@@ -50,6 +50,7 @@ const Map<String, Object> subpageIcons = {
   'Sonos': Icons.speaker_outlined,
   'Floating Player': Icons.picture_in_picture_alt_outlined,
   'Now Playing': Icons.fullscreen,
+  'Lyrics': Icons.lyrics_outlined,
   // ESPHome.
   'Notifications': Icons.notifications_outlined,
   'Bluetooth Proxy': Icons.bluetooth,

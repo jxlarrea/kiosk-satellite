@@ -181,6 +181,11 @@ class SendspinManager extends Manager {
   MusicAssistantApi Function({required String baseUrl, required String token})
   apiFactory = MusicAssistantApi.new;
 
+  /// Builds the LRCLIB client. Swapped in tests so no lookup leaves the
+  /// machine.
+  @visibleForTesting
+  LrclibApi Function() lrclibFactory = LrclibApi.new;
+
   /// Builds the remote-player follower (issue #265). Swapped in tests so a
   /// manager test never opens a socket.
   @visibleForTesting
@@ -238,12 +243,14 @@ class SendspinManager extends Manager {
   /// followed Sonos takes them from Music Assistant, so it needs the
   /// connection and its own switch on.
   bool get lyricsAvailable {
-    final remote = _remote;
-    if (remote == null) return true;
-    if (remote is SonosPlayer) {
-      return _maConfigured && _settings.get(defs.sendspinSonosLyrics);
+    if (!_settings.get(defs.sendspinLyricsEnabled)) return false;
+    // Music Assistant as the source needs its connection; LRCLIB needs
+    // nothing beyond the track's name.
+    if (_settings.get(defs.sendspinLyricsSource) == 'ma' && !_maConfigured) {
+      return false;
     }
-    return remote.lyricsSynced;
+    final remote = _remote;
+    return remote == null || remote.lyricsSynced;
   }
 
   /// Whether the Now Playing view can set the volume: always for the
@@ -294,36 +301,48 @@ class SendspinManager extends Manager {
     lyrics.value = const [];
     if (title.isEmpty) return;
     lyricsPending.value = true;
-    String? lrc;
-    var source = 'Music Assistant';
-    if (_maConfigured) {
+    Future<String?> askMusicAssistant() {
+      if (!_maConfigured) return Future.value(null);
       final api = apiFactory(
         baseUrl: _settings.get(defs.sendspinMaUrl),
         token: _settings.get(defs.sendspinMaToken),
       );
-      lrc = await api.fetchLyrics(
+      return api.fetchLyrics(
         title: title,
         artist: artist,
         album: '${track['album'] ?? ''}',
       );
-      // The song may have moved on while Music Assistant was looking.
-      if (_lyricsKey != key) return;
     }
-    if (lrc == null || lrc.trim().isEmpty) {
-      // Music Assistant's providers found nothing — often strict matching
-      // losing to a lyrics database's sloppy credits (issue #90) — or
-      // there is no Music Assistant to ask. Ask LRCLIB's own, looser
-      // search directly before giving up; the user's local .lrc files
-      // stayed authoritative above.
-      final durationMs = (track['durationMs'] as num?)?.toInt() ?? 0;
-      lrc = await LrclibApi().fetchSyncedLyrics(
-        title: title,
-        artist: artist,
-        durationSeconds: durationMs > 0 ? (durationMs / 1000).round() : null,
-      );
-      if (_lyricsKey != key) return;
+
+    String? lrc;
+    var source = 'Music Assistant';
+    if (_settings.get(defs.sendspinLyricsSource) == 'ma') {
+      lrc = await askMusicAssistant();
+    } else {
       source = 'LRCLIB';
+      final durationMs = (track['durationMs'] as num?)?.toInt() ?? 0;
+      try {
+        lrc = await lrclibFactory().fetchSyncedLyrics(
+          title: title,
+          artist: artist,
+          durationSeconds: durationMs > 0 ? (durationMs / 1000).round() : null,
+        );
+      } on LrclibUnreachable catch (e) {
+        // A device kept off the internet, or an outage: Music Assistant
+        // steps in when the fallback is on and a connection exists. A
+        // track LRCLIB simply has no lyrics for stays without them.
+        if (_lyricsKey != key) return;
+        if (_settings.get(defs.sendspinLyricsFallback) && _maConfigured) {
+          log.info(name, '${e.reason}; asking Music Assistant');
+          source = 'Music Assistant';
+          lrc = await askMusicAssistant();
+        } else {
+          log.warn(name, '$e');
+        }
+      }
     }
+    // The song may have moved on while the lookup was out.
+    if (_lyricsKey != key) return;
     final parsed = parseLrc(lrc);
     log.info(
       name,
@@ -623,8 +642,15 @@ class SendspinManager extends Manager {
       // button, or either settings surface): fetch for the track already
       // playing, or clear what is up. The per-track fetch below only
       // runs at track changes.
-      if (e.key == defs.sendspinLyrics.key ||
-          e.key == defs.sendspinSonosLyrics.key) {
+      if (e.key == defs.sendspinLyrics.key) {
+        unawaited(_refreshLyrics());
+      }
+      // The Lyrics page: the master switch, the source or the fallback
+      // changing re-asks for the playing track from the new place.
+      if (e.key == defs.sendspinLyricsEnabled.key ||
+          e.key == defs.sendspinLyricsSource.key ||
+          e.key == defs.sendspinLyricsFallback.key) {
+        _lyricsKey = '';
         unawaited(_refreshLyrics());
       }
       // The queue panel switching on (the view's button, or either
@@ -705,7 +731,9 @@ class SendspinManager extends Manager {
         'sendspin.player_name',
         'sendspin.sonos_hosts',
         'sendspin.sonos_group_volume',
-        'sendspin.sonos_lyrics',
+        'sendspin.lyrics_enabled',
+        'sendspin.lyrics_source',
+        'sendspin.lyrics_fallback_ma',
         'sendspin.player_active',
         'sendspin.local_player_name',
       ];

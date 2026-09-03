@@ -2288,26 +2288,7 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// shown disabled with the reason it cannot be used. Keyed by setting
   /// key and handed to every render of the category, the pages below it
   /// included, so a replacement follows its row onto its page.
-  /// A Sonos lyrics switch without a Music Assistant connection: disabled,
-  /// saying what it needs, since the lyrics can only come from there.
-  bool get _maConfigured =>
-      widget.container.settings.get(sendspinMaUrl).trim().isNotEmpty &&
-      widget.container.settings.get(sendspinMaToken).trim().isNotEmpty;
-
   Map<String, Widget> _rowReplacements(AppContainer container) => {
-    if (widget.category == 'Sendspin' && !_maConfigured)
-      sendspinSonosLyrics.key: SearchLandingTarget(
-        id: sendspinSonosLyrics.key,
-        child: SwitchListTile(
-          title: Text(sendspinSonosLyrics.title),
-          subtitle: const Text(
-            'Needs a Music Assistant connection. Set the server address '
-            'and token on the Music Assistant page.',
-          ),
-          value: false,
-          onChanged: null,
-        ),
-      ),
     // The player pick (issue #265): a grouped picker fed by the live
     // player lists, in the place of the plain text field its definition
     // would draw.

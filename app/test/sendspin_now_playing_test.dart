@@ -129,7 +129,6 @@ void main() {
         defs.sendspinFullscreenControls,
         defs.sendspinFullscreenOnPlay,
         defs.sendspinFullscreenMotion,
-        defs.sendspinLyricsOffset,
       ]) {
         expect(def.category, 'Sendspin');
         expect(def.subpage, 'Now Playing');
@@ -144,8 +143,27 @@ void main() {
       expect(keys[first + 4], defs.sendspinFullscreenMotion.key);
       expect(keys[first + 5], defs.sendspinFullscreenShortcut.key);
       expect(keys[first + 6], defs.sendspinLyrics.key);
-      expect(keys[first + 7], defs.sendspinLyricsOffset.key);
-      expect(keys[first + 8], defs.sendspinFullscreenQueue.key);
+      expect(keys[first + 7], defs.sendspinFullscreenQueue.key);
+      // The Lyrics page follows as one card of its own, the timing row
+      // moved there from this page.
+      expect(keys[first + 8], defs.sendspinLyricsEnabled.key);
+      expect(keys[first + 9], defs.sendspinLyricsSource.key);
+      expect(keys[first + 10], defs.sendspinLyricsFallback.key);
+      expect(keys[first + 11], defs.sendspinLyricsOffset.key);
+      for (final def in [
+        defs.sendspinLyricsEnabled,
+        defs.sendspinLyricsSource,
+        defs.sendspinLyricsFallback,
+        defs.sendspinLyricsOffset,
+      ]) {
+        expect(def.subpage, 'Lyrics');
+      }
+      expect(defs.sendspinLyricsEnabled.defaultValue, isTrue);
+      expect(defs.sendspinLyricsSource.defaultValue, 'lrclib');
+      expect(defs.sendspinLyricsFallback.defaultValue, isTrue);
+      expect(defs.sendspinLyricsFallback.dependsOn, 'sendspin.lyrics_source');
+      expect(defs.sendspinLyricsFallback.dependsOnValue, 'lrclib');
+      expect(defs.sendspinLyricsOffset.dependsOn, 'sendspin.lyrics_enabled');
       expect(defs.sendspinFullscreenDoubleTap.defaultValue, isFalse);
       expect(
         defs.sendspinFullscreenDoubleTap.dependsOn,

@@ -4,6 +4,7 @@ import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/sendspin/lrclib.dart';
 import 'package:kiosk_satellite/managers/sendspin/ma_remote_player.dart';
 import 'package:kiosk_satellite/managers/sendspin/music_assistant_api.dart';
 import 'package:kiosk_satellite/managers/sendspin/sendspin_manager.dart';
@@ -70,6 +71,45 @@ class _FakeApi extends MusicAssistantApi {
   Future<Map<String, Object?>?> fetchActiveQueueTrack({
     required String playerId,
   }) async => null;
+}
+
+/// A Music Assistant with lyrics for every track, counting the asks.
+class _LyricsApi extends _FakeApi {
+  _LyricsApi() : super(const []);
+
+  static int asks = 0;
+
+  @override
+  Future<String?> fetchLyrics({
+    required String title,
+    required String artist,
+    String album = '',
+  }) async {
+    asks++;
+    return '[00:01.00] from music assistant';
+  }
+}
+
+/// LRCLIB as a test sees it: answering, empty-handed, or down.
+class _FakeLrclib extends LrclibApi {
+  _FakeLrclib(this.mode);
+
+  final String mode;
+  static int asks = 0;
+
+  @override
+  Future<String?> fetchSyncedLyrics({
+    required String title,
+    required String artist,
+    int? durationSeconds,
+  }) async {
+    asks++;
+    return switch (mode) {
+      'found' => '[00:01.00] from lrclib',
+      'missing' => null,
+      _ => throw const LrclibUnreachable('no route'),
+    };
+  }
 }
 
 class _FakeRemote extends MaRemotePlayer {
@@ -379,6 +419,68 @@ void main() {
       );
       expect(sendspin.nowPlaying.value, isNull);
       expect(sendspin.lyrics.value, isEmpty);
+    });
+
+    group('lyrics source', () {
+      Future<void> play(
+        String lrclib, {
+        Map<String, Object> prefs = const {},
+      }) async {
+        await build();
+        _LyricsApi.asks = 0;
+        _FakeLrclib.asks = 0;
+        sendspin.apiFactory = ({required baseUrl, required token}) =>
+            _LyricsApi();
+        sendspin.lrclibFactory = () => _FakeLrclib(lrclib);
+        for (final e in prefs.entries) {
+          final def = defs.allSettings.firstWhere((d) => d.key == e.key);
+          await settings.set(def, e.value);
+        }
+        fake!.onSnapshot({'title': 'Song', 'artist': 'A', 'playing': true});
+        await pumpEventQueue();
+      }
+
+      test('LRCLIB by default, Music Assistant left alone', () async {
+        await play('found');
+        expect(sendspin.lyrics.value, isNotEmpty);
+        expect(sendspin.lyrics.value.first.text, 'from lrclib');
+        expect(_FakeLrclib.asks, 1);
+        expect(_LyricsApi.asks, 0);
+      });
+
+      test('LRCLIB unreachable falls back to Music Assistant', () async {
+        await play('down');
+        expect(sendspin.lyrics.value.first.text, 'from music assistant');
+        expect(_LyricsApi.asks, 1);
+      });
+
+      test('a track LRCLIB lacks is not retried on Music Assistant', () async {
+        await play('missing');
+        expect(sendspin.lyrics.value, isEmpty);
+        expect(_LyricsApi.asks, 0);
+      });
+
+      test(
+        'the fallback switched off leaves an unreachable LRCLIB empty',
+        () async {
+          await play('down', prefs: {'sendspin.lyrics_fallback_ma': false});
+          expect(sendspin.lyrics.value, isEmpty);
+          expect(_LyricsApi.asks, 0);
+        },
+      );
+
+      test('Music Assistant as the source never asks LRCLIB', () async {
+        await play('found', prefs: {'sendspin.lyrics_source': 'ma'});
+        expect(sendspin.lyrics.value.first.text, 'from music assistant');
+        expect(_FakeLrclib.asks, 0);
+      });
+
+      test('Enable lyrics off takes them away everywhere', () async {
+        await play('found', prefs: {'sendspin.lyrics_enabled': false});
+        expect(sendspin.lyricsAvailable, isFalse);
+        expect(sendspin.lyrics.value, isEmpty);
+        expect(_FakeLrclib.asks, 0);
+      });
     });
 
     test('clearing the pick returns the card to the local player', () async {

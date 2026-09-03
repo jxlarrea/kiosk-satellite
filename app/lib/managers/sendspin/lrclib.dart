@@ -18,11 +18,26 @@ import '../../core/app_identity.dart';
 /// queries stall it (measured during and after their 2026-07-30 outage,
 /// but the short query is the safe shape either way). The artist and
 /// duration then filter OUR side, where sloppy credits cost nothing.
+/// LRCLIB could not be asked: no route to it (a device kept off the
+/// internet), a timeout, or an answer that was not a search result. Told
+/// apart from "no lyrics for this track" so a fallback can step in for
+/// the one and not the other.
+class LrclibUnreachable implements Exception {
+  const LrclibUnreachable(this.reason);
+
+  final String reason;
+
+  @override
+  String toString() => 'LRCLIB unreachable: $reason';
+}
+
 class LrclibApi {
   static const _host = 'lrclib.net';
 
-  /// Synced (LRC) lyrics for the track, or null. [artist] may be a
-  /// Sendspin slash-joined credit; matching uses the primary artist.
+  /// Synced (LRC) lyrics for the track, or null when it has none there.
+  /// Throws [LrclibUnreachable] when the service could not be asked.
+  /// [artist] may be a Sendspin slash-joined credit; matching uses the
+  /// primary artist.
   Future<String?> fetchSyncedLyrics({
     required String title,
     required String artist,
@@ -41,20 +56,24 @@ class LrclibApi {
       final response = await request.close().timeout(
         const Duration(seconds: 25),
       );
-      if (response.statusCode != 200) return null;
+      if (response.statusCode != 200) {
+        throw LrclibUnreachable('HTTP ${response.statusCode}');
+      }
       final body = await response
           .transform(utf8.decoder)
           .join()
           .timeout(const Duration(seconds: 10));
       final decoded = jsonDecode(body);
-      if (decoded is! List) return null;
+      if (decoded is! List) throw const LrclibUnreachable('not a result');
       return pickLrclibLyrics(
         decoded,
         artist: artist.split('/').first.trim(),
         durationSeconds: durationSeconds,
       );
-    } catch (_) {
-      return null;
+    } on LrclibUnreachable {
+      rethrow;
+    } catch (e) {
+      throw LrclibUnreachable('$e');
     } finally {
       client.close(force: true);
     }

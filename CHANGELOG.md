@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Lyrics** page under Media Player, on the device and in the remote admin alike, for every player source: an **Enable lyrics** switch, on by default, that takes the lyrics button off the Now Playing view when off; a **Lyrics source** select between LRCLIB, the default, and Music Assistant; and with LRCLIB picked a **Fallback to Music Assistant** switch, on by default, that asks Music Assistant when LRCLIB cannot be reached, for a device kept off the internet. The Lyrics timing row moved there from the Now Playing page.
+
+### Changed
+- The Sonos page's **Enable lyrics** switch is gone, and a followed Sonos room no longer needs Music Assistant for its lyrics: every source takes them from the Lyrics page's source, so a Sonos followed directly reads them from LRCLIB like a Home Assistant player does.
+
 ## v2026.9.10 - 2026-09-03
 
 ### Added

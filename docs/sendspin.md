@@ -54,7 +54,6 @@ Configures direct integration with local Sonos hardware.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| Enable lyrics | on | Fetches synchronized lyrics for the active Sonos room via Music Assistant. Requires the Music Assistant server address and token to be configured. |
 | Adjust the group volume | on | Controls whether the Now Playing volume slider adjusts the entire Sonos group volume or only the local room volume. |
 | Speakers | list | Displays discovered Sonos rooms with a **Forget** option to clear household pairings. **Search** discovers speakers on the local subnet via SSDP. **Add by address** allows manually targeting a speaker IP on a different VLAN. |
 
@@ -78,6 +77,16 @@ Configures direct integration with local Sonos hardware.
 | Launch Now Playing when music starts playing | on | Instantly launches the full screen view when playback starts rather than waiting for the idle screensaver timeout. |
 | Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the full screen music display. |
 | Show in the kiosk menu | off | Adds a menu shortcut to open the full screen view directly. Remains hidden if no media is playing or queued. |
+
+### Lyrics
+
+Synchronized lyrics for every player source, on a page of their own.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Enable lyrics | on | The master switch. Off, the Now Playing view has no lyrics button and nothing is looked up. |
+| Lyrics source | LRCLIB | Where the words come from. **LRCLIB** asks the public database directly, with the track's title, artist and duration. **Music Assistant** asks its providers, the user's own .lrc files among them, and needs the server address and token on the Music Assistant page. |
+| Fallback to Music Assistant | on | Shown with LRCLIB as the source. If LRCLIB is unreachable, Music Assistant is asked instead, when a connection is configured. Useful for devices that have no internet access: the words then come from Music Assistant on the local network. A track LRCLIB has no lyrics for is not retried there. |
 | Lyrics timing | +0.3s | Adjusts lyric line synchronization relative to audio. Positive values display lyric lines earlier. |
 
 ## Following Another Player
@@ -98,7 +107,7 @@ Capabilities vary slightly by player source:
 | This device | Supported | Supported | Supported |
 | Music Assistant player | Supported | Supported | Supported |
 | Home Assistant media player | Supported | Supported | Not supported |
-| Sonos (Direct UPnP) | Supported | Supported (via Music Assistant) | Supported |
+| Sonos (Direct UPnP) | Supported | Supported | Supported |
 
 Unsupported controls are hidden automatically. For example, if a Home Assistant player does not report position seeking, the progress bar thumb is removed.
 
@@ -151,7 +160,7 @@ When **Show media controls** is enabled, transport buttons, a progress bar, and 
 
 Enabling the lyrics toggle splits the screen to display synchronized lyric lines alongside album artwork. The active line highlights and auto-scrolls in sync with audio playback. For the local Sendspin player, timing relies on Sendspin position timestamps. For external players, timing relies on progress data reported by Music Assistant or Home Assistant.
 
-Lyrics are fetched from Music Assistant. If no Music Assistant server is configured, the app queries the public LRCLIB service directly using track metadata. 
+The words come from the **Lyrics source** on the Lyrics page: LRCLIB's public database by default, or Music Assistant's providers. With LRCLIB as the source and **Fallback to Music Assistant** on, a device that cannot reach LRCLIB asks Music Assistant instead.
 
 The **Lyrics timing** setting applies a global offset (defaulting to +0.3 seconds early) to ensure lyrics display slightly ahead of vocal execution for better readability. Embedded `[offset:]` file tags are applied on top of this setting. Plain, un-timed text lyrics are suppressed.
 

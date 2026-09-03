@@ -214,6 +214,7 @@ const Map<String, String> subpageHints = {
   'Sonos': 'Speakers on the network, add one by address',
   'Floating Player': 'The small card over the dashboard',
   'Now Playing': 'Full-screen view while music plays',
+  'Lyrics': 'Synchronized lyrics, their source and timing',
   // ESPHome.
   'Notifications': 'Transparency, blur, notification sound, test notification',
   'Bluetooth Proxy': 'Relay nearby Bluetooth devices to Home Assistant',
@@ -4467,23 +4468,6 @@ const sendspinPlayerName = SettingDef<String>(
   hidden: true,
 );
 
-/// Lyrics for a followed Sonos come from Music Assistant's providers,
-/// which is the one source of them the speaker itself cannot be: the
-/// switch only means anything with a Music Assistant connection, and
-/// both settings surfaces say so on the row while there is none.
-const sendspinSonosLyrics = SettingDef<bool>(
-  key: 'sendspin.sonos_lyrics',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Enable lyrics',
-  description:
-      'Lyrics for the followed Sonos room, from Music Assistant. Needs '
-      'the Music Assistant server address and token.',
-  category: 'Sendspin',
-  subpage: 'Sonos',
-  section: 'Sonos',
-);
-
 /// Whether the Now Playing volume slider sets the whole group's volume
 /// while the followed Sonos room plays in one, the way the Sonos app's
 /// group slider does or only the room's own.
@@ -4951,28 +4935,9 @@ const sendspinLyrics = SettingDef<bool>(
   section: 'Now Playing',
   // The Now Playing view's own lyrics button flips this and the choice
   // sticks, so no settings row: two places to flip one thing only invite
-  // confusion. The timing row rides this dependsOn, so it shows only
-  // while lyrics are on.
+  // confusion. The Lyrics page's Enable lyrics is the master switch
+  // above it.
   hidden: true,
-);
-
-const sendspinLyricsOffset = SettingDef<num>(
-  key: 'sendspin.lyrics_offset',
-  type: SettingType.number,
-  defaultValue: 0.3,
-  title: 'Lyrics timing',
-  description:
-      'Shift the lyrics against the music. Positive shows each line '
-      'earlier, negative later. Worth a nudge on tracks that read '
-      'consistently off.',
-  category: 'Sendspin',
-  subpage: 'Now Playing',
-  section: 'Now Playing',
-  dependsOn: 'sendspin.lyrics',
-  min: -3,
-  max: 3,
-  step: 0.1,
-  unit: 's',
 );
 
 /// The queue panel in the lyrics' slot, persisted like the lyrics are:
@@ -4990,6 +4955,77 @@ const sendspinFullscreenQueue = SettingDef<bool>(
   subpage: 'Now Playing',
   section: 'Now Playing',
   hidden: true,
+);
+
+/// Lyrics for every source, on the Lyrics page. The master switch: off,
+/// the Now Playing view has no lyrics button and fetches nothing.
+const sendspinLyricsEnabled = SettingDef<bool>(
+  key: 'sendspin.lyrics_enabled',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable lyrics',
+  description:
+      'Synchronized lyrics on the Now Playing view, for every player '
+      'source.',
+  category: 'Sendspin',
+  subpage: 'Lyrics',
+  section: 'Lyrics',
+);
+
+/// Where the words come from: LRCLIB's public database directly, or
+/// Music Assistant's providers (the user's own .lrc files among them),
+/// which need the connection on the Music Assistant page.
+const sendspinLyricsSource = SettingDef<String>(
+  key: 'sendspin.lyrics_source',
+  type: SettingType.select,
+  defaultValue: 'lrclib',
+  title: 'Lyrics source',
+  description:
+      'Where the lyrics come from. Music Assistant needs the server '
+      'address and token on its page.',
+  category: 'Sendspin',
+  subpage: 'Lyrics',
+  section: 'Lyrics',
+  dependsOn: 'sendspin.lyrics_enabled',
+  options: ['lrclib', 'ma'],
+  optionLabels: {'lrclib': 'LRCLIB', 'ma': 'Music Assistant'},
+);
+
+/// With LRCLIB as the source: a device that cannot reach it (no internet
+/// access, or an outage) asks Music Assistant instead, when a connection
+/// is configured.
+const sendspinLyricsFallback = SettingDef<bool>(
+  key: 'sendspin.lyrics_fallback_ma',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Fallback to Music Assistant',
+  description:
+      'If LRCLIB is unreachable, Music Assistant is asked instead. Needs '
+      'the Music Assistant connection.',
+  category: 'Sendspin',
+  subpage: 'Lyrics',
+  section: 'Lyrics',
+  dependsOn: 'sendspin.lyrics_source',
+  dependsOnValue: 'lrclib',
+);
+
+const sendspinLyricsOffset = SettingDef<num>(
+  key: 'sendspin.lyrics_offset',
+  type: SettingType.number,
+  defaultValue: 0.3,
+  title: 'Lyrics timing',
+  description:
+      'Shift the lyrics against the music. Positive shows each line '
+      'earlier, negative later. Worth a nudge on tracks that read '
+      'consistently off.',
+  category: 'Sendspin',
+  subpage: 'Lyrics',
+  section: 'Lyrics',
+  dependsOn: 'sendspin.lyrics_enabled',
+  min: -3,
+  max: 3,
+  step: 0.1,
+  unit: 's',
 );
 
 /// The floating player's position as "x,y" fractions of the free area.
@@ -5974,7 +6010,6 @@ const List<SettingDef<Object>> allSettings = [
   sendspinMaShortcut,
   sendspinMaAutoClose,
   sendspinMaHideClose,
-  sendspinSonosLyrics,
   sendspinSonosGroupVolume,
   sendspinSonosHosts,
   sendspinShowPlayer,
@@ -5989,8 +6024,11 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenMotion,
   sendspinFullscreenShortcut,
   sendspinLyrics,
-  sendspinLyricsOffset,
   sendspinFullscreenQueue,
+  sendspinLyricsEnabled,
+  sendspinLyricsSource,
+  sendspinLyricsFallback,
+  sendspinLyricsOffset,
   sendspinPlayerPos,
   sendspinClientId,
   sendspinPlayerActive,
