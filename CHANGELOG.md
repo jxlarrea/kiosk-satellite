@@ -6,6 +6,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Fixed
 - **Forgetting a Sonos room forgets its household and its pick**. Forget dropped the one room, then the next listing read the household back from any other room and brought it back, and a forgotten room that was the picked player kept its place in the Player dropdown and on the Player row even after a reload, since the pick lived on. Forget now drops every room of the household, the mirror of Add, and clears the pick when it named one of them, so the Player row asks again.
+- **Picking a player in the remote admin no longer makes the page jump**. The pick re-rendered the whole Media Player page, the intro note above the rows going and coming back with it. The row's warning is now reworded in place and the rest of the page stays put.
 - The remote admin's **Player select follows the Sonos page**: a speaker added, found or forgotten there shows up in the Media Player page's Player dropdown at once, where before the page had to be reloaded to pick it.
 
 ## v2026.9.7 - 2026-09-02

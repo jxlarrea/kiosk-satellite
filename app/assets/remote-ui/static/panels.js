@@ -254,7 +254,15 @@ export async function updatePlayerRow() {
       'sendspin.player_name': name,
       'sendspin.player_active': true,
     }) });
-    await loadSettings();
+    // Nothing else on the page hangs on the pick, so the page stays put:
+    // the settings are read back and the row's warning reworded in place
+    // rather than the whole page re-rendered around a select that is
+    // already right.
+    try {
+      const { settings } = await (await api('/api/settings')).json();
+      if (Array.isArray(settings)) state.settings = settings;
+    } catch (_) {}
+    updatePlayerRow();
   });
 }
 
