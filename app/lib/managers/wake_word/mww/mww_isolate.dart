@@ -6,6 +6,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 import 'micro_frontend.dart';
 import 'mww_gate.dart';
+import 'xnnpack_variable_ops.dart';
 import '../wake_msg.dart';
 
 /// Entry point of the microWakeWord compute isolate.
@@ -44,7 +45,7 @@ void mwwIsolateEntry(SendPort mainPort) {
 class _Kw {
   _Kw(this.id, this.wakeWord, this.interpreter, this.gate, this.framesPerInfer,
       this.inputScale, this.inputZeroPoint, int inputElements,
-      {this.isStop = false})
+      {this.isStop = false, this.delegate})
       : accum = List.generate(framesPerInfer, (_) => Float32List(kFeatureSize)),
         inputBuf = Int8List(inputElements);
 
@@ -56,6 +57,10 @@ class _Kw {
   /// starting a turn.
   final bool isStop;
   final Interpreter interpreter;
+
+  /// The hand-applied XNNPACK delegate, outliving [interpreter]; null where
+  /// the runtime's default delegate is in use.
+  final VariableOpsXnnpackDelegate? delegate;
   final MwwGate gate;
 
   /// Feature frames the model consumes per invoke, probed off its input tensor
@@ -129,7 +134,13 @@ class _MwwWorker {
         _sleepAfterChunks = (gate['sleepAfterChunks'] as num).toInt();
       }
       for (final md in (msg['models'] as List)) {
-        final interpreter = Interpreter.fromBuffer(md['tflite'] as Uint8List);
+        final delegate = VariableOpsXnnpackDelegate.create();
+        final interpreter = Interpreter.fromBuffer(
+          md['tflite'] as Uint8List,
+          options: delegate == null
+              ? null
+              : (InterpreterOptions()..addDelegate(delegate)),
+        );
         final inT = interpreter.getInputTensors().first;
 
         // The tensor is authoritative about frames-per-invoke and
@@ -154,6 +165,7 @@ class _MwwWorker {
           zeroPoint,
           inputElements,
           isStop: md['stop'] == true,
+          delegate: delegate,
         ));
         _log(
             'info',
@@ -405,6 +417,7 @@ class _MwwWorker {
     _stopped = true;
     for (final k in _kws) {
       k.interpreter.close();
+      k.delegate?.delete();
     }
     _kws.clear();
     _main.send({'type': WakeMsg.stopped});

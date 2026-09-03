@@ -149,6 +149,23 @@ dependencies {
     //     | grep strtod_l
     // must print nothing, on every ABI. VisionRuntime.kt probes the load
     // on Android 7 and both settings surfaces say so when it fails.
+    //
+    // The second constraint is devices that take CPU cores offline at idle
+    // (the MediaTek Echo Shows, issue #416). Every 1.x release bundles a
+    // Ruy older than its November 2023 cpuinfo null checks, so the first
+    // matrix multiply a built-in kernel runs walks the cache topology and
+    // dereferences null when a core sharing a cache is offline at that
+    // moment: SIGSEGV at TfLiteInterpreterInvoke, one cold start in three
+    // on an Echo Show 8. XNNPACK does not use Ruy, so the wake word isolate
+    // applies XNNPACK by hand with variable operators on, which takes every
+    // node of the microWakeWord models (xnnpack_variable_ops.dart); 1.4.0
+    // happened to delegate them fully by default, 1.3.0, 1.4.1 and 1.4.2 do
+    // not. Before bumping, repeat the check on an Echo Show with the cores
+    // held offline (adb root): echo 0 > /proc/hps/enabled, echo 0 >
+    // /sys/devices/system/cpu/cpu{1,2,3}/online, then restart the app on
+    // microWakeWord a few times and read logcat -b crash; the probeMww
+    // command with compare: true shows both setups' outputs side by side.
+    // Put hps back to 1 afterwards.
     implementation("com.google.ai.edge.litert:litert:$litertVersion")
     // MediaPipe Tasks: the hand landmarker (palm detection, tracking,
     // smoothing and the full landmark model in one graph) behind the Show

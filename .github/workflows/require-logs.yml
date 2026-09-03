@@ -32,7 +32,10 @@ jobs:
 
             // Pull the content of one form section by its heading.
             function section(label) {
-              const re = new RegExp(`### ${label}\\s*\\n([\\s\\S]*?)(?=\\n### |$)`);
+              // Labels carry parentheses ("Logcat (required for ...)"), which
+              // a raw interpolation would read as a capture group.
+              const esc = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+              const re = new RegExp(`### ${esc}\\s*\\n([\\s\\S]*?)(?=\\n### |$)`);
               const m = body.match(re);
               return m ? m[1].trim() : "";
             }

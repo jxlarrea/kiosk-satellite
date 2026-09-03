@@ -828,13 +828,19 @@ class WakeWordManager extends Manager implements NativeAudioSource {
         description:
             'Can this device run a microWakeWord .tflite model? Reports its '
             'tensors and times one invoke. Groundwork for native mww.',
-        params: const {'url': 'absolute .tflite URL'},
+        params: const {
+          'url': 'absolute .tflite URL',
+          'compare': 'true to also run one input sequence through the '
+              'default runtime and through XNNPACK with variable operators '
+              'and report both output streams',
+        },
         handler: (p) async {
           final url = p['url'] as String?;
           if (url == null || url.isEmpty) {
             return const CommandResult.fail('url required');
           }
-          final res = await probeMww(url);
+          final res = await probeMww(url,
+              compare: p['compare'] == true || p['compare'] == 'true');
           log.info(name, 'mww probe: $res');
           return CommandResult.ok(res);
         },
