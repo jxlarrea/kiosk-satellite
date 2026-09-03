@@ -1592,11 +1592,14 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     // tap targets and the bar widens to match.
     double item(double size) =>
         max((size + 16) * scale, kMinInteractiveDimension);
+    // Two toggles a side, present or blank, so the play button sits on
+    // the screen's center line under the cover: a spare slot on one side
+    // once shifted the whole row half a toggle off it.
     final rowWidth =
         item(toggleSize) * 4 +
         item(44) * 2 +
         item(68) +
-        (12 * 4 + 20 * 2 + 16 * 2) * scale;
+        (12 * 2 + 20 * 2 + 16 * 2) * scale;
     // Never wider than the screen: a portrait phone shrinks the row of
     // buttons a little instead of overflowing it.
     final maxWidth = MediaQuery.sizeOf(context).width - 24 * scale;
@@ -1751,7 +1754,6 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                   ...cluster([
                     ('lyrics', lyrics),
                     ('queue', queue),
-                    ('spare', toggleBlank),
                   ], left: false),
                 ],
               ),
