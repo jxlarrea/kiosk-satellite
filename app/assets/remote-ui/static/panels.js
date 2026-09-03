@@ -286,6 +286,15 @@ export async function updateSonosPage() {
   panel.append(h, card);
   const list = document.createElement('div');
   card.appendChild(list);
+  // The parent page's Player select was built from the speakers known
+  // when the page rendered: a change to the list here rebuilds it, so a
+  // speaker just added can be picked without a reload.
+  const refreshPick = () => {
+    const sel = document.querySelector('#tab-sendspin [data-key="sendspin.player"] select');
+    if (!sel || sel.dataset.source !== 'sonos') return;
+    sel.remove();
+    updatePlayerRow();
+  };
   const render = (speakers) => {
     list.textContent = '';
     if (!speakers.length) {
@@ -303,7 +312,7 @@ export async function updateSonosPage() {
       forget.addEventListener('click', async () => {
         const out = await (await api('/api/commands/sonosForget', {
           method: 'POST', body: JSON.stringify({ id: p.id }) })).json();
-        if (out.ok) render(out.data || []);
+        if (out.ok) { render(out.data || []); refreshPick(); }
       });
       r.appendChild(forget);
       list.appendChild(r);
@@ -316,6 +325,7 @@ export async function updateSonosPage() {
         method: 'POST', body: JSON.stringify({ discover }) })).json();
     } catch (_) { out = { ok: false }; }
     render(out.ok ? (out.data || []) : []);
+    if (discover && out.ok) refreshPick();
     if (discover && out.ok && !(out.data || []).length) {
       showToast({ title: 'No Sonos found',
         message: 'Nothing answered on this network. Add one by address.', kind: 'warning' });
@@ -372,6 +382,7 @@ export async function updateSonosPage() {
       shell.close();
       showToast({ title: 'Sonos added', message: (out.data || []).map((p) => p.name).join(', '), kind: 'success' });
       await load(false);
+      refreshPick();
     };
     ok.addEventListener('click', submit);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });

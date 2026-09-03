@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The remote admin's **Player select follows the Sonos page**: a speaker added, found or forgotten there shows up in the Media Player page's Player dropdown at once, where before the page had to be reloaded to pick it.
+
 ## v2026.9.7 - 2026-09-02
 
 ### Added
