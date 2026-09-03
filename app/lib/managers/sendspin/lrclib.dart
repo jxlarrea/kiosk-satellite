@@ -32,12 +32,24 @@ class LrclibUnreachable implements Exception {
 }
 
 class LrclibApi {
+  LrclibApi({LrclibFetch? fetch}) : _fetch = fetch ?? _fetchOverHttp;
+
   static const _host = 'lrclib.net';
+
+  final LrclibFetch _fetch;
 
   /// Synced (LRC) lyrics for the track, or null when it has none there.
   /// Throws [LrclibUnreachable] when the service could not be asked.
   /// [artist] may be a Sendspin slash-joined credit; matching uses the
   /// primary artist.
+  ///
+  /// Three asks, each only if the one before came back empty: the exact
+  /// lookup by title and artist, which answers most tracks in one round
+  /// trip; the search qualified by artist, which forgives a differently
+  /// cased or punctuated title; and last the title-only search the
+  /// client began with, filtered on this side, for a credit LRCLIB
+  /// spells too differently to match. The first two are what keep a
+  /// common title ("Crush", "5am") from losing to twenty namesakes.
   Future<String?> fetchSyncedLyrics({
     required String title,
     required String artist,
@@ -45,10 +57,62 @@ class LrclibApi {
   }) async {
     final query = _stripped(title);
     if (query.isEmpty) return null;
+    final primary = artist.split('/').first.trim();
+    if (primary.isNotEmpty) {
+      final exact = await _get(
+        Uri.https(_host, '/api/get', {
+          'track_name': title.trim(),
+          'artist_name': primary,
+          if (durationSeconds != null) 'duration': '$durationSeconds',
+        }),
+        notFound: 404,
+      );
+      if (exact is Map) {
+        final synced = exact['syncedLyrics'];
+        if (synced is String && synced.trim().isNotEmpty) return synced;
+      }
+      final qualified = await _get(
+        Uri.https(_host, '/api/search', {
+          'track_name': title.trim(),
+          'artist_name': primary,
+        }),
+      );
+      if (qualified is List) {
+        final hit = pickLrclibLyrics(
+          qualified,
+          artist: primary,
+          durationSeconds: durationSeconds,
+        );
+        if (hit != null) return hit;
+      }
+    }
+    final loose = await _get(Uri.https(_host, '/api/search', {'q': query}));
+    if (loose is! List) return null;
+    return pickLrclibLyrics(
+      loose,
+      artist: primary,
+      durationSeconds: durationSeconds,
+    );
+  }
+
+  /// One request, decoded. A status of [notFound] is an empty answer
+  /// (null); any other failure to get a JSON answer is the service out
+  /// of reach.
+  Future<Object?> _get(Uri uri, {int? notFound}) async {
+    final (status, body) = await _fetch(uri);
+    if (status == notFound) return null;
+    if (status != 200) throw LrclibUnreachable('HTTP $status');
+    try {
+      return jsonDecode(body);
+    } catch (_) {
+      throw const LrclibUnreachable('not a result');
+    }
+  }
+
+  static Future<(int, String)> _fetchOverHttp(Uri uri) async {
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 10);
     try {
-      final uri = Uri.https(_host, '/api/search', {'q': query});
       final request = await client.getUrl(uri);
       // LRCLIB asks clients to identify themselves with something a
       // maintainer could contact; the app-wide string carries the link.
@@ -56,20 +120,11 @@ class LrclibApi {
       final response = await request.close().timeout(
         const Duration(seconds: 25),
       );
-      if (response.statusCode != 200) {
-        throw LrclibUnreachable('HTTP ${response.statusCode}');
-      }
       final body = await response
           .transform(utf8.decoder)
           .join()
           .timeout(const Duration(seconds: 10));
-      final decoded = jsonDecode(body);
-      if (decoded is! List) throw const LrclibUnreachable('not a result');
-      return pickLrclibLyrics(
-        decoded,
-        artist: artist.split('/').first.trim(),
-        durationSeconds: durationSeconds,
-      );
+      return (response.statusCode, body);
     } on LrclibUnreachable {
       rethrow;
     } catch (e) {
@@ -79,6 +134,10 @@ class LrclibApi {
     }
   }
 }
+
+/// How the client reaches LRCLIB: the status and body of one GET.
+/// Swapped in tests.
+typedef LrclibFetch = Future<(int, String)> Function(Uri uri);
 
 /// The best synced lyric among LRCLIB search results for a title-only
 /// query. Tiered, strictest first, and with a KNOWN artist that artist
