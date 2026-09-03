@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.8 - 2026-09-02
 
 ### Changed
 - The **Now Playing view's small toggles are a size up**: volume, shuffle, lyrics and queue, and the speaker beside the volume slider, drawn at 32 instead of 24, so on an Echo Show 8, where the controls scale down with the short side of the screen, they read as what they are instead of specks beside the transport.
