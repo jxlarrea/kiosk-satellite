@@ -233,14 +233,14 @@ Give each kind of notification (a leak, a delivery, the laundry) its own `chime_
 
 ## GPS sensor
 
-A tablet that travels (in an RV, say) can tell Home Assistant where it is from its own GPS receiver. Opt-in on **Settings, ESPHome, GPS Sensor**.
+A device that travels (in an RV, say) can tell Home Assistant where it is from its own GPS receiver. Opt-in on **Settings, ESPHome, GPS Sensor**.
 
 | | |
 | --- | --- |
 | **Report location** | Reads the receiver and serves the six location sensors above. Off by default. Turning it on or off re-registers the device, so every entity is unavailable for a couple of seconds |
 | **Update interval** | Seconds between readings, 60 by default. A reading is only pushed when the receiver delivers one, so a parked kiosk costs Home Assistant nothing |
 | **Last coordinates** | Under the switch: the last reading's coordinates, with its accuracy and age, or why there is none |
-| No GPS receiver | The switch is disabled with the reason. Most kiosk-class tablets have none |
+| No GPS receiver | The switch is disabled with the reason. Most kiosk-class devices have none |
 | **Location** grant | The one permission the page asks for, plus location switched on in the device settings. **Grant** asks, or opens the location settings when the switch is what is off |
 | Screen off | The Kiosk Satellite Service attaches Android's location foreground type while the switch is on, so readings keep arriving with the panel off or another app in front |
 | Cold start | The first reading of a run comes from the receiver's last known position; a fresh fix under open sky can take a few minutes. The last reading is kept across restarts |
@@ -323,7 +323,7 @@ Home Assistant shows the scanner as failed when the kiosk genuinely cannot scan.
 
 ## Hardware notes
 
-- Bluetooth and 2.4 GHz Wi-Fi share an antenna on most tablets. A kiosk streaming heavily on 2.4 GHz misses advertisements whatever the software does. Prefer 5 GHz on proxy duty.
+- Bluetooth and 2.4 GHz Wi-Fi share an antenna on most devices. A kiosk streaming heavily on 2.4 GHz misses advertisements whatever the software does. Prefer 5 GHz on proxy duty.
 - On the LineageOS builds for Amazon Echo Shows the Bluetooth service can crash-loop before the radio powers on. No app can scan there. The proxy reports the scanner as failed and waits instead of retry-looping.
 - Some builds declare no Bluetooth LE support at all (a Facebook Portal on Android 9, LineageOS ports that leave `android.hardware.bluetooth_le` out): every scan fails the instant it starts ("code=3 internal error"). The app keeps **Enable Bluetooth proxy** off there, disabled with the reason on both settings pages. Home Assistant sees the kiosk's entities but no scanner. On a ROM you build yourself, adding the feature declaration at `/vendor/etc/permissions/android.hardware.bluetooth_le.xml` and rebooting lifts the gate.
 - The encryption key is generated once and kept. Home Assistant stores it in its config entry, so clearing it forces a re-setup on the Home Assistant side.

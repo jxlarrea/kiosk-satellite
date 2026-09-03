@@ -57,7 +57,7 @@ adb shell settings put secure enabled_accessibility_services me.jxl.kiosk_satell
 adb shell settings put secure accessibility_enabled 1
 ```
 
-Then finish the setup wizard on the tablet or from a browser at
+Then finish the setup wizard on the device or from a browser at
 `http://<fire ip>:2324`.
 
 ## The lock screen
@@ -103,7 +103,7 @@ The switch alone changes nothing: the lock screen reads it when it is
 created, so setting it live reports success, `locksettings get-disabled`
 answers `true` and the next screen-off still raises the lock screen. The
 reboot re-creates it. So does restarting System UI, which keeps adb
-alive on a wall-mounted tablet, provided the screen is on and unlocked
+alive on a wall-mounted device, provided the screen is on and unlocked
 at the time (restarted while the lock screen shows, it comes back
 showing and the switch appears not to have taken). Verified on Fire OS 7
 and 8:
@@ -123,7 +123,7 @@ night instead, never meets the lock screen and needs none of this.
 
 ## The microphone after a reboot
 
-A sideloaded app on Fire OS 8 keeps its microphone until the tablet
+A sideloaded app on Fire OS 8 keeps its microphone until the device
 reboots, and loses it on the way back up. The app asks for it again the
 next time it opens the mic, so the permission prompt reappears once after
 each reboot, on wake word, on a page calling `getUserMedia`, on a gesture
@@ -153,10 +153,10 @@ once on the next mic open, which is a tap.
 | Quirk | Effect | What to do |
 | --- | --- | --- |
 | Fire OS 8 lets no app clear the lock screen | A screen turned off by the app wakes onto the lock screen and sleeps again seconds later, see above. Fire OS 7 is not affected | `adb shell locksettings set-disabled true` and a reboot or a System UI restart, once |
-| Fire OS revokes the mic from sideloaded apps at every boot | The microphone permission holds until the tablet reboots. A boot-time enforcer strips `RECORD_AUDIO` from any app not installed through Amazon, so the app re-asks on the next mic open after a reboot, see above. Camera and location are not touched | Tap Allow on the prompt when it reappears after a reboot. Nothing to pre-empt it |
+| Fire OS revokes the mic from sideloaded apps at every boot | The microphone permission holds until the device reboots. A boot-time enforcer strips `RECORD_AUDIO` from any app not installed through Amazon, so the app re-asks on the next mic open after a reboot, see above. Camera and location are not touched | Tap Allow on the prompt when it reappears after a reboot. Nothing to pre-empt it |
 | Wireless debugging is off after every reboot, on a new port | A setup that ends in a reboot loses adb | Use a cable, or turn Wireless debugging back on afterwards and read the new port from its page |
 | Amazon's WebView has no WebRTC | Go2RTC camera streams cannot play over WebRTC | Nothing: the app falls back to MSE on its own and records the switch in the App Logs. **Prefer MSE over WebRTC** (Settings, Camera Streams, Playback) skips the failed attempt. See [Cameras](cameras.md) |
-| Bluetooth scanning is gated on location | Fire OS 8 is Android 11, where a scanner without the Location permission and Location Based Services on runs and hears nothing | Grant location (the block above) and turn **Location Based Services** on in the tablet's Settings. The Nearby devices row on the Bluetooth Proxy page reads the gate. See [ESPHome](esphome.md) |
+| Bluetooth scanning is gated on location | Fire OS 8 is Android 11, where a scanner without the Location permission and Location Based Services on runs and hears nothing | Grant location (the block above) and turn **Location Based Services** on in the device's Settings. The Nearby devices row on the Bluetooth Proxy page reads the gate. See [ESPHome](esphome.md) |
 | Sticky services restart lazily | A crashed kiosk on other devices is back in about a second; Fire OS takes its time to restart the guard | Nothing: the crash self-heal has a heartbeat alarm for this. Keep the Display over other apps grant, the relaunch needs it |
 | Amazon's WebView can crash the process in its audio path | A native crash in `libaaudio` under the WebView's audio playback takes the app down | Nothing to prevent it; the crash self-heal relaunches the kiosk |
 | The [Home Launcher](home-launcher.md) is not supported | Fire OS does not allow replacing its launcher, so Kiosk Satellite cannot register as the home screen, and the Home Launcher page says so on a Fire. The lock runs deep: Fire OS advertises the home role as available yet denies every request silently, its default-home settings screen closes itself the moment it opens, and even granting the role over adb (`cmd role add-role-holder`) changes nothing, the home button still lands on the Fire launcher | Use **Start on boot** and Kiosk Mode's protections instead |

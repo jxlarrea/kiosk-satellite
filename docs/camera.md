@@ -1,6 +1,6 @@
 # Device Camera
 
-The tablet's own camera, put to work for the smart home: a still camera
+The device's own camera, put to work for the smart home: a still camera
 entity in Home Assistant fed by JPEG snapshots, and an on-device motion
 detector that wakes the screensaver, holds it off while someone is around,
 or feeds a motion sensor in Home Assistant. Everything is processed on the
@@ -21,7 +21,7 @@ Turning it on asks for the Android camera permission. While the switch is
 on and the grant is missing, a notice with a **Grant** button sits right
 under it; if Android has stopped asking, the notice offers the app
 settings instead. In the remote admin the notice explains that the grant
-dialog appears on the tablet screen.
+dialog appears on the device screen.
 
 Devices that were already using **Dismiss on motion** before the Camera
 page existed had the camera enabled automatically on upgrade, once.

@@ -2,7 +2,7 @@
 
 Kiosk Satellite can publish itself to an MQTT broker using Home Assistant's
 [MQTT discovery](https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery),
-turning every tablet into a ready-made Home Assistant device with entities
+turning every kiosk into a ready-made Home Assistant device with entities
 for the screen, the screensaver, key settings and live diagnostics. No YAML,
 no manual configuration in Home Assistant: entities appear on their own as
 soon as the app connects to the broker Home Assistant uses.
@@ -33,12 +33,12 @@ is connected to, and discovery must be enabled there (it is by default).
 and reports what the broker says, so a wrong password or a blocked port is
 visible without reading the log.
 
-Any number of tablets can share one broker and one set of credentials. Each
+Any number of devices can share one broker and one set of credentials. Each
 install generates a permanent random id that namespaces its topics and
 entity ids, so devices never collide; each appears in Home Assistant as its
 own device, named after the **Device name** setting. Each device also
 carries a "Visit" link on its Home Assistant device page pointing at the
-tablet's remote admin (while remote administration is enabled).
+device's remote admin (while remote administration is enabled).
 
 ## Entities
 
@@ -100,7 +100,7 @@ tablet's remote admin (while remote administration is enabled).
 | Last screenshot | sensor | When the Screenshot entity's frame was captured, as a timestamp; like the camera, the entity's own state never moves, so this is what shows a fresh frame arriving. A capture from the remote admin's overview page counts too and refreshes the Screenshot entity the same way. |
 | Motion | binary_sensor | Camera-based motion, with the **Motion sensor** setting on (Camera settings). The app only ever publishes motion; the clearing is Home Assistant's `off_delay`, set from the **Clear after** setting, so a broker reconnect never replays stale motion. See the [Device Camera doc](camera.md). |
 
-All entities carry availability: they go unavailable the moment the tablet
+All entities carry availability: they go unavailable the moment the device
 drops off the broker (broker-side last will, so it works however the
 connection dies) and recover automatically when it returns. The two
 deliberate exceptions are Last seen and Connectivity, which stay readable
@@ -174,11 +174,11 @@ by the setup wizard and surfaced in Settings when missing:
   kiosksatellite_<id>` (Settings → Logs), that Home Assistant's MQTT
   integration is connected to the same broker, and that the discovery
   prefix matches.
-- **Two tablets keep knocking each other offline**: your broker only allows
+- **Two devices keep knocking each other offline**: your broker only allows
   one session per username. Kiosk Satellite already uses a unique client id
   per device, so this is broker policy, not id collision. On EMQX the
   culprit is the "Use Username as Client ID" option (`clientid_override`);
-  turn it off, or give each tablet its own broker login. The app detects
+  turn it off, or give each device its own broker login. The app detects
   the resulting reconnect storm and backs off for 30 seconds at a time, so
   the log will show `MQTT reconnect storm; backing off` while this is
   happening.

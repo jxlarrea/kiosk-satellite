@@ -1,6 +1,6 @@
 # Kiosk Mode and Lockdown Mode
 
-Two layers of protection for the tablet on the wall. **Kiosk Mode** is the
+Two layers of protection for the kiosk on the wall. **Kiosk Mode** is the
 persistent setup: it locks the device into Kiosk Satellite, with a
 configurable set of protections that survive reboots and stay on until you
 turn them off. **Lockdown Mode** is the momentary switch on top: one toggle
@@ -77,7 +77,7 @@ says when it is missing.
 ## Lockdown Mode
 
 Lockdown Mode makes the screen untouchable while the
-dashboard stays visible and live: the tablet remains glanceable, but every
+dashboard stays visible and live: the device remains glanceable, but every
 tap lands on the shield and shows a brief "Screen is locked" notice instead
 of reaching the page. While the mode holds, every Kiosk Mode protection
 arms at runtime without changing the stored kiosk settings, wake word
@@ -94,7 +94,7 @@ gesture on the glass.
 | Setting | What it does |
 | --- | --- |
 | Enable Lockdown Mode | Disables screen interactions until turned off either from Home Assistant or with the exit gesture. |
-| Blackout | Paints the locked screen solid black and pauses the dashboard's rendering underneath, so a locked tablet also costs less power. The panel stays lit and the device stays reachable. |
+| Blackout | Paints the locked screen solid black and pauses the dashboard's rendering underneath, so a locked device also costs less power. The panel stays lit and the device stays reachable. |
 | Allow screensaver | Lets the screensaver keep running while locked, for whoever prefers the clock over a live dashboard. Dismiss on motion stays deactivated while the mode holds, so someone walking past never unlocks the view; normal behavior returns when the lock lifts. |
 | Lockdown exit gesture | The same options as the kiosk exit gesture, its own setting so the two can differ. Fast taps anywhere turn the mode off, after the kiosk PIN if one is set. |
 
@@ -122,7 +122,7 @@ what it is for and reads Granted, Missing (something switched on needs it
 and does not have it) or Not granted (nothing needs it yet, and it can
 still be given ahead of time). Note that granting always happens on the
 device: the buttons there and in the remote admin both open an Android
-dialog or settings screen on the tablet, because Android has no way to
+dialog or settings screen on the device, because Android has no way to
 accept a permission on someone's behalf. Some manufacturers also add their
 own battery or autostart manager on top of Android's, which no app can
 read or request; if the app keeps being killed with every row granted,

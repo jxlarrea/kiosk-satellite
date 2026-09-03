@@ -172,7 +172,7 @@ JSON messages, `{type, ...}`:
   `screensaverstop` and `cameraview` are the diffs to the snapshot's three
   states), `log` (app log lines),
   `console` (`{type: 'console', level, message, time}`, the WebView's
-  JavaScript console, streamed live so you can watch a wall-mounted tablet's
+  JavaScript console, streamed live so you can watch a wall-mounted kiosk's
   page logs remotely; fetch history first from `GET /api/console`).
 - Client → server: `subscribe {topics: ['state','events','logs']}`,
   `command {name, params}` (same registry as REST).

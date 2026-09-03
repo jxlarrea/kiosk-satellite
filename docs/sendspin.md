@@ -3,13 +3,13 @@
 Kiosk Satellite shows and controls music on screen: a floating now-playing
 card over the dashboard and an optional full-screen "Now Playing" view that
 stands in for the screensaver while music plays, with artwork, transport
-controls, lyrics and the queue. The music can be the tablet's own or
+controls, lyrics and the queue. The music can be the device's own or
 another player's.
 
-The tablet's own player is [Sendspin](https://www.sendspin-audio.com/),
+The device's own player is [Sendspin](https://www.sendspin-audio.com/),
 the synchronized multi-room audio protocol native to
 [Music Assistant](https://www.music-assistant.io/). Enable it and the
-tablet appears as a player in Music Assistant automatically, named after
+device appears as a player in Music Assistant automatically, named after
 the device name, playing in sample-accurate sync with every other Sendspin
 speaker in the house. Through the Music Assistant integration it also
 shows up in Home Assistant as a `media_player` entity with full metadata,
@@ -17,7 +17,7 @@ artwork and volume control.
 
 Or the surfaces follow a player elsewhere: any Music Assistant player, any
 Home Assistant media player or a Sonos speaker directly, for the wall
-tablet whose job is to show and steer the kitchen speakers without making
+device whose job is to show and steer the kitchen speakers without making
 any music itself.
 
 Browsing and queueing happen in Music Assistant (or its dashboard card),
@@ -43,14 +43,14 @@ appears.
 
 ### Sendspin Player
 
-The tablet as a synchronized Music Assistant player. The page leaves the
+The device as a synchronized Music Assistant player. The page leaves the
 settings while another player is followed, since the local player never
 runs in that mode.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Enable Sendspin player | off | The master switch. |
-| Server | | `host:port` of the Sendspin server (Music Assistant listens on port 8927). Leave empty to discover the server via mDNS; note that mDNS does not cross subnets, so set the address explicitly when the tablet and the server live on different networks. |
+| Server | | `host:port` of the Sendspin server (Music Assistant listens on port 8927). Leave empty to discover the server via mDNS; note that mDNS does not cross subnets, so set the address explicitly when the device and the server live on different networks. |
 | Preferred audio codec | FLAC | FLAC (lossless), Opus (efficient) or PCM (uncompressed). The server makes the final choice from what the device offers. |
 | Audio sync offset | 0 ms | Negative plays this device earlier, for speakers that lag behind the group (Bluetooth). Applies live. |
 | Duck volume during voice interactions | 10% | While the voice assistant listens or speaks, music drops to this fraction of its volume. Capped at 25% so wake word and speech detection stay reliable. |
@@ -84,7 +84,7 @@ player.
 | --- | --- | --- |
 | Enable lyrics | on | Lyrics for the followed Sonos room, from Music Assistant. Needs the Music Assistant server address and token; without them the switch is disabled and says so. |
 | Adjust the group volume | on | While the followed room plays in a group, the Now Playing volume slider sets the whole group's volume, the way the Sonos app's group slider does. Off, only that room's. |
-| Speakers | | Every room the kiosk knows, each with a Forget. **Search** finds Sonos speakers on the tablet's own network, which must be on the same VLAN as the device to be auto discovered. **Add by address** asks for a speaker's IP for one the search cannot reach and adds the whole household from it. |
+| Speakers | | Every room the kiosk knows, each with a Forget. **Search** finds Sonos speakers on the device's own network, which must be on the same VLAN as the device to be auto discovered. **Add by address** asks for a speaker's IP for one the search cannot reach and adds the whole household from it. |
 
 ### Floating Player
 
@@ -112,7 +112,7 @@ player.
 
 By default the floating card and the "Now Playing" screen belong to this
 device's own player: what plays here is what they show. **Player source**
-points them at a player elsewhere instead, for the wall tablet whose job
+points them at a player elsewhere instead, for the wall-mounted device whose job
 is to show and steer the music without making any of it and the
 **Player** dropdown under it lists that source's players:
 
@@ -128,7 +128,7 @@ is to show and steer the music without making any of it and the
   interface, with no Home Assistant or Music Assistant in between. The
   list names every room of the household the way the Sonos app does,
   rooms playing together as one entry. The speakers come from the Sonos
-  page: found by its search on the tablet's own network or added there by
+  page: found by its search on the device's own network or added there by
   address for a speaker on another VLAN, which the search never reaches.
 
 Pick a player and the card, the full-screen view and the transport buttons
@@ -197,7 +197,7 @@ selected: this device's own or the followed Music Assistant player when
 **Player** points at one.
 
 **Close after inactivity** puts the dashboard back on its own, for the wall
-tablet whose visitor queued a song and walked away: up to a minute without a
+device whose visitor queued a song and walked away: up to a minute without a
 touch anywhere on the Music Assistant page and it closes itself. Scrolling
 and tapping count, so reading a long album page keeps it up. At zero it
 stays until someone closes it, which is what a desk or a kitchen counter
@@ -214,7 +214,7 @@ still lead back to the dashboard.
 would land on its login screen every time storage is cleared. Instead the
 token above is handed to the page as it loads, and the interface opens
 already signed in, as the user that token belongs to. Give the token the
-rights that user should have on the tablet: a read-only token browses but
+rights that user should have on the device: a read-only token browses but
 cannot queue. Signing in by hand still works and is left alone when it
 happens, and the token is only ever given to pages on the configured server.
 
@@ -419,7 +419,7 @@ once a second while playing and every few seconds otherwise, the play
 mode and the volume a little less often, the household topology every
 half minute and the queue through the speaker's ContentDirectory. Polling
 rather than events keeps it working across VLANs, where a speaker could
-never reach an event callback on the tablet.
+never reach an event callback on the device.
 
 The implementation is adapted from
 [SendspinDroid](https://github.com/chrisuthe/SendspinDroid) (MIT), whose
@@ -443,7 +443,7 @@ license and attribution ship in the source tree.
   boundary. The card keeps the previous song on screen and cross-fades
   when the update arrives.
 - **No Sonos found**: the Sonos page's search is a multicast on the
-  tablet's own network, which a speaker on another VLAN never hears. Add
+  device's own network, which a speaker on another VLAN never hears. Add
   it by address on that page instead; the kiosk needs to reach the
   speaker on port 1400, which a router between the two usually allows.
 - **A followed Home Assistant player shows no track**: the entity has to

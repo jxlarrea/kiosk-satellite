@@ -18,10 +18,10 @@ code on screen, photos from the HA media library.
    permissions are involved.
 2. In Home Assistant, the kiosk is discovered automatically by the
    built-in [DLNA Digital Media Renderer](https://www.home-assistant.io/integrations/dlna_dmr/)
-   integration when Home Assistant and the tablet share a subnet, and
+   integration when Home Assistant and the device share a subnet, and
    appears under Settings → Devices & Services as a discovered device
    named after the kiosk's device name.
-3. On segmented networks (the tablet and Home Assistant on different
+3. On segmented networks (the device and Home Assistant on different
    VLANs), discovery multicast does not cross over: add the integration
    manually instead, with the URL `http://<device-ip>:<port>/device.xml`,
    where the port is the one shown in Settings → DLNA Renderer → Server
@@ -69,7 +69,7 @@ and play.
 
 ## Troubleshooting
 
-- **The kiosk is not discovered**: Home Assistant and the tablet are
+- **The kiosk is not discovered**: Home Assistant and the device are
   probably on different subnets. Add the DLNA Digital Media Renderer
   integration manually with `http://<device-ip>:<port>/device.xml`, taking
   the port from Settings → DLNA Renderer → Server port.

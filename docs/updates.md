@@ -1,7 +1,7 @@
 # Updating Kiosk Satellite
 
 The app updates itself from the GitHub releases: it notices a new release,
-downloads it on the tablet and hands it to Android's installer. How much of
+downloads it on the device and hands it to Android's installer. How much of
 that is hands-free depends on the Android version and on device ownership.
 
 ## How the app finds an update
@@ -24,7 +24,7 @@ until the app has seen the release. To check right away:
 
 ## Installing
 
-All three surfaces start the same download on the tablet. Before
+All three surfaces start the same download on the device. Before
 downloading, the app asks GitHub once more and takes the newest release, so
 nothing is left waiting behind the one that installs. Progress shows where
 the download was started and in the Home Assistant entity. The download
@@ -34,8 +34,8 @@ can be cancelled from the device or the remote admin.
 
 | Device | What happens at install |
 | --- | --- |
-| Android 12 and newer | The first in-app update shows Android's install confirmation on the tablet screen. Every update after that installs silently. |
-| Android 11 and older | Every update shows Android's install confirmation on the tablet screen. |
+| Android 12 and newer | The first in-app update shows Android's install confirmation on the device screen. Every update after that installs silently. |
+| Android 11 and older | Every update shows Android's install confirmation on the device screen. |
 | App is the device owner | Every update installs silently, on any Android version. |
 
 The Android 12 rule keys on the installer of record. The first in-app
@@ -75,7 +75,7 @@ relaunch needs the **Display over other apps** permission. Without it the
 update installs and the kiosk stays closed until someone taps the icon.
 The setup wizard requests the permission, the update dialog warns when it
 is missing and the remote admin's Updates card offers a button that opens
-the grant screen on the tablet. Over `adb`:
+the grant screen on the device. Over `adb`:
 
 ```
 adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow
@@ -105,7 +105,7 @@ Everything else about a Portal is in [Meta Portal](portal.md).
 ## Amazon Fire tablets
 
 Updates on a Fire are never hands-free. Fire OS 8 is Android 11, so
-every update shows Android's confirmation on the tablet, and the tier
+every update shows Android's confirmation on the device, and the tier
 that removes it, device ownership, cannot be applied to any Fire:
 Amazon provisions its Parental Controls as profile owner on the main
 user at first boot, Android allows one owner per user and
@@ -117,7 +117,7 @@ the first block.
 
 What does work: the updater downloads the release, brings Android's
 confirmation to the front (standing Kiosk Mode down for it) and re-arms
-the kiosk after the install. So an update is one tap on the tablet, or
+the kiosk after the install. So an update is one tap on the device, or
 one tap after the Home Assistant Install button or the remote admin's
 Install button started the download. The install unknown apps grant is
 the same as anywhere else, over `adb` or under Settings, Security &
@@ -137,7 +137,7 @@ see [Kiosk and Lockdown](kiosk.md#going-further-device-ownership).
 > has no command to take it back and the app cannot give it up on its own.
 > While it holds the role, Kiosk Satellite cannot be uninstalled and its
 > device admin cannot be deactivated. Everything on the device goes with
-> the reset that undoes it. Do this on a tablet that stays on the wall as a
+> the reset that undoes it. Do this on a device that stays on the wall as a
 > panel, never on someone's daily driver.
 
 Android refuses the command while any account is signed in on the device
@@ -145,7 +145,7 @@ Android refuses the command while any account is signed in on the device
 factory reset. It also refuses on a device that already has an owner:
 Amazon Fire tablets provision Parental Controls as profile owner at first
 boot, so no Fire can take this tier at all, whatever its accounts say. See
-[Amazon Fire tablets](fire.md). With the tablet on `adb`:
+[Amazon Fire tablets](fire.md). With the device on `adb`:
 
 ```
 adb shell dpm set-device-owner me.jxl.kiosk_satellite/.KioskAdminReceiver
@@ -171,5 +171,5 @@ in-app update, since `adb` is now the installer of record.
 | The Update entity still shows the old version after the install | It refreshes when the app reconnects after its relaunch. If the app did not come back, see the next row. |
 | The update installed but the app stayed closed | **Display over other apps** is missing. Tap the app icon, then grant it so the next update returns on its own. |
 | Nothing happens after the download on Android 11 or older | The confirmation could not show. If it never appears, the ROM may have no way to give the install unknown apps grant. Grant it over `adb` if the toggle exists or make the app the device owner. On a Meta Portal the confirmation shows and the install fails afterwards, see [Meta Portal](#meta-portal). On an Amazon Fire the confirmation is the most that can be had, see [Amazon Fire tablets](#amazon-fire-tablets). |
-| The download fails or stalls | The tablet cannot reach GitHub or the transfer went quiet and the app gave up. The Logs page of the remote admin shows why. The notice stays up, so the download can be started again. |
+| The download fails or stalls | The device cannot reach GitHub or the transfer went quiet and the app gave up. The Logs page of the remote admin shows why. The notice stays up, so the download can be started again. |
 | An update on Android 12+ asked for confirmation again | Something else installed the app in between, usually `adb`. One confirmed in-app update makes the following ones silent again. |

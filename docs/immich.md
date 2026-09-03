@@ -119,7 +119,7 @@ photo may be cropped to get there.
 | Setting | What a photo gets |
 | --- | --- |
 | Off | Its full frame between black bars. |
-| Smart (default) | Enlarged to cover the whole panel if its shape is close enough to the screen's, within about a 25 percent crop along one axis. This admits the common 4:3 and 16:9 camera frames on a landscape tablet in either orientation. Portrait and square photos, which such a crop would ruin, keep their full frame and get the photo itself, enlarged, blurred and dimmed, as the backdrop instead of black bars. |
+| Smart (default) | Enlarged to cover the whole panel if its shape is close enough to the screen's, within about a 25 percent crop along one axis. This admits the common 4:3 and 16:9 camera frames on a landscape screen in either orientation. Portrait and square photos, which such a crop would ruin, keep their full frame and get the photo itself, enlarged, blurred and dimmed, as the backdrop instead of black bars. |
 | Always | Enlarged to cover the panel whatever its shape. Nothing is ever framed or letterboxed, at the cost of the crop: a 4:3 photo on a 2:1 panel loses roughly a third of its height, and a portrait photo on a landscape panel is cut down to a narrow band of its middle. |
 
 **Always** has no way to know what a photo is of, so whatever the crop
@@ -233,7 +233,7 @@ its spot, so both are always readable at once.
   offline). Validation moves on to the next asset, and the screensaver
   skips such photos when it meets them.
 - **"Could not reach the Immich server"**: the address is wrong, the
-  server is down, or the tablet cannot route to it. This message is
+  server is down, or the device cannot route to it. This message is
   reserved for genuine transport failures (DNS, refused connections,
   timeouts); a server that answers with an error shows the HTTP status or
   the missing permission instead. The screensaver keeps trying on its own,

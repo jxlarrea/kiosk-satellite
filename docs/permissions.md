@@ -137,7 +137,7 @@ It holds two locks through screen-off: the high-performance Wi-Fi lock
 lock while the panel is dark, so the timers behind the keepalives fire on
 time instead of waiting for the next interrupt. The wake lock is the
 service's one setting, **Keep the CPU awake while the screen is off**, on
-by default; turn it off on a tablet that runs on battery.
+by default; turn it off on a device that runs on battery.
 
 **Settings, Device, Kiosk Satellite Service** shows the service on the
 device and in the remote admin alike: whether it is running and holds its

@@ -2,7 +2,7 @@
 
 The **Optimizations** group under Settings, then **Home Assistant
 Configuration**, collects the switches that keep a dashboard fast and its
-connection healthy on kiosk hardware. A wall tablet is not a laptop: it runs
+connection healthy on kiosk hardware. A wall-mounted device is not a laptop: it runs
 one page forever, often on a slow chipset, and spends most of its life behind
 a screensaver or with the screen off. Each optimization exists because one of
 those realities hurts a stock browser setup.
@@ -58,7 +58,7 @@ camera cards, ~5000 subscribed entities) under a clock screensaver:
 | CPU temperature | 68°C | 41°C |
 
 All of that saved work is heat: on the same busy dashboard the CPU ran more
-than 20°C cooler with the setting on. For a tablet mounted
+than 20°C cooler with the setting on. For a device mounted
 flat against a wall, running warm around the clock, that is the difference
 that matters for comfort and hardware longevity.
 
@@ -92,7 +92,7 @@ two are indistinguishable underneath, so the dashboard keeps drawing.
 
 A dashboard subscribes to every entity in Home Assistant, and a large
 installation can push thousands of state updates a minute at a page that
-displays thirty of them. Older tablets spend so much main-thread time
+displays thirty of them. Older devices spend so much main-thread time
 processing that firehose that scrolling visibly stutters.
 
 With this on, the app reads the current view, works out which entities it
@@ -116,7 +116,7 @@ To put the optimizations in context, here is the same dashboard on the same
 device, once under a stock install of Fully Kiosk Browser and once under
 Kiosk Satellite with the optimizations at their defaults. The device is a
 Galaxy Tab S8+ (Snapdragon 8 Gen 1, Android 16), and the page is a real
-production tablet dashboard: live camera card, animated graphs, and a wall
+production kiosk dashboard: live camera card, animated graphs, and a wall
 of updating sensors. Both apps loaded the identical dashboard URL from the
 same instance, and both render through the same system WebView, so the
 engine is not the variable; what the app does around the engine is.
@@ -150,7 +150,7 @@ that goes fully idle instead of staying half-busy forever, and an SoC that
 fell from 57°C to 43°C within a minute of the screensaver engaging. RAM is
 the one metric that goes the other way: Kiosk Satellite holds a few
 hundred MB more, its Flutter UI, wake word model and caches on top of the
-same WebView, which is a fair trade on a tablet with memory to spare and
+same WebView, which is a fair trade on a device with memory to spare and
 worth knowing about on one without.
 
 Methodology, for anyone reproducing it: each app was measured alone with

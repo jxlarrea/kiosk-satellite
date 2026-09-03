@@ -27,7 +27,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
 
 &bull; **Guided setup**: a five-step wizard connects to Home Assistant, picks
   the dashboard, detects Voice Satellite, and requests only the Android
-  permissions your choices need. Run it on the tablet or from a browser
+  permissions your choices need. Run it on the device or from a browser
   on your computer.
 
 &bull; **[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration), natively**: the kiosk gets its own
@@ -45,10 +45,10 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   microphone and the rest of the https-only browser surface work with no
   certificates or reverse proxy. Enabled automatically during setup.
   
-&bull; **Fast dashboards on slow tablets**: optional
+&bull; **Fast dashboards on slow devices**: optional
   [optimizations](docs/optimizations.md) filter Home Assistant's state
   stream down to just the entities on the view currently on screen,
-  turning constant stutter on older tablets into smooth scrolling, and
+  turning constant stutter on older devices into smooth scrolling, and
   pause the dashboard's rendering while the screensaver covers it, taking
   a busy dashboard's browser from over two full cores and 70% GPU to a
   fraction of one core and 0%. The connection and Voice Satellite keep
@@ -61,7 +61,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
 
 &bull; **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake on power button, and
-  lock-task support on device-owner provisioned tablets.
+  lock-task support on device-owner provisioned kiosks.
 
 &bull; **Gestures**: map corner taps, corner holds, multi-finger taps and
   holds, a knock-code corner sequence, 2 to 4 claps (the Clapper,
@@ -71,7 +71,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   call a Home Assistant service or script, open another app and more,
   all invisible to guests.
 
-&bull; **Media player**: the tablet doubles as a synchronized
+&bull; **Media player**: the device doubles as a synchronized
   [Sendspin](https://www.sendspin-audio.com/) speaker for Music
   Assistant, in sample-accurate sync with every other Sendspin player in
   the house, with metadata, artwork and volume in Home Assistant. Or it
@@ -107,7 +107,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
 </p>
 
 &bull; **Native ESPHome device**: enable ESPHome and Home Assistant
-  discovers every tablet on its own, no broker, no YAML, one pasted key.
+  discovers every device on its own, no broker, no YAML, one pasted key.
   The device carries the full entity catalog: a screen light, volume
   sliders, screensaver and settings switches, action buttons, camera view
   and dashboard selects, an update entity, a live camera, and the whole
@@ -123,7 +123,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   custom JavaScript injection, and self-signed certificate support.
 
 &bull; **Open other apps from the dashboard**: point any card's tap action at
-  `app://<package>` and the tablet opens that app, with the kiosk still
+  `app://<package>` and the device opens that app, with the kiosk still
   running behind it.
 
   ```yaml
@@ -134,7 +134,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   
 &bull; **Camera Streams**: import streams from Go2RTC or add WebRTC, MSE, HLS or MJPEG cameras
   manually, then arrange up to four cameras into responsive
-  [camera views](docs/cameras.md) that can be opened from the tablet,
+  [camera views](docs/cameras.md) that can be opened from the device,
   Remote Admin or Home Assistant.
 
 <p align="center">
@@ -146,7 +146,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
 turns a Home Assistant dashboard into a full hands-free voice assistant
 with wake word, conversations, timers and announcements. It runs entirely in the
-browser, which is exactly its limit on a wall tablet: browsers can't listen
+browser, which is exactly its limit on a wall-mounted device: browsers can't listen
 while the screen is off, browser-side wake-word engines are expensive, and
 on a plain http instance the browser refuses the microphone altogether.
 
@@ -163,7 +163,7 @@ always-on, cheaper, and screen-independent.
 The performance difference is one of the main reasons to use Kiosk
 Satellite. Native inference runs the entire wake-word pipeline many times
 faster than realtime on the CPU alone (tens of times faster on a modern
-tablet) at a fraction of the CPU and battery a browser-side engine burns,
+device) at a fraction of the CPU and battery a browser-side engine burns,
 and it keeps the dashboard perfectly smooth while listening. It is
 efficient enough that vsWakeWord now runs even on an Amazon Echo Show 5,
 on CPU, with no GPU or accelerator needed.
@@ -179,12 +179,12 @@ word and the kiosk brings the dashboard back and answers.
 | Wake word with the screen off | ❌ | ✅ |
 | Wake word with another app in front | ❌ | ✅ Returns to the dashboard on trigger |
 | Mic access in non-HTTPS HA instances | ❌ | ✅ |
-| Detection cost | ⚠️ Browser based, heavy on tablets | ✅ Native CPU inference, 10x-30x faster |
+| Detection cost | ⚠️ Browser based, heavy on the device | ✅ Native CPU inference, 10x-30x faster |
 | Wake word on low-end hardware | ⚠️ Struggles | ✅ CPU only, no GPU needed |
 | Survives reboots | ⚠️ Manual relaunch | ✅ Start on boot |
 
 Voice Satellite is not required, since Kiosk Satellite is a complete Home
-Assistant kiosk on its own, but together they make a tablet into something
+Assistant kiosk on its own, but together they make a device into something
 very close to a purpose-built voice hub.
 
 ## Installation
@@ -193,7 +193,7 @@ Kiosk Satellite is distributed as a free APK for sideloading:
 
 1. Download the latest APK from the
    [releases page](../../releases).
-2. Copy it to the tablet (or download it there directly) and open it.
+2. Copy it to the device (or download it there directly) and open it.
    Allow installing from unknown sources when Android asks.
 3. Open the app and follow the setup wizard. The first step names the
    device, which is what Home Assistant and the network will call it. Tip:
@@ -202,7 +202,7 @@ Kiosk Satellite is distributed as a free APK for sideloading:
    token is much easier than typing it on glass.
 
 **Requirements:** Android 7.0 or newer, a Home Assistant instance you can
-reach from the tablet, and a long-lived access token (HA profile →
+reach from the device, and a long-lived access token (HA profile →
 Security → Long-lived access tokens). For voice, install
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
 from the default HACS repository.
@@ -217,8 +217,8 @@ from the default HACS repository.
 - [Camera streams](docs/cameras.md): Go2RTC import, camera views, and Home Assistant controls
 - [Screen](docs/screen.md): keep-awake, default brightness, and adaptive brightness from the device's own light sensor.
 - [Screensavers](docs/screensavers.md): the modes, schedule, brightness, motion wake, and what starts and dismisses them.
-- [Device camera](docs/camera.md): the tablet's own camera as a Home Assistant still camera and motion detector.
-- [Media Player](docs/sendspin.md): the floating player and Now Playing view for the tablet's own Sendspin player, any Music Assistant or Home Assistant media player or a Sonos speaker followed directly.
+- [Device camera](docs/camera.md): the device's own camera as a Home Assistant still camera and motion detector.
+- [Media Player](docs/sendspin.md): the floating player and Now Playing view for the device's own Sendspin player, any Music Assistant or Home Assistant media player or a Sonos speaker followed directly.
 - [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 - [At a Glance](docs/at-a-glance.md): a row of entity states on the screensaver.

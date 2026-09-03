@@ -2,7 +2,7 @@
 
 A row of Home Assistant entity states on the screensaver, for the things
 people check in passing: is the garage still open, is the front door locked,
-is the gate shut. The answer is there without waking the tablet and finding a
+is the gate shut. The answer is there without waking the device and finding a
 dashboard.
 
 ## Setup
@@ -101,7 +101,7 @@ while the kiosk is in normal use.
 
 It deliberately does not read the states off the dashboard the kiosk is
 showing. **Filter dashboard updates** (Settings, Home Assistant Setup,
-Optimizations) exists to stop weak tablets processing entities they do not
+Optimizations) exists to stop weak devices processing entities they do not
 display, and feeding the At a Glance entities back through the page would give
 back the work that setting saves: a rapidly changing entity, a power meter
 say, would cost the dashboard real work every second it updated. The row

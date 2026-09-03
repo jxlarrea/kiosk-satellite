@@ -31,7 +31,7 @@ through Home Assistant Cloud work too.
 
 Open Settings, then Camera Streams, and select **Add Go2RTC server**.
 
-Enter the base URL of a Go2RTC server that the tablet can reach, such as:
+Enter the base URL of a Go2RTC server that the device can reach, such as:
 
 ```text
 http://192.168.1.10:1984
@@ -204,7 +204,7 @@ H.264 substream that can be used in the view.
 
 **Allow H.265 streams** (Settings, then Camera Streams, then Playback) turns
 the restriction off for devices that really do decode H.265, such as recent
-high-end tablets. A device that cannot decode it shows a blank image instead.
+high-end devices. A device that cannot decode it shows a blank image instead.
 
 Whatever the setting, a stream that connects but decodes nothing says so on
 the tile and writes a warning to the App Logs naming the codec, so a camera
@@ -275,5 +275,5 @@ A brief ICE disconnect is given a few seconds to heal before the session is
 renegotiated, so a flaky network costs a stutter rather than a black tile.
 
 Four high-resolution streams can exceed the hardware decoder capacity of older
-tablets. Prefer H.264 substreams at 720p or lower, with a reduced frame rate,
+devices. Prefer H.264 substreams at 720p or lower, with a reduced frame rate,
 for multi-camera grids.

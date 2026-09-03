@@ -52,7 +52,7 @@ Maximum, and 40 lx (a lit living room in the evening) sits halfway.
 
 **Set the two light levels against the reading, not against a scale.**
 Light sensors disagree wildly about what a lit room reads: an Echo Show 8
-reports around 50 lx with every light on, a tablet by a window reports
+reports around 50 lx with every light on, a device by a window reports
 thousands. That is why the reading is on the page and the levels are
 typed rather than slid. Watch the reading with the lights on and put
 Bright room a little under it; watch it at night and put Dark room a

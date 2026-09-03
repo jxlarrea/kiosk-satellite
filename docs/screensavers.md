@@ -128,7 +128,7 @@ of parking an error page for the night.
 
 **Zoom level** scales the whole page, the same way the Browser page's
 zoom level scales the dashboard, and applies to this screensaver only.
-Below 1x fits a page built for a monitor onto a small tablet, above 1x
+Below 1x fits a page built for a monitor onto a small screen, above 1x
 enlarges one meant to be read up close. Applies live to a page already
 on screen.
 
@@ -188,7 +188,7 @@ Media) share one machinery:
 - The playlist is read once per activation, so new photos appear the
   next time the screensaver starts, not mid-session.
 - Photos are decoded at panel resolution and shown slides are released,
-  so a folder of huge originals does not exhaust a low-RAM tablet.
+  so a folder of huge originals does not exhaust a low-RAM device.
 - **Stepping from Home Assistant**: the **Screensaver next slide** and
   **Screensaver previous slide** buttons on the [ESPHome](esphome.md)
   device move the showing slideshow by one, and the new slide gets a
@@ -351,7 +351,7 @@ worse than missing it until morning.
 The screensaver stands down while another app is in front of the kiosk:
 the idle clock stops counting the moment the app goes behind (an app
 opened from the App Launcher, a gesture or Home Assistant, or Home pressed
-on a tablet without kiosk mode), a screensaver already up ends so the
+on a device without kiosk mode), a screensaver already up ends so the
 other app gets the brightness back, and the clock starts over from the
 moment the kiosk returns. Brightness is a device-wide setting, so a
 screensaver dimming it under someone using another app would dim that app.
@@ -557,7 +557,7 @@ instead of the camera, under Proximity Detection:
   to speak of: the sensor is a single interrupt line.
 
 No camera, no permission and it works in the dark. The catch is the
-sensor itself. Kiosk-class tablets (the Galaxy Tab line, Fire tablets,
+sensor itself. Kiosk-class devices (the Galaxy Tab line, Fire tablets,
 the Echo Show) mostly have none, and on those the switch is disabled with
 the reason. Modern phones usually have one, but many expose a virtual
 sensor made for calls, typically named "palm proximity", that only

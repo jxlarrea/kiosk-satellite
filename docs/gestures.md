@@ -2,7 +2,7 @@
 
 Touch, clap and hand gestures that trigger actions, for the kiosk that should stay clean.
 The dashboard shows nothing extra, guests see nothing to press, and the
-person who set the tablet up can still jump to an admin view, run a script
+person who set the device up can still jump to an admin view, run a script
 or trigger an automation with a touch shape nobody performs by accident.
 
 Gestures generalize the kiosk exit gesture: where that one is fixed (fast
@@ -24,7 +24,7 @@ trigger. The same page is in the remote admin. Anything configured there
 works whenever the app is running, kiosk mode or not.
 
 Kiosk Mode has one related switch, **Disable Gestures**, for the locked
-tablet that should ignore them: while kiosk mode is on with that switch
+device that should ignore them: while kiosk mode is on with that switch
 set, the gestures stay dormant, and they arm again the moment lockdown
 ends.
 
@@ -171,7 +171,7 @@ The camera side:
 - A hand is looked at within a quarter second of the picture changing
   with it coming up, and the first look that reads the configured count
   fires the action, about half a second after the hand is up on a slow
-  tablet. A hand busy with something else (a vape or a cup at the
+  device. A hand busy with something else (a vape or a cup at the
   mouth) can read as a count for a look and fire; speed was chosen over
   a second confirming look. The count then has to change (or the hand
   go) before the same mapping fires again, so switching from two

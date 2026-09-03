@@ -145,7 +145,7 @@ natively, so during a voice turn no audio crosses the JS bridge in either
 direction. The page keeps everything else: the session policy, the overlay
 UI, and every pipeline event, which the app forwards verbatim. The audio
 methods mirror the page's own send/buffer/mute choreography one to one, so
-the chime mute window, cross-tablet dedupe and seamless one-shot buffering
+the chime mute window, cross-device dedupe and seamless one-shot buffering
 run unchanged.
 
 The delegation is negotiated transparently, like the wake-word handoff:
