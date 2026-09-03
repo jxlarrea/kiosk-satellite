@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.10 - 2026-09-03
 
 ### Added
 - **A Default dashboard select among the ESPHome configuration entities.** The Dashboard view select only navigates for the moment, so a kiosk that crashed or restarted came back on whatever dashboard was picked on the device or in the remote admin. The new select carries the same `dashboard/view` options and rewrites the start URL while leaving the page where it is, so an automation can make the night dashboard the one the kiosk always returns to and use the Dashboard view select when it should show right away.
