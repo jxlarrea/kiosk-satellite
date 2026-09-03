@@ -1,114 +1,64 @@
-# Microphone settings
+# Microphone Settings
 
-Settings → Screen & Audio → **Microphone settings**.
+Navigate to **Settings > Screen & Audio > Microphone settings**.
 
-Escape hatches for devices whose audio stack does not behave. Every
-default is what the app has always done, so an untouched install captures
-exactly as it did before these existed. Nothing here is a general improvement:
-each one trades something away, and on a device that already hears you well
-they will make detection worse. The one exception is the microphone channel,
-which on the right hardware is a genuine improvement; it appears only when
-that hardware is selected.
+These settings serve as escape hatches for devices whose Android audio stack is miscalibrated or behaving unpredictably. By default, every setting matches the app's historical baseline, so an untouched installation captures audio exactly as it always has. None of these toggles represent a universal upgrade: each one trades off a specific capability, and applying them to a device that already hears you well will actually degrade detection performance. The single exception is the microphone channel selector, which can offer a genuine quality boost on specialized hardware; this option only appears when supported hardware is selected.
 
-## When you need them
+## When You Need Them
 
-The symptom is a device that only wakes when you are right next to it, where
-the wake word sensitivity setting makes no difference. Sensitivity decides how
-strict the model is about what it hears; it cannot help when the audio arriving
-at the model is simply too quiet.
+The primary symptom requiring these adjustments is a kiosk that only triggers when you speak directly next to it, regardless of how high you set the wake word sensitivity. Sensitivity controls how strictly the AI model evaluates the audio it receives, but it cannot compensate if the incoming audio signal itself is simply too quiet.
 
-Check the level before changing anything. Settings → Voice Satellite → **Wake
-Word Tester** shows a live **Mic level**, a linear RMS of what the microphone
-is delivering:
+Before adjusting anything, measure your actual input level. Go to **Settings > Voice Satellite > Wake Word Tester** to view the live **Mic level**, which displays a linear RMS value of the microphone signal:
 
-| Mic level | What it means |
+| Mic Level | Meaning |
 | --- | --- |
-| below 0.005 | far too quiet, detection will be unreliable at any distance |
-| 0.01 to 0.02 | low, works up close and rarely at room distance |
-| 0.05 to 0.1 | healthy speech level, what the models expect |
-| above 0.3 sustained | too hot, loud speech will clip |
+| Below 0.005 | Far too quiet. Detection will be completely unreliable at any distance. |
+| 0.01 to 0.02 | Low input. Works up close, but rarely succeeds from across the room. |
+| 0.05 to 0.1 | Healthy speech level. This is the optimal range expected by wake word models. |
+| Above 0.3 sustained | Too hot. Loud speech will clip and distort. |
 
-Speak normally from where you actually use the device. If a plain recorder app
-sounds fine and the tester reads far lower, the capture path is the problem,
-not the microphone.
+Speak at a normal volume from the distance where you typically use the device. If a standard voice recorder app sounds fine but the tester displays a very low value, the issue lies within Android's capture path rather than the physical microphone.
 
-## Capture mode
+## Capture Mode
 
-Which of Android's microphone paths to record from.
+This setting determines which of Android's internal microphone audio paths the app records from.
 
-- **Voice communication** (default) is the phone-call capture path. It is the
-  only one echo cancellation works on, which is why it is the default: the
-  device listens for the stop word while its own speech is playing.
-- **Voice recognition** and **Raw microphone** skip that path entirely.
+* **Voice communication** (Default): Uses the phone call capture path. This is the only path that supports hardware echo cancellation, which is why it is enabled by default. It allows the kiosk to listen for a stop word while simultaneously playing audio through its speaker.
+* **Voice recognition** and **Raw microphone**: Completely bypass the phone call capture path.
 
-On custom ROMs the call path is the one most likely to be miscalibrated, since
-it is the least tested. A ROM can deliver it 20 dB below the raw microphone
-while a recorder app on the plain source sounds perfectly fine. That is the
-case this setting exists for.
+On custom ROMs, the call capture path is frequently miscalibrated because it undergoes the least testing during development. A custom ROM might deliver audio on the call path 20 dB quieter than the raw microphone, even though a standard recording app on the raw source sounds perfectly clear. This setting exists specifically to resolve that issue.
 
-The cost of moving off Voice communication is echo cancellation: the device may
-hear its own speech through its own speaker and score it, so it talks over
-itself or wakes on its own voice. Move the speaker further from the microphone,
-or lower the volume, if that starts happening.
+The trade off of switching away from Voice communication is the loss of echo cancellation. The kiosk may pick up its own speaker output and process it, leading to the device talking over itself or falsely triggering on its own voice. If this occurs, lower the speaker volume or increase the physical distance between the speaker and the microphone.
 
-## Automatic gain control
+## Automatic Gain Control
 
-Hands the levelling to Android instead of a fixed gain, so quiet and loud
-speech both arrive at a usable level.
+Enabling Automatic Gain Control delegates volume levelling to Android rather than applying a fixed gain boost, ensuring both quiet and loud speech arrive at a usable level.
 
-It is off by default because it adapts continuously: with nobody speaking it
-lifts the room noise up to speaking level, and wake word models are not trained
-on a signal whose level moves underneath them. On many devices, particularly
-the ones with a broken capture path in the first place, it does nothing at all.
+This feature is disabled by default because it continuously adapts to ambient sound. When no one is speaking, it automatically boosts background room noise up to speech levels. Wake word models are not trained to process signals with fluctuating noise floors. Furthermore, on many budget or misconfigured devices, Android's built in AGC implementation does nothing at all.
 
-Turning it on hides the gain slider. They are two controls over one number, and
-a fixed gain underneath an adaptive one just fights it.
+Turning this setting on automatically hides the manual gain slider. They control the same underlying value, and combining a fixed gain with an adaptive algorithm causes them to fight each other.
 
-## Microphone gain
+## Microphone Gain
 
-Amplifies the captured audio, 0 to 24 dB, before anything hears it: the wake
-word engine, the stop word, and the audio streamed to Home Assistant for speech
-to text all get the boosted signal.
+Amplifies the captured audio from 0 to 24 dB before it reaches any downstream processing. The wake word engine, the stop word classifier, and the speech to text stream sent to Home Assistant all receive this boosted signal.
 
-Set it with the wake word tester open and aim for around 0.05 while speaking
-normally from your usual distance. As a starting point, every 6 dB doubles the
-level, so a tester reading of 0.012 needs roughly 12 dB to reach 0.05.
+To calibrate this, keep the wake word tester open and adjust the gain until normal speech from your usual distance reads around 0.05. As a baseline rule, every 6 dB doubles the signal level; for example, if the tester reads 0.012, you will need roughly 12 dB of gain to hit the target 0.05 mark.
 
-This does not improve the signal to noise ratio, and it is not meant to: room
-noise comes up with the speech. It works because two of the three wake word
-engines do no level compensation of their own, so audio arriving well below
-what a model was trained on lands in the wrong place regardless of how clean it
-is. Too much gain is worse than none, since clipped speech is distorted speech.
+This amplification does not improve the signal to noise ratio, nor is it designed to: background room noise is amplified equally alongside speech. However, it is effective because two of the three supported wake word engines perform no internal level normalization. If audio arrives significantly below the levels used during model training, detection will fail regardless of how clean the audio is. Avoid applying excessive gain, as clipped speech creates severe distortion that breaks recognition.
 
-## Microphone channel
+## Microphone Channel
 
-Only shown when the microphone selected under Audio Devices reports more than
-one channel. Most built-in microphones do not, so most devices never see this
-row.
+This row only appears when the microphone selected under Audio Devices explicitly reports more than one physical audio channel. Most built in tablet microphones are single channel, so most devices will never see this option.
 
-Multichannel USB microphones often put a differently processed signal on each
-channel. The reSpeaker XVF3800 is the motivating example: channel 1 carries
-its call output, tuned to sound good to a person on the other end of a call
-(noise suppression and automatic gain control), while channel 2 carries the
-same picked-up voice with a fixed gain and lighter processing, the output XMOS
-recommends for feeding recognition engines.
+Multichannel USB microphone arrays often route differently processed signals to each channel. For example, the reSpeaker XVF3800 delivers call tuned audio on channel 1 (including aggressive noise suppression and automatic gain control intended for human listeners) and a clean voice signal with fixed gain and minimal processing on channel 2 (the exact output recommended by XMOS for speech recognition engines).
 
-- **Downmix** (default) lets Android average every channel together, which is
-  what the app has always done. On an array like the one above that mixes the
-  call-processed channel into the clean one.
-- **Channel N** feeds that channel alone to the wake word engine, the stop
-  word and speech to text.
+* **Downmix** (Default): Averages all available channels together into a single stream, matching historical app behavior. On a multichannel array like the one described above, this blends the call processed audio into the clean channel.
+* **Channel N**: Isolates and feeds that specific channel directly to the wake word engine, the stop word classifier, and speech to text processing.
 
-If a multichannel array underperforms on wake words, pick its recognition
-channel; on the XVF3800 that is channel 2. If a chosen channel cannot be
-opened (the array was swapped for a simpler microphone), capture falls back
-to the downmix rather than going silent.
+If a multichannel array yields poor wake word performance under Downmix, select its dedicated recognition channel (channel 2 on the XVF3800). If a previously selected channel becomes unavailable (for example, if the array is unplugged and replaced with a simple microphone), the capture automatically falls back to Downmix rather than going silent.
 
 ## Notes
 
-- Changing any of these reopens the microphone. Detection stops for a moment
-  and resumes on its own.
-- All of them are applied when capture starts, so they are equally in force
-  with the screen off and while background listening is running.
-- The settings appear in the remote admin in the same place, under Voice
-  Satellite.
+* Adjusting any of these settings temporarily reopens the microphone. Detection pauses briefly and resumes automatically.
+* All settings are applied when the capture session starts, meaning they remain fully active when the screen is off and during background listening.
+* These options are also available in the remote admin interface under the Voice Satellite section.

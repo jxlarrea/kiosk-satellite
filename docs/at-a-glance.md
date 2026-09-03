@@ -1,112 +1,66 @@
 # At a Glance
 
-A row of Home Assistant entity states on the screensaver, for the things
-people check in passing: is the garage still open, is the front door locked,
-is the gate shut. The answer is there without waking the device and finding a
-dashboard.
+A quick row of essential Home Assistant entity states displayed right on your screensaver. It’s perfect for the things you check in passing: Is the garage open? Is the front door locked? You get the answers instantly without having to wake the device or navigate a dashboard.
 
 ## Setup
 
-Settings, then **Screensaver**, then **At a Glance**:
+Navigate to **Settings**, then **Screensaver**, and select **At a Glance**:
 
 | Setting | Notes |
 | --- | --- |
-| At a glance | Turns the row on. |
-| Entities | Up to four entities, in the order they appear. |
-| Show on Now Playing | Adds the row to the full-screen Now Playing view. |
+| At a glance | Turns the status row on. |
+| Entities | Select up to four entities to display, in the order they appear. |
+| Show on Now Playing | Adds the status row to the full-screen Now Playing view. |
 
-Under **Appearance**:
+Under the **Appearance** section:
 
 | Setting | Notes |
 | --- | --- |
-| Row scaling | Scales the whole row, like the widgets' Widget scaling. |
-| Hide names | Icon and value only, with the value drawn larger. |
-| Monochromatic icons | Keeps every icon in the neutral grey instead of its state color. |
-| Floating text style | Floating text instead of chips, the row's original look. |
+| Row scaling | Scales the entire row, similar to Widget scaling. |
+| Hide names | Displays only the icon and the value (with the value drawn larger). |
+| Monochromatic icons | Keeps all icons a neutral grey instead of their state-based color. |
+| Floating text style | Uses floating text instead of chips (the row's original style). |
 
-**Entities** opens a picker that searches Home Assistant by name or entity id,
-so nothing has to be typed from memory. The chosen entities sit at the top and
-can be reordered; the same picker is in the remote admin's Screensaver tab.
+When you select **Entities**, a picker opens where you can search your Home Assistant setup by name or entity ID—no need to type from memory. Your chosen entities will sit at the top and can be easily reordered. This exact same picker is also available in the remote admin's Screensaver tab.
 
-The row needs a working Home Assistant connection (Settings, Home Assistant
-Configuration).
+> Note: The row requires an active Home Assistant connection (Settings → Home Assistant Configuration).
 
-## Where it appears
+## Where It Appears
 
-Every screensaver mode except the Camera Streams grid, where a status row
-would sit over a live feed:
+The At a Glance row is available on every screensaver mode *except* the Camera Streams grid (since a status row would obscure a live video feed):
 
-- **Black**: the row is centred, and is the whole display.
-- **Clock**: the row sits under the date, and the clock shrinks a little to
-  make room for it.
-- The photo and web modes (Home Assistant Media, Local Media, Photo Gallery,
-  Immich, Website): the row is pinned near the bottom of the screen, over
-  whatever the mode is showing.
+* **Black:** The row is centered and takes up the entire display.
+* **Clock:** The row sits just under the date; the clock itself shrinks slightly to accommodate it.
+* **Photo and Web Modes** (Home Assistant Media, Local Media, Photo Gallery, Immich, Website): The row is pinned near the bottom of the screen, layered over whatever the mode is displaying.
 
-On the Immich screensaver, when the [metadata
-overlay](screensavers.md#immich-media) occupies a bottom corner (its own
-panel, or the two panels under a portrait pair), the row narrows to two
-columns and wraps, staying clear of the corners instead of spreading into
-them.
+On the Immich screensaver, if the [metadata overlay](screensavers.md#immich-media) occupies a bottom corner, the status row intelligently narrows into two columns and wraps, staying clear of the corners rather than overlapping them.
 
-A landscape screen shows the entities in one row. A portrait one takes two
-side by side and wraps the rest onto further rows, since three across a narrow
-panel leaves every name truncated to a stub. The entities keep equal-width
-columns either way, and the type shrinks a little when the columns are tight
-before any name is shortened.
+On a landscape screen, entities display in a single row. In portrait orientation, it displays two entities side-by-side and wraps the rest onto a second row (to prevent names from being cut off in narrow spaces). The columns maintain equal width in both layouts, and the text shrinks slightly before any names are truncated.
 
-## What it shows
+## What It Shows
 
-Each entity shows its icon, its name and its current state. The icon is the
-one set on the entity in Home Assistant; entities without one get the icon
-Home Assistant itself would draw for that kind of entity, so a lock looks like
-a lock and an open garage looks open.
+Each entity displays its icon, name, and current state. The icon is inherited directly from Home Assistant. If no specific icon is set, the default Home Assistant icon for that entity type is used (e.g., a lock icon for a lock, an open door for an open garage).
 
-By default each entity is a chip: a rounded pill in one translucent dark
-tone, sized to its content, with the icon in its own circle on the left and
-the name over the state beside it. The pill carries its own contrast, which
-is what lets the row sit over photos: no photo is bright or dark enough to
-take the text with it.
+By default, each entity is presented as a "chip"—a rounded, translucent dark pill sized to its content. The icon sits in its own circle on the left, with the name displayed above the state on the right. Because the pill provides its own contrast, it remains highly readable even when overlaid on bright or complex photos.
 
-The icon's circle follows the entity's state, the way Home Assistant lights
-up an active tile: a lit light glows amber, an unlocked lock warns red, an
-open cover shows purple, and anything idle (and every plain sensor) stays
-grey, so a colored circle always means something is going on.
-**Monochromatic icons** keeps every circle in the neutral grey instead. The
-text never takes a color in any case: the state is read from the words, the
-color is only a hint.
+The icon's background circle reflects the entity's state, matching how Home Assistant highlights active tiles. For example:
+* A turned-on light glows amber.
+* An unlocked lock warns in red.
+* An open cover shows purple.
+* Idle entities (and all basic sensors) remain grey.
 
-**Hide names** drops the name line from every entity and grows the value into
-the room it took, in both styles. Made for a small panel read from across the
-room, where the icon already says which reading is which. The custom names
-are kept for when the toggle goes back off.
+A colored circle always indicates activity. The text itself never changes color; you read the state from the words, while the color simply acts as a visual cue. If you prefer a cleaner look, enabling **Monochromatic icons** keeps all circles in a neutral grey.
 
-**Floating text style** switches back to the row's original look: floating
-text in one muted tone, no chip and no state color. On the Clock screensaver that tone
-is the face's own digit color (Clock color for Digital, the digit colors for
-Flip and Roller), so the text stays readable on whatever backdrop the clock
-was given. Over photos the text-only style is at the photo's mercy, which is
-exactly why the chips are the default.
+Enabling **Hide names** removes the name text from every entity and enlarges the value text to fill the space. This is ideal for smaller screens read from across a room, where the icon alone provides enough context. (Your custom names are saved and will return if you toggle this setting off later).
 
-States are shown the way they read in Home Assistant, capitalised (`Open`,
-`Locked`, `Closed`), with the unit appended for numeric sensors.
+Enabling **Floating text style** reverts the row to its original, minimalist look: floating text in a single muted tone, without the chip background or state colors. On the Clock screensaver, this text matches the clock's digit color (Clock color for Digital; digit colors for Flip and Roller) to ensure readability against any background. However, over photos, this text-only style can be harder to read depending on the image behind it—which is exactly why the chip style is now the default.
 
-## How it stays current
+States are displayed exactly as they appear in Home Assistant, capitalized (e.g., `Open`, `Locked`, `Closed`), with the appropriate unit appended for numeric sensors.
 
-While the screensaver is showing, Kiosk Satellite subscribes to just these
-entities over its own Home Assistant connection, and closes it again when the
-screensaver goes away. Home Assistant's subscription takes an entity list, so
-that connection carries these entities and nothing else, and it costs nothing
-while the kiosk is in normal use.
+## How It Stays Current
 
-It deliberately does not read the states off the dashboard the kiosk is
-showing. **Filter dashboard updates** (Settings, Home Assistant Setup,
-Optimizations) exists to stop weak devices processing entities they do not
-display, and feeding the At a Glance entities back through the page would give
-back the work that setting saves: a rapidly changing entity, a power meter
-say, would cost the dashboard real work every second it updated. The row
-therefore has no effect on that filter, and works the same whether it is on or
-off.
+When the screensaver is active, Kiosk Satellite subscribes *only* to these specific At a Glance entities via its own Home Assistant connection. When the screensaver closes, it kills that connection. Because Home Assistant's subscription allows for an entity list, this connection handles just these few entities and costs essentially nothing when the kiosk is in normal use.
 
-It also means the row works on a kiosk pointed at something other than a Home
-Assistant dashboard, and keeps working while the page is reloading.
+Crucially, it does *not* read these states from the currently displayed dashboard. The **Filter dashboard updates** feature (Settings → Home Assistant Setup → Optimizations) exists to prevent lower-end devices from processing entity updates they aren't actively displaying. If the At a Glance row relied on the dashboard connection, it would defeat the purpose of that filter—a rapidly updating entity (like a power meter) would force the dashboard to constantly process new data in the background. Therefore, the status row operates entirely independently of the dashboard filter.
+
+This separate connection also means the At a Glance row continues to work perfectly even if the kiosk is currently pointed at a non-Home Assistant webpage, or if the main dashboard page is in the middle of reloading.

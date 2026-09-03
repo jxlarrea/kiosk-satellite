@@ -1,279 +1,144 @@
 # Camera Streams
 
-Kiosk Satellite can show up to twelve cameras in a full-screen view. Camera
-streams come from Home Assistant itself, from Go2RTC, or from a direct WHEP
-endpoint, and play over WebRTC, MSE, HLS, or MJPEG. WebRTC leads for its
-near-realtime latency where a camera offers it; MSE (Go2RTC cameras), HLS
-and MJPEG (Home Assistant cameras) carry the cameras and devices WebRTC
-cannot serve, switching over automatically.
+Kiosk Satellite can display up to twelve cameras in a full screen view. Your camera streams can come directly from Home Assistant, a Go2RTC server, or a direct WHEP endpoint. The app supports playback over WebRTC, MSE, HLS, or MJPEG. WebRTC is the top choice because of its near realtime latency. For cameras or devices that do not support WebRTC, the app automatically switches to MSE (for Go2RTC cameras), or HLS and MJPEG (for Home Assistant cameras) so you always get a picture.
 
-## Import cameras from Home Assistant
+## Import Cameras from Home Assistant
 
-Open Settings, then Camera Streams, and select **Import cameras from Home
-Assistant**. Kiosk Satellite asks the connected Home Assistant for every
-`camera.*` entity (Home Assistant 2024.11 or newer) and adds them as
-cameras. Entities that stream WebRTC play through Home Assistant's own
-WebRTC signaling over the existing connection; entities that only offer
-HLS, which is most cameras without a WebRTC provider behind them, play
-[over HLS](#home-assistant-cameras-and-hls) instead; entities that cannot
-stream at all, such as UniFi package cameras, play
-[over MJPEG](#mjpeg-cameras). No Go2RTC URL, port or WHEP setup is
-involved: if a camera shows a picture in the Home Assistant frontend, it
-works here.
+Go to **Settings**, then **Camera Streams**, and select **Import cameras from Home Assistant**. Kiosk Satellite will ask your connected Home Assistant instance (version 2024.11 or newer) for every `camera.*` entity and add them automatically. 
 
-Importing again merges new entities, preserves camera names and view
-membership, refreshes which stream types each entity offers, and marks
-entities that disappeared (or stopped streaming) as missing. Home Assistant
-hands the WebRTC player its ICE server configuration, so setups that stream
-through Home Assistant Cloud work too.
+Entities that support WebRTC will play using Home Assistant's built in WebRTC signaling over your existing connection. Cameras that only offer HLS (which covers most cameras without a dedicated WebRTC provider) will play [over HLS](#home-assistant-cameras-and-hls). For entities that cannot stream video at all, like UniFi package cameras, the app will play them [over MJPEG](#mjpeg-cameras). There is no need to configure Go2RTC URLs, ports, or WHEP. If you can see the picture in the Home Assistant frontend, it will work here.
 
-## Add a Go2RTC server
+If you run the import again later, the app merges any new entities while keeping your custom camera names and view layouts intact. It also updates the available stream types for each entity and flags any cameras that have disappeared or stopped streaming. Because Home Assistant provides its ICE server configuration to the WebRTC player, streams running through Home Assistant Cloud work perfectly as well.
 
-Open Settings, then Camera Streams, and select **Add Go2RTC server**.
+## Add a Go2RTC Server
 
-Enter the base URL of a Go2RTC server that the device can reach, such as:
+Go to **Settings**, then **Camera Streams**, and select **Add Go2RTC server**. Enter the base URL of a Go2RTC server that your device can reach on the network, like this:
 
 ```text
 http://192.168.1.10:1984
 ```
 
-Basic authentication and self-signed TLS certificates are supported. After
-saving the server, select **Import streams**. Kiosk Satellite reads the stream
-names from `/api/streams`; it does not copy the source URLs into camera views.
+The app fully supports basic authentication and self-signed TLS certificates. Once you save the server, tap **Import streams**. Kiosk Satellite will read your stream names from `/api/streams` without copying the actual source URLs into the camera views.
 
-The Go2RTC API can control powerful server features. Protect it with
-authentication and expose only the paths the kiosk needs when possible:
+The Go2RTC API has access to powerful server features, so it is a good idea to protect it with authentication. Whenever possible, restrict access to just the paths the kiosk actually needs:
 
 ```yaml
 api:
   allow_paths: [/api/streams, /api/webrtc]
 ```
 
-Imported streams remain in Kiosk Satellite until they are deleted. Importing
-again merges new stream names, preserves camera names and view membership, and
-marks streams that disappeared from Go2RTC as missing.
+Once imported, streams stay in Kiosk Satellite until you manually delete them. Running the import again will pull in new stream names while preserving your existing camera names and view arrangements. Any streams that are no longer available in Go2RTC will simply be marked as missing.
 
-## Add a camera manually
+## Add a Camera Manually
 
-A manual camera can reference:
+If you prefer to add a camera manually, you can reference:
+* A specific stream name from a configured Go2RTC server.
+* A direct HTTP or HTTPS WHEP endpoint.
+* A Home Assistant `camera.*` entity. The app will attempt to stream this via WebRTC if supported, and fall back to HLS if not, just like the automatic import.
 
-- A stream name on a configured Go2RTC server.
-- A direct HTTP or HTTPS WHEP endpoint.
-- A Home Assistant `camera.*` entity (streamed through Home Assistant's
-  WebRTC signaling when the entity supports it, falling back to HLS
-  otherwise, like the import).
+Please note that raw RTSP URLs are not supported directly by the app player. To use an RTSP source, add it to Go2RTC first, and then reference that stream name in the app.
 
-Raw RTSP URLs are not supported by the app player. Add the RTSP source to
-Go2RTC first, then reference its stream name.
+For Go2RTC cameras, you can configure an optional full screen stream. This lets you use a lightweight, lower resolution substream for the grid view, but automatically switch to a high resolution stream when you tap to focus on it full screen.
 
-For a Go2RTC camera, an optional fullscreen stream can be configured. Use a
-lower-resolution substream for the grid and a higher-resolution stream for
-fullscreen focus.
+## Create a View
 
-## Create a view
+A view holds anywhere from one to twelve cameras, displayed in the exact order you set. In the view editor, your selected cameras appear in a list. You can add or remove cameras, and reorder them by dragging the handles (or tapping the arrows on a touch screen). If you want text labels to appear over the video feeds, toggle the **Show camera names** option.
 
-A view contains one to twelve cameras, in the order you arrange them. In the
-view editor the chosen cameras sit in their own list: drag a row by its handle
-to reorder it (or use the arrows on a touch screen), and add or remove cameras
-from the list below. The view's **Show camera names** option controls whether
-labels appear over the video.
+The layout adapts automatically based on how many cameras you add:
+* **One camera** fills the entire display.
+* **Two cameras** split into columns in landscape mode, or rows in portrait mode.
+* **Three cameras** arrange into a balanced, orientation aware layout.
+* **Four cameras** create a perfect 2 by 2 grid.
+* **Larger counts** build balanced grids where the first few cameras receive the largest tiles, automatically adjusting for portrait orientation.
 
-- One camera fills the display.
-- Two cameras use columns in landscape and rows in portrait.
-- Three cameras use a balanced orientation-aware layout.
-- Four cameras use a 2 by 2 grid.
-- Larger counts use balanced grids where the first cameras get the biggest
-  tiles, transposed automatically in portrait.
+If you are looking at a multi-camera grid, tap any camera to focus on it. To save resources, Kiosk Satellite will temporarily close the connections to the other cameras while you are focused on one. To go back to the grid, press Back, use the back swipe gesture, or double tap the focused video. 
 
-Tap a camera in a multi-camera view to focus it. Kiosk Satellite closes the
-other peer connections while focused. Press Back, use the back swipe gesture,
-or double tap the focused camera to return to the grid. These actions only
-close the focused camera.
+To close the grid entirely and return to your Home Assistant dashboard, simply press Back, use the back swipe gesture, or double tap any camera in the grid. 
 
-Press Back, use the back swipe gesture, or double tap a camera in the grid to
-close the camera view and return to the Home Assistant dashboard. A voice
-interaction temporarily closes the camera view so the Voice Satellite
-integration is visible, including follow-up turns that do not start with a new
-wake word. The same view and focused camera return when the interaction ends.
-Explicitly closing or changing the camera view cancels that return.
+If you trigger a voice interaction, the app will temporarily hide the camera view so you can see the Voice Satellite interface. This includes any follow up conversation turns. Once the voice interaction finishes, your camera view and any previously focused camera will automatically reappear. However, if you explicitly close or change the view during that time, it cancels the automatic return.
 
-## The default view
+## The Default View
 
-Every install has a view named **Default**. It cannot be deleted, and it is
-allowed to stand empty; emptying it is how you retire it. Once it holds at
-least one camera, a **Default Camera View** entry appears in the kiosk menu,
-so the cameras are one swipe and one tap away without any automation.
+Every installation includes a view named **Default**. This view cannot be deleted, but you are free to leave it empty if you do not want to use it. As soon as you add at least one camera to it, a **Default Camera View** button will appear in the main kiosk menu. This keeps your primary cameras just one swipe and a tap away, completely independent of any Home Assistant automations.
 
-## Camera screensaver
+## Camera Screensaver
 
-Set the screensaver mode to **Camera Streams** to have the screensaver show
-camera views after the idle timeout, then open its page to pick which. **Camera
-views** lists the views in the order the screensaver cycles through them, and
-**Seconds per camera view** is how long each stays on screen before the next,
-counted from the moment the view shows video; with one view selected nothing
-rotates. The grid on screen is shut down before
-the next view's streams are started, so two views never play at once and a
-change costs a moment of black. Touching the screen wakes the kiosk as it does
-for every other mode: the grid is scenery here, so it has no focus or close
-gestures of its own. The screensaver's small corner clock stays off in this
-mode, so nothing sits over the cameras. Its **Mute all views** toggle, on by
-default, keeps the screensaver silent even where **Play sound for a single
-camera** would let a one-camera view play its sound; the switch below still
-applies to a view you open yourself.
+You can set your screensaver mode to **Camera Streams** to display your cameras after the device goes idle. Once enabled, open the settings page to choose which views to feature. The **Camera views** list dictates the rotation order, and **Seconds per camera view** sets how long each grid stays on screen before transitioning. This timer starts the moment the video actually appears. If you only select one view, it will simply stay on screen without rotating.
 
-A camera view you opened yourself still holds the screensaver off, and the
-screensaver only ever shows the views configured for it, so the two never
-fight over the display.
+To keep performance smooth, the app completely shuts down the current grid before starting the streams for the next one. This ensures two views are never playing simultaneously, though it does result in a brief moment of a blank screen during the transition. 
 
-## Home Assistant
+Just like any other screensaver mode, touching the screen wakes the kiosk up. Because the cameras are acting as background scenery here, you cannot tap to focus or use gestures to close them. The screensaver's small corner clock is also hidden in this mode to ensure nothing obstructs the video feeds. 
 
-With [ESPHome](esphome.md) **Expose kiosk entities** on, every camera view
-creates a button on the Kiosk Satellite device:
+By default, the **Mute all views** toggle is turned on. This ensures the screensaver remains completely silent, even if you have audio enabled for single camera views elsewhere. Any sound settings you configured will still apply normally when you open a camera view manually.
 
-- **Show &lt;view name&gt;**
-- **Close camera view**
-- **Active camera view**, a sensor with the current view name
-- **Camera view**, a select that opens any view by name, or **Closed**
+If you manually open a camera view, it prevents the screensaver from turning on at all. The screensaver also strictly sticks to its own configured views, ensuring the manual player and the screensaver never fight for control of the display.
 
-Use the normal `button.press` action in a Home Assistant automation to show a
-specific view. View buttons use stable internal IDs, so renaming a view does
-not replace its Home Assistant entity.
+## Home Assistant Integration
+
+If you have **Expose kiosk entities** enabled in [ESPHome](esphome.md), every camera view you create generates a corresponding entity on the Kiosk Satellite device in Home Assistant:
+* A **Show &lt;view name&gt;** button.
+* A **Close camera view** button.
+* An **Active camera view** sensor that reports the name of the currently visible view.
+* A **Camera view** dropdown selector that lets you open any view by name, or set it to **Closed**.
+
+You can use a standard `button.press` action in your Home Assistant automations to trigger a specific view. Since view buttons use stable internal IDs, renaming a view in the app will not break your existing Home Assistant entities or automations.
 
 ## Sound
 
-Playback is silent by default. **Play sound for a single camera** (Settings,
-then Camera Streams, then Playback) plays a camera's audio when it is the
-only one on screen: a view with one camera, or the camera focused with a tap
-in a larger view. Made for the baby-monitor case, where the picture matters
-less than the sound.
+Camera playback is completely silent by default. If you navigate to **Settings**, then **Camera Streams**, and look under **Playback**, you can enable **Play sound for a single camera**. This allows audio to pass through only when a single camera is on screen. This applies to a view built with only one camera, or when you tap to focus a single camera from a larger grid. This is incredibly useful for baby monitor setups where hearing the room is just as important as seeing it.
 
-Grids with several cameras always stay silent, whatever the setting, since
-several microphones playing over each other is noise rather than audio. The
-camera also has to publish an audio track Kiosk Satellite can play: AAC and
-Opus are the safe choices, while a camera that streams no audio, or a codec
-the device cannot decode, simply plays silently.
+Multi-camera grids will always remain silent regardless of this setting, preventing the chaotic noise of several microphones playing over each other. Keep in mind that your camera must publish an audio track the app can actually decode. AAC and Opus are the most reliable choices. If a camera streams no audio, or uses an unsupported codec, it will simply play in silence.
 
 ## Zoom
 
-**Pinch to zoom a single camera** (Settings, then Camera Streams, then
-Playback) is on by default. Where one camera fills the display, two fingers
-scale the picture up to five times, one finger moves around it while it is
-zoomed, and a double tap puts it back. This is only which part of the frame
-is on screen; nothing is asked of the camera, so it works whatever the
-camera is and whichever transport it streams over. Made for wide-angle
-cameras, where the thing worth looking at sits in a corner of the frame.
+The **Pinch to zoom a single camera** feature (found under **Settings** > **Camera Streams** > **Playback**) is enabled by default. Whenever a single camera fills the display, you can use two fingers to scale the picture up to five times its normal size. Once zoomed in, use one finger to pan around the image, and double tap to reset it. Because this zooming happens entirely on the screen, it places no extra demand on the camera itself and works flawlessly across any transport protocol. It is perfect for wide angle lenses where the subject is tucked away in a corner of the frame.
 
-Zooming applies to a view holding one camera and to the camera focused with
-a tap in a larger view, and never to a grid, where a pinch would land on
-whichever tiles the fingers happened to cover. Leaving focus, or closing the
-view, puts the zoom back. While a picture is zoomed the back swipe is given
-over to moving around it, so a double tap is what leaves: the first one
-takes the zoom off, the second closes the view or returns to the grid. The
-picture cannot be dragged past its own edges, and the [camera
-screensaver](#camera-screensaver) is untouched, as it is scenery rather than
-something to handle.
+Zooming only works on single camera views or when you have tapped to focus a specific camera from a grid. It is disabled on multi-camera grids to prevent gesture confusion across different video tiles. 
+
+If you close the view or leave focus mode, the zoom resets automatically. Note that while you are zoomed in, the standard back swipe gesture is repurposed for panning around the image. To back out, you will need to double tap: the first double tap removes the zoom, and the second double tap closes the view or sends you back to the grid. The app prevents you from dragging the picture past its physical edges. Also, zooming is disabled on the [camera screensaver](#camera-screensaver) since those feeds act purely as background scenery.
 
 ## Auto-dismiss
 
-**Auto-dismiss after** (Settings, then Camera Streams, then Playback) closes
-an opened camera view on its own after the chosen time, from 30 seconds to 5
-minutes. The default, 0, keeps a view up until something closes it. Made for
-views opened in passing: a clap sequence or a corner tap brings the cameras
-up for a look, and the dashboard comes back on its own instead of the grid
-streaming until someone touches the screen.
+The **Auto-dismiss after** setting (located in **Settings** > **Camera Streams** > **Playback**) automatically closes a camera view after a specified amount of time, ranging from 30 seconds to 5 minutes. The default setting is 0, which keeps the view open indefinitely until you close it manually. This is highly recommended for quick check-ins. For example, if a custom clap sequence or corner tap brings up your cameras, auto-dismiss ensures the device naturally returns to your Home Assistant dashboard instead of streaming video forever.
 
-The countdown restarts when a camera is focused, since a tap on the view is
-someone using it, and it applies however the view was opened: a gesture, the
-menu, Home Assistant, or the remote admin. The [camera screensaver](#camera-screensaver)
-is unaffected, since it is the screensaver showing cameras rather than a view
-over the dashboard.
+The countdown timer automatically resets if you tap to focus a camera, as that indicates you are actively using the view. This timer applies no matter how the view was opened, whether by gesture, the app menu, Home Assistant automation, or the remote admin. The [camera screensaver](#camera-screensaver) ignores this setting completely, as it is designed to run continuous video loops while idle.
 
-## Stream codecs
+## Stream Codecs
 
-Kiosk Satellite asks for H.264 (and VP8, VP9, AV1) and deliberately leaves
-H.265 out of the request. Android WebViews advertise H.265 support whether or
-not the device can decode it: the stream connects, video data arrives, and not
-a single frame is ever decoded, which looks like a permanently blank camera
-with nothing in the logs.
+When requesting a stream, Kiosk Satellite specifically asks for H.264, VP8, VP9, or AV1, deliberately excluding H.265. This is because Android WebViews often claim to support H.265 even when the physical hardware cannot decode it. When this happens, the stream connects and receives data, but fails to render a single frame. This results in a permanently blank screen with no errors in the logs to explain why.
 
-With H.265 out of the way, a Go2RTC server that has `ffmpeg` available
-transcodes an H.265 camera to H.264 on its own and the camera plays. A server
-without `ffmpeg` answers with an error instead, which the App Logs record. The
-other fix is at the camera: many models can be switched to H.264, or expose an
-H.264 substream that can be used in the view.
+By purposefully blocking H.265, a Go2RTC server equipped with `ffmpeg` will automatically transcode the feed to H.264 so it plays properly. If the server lacks `ffmpeg`, it will throw a clear error that Kiosk Satellite records in the App Logs. Alternatively, you can often fix this at the source by switching your camera's output to H.264, or by tapping into a dedicated H.264 substream.
 
-**Allow H.265 streams** (Settings, then Camera Streams, then Playback) turns
-the restriction off for devices that really do decode H.265, such as recent
-high-end devices. A device that cannot decode it shows a blank image instead.
+If you are running the app on a newer, high end device that legitimately supports H.265 decoding, you can toggle **Allow H.265 streams** (found under **Settings** > **Camera Streams** > **Playback**). Just be aware that if your device cannot actually handle it, you will get a blank image.
 
-Whatever the setting, a stream that connects but decodes nothing says so on
-the tile and writes a warning to the App Logs naming the codec, so a camera
-that stays blank can be diagnosed from the logs alone.
+Regardless of your settings, if a stream connects but fails to decode any frames, the app will display a warning directly on the camera tile and write a detailed log entry naming the problematic codec. This makes diagnosing blank cameras incredibly straightforward.
 
 ## WebRTC and MSE
 
-Go2RTC cameras stream over WebRTC first, for its near-realtime latency, and
-fall back to MSE on their own when WebRTC does not work out: a stream that
-connects and decodes nothing, a WebView that cannot do WebRTC at all (Fire
-tablets), or repeated failed connections all switch the tile over
-automatically, and the App Logs say so. MSE plays the same stream through
-ordinary video buffering, which nearly every WebView handles, at the cost of
-a second or two of delay.
+Go2RTC cameras always attempt to stream over WebRTC first to take advantage of its near realtime latency. If WebRTC fails, they automatically fall back to MSE. A failure could mean a stream that connects but decodes nothing, a device that lacks WebRTC support entirely (like Amazon Fire tablets), or just repeated connection drops. When the app switches to MSE, it notes the change in the App Logs. MSE plays the video stream using standard buffering, which works on virtually every device, though it does introduce a second or two of delay.
 
-**Prefer MSE over WebRTC** (Settings, then Camera Streams, then Playback)
-flips the order for devices known to lack WebRTC, and is also the switch to
-force MSE when testing. WebRTC then becomes the fallback. WHEP cameras are
-WebRTC by definition, and Home Assistant cameras have
-[their own fallback](#home-assistant-cameras-and-hls), so neither is
-affected.
+If you are using a device you know struggles with WebRTC, you can enable **Prefer MSE over WebRTC** (**Settings** > **Camera Streams** > **Playback**). This reverses the priority, making MSE the default and WebRTC the fallback. It is also a great tool for testing. Note that this setting does not affect WHEP cameras (which are strictly WebRTC) or Home Assistant cameras (which use [their own fallback method](#home-assistant-cameras-and-hls)).
 
-## Home Assistant cameras and HLS
+## Home Assistant Cameras and HLS
 
-A Home Assistant camera with no WebRTC path, which is most cameras unless a
-WebRTC provider such as go2rtc is set up in Home Assistant, streams over
-HLS: the same stream the Home Assistant frontend itself plays. Kiosk
-Satellite asks Home Assistant to start the stream and plays it through
-ordinary video buffering, so it works on nearly every WebView, Fire tablets
-included. The cost is HLS-typical latency of a few seconds, which is why a
-camera that offers both transports always tries WebRTC first and falls back
-to HLS only when WebRTC does not work out on the device.
+Most Home Assistant cameras lack a native WebRTC path unless you have specifically configured a provider like go2rtc. Because of this, they default to streaming over HLS, which is the exact same method the standard Home Assistant dashboard uses. Kiosk Satellite simply requests the stream and plays it using normal video buffering. This approach is highly compatible and works beautifully on almost any device, including Fire tablets. The only downside is a typical HLS latency of a few seconds. For this reason, if a camera supports both protocols, the app will always try WebRTC first and only fall back to HLS if necessary.
 
-The stream is whatever Home Assistant produces, so the H.265 notes above
-apply: a device that cannot decode the stream says so on the tile rather
-than staying silently blank.
+Because the app plays whatever stream Home Assistant provides, the H.265 decoding rules mentioned earlier still apply. If the device cannot decode the format, the camera tile will display a clear error message instead of sitting silently blank.
 
-**Prefer HLS over WebRTC** (Settings, then Camera Streams, then Playback)
-flips the order for Home Assistant cameras that offer both transports, the
-counterpart of the MSE toggle above: for devices whose WebRTC cannot play
-these streams, and the switch to force HLS when testing. WebRTC then
-becomes the fallback.
+You can toggle **Prefer HLS over WebRTC** (**Settings** > **Camera Streams** > **Playback**) to reverse the default priority for Home Assistant cameras that support both. This is the exact counterpart to the MSE toggle, useful for testing or for older devices that struggle with WebRTC feeds.
 
-Each camera's row in the Cameras list names the formats it can play with,
-so which transport a camera has available is visible at a glance.
+To make things easy, every camera listed in your settings menu will clearly display which formats it supports, letting you verify its transport options at a glance.
 
-## MJPEG cameras
+## MJPEG Cameras
 
-Every Home Assistant camera entity can serve its picture as an MJPEG
-stream, whether or not it supports real streaming, and Kiosk Satellite
-uses that as the transport of last resort: a camera whose WebRTC and HLS
-paths fail switches to MJPEG on its own, and a camera that cannot stream
-at all, such as a UniFi package camera or another stills-only entity,
-plays over MJPEG from the start. Frame rates are whatever the camera
-produces, there is no audio, and Home Assistant transcodes the stream
-server-side, so the fancier transports always get their chance first.
+Every camera entity in Home Assistant is capable of serving its picture as an MJPEG stream, regardless of whether it supports true video streaming. Kiosk Satellite uses this as a foolproof transport of last resort. If a camera fails on both WebRTC and HLS, it will automatically switch to MJPEG. For cameras that cannot stream video at all, like UniFi package cameras or other stills only entities, the app will use MJPEG right from the start.
+
+With MJPEG, the frame rate depends entirely on what the camera can push, and there is absolutely no audio support. Because Home Assistant has to transcode the stream on the server side, Kiosk Satellite will always try the more advanced protocols first to save resources.
 
 ## Performance
 
-The camera player is created only while a view is visible. One WebView owns all
-peer connections, camera audio is not negotiated unless
-[a single camera's sound](#sound) is enabled, and hidden cameras are
-disconnected in focus mode. Streams are released once the page has been hidden
-for ten seconds, so a view left open when the panel turns off stops decoding,
-and they come back when the screen does.
+To optimize resources, the camera player is only created when a view is actually visible on screen. A single WebView handles all the peer connections to keep overhead low. Camera audio is completely ignored during negotiation unless [sound is explicitly enabled](#sound) for a single camera, and any hidden cameras in a grid are immediately disconnected when you tap to focus on one. If the camera page is hidden for more than ten seconds (like when the screen turns off), the app releases the streams entirely to save power. They will instantly reconnect the moment the screen turns back on.
 
-A brief ICE disconnect is given a few seconds to heal before the session is
-renegotiated, so a flaky network costs a stutter rather than a black tile.
+If the network connection drops briefly, the app gives it a few seconds to heal before trying to renegotiate the session. This means a spotty network connection might cause a quick stutter instead of a completely black tile.
 
-Four high-resolution streams can exceed the hardware decoder capacity of older
-devices. Prefer H.264 substreams at 720p or lower, with a reduced frame rate,
-for multi-camera grids.
+Keep in mind that displaying four high resolution streams simultaneously can easily overwhelm the hardware decoders on older tablets. For multi-camera grids, it is highly recommended to use H.264 substreams set to 720p or lower, ideally with a reduced frame rate.

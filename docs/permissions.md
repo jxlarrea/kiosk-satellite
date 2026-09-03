@@ -1,48 +1,45 @@
 # Permissions
 
-Every Android grant Kiosk Satellite can use, what each one is for, and the
-adb commands that grant the lot in one sitting.
+This guide covers every Android permission Kiosk Satellite utilizes, what each grant is for, and the specific `adb` commands to grant them all at once.
 
-In the app, **Settings, Device, Permissions Manager** shows the same list
-with live status, and every row has a button that opens the right Android
-dialog or settings screen, including from the remote admin. That is the
-normal path. This page is for the other way around: a wall panel being
-provisioned from a computer, where tapping through ten Android screens on
-the device is the slow part. Everything here works over plain `adb`, no
-root required.
+In the app, navigating to **Settings > Device > Permissions Manager** displays this exact list with live status tracking. Each row includes a button that opens the correct Android system dialog or settings page (which can also be triggered remotely from the admin interface). That is the standard, everyday setup path.
 
-## Granted at install
+This documentation covers the alternative approach: provisioning a wall panel from a computer. Tapping through a dozen permission screens on a touchscreen is slow; executing everything over `adb` takes seconds and requires no root access.
 
-These come with the APK and never ask: internet and network state, Wi-Fi
-multicast (SendSpin server discovery), wake lock, audio settings, boot
-completed (Start on boot), the foreground service types behind the
-[Kiosk Satellite Service](#the-kiosk-satellite-service), and the install
-permissions behind in-app updates. Nothing to do. The one update-related
-grant that does need a human, **Install unknown apps**, is covered in
-[Updates](updates.md#the-install-unknown-apps-grant).
+## Granted at Install
 
-## The grants that need a human
+The following permissions are bundled directly inside the APK and require no user interaction:
+* Internet access and network state monitoring
+* Wi-Fi multicast (used for SendSpin server discovery)
+* Wake locks and audio settings
+* Boot completed listeners (used for Start on boot)
+* Foreground service types (which power the [Kiosk Satellite Service](#the-kiosk-satellite-service))
+* Package installation permissions (which handle in-app updates)
 
-| Grant | What it is for |
+The only update-related permission that requires manual user intervention is **Install unknown apps**, which is covered in detail in the [Updates](updates.md#the-install-unknown-apps-grant) documentation.
+
+## Grants That Require Setup
+
+| Grant | Purpose |
 | --- | --- |
-| Microphone | Wake word detection and speech to text, plus any dashboard page that asks for the microphone. |
-| Camera | Motion detection, camera snapshots, and pages that ask for the camera. |
-| Notifications | The Kiosk Satellite Service's ongoing notification. Only a runtime prompt on Android 13+; older versions allow it by default. The service runs without it; its notification just is not shown. |
-| Unrestricted battery | Keeps the Home Assistant and ESPHome connections alive with the screen off. Matters on every install, voice or not. |
-| Display over other apps | Lets the app bring itself back to the front after a crash, an update, or a wake word heard behind another app, lets the lockdown shield cover the whole screen, lets the App Launcher's **Return automatically** see touches in the other app so it only returns from an idle one, and is what **Screen on** falls back on where the panel ignores the app's wake lock. |
-| Modify system settings | Writing the panel's real brightness instead of dimming the app window. |
-| All files access | The File Manager's shared storage root. Without it the manager still works on the app's own folder. Android 11+; on older versions the storage permission below is the whole grant. |
-| Usage access | Lets the ESPHome **Foreground app** sensor name whichever app is on screen. Without it the sensor still reports Kiosk Satellite while the kiosk is frontmost, just never another app. |
-| Device admin | The real **Screen off**: powers the panel down instead of only blacking it out. |
-| Location | The ESPHome [location sensors](esphome.md#gps-sensor) (off by default), dashboard pages that ask for the device location, and BLE scanning, where the OS requires it on every version (see Nearby devices). |
-| Nearby devices | The Bluetooth scan and connect pair behind the [Bluetooth proxy](esphome.md). A runtime prompt on Android 12+; granted at install before that, where Android instead requires Location plus location services on for scan results. |
-| System UI guard | An accessibility service that closes the notification shade and recents while kiosk protections hold. See [Kiosk and Lockdown](kiosk.md#required-system-permissions). |
-| Media library | Reading the folder the Local Media screensaver was pointed at. |
-| Log access | Devices with a person sensor of their own (today the Meta Portal): reading it for the screensaver's Person Detection. adb only and only in effect after the app restarts. See [Meta Portal](portal.md). |
+| Microphone | Powers wake word detection and speech to text capabilities, as well as any dashboard pages requesting microphone access. |
+| Camera | Powers camera motion detection, image snapshots, and dashboard pages requesting camera access. |
+| Notifications | Displays the ongoing status notification for the Kiosk Satellite Service. This is a runtime prompt on Android 13 and newer; older versions allow it automatically. The background service functions fine without it, but its status notification will remain hidden. |
+| Unrestricted battery | Essential for every installation (voice enabled or not). It prevents Android from killing Home Assistant and ESPHome background connections when the screen is off. |
+| Display over other apps | Allows the app to pull itself back to the foreground following a crash, an update, or a wake word trigger while another app is open. It also powers the full screen Lockdown shield, allows the App Launcher's **Return automatically** feature to monitor touches in secondary apps, and serves as a fallback for **Screen on** if the hardware ignores standard wake locks. |
+| Modify system settings | Allows the app to adjust the panel's actual hardware brightness rather than simply dimming the application window. |
+| All files access | Grants access to the root directory in the built-in File Manager. Without it, the File Manager is restricted to the app's own internal storage folder. This applies to Android 11 and newer; older versions rely on standard storage permissions. |
+| Usage access | Enables the ESPHome **Foreground app** sensor to identify whichever application is currently visible on screen. Without it, the sensor will only report Kiosk Satellite while it is in front. |
+| Device admin | Enables true **Screen off** functionality, powering down the display panel rather than simply rendering a black overlay. |
+| Location | Required for ESPHome [location sensors](esphome.md#gps-sensor) (off by default), dashboard pages requesting location, and Bluetooth scanning across all Android versions (as required by the OS). |
+| Nearby devices | Controls the Bluetooth scan and connect operations for the [Bluetooth proxy](esphome.md). This is a runtime prompt on Android 12 and newer. On older versions, it is granted at installation, though Android still requires Location permissions and active location services to return scan results. |
+| System UI guard | An optional accessibility service that forcibly closes the notification shade and recent apps screen while kiosk protections are active. See [Kiosk and Lockdown](kiosk.md#required-system-permissions). |
+| Media library | Grants read access to local folders selected for the Local Media screensaver. |
+| Log access | Specifically for hardware with native person sensors (such as Meta Portals). It reads system logs for the screensaver's Person Detection feature. This can only be granted via `adb` and takes effect after an app restart. See [Meta Portal](portal.md). |
 
-## Granting everything from adb
+## Granting Everything via ADB
 
-The runtime permissions, as one block:
+You can execute the standard runtime permissions as a single block:
 
 ```
 adb shell pm grant me.jxl.kiosk_satellite android.permission.RECORD_AUDIO
@@ -51,29 +48,26 @@ adb shell pm grant me.jxl.kiosk_satellite android.permission.ACCESS_COARSE_LOCAT
 adb shell pm grant me.jxl.kiosk_satellite android.permission.ACCESS_FINE_LOCATION
 ```
 
-Notifications and the media library are Android-version dependent; run the
-lines that match the device and let the others fail (a failed `pm grant`
-changes nothing):
+Because notification and media library permissions vary by Android version, run the commands that correspond to your device version. You can safely ignore any errors from mismatched commands:
 
 ```
-# Android 12 and later: the Bluetooth proxy's scan/connect pair
+# Android 12 and newer (Bluetooth proxy scan/connect permissions)
 adb shell pm grant me.jxl.kiosk_satellite android.permission.BLUETOOTH_SCAN
 adb shell pm grant me.jxl.kiosk_satellite android.permission.BLUETOOTH_CONNECT
 
-# Android 13 and later
+# Android 13 and newer
 adb shell pm grant me.jxl.kiosk_satellite android.permission.POST_NOTIFICATIONS
 adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_MEDIA_IMAGES
 adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_MEDIA_VIDEO
 
-# Android 12 and earlier
+# Android 12 and older
 adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_EXTERNAL_STORAGE
 
-# Android 10 and earlier: writing in the File Manager's shared root
+# Android 10 and older (File Manager shared storage write access)
 adb shell pm grant me.jxl.kiosk_satellite android.permission.WRITE_EXTERNAL_STORAGE
 ```
 
-The special grants, the ones Android puts behind a settings screen instead
-of a dialog:
+Special permissions (which Android places behind system settings pages rather than standard pop-up dialogs) can be granted with the following commands:
 
 ```
 adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow
@@ -84,111 +78,78 @@ adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite
 adb shell dpm set-active-admin me.jxl.kiosk_satellite/.KioskAdminReceiver
 ```
 
-On a Meta Portal, the grant behind the screensaver's **Person Detection**,
-which reaches the app at its next start:
+For Meta Portal devices, enable **Person Detection** for the screensaver using:
 
 ```
 adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS
 adb shell am force-stop me.jxl.kiosk_satellite
 ```
 
-The `MANAGE_EXTERNAL_STORAGE` line is Android 11+ (All files access does
-not exist before that; the storage grant above covers older versions).
-The `deviceidle whitelist` line is the battery optimization exemption and
-survives reboots.
+Note: The `MANAGE_EXTERNAL_STORAGE` command applies to Android 11 and newer (older versions use the standard storage grants above). The `deviceidle whitelist` command applies the battery optimization exemption permanently and survives reboots.
 
-The System UI guard is an accessibility service, so it is enabled with a
-settings write rather than a grant. Note that this **replaces** the list of
-enabled accessibility services, which is usually empty on a dedicated
-panel; if the device uses others (a screen reader, for example, or the two
-Meta services a [Portal](portal.md) ships with), enable the guard from
-Android's Accessibility settings instead, or append to the list:
+The System UI guard operates as an accessibility service, so it is enabled by writing directly to system settings. Be aware that this command **overwrites** the existing list of enabled accessibility services. While this is usually empty on a dedicated tablet, if your device relies on existing services (such as a screen reader or Meta's built-in Portal services), you should enable the guard manually inside Android's Accessibility settings or append it to the existing list:
 
 ```
 adb shell settings put secure enabled_accessibility_services me.jxl.kiosk_satellite/me.jxl.kiosk_satellite.KioskAccessibilityService
 adb shell settings put secure accessibility_enabled 1
 ```
 
-After the block runs, open **Settings, Device, Permissions Manager** (or
-the same page in the remote admin): every row should read Granted.
+After running these command blocks, check **Settings > Device > Permissions Manager** (or open the page in the remote admin). Every row should now display as Granted.
 
 ## The Kiosk Satellite Service
 
-Android freezes a cached process whole, and the battery managers some
-manufacturers add kill a backgrounded app outright. Either way the Home
-Assistant session, the ESPHome server, the wake word engine and the
-remote admin all stop together the moment the screen has been off for a
-while or another app is in front. A running foreground service is the
-exemption from both, so the app runs one, the **Kiosk Satellite Service**,
-from its first start and on every install, whatever features are on. Its
-notification in the shade is the price Android asks for that, and its text
-says what the service is doing.
+Android aggressively freezes cached background processes, and third-party manufacturer battery managers often kill background applications outright. When this happens, your Home Assistant session, ESPHome server, wake word detection, and remote admin interface will all crash together as soon as the screen stays dark or another app takes the foreground.
 
-The features only add to what it declares. On its own it keeps the Home
-Assistant connection; background listening adds the microphone, an enabled
-camera adds the camera, the Bluetooth proxy adds Bluetooth scanning, and
-the ESPHome server, remote administration and the kiosk protections are
-listed so the page below says why the process is being held up. The
-service is also what relaunches the kiosk after a crash or a close from
-the recents screen.
+Running an active foreground service provides an explicit exemption from these OS restrictions. Because of this, Kiosk Satellite runs a persistent background service—the **Kiosk Satellite Service**—by default on every installation, regardless of which features are enabled. The ongoing notification in the status shade is the mandatory trade-off Android requires for running a foreground service, and its text actively details what the service is doing.
 
-It holds two locks through screen-off: the high-performance Wi-Fi lock
-(see the Android 14 note below) for as long as it runs, and a CPU wake
-lock while the panel is dark, so the timers behind the keepalives fire on
-time instead of waiting for the next interrupt. The wake lock is the
-service's one setting, **Keep the CPU awake while the screen is off**, on
-by default; turn it off on a device that runs on battery.
+Active features add capabilities to what this service declares. On its own, it maintains the core Home Assistant connection. Enabling background listening attaches microphone access, enabling the camera attaches camera access, enabling the Bluetooth proxy attaches Bluetooth scanning, and enabling ESPHome or remote admin options keeps the server processes active. This service is also responsible for automatically relaunching Kiosk Satellite if it crashes or gets closed from the recent apps screen.
 
-**Settings, Device, Kiosk Satellite Service** shows the service on the
-device and in the remote admin alike: whether it is running and holds its
-foreground exemption, the foreground service types it declares, the two
-locks, the notification, what it is keeping the process alive for, and
-the grants that matter for that: **Unrestricted battery** always,
-**Display over other apps** for the relaunch after a crash,
-**Notifications** for the notification itself, and the microphone, camera
-or Nearby devices grant while the feature that needs it is on. A kiosk
-that still gets killed with every row granted is being killed by a
-manufacturer's own battery manager, which no app can read or request;
-that is the next place to look.
+The service holds two system locks while the screen is off:
+1. A high-performance Wi-Fi lock to maintain network connectivity (see the Android 14 note below).
+2. A CPU wake lock while the display is dark, ensuring keepalive timers fire on schedule rather than waiting for OS interrupts.
 
-## Keeping Wi-Fi awake through screen off on Android 14+
+The CPU wake lock is managed by a single setting: **Keep the CPU awake while the screen is off** (enabled by default). You should only disable this option on devices running strictly on battery power.
 
-Whenever anything that must stay reachable is running (background
-listening, the ESPHome server), the app holds Android's
-high-performance Wi-Fi lock, which keeps the radio out of power saving
-while the screen is off. From Android 14 the OS silently downgrades that
-lock to a "low latency" type that is only in effect while the screen is
-**on**, so on some devices the Wi-Fi radio starts napping minutes into a
-dark spell: entities flap unavailable for a moment, adb over Wi-Fi drops,
-and a wall of missed traffic greets the next wake. A one-time shell
-command restores the old behavior:
+Navigating to **Settings > Device > Kiosk Satellite Service** displays live service diagnostics both on the device and in the remote admin. This page indicates whether the service is running, details its foreground exemption status, lists its active foreground service types, tracks both system locks, and displays which permissions are currently required:
+* **Unrestricted battery** (always required)
+* **Display over other apps** (required for relaunching after crashes)
+* **Notifications** (required for the ongoing status notification)
+* Microphone, Camera, or Nearby devices grants (required whenever their respective features are enabled)
+
+If a tablet continues to get killed despite every permission showing as granted, the device is likely being terminated by a manufacturer-specific battery manager. These proprietary managers cannot be read or configured by third-party apps, making the tablet's vendor settings menu the next place to troubleshoot.
+
+## Keeping Wi-Fi Awake on Android 14 and Newer
+
+Whenever a feature requiring continuous network reachability is active (such as background voice listening or the ESPHome server), the app holds Android's high-performance Wi-Fi lock to prevent the network card from entering power-saving mode when the screen turns off.
+
+Starting in Android 14, the operating system silently downgrades this lock to a "low latency" state that only remains active while the screen is **on**. On some hardware, this causes the Wi-Fi radio to enter a sleep state a few minutes after the screen goes dark. When this happens, entities temporarily report as unavailable, `adb` over Wi-Fi drops, and the device is hit with a backlog of missed network traffic upon waking.
+
+You can restore the legacy Wi-Fi lock behavior across Android 14+ using a single `adb` command:
 
 ```
 adb shell device_config put wifi high_perf_lock_deprecated false
 ```
 
-Restart the app afterwards so the lock is re-acquired under the restored
-rules. To verify, turn the screen off and run
-`adb shell dumpsys wifi | grep "ks:screen-off"`: the lock should show
-`type=3` (high performance) rather than `type=4`.
+Restart the app after executing this command so the Wi-Fi lock is re-acquired under the restored system rules. To verify that the fix worked, turn the screen off and run:
 
-One caveat: on devices with Google Play services this flag is one of the
-remotely synced ones, so a background sync can quietly flip it back. If
-the kiosk is a dedicated panel, `adb shell device_config
-set_sync_disabled_for_tests persistent` pins every flag on the device,
-this one included; that is a blunt instrument, so weigh it against simply
-re-running the command if the symptom returns.
+```
+adb shell dumpsys wifi | grep "ks:screen-off"
+```
 
-## Going further
+The output should confirm `type=3` (high performance) rather than `type=4`.
 
-`dpm set-active-admin` above gives exactly one thing, the device admin
-grant behind **Screen off**. Device *ownership* is the bigger tier: full
-lock task, the OS keeping the shade and navigation dead, and silent
-self-updates on Android 11 and earlier. It has real preconditions and is
-deliberately hard to undo, so it lives in its own section of
-[Kiosk and Lockdown](kiosk.md#going-further-device-ownership).
+Note: On devices equipped with Google Play services, system configuration flags are periodically synced from the cloud, meaning a background system sync may eventually revert this setting. On a dedicated wall tablet, you can permanently lock all system flags on the device by running:
 
-Some manufacturers layer their own battery or autostart manager on top of
-Android's, which no app can read and no adb command reaches. If the app
-keeps being killed with every row granted, look for the vendor's own
-battery settings next.
+```
+adb shell device_config set_sync_disabled_for_tests persistent
+```
+
+Because this is a global system change, weigh the benefits against simply re-running the initial command if network sleeping symptoms ever return.
+
+## Going Further
+
+Running `dpm set-active-admin` grants basic device administration, which powers the native **Screen off** feature. Full **Device Ownership** represents a much deeper level of control, granting complete lock task capabilities, OS-level suppression of the notification shade and navigation bars, and silent self-updates on Android 11 and earlier.
+
+Device ownership has strict prerequisites and is intentionally difficult to reverse, so its setup is covered in detail in the [Kiosk and Lockdown](kiosk.md#going-further-device-ownership) documentation.
+
+Finally, keep in mind that certain hardware vendors layer aggressive, proprietary battery management software on top of standard Android. These vendor utilities cannot be queried by apps or configured via standard `adb` commands. If Kiosk Satellite continues to be killed in the background despite all permissions showing as Granted, inspect the manufacturer's custom power and battery management settings directly on the device.

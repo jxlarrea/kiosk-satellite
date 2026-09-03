@@ -1,166 +1,101 @@
 # Optimizations
 
-The **Optimizations** group under Settings, then **Home Assistant
-Configuration**, collects the switches that keep a dashboard fast and its
-connection healthy on kiosk hardware. A wall-mounted device is not a laptop: it runs
-one page forever, often on a slow chipset, and spends most of its life behind
-a screensaver or with the screen off. Each optimization exists because one of
-those realities hurts a stock browser setup.
+The **Optimizations** group under **Settings > Home Assistant Configuration** contains the settings that keep your dashboard running fast and your connection stable. A wall mounted device operates differently than a laptop: it runs a single web page indefinitely, often on lower end hardware, and spends most of its life behind a screensaver or with the display turned off. Each optimization exists to address a specific bottleneck present in stock browser behavior.
 
-All three appear in the same place in the on-device settings and in the
-remote admin's Home Assistant tab.
+All three options are located in the same place in both the on device settings menu and the remote admin's Home Assistant tab.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Keep connected in the background | On | Stops Home Assistant from suspending the connection while the page is hidden. |
-| Pause dashboard during screensaver | On | Stops rendering the dashboard while the screensaver covers it. |
-| Filter dashboard updates | On | Drops entity updates that the current view does not display. |
+| Keep connected in the background | On | Prevents Home Assistant from disconnecting the WebSocket when the page is hidden. |
+| Pause dashboard during screensaver | On | Stops rendering the active dashboard while a screensaver covers the screen. |
+| Filter dashboard updates | On | Ignores entity updates that are not displayed on the active view. |
 
-## Keep connected in the background
+## Keep Connected in the Background
 
-Home Assistant's frontend has a per-user "automatically close connection"
-behavior: a few minutes after the page stops being visible, it closes its
-websocket to save resources. On a phone in a pocket that is sensible. On a
-kiosk it is exactly wrong: the screen being off is the normal state, and a
-closed connection means the next wake word or screen-on greets a dashboard
-that is still reconnecting.
+Home Assistant's frontend includes a per user setting that automatically closes its connection a few minutes after the page becomes hidden to conserve server resources. While this makes sense for a smartphone in a pocket, it creates problems for a wall mounted kiosk where the screen is frequently off. A closed connection means that waking the device forces you to wait while the dashboard reconnects.
 
-With this on (the default), the app turns that preference off for the
-kiosk's session on every page load, so the connection stays up however long
-the page sits hidden. Turn it off only if you specifically want Home
-Assistant's stock suspend behavior back.
+When enabled (the default setting), Kiosk Satellite automatically overrides this preference for the kiosk's session on every page load, ensuring the WebSocket connection remains active no matter how long the screen stays off or hidden. You should only disable this if you explicitly want Home Assistant's stock disconnection behavior.
 
-## Pause dashboard during screensaver
+## Pause Dashboard During Screensaver
 
-The screensaver is drawn by the app, in front of the
-dashboard, and the browser engine underneath never learns it is covered: it
-keeps rasterizing and compositing every animation, chart and camera refresh
-at full rate, for a page nobody can see. On a busy dashboard that is real
-heat and battery for nothing.
+Screensavers are rendered natively by the app directly in front of the web dashboard. Standard web engines have no way of knowing they are obscured, so they continue rasterizing and compositing every animation, live chart, and camera refresh at full speed behind the screensaver. On a complex dashboard, this generates unnecessary heat and drains power.
 
-With this on, the app hides the dashboard's native view while the
-screensaver is showing, which stops all of that drawing work, and restores
-it just before the screensaver lifts, so waking always lands on the live
-page. Only drawing stops. The page itself still believes it is visible, so
-nothing is throttled or suspended: the websocket keeps flowing, entity
-states stay current, and wake words, voice interactions, announcements and
-timers from the Voice Satellite integration behave exactly as they do with
-the setting off.
+When enabled, Kiosk Satellite temporarily hides the web view while a screensaver is active, stopping all visual rendering. It instantly restores the view the moment the screensaver is dismissed, ensuring you always wake up to a live page. 
 
-Measured on a Galaxy Tab S8 showing a busy dashboard (animated power flow,
-camera cards, ~5000 subscribed entities) under a clock screensaver:
+Only visual rendering is paused; the underlying page logic remains active. The WebSocket stays connected, entity states continue updating in real time, and all voice features (wake words, voice interactions, announcements, and timers) operate normally.
 
-| | Screensaver up, setting off | Screensaver up, setting on |
+Here is a performance comparison measured on a Galaxy Tab S8 displaying a complex dashboard (featuring animated power flow cards, live camera feeds, and roughly 5,000 subscribed entities) under a clock screensaver:
+
+| Metric | Screensaver active (Setting OFF) | Screensaver active (Setting ON) |
 | --- | --- | --- |
-| App process CPU | 152% of one core | 57% |
-| Browser renderer CPU | 130% of one core | 35% |
-| GPU | 70% busy | 0% |
+| App process CPU | 152% of one core | 57% of one core |
+| Browser renderer CPU | 130% of one core | 35% of one core |
+| GPU utilization | 70% busy | 0% (Fully idle) |
 | CPU temperature | 68°C | 41°C |
 
-All of that saved work is heat: on the same busy dashboard the CPU ran more
-than 20°C cooler with the setting on. For a device mounted
-flat against a wall, running warm around the clock, that is the difference
-that matters for comfort and hardware longevity.
+Eliminating that unnecessary rendering significantly lowers internal temperatures. On this test dashboard, the CPU ran over 20°C cooler with the setting enabled. For a tablet mounted flush against a wall running 24/7, this temperature drop is crucial for long term hardware health and battery safety.
 
-The gain scales with how busy the dashboard is. A mostly static dashboard,
-or one already running the update filter below, has little rendering work to
-save, and the numbers barely move; that is the expected result, not a fault.
+The efficiency gains depend on the complexity of your setup. A simple, mostly static dashboard has very little rendering work to pause, so the reduction in CPU and GPU usage will be smaller.
 
-Turning it on also turns on **Keep connected in the background**, since a
-covered dashboard must not be one Home Assistant chooses to disconnect.
+Enabling this setting automatically turns on **Keep connected in the background**, ensuring Home Assistant does not disconnect the backgrounded web view while it is paused.
 
-The one screensaver it cannot help is **Dim**: that mode keeps the dashboard
-itself on screen, just darker, so there is nothing to stop drawing. The pause
-simply does not engage there, and the dashboard keeps its normal CPU, GPU and
-battery use. Every other mode puts its own overlay in front and benefits in
-full.
+Note: The **Dim** screensaver is the single mode that cannot benefit from this setting. Because the Dim screensaver keeps the dashboard visible at a lower brightness, visual rendering cannot be paused. All other screensaver modes draw a complete overlay in front of the dashboard and gain the full performance benefit.
 
-On by default, verified on Snapdragon and MediaTek hardware from Android 11
-up. WebView builds vary; if a dashboard ever comes back wrong after the
-screensaver, turn it off and please report what the device and Android
-version were.
+This feature is verified and enabled by default on Snapdragon and MediaTek devices running Android 11 and newer. If your specific WebView implementation exhibits rendering glitches after waking from a screensaver, turn this option off and report your device model and Android version.
 
-The same pause, with no setting of its own, runs whenever anything else
-covers the dashboard completely: the settings screen, a camera view, media
-pushed over DLNA, blackout lockdown, and a page shown over the dashboard
-(the Music Assistant shortcut, a tapped dashboard link, the view rotation's
-external pages). Those surfaces are always opaque, so there is nothing to
-decide. A page shown on Home Assistant's own address is the exception: the
-two are indistinguishable underneath, so the dashboard keeps drawing.
+The exact same rendering pause occurs automatically whenever another opaque surface completely covers the dashboard, including:
+* The settings menu
+* A full screen camera view
+* Media cast over DLNA
+* Blackout Lockdown mode
+* Overlay pages (such as the Music Assistant shortcut, tapped dashboard links, or external pages during view rotation)
 
-## Filter dashboard updates
+The only exception is a web page loaded on Home Assistant's own server address; because the app treats these as part of the dashboard itself, rendering continues.
 
-A dashboard subscribes to every entity in Home Assistant, and a large
-installation can push thousands of state updates a minute at a page that
-displays thirty of them. Older devices spend so much main-thread time
-processing that firehose that scrolling visibly stutters.
+## Filter Dashboard Updates
 
-With this on, the app reads the current view, works out which entities it
-actually shows, and drops every update for the rest before the page ever
-sees it. On the view it was built for, an Echo Show 5 went from 33% browser
-main-thread load to about 1%. While the filter runs, a live line under the
-setting shows what it is watching and how much of the stream it is dropping,
-and the watched-entities count opens the full list, so the effect is
-inspectable rather than taken on faith.
+A Home Assistant dashboard subscribes to every entity in your setup. A large smart home installation can broadcast thousands of state changes per minute to a tablet that might only display twenty or thirty of them. Older tablets spend considerable processing power handling this constant stream of data, causing visible stuttering when scrolling.
 
-Views change, and the filter follows navigation. Any view whose entities it
-cannot fully work out (heavily templated cards, custom cards that reference
-entities dynamically) is deliberately left unfiltered, so nothing ever
-breaks; the telemetry line says when that is the case. That safe fallback is
-why it is on by default: the worst a view can get is the stock, unfiltered
-behavior. It works best on a locked, single-view kiosk.
+When enabled, Kiosk Satellite inspects the active dashboard view, identifies which entities are visually present, and filters out state updates for everything else before the web engine processes them. In testing on an Echo Show 5, this reduced the main thread browser load from 33% down to approximately 1%. 
 
-## Measured against Fully Kiosk
+While filtering is active, a status line beneath the setting shows real time telemetry detailing which entities are being tracked and what percentage of updates are being dropped. Tapping the tracked entity count opens a full list of allowed entities for easy verification.
 
-To put the optimizations in context, here is the same dashboard on the same
-device, once under a stock install of Fully Kiosk Browser and once under
-Kiosk Satellite with the optimizations at their defaults. The device is a
-Galaxy Tab S8+ (Snapdragon 8 Gen 1, Android 16), and the page is a real
-production kiosk dashboard: live camera card, animated graphs, and a wall
-of updating sensors. Both apps loaded the identical dashboard URL from the
-same instance, and both render through the same system WebView, so the
-engine is not the variable; what the app does around the engine is.
+As you navigate between different dashboard views, the filter updates automatically. If the app encounters a view containing dynamic or complex custom cards whose entity dependencies cannot be reliably parsed (such as heavily templated cards), it safely bypasses the filter for that specific view to prevent breaking your layout. This fallback mechanism ensures that, at worst, the dashboard simply reverts to standard, unfiltered Home Assistant behavior. This feature works best on dedicated, single view kiosk setups.
 
-The comparison is asymmetric in one honest way: Kiosk Satellite ran its
-built-in microWakeWord engine through every window (a live 16 kHz
-microphone stream, verified in dumpsys), because on-device wake word is
-part of what it is. Fully Kiosk has nothing comparable to run.
+## Measured Against Fully Kiosk
 
-With the dashboard on screen the two are comparable: CPU is a dead heat
-with the wake word engine included, with Kiosk Satellite a little heavier
-on the GPU because the page's animations render through the app's
-compositor. The state that matters is idle, because a kiosk on a
-30-second screensaver timeout spends nearly its whole life there. Fully
-Kiosk has nothing to stand down to: with no touches, the dashboard simply
-keeps rendering, and its idle measurement is identical to its active one.
-(Its optional black screensaver does not change that; measured
-separately, the overlay draws over a page that keeps rendering
-underneath.) Kiosk Satellite drops into its clock screensaver with
-**Pause dashboard during screensaver** stopping the page:
+To demonstrate the impact of these optimizations, here is a direct comparison running the same production dashboard on the same hardware: once using a standard installation of Fully Kiosk Browser, and once using Kiosk Satellite with default optimization settings.
 
-| Idle, 30 s after the last touch | Fully Kiosk 1.60.1 | Kiosk Satellite |
+* **Test Hardware:** Galaxy Tab S8+ (Snapdragon 8 Gen 1, Android 16)
+* **Dashboard Details:** Live camera card, animated graphs, and numerous updating sensor cards
+* **Environment:** Both applications loaded the exact same dashboard URL from the same Home Assistant instance using the native system WebView.
+
+Note on testing methodology: Kiosk Satellite maintained its built in microWakeWord engine (a live 16 kHz microphone capture stream) throughout the test. Fully Kiosk Browser does not offer an equivalent on device wake word feature.
+
+While the dashboard is actively displayed on screen, CPU usage between the two apps is roughly equal (even with Kiosk Satellite running on device wake word processing). Kiosk Satellite shows slightly higher GPU utilization due to rendering through the Flutter compositor.
+
+However, the key difference appears when the device is idle. Because a wall mounted kiosk spends most of its time sitting behind a screensaver, idle efficiency is what dictates long term device thermals. 
+
+When idle, Fully Kiosk Browser continues rendering the web page at full speed beneath its screensaver, resulting in identical resource consumption whether active or idle. (Using Fully Kiosk's black screensaver does not alter this, as the web page continues rendering underneath the overlay). 
+
+In contrast, Kiosk Satellite engages its **Pause dashboard during screensaver** optimization 30 seconds after the last touch:
+
+| Metric (30 Seconds After Idle) | Fully Kiosk 1.60.1 | Kiosk Satellite |
 | --- | --- | --- |
-| App CPU (all processes, of total 8-core capacity) | 21.7% | 8.6% |
-| System CPU total | 34.0% | 16.2% |
-| GPU load | 52.3% | 0.0% |
-| SoC temperature (window mean) | 52.7°C | 38.7°C |
+| Total App CPU Usage (All processes) | 21.7% | 8.6% |
+| System CPU Usage | 34.0% | 16.2% |
+| GPU Load | 52.3% | 0.0% (Idle) |
+| SoC Temperature (Window Mean) | 52.7°C | 38.7°C |
 
-Less than half the CPU with wake word inference still listening, a GPU
-that goes fully idle instead of staying half-busy forever, and an SoC that
-fell from 57°C to 43°C within a minute of the screensaver engaging. RAM is
-the one metric that goes the other way: Kiosk Satellite holds a few
-hundred MB more, its Flutter UI, wake word model and caches on top of the
-same WebView, which is a fair trade on a device with memory to spare and
-worth knowing about on one without.
+Kiosk Satellite uses less than half the CPU processing power (while actively running local wake word detection), drops GPU utilization to zero, and lowers the System on Chip (SoC) temperature from 57°C down to 43°C within one minute of entering the screensaver. 
 
-Methodology, for anyone reproducing it: each app was measured alone with
-the other force-stopped, back to back on the same network and Home
-Assistant instance, each dashboard session started from the same cooled
-baseline (under 46°C on the launcher), and every state was verified by
-screenshot around its window. CPU is jiffies attributed to every process
-of the app including its WebView renderer, sampled over two minutes and
-reported against the full 8-core capacity. RAM is PSS summed over the same
-processes. GPU load is the Adreno driver's busy-cycle counters over the
-same window, cross-checked against its busy-percentage node (they agreed
-within half a point). Temperature is the hottest CPU cluster thermal zone,
-sampled every three seconds.
+System memory (RAM) is the one area where Fully Kiosk holds an advantage: Kiosk Satellite uses a few hundred megabytes more RAM to run the Flutter framework, local wake word models, and internal caches on top of the web engine. On modern devices with ample memory this is an easy trade off, though it is worth considering if you are deploying to a device with severely constrained RAM.
+
+**Testing Methodology:**
+* Each application was tested independently with the opposing app force closed.
+* Tests were conducted back to back on the same Wi-Fi network and Home Assistant instance.
+* Each test session started from a cooled baseline temperature (below 46°C on the home screen).
+* CPU metrics represent system jiffies across all app processes (including the WebView renderer) sampled over a two minute window against total 8 core capacity.
+* RAM metrics represent Proportional Set Size (PSS) summed across all relevant processes.
+* GPU load was captured directly from the Adreno driver's busy cycle counters over the test window.
+* Temperatures represent the hottest CPU cluster thermal zone sampled at three second intervals.

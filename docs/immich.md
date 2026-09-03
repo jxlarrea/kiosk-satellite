@@ -1,257 +1,111 @@
 # Kiosk Satellite Immich Screensaver
 
-Kiosk Satellite can use an [Immich](https://immich.app/) server as its
-screensaver: point it at your library or the albums you pick and the kiosk
-becomes a photo frame, with slideshow transitions, full screen photos, an
-optional metadata overlay, and a local cache so images appear instantly.
-Videos in the selection play too, muted and in full.
+Kiosk Satellite can turn your device into a smart digital photo frame using an [Immich](https://immich.app/) server. Point it at your library or specific albums to enjoy full screen slideshows, customizable transition effects, an optional metadata overlay, and local image caching for instant loading. It even plays videos from your selection in full with audio muted.
 
 ## Setup
 
-1. In Immich, create an API key under **Account Settings → API Keys**. A
-   full-access key works; a restricted key needs the `album.read`,
-   `asset.read` and `asset.view` permissions, plus `person.read` to use
-   the people filters and `tag.read` for the tag filter (see
-   [Filters](#filters)). Note that Immich separates
-   viewing from downloading: `asset.view` covers the screen-sized previews
-   the screensaver actually fetches, and `asset.download` (originals) is
-   neither a substitute for it nor needed.
-2. On the device, Settings → **Screensaver** → set the screensaver mode to
-   **Immich Media** (or do the same from the Screensaver tab in the remote
-   admin).
-3. Enter the **Server address** (for example `http://immich.local:2283`)
-   and the **API key**, then tap **Validate connection**. Validation
-   checks the exact calls the screensaver needs, album listing, asset
-   search and a preview fetch, so a key that is missing a permission
-   fails here naming it instead of failing silently at night. The preview
-   check tries up to five assets of the selected source and passes on the
-   first one that answers, since an asset the server has not generated a
-   preview for yet says nothing about the key. The rest of
-   the settings unlock once validation succeeds, and changing the address
-   or key asks for a new validation.
+1. In Immich, generate an API key under **Account Settings > API Keys**. A full access key works great. If you prefer a restricted key, make sure to grant `album.read`, `asset.read`, and `asset.view` permissions. Add `person.read` if you plan to filter by people, and `tag.read` for tag filtering (see [Filters](#filters)). Note that Immich separates viewing from downloading: `asset.view` handles the screen sized previews the screensaver uses, so `asset.download` is not required.
+2. On your device, go to **Settings > Screensaver** and set the mode to **Immich Media** (or configure this from the Screensaver tab in the remote admin).
+3. Enter your **Server address** (such as `http://immich.local:2283`) and your **API key**, then tap **Validate connection**. Validation tests the exact API endpoints the screensaver depends on, including album listings, asset searches, and preview fetches. If your key is missing a required permission, validation will explicitly name the issue rather than failing silently later. The preview check tests up to five assets from your selected source and passes on the first successful response. Once validated, the remaining settings will unlock. Updating the address or key will require validating again.
 
 ## Settings
 
-The page is five groups: Server Connection (the address, key and
-Validate button above), then these.
+The settings page is organized into five main sections: Server Connection, Media, Slideshow, Metadata, and Filters.
 
 | Group | Setting | Default | Notes |
 | --- | --- | --- | --- |
-| Media | Media source | All media | The whole library, or any number of albums ticked off the server's list. Shared albums are listed too. A photo in several picked albums shows once. |
-| Media | Photos only | off | Skip videos in the slideshow. |
-| Media | Cache media locally | on | See below. |
-| Media | Cache size (items) | 500 | The oldest cached items are deleted once the cache is full. Live usage shows under the field. |
-| Slideshow | Seconds per image | 10 | Videos ignore this and play to their end. |
-| Slideshow | Shuffle | off | Random order instead of the server's newest-first order. |
-| Slideshow | Transition | Crossfade | The same set every slideshow mode offers: none, crossfade, slide, zoom, Ken Burns, or random. |
-| Slideshow | Fill the screen | Smart | See below. |
-| Slideshow | Pair portrait photos | on | See below. |
-| Metadata | Show metadata | off | See below. |
-| Metadata | Album name, Date taken, Camera details, Location | on | One toggle per metadata line. |
-| Metadata | Metadata position | Bottom left | Which corner the details sit in. |
-| Filters | People | Anyone | See [Filters](#filters). |
-| Filters | Exclude people | No one | See [Filters](#filters). |
-| Filters | Tags | Any | See [Filters](#filters). |
-| Filters | Favorites only | off | See [Filters](#filters). |
-| Filters | Taken within | Any time | See [Filters](#filters). |
-| Filters | From | Any time | The date Since and Timeframe start at. |
-| Filters | To | Today | The date Timeframe ends at. |
+| Media | Media source | All media | Displays your whole library or specific albums you select from the server list, including shared albums. Photos appearing in multiple selected albums are only shown once. |
+| Media | Photos only | off | Skips video assets during the slideshow. |
+| Media | Cache media locally | on | Stores previews on the device for faster loading. |
+| Media | Cache size (items) | 500 | Automatically purges the oldest cached files when full. Current usage displays beneath this field. |
+| Slideshow | Seconds per image | 10 | Sets photo display duration. Videos ignore this setting and play through to completion. |
+| Slideshow | Shuffle | off | Displays media in random order instead of the server default (newest first). |
+| Slideshow | Transition | Crossfade | Options include none, crossfade, slide, zoom, Ken Burns, or random. |
+| Slideshow | Fill the screen | Smart | Controls how aggressively photos are cropped to fit the screen. |
+| Slideshow | Pair portrait photos | on | Displays two portrait photos side by side in landscape mode. |
+| Metadata | Show metadata | off | Displays photo details in a designated corner of the screen. |
+| Metadata | Album name, Date taken, Camera details, Location | on | Toggles individual metadata lines. |
+| Metadata | Metadata position | Bottom left | Specifies which corner holds the photo details. |
+| Filters | People | Anyone | Filter by specific recognized individuals. |
+| Filters | Exclude people | No one | Exclude media containing specific individuals. |
+| Filters | Tags | Any | Filter by specific Immich tags. |
+| Filters | Favorites only | off | Limits the slideshow to photos marked as favorites in Immich. |
+| Filters | Taken within | Any time | Restricts photos based on a rolling or pinned timeframe. |
+| Filters | From | Any time | Defines the starting date for Since or Timeframe filters. |
+| Filters | To | Today | Defines the ending date for the Timeframe filter. |
 
-The playlist is fetched from the server each time the screensaver
-activates, so new uploads and album changes are picked up on the next
-activation, not in the middle of a running session.
+Your playlist refreshes from the server every time the screensaver starts. Any newly uploaded photos or album edits will show up during the next screensaver session.
 
 ## Filters
 
-A phone backup holds more than family photos: receipts, recipes, screen
-grabs and the odd document. The **Filters** group narrows the chosen
-source (the whole library or the picked albums) to what a photo frame should show.
-Every filter that is set has to hold, and a photo is never shown twice.
+A full phone backup often contains receipts, documents, and screenshots alongside family memories. The **Filters** settings let you refine your source media so your screen displays only what belongs on a photo frame. Every active filter must be satisfied for a photo to appear, and photos are never duplicated.
 
-- **People**: only media with any of these people in it. Tap the row and
-  tick names off the list of people Immich has recognized and you have
-  named. Unnamed face clusters are not offered, so name the family in
-  Immich first. People you have hidden in Immich are offered, marked
-  **Hidden** under a struck-out eye: hiding only takes them out of
-  Immich's own listings, and both filters still work on them.
-- **Exclude people**: skip media with any of these people, whoever else
-  is in it. The same list, the opposite effect. Immich cannot answer this
-  question on its own, so the kiosk asks for every asset's people and
-  drops the matches itself, which costs a somewhat larger listing.
-- **Tags**: only media carrying any of these tags, picked from Immich's
-  tag list by full path (`Family/Kids`).
-- **Favorites only**: only media marked as favorite in Immich. The
-  quickest way to curate a frame is to heart the photos that belong on
-  it.
-- **Taken within**: skip media outside a window. The rolling choices are
-  the past month, 3 months, year, 2, 5 or 10 years, and they move along
-  with the calendar, so a frame set to the past year keeps showing the
-  past year. **Since** and **Timeframe** pin the window instead: Since
-  reveals a **From** date and shows everything taken from that day on,
-  Timeframe reveals **From** and **To** and shows the days between them,
-  both ends counting whole. Pick a date off the calendar on either
-  surface, tapping the month heading to jump straight to a year rather
-  than stepping months. **Clear** in the picker puts an end back to open,
-  and Any time drops the filter altogether. A pinned window is the one to use for a
-  frame that should start at a wedding, a birth or the year a scanned
-  album begins, since a rolling one walks past it.
+* **People:** Displays media containing any of the selected individuals. Tap the row to select recognized people from your Immich library. Be sure to name your recognized face clusters in Immich first, as unnamed clusters will not appear in the picker. Individuals you have hidden in Immich will appear marked as **Hidden** with a struck out eye icon. Hiding someone in Immich only removes them from Immich's internal views, so both filters still work as expected.
+* **Exclude people:** Automatically skips any media containing the specified people, regardless of who else is in the shot. Because Immich cannot perform this check directly, the kiosk requests person data for each asset and filters out matches locally.
+* **Tags:** Limits media to assets tagged with specific keywords using full path names (e.g., `Family/Kids`).
+* **Favorites only:** Restricts playback to items you have starred or favorited in Immich. This is often the easiest way to curate a display list.
+* **Taken within:** Filters photos outside a specific time window. Rolling options include the past month, 3 months, 1 year, 2 years, 5 years, or 10 years, moving along automatically with the calendar. Selecting **Since** or **Timeframe** pins a fixed window instead. **Since** reveals a **From** date to display everything taken from that point forward. **Timeframe** reveals both **From** and **To** dates, displaying photos taken between those dates inclusive. You can select dates directly from the calendar picker or tap the month header to jump straight to a year. Tapping **Clear** in the picker leaves an end open, while choosing **Any time** removes the filter entirely. Fixed date ranges work best for events like weddings or births where you want a consistent starting point.
 
-Picking several people (or tags) means any of them, not all of them at
-once: Immich itself reads a list of people as "everyone in the same
-photo", so the kiosk searches once per person and merges the answers.
-The chosen names are stored on the device, so both settings pages show
-them without asking the server, and every save rebuilds the list from
-the server, so a person renamed in Immich picks up the new name and one
-merged away drops out.
+Selecting multiple people or tags acts as an "OR" filter rather than an "AND" filter. Because Immich interprets a person search as everyone present in a single photo, the kiosk searches for each person individually and merges the results. Selected names are saved on the device so settings load instantly without querying the server. Saving your settings automatically rebuilds the list, ensuring renamed or merged people in Immich update seamlessly.
 
-The people lists need the `person.read` permission on the API key and
-the tag list needs `tag.read`; a key without them still validates and
-runs the screensaver, and the picker says which permission is missing
-when opened. With a filter set and nothing matching, the screensaver
-says so ("No media matches the source and filters.") rather than
-showing a black screen.
+Selecting people requires the `person.read` API permission, while tags require `tag.read`. If these permissions are missing, the key will still validate and run the screensaver, but the filter pickers will display a message indicating which permission is needed. If your filters produce no matching assets, the screensaver displays a helpful status message ("No media matches the source and filters.") instead of staying on a black screen.
 
-## Fill the screen
+## Fill the Screen
 
-Most people want photos edge to edge. **Fill the screen** sets how far a
-photo may be cropped to get there.
+Most users prefer photos to fill the entire display. The **Fill the screen** setting controls how much cropping is allowed to achieve that edge to edge look.
 
-| Setting | What a photo gets |
+| Setting | Effect |
 | --- | --- |
-| Off | Its full frame between black bars. |
-| Smart (default) | Enlarged to cover the whole panel if its shape is close enough to the screen's, within about a 25 percent crop along one axis. This admits the common 4:3 and 16:9 camera frames on a landscape screen in either orientation. Portrait and square photos, which such a crop would ruin, keep their full frame and get the photo itself, enlarged, blurred and dimmed, as the backdrop instead of black bars. |
-| Always | Enlarged to cover the panel whatever its shape. Nothing is ever framed or letterboxed, at the cost of the crop: a 4:3 photo on a 2:1 panel loses roughly a third of its height, and a portrait photo on a landscape panel is cut down to a narrow band of its middle. |
+| Off | Displays the full uncropped photo, placing black bars where aspect ratios differ. |
+| Smart (default) | Enlarges photos to fill the display if the aspect ratio is close to the screen's dimensions (allowing up to roughly a 25 percent crop on one axis). This accommodates standard 4:3 and 16:9 camera shots on landscape displays. For portrait or square photos where cropping would ruin the composition, the photo remains uncropped in the center while an enlarged, blurred, and dimmed version of the image serves as the background instead of black bars. |
+| Always | Forces every photo to fill the panel regardless of aspect ratio. Nothing is ever letterboxed, but cropping can be severe. A 4:3 image on a 2:1 screen loses about a third of its height, and a portrait photo on a landscape screen is cropped down to a narrow horizontal strip. |
 
-**Always** has no way to know what a photo is of, so whatever the crop
-takes is gone. On photos with a subject that is not centered, a person or
-a pet, it is the setting most likely to cut off the thing worth seeing.
+The **Always** mode has no awareness of a photo's subject, so anything outside the crop area is lost. If a photo features an off center subject like a person or a pet, this setting may crop them out.
 
-For portrait photos, **Pair portrait photos** below fills the panel with
-no such loss.
+For portrait photos on landscape screens, the **Pair portrait photos** setting provides a much better solution without severe cropping.
 
-## Pair portrait photos
+## Pair Portrait Photos
 
-A photo taken in portrait uses about a third of a landscape screen and
-leaves the rest to the blurred backdrop. **Pair portrait photos**, on by
-default, shows two portrait photos in a row side by side instead, half
-the screen each, so the panel is filled with photos rather than
-backdrop. Turn it off to give every photo the screen to itself.
-The pair counts as one slide: it holds for the usual interval and then
-both are replaced together.
+Single portrait photos on a landscape display normally leave large blurred background areas on either side. With **Pair portrait photos** enabled (on by default), the app places two portrait photos side by side. Each photo occupies half the screen, filling the panel cleanly with photos rather than background blur. You can turn this setting off if you prefer each photo to appear solo.
 
-A portrait photo is not limited to the photo that happens to follow it.
-When the playlist is read, each portrait photo reaches ahead for the next
-portrait photo anywhere in the list and brings it back to its side, so a
-library with portrait shots scattered between landscape ones still pairs
-them all. Nothing is shown twice or skipped; the order is only
-rearranged, and it happens after the shuffle so it follows the order the
-slideshow actually runs in.
+A pair counts as a single slideshow entry: both photos display for the configured duration and transition together.
 
-Pairing needs both photos taller than wide (square ones do not pair,
-since half a screen each would show them small) and the screen itself
-landscape; videos never pair. A photo left without a partner, the odd one
-out of an odd number of portrait shots, shows on its own exactly as
-before. Photos are measured by the shape Immich reports, including the
-orientation tag phones set instead of rotating the pixels, so a portrait
-photo stored as a landscape frame still counts as portrait.
+The pairing logic intelligently searches your playlist. When the playlist loads, each portrait photo looks ahead for the next available portrait image in the list and pairs up with it. This ensures that even if portrait shots are scattered randomly among landscape photos, every portrait photo gets paired. No photos are skipped or duplicated; the list order is simply rearranged following your shuffle settings.
 
-With the metadata overlay on, a pair carries two sets of details: the
-left photo's in the bottom-left corner and the right photo's in the
-bottom-right, each under its own photo. For as long as the pair is on
-screen, any [widget](screensavers.md#widgets) in those two corners is
-hidden, so nothing sits on top of the details; it reappears with the
-next single photo.
+To pair up, both images must be taller than they are wide (square images are excluded since fitting two on a screen would make them very small), and the device must be in landscape orientation. Videos are never paired. If an odd number of portrait photos leaves one without a partner, it displays on its own as usual. Photos are measured using the dimensions reported by Immich, which accounts for orientation EXIF tags automatically.
 
-## Metadata overlay
+When the metadata overlay is enabled, a portrait pair displays two distinct sets of details: the left photo's information sits in the bottom left corner, and the right photo's details sit in the bottom right corner directly beneath each image. While a pair is on screen, any [widgets](screensavers.md#widgets) in those two bottom corners are temporarily hidden so details remain readable. They reappear automatically on the next single photo slide.
 
-**Show metadata** puts the photo's details in a corner of the screen
-(pick which one), each line with its own icon and only when the asset
-actually carries the information:
+## Metadata Overlay
 
-- Album name: the one picked album, or, with several or none picked, an
-  album the photo belongs to (a picked one first).
-- Date taken.
-- Camera details: the camera the photo was taken with, and its focal
-  length, aperture and ISO, from EXIF. A line each, one toggle.
-- Location: city, state and country from EXIF.
+Enabling **Show metadata** places photo details in a designated corner of the screen. Each line features a subtle icon and only displays when the photo actually contains that metadata:
 
-Each line has its own toggle, all on: pointing the screensaver at one
-album makes its name the same on every photo, and the same goes for any
-other line somebody would rather not read. With the album line off the
-lookup it needs is never made either. Turn every line off and the
-overlay stands down entirely, vignette included, exactly as if **Show
-metadata** were off.
+* Album name: Displays the selected album name. If multiple or no albums are selected, it shows an album the photo belongs to.
+* Date taken: Displays the capture date.
+* Camera details: Shows the camera model, focal length, aperture, and ISO derived from EXIF data.
+* Location: Displays city, state, and country information from EXIF data.
 
-In a right-hand corner the lines are right-aligned with their icons on
-the right, mirroring the layout of the corner widgets.
+Each metadata line has its own toggle switch. If you point your screensaver at a single album, you may want to turn off the album line so it doesn't repeat on every photo. Turning off a specific toggle also prevents the app from querying that data. If you turn off all metadata lines, the overlay and its background vignette turn off completely, behaving just as if **Show metadata** were disabled.
 
-The overlay sits on a soft vignette like the corner widgets do. Its
-**Vignette strength** slider (0 to 100 percent, 80 by default) sets how
-dark, independently of the widgets' own slider, and 0 removes it,
-leaving the text alone over the photo.
+When placed in a right hand corner, text and icons align to the right, mirroring the layout of right aligned widgets.
 
-A pair of portrait photos overrides the chosen corner, using both bottom
-corners so each photo's details sit under it.
+The overlay rests on a subtle dark vignette to keep text readable against bright photos. You can adjust the **Vignette strength** slider from 0 to 100 percent (80 percent by default). Setting it to 0 removes the vignette entirely, leaving clean text over the photo.
 
-## The local cache
+When a pair of portrait photos is on screen, the overlay overrides your corner selection and uses both bottom corners so each photo's metadata sits directly underneath it.
 
-With **Cache media locally** on, every image shown is kept on the device,
-so later loops of the playlist load from disk instead of the network.
-Images are fetched as Immich's screen-sized previews rather than
-originals, so a cached item is a few hundred KB, not a 50 MB original.
-When the cache exceeds the configured item cap, the least recently shown
-items are deleted first; lowering the cap prunes immediately. Videos are
-never cached, they stream from the server each time.
+## The Local Cache
 
-## Small clock
-
-The screensaver's **Small clock** widget (added from the Widgets group
-under the mode's settings) pairs well with this one: a corner
-clock and date over the photos, with a soft vignette behind it so it
-stays readable on bright pictures. Widgets own their corners: the
-metadata overlay steps to the first free corner when a widget claims
-its spot, so both are always readable at once.
+With **Cache media locally** enabled, every displayed photo is stored directly on the device. Subsequent playlist loops load images directly from local storage instead of downloading them over the network again. The app caches Immich's screen sized previews rather than full resolution originals, keeping individual file sizes down to a few hundred kilobytes instead of tens of megabytes. When the cache reaches its configured limit, the oldest and least recently viewed items are automatically purged. Lowering the cache limit triggers an immediate cleanup. Videos are never cached locally and will always stream directly from the server.
 
 ## Troubleshooting
 
-- **Validation fails with a permission message**: the API key is
-  restricted too tightly. It needs `album.read`, `asset.read` and
-  `asset.view`; the message names the one the failing call was denied.
-- **"The API key is missing the asset.view permission"**: the key can
-  search assets but not fetch their previews. Add `asset.view` to the key
-  in Immich; the change applies immediately, no new key needed.
-- **The People or Tags picker says a permission is missing**: the key
-  lacks `person.read` (people) or `tag.read` (tags). Add it to the key in
-  Immich; the rest of the screensaver does not need either.
-- **Nobody is listed under People**: the filters pick by name, and Immich
-  only has names for the people you have named under its People page.
-  Name them there, then open the picker again. Hiding a person in Immich
-  does not take them off this list.
-- **Validation passes but the log says a preview probe was skipped**:
-  that asset has no preview on the server yet (still being processed,
-  generation failed, an external library not scanned, or the file is
-  offline). Validation moves on to the next asset, and the screensaver
-  skips such photos when it meets them.
-- **"Could not reach the Immich server"**: the address is wrong, the
-  server is down, or the device cannot route to it. This message is
-  reserved for genuine transport failures (DNS, refused connections,
-  timeouts); a server that answers with an error shows the HTTP status or
-  the missing permission instead. The screensaver keeps trying on its own,
-  first after 15 seconds and then at up to a minute apart, and the
-  slideshow resumes by itself once the server answers again, so a device
-  that drops its Wi-Fi overnight shows photos again without a restart.
-- **Diagnosing from the device**: every failing Immich call is logged
-  with its endpoint and HTTP status in the app's log (the Logs tab of the
-  remote admin, or `GET /api/logs`), so there is no need to instrument a
-  reverse proxy to see what the server answered.
-- **Self-signed HTTPS**: certificate errors are accepted automatically
-  for the configured Immich host (and only that host). One caveat: videos
-  play through the platform player, which does its own certificate
-  checking, so on a self-signed server videos are skipped while images
-  work. Plain `http://` servers, the common LAN setup, are unaffected.
-- **A video does not play**: the device lacks the codec, or the
-  self-signed case above applies. Failed items are logged and skipped;
-  the slideshow keeps going.
-- **New photos do not appear**: the playlist refreshes when the
-  screensaver next activates, not during a running session. Dismiss it
-  once.
+* **Validation fails with a permission message:** Your API key is restricted. Ensure it has `album.read`, `asset.read`, and `asset.view` permissions enabled in Immich.
+* **"The API key is missing the asset.view permission":** Your key can search assets but cannot fetch previews. Add `asset.view` to the key permissions in Immich. You do not need to generate a new key; changes apply immediately.
+* **The People or Tags picker indicates a permission is missing:** The key lacks `person.read` (for people) or `tag.read` (for tags). Grant the missing permission in Immich. The rest of the screensaver functions fine without them.
+* **No individuals appear under People:** The picker relies on named individuals. Open Immich, assign names to your recognized face clusters on the People page, and reopen the picker. Hiding a person in Immich will not remove them from this list.
+* **Validation passes but logs show a preview probe was skipped:** The selected asset does not have a preview generated on the server yet (it may still be processing, failed to generate, or belongs to an offline external library). Validation will test the next asset, and the screensaver will simply skip ungenerated photos during playback.
+* **"Could not reach the Immich server":** The server address is incorrect, the server is offline, or the device cannot connect to your network. This message is reserved for true network transport errors (DNS failures, refused connections, or timeouts). If the server responds with an HTTP error code, the app displays that specific status instead. The screensaver will automatically attempt to reconnect (first after 15 seconds, then every minute), resuming the slideshow seamlessly once the connection recovers.
+* **Diagnosing issues on the device:** Every failed Immich request is recorded with its endpoint URL and HTTP status in the app log (accessible via the Logs tab in the remote admin or at `GET /api/logs`), making it easy to diagnose issues without setting up network proxies.
+* **Self-signed HTTPS certificates:** The app automatically accepts self signed certificate errors specifically for your configured Immich host. Note that videos play through the native system player, which enforces strict certificate checks. On a self signed HTTPS setup, photos will play normally, but videos will be skipped. Standard `http://` setups on local networks are completely unaffected.
+* **A video fails to play:** The device lacks the required hardware codec, or you are using self signed HTTPS. Failed videos are logged and skipped automatically so the slideshow continues uninterrupted.
+* **New photos do not show up:** The playlist refreshes when the screensaver starts up. If the screensaver is currently running, dismiss it once and let it restart to pull in new media.

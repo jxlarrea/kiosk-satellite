@@ -1,215 +1,100 @@
 # Gestures
 
-Touch, clap and hand gestures that trigger actions, for the kiosk that should stay clean.
-The dashboard shows nothing extra, guests see nothing to press, and the
-person who set the device up can still jump to an admin view, run a script
-or trigger an automation with a touch shape nobody performs by accident.
+Kiosk Satellite supports touch, clap, and hand gestures that trigger specific actions. This keeps your kiosk screen clean, as guests see no extra buttons on the dashboard. Meanwhile, the person who configured the device can use a deliberate, hidden gesture to jump to an admin view, run a script, or trigger an automation.
 
-Gestures generalize the kiosk exit gesture: where that one is fixed (fast
-taps anywhere, then the PIN, then the menu), these are configurable on both
-ends. The exit gesture itself is unchanged and keeps working alongside them.
+These custom gestures build upon the standard kiosk exit gesture. While the exit gesture is fixed (rapid taps anywhere, followed by a PIN, then the menu), these custom gestures allow you to fully configure both the input and the action. The standard exit gesture remains active and works alongside your custom ones.
 
-Two gestures are not touch at all. **Claps**: two, three or four claps
-heard through the microphone trigger an action from across the room, the
-way the classic Clapper turned on a lamp. Clap detection works with or
-without Voice Satellite; see [its section](#claps) below. **Show
-fingers**: a hand showing a number of fingers to the camera, the gesture
-for hands that are wet, floury or otherwise not touching a screen; see
-[its section](#show-fingers).
+Two of the available gestures do not require touching the screen at all. **Claps** allow you to trigger an action from across the room using the microphone, much like a classic Clapper switch. This works independently of Voice Satellite (see the [Claps](#claps) section below). The **Show fingers** gesture uses the camera to count the number of fingers you hold up. This is perfect for when your hands are wet, covered in flour, or otherwise unable to touch a screen (see the [Show fingers](#show-fingers) section below).
 
 ## Setup
 
-Settings, then **Gestures**: the list of gestures and the actions they
-trigger. The same page is in the remote admin. Anything configured there
-works whenever the app is running, kiosk mode or not.
+Navigate to **Settings**, then **Gestures**. Here you will find the list of active gestures and the specific actions they trigger. This same page is also available in the remote admin interface. Any gesture configured here will function whenever the app is running, regardless of whether Kiosk Mode is enabled.
 
-Kiosk Mode has one related switch, **Disable Gestures**, for the locked
-device that should ignore them: while kiosk mode is on with that switch
-set, the gestures stay dormant, and they arm again the moment lockdown
-ends.
+If you are using Kiosk Mode, you can use the **Disable Gestures** switch. When Kiosk Mode is active and this switch is turned on, all custom gestures become dormant. They will automatically rearm the moment lockdown ends.
 
-Each entry is one gesture bound to one action. Adding one asks for the
-gesture's shape, then the action, and each action type asks only for what
-it needs: a URL, a dashboard view, a service call. The Home Assistant
-dialogs carry a **Validate** button that checks the domain, service and
-entity against the connected instance before anything is saved.
+Each entry on this page binds one specific gesture to one specific action. When adding a new entry, the app will first ask for the gesture's shape, and then the action. Each action type only requests the information it specifically requires (like a URL, a dashboard view, or a Home Assistant service call). The Home Assistant configuration dialogs include a **Validate** button, which actively checks the domain, service, and entity against your connected instance before saving anything.
 
-## The gestures
+## The Gestures
 
 | Gesture | Notes |
 | --- | --- |
-| Taps in a corner | 2 to 4 quick taps inside one corner of the screen. |
-| Hold a corner | Press and hold a corner, 0.5 to 3 seconds. |
-| Multi-finger tap | 2 or 3 fingers, single or double tap, anywhere. |
-| Multi-finger hold | 2 or 3 fingers held down, anywhere. |
-| Corner sequence | An ordered sequence of corner taps, like a knock code. |
-| Claps | 2 to 4 claps, heard through the microphone. |
-| Show fingers | A hand showing 1 to 4 fingers, or an open hand, to the camera. |
+| Taps in a corner | 2 to 4 quick taps located entirely inside one corner of the screen. |
+| Hold a corner | Press and hold a specific corner for 0.5 to 3 seconds. |
+| Multi-finger tap | 2 or 3 fingers, executing a single or double tap anywhere on the screen. |
+| Multi-finger hold | 2 or 3 fingers held down simultaneously, anywhere on the screen. |
+| Corner sequence | An ordered sequence of corner taps, functioning like a knock code. |
+| Claps | 2 to 4 distinct claps, detected through the device microphone. |
+| Show fingers | An open hand, or a hand showing 1 to 4 fingers, presented to the device camera. |
 
-The corners are boxes about a centimeter and a half on a side. Two mappings
-can share a corner with different tap counts; the shorter one waits a beat
-to be sure the longer one is not still coming.
+The corner hitboxes are approximately 1.5 centimeters square. You can map two different gestures to the exact same corner using different tap counts; the system will automatically wait a beat after the shorter sequence to ensure you aren't simply entering the longer one.
 
-Gestures are observed, never intercepted: every touch still reaches the
-dashboard underneath. That is why the shapes are corners, extra fingers and
-long holds. None of them double as something a card would react to, where a
-plain tap or swipe would. A corner sequence is the most hidden of the set
-and works well as the one that opens something sensitive.
+Crucially, touch gestures are only *observed*, never intercepted. Every touch still passes through to the dashboard underneath. This is exactly why the gesture shapes rely on corners, extra fingers, and long holds. None of these motions will accidentally trigger a standard dashboard card, which expects a simple tap or swipe. The corner sequence is the most discreet option available, making it perfect for protecting sensitive actions.
 
-## The actions
+## The Actions
 
-The chooser groups them: Kiosk Satellite, Android, Home Assistant.
+The action chooser groups options into three categories: Kiosk Satellite, Android, and Home Assistant.
 
 | Action | Notes |
 | --- | --- |
-| Go to a dashboard view | Picked from a list of the instance's dashboards and views. |
-| Open a web page | An external URL, in the same overlay a dashboard link opens, with its close button. |
-| Show a camera view | Any configured camera view. The show action toggles: the same gesture performed again closes the view it opened. A separate close action exists for closing whatever view is up. |
-| Show the floating player | The floating player card; a fling on the card is how it hides. |
-| Open the app launcher | The overlay with the apps picked under App Launcher; its close button or a tap outside closes it. Needs the App Launcher enabled with at least one app picked, and works whether or not the Apps entry is allowed in the kiosk menu, so the menu entry can be switched off under Kiosk Mode, Allowed Actions, and the launcher kept reachable through a gesture only you know. |
-| Start the screensaver | Whatever mode is configured. |
-| Stop the screensaver | Redundant for touch (any tap dismisses), made for claps: the screen comes back from across the room. |
-| Toggle hold mode | Pins the current view (screensaver, dashboard rotation and the return to home timer pause); the same gesture again releases it. Works well as a clap mapping while cooking from a recipe. |
-| Open another app | By package name, kiosk still running behind it. |
-| Open a deep link | Any URI another app claims, `myapp://path`. |
-| Open Android Settings | The system Settings app, kiosk still running behind it. |
-| Call a service | Domain, service, optional entity and data. |
-| Run a script | A `script.*` entity, run through `script.turn_on`. |
-| Trigger an automation | An `automation.*` entity, run through `automation.trigger`. |
-| Fire an event | An event type and optional data for automations to listen to. |
+| Go to a dashboard view | Select from a dynamic list of your instance's dashboards and views. |
+| Open a web page | Opens an external URL in an overlay (the same type used for dashboard links), complete with a close button. |
+| Show a camera view | Displays any configured camera view. This action toggles: performing the exact same gesture again will close the view it just opened. A separate, dedicated close action exists if you simply want to close whatever view is currently visible. |
+| Show the floating player | Displays the floating media player card. You can hide it by simply flinging the card away. |
+| Open the app launcher | Opens the app launcher overlay displaying the specific apps you selected under App Launcher configuration. You can close it via its close button or by tapping outside the overlay. This requires the App Launcher to be enabled with at least one app selected. It works even if the Apps entry is hidden from the main kiosk menu (meaning you can hide the menu entry via Kiosk Mode, Allowed Actions, but keep the launcher accessible via a secret gesture). |
+| Start the screensaver | Immediately launches whatever screensaver mode is currently configured. |
+| Stop the screensaver | While redundant for touch gestures (since any screen tap dismisses a screensaver), this is highly useful for clap gestures, allowing you to wake the screen from across the room. |
+| Toggle hold mode | Pins the current view, pausing the screensaver, dashboard rotation, and the return to home timer. Performing the same gesture again releases the hold. This pairs exceptionally well with a clap gesture when cooking from a recipe. |
+| Open another app | Opens a specific app by its package name, keeping the kiosk running safely in the background. |
+| Open a deep link | Launches any custom URI claimed by another app (e.g., `myapp://path`). |
+| Open Android Settings | Opens the core Android Settings app, keeping the kiosk running in the background. |
+| Call a service | Executes a Home Assistant domain and service, with optional entity and data payload. |
+| Run a script | Triggers a `script.*` entity using `script.turn_on`. |
+| Trigger an automation | Triggers an `automation.*` entity using `automation.trigger`. |
+| Fire an event | Fires a specific event type (with optional data) for Home Assistant automations to listen for. |
 
-The four Home Assistant actions change nothing on the screen by themselves,
-so each shows a toast when it completes, titled for what it is (Home
-Assistant Service, Script, Automation or Event) with what ran underneath
-(Called light.turn_on, Ran script.morning, Triggered automation.lights_off,
-Fired event kiosk_gesture) or, in red, why it could not (Home Assistant not
-configured, the connection down, the call rejected). The other actions are
-their own confirmation.
+The four Home Assistant actions do not inherently change anything on the screen. Therefore, when they complete, Kiosk Satellite displays a toast notification titled by the action type (Home Assistant Service, Script, Automation, or Event). It will detail exactly what ran (e.g., "Called light.turn_on", "Ran script.morning"). If it fails, the toast will appear in red and explain why (e.g., Home Assistant not configured, connection down, call rejected). All other actions provide their own visual confirmation simply by executing.
 
 ## Claps
 
-A clap is detected as what it is acoustically: a sharp, broadband burst
-that jumps far above the room's noise level and dies away within a fraction
-of a second. Detection is plain arithmetic on the audio stream, no models
-and no cloud, and it is light enough to run on the weakest supported
-devices without competing with wake word detection.
+The app detects claps purely acoustically: it listens for a sharp, broadband burst of sound that significantly exceeds the room's ambient noise level and decays within a fraction of a second. This detection relies on simple arithmetic applied to the audio stream; it uses absolutely no machine learning models and relies on no cloud services. It is so lightweight that it runs comfortably on the weakest supported devices without ever competing with wake word detection resources.
 
-Claps in a sequence land roughly a half second apart or faster; a pause of
-about three quarters of a second ends the sequence. Two mappings can use
-different counts; a smaller count waits out that pause when a larger one is
-configured, to be sure more claps are not coming.
+For a sequence, claps must land roughly a half second apart or faster. A pause of roughly three quarters of a second definitively ends the sequence. You can map different actions to different clap counts; if you clap twice but have a three clap action configured, the system will wait out that brief pause to ensure a third clap isn't coming before firing the two clap action.
 
-The microphone side:
+Microphone behavior for claps:
+* If Voice Satellite wake word detection is running, clap detection simply piggybacks on the already open microphone capture, costing absolutely zero extra resources. If Voice Satellite is off, the app will open the microphone itself as long as at least one clap mapping exists. This means the clap feature works perfectly on a device that has never even installed Voice Satellite. When you create your first clap mapping, the app will prompt for the Microphone permission if it hasn't been granted yet.
+* The app actively ignores claps while a voice interaction is taking place, ensuring that speaking to the satellite does not accidentally fire an action.
+* If you mute the satellite via Voice Satellite, it closes the microphone entirely, which also disables clap detection. A muted device listens to nothing, full stop.
+* Lockdown Mode and Kiosk Mode's Disable Gestures toggle will silence clap detection exactly as they silence touch gestures.
+* The detection thresholds automatically adapt to the room's environment. Constant ambient noise (like background music or a running TV) will raise the acoustic bar a clap must clear to trigger, preventing false positives. While it works reliably over music, extremely percussive tracks played at high volumes can sometimes register as claps. For any critical action that must never misfire, configure it to require 3 or 4 claps.
+* A clap must appear deliberate to the system: it must emerge from a relatively calm moment, land on an even beat, and maintain consistent loudness. While random room clatter might share a clap's acoustic shape, it rarely exhibits all three of these traits. If you still experience false triggers (children playing with toys can occasionally mimic clapping sounds), go to the Gestures page and set **Clap detection** to Strict. This forces the algorithm to tighten those checks and demand significantly louder claps. In these environments, prefer 3 or 4 claps over 2.
+* On Android 12 and later, the standard system microphone indicator will remain visible while clap detection is active, just as it does for wake word detection.
 
-- With Voice Satellite wake word detection running, clap detection shares
-  the capture that is already open and costs nothing extra. Without it, the
-  app opens the microphone itself while at least one claps mapping exists,
-  so the Clapper works on a device that has never seen Voice Satellite. The
-  first claps mapping prompts for the Microphone permission if it was never
-  granted.
-- Claps are ignored while a voice interaction is running: talking at the
-  satellite must not fire an action.
-- Muting the satellite in Voice Satellite closes the microphone, claps
-  included. A muted device is not listening, full stop.
-- Lockdown Mode and kiosk mode's Disable Gestures silence claps exactly as
-  they silence touch gestures.
-- Thresholds adapt to the room: steady loudness (music, a running TV)
-  raises the bar claps must clear rather than firing through it. Detection
-  keeps working over background music, though very percussive tracks at
-  high volume can occasionally read as claps; pick 3 or 4 claps for
-  anything that should never misfire.
-- Claps must look deliberate: they come out of a calm moment, land on an
-  even beat, and stay at one loudness. Ordinary clatter shares a clap's
-  impulse shape but rarely all three. If it still false-triggers (a child
-  playing with toys can be surprisingly clap-like), set **Clap detection**
-  on the Gestures page to Strict, which tightens those checks and wants
-  louder claps, and prefer 3 or 4 claps over 2.
-- On Android 12 and later the system microphone indicator shows while clap
-  detection is listening, as it does for wake word detection.
+## Show Fingers
 
-## Show fingers
+You can trigger up to five distinct actions using a single hand by displaying one to four fingers, or a fully open hand. The device camera watches the scene, locates a hand, tracks it frame by frame, and analyzes its 21 physical joints locally to count the raised fingers. 
 
-A hand showing one to four fingers, or an open hand, each its own
-trigger, so five actions can live on one hand. The camera watches, finds a hand, tracks it from frame
-to frame and reads its 21 joints on the device, from which the raised
-fingers are counted: a finger is up when its tip
-is farther from the wrist than its middle knuckle. The thumb is not
-counted, so the counts are the four fingers and an open hand is all
-four; a thumb resting out beside two raised fingers changes nothing. It runs on the frames the motion analyzer already
-samples, only while something in the frame changed or a hand is in
-view. Detection is not recognition: nothing is identified,
-stored or compared, and no frame leaves the device.
+A finger is considered "up" when its tip is further from the wrist than its middle knuckle. The thumb is explicitly ignored in this count. Therefore, the available counts are 1, 2, 3, or 4 fingers, and an open hand registers as all four. A thumb resting to the side of two raised fingers will not alter the count. 
 
-The camera side:
+This detection runs on the exact same frames that the motion analyzer already samples, and it only activates when something in the frame moves or a hand is actively in view. Crucially, this is detection, not recognition: the system identifies nothing specific about the person, stores absolutely no data, compares nothing against a database, and ensures no frame ever leaves the device.
 
-- The gesture needs the camera enabled under Camera settings; the first
-  hand mapping prompts for the Camera permission if it was never
-  granted. While at least one hand mapping exists the camera runs
-  whenever the screen is on, screensaver or not, so it costs what
-  [Postpone screensaver on motion](camera.md#motion-detection) costs; a
-  panel that is off releases it.
-- Not available on x86 devices (ChromeOS, FydeOS and BlissOS containers):
-  the hand landmarker ships for arm processors only, and the trigger is
-  not offered there.
-- Like claps, a hand shown during a voice interaction fires nothing: the
-  camera's analysis is idled from the wake word until Voice Satellite is
-  listening for it again, and a hand that was up when the turn started
-  has to come up again afterwards.
-- The reach is a few steps, and the hand has to be in the picture: a
-  front camera set at chest height sees a hand at shoulder height or
-  above, not one shown at the waist. The detector looks at a square of
-  the frame around wherever the picture just changed (the hand coming
-  up), which is what lets it see a hand that spans a fifteenth of a
-  wide-angle frame. Across the room it does not reach; claps are the
-  across-the-room gesture.
-- The hand is read in any orientation and is confirmed by the landmark
-  model, which turns a wall, a lamp or a hand-shaped shadow down; the
-  count is what fires, so a hand at rest on a keyboard shows zero
-  fingers and matches nothing. A fist held up counts too: the
-  detector finds palms in any pose, and the hold is what makes the
-  gesture deliberate.
-- A hand is looked at within a quarter second of the picture changing
-  with it coming up, and the first look that reads the configured count
-  fires the action, about half a second after the hand is up on a slow
-  device. A hand busy with something else (a vape or a cup at the
-  mouth) can read as a count for a look and fire; speed was chosen over
-  a second confirming look. The count then has to change (or the hand
-  go) before the same mapping fires again, so switching from two
-  fingers to an open hand fires both in turn. A second hand resting in
-  view does not block it.
-- Once fired, the count must change (or the hand go) before the same
-  mapping fires again. Keeping the hand up does not repeat the action.
-- Lockdown Mode and kiosk mode's Disable Gestures silence the hand
-  gesture exactly as they silence touch gestures, and the camera is not
-  even bound for it then.
-- While a hand mapping exists the camera's exposure is steered by the
-  frames themselves: a front camera meters the whole room and leaves a
-  person in front of it dark, so a dark frame asks the camera for a
-  stop more, a bright one gives it back, a step every couple of
-  seconds; the motion analyzer and any snapshot taken meanwhile see the
-  same frames. Hands need some light even so, though less than faces: a
-  palm held up under a night light is still seen, at the price of a beat
-  more hesitation than in daylight. In the dark the gestures do not
-  work.
+Camera behavior for Show Fingers:
+* This gesture requires the camera to be enabled in the Camera settings. Creating your first hand mapping will prompt for the Camera permission if it is missing. As long as one hand mapping exists, the camera will run whenever the screen is on (whether displaying a screensaver or not). The resource cost is identical to running [Postpone screensaver on motion](camera.md#motion-detection). When the panel turns off, it releases the camera.
+* This feature is physically unavailable on x86 devices (such as ChromeOS, FydeOS, and BlissOS containers) because the hand landmarker library only ships for ARM processors. The trigger will simply not be offered on those platforms.
+* Just like claps, any hand shown during an active voice interaction will be ignored. The camera's analysis idles from the moment the wake word triggers until Voice Satellite returns to listening mode. If your hand was up when the voice turn started, you must lower it and raise it again afterward to trigger an action.
+* The effective range is a few steps away from the device, and your hand must be visible within the frame. A front facing camera mounted at chest height will easily see a hand held at shoulder height, but it will miss a hand held at the waist. The detector focuses on a localized square of the frame wherever movement occurred (where the hand came up). This allows it to accurately read a hand that only occupies a fifteenth of a wide angle shot. It will not work from across the room; use claps for across the room gestures.
+* The system can read a hand in any orientation. It uses a landmark model to confirm the shape, ensuring it rejects a wall, a lamp, or a hand shaped shadow. The action fires based strictly on the finger count, meaning a hand resting flat on a keyboard shows zero fingers and triggers nothing. A raised fist is also detected, as the system finds palms in any pose, but holding the pose is what confirms the gesture is deliberate.
+* The system analyzes a hand within a quarter second of the picture changing as the hand raises. The very first frame that confidently reads a configured count will fire the action (typically half a second after raising your hand on a slow device). If a hand is busy doing something else (like holding a vape or a cup near the mouth), it might briefly resemble a configured count and fire. The system prioritizes speed over requiring a long, secondary confirming look. 
+* Once an action fires, the finger count must physically change (or the hand must drop out of frame) before that specific mapping can fire again. Simply holding the hand up will not repeat the action. However, smoothly switching from two fingers to an open hand will fire both associated actions in sequence. A second hand resting in view will not block detection.
+* Lockdown Mode and Kiosk Mode's Disable Gestures toggle will silence the hand gesture exactly as they do touch gestures. When silenced, the camera is not even bound for hand detection.
+* As long as a hand mapping exists, the camera's exposure is dynamically steered by the video frames themselves. Because a front camera typically meters for the whole room (which often leaves a person standing in front of it in silhouette), the app will ask the camera to step up the exposure for dark frames and step it down for bright ones, adjusting every couple of seconds. The motion analyzer and any snapshots taken simultaneously will use these same adjusted frames. Hands still require some ambient light to be read, though less than faces. A palm held up near a dim night light will be detected, though it may take a beat longer than in daylight. The gesture will not function in complete darkness.
 
 ## Timing
 
-Taps chain when they land within about half a second of each other; a pause
-or a tap outside the corner starts over. A hold fires while the finger is
-still down, at the configured duration. Corner sequences allow a slower
-rhythm, about a second and a half between taps.
+Tap gestures chain together as long as they land within roughly half a second of each other. If you pause too long, or tap outside the designated corner, the sequence restarts. A hold gesture fires while your finger is actively pressed down, triggering exactly at the configured duration. Corner sequences are more forgiving, allowing a slower rhythm of about a second and a half between taps.
 
 ## Notes
 
-- Gestures pause the dashboard rotation and reset the screensaver idle
-  timer, exactly as any touch does.
-- The first tap on an active screensaver dismisses it and still counts, so
-  a corner double tap performed on a sleeping screen wakes it and fires.
-- Long holds inside the dashboard can also select text or open a context
-  menu unless **Disable context menus** (Kiosk Mode) is on.
-- The exit gesture's fast-tap counter is position blind and unchanged: five
-  or seven fast taps anywhere still open the menu, whatever is configured
-  here. Its hold variants (the last tap held down for a second) do not
-  collide with these gestures either: a corner hold needs a corner box and
-  a finger hold needs two or three fingers, while the exit hold is one
-  finger anywhere after a chain of fast taps.
+* Gestures automatically pause dashboard rotation and reset the screensaver's idle timer, functioning exactly like a standard screen touch.
+* If you tap an active screensaver, that first tap dismisses the screensaver but still counts toward your gesture. For example, performing a corner double tap on a sleeping screen will both wake the device and fire the mapped action.
+* Long holds executed inside the dashboard area can still select text or open context menus, unless you have specifically enabled **Disable context menus** under Kiosk Mode settings.
+* The primary exit gesture's fast tap counter remains completely position blind and unchanged. Tapping five or seven times rapidly anywhere on the screen will still open the menu, regardless of any custom gestures configured here. The hold variants of the exit gesture (where the final tap is held down for a second) will not conflict with custom gestures. A custom corner hold strictly requires the corner hitbox, and a custom finger hold requires two or three fingers, whereas the exit hold is a single finger anywhere on the screen following a chain of fast taps.

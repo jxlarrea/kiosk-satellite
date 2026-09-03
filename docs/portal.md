@@ -1,29 +1,19 @@
 # Meta Portal
 
-Verified on a Portal Go (Android 10, `QKQ1.210213.001`). Portal, Portal
-Mini and Portal+ run the same OS family on Android 9 or 10 and should
-behave the same, but were not tested.
+This setup has been verified on a Portal Go (Android 10, `QKQ1.210213.001`). The Portal, Portal Mini, and Portal+ run the same OS family on Android 9 or 10 and are expected to behave identically, though they were not explicitly tested.
 
-Once installed, turn on the [Home Launcher](home-launcher.md): it replaces
-Meta's launcher as the device's home screen, so the Portal boots straight
-into the kiosk and the stock launcher, which wants a Facebook or WhatsApp
-login, drops out of the picture entirely.
+Once installed, enable the [Home Launcher](home-launcher.md). It replaces Meta's stock launcher as the device's home screen, ensuring the Portal boots directly into the kiosk. This bypasses the default launcher entirely, removing the need for a Facebook or WhatsApp account login.
 
 ## Install
 
-The APK installs over plain `adb install` like anywhere else. Connect over
-the network (`adb connect <ip>:5555`) and accept the debugging prompt on
-the Portal's screen the first time. Nothing on the Portal blocks the
-install, the app or its foreground service.
+The APK installs via standard `adb install`. Connect over your network using `adb connect <ip>:5555` and accept the debugging authorization prompt on the Portal's screen during the initial connection. Nothing on the Portal blocks the installation, the app itself, or its background foreground service.
 
-## Setup in one sitting
+## Setup in One Sitting
 
-Everything a Portal needs, from a computer on the same network. The
-grants are the Android 10 subset of [Permissions](permissions.md), the
-last block is Portal-specific and the reasons are further down this page.
+You can perform the complete setup required for a Portal from a computer on the same network. The grants below represent the Android 10 subset of standard [Permissions](permissions.md). The final block contains Portal-specific configurations, with detailed explanations provided further down this page.
 
 ```
-adb tcpip 5555                      # over USB, after enabling ADB in the Portal's Settings (see the table below)
+adb tcpip 5555                      # Connect over USB after enabling ADB in the Portal's Settings (see table below)
 adb connect <portal ip>:5555
 adb install -r kiosk-satellite.apk
 ```
@@ -43,158 +33,110 @@ adb shell dpm set-active-admin me.jxl.kiosk_satellite/.KioskAdminReceiver
 ```
 
 ```
-# In-app updates: Meta's package verifier would reject them
+# In-app updates: Disable Meta's package verifier to prevent installation blocks
 adb shell settings put global package_verifier_enable 0
-# Person Detection: reading the Portal's own person sensor
+# Person Detection: Grants permission to read the Portal's built-in person sensor logs
 adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS
-# The grant reaches the app at its next start
+# Force stop and relaunch so the app recognizes the new permission
 adb shell am force-stop me.jxl.kiosk_satellite
 adb shell monkey -p me.jxl.kiosk_satellite -c android.intent.category.LAUNCHER 1
 ```
 
-Optional, the System UI guard behind Kiosk Mode's protections. A Portal
-already has two Meta accessibility services enabled, so append rather
-than run the line from the Permissions doc:
+Optional: Enable the System UI guard behind Kiosk Mode's protections. Because a Portal already has two Meta accessibility services active, append Kiosk Satellite to the existing list rather than overwriting it:
 
 ```
 adb shell settings put secure enabled_accessibility_services "com.facebook.aloha.system.device/com.facebook.aloha.system.device.accessibility.KeyEventAccessibilityService:com.facebook.alohaservices.presence/com.facebook.aloha.system.presence.touch.TouchEventAccessibilityService:me.jxl.kiosk_satellite/me.jxl.kiosk_satellite.KioskAccessibilityService"
 ```
 
-Then finish the setup wizard on the Portal or from a browser at
-`http://<portal ip>:2324`. The app switches itself to the Legacy renderer
-on its first start, see below, and needs nothing else.
+Finish the setup wizard on the Portal itself or via a browser at `http://<portal ip>:2324`. The app automatically switches to the Legacy renderer on its first launch (detailed below) and requires no further configuration.
 
-## What to know before provisioning
+## What to Know Before Provisioning
 
 | Quirk | Effect | What to do |
 | --- | --- | --- |
-| Meta's notification layer drops the service notification (`not_in_allowlist`) | The Kiosk Satellite Service's notification never shows. The service still runs as a foreground service, so nothing is lost | Nothing |
-| Two Meta accessibility services are already enabled | The `settings put secure enabled_accessibility_services` line in [Permissions](permissions.md) replaces the list, which would disable Meta's key handling and the presence touch service | Append instead of replacing, the line in the setup block above does |
-| adb is off after every reboot, USB included | Meta's own **ADB enabled** switch (Portal Settings, needs the account login to change) is turned back off at boot. It only ever enables USB debugging. Network adb comes from `adb tcpip 5555` over a cable and lives in a runtime property that Android only restores from `persist.adb.tcp.port`, which nothing short of root can write on a Portal | After every reboot: turn **ADB enabled** on again in the Portal's Settings, plug in a cable, run `adb tcpip 5555`. Nothing on the device or in the app can keep adb on across a reboot, so do the setup below in one sitting and keep reboots rare |
-| Meta's package verifier rejects every app-initiated install | `com.facebook.appverifier` answers Android's package verification for installs an app starts and refuses any APK not signed by Meta, so the in-app updater ends in `INSTALL_FAILED_VERIFICATION_FAILURE` after the Install tap. The app logs the verifier's refusal. adb installs are exempt | Turn the verifier off once: `adb shell settings put global package_verifier_enable 0`. Reversible with `settings put global package_verifier_enable 1`. Device ownership does not get around it, the verifier runs for owner installs too |
-| `pm clear` revokes the runtime grants | A data reset from adb also resets microphone, camera, location and storage | Run the grant block again after a clear |
-| Impeller's OpenGLES backend wedges on Activity re-creation | Flutter's default renderer rejects the Portal's Vulkan driver and falls back to OpenGLES, which loses its context when Android destroys and re-creates the app's Activity. On a Portal the Back button in Meta's own bar at the top of the screen does exactly that: it closes the app, and the next tap on the tile re-creates it. From then on the dashboard WebView still shows but nothing Flutter draws does: no screensaver, no drawer, no settings | Nothing: the app switches itself to the Legacy renderer (Skia) on a Portal the first time it starts, and shows that under **Settings, Device**. Leave it on |
+| Meta's notification system drops the background service notification (`not_in_allowlist`). | The status notification for the Kiosk Satellite Service will not display. However, the background process still runs with full foreground privileges. | Nothing required. |
+| Two Meta accessibility services are active by default. | Running the standard `settings put secure enabled_accessibility_services` command replaces the entire list, disabling Meta's hardware key handling and touch presence services. | Append Kiosk Satellite to the list instead of replacing it, as shown in the setup commands above. |
+| Network ADB turns off after every reboot. | Meta's native **ADB enabled** switch in Portal Settings (which requires an account login to modify) automatically turns off at boot and only controls USB debugging. Network ADB initiated via `adb tcpip 5555` relies on a runtime property that requires root access to persist across reboots. | After every reboot, turn **ADB enabled** back on in Portal Settings, connect a USB cable, and run `adb tcpip 5555`. Because no app setting can force ADB to remain active through a reboot, perform all setup commands in one sitting and minimize reboots. |
+| Meta's package verifier blocks app-initiated updates. | The `com.facebook.appverifier` service evaluates package updates requested by applications and rejects any APK not signed by Meta, causing in-app updates to fail with `INSTALL_FAILED_VERIFICATION_FAILURE`. Standard ADB installs bypass this check. | Disable the verifier once using `adb shell settings put global package_verifier_enable 0`. You can re-enable it later using `settings put global package_verifier_enable 1`. Note that device ownership does not bypass this restriction. |
+| Running `pm clear` revokes runtime permissions. | Clearing app data via ADB resets granted permissions for the microphone, camera, location, and storage. | Re-run the permission grant commands after performing a data clear. |
+| Impeller's OpenGLES backend hangs during Activity re-creation. | Flutter's default rendering engine rejects the Portal's Vulkan driver and falls back to OpenGLES, which loses context when Android destroys and re-creates the Activity. Tapping the Back button in Meta's top system bar triggers this Activity destruction. On subsequent launches, the web view displays, but Flutter elements (screensavers, drawers, and settings menus) fail to render. | Nothing required. The app automatically configures itself to use the Legacy renderer (Skia) on its initial boot on a Portal. This setting can be verified under **Settings > Device**. Leave it set to Legacy. |
 
-Read the current accessibility list first with `adb shell settings get
-secure enabled_accessibility_services` in case your Portal lists something
-else than the two services in the setup block above.
+Note: Before running the accessibility command, inspect your active accessibility services using `adb shell settings get secure enabled_accessibility_services` to verify if your device lists additional services beyond the two standard Meta entries.
 
 ## Updates
 
-What the in-app updater does on a Portal, in order:
+The in-app update process functions on a Portal as follows:
 
-| Step | On a Portal |
+| Step | Portal Behavior |
 | --- | --- |
-| Download | Works as anywhere |
-| Install unknown apps grant | Asked once, the first time, on Android's own screen |
-| Android's install confirmation | Shown on every update: Android 10 never installs silently for an app that is not the device owner |
-| The install itself | Fails with `INSTALL_FAILED_VERIFICATION_FAILURE` until Meta's package verifier is turned off, see the table above |
-| Relaunch | The app comes back on its own once the install goes through |
+| Download | Downloads normally. |
+| Install unknown apps permission | Prompts once on Android's system screen during the initial update. |
+| Android install confirmation | Requires manual confirmation on every update because Android 10 does not allow silent updates for non-device-owner applications. |
+| Installation | Fails with `INSTALL_FAILED_VERIFICATION_FAILURE` unless Meta's package verifier is disabled (see table above). |
+| Relaunch | The app automatically relaunches once the installation completes. |
 
-So a Portal needs this once, from a computer:
+To allow in-app updates to proceed, execute this command once from a computer:
 
 ```
 adb shell settings put global package_verifier_enable 0
 ```
 
-There is no hands-free path. Device ownership, which gives silent updates
-on Android 11 and older elsewhere, needs a device with no accounts, and a
-Portal carries Meta's own (`com.facebook.aloha.*`) that cannot be removed,
-so `dpm set-device-owner` refuses. Each update takes one tap on the
-confirmation, which the app brings to the front and re-arms the kiosk
-after.
+Silent, fully automated updates are not supported. Device ownership on Android 11 and older requires a device with no registered accounts; Portals carry unremovable Meta system accounts (`com.facebook.aloha.*`), causing `dpm set-device-owner` to fail. Each update requires a single tap on the onscreen confirmation prompt, which the app automatically brings to the foreground before re-arming kiosk protections.
 
-## Person detection
+## Person Detection
 
-Portal OS runs a person detector all the time. It is what the Smart
-Camera's auto-framing uses to follow people around the room, it reads a
-virtual camera feed that never lights the camera LED and it logs a
-heartbeat every 30 seconds while someone is in view, going silent when
-the room empties. It detects people, bodies at any angle, not faces:
-someone reading at the kiosk with their back to it counts. Kiosk
-Satellite reads that sensor as **Settings, Screensaver, Person
-Detection**, a page that only exists on a Portal:
+Portal OS runs a continuous background person detection service. This powers the Smart Camera's auto-framing feature, utilizing a virtual camera feed that does not illuminate the hardware camera LED. It logs a heartbeat every 30 seconds when someone is in view and goes silent when the room is empty. The sensor detects bodies at any angle rather than strictly facing forward, meaning a person sitting with their back to the device still registers. 
 
-- **Dismiss on person**: read the sensor while the screensaver is up and
-  wake the screen when someone is in front of the Portal.
-- **Postpone screensaver on person**: also read it between screensavers,
-  so someone in front of the Portal keeps resetting the idle timer. It
-  requires Dismiss on person.
+Kiosk Satellite exposes this hardware feature under **Settings > Screensaver > Person Detection** (a menu exclusive to Portal devices):
 
-Dismiss acts on someone arriving. With Postpone off, a screensaver that
-starts while someone is already there stays up until they leave and come
-back.
+* **Dismiss on person**: Reads the sensor while the screensaver is active and wakes the display when a person is detected.
+* **Postpone screensaver on person**: Monitors the sensor between screensaver sessions, continuously resetting the idle timer while someone remains in front of the device. This setting requires Dismiss on person to be enabled.
 
-Both are independent of the camera legs: Motion Detection and Face
-Detection keep working exactly as they do elsewhere and can run at the
-same time.
+Dismiss activates when a person arrives. If Postpone is disabled, a screensaver that activates while someone is already present will remain active until that person leaves and approaches again.
 
-| | Person Detection | Face Detection |
+Person detection operates independently of camera-based Motion Detection and Face Detection, allowing both systems to run simultaneously.
+
+| Feature | Person Detection | Face Detection |
 | --- | --- | --- |
-| What runs | Nothing of the app's: it reads the Portal's log | The app's own face model on the camera, during the screensaver |
-| Camera light | Never | On while the camera runs |
-| Needs | The Log access grant | Camera enabled, camera grant |
-| Detects | Anyone the Portal counts as present, any angle | A face turned toward the screen, within the distance Face sensitivity sets |
-| Latency | Arrival: a second or two, from the framing director's tracking lines, otherwise the next heartbeat, up to 30 seconds. Absence: about three seconds once the director reports nobody to follow, 50 seconds without any signal at worst | Under a second |
-| In the dark | Meta's detector weakens in low light | Fails |
+| Operation | Reads Portal system logs without running internal models. | Runs the app's internal face detection model on camera frames during screensavers. |
+| Camera LED | Never illuminates. | Illuminates while the camera is active. |
+| Requirements | `READ_LOGS` permission grant. | Camera enabled in settings and camera permission granted. |
+| Detection Scope | Detects any person present in the room at any angle. | Detects faces oriented toward the screen within the defined Face Sensitivity range. |
+| Response Time | Arrival: 1 to 2 seconds via tracking lines, or up to 30 seconds on the next log heartbeat. Departure: ~3 seconds after tracking stops, or up to 50 seconds worst-case. | Under 1 second. |
+| Low Light | Accuracy degrades in low ambient light. | Fails completely in the dark. |
 
-Presence is a state rather than a sighting: while someone is in view,
-Postpone screensaver on person holds the idle clock continuously, so the
-screensaver does not start between heartbeats whatever the idle timeout.
-Under [Lockdown Mode](kiosk.md) the sensor neither dismisses nor
-postpones, like motion.
+Person detection represents an ongoing state rather than a single event. While a person remains in view, **Postpone screensaver on person** holds the idle clock continuously, preventing the screensaver from triggering between heartbeats regardless of your idle timeout settings. Under [Lockdown Mode](kiosk.md), person detection will neither dismiss nor postpone the screensaver.
 
-The **Occupancy** row under Dismiss on person shows what the sensor reports
-(Detected or Clear) and the age of the last heartbeat, on the device and
-in the remote admin alike. With the grant missing it says so and nothing
-wakes the screen.
+The **Occupancy** indicator beneath the Dismiss on person setting displays real-time status (Detected or Clear) along with the timestamp of the last heartbeat, both on the device and within the remote admin interface. If the required permission is missing, an error notice displays and presence events will not wake the display.
 
-With Dismiss on person on, the [ESPHome](esphome.md) device also carries
-a **Person** occupancy binary sensor with the same state, so Home
-Assistant automations get the Portal's detector as a plain occupancy
-entity. Turning the switch on or off re-registers the ESPHome device.
+When Dismiss on person is enabled, the [ESPHome](esphome.md) integration exposes a **Person** binary occupancy sensor, allowing Home Assistant automations to utilize the Portal's built-in detector directly. Toggling this switch re-registers the ESPHome device.
 
-### The Log access grant
+### The Log Access Grant
 
-Reading another app's log lines needs `READ_LOGS`, which Android grants
-only over adb and only to a process started after the grant:
+Reading the Portal's presence logs requires the `READ_LOGS` permission. Android strictly requires this permission to be granted via ADB to a process launched after the grant is applied:
 
 ```
-adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS
+adb shell pm grant me.jxl.kiosk_satellite android.permission.RECORD_AUDIO
 adb shell am force-stop me.jxl.kiosk_satellite
 adb shell monkey -p me.jxl.kiosk_satellite -c android.intent.category.LAUNCHER 1
 ```
 
-The **Required system permissions** group at the foot of the Person
-Detection page shows the row. While the grant is missing it says that
-only adb can grant it and points here for the command (the remote admin
-also offers the command with a copy box). Once granted but before the
-restart it offers a Restart button. The permission does nothing on
-any other device and the app never reads the log unless Dismiss on person
-is on.
+The **Required system permissions** section at the bottom of the Person Detection settings page displays the status of this grant. If missing, it indicates that ADB is required and displays the exact command. Once granted, a Restart button appears to relaunch the app. This permission has no effect on non-Portal devices, and the app does not read system logs unless Dismiss on person is toggled on.
 
-### What the app cannot do
+### System Limitations
 
-Meta's presence state also lives in a content provider and goes out as
-broadcasts, but both sit behind `signature|privileged` permissions
-(`com.facebook.aloha.permission.ACCESS_STATESDB`,
-`RECEIVE_PRESENCE_TRANSITION`) that no sideloaded app can hold. The log
-is the only door.
+Meta's presence data also exists within a system content provider and system broadcasts. However, both interfaces are protected by `signature|privileged` permissions (`com.facebook.aloha.permission.ACCESS_STATESDB` and `RECEIVE_PRESENCE_TRANSITION`) that sideloaded applications cannot obtain. System log parsing remains the only functional integration path.
 
-### If it stays at Clear
+### Troubleshooting Clear Status
 
-- The grant is in the package manager but not in the process: restart the
-  app, the row says so.
-- Meta's presence stack is disabled on the Portal
-  (`com.facebook.alohaservices.presence`, `com.facebook.portal.aiservice`):
-  the page is hidden.
-- Check what the Portal writes: `adb shell logcat -v epoch -s
-  PresenceManager:I aloha.CameraServiceController:I
-  aloha.TrackAndHoldAiDirectorDefaultNudgeMovement:I` should print `Notify
-  people presence` and `onNotifyPresence presence updated` every 30 seconds
-  while someone stands in front of it plus `Forcing fast track movement`
-  and `boundaryViolatedPct` lines while it follows them. With the room
-  empty only `Forcing brake movement` lines appear, once a second, which
-  is what tells the app the person left. The app logs each
-  matched line when presence begins and every five minutes after, under
-  the `portal` tag.
+If person detection remains stuck on Clear:
+
+* **Permission not active in running process**: If `READ_LOGS` was granted while the app was running, force stop and restart the application using the button in settings or ADB.
+* **Disabled presence service**: If Meta's internal presence services (`com.facebook.alohaservices.presence` or `com.facebook.portal.aiservice`) have been disabled, the Person Detection configuration page will be hidden entirely.
+* **Verify system log output**: Run the following command to verify if the Portal is generating presence logs:
+
+```
+adb shell logcat -v epoch -s PresenceManager:I aloha.CameraServiceController:I aloha.TrackAndHoldAiDirectorDefaultNudgeMovement:I
+```
+
+When a person is in front of the device, logcat should output `Notify people presence` and `onNotifyPresence presence updated` every 30 seconds, alongside `Forcing fast track movement` and `boundaryViolatedPct` lines as the camera tracks movement. When the room is empty, `Forcing brake movement` logs display once per second to signal departure. Kiosk Satellite logs these matched entries under the `portal` log tag when presence begins and every five minutes thereafter.

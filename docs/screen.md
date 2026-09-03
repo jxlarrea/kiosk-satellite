@@ -1,98 +1,51 @@
 # Screen
 
-Settings → Screen & Audio → **Screen**.
+Navigate to **Settings > Screen & Audio > Screen**.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Keep screen on | off | Stops the OS display timeout while the app is in front. |
-| Set brightness on launch | off | Applies the default brightness whenever the app starts. |
-| Default brightness | 80% | The brightness applied at start. Moving the slider applies it at once, and so does Home Assistant's Screen light or the remote admin's slider, which turn this setting. Stands down while adaptive brightness is on. |
+| Keep screen on | off | Prevents the operating system's display timeout from turning off the screen while Kiosk Satellite is in the foreground. |
+| Set brightness on launch | off | Applies the specified Default brightness value automatically whenever the app starts up. |
+| Default brightness | 80% | Sets the display brightness applied on startup. Adjusting this slider changes the screen brightness immediately. This setting is also controlled by Home Assistant's Screen light entity and the remote admin slider. It is automatically disabled while Adaptive brightness is active. |
 
-## Default brightness
+## Default Brightness
 
-Off by default, because a slider with no gate would override every
-device's own brightness the moment it upgrades. With the gate on, the app
-writes the default brightness to the panel when it starts and whenever
-the slider moves. Home Assistant's Screen light and the remote admin's
-slider move the panel the same way, at any time.
+This option is disabled by default to prevent a default slider from overriding your device's built in brightness settings upon installation. When enabled, Kiosk Satellite applies the configured Default brightness value directly to the display panel whenever the app starts or when the slider is moved. Adjustments made via Home Assistant's Screen light entity or the remote admin slider update the display panel in real time.
 
-The app writes the panel's real system brightness, which needs the
-"Modify system settings" grant (the page says so under the slider when it
-is missing); without it, changes fall back to a window-level dimming that
-darkens the kiosk but leaves Android's own slider where it was. Every
-write puts Android's brightness mode on manual, since under Android's
-own adaptive brightness a written value is only a hint the OS drifts away
-from.
+Writing values directly to the system display requires the "Modify system settings" permission (an alert appears beneath the slider if this permission is missing). If this permission is not granted, brightness adjustments fall back to window level dimming, which darkens the app content but leaves the system brightness slider unchanged. Every direct system write automatically switches Android's brightness mode to manual, as system level adaptive brightness would otherwise override the set value over time.
 
-## Adaptive brightness
+## Adaptive Brightness
 
-Settings → Screen & Audio → **Adaptive brightness**. Only offered on a
-device with an ambient light sensor; on one without, the switch renders
-disabled with the reason.
+Navigate to **Settings > Screen & Audio > Adaptive brightness**. This menu option is available only on devices equipped with a physical ambient light sensor. If no sensor is detected, the setting appears disabled with an explanatory note.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Adaptive brightness | off | Dims the screen as the room gets darker, from the device's own ambient light sensor. |
-| Ambient light | live | What the sensor reads right now, in lx. |
-| Minimum brightness | 15% | Screen brightness in a dark room. |
-| Maximum brightness | 80% | Screen brightness in a bright room. |
-| Dark room (lx) | 5 | Light level at or below which the screen sits at Minimum brightness. |
-| Bright room (lx) | 300 | Light level at or above which the screen sits at Maximum brightness. |
+| Adaptive brightness | off | Automatically dims or brightens the display based on ambient light levels read by the device's sensor. |
+| Ambient light | live | Displays the real time ambient light reading in lux (lx). |
+| Minimum brightness | 15% | Sets the minimum screen brightness level for a completely dark room. |
+| Maximum brightness | 80% | Sets the maximum screen brightness level for a fully lit room. |
+| Dark room (lx) | 5 | Defines the ambient light threshold (in lux) at or below which the screen stays at Minimum brightness. |
+| Bright room (lx) | 300 | Defines the ambient light threshold (in lux) at or above which the screen stays at Maximum brightness. |
 
-Home Assistant can already map the kiosk's Ambient light sensor onto its
-Screen light, but that mapping stops the moment Home Assistant or the
-network is away. Adaptive brightness does the same thing on the device,
-with nothing to reach.
+While Home Assistant automations can map the kiosk's ambient light sensor back to its Screen light entity, that mechanism relies on an active network connection. Kiosk Satellite's native Adaptive brightness processes these adjustments directly on the device, ensuring continuous operation even during network outages.
 
-Between the two light levels the brightness follows the log of the
-reading, because the eye judges light on a log scale: a straight line
-would park the panel at Minimum for the whole 0..50 lx evening and then
-jump. With the defaults, 5 lx and below is Minimum, 300 lx and above is
-Maximum, and 40 lx (a lit living room in the evening) sits halfway.
+Brightness scaling between the dark and bright room thresholds follows a logarithmic curve to match human eye perception. A linear scale would keep the display at Minimum brightness for most typical evening light levels before stepping up sharply. With the default configuration (5 lx dark, 300 lx bright), a typical living room in the evening (around 40 lx) sets the screen to roughly half of its configured brightness range.
 
-**Set the two light levels against the reading, not against a scale.**
-Light sensors disagree wildly about what a lit room reads: an Echo Show 8
-reports around 50 lx with every light on, a device by a window reports
-thousands. That is why the reading is on the page and the levels are
-typed rather than slid. Watch the reading with the lights on and put
-Bright room a little under it; watch it at night and put Dark room a
-little over it. Dark room must stay below Bright room, and Minimum
-brightness below Maximum brightness; a value that would cross the other
-end is refused with the other end's value in the message.
+**Calibrate the light level thresholds against live sensor readings rather than an arbitrary scale.** Light sensors vary widely across hardware: an Echo Show 8 may report 50 lx under bright indoor lighting, whereas a tablet near a window can report thousands of lux. Observe the live Ambient light reading on the settings page under your typical room conditions:
+* Set **Bright room (lx)** slightly below the reading obtained with all room lights turned on.
+* Set **Dark room (lx)** slightly above the reading obtained in your typical nighttime environment.
+* The Dark room threshold must remain below the Bright room threshold, and Minimum brightness must remain below Maximum brightness. Entering conflicting values will trigger a validation error.
 
-While the switch is on, Default brightness stands down (the slider says
-so): a session starts at Maximum brightness dimmed for the room as it
-is. The screensaver's own brightness and the Dim level keep their
-meaning as the level in a bright room and dim by the same share as the
-dashboard does, so a clock at 20% by day sits at a few percent at night
-with the slider untouched. Its saved restore point is the bright-room
-level too, so the dashboard comes back where it belongs however dark it
-got in between.
+When Adaptive brightness is enabled, the Default brightness slider is disabled, and the app calculates startup brightness dynamically based on current room conditions. Screensaver brightness and Dim levels scale proportionally based on the active ambient light curve, ensuring a clock screensaver set to 20% during the day automatically drops to a much lower intensity at night. When returning to the dashboard, the screen restores to the appropriate level for the current lighting environment.
 
-**Home Assistant's Screen light, the remote admin's Overview slider and
-the JS API turn the setting that governs the level**: Default brightness
-with the switch off, Maximum brightness with it on. A write stores that
-setting and the panel follows, so a scene setting the screen to 60% at
-night keeps it at 60% by day and dims it by the curve at night, rather
-than lasting until the room's light next moves. A write below Minimum
-brightness is refused and the light snaps back. The light's brightness
-reads that setting too, so a write reads back as written; what the panel
-actually shows is the **Panel brightness** diagnostic sensor, in percent,
-which follows every step of the curve. With the switch off the two agree.
-For a scene that wants the panel held exactly where it puts it, turn the
-switch off first: it is an entity too (**Adaptive brightness**, on the
-[ESPHome](esphome.md) and [MQTT](mqtt.md) devices alike). A change made
-in Android's own quick settings moves the panel for the session without
-touching the setting.
+**Home Assistant's Screen light entity, the remote admin slider, and the JavaScript API adjust the underlying setting controlling the panel**:
+* Adjustments modify **Default brightness** when Adaptive brightness is turned off.
+* Adjustments modify **Maximum brightness** when Adaptive brightness is turned on.
 
-While the screensaver shows, a write from any of them changes the setting
-and leaves the screensaver's own level alone; the new level lands when
-the screensaver ends.
+Writing a new value updates the stored setting, and the screen adjusts accordingly. For example, setting the brightness to 60% via an automation sets the Maximum brightness baseline to 60%, allowing ambient dimming to calculate downwards from that new peak at night. Setting requests below the Minimum brightness threshold are rejected to maintain legibility.
 
-Steps are small and spaced: the panel moves only when the curve moves it
-by a few percent and never more often than every couple of seconds, so a
-passing shadow or a lamp flicker does not make it pulse. The room's light
-reaches the app through the same damped sensor stream that feeds the
-Ambient light entity. A sensor that registers itself only after the app
-has started (some Android Things devices) is picked up on the next app
-start.
+The Screen light entity reflects the configured baseline setting. To track the actual output of the display panel as it adjusts along the logarithmic curve, check the **Panel brightness** diagnostic sensor (reported in percentage). When Adaptive brightness is disabled, the entity setting and diagnostic sensor output remain identical. If you need to temporarily lock the display to a specific static brightness value via Home Assistant, turn off the **Adaptive brightness** switch entity (available on both [ESPHome](esphome.md) and [MQTT](mqtt.md) devices) before sending the brightness command. Manual adjustments made using Android's system quick settings shade modify panel output for the current session without altering app settings.
+
+When a screensaver is active, incoming brightness commands update the stored app settings immediately but leave the active screensaver brightness level untouched. The newly requested setting takes effect as soon as the screensaver is dismissed.
+
+Brightness updates are applied smoothly and gradually: the screen updates only when sensor changes shift the calculated output by several percentage points, and updates are throttled to occur no more than once every few seconds. This prevents screen flickering caused by temporary shadows or lamp fluctuations. Room light data reaches the app through the same damped sensor stream that feeds the Ambient light diagnostic entity. On specialized devices (such as certain Android Things hardware) where light sensors register after app initialization, the sensor is recognized upon the next app restart.

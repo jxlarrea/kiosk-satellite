@@ -17,7 +17,7 @@
 <a href="https://buymeacoffee.com/jxlarrea"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
 </p>
 
-Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpose-built for Home Assistant from the ground up, Kiosk Satellite delivers a smooth, native dashboard experience with optional voice control via [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration). Kiosk Satellite is free and open source.
+Transform any Android device into a beautiful, dedicated Home Assistant kiosk. Built specifically for Home Assistant from the ground up, Kiosk Satellite gives you a smooth, native dashboard experience. Want voice control? Pair it with [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration) for a fully hands-free setup. Kiosk Satellite is completely free and open source.
 
 <p align="center">
  <img src="assets/ks-demo-lossy.gif" alt="Kiosk Satellite" width="650"/>
@@ -25,117 +25,51 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
 
 ## Main Features
 
-&bull; **Guided setup**: a five-step wizard connects to Home Assistant, picks
-  the dashboard, detects Voice Satellite, and requests only the Android
-  permissions your choices need. Run it on the device or from a browser
-  on your computer.
+&bull; **Guided setup**: Get up and running easily. A five-step wizard connects to your Home Assistant instance, lets you pick a dashboard, detects Voice Satellite automatically, and only asks for the Android permissions it actually needs. You can run the setup directly on the device or from a browser on your computer.
 
-&bull; **[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration), natively**: the kiosk gets its own
-  `assist_satellite` entity and the app's built-in engine takes over
-  wake-word detection: it keeps listening with the screen off, at a
-  fraction of the CPU a browser needs. No configuration in Voice
-  Satellite; everything is inherited.
+&bull; **Native [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)**: Your kiosk gets its own `assist_satellite` entity, and the app's built-in engine takes over wake-word detection. It quietly listens in the background even with the screen off—using a fraction of the CPU a web browser requires. There's no extra configuration needed; it inherits everything directly.
 
 <p align="center">
  <img src="assets/vs-demo.gif" alt="Voice Satellite" width="650"/>
 </p>
 
-&bull; **Plain HTTP instances, fully unlocked**: a loopback proxy inside the
-  app makes an `http://` dashboard a genuine secure context, so the
-  microphone and the rest of the https-only browser surface work with no
-  certificates or reverse proxy. Enabled automatically during setup.
-  
-&bull; **Fast dashboards on slow devices**: optional
-  [optimizations](docs/optimizations.md) filter Home Assistant's state
-  stream down to just the entities on the view currently on screen,
-  turning constant stutter on older devices into smooth scrolling, and
-  pause the dashboard's rendering while the screensaver covers it, taking
-  a busy dashboard's browser from over two full cores and 70% GPU to a
-  fraction of one core and 0%. The connection and Voice Satellite keep
-  working throughout, and any view the filter cannot fully resolve is
-  left unfiltered, so nothing ever breaks.
+&bull; **Fully unlocked plain HTTP**: No certificates or reverse proxies required. A loopback proxy inside the app turns an `http://` dashboard into a genuine secure context automatically, meaning your microphone and other HTTPS-only features work right out of the box.
+
+&bull; **Smooth performance on older devices**: Optional [optimizations](docs/optimizations.md) filter Home Assistant's state stream to only update the entities currently visible on your screen, turning constant stutter into smooth scrolling. It also pauses rendering when the screensaver is on, dropping CPU/GPU usage dramatically. Voice and connection keep running, and anything it can't filter safely is left alone, so nothing breaks.
 
 <p align="center">
  <img src="assets/perf-vs-fully.svg" alt="Measured against Fully Kiosk on a Galaxy Tab S8+ running the same dashboard" width="650">
 </p>
 
-&bull; **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
-  buttons, a status-bar shield, instant re-wake on power button, and
-  lock-task support on device-owner provisioned kiosks.
+&bull; **Kiosk lockdown**: Keep your setup secure. Features include an exit PIN, blocked hardware buttons (back/volume/home), a status-bar shield, instant re-wake on the power button, and lock-task support for fully provisioned devices.
 
-&bull; **Gestures**: map corner taps, corner holds, multi-finger taps and
-  holds, a knock-code corner sequence, 2 to 4 claps (the Clapper,
-  heard through the microphone, no Voice Satellite required) or a hand
-  showing fingers to the camera to
-  [configurable actions](docs/gestures.md): jump to a dashboard view,
-  call a Home Assistant service or script, open another app and more,
-  all invisible to guests.
+&bull; **Custom gestures**: Keep your interface clean by mapping invisible gestures to [configurable actions](docs/gestures.md). Use corner taps, multi-finger holds, knock-codes, claps (heard through the mic, no Voice Satellite required), or even hand signals to the camera. Use them to jump to views, run HA scripts, or open other apps without guests ever knowing.
 
-&bull; **Media player**: the device doubles as a synchronized
-  [Sendspin](https://www.sendspin-audio.com/) speaker for Music
-  Assistant, in sample-accurate sync with every other Sendspin player in
-  the house, with metadata, artwork and volume in Home Assistant. Or it
-  follows a player elsewhere, any Music Assistant player, any Home
-  Assistant media player or a Sonos speaker directly, showing and steering
-  its music with artwork, lyrics, the queue and volume on screen.
+&bull; **Synchronized media player**: Use your device as a perfectly synced [Sendspin](https://www.sendspin-audio.com/) speaker for Music Assistant. Alternatively, let the kiosk follow another player (like any HA media player or Sonos speaker) to display album artwork, lyrics, and volume controls on screen.
 
 <p align="center">
  <img src="assets/screenshots/now-playing.png" alt="Now Playing" width="650"/>
 </p>
 
-&bull; **Screensavers**: dim, black, clock, Home Assistant media, local
-  folders, a photo gallery picked straight from the system picker, or an
-  [Immich](docs/immich.md) library or album as a full photo frame with
-  metadata overlay, all with crossfade / slide / zoom / Ken Burns
-  transitions and an optional corner clock. Supports dismiss on motion, face detection and presence detection.
+&bull; **Dynamic screensavers**: Choose from dim, black, clock, local photos, or a stunning [Immich](docs/immich.md) photo frame with transition effects (slide, zoom, Ken Burns) and metadata overlays. Includes support for waking up via motion, face, or presence detection.
 
-&bull; **Remote administration**: an embedded web admin at
-  `http://<device-ip>:2324` mirrors every setting, shows a live
-  screenshot, web console and logs, and exports the entire configuration
-  as a single backup file.
+&bull; **Remote administration**: Manage everything from your computer. The embedded web admin (`http://<device-ip>:2324`) mirrors your settings, shows a live screenshot, provides a web console for logs, and handles configuration backups.
 
-&bull; **Dashboard view rotation**: cycle through a chosen set of dashboard
-  views in an endless loop, each on screen for a configurable number of
-  seconds.
+&bull; **Dashboard view rotation**: Set your kiosk to automatically cycle through specific dashboard views on an endless loop, customizing how many seconds each view stays on screen.
 
-&bull; **DLNA renderer**: push images, video and live cameras full screen
-  onto the kiosk with `media_player.play_media`, from Home Assistant
-  automations, the media browser or any DLNA app.
+&bull; **DLNA renderer**: Push videos, images, and live cameras directly to the full screen using `media_player.play_media`—perfect for HA automations.
 
 <p align="center">
  <img src="assets/screenshots/dashboard.png" alt="Dashboard" width="650"/>
 </p>
 
-&bull; **Native ESPHome device**: enable ESPHome and Home Assistant
-  discovers every device on its own, no broker, no YAML, one pasted key.
-  The device carries the full entity catalog: a screen light, volume
-  sliders, screensaver and settings switches, action buttons, camera view
-  and dashboard selects, an update entity, a live camera, and the whole
-  diagnostics set.
+&bull; **Native ESPHome integration**: Home Assistant discovers the kiosk automatically. No broker, no YAML. You get a massive catalog of entities right out of the box: screen light, volume sliders, screensaver switches, a live camera stream, and full diagnostics.
 
-&bull; **Bluetooth proxy**: the same ESPHome connection relays BLE
-  advertisements and carries active device connections, exactly like an
-  ESP32 proxy: BTHome sensors, thermometers, presence beacons, locks and
-  buttons, with several kiosks forming a Bluetooth mesh on their own.
+&bull; **Built-in Bluetooth proxy**: Acting just like an ESP32, the ESPHome connection relays BLE advertisements and active connections for your BTHome sensors, locks, and buttons. Multiple kiosks can even form a Bluetooth mesh network.
 
-&bull; **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
-  awake, default and adaptive brightness, scheduled light/dark theme,
-  custom JavaScript injection, and self-signed certificate support.
-
-&bull; **Open other apps from the dashboard**: point any card's tap action at
-  `app://<package>` and the device opens that app, with the kiosk still
-  running behind it.
-
-  ```yaml
-  tap_action:
-    action: url
-    url_path: app://com.android.deskclock
-  ```
+&bull; **Everyday kiosk conveniences**: Pull-to-refresh, boot on start, keep-screen-awake, adaptive brightness using the device's light sensor, scheduled themes, custom JavaScript injection, and self-signed certificate support.
   
-&bull; **Camera Streams**: import streams from Go2RTC or add WebRTC, MSE, HLS or MJPEG cameras
-  manually, then arrange up to four cameras into responsive
-  [camera views](docs/cameras.md) that can be opened from the device,
-  Remote Admin or Home Assistant.
+&bull; **Advanced camera streams**: Import streams via Go2RTC or manually add WebRTC, MSE, HLS, or MJPEG cameras. You can arrange up to four feeds into responsive [camera views](docs/cameras.md) accessible from the device, Remote Admin, or Home Assistant.
 
 <p align="center">
  <img src="assets/screenshots/camera-1.png" alt="Cameras" width="650"/>
@@ -143,35 +77,17 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
 
 ## Kiosk Satellite + Voice Satellite
 
-[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
-turns a Home Assistant dashboard into a full hands-free voice assistant
-with wake word, conversations, timers and announcements. It runs entirely in the
-browser, which is exactly its limit on a wall-mounted device: browsers can't listen
-while the screen is off, browser-side wake-word engines are expensive, and
-on a plain http instance the browser refuses the microphone altogether.
+[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration) turns a Home Assistant dashboard into a full hands-free voice assistant with a wake word, timers, and announcements. However, because it relies on the browser, it hits a wall on dedicated devices: browsers can't listen while the screen is off, their wake-word engines are resource-heavy, and standard HTTP setups block microphone access entirely.
 
-Kiosk Satellite removes that limit. The app runs Voice Satellite's own
-wake-word models natively and transparently: Voice Satellite detects it is
-running inside Kiosk Satellite and hands detection over on its own. You keep
-configuring everything in Voice Satellite as usual; the kiosk just makes it
-always-on, cheaper, and screen-independent.
+Kiosk Satellite shatters those limits. The app runs Voice Satellite's wake-word models natively and transparently. Voice Satellite realizes it’s inside Kiosk Satellite and smoothly hands over the detection work. You still configure everything as usual in Voice Satellite; the kiosk just makes it always-on, highly efficient, and independent of the screen state.
 
 <p align="center">
  <img src="assets/screenshots/vs-settings.png" alt="Voice Satellite Settings" width="650"/>
 </p>
 
-The performance difference is one of the main reasons to use Kiosk
-Satellite. Native inference runs the entire wake-word pipeline many times
-faster than realtime on the CPU alone (tens of times faster on a modern
-device) at a fraction of the CPU and battery a browser-side engine burns,
-and it keeps the dashboard perfectly smooth while listening. It is
-efficient enough that vsWakeWord now runs even on an Amazon Echo Show 5,
-on CPU, with no GPU or accelerator needed.
+This massive performance boost is one of the best reasons to use Kiosk Satellite. By running native inference on the CPU, the wake-word pipeline operates incredibly fast—saving your device's battery and CPU while keeping the dashboard buttery smooth. It’s so efficient that vsWakeWord can comfortably run on something as low-powered as an Amazon Echo Show 5.
 
-Detection also no longer depends on the page being visible: with
-background listening enabled, the wake word keeps working while the
-screen is off or **another app entirely is in the foreground**. Say the
-word and the kiosk brings the dashboard back and answers.
+Plus, you aren't forced to keep the dashboard open. With background listening enabled, the wake word continues working even if the screen is off or **you have another app open**. Just say the word, and the kiosk instantly brings the dashboard front and center to answer.
 
 | Capability | Voice Satellite alone | Kiosk Satellite + Voice Satellite |
 | --- | --- | --- |
@@ -183,75 +99,60 @@ word and the kiosk brings the dashboard back and answers.
 | Wake word on low-end hardware | ⚠️ Struggles | ✅ CPU only, no GPU needed |
 | Survives reboots | ⚠️ Manual relaunch | ✅ Start on boot |
 
-Voice Satellite is not required, since Kiosk Satellite is a complete Home
-Assistant kiosk on its own, but together they make a device into something
-very close to a purpose-built voice hub.
+While you don't *have* to use Voice Satellite (Kiosk Satellite is a fantastic HA dashboard all on its own), putting them together essentially gives you a custom-built smart display and voice hub.
 
 ## Installation
 
-Kiosk Satellite is distributed as a free APK for sideloading:
+Kiosk Satellite is completely free and distributed as an APK for sideloading:
 
-1. Download the latest APK from the
-   [releases page](../../releases).
-2. Copy it to the device (or download it there directly) and open it.
-   Allow installing from unknown sources when Android asks.
-3. Open the app and follow the setup wizard. The first step names the
-   device, which is what Home Assistant and the network will call it. Tip:
-   enable remote administration in the same step and finish the setup from
-   a browser on your computer, where pasting the Home Assistant access
-   token is much easier than typing it on glass.
+1. Download the latest APK from the [releases page](../../releases).
+2. Copy it to your Android device (or download it directly there) and open it. If Android prompts you, allow installation from unknown sources.
+3. Open the app and follow the simple setup wizard. 
+   
+> **Pro Tip:** In the first step (naming the device), enable Remote Administration. You can then finish the rest of the setup from your computer's browser—it makes copying and pasting your Home Assistant long-lived access token vastly easier than typing it out on a touchscreen!
 
-**Requirements:** Android 7.0 or newer, a Home Assistant instance you can
-reach from the device, and a long-lived access token (HA profile →
-Security → Long-lived access tokens). For voice, install
-[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
-from the default HACS repository.
-
+**Requirements:** Android 7.0 or newer, a reachable Home Assistant instance, and a long-lived access token (found in HA Profile → Security → Long-lived access tokens). For voice features, make sure to install [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration) from the default HACS repository.
 
 ## Documentation
 
-- [JavaScript API](docs/js-api.md): `window.kioskSatellite`, wake-word handoff protocol
-- [Remote API](docs/remote-api.md): REST + WebSocket surface
-- [ESPHome](docs/esphome.md): native Home Assistant entities and a Bluetooth proxy over the ESPHome API.
-- [MQTT](docs/mqtt.md): the MQTT integration, on its way out in favor of ESPHome and kept for existing setups until it is removed
-- [Camera streams](docs/cameras.md): Go2RTC import, camera views, and Home Assistant controls
-- [Screen](docs/screen.md): keep-awake, default brightness, and adaptive brightness from the device's own light sensor.
-- [Screensavers](docs/screensavers.md): the modes, schedule, brightness, motion wake, and what starts and dismisses them.
-- [Device camera](docs/camera.md): the device's own camera as a Home Assistant still camera and motion detector.
-- [Media Player](docs/sendspin.md): the floating player and Now Playing view for the device's own Sendspin player, any Music Assistant or Home Assistant media player or a Sonos speaker followed directly.
-- [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
-- [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
-- [At a Glance](docs/at-a-glance.md): a row of entity states on the screensaver.
-- [Kiosk and Lockdown](docs/kiosk.md): Kiosk Mode's protections, Lockdown Mode, the grants they need, and the device owner tier.
-- [Home Launcher](docs/home-launcher.md): Kiosk Satellite as the device's home screen, what that replaces, and the crash fuse that hands the role back if the app cannot start.
-- [Gestures](docs/gestures.md): touch gestures mapped to configurable actions.
-- [Microphone](docs/microphone.md): capture mode, gain and AGC, for devices whose microphone reads too quiet.
-- [Optimizations](docs/optimizations.md): the connection and performance switches, what each one does and when to use it.
-- [Permissions](docs/permissions.md): every Android grant the app uses, what each is for, adb commands to grant them all at once, and the Kiosk Satellite Service that keeps the app alive with the screen off.
-- [Updates](docs/updates.md): how the app finds and installs new releases, what Android asks for on each version, and hands-free updates through device ownership.
+- [JavaScript API](docs/js-api.md): Info on `window.kioskSatellite` and the wake-word handoff protocol.
+- [Remote API](docs/remote-api.md): Details on the REST + WebSocket interface.
+- [ESPHome](docs/esphome.md): Everything you need to know about native HA entities and Bluetooth proxying via the ESPHome API.
+- [MQTT](docs/mqtt.md): Legacy MQTT integration (currently being phased out in favor of ESPHome, but kept for existing setups).
+- [Camera streams](docs/cameras.md): Using Go2RTC import, setting up camera views, and HA controls.
+- [Screen](docs/screen.md): Keep-awake settings, default brightness, and adaptive brightness logic.
+- [Screensavers](docs/screensavers.md): Modes, schedules, brightness, motion waking, and triggers.
+- [Device camera](docs/camera.md): Utilizing the tablet's physical camera for still images and motion detection in HA.
+- [Media Player](docs/sendspin.md): The floating player, Now Playing views, Sendspin integration, and following HA/Sonos players.
+- [DLNA](docs/dlna.md): Pushing media to the kiosk from HA or DLNA apps.
+- [Immich](docs/immich.md): Setting up the Immich photo-frame screensaver, metadata overlays, and local caching.
+- [At a Glance](docs/at-a-glance.md): Adding a row of entity states directly onto your screensaver.
+- [Kiosk and Lockdown](docs/kiosk.md): Understanding Kiosk Mode protections, permissions, and device owner provisioning.
+- [Home Launcher](docs/home-launcher.md): Setting Kiosk Satellite as the device's home screen.
+- [Gestures](docs/gestures.md): Mapping touch and camera gestures to custom actions.
+- [Microphone](docs/microphone.md): Capture modes and AGC for devices with quiet microphones.
+- [Optimizations](docs/optimizations.md): Performance switches and connection tweaks for older hardware.
+- [Permissions](docs/permissions.md): A detailed breakdown of every Android permission the app requests, `adb` grant commands, and background service details.
+- [Updates](docs/updates.md): How updates work, required permissions, and enabling hands-free updates.
 
-### Device Specific
-- [Meta Portal](docs/portal.md): Notes about running Kiosk Satellite on a Portal device and required permissions for its Person detector.
-- [Amazon Fire tablets](docs/fire.md): Notes about running Kiosk Satellite on a Fire tablet, the lock screen it cannot clear and the adb switch that turns it off.
+### Device Specific Guides
+- [Meta Portal](docs/portal.md): Running Kiosk Satellite on a Meta Portal and fixing Person detector permissions.
+- [Amazon Fire tablets](docs/fire.md): Navigating Fire OS quirks, clearing lock screens, and useful `adb` tweaks.
 
 ## License
 
-Kiosk Satellite is free for personal, non-commercial use. It is licensed
-under
-[CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/):
-you may use and share it, but commercial use and derivative works are not
-permitted. See [LICENSE](LICENSE).
+Kiosk Satellite is free for personal, non-commercial use, licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). You are welcome to use and share it, but commercial use and derivative works are not permitted. See [LICENSE](LICENSE) for full details.
 
 ## Acknowledgements
 
-Kiosk Satellite stands on a lot of amazing projects. Thanks to:
+Kiosk Satellite stands on the shoulders of several amazing open-source projects. A massive thank you to:
 
-- [Home Assistant](https://www.home-assistant.io/) and [ESPHome](https://esphome.io/), the ecosystem this app was made for.
-- [Music Assistant](https://www.music-assistant.io/) which carries the media player experience in Kiosk Satellite.
-- [Immich](https://immich.app/) for the photo-frame screensaver which everyone loves.
-- [Flutter](https://flutter.dev/) and [flutter_inappwebview](https://inappwebview.dev/), which carries the whole dashboard experience.
-- [ONNX Runtime](https://onnxruntime.ai/) for on-device wake word inference, running [vsWakeWord](https://github.com/jxlarrea/voice-satellite-card-integration), [openWakeWord](https://github.com/dscripka/openWakeWord) and [microWakeWord](https://github.com/kahrendt/microWakeWord) models.
-- [Material Design Icons](https://pictogrammers.com/library/mdi/) for the icon set.
-- The [Rubik](https://fonts.google.com/specimen/Rubik), [Nunito](https://fonts.google.com/specimen/Nunito), [Inter](https://rsms.me/inter/) and [DSEG](https://github.com/keshikan/DSEG) fonts, all under the SIL Open Font License.
+- [Home Assistant](https://www.home-assistant.io/) and [ESPHome](https://esphome.io/), the incredible ecosystem this app was built for.
+- [Music Assistant](https://www.music-assistant.io/) for powering the media player experience.
+- [Immich](https://immich.app/) for providing the backend to everyone's favorite photo-frame screensaver.
+- [Flutter](https://flutter.dev/) and [flutter_inappwebview](https://inappwebview.dev/) for making the dashboard experience possible.
+- [ONNX Runtime](https://onnxruntime.ai/) for handling fast, on-device wake word inference (supporting [vsWakeWord](https://github.com/jxlarrea/voice-satellite-card-integration), [openWakeWord](https://github.com/dscripka/openWakeWord), and [microWakeWord](https://github.com/kahrendt/microWakeWord)).
+- [Material Design Icons](https://pictogrammers.com/library/mdi/) for the UI icon set.
+- The creators of [Rubik](https://fonts.google.com/specimen/Rubik), [Nunito](https://fonts.google.com/specimen/Nunito), [Inter](https://rsms.me/inter/), and [DSEG](https://github.com/keshikan/DSEG) fonts.
 
-And every package author in `pubspec.yaml` whose work this app quietly depends on.
+And finally, thank you to every package author in our `pubspec.yaml` whose hard work this app quietly depends on.
