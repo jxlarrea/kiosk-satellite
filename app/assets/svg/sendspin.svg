@@ -1,0 +1,12 @@
+<!--
+  The Sendspin mark, monochrome: the record from the project's own favicon
+  (sendspin-audio.com), the disc as a ring, one groove, the label as a
+  filled circle with the spindle hole cut out of it, so it reads as the
+  logo in whatever color it is given. The dark plate and the label's red
+  are left out, as a flat glyph beside the Material ones needs neither.
+-->
+<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<circle cx="12" cy="12" r="9.6" fill="none" stroke="#000" stroke-width="1.8"/>
+<circle cx="12" cy="12" r="6.9" fill="none" stroke="#000" stroke-width="0.8" opacity="0.55"/>
+<path fill="#000" fill-rule="evenodd" d="M12 7.7a4.3 4.3 0 1 0 0 8.6a4.3 4.3 0 1 0 0-8.6zm0 3.15a1.15 1.15 0 1 1 0 2.3a1.15 1.15 0 1 1 0-2.3z"/>
+</svg>

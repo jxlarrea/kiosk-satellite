@@ -88,10 +88,15 @@ export const SUBPAGE_ICONS = {
     + '<path d="M5.6 5.6a9 9 0 0 0 0 12.8m12.8-12.8a9 9 0 0 1 0 12.8"/>'),
   'Scheduled Screensavers': svg('<rect x="3" y="5" width="18" height="16" rx="2"/>'
     + '<path d="M3 10h18M8 3v4m8-4v4"/>'),
-  // Media Player. Music Assistant wears its own mark, the one the
-  // category rail used to.
-  'Sendspin Player': svg('<rect x="4" y="2" width="16" height="20" rx="2"/>'
-    + '<circle cx="12" cy="14" r="4"/><circle cx="12" cy="7" r="1"/>'),
+  // Media Player. Sendspin and Music Assistant wear their own marks:
+  // Sendspin the record from its favicon (the disc, a groove, the label
+  // with the spindle hole cut out), Music Assistant the one the category
+  // rail used to.
+  'Sendspin Player': svg('<circle cx="12" cy="12" r="9.6" stroke-width="1.8"/>'
+    + '<circle cx="12" cy="12" r="6.9" stroke-width="0.8" opacity="0.55"/>'
+    + '<path fill="currentColor" stroke="none" fill-rule="evenodd" '
+    + 'd="M12 7.7a4.3 4.3 0 1 0 0 8.6a4.3 4.3 0 1 0 0-8.6zm0 3.15a1.15 1.15 '
+    + '0 1 1 0 2.3a1.15 1.15 0 1 1 0-2.3z"/>'),
   'Music Assistant': svg('<path d="M68.371 2.73837C72.0263 -0.912791 77.9927 -0.912791 81.629 2.73837L143.371 64.5432C147.026 68.1943 150 75.4021 150 80.5667V136.886L149.997 137.108C149.868 142.162 145.696 146.25 140.625 146.25H9.375C4.22349 146.25 1.50296e-05 142.012 0 136.867V80.5478C7.52069e-05 75.3832 2.99271 68.1754 6.62903 64.5243L68.371 2.73837ZM22.5 75.0003C19.7386 75.0003 17.5 77.2389 17.5 80.0003V128.75H27.5V80.0003C27.5 77.2389 25.2614 75.0003 22.5 75.0003ZM42.5 75.0003C39.7386 75.0003 37.5 77.2389 37.5 80.0003V128.75H47.5V80.0003C47.5 77.2389 45.2614 75.0003 42.5 75.0003ZM62.5 75.0003C59.7386 75.0003 57.5 77.2389 57.5 80.0003V128.75H67.5V80.0003C67.5 77.2389 65.2614 75.0003 62.5 75.0003ZM98.9954 75.2671C96.3753 74.395 93.5442 75.8122 92.6721 78.4323L75.9241 128.75H86.4636L102.16 81.5903C103.032 78.9703 101.615 76.1393 98.9954 75.2671ZM117.943 78.4323C117.07 75.8123 114.239 74.3951 111.619 75.2671C108.999 76.1392 107.582 78.9702 108.454 81.5903L124.151 128.75H134.69L117.943 78.4323Z"/>', 'fill="currentColor"', '-11 -13 172 172'),
   'Sonos': svg('<rect x="6" y="2" width="12" height="20" rx="2"/>'
     + '<circle cx="12" cy="14" r="3.5"/><circle cx="12" cy="7" r="1"/>'),

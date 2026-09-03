@@ -45,7 +45,7 @@ const Map<String, Object> subpageIcons = {
   'Scheduled Screensavers': Icons.calendar_today_outlined,
   // Media Player. Music Assistant is the one page named after a product
   // here; it wears the mark the category rail used to.
-  'Sendspin Player': Icons.speaker_group_outlined,
+  'Sendspin Player': 'assets/svg/sendspin.svg',
   'Music Assistant': 'assets/svg/music-assistant.svg',
   'Sonos': Icons.speaker_outlined,
   'Floating Player': Icons.picture_in_picture_alt_outlined,

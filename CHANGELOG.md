@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- The **Sendspin Player page wears the Sendspin mark**, the record from the project's own logo, on its entry row and page title on the device and in the remote admin alike, where it had a generic speaker glyph.
+
 ### Added
 - An **HA Kiosk Mode** row on the Kiosk Mode page's Allowed Actions: with it on, the restricted menu that Allow menu with quick actions opens carries the same HA Kiosk Mode entry as the full menu, so whoever stands at the device can bring the Home Assistant header and sidebar back, or hide them again, without the exit gesture or the PIN. On by default like the other actions, so switch it off where the hidden navigation must stay hidden.
 - A **Toggle HA kiosk mode** gesture action, on the device and in the remote admin alike: the mapped gesture hides the Home Assistant header and sidebar and, performed again, brings them back, the same switch as HA kiosk mode under the Home Assistant settings. It runs whether or not the menu row is allowed, so a secret gesture can open the navigation for a moment while the menu stays as it was.
