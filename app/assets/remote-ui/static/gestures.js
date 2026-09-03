@@ -41,6 +41,7 @@ export const GESTURE_ACTION_GROUPS = [
     ['screensaver', 'Start the screensaver', 'moon'],
     ['screensaver_stop', 'Stop the screensaver', 'sun'],
     ['hold_mode', 'Toggle hold mode', 'pauseCircle'],
+    ['ha_kiosk', 'Toggle HA kiosk mode', 'fullscreen'],
   ]],
   ['Android', [
     ['launch_app', 'Open another app', 'apps'],
@@ -96,6 +97,7 @@ export function describeGestureAction(a) {
     case 'screensaver': return 'Start the screensaver';
     case 'screensaver_stop': return 'Stop the screensaver';
     case 'hold_mode': return 'Toggle hold mode';
+    case 'ha_kiosk': return 'Toggle HA kiosk mode';
     case 'launch_app': return `Open app ${a.package}`;
     case 'open_uri': return `Open ${a.uri}`;
     case 'android_settings': return 'Open Android Settings';
@@ -425,6 +427,7 @@ export async function pickGestureAction(current) {
   switch (type) {
     case 'android_settings': case 'sendspin_player': case 'app_launcher':
     case 'screensaver': case 'screensaver_stop': case 'hold_mode':
+    case 'ha_kiosk':
       return { type };
     case 'navigate': return configureGestureNavigate(carried);
     case 'url': return configureGestureText(carried, {

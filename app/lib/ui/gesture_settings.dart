@@ -38,6 +38,7 @@ const _actionGroups = <(String, List<(String, String, IconData)>)>[
       ('screensaver', 'Start the screensaver', Icons.nightlight_outlined),
       ('screensaver_stop', 'Stop the screensaver', Icons.light_mode_outlined),
       ('hold_mode', 'Toggle hold mode', Icons.pause_circle_outline),
+      ('ha_kiosk', 'Toggle HA kiosk mode', Icons.fullscreen),
     ],
   ),
   (
@@ -558,7 +559,8 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
       'app_launcher' ||
       'screensaver' ||
       'screensaver_stop' ||
-      'hold_mode' => {'type': type},
+      'hold_mode' ||
+      'ha_kiosk' => {'type': type},
       'navigate' => _configureNavigate(carried),
       'url' => _configureText(
         carried,

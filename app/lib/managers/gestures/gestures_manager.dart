@@ -326,6 +326,13 @@ class GesturesManager extends Manager {
         // again, releases it (issue #266). The setting IS the state, so
         // every other surface follows.
         await _settings.set(defs.haHoldMode, !_settings.get(defs.haHoldMode));
+      case 'ha_kiosk':
+        // The same toggle as the drawer row (issue #422): the setting is
+        // the state, the kiosk screen restyles the page as it changes.
+        // Deliberately not behind the drawer's Allowed Action, so the
+        // header can come back on a secret gesture while the menu row
+        // stays hidden.
+        await _settings.set(defs.haKioskMode, !_settings.get(defs.haKioskMode));
       case 'launch_app':
         await _run('launchApp', {'package': a['package']});
       case 'open_uri':

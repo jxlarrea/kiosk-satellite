@@ -44,6 +44,7 @@ The action chooser groups options into three categories: Kiosk Satellite, Androi
 | Start the screensaver | Immediately launches whatever screensaver mode is currently configured. |
 | Stop the screensaver | While redundant for touch gestures (since any screen tap dismisses a screensaver), this is highly useful for clap gestures, allowing you to wake the screen from across the room. |
 | Toggle hold mode | Pins the current view, pausing the screensaver, dashboard rotation, and the return to home timer. Performing the same gesture again releases the hold. This pairs exceptionally well with a clap gesture when cooking from a recipe. |
+| Toggle HA kiosk mode | Toggles the Home Assistant header and sidebar visibility. This controls the exact same setting as "HA kiosk mode" in the Home Assistant configuration and the "HA Kiosk Mode" menu option. It remains fully functional even when Kiosk Mode hides the menu item, allowing a hidden gesture to temporarily expose navigation controls without requiring a PIN. |
 | Open another app | Opens a specific app by its package name, keeping the kiosk running safely in the background. |
 | Open a deep link | Launches any custom URI claimed by another app (e.g., `myapp://path`). |
 | Open Android Settings | Opens the core Android Settings app, keeping the kiosk running in the background. |

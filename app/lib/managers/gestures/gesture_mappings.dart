@@ -37,6 +37,7 @@
 ///  - screensaver:      start the screensaver
 ///  - screensaver_stop: stop it (redundant for touch, made for claps)
 ///  - hold_mode:        toggle hold mode (pin the current view, issue #266)
+///  - ha_kiosk:         toggle HA kiosk mode (the header and sidebar, #422)
 ///  - launch_app:       package
 ///  - open_uri:         uri, an Android deep link (ACTION_VIEW)
 ///  - android_settings
@@ -200,6 +201,8 @@ String describeGestureAction(Map<String, Object?> action) {
       return 'Stop the screensaver';
     case 'hold_mode':
       return 'Toggle hold mode';
+    case 'ha_kiosk':
+      return 'Toggle HA kiosk mode';
     case 'launch_app':
       return 'Open app ${action['package']}';
     case 'open_uri':

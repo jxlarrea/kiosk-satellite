@@ -100,6 +100,7 @@ export const CAMERA_ICONS = {
     + '<path d="m10 8.5 5.5 3.5-5.5 3.5z"/>',
   pauseCircle: '<circle cx="12" cy="12" r="9"/>'
     + '<path d="M10 9v6M14 9v6"/>',
+  fullscreen: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>',
   announce: '<path d="M4 9v6h4l5 4V5L8 9z"/>'
     + '<path d="M16.5 8.5a5 5 0 0 1 0 7"/>',
 };

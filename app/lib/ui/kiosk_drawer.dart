@@ -178,7 +178,12 @@ class KioskDrawer extends StatelessWidget {
                               // kind of thing done at the wall, without a trip
                               // into Settings. The kiosk screen reacts to the
                               // setting change and restyles the page.
-                              if (!restricted)
+                              // Behind its own Allowed Action in the
+                              // restricted menu (issue #422): the owner
+                              // who hid the header and sidebar decides
+                              // whether a visitor may bring them back.
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowHaKiosk))
                                 _item(
                                   divided: sep(),
                                   context,

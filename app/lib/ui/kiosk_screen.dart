@@ -268,6 +268,7 @@ class _KioskScreenState extends State<KioskScreen>
         c.settings.get(defs.launcherEnabled) && c.launcher.apps.isNotEmpty;
     final hasHold = c.settings.get(defs.haHoldMenu);
     return c.settings.get(defs.kioskAllowDashboard) ||
+        c.settings.get(defs.kioskAllowHaKiosk) ||
         c.settings.get(defs.kioskAllowScreensaver) ||
         c.settings.get(defs.kioskAllowTheme) ||
         (c.settings.get(defs.kioskAllowCamera) && hasCameras) ||

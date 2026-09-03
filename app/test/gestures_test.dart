@@ -547,6 +547,20 @@ void main() {
       await fire('g1');
       expect(settings.get(defs.haHoldMode), isFalse);
     });
+
+    test('ha_kiosk toggles HA kiosk mode each time (issue #422)', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl","taps":3},'
+        '"action":{"type":"ha_kiosk"}}]',
+      );
+      // The same gesture hides the header and sidebar and, performed
+      // again, brings them back: the setting is the state the kiosk
+      // screen, the drawer row and the HA switch all follow.
+      await fire('g1');
+      expect(settings.get(defs.haKioskMode), isTrue);
+      await fire('g1');
+      expect(settings.get(defs.haKioskMode), isFalse);
+    });
   });
 
   group('clapTargets', () {
