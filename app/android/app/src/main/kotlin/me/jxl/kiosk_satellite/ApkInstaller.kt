@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.os.Build
 import android.util.Log
@@ -151,6 +152,15 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
         val params = PackageInstaller.SessionParams(
             PackageInstaller.SessionParams.MODE_FULL_INSTALL)
         params.setAppPackageName(context.packageName)
+        // Session params default to INSTALL_LOCATION_INTERNAL_ONLY, and on a
+        // tablet whose SD card is formatted as internal (adopted storage)
+        // with this app living on it, that makes Android refuse the update
+        // outright: "Cannot automatically move <package> from <volume> to
+        // internal storage" (issue #424). AUTO keeps an update on whichever
+        // volume the app already occupies, which is what the system installer
+        // does too.
+        params.setInstallLocation(PackageInfo.INSTALL_LOCATION_AUTO)
+        params.setSize(apk.length())
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             params.setRequireUserAction(
                 PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)

@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- **Updating from an SD card formatted as internal storage** works again. A tablet whose SD card is adopted as internal storage and that keeps the app on it refused every update from the app itself, with "Cannot automatically move me.jxl.kiosk_satellite from <volume> to internal storage", because the install session asked Android for internal storage only. The session now lets the update stay on whichever storage the app already occupies, as the system installer does.
+
 ### Changed
 - The **Sendspin Player page wears the Sendspin mark**, the record from the project's own logo, on its entry row and page title on the device and in the remote admin alike, where it had a generic speaker glyph.
 
