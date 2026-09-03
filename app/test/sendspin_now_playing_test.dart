@@ -448,6 +448,44 @@ void main() {
       },
     );
 
+    test(
+      'the status carries a followed player\'s track, not the idle local one',
+      () async {
+        // Remote mode: the local client has no track; the followed player's
+        // snapshot is what the surfaces show, so it is what the status says.
+        await build();
+        expect(fake, isNotNull);
+        fake!.onSnapshot({
+          'title': 'Song',
+          'artist': 'Band',
+          'album': 'Record',
+          'artworkUrl': 'http://art/1.jpg',
+          'playing': true,
+          'supportedCommands': ['play', 'pause', 'next'],
+        });
+        final status =
+            (await commands.execute('sendspinStatus', const {})).data as Map;
+        expect(status['remotePlayer'], 'Kitchen');
+        expect(status['title'], 'Song');
+        expect(status['artist'], 'Band');
+        expect(status['album'], 'Record');
+        expect(status['artworkUrl'], 'http://art/1.jpg');
+        expect(status['playing'], isTrue);
+        expect(status['playbackState'], 'playing');
+        expect(status['supportedCommands'], ['play', 'pause', 'next']);
+        fake!.onSnapshot({'title': 'Song', 'playing': false});
+        final paused =
+            (await commands.execute('sendspinStatus', const {})).data as Map;
+        expect(paused['playbackState'], 'paused');
+        // Nothing followed: the fields stay the local client's.
+        fake!.onSnapshot(null);
+        final gone =
+            (await commands.execute('sendspinStatus', const {})).data as Map;
+        expect(gone['title'], isNull);
+        expect(gone.containsKey('playbackState'), isFalse);
+      },
+    );
+
     test('the watcher re-bases a position the engine ran away with', () async {
       await build(
         extra: {

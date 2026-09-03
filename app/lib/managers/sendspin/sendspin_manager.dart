@@ -847,6 +847,28 @@ class SendspinManager extends Manager {
               'remotePlayer': _settings.get(defs.sendspinPlayerName),
             ..._status,
             ...live,
+            // A followed player's track over the local client's, which
+            // sits idle while another player is controlled: the shown
+            // surfaces play from the snapshot, so the status says what
+            // they show rather than an empty local queue.
+            if (_remote != null)
+              for (final e in (nowPlaying.value ?? const {}).entries)
+                if (const {
+                  'title',
+                  'artist',
+                  'album',
+                  'artworkUrl',
+                  'positionMs',
+                  'durationMs',
+                  'receivedAt',
+                  'supportedCommands',
+                  'shuffle',
+                }.contains(e.key))
+                  e.key: e.value,
+            if (_remote != null && nowPlaying.value != null)
+              'playbackState': nowPlaying.value!['playing'] == true
+                  ? 'playing'
+                  : 'paused',
           });
         },
       ),
