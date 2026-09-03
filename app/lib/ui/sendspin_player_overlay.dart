@@ -1021,13 +1021,30 @@ class _GroupMenuState extends State<_GroupMenu> {
   @override
   void initState() {
     super.initState();
+    // The menu is a route above the view, so the view going away (the
+    // screensaver dismissed, playback ending) would leave it up on its
+    // own: it goes with the view.
+    final c = widget.container;
+    c.screensaver.activeView.addListener(_viewChanged);
+    c.sendspin.fullscreenActive.addListener(_viewChanged);
     unawaited(_load());
   }
 
   @override
   void dispose() {
+    final c = widget.container;
+    c.screensaver.activeView.removeListener(_viewChanged);
+    c.sendspin.fullscreenActive.removeListener(_viewChanged);
     _recheck?.cancel();
     super.dispose();
+  }
+
+  void _viewChanged() {
+    final c = widget.container;
+    if (c.screensaver.activeView.value == null ||
+        !c.sendspin.fullscreenActive.value) {
+      if (mounted) Navigator.of(context).maybePop();
+    }
   }
 
   Future<void> _load() async {
