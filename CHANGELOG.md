@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- **The At a Glance chips follow the Clock screensaver's Night mode.** The Night color reached the row only in the Floating text style, so with the default chips the white pills, their icon circles and state colors stayed lit beside the dimmed digits. In the dark the chips are now drawn in the Night color alone, the pill and circle as faint washes of it, the name and value in it outright, and the state colors stand down until the light returns.
+
 ### Changed
 - The **remote admin's Overview page opens on what the kiosk needs and how it is doing**. A Needs attention card lists an update to install, a grant a switched-on feature is missing, a lost Home Assistant connection or a stopped wake word engine, each with its button, and stays out of the way while there is nothing. Status tiles for Home Assistant, Voice Satellite, ESPHome, Media Player, the Kiosk Satellite Service and updates each open their page. The screenshot wears a badge while the panel is dark, on the screensaver or showing a camera view, with a Still or Live toggle, how long ago it was taken, full size and download in place of the old Refresh button and page address. A Now playing card with previous, play or pause and next appears while the media player has a track, a Master Volume slider sits under Brightness and the quick controls gain Postpone screensaver, Take snapshot and Check for updates in smaller tiles.
 

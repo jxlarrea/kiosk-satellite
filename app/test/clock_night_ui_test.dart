@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/core/events.dart';
+import 'package:kiosk_satellite/managers/glance/glance_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/ui/clock_faces.dart';
+import 'package:kiosk_satellite/ui/glance_row.dart';
 import 'package:kiosk_satellite/ui/screensaver_view.dart';
 import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -304,6 +306,92 @@ void main() {
         tester.widget<FlipClockFace>(find.byType(FlipClockFace)).cardColor,
         const Color(0xFFF0F0F0),
       );
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
+
+  // The At a Glance row under the clock (issue #425): the night color used
+  // to reach the floating text alone, through the row's tint, so the chip
+  // style stayed a white pill beside the dimmed digits.
+  group('glance chips', () {
+    const day = Color(0xB31C1C1E);
+
+    Future<AppContainer> pumpChips(
+      WidgetTester tester, {
+      required double lux,
+      bool textOnly = false,
+    }) async {
+      final container = await makeContainer({
+        'ks.screensaver.clock_night': true,
+        'ks.screensaver.clock_show_date': false,
+        'ks.screensaver.glance_text_only': textOnly,
+      }, lux: lux);
+      container.glance.entities.value = const [
+        GlanceEntity(entityId: 'light.desk', name: 'Desk', state: 'on'),
+      ];
+      container.screensaver.activeView.value = 'clock';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Stack(children: [ScreensaverOverlay(container: container)]),
+        ),
+      );
+      return container;
+    }
+
+    ShapeDecoration pill(WidgetTester tester) => tester
+        .widgetList<Container>(
+          find.descendant(
+            of: find.byType(GlanceRow),
+            matching: find.byType(Container),
+          ),
+        )
+        .map((c) => c.decoration)
+        .whereType<ShapeDecoration>()
+        .single;
+
+    Color? valueColor(WidgetTester tester) =>
+        tester.widget<Text>(find.text('On')).style?.color;
+
+    testWidgets('a dark room draws the chips in the night color', (
+      tester,
+    ) async {
+      await pumpChips(tester, lux: 2);
+      final deco = pill(tester);
+      // The pill, its edge and the text all in the one color: a wash of
+      // it behind, the color itself in front, no state accent lighting
+      // the circle of an entity that is on.
+      expect(deco.color, nightRed.withValues(alpha: 0.16));
+      expect(
+        (deco.shape as StadiumBorder).side.color,
+        nightRed.withValues(alpha: 0.4),
+      );
+      expect(valueColor(tester), nightRed);
+      final circles = tester
+          .widgetList<Container>(
+            find.descendant(
+              of: find.byType(GlanceRow),
+              matching: find.byType(Container),
+            ),
+          )
+          .map((c) => c.decoration)
+          .whereType<BoxDecoration>()
+          .where((d) => d.shape == BoxShape.circle);
+      expect(circles.single.color, nightRed.withValues(alpha: 0.28));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('in the light the chips keep their own palette', (
+      tester,
+    ) async {
+      await pumpChips(tester, lux: 50);
+      expect(pill(tester).color, day);
+      expect(valueColor(tester), Colors.white);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the floating text takes it as before', (tester) async {
+      await pumpChips(tester, lux: 2, textOnly: true);
+      expect(valueColor(tester), nightRed);
       await tester.pumpWidget(const SizedBox());
     });
   });

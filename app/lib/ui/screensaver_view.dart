@@ -787,20 +787,22 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                 // The row wears the face's digit color so it reads as part
                 // of the clock — and stays legible on every face, whose
                 // backdrops all follow the user's colors now (issue #173:
-                // a white backdrop under grey-on-black glance rows).
-                tint:
-                    _nightColor() ??
-                    switch (style) {
-                      'flip' => _rgb(
-                        defs.screensaverFlipDigitColor,
-                        const Color(0xFFFAFAFA),
-                      ),
-                      'roller' => _rgb(
-                        defs.screensaverRollerDigitColor,
-                        const Color(0xFFFAFAFA),
-                      ),
-                      _ => _color(),
-                    },
+                // a white backdrop under grey-on-black glance rows). Night
+                // mode rides separately (issue #425): the tint only ever
+                // reached the floating text, so the chips stayed white
+                // beside the dimmed digits; night reaches both styles.
+                night: _nightColor(),
+                tint: switch (style) {
+                  'flip' => _rgb(
+                    defs.screensaverFlipDigitColor,
+                    const Color(0xFFFAFAFA),
+                  ),
+                  'roller' => _rgb(
+                    defs.screensaverRollerDigitColor,
+                    const Color(0xFFFAFAFA),
+                  ),
+                  _ => _color(),
+                },
               ),
             ),
           Align(

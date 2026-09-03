@@ -24,12 +24,18 @@ import 'mdi_icon.dart';
 /// across a dark room without it competing with the clock, so state may
 /// light the icon's circle but never tints the words: an open garage door
 /// reads "Open", it does not glow orange.
+///
+/// The one exception is the Clock screensaver's Night mode ([night]): in
+/// the dark both styles are drawn in the night color alone, the chips
+/// included, so the row dims with the digits instead of staying a bright
+/// white pill on an otherwise dark screen.
 class GlanceRow extends StatelessWidget {
   const GlanceRow({
     super.key,
     required this.container,
     this.scale = 1,
     this.tint,
+    this.night,
     this.narrow = false,
   });
 
@@ -45,6 +51,13 @@ class GlanceRow extends StatelessWidget {
   /// the standalone grey-on-black palette. Floating-text style only; the
   /// chips bring their own backdrop and palette.
   final Color? tint;
+
+  /// The Clock screensaver's night color while its Night mode holds, null
+  /// otherwise. Unlike [tint] it reaches both styles: the floating text
+  /// takes it as its tint, and the chips give up their white-on-grey
+  /// palette and state accents for a pill, circle, glyph and text all in
+  /// this one color, since a lit chip defeats a screen dimmed for sleep.
+  final Color? night;
 
   /// Wraps the row into a narrow centred block even on a landscape panel,
   /// for the modes whose bottom corners are spoken for (the Immich
@@ -133,6 +146,7 @@ class GlanceRow extends StatelessWidget {
                         scale: scale,
                         bw: bw,
                         hideName: hideNames,
+                        night: night,
                       ),
                     ],
                   ],
@@ -168,6 +182,7 @@ class GlanceRow extends StatelessWidget {
                             scale: scale,
                             bw: bw,
                             hideName: hideNames,
+                            night: night,
                           ),
                         ),
                       ],
@@ -225,7 +240,7 @@ class GlanceRow extends StatelessWidget {
                           child: _GlanceItem(
                             entity: entity,
                             scale: scale * fit,
-                            tint: tint,
+                            tint: night ?? tint,
                             hideName: hideNames,
                           ),
                         ),
@@ -360,16 +375,25 @@ Color? glanceIconAccent(GlanceEntity entity) {
 /// neutral grey; the text never colors either way, and the clock tint
 /// never reaches the chip, because the pill, not the backdrop, is what
 /// the text has to stay legible against.
+///
+/// Night mode is the exception ([night]): the whole chip is drawn in the
+/// night color, the pill and circle as faint washes of it, the glyph and
+/// text in it outright, and the state accents stand down, so the row
+/// dims with the clock instead of staying lit beside it.
 class _GlanceCard extends StatelessWidget {
   const _GlanceCard({
     required this.entity,
     required this.scale,
     required this.bw,
     required this.hideName,
+    this.night,
   });
 
   final GlanceEntity entity;
   final double scale;
+
+  /// The Clock screensaver's night color while its Night mode holds.
+  final Color? night;
 
   /// Monochromatic icons: keep the circle in the neutral grey even for an
   /// active entity.
@@ -402,10 +426,18 @@ class _GlanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Full white for name and value both: the pill provides the
-    // contrast, so the hierarchy lives in size and weight alone.
-    const label = Colors.white;
-    const value = Colors.white;
-    final accent = bw ? null : glanceIconAccent(entity);
+    // contrast, so the hierarchy lives in size and weight alone. At
+    // night the name steps back a little from the value, the way the
+    // floating text reads, since the pill no longer carries the contrast.
+    final night = this.night;
+    final label = night?.withValues(alpha: 0.75) ?? Colors.white;
+    final value = night ?? Colors.white;
+    // No state accents in the dark: a pastel circle is exactly the light
+    // Night mode exists to put out.
+    final accent = bw || night != null ? null : glanceIconAccent(entity);
+    final background = night?.withValues(alpha: 0.16) ?? _background;
+    final border = night?.withValues(alpha: 0.4) ?? _border;
+    final circle = night?.withValues(alpha: 0.28) ?? _circleNeutral;
     return Container(
       // Capped so one long name cannot stretch its pill across the
       // screen; the name inside truncates instead.
@@ -417,9 +449,9 @@ class _GlanceCard extends StatelessWidget {
       // over-sized RRect the engine must renormalize, and re-rasterizing
       // that shape at a new size froze Impeller's raster thread on the
       // Tab S8 — the whole app kept running behind a stuck last frame.
-      decoration: const ShapeDecoration(
-        color: _background,
-        shape: StadiumBorder(side: BorderSide(color: _border)),
+      decoration: ShapeDecoration(
+        color: background,
+        shape: StadiumBorder(side: BorderSide(color: border)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -429,15 +461,16 @@ class _GlanceCard extends StatelessWidget {
             height: 40 * scale,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: accent ?? _circleNeutral,
+              color: accent ?? circle,
               shape: BoxShape.circle,
             ),
             // Full white on the neutral circle; the dark glyph only on a
-            // pastel, where white would wash out.
+            // pastel, where white would wash out. The night color on its
+            // own wash at night.
             child: GlanceIcon(
               entity: entity,
               size: 22 * scale,
-              color: accent != null ? _iconOnAccent : Colors.white,
+              color: accent != null ? _iconOnAccent : value,
             ),
           ),
           SizedBox(width: 10 * scale),
