@@ -82,8 +82,7 @@ void main() {
       );
       expect(script, isNotNull);
       // The seeded value is a JSON string inside the script; recover it.
-      final start =
-          script!.indexOf('"hassTokens", ') + '"hassTokens", '.length;
+      final start = script!.indexOf('"hassTokens", ') + '"hassTokens", '.length;
       final end = script.indexOf(');', start);
       final seeded =
           jsonDecode(jsonDecode(script.substring(start, end)) as String)
@@ -108,7 +107,10 @@ void main() {
 
     test('nothing to share, nothing injected', () {
       expect(buildHaSessionScript(tokens: null, url: 'http://a:8123/'), isNull);
-      expect(buildHaSessionScript(tokens: '   ', url: 'http://a:8123/'), isNull);
+      expect(
+        buildHaSessionScript(tokens: '   ', url: 'http://a:8123/'),
+        isNull,
+      );
       expect(
         buildHaSessionScript(tokens: 'not json', url: 'http://a:8123/'),
         isNull,
@@ -143,9 +145,18 @@ void main() {
       expect(script, contains('expires: Date.now() + 315360000000'));
     });
 
-    test('never overwrites a session the page already has', () {
-      final script = buildHaAutoLoginScript(token: 'llat');
-      expect(script, contains('if (!localStorage.getItem("hassTokens"))'));
+    test('replaces its own seed for a changed token, never a hand login', () {
+      final script = buildHaAutoLoginScript(token: 'llat')!;
+      // A seed has no refresh token; a login done by hand always does. Only
+      // a seed for another token gives way (discussion #426).
+      expect(
+        script,
+        contains('seed = !s.refresh_token && s.access_token !== "llat";'),
+      );
+      // A stored value that cannot be parsed is no session: seed over it.
+      expect(script, contains('catch (e) { seed = true; }'));
+      expect(script, contains('if (seed) {'));
+      expect(script, isNot(contains('if (!localStorage.getItem')));
     });
 
     test('no token, nothing injected', () {

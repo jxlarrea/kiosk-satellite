@@ -309,6 +309,10 @@ class _KioskScreenState extends State<KioskScreen>
   /// creation (mixed content, SSL trust). Rebuilding re-reads initialSettings.
   int _webViewEpoch = 0;
 
+  /// The next rebuilt WebView loads the start URL instead of picking up
+  /// where the current page was (a token change, see _onSettingChanged).
+  bool _rebuildFromStart = false;
+
   /// Consecutive renderer-unresponsive callbacks; two in a row means a
   /// wedged renderer, not a transient stall, and earns a terminate.
   int _unresponsiveStrikes = 0;
@@ -438,6 +442,19 @@ class _KioskScreenState extends State<KioskScreen>
         e.key == defs.haAutoLogin.key ||
         e.key == defs.kioskDisableContextMenus.key) {
       setState(() => _webViewEpoch++);
+      return;
+    }
+    // A new long-lived token reaches the dashboard only through the
+    // auto-login seed, which runs at document start: rebuild so the page
+    // reloads with the new token and signs in as its user (discussion #426).
+    // Reloaded from the start URL, not the current page: whoever the new
+    // token belongs to should land on the dashboard, not on a view the old
+    // user was browsing, or the login form a failed token left behind.
+    if (e.key == defs.haToken.key && c.settings.get(defs.haAutoLogin)) {
+      setState(() {
+        _webViewEpoch++;
+        _rebuildFromStart = true;
+      });
       return;
     }
     // Hold mode flips silently from gestures, HA and the remote admin, so
@@ -872,8 +889,9 @@ class _KioskScreenState extends State<KioskScreen>
     // the long-lived access token, so the dashboard signs itself in
     // instead of presenting the login form. Only seeded while the page
     // has no session of its own — a login someone did by hand, or a
-    // session the frontend refreshed, always wins. Frozen at WebView
-    // creation; the toggle rebuilds the WebView (see _onSettingChanged).
+    // session the frontend refreshed, always wins; a session this seed
+    // wrote for an earlier token is replaced. Frozen at WebView creation;
+    // the toggle and a token change rebuild the WebView (_onSettingChanged).
     if (c.settings.get(defs.haAutoLogin) &&
         c.settings.get(defs.haToken).trim().isNotEmpty)
       UserScript(
@@ -1473,6 +1491,16 @@ class _KioskScreenState extends State<KioskScreen>
     );
   }
 
+  /// The page a (re)built WebView opens: the start URL for the first build,
+  /// while nothing has loaded yet, or when the rebuild asked for it;
+  /// otherwise the page that was showing.
+  String _rebuildUrl() {
+    final fromStart =
+        _rebuildFromStart || _webViewEpoch == 0 || c.browser.currentUrl.isEmpty;
+    _rebuildFromStart = false;
+    return fromStart ? _initialUrl : c.browser.currentUrl;
+  }
+
   Widget _webView() => InAppWebView(
     key: ValueKey(_webViewEpoch),
     initialUrlRequest: URLRequest(
@@ -1480,15 +1508,7 @@ class _KioskScreenState extends State<KioskScreen>
       // proxy state calls for: a rebuild triggered by the proxy toggle
       // moves a proxied currentUrl back to the real origin (or vice
       // versa), and both calls pass everything else through untouched.
-      url: WebUri(
-        c.proxy.mapUrl(
-          c.proxy.unmapUrl(
-            _webViewEpoch == 0 || c.browser.currentUrl.isEmpty
-                ? _initialUrl
-                : c.browser.currentUrl,
-          ),
-        ),
-      ),
+      url: WebUri(c.proxy.mapUrl(c.proxy.unmapUrl(_rebuildUrl()))),
     ),
     initialUserScripts: UnmodifiableListView(_userScripts),
     pullToRefreshController: _pullToRefresh,

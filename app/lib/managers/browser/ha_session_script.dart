@@ -37,15 +37,28 @@ import 'dart:convert';
 /// whose origin is not its own (which also keeps the seed correct under
 /// the loopback proxy).
 ///
-/// Seeded only where the page has no session of its own: one it refreshed
-/// for itself, or a login someone did by hand, always wins.
+/// A login someone did by hand always wins: it is left alone. A session
+/// this seed wrote itself is replaced when the token changes, so a new
+/// token, typed in or brought by a settings import, signs the dashboard in
+/// as the user it belongs to instead of leaving the first token's user
+/// logged in for good (discussion #426). The two are told apart by the
+/// refresh token: a real login always carries one, a seed never does.
 String? buildHaAutoLoginScript({required String? token}) {
   final trimmed = token?.trim();
   if (trimmed == null || trimmed.isEmpty) return null;
+  final encoded = jsonEncode(trimmed);
   return 'try {'
-      'if (!localStorage.getItem("hassTokens")) {'
+      'var seed = true;'
+      'var stored = localStorage.getItem("hassTokens");'
+      'if (stored) {'
+      'try {'
+      'var s = JSON.parse(stored);'
+      'seed = !s.refresh_token && s.access_token !== $encoded;'
+      '} catch (e) { seed = true; }'
+      '}'
+      'if (seed) {'
       'localStorage.setItem("hassTokens", JSON.stringify({'
-      'access_token: ${jsonEncode(trimmed)},'
+      'access_token: $encoded,'
       'token_type: "Bearer",'
       'expires_in: 1800,'
       'expires: Date.now() + 315360000000,'

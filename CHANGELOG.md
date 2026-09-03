@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- **Replacing the long-lived access token now signs the dashboard in as the new token's user.** The automatic login only ever seeded the dashboard's session while it had none, so once a kiosk had signed in with the first token, a new token typed into Settings or brought in by a settings import changed nothing in the dashboard, which stayed logged in as the first user until the app was reinstalled. Saving a new token now reloads the dashboard with it, and a session the app seeded for an earlier token gives way. A login someone did by hand on the Home Assistant login page is left alone as before.
 - **The At a Glance chips follow the Clock screensaver's Night mode.** The Night color reached the row only in the Floating text style, so with the default chips the white pills, their icon circles and state colors stayed lit beside the dimmed digits. In the dark the chips are now drawn in the Night color alone, the pill and circle as faint washes of it, the name and value in it outright, and the state colors stand down until the light returns.
 
 ### Changed
