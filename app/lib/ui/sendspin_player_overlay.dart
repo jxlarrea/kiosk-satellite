@@ -165,7 +165,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     c.sendspin.lyricsPending.addListener(_onNowPlaying);
     _settingsSub = c.bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.sendspinLyrics.key ||
-          e.key == defs.sendspinFullscreenQueue.key) {
+          e.key == defs.sendspinFullscreenQueue.key ||
+          e.key == defs.sendspinSpeakerPill.key) {
         _onNowPlaying();
       }
     });
@@ -449,7 +450,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         // Whose music this is: the shown player's name in a chip opposite
         // the close button, and the way into its group where the source
         // can put other players in it.
-        if (c.sendspin.playerChipName.isNotEmpty)
+        if (c.settings.get(defs.sendspinSpeakerPill) &&
+            c.sendspin.playerChipName.isNotEmpty)
           Positioned(
             top: 12,
             left: 12,

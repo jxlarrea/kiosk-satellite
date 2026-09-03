@@ -798,6 +798,7 @@ class SendspinManager extends Manager {
         'sendspin.player_name',
         'sendspin.sonos_hosts',
         'sendspin.sonos_group_volume',
+        'sendspin.speaker_pill',
         'sendspin.lyrics_enabled',
         'sendspin.lyrics_source',
         'sendspin.lyrics_fallback_ma',

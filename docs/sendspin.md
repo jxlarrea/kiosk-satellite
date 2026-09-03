@@ -20,6 +20,7 @@ A core rule applies to all media sources: both the floating player card and the 
 | --- | --- | --- |
 | Player source | This device | Selects what the floating player and Now Playing view display and control: the native Sendspin player, or an external player from Home Assistant, Music Assistant, or a Sonos household. Selecting an external source takes the local Sendspin player offline. |
 | Player | Sendspin Player | When "This device" is selected, it defaults to the native Sendspin player. For external sources, this dropdown populates with players available from that specific provider. |
+| Show speaker selection pill | on | The chip in the Now Playing view's top left corner that names the player and opens the speaker group menu. Off, the view shows neither. |
 
 ### Sendspin Player
 
