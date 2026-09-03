@@ -270,89 +270,100 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
             centred: stacked,
           );
 
-    final Widget content;
-    if (sideBySide) {
-      // Art and words to one side, the panel to the other: a lyric needs
-      // the height, and stacking it under a 360px cover leaves room for
-      // about two lines.
-      content = Padding(
-        padding: EdgeInsets.fromLTRB(edge, 12, edge, 0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              flex: 5,
-              child: _fitted(
-                _trackPanel(
-                  art: art,
-                  title: title,
-                  artist: artist,
-                  artSize: artSize * 0.85,
-                  titleSize: titleSize * 0.75,
-                  artistSize: artistSize * 0.85,
-                  gap: gap * 0.5,
-                  horizontalPadding: 8,
-                ),
-                width: artSize * 0.85 * 1.5,
-              ),
-            ),
-            SizedBox(width: (screen.width * 0.04).clamp(12.0, 48.0)),
-            Expanded(flex: 6, child: panel()),
-          ],
-        ),
-      );
-    } else if (stacked) {
-      // Portrait: cover and track up top, the panel filling everything
-      // below them. Left as the plain centred view, a tall panel spends
-      // its whole lower half on nothing.
-      content = Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          (screen.height * 0.05).clamp(12.0, 48.0),
-          20,
-          0,
-        ),
-        child: LayoutBuilder(
-          builder: (context, box) => Column(
+    // The cover block sits a little below center, clear of the player
+    // chip in the top left corner: a share of the slot's height, so a
+    // small panel gives up less of it, and never enough to crowd the
+    // transport.
+    Widget content(double lift) {
+      if (sideBySide) {
+        // Art and words to one side, the panel to the other: a lyric needs
+        // the height, and stacking it under a 360px cover leaves room for
+        // about two lines.
+        return Padding(
+          padding: EdgeInsets.fromLTRB(edge, 12, edge, 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: box.maxHeight * 0.5),
-                child: _fitted(
-                  _trackPanel(
-                    art: art,
-                    title: title,
-                    artist: artist,
-                    artSize: artSize * 0.66,
-                    titleSize: titleSize * 0.8,
-                    artistSize: artistSize * 0.9,
-                    gap: gap * 0.6,
-                    horizontalPadding: 12,
+              Expanded(
+                flex: 5,
+                child: Padding(
+                  padding: EdgeInsets.only(top: lift),
+                  child: _fitted(
+                    _trackPanel(
+                      art: art,
+                      title: title,
+                      artist: artist,
+                      artSize: artSize * 0.85,
+                      titleSize: titleSize * 0.75,
+                      artistSize: artistSize * 0.85,
+                      gap: gap * 0.5,
+                      horizontalPadding: 8,
+                    ),
+                    width: artSize * 0.85 * 1.5,
                   ),
-                  width: screen.width - 40,
                 ),
               ),
-              SizedBox(height: (screen.height * 0.03).clamp(10.0, 32.0)),
-              Expanded(child: panel()),
+              SizedBox(width: (screen.width * 0.04).clamp(12.0, 48.0)),
+              Expanded(flex: 6, child: panel()),
             ],
           ),
-        ),
-      );
-    } else {
-      content = Center(
-        child: _fitted(
-          _trackPanel(
-            art: art,
-            title: title,
-            artist: artist,
-            artSize: artSize,
-            titleSize: titleSize,
-            artistSize: artistSize,
-            gap: gap,
-            horizontalPadding: 0,
+        );
+      } else if (stacked) {
+        // Portrait: cover and track up top, the panel filling everything
+        // below them. Left as the plain centred view, a tall panel spends
+        // its whole lower half on nothing.
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            (screen.height * 0.05).clamp(12.0, 48.0) + lift,
+            20,
+            0,
           ),
-          width: min(screen.width - 96, artSize * 2.2),
-        ),
-      );
+          child: LayoutBuilder(
+            builder: (context, box) => Column(
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: box.maxHeight * 0.5),
+                  child: _fitted(
+                    _trackPanel(
+                      art: art,
+                      title: title,
+                      artist: artist,
+                      artSize: artSize * 0.66,
+                      titleSize: titleSize * 0.8,
+                      artistSize: artistSize * 0.9,
+                      gap: gap * 0.6,
+                      horizontalPadding: 12,
+                    ),
+                    width: screen.width - 40,
+                  ),
+                ),
+                SizedBox(height: (screen.height * 0.03).clamp(10.0, 32.0)),
+                Expanded(child: panel()),
+              ],
+            ),
+          ),
+        );
+      } else {
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.only(top: lift),
+            child: _fitted(
+              _trackPanel(
+                art: art,
+                title: title,
+                artist: artist,
+                artSize: artSize,
+                titleSize: titleSize,
+                artistSize: artistSize,
+                gap: gap,
+                horizontalPadding: 0,
+              ),
+              width: min(screen.width - 96, artSize * 2.2),
+            ),
+          ),
+        );
+      }
     }
 
     return Stack(
@@ -387,7 +398,12 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         // the transport keeps its place whatever the content does.
         Column(
           children: [
-            Expanded(child: content),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, box) =>
+                    content((box.maxHeight * 0.08).clamp(0.0, 56.0)),
+              ),
+            ),
             if (glance)
               Padding(
                 padding: EdgeInsets.only(
