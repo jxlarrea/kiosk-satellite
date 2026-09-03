@@ -473,7 +473,7 @@ class EspEntitySurface {
           'icon': 'mdi:cctv',
         },
       ],
-      if (_dashboardViews.isNotEmpty)
+      if (_dashboardViews.isNotEmpty) ...[
         {
           'type': 'select',
           'objectId': 'dashboard_view',
@@ -481,6 +481,19 @@ class EspEntitySurface {
           'icon': 'mdi:view-dashboard-outline',
           'options': _dashboardViews,
         },
+        // The start URL as a select (discussion #427): the dashboard the
+        // kiosk comes back to after a restart and on Go to dashboard, so
+        // an automation can move it for the night and a crash lands on
+        // the right page. Same option list as the view select.
+        {
+          'type': 'select',
+          'objectId': 'default_dashboard',
+          'name': 'Default dashboard',
+          'icon': 'mdi:view-dashboard-edit-outline',
+          'options': _dashboardViews,
+          'category': 1,
+        },
+      ],
       {
         'type': 'update',
         'objectId': 'update',
@@ -1286,6 +1299,8 @@ class EspEntitySurface {
         });
       case 'dashboard_view':
         await commands.execute('haNavigate', {'path': '$value'});
+      case 'default_dashboard':
+        await _setDefaultDashboard('$value');
       case 'update':
         if ('$value' == 'install') {
           await commands.execute('installUpdate', const {});
@@ -1376,6 +1391,10 @@ class EspEntitySurface {
   void _onSettingChanged(SettingChanged e) {
     if (e.key == defs.cameraEnabled.key || e.key == defs.motionSensor.key) {
       _sendMotionState();
+    }
+    if (e.key == defs.startUrl.key) {
+      _sendDefaultDashboard();
+      return;
     }
     for (final entry in _settingSwitches.entries) {
       if (entry.value.$3.key == e.key) {
@@ -1490,6 +1509,7 @@ class EspEntitySurface {
     // dashboard select derives from the page currently showing.
     await _send('camera_view', 'Closed');
     await _send('active_camera_view', 'none');
+    await _sendDefaultDashboard();
     // The server (re)started: that IS a fresh sighting, and readable
     // connectivity is by definition on.
     await _send('last_seen', DateTime.now().toUtc().toIso8601String());
@@ -1778,6 +1798,52 @@ class EspEntitySurface {
       }
     } catch (_) {}
     return const [];
+  }
+
+  /// The Default dashboard select's state: the option the start URL points
+  /// at, a bare dashboard URL reading as its first view like the view
+  /// select does. Nothing is sent for a start URL outside the list (a
+  /// page on another host), which leaves the select on unknown rather
+  /// than claiming a dashboard the kiosk does not open.
+  Future<void> _sendDefaultDashboard() async {
+    final match = matchDashboardView(
+      _settings.get(defs.startUrl),
+      _dashboardViews,
+    );
+    if (match != null) await _send('default_dashboard', match);
+  }
+
+  /// Writes the start URL for a view path, and only that: the page stays
+  /// where it is, and the new default is what the next restart, crash
+  /// recovery or Go to dashboard press lands on. The Dashboard view select
+  /// is the one that moves the page. The Home Assistant base URL is the
+  /// origin, since the device's picker stores that origin too, whatever
+  /// host the page itself is served from.
+  Future<void> _setDefaultDashboard(String path) async {
+    if (!_dashboardViews.contains(path)) {
+      log.warn('esphome', 'default_dashboard: unknown option $path');
+      return;
+    }
+    final base = _haBaseUrl();
+    if (base.isEmpty) {
+      log.warn('esphome', 'default_dashboard: no Home Assistant URL');
+      return;
+    }
+    await _settings.set(defs.startUrl, '$base/$path', source: 'esphome');
+  }
+
+  /// The Home Assistant origin the start URL is built on, as the manager
+  /// derives it from the base URL setting: scheme, host and port only.
+  String _haBaseUrl() {
+    final url = _settings.get(defs.haUrl).trim();
+    if (url.isEmpty) return '';
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
+      return uri.hasPort
+          ? '${uri.scheme}://${uri.host}:${uri.port}'
+          : '${uri.scheme}://${uri.host}';
+    }
+    return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
   }
 
   /// One read of the dashboard view list from Home Assistant, the crawl

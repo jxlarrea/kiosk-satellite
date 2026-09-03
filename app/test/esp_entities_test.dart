@@ -73,6 +73,9 @@ void main() {
       'ks.screensaver.brightness_level': 0.4,
       'ks.sendspin.player_active': true,
       'ks.sendspin.fullscreen': true,
+      'ks.ha.url': 'https://ha.local',
+      // A bare dashboard URL, the way the setup wizard writes it.
+      'ks.browser.start_url': 'https://ha.local/lovelace',
     });
     bus = EventBus();
     log = Logger();
@@ -341,6 +344,7 @@ void main() {
         'close_camera_view',
         'active_camera_view',
         'dashboard_view',
+        'default_dashboard',
         'update',
         'device_camera',
         'take_snapshot',
@@ -710,7 +714,46 @@ void main() {
     expect(byId['active_camera_view'], 'none');
     expect(byId['url'], 'https://ha.local/lovelace/home');
     expect(byId['dashboard_view'], 'lovelace/home');
+    // The start URL names the dashboard alone, which is its first view.
+    expect(byId['default_dashboard'], 'lovelace/home');
   });
+
+  test(
+    'the default dashboard select rewrites the start URL without loading it',
+    () async {
+      final catalog = await surface.build();
+      final select = catalog.firstWhere(
+        (d) => d['objectId'] == 'default_dashboard',
+      );
+      expect(select['type'], 'select');
+      expect(select['category'], 1);
+      expect(select['options'], ['lovelace/home', 'lovelace/cameras']);
+      await attach();
+      executed.clear();
+      pushed.clear();
+
+      await surface.handleCommand('default_dashboard', 'lovelace/cameras');
+      await Future<void>.delayed(Duration.zero);
+      expect(settings.get(defs.startUrl), 'https://ha.local/lovelace/cameras');
+      // The page stays put: the Dashboard view select is the one that
+      // navigates, this one only decides where the kiosk comes back to.
+      expect(executed, isEmpty);
+      // The state rides the setting change, like the other selects.
+      expect(pushed, contains(('default_dashboard', 'lovelace/cameras')));
+
+      // An option outside the list changes nothing.
+      executed.clear();
+      await surface.handleCommand('default_dashboard', 'other/view');
+      expect(settings.get(defs.startUrl), 'https://ha.local/lovelace/cameras');
+      expect(executed, isEmpty);
+
+      // The start URL set on the device reaches the select too.
+      pushed.clear();
+      await settings.set(defs.startUrl, 'https://ha.local/lovelace');
+      await Future<void>.delayed(Duration.zero);
+      expect(pushed, contains(('default_dashboard', 'lovelace/home')));
+    },
+  );
 
   test('commands land on the same handlers MQTT uses', () async {
     await surface.build();

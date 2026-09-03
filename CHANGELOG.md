@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **A Default dashboard select among the ESPHome configuration entities.** The Dashboard view select only navigates for the moment, so a kiosk that crashed or restarted came back on whatever dashboard was picked on the device or in the remote admin. The new select carries the same `dashboard/view` options and rewrites the start URL while leaving the page where it is, so an automation can make the night dashboard the one the kiosk always returns to and use the Dashboard view select when it should show right away.
+
 ### Fixed
 - **Replacing the long-lived access token now signs the dashboard in as the new token's user.** The automatic login only ever seeded the dashboard's session while it had none, so once a kiosk had signed in with the first token, a new token typed into Settings or brought in by a settings import changed nothing in the dashboard, which stayed logged in as the first user until the app was reinstalled. Saving a new token now reloads the dashboard with it, and a session the app seeded for an earlier token gives way. A login someone did by hand on the Home Assistant login page is left alone as before.
 - **The At a Glance chips follow the Clock screensaver's Night mode.** The Night color reached the row only in the Floating text style, so with the default chips the white pills, their icon circles and state colors stayed lit beside the dimmed digits. In the dark the chips are now drawn in the Night color alone, the pill and circle as faint washes of it, the name and value in it outright, and the state colors stand down until the light returns.

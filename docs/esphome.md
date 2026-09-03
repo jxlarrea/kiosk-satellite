@@ -91,6 +91,7 @@ Every item in this list corresponds directly to a kiosk setting. They are fully 
 | **Voice Satellite auto start** | switch | Controls whether the voice engine starts automatically with the dashboard. This allows an automation to delay voice services on slower devices that need all their processing power for the initial dashboard load. Requires a bound satellite. |
 | **Theme** | select | Options are Auto, Light, or Dark. Selecting Light or Dark forcibly pins the dashboard theme, overriding both the on device schedule and the app theme sync for as long as it is active. If theme sync is enabled, pinning the theme will flip the app's internal screens as well. |
 | **Screensaver mode**, **Clock style** | select | Provides the exact same options found on the device settings pages. |
+| **Default dashboard** | select | The dashboard the kiosk starts on, returns to with the Go to dashboard button and reloads after a crash or restart. Same `dashboard/view` options as the Dashboard view select. Changing it rewrites the start URL but leaves the page where it is, so an automation can make a night dashboard the one the kiosk always comes back to and use the Dashboard view select when it should show right away. |
 | **Camera facing** | select | Requires both a front and back physical camera. |
 
 ### Diagnostics
