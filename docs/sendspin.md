@@ -84,7 +84,7 @@ player.
 | --- | --- | --- |
 | Enable lyrics | on | Lyrics for the followed Sonos room, from Music Assistant. Needs the Music Assistant server address and token; without them the switch is disabled and says so. |
 | Adjust the group volume | on | While the followed room plays in a group, the Now Playing volume slider sets the whole group's volume, the way the Sonos app's group slider does. Off, only that room's. |
-| Speakers | | Every room the kiosk knows, each with a Forget. **Search** finds Sonos speakers on the device's own network, which must be on the same VLAN as the device to be auto discovered. **Add by address** asks for a speaker's IP for one the search cannot reach and adds the whole household from it. |
+| Speakers | | Every room the kiosk knows, each with a Forget that drops its whole household and clears the pick if it was one of them. **Search** finds Sonos speakers on the device's own network, which must be on the same VLAN as the device to be auto discovered. **Add by address** asks for a speaker's IP for one the search cannot reach and adds the whole household from it. |
 
 ### Floating Player
 

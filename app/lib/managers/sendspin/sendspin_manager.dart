@@ -919,7 +919,9 @@ class SendspinManager extends Manager {
     commands.register(
       Command(
         name: 'sonosForget',
-        description: 'Forget a Sonos speaker the device knows, by id.',
+        description:
+            'Forget a Sonos speaker the device knows, by id, with the rest '
+            'of its household. The pick is cleared if it was one of them.',
         params: const {'id': 'the speaker id (RINCON_...)'},
         handler: (p) async {
           final id = '${p['id'] ?? ''}'.trim();
@@ -927,8 +929,31 @@ class SendspinManager extends Manager {
           if (!hosts.containsKey(id)) {
             return const CommandResult.fail('unknown');
           }
-          hosts.remove(id);
+          // The whole household goes, the mirror of Add: any room left
+          // behind would list the household again on the next read and
+          // bring the forgotten one back with it.
+          final gone = {id};
+          try {
+            final groups = await _sonosGroupsAt(hosts[id]!['host'] ?? '');
+            for (final g in groups) {
+              for (final m in g.members) {
+                gone.add(m.uuid);
+              }
+            }
+          } catch (_) {
+            // A speaker that does not answer is forgotten on its own.
+          }
+          hosts.removeWhere((uuid, _) => gone.contains(uuid));
           await _settings.set(defs.sendspinSonosHosts, jsonEncode(hosts));
+          // A forgotten room that was the pick leaves nothing to follow:
+          // the pick goes with it, so the Player row asks again instead
+          // of naming a speaker the page no longer lists.
+          final picked = _source;
+          if (picked.kind == PlayerSourceKind.sonos &&
+              gone.contains(picked.id)) {
+            await _settings.set(defs.sendspinPlayer, '');
+            await _settings.set(defs.sendspinPlayerName, '');
+          }
           return CommandResult.ok(_sonosSpeakerRows());
         },
       ),

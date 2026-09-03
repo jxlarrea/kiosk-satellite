@@ -289,9 +289,15 @@ export async function updateSonosPage() {
   // The parent page's Player select was built from the speakers known
   // when the page rendered: a change to the list here rebuilds it, so a
   // speaker just added can be picked without a reload.
-  const refreshPick = () => {
+  const refreshPick = async () => {
     const sel = document.querySelector('#tab-sendspin [data-key="sendspin.player"] select');
     if (!sel || sel.dataset.source !== 'sonos') return;
+    // A forgotten room that was the pick clears the pick on the device:
+    // read the settings back so the select is built from what it holds.
+    try {
+      const { settings } = await (await api('/api/settings')).json();
+      if (Array.isArray(settings)) state.settings = settings;
+    } catch (_) {}
     sel.remove();
     updatePlayerRow();
   };

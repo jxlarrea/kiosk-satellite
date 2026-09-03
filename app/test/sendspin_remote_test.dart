@@ -516,5 +516,34 @@ void main() {
       // hiding.
       expect((data['notes'] as Map)['ha'], isNotNull);
     });
+
+    test('forgetting the picked Sonos room clears the pick', () async {
+      await build(player: 'sonos:RINCON_A');
+      await settings.set(defs.sendspinPlayerSource, 'sonos');
+      await settings.set(defs.sendspinPlayerName, 'Office');
+      // Nothing listens at the loopback address, so the household read
+      // fails at once and the room is forgotten on its own.
+      await settings.set(
+        defs.sendspinSonosHosts,
+        '{"RINCON_A":{"host":"127.0.0.1","name":"Office"},'
+        '"RINCON_B":{"host":"127.0.0.2","name":"Kitchen"}}',
+      );
+      final kept = await sendspin.commands.execute('sonosForget', {
+        'id': 'RINCON_B',
+      });
+      expect(kept.ok, isTrue);
+      // Another room going leaves the pick alone.
+      expect(settings.get(defs.sendspinPlayer), 'sonos:RINCON_A');
+      expect(settings.get(defs.sendspinPlayerName), 'Office');
+      final result = await sendspin.commands.execute('sonosForget', {
+        'id': 'RINCON_A',
+      });
+      expect(result.ok, isTrue);
+      expect(result.data, isEmpty);
+      expect(settings.get(defs.sendspinSonosHosts), '{}');
+      expect(settings.get(defs.sendspinPlayer), '');
+      expect(settings.get(defs.sendspinPlayerName), '');
+      expect(settings.get(defs.sendspinPlayerSource), 'sonos');
+    });
   });
 }
