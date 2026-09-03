@@ -159,7 +159,7 @@ When **Show media controls** is enabled, transport buttons, a progress bar, and 
 
 ### Speaker groups
 
-The chip in the top left corner names the player the view shows. Where the source can group players, the chip carries a caret and a tap opens the group menu: the players already in the group first, then every player that could join, alphabetical within each, a checkbox on every row. Checking a row puts that player in the group, unchecking takes it out, and the row spins until the source reports the group back.
+The chip in the top left corner names the player the view shows. Where the source can group players, the chip carries a caret and a tap opens the group menu: the players already in the group first, then every player that could join, alphabetical within each, a checkbox on every row. Checking a row puts that player in the group, unchecking takes it out, and the row spins until the source reports the group back. When the shown player follows another, the player the music streams from is listed as a checked row with a **Leader** tag, and unchecking it takes the shown player out of the group.
 
 | Source | Who can join |
 | --- | --- |

@@ -1254,6 +1254,19 @@ class _GroupMenuState extends State<_GroupMenu> {
                                       ),
                                     ),
                                   ),
+                                  // The player the music streams from,
+                                  // when that is not the one shown: a
+                                  // word, since no glyph says it.
+                                  if (m.id == group?.leaderId) ...[
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      'Leader',
+                                      style: TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
