@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -483,6 +484,50 @@ void main() {
             (await commands.execute('sendspinStatus', const {})).data as Map;
         expect(gone['title'], isNull);
         expect(gone.containsKey('playbackState'), isFalse);
+      },
+    );
+
+    test(
+      'the artwork command serves the shown cover through the device',
+      () async {
+        await build();
+        final asked = <String>[];
+        sendspin.artworkFetcher = (url) async {
+          asked.add(url);
+          return Uint8List.fromList([0xFF, 0xD8, 0xFF, 0x00]);
+        };
+        // No track: nothing to fetch.
+        final none = await commands.execute('sendspinArtwork', const {});
+        expect(none.ok, isFalse);
+        fake!.onSnapshot({
+          'title': 'Song',
+          'playing': true,
+          'artworkUrl': 'https://ma.local:8095/imageproxy/a?size=512',
+        });
+        final first = await commands.execute('sendspinArtwork', const {});
+        expect(first.ok, isTrue);
+        expect(
+          (first.data as Map)['url'],
+          'https://ma.local:8095/imageproxy/a?size=512',
+        );
+        expect(base64Decode('${(first.data as Map)['data']}'), [
+          0xFF,
+          0xD8,
+          0xFF,
+          0x00,
+        ]);
+        // The same cover again comes from the cache, not a second fetch.
+        await commands.execute('sendspinArtwork', const {});
+        expect(asked, hasLength(1));
+        // A fetch that fails is a refusal, and nothing stale is served.
+        sendspin.artworkFetcher = (_) async => null;
+        fake!.onSnapshot({
+          'title': 'Next',
+          'playing': true,
+          'artworkUrl': 'https://ma.local/b',
+        });
+        final failed = await commands.execute('sendspinArtwork', const {});
+        expect(failed.ok, isFalse);
       },
     );
 

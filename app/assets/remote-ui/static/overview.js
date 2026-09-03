@@ -353,12 +353,15 @@ function paintNowPlaying(s) {
   $('#npArtist').textContent = [s.artist, s.album].filter(Boolean).join(' · ');
   $('#npSource').textContent = [serverLabel(s.serverName), settingVal('sendspin.player_name')]
     .filter(Boolean).join(' · ');
+  // The cover comes through the device (/api/media/artwork): a Music
+  // Assistant image proxy sits on a self-signed https address the
+  // browser would refuse silently. Fetched once per URL; a fetch that
+  // fails leaves the glyph and is tried again on the next read.
   const img = $('#npArt img');
   if (s.artworkUrl) {
     if (img.dataset.src !== s.artworkUrl) {
       img.dataset.src = s.artworkUrl;
-      img.hidden = false;
-      img.src = s.artworkUrl;
+      loadArtwork(img, s.artworkUrl);
     }
   } else {
     delete img.dataset.src;
@@ -373,6 +376,20 @@ function paintNowPlaying(s) {
   document.querySelectorAll('#npCard [data-np]').forEach((b) => {
     b.disabled = supported.length > 0 && !supported.includes(b.dataset.np);
   });
+}
+async function loadArtwork(img, url) {
+  try {
+    const res = await api('/api/media/artwork');
+    if (img.dataset.src !== url) return; // the track moved on meanwhile
+    if (!res.ok) throw new Error('no artwork');
+    const blob = URL.createObjectURL(await res.blob());
+    const old = img.src;
+    img.src = blob;
+    img.hidden = false;
+    if (old.startsWith('blob:')) URL.revokeObjectURL(old);
+  } catch (_) {
+    if (img.dataset.src === url) { delete img.dataset.src; img.hidden = true; }
+  }
 }
 async function refreshNowPlaying() {
   paintNowPlaying(await ask('sendspinStatus'));

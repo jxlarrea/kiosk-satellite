@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## v2026.9.12 - 2026-09-03
 
 ### Fixed
+- The **remote admin's Now playing card shows the cover**. The card asked the browser to load the cover from the Music Assistant image proxy, an https address with a self-signed certificate the browser refuses without a word, so the card kept its record glyph. The device fetches the cover now, as its own Now Playing view does, and hands it to the page.
 - The **remote admin's Now playing card shows the followed player's track**. With a Music Assistant, Sonos or Home Assistant player picked, the status behind the card carried the device's own idle Sendspin queue, so the card read Unknown track with no art, or a track without its cover. It now carries the followed player's title, artist, album, cover and transport, the same snapshot the Now Playing view on the device plays from.
 - **Lyrics from LRCLIB find tracks with common titles.** The client asked LRCLIB by title alone and picked from the twenty answers it sends back, so a track called "Crush" or "5am" lost its place to namesakes and showed no lyrics; Music Assistant used to be asked first and hid it. The client now asks for the exact title and artist first, then searches by title and artist, and only then falls back to the title-only search.
 

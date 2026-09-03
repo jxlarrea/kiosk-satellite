@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' show ImageFilter;
@@ -13,7 +12,6 @@ import 'theme.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../managers/sendspin/remote_player.dart';
-import '../managers/sendspin/music_assistant_api.dart';
 import '../managers/settings/definitions.dart' as defs;
 
 /// The floating now-playing card for the Sendspin player.
@@ -1796,41 +1794,10 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   }
 }
 
-/// Fetch artwork accepting a bad TLS certificate only for the configured
-/// Sendspin server's host or the Music Assistant server's (its image
-/// proxy is self-signed, and a remote player's artwork comes from the
-/// Music Assistant address, which need not be the Sendspin one).
-/// Shared by the floating card and the full-screen view.
-Future<Uint8List?> fetchSendspinArtwork(AppContainer c, String url) async {
-  if (url.isEmpty) return null;
-  try {
-    final serverHost = Uri.parse(
-      'ws://${c.settings.get(defs.sendspinServer).trim()}',
-    ).host;
-    final maHost =
-        Uri.tryParse(
-          musicAssistantWebUrl(c.settings.get(defs.sendspinMaUrl)) ?? '',
-        )?.host ??
-        '';
-    final client = HttpClient()
-      ..badCertificateCallback = (cert, host, port) =>
-          host.isNotEmpty && (host == serverHost || host == maHost);
-    final request = await client.getUrl(Uri.parse(url));
-    // Bounded: a speaker's art proxy can hang on an image it cannot
-    // fetch, and a fetch that never ends would hold the cover blank for
-    // the next track too.
-    final response = await request.close().timeout(const Duration(seconds: 12));
-    final bytes = <int>[];
-    await for (final part in response.timeout(const Duration(seconds: 12))) {
-      bytes.addAll(part);
-    }
-    client.close();
-    if (response.statusCode != 200) return null;
-    return Uint8List.fromList(bytes);
-  } catch (_) {
-    return null;
-  }
-}
+/// Shared by the floating card and the full-screen view: the manager's
+/// fetcher, which trusts the Sendspin and Music Assistant hosts.
+Future<Uint8List?> fetchSendspinArtwork(AppContainer c, String url) =>
+    c.sendspin.fetchArtwork(url);
 
 class SendspinPlayerOverlay extends StatefulWidget {
   const SendspinPlayerOverlay({super.key, required this.container});

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' show Random, max;
 
-import 'package:flutter/foundation.dart' show ValueNotifier, visibleForTesting;
+import 'package:flutter/foundation.dart'
+    show Uint8List, ValueNotifier, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../core/command_registry.dart';
@@ -185,6 +187,58 @@ class SendspinManager extends Manager {
   /// machine.
   @visibleForTesting
   LrclibApi Function() lrclibFactory = LrclibApi.new;
+
+  /// Cover art bytes for a URL, accepting a bad TLS certificate only for
+  /// the configured Sendspin server's host or the Music Assistant
+  /// server's (its image proxy is self-signed, and a remote player's
+  /// artwork comes from the Music Assistant address, which need not be
+  /// the Sendspin one). The device's Now Playing surfaces and the remote
+  /// admin's card load through here; a browser would refuse the proxy's
+  /// certificate outright and show nothing. Injectable for tests.
+  late Future<Uint8List?> Function(String url) artworkFetcher = fetchArtwork;
+
+  Future<Uint8List?> fetchArtwork(String url) async {
+    if (url.isEmpty) return null;
+    try {
+      final serverHost = Uri.parse(
+        'ws://${_settings.get(defs.sendspinServer).trim()}',
+      ).host;
+      final maHost =
+          Uri.tryParse(
+            musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl)) ?? '',
+          )?.host ??
+          '';
+      final client = HttpClient()
+        ..badCertificateCallback = (cert, host, port) =>
+            host.isNotEmpty && (host == serverHost || host == maHost);
+      final request = await client.getUrl(Uri.parse(url));
+      // Bounded: a speaker's art proxy can hang on an image it cannot
+      // fetch, and a fetch that never ends would hold the cover blank for
+      // the next track too.
+      final response = await request.close().timeout(
+        const Duration(seconds: 12),
+      );
+      final bytes = <int>[];
+      await for (final part in response.timeout(const Duration(seconds: 12))) {
+        bytes.addAll(part);
+      }
+      client.close();
+      if (response.statusCode != 200) return null;
+      return Uint8List.fromList(bytes);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The shown track's artwork URL: the followed player's while there is
+  /// one, else the local stream's.
+  String get _shownArtworkUrl =>
+      '${(_remote == null ? _status : (nowPlaying.value ?? const {}))['artworkUrl'] ?? ''}';
+
+  // One cover at a time: the remote admin re-asks on every track change
+  // and the same URL is not fetched twice.
+  String _artworkCacheUrl = '';
+  Uint8List? _artworkCache;
 
   /// Builds the remote-player follower (issue #265). Swapped in tests so a
   /// manager test never opens a socket.
@@ -871,6 +925,32 @@ class SendspinManager extends Manager {
               'playbackState': nowPlaying.value!['playing'] == true
                   ? 'playing'
                   : 'paused',
+          });
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'sendspinArtwork',
+        description:
+            'The shown track\'s cover art, fetched by the device (which '
+            'trusts the Sendspin and Music Assistant hosts a browser would '
+            'not), as base64 with its URL. Fails with no track or no art.',
+        handler: (_) async {
+          final url = _shownArtworkUrl;
+          if (url.isEmpty) return const CommandResult.fail('no artwork');
+          if (url != _artworkCacheUrl || _artworkCache == null) {
+            final bytes = await artworkFetcher(url);
+            if (bytes == null || bytes.isEmpty) {
+              return const CommandResult.fail('artwork could not be fetched');
+            }
+            _artworkCacheUrl = url;
+            _artworkCache = bytes;
+          }
+          return CommandResult.ok({
+            'url': url,
+            'data': base64Encode(_artworkCache!),
           });
         },
       ),

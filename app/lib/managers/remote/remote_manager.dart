@@ -453,6 +453,8 @@ class RemoteManager extends Manager {
         return _json(200, {'console': console.data});
       case ('GET', 'api/screenshot'):
         return _screenshot();
+      case ('GET', 'api/media/artwork'):
+        return _artwork();
       case ('GET', 'api/camera/snapshot'):
         final snapshot = _lastSnapshot;
         if (snapshot == null) {
@@ -703,6 +705,33 @@ class RemoteManager extends Manager {
     return Response.ok(
       bytes,
       headers: {'content-type': png ? 'image/png' : 'image/jpeg'},
+    );
+  }
+
+  /// The shown track's cover, fetched by the device: a browser cannot
+  /// load it from a Music Assistant image proxy on a self-signed address.
+  Future<Response> _artwork() async {
+    final result = await commands.execute('sendspinArtwork', const {});
+    if (!result.ok || result.data is! Map) {
+      return _json(404, {'error': result.error ?? 'no artwork'});
+    }
+    final data = result.data as Map;
+    final bytes = base64Decode('${data['data']}');
+    // Label by the magic bytes rather than trusting the URL's extension.
+    final type = bytes.length > 3 && bytes[0] == 0x89 && bytes[1] == 0x50
+        ? 'image/png'
+        : bytes.length > 3 && bytes[0] == 0x47 && bytes[1] == 0x49
+        ? 'image/gif'
+        : bytes.length > 11 && bytes[8] == 0x57 && bytes[9] == 0x45
+        ? 'image/webp'
+        : 'image/jpeg';
+    return Response.ok(
+      bytes,
+      headers: {
+        'Content-Type': type,
+        'Cache-Control': 'no-store',
+        'X-Artwork-Url': '${data['url']}',
+      },
     );
   }
 

@@ -63,6 +63,7 @@ is administrable here by construction.
 | `/api/commands` | GET | List registered commands + param schemas |
 | `/api/commands/<name>` | POST | Execute a command with JSON params |
 | `/api/screenshot` | GET | JPEG of the current screen (PNG placeholder while it is off). The capture also feeds the Screenshot entity and Last screenshot over ESPHome and MQTT |
+| `/api/media/artwork` | GET | The shown track's cover art, fetched by the device (which trusts the Sendspin and Music Assistant hosts a browser would not), labelled by its bytes. 404 with no track or no art. `X-Artwork-Url` carries the source URL. |
 | `/api/camera/snapshot` | GET | The latest device-camera frame as JPEG (404 until one has been captured). `X-Snapshot-At` carries the capture time as ISO 8601 UTC. Serves the cached frame; it never triggers a capture (use the `takeCameraSnapshot` command for that). |
 | `/api/files/download` | GET | Stream a device file. Query params: `root` (`shared` or `app`), `path` (relative to the root) |
 | `/api/files/upload` | POST | Write the raw request body to a device file, same `root`/`path` query params. Parent folders are created |
