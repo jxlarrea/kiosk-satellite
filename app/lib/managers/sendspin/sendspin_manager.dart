@@ -263,10 +263,10 @@ class SendspinManager extends Manager {
     final group = await _api().fetchGroup(
       _settings.get(defs.sendspinClientId).trim(),
     );
-    // Titled the way the chip names this device, not the way Music
-    // Assistant happens to.
-    return group == null
-        ? null
+    // Titled the way the chip names this device while it leads, not the
+    // way Music Assistant happens to; another leader keeps its name.
+    return group == null || !group.leads
+        ? group
         : RemoteGroup(
             selfId: group.selfId,
             leaderId: group.leaderId,
@@ -286,7 +286,6 @@ class SendspinManager extends Manager {
     final group = await _api().fetchGroup(self);
     final leader = group?.leaderId ?? self;
     final error = await _api().setGrouped(
-      selfId: group?.selfId ?? self,
       leaderId: leader,
       memberId: id,
       grouped: grouped,

@@ -72,11 +72,11 @@ abstract interface class RemotePlayer {
   Future<bool> setGrouped(String id, bool grouped);
 }
 
-/// A player's group as the Now Playing chip lists it: who leads it and
-/// every player that is in it or could be, the members first, each in
-/// alphabetical order. The shown player itself is not listed (it is the
-/// chip); its leader is, when that is another player, and unchecking the
-/// leader means the shown player leaves.
+/// A player's group as the Now Playing chip's menu shows it, the same
+/// from every member: the leader (the player the music streams from) is
+/// the title, and every other player is a row, the shown player among
+/// them when it follows, the members first, each in alphabetical order.
+/// Unchecking the shown player's own row is leaving the group.
 class RemoteGroup {
   const RemoteGroup({
     required this.selfId,
@@ -85,19 +85,15 @@ class RemoteGroup {
     required this.members,
   });
 
-  /// The shown player's id in the source, the one row the list omits.
+  /// The shown player's id in the source, so its row can say so.
   final String selfId;
   final String leaderId;
   final String leaderName;
   final List<GroupMember> members;
 
-  /// Who an uncheck of [memberId] takes out of the group: the shown
-  /// player itself when the row is its leader, that member otherwise.
-  static String leaving({
-    required String selfId,
-    required String leaderId,
-    required String memberId,
-  }) => memberId == leaderId ? selfId : memberId;
+  /// Whether the shown player leads, in which case the title is its own
+  /// name and it has no row.
+  bool get leads => selfId == leaderId;
 
   /// [members] in the chip's order: the grouped ones first, then the
   /// rest, by name within each.

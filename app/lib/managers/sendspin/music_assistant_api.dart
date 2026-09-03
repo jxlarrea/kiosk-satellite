@@ -193,10 +193,8 @@ class MusicAssistantApi {
   }
 
   /// Put [memberId] in [leaderId]'s group, or take it out of whatever
-  /// group it is in; unchecking the leader takes [selfId] out instead.
-  /// Null when the server took it, its refusal otherwise.
+  /// group it is in. Null when the server took it, its refusal otherwise.
   Future<String?> setGrouped({
-    required String selfId,
     required String leaderId,
     required String memberId,
     required bool grouped,
@@ -206,16 +204,7 @@ class MusicAssistantApi {
             'players/cmd/group',
             args: {'player_id': memberId, 'target_player': leaderId},
           )
-        : await call(
-            'players/cmd/ungroup',
-            args: {
-              'player_id': RemoteGroup.leaving(
-                selfId: selfId,
-                leaderId: leaderId,
-                memberId: memberId,
-              ),
-            },
-          );
+        : await call('players/cmd/ungroup', args: {'player_id': memberId});
     return res.ok ? null : (res.error ?? 'refused');
   }
 
@@ -223,7 +212,7 @@ class MusicAssistantApi {
   /// synced to leads, or it leads itself; the leader's children are in
   /// the group; every enabled, visible, plain player the leader can
   /// group with (by id, or by belonging to a provider the leader names)
-  /// is a candidate. The player itself is not listed: it is the chip. A bare
+  /// is a candidate. The leader is not listed: it is the menu's title. A bare
   /// Sendspin client id answers for the wrapper Music Assistant lists it
   /// under when the bare player is not in the list itself (a universal
   /// player prefixes the id it wraps).
@@ -261,7 +250,7 @@ class MusicAssistantApi {
     for (final entry in byId.entries) {
       final id = entry.key;
       final p = entry.value;
-      if (id == myId || id.isEmpty) continue;
+      if (id == leaderId || id.isEmpty) continue;
       if (p['enabled'] == false ||
           p['hidden'] == true ||
           p['hide_in_ui'] == true) {

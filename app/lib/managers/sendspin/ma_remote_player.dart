@@ -83,25 +83,19 @@ class MaRemotePlayer implements RemotePlayer {
   bool get hasGrouping => true;
 
   /// The leader of the last group read, so a member is grouped under the
-  /// player this one is actually synced to, and this player's own id as
-  /// Music Assistant lists it.
+  /// player this one is actually synced to.
   String _leaderId = '';
-  String _selfId = '';
 
   @override
   Future<RemoteGroup?> fetchGroup() async {
     final group = await _api.fetchGroup(playerId);
-    if (group != null) {
-      _leaderId = group.leaderId;
-      _selfId = group.selfId;
-    }
+    if (group != null) _leaderId = group.leaderId;
     return group;
   }
 
   @override
   Future<bool> setGrouped(String id, bool grouped) async {
     final error = await _api.setGrouped(
-      selfId: _selfId.isNotEmpty ? _selfId : playerId,
       leaderId: _leaderId.isNotEmpty ? _leaderId : playerId,
       memberId: id,
       grouped: grouped,

@@ -1124,6 +1124,7 @@ class _GroupMenuState extends State<_GroupMenu> {
     final screen = MediaQuery.sizeOf(context);
     final group = _group;
     final members = _members;
+    final isLocal = widget.container.sendspin.followedPlayerName.isEmpty;
     const titleStyle = TextStyle(
       color: Colors.white,
       fontSize: 16,
@@ -1170,12 +1171,27 @@ class _GroupMenuState extends State<_GroupMenu> {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          group?.leaderName ??
-                              widget.container.sendspin.playerChipName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: titleStyle,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              group?.leaderName ??
+                                  widget.container.sendspin.playerChipName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: titleStyle,
+                            ),
+                            // Another player's name over this one's
+                            // menu: say why.
+                            if (group != null && !group.leads)
+                              const Text(
+                                'Leads the group',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 13,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],
@@ -1254,13 +1270,13 @@ class _GroupMenuState extends State<_GroupMenu> {
                                       ),
                                     ),
                                   ),
-                                  // The player the music streams from,
-                                  // when that is not the one shown: a
-                                  // word, since no glyph says it.
-                                  if (m.id == group?.leaderId) ...[
+                                  // The shown player's own row, under a
+                                  // name the source may spell its own
+                                  // way: unchecking it is leaving.
+                                  if (m.id == group?.selfId && isLocal) ...[
                                     const SizedBox(width: 10),
                                     const Text(
-                                      'Leader',
+                                      'This device',
                                       style: TextStyle(
                                         color: Colors.white54,
                                         fontSize: 13,
