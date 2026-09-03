@@ -1,6 +1,7 @@
 import { api, showView } from './core.js';
 import { refreshUpdateBadge } from './device.js';
 import { loadConsole } from './logs.js';
+import { initOverview } from './overview.js';
 import { loadScreenshot, loadViewJump } from './panels.js';
 import { loadSettings } from './settings.js';
 import { showTab } from './tabs.js';
@@ -31,6 +32,7 @@ export async function start() {
   refreshUpdateBadge();
   await loadSettings();
   await loadConsole();
+  await initOverview();
   loadViewJump();
   // Whatever the URL asked for, now that the panels it needs exist.
   showTab(decodeURIComponent(location.hash.slice(1)) || 'dashboard', { push: false });
@@ -39,10 +41,11 @@ export async function start() {
   // tablet reads back and encodes its screen, and the panel has its own
   // placeholder. It lands into the visible page.
   loadScreenshot();
-  // No auto-refresh at all: each capture makes the tablet read back and
-  // encode its screen, and an admin tab left open would otherwise poll the
-  // device forever. One shot on load plus the Refresh button is the deal,
-  // which is also why the capture can afford to be high-quality.
+  // No auto-refresh by default: each capture makes the tablet read back
+  // and encode its screen, and an admin tab left open would otherwise poll
+  // the device forever. One shot on load plus Refresh is the deal, which
+  // is also why the capture can afford to be high-quality. Live is the
+  // Overview's explicit opt-in, and only while the page is in view.
   connectWs();
 }
 /* ---- Onboarding wizard ----------------------------------------------

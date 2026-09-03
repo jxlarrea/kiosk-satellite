@@ -146,6 +146,138 @@ export async function loadDeviceInfo() {
 /* ---- About ---- */
 // The same rows the device's own About page shows: app identity plus
 // attribution and the license in one sentence.
+/* The Install button's whole life, shared by the About page and the
+   Overview's Needs attention row: release notes, then the download on the
+   tablet, ridden by polling until the installer has it. `btn` carries its
+   idle label already. */
+export function attachUpdateInstall(btn, upd) {
+  const idleLabel = `Install version ${upd.availableVersion}`;
+  const run = async () => {
+    // One riding loop at a time: a re-rendered About tab (or a second
+    // click) starts a fresh one and this token retires the old, which
+    // would otherwise keep polling a detached button for the rest of
+    // the download.
+    const token = (window.__ksUpdateRun = (window.__ksUpdateRun || 0) + 1);
+    const stale = () => window.__ksUpdateRun !== token;
+    btn.disabled = true;
+    const res = await cmd('installUpdate').catch(() => null);
+    // "Already running" is not a failure: attach to the download in
+    // flight (started on the device, an earlier session, or one that
+    // stalled) instead of erroring beside it (#272).
+    if (!res?.ok && !/already running/.test(res?.error || '')) {
+      btn.disabled = false;
+      alert(`Update failed: ${res?.error || 'device unreachable'}`);
+      return;
+    }
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn-ghost';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.marginLeft = '8px';
+    cancelBtn.addEventListener('click', () => {
+      cancelBtn.disabled = true;
+      cmd('cancelUpdateDownload').catch(() => null);
+    });
+    btn.after(cancelBtn);
+    // Ride the download via polling; when it settles the installer has
+    // the rest (or the device will log why not). A few missed polls are
+    // Wi-Fi blips on the tablet, not the end of the download.
+    let st;
+    let misses = 0;
+    for (;;) {
+      await new Promise((r) => setTimeout(r, 1000));
+      if (stale()) { cancelBtn.remove(); return; }
+      const cur = (await cmd('getUpdateStatus').catch(() => null))?.data;
+      if (stale()) { cancelBtn.remove(); return; }
+      if (!cur) { if (++misses >= 5) break; continue; }
+      misses = 0;
+      st = cur;
+      if (st.progress === null || st.progress === undefined) break;
+      btn.textContent = `Downloading… ${Math.round(st.progress * 100)}%`;
+    }
+    cancelBtn.remove();
+    // The device re-checks GitHub before downloading, so the run can end
+    // with nothing to install (the offered release was pulled and the
+    // tablet is on the latest). Only say so when the device answered:
+    // a poll lost to the install itself is not the same thing.
+    if (st && !st.availableVersion) {
+      btn.textContent = 'Already up to date';
+      return;
+    }
+    if (st?.lastOutcome === 'cancelled') {
+      btn.disabled = false;
+      btn.textContent = idleLabel;
+      return;
+    }
+    if (st?.lastOutcome === 'failed') {
+      btn.disabled = false;
+      btn.textContent = idleLabel;
+      alert(st.lastError || 'Update failed. Check the device logs.');
+      return;
+    }
+    if (st?.lastOutcome === 'silent') {
+      btn.textContent = 'Installing…';
+      return;
+    }
+    btn.textContent = 'Confirm on the tablet screen';
+  };
+  // Release notes first, then the download: the same flow as the
+  // drawer's dialog on the device.
+  btn.onclick = () => {
+    const shell = modalShell({
+      title: `Update to ${upd.availableVersion}`,
+      width: 520,
+    });
+    const back = shell.back;
+    const notes = shell.body;
+    notes.style.cssText += 'font-size:13.5px; line-height:1.5;';
+    // Markdown-lite, DOM-built so the release body stays inert text:
+    // headings bold, list markers as bullets, emphasis/code/links stripped.
+    const inline = (s) => s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/\*\*|__|`/g, '');
+    const body = (upd.availableNotes || '').trim();
+    if (!body) {
+      notes.textContent = 'No release notes.';
+    } else {
+      for (const raw of body.split('\n')) {
+        const line = raw.trimEnd();
+        const p = document.createElement('div');
+        if (!line.trim()) {
+          p.style.height = '10px';
+        } else if (/^#+\s*/.test(line)) {
+          p.textContent = inline(line.replace(/^#+\s*/, ''));
+          p.style.cssText = 'font-weight:700; margin-bottom:4px;';
+        } else if (/^\s*[-*]\s+/.test(line)) {
+          p.textContent = `•  ${inline(line.replace(/^\s*[-*]\s+/, ''))}`;
+          p.style.marginBottom = '3px';
+        } else {
+          p.textContent = inline(line);
+        }
+        notes.appendChild(p);
+      }
+    }
+    // The hint stays visible under the notes, above the fixed actions.
+    const hint = document.createElement('div');
+    hint.textContent = 'The download runs on the tablet; the installation '
+      + 'must be confirmed on the tablet screen.';
+    hint.style.cssText =
+      'flex:none; margin:14px 0 0; font-size:12.5px; color:var(--muted);';
+    shell.card.insertBefore(hint, shell.foot);
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-text';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => back.remove());
+    const ok = document.createElement('button');
+    ok.className = 'btn-primary';
+    ok.textContent = 'Update';
+    ok.addEventListener('click', () => { back.remove(); run(); });
+    shell.foot.append(cancel, ok);
+  };
+  // A download already in flight when this tab renders (started from the
+  // device, or the page reloaded mid-download): attach to it right away
+  // rather than offering an Install button that would only error (#272).
+  if (upd.progress !== null && upd.progress !== undefined) run();
+}
+
 export async function loadAboutInfo() {
   const root = $('#about-info');
   // Everything is fetched before the container is cleared: an await between
@@ -224,131 +356,7 @@ export async function loadAboutInfo() {
     const btn = document.createElement('button');
     btn.className = 'btn-ghost';
     btn.textContent = `Install version ${upd.availableVersion}`;
-    const idleLabel = `Install version ${upd.availableVersion}`;
-    const run = async () => {
-      // One riding loop at a time: a re-rendered About tab (or a second
-      // click) starts a fresh one and this token retires the old, which
-      // would otherwise keep polling a detached button for the rest of
-      // the download.
-      const token = (window.__ksUpdateRun = (window.__ksUpdateRun || 0) + 1);
-      const stale = () => window.__ksUpdateRun !== token;
-      btn.disabled = true;
-      const res = await cmd('installUpdate').catch(() => null);
-      // "Already running" is not a failure: attach to the download in
-      // flight (started on the device, an earlier session, or one that
-      // stalled) instead of erroring beside it (#272).
-      if (!res?.ok && !/already running/.test(res?.error || '')) {
-        btn.disabled = false;
-        alert(`Update failed: ${res?.error || 'device unreachable'}`);
-        return;
-      }
-      const cancelBtn = document.createElement('button');
-      cancelBtn.className = 'btn-ghost';
-      cancelBtn.textContent = 'Cancel';
-      cancelBtn.style.marginLeft = '8px';
-      cancelBtn.addEventListener('click', () => {
-        cancelBtn.disabled = true;
-        cmd('cancelUpdateDownload').catch(() => null);
-      });
-      btn.after(cancelBtn);
-      // Ride the download via polling; when it settles the installer has
-      // the rest (or the device will log why not). A few missed polls are
-      // Wi-Fi blips on the tablet, not the end of the download.
-      let st;
-      let misses = 0;
-      for (;;) {
-        await new Promise((r) => setTimeout(r, 1000));
-        if (stale()) { cancelBtn.remove(); return; }
-        const cur = (await cmd('getUpdateStatus').catch(() => null))?.data;
-        if (stale()) { cancelBtn.remove(); return; }
-        if (!cur) { if (++misses >= 5) break; continue; }
-        misses = 0;
-        st = cur;
-        if (st.progress === null || st.progress === undefined) break;
-        btn.textContent = `Downloading… ${Math.round(st.progress * 100)}%`;
-      }
-      cancelBtn.remove();
-      // The device re-checks GitHub before downloading, so the run can end
-      // with nothing to install (the offered release was pulled and the
-      // tablet is on the latest). Only say so when the device answered:
-      // a poll lost to the install itself is not the same thing.
-      if (st && !st.availableVersion) {
-        btn.textContent = 'Already up to date';
-        return;
-      }
-      if (st?.lastOutcome === 'cancelled') {
-        btn.disabled = false;
-        btn.textContent = idleLabel;
-        return;
-      }
-      if (st?.lastOutcome === 'failed') {
-        btn.disabled = false;
-        btn.textContent = idleLabel;
-        alert(st.lastError || 'Update failed. Check the device logs.');
-        return;
-      }
-      if (st?.lastOutcome === 'silent') {
-        btn.textContent = 'Installing…';
-        return;
-      }
-      btn.textContent = 'Confirm on the tablet screen';
-    };
-    // Release notes first, then the download: the same flow as the
-    // drawer's dialog on the device.
-    btn.onclick = () => {
-      const shell = modalShell({
-        title: `Update to ${upd.availableVersion}`,
-        width: 520,
-      });
-      const back = shell.back;
-      const notes = shell.body;
-      notes.style.cssText += 'font-size:13.5px; line-height:1.5;';
-      // Markdown-lite, DOM-built so the release body stays inert text:
-      // headings bold, list markers as bullets, emphasis/code/links stripped.
-      const inline = (s) => s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-        .replace(/\*\*|__|`/g, '');
-      const body = (upd.availableNotes || '').trim();
-      if (!body) {
-        notes.textContent = 'No release notes.';
-      } else {
-        for (const raw of body.split('\n')) {
-          const line = raw.trimEnd();
-          const p = document.createElement('div');
-          if (!line.trim()) {
-            p.style.height = '10px';
-          } else if (/^#+\s*/.test(line)) {
-            p.textContent = inline(line.replace(/^#+\s*/, ''));
-            p.style.cssText = 'font-weight:700; margin-bottom:4px;';
-          } else if (/^\s*[-*]\s+/.test(line)) {
-            p.textContent = `•  ${inline(line.replace(/^\s*[-*]\s+/, ''))}`;
-            p.style.marginBottom = '3px';
-          } else {
-            p.textContent = inline(line);
-          }
-          notes.appendChild(p);
-        }
-      }
-      // The hint stays visible under the notes, above the fixed actions.
-      const hint = document.createElement('div');
-      hint.textContent = 'The download runs on the tablet; the installation '
-        + 'must be confirmed on the tablet screen.';
-      hint.style.cssText =
-        'flex:none; margin:14px 0 0; font-size:12.5px; color:var(--muted);';
-      shell.card.insertBefore(hint, shell.foot);
-      const cancel = document.createElement('button');
-      cancel.className = 'btn-text';
-      cancel.textContent = 'Cancel';
-      cancel.addEventListener('click', () => back.remove());
-      const ok = document.createElement('button');
-      ok.className = 'btn-primary';
-      ok.textContent = 'Update';
-      ok.addEventListener('click', () => { back.remove(); run(); });
-      shell.foot.append(cancel, ok);
-    };
-    // A download already in flight when this tab renders (started from the
-    // device, or the page reloaded mid-download): attach to it right away
-    // rather than offering an Install button that would only error (#272).
-    if (upd.progress !== null && upd.progress !== undefined) run();
+    attachUpdateInstall(btn, upd);
     const updRows = [['Update available', btn]];
     // No draw-over-apps grant means the relaunch receiver's activity start
     // is a background launch Android will abort: the update installs but

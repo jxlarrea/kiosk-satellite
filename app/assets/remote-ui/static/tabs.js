@@ -5,6 +5,7 @@ import { loadFiles } from './files.js';
 import { loadGestures } from './gestures.js';
 import { subpageIcon } from './icons.js';
 import { loadLogs } from './logs.js';
+import { overviewShown } from './overview.js';
 import {
   updateAmbientDisplayNotice,
   updateBrightnessGrantNotices,
@@ -168,6 +169,8 @@ export function showTab(name, { push = true } = {}) {
   if (push && decodeURIComponent(location.hash.slice(1)) !== currentPath) {
     location.hash = currentPath;
   }
+  // Nothing on the Overview is a setting: it is re-read on every visit.
+  if (tab === 'dashboard' && !sameTab) overviewShown();
   if (tab === 'logs') loadLogs();
   if (tab === 'files') loadFiles();
   if (tab === 'gestures') loadGestures();

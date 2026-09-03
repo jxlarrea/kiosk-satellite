@@ -185,10 +185,17 @@ holds the markup, and the stylesheet plus ES modules live under
 [app/assets/remote-ui/static/](../app/assets/remote-ui/static/), bundled as
 Flutter assets. The server serves the page at `/` and the files at
 `/static/<name>`, discovered from the asset manifest, so adding a module is
-just adding the file. Tabs: Dashboard (live screenshot + quick controls +
-brightness; the screen, screensaver and camera view controls are one tile
-each, relabelled by the device's state, **Screen off** while the panel is
-lit and **Screen on** once it is dark, **Start screensaver** or **Dismiss
+just adding the file. Tabs: Overview (a Needs attention card for an update
+to install, a missing grant a switched-on feature needs, a lost Home
+Assistant connection or a stopped wake word engine, hidden while there is
+nothing; the screenshot with a badge while the panel is dark, on the
+screensaver or showing a camera view, a Still or Live toggle, full size and
+download; status tiles for Home Assistant, Voice Satellite, ESPHome, Media
+Player, the service and updates, each opening its page; a Now playing card
+while the media player has a track; quick controls, brightness and master
+volume. The screen, screensaver and camera view controls are one tile each,
+relabelled by the device's state, **Screen off** while the panel is lit and
+**Screen on** once it is dark, **Start screensaver** or **Dismiss
 screensaver**, **Show camera view**, which picks a view, or **Dismiss camera
 view**), Settings (rendered from the declarative setting definitions),
 Console (live JS console over WS), Logs. It talks only to the REST/WS API

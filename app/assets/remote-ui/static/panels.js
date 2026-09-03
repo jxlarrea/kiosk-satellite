@@ -547,7 +547,6 @@ $('#viewJump').addEventListener('change', async (e) => {
   // row never claims a view the tablet may have since navigated away from.
   e.target.value = '';
 });
-$('#refreshShot').addEventListener('click', loadScreenshot);
 /* ---- Quick controls ----
    The screen, screensaver and camera view tiles are one tile each that
    reads by what the device is doing, so the dashboard offers the action
@@ -593,6 +592,8 @@ export function renderQuickControls() {
   setTile('tileCameraView', quick.cameraView?.active
     ? { icon: 'cameraHide', label: 'Dismiss camera view', command: 'hideCameraView' }
     : { icon: 'cameraShow', label: 'Show camera view', command: null });
+  // The Overview's screenshot badge reads the same three states.
+  document.dispatchEvent(new CustomEvent('ks-quick'));
 }
 
 // The snapshot: /api/info at boot and every WS `state` message. Fields a
@@ -677,18 +678,25 @@ document.getElementById('tileCameraView')?.addEventListener('click', () => {
 export async function loadScreenshot() {
   try {
     const res = await api('/api/screenshot');
+    if (!res.ok) return false;
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const wrap = $('#shotWrap');
     let img = wrap.querySelector('img');
     if (!img) {
-      wrap.innerHTML = '';
+      // The placeholder goes; the state badge over the frame stays.
+      wrap.querySelector('.placeholder')?.remove();
       img = document.createElement('img');
       // Size the box to the screenshot's own aspect once it arrives (a
       // portrait phone shot must not be squeezed into a 16/10 landscape box).
       img.addEventListener('load', () => wrap.classList.add('free'));
-      wrap.appendChild(img);
+      wrap.prepend(img);
     }
     const old = img.src; img.src = url; if (old) URL.revokeObjectURL(old);
-  } catch (_) { /* ignore */ }
+    // When and what, for the Overview's "Taken ... ago" and its download.
+    state.screenshotAt = Date.now();
+    state.screenshotType = blob.type;
+    document.dispatchEvent(new CustomEvent('ks-screenshot'));
+    return true;
+  } catch (_) { return false; }
 }

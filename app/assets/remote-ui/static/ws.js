@@ -43,11 +43,16 @@ export function connectWs() {
       if (moved && !snapshotSeen) movedFirst[moved] = true;
       applyQuickEvent(msg.event, msg.data);
       if (moved) queueScreenshotRefresh();
+      // The Overview listens for the rest (the volume fader follows the
+      // tablet's rocker) without this module knowing the page.
+      document.dispatchEvent(new CustomEvent('ks-event',
+        { detail: { event: msg.event, data: msg.data } }));
     }
     // The device's own settings screen updates live off the same event; this
     // panel has to as well, or the two disagree about the same device.
     else if (msg.type === 'wakeword-state') {
       queueVsControlsRefresh();
+      document.dispatchEvent(new CustomEvent('ks-wakeword'));
     }
     // The screensaver and the card both dim behind our back.
     else if (msg.type === 'brightness') showBrightness(msg.level);
@@ -113,7 +118,6 @@ export function applyInfo(device, currentUrl, keepQuick = {}) {
   // Login keeps the static default; renames land on the next info refresh.
   if (name) document.title = name + ' - Kiosk Satellite Remote';
   renderStats(device);
-  if (currentUrl) $('#currentUrl').textContent = currentUrl;
   if (device.brightness != null) showBrightness(device.brightness);
   applyQuickState(device, keepQuick);
   state.device = device;

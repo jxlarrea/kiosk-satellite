@@ -455,9 +455,10 @@
      tile shape. Only the dashboard grid opts in; the plain .action buttons
      elsewhere (Import, camera views) keep the text-only look. */
   .action.tile { display: flex; flex-direction: column; align-items: center;
-    gap: 9px; padding: 14px 10px 12px; font-size: 13px; font-weight: 500; }
-  .action.tile .disc { width: 34px; height: 34px; transition: transform .12s; }
-  .action.tile .disc svg { width: 17px; height: 17px; }
+    gap: 7px; padding: 10px 8px 9px; font-size: 12.5px; font-weight: 500;
+    line-height: 1.3; }
+  .action.tile .disc { width: 28px; height: 28px; transition: transform .12s; }
+  .action.tile .disc svg { width: 15px; height: 15px; }
   .action.tile:active .disc { transform: scale(.92); }
   /* Dashboard control rows: the label keeps its natural width and the
      control takes the rest, instead of the two splitting the row and
@@ -949,4 +950,64 @@
   @media (max-width: 719px) {
     .wizard-rail { display: none; }
     .wizard-pane { padding: 20px 16px 16px; }
+  }
+
+  /* ---- Overview ----
+     Status tiles: a dot, a name and one line of state, the quick-control
+     tile shape without the disc; each opens its page. The screenshot badge
+     names a dark frame. Now playing: art, three lines, transport. */
+  .health { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px; padding: 10px 0; }
+  .status { display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    background: var(--surface-2); border: 1px solid transparent;
+    border-radius: var(--radius-sm); color: var(--text); text-align: left;
+    min-width: 0; font: inherit; cursor: pointer; }
+  .status:hover { border-color: var(--primary-fill); }
+  .status .dot { width: 10px; height: 10px; }
+  .dot.warn { background: var(--warn); }
+  .status .s-text { display: flex; flex-direction: column; min-width: 0; }
+  .status .s-name { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+  .status .s-sub { font-size: 12.5px; color: var(--muted); line-height: 1.35;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .status.warn .s-sub { color: var(--warn); }
+  .status.error .s-sub { color: var(--error); }
+  #attentionCard .row .info { flex: 1; margin-right: 0; }
+  .shot-badge { position: absolute; right: 14px; top: 14px; display: inline-flex;
+    align-items: center; gap: 7px; padding: 6px 12px 6px 10px;
+    border-radius: 999px; background: rgba(20, 21, 24, .62); color: #fff;
+    font-size: 12.5px; font-weight: 600; backdrop-filter: blur(6px); }
+  .shot-badge svg { width: 14px; height: 14px; }
+  .shot-bar { margin: 12px 0 8px; }
+  .shot-bar .icon-btn { color: var(--text); }
+  .np { display: flex; align-items: center; gap: 16px; padding: 12px 0 13px; }
+  .np .art { position: relative; flex: none; width: 64px; height: 64px;
+    border-radius: 12px; background: var(--surface-2); display: grid;
+    place-items: center; color: var(--muted); overflow: hidden; }
+  .np .art svg { width: 30px; height: 30px; }
+  .np .art img { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; }
+  .np .meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .np .title { font-size: 16px; font-weight: 600; line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np .sub { font-size: 13px; color: var(--muted); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  .np .ctl { display: flex; align-items: center; gap: 2px; flex: none; }
+  .np .ctl .icon-btn { color: var(--text); }
+  .np .ctl .play { background: var(--primary-fill); color: var(--primary-ink);
+    width: 44px; height: 44px; }
+  .np .ctl .play:hover { background: var(--accent); color: var(--primary-ink); }
+  @media (max-width: 640px) {
+    .health { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .status { padding: 10px 12px; gap: 9px; align-items: flex-start; }
+    .status .dot { margin-top: 5px; }
+    .status .s-sub { white-space: normal; }
+    /* The toggle and the icons share the top line; when it was taken
+       goes under them on its own line. */
+    .shot-bar { flex-wrap: wrap; row-gap: 6px; }
+    .shot-bar .spacer { display: none; }
+    .shot-bar .icon-btn { order: 2; width: 36px; }
+    .shot-bar .icon-btn:first-of-type { margin-left: auto; }
+    .shot-bar .device { flex-basis: 100%; order: 3; }
+    .np { flex-wrap: wrap; }
+    .np .ctl { flex-basis: 100%; justify-content: center; }
   }

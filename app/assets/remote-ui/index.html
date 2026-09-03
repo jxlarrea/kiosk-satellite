@@ -205,16 +205,47 @@
     <div class="nav-backdrop" id="navBackdrop"></div>
     <main>
       <h1 id="pageTitle">Overview</h1>
-    <!-- Dashboard -->
+    <!-- Dashboard: the Overview. What needs a person, what the screen
+         shows, how each part is doing, then the controls. The status
+         tiles, the attention rows, the Now playing card and the volume
+         fader are built by overview.js from the device's status commands;
+         the markup here is the quiet-state page. -->
     <div class="tab active" id="tab-dashboard">
+      <h2 class="card-title hidden" id="attentionTitle">Needs attention</h2>
+      <div class="card hidden" id="attentionCard"></div>
+      <!-- The screen needs no heading: it is the page's first card and
+           reads as what it is. -->
       <div class="card">
         <div class="shot-wrap" id="shotWrap">
           <span class="placeholder">No screenshot</span>
+          <!-- Screen off, Screensaver or Camera view, over the frame, so a
+               dark capture says why. -->
+          <span class="shot-badge hidden" id="shotBadge"></span>
         </div>
-        <div class="toolbar" style="margin-top:12px">
-          <button class="btn-ghost" id="refreshShot">Refresh</button>
+        <div class="toolbar shot-bar">
+          <div class="seg" id="shotMode">
+            <button type="button" class="active" data-live="0">Still</button>
+            <button type="button" data-live="1">Live</button>
+          </div>
+          <span class="device" id="shotTaken"></span>
           <span class="spacer"></span>
-          <span class="device" id="currentUrl"></span>
+          <button type="button" class="icon-btn" id="shotRefresh" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4v6h-6"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L21 10"/></svg></button>
+          <button type="button" class="icon-btn" id="shotFull" title="Full size" aria-label="Full size"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          <button type="button" class="icon-btn" id="shotSave" title="Download" aria-label="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M4 19h16"/></svg></button>
+        </div>
+      </div>
+      <h2 class="card-title">Status</h2>
+      <div class="card"><div class="health" id="statusGrid"></div></div>
+      <h2 class="card-title hidden" id="npTitle">Now playing</h2>
+      <div class="card hidden" id="npCard">
+        <div class="np">
+          <div class="art" id="npArt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg><img alt="" hidden></div>
+          <div class="meta"><span class="title" id="npTrack"></span><span class="sub" id="npArtist"></span><span class="sub" id="npSource"></span></div>
+          <div class="ctl">
+            <button type="button" class="icon-btn" data-np="previous" title="Previous" aria-label="Previous"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5 8 12l10 7zM6 5v14"/></svg></button>
+            <button type="button" class="icon-btn play" id="npPlay" data-np="play" title="Play" aria-label="Play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l10 7-10 7z"/></svg></button>
+            <button type="button" class="icon-btn" data-np="next" title="Next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5l10 7-10 7zM18 5v14"/></svg></button>
+          </div>
         </div>
       </div>
       <h2 class="card-title">Quick controls</h2>
@@ -234,8 +265,12 @@
           <button class="action tile" id="tileScreen" data-cmd="screenOff"><span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M4 20 20 4"/></svg></span><span>Screen off</span></button>
           <button class="action tile" id="tileScreensaver" data-cmd="startScreensaver"><span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span>Start screensaver</span></button>
           <button class="action tile" id="tileCameraView"><span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="12.5" height="11" rx="2.5"/><path d="m15.5 10.5 5.5-3v9l-5.5-3"/></svg></span><span>Show camera view</span></button>
-          <button class="action tile" data-cmd="restartApp"><span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.6a8 8 0 1 0 11.4 0"/></svg></span><span>Restart app</span></button>
-          <button class="action tile" id="tileExitApp" data-cmd="exitApp"><span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 21H6a2.5 2.5 0 0 1-2.5-2.5v-13A2.5 2.5 0 0 1 6 3h3.5"/><path d="m15.5 16.5 4.5-4.5-4.5-4.5M20 12H9.5"/></svg></span><span>Exit app</span></button>
+          <button class="action tile" data-cmd="postponeScreensaver"><span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>Postpone screensaver</span></button>
+          <!-- Only with the device camera switched on (overview.js). -->
+          <button class="action tile" id="tileSnapshot"><span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1.2-1.6a2 2 0 0 1 1.6-.8h3.4a2 2 0 0 1 1.6.8L16.5 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span>Take snapshot</span></button>
+          <button class="action tile" id="tileCheckUpdate"><span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span><span>Check for updates</span></button>
+          <button class="action tile" data-cmd="restartApp"><span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.6a8 8 0 1 0 11.4 0"/></svg></span><span>Restart app</span></button>
+          <button class="action tile" id="tileExitApp" data-cmd="exitApp"><span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 21H6a2.5 2.5 0 0 1-2.5-2.5v-13A2.5 2.5 0 0 1 6 3h3.5"/><path d="m15.5 16.5 4.5-4.5-4.5-4.5M20 12H9.5"/></svg></span><span>Exit app</span></button>
         </div>
         <div class="row slider-row" style="margin-top:6px">
           <div class="info"><div class="name">Brightness</div></div>
@@ -254,6 +289,11 @@
             settings" so the slider controls the panel's actual brightness.
           </div>
           <button class="btn-ghost js-brightness-grant">Grant on device</button>
+        </div>
+        <!-- The device volume, live (overview.js); hidden where the device
+             will not report one. -->
+        <div class="row slider-row hidden" id="volumeRow">
+          <div class="info"><div class="name">Master Volume</div></div>
         </div>
         <div class="row">
           <div class="info"><div class="name">Go to view</div></div>
