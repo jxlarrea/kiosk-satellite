@@ -1194,7 +1194,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     // The four toggles: lit when on, dimmed when off. A missing one
     // leaves its width behind so the transport stays centered under the
     // cover either way.
-    const toggleSize = 24.0;
+    const toggleSize = 32.0;
     final toggleBlank = SizedBox(width: (toggleSize + 16) * scale);
     final shuffleOn = _shuffleOverride ?? (now['shuffle'] == true);
     final shuffle = has('shuffle')
@@ -1308,7 +1308,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                       // player reports its own back through the snapshot.
                       if (mounted) setState(() {});
                     },
-                    size: 28,
+                    size: 32,
                     color: muted ? Colors.white : Colors.white70,
                   ),
                   Expanded(

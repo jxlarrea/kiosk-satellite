@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- The **Now Playing view's small toggles are a size up**: volume, shuffle, lyrics and queue, and the speaker beside the volume slider, drawn at 32 instead of 24, so on an Echo Show 8, where the controls scale down with the short side of the screen, they read as what they are instead of specks beside the transport.
+
 ### Fixed
 - **Forgetting a Sonos room forgets its household and its pick**. Forget dropped the one room, then the next listing read the household back from any other room and brought it back, and a forgotten room that was the picked player kept its place in the Player dropdown and on the Player row even after a reload, since the pick lived on. Forget now drops every room of the household, the mirror of Add, and clears the pick when it named one of them, so the Player row asks again.
 - **Picking a player in the remote admin no longer makes the page jump**. The pick re-rendered the whole Media Player page, the intro note above the rows going and coming back with it. The row's warning is now reworded in place and the rest of the page stays put.
