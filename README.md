@@ -27,7 +27,7 @@ Transform any Android device into a beautiful, dedicated Home Assistant kiosk. B
 
 &bull; **Guided setup**: Get up and running easily. A five-step wizard connects to your Home Assistant instance, lets you pick a dashboard, detects Voice Satellite automatically, and only asks for the Android permissions it actually needs. You can run the setup directly on the device or from a browser on your computer.
 
-&bull; **Native [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)**: Your kiosk gets its own `assist_satellite` entity, and the app's built-in engine takes over wake-word detection. It quietly listens in the background even with the screen off—using a fraction of the CPU a web browser requires. There's no extra configuration needed; it inherits everything directly.
+&bull; **Native [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)**: Your kiosk gets its own `assist_satellite` entity, and the app's built-in engine takes over wake-word detection. It quietly listens in the background even with the screen off using a fraction of the CPU a web browser requires. There's no extra configuration needed; it inherits everything directly.
 
 <p align="center">
  <img src="assets/vs-demo.gif" alt="Voice Satellite" width="650"/>
@@ -57,7 +57,7 @@ Transform any Android device into a beautiful, dedicated Home Assistant kiosk. B
 
 &bull; **Dashboard view rotation**: Set your kiosk to automatically cycle through specific dashboard views on an endless loop, customizing how many seconds each view stays on screen.
 
-&bull; **DLNA renderer**: Push videos, images, and live cameras directly to the full screen using `media_player.play_media`—perfect for HA automations.
+&bull; **DLNA renderer**: Push videos, images, and live cameras directly to the full screen using `media_player.play_media`, perfect for HA automations.
 
 <p align="center">
  <img src="assets/screenshots/dashboard.png" alt="Dashboard" width="650"/>
@@ -85,7 +85,7 @@ Kiosk Satellite shatters those limits. The app runs Voice Satellite's wake-word 
  <img src="assets/screenshots/vs-settings.png" alt="Voice Satellite Settings" width="650"/>
 </p>
 
-This massive performance boost is one of the best reasons to use Kiosk Satellite. By running native inference on the CPU, the wake-word pipeline operates incredibly fast—saving your device's battery and CPU while keeping the dashboard buttery smooth. It’s so efficient that vsWakeWord can comfortably run on something as low-powered as an Amazon Echo Show 5.
+This massive performance boost is one of the best reasons to use Kiosk Satellite. By running native inference on the CPU, the wake-word pipeline operates incredibly fast, saving your device's battery and CPU while keeping the dashboard buttery smooth. It’s so efficient that vsWakeWord can comfortably run on something as low-powered as an Amazon Echo Show 5.
 
 Plus, you aren't forced to keep the dashboard open. With background listening enabled, the wake word continues working even if the screen is off or **you have another app open**. Just say the word, and the kiosk instantly brings the dashboard front and center to answer.
 
@@ -109,7 +109,7 @@ Kiosk Satellite is completely free and distributed as an APK for sideloading:
 2. Copy it to your Android device (or download it directly there) and open it. If Android prompts you, allow installation from unknown sources.
 3. Open the app and follow the simple setup wizard. 
    
-> **Pro Tip:** In the first step (naming the device), enable Remote Administration. You can then finish the rest of the setup from your computer's browser—it makes copying and pasting your Home Assistant long-lived access token vastly easier than typing it out on a touchscreen!
+> **Pro Tip:** In the first step (naming the device), enable Remote Administration. You can then finish the rest of the setup from your computer's browser.
 
 **Requirements:** Android 7.0 or newer, a reachable Home Assistant instance, and a long-lived access token (found in HA Profile → Security → Long-lived access tokens). For voice features, make sure to install [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration) from the default HACS repository.
 
