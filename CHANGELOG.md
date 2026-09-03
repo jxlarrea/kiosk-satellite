@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.9 - 2026-09-03
 
 ### Fixed
 - **Updating from an SD card formatted as internal storage** works again. A tablet whose SD card is adopted as internal storage and that keeps the app on it refused every update from the app itself, with "Cannot automatically move me.jxl.kiosk_satellite from <volume> to internal storage", because the install session asked Android for internal storage only. The session now lets the update stay on whichever storage the app already occupies, as the system installer does.
