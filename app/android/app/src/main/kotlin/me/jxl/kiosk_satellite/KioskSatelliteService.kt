@@ -501,7 +501,7 @@ class KioskSatelliteService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Kiosk Satellite Service")
             .setContentText(summary(reasons))
-            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_stat_service)
             .setContentIntent(open)
             .setOngoing(true)
             .setShowWhen(false)
