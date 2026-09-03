@@ -268,6 +268,7 @@ class SendspinManager extends Manager {
     return group == null
         ? null
         : RemoteGroup(
+            selfId: group.selfId,
             leaderId: group.leaderId,
             leaderName: playerChipName,
             members: group.members,
@@ -285,6 +286,7 @@ class SendspinManager extends Manager {
     final group = await _api().fetchGroup(self);
     final leader = group?.leaderId ?? self;
     final error = await _api().setGrouped(
+      selfId: group?.selfId ?? self,
       leaderId: leader,
       memberId: id,
       grouped: grouped,

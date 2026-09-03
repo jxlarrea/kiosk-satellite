@@ -74,17 +74,30 @@ abstract interface class RemotePlayer {
 
 /// A player's group as the Now Playing chip lists it: who leads it and
 /// every player that is in it or could be, the members first, each in
-/// alphabetical order.
+/// alphabetical order. The shown player itself is not listed (it is the
+/// chip); its leader is, when that is another player, and unchecking the
+/// leader means the shown player leaves.
 class RemoteGroup {
   const RemoteGroup({
+    required this.selfId,
     required this.leaderId,
     required this.leaderName,
     required this.members,
   });
 
+  /// The shown player's id in the source, the one row the list omits.
+  final String selfId;
   final String leaderId;
   final String leaderName;
   final List<GroupMember> members;
+
+  /// Who an uncheck of [memberId] takes out of the group: the shown
+  /// player itself when the row is its leader, that member otherwise.
+  static String leaving({
+    required String selfId,
+    required String leaderId,
+    required String memberId,
+  }) => memberId == leaderId ? selfId : memberId;
 
   /// [members] in the chip's order: the grouped ones first, then the
   /// rest, by name within each.

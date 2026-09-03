@@ -206,37 +206,47 @@ class SonosPlayer implements RemotePlayer {
   }
 
   /// [uuid]'s group out of the household's [groups]: its coordinator
-  /// leads, its other rooms are in, every room of the other groups could
-  /// join. The coordinator is not listed: it is the chip.
+  /// leads, the rooms with it are in, every room of the other groups
+  /// could join. The room itself is not listed: it is the chip.
   static RemoteGroup? groupFrom(List<SonosGroup> groups, String uuid) {
     final mine = groups.where((g) => g.contains(uuid)).firstOrNull;
     if (mine == null) return null;
     final leader = mine.leader;
     return RemoteGroup(
+      selfId: uuid,
       leaderId: leader.uuid,
       leaderName: leader.name,
       members: RemoteGroup.ordered([
         for (final g in groups)
           for (final m in g.members)
-            if (m.uuid != leader.uuid)
+            if (m.uuid != uuid)
               GroupMember(id: m.uuid, name: m.name, inGroup: g == mine),
       ]),
     );
   }
 
   /// A room joins this group by pointing its transport at the coordinator
-  /// and leaves by becoming a coordinator of its own; either way the
-  /// topology is read back at once so the chip and the queue follow.
+  /// and leaves by becoming a coordinator of its own (unchecking the
+  /// coordinator is this room leaving); either way the topology is read
+  /// back at once so the chip and the queue follow.
   @override
   Future<bool> setGrouped(String id, bool grouped) async {
     final leader = _group?.leader;
+    if (leader == null) return false;
+    final target = grouped
+        ? id
+        : RemoteGroup.leaving(
+            selfId: uuid,
+            leaderId: leader.uuid,
+            memberId: id,
+          );
     SonosMember? room;
     for (final g in _household) {
       for (final m in g.members) {
-        if (m.uuid == id) room = m;
+        if (m.uuid == target) room = m;
       }
     }
-    if (leader == null || room == null) return false;
+    if (room == null) return false;
     final client = clientFactory(room.host);
     try {
       if (grouped) {

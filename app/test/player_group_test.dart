@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/managers/sendspin/music_assistant_api.dart';
+import 'package:kiosk_satellite/managers/sendspin/remote_player.dart';
 import 'package:kiosk_satellite/managers/sendspin/sonos_client.dart';
 import 'package:kiosk_satellite/managers/sendspin/sonos_player.dart';
 
@@ -72,10 +73,29 @@ void main() {
       expect(group.members[1].available, isFalse);
     });
 
-    test('a synced member answers with its leader\'s group', () {
+    test('a synced member lists its leader, not itself', () {
       final group = MusicAssistantApi.groupFrom(players, 'echo')!;
+      expect(group.selfId, 'echo');
       expect(group.leaderId, 'tablet');
-      expect(group.members.map((m) => m.id), ['echo', 'bedroom', 'lounge']);
+      expect(group.members.map((m) => m.id), ['tablet', 'bedroom', 'lounge']);
+      expect(group.members.first.inGroup, isTrue);
+      // Unchecking the leader is this player leaving, not the leader.
+      expect(
+        RemoteGroup.leaving(
+          selfId: 'echo',
+          leaderId: 'tablet',
+          memberId: 'tablet',
+        ),
+        'echo',
+      );
+      expect(
+        RemoteGroup.leaving(
+          selfId: 'echo',
+          leaderId: 'tablet',
+          memberId: 'lounge',
+        ),
+        'lounge',
+      );
     });
 
     test('an unknown player is no group', () {
@@ -131,10 +151,14 @@ void main() {
     test('the coordinator leads, its rooms are in, the rest could join', () {
       final groups = SonosClient.parseZoneGroups(topology);
       final group = SonosPlayer.groupFrom(groups, 'RINCON_B')!;
+      expect(group.selfId, 'RINCON_B');
       expect(group.leaderId, 'RINCON_A');
       expect(group.leaderName, 'Office');
-      expect(group.members.map((m) => m.name), ['Hall', 'Bedroom']);
+      // The room itself stays out; its coordinator is a grouped row.
+      expect(group.members.map((m) => m.name), ['Office', 'Bedroom']);
       expect(group.members.map((m) => m.inGroup), [true, false]);
+      final led = SonosPlayer.groupFrom(groups, 'RINCON_A')!;
+      expect(led.members.map((m) => m.name), ['Hall', 'Bedroom']);
     });
 
     test('a room the household does not know is no group', () {
