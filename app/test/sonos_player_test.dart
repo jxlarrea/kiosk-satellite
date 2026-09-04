@@ -184,6 +184,45 @@ void main() {
     });
   });
 
+  group('SonosPlayer inputs', () {
+    test('a TV or line-in input is idle unless asked for, then named', () {
+      expect(SonosPlayer.inputOf('x-sonos-htastream:RINCON_1:spdif'), 'TV');
+      expect(SonosPlayer.inputOf('x-rincon-stream:RINCON_1'), 'Line-in');
+      expect(
+        SonosPlayer.inputOf('x-sonos-spotify:spotify%3atrack%3a1'),
+        isNull,
+      );
+      final position = {
+        'Track': '1',
+        'TrackDuration': 'NOT_IMPLEMENTED',
+        'TrackURI': 'x-sonos-htastream:RINCON_542A1BD1748A01400:spdif',
+        'TrackMetaData':
+            '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/"><item id="-1" parentID="-1"><dc:title>RINCON_542A1BD1748A01400</dc:title></item></DIDL-Lite>',
+        'RelTime': '0:00:00',
+      };
+      expect(
+        SonosPlayer.snapshotFrom(
+          transport: {'CurrentTransportState': 'PLAYING'},
+          position: position,
+          host: 'h',
+        ),
+        isNull,
+      );
+      final shown = SonosPlayer.snapshotFrom(
+        transport: {'CurrentTransportState': 'PLAYING'},
+        position: position,
+        host: 'h',
+        volume: 20,
+        showInputs: true,
+      )!;
+      expect(shown['title'], 'TV');
+      expect(shown['playing'], isTrue);
+      expect(shown['volume'], 20);
+      expect(shown['supportedCommands'], isNot(contains('next')));
+      expect(shown.containsKey('artworkUrl'), isFalse);
+    });
+  });
+
   group('SonosPlayer.stationFrom', () {
     test('the station item in the media info carries the name and logo', () {
       // A TuneIn station as GetMediaInfo describes it: the track metadata

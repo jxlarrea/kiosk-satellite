@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- **A Sonos soundbar playing its TV input no longer holds the screensaver off with its serial as the title.** A home theater or line-in input has no title, art or track, and the direct source showed it as a card named by the speaker's id and took the Now Playing view over with it. The room now reads as idle while an input plays, and a **Show TV and line-in** switch on the Sonos page, off by default, brings the card and the view back for it, named TV or Line-in, with the volume control.
+
 ### Added
 - **The Now Playing heart reaches My Sonos on a Sonos followed directly.** The playing station or track is looked up in the household's favorites over the speaker's own interface, the heart filled while it is one, and a tap adds it there the way the Sonos app's heart does, or takes it out. Music Assistant's library is left alone for that source, since a Sonos favorite is a Sonos thing.
 - **Album art on the queue panel's rows.** Every row of the Now Playing queue carries the track's cover, the Music Assistant server's small copy for its players and this device's own, the speaker's thumbnail for a Sonos followed directly, fetched a few at a time as the rows come into view, decoded at the drawn size and kept in a cache bounded by a few megabytes, oldest out first, so a queue of a thousand tracks flung end to end costs the device nothing it cannot spare, with a placeholder while a cover loads and when nothing comes. A **Show album art in the queue** switch on the Now Playing page, on by default, takes the covers off and lets the rows tighten back up.

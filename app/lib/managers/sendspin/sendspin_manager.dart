@@ -283,6 +283,7 @@ class SendspinManager extends Manager {
     required void Function(Map<String, Object?>?) onSnapshot,
     required Logger log,
     bool groupVolume,
+    bool showInputs,
   })
   sonosRemoteFactory = SonosPlayer.new;
 
@@ -842,6 +843,7 @@ class SendspinManager extends Manager {
           e.key == defs.sendspinMaToken.key ||
           e.key == defs.sendspinSonosHosts.key ||
           e.key == defs.sendspinSonosGroupVolume.key ||
+          e.key == defs.sendspinSonosInputs.key ||
           e.key == defs.haUrl.key ||
           e.key == defs.haToken.key) {
         _syncRemote();
@@ -894,6 +896,7 @@ class SendspinManager extends Manager {
         'sendspin.player_name',
         'sendspin.sonos_hosts',
         'sendspin.sonos_group_volume',
+        'sendspin.sonos_inputs',
         'sendspin.speaker_pill',
         'sendspin.queue_art',
         'sendspin.lyrics_enabled',
@@ -1564,7 +1567,7 @@ class SendspinManager extends Manager {
             PlayerSourceKind.homeAssistant => 'ha|${source.id}|$haUrl|$haToken',
             PlayerSourceKind.sonos =>
               'sonos|${source.id}|$sonosHost|'
-                  '${_settings.get(defs.sendspinSonosGroupVolume)}',
+                  '${_settings.get(defs.sendspinSonosGroupVolume)}|${_settings.get(defs.sendspinSonosInputs)}',
             _ => '',
           }
         : '';
@@ -1598,6 +1601,7 @@ class SendspinManager extends Manager {
         onSnapshot: _onRemoteSnapshot,
         log: log,
         groupVolume: _settings.get(defs.sendspinSonosGroupVolume),
+        showInputs: _settings.get(defs.sendspinSonosInputs),
       ),
       _ => remoteFactory(
         baseUrl: maUrl,

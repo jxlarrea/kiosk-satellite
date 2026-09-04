@@ -27,12 +27,17 @@ class SonosPlayer implements RemotePlayer {
     required this.onSnapshot,
     required this.log,
     this.groupVolume = true,
+    this.showInputs = false,
     this.clientFactory = SonosClient.new,
   });
 
   /// Whether the volume slider sets the whole group's volume while the
   /// room plays in one or only the room's own.
   final bool groupVolume;
+
+  /// Whether a TV or line-in input shows as a card named after it, or
+  /// the room reads as idle while one plays.
+  final bool showInputs;
 
   static const _name = 'sendspin';
 
@@ -312,6 +317,7 @@ class SonosPlayer implements RemotePlayer {
       station: _station,
       inQueue: _inQueue,
       favorite: _item == null ? null : _favoriteId != null,
+      showInputs: showInputs,
     );
     _playing = snap?['playing'] == true;
     if (_playing) _sawPlayback = true;
@@ -401,6 +407,16 @@ class SonosPlayer implements RemotePlayer {
       log.warn(_name, 'Sonos favorite failed: $e');
       return false;
     }
+  }
+
+  /// The input a Sonos resource URI stands for, when it is one: the home
+  /// theater input of a soundbar (HDMI ARC, optical), or a line-in. Null
+  /// for anything that is music.
+  @visibleForTesting
+  static String? inputOf(String uri) {
+    if (uri.startsWith('x-sonos-htastream:')) return 'TV';
+    if (uri.startsWith('x-rincon-stream:')) return 'Line-in';
+    return null;
   }
 
   /// The service a Sonos resource URI plays from, as My Sonos names it
@@ -581,11 +597,33 @@ class SonosPlayer implements RemotePlayer {
     SonosStation? station,
     bool inQueue = true,
     bool? favorite,
+    bool showInputs = false,
   }) {
     final state = transport['CurrentTransportState'] ?? '';
     final playing = state == 'PLAYING' || state == 'TRANSITIONING';
     final paused = state == 'PAUSED_PLAYBACK';
     if (!playing && !paused && !sawPlayback) return null;
+    // A TV or line-in input: nothing to show but the input's name, and
+    // by default not even that, so a soundbar under a television does
+    // not hold the screensaver off with its own serial as the title.
+    final input = inputOf(position['TrackURI'] ?? '');
+    if (input != null) {
+      if (!showInputs) return null;
+      return {
+        'trackUri': (position['TrackURI'] ?? '').trim(),
+        'title': input,
+        'positionMs': 0,
+        'receivedAt': DateTime.now().millisecondsSinceEpoch,
+        'playing': playing,
+        'shuffle': false,
+        'repeat': 'off',
+        'trackNumber': 0,
+        'stream': true,
+        'supportedCommands': ['play', 'pause', 'stop', 'volume'],
+        'volume': ?volume,
+        'muted': ?muted,
+      };
+    }
     final items = SonosClient.parseDidlItems(position['TrackMetaData'] ?? '');
     final item = items.isEmpty ? const <String, String>{} : items.first;
     // A radio stream names the station in the title and the song, when

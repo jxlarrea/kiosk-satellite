@@ -4392,6 +4392,24 @@ const sendspinSonosGroupVolume = SettingDef<bool>(
   section: 'Sonos',
 );
 
+/// A TV or line-in input on a Sonos is not music the surfaces can say
+/// anything about: no title, no art, nothing to skip. Off, the followed
+/// room reads as idle while one plays and the screensaver keeps its
+/// place; on, the card and the view name the input, for the volume.
+const sendspinSonosInputs = SettingDef<bool>(
+  key: 'sendspin.sonos_inputs',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show TV and line-in',
+  description:
+      'The floating player and Now Playing while the followed room plays '
+      'its TV or line-in input, named as such. Off, the room reads as '
+      'idle while one plays.',
+  category: 'Sendspin',
+  subpage: 'Sonos',
+  section: 'Sonos',
+);
+
 /// The Sonos speakers this device has met, as JSON: player id to host
 /// and room name. Discovery only reaches the tablet's own VLAN, so a
 /// speaker added by address (or found once) is remembered here and the
@@ -5939,6 +5957,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinMaAutoClose,
   sendspinMaHideClose,
   sendspinSonosGroupVolume,
+  sendspinSonosInputs,
   sendspinSonosHosts,
   sendspinShowPlayer,
   sendspinPlayerSize,
