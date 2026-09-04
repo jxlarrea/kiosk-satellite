@@ -11,7 +11,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Fixed
 - **A Sonos playing a station shows no queue and no skip buttons.** The speaker keeps the queue it played before the station, and the panel listed it with next and previous on the transport, though neither did anything. A station plays outside the queue, which the speaker's media info states outright, so the panel now says nothing is queued and the skip buttons stay off the view, for a plain stream and for a station that reports its songs like tracks alike.
-- **A radio station played from Music Assistant shows its logo on its queue row.** A station keeps its images in a list in its metadata rather than a single image, so the row had the placeholder while the cover above showed the logo; the list's thumbnail is used now.
+- **A radio station played from Music Assistant shows its logo on its queue row.** A station's queue item carries no image, in Music Assistant's own queue as much as here, while the cover above comes from the stream's metadata; the playing row borrows that cover when its item brings none, and an item whose images sit in a list in its metadata takes the list's thumbnail.
 - **A broken lyric sync on LRCLIB is passed over for a sound one.** LRCLIB carries uploads whose every line is stamped within a few seconds of one another, by the dozen for some tracks, and the exact lookup handed one back first: on screen that was no highlight for most of the song and then every line in a rush. A synced file is now checked against the track's length, its stamps having to span at least a third of it, and one that fails makes way for the next copy the search holds.
 
 ## v2026.9.16 - 2026-09-04

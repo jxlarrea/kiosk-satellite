@@ -2045,7 +2045,7 @@ class SendspinManager extends Manager {
     _queueId = queueId;
     // Music Assistant leaves every item's own index at zero here: the
     // position comes from the offset, the identity from the item id.
-    queueItems.value = [
+    final rows = [
       for (final (i, it) in items.indexed)
         if (it is Map)
           _queueRow(
@@ -2056,6 +2056,19 @@ class SendspinManager extends Manager {
             musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl)),
           ),
     ];
+    // A radio's queue item carries no image, in Music Assistant's own
+    // queue as much as here; the cover the stream sends for it does
+    // reach the view, so the playing row borrows that one.
+    final cover = '${nowPlaying.value?['artworkUrl'] ?? ''}';
+    if (cover.isNotEmpty) {
+      for (var i = 0; i < rows.length; i++) {
+        final row = rows[i];
+        if (row['current'] == true && row['artworkUrl'] == null) {
+          rows[i] = {...row, 'artworkUrl': cover};
+        }
+      }
+    }
+    queueItems.value = rows;
     final total = (queue['items'] as num?)?.toInt() ?? items.length;
     queueUpNext.value = max(0, total - index - 1);
   }
