@@ -80,8 +80,8 @@ void main() {
     });
   });
 
-  group('SonosPlayer.stationArt', () {
-    test('the station item in the media info carries the logo', () {
+  group('SonosPlayer.stationFrom', () {
+    test('the station item in the media info carries the name and logo', () {
       // A TuneIn station as GetMediaInfo describes it: the track metadata
       // of the stream names the song and has no art; this item has it.
       const media = {
@@ -92,19 +92,79 @@ void main() {
             '<upnp:albumArtURI>https://cdn-profiles.tunein.com/s24939/images/logoq.jpg?t=1</upnp:albumArtURI>'
             '<desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON65031_</desc></item></DIDL-Lite>',
       };
+      final station = SonosPlayer.stationFrom(media, '10.11.12.70')!;
+      expect(station.name, '1LIVE');
       expect(
-        SonosPlayer.stationArt(media, '10.11.12.70'),
+        station.art,
         'https://cdn-profiles.tunein.com/s24939/images/logoq.jpg?t=1',
       );
-      // A path is served by the speaker; no item is no logo.
+      // A path is served by the speaker; no item is no station.
       expect(
-        SonosPlayer.stationArt({
+        SonosPlayer.stationFrom({
           'CurrentURIMetaData':
               '<DIDL-Lite><item id="x"><upnp:albumArtURI>/getaa?s=1&amp;u=x</upnp:albumArtURI></item></DIDL-Lite>',
-        }, '10.11.12.70'),
+        }, '10.11.12.70')!.art,
         'http://10.11.12.70:1400/getaa?s=1&u=x',
       );
-      expect(SonosPlayer.stationArt(const {}, 'h'), isNull);
+      expect(SonosPlayer.stationFrom(const {}, 'h'), isNull);
+    });
+
+    test('a stream named by its file takes the station name and logo', () {
+      const station = SonosStation(
+        name: 'BBC Radio 1',
+        art: 'https://cdn.example/logo.png',
+      );
+      // Captured from an Era 100 playing a TuneIn station: the track is
+      // the stream file, no song text, no art.
+      const meta =
+          '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/">'
+          '<item id="-1" parentID="-1"><dc:title>bbc_radio_one.m3u8</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class>'
+          '<r:streamContent></r:streamContent></item></DIDL-Lite>';
+      final snap = SonosPlayer.snapshotFrom(
+        transport: {'CurrentTransportState': 'PLAYING'},
+        position: {
+          'Track': '1',
+          'TrackDuration': 'NOT_IMPLEMENTED',
+          'TrackMetaData': meta,
+          'RelTime': '0:00:10',
+        },
+        host: 'h',
+        station: station,
+      )!;
+      expect(snap['title'], 'BBC Radio 1');
+      expect(snap['artworkUrl'], 'https://cdn.example/logo.png');
+      // With a song in the stream, the station is the album line.
+      final sung = SonosPlayer.snapshotFrom(
+        transport: {'CurrentTransportState': 'PLAYING'},
+        position: {
+          'Track': '1',
+          'TrackDuration': 'NOT_IMPLEMENTED',
+          'TrackMetaData': meta.replaceFirst(
+            '<r:streamContent></r:streamContent>',
+            '<r:streamContent>Spice Girls - Spice Up Your Life</r:streamContent>',
+          ),
+          'RelTime': '0:00:10',
+        },
+        host: 'h',
+        station: station,
+      )!;
+      expect(sung['title'], 'Spice Up Your Life');
+      expect(sung['artist'], 'Spice Girls');
+      expect(sung['album'], 'BBC Radio 1');
+      // A track with art of its own keeps it.
+      final own = SonosPlayer.snapshotFrom(
+        transport: {'CurrentTransportState': 'PLAYING'},
+        position: {
+          'Track': '1',
+          'TrackDuration': '0:03:00',
+          'TrackMetaData': _trackMeta,
+          'RelTime': '0:00:10',
+        },
+        host: 'h',
+        station: station,
+      )!;
+      expect(own['title'], 'drop dead');
+      expect(own['artworkUrl'], startsWith('https://sonosradio.imgix.net/'));
     });
   });
 

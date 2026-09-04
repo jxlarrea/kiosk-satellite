@@ -143,29 +143,29 @@ class SonosPlayer implements RemotePlayer {
       final co = _coordinator;
       final transport = await co.transportInfo();
       final position = await co.positionInfo();
-      // A station's logo lives on the station, not the track: the track
-      // metadata of a radio stream names the song and carries no art,
-      // while the media the speaker was given (GetMediaInfo) is the
-      // station item with its logo. Read once per stream, when the
-      // track brings no art of its own.
+      // A station's name and logo live on the station, not the track:
+      // the track metadata of a radio stream names the song (or the
+      // stream file) and carries no art, while the media the speaker was
+      // given (GetMediaInfo) is the station item with both. Read once
+      // per stream, when the track brings no art of its own.
       final trackUri = (position['TrackURI'] ?? '').trim();
       final trackArt = SonosClient.parseDidlItems(
         position['TrackMetaData'] ?? '',
       ).firstOrNull?['art'];
       if (trackArt == null && trackUri.isNotEmpty) {
-        if (_stationArtFor != trackUri) {
-          _stationArtFor = trackUri;
-          _stationArt = null;
+        if (_stationFor != trackUri) {
+          _stationFor = trackUri;
+          _station = null;
           try {
-            _stationArt = stationArt(await co.mediaInfo(), co.host);
+            _station = stationFrom(await co.mediaInfo(), co.host);
           } catch (_) {
-            // No media info is no logo; the track's own art may still
-            // come on a later poll.
+            // No media info is no station; the track's own art may
+            // still come on a later poll.
           }
         }
       } else {
-        _stationArtFor = '';
-        _stationArt = null;
+        _stationFor = '';
+        _station = null;
       }
       // The play mode and the volume change rarely and cost a call each:
       // read them at the start, then every few ticks.
@@ -291,13 +291,11 @@ class SonosPlayer implements RemotePlayer {
       volume: _volume,
       muted: _muted,
       sawPlayback: _sawPlayback,
+      station: _station,
     );
     _playing = snap?['playing'] == true;
     if (_playing) _sawPlayback = true;
     queueEmpty = snap == null;
-    if (snap != null && snap['artworkUrl'] == null && _stationArt != null) {
-      snap['artworkUrl'] = _stationArt;
-    }
     if (snap != null) _preferPublicArt(snap);
     // A poll that changed nothing stays quiet: the surfaces extrapolate
     // the position from the last report, and a fresh map every second
@@ -309,22 +307,32 @@ class SonosPlayer implements RemotePlayer {
     _emit(snap);
   }
 
-  /// The station logo of the stream the speaker plays, read from its
-  /// media info for the track URI in [_stationArtFor]; null when the
-  /// media carried none or was not read.
-  String? _stationArt;
-  String _stationArtFor = '';
+  /// The station the speaker plays, read from its media info for the
+  /// track URI in [_stationFor]; null when the media carried none or
+  /// was not read.
+  SonosStation? _station;
+  String _stationFor = '';
 
-  /// The logo in a GetMediaInfo answer: the art of the item the speaker
-  /// was given to play, made absolute on the speaker when it is a path.
+  /// The station in a GetMediaInfo answer: the name and logo of the item
+  /// the speaker was given to play, the logo made absolute on the
+  /// speaker when it is a path. Null when the item carries neither.
   @visibleForTesting
-  static String? stationArt(Map<String, String> media, String host) {
-    final items = SonosClient.parseDidlItems(media['CurrentURIMetaData'] ?? '');
-    final art = items.firstOrNull?['art'];
-    if (art == null || art.isEmpty) return null;
-    return art.startsWith('http')
-        ? art
-        : 'http://$host:${SonosClient.port}${art.startsWith('/') ? '' : '/'}$art';
+  static SonosStation? stationFrom(Map<String, String> media, String host) {
+    final item = SonosClient.parseDidlItems(
+      media['CurrentURIMetaData'] ?? '',
+    ).firstOrNull;
+    if (item == null) return null;
+    final name = item['title'] ?? '';
+    final art = item['art'] ?? '';
+    if (name.isEmpty && art.isEmpty) return null;
+    return SonosStation(
+      name: name,
+      art: art.isEmpty
+          ? null
+          : art.startsWith('http')
+          ? art
+          : 'http://$host:${SonosClient.port}${art.startsWith('/') ? '' : '/'}$art',
+    );
   }
 
   /// Swap the speaker's art proxy for the service's own image where one
@@ -463,6 +471,7 @@ class SonosPlayer implements RemotePlayer {
     int? volume,
     bool? muted,
     bool sawPlayback = false,
+    SonosStation? station,
   }) {
     final state = transport['CurrentTransportState'] ?? '';
     final playing = state == 'PLAYING' || state == 'TRANSITIONING';
@@ -479,6 +488,12 @@ class SonosPlayer implements RemotePlayer {
     var title = item['title'] ?? '';
     var artist = item['artist'] ?? '';
     var album = item['album'] ?? '';
+    // The station's own name, over a track title that is the stream's
+    // file name or nothing at all.
+    final stationName = station?.name ?? '';
+    if (stationName.isNotEmpty && (title.isEmpty || _looksLikeFile(title))) {
+      title = stationName;
+    }
     if (stream != null && stream.isNotEmpty) {
       // "Artist - Title" is the common shape; anything else is the title.
       final dash = stream.indexOf(' - ');
@@ -495,7 +510,7 @@ class SonosPlayer implements RemotePlayer {
     final duration = parseUpnpTime(position['TrackDuration'] ?? '');
     final elapsed = parseUpnpTime(position['RelTime'] ?? '');
     final durationMs = duration?.inMilliseconds ?? 0;
-    final art = item['art'] ?? '';
+    final art = item['art'] ?? station?.art ?? '';
     final tracks = int.tryParse(position['Track'] ?? '') ?? 0;
     final trackUri = (position['TrackURI'] ?? '').trim();
     return {
@@ -693,4 +708,20 @@ class SonosPlayer implements RemotePlayer {
     _snapshot = snapshot;
     if (_running) onSnapshot(snapshot);
   }
+}
+
+/// A stream's file name standing in for a title: no spaces, an extension
+/// or a scheme, the way a speaker names a stream it was handed with no
+/// metadata of its own.
+bool _looksLikeFile(String title) =>
+    !title.contains(' ') &&
+    (title.contains('://') || RegExp(r'\.[A-Za-z0-9]{2,4}$').hasMatch(title));
+
+/// The station a Sonos was given to play: its name and its logo, from the
+/// speaker's media info.
+class SonosStation {
+  const SonosStation({required this.name, required this.art});
+
+  final String name;
+  final String? art;
 }
