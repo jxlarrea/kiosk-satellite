@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- **A broken lyric sync on LRCLIB is passed over for a sound one.** LRCLIB carries uploads whose every line is stamped within a few seconds of one another, by the dozen for some tracks, and the exact lookup handed one back first: on screen that was no highlight for most of the song and then every line in a rush. A synced file is now checked against the track's length, its stamps having to span at least a third of it, and one that fails makes way for the next copy the search holds.
+
 ### Added
 - **The favorite heart is back on the Now Playing view, and a repeat toggle joins it.** The toggles flanking the transport are three a side again: volume, the heart and shuffle on the left, repeat, lyrics and queue on the right, the way Music Assistant's own player lays them out. The heart marks the playing track as a favorite in Music Assistant, filled while it is one, for this device's own player and a followed Music Assistant player. Repeat cycles off, all and one on every source that reports it: Music Assistant's queue, a Sonos room's play mode and a Home Assistant player's repeat set, with the numbered glyph on one. A source without either leaves a blank in its place so the transport stays centered.
 

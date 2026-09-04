@@ -69,7 +69,11 @@ class LrclibApi {
       );
       if (exact is Map) {
         final synced = exact['syncedLyrics'];
-        if (synced is String && synced.trim().isNotEmpty) return synced;
+        if (synced is String &&
+            synced.trim().isNotEmpty &&
+            plausiblySynced(synced, durationSeconds: durationSeconds)) {
+          return synced;
+        }
       }
       final qualified = await _get(
         Uri.https(_host, '/api/search', {
@@ -180,10 +184,52 @@ String? pickLrclibLyrics(
       if (entry is! Map) continue;
       final synced = entry['syncedLyrics'];
       if (synced is! String || synced.trim().isEmpty) continue;
-      if (fits(entry)) return synced;
+      if (!fits(entry)) continue;
+      // A file whose stamps are squeezed into a corner of the song is a
+      // broken upload, and LRCLIB carries them by the dozen for some
+      // tracks: the next candidate gets its turn.
+      final length = entry['duration'];
+      if (!plausiblySynced(
+        synced,
+        durationSeconds: length is num ? length.round() : durationSeconds,
+      )) {
+        continue;
+      }
+      return synced;
     }
   }
   return null;
+}
+
+/// Whether a synced file's stamps could follow a song of
+/// [durationSeconds]: LRCLIB carries uploads whose every line sits within
+/// a few seconds of one another, which on screen is nothing for most of
+/// the track and then every line in a rush. With the length known, the
+/// stamps must span at least a third of it; without it, the lines must
+/// average more than a second and a half apart. A short file passes: a
+/// chorus-only sync is a choice, not a fault.
+bool plausiblySynced(String lrc, {int? durationSeconds}) {
+  final stamps = <int>[];
+  for (final m in RegExp(
+    r'\[(\d+):([0-5]\d)(?:[.:](\d{1,3}))?\]',
+  ).allMatches(lrc)) {
+    final fraction = m.group(3);
+    final ms = fraction == null
+        ? 0
+        : fraction.length == 3
+        ? int.parse(fraction)
+        : int.parse(fraction) * 10;
+    stamps.add(
+      int.parse(m.group(1)!) * 60000 + int.parse(m.group(2)!) * 1000 + ms,
+    );
+  }
+  if (stamps.length < 6) return true;
+  stamps.sort();
+  final span = stamps.last - stamps.first;
+  if (durationSeconds != null && durationSeconds > 30) {
+    return span >= durationSeconds * 1000 * 0.3;
+  }
+  return span / (stamps.length - 1) >= 1500;
 }
 
 /// Lowercased, punctuation flattened to spaces, whitespace collapsed: the
