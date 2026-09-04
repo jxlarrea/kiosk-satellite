@@ -246,6 +246,28 @@ data:
   image: ""
 ```
 
+From another ESPHome device, where every value in the data block is a string, put the line breaks in as `\n` inside a double-quoted string. A message built from the device's own sensors goes through `data_template` and `variables` the way the ESPHome documentation shows for any action.
+
+```yaml
+binary_sensor:
+  - platform: gpio
+    pin: GPIO4
+    on_press:
+      - homeassistant.action:
+          action: esphome.kitchen_tablet_notification
+          data:
+            message: "**Leak detected**\n- Location: `utility room`\n- Valve: closed automatically"
+            title: "Water sensor"
+            duration: "0"
+            type: error
+            chime: "true"
+            scale: "2"
+            icon: mdi:water-alert
+            chime_file: ""
+            volume: "0"
+            image: ""
+```
+
 ### Appearance
 
 | | |
