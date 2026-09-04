@@ -50,6 +50,12 @@ abstract interface class RemotePlayer {
   /// a favorite in.
   bool get hasFavorites;
 
+  /// Mark the playing item a favorite in the source's own library, or
+  /// take it out, for a source that keeps that state itself and reports
+  /// it as 'favorite' in its snapshot (a Sonos household's My Sonos).
+  /// False when the source refused or keeps no such library.
+  Future<bool> setFavorite(bool on);
+
   Future<bool> seek(int positionMs);
 
   /// Set the player's volume, 0 to 100.

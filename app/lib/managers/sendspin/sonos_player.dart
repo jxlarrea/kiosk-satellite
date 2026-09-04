@@ -165,6 +165,18 @@ class SonosPlayer implements RemotePlayer {
           final media = await co.mediaInfo();
           _inQueue = (media['CurrentURI'] ?? '').startsWith('x-rincon-queue:');
           if (trackArt == null) _station = stationFrom(media, co.host);
+          // The item My Sonos would hold: the station the speaker was
+          // given, or the track itself when it plays from the queue.
+          _item = _inQueue
+              ? _FavoriteItem(
+                  uri: trackUri,
+                  metadata: position['TrackMetaData'] ?? '',
+                )
+              : _FavoriteItem(
+                  uri: (media['CurrentURI'] ?? '').trim(),
+                  metadata: media['CurrentURIMetaData'] ?? '',
+                );
+          await _readFavorite(co);
         } catch (_) {
           // No media info: the next poll asks again.
           _mediaFor = '';
@@ -299,6 +311,7 @@ class SonosPlayer implements RemotePlayer {
       sawPlayback: _sawPlayback,
       station: _station,
       inQueue: _inQueue,
+      favorite: _item == null ? null : _favoriteId != null,
     );
     _playing = snap?['playing'] == true;
     if (_playing) _sawPlayback = true;
@@ -315,10 +328,95 @@ class SonosPlayer implements RemotePlayer {
   }
 
   /// The station the speaker plays and whether it plays from its queue,
-  /// read from its media info for the track URI in [_mediaFor].
+  /// read from its media info for the track URI in [_mediaFor], and the
+  /// item My Sonos would hold for it with the favorite's id when it does.
   SonosStation? _station;
   bool _inQueue = true;
   String _mediaFor = '';
+  _FavoriteItem? _item;
+  String? _favoriteId;
+
+  /// Look the playing item up in My Sonos.
+  Future<void> _readFavorite(SonosClient co) async {
+    final item = _item;
+    if (item == null || item.uri.isEmpty) {
+      _favoriteId = null;
+      return;
+    }
+    final favorites = await co.browseFavorites();
+    _favoriteId = favorites
+        .where((f) => sameItem(f['uri'] ?? '', item.uri))
+        .map((f) => f['id'] ?? '')
+        .where((id) => id.isNotEmpty)
+        .firstOrNull;
+  }
+
+  /// Whether two Sonos resource URIs name the same item: the resource
+  /// itself and the service (sid), the session and flag parameters
+  /// aside, which the household rewrites between a favorite and a play.
+  @visibleForTesting
+  static bool sameItem(String a, String b) {
+    String key(String uri) {
+      final q = uri.indexOf('?');
+      final path = (q < 0 ? uri : uri.substring(0, q)).toLowerCase();
+      final sid = RegExp(r'[?&]sid=(\d+)').firstMatch(uri)?.group(1) ?? '';
+      return '$path|$sid';
+    }
+
+    return a.isNotEmpty && key(a) == key(b);
+  }
+
+  /// My Sonos is the household's own library.
+  @override
+  bool get hasFavorites => true;
+
+  /// Put the playing item in My Sonos or take it out, and republish
+  /// with the heart as the household now has it.
+  @override
+  Future<bool> setFavorite(bool on) async {
+    final item = _item;
+    if (item == null || item.uri.isEmpty) return false;
+    try {
+      final co = _coordinator;
+      if (on) {
+        if (_favoriteId == null) {
+          final snap = _snapshot ?? const <String, Object?>{};
+          final meta = SonosClient.parseDidlItems(item.metadata).firstOrNull;
+          await co.addFavorite(
+            title: meta?['title'] ?? '${snap['album'] ?? snap['title'] ?? ''}',
+            uri: item.uri,
+            metadata: item.metadata,
+            art: meta?['art'] ?? '',
+            description: serviceName(item.uri),
+          );
+        }
+      } else if (_favoriteId != null) {
+        await co.removeFavorite(_favoriteId!);
+      }
+      await _readFavorite(co);
+      final current = _snapshot;
+      if (current != null) _emit({...current, 'favorite': _favoriteId != null});
+      return true;
+    } catch (e) {
+      log.warn(_name, 'Sonos favorite failed: $e');
+      return false;
+    }
+  }
+
+  /// The service a Sonos resource URI plays from, as My Sonos names it
+  /// under a favorite.
+  @visibleForTesting
+  static String serviceName(String uri) {
+    final scheme = uri.split(':').first;
+    return switch (scheme) {
+      'x-sonosapi-radio' => 'Sonos Radio',
+      'x-sonosapi-stream' => 'TuneIn',
+      'x-sonos-spotify' => 'Spotify',
+      'x-sonos-http' when uri.contains('DZR') => 'Deezer',
+      'x-sonosapi-hls' => 'Apple Music',
+      _ => '',
+    };
+  }
 
   /// The station in a GetMediaInfo answer: the name and logo of the item
   /// the speaker was given to play, the logo made absolute on the
@@ -448,6 +546,7 @@ class SonosPlayer implements RemotePlayer {
     'durationMs',
     'trackNumber',
     'stream',
+    'favorite',
   ];
 
   static bool _differs(Map<String, Object?>? old, Map<String, Object?>? now) {
@@ -481,6 +580,7 @@ class SonosPlayer implements RemotePlayer {
     bool sawPlayback = false,
     SonosStation? station,
     bool inQueue = true,
+    bool? favorite,
   }) {
     final state = transport['CurrentTransportState'] ?? '';
     final playing = state == 'PLAYING' || state == 'TRANSITIONING';
@@ -533,6 +633,7 @@ class SonosPlayer implements RemotePlayer {
       'playing': playing,
       'shuffle': shuffle,
       'repeat': repeat,
+      'favorite': ?favorite,
       'trackNumber': tracks,
       'stream': isStream,
       'supportedCommands': [
@@ -609,10 +710,6 @@ class SonosPlayer implements RemotePlayer {
         (false, 'all') => 'REPEAT_ALL',
         (false, _) => 'NORMAL',
       };
-
-  /// Rooms have no library to favorite into.
-  @override
-  bool get hasFavorites => false;
 
   @override
   Future<bool> setShuffle(bool on) async {
@@ -790,4 +887,13 @@ class SonosStation {
 
   final String name;
   final String? art;
+}
+
+/// The playing item as My Sonos would keep it: its resource URI and the
+/// metadata document the speaker plays it from.
+class _FavoriteItem {
+  const _FavoriteItem({required this.uri, required this.metadata});
+
+  final String uri;
+  final String metadata;
 }

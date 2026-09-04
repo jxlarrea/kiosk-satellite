@@ -1613,6 +1613,11 @@ class SendspinManager extends Manager {
   void _onRemoteSnapshot(Map<String, Object?>? snapshot) {
     // A follower being torn down may answer one last time.
     if (_remote == null) return;
+    // A source that keeps its own favorites says so in the snapshot; the
+    // heart follows it rather than Music Assistant's library.
+    if (_remote is SonosPlayer) {
+      favorite.value = snapshot?['favorite'] as bool?;
+    }
     _setNowPlaying(snapshot);
     _syncQueuePoll();
     unawaited(_refreshLyrics());
@@ -1900,6 +1905,8 @@ class SendspinManager extends Manager {
 
   Future<void> _refreshFavorite() async {
     final key = _trackKey;
+    // A Sonos carries the heart in its own snapshot.
+    if (_remote is SonosPlayer) return;
     favorite.value = null;
     _favoriteItem = null;
     if (!favoriteAvailable || key == '|') return;
@@ -1941,6 +1948,14 @@ class SendspinManager extends Manager {
   /// Playing view's heart. Optimistic on screen, re-read from the server
   /// after, and put back on a refusal.
   Future<bool> toggleFavorite() async {
+    if (_remote case final remote? when remote is SonosPlayer) {
+      final current = favorite.value;
+      if (current == null) return false;
+      favorite.value = !current;
+      final ok = await remote.setFavorite(!current);
+      if (!ok) favorite.value = current;
+      return ok;
+    }
     final item = _favoriteItem;
     final current = favorite.value;
     if (item == null || current == null) return false;

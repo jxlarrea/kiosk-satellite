@@ -108,6 +108,82 @@ void main() {
     });
   });
 
+  group('SonosPlayer favorites', () {
+    test('a favorite matches the playing item by resource and service', () {
+      expect(
+        SonosPlayer.sameItem(
+          'x-sonosapi-radio:sonos%3a2997?sid=303&flags=0&sn=1',
+          'x-sonosapi-radio:sonos%3a2997?sid=303&flags=8224&sn=3',
+        ),
+        isTrue,
+      );
+      expect(
+        SonosPlayer.sameItem(
+          'x-sonosapi-radio:sonos%3a2997?sid=303',
+          'x-sonosapi-radio:sonos%3a2998?sid=303',
+        ),
+        isFalse,
+      );
+      expect(SonosPlayer.sameItem('', ''), isFalse);
+      expect(
+        SonosPlayer.serviceName('x-sonosapi-radio:sonos%3a1?sid=303'),
+        'Sonos Radio',
+      );
+      expect(
+        SonosPlayer.serviceName('x-sonos-spotify:spotify%3atrack%3a1?sid=9'),
+        'Spotify',
+      );
+    });
+
+    test('a favorite is created from the playing item', () {
+      const meta =
+          '<DIDL-Lite><item id="000c0000sonos%3a2997" parentID="-1" restricted="true"><dc:title>Hit List</dc:title></item></DIDL-Lite>';
+      final didl = SonosClient.favoriteDidl(
+        title: 'Hit List',
+        uri: 'x-sonosapi-radio:sonos%3a2997?sid=303&flags=0&sn=1',
+        metadata: meta,
+        art: 'https://img/a.jpg?w=1&h=2',
+        description: 'Sonos Radio',
+      );
+      expect(didl, contains('<item id="" parentID="FV:2" restricted="false">'));
+      expect(didl, contains('<dc:title>Hit List</dc:title>'));
+      expect(
+        didl,
+        contains(
+          '<res protocolInfo="x-sonosapi-radio:*:*:*">x-sonosapi-radio:sonos%3a2997?sid=303&amp;flags=0&amp;sn=1</res>',
+        ),
+      );
+      expect(
+        didl,
+        contains(
+          '<upnp:albumArtURI>https://img/a.jpg?w=1&amp;h=2</upnp:albumArtURI>',
+        ),
+      );
+      expect(didl, contains('<r:description>Sonos Radio</r:description>'));
+      // The item's own document rides inside, escaped once.
+      expect(
+        didl,
+        contains(
+          '<r:resMD>&lt;DIDL-Lite&gt;&lt;item id=&quot;000c0000sonos%3a2997&quot;',
+        ),
+      );
+      // What the household lists comes back with its id and resource.
+      final listed = SonosClient.parseDidlItems(
+        '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/">'
+        '<item id="FV:2/3" parentID="FV:2" restricted="false"><dc:title>Hit List</dc:title>'
+        '<res protocolInfo="x-sonosapi-radio:*:*:*">x-sonosapi-radio:sonos%3a2997?sid=303&amp;flags=0&amp;sn=1</res>'
+        '<r:type>instantPlay</r:type></item>'
+        '<item id="FV:2/1" parentID="FV:2" restricted="false"><dc:title>Discover Sonos Radio</dc:title><r:type>shortcut</r:type></item></DIDL-Lite>',
+      );
+      expect(listed[0]['id'], 'FV:2/3');
+      expect(
+        listed[0]['uri'],
+        'x-sonosapi-radio:sonos%3a2997?sid=303&flags=0&sn=1',
+      );
+      expect(listed[1].containsKey('uri'), isFalse);
+    });
+  });
+
   group('SonosPlayer.stationFrom', () {
     test('the station item in the media info carries the name and logo', () {
       // A TuneIn station as GetMediaInfo describes it: the track metadata

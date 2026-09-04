@@ -278,6 +278,11 @@ class MaRemotePlayer implements RemotePlayer {
   @override
   bool get hasFavorites => true;
 
+  /// The manager marks the track through Music Assistant's own library;
+  /// nothing to do here.
+  @override
+  Future<bool> setFavorite(bool on) async => false;
+
   /// Seek the followed player's queue: Music Assistant takes the position
   /// in whole seconds and answers with a queue_time_updated for the bar.
   @override

@@ -249,6 +249,72 @@ class SonosClient {
     );
   }
 
+  // ── Favorites (My Sonos) ───────────────────────────────────────────
+
+  /// The household's My Sonos favorites: id, title and the resource URI
+  /// of each (a shortcut has none).
+  Future<List<Map<String, String>>> browseFavorites() async {
+    final r = await call(contentDirectory, 'Browse', {
+      'ObjectID': 'FV:2',
+      'BrowseFlag': 'BrowseDirectChildren',
+      'Filter': '*',
+      'StartingIndex': '0',
+      'RequestedCount': '500',
+      'SortCriteria': '',
+    });
+    return parseDidlItems(r['Result'] ?? '');
+  }
+
+  /// Add an item to My Sonos: the id the household gave it.
+  Future<String> addFavorite({
+    required String title,
+    required String uri,
+    required String metadata,
+    String art = '',
+    String description = '',
+  }) async {
+    final r = await call(contentDirectory, 'CreateObject', {
+      'ContainerID': 'FV:2',
+      'Elements': favoriteDidl(
+        title: title,
+        uri: uri,
+        metadata: metadata,
+        art: art,
+        description: description,
+      ),
+    });
+    return r['ObjectID'] ?? '';
+  }
+
+  Future<void> removeFavorite(String id) =>
+      call(contentDirectory, 'DestroyObject', {'ObjectID': id});
+
+  /// The item a favorite is created from: the playing item's title,
+  /// resource and art, the service's name as the line under it, and the
+  /// item's own metadata document carried inside, which is what the
+  /// speaker plays it back from.
+  static String favoriteDidl({
+    required String title,
+    required String uri,
+    required String metadata,
+    String art = '',
+    String description = '',
+  }) {
+    final scheme = uri.split(':').first;
+    return '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" '
+        'xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" '
+        'xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" '
+        'xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">'
+        '<item id="" parentID="FV:2" restricted="false">'
+        '<dc:title>${escapeXml(title)}</dc:title>'
+        '<res protocolInfo="$scheme:*:*:*">${escapeXml(uri)}</res>'
+        '${art.isEmpty ? '' : '<upnp:albumArtURI>${escapeXml(art)}</upnp:albumArtURI>'}'
+        '<r:type>instantPlay</r:type>'
+        '${description.isEmpty ? '' : '<r:description>${escapeXml(description)}</r:description>'}'
+        '<r:resMD>${escapeXml(metadata)}</r:resMD>'
+        '</item></DIDL-Lite>';
+  }
+
   // ── Topology ───────────────────────────────────────────────────────
 
   /// Every group in the household this speaker belongs to.
@@ -441,3 +507,11 @@ class SonosGroup {
   /// and, past it, every other room joined with a plus.
   String get name => members.map((m) => m.name).join(' + ');
 }
+
+/// The five XML escapes, for text and attribute values alike.
+String escapeXml(String text) => text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');

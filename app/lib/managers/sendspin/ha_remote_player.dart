@@ -146,6 +146,9 @@ class HaRemotePlayer implements RemotePlayer {
   bool get hasFavorites => false;
 
   @override
+  Future<bool> setFavorite(bool on) async => false;
+
+  @override
   Future<bool> seek(int positionMs) =>
       _callService('media_seek', {'seek_position': positionMs / 1000});
 
