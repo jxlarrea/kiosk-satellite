@@ -18,7 +18,11 @@
 /// The page's own meta (HA declares one) is saved in data-ks-orig and its
 /// non-scale keys — viewport-fit=cover above all, edge-to-edge depends on
 /// it — are carried into the rewritten content. Idempotent and reversible:
-/// 1x restores the original meta, or removes one this script created.
+/// 1x with pinching off restores the original meta, or removes one this
+/// script created. 1x with pinching on still rewrites: the page's own meta
+/// is what says user-scalable=no (HA's does), and the WebView's zoom flags
+/// do not override it, so leaving it alone at 1x left the setting dead
+/// until the slider moved (issue #443).
 ///
 /// Shared by the dashboard WebView (the Browser zoom level) and the website
 /// screensaver (its own zoom level): the rewritten meta dies with each
@@ -30,7 +34,7 @@ String viewportZoomJs({required num zoom, required bool pinch}) {
       var z = $zoom;
       var ms = document.querySelectorAll('meta[name=viewport]');
       var m = ms.length ? ms[ms.length - 1] : null;
-      if (z === 1) {
+      if (z === 1 && !$pinch) {
         if (m && m.hasAttribute('data-ks-zoom')) {
           var orig = m.getAttribute('data-ks-orig');
           if (orig === null) { m.remove(); return; }

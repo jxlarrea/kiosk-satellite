@@ -1721,8 +1721,12 @@ class _KioskScreenState extends State<KioskScreen>
       // before a toggle would otherwise keep the old answer.
       _applyKioskMode();
       // The zoom-level setting, re-asserted on every navigation: the
-      // rewritten viewport meta dies with each document.
-      if (c.settings.get(defs.browserZoom) != 1) c.browser.runJs(_zoomJs);
+      // rewritten viewport meta dies with each document. Pinch to zoom
+      // needs the rewrite at 1x as well, the page's own meta forbids it.
+      if (c.settings.get(defs.browserZoom) != 1 ||
+          c.settings.get(defs.pinchToZoom)) {
+        c.browser.runJs(_zoomJs);
+      }
       // The scroll lock too: its style element dies with each document.
       if (c.settings.get(defs.disableScrolling)) {
         c.browser.runJs(_scrollLockJs);

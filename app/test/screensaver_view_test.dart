@@ -297,6 +297,20 @@ void main() {
       expect(js, contains('requestAnimationFrame'));
       expect(js, contains("'user-scalable=yes'"));
     });
+
+    // Issue #443: at 1x the script used to leave the page's own meta in
+    // place, and HA's says user-scalable=no, so pinching only worked once
+    // the slider left 1x. The restore path is for 1x with pinching off.
+    test('1x still rewrites the meta when pinch to zoom is on', () {
+      expect(
+        viewportZoomJs(zoom: 1, pinch: true),
+        contains('if (z === 1 && !true) {'),
+      );
+      expect(
+        viewportZoomJs(zoom: 1, pinch: false),
+        contains('if (z === 1 && !false) {'),
+      );
+    });
   });
 
   // The Clock screensaver's Night mode (issue #391): at or below the
