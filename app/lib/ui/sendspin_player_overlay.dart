@@ -987,6 +987,18 @@ class _QueueThumb extends StatefulWidget {
 class _QueueThumbState extends State<_QueueThumb> {
   Uint8List? _bytes;
   FetchTicket? _ticket;
+  String _ticketUrl = '';
+
+  /// Leave the fetch line, and take the URL off the pending list when
+  /// the fetch never started, or the next row for it would wait on a
+  /// fetch nobody runs.
+  void _withdraw() {
+    final ticket = _ticket;
+    _ticket = null;
+    if (ticket != null && ticket.cancel()) {
+      _QueueThumb._pending.remove(_ticketUrl);
+    }
+  }
 
   @override
   void initState() {
@@ -998,7 +1010,7 @@ class _QueueThumbState extends State<_QueueThumb> {
   void didUpdateWidget(covariant _QueueThumb old) {
     super.didUpdateWidget(old);
     if (old.url != widget.url) {
-      _ticket?.cancel();
+      _withdraw();
       _bytes = null;
       _load();
     }
@@ -1009,7 +1021,7 @@ class _QueueThumbState extends State<_QueueThumb> {
     // Scrolled away before its turn: out of the line. One already
     // running finishes and lands in the cache for the next time the row
     // comes by.
-    _ticket?.cancel();
+    _withdraw();
     super.dispose();
   }
 
@@ -1030,6 +1042,7 @@ class _QueueThumbState extends State<_QueueThumb> {
     }
     final completer = Completer<Uint8List?>();
     _QueueThumb._pending[url] = completer.future;
+    _ticketUrl = url;
     _ticket = _QueueThumb.lane.schedule(() async {
       Uint8List? bytes;
       try {
