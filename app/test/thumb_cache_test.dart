@@ -51,7 +51,8 @@ void main() {
   });
 
   group('FetchLane', () {
-    test('runs a few at a time and lets a waiter withdraw', () async {
+    test('runs a few at a time, newest first, and lets a waiter '
+        'withdraw', () async {
       final lane = FetchLane(width: 2);
       final gates = <Completer<void>>[];
       final ran = <int>[];
@@ -65,17 +66,17 @@ void main() {
       }
       expect(ran, [0, 1]);
       expect(lane.pending, 2);
-      // The third row scrolled away: it never runs.
-      // (Withdrawing needs the ticket; schedule one more and cancel it.)
+      // A row that scrolled away never runs.
       final ticket = lane.schedule(() async => ran.add(9));
       expect(ticket.cancel(), isTrue);
+      // The newest waiting request goes first: the row on screen now.
       gates[0].complete();
       await Future<void>.delayed(Duration.zero);
-      expect(ran, [0, 1, 2]);
+      expect(ran, [0, 1, 3]);
       gates[1].complete();
-      gates[2].complete();
+      gates[3].complete();
       await Future<void>.delayed(Duration.zero);
-      expect(ran, [0, 1, 2, 3]);
+      expect(ran, [0, 1, 3, 2]);
       expect(lane.pending, 0);
     });
   });

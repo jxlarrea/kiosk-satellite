@@ -48,10 +48,12 @@ class ThumbCache {
 
 /// Fetches for a scrolling list, a few at a time: a fling through a long
 /// queue asks for a row's image the moment the row is built, and without
-/// this every one of them opened a connection at once. Callers that no
-/// longer need their answer withdraw before their turn comes.
+/// this every one of them opened a connection at once. The newest request
+/// runs first, since it is the row on screen now and the older ones are
+/// the rows scrolled past. Callers that no longer need their answer
+/// withdraw before their turn comes.
 class FetchLane {
-  FetchLane({this.width = 4});
+  FetchLane({this.width = 6});
 
   /// How many fetches run at once.
   final int width;
@@ -72,7 +74,7 @@ class FetchLane {
 
   void _pump() {
     while (_running < width && _waiting.isNotEmpty) {
-      final next = _waiting.removeAt(0);
+      final next = _waiting.removeLast();
       _running++;
       unawaited(
         next.work().whenComplete(() {

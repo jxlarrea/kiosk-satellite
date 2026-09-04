@@ -978,25 +978,43 @@ class _QueueThumb extends StatefulWidget {
 
   static final cache = ThumbCache();
   static final lane = FetchLane();
-  static final _pending = <String, Future<Uint8List?>>{};
+
+  /// One fetch per URL however many rows share it (an album's tracks
+  /// do), with a count of the rows waiting on it: the fetch stays in
+  /// line while any of them is on screen and leaves it only when the
+  /// last one has scrolled away.
+  static final _pending = <String, _SharedFetch>{};
 
   @override
   State<_QueueThumb> createState() => _QueueThumbState();
 }
 
+class _SharedFetch {
+  final completer = Completer<Uint8List?>();
+  FetchTicket? ticket;
+  int waiters = 0;
+}
+
 class _QueueThumbState extends State<_QueueThumb> {
   Uint8List? _bytes;
-  FetchTicket? _ticket;
-  String _ticketUrl = '';
+  String _waitingOn = '';
 
-  /// Leave the fetch line, and take the URL off the pending list when
-  /// the fetch never started, or the next row for it would wait on a
-  /// fetch nobody runs.
+  /// A beat before asking: the panel lands on the playing track a frame
+  /// after it opens, and the rows built at the top in between are gone
+  /// before this fires.
+  Timer? _grace;
+
+  /// Stop waiting. The last row to leave takes the fetch out of the
+  /// line when it has not started; one already running finishes and
+  /// lands in the cache for the next time a row comes by.
   void _withdraw() {
-    final ticket = _ticket;
-    _ticket = null;
-    if (ticket != null && ticket.cancel()) {
-      _QueueThumb._pending.remove(_ticketUrl);
+    final url = _waitingOn;
+    _waitingOn = '';
+    final shared = _QueueThumb._pending[url];
+    if (shared == null) return;
+    shared.waiters--;
+    if (shared.waiters <= 0 && (shared.ticket?.cancel() ?? false)) {
+      _QueueThumb._pending.remove(url);
     }
   }
 
@@ -1010,6 +1028,7 @@ class _QueueThumbState extends State<_QueueThumb> {
   void didUpdateWidget(covariant _QueueThumb old) {
     super.didUpdateWidget(old);
     if (old.url != widget.url) {
+      _grace?.cancel();
       _withdraw();
       _bytes = null;
       _load();
@@ -1021,6 +1040,7 @@ class _QueueThumbState extends State<_QueueThumb> {
     // Scrolled away before its turn: out of the line. One already
     // running finishes and lands in the cache for the next time the row
     // comes by.
+    _grace?.cancel();
     _withdraw();
     super.dispose();
   }
@@ -1033,34 +1053,49 @@ class _QueueThumbState extends State<_QueueThumb> {
       _bytes = cache.get(url);
       return;
     }
-    // One fetch per URL however many rows share it (an album's tracks
-    // do); every row waiting on it is told when it lands.
-    final inFlight = _QueueThumb._pending[url];
-    if (inFlight != null) {
-      inFlight.then(_landed(url));
+    _grace?.cancel();
+    _grace = Timer(const Duration(milliseconds: 250), () {
+      if (mounted && widget.url == url) _ask(url);
+    });
+  }
+
+  void _ask(String url) {
+    final cache = _QueueThumb.cache;
+    if (cache.contains(url)) {
+      setState(() => _bytes = cache.get(url));
       return;
     }
-    final completer = Completer<Uint8List?>();
-    _QueueThumb._pending[url] = completer.future;
-    _ticketUrl = url;
-    _ticket = _QueueThumb.lane.schedule(() async {
-      Uint8List? bytes;
-      try {
-        bytes = await widget.container.sendspin.fetchArtwork(
-          url,
-          timeout: const Duration(seconds: 4),
-        );
-      } catch (_) {
-        bytes = null;
-      }
-      cache.put(url, bytes);
-      _QueueThumb._pending.remove(url);
-      completer.complete(bytes);
-    });
-    completer.future.then(_landed(url));
+    var shared = _QueueThumb._pending[url];
+    if (shared == null) {
+      final fresh = _SharedFetch();
+      _QueueThumb._pending[url] = fresh;
+      fresh.ticket = _QueueThumb.lane.schedule(() async {
+        Uint8List? bytes;
+        try {
+          bytes = await widget.container.sendspin.fetchArtwork(
+            url,
+            timeout: const Duration(seconds: 8),
+          );
+        } catch (_) {
+          bytes = null;
+        }
+        // An empty answer is not remembered: a server resizing its
+        // first thumbnail can be slow, and the next visit may do better.
+        if (bytes != null) cache.put(url, bytes);
+        if (identical(_QueueThumb._pending[url], fresh)) {
+          _QueueThumb._pending.remove(url);
+        }
+        fresh.completer.complete(bytes);
+      });
+      shared = fresh;
+    }
+    shared.waiters++;
+    _waitingOn = url;
+    shared.completer.future.then(_landed(url));
   }
 
   void Function(Uint8List?) _landed(String url) => (bytes) {
+    if (_waitingOn == url) _waitingOn = '';
     if (mounted && widget.url == url) setState(() => _bytes = bytes);
   };
 
