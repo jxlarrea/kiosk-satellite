@@ -188,6 +188,12 @@ internal class ApiServer(
 
     fun hasAdvertisementSubscribers(): Boolean = sessions.any { it.wantsAdvertisements }
 
+    /**
+     * Sessions subscribed to entity states: the Home Assistant connections
+     * the entity surface is actually serving, whatever the proxy is doing.
+     */
+    fun stateClientCount(): Int = sessions.count { it.wantsStates }
+
     /** Fully connected addresses, raw, for the nearby-device tracker. */
     fun gattConnectedSet(): Set<Long> = synchronized(gattLock) { gattConnected.toSet() }
 

@@ -987,6 +987,10 @@ class EspEntitySurface {
   ) {
     _push = push;
     _pushImage = pushImage;
+    // Every attach faces a fresh native hub with no values: the anchors
+    // must go out again even when they did not move, or the uptime
+    // sensors sit on "unknown" until the app itself restarts.
+    _lastAnchor.clear();
     _subs.add(
       bus.on<ScreensaverStateChanged>().listen((e) {
         _screensaverActive = e.active;

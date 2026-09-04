@@ -718,6 +718,26 @@ void main() {
     expect(byId['default_dashboard'], 'lovelace/home');
   });
 
+  test('a re-attach sends the uptime anchors again', () async {
+    // A server restart hands the surface a fresh native hub with no
+    // values, and the anchors have not moved: without a resend Home
+    // Assistant reads Unknown for both uptimes until the app restarts.
+    await surface.build();
+    await attach();
+    final first = pushed.where((p) => p.$1 == 'app_uptime').length;
+    expect(first, 1);
+    surface.detach();
+    pushed.clear();
+    await attach();
+    final again = [
+      for (final p in pushed)
+        if (p.$1 == 'app_uptime') p.$2,
+    ];
+    expect(again, hasLength(1));
+    expect(DateTime.parse('${again.single}'), isA<DateTime>());
+    expect(pushed.where((p) => p.$1 == 'network_uptime'), hasLength(1));
+  });
+
   test(
     'the default dashboard select rewrites the start URL without loading it',
     () async {

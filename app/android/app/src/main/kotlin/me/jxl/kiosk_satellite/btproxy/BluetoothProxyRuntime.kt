@@ -195,6 +195,7 @@ internal object BluetoothProxyRuntime {
             "scanning" to (e?.isScanning ?: false),
             "received" to (s?.receivedCount?.get() ?: 0L),
             "forwarded" to (s?.forwardedCount?.get() ?: 0L),
+            "clients" to (s?.stateClientCount() ?: 0),
             "subscribers" to (s?.hasAdvertisementSubscribers() ?: false),
             "connections" to (s?.activeGattAddresses() ?: emptyList<String>()),
             "connectionSlots" to (gattEngine?.connectionLimit ?: 0),

@@ -170,9 +170,13 @@ async function readHealth() {
     paintTile('voice', 'on', words ? `Listening for ${words}` : 'Listening');
   } else paintTile('voice', 'warn', wake.statusLabel || 'Not listening');
 
+  // Connected means a Home Assistant session subscribed to entity states
+  // (clients), or the proxy relaying: advertisements subscribed or a
+  // device connected through it. The proxy signals alone used to decide,
+  // so an entities-only server read as waiting while it served everything.
   if (!esp) paintTile('esphome', '', 'Status unavailable');
   else if (!esp.running) paintTile('esphome', '', 'Off');
-  else if ((esp.connections || []).length || esp.subscribers) {
+  else if (esp.clients || (esp.connections || []).length || esp.subscribers) {
     // What the connection carries, from the two switches under it.
     const entities = settingOn('esphome.entities');
     const proxy = settingOn('btproxy.enabled');
