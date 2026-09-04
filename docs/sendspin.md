@@ -20,7 +20,6 @@ A core rule applies to all media sources: both the floating player card and the 
 | --- | --- | --- |
 | Player source | This device | Selects what the floating player and Now Playing view display and control: the native Sendspin player, or an external player from Home Assistant, Music Assistant, or a Sonos household. Selecting an external source takes the local Sendspin player offline. |
 | Player | Sendspin Player | When "This device" is selected, it defaults to the native Sendspin player. For external sources, this dropdown populates with players available from that specific provider. |
-| Show speaker selection pill | on | The chip in the Now Playing view's top left corner that names the player and opens the speaker group menu. Off, the view shows neither. |
 
 ### Sendspin Player
 
@@ -78,6 +77,7 @@ Configures direct integration with local Sonos hardware.
 | Launch Now Playing when music starts playing | on | Instantly launches the full screen view when playback starts rather than waiting for the idle screensaver timeout. |
 | Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the full screen music display. |
 | Show in the kiosk menu | off | Adds a menu shortcut to open the full screen view directly. Remains hidden if no media is playing or queued. |
+| Show speaker selection pill | on | The chip in the Now Playing view's top left corner that names the player and opens the speaker group menu. Off, the view shows neither. |
 
 ### Lyrics
 

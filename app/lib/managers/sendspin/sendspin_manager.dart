@@ -314,9 +314,13 @@ class SendspinManager extends Manager {
     final remote = _remote;
     if (remote != null) return remote.fetchGroup();
     if (!groupAvailable) return null;
-    final group = await _api().fetchGroup(
+    final api = _api();
+    final group = await api.fetchGroup(
       _settings.get(defs.sendspinClientId).trim(),
     );
+    if (group == null) {
+      log.warn(name, 'group read failed: ${api.groupProblem}');
+    }
     // Titled the way the chip names this device while it leads, not the
     // way Music Assistant happens to; another leader keeps its name.
     return group == null || !group.leads

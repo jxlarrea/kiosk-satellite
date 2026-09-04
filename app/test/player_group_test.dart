@@ -5,6 +5,22 @@ import 'package:kiosk_satellite/managers/sendspin/sonos_player.dart';
 
 /// The Now Playing chip's group menu, read out of each source's own
 /// picture of its players: who leads, who is in and who could join.
+/// A server answering players/all with a fixed list, or failing.
+class _ListingApi extends MusicAssistantApi {
+  _ListingApi(this.players) : super(baseUrl: 'ma.local', token: 't');
+
+  final List<Object?>? players;
+
+  @override
+  Future<MusicAssistantResult> call(
+    String command, {
+    Map<String, Object?> args = const {},
+    Duration timeout = const Duration(seconds: 15),
+  }) async => players == null
+      ? const MusicAssistantResult.failure('offline')
+      : MusicAssistantResult.success(players, const {});
+}
+
 void main() {
   group('MusicAssistantApi.groupFrom', () {
     final players = [
@@ -87,6 +103,20 @@ void main() {
 
     test('an unknown player is no group', () {
       expect(MusicAssistantApi.groupFrom(players, 'ghost'), isNull);
+    });
+
+    test('a player the list lacks is named with what the list holds', () async {
+      final api = _ListingApi(players);
+      expect(await api.fetchGroup('tablet-x'), isNull);
+      // The log line names the id asked for, the count and the ids that
+      // share its start, so a server listing the player under another
+      // shape shows itself.
+      expect(api.groupProblem, 'no player tablet-x among 7: tablet');
+      expect(await api.fetchGroup('tablet'), isNotNull);
+      expect(api.groupProblem, isNull);
+      final down = _ListingApi(null);
+      expect(await down.fetchGroup('tablet'), isNull);
+      expect(down.groupProblem, startsWith('players/all: '));
     });
 
     test('a bare client id answers for the wrapper that carries it', () {

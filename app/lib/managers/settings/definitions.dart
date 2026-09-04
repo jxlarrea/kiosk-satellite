@@ -4366,17 +4366,6 @@ const sendspinPlayer = SettingDef<String>(
 /// The picked player's display name: what the settings rows show and what
 /// the Now Playing view's chip says. Stored beside the id so neither
 /// surface needs the player's system just to say what is selected.
-/// The Now Playing view's player chip, the way into the speaker group
-/// menu. Off, the view names no player and offers no menu.
-const sendspinSpeakerPill = SettingDef<bool>(
-  key: 'sendspin.speaker_pill',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Show speaker selection pill',
-  description: 'Allows to add or remove speakers to the current group.',
-  category: 'Sendspin',
-);
-
 const sendspinPlayerName = SettingDef<String>(
   key: 'sendspin.player_name',
   type: SettingType.string,
@@ -4834,6 +4823,20 @@ const sendspinFullscreenShortcut = SettingDef<bool>(
       'Add an entry in the kiosk menu that shows the Now Playing view. '
       "WARNING: If nothing is playing or there is no queue for this "
       "player, it won't show up.",
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
+);
+
+/// The Now Playing view's player chip, the way into the speaker group
+/// menu. Off, the view names no player and offers no menu.
+const sendspinSpeakerPill = SettingDef<bool>(
+  key: 'sendspin.speaker_pill',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show speaker selection pill',
+  description: 'Allows to add or remove speakers to the current group.',
   category: 'Sendspin',
   subpage: 'Now Playing',
   section: 'Now Playing',
@@ -5910,7 +5913,6 @@ const List<SettingDef<Object>> allSettings = [
   // Sendspin player below is one of the things it drives.
   sendspinPlayerSource,
   sendspinPlayer,
-  sendspinSpeakerPill,
   sendspinPlayerName,
   sendspinEnabled,
   sendspinServer,
@@ -5935,6 +5937,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenOnPlay,
   sendspinFullscreenMotion,
   sendspinFullscreenShortcut,
+  sendspinSpeakerPill,
   sendspinLyrics,
   sendspinFullscreenQueue,
   sendspinLyricsEnabled,

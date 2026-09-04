@@ -186,11 +186,36 @@ class MusicAssistantApi {
   /// from one read of the player list. Null when the server cannot be
   /// reached or knows no such player.
   Future<RemoteGroup?> fetchGroup(String playerId) async {
+    groupProblem = null;
     final res = await call('players/all');
     final players = res.result;
-    if (!res.ok || players is! List) return null;
-    return groupFrom(players, playerId);
+    if (!res.ok || players is! List) {
+      groupProblem = 'players/all: ${res.error ?? 'not a list'}';
+      return null;
+    }
+    final group = groupFrom(players, playerId);
+    if (group == null) {
+      // What the server lists instead, so a log can say why the player
+      // was not found: every id that shares the client id's start, or
+      // the first few when none does.
+      final ids = [
+        for (final p in players)
+          if (p is Map) '${p['player_id'] ?? ''}',
+      ];
+      final stem = playerId.length >= 6
+          ? playerId.substring(0, 6).toLowerCase()
+          : playerId.toLowerCase();
+      final like = ids.where((id) => id.toLowerCase().contains(stem)).toList();
+      groupProblem =
+          'no player $playerId among ${ids.length}: '
+          '${(like.isNotEmpty ? like : ids.take(8)).join(', ')}';
+    }
+    return group;
   }
+
+  /// Why the last [fetchGroup] came back empty, for the log; null after
+  /// one that answered.
+  String? groupProblem;
 
   /// Put [memberId] in [leaderId]'s group, or take it out of whatever
   /// group it is in. Null when the server took it, its refusal otherwise.

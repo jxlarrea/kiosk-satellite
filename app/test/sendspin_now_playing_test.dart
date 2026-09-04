@@ -143,14 +143,17 @@ void main() {
       expect(keys[first + 3], defs.sendspinFullscreenOnPlay.key);
       expect(keys[first + 4], defs.sendspinFullscreenMotion.key);
       expect(keys[first + 5], defs.sendspinFullscreenShortcut.key);
-      expect(keys[first + 6], defs.sendspinLyrics.key);
-      expect(keys[first + 7], defs.sendspinFullscreenQueue.key);
+      expect(keys[first + 6], defs.sendspinSpeakerPill.key);
+      expect(keys[first + 7], defs.sendspinLyrics.key);
+      expect(keys[first + 8], defs.sendspinFullscreenQueue.key);
       // The Lyrics page follows as one card of its own, the timing row
       // moved there from this page.
-      expect(keys[first + 8], defs.sendspinLyricsEnabled.key);
-      expect(keys[first + 9], defs.sendspinLyricsSource.key);
-      expect(keys[first + 10], defs.sendspinLyricsFallback.key);
-      expect(keys[first + 11], defs.sendspinLyricsOffset.key);
+      expect(keys[first + 9], defs.sendspinLyricsEnabled.key);
+      expect(keys[first + 10], defs.sendspinLyricsSource.key);
+      expect(keys[first + 11], defs.sendspinLyricsFallback.key);
+      expect(keys[first + 12], defs.sendspinLyricsOffset.key);
+      expect(defs.sendspinSpeakerPill.subpage, 'Now Playing');
+      expect(defs.sendspinSpeakerPill.dependsOn, 'sendspin.fullscreen');
       for (final def in [
         defs.sendspinLyricsEnabled,
         defs.sendspinLyricsSource,

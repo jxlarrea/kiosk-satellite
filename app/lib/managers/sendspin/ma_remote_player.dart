@@ -89,7 +89,11 @@ class MaRemotePlayer implements RemotePlayer {
   @override
   Future<RemoteGroup?> fetchGroup() async {
     final group = await _api.fetchGroup(playerId);
-    if (group != null) _leaderId = group.leaderId;
+    if (group != null) {
+      _leaderId = group.leaderId;
+    } else {
+      log.warn(_name, '$label group read failed: ${_api.groupProblem}');
+    }
     return group;
   }
 

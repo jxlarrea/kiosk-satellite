@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- The **Show speaker selection pill** switch moved from the Media Player page to the Now Playing page, beside the view's other toggles, and follows the Now Playing switch. A speaker group that cannot be read now says why in the log: the server's error, or the player id the kiosk asked for and the ids the server listed instead.
+
 ### Added
 - Two **ESPHome actions to follow a player from an automation**: `media_player_list` answers through `response_variable` with every player the kiosk can follow, its source, name, id and availability, and the pick in force; `media_player_set` takes a source (`device`, `home_assistant`, `music_assistant` or `sonos`) and a player by name or id and picks it, the way the Media Player page's two rows do by hand. The remote API carries the same as the `mediaPlayerSet` command beside `mediaPlayers`. The Sonos page's speaker rows show each room's id under its address, on the device and in the remote admin alike.
 
