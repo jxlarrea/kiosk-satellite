@@ -315,9 +315,23 @@ class SendspinManager extends Manager {
     if (remote != null) return remote.fetchGroup();
     if (!groupAvailable) return null;
     final api = _api();
-    final group = await api.fetchGroup(
+    var group = await api.fetchGroup(
       _settings.get(defs.sendspinClientId).trim(),
+      ownName: _settings.get(defs.sendspinLocalPlayerName),
     );
+    if (group == null) {
+      // The last resort: the queue Music Assistant answers for the
+      // client id is the queue of whatever player stands for this device
+      // there, a wrapper included, and a queue's id is its player's.
+      final queueId = await _ownQueueId();
+      if (queueId.isNotEmpty) {
+        log.info(name, 'group read: ${api.groupProblem}; trying $queueId');
+        group = await api.fetchGroup(
+          queueId,
+          ownName: _settings.get(defs.sendspinLocalPlayerName),
+        );
+      }
+    }
     if (group == null) {
       log.warn(name, 'group read failed: ${api.groupProblem}');
     }
@@ -341,7 +355,7 @@ class SendspinManager extends Manager {
     if (remote != null) return remote.setGrouped(id, grouped);
     if (!groupAvailable) return false;
     final self = _settings.get(defs.sendspinClientId).trim();
-    final group = await _api().fetchGroup(self);
+    final group = await fetchGroup();
     final leader = group?.leaderId ?? self;
     final error = await _api().setGrouped(
       leaderId: leader,
@@ -1677,6 +1691,20 @@ class SendspinManager extends Manager {
     baseUrl: _settings.get(defs.sendspinMaUrl),
     token: _settings.get(defs.sendspinMaToken),
   );
+
+  /// The id of the queue Music Assistant answers for this device's client
+  /// id, which is the id of the player that stands for it there; empty
+  /// when there is none to ask or no answer.
+  Future<String> _ownQueueId() async {
+    final self = _settings.get(defs.sendspinClientId).trim();
+    if (self.isEmpty || !_maConfigured) return '';
+    final res = await _api().call(
+      'player_queues/get_active_queue',
+      args: {'player_id': self},
+    );
+    final queue = res.result;
+    return res.ok && queue is Map ? '${queue['queue_id'] ?? ''}' : '';
+  }
 
   /// The queue Music Assistant is playing on the shown player: the
   /// followed one, or this device's own (which Music Assistant resolves

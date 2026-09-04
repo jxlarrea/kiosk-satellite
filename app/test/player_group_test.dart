@@ -105,6 +105,35 @@ void main() {
       expect(MusicAssistantApi.groupFrom(players, 'ghost'), isNull);
     });
 
+    test('a wrapper is found by its members or by the name the device '
+        'registered under', () {
+      // One server names a universal player after the player it wraps;
+      // another gives it a hash and lists the wrapped id among its
+      // members; the name this device joined with is the last resort.
+      final byId = <String, Map<Object?, Object?>>{
+        'upbf0e4345': {
+          'name': 'Office Display',
+          'static_group_members': ['sendspin--3177f9a8e3b7'],
+        },
+        'upother': {
+          'name': 'Kitchen',
+          'static_group_members': ['x'],
+        },
+        'hiddenmatch': {'name': 'Office Display', 'hide_in_ui': true},
+      };
+      expect(MusicAssistantApi.ownPlayerId(byId, '3177f9a8e3b7'), 'upbf0e4345');
+      expect(
+        MusicAssistantApi.ownPlayerId(
+          byId,
+          'nowhere',
+          ownName: 'office display',
+        ),
+        'upbf0e4345',
+      );
+      expect(MusicAssistantApi.ownPlayerId(byId, 'nowhere'), '');
+      expect(MusicAssistantApi.ownPlayerId(byId, 'upother'), 'upother');
+    });
+
     test('a player the list lacks is named with what the list holds', () async {
       final api = _ListingApi(players);
       expect(await api.fetchGroup('tablet-x'), isNull);

@@ -185,7 +185,10 @@ class MusicAssistantApi {
   /// The group [playerId] plays in and every player it could group with,
   /// from one read of the player list. Null when the server cannot be
   /// reached or knows no such player.
-  Future<RemoteGroup?> fetchGroup(String playerId) async {
+  Future<RemoteGroup?> fetchGroup(
+    String playerId, {
+    String ownName = '',
+  }) async {
     groupProblem = null;
     final res = await call('players/all');
     final players = res.result;
@@ -193,7 +196,7 @@ class MusicAssistantApi {
       groupProblem = 'players/all: ${res.error ?? 'not a list'}';
       return null;
     }
-    final group = groupFrom(players, playerId);
+    final group = groupFrom(players, playerId, ownName: ownName);
     if (group == null) {
       // What the server lists instead, so a log can say why the player
       // was not found: every id that shares the client id's start, or
@@ -217,6 +220,52 @@ class MusicAssistantApi {
   /// one that answered.
   String? groupProblem;
 
+  /// The id Music Assistant lists the player [playerId] under, out of the
+  /// players [byId]: the id itself; a wrapper whose id embeds it (one
+  /// server's universal players are named after the player they wrap);
+  /// a wrapper whose members name it (another server's carry a hash);
+  /// and last the player registered under [ownName], the name this
+  /// device joined the server with. Empty when none fits.
+  static String ownPlayerId(
+    Map<String, Map<Object?, Object?>> byId,
+    String playerId, {
+    String ownName = '',
+  }) {
+    if (byId.containsKey(playerId)) return playerId;
+    final wanted = playerId.toLowerCase();
+    if (wanted.isNotEmpty) {
+      for (final id in byId.keys) {
+        if (id.toLowerCase().contains(wanted)) return id;
+      }
+      for (final entry in byId.entries) {
+        final p = entry.value;
+        for (final key in [
+          'static_group_members',
+          'group_members',
+          'group_childs',
+        ]) {
+          final members = p[key];
+          if (members is List &&
+              members.any((m) => '$m'.toLowerCase().contains(wanted))) {
+            return entry.key;
+          }
+        }
+      }
+    }
+    final name = ownName.trim().toLowerCase();
+    if (name.isNotEmpty) {
+      String nameOf(Map<Object?, Object?> p) =>
+          '${p['display_name'] ?? p['name'] ?? ''}'.trim().toLowerCase();
+      final named = byId.entries.where((e) => nameOf(e.value) == name);
+      final shown = named.where(
+        (e) => e.value['hidden'] != true && e.value['hide_in_ui'] != true,
+      );
+      final pick = shown.firstOrNull ?? named.firstOrNull;
+      if (pick != null) return pick.key;
+    }
+    return '';
+  }
+
   /// Put [memberId] in [leaderId]'s group, or take it out of whatever
   /// group it is in. Null when the server took it, its refusal otherwise.
   Future<String?> setGrouped({
@@ -239,23 +288,19 @@ class MusicAssistantApi {
   /// group with (by id, or by belonging to a provider the leader names)
   /// is a candidate. The leader is not listed: it is the menu's title. A bare
   /// Sendspin client id answers for the wrapper Music Assistant lists it
-  /// under when the bare player is not in the list itself (a universal
-  /// player prefixes the id it wraps).
-  static RemoteGroup? groupFrom(List<Object?> players, String playerId) {
+  /// under when the bare player is not in the list itself, found by
+  /// [ownPlayerId].
+  static RemoteGroup? groupFrom(
+    List<Object?> players,
+    String playerId, {
+    String ownName = '',
+  }) {
     final byId = <String, Map<Object?, Object?>>{
       for (final p in players)
         if (p is Map) '${p['player_id'] ?? ''}': p,
     };
-    var myId = playerId;
-    var me = byId[myId];
-    if (me == null && playerId.isNotEmpty) {
-      final wanted = playerId.toLowerCase();
-      myId = byId.keys.firstWhere(
-        (id) => id.toLowerCase().contains(wanted),
-        orElse: () => '',
-      );
-      me = byId[myId];
-    }
+    final myId = ownPlayerId(byId, playerId, ownName: ownName);
+    final me = byId[myId];
     if (me == null) return null;
     final syncedTo = '${me['synced_to'] ?? ''}';
     final leaderId = syncedTo.isNotEmpty ? syncedTo : myId;

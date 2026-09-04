@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **The speaker group menu finds this device's own player on every Music Assistant.** The menu looked for the kiosk under its Sendspin client id, or a universal player whose id embeds it, which is how one server names them; another names the wrapper with a hash, so the read came back empty and the menu read "The group could not be read". The kiosk is now also found through the wrapper whose members name it, through the name it registered under, and last through the queue Music Assistant answers for its client id, which is the wrapper's.
+
 ## v2026.9.15 - 2026-09-04
 
 ### Changed
