@@ -599,6 +599,79 @@ void main() {
     expect(onScreen(), ['Washing machine finished']);
   });
 
+  testWidgets('the card reads Markdown in the message and the title', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.dark),
+        home: Scaffold(
+          body: Stack(
+            children: [
+              const SizedBox.expand(),
+              NotificationOverlay(notifications: notifications),
+            ],
+          ),
+        ),
+      ),
+    );
+    await show({
+      'title': 'Battery ***low***',
+      'message':
+          'Level: **15%**\n'
+          '- Charger: `unplugged`\n'
+          '- Time left: ~~2h~~ 1h',
+      'duration': 0,
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // The markup is gone from what is drawn, and the raw text is kept
+    // for the log and the API.
+    expect(find.text('Battery low'), findsOneWidget);
+    expect(find.text('Level: 15%'), findsOneWidget);
+    expect(find.text('Charger: unplugged'), findsOneWidget);
+    expect(find.text('Time left: 2h 1h'), findsOneWidget);
+    expect(find.textContaining('**'), findsNothing);
+    expect(onScreen().single, contains('**15%**'));
+
+    // Each run carries its style over the card's own.
+    TextSpan spanOf(String text) =>
+        tester.widget<Text>(find.text(text)).textSpan! as TextSpan;
+    List<TextSpan> runs(String text) => spanOf(text).children!.cast<TextSpan>();
+    final level = runs('Level: 15%');
+    expect(level.map((s) => s.text), ['Level: ', '15%']);
+    expect(level[0].style?.fontWeight, isNull);
+    expect(level[1].style!.fontWeight, FontWeight.w700);
+    // Past the title's own semibold, or it would not show.
+    expect(runs('Battery low')[1].style!.fontWeight, FontWeight.w800);
+    expect(runs('Battery low')[1].style!.fontStyle, FontStyle.italic);
+    expect(runs('Charger: unplugged')[1].style!.fontFamily, 'monospace');
+    expect(
+      runs('Time left: 2h 1h')[1].style!.decoration,
+      TextDecoration.lineThrough,
+    );
+    // The card's type sizes still apply under the spans.
+    expect(
+      tester.widget<Text>(find.text('Level: 15%')).style!.fontSize,
+      greaterThanOrEqualTo(18),
+    );
+    // Bullets hang in their own gutter, one under the other.
+    expect(find.text('\u2022'), findsNWidgets(2));
+    expect(
+      tester.getRect(find.text('Charger: unplugged')).top,
+      lessThan(tester.getRect(find.text('Time left: 2h 1h')).top),
+    );
+    expect(
+      tester.getRect(find.text('Charger: unplugged')).left,
+      tester.getRect(find.text('Time left: 2h 1h')).left,
+    );
+    expect(
+      tester.getRect(find.text('Charger: unplugged')).left,
+      greaterThan(tester.getRect(find.text('Level: 15%')).left),
+    );
+  });
+
   testWidgets(
     'a notification whose countdown ran out before its first frame goes away',
     (tester) async {

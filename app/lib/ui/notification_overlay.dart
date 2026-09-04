@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../core/events.dart';
+import '../core/markup.dart';
 import '../managers/notifications/notification_manager.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/settings/settings_manager.dart';
@@ -364,8 +365,14 @@ class _NotificationCardState extends State<_NotificationCard>
                                     if (title != null)
                                       Padding(
                                         padding: EdgeInsets.only(bottom: px(4)),
-                                        child: Text(
-                                          title,
+                                        child: Text.rich(
+                                          _spans(
+                                            widget.note.heading!,
+                                            scheme,
+                                            // Over an already semibold
+                                            // line, bold has to go past it.
+                                            bold: FontWeight.w800,
+                                          ),
                                           style: TextStyle(
                                             fontFamily: Ks.displayFont,
                                             fontSize: px(24),
@@ -375,9 +382,11 @@ class _NotificationCardState extends State<_NotificationCard>
                                           ),
                                         ),
                                       ),
-                                    Text(
-                                      widget.note.message,
-                                      style: TextStyle(
+                                    _body(
+                                      widget.note.body,
+                                      scheme,
+                                      px,
+                                      TextStyle(
                                         fontSize: px(20),
                                         height: 1.35,
                                         color: title == null
@@ -460,6 +469,99 @@ class _NotificationCardState extends State<_NotificationCard>
       ),
     );
   }
+
+  /// The message, block by block (issue #439). The common case, one
+  /// paragraph, is one Text as before; lists and headings stack under
+  /// each other, a bullet or number hanging in a gutter so a wrapped
+  /// item keeps its left edge.
+  Widget _body(
+    List<MarkupBlock> blocks,
+    ColorScheme scheme,
+    double Function(double) px,
+    TextStyle style,
+  ) {
+    if (blocks.isEmpty) return const SizedBox.shrink();
+    if (blocks.length == 1 && blocks.single is MarkupParagraph) {
+      return Text.rich(_spans(blocks.single.runs, scheme), style: style);
+    }
+    final children = <Widget>[];
+    MarkupBlock? previous;
+    for (final block in blocks) {
+      // A paragraph or heading stands off from what came before it; list
+      // items sit close together, as a list does.
+      final gap = previous == null
+          ? 0.0
+          : block is MarkupListItem && previous is MarkupListItem
+          ? px(2)
+          : px(8);
+      children.add(
+        Padding(
+          padding: EdgeInsets.only(top: gap),
+          child: switch (block) {
+            MarkupHeading() => Text.rich(
+              _spans(block.runs, scheme),
+              style: style.copyWith(
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface,
+              ),
+            ),
+            MarkupParagraph() => Text.rich(
+              _spans(block.runs, scheme),
+              style: style,
+            ),
+            MarkupListItem() => Padding(
+              padding: EdgeInsets.only(left: px(20) * block.depth.clamp(0, 3)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: px(block.number == null ? 22 : 34),
+                    child: Text(block.number ?? '\u2022', style: style),
+                  ),
+                  Expanded(
+                    child: Text.rich(_spans(block.runs, scheme), style: style),
+                  ),
+                ],
+              ),
+            ),
+          },
+        ),
+      );
+      previous = block;
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  /// One line's runs as spans over the Text's own style. Code keeps the
+  /// platform's monospace face on a faint tint: the app bundles no such
+  /// font, and the system one reads fine at card size.
+  TextSpan _spans(
+    List<MarkupRun> runs,
+    ColorScheme scheme, {
+    FontWeight bold = FontWeight.w700,
+  }) => TextSpan(
+    children: [
+      for (final run in runs)
+        run.plain
+            ? TextSpan(text: run.text)
+            : TextSpan(
+                text: run.text,
+                style: TextStyle(
+                  fontWeight: run.bold ? bold : null,
+                  fontStyle: run.italic ? FontStyle.italic : null,
+                  decoration: run.strike ? TextDecoration.lineThrough : null,
+                  fontFamily: run.code ? 'monospace' : null,
+                  backgroundColor: run.code
+                      ? scheme.onSurface.withValues(alpha: 0.08)
+                      : null,
+                ),
+              ),
+    ],
+  );
 
   /// The card's surface: the fill and hairline that the transparency
   /// slider fades, behind everything solid, optionally over a backdrop

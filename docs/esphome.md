@@ -166,8 +166,8 @@ Every argument in the data block is strictly required (the ESPHome protocol does
 
 | Argument | Meaning |
 |---|---|
-| `message` | The main text, displayed in the largest font on the card. |
-| `title` | A smaller heading positioned above the message. Leave empty if you only want the message itself. |
+| `message` | The main text, displayed in the largest font on the card. Markdown is rendered; see [Formatting](#formatting). |
+| `title` | A heading positioned above the message. Inline Markdown (bold, italic, code) is rendered. Leave empty if you only want the message itself. |
 | `duration` | Time in seconds the card stays on screen. Setting it to `0` keeps it up indefinitely until tapped or cleared by Home Assistant. Negative numbers revert to the default 30 seconds. |
 | `type` | Accepts `info`, `success`, `warning`, or `error`. This automatically picks the base icon and its color. If left empty, it defaults to `info`. |
 | `chime` | A boolean indicating whether to play the notification sound. It plays through the selected speaker just like any other app audio. |
@@ -209,6 +209,42 @@ The action returns the card's specific ID (e.g., `{"id": 7}`). Using `response_v
 ```
 
 When using the [remote API](remote-api.md), these two commands correspond to `showNotification` (which returns the same `id`) and `dismissNotification` (which takes the ID, or clears the screen if given `0` or nothing).
+
+### Formatting
+
+The message is read as Markdown, so a number can carry weight and a daily summary can be a list rather than a wall of text. The subset is deliberately small and anything outside it displays as typed.
+
+| Syntax | Renders as |
+|---|---|
+| `**bold**`, `*italic*`, `***both***` | Bold, italic, or both. |
+| `` `code` `` | Monospace on a faint tint, for entity ids and commands. |
+| `~~struck~~` | Strikethrough. |
+| `[label](url)` | The label only. Nothing on a card can open a link. |
+| A newline | A line break. A blank line separates paragraphs. |
+| `# Heading` | A bolder line above what follows. Every heading level looks the same. |
+| `- item`, `* item`, `+ item` | A bullet, hanging in its own gutter so a wrapped item keeps its left edge. Indent by two spaces to nest. |
+| `1. item` | A numbered item. The number is shown as written. |
+| `\*`, `` \` ``, `\-`, `\#` | The character itself. |
+
+Underscores never emphasize, so `sensor.living_room_temp` or `__init__` reads as typed. A `*` followed by a space, or one with no partner on the same line, is a star, so `2 * 3` and `4* hotel` survive. The title takes the inline syntax only.
+
+```yaml
+action: esphome.kitchen_tablet_notification
+data:
+  message: |
+    Battery: **15%**
+    - Charger: `unplugged`
+    - Time left: about an hour
+  title: Tablet battery low
+  duration: 0
+  type: warning
+  chime: true
+  scale: 1
+  icon: ""
+  chime_file: ""
+  volume: 0
+  image: ""
+```
 
 ### Appearance
 

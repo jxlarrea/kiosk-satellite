@@ -107,7 +107,8 @@ settings), `homeLauncherStatus`, `acquireHomeRole` and `releaseHomeRole`
 takeover, and giving the role back; `releaseHomeRole` is the recovery
 lever and works with no kiosk screen up, as long as the process runs), `showNotification {message, title, duration, type, chime, scale, icon, chime_file, volume, image}` and
 `dismissNotification {id}` (a message over whatever is on screen, the
-screensaver included; `duration` is seconds, `0` stays until dismissed,
+screensaver included; `message` is read as Markdown and `title` takes
+its inline part, see [esphome.md](esphome.md#formatting); `duration` is seconds, `0` stays until dismissed,
 omitted uses 30, `chime` defaults to on, and `scale` draws the card
 larger, 1 to 4 with decimals, `icon` takes any Material Design Icon
 name (`mdi:washing-machine`) in place of the one the type picks,

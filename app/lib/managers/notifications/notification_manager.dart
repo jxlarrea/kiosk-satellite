@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../../core/markup.dart';
 import '../../ui/mdi_icon.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
@@ -22,7 +23,7 @@ enum NotificationLevel { info, success, warning, error }
 /// One notification, as the overlay draws it.
 @immutable
 class KioskNotification {
-  const KioskNotification({
+  KioskNotification({
     required this.id,
     required this.message,
     this.title,
@@ -30,7 +31,10 @@ class KioskNotification {
     this.scale = 1,
     this.icon,
     this.image,
-  });
+    List<MarkupBlock>? body,
+    List<MarkupRun>? heading,
+  }) : body = body ?? Markup.parse(message),
+       heading = heading ?? (title == null ? null : Markup.inline(title));
 
   /// Rising per notification; the auto-dismiss timer carries the id it was
   /// started for, so a late timer never takes down another notification.
@@ -38,8 +42,17 @@ class KioskNotification {
   /// action's response) and hands to dismissNotification later (issue
   /// #321).
   final int id;
+
+  /// The words as they came in, markup and all, for the API and the log.
   final String message;
   final String? title;
+
+  /// [message] read as Markdown (issue #439), parsed once here rather
+  /// than on every frame of the card's slide-in. The overlay draws these.
+  final List<MarkupBlock> body;
+
+  /// [title] read the same way, inline markup only: a heading is one line.
+  final List<MarkupRun>? heading;
   final NotificationLevel level;
 
   /// How much bigger than the ordinary card to draw this one, 1 to
@@ -68,6 +81,8 @@ class KioskNotification {
     scale: scale,
     icon: icon,
     image: bytes,
+    body: body,
+    heading: heading,
   );
 }
 
@@ -169,8 +184,12 @@ class NotificationManager extends Manager {
               'Show a notification over whatever is on screen (the '
               'screensaver included) and chime',
           params: const {
-            'message': 'the text to show',
-            'title': 'optional heading above the message',
+            'message':
+                'the text to show; Markdown bold, italic, code, lists, '
+                'headings and line breaks are rendered',
+            'title':
+                'optional heading above the message; inline Markdown is '
+                'rendered',
             'duration':
                 'seconds on screen; 0 stays until dismissed, omitted or '
                 'negative uses the default 30',

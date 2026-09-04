@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Notifications render Markdown.** The message of a notification pushed from Home Assistant, over the ESPHome action or the remote API, is read as Markdown: bold, italic, inline code, strikethrough, headings, bullet and numbered lists and line breaks, with a link shown as its label. A battery alert can put its weight on the number and a daily summary can be a list rather than a block of text. The title takes the inline syntax. The subset is small on purpose: underscores never emphasize, so entity ids read as typed, and a lone star or one followed by a space stays a star. Nothing changes for a message without markup.
+
 ## v2026.9.14 - 2026-09-04
 
 ### Removed
