@@ -2,21 +2,19 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.15 - 2026-09-04
 
 ### Changed
 - The **Show speaker selection pill** switch moved from the Media Player page to the Now Playing page, beside the view's other toggles, and follows the Now Playing switch. A speaker group that cannot be read now says why in the log: the server's error, or the player id the kiosk asked for and the ids the server listed instead.
 
 ### Added
+- **Notifications render Markdown.** The message of a notification pushed from Home Assistant, over the ESPHome action or the remote API, is read as Markdown: bold, italic, inline code, strikethrough, headings, bullet and numbered lists and line breaks, with a link shown as its label. A battery alert can put its weight on the number and a daily summary can be a list rather than a block of text. The title takes the inline syntax. The subset is small on purpose: underscores never emphasize, so entity ids read as typed, and a lone star or one followed by a space stays a star. Nothing changes for a message without markup.
 - Two **ESPHome actions to follow a player from an automation**: `media_player_list` answers through `response_variable` with every player the kiosk can follow, its source, name, id and availability, and the pick in force; `media_player_set` takes a source (`device`, `home_assistant`, `music_assistant` or `sonos`) and a player by name or id and picks it, the way the Media Player page's two rows do by hand. The remote API carries the same as the `mediaPlayerSet` command beside `mediaPlayers`. The Sonos page's speaker rows show each room's id under its address, on the device and in the remote admin alike.
 
 ### Fixed
 - **A radio station's logo and name show on a Sonos followed directly.** A stream's track metadata names the song and carries no art, so the view showed the placeholder, and a station with no song text showed the stream's file name as the title. The logo and the name are on the station item the speaker was given to play, which the speaker's media info carries. The player reads it once per stream when the track brings no art of its own: the logo becomes the cover, the station name the title when the stream sends no song and the album line when it does. A queue track's own cover and title are untouched.
 - **Pinch to zoom works at a 1x zoom level.** The viewport rewrite that frees pinching only ran once the Browser zoom level left 1x, so at 1x the dashboard's own viewport meta, which forbids user scaling, stayed in force and the switch did nothing. The rewrite now runs at 1x too whenever pinch to zoom is on.
 - **Screen off on a panel that is already dark no longer replays the lock sound.** Every Screen off, from the remote admin, the ESPHome Screen light, the screensaver's countdown or the JavaScript API, ran the device admin lock even when the panel was already off, and Android plays its lock sound for each one on a device with lock screen sounds on. A blanket lights-off automation that includes the Screen light clicked the tablet in a dark room every time it ran. The panel is now asked first and a dark one is left alone, which also stops re-arming the lock screen for nothing.
-
-### Added
-- **Notifications render Markdown.** The message of a notification pushed from Home Assistant, over the ESPHome action or the remote API, is read as Markdown: bold, italic, inline code, strikethrough, headings, bullet and numbered lists and line breaks, with a link shown as its label. A battery alert can put its weight on the number and a daily summary can be a list rather than a block of text. The title takes the inline syntax. The subset is small on purpose: underscores never emphasize, so entity ids read as typed, and a lone star or one followed by a space stays a star. Nothing changes for a message without markup.
 
 ## v2026.9.14 - 2026-09-04
 
