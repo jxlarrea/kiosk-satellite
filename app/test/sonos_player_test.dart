@@ -416,6 +416,42 @@ void main() {
       expect(station['supportedCommands'], contains('seek'));
     });
 
+    test('an app session keeps the skips and no queue', () {
+      // Spotify Connect and AirPlay play as a virtual line-in: the app
+      // holds the queue and the speaker passes next and previous to it.
+      expect(
+        SonosPlayer.appSession(
+          'x-sonos-vli:RINCON_74CA60A4CCD001400:2,spotify:7e14bf5ed6',
+        ),
+        isTrue,
+      );
+      expect(
+        SonosPlayer.appSession(
+          'x-sonos-vli:RINCON_74CA60A4CCD001400:1,airplay:abcd',
+        ),
+        isTrue,
+      );
+      expect(SonosPlayer.appSession('x-rincon-queue:RINCON_1#0'), isFalse);
+      expect(SonosPlayer.inputOf('x-sonos-vli:RINCON_1:2,spotify:x'), isNull);
+      final snap = SonosPlayer.snapshotFrom(
+        transport: {'CurrentTransportState': 'PLAYING'},
+        position: {
+          'Track': '0',
+          'TrackURI': 'x-sonos-vli:RINCON_74CA60A4CCD001400:2,spotify:7e14',
+          'TrackDuration': '0:04:13',
+          'TrackMetaData': _trackMeta,
+          'RelTime': '0:01:36',
+        },
+        host: 'h',
+        inQueue: false,
+        appSession: true,
+      )!;
+      expect(snap['title'], 'drop dead');
+      expect(snap['stream'], isFalse);
+      expect(snap['supportedCommands'], containsAll(['next', 'previous']));
+      expect(snap.containsKey('favorite'), isFalse);
+    });
+
     test('stopped shows nothing until playback was seen', () {
       final position = {
         'Track': '2',

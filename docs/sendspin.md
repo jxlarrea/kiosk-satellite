@@ -114,7 +114,7 @@ Capabilities vary slightly by player source:
 
 Unsupported controls are hidden automatically. For example, if a Home Assistant player does not report position seeking, the progress bar thumb is removed.
 
-Direct Sonos tracking polls the speaker over port 1400 once per second while active, maintaining precise lyric timing, queue jumping, and group volume controls. Regrouping speakers in the official Sonos app automatically updates the target tracking. Album artwork for Spotify or Deezer tracks on Sonos is resolved using public API image lookups to prevent loading failures on isolated VLANs.
+Direct Sonos tracking polls the speaker over port 1400 once per second while active, maintaining precise lyric timing, queue jumping, and group volume controls. Regrouping speakers in the official Sonos app automatically updates the target tracking. Album artwork for Spotify or Deezer tracks on Sonos is resolved using public API image lookups to prevent loading failures on isolated VLANs. A Spotify Connect or AirPlay session played through the speaker keeps next and previous, which the speaker passes on to the app, while the queue panel says nothing is queued since the app holds that queue and the heart stays off since My Sonos cannot keep a session.
 
 When configured to follow an external player, the kiosk acts purely as a remote control: its internal Sendspin player shuts down and reports as offline in Music Assistant. Selecting "This device" brings the local Sendspin player back online. Swiping away the floating card will stop the external player's music unless "Keep playing when dismissed" is explicitly enabled.
 

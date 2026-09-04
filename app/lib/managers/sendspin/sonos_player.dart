@@ -168,17 +168,22 @@ class SonosPlayer implements RemotePlayer {
         _station = null;
         try {
           final media = await co.mediaInfo();
-          _inQueue = (media['CurrentURI'] ?? '').startsWith('x-rincon-queue:');
+          final currentUri = (media['CurrentURI'] ?? '').trim();
+          _inQueue = currentUri.startsWith('x-rincon-queue:');
+          _appSession = appSession(currentUri);
           if (trackArt == null) _station = stationFrom(media, co.host);
           // The item My Sonos would hold: the station the speaker was
-          // given, or the track itself when it plays from the queue.
-          _item = _inQueue
+          // given, or the track itself when it plays from the queue. An
+          // app's session is the app's, and My Sonos cannot keep it.
+          _item = _appSession
+              ? null
+              : _inQueue
               ? _FavoriteItem(
                   uri: trackUri,
                   metadata: position['TrackMetaData'] ?? '',
                 )
               : _FavoriteItem(
-                  uri: (media['CurrentURI'] ?? '').trim(),
+                  uri: currentUri,
                   metadata: media['CurrentURIMetaData'] ?? '',
                 );
           await _readFavorite(co);
@@ -316,6 +321,7 @@ class SonosPlayer implements RemotePlayer {
       sawPlayback: _sawPlayback,
       station: _station,
       inQueue: _inQueue,
+      appSession: _appSession,
       favorite: _item == null ? null : _favoriteId != null,
       showInputs: showInputs,
     );
@@ -333,11 +339,13 @@ class SonosPlayer implements RemotePlayer {
     _emit(snap);
   }
 
-  /// The station the speaker plays and whether it plays from its queue,
-  /// read from its media info for the track URI in [_mediaFor], and the
-  /// item My Sonos would hold for it with the favorite's id when it does.
+  /// The station the speaker plays and whether it plays from its queue
+  /// or from an app's session, read from its media info for the track
+  /// URI in [_mediaFor], and the item My Sonos would hold for it with
+  /// the favorite's id when it does.
   SonosStation? _station;
   bool _inQueue = true;
+  bool _appSession = false;
   String _mediaFor = '';
   _FavoriteItem? _item;
   String? _favoriteId;
@@ -372,9 +380,10 @@ class SonosPlayer implements RemotePlayer {
     return a.isNotEmpty && key(a) == key(b);
   }
 
-  /// My Sonos is the household's own library.
+  /// My Sonos is the household's own library, and it cannot keep an
+  /// app's session, so the heart leaves the view for one.
   @override
-  bool get hasFavorites => true;
+  bool get hasFavorites => !_appSession;
 
   /// Put the playing item in My Sonos or take it out, and republish
   /// with the heart as the household now has it.
@@ -418,6 +427,13 @@ class SonosPlayer implements RemotePlayer {
     if (uri.startsWith('x-rincon-stream:')) return 'Line-in';
     return null;
   }
+
+  /// Whether a Sonos resource URI is an app's session on the speaker:
+  /// Spotify Connect or AirPlay, which the speaker plays as a virtual
+  /// line-in. The app keeps the queue, and the speaker passes next and
+  /// previous on to it.
+  @visibleForTesting
+  static bool appSession(String uri) => uri.startsWith('x-sonos-vli:');
 
   /// The service a Sonos resource URI plays from, as My Sonos names it
   /// under a favorite.
@@ -596,6 +612,7 @@ class SonosPlayer implements RemotePlayer {
     bool sawPlayback = false,
     SonosStation? station,
     bool inQueue = true,
+    bool appSession = false,
     bool? favorite,
     bool showInputs = false,
   }) {
@@ -679,9 +696,10 @@ class SonosPlayer implements RemotePlayer {
         'pause',
         'stop',
         // A stream has nothing to skip to, and neither does anything
-        // played outside the speaker's queue.
-        if (!isStream && inQueue) 'next',
-        if (!isStream && inQueue) 'previous',
+        // played outside the speaker's queue, unless an app plays its
+        // own queue through the speaker and takes the skips.
+        if (!isStream && (inQueue || appSession)) 'next',
+        if (!isStream && (inQueue || appSession)) 'previous',
         if (durationMs > 0) 'seek',
         'shuffle',
         'repeat',
@@ -831,17 +849,17 @@ class SonosPlayer implements RemotePlayer {
   }
 
   /// The group's queue, the playing item flagged by the transport's
-  /// track number. A station or a line-in plays outside the queue, and
-  /// the panel shows that as nothing queued.
+  /// track number. A station, a line-in or an app's session plays
+  /// outside the queue, and the panel shows that as nothing queued.
   @override
   Future<RemoteQueue?> fetchQueue() async {
     try {
       final co = _coordinator;
       final media = await co.mediaInfo();
       final inQueue = (media['CurrentURI'] ?? '').startsWith('x-rincon-queue:');
-      // A station or a line-in plays outside the queue: the queue the
-      // speaker still holds is not what is playing, and next and
-      // previous do nothing, so the panel says nothing is queued.
+      // A station, a line-in or an app's session plays outside the
+      // queue: the queue the speaker still holds is not what is
+      // playing, so the panel says nothing is queued.
       if (!inQueue) return const RemoteQueue(items: [], upNext: 0);
       final (items, total) = await co.browseQueue();
       final current = _snapshot?['trackNumber'] as int? ?? 0;
