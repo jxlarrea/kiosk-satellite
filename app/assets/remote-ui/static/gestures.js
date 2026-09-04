@@ -752,7 +752,6 @@ export const CATEGORY_TABS = [
   ['tab-screensaver', ['Screensaver']],
   ['tab-camera', ['Camera']],
   ['tab-homeassistant', ['Home Assistant']],
-  ['tab-mqtt', ['MQTT']],
   ['tab-sendspin', ['Sendspin']],
   ['tab-dlna', ['DLNA']],
   ['tab-esphome', ['ESPHome']],

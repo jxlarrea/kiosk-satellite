@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// The standalone motion sensor leg: "Motion sensor" (Camera > Motion
 /// Detection) runs the camera on its own, with no screensaver switches and
-/// no screen-state gate, feeding the MQTT binary_sensor. The camera plugin
+/// no screen-state gate, feeding the ESPHome binary sensor. The camera plugin
 /// is mocked at the EventChannel, so a test can see the stream being
 /// listened to (the camera "running") and push motion ticks through it.
 void main() {
@@ -99,7 +99,7 @@ void main() {
     await pump();
     expect(sink, isNotNull, reason: 'screen off must not stop the camera');
 
-    // A native motion tick surfaces as the bus event MQTT publishes.
+    // A native motion tick surfaces as the bus event ESPHome publishes.
     var detected = 0;
     bus.on<MotionDetected>().listen((_) => detected++);
     sink!.success(null);
@@ -286,7 +286,7 @@ void main() {
     expect(listens, 1, reason: 'a session that framed while off is healthy');
   });
 
-  test('the off_delay is MQTT-side only: changing it never restarts the '
+  test('the off_delay is entity-side only: changing it never restarts the '
       'camera', () async {
     await build({'ks.camera.enabled': true, 'ks.motion.sensor': true});
     await pump();

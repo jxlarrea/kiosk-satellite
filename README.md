@@ -118,7 +118,6 @@ Kiosk Satellite is completely free and distributed as an APK for sideloading:
 - [JavaScript API](docs/js-api.md): Info on `window.kioskSatellite` and the wake-word handoff protocol.
 - [Remote API](docs/remote-api.md): Details on the REST + WebSocket interface.
 - [ESPHome](docs/esphome.md): Everything you need to know about native HA entities and Bluetooth proxying via the ESPHome API.
-- [MQTT](docs/mqtt.md): Legacy MQTT integration (currently being phased out in favor of ESPHome, but kept for existing setups).
 - [Camera streams](docs/cameras.md): Using Go2RTC import, setting up camera views, and HA controls.
 - [Screen](docs/screen.md): Keep-awake settings, default brightness, and adaptive brightness logic.
 - [Screensavers](docs/screensavers.md): Modes, schedules, brightness, motion waking, and triggers.

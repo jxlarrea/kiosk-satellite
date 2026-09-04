@@ -33,7 +33,6 @@ import {
   updatePlayerRow,
   updateSonosPage,
   updateMaValidateRow,
-  updateMqttValidateRow,
 } from './panels.js';
 import { askImportOptions } from './pickers.js';
 import { settingRow } from './rows.js';
@@ -469,54 +468,6 @@ export async function loadSettings() {
     }
   } else if (byKey['btproxy.key']?.value) {
     window.__esphomeKeyRetries = 0;
-  }
-
-  // ── MQTT sunset notice ───────────────────────────────────────────────
-  // Atop the MQTT tab: ESPHome is the integration path now, and nobody
-  // should build new automations on a surface with a removal date.
-  {
-    const root = document.getElementById('tab-mqtt');
-    const warn = document.createElement('div');
-    warn.style.cssText = 'display:flex; gap:8px; align-items:flex-start; ' +
-      'margin:0 0 14px; font-size:13px; color:var(--warn); line-height:1.5';
-    warn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" ' +
-      'fill="none" stroke="currentColor" stroke-width="2" ' +
-      'stroke-linecap="round" stroke-linejoin="round" ' +
-      'style="flex:none; margin-top:2px">' +
-      '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 ' +
-      '1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' +
-      '<path d="M12 9v4M12 17h.01"/></svg><span></span>';
-    warn.querySelector('span').textContent =
-      'ESPHome is now the preferred integration and MQTT will be removed ' +
-      'in a future version. See the ESPHome section to migrate.';
-    root.insertBefore(warn, root.firstChild);
-  }
-
-  // ── Duplicate-entities warning ───────────────────────────────────────
-  // Both entity surfaces on at once means every kiosk entity exists
-  // twice in Home Assistant; warn where the choice is made, mirroring
-  // the device page.
-  if (byKey['esphome.entities']?.value === true &&
-      depSatisfied(byKey['esphome.entities'], byKey) &&
-      byKey['mqtt.enabled']?.value === true) {
-    const row = document.querySelector('[data-key="esphome.entities"]');
-    if (row) {
-      const warn = document.createElement('div');
-      warn.style.cssText = 'display:flex; gap:8px; ' +
-        'align-items:flex-start; margin:6px 0 10px; ' +
-        'font-size:12.5px; color:var(--warn); line-height:1.5';
-      warn.innerHTML = '<svg width="15" height="15" ' +
-        'viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-        'stroke-width="2" stroke-linecap="round" ' +
-        'stroke-linejoin="round" style="flex:none; margin-top:2px">' +
-        '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 ' +
-        '1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' +
-        '<path d="M12 9v4M12 17h.01"/></svg><span></span>';
-      warn.querySelector('span').textContent =
-        'MQTT is also enabled: these entities will exist twice in ' +
-        'Home Assistant, once per integration.';
-      row.insertAdjacentElement('afterend', warn);
-    }
   }
 
   // ── Real-MAC identity outcome ────────────────────────────────────────
@@ -1173,7 +1124,7 @@ export async function loadSettings() {
       'and mutes wake word detection while it is on. With the System UI ' +
       'guard enabled (above), the notification shade and recents are ' +
       'blocked too. Home Assistant gets a Lockdown mode switch over ' +
-      'MQTT.';
+      'ESPHome.';
     document.getElementById('tab-lockdown').appendChild(note);
   }
   // The master fader tops the Audio Volume card, mirroring the device: the
@@ -1253,7 +1204,6 @@ export async function loadSettings() {
   updateScreenOffAdminNotice();
   updateAutoReloadOverlayNotice();
   updateImmichValidateRow();
-  updateMqttValidateRow();
   updateMaValidateRow();
   updatePlayerRow();
   updateSonosPage();

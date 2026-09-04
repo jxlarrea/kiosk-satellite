@@ -2,8 +2,8 @@ import 'dart:async';
 
 import '../../core/events.dart';
 
-/// The Last interaction sensor's stamp-and-throttle (issue #241), shared by
-/// the MQTT and ESPHome surfaces so both publish identical semantics.
+/// The Last interaction sensor's stamp-and-throttle (issue #241) behind the
+/// ESPHome entity.
 ///
 /// Touches arrive once per pointer-down, and publishing each one would
 /// churn the Home Assistant recorder for nothing. The leading edge lands
@@ -14,7 +14,7 @@ import '../../core/events.dart';
 /// last real touch.
 class InteractionStamp {
   InteractionStamp(this._publish, {DateTime Function()? now})
-      : _now = now ?? _utcNow;
+    : _now = now ?? _utcNow;
 
   final void Function(DateTime stamp) _publish;
   final DateTime Function() _now;

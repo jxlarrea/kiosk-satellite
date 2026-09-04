@@ -141,7 +141,7 @@ void main() {
     await camera().init();
     // A burst of ticks: someone staying in frame. Only the first is an
     // arrival; the rest land inside the Clear after window and must not
-    // refresh the retained MQTT snapshot (the sensor leg keeps the camera
+    // refresh the published snapshot (the sensor leg keeps the camera
     // on permanently, so per-tick snapshots would publish forever).
     bus.publish(const MotionDetected());
     bus.publish(const MotionDetected());

@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Removed
+- **The MQTT integration.** ESPHome has been the integration path for every kiosk entity for a while, and MQTT was kept alongside it for existing setups. It is gone now: the MQTT Settings page on the device and in the remote admin, the broker connection, the discovery publishing and the two MQTT client libraries behind them. A device that still had MQTT on keeps every other setting and simply stops publishing to the broker. Automations written against the MQTT entities move to the ESPHome ones, which carry the same names, so only the device half of each entity id changes. See the ESPHome section of the documentation to set it up.
+
 ### Fixed
 - The **remote admin's ESPHome tile reads Connected while Home Assistant is subscribed to the entities.** The tile took its answer from the Bluetooth proxy alone, advertisements subscribed or a device connected through it, so a server serving entities with the proxy off, or on without a Bluetooth integration asking for advertisements, read Waiting for Home Assistant while every entity state flowed. The status now counts the sessions subscribed to entity states and the tile reads that first.
 - **App uptime and Network uptime no longer sit on Unknown after an ESPHome server restart.** The two timestamp anchors were sent only when they moved, and the check outlived the server, so a restart from a settings change on the ESPHome pages handed Home Assistant a fresh entity list with no value for either until the app itself restarted. Every start of the server sends both again.

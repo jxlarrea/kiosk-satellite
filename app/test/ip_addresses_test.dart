@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/managers/device/ip_addresses.dart';
 
-/// Issue #213: the MQTT sensors carry this detail as attributes and the
-/// ESPHome ones as entities of their own, off one summary, so the two
-/// integrations can never lead with different addresses.
+/// Issue #213: the ESPHome sensors carry this detail as entities of their
+/// own, off one summary, so no two readers can lead with different
+/// addresses.
 void main() {
   test('the first address leads and the rest are the others', () {
     final family = summarizeIpFamily(const {

@@ -4,7 +4,7 @@
 ///
 /// This is deliberately a judgment layer over the relay, never part of it:
 /// the proxy forwards advertisements to Home Assistant untouched, and these
-/// labels exist only in Kiosk Satellite's own list and MQTT sensor.
+/// labels exist only in Kiosk Satellite's own list and Nearby devices sensor.
 ///
 /// Sources, in order of trust: the name the device broadcasts, the service
 /// UUID (identifies a device class even on anonymous devices), the
@@ -89,8 +89,8 @@ const Map<int, String> appleFrames = {
   0x12: 'Apple Find My device',
 };
 
-/// One identified nearby device, ready for the UI row and the MQTT
-/// attribute list.
+/// One identified nearby device, ready for the UI row and the Nearby
+/// devices sensor.
 class NearbyDevice {
   const NearbyDevice({
     required this.address,
@@ -122,15 +122,15 @@ class NearbyDevice {
   final String? vendor;
 
   Map<String, Object?> toJson() => {
-        'mac': address,
-        'identity': identity,
-        if (broadcastName != null) 'name': broadcastName,
-        if (vendor != null) 'vendor': vendor,
-        if (rotating) 'rotating': true,
-        if (connected) 'connected': true,
-        'rssi': rssi,
-        'last_seen': lastSeenAt.toIso8601String(),
-      };
+    'mac': address,
+    'identity': identity,
+    if (broadcastName != null) 'name': broadcastName,
+    if (vendor != null) 'vendor': vendor,
+    if (rotating) 'rotating': true,
+    if (connected) 'connected': true,
+    'rssi': rssi,
+    'last_seen': lastSeenAt.toIso8601String(),
+  };
 }
 
 /// Whether [address] can be looked up in an OUI registry at all: only
@@ -197,8 +197,9 @@ List<Map<String, Object?>> _sortByMode(
     case 'rssi':
       // Strongest first: the devices actually in this room on top.
       sorted.sort((a, b) {
-        final cmp = ((b['rssi'] as int?) ?? -128)
-            .compareTo((a['rssi'] as int?) ?? -128);
+        final cmp = ((b['rssi'] as int?) ?? -128).compareTo(
+          (a['rssi'] as int?) ?? -128,
+        );
         return cmp != 0 ? cmp : byMac(a, b);
       });
     default:
@@ -218,8 +219,11 @@ List<Map<String, Object?>> _sortByMode(
 /// dependable for sensors, -85 and below is the edge of range where
 /// advertisements start going missing. Both UIs map these to their
 /// green/yellow/red.
-String rssiTier(int rssi) =>
-    rssi >= -65 ? 'strong' : rssi >= -84 ? 'medium' : 'weak';
+String rssiTier(int rssi) => rssi >= -65
+    ? 'strong'
+    : rssi >= -84
+    ? 'medium'
+    : 'weak';
 
 /// Whether [address] is a resolvable private address: top two bits 01.
 /// Only these actually rotate; static random addresses (top bits 11, most
@@ -294,7 +298,8 @@ NearbyDevice classify(
     // versions that hide the link-layer address type, and a broadcast
     // name is the practical tiebreak: the anonymous rotating crowd
     // (phones, watches, trackers) never carries one.
-    rotating: addressType == 1 &&
+    rotating:
+        addressType == 1 &&
         isRotatingAddress(address) &&
         (name == null || name.isEmpty),
     rssi: raw['rssi'] as int? ?? 0,

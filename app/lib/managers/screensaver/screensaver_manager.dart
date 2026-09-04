@@ -132,7 +132,7 @@ Map<String, Object?>? activeScheduleEntry(
 /// exactly one place, the "Turn screen off after" timer, and by explicit
 /// request — with background listening on, the process (and its camera,
 /// carried by the camera-type foreground service) keeps running behind the
-/// dark panel, so motion, the MQTT dismiss and the wake word can all light
+/// dark panel, so motion, the ESPHome dismiss and the wake word can all light
 /// it back up. The session stays active across the power-off, which is what
 /// routes every dismiss source through [stop] and its screenOn.
 class ScreensaverManager extends Manager with WidgetsBindingObserver {
@@ -543,7 +543,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       }
       // Disabling the master toggle takes a running screensaver down with
       // it. On the device this never shows (opening settings already
-      // dismisses it), but over MQTT or the remote admin nothing else
+      // dismisses it), but over ESPHome or the remote admin nothing else
       // would, and the screensaver stayed up with no timer (issue #152).
       if (e.key == defs.screensaverEnabled.key && e.value == false) {
         unawaited(stop());
@@ -1001,7 +1001,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       return;
     }
     // Hold mode refuses every start, commanded ones included: "keep this
-    // view on screen" beats a startScreensaver arriving over MQTT or a
+    // view on screen" beats a startScreensaver arriving over ESPHome or a
     // gesture (issue #266).
     if (_settings.get(defs.haHoldMode)) return;
     // No screensaver under Lockdown Mode unless the owner opted in: by
@@ -1037,7 +1037,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// "Turn screen off after": once the screensaver has been up this long,
   /// truly power the panel off (device-admin lockNow via the screenOff
   /// command). The session stays active behind the dark panel — that is
-  /// what lets motion, the MQTT dismiss and the wake word wake it through
+  /// what lets motion, the ESPHome dismiss and the wake word wake it through
   /// the normal [stop] path. Quiet on a missing device admin grant: a
   /// timer firing overnight must never put Android's permission screen up.
   void _armScreenOffTimer() {

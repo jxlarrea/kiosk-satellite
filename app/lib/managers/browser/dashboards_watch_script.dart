@@ -1,9 +1,8 @@
 /// Document-start script that tells the app when Home Assistant's set of
 /// dashboards may have changed, through the page's own live connection.
 ///
-/// The dashboard view selects (MQTT and ESPHome) carry the dashboards and
-/// views as their option list, and the ESPHome one can only change that
-/// list by re-registering with Home Assistant, which makes every entity
+/// The ESPHome dashboard view select carries the dashboards and views as
+/// its option list, and it can only change that list by re-registering with Home Assistant, which makes every entity
 /// unavailable for a moment. So the list is never re-read on a timer: the
 /// page reports the moments it can actually have moved, and nothing else
 /// (issue #362). Home Assistant fires `panels_updated` on its bus when a

@@ -28,7 +28,7 @@ import androidx.core.content.ContextCompat
  *
  * Android freezes cached processes whole: put the kiosk behind another app
  * or turn the panel off for long enough and the Home Assistant websocket,
- * the MQTT session, the ESPHome server, the wake-word engine and the remote
+ * the ESPHome server, the wake-word engine and the remote
  * admin all stop on the same breath, with the process still nominally
  * there. OEM battery managers go one further and kill a backgrounded app
  * outright, which is how a kiosk reads "unavailable" in Home Assistant for
@@ -77,7 +77,6 @@ class KioskSatelliteService : Service() {
         /// service exists for it on a clean install with nothing else on.
         const val REASON_SESSIONS = "sessions"
         const val REASON_REMOTE = "remote"
-        const val REASON_MQTT = "mqtt"
         const val REASON_ESPHOME = "esphome"
         const val REASON_BLUETOOTH = "bluetooth"
         const val REASON_LISTENING = "listening"
@@ -479,7 +478,6 @@ class KioskSatelliteService : Service() {
         if (REASON_LISTENING in reasons) labels.add("listening for a wake word")
         if (REASON_ESPHOME in reasons) labels.add("serving ESPHome")
         if (REASON_BLUETOOTH in reasons) labels.add("relaying Bluetooth devices")
-        if (REASON_MQTT in reasons) labels.add("publishing over MQTT")
         if (REASON_CAMERA in reasons) labels.add("watching the camera")
         if (REASON_LOCATION in reasons) labels.add("reporting the location")
         if (REASON_REMOTE in reasons) labels.add("serving the remote admin")

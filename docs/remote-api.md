@@ -62,7 +62,7 @@ is administrable here by construction.
 | `/api/config/import` | POST | Apply a full backup. Query params: `adoptIdentity` (default on) takes over the backup's device name and ESPHome node name, for replacing the original device — pass `0` when cloning a second device so it keeps its own identity; `importLocalStorage` (default on) applies the page's saved data including the Voice Satellite selection — pass `0` so the device answers as its own satellite |
 | `/api/commands` | GET | List registered commands + param schemas |
 | `/api/commands/<name>` | POST | Execute a command with JSON params |
-| `/api/screenshot` | GET | JPEG of the current screen (PNG placeholder while it is off). The capture also feeds the Screenshot entity and Last screenshot over ESPHome and MQTT |
+| `/api/screenshot` | GET | JPEG of the current screen (PNG placeholder while it is off). The capture also feeds the Screenshot entity and Last screenshot over ESPHome |
 | `/api/media/artwork` | GET | The shown track's cover art, fetched by the device (which trusts the Sendspin and Music Assistant hosts a browser would not), labelled by its bytes. 404 with no track or no art. `X-Artwork-Url` carries the source URL. |
 | `/api/camera/snapshot` | GET | The latest device-camera frame as JPEG (404 until one has been captured). `X-Snapshot-At` carries the capture time as ISO 8601 UTC. Serves the cached frame; it never triggers a capture (use the `takeCameraSnapshot` command for that). |
 | `/api/files/download` | GET | Stream a device file. Query params: `root` (`shared` or `app`), `path` (relative to the root) |

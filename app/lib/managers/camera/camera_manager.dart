@@ -59,7 +59,7 @@ class CameraManager extends Manager {
 
   /// Auto-dismiss: an open view closes on its own after the configured time.
   /// Armed off the [activeViewId] listener so every way of opening a view is
-  /// covered (gesture, MQTT, drawer, the restore after a voice turn) and
+  /// covered (gesture, ESPHome, drawer, the restore after a voice turn) and
   /// nothing else needs to know. The screensaver's camera mode renders its
   /// own surface and never touches [activeViewId], so it is exempt by
   /// construction. Focusing a camera re-arms the countdown: a tap on the

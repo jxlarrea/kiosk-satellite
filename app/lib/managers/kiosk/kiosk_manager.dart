@@ -40,7 +40,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   /// the kiosk-mode reclaim must not yank the owner out of them.
   bool menuBusy = false;
 
-  /// The last sanctioned app launch (launcher, gesture, MQTT). A pause
+  /// The last sanctioned app launch (launcher, gesture, ESPHome). A pause
   /// right after one is the launched app coming up — the launcher's
   /// auto-return owns the way back, not the reclaim.
   DateTime? _appLaunchedAt;
@@ -310,7 +310,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           log.info(name, 'restarting application');
           try {
             await _backgroundChannel.invokeMethod<void>('restartProcess', {
-              'reason': 'restart requested (kiosk menu, remote admin or MQTT)',
+              'reason':
+                  'restart requested (kiosk menu, remote admin or ESPHome)',
             });
           } on PlatformException catch (e) {
             return CommandResult.fail('restart failed: $e');

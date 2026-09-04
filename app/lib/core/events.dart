@@ -10,7 +10,7 @@ sealed class AppEvent {
   const AppEvent();
 
   /// Wire-format name used by the JS API (`kiosksatellite:<name>`), the
-  /// remote WebSocket, and MQTT. Null for internal-only events.
+  /// remote WebSocket. Null for internal-only events.
   String? get wireName => null;
 
   Map<String, Object?> toJson() => const {};
@@ -19,8 +19,7 @@ sealed class AppEvent {
 // ── Screen ─────────────────────────────────────────────────────────────
 
 /// The device turned out to keep its panel lit through a screen-off, or
-/// stopped doing so. Internal: the MQTT screen entity withdraws itself while
-/// it holds, and the Screen settings page explains why.
+/// stopped doing so. Internal: the Screen settings page explains why.
 class AmbientDisplayChanged extends AppEvent {
   const AmbientDisplayChanged({required this.on});
   final bool on;
@@ -31,7 +30,7 @@ class ScreenStateChanged extends AppEvent {
   final bool on;
 
   /// 'app' when this app moved the panel itself (screenOn/screenOff, from
-  /// a dismiss, the wake word or the MQTT Screen switch); 'system' for the
+  /// a dismiss, the wake word or the ESPHome Screen switch); 'system' for the
   /// power button, double-tap-to-wake and everything else the OS reports;
   /// 'probe' when a wake this app asked for turned out not to have lit the
   /// panel, and the flag is being taken back to match it.
@@ -129,7 +128,7 @@ class ScreensaverSlideChanged extends AppEvent {
 /// The device's media volume changed, from any side: a command, the
 /// hardware rocker, or another app.
 /// The device's next alarm was set, moved or dismissed, in whichever clock
-/// app owns it. Internal: the MQTT sensor republishes off it.
+/// app owns it. Internal: the ESPHome sensor republishes off it.
 class NextAlarmChanged extends AppEvent {
   const NextAlarmChanged();
 }
@@ -142,7 +141,7 @@ class VolumeChanged extends AppEvent {
 }
 
 /// A meaningfully different ambient light reading from the device's light
-/// sensor (damped at the native side). Internal-only; MQTT mirrors it into
+/// sensor (damped at the native side). Internal-only; ESPHome mirrors it into
 /// the Home Assistant illuminance sensor.
 class LightLevelChanged extends AppEvent {
   const LightLevelChanged({required this.lux});
@@ -180,7 +179,7 @@ class LocationChanged extends AppEvent {
 
 /// External power was connected or removed. Android broadcasts every battery
 /// change; the device manager re-reads the plugged flag on each and only a
-/// genuine flip travels here. Internal-only; MQTT mirrors it into the
+/// genuine flip travels here. Internal-only; ESPHome mirrors it into the
 /// Charging binary sensor without waiting for the minute poll (issue #205).
 class PowerChanged extends AppEvent {
   const PowerChanged({required this.charging});
@@ -421,7 +420,7 @@ class PalmDetected extends AppEvent {
 
 /// A fresh still from the device's own camera (JPEG bytes). Internal-only
 /// (no wireName), like [AudioChunk]: a binary payload must never enter the
-/// generic wire-event feed. MQTT publishes it to the camera entity's topic.
+/// generic wire-event feed. The ESPHome camera entity serves it.
 class CameraSnapshotTaken extends AppEvent {
   const CameraSnapshotTaken({required this.jpeg});
   final Uint8List jpeg;
@@ -429,7 +428,7 @@ class CameraSnapshotTaken extends AppEvent {
 
 /// The display was captured for someone to look at: the remote admin's
 /// overview page fetched its preview. The Home Assistant twins (the
-/// Screenshot camera and Last screenshot over ESPHome and MQTT) follow it,
+/// Screenshot camera and Last screenshot over ESPHome) follow it,
 /// so "last screenshot" means the last capture a person asked for,
 /// whichever door they came in by. Captures a client raises on its own
 /// (a camera fetch refreshing a preview) do not publish this.
@@ -660,7 +659,7 @@ class KioskBackPressed extends AppEvent {
 }
 
 /// Something was raised over the kiosk on purpose: another app through
-/// launchApp (the app launcher, a gesture action, MQTT, the remote admin),
+/// launchApp (the app launcher, a gesture action, ESPHome, the remote admin),
 /// a deep link through openUri or the Android Settings app through
 /// openSystemSettings. Internal: the launcher manager arms its auto-return
 /// clock off it (issue #114) and the kiosk manager's foreground reclaim

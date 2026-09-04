@@ -995,7 +995,7 @@ const lockdownExitGesture = SettingDef<String>(
 
 // Master switch, off by default. While off the launcher is genuinely
 // gone, not just empty: no menu entry, showAppLauncher refuses (which
-// covers the remote API), and the MQTT button is retracted from HA.
+// covers the remote API), and the ESPHome button refuses too.
 const launcherEnabled = SettingDef<bool>(
   key: 'launcher.enabled',
   type: SettingType.boolean,
@@ -1020,7 +1020,7 @@ const launcherApps = SettingDef<String>(
 );
 
 // The way back without a gesture or a hand: after an app opened through
-// launchApp (the launcher, a gesture, MQTT), an idle clock brings the
+// launchApp (the launcher, a gesture, an ESPHome button), an idle clock brings the
 // kiosk to the front again. Idle, not elapsed (issue #317): a touch
 // watch window restarts the clock on every touch in the other app, so
 // someone using it is not pulled out mid-task. Uses the same bringToFront
@@ -1723,7 +1723,7 @@ const screensaverClockBgColor = SettingDef<String>(
 // A local photo behind the clock (issue #132), any face. The device picker
 // stores the path of a copy in app documents, made when the photo is
 // picked; the original may live in picker cache the OS purges. The remote
-// admin and the MQTT Clock background entity (issue #150) write a raw
+// admin and the ESPHome Clock background entity (issue #150) write a raw
 // device path into the same setting instead — the renderer fails soft on
 // a missing file, so an unvalidated path costs nothing.
 const screensaverClockBackground = SettingDef<String>(
@@ -2858,7 +2858,7 @@ const screensaverNotificationBrightness = SettingDef<bool>(
 // The screensaver deliberately holds the panel awake (see the manager's
 // start()), so the OS idle timeout can never fire under it; this timer is
 // the one sanctioned way a session ends in a truly dark panel. Wake paths
-// exist for every dismiss source: motion, the MQTT dismiss button and the
+// exist for every dismiss source: motion, the ESPHome dismiss button and the
 // wake word all light the panel back up. Real power-off is device-admin
 // lockNow, hence the permission note.
 const screensaverScreenOffMinutes = SettingDef<num>(
@@ -3304,7 +3304,7 @@ const screensaverPostponeOnPerson = SettingDef<bool>(
 
 // ── Camera ─────────────────────────────────────────────────────────────
 // The device's own camera as a Home Assistant feature (discussion #72):
-// snapshots published over MQTT, and the sensor the screensaver's motion
+// snapshots published to Home Assistant, and the sensor the screensaver's motion
 // detection watches. One master switch so a kiosk that does not need the
 // camera never spends a cycle (or a degree) on it; livestreaming will build
 // on this same section.
@@ -3356,8 +3356,8 @@ const cameraSnapshots = SettingDef<bool>(
   defaultValue: false,
   title: 'Continuous snapshots',
   description:
-      'Publish a fresh camera snapshot to Home Assistant over MQTT at a '
-      'fixed interval.',
+      'Publish a fresh camera snapshot to Home Assistant at a fixed '
+      'interval.',
   category: 'Camera',
   dependsOn: 'camera.enabled',
 );
@@ -3378,7 +3378,7 @@ const cameraSnapshotInterval = SettingDef<num>(
 
 // ── Camera: Motion Detection ───────────────────────────────────────────
 // Motion detection's home: the standalone sensor and the shared tuning.
-// The sensor is motion exposed as its own MQTT binary_sensor, independent
+// The sensor is motion exposed as its own HA binary sensor, independent
 // of the screensaver's motion features. Users asked for the sensor without
 // the screensaver strings attached, and its natural use (motion turns the
 // panel on) needs the camera watching while the screen is dark, which no
@@ -3394,15 +3394,15 @@ const motionSensor = SettingDef<bool>(
   defaultValue: false,
   title: 'Motion sensor',
   description:
-      'Expose motion as a Home Assistant sensor over MQTT. WARNING: '
-      'Keeps the camera running permanently, even with the screen off.',
+      'Expose motion as a Home Assistant sensor. WARNING: Keeps the '
+      'camera running permanently, even with the screen off.',
   category: 'Camera',
   section: 'Motion Detection',
   dependsOn: 'camera.enabled',
 );
 
-// The sensor clears itself in Home Assistant (off_delay in the discovery
-// config): the app only ever reports motion, never its absence.
+// The sensor clears itself after this many seconds: the app only ever
+// reports motion, never its absence.
 const motionSensorOffDelay = SettingDef<num>(
   key: 'motion.sensor_off_delay',
   type: SettingType.number,
@@ -4152,7 +4152,7 @@ const haReturnHomeSeconds = SettingDef<num>(
 
 /// Hold mode (issue #266): pin the current view until released. The toggle
 /// IS the live state, not a feature gate: flipping it here, from the remote
-/// admin, over MQTT/ESPHome or by gesture all drive the same setting, so
+/// admin, over ESPHome or by gesture all drive the same setting, so
 /// every surface stays in step and the state survives a restart. While on,
 /// the screensaver will not start, dashboard view rotation freezes in
 /// place, the return-home timer stands down and the display stays awake.
@@ -4201,101 +4201,6 @@ const haHoldMenu = SettingDef<bool>(
   category: 'Home Assistant',
   section: 'Hold mode',
   subpage: 'Hold mode',
-);
-
-// ── MQTT ───────────────────────────────────────────────────────────────
-// Ready-made Home Assistant entities over MQTT discovery (issue #11). The
-// broker settings live here; everything the entities do routes through the
-// same CommandRegistry commands and bus events every other surface uses.
-
-const mqttEnabled = SettingDef<bool>(
-  key: 'mqtt.enabled',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: 'Publish to MQTT',
-  description:
-      'Create ready-made Home Assistant entities for this device via MQTT '
-      'discovery: screen, brightness, battery and more. No YAML needed.',
-  category: 'MQTT',
-);
-
-const mqttHost = SettingDef<String>(
-  key: 'mqtt.host',
-  type: SettingType.string,
-  defaultValue: '',
-  title: 'Server',
-  description:
-      'Hostname or IP of the MQTT broker, for example homeassistant.local '
-      'when using the Mosquitto add-on.',
-  category: 'MQTT',
-  dependsOn: 'mqtt.enabled',
-);
-
-const mqttPort = SettingDef<num>(
-  key: 'mqtt.port',
-  type: SettingType.number,
-  defaultValue: 1883,
-  title: 'Port',
-  description: '1883 is the MQTT default; 8883 is the usual TLS port.',
-  category: 'MQTT',
-  dependsOn: 'mqtt.enabled',
-);
-
-const mqttTls = SettingDef<bool>(
-  key: 'mqtt.tls',
-  type: SettingType.boolean,
-  defaultValue: false,
-  title: 'Use TLS',
-  description: 'Encrypt the broker connection.',
-  category: 'MQTT',
-  dependsOn: 'mqtt.enabled',
-);
-
-const mqttUsername = SettingDef<String>(
-  key: 'mqtt.username',
-  type: SettingType.string,
-  defaultValue: '',
-  title: 'Username',
-  description: 'Leave empty when the broker allows anonymous access.',
-  category: 'MQTT',
-  dependsOn: 'mqtt.enabled',
-);
-
-const mqttPassword = SettingDef<String>(
-  key: 'mqtt.password',
-  type: SettingType.password,
-  defaultValue: '',
-  title: 'Password',
-  description: 'Leave empty when the broker allows anonymous access.',
-  category: 'MQTT',
-  secret: true,
-  dependsOn: 'mqtt.enabled',
-);
-
-const mqttDiscoveryPrefix = SettingDef<String>(
-  key: 'mqtt.discovery_prefix',
-  type: SettingType.string,
-  defaultValue: 'homeassistant',
-  title: 'Discovery prefix',
-  description:
-      "Home Assistant's MQTT discovery prefix. Leave at homeassistant "
-      'unless yours was changed.',
-  category: 'MQTT',
-  dependsOn: 'mqtt.enabled',
-);
-
-/// Stable per-install identity behind every MQTT topic and unique_id, so
-/// several tablets on one broker never collide and a reinstalled app gets a
-/// fresh device rather than adopting a stale one. Generated on first MQTT
-/// start; never shown.
-const mqttDeviceId = SettingDef<String>(
-  key: 'mqtt.device_id',
-  type: SettingType.string,
-  defaultValue: '',
-  title: 'MQTT device id',
-  description: 'Internal identity for MQTT topics.',
-  category: 'MQTT',
-  hidden: true,
 );
 
 // Android WebViews advertise H.265 receive support in the SDP offer whether
@@ -4378,7 +4283,7 @@ const cameraPinchZoom = SettingDef<bool>(
 
 // A glance at the cameras from a clap or a corner tap should not stay up
 // forever on a wall panel. Applies to the camera view overlay however it was
-// opened (gesture, MQTT, the drawer); the screensaver's camera mode is its
+// opened (gesture, ESPHome, the drawer); the screensaver's camera mode is its
 // own surface and never touched by this.
 const cameraAutoDismissSeconds = SettingDef<num>(
   key: 'camera.auto_dismiss_seconds',
@@ -5136,8 +5041,8 @@ String? validatePort(Object? value) {
 }
 
 // ── ESPHome ────────────────────────────────────────────────────────────
-// The kiosk as a native ESPHome device (issue: sunset the MQTT broker
-// requirement): one master switch runs the API server and the kiosk's
+// The kiosk as a native ESPHome device: one master switch runs the API
+// server and the kiosk's
 // entity surface; the Bluetooth proxy is a subsystem on the same
 // connection, in its own section below. The btproxy.* key names predate
 // the page and stay for settings-export compatibility.
@@ -5154,9 +5059,9 @@ const esphomeEnabled = SettingDef<bool>(
 );
 
 /// Decoupled from the master switch, and off by default, on purpose: a
-/// household with MQTT enabled that turns on ESPHome just for the
-/// Bluetooth proxy must not wake up to a duplicate entity set; entities
-/// are an explicit step, taken when the user is ready to migrate.
+/// household that turns on ESPHome just for the Bluetooth proxy must not
+/// wake up to a full entity set it never asked for; entities are an
+/// explicit step.
 const esphomeEntities = SettingDef<bool>(
   key: 'esphome.entities',
   type: SettingType.boolean,
@@ -5600,7 +5505,7 @@ const btproxyMinConnectRssi = SettingDef<String>(
 
 // The one input the keep-alive service takes from the user. The service
 // itself is not optional (ServiceManager, KioskSatelliteService.kt): it is
-// what keeps the Home Assistant, MQTT and ESPHome sessions alive with the
+// what keeps the Home Assistant and ESPHome sessions alive with the
 // screen off on every install. The wake lock is a setting because it costs
 // battery on an unplugged tablet, the one place a kiosk pays for it.
 const serviceCpuAwake = SettingDef<bool>(
@@ -5661,7 +5566,7 @@ const deviceName = SettingDef<String>(
   title: 'Device name',
   description:
       'Friendly name shown in remote management and used as the device '
-      'name published over MQTT.',
+      'name published to Home Assistant.',
   category: 'Device',
 );
 
@@ -5993,14 +5898,6 @@ const List<SettingDef<Object>> allSettings = [
   disableSuspend,
   freezeOnScreensaver,
   wsFilter,
-  mqttEnabled,
-  mqttHost,
-  mqttPort,
-  mqttTls,
-  mqttUsername,
-  mqttPassword,
-  mqttDiscoveryPrefix,
-  mqttDeviceId,
   cameraAllowH265,
   cameraPreferMse,
   cameraPreferHls,

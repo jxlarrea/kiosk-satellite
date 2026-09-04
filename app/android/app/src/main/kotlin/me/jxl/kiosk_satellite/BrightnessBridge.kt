@@ -18,7 +18,7 @@ import kotlin.math.abs
  *
  * The distinction matters to anyone watching from outside: the window
  * override dims what the fullscreen kiosk shows, but the system slider (and
- * anything reading it, like the MQTT brightness state) never moves, and a
+ * anything reading it, like the ESPHome brightness state) never moves, and a
  * brightness change made in quick settings never reaches the app. This
  * bridge reads and writes the system value and pushes every external change
  * to Dart, so the remote admin and Home Assistant see what the panel is

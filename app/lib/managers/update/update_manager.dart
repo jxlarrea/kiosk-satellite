@@ -46,7 +46,7 @@ class UpdateInfo {
 ///
 /// A wall tablet has no Play Store nudging it, so the app checks on its own:
 /// once shortly after start and then twice a day. The result feeds the
-/// drawer's notice and the Home Assistant update entity (over MQTT); nothing
+/// drawer's notice and the Home Assistant update entity (over ESPHome); nothing
 /// downloads or installs until a tap in either place asks for it.
 class UpdateManager extends Manager {
   UpdateManager(super.bus, super.commands, super.log);
@@ -129,7 +129,7 @@ class UpdateManager extends Manager {
   Timer? _timer;
 
   /// Last whole percent pushed onto the bus; keeps the progress stream from
-  /// flooding listeners (MQTT republishes every event it hears).
+  /// flooding listeners (the ESPHome entity republishes every event it hears).
   int _lastPercent = -1;
 
   /// When the last mid-download percent went onto the bus (see the
@@ -166,16 +166,15 @@ class UpdateManager extends Manager {
       final percent = p == null ? -1 : (p * 100).floor();
       if (percent == _lastPercent) return;
       // At most one mid-download publish a second: each one fans out to a
-      // getUpdateStatus execution and a state push on MQTT and the ESPHome
-      // surface apiece, and on a fast download the percent flips several
+      // getUpdateStatus execution and a state push on the ESPHome
+      // surface, and on a fast download the percent flips several
       // times a second — a storm reported as log spam and CPU load on weak
       // tablets (#272). The transitions in and out of "downloading" always
       // go out, so nothing ever misses the start or the end.
       final now = DateTime.now();
       final transition = p == null || _lastPercent == -1;
       if (!transition &&
-          now.difference(_lastProgressPublish) <
-              const Duration(seconds: 1)) {
+          now.difference(_lastProgressPublish) < const Duration(seconds: 1)) {
         return;
       }
       _lastProgressPublish = now;
@@ -190,7 +189,7 @@ class UpdateManager extends Manager {
           description:
               'Running version, the newer GitHub release if any, and the '
               'APK download progress (0..1, null while idle)',
-          // Executed per progress event by the MQTT and ESPHome listeners
+          // Executed per progress event by the ESPHome listener
           // and once a second by a remote admin riding a download.
           quiet: true,
           handler: (_) async => CommandResult.ok({
@@ -332,7 +331,8 @@ class UpdateManager extends Manager {
                 version: tag,
                 apkUrl: url,
                 notes: _combinedNotes(releases, tagOf),
-                releaseUrl: latest['html_url'] as String? ??
+                releaseUrl:
+                    latest['html_url'] as String? ??
                     'https://github.com/jxlarrea/kiosk-satellite/releases',
                 apkSize: (apk['size'] as num?)?.toInt(),
               )
@@ -460,9 +460,7 @@ class UpdateManager extends Manager {
       // APKs of identical size, and on exactly such a pair the reuse
       // check below installed the cached old release as if it were the
       // new download, "updating" the device to the version it already ran.
-      final dir = Directory(
-        '${(await getTemporaryDirectory()).path}/updates',
-      );
+      final dir = Directory('${(await getTemporaryDirectory()).path}/updates');
       await dir.create(recursive: true);
       final file = File(
         '${dir.path}/kiosk-satellite-update-${info.version}.apk',
@@ -479,10 +477,7 @@ class UpdateManager extends Manager {
       if (expected != null &&
           await file.exists() &&
           await file.length() == expected) {
-        log.info(
-          name,
-          'reusing the already-downloaded v${info.version} APK',
-        );
+        log.info(name, 'reusing the already-downloaded v${info.version} APK');
       } else {
         final res = await client.send(
           http.Request('GET', Uri.parse(info.apkUrl)),
@@ -577,11 +572,14 @@ class UpdateManager extends Manager {
       // The kiosk re-arms when the install is declined or fails (below);
       // a successful install kills the process and the relaunch re-arms.
       if (await _needsConfirmation()) {
-        _kioskPaused =
-            (await commands.execute('pauseKioskForInstall', const {})).ok;
+        _kioskPaused = (await commands.execute(
+          'pauseKioskForInstall',
+          const {},
+        )).ok;
       }
-      final mode =
-          await _installer.invokeMethod<String>('installApk', {'path': file.path});
+      final mode = await _installer.invokeMethod<String>('installApk', {
+        'path': file.path,
+      });
       _lastOutcome = mode == 'silent' ? 'silent' : 'confirm';
       log.info(
         name,

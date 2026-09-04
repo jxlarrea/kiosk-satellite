@@ -47,7 +47,7 @@ class Command {
 /// The single administration surface.
 ///
 /// Every user-facing capability is registered here once; the JS API bridge,
-/// the remote REST/WS API, and (later) MQTT command topics are thin protocol
+/// the remote REST/WS API and the ESPHome entities are thin protocol
 /// adapters over this registry.
 class CommandRegistry {
   CommandRegistry(this._log) : _commands = {}, source = null;
@@ -64,7 +64,7 @@ class CommandRegistry {
   /// The same registry (one command table, shared) seen through a handle
   /// that logs every execute with `[source]` at its end. Every manager holds one
   /// under its own name, so the log says whether a command came from the
-  /// remote admin page, an ESPHome entity, MQTT, the page's JS API or the
+  /// remote admin page, an ESPHome entity, the page's JS API or the
   /// device's own UI, which is the whole question when a setting keeps
   /// flipping and nobody on the device touched it.
   CommandRegistry as(String source) =>

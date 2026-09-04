@@ -146,7 +146,7 @@ export function renderServicePage(panel) {
     batteryUnrestricted: permRow('Unrestricted battery',
       'Allows the process to run in the background without being paused or killed.',
       'Android may pause the app when the screen is off, dropping the Home '
-        + 'Assistant connection and the MQTT entities with it.',
+        + 'Assistant connection and the ESPHome entities with it.',
       '', ['batteryOptimizations']),
     displayOverOtherApps: permRow('Display over other apps',
       'Kiosk Satellite can bring itself back in the foreground.',

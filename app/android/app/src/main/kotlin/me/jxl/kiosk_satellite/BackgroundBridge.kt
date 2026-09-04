@@ -221,7 +221,7 @@ class BackgroundBridge(
                     val app = foregroundApp()
                     Handler(Looper.getMainLooper()).post { result.success(app) }
                 }.start()
-                // MASTER volume: no permission involved. The MQTT volume
+                // MASTER volume: no permission involved. The ESPHome volume
                 // entity reads and writes through these. VolumeController
                 // decides whether that means STREAM_MUSIC or, on
                 // fixed-volume devices (Chromebooks), the software master
@@ -468,7 +468,7 @@ class BackgroundBridge(
     }
 
     // Hardware volume changes (rocker, other apps), pushed to Dart so the
-    // MQTT volume entity tracks reality instead of drifting until the next
+    // ESPHome volume entity tracks reality instead of drifting until the next
     // poll. The extra filters to STREAM_MUSIC: ring/alarm changes are not
     // the media volume the entity models.
     private val volumeReceiver = object : BroadcastReceiver() {
@@ -483,7 +483,7 @@ class BackgroundBridge(
     // The display going to sleep or waking by any route other than this app:
     // the power button, the OS idle timeout, another app, a lock screen. Dart
     // keeps a logical on/off flag that only its own screenOn/screenOff moved,
-    // so every mirror of it (the MQTT light, the remote admin) went stale the
+    // so every mirror of it (the Screen light, the remote admin) went stale the
     // moment someone touched the power button (issue #41).
     //
     // ACTION_SCREEN_ON/OFF report interactivity rather than literal panel
@@ -524,7 +524,7 @@ class BackgroundBridge(
 
     // Default-network transitions, pushed to Dart so a manager holding a
     // dead connection retries NOW instead of waiting out its own timers
-    // (MQTT after an offline boot, a stale HA page, the glance socket).
+    // (a stale HA page after an offline boot, the glance socket).
     //
     // registerDefaultNetworkCallback replays onAvailable immediately when a
     // network already exists at registration. That replay is not an outage
@@ -597,7 +597,7 @@ class BackgroundBridge(
         // Software-gain changes on fixed-volume devices never hit the
         // system broadcast above (there is no stream change to announce),
         // so relay them to Dart the same way - one path regardless of who
-        // moved the volume (MQTT, remote admin, SendSpin server).
+        // moved the volume (ESPHome, remote admin, SendSpin server).
         VolumeController.addListener {
             channel.invokeMethod("volumeChanged", null)
         }
@@ -758,7 +758,7 @@ class BackgroundBridge(
             ?: return false
         return try {
             // NEW_TASK because this may be launched with no Activity of ours
-            // on screen at all (an automation over MQTT, the remote admin).
+            // on screen at all (an automation over ESPHome, the remote admin).
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
             true

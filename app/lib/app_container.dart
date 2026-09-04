@@ -23,7 +23,6 @@ import 'managers/notifications/notification_manager.dart';
 import 'managers/location/location_manager.dart';
 import 'managers/person/person_sensor_manager.dart';
 import 'managers/proximity/proximity_manager.dart';
-import 'managers/mqtt/mqtt_manager.dart';
 import 'managers/proxy/proxy_manager.dart';
 import 'managers/remote/remote_manager.dart';
 import 'managers/screen/screen_manager.dart';
@@ -79,7 +78,6 @@ class AppContainer {
     // in-process audio stream through it (issue-free: one consumer per
     // turn, negotiated by Voice Satellite).
     pipeline = AssistPipelineManager(bus, commands, log, settings, wakeWord);
-    mqtt = MqttManager(bus, commands, log, settings);
     sendspin = SendspinManager(bus, commands, log, settings);
     dlna = DlnaManager(bus, commands, log, settings);
     btProxy = BtProxyManager(bus, commands, log, settings);
@@ -135,7 +133,6 @@ class AppContainer {
   late final AudioRoutingManager audio;
   late final WakeWordManager wakeWord;
   late final AssistPipelineManager pipeline;
-  late final MqttManager mqtt;
   late final SendspinManager sendspin;
   late final DlnaManager dlna;
   late final BtProxyManager btProxy;
@@ -181,7 +178,6 @@ class AppContainer {
     gestures,
     wakeWord,
     pipeline,
-    mqtt,
     sendspin,
     dlna,
     btProxy,

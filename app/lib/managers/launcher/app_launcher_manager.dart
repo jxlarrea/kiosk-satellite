@@ -48,7 +48,7 @@ List<LauncherApp> decodeLauncherApps(String json) {
 /// The overlay itself is AppLauncherOverlay in the kiosk screen's stack;
 /// this manager owns its visibility, the installed-apps enumeration the
 /// pickers read, the icon cache, and auto-return: after any launchApp
-/// (this launcher, a gesture, MQTT), an armed timer calls bringToFront
+/// (this launcher, a gesture, an ESPHome button), an armed timer calls bringToFront
 /// once the configured time has passed with the app still backgrounded
 /// and untouched. The "untouched" comes from a native touch watch window
 /// (TouchWatchOverlay, issue #317) that reports every touch in the other
@@ -163,14 +163,14 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
             'configured, so a caller can say so instead of showing nothing.',
         handler: (_) async {
           // The master switch is a hard gate for every opener — the menu
-          // checks it itself, and MQTT and the remote API both land here.
+          // checks it itself, and ESPHome and the remote API both land here.
           if (!_settings.get(defs.launcherEnabled)) {
             return const CommandResult.fail('the app launcher is disabled');
           }
           if (apps.isEmpty) {
             return const CommandResult.fail('no launcher apps configured');
           }
-          // Same choreography as a camera view: an MQTT open must land on a
+          // Same choreography as a camera view: an ESPHome open must land on a
           // lit, frontmost kiosk, not behind a dark panel or screensaver.
           await commands.execute('screenOn', const {});
           await commands.execute('bringToFront', const {});

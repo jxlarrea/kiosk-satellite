@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
  *  - MASTER is the device volume: STREAM_MUSIC on ordinary Android, a
  *    persisted software gain on fixed-volume devices (Chromebooks,
  *    Android Automotive: [AudioManager.isVolumeFixed]) where
- *    setStreamVolume is a platform no-op. Hardware buttons and the MQTT
+ *    setStreamVolume is a platform no-op. Hardware buttons and the ESPHome
  *    Volume entity move this and only this.
  *  - MEDIA scales playback under the master ceiling: SendSpin's
  *    AudioTrack, the DLNA overlay's player. Music Assistant's volume

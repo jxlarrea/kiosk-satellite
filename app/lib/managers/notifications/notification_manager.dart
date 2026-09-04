@@ -467,7 +467,7 @@ class NotificationManager extends Manager {
     _ => NotificationLevel.info,
   };
 
-  /// Tolerant of the string booleans the REST and MQTT-style callers send.
+  /// Tolerant of the string booleans REST callers send.
   bool _flag(Object? value, {required bool orElse}) => switch (value) {
     bool v => v,
     num v => v != 0,

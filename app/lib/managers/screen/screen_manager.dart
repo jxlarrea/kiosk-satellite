@@ -104,7 +104,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     // The panel's real state, however it got there. Without this the flag
     // below only ever moved when this app itself turned the screen on or
     // off, so the power button, the OS idle timeout or another app left
-    // every mirror of it stale — the MQTT light stuck on, the remote admin
+    // every mirror of it stale — the Screen light stuck on, the remote admin
     // disagreeing with the tablet in front of you (issue #41).
     // Through BackgroundListening, which multiplexes this channel: setting a
     // handler on it directly would replace the one carrying download and
@@ -135,7 +135,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
 
     // External brightness changes (quick settings, the OS auto mode):
     // pushed by the native observer so every mirror of the value — the
-    // remote admin's slider, the MQTT brightness state — tracks the panel
+    // remote admin's slider, the ESPHome brightness state — tracks the panel
     // instead of the last value this app happened to write.
     _brightness.setMethodCallHandler((call) async {
       if (call.method == 'brightnessChanged') {
@@ -763,7 +763,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     _lastWritten = clamped;
     _lastWriteAt = DateTime.now();
     // The real thing first: write the system setting, so the value every
-    // other surface reads (quick settings, the MQTT state) moves too.
+    // other surface reads (quick settings, the ESPHome state) moves too.
     // Needs the "Modify system settings" grant; false without it.
     try {
       if (await _brightness.invokeMethod<bool>('set', {'level': clamped}) ==

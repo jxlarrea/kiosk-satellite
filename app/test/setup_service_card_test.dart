@@ -158,8 +158,8 @@ void main() {
     );
     expect(device.dy, lessThan(remote.dy));
 
-    // What is typed is what the ESPHome node name and the MQTT device are
-    // built from, so Next stores it, remote administration on or off.
+    // What is typed is what the ESPHome node name is built from, so Next
+    // stores it, remote administration on or off.
     await tester.enterText(field, ' Kitchen Tablet ');
     await tester.tap(find.byType(SwitchListTile));
     await settle(tester);

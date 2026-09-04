@@ -665,7 +665,7 @@ class SendspinManager extends Manager {
         case 'volumeChanged':
           _status = {..._status, ...map};
           // A server-commanded media volume applied natively; persist it
-          // into the media fader setting so the slider, the MQTT entity
+          // into the media fader setting so the slider, the ESPHome entity
           // and the next app start all agree. Equality-guarded: the echo
           // of our own setting push must not ping-pong.
           final vol = (map['volume'] as num?)?.toInt();

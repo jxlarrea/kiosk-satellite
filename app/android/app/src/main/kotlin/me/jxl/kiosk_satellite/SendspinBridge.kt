@@ -431,7 +431,7 @@ class SendspinBridge(
     // ==================================================================
 
     // The server's volume is the MEDIA fader, not the device volume: the
-    // Music Assistant slider is the music's. Master stays with the MQTT
+    // Music Assistant slider is the music's. Master stays with the ESPHome
     // Volume entity and the hardware buttons.
     private fun deviceVolumePct(): Int = VolumeController.mediaPercent()
 

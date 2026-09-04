@@ -19,7 +19,7 @@ import 'gesture_mappings.dart';
 /// id. This manager owns the other side: it resolves the id against
 /// gestures.mappings and runs the mapped action. Everything is a
 /// registered command (or a settings write), so a gesture can do exactly
-/// what the remote admin and MQTT can.
+/// what the remote admin and an ESPHome entity can.
 ///
 /// It also owns the one acoustic trigger: clap sequences. While any claps
 /// mapping exists, this manager subscribes to the shared microphone stream

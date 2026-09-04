@@ -12,13 +12,13 @@ export function permissionSpecs(on) {
       held: 'Allows microphone usage for wake word detection and speech to text.',
       missing: 'Wake word detection is on and nothing is listening.',
       idle: 'Needed by wake word detection and by pages that ask for the microphone.' },
-    // Always needed: the app holds the Home Assistant and MQTT
+    // Always needed: the app holds the Home Assistant and ESPHome
     // connections open while the screen is off, and Doze is what stops
     // them. Nothing has to be switched on for this one to matter.
     { key: 'batteryUnrestricted', name: 'Unrestricted battery', ask: 'batteryOptimizations',
       needed: true, requestable: 'batteryRequestable', adb: "This device has no settings screen for it. Grant it over adb: adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite",
       held: 'Allows the process to run in the background without being paused or killed.',
-      missing: 'Android may pause the app when the screen is off, dropping the Home Assistant connection and the MQTT entities with it.',
+      missing: 'Android may pause the app when the screen is off, dropping the Home Assistant connection and the ESPHome entities with it.',
       idle: '' },
     { key: 'camera', name: 'Camera', ask: 'camera',
       needed: on('camera.enabled'),

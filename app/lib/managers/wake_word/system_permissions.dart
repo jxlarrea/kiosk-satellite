@@ -94,7 +94,7 @@ class SystemPermissions {
   /// #175); without it the manager still works on the app's own folder.
   final bool allFiles;
 
-  /// "Usage access": naming whichever app is on screen, for the MQTT
+  /// "Usage access": naming whichever app is on screen, for the ESPHome
   /// Foreground app sensor (issue #192). Without it the sensor still knows
   /// when Kiosk Satellite itself is frontmost, just never who else is.
   final bool usageAccess;

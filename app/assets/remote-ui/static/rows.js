@@ -201,7 +201,7 @@ export function settingRow(s) {
 
   // The clock's background photo deliberately has no special case: the
   // generic text input edits the file path directly, the same contract as
-  // the MQTT Clock background entity (issue #150) — a path in, empty
+  // the ESPHome Clock background entity (issue #150) — a path in, empty
   // clears. Picking from the device's photos still happens on the device.
 
   // The gallery selection lives on the device (system photo picker); the

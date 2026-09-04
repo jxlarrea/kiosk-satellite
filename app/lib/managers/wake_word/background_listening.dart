@@ -103,7 +103,7 @@ class BackgroundListening {
   _onDownloadComplete;
 
   /// Media volume changed on the device (rocker, another app), pushed from
-  /// the platform's volume receiver. The MQTT manager republishes off it.
+  /// the platform's volume receiver. The ESPHome Volume entity follows it.
   static void Function()? _onVolumeChanged;
 
   /// The display woke or slept by any route, pushed from the platform's

@@ -37,7 +37,7 @@ const batteryAdbHint =
 ///
 /// The service runs on every install, whatever is switched on: Android
 /// freezes cached processes whole and OEM battery managers kill backgrounded
-/// apps outright, and either way the Home Assistant session, MQTT and
+/// apps outright, and either way the Home Assistant session, ESPHome and
 /// everything else stop together the moment the screen has been off for a
 /// while. This manager does not decide whether it runs. It tells the service
 /// *why* it runs, as a list of [ServiceReason]s computed from the settings:
@@ -72,7 +72,6 @@ class ServiceManager extends Manager {
   /// The settings a reason is read from; a change to any re-syncs.
   static const _watched = {
     'remote.enabled',
-    'mqtt.enabled',
     'esphome.enabled',
     'esphome.entities',
     'btproxy.enabled',
@@ -165,12 +164,6 @@ class ServiceManager extends Manager {
           'Person detection',
           "Keeps reading the device's person sensor while another app is "
               'in front.',
-        ),
-      if (s.get(defs.mqttEnabled))
-        const ServiceReason(
-          'mqtt',
-          'MQTT',
-          'Keeps the broker session, and the entities on it, available.',
         ),
       if (s.get(defs.cameraEnabled))
         const ServiceReason(

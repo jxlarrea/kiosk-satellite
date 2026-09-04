@@ -10,24 +10,24 @@ import '../../core/event_bus.dart';
 import '../../core/events.dart';
 import '../../core/logging.dart';
 import '../device/ip_addresses.dart';
-import '../mqtt/dashboard_views.dart';
-import '../mqtt/interaction_stamp.dart';
+import 'dashboard_views.dart';
+import 'interaction_stamp.dart';
 import '../sendspin/music_assistant_api.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'countdown_stamp.dart';
 
-/// The kiosk entities served over the ESPHome native API: the full MQTT
-/// catalog, one entity at a time, so the MQTT integration can sunset. This
-/// is the Dart half of the pair with the native EntityHub: it owns WHAT
-/// exists, what values mean and what commands do; the native side owns the
-/// wire. Sources and command handlers are the exact ones the MQTT entities
-/// use, so both surfaces agree while they coexist.
+/// The kiosk entities served over the ESPHome native API. This is the
+/// Dart half of the pair with the native EntityHub: it owns WHAT exists,
+/// what values mean and what commands do; the native side owns the wire.
+/// Sources and command handlers are the ones every other surface (the
+/// remote admin, the JS API, gestures) uses, so all of them agree.
 ///
 /// Entity object ids and names are permanent API: names become Home
 /// Assistant entity ids (`sensor.<device>_battery`) and survive in users'
-/// automations, and both mirror the MQTT catalog so a migrating automation
-/// only swaps the device half of the id. Never rename one casually.
+/// automations, and they carry over from the retired MQTT catalog so an
+/// automation written against it only swaps the device half of the id.
+/// Never rename one casually.
 ///
 /// Two cameras ride the ESPHome camera protocol: the Screenshot camera on
 /// every device (the display itself, the frame the remote admin shows) and
@@ -88,8 +88,9 @@ class EspEntitySurface {
   Timer? _viewsNudge;
   bool _refreshingDashboardViews = false;
 
-  /// The persisted dashboard view list, shared with the MQTT select so
-  /// either surface's read serves the other's next start.
+  /// The persisted dashboard view list, so a read serves the next start.
+  /// The key predates the ESPHome surface and stays for the cache already
+  /// stored on every device.
   static const _dashboardViewsKey = 'mqtt_dashboard_views';
   bool _deviceCameraPresent = false;
   bool _screensaverActive = false;
@@ -113,7 +114,7 @@ class EspEntitySurface {
   Timer? _vsNudge;
 
   /// Uptime anchors last pushed, so a poll only republishes when the
-  /// start moment genuinely moved (same 5-second tolerance as MQTT:
+  /// start moment genuinely moved (a 5-second tolerance:
   /// second-to-second jitter in "now minus uptime" is not a restart).
   final Map<String, DateTime?> _lastAnchor = {};
 
@@ -139,7 +140,7 @@ class EspEntitySurface {
   void _sendCountdown() => _countdown.set(_screensaverActive ? null : _idleDue);
 
   /// Settings-backed switches: objectId -> (name, icon, definition).
-  /// Mirrors the MQTT _settingSwitches map, entity ids and all.
+  /// Entity ids are the ones the retired MQTT catalog used.
   static final _settingSwitches =
       <String, (String, String, defs.SettingDef<bool>)>{
         'kiosk': ('Kiosk mode', 'mdi:lock-outline', defs.kioskEnabled),
@@ -193,7 +194,7 @@ class EspEntitySurface {
 
   /// Settings-backed selects: objectId -> (name, icon, definition). The
   /// options are the definitions' display labels, the stored value maps
-  /// through them, matching the MQTT contract.
+  /// through them.
   static final _settingSelects =
       <String, (String, String, defs.SettingDef<String>)>{
         // The dashboard's light/dark pin (discussion #351): Auto, Light or
@@ -452,7 +453,7 @@ class EspEntitySurface {
             for (final view in _cameraViews) '${view['name']}',
           ],
         },
-        // One press-to-show button per view too, exactly like MQTT: the
+        // One press-to-show button per view too: the
         // select is the compact form, the buttons are what dashboards and
         // scripts press.
         for (final view in _cameraViews)
@@ -781,8 +782,8 @@ class EspEntitySurface {
           icon: 'mdi:bluetooth-connect',
           stateClass: 1,
         ),
-      // The MQTT twins of the four that follow carry their detail as
-      // attributes on the Device and IP sensors; the ESPHome protocol has
+      // The retired MQTT twins of the four that follow carried their detail
+      // as attributes on the Device and IP sensors; the ESPHome protocol has
       // no attributes to hang anything off, so each is its own text sensor
       // here and both integrations answer the same questions (issue #213).
       diagnostic(
@@ -847,7 +848,7 @@ class EspEntitySurface {
         icon: 'mdi:lan-connect',
         type: 'text_sensor',
       ),
-      // Timestamps like their MQTT twins: the recorder logs the moments
+      // Timestamps, not counters: the recorder logs the moments
       // the anchors move (a restart, a reconnect) and Home Assistant
       // renders the ticking "n hours ago" on its own, instead of a
       // seconds counter churning the recorder every poll.
@@ -873,8 +874,8 @@ class EspEntitySurface {
         type: 'text_sensor',
       ),
       // Strictly redundant over ESPHome (a lost connection makes every
-      // entity unavailable), but automations written against the MQTT
-      // sensor check for 'on', and 'unavailable' satisfies their
+      // entity unavailable), but automations written against the retired
+      // MQTT sensor check for 'on', and 'unavailable' satisfies their
       // "not on" branch the same way 'off' did.
       diagnostic(
         'connectivity',
@@ -1014,7 +1015,7 @@ class EspEntitySurface {
     _subs.add(bus.on<ScreenStateChanged>().listen((_) => _sendScreen()));
     // Addresses change exactly at these transitions, and the minute poll
     // would leave the IP sensors stale until it comes round. Deferred a
-    // moment so DHCP has settled by the time we look, like the MQTT twin.
+    // moment so DHCP has settled by the time we look.
     _subs.add(
       bus.on<NetworkStateChanged>().listen((_) {
         Timer(const Duration(seconds: 3), _sendIpAddresses);
@@ -1069,8 +1070,7 @@ class EspEntitySurface {
       // The device manager persists each reading (esphome_last_lux) and
       // seeds getLightLevel from it after a restart, so a driver that
       // emits nothing at registration (the Echo Show's) leaves the entity
-      // on the last known value rather than unknown; the MQTT twin gets
-      // the same from broker retention.
+      // on the last known value rather than unknown.
       bus.on<LightLevelChanged>().listen((e) {
         _send('illuminance', e.lux.round());
       }),
@@ -1142,7 +1142,8 @@ class EspEntitySurface {
       }),
     );
     // A person waking the panel by hand counts too (issue #348); see the
-    // MQTT mirror for why only the OS-reported wake qualifies.
+    // ScreenStateChanged listener below for why only the OS-reported wake
+    // qualifies.
     _subs.add(
       bus.on<ScreenStateChanged>().listen((e) {
         if (e.on && e.source == 'system') _interaction.mark();
@@ -1178,7 +1179,7 @@ class EspEntitySurface {
   /// echoes ride the ordinary change events the acted-on managers publish,
   /// so HA sees the real outcome, not an optimistic assumption.
   Future<void> handleCommand(String objectId, Object? value) async {
-    // Mirrors the MQTT command line, so a setting flipped from Home
+    // Logged under its own source, so a setting flipped from Home
     // Assistant reads as such in the log instead of looking like the app's
     // own doing.
     log.info('esphome', 'command $objectId = $value');
@@ -1340,7 +1341,7 @@ class EspEntitySurface {
 
   /// Captures the display for the Screenshot camera. Only the Take
   /// screenshot button stamps Last screenshot: the stamp means "when the
-  /// button last captured", as it does over MQTT, and a camera fetch,
+  /// button last captured", and a camera fetch,
   /// which Home Assistant issues on its own whenever a preview refreshes,
   /// must not move it.
   Future<void> _takeScreenshot({required bool stamp}) async {
@@ -1381,8 +1382,8 @@ class EspEntitySurface {
     }
   }
 
-  /// Stamps a capture timestamp now and keeps it: the MQTT twin never
-  /// reads unknown after a restart because the broker retains its last
+  /// Stamps a capture timestamp now and keeps it: the retired MQTT twin
+  /// never read unknown after a restart because the broker retained its last
   /// value, and with no broker the settings store plays that role, so the
   /// sensor reseeds at the next attach instead of sitting on unknown until
   /// the next capture.
@@ -1507,7 +1508,7 @@ class EspEntitySurface {
       'clock_background',
       _settings.get(defs.screensaverClockBackground),
     );
-    // MQTT inherits these from broker retention; here they need an
+    // A broker would have retained these; here they need an
     // explicit first value or the selects sit on "unknown" until the
     // first change. No camera view is open at server start, and the
     // dashboard select derives from the page currently showing.
@@ -1527,8 +1528,8 @@ class EspEntitySurface {
     if (lastInteraction.isNotEmpty) {
       await _send('last_interaction', lastInteraction);
     }
-    // The capture stamps from before the restart, the way the broker
-    // retains them for MQTT; unknown only until the first capture ever.
+    // The capture stamps from before the restart, the way a broker would
+    // have retained them; unknown only until the first capture ever.
     for (final stamp in [
       'last_screenshot',
       if (_deviceCameraPresent) 'last_snapshot',
@@ -1720,8 +1721,7 @@ class EspEntitySurface {
     );
   }
 
-  /// The address sensors, summarized exactly as the MQTT ones summarize
-  /// them, down to the routable address leading the IPv6 one and the scope
+  /// The address sensors, summarized down to the routable address leading the IPv6 one and the scope
   /// suffix coming off. The per-interface line is what stands in for the
   /// attributes this protocol cannot carry (issue #213).
   Future<void> _sendIpAddresses() async {
@@ -1742,8 +1742,8 @@ class EspEntitySurface {
   }
 
   /// The device's identity, sent once per bring-up: none of it changes
-  /// while the process lives. The MQTT twin carries the version and the
-  /// build as attributes on one sensor; here they are entities of their
+  /// while the process lives. The retired MQTT twin carried the version and
+  /// the build as attributes on one sensor; here they are entities of their
   /// own (issue #213).
   Future<void> _sendDeviceInfo() async {
     final info = await commands.execute('getDeviceInfo', const {});
@@ -1850,8 +1850,8 @@ class EspEntitySurface {
     return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
   }
 
-  /// One read of the dashboard view list from Home Assistant, the crawl
-  /// the MQTT select uses. Empty when any part of it failed: a websocket
+  /// One read of the dashboard view list from Home Assistant. Empty when
+  /// any part of it failed: a websocket
   /// that is down says nothing about the dashboards, so the caller keeps
   /// what it had rather than downgrading the select (issue #214).
   ///
@@ -1912,8 +1912,7 @@ class EspEntitySurface {
     }
   }
 
-  /// The slow-moving values, refreshed on the poll cadence (matching the
-  /// MQTT sensors so both surfaces agree while they coexist).
+  /// The slow-moving values, refreshed on the poll cadence.
   Future<void> _refresh() async {
     final stats = await commands.execute('getStats', const {});
     final data = stats.data;
@@ -1974,7 +1973,7 @@ class EspEntitySurface {
       if (count is num) await _send('btproxy_nearby', count.toInt());
     }
     await _sendVoiceSatellite();
-    // Every completed poll IS a sighting, like the MQTT twin.
+    // Every completed poll IS a sighting.
     await _send('last_seen', DateTime.now().toUtc().toIso8601String());
   }
 }

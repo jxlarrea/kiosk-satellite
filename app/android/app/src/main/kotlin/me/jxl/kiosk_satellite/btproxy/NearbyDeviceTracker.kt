@@ -2,7 +2,7 @@ package me.jxl.kiosk_satellite.btproxy
 
 /**
  * A bounded inventory of the devices the Bluetooth proxy hears, kept for
- * the "Nearby devices" list and its MQTT sensor.
+ * the "Nearby devices" list and its ESPHome sensor.
  *
  * The proxy already handles every advertisement; this class only records
  * facts about each address (broadcast name, manufacturer company IDs,

@@ -185,7 +185,7 @@ class DeviceDetails {
 /// (issue #367): Android's BatteryManager answers Integer.MIN_VALUE (0 on
 /// targets before Android 9) for a capacity the kernel does not expose,
 /// and a value outside 0..100 is a sentinel of some kind, never a charge.
-/// Every consumer (the screensaver widget, MQTT, ESPHome, the remote admin
+/// Every consumer (the screensaver widget, ESPHome, the remote admin
 /// and /api/health) reads through this one gate.
 int? batteryPercent(Object? raw) {
   if (raw is! num) return null;

@@ -21,9 +21,6 @@ import 'dashboard_list.dart';
 
 /// Home Assistant connection: long-lived-token auth, connection validation,
 /// and the dashboard list used by the dashboard picker.
-///
-/// Later milestones add MQTT discovery publishing and HA event
-/// subscriptions for event-driven navigation.
 class HomeAssistantManager extends Manager {
   HomeAssistantManager(
     super.bus,
@@ -288,7 +285,7 @@ class HomeAssistantManager extends Manager {
             // A commanded view should not instantly rotate away: give it the
             // same grace window a touch gets.
             if (_rotationTimer != null) _pauseRotationForTouch();
-            // The outcome travels in the result so the MQTT select knows
+            // The outcome travels in the result so the ESPHome select knows
             // whether the page actually moved before echoing state.
             return CommandResult.ok(await navigateToViewPath(path));
           },
@@ -1008,7 +1005,7 @@ class HomeAssistantManager extends Manager {
   ///
   /// Returns what actually happened — 'navigated', 'already' (the page is
   /// on that view), 'off-origin' (a non-HA page is on screen, nothing
-  /// moved) or 'failed' — so callers reporting state elsewhere (the MQTT
+  /// moved) or 'failed' — so callers reporting state elsewhere (the ESPHome
   /// select) do not have to guess.
   Future<String> navigateToViewPath(
     String viewPath, {

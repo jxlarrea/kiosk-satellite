@@ -199,7 +199,6 @@ const _categories = <(String, String, Object, String)>[
     'assets/svg/esphome.svg',
     'Native entities and Bluetooth proxy',
   ),
-  ('MQTT', 'MQTT Settings', Icons.hub_outlined, 'Publish to an MQTT broker'),
   (
     'Kiosk',
     'Kiosk Mode',
@@ -1196,20 +1195,6 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// general ESPHome group above), and with the adapter off everything
   /// Bluetooth goes inert under a notice while the entity server above
   /// keeps its live controls. Every other category passes through.
-  /// The sunset notice atop the MQTT page: ESPHome is the integration
-  /// path now, and nobody should build new automations on a surface with
-  /// a removal date.
-  List<Widget> _withMqttDeprecation(List<Widget> cards) {
-    if (widget.category != 'MQTT') return cards;
-    return [
-      const WarnRow(
-        'ESPHome is now the preferred integration and MQTT will be '
-        'removed in a future version. See the ESPHome section to migrate.',
-      ),
-      ...cards,
-    ];
-  }
-
   /// A dead server right where its switch is: without this the page renders
   /// identically whether the server runs or not (issue #240). The Bluetooth
   /// half of this category lives on a page of its own, taking its permissions
@@ -1957,24 +1942,22 @@ class _CategoryContentState extends State<_CategoryContent> {
               padding: EdgeInsets.only(left: 4),
               child: HintRow(_mediaPlayerIntro, inset: false),
             ),
-          ..._withMqttDeprecation(
-            _withEsphomeStartError(
-              _sectionedCards(
-                container,
-                // With the Camera master switch off (or no camera on the
-                // device at all), motion detection cannot run: the dismiss
-                // switch renders disabled (below) with the reason, instead of
-                // lying enabled; its tuning rows live in the Camera section
-                // now and hide with the master there. A camera-less device
-                // keeps only the disabled master switch.
-                widget.category == 'Camera' &&
-                        container.deviceCamera.cameraKnownAbsent
-                    ? const [cameraEnabled]
-                    : _defsFor(widget.category),
-                () => setState(() {}),
-                replace: _rowReplacements(container),
-                after: _rowExtras(container),
-              ),
+          ..._withEsphomeStartError(
+            _sectionedCards(
+              container,
+              // With the Camera master switch off (or no camera on the
+              // device at all), motion detection cannot run: the dismiss
+              // switch renders disabled (below) with the reason, instead of
+              // lying enabled; its tuning rows live in the Camera section
+              // now and hide with the master there. A camera-less device
+              // keeps only the disabled master switch.
+              widget.category == 'Camera' &&
+                      container.deviceCamera.cameraKnownAbsent
+                  ? const [cameraEnabled]
+                  : _defsFor(widget.category),
+              () => setState(() {}),
+              replace: _rowReplacements(container),
+              after: _rowExtras(container),
             ),
           ),
         ],
@@ -2574,8 +2557,6 @@ class _CategoryContentState extends State<_CategoryContent> {
       remoteEnabled.key: _RemoteStatusRow(container: container),
     // Under the last credential field, where the Home Assistant
     // and Immich cards put theirs.
-    if (widget.category == 'MQTT')
-      mqttPassword.key: _MqttValidateRow(container: container),
     if (widget.category == 'Sendspin')
       sendspinMaToken.key: _MaValidateRow(container: container),
     // Say what the pick just did to this device, under the row that
@@ -2591,16 +2572,6 @@ class _CategoryContentState extends State<_CategoryContent> {
     // The live list right under the sort picker that orders it.
     // Rides the section's dependsOn: with the proxy off there is
     // nothing to list and none of these rows render.
-    // Both entity surfaces on at once means every kiosk entity
-    // exists twice in Home Assistant; say so where the choice is
-    // made instead of letting the duplicates say it.
-    if (widget.category == 'ESPHome' &&
-        container.settings.get(esphomeEntities) &&
-        container.settings.get(mqttEnabled))
-      esphomeEntities.key: const WarnRow(
-        'MQTT is also enabled: these entities will exist twice '
-        'in Home Assistant, once per integration.',
-      ),
     // What the real-MAC switch actually did, right under it: with
     // the address unreadable the flip is otherwise a silent no-op
     // that renders identically to a working one.
@@ -4946,68 +4917,6 @@ class _NotificationTestRow extends StatelessWidget {
   }
 }
 
-/// The broker check, mirroring the Home Assistant and Immich rows: unlike
-/// those it gates nothing, since MQTT publishes on its own schedule. It is
-/// here to answer "are these credentials right?" without watching the log.
-class _MqttValidateRow extends StatefulWidget {
-  const _MqttValidateRow({required this.container});
-
-  final AppContainer container;
-
-  @override
-  State<_MqttValidateRow> createState() => _MqttValidateRowState();
-}
-
-class _MqttValidateRowState extends State<_MqttValidateRow> {
-  bool _validating = false;
-  bool? _ok;
-  String? _error;
-
-  Future<void> _validate() async {
-    setState(() {
-      _validating = true;
-      _error = null;
-    });
-    final result = await widget.container.commands.execute(
-      'mqttValidate',
-      const {},
-    );
-    if (!mounted) return;
-    setState(() {
-      _validating = false;
-      _ok = result.ok;
-      _error = result.ok ? null : result.error;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-    title: const Text('Validate connection'),
-    subtitle: Text(
-      _validating
-          ? 'Checking…'
-          : _error ??
-                (_ok == true
-                    ? 'Connected'
-                    : 'Check the broker accepts these settings.'),
-    ),
-    trailing: _validating
-        ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2.4),
-          )
-        : Icon(
-            _ok == null
-                ? Icons.cloud_queue_outlined
-                : _ok!
-                ? Icons.cloud_done_outlined
-                : Icons.cloud_off_outlined,
-          ),
-    onTap: _validating ? null : _validate,
-  );
-}
-
 /// The live nearby-device list under the Bluetooth proxy's lookup toggle:
 /// what this kiosk hears right now, identified as far as honesty allows
 /// (broadcast name, then device class, then vendor). Refreshes itself while
@@ -5172,7 +5081,7 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
   }
 }
 
-/// The Music Assistant check, mirroring the Home Assistant, Immich and MQTT
+/// The Music Assistant check, mirroring the Home Assistant and Immich
 /// rows: it opens the API with the address and token above and authenticates,
 /// which is the only way to tell a wrong port from a wrong token.
 class _MaValidateRow extends StatefulWidget {
@@ -7127,7 +7036,7 @@ class _ServicePermissionsTileState extends State<_ServicePermissionsTile>
               'Allows the process to run in the background without being paused or killed.',
           missing:
               'Android may pause the app when the screen is off, dropping '
-              'the Home Assistant connection and the MQTT entities with it.',
+              'the Home Assistant connection and the ESPHome entities with it.',
           idle: '',
           onGrant: BackgroundListening.requestBatteryUnrestricted,
           adbHint: perms?.batteryRequestable == false ? batteryAdbHint : null,
@@ -7345,7 +7254,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
             }
           },
         ),
-        // Always needed: the app keeps its Home Assistant and MQTT
+        // Always needed: the app keeps its Home Assistant and ESPHome
         // connections alive while the screen is off, and Doze is what stops
         // them. Nothing has to be switched on for this one to matter.
         _row(
@@ -7357,7 +7266,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               'Allows the process to run in the background without being paused or killed.',
           missing:
               'Android may pause the app when the screen is off, dropping '
-              'the Home Assistant connection and the MQTT entities with it.',
+              'the Home Assistant connection and the ESPHome entities with it.',
           idle: '',
           onGrant: BackgroundListening.requestBatteryUnrestricted,
           adbHint: perms?.batteryRequestable == false ? batteryAdbHint : null,
@@ -7463,8 +7372,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           action: 'Enable',
           onGrant: widget.container.kiosk.openUiGuardSettings,
         ),
-        // Never marked needed: the screen entity and the MQTT switch both
-        // fall back to a dark panel without it, which is a lesser version of
+        // Never marked needed: the Screen entity falls back to a dark
+        // panel without it, which is a lesser version of
         // the feature rather than a broken one.
         _row(
           granted: perms?.deviceAdmin,
@@ -8282,7 +8191,7 @@ class _ClearModelCacheTileState extends State<ClearModelCacheTile> {
 /// pages — see KioskScreen._onSettingChanged).
 /// The master volume fader: the device's live volume, not a setting, so
 /// it is read and written through the getVolume/setVolume commands and
-/// follows outside moves (hardware buttons, MQTT) while the page is open.
+/// follows outside moves (hardware buttons, ESPHome) while the page is open.
 class _MasterVolumeTile extends StatefulWidget {
   const _MasterVolumeTile({required this.container});
 

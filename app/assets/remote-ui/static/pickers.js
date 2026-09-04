@@ -6,7 +6,7 @@ import { modalShell } from './widgets.js';
 // same command and the same shape the device's native picker uses. Resolves to
 // the chosen media-source id, or null if cancelled.
 // The two questions a configuration import must ask (issue #25): does this
-// device become the backup's device (name + MQTT identity) or stay itself,
+// device become the backup's device (name + ESPHome identity) or stay itself,
 // and does the page's saved data (which carries the Voice Satellite
 // selection) come along. Resolves {adopt, local} or null on cancel. The
 // checkbox default follows the choice until the user touches it.
@@ -27,8 +27,8 @@ export function askImportOptions(backupName) {
 
     body.innerHTML = `
       <div style="font-size:13.5px; margin-bottom:12px">Replace this device's settings with the file's? The page may reload.</div>
-      <label style="display:block; margin-bottom:8px"><input type="radio" name="impid"> Set up as new device<div class="desc" style="margin-left:22px">Assign its own name and MQTT identity, so both devices are unique.</div></label>
-      <label style="display:block; margin-bottom:12px"><input type="radio" name="impid"> <span id="impReplaceLbl"></span><div class="desc" style="margin-left:22px">Keeps the backup's name and MQTT identity; the original device must stay offline.</div></label>
+      <label style="display:block; margin-bottom:8px"><input type="radio" name="impid"> Set up as new device<div class="desc" style="margin-left:22px">Assign its own name and ESPHome identity, so both devices are unique.</div></label>
+      <label style="display:block; margin-bottom:12px"><input type="radio" name="impid"> <span id="impReplaceLbl"></span><div class="desc" style="margin-left:22px">Keeps the backup's name and ESPHome identity; the original device must stay offline.</div></label>
       <label style="display:block"><input type="checkbox" id="impLocal"> Restore Webview's local storage<div class="desc" style="margin-left:22px">Includes the Home Assistant signed in session and the Voice Satellite assist_satellite selection - two devices must not share one satellite.</div></label>`;
     body.querySelector('#impReplaceLbl').textContent = replaceLabel;
     const radios = body.querySelectorAll('input[type=radio]');

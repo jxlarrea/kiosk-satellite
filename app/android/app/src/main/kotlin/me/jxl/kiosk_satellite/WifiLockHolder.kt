@@ -10,16 +10,14 @@ import android.net.wifi.WifiManager
  * Minutes into a dark spell, OEM Wi-Fi power saving naps the radio. How that
  * lands depends on the hardware: a Galaxy Tab S9 drops the connection outright
  * every 10 to 30 dark minutes, while a Lenovo M10 Plus keeps the association
- * but delays traffic long enough that the MQTT keepalive misses its answer
+ * but delays traffic long enough that a keepalive misses its answer
  * every single cycle, flapping the device's Home Assistant entities
  * unavailable about once a minute (issue #184). Either way, everything that
- * makes a dark kiosk reachable — MQTT, the dashboard's websocket, the remote
+ * makes a dark kiosk reachable — ESPHome, the dashboard's websocket, the remote
  * admin, adb — suffers together.
  *
- * Holders: the keep-alive foreground service for its lifetime (background
- * listening), and the MQTT client for the span it is connected, so a device
- * without background listening still holds the radio while its entities
- * depend on it. Refcounted here so the owners stay independent.
+ * Holder: the Kiosk Satellite Service for its lifetime, so the radio is
+ * held whenever the process is. Refcounted so a second owner can join.
  *
  * HIGH_PERF, not LOW_LATENCY: the low-latency mode only applies while the
  * acquiring app is foreground with the screen ON, and the whole point is the

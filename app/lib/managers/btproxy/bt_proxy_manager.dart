@@ -437,7 +437,7 @@ class BtProxyManager extends Manager {
   /// Keeps the proxy switch off where scanning cannot work: at boot, and
   /// whenever something turns it on. Off in the setting rather than only
   /// in effect, so every reader of the switch (the entity catalogs, the
-  /// MQTT sensors, the service reasons, the permission rows) agrees
+  /// service reasons, the permission rows) agrees
   /// without a second flag, and the server starts with no proxy for Home
   /// Assistant to see.
   Future<void> _guardBleSupport() async {

@@ -705,7 +705,7 @@ class DeviceDetails(
      * residency is what the silicon actually did, whatever the clocks claim.
      *
      * The window is whatever elapsed since the previous call (the admin polls
-     * every few seconds, MQTT once a minute). A first call, or a window so
+     * every few seconds, ESPHome once a minute). A first call, or a window so
      * stale it may span a suspend (cpuidle counters stop during suspend, the
      * clock does not), takes a short paired sample instead.
      */

@@ -1,6 +1,6 @@
 # ESPHome
 
-Kiosk Satellite presents itself to Home Assistant as a fully native ESPHome device. Its sensors and controls appear as entities on a device that Home Assistant discovers automatically, with no MQTT broker or custom integration required. This acts as the single integration path for every entity the kiosk provides.
+Kiosk Satellite presents itself to Home Assistant as a fully native ESPHome device. Its sensors and controls appear as entities on a device that Home Assistant discovers automatically, with no broker or custom integration required. This is the single integration path for every entity the kiosk provides.
 
 The exact same connection can run a **Bluetooth proxy**: Bluetooth Low Energy (BLE) advertisements from nearby devices (like BTHome sensors, Xiaomi and Govee thermometers, iBeacons, plant sensors, and smart scales) are relayed to Home Assistant exactly as if they were in range of the main server. Home Assistant can also establish active connections to locks, buttons, and curtain motors directly through the kiosk. Multiple kiosks automatically mesh together out of the box; Home Assistant simply uses whichever proxy hears a device best. This makes it incredibly easy to set up room level presence detection (like Bermuda), as each kiosk acts as a distinct measuring point.
 

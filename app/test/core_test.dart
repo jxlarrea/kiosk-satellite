@@ -56,14 +56,14 @@ void main() {
       );
       // One command table: what is registered on the root runs through
       // every handle, and vice versa.
-      final mqtt = registry.as('mqtt');
-      expect((await mqtt.execute('ping', const {})).ok, isTrue);
+      final esphome = registry.as('esphome');
+      expect((await esphome.execute('ping', const {})).ok, isTrue);
       expect((await registry.execute('ping', {'n': 1})).ok, isTrue);
       final lines = log.recent
           .where((e) => e.tag == 'command')
           .map((e) => e.message)
           .toList();
-      expect(lines, ['ping [mqtt]', 'ping {n: 1}']);
+      expect(lines, ['ping [esphome]', 'ping {n: 1}']);
     });
 
     test('converts thrown errors into failed results', () async {

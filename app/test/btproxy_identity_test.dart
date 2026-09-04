@@ -111,10 +111,19 @@ void main() {
 
   test('connected devices lead the list whatever the sort', () {
     final devices = [
-      {'mac': 'AA:00:00:00:00:01', 'identity': 'Loud beacon',
-        'rssi': -30, 'last_seen': '2026-08-17T07:00:09'},
-      {'mac': 'BB:00:00:00:00:02', 'identity': 'Quiet EcoFlow',
-        'connected': true, 'rssi': -90, 'last_seen': '2026-08-17T06:00:00'},
+      {
+        'mac': 'AA:00:00:00:00:01',
+        'identity': 'Loud beacon',
+        'rssi': -30,
+        'last_seen': '2026-08-17T07:00:09',
+      },
+      {
+        'mac': 'BB:00:00:00:00:02',
+        'identity': 'Quiet EcoFlow',
+        'connected': true,
+        'rssi': -90,
+        'last_seen': '2026-08-17T06:00:00',
+      },
     ];
     for (final mode in ['last_seen', 'name', 'mac', 'rssi']) {
       expect(
@@ -127,22 +136,38 @@ void main() {
 
   test('sortNearbyJson orders by every mode with stable ties', () {
     final devices = [
-      {'mac': 'BB:00:00:00:00:02', 'identity': 'Unknown device',
-        'rssi': -40, 'last_seen': '2026-08-17T07:00:02'},
-      {'mac': 'AA:00:00:00:00:01', 'identity': 'Govee sensor',
-        'rssi': -90, 'last_seen': '2026-08-17T07:00:03'},
-      {'mac': 'CC:00:00:00:00:03', 'identity': 'Apple device',
-        'rssi': -60, 'last_seen': '2026-08-17T07:00:01'},
+      {
+        'mac': 'BB:00:00:00:00:02',
+        'identity': 'Unknown device',
+        'rssi': -40,
+        'last_seen': '2026-08-17T07:00:02',
+      },
+      {
+        'mac': 'AA:00:00:00:00:01',
+        'identity': 'Govee sensor',
+        'rssi': -90,
+        'last_seen': '2026-08-17T07:00:03',
+      },
+      {
+        'mac': 'CC:00:00:00:00:03',
+        'identity': 'Apple device',
+        'rssi': -60,
+        'last_seen': '2026-08-17T07:00:01',
+      },
     ];
-    List<String> macs(String mode) =>
-        [for (final d in sortNearbyJson(devices, mode)) '${d['mac']}'];
+    List<String> macs(String mode) => [
+      for (final d in sortNearbyJson(devices, mode)) '${d['mac']}',
+    ];
 
     // Newest first; also the default for unrecognized modes.
     expect(macs('last_seen').first, 'AA:00:00:00:00:01');
     expect(macs('bogus'), macs('last_seen'));
     // Alphabetical, unknowns last.
-    expect(macs('name'),
-        ['CC:00:00:00:00:03', 'AA:00:00:00:00:01', 'BB:00:00:00:00:02']);
+    expect(macs('name'), [
+      'CC:00:00:00:00:03',
+      'AA:00:00:00:00:01',
+      'BB:00:00:00:00:02',
+    ]);
     expect(macs('mac').first, 'AA:00:00:00:00:01');
     // Strongest first.
     expect(macs('rssi').first, 'BB:00:00:00:00:02');
@@ -159,7 +184,7 @@ void main() {
     expect(rssiTier(-101), 'weak');
   });
 
-  test('toJson carries the fields the MQTT attributes need', () {
+  test('toJson carries the fields the Nearby devices sensor needs', () {
     final json = classify(
       raw(name: 'GVH1401A16B', companies: [34883], rssi: -61),
     ).toJson();

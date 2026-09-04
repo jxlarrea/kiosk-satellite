@@ -472,7 +472,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
       _shift = Timer.periodic(const Duration(minutes: 1), (_) => _nudge());
     }
     // The face only rebuilds on clock ticks, a minute apart with seconds
-    // off — a background pushed over MQTT (issue #150) must not wait out
+    // off — a background pushed over ESPHome (issue #150) must not wait out
     // the minute. The Font key rides the same listener so it can be tuned
     // from the remote admin against the live face; the Night mode keys
     // reach the face through the overlay, which owns that decision.

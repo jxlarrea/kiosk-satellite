@@ -11,7 +11,7 @@ export const SEARCH_CATEGORY_TABS = {
   'Launcher': 'launcher', 'Home': 'home', 'Screen & Audio': 'screenaudio',
   'Screensaver': 'screensaver', 'Camera': 'camera',
   'Home Assistant': 'homeassistant', 'Voice Satellite': 'voicesatellite',
-  'MQTT': 'mqtt', 'Sendspin': 'sendspin', 'DLNA': 'dlna',
+  'Sendspin': 'sendspin', 'DLNA': 'dlna',
   'ESPHome': 'esphome',
   'Device': 'device', 'Cameras': 'cameras', 'Gestures': 'gestures',
 };

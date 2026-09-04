@@ -35,7 +35,7 @@ import 'vision_support.dart';
 /// burning CPU behind a dark screen would be the worst version of the trade.
 ///
 /// The "Motion sensor" leg (Camera section) is the third and least gated:
-/// motion as its own MQTT binary_sensor, independent of the screensaver
+/// motion as its own Home Assistant binary sensor, independent of the screensaver
 /// features. It ignores even the screen-on gate above, and a truly
 /// powered-off panel is its headline use: an already-open session now
 /// survives screen-off because the Kiosk Satellite Service carries the
@@ -125,7 +125,7 @@ class MotionManager extends Manager {
       _settings.get(defs.screensaverEnabled) &&
       _settings.get(defs.cameraEnabled);
 
-  /// Whether the standalone MQTT sensor wants the camera: whenever it is
+  /// Whether the standalone motion sensor wants the camera: whenever it is
   /// on. No screensaver or screen-state gates (see the class comment).
   bool get _sensorEnabled =>
       _settings.get(defs.motionSensor) && _settings.get(defs.cameraEnabled);
@@ -380,8 +380,8 @@ class MotionManager extends Manager {
           e.key == defs.lockdownEnabled.key ||
           e.key == defs.kioskEnabled.key ||
           e.key == defs.kioskDisableGestures.key;
-      // MQTT-side only (it lives in the HA discovery config): no reason to
-      // restart the camera over it.
+      // Entity-side only (the ESPHome sensor times its own clear): no
+      // reason to restart the camera over it.
       if (e.key == defs.motionSensorOffDelay.key) return;
       // The preview's look and span are read when a preview shows; only
       // the switch itself changes what the session is bound with.

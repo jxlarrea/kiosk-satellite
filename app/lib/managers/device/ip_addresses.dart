@@ -1,10 +1,10 @@
-/// One address family as both integrations report it (issue #213).
+/// One address family as the entities report it (issue #213).
 ///
-/// The raw reading is a map of interface name to the addresses on it. MQTT
-/// hangs the detail off the sensor as attributes; ESPHome's protocol has no
-/// attributes at all, so the same detail becomes its own text sensor there.
-/// Either way the reading is summarized here, once, so the two surfaces can
-/// never disagree about which address leads or how an interface is spelled.
+/// The raw reading is a map of interface name to the addresses on it. The
+/// ESPHome protocol has no attributes, so each detail becomes its own text
+/// sensor. The reading is summarized here, once, so the sensors and the
+/// remote admin can never disagree about which address leads or how an
+/// interface is spelled.
 class IpFamily {
   const IpFamily({
     required this.primary,

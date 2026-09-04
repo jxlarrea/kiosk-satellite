@@ -248,7 +248,7 @@ class _SetupScreenState extends State<SetupScreen> {
   /// setup. Settings are applied verbatim, remote password included (the
   /// person holding the backup knows its password) — except device identity
   /// and the page data, which the options dialog decides: cloning a second
-  /// tablet must not inherit the original's MQTT identity or satellite
+  /// tablet must not inherit the original's identity or satellite
   /// (issue #25), while replacing a dead tablet should.
   Future<void> _importBackup() async {
     setState(() {
@@ -276,7 +276,7 @@ class _SetupScreenState extends State<SetupScreen> {
     }
     if (!mounted) return;
     // The clone-vs-replace question (issue #25): a backup applied verbatim
-    // to a second live device makes the two contend for one MQTT identity
+    // to a second live device makes the two contend for one device name
     // and one Voice Satellite entity.
     final options = await showImportOptionsDialog(
       context,
@@ -321,7 +321,7 @@ class _SetupScreenState extends State<SetupScreen> {
     switch (_step) {
       case 0:
         // Stored as typed, the model included: an explicit name is what
-        // the ESPHome node name and the MQTT device are built from, and
+        // the ESPHome node name is built from, and
         // an empty box falls back to the model on its own.
         _deviceName.text = _deviceName.text.trim();
         await c.settings.set(defs.deviceName, _deviceName.text);
@@ -445,7 +445,7 @@ class _SetupScreenState extends State<SetupScreen> {
           'which': [
             'microphone',
             // Every kiosk needs this one, voice or not: the app holds the
-            // Home Assistant and MQTT connections open while the screen is
+            // Home Assistant and ESPHome connections open while the screen is
             // off, and Doze is what stops them (issue #156). It used to
             // ride background listening, so a setup without Voice
             // Satellite was never asked and had no way to find it later.

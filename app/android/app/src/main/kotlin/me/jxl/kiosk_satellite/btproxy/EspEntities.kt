@@ -2,8 +2,7 @@ package me.jxl.kiosk_satellite.btproxy
 
 /**
  * Native-API entities: the kiosk's own sensors and controls, served over the
- * same ESPHome connection the Bluetooth proxy already holds (issue: phase
- * out the MQTT broker requirement).
+ * same ESPHome connection the Bluetooth proxy already holds.
  *
  * The Dart side owns the catalog - which entities exist, their current
  * values, and what a command does. This layer only speaks the wire format:

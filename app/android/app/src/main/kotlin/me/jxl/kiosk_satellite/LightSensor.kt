@@ -23,7 +23,7 @@ import io.flutter.plugin.common.MethodChannel
  * reading of a burst sent when the window closes; the first reading always
  * passes so the entity is never blank. The 1 lx floor is what adaptive
  * brightness needs at the dark end of its curve, where 1 lx and 4 lx are
- * different rooms. Coarser rate limiting for the MQTT recorder lives on the
+ * different rooms. Coarser rate limiting for the HA recorder lives on the
  * Dart side.
  *
  * TYPE_LIGHT needs no permission on any Android version. Devices without the

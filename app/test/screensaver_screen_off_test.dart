@@ -134,18 +134,21 @@ void main() {
     );
   });
 
-  test('the MQTT dismiss lights the panel even with no session up', () async {
-    await build({'ks.screensaver.enabled': true});
-    final result = await commands.execute('stopScreensaver', const {});
-    expect(result.ok, isTrue);
-    expect(
-      onCalls.length,
-      greaterThan(0),
-      reason:
-          'the dismiss button means "bring the dashboard back", and '
-          'half of that is the screen',
-    );
-  });
+  test(
+    'the ESPHome dismiss lights the panel even with no session up',
+    () async {
+      await build({'ks.screensaver.enabled': true});
+      final result = await commands.execute('stopScreensaver', const {});
+      expect(result.ok, isTrue);
+      expect(
+        onCalls.length,
+        greaterThan(0),
+        reason:
+            'the dismiss button means "bring the dashboard back", and '
+            'half of that is the screen',
+      );
+    },
+  );
 
   test('an app-sourced mid-session wake keeps the session, with a fresh '
       'countdown', () async {
@@ -161,7 +164,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 100));
     expect(offCalls, isEmpty);
 
-    // An automation switching the panel on (the MQTT Screen switch: source
+    // An automation switching the panel on (the ESPHome Screen switch: source
     // app) wants the screensaver it left showing — a photo frame's morning
     // switch-on — so the session survives and earns a fresh countdown.
     bus.publish(const ScreenStateChanged(on: true, source: 'app'));

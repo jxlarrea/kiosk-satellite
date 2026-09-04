@@ -54,7 +54,7 @@ class DeviceCamera(
         private const val TAG = "DeviceCamera"
 
         // The default target (the 480p tier): fine for a Home Assistant
-        // still, and a lightweight MQTT payload. The Dart side passes the
+        // still, and a lightweight payload. The Dart side passes the
         // configured tier's size with every call, so this only backstops
         // missing arguments.
         private val DEFAULT_TARGET = Size(640, 480)

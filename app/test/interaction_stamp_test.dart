@@ -1,16 +1,14 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/events.dart';
-import 'package:kiosk_satellite/managers/mqtt/interaction_stamp.dart';
+import 'package:kiosk_satellite/managers/btproxy/interaction_stamp.dart';
 
 /// The Last interaction stamp (issue #241): the first touch after a quiet
 /// spell publishes immediately, a stream of touches collapses to one
 /// publish a minute, and the trailing publish carries the true final stamp.
 void main() {
-  test(
-      'leading edge lands immediately, a touch stream throttles to one '
-      'publish a minute, and the trailing publish keeps the final stamp',
-      () {
+  test('leading edge lands immediately, a touch stream throttles to one '
+      'publish a minute, and the trailing publish keeps the final stamp', () {
     fakeAsync((async) {
       var now = DateTime.utc(2026, 8, 19, 12);
       void tick(Duration d) {
@@ -60,24 +58,32 @@ void main() {
 
   test('only spoken turns count as voice interactions', () {
     expect(
-        InteractionStamp.countsAsVoice(
-            const VoiceInteractionChanged(active: true, reason: 'voice')),
-        isTrue);
+      InteractionStamp.countsAsVoice(
+        const VoiceInteractionChanged(active: true, reason: 'voice'),
+      ),
+      isTrue,
+    );
     // The legacy pauseScreensaver fallback carries no reason.
     expect(
-        InteractionStamp.countsAsVoice(
-            const VoiceInteractionChanged(active: true)),
-        isTrue);
+      InteractionStamp.countsAsVoice(
+        const VoiceInteractionChanged(active: true),
+      ),
+      isTrue,
+    );
     expect(
-        InteractionStamp.countsAsVoice(
-            const VoiceInteractionChanged(active: false, reason: 'voice')),
-        isFalse);
+      InteractionStamp.countsAsVoice(
+        const VoiceInteractionChanged(active: false, reason: 'voice'),
+      ),
+      isFalse,
+    );
     for (final reason in ['announcement', 'timer', 'media']) {
       expect(
-          InteractionStamp.countsAsVoice(
-              VoiceInteractionChanged(active: true, reason: reason)),
-          isFalse,
-          reason: reason);
+        InteractionStamp.countsAsVoice(
+          VoiceInteractionChanged(active: true, reason: reason),
+        ),
+        isFalse,
+        reason: reason,
+      );
     }
   });
 }

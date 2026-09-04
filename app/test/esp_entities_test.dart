@@ -320,7 +320,7 @@ void main() {
     expect(pushed, contains(('now_playing', true)));
   });
 
-  test('the catalog mirrors the MQTT entity set', () async {
+  test('the catalog carries the full entity set', () async {
     final catalog = await surface.build();
     final ids = [for (final d in catalog) '${d['objectId']}'];
     expect(
@@ -393,8 +393,8 @@ void main() {
         'admin_url',
       ]),
     );
-    // The MQTT catalog's attributes have nowhere to live in the ESPHome
-    // protocol, so the Device and IP detail is its own entity here.
+    // Attributes have nowhere to live in the ESPHome protocol, so the
+    // Device and IP detail is its own entity here.
     for (final id in [
       'android_version',
       'android_build',
@@ -413,7 +413,7 @@ void main() {
     expect(ids, contains('last_seen'));
     final byId = {for (final d in catalog) d['objectId']: d};
     // Only views with cameras become options; 'Closed' leads. The
-    // per-view show buttons ride along, exactly like MQTT.
+    // per-view show buttons ride along.
     expect(byId['camera_view']!['options'], ['Closed', 'Front door']);
     expect(byId['camera_view_v1']!['name'], 'Show Front door');
     expect(byId.containsKey('camera_view_v2'), isFalse);
@@ -682,7 +682,7 @@ void main() {
     expect(byId['ram_total'], 4096);
     expect(byId['ipv4_address'], '192.168.1.5');
     expect(byId['ipv6_address'], 'fe80::1');
-    // Uptimes are timestamp anchors like their MQTT twins: the moment the
+    // Uptimes are timestamp anchors: the moment the
     // app started, rendered by HA as "n hours ago".
     final appAnchor = DateTime.parse('${byId['app_uptime']}');
     final drift = DateTime.now().toUtc().difference(appAnchor).inSeconds - 4200;
@@ -775,7 +775,7 @@ void main() {
     },
   );
 
-  test('commands land on the same handlers MQTT uses', () async {
+  test('commands land on the shared command handlers', () async {
     await surface.build();
     await attach();
     executed.clear();

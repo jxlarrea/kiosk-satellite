@@ -458,7 +458,7 @@ class DeviceManager extends Manager {
   /// change (level, plugged, status alike); each broadcast is only a cue to
   /// re-read the plugged flag — the carried status is the very value issue
   /// #205 showed lying. Without this the Charging entity trailed the cable
-  /// by up to a minute, the MQTT poll interval.
+  /// by up to a minute, the entity poll interval.
   void _watchPower() {
     try {
       _powerSub = _battery.onBatteryStateChanged.listen(
@@ -609,7 +609,7 @@ class DeviceManager extends Manager {
 
   /// Hook up the ambient light stream when the hardware exists. The native
   /// side damps the event rate (5 lx / 10% deadband, 2s minimum spacing);
-  /// listeners downstream (MQTT) add their own coarser limits.
+  /// listeners downstream (the ESPHome sensor) add their own coarser limits.
   Future<void> _initLightSensor() async {
     if (!Platform.isAndroid) return;
     try {

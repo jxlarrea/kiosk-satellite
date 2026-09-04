@@ -18,9 +18,9 @@ import 'native_camera.dart';
 /// whole feature's gate, so a kiosk that does not need the camera never
 /// spends a CPU cycle or a degree of heat on it. With it on, this manager
 /// captures stills — on demand (the `takeCameraSnapshot` command, reachable
-/// from MQTT's "Take snapshot" button and the remote admin) and on a timer
+/// from the ESPHome "Take snapshot" button and the remote admin) and on a timer
 /// ([defs.cameraSnapshots]) — and publishes each as [CameraSnapshotTaken]
-/// for the MQTT camera entity to relay.
+/// for the ESPHome camera entity to relay.
 ///
 /// Nothing is held open between captures: the native side
 /// (`DeviceCamera.kt`) opens the camera, takes one frame, and releases it —
@@ -105,7 +105,7 @@ class DeviceCameraManager extends Manager {
   Future<void> init() async {
     await _migrateLegacyMotionCamera();
 
-    // Probe early so the settings surfaces and MQTT discovery have the
+    // Probe early so the settings surfaces and the ESPHome catalog have the
     // answer by the time they ask. Unawaited: with no Activity yet the
     // probe simply resolves later, on the first ask that finds one.
     unawaited(cameraPresent());
@@ -133,11 +133,11 @@ class DeviceCameraManager extends Manager {
     // Motion refreshes the picture: the tick that wakes the screensaver is
     // someone stepping up to the kiosk, which is exactly the moment worth
     // having on the Home Assistant camera. One snapshot per motion session,
-    // mirroring the MQTT motion sensor: a tick only counts as an arrival if
+    // mirroring the motion sensor entity: a tick only counts as an arrival if
     // the sensor's Clear after window has passed without motion. Someone
     // staying in frame keeps the sensor on Detected and updates nothing —
     // without the session gate, the always-on sensor leg turned sustained
-    // motion into a retained-JPEG hose over MQTT.
+    // motion into a JPEG hose.
     bus.on<MotionDetected>().listen((_) {
       if (!enabled) return;
       final now = DateTime.now();
@@ -186,7 +186,7 @@ class DeviceCameraManager extends Manager {
         name: 'takeCameraSnapshot',
         description:
             'Capture a still from the device camera and publish it to the '
-            'Home Assistant camera entity over MQTT.',
+            'Home Assistant camera entity.',
         handler: (_) => _snapshot(),
       ),
     );
@@ -253,7 +253,7 @@ class DeviceCameraManager extends Manager {
         'The camera is disabled in the Camera settings.',
       );
     }
-    // Timer ticks and MQTT button presses can overlap a capture still in
+    // Timer ticks and entity button presses can overlap a capture still in
     // flight; the native side would refuse anyway, this keeps it quiet.
     if (_capturing) {
       return const CommandResult.fail('A snapshot is already in progress.');

@@ -82,34 +82,6 @@ export function updateImmichValidateRow() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
-/* MQTT validate row: mirror of the device's row, under the last credential
-   field. Unlike Home Assistant and Immich it gates nothing — it answers
-   "does the broker accept these settings?" without reading the log. */
-export function updateMqttValidateRow() {
-  const tab = document.getElementById('tab-mqtt');
-  const anchor = [...tab.querySelectorAll('.row')]
-    .find((r) => r.querySelector('.name')?.textContent === 'Password');
-  if (!anchor || tab.querySelector('.mqtt-validate-row')) return;
-  const row = readOnlyRow('Validate connection',
-    'Check the broker accepts these settings.', '');
-  row.classList.add('mqtt-validate-row');
-  const btn = document.createElement('button');
-  btn.className = 'btn-ghost';
-  btn.textContent = 'Validate';
-  btn.style.cssText = 'flex-shrink:0;';
-  btn.addEventListener('click', async () => {
-    btn.disabled = true; btn.textContent = 'Checking…';
-    let res;
-    try { res = await (await api('/api/commands/mqttValidate', { method: 'POST', body: '{}' })).json(); }
-    catch (_) { res = { ok: false, error: 'The device did not answer.' }; }
-    btn.disabled = false; btn.textContent = 'Validate';
-    row.querySelector('.desc').textContent = res.ok
-      ? 'Connected' : (res.error || 'Validation failed.');
-  });
-  row.appendChild(btn);
-  anchor.insertAdjacentElement('afterend', row);
-}
-
 /* Music Assistant validate row: mirror of the device's row, under the auth
    token on the Sendspin tab. Opening the API and authenticating is the only
    way to tell a wrong port from a wrong token. */
@@ -432,7 +404,7 @@ export async function updateAmbientDisplayNotice() {
 /* Brightness grant notices: shown under the dashboard slider and on the
    Screen & Audio tab only while "Modify system settings" is missing on the
    device. Without it the slider falls back to dimming the app window; the
-   panel's system brightness (what the MQTT entity reports) never moves. */
+   panel's system brightness (what the ESPHome entity reports) never moves. */
 export async function updateBrightnessGrantNotices() {
   let granted;
   try {
@@ -486,7 +458,7 @@ $('#brightness').addEventListener('change', (e) =>
 /* The free Load URL box this replaced let an admin point a locked kiosk at
    any page on the internet; a picker over the instance's own dashboard
    views navigates without opening that door. Same list, same paths, same
-   command as the rotation picker and the MQTT Dashboard select. */
+   command as the rotation picker and the ESPHome Dashboard select. */
 export async function loadViewJump() {
   const sel = $('#viewJump');
   try {
@@ -605,7 +577,7 @@ export function quickStateOf(event) {
   return null;
 }
 
-// The diffs: the same bus events the JS API and MQTT hear.
+// The diffs: the same bus events the JS API and ESPHome hear.
 export function applyQuickEvent(event, data) {
   if (event === 'screenon') quick.screenOn = true;
   else if (event === 'screenoff') quick.screenOn = false;

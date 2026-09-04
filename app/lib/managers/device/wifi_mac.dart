@@ -36,8 +36,8 @@ typedef WifiMacIdentity = ({String? mac, WifiMacSource source});
 /// starts working. Read live rather than adopted because editing the field
 /// is exactly how a wrong entry gets fixed.
 ///
-/// Shared by the ESPHome identity and the MQTT discovery device block, so
-/// both integrations land on the same Home Assistant device.
+/// Read by the ESPHome identity, so the kiosk lands on the same Home
+/// Assistant device as the router integrations' entries.
 Future<WifiMacIdentity> wifiMacIdentity(SettingsManager settings) async {
   if (!settings.get(defs.esphomeRealMac)) {
     return (mac: null, source: WifiMacSource.none);

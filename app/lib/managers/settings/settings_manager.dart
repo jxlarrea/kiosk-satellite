@@ -70,8 +70,8 @@ class SettingsManager extends Manager {
           params: const {
             'config': 'The exported JSON object',
             'adoptIdentity':
-                "take over the backup's device identity (device name, MQTT "
-                'device id) as a replacement device; false keeps this '
+                "take over the backup's device identity (device name, "
+                'ESPHome node name) as a replacement device; false keeps this '
                 "device's own so the two can run side by side (default true)",
             'importLocalStorage':
                 "apply the backup's page localStorage, which carries the "
@@ -174,7 +174,7 @@ class SettingsManager extends Manager {
                           'microphone',
                         if (get(cameraEnabled) || get(webCamera)) 'camera',
                         // Unconditional like the setup wizard's: the Home
-                        // Assistant and MQTT connections are held open with
+                        // Assistant and ESPHome connections are held open with
                         // the screen off whatever else is configured, and
                         // Doze is what stops them (issue #156).
                         'batteryOptimizations',
@@ -333,7 +333,7 @@ class SettingsManager extends Manager {
   }
 
   /// [source] names who asked for the write when it was not the device's
-  /// own UI (the ESPHome or MQTT entity in Home Assistant, the remote admin
+  /// own UI (the ESPHome entity in Home Assistant, the remote admin
   /// page, a settings import), so the log says which caller flipped a
   /// setting rather than leaving it to be guessed from the lines around it.
   Future<void> set<T>(SettingDef<T> def, T value, {String? source}) async {
@@ -511,10 +511,8 @@ class SettingsManager extends Manager {
 
   /// Drops one specific device's identity from an incoming settings [map],
   /// for imports that clone a device to run side by side rather than
-  /// replace it: the device name and MQTT device id, or the two devices
-  /// contend for one MQTT client id and one discovered HA device, each
-  /// overriding the other's discovery on launch (issue #25), and the
-  /// Sendspin player id, under which two devices kick each other off Music
+  /// replace it: the device name, which two devices would otherwise
+  /// share in Home Assistant (issue #25), and the Sendspin player id, under which two devices kick each other off Music
   /// Assistant in a reconnect loop so neither ever syncs (issue #136).
   /// Shared by the importConfig command and the raw /api/settings/import
   /// endpoint, which used to apply the dump verbatim (issue #221). The
@@ -526,18 +524,12 @@ class SettingsManager extends Manager {
   /// A device that inherited one of these identities from an older
   /// verbatim clone would keep colliding by "keeping its own"; equality
   /// with the incoming value is that inheritance, so it is shed too (the
-  /// ids regenerate at the next MQTT or Sendspin connect, the name is the
-  /// user's to re-set).
+  /// ids regenerate at the next Sendspin connect, the name is the user's
+  /// to re-set).
   Future<void> shedImportedIdentity(Map<String, Object?> map) async {
-    final importedId = map.remove(mqttDeviceId.key);
     final importedName = map.remove(deviceName.key);
     final importedPlayer = map.remove(sendspinClientId.key);
     final importedNode = map.remove(esphomeNodeName.key);
-    if (importedId is String &&
-        importedId.isNotEmpty &&
-        get(mqttDeviceId) == importedId) {
-      await set(mqttDeviceId, '');
-    }
     if (importedName is String &&
         importedName.isNotEmpty &&
         get(deviceName) == importedName) {

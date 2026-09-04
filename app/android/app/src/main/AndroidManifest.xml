@@ -51,7 +51,7 @@
         android:maxSdkVersion="30"/>
     <!-- The Kiosk Satellite Service (KioskSatelliteService). Android freezes
          cached processes whole, so without a foreground service the Home
-         Assistant session, MQTT, the ESPHome server, the mic, the WebView
+         Assistant session, the ESPHome server, the mic, the WebView
          and our own Dart all stop the moment the screen is off for long or
          another app is in front. specialUse is its base type: the
          connections the kiosk holds open regardless of features. -->
@@ -106,7 +106,7 @@
          device. -->
     <uses-permission android:name="android.permission.READ_LOGS"
         tools:ignore="ProtectedPermissions"/>
-    <!-- Which app is on screen, for the MQTT "Foreground app" sensor
+    <!-- Which app is on screen, for the ESPHome "Foreground app" sensor
          (issue #192). Granted via the special "Usage access" screen, never
          a runtime prompt; without it the sensor only knows when Kiosk
          Satellite itself is in the foreground. -->
@@ -186,7 +186,7 @@
             android:foregroundServiceType="specialUse|microphone|camera|connectedDevice|location">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Keeps the kiosk's Home Assistant, MQTT and ESPHome connections alive while the screen is off or another app is in front."/>
+                android:value="Keeps the kiosk's Home Assistant and ESPHome connections alive while the screen is off or another app is in front."/>
         </service>
         <!-- The System UI guard: closes the notification shade and recents
              the moment they open while kiosk or lockdown protections hold.

@@ -4,7 +4,7 @@ import 'kit.dart';
 
 /// What a configuration import should do about the two things a backup
 /// carries that belong to one specific device (issue #25): its identity
-/// (device name + MQTT device id) and its page data (which includes the
+/// (device name + ESPHome node name) and its page data (which includes the
 /// Voice Satellite selection).
 typedef ImportOptions = ({bool adoptIdentity, bool importLocalStorage});
 
@@ -61,9 +61,9 @@ Future<ImportOptions?> showImportOptionsDialog(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
                   adopt
-                      ? 'Keeps the backup\'s name and MQTT identity; the '
+                      ? 'Keeps the backup\'s name and ESPHome identity; the '
                             'original device must stay offline.'
-                      : 'Assign its own name and MQTT identity, so both '
+                      : 'Assign its own name and ESPHome identity, so both '
                             'devices are unique.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
