@@ -56,8 +56,12 @@ class SonosPlayer implements RemotePlayer {
   @override
   bool queueEmpty = false;
 
+  /// The speaker's queue is there to show only while it plays from it:
+  /// a station, an input or an app's session plays outside it, and the
+  /// panel would only say nothing is queued, so the toggle leaves the
+  /// view with it.
   @override
-  bool get hasQueue => true;
+  bool get hasQueue => _inQueue;
 
   /// Position is read from the speaker itself every second.
   @override
