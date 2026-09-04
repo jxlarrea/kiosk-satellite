@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.14 - 2026-09-04
 
 ### Removed
 - **The MQTT integration.** ESPHome has been the integration path for every kiosk entity for a while, and MQTT was kept alongside it for existing setups. It is gone now: the MQTT Settings page on the device and in the remote admin, the broker connection, the discovery publishing and the two MQTT client libraries behind them. A device that still had MQTT on keeps every other setting and simply stops publishing to the broker. Automations written against the MQTT entities move to the ESPHome ones, which carry the same names, so only the device half of each entity id changes. See the ESPHome section of the documentation to set it up.
