@@ -4402,9 +4402,8 @@ const sendspinSonosInputs = SettingDef<bool>(
   defaultValue: false,
   title: 'Show TV and line-in',
   description:
-      'The floating player and Now Playing while the followed room plays '
-      'its TV or line-in input, named as such. Off, the room reads as '
-      'idle while one plays.',
+      'Show activity in the media player when eARC or line-in inputs are '
+      'active.',
   category: 'Sendspin',
   subpage: 'Sonos',
   section: 'Sonos',
