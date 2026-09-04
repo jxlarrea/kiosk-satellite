@@ -2,10 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
-
-### Fixed
-- **A Sonos soundbar playing its TV input no longer holds the screensaver off with its serial as the title.** A home theater or line-in input has no title, art or track, and the direct source showed it as a card named by the speaker's id and took the Now Playing view over with it. The room now reads as idle while an input plays, and a **Show TV and line-in** switch on the Sonos page, off by default, brings the card and the view back for it, named TV or Line-in, with the volume control.
+## v2026.9.17 - 2026-09-04
 
 ### Added
 - **The Now Playing heart reaches My Sonos on a Sonos followed directly.** The playing station or track is looked up in the household's favorites over the speaker's own interface, the heart filled while it is one, and a tap adds it there the way the Sonos app's heart does, or takes it out. Music Assistant's library is left alone for that source, since a Sonos favorite is a Sonos thing.
@@ -13,6 +10,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **The favorite heart is back on the Now Playing view, and a repeat toggle joins it.** The toggles flanking the transport are three a side again: volume, the heart and shuffle on the left, repeat, lyrics and queue on the right, the way Music Assistant's own player lays them out. The heart marks the playing track as a favorite in Music Assistant, filled while it is one, for this device's own player and a followed Music Assistant player. Repeat cycles off, all and one on every source that reports it: Music Assistant's queue, a Sonos room's play mode and a Home Assistant player's repeat set, with the numbered glyph on one. A source without either leaves a blank in its place so the transport stays centered.
 
 ### Fixed
+- **A Sonos soundbar playing its TV input no longer holds the screensaver off with its serial as the title.** A home theater or line-in input has no title, art or track, and the direct source showed it as a card named by the speaker's id and took the Now Playing view over with it. The room now reads as idle while an input plays, and a **Show TV and line-in** switch on the Sonos page, off by default, brings the card and the view back for it, named TV or Line-in, with the volume control.
 - **A Sonos playing a station shows no queue and no skip buttons.** The speaker keeps the queue it played before the station, and the panel listed it with next and previous on the transport, though neither did anything. A station plays outside the queue, which the speaker's media info states outright, so the panel now says nothing is queued and the skip buttons stay off the view, for a plain stream and for a station that reports its songs like tracks alike.
 - **A radio station played from Music Assistant shows its logo on its queue row.** A station's queue item carries no image, in Music Assistant's own queue as much as here, while the cover above comes from the stream's metadata; the playing row borrows that cover when its item brings none, and an item whose images sit in a list in its metadata takes the list's thumbnail.
 - **A broken lyric sync on LRCLIB is passed over for a sound one.** LRCLIB carries uploads whose every line is stamped within a few seconds of one another, by the dozen for some tracks, and the exact lookup handed one back first: on screen that was no highlight for most of the song and then every line in a rush. A synced file is now checked against the track's length, its stamps having to span at least a third of it, and one that fails makes way for the next copy the search holds.
