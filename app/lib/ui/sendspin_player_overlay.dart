@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'glance_row.dart';
 import 'lyrics_view.dart';
 import 'theme.dart';
+import 'thumb_cache.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
@@ -956,10 +957,14 @@ class _QueueViewState extends State<_QueueView> {
   }
 }
 
-/// A queue row's cover: fetched once per URL and kept for the panel's
-/// life, a placeholder glyph while it loads and when nothing comes. On
-/// a short leash, since a speaker's art proxy can hang on an image it
-/// cannot reach and a row must not wait on it.
+/// A queue row's cover: fetched once per URL and kept in a cache bounded
+/// by bytes, a placeholder glyph while it loads and when nothing comes.
+/// Built to survive a thousand-row queue flung end to end: the rows
+/// themselves are lazy, the fetches run a few at a time and a row that
+/// scrolls away before its turn withdraws, the bytes are decoded at the
+/// drawn size rather than the cover's own, and the cache evicts by age
+/// past a few megabytes. On a short leash, since a speaker's art proxy
+/// can hang on an image it cannot reach and a row must not wait on it.
 class _QueueThumb extends StatefulWidget {
   const _QueueThumb({
     required this.container,
@@ -971,9 +976,8 @@ class _QueueThumb extends StatefulWidget {
   final String url;
   final double size;
 
-  /// Bytes by URL, null for a fetch that came back empty so it is not
-  /// asked again; capped so a long queue cannot grow it without end.
-  static final _cache = <String, Uint8List?>{};
+  static final cache = ThumbCache();
+  static final lane = FetchLane();
   static final _pending = <String, Future<Uint8List?>>{};
 
   @override
@@ -982,6 +986,7 @@ class _QueueThumb extends StatefulWidget {
 
 class _QueueThumbState extends State<_QueueThumb> {
   Uint8List? _bytes;
+  FetchTicket? _ticket;
 
   @override
   void initState() {
@@ -993,44 +998,78 @@ class _QueueThumbState extends State<_QueueThumb> {
   void didUpdateWidget(covariant _QueueThumb old) {
     super.didUpdateWidget(old);
     if (old.url != widget.url) {
+      _ticket?.cancel();
       _bytes = null;
       _load();
     }
   }
 
+  @override
+  void dispose() {
+    // Scrolled away before its turn: out of the line. One already
+    // running finishes and lands in the cache for the next time the row
+    // comes by.
+    _ticket?.cancel();
+    super.dispose();
+  }
+
   void _load() {
     final url = widget.url;
     if (url.isEmpty) return;
-    final cache = _QueueThumb._cache;
-    if (cache.containsKey(url)) {
-      _bytes = cache[url];
+    final cache = _QueueThumb.cache;
+    if (cache.contains(url)) {
+      _bytes = cache.get(url);
       return;
     }
-    final fetch = _QueueThumb._pending.putIfAbsent(url, () async {
-      final bytes = await widget.container.sendspin.fetchArtwork(
-        url,
-        timeout: const Duration(seconds: 4),
-      );
-      if (cache.length > 300) cache.clear();
-      cache[url] = bytes;
+    // One fetch per URL however many rows share it (an album's tracks
+    // do); every row waiting on it is told when it lands.
+    final inFlight = _QueueThumb._pending[url];
+    if (inFlight != null) {
+      inFlight.then(_landed(url));
+      return;
+    }
+    final completer = Completer<Uint8List?>();
+    _QueueThumb._pending[url] = completer.future;
+    _ticket = _QueueThumb.lane.schedule(() async {
+      Uint8List? bytes;
+      try {
+        bytes = await widget.container.sendspin.fetchArtwork(
+          url,
+          timeout: const Duration(seconds: 4),
+        );
+      } catch (_) {
+        bytes = null;
+      }
+      cache.put(url, bytes);
       _QueueThumb._pending.remove(url);
-      return bytes;
+      completer.complete(bytes);
     });
-    fetch.then((bytes) {
-      if (mounted && widget.url == url) setState(() => _bytes = bytes);
-    });
+    completer.future.then(_landed(url));
   }
+
+  void Function(Uint8List?) _landed(String url) => (bytes) {
+    if (mounted && widget.url == url) setState(() => _bytes = bytes);
+  };
 
   @override
   Widget build(BuildContext context) {
     final bytes = _bytes;
+    // Decoded at the drawn size: a speaker's thumbnail is the whole
+    // cover, and a full decode per row is what fills memory on a fling.
+    final px = (widget.size * MediaQuery.devicePixelRatioOf(context)).round();
     return ClipRRect(
       borderRadius: BorderRadius.circular(6),
       child: SizedBox(
         width: widget.size,
         height: widget.size,
         child: bytes != null
-            ? Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true)
+            ? Image.memory(
+                bytes,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                cacheWidth: px,
+                cacheHeight: px,
+              )
             : ColoredBox(
                 color: Colors.white10,
                 child: Icon(
