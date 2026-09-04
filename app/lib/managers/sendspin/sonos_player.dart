@@ -143,6 +143,30 @@ class SonosPlayer implements RemotePlayer {
       final co = _coordinator;
       final transport = await co.transportInfo();
       final position = await co.positionInfo();
+      // A station's logo lives on the station, not the track: the track
+      // metadata of a radio stream names the song and carries no art,
+      // while the media the speaker was given (GetMediaInfo) is the
+      // station item with its logo. Read once per stream, when the
+      // track brings no art of its own.
+      final trackUri = (position['TrackURI'] ?? '').trim();
+      final trackArt = SonosClient.parseDidlItems(
+        position['TrackMetaData'] ?? '',
+      ).firstOrNull?['art'];
+      if (trackArt == null && trackUri.isNotEmpty) {
+        if (_stationArtFor != trackUri) {
+          _stationArtFor = trackUri;
+          _stationArt = null;
+          try {
+            _stationArt = stationArt(await co.mediaInfo(), co.host);
+          } catch (_) {
+            // No media info is no logo; the track's own art may still
+            // come on a later poll.
+          }
+        }
+      } else {
+        _stationArtFor = '';
+        _stationArt = null;
+      }
       // The play mode and the volume change rarely and cost a call each:
       // read them at the start, then every few ticks.
       if (_ticks % 5 == 0) {
@@ -271,6 +295,9 @@ class SonosPlayer implements RemotePlayer {
     _playing = snap?['playing'] == true;
     if (_playing) _sawPlayback = true;
     queueEmpty = snap == null;
+    if (snap != null && snap['artworkUrl'] == null && _stationArt != null) {
+      snap['artworkUrl'] = _stationArt;
+    }
     if (snap != null) _preferPublicArt(snap);
     // A poll that changed nothing stays quiet: the surfaces extrapolate
     // the position from the last report, and a fresh map every second
@@ -280,6 +307,24 @@ class SonosPlayer implements RemotePlayer {
     // report is getting old.
     if (!_differs(_snapshot, snap)) return;
     _emit(snap);
+  }
+
+  /// The station logo of the stream the speaker plays, read from its
+  /// media info for the track URI in [_stationArtFor]; null when the
+  /// media carried none or was not read.
+  String? _stationArt;
+  String _stationArtFor = '';
+
+  /// The logo in a GetMediaInfo answer: the art of the item the speaker
+  /// was given to play, made absolute on the speaker when it is a path.
+  @visibleForTesting
+  static String? stationArt(Map<String, String> media, String host) {
+    final items = SonosClient.parseDidlItems(media['CurrentURIMetaData'] ?? '');
+    final art = items.firstOrNull?['art'];
+    if (art == null || art.isEmpty) return null;
+    return art.startsWith('http')
+        ? art
+        : 'http://$host:${SonosClient.port}${art.startsWith('/') ? '' : '/'}$art';
   }
 
   /// Swap the speaker's art proxy for the service's own image where one

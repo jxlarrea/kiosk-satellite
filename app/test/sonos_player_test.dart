@@ -80,6 +80,34 @@ void main() {
     });
   });
 
+  group('SonosPlayer.stationArt', () {
+    test('the station item in the media info carries the logo', () {
+      // A TuneIn station as GetMediaInfo describes it: the track metadata
+      // of the stream names the song and has no art; this item has it.
+      const media = {
+        'CurrentURI': 'x-sonosapi-stream:s24939?sid=254&flags=8224&sn=0',
+        'CurrentURIMetaData':
+            '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">'
+            '<item id="F00092020s24939" parentID="L" restricted="true"><dc:title>1LIVE</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class>'
+            '<upnp:albumArtURI>https://cdn-profiles.tunein.com/s24939/images/logoq.jpg?t=1</upnp:albumArtURI>'
+            '<desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON65031_</desc></item></DIDL-Lite>',
+      };
+      expect(
+        SonosPlayer.stationArt(media, '10.11.12.70'),
+        'https://cdn-profiles.tunein.com/s24939/images/logoq.jpg?t=1',
+      );
+      // A path is served by the speaker; no item is no logo.
+      expect(
+        SonosPlayer.stationArt({
+          'CurrentURIMetaData':
+              '<DIDL-Lite><item id="x"><upnp:albumArtURI>/getaa?s=1&amp;u=x</upnp:albumArtURI></item></DIDL-Lite>',
+        }, '10.11.12.70'),
+        'http://10.11.12.70:1400/getaa?s=1&u=x',
+      );
+      expect(SonosPlayer.stationArt(const {}, 'h'), isNull);
+    });
+  });
+
   group('SonosPlayer.snapshotFrom', () {
     test('a playing station track: no duration, no seek, absolute art', () {
       final snap = SonosPlayer.snapshotFrom(
