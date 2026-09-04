@@ -320,7 +320,10 @@ class SonosClient {
       final duration = RegExp(
         r'<res[^>]*\sduration="([^"]*)"',
       ).firstMatch(body)?[1];
+      final res = RegExp(r'<res[^>]*>([^<]*)</res>').firstMatch(body)?[1];
       out.add({
+        if (res != null && res.trim().isNotEmpty)
+          'uri': unescapeXml(res.trim()),
         'id': unescapeXml(_attr(attrs, 'id') ?? ''),
         'title': ?text('dc:title'),
         'artist': ?text('dc:creator'),

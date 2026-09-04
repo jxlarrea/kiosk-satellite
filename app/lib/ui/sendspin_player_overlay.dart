@@ -631,6 +631,10 @@ class _QueueViewState extends State<_QueueView> {
   AppContainer get container => widget.container;
   double get fontSize => widget.fontSize;
 
+  /// The thumbnails switch flipping from either settings surface
+  /// rebuilds the rows.
+  StreamSubscription<SettingChanged>? _artSub;
+
   final _scroll = ScrollController();
   final _nowPlayingKey = GlobalKey();
   final _lastPlayedKey = GlobalKey();
@@ -647,6 +651,9 @@ class _QueueViewState extends State<_QueueView> {
   @override
   void initState() {
     super.initState();
+    _artSub = container.bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.sendspinQueueArt.key && mounted) setState(() {});
+    });
     container.sendspin.nowPlaying.addListener(_onNowPlaying);
   }
 
@@ -655,6 +662,7 @@ class _QueueViewState extends State<_QueueView> {
     container.sendspin.nowPlaying.removeListener(_onNowPlaying);
     _pendingTimeout?.cancel();
     _scroll.dispose();
+    _artSub?.cancel();
     super.dispose();
   }
 
@@ -812,6 +820,17 @@ class _QueueViewState extends State<_QueueView> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               child: Row(
                 children: [
+                  if (container.settings.get(defs.sendspinQueueArt)) ...[
+                    Opacity(
+                      opacity: played && !current && !focused ? 0.45 : 1,
+                      child: _QueueThumb(
+                        container: container,
+                        url: '${item['artworkUrl'] ?? ''}',
+                        size: fontSize * 2.4,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -933,6 +952,94 @@ class _QueueViewState extends State<_QueueView> {
           ),
         );
       },
+    );
+  }
+}
+
+/// A queue row's cover: fetched once per URL and kept for the panel's
+/// life, a placeholder glyph while it loads and when nothing comes. On
+/// a short leash, since a speaker's art proxy can hang on an image it
+/// cannot reach and a row must not wait on it.
+class _QueueThumb extends StatefulWidget {
+  const _QueueThumb({
+    required this.container,
+    required this.url,
+    required this.size,
+  });
+
+  final AppContainer container;
+  final String url;
+  final double size;
+
+  /// Bytes by URL, null for a fetch that came back empty so it is not
+  /// asked again; capped so a long queue cannot grow it without end.
+  static final _cache = <String, Uint8List?>{};
+  static final _pending = <String, Future<Uint8List?>>{};
+
+  @override
+  State<_QueueThumb> createState() => _QueueThumbState();
+}
+
+class _QueueThumbState extends State<_QueueThumb> {
+  Uint8List? _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _QueueThumb old) {
+    super.didUpdateWidget(old);
+    if (old.url != widget.url) {
+      _bytes = null;
+      _load();
+    }
+  }
+
+  void _load() {
+    final url = widget.url;
+    if (url.isEmpty) return;
+    final cache = _QueueThumb._cache;
+    if (cache.containsKey(url)) {
+      _bytes = cache[url];
+      return;
+    }
+    final fetch = _QueueThumb._pending.putIfAbsent(url, () async {
+      final bytes = await widget.container.sendspin.fetchArtwork(
+        url,
+        timeout: const Duration(seconds: 4),
+      );
+      if (cache.length > 300) cache.clear();
+      cache[url] = bytes;
+      _QueueThumb._pending.remove(url);
+      return bytes;
+    });
+    fetch.then((bytes) {
+      if (mounted && widget.url == url) setState(() => _bytes = bytes);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = _bytes;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: bytes != null
+            ? Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true)
+            : ColoredBox(
+                color: Colors.white10,
+                child: Icon(
+                  Icons.music_note_rounded,
+                  color: Colors.white24,
+                  size: widget.size * 0.5,
+                ),
+              ),
+      ),
     );
   }
 }

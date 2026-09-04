@@ -584,6 +584,63 @@ void main() {
       expect(settings.visible(defs.sendspinShowPlayer), isFalse);
     });
 
+    test('a queue row carries its cover, small, through the proxy', () {
+      final row = SendspinManager.queueRow(
+        {
+          'queue_item_id': 'item-1',
+          'name': 'Song',
+          'duration': 200,
+          'media_item': {
+            'name': 'Song',
+            'artists': [
+              {'name': 'Band'},
+            ],
+            'image': {'path': '/cover.jpg', 'proxy_id': 'abc'},
+          },
+        },
+        3,
+        1,
+        'item-1',
+        'https://ma.local:8095',
+      );
+      expect(row['title'], 'Song');
+      expect(row['artist'], 'Band');
+      expect(row['current'], isTrue);
+      expect(
+        row['artworkUrl'],
+        'https://ma.local:8095/imageproxy/abc?size=128&fmt=jpg',
+      );
+      // A plain web image is used as it is; no image is no key.
+      expect(
+        SendspinManager.queueRow(
+          {
+            'queue_item_id': 'x',
+            'media_item': {
+              'image': {
+                'path': 'https://img/1.jpg',
+                'remotely_accessible': true,
+              },
+            },
+          },
+          0,
+          0,
+          '',
+          null,
+        )['artworkUrl'],
+        'https://img/1.jpg',
+      );
+      expect(
+        SendspinManager.queueRow(
+          {'queue_item_id': 'x'},
+          0,
+          0,
+          '',
+          null,
+        ).containsKey('artworkUrl'),
+        isFalse,
+      );
+    });
+
     test('mediaPlayerSet follows a player by name or id, per source', () async {
       await build();
       sendspin.apiFactory = ({required baseUrl, required token}) => _FakeApi([

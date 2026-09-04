@@ -709,6 +709,11 @@ class SonosPlayer implements RemotePlayer {
             'durationMs': ?parseUpnpTime(it['duration'] ?? '')?.inMilliseconds,
             'current': current == i + 1,
             'played': current > 0 && i + 1 < current,
+            // The row's thumbnail: the service's own image where the
+            // cover lookup has found it for this track, else the
+            // speaker's art proxy, which the panel fetches on a short
+            // leash since it can hang on an image it cannot reach.
+            'artworkUrl': ?_queueArt(it, co.host),
           },
       ];
       return RemoteQueue(
@@ -719,6 +724,17 @@ class SonosPlayer implements RemotePlayer {
       log.warn(_name, 'Sonos queue failed: $e');
       return null;
     }
+  }
+
+  String? _queueArt(Map<String, String> item, String host) {
+    final uri = item['uri'] ?? '';
+    final found = uri.isEmpty ? null : _artCache[uri];
+    if (found != null) return found;
+    final art = item['art'] ?? '';
+    if (art.isEmpty) return null;
+    return art.startsWith('http')
+        ? art
+        : 'http://$host:${SonosClient.port}${art.startsWith('/') ? '' : '/'}$art';
   }
 
   /// Jump the queue to the row [id], its 1-based track number. A speaker

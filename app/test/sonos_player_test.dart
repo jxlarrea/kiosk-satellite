@@ -56,6 +56,7 @@ void main() {
       expect(items[0]['album'], 'Neighbor Songs');
       expect(items[0]['duration'], '0:03:18');
       expect(items[0]['art'], startsWith('/getaa?s=1&u='));
+      expect(items[0]['uri'], 'x-sonos-spotify:spotify%3atrack%3a1');
       expect(items[0]['id'], 'Q:0/1');
       expect(items[1]['title'], 'Second');
       expect(items[1].containsKey('album'), isFalse);

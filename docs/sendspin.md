@@ -77,6 +77,7 @@ Configures direct integration with local Sonos hardware.
 | Launch Now Playing when music starts playing | on | Instantly launches the full screen view when playback starts rather than waiting for the idle screensaver timeout. |
 | Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the full screen music display. |
 | Show in the kiosk menu | off | Adds a menu shortcut to open the full screen view directly. Remains hidden if no media is playing or queued. |
+| Show album art in the queue | on | A cover on every row of the queue panel, the server's or the speaker's own thumbnail, fetched as the rows come into view. Off, the rows tighten back up. |
 | Show speaker selection pill | on | The chip in the Now Playing view's top left corner that names the player and opens the speaker group menu. Off, the view shows neither. |
 
 ### Lyrics
@@ -154,7 +155,7 @@ When **Show media controls** is enabled, transport buttons, a progress bar, and 
 
 * **Transport & Progress**: Displays previous, play/pause, and next buttons alongside elapsed and total track time. On supported players, dragging the progress bar thumb seeks within the track.
 * **Left Toggles**: Volume, favorite and shuffle. Toggling volume replaces the progress bar with a volume slider and a mute button. On Sonos devices, adjusting volume updates the entire group volume when group volume adjustment is enabled. The heart marks the playing track as a favorite in Music Assistant, filled while it is one; it shows for this device's own player and a followed Music Assistant player, the sources with a Music Assistant library behind them.
-* **Right Toggles**: Repeat, synchronized lyrics and the queue panel. Repeat cycles off, all and one on every source that reports it, lit while on and wearing the numbered glyph on one. Side-by-side or stacked layouts adapt dynamically based on screen orientation. The queue panel displays past tracks, the current track, and upcoming items, allowing direct track jumping by tapping any row.
+* **Right Toggles**: Repeat, synchronized lyrics and the queue panel. Repeat cycles off, all and one on every source that reports it, lit while on and wearing the numbered glyph on one. Side-by-side or stacked layouts adapt dynamically based on screen orientation. The queue panel displays past tracks, the current track, and upcoming items, each with its cover while **Show album art in the queue** is on, allowing direct track jumping by tapping any row.
 * **Dismissal**: When media controls are enabled, tapping the background does not dismiss the view; users must tap the top-right close button, use a double tap gesture (if **Double tap to dismiss** is on), or press the physical back button.
 
 ### Speaker groups

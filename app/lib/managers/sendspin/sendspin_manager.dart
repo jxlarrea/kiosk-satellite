@@ -206,7 +206,10 @@ class SendspinManager extends Manager {
   /// certificate outright and show nothing. Injectable for tests.
   late Future<Uint8List?> Function(String url) artworkFetcher = fetchArtwork;
 
-  Future<Uint8List?> fetchArtwork(String url) async {
+  Future<Uint8List?> fetchArtwork(
+    String url, {
+    Duration timeout = const Duration(seconds: 12),
+  }) async {
     if (url.isEmpty) return null;
     try {
       final serverHost = Uri.parse(
@@ -224,11 +227,9 @@ class SendspinManager extends Manager {
       // Bounded: a speaker's art proxy can hang on an image it cannot
       // fetch, and a fetch that never ends would hold the cover blank for
       // the next track too.
-      final response = await request.close().timeout(
-        const Duration(seconds: 12),
-      );
+      final response = await request.close().timeout(timeout);
       final bytes = <int>[];
-      await for (final part in response.timeout(const Duration(seconds: 12))) {
+      await for (final part in response.timeout(timeout)) {
         bytes.addAll(part);
       }
       client.close();
@@ -894,6 +895,7 @@ class SendspinManager extends Manager {
         'sendspin.sonos_hosts',
         'sendspin.sonos_group_volume',
         'sendspin.speaker_pill',
+        'sendspin.queue_art',
         'sendspin.lyrics_enabled',
         'sendspin.lyrics_source',
         'sendspin.lyrics_fallback_ma',
@@ -2030,17 +2032,34 @@ class SendspinManager extends Manager {
     // position comes from the offset, the identity from the item id.
     queueItems.value = [
       for (final (i, it) in items.indexed)
-        if (it is Map) _queueRow(it, i, index, currentId),
+        if (it is Map)
+          _queueRow(
+            it,
+            i,
+            index,
+            currentId,
+            musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl)),
+          ),
     ];
     final total = (queue['items'] as num?)?.toInt() ?? items.length;
     queueUpNext.value = max(0, total - index - 1);
   }
+
+  @visibleForTesting
+  static Map<String, Object?> queueRow(
+    Map it,
+    int index,
+    int currentIndex,
+    String currentId,
+    String? webBase,
+  ) => _queueRow(it, index, currentIndex, currentId, webBase);
 
   static Map<String, Object?> _queueRow(
     Map it,
     int index,
     int currentIndex,
     String currentId,
+    String? webBase,
   ) {
     final media = it['media_item'] is Map
         ? (it['media_item'] as Map).cast<String, Object?>()
@@ -2059,6 +2078,16 @@ class SendspinManager extends Manager {
       if (duration != null) 'durationMs': (duration * 1000).round(),
       'current': id.isNotEmpty && id == currentId,
       'played': index < currentIndex,
+      // A row's thumbnail: the item's own image, small, through the
+      // server's proxy where it is not a plain URL.
+      ...switch (queueImageUrl(
+        it['image'] ?? media['image'],
+        webBase,
+        size: 128,
+      )) {
+        final url? => {'artworkUrl': url},
+        null => const <String, Object?>{},
+      },
     };
   }
 

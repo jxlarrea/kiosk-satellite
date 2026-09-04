@@ -4843,6 +4843,20 @@ const sendspinSpeakerPill = SettingDef<bool>(
   dependsOn: 'sendspin.fullscreen',
 );
 
+/// A cover on every row of the queue panel: the server's or the
+/// speaker's own thumbnail, fetched as the rows come into view.
+const sendspinQueueArt = SettingDef<bool>(
+  key: 'sendspin.queue_art',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show album art in the queue',
+  description: 'A cover on every row of the queue panel.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
+);
+
 const sendspinLyrics = SettingDef<bool>(
   key: 'sendspin.lyrics',
   type: SettingType.boolean,
@@ -5938,6 +5952,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenMotion,
   sendspinFullscreenShortcut,
   sendspinSpeakerPill,
+  sendspinQueueArt,
   sendspinLyrics,
   sendspinFullscreenQueue,
   sendspinLyricsEnabled,

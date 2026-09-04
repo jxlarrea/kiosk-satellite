@@ -514,7 +514,7 @@ Map<String, Object?>? queueTrackSnapshot(Object? queue, {String? webBase}) {
 /// a plain web URL, otherwise the server's image proxy (rooted at
 /// [webBase]) via the image's deterministic proxy id. Null when there is
 /// no image to offer.
-String? queueImageUrl(Object? image, String? webBase) {
+String? queueImageUrl(Object? image, String? webBase, {int size = 512}) {
   if (image is! Map) return null;
   final path = '${image['path'] ?? ''}';
   if (image['remotely_accessible'] == true && path.startsWith('http')) {
@@ -522,7 +522,7 @@ String? queueImageUrl(Object? image, String? webBase) {
   }
   final proxyId = '${image['proxy_id'] ?? ''}';
   if (proxyId.isEmpty || webBase == null) return null;
-  return '$webBase/imageproxy/$proxyId?size=512&fmt=jpg';
+  return '$webBase/imageproxy/$proxyId?size=$size&fmt=jpg';
 }
 
 /// Request/response bookkeeping for one open connection, plus the events
