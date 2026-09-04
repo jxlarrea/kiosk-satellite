@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.18 - 2026-09-04
 
 ### Fixed
 - **A Sonos playing a Spotify Connect or AirPlay session shows its skip buttons again.** The speaker plays an app's session as a virtual line-in, outside its own queue, and the change that took the skips off a station took them off the session with it, though the speaker passes next and previous on to the app the way the Sonos app's own buttons do. The session keeps both. The queue toggle and the heart leave the view for it, since the app holds that queue and the speaker cannot list it, and My Sonos cannot keep a session. The queue toggle leaves the same way while a Sonos plays a station or an input, where the panel could only say nothing is queued, and comes back with the queue.
