@@ -1013,9 +1013,19 @@ class BackgroundBridge(
         false
     }
 
+    /**
+     * Device-admin lockNow, the one true panel off an app can ask for.
+     * False only without the grant. A panel already asleep is left as it
+     * is and counts as done (issue #440): lockNow there changes nothing
+     * on the panel but re-arms the keyguard, and the lock sound plays for
+     * every repeat. The same reality check [wakeScreen] makes in the other
+     * direction; the Dart side asks it too before calling here.
+     */
     private fun screenOff(): Boolean = try {
         val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         if (dpm.isAdminActive(ComponentName(context, KioskAdminReceiver::class.java))) {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isInteractive) return true
             // Before the lock, not after: the SCREEN_OFF broadcast it causes
             // is what kiosk mode's power-button defence listens for, and it
             // must recognise this one as ours and leave the panel off.

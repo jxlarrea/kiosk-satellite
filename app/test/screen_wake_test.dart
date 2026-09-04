@@ -78,6 +78,9 @@ void main() {
               return keyguardStays;
             case 'ambientDisplaySetting':
               return -1;
+            case 'screenOff':
+              interactive = false;
+              return true;
             default:
               return null;
           }
@@ -248,6 +251,42 @@ void main() {
     expect(calls, contains('wakeScreenViaActivity'));
     expect(screen.isScreenOn, isTrue);
     expect(warnings(), isEmpty);
+  });
+
+  test('screen off on a lit panel locks it', () async {
+    await build(lit: true);
+    expect(await screen.screenOff(), isTrue);
+    expect(calls, contains('screenOff'));
+    expect(screen.isScreenOn, isFalse);
+    await settle();
+    expect(events.map((e) => e.on), [false]);
+  });
+
+  test('screen off on a dark panel leaves the lock alone', () async {
+    // Every repeat of lockNow on a sleeping device replays the lock sound
+    // and re-arms the keyguard (issue #440); the panel is asked, not the
+    // logical flag.
+    await build();
+    expect(screen.isScreenOn, isFalse);
+    expect(await screen.screenOff(), isTrue, reason: 'done, not refused');
+    expect(calls, isNot(contains('screenOff')));
+    expect(events, isEmpty);
+    expect(
+      log.recent.map((e) => e.message),
+      contains('screen already off; leaving the lock alone'),
+    );
+  });
+
+  test('screen off trusts the panel over a stale flag', () async {
+    // A wake still being confirmed reads on before the panel lit; a
+    // screen off in that window must look at the panel.
+    await build(wakeLock: false, outcome: 'no_overlay_grant');
+    await screen.screenOn();
+    expect(screen.isScreenOn, isTrue, reason: 'optimistic');
+    expect(await screen.screenOff(), isTrue);
+    expect(calls, isNot(contains('screenOff')));
+    await settle();
+    expect(screen.isScreenOn, isFalse);
   });
 
   test('a lit panel needs no confirmation at all', () async {

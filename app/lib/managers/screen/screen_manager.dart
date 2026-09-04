@@ -814,7 +814,25 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   /// the brightness slider owns brightness (issue #2). Returns false when
   /// the device admin permission is not active, in which case nothing
   /// happens at all.
+  ///
+  /// A panel already dark is left alone (issue #440). lockNow on a sleeping
+  /// device does nothing to the panel but still re-arms the keyguard, and
+  /// Android plays the lock sound for it, so every repeat clicked audibly
+  /// in a dark room; a blanket lights-off automation that includes the
+  /// Screen entity sends one every time it runs. The panel itself is
+  /// asked, not the logical flag: that flag reads true optimistically
+  /// while a wake is still being confirmed and false after a wake that
+  /// never lit the panel, both cases where the panel is what counts. A
+  /// skipped call still counts as done, since the ask was for a dark panel
+  /// and that is what there is; false is reserved for the missing grant,
+  /// which the command turns into the grant screen.
   Future<bool> screenOff() async {
+    final lit = await _isInteractive();
+    if (lit == false) {
+      log.debug(name, 'screen already off; leaving the lock alone');
+      _setScreenOn(false, source: 'app');
+      return true;
+    }
     var ok = false;
     try {
       ok = await _background.invokeMethod('screenOff') == true;

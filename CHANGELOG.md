@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- **Screen off on a panel that is already dark no longer replays the lock sound.** Every Screen off, from the remote admin, the ESPHome Screen light, the screensaver's countdown or the JavaScript API, ran the device admin lock even when the panel was already off, and Android plays its lock sound for each one on a device with lock screen sounds on. A blanket lights-off automation that includes the Screen light clicked the tablet in a dark room every time it ran. The panel is now asked first and a dark one is left alone, which also stops re-arming the lock screen for nothing.
+
 ### Added
 - **Notifications render Markdown.** The message of a notification pushed from Home Assistant, over the ESPHome action or the remote API, is read as Markdown: bold, italic, inline code, strikethrough, headings, bullet and numbered lists and line breaks, with a link shown as its label. A battery alert can put its weight on the number and a daily summary can be a list rather than a block of text. The title takes the inline syntax. The subset is small on purpose: underscores never emphasize, so entity ids read as typed, and a lone star or one followed by a space stays a star. Nothing changes for a message without markup.
 
