@@ -321,6 +321,13 @@ abstract class WakeWordEngine {
   Future<void> pauseDetection() async {}
   Future<void> resumeDetection() async {}
 
+  /// Diagnostic: feed [pcm] (16 kHz mono PCM16) through the engine exactly
+  /// as if the microphone had captured it, with the real capture muted for
+  /// the duration so room audio cannot interleave with it. Returns the
+  /// engine's mic-timeline position in ms at the first injected sample, or
+  /// null when the engine cannot inject (not running, or a base engine).
+  Future<int?> injectAudio(Uint8List pcm) async => null;
+
   /// Stream captured audio to the page (the app owns the mic; the card uses
   /// this instead of getUserMedia). [onChunk] receives raw 16 kHz mono PCM16
   /// little-endian bytes, starting with a short pre-roll of already-captured

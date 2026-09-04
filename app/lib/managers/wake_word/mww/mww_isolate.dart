@@ -159,7 +159,11 @@ class _MwwWorker {
           md['id'] as String,
           md['wakeWord'] as String,
           interpreter,
-          MwwGate(cutoff: cutoff, slidingWindowSize: window),
+          MwwGate(
+            cutoff: cutoff,
+            slidingWindowSize: window,
+            framesPerInfer: framesPerInfer < 1 ? 1 : framesPerInfer,
+          ),
           framesPerInfer < 1 ? 1 : framesPerInfer,
           scale,
           zeroPoint,
@@ -334,7 +338,10 @@ class _MwwWorker {
     if (_silentChunks < _sleepAfterChunks) return true;
     _sleeping = true;
     for (final k in _kws) {
-      k.gate.reset();
+      // Stale probabilities go; the warmup stays done. A full reset here
+      // cost the first second of audio after every wake of the gate, which
+      // is exactly where the wake word is when spoken into a quiet room.
+      k.gate.reset(keepWarmup: true);
       k.accumLen = 0;
     }
     _log('info', 'energy gate: asleep (rms ${rms.toStringAsFixed(4)})');

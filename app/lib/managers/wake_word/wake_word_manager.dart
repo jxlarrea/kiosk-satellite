@@ -867,6 +867,130 @@ class WakeWordManager extends Manager implements NativeAudioSource {
         },
       ))
       ..register(Command(
+        name: 'injectWakeAudio',
+        description:
+            'Diagnostic: feed a wake word clip through the running engine as '
+            'if the mic had heard it (real capture muted meanwhile), '
+            'optionally after a stretch of digital silence and repeated with '
+            'a noise gap between repeats. In tester mode (default) no turn '
+            'starts and the per-inference telemetry is returned instead.',
+        params: const {
+          'wavBase64': 'WAV file (16 kHz mono PCM16), base64',
+          'silenceMs': 'digital silence fed before the first clip (3200)',
+          'repeat': 'how many times the clip is fed (2)',
+          'gapMs': 'noise fed between repeats (3000)',
+          'gapRms': 'rms of that noise, full scale 1.0 (0.1)',
+          'tester': 'suppress real detections, return telemetry (true)',
+        },
+        handler: (p) async {
+          if (!_engine.running) {
+            return const CommandResult.fail('engine not running');
+          }
+          final wav = p['wavBase64'] as String?;
+          if (wav == null || wav.isEmpty) {
+            return const CommandResult.fail('wavBase64 required');
+          }
+          final clip = _wavPcm16k(base64Decode(wav));
+          if (clip == null) {
+            return const CommandResult.fail(
+                'WAV must be 16 kHz mono PCM16 with a data chunk');
+          }
+          final silenceMs = (p['silenceMs'] as num? ?? 3200).toInt();
+          final repeat = (p['repeat'] as num? ?? 2).toInt().clamp(1, 10);
+          final gapMs = (p['gapMs'] as num? ?? 3000).toInt();
+          final gapRms = (p['gapRms'] as num? ?? 0.1).toDouble();
+          final tester = p['tester'] != false;
+
+          // Assemble: silence, clip, (noise, clip) x (repeat - 1), tail.
+          final out = BytesBuilder(copy: false);
+          final clipWindows = <Map<String, int>>[];
+          out.add(Uint8List(silenceMs * 32));
+          for (var i = 0; i < repeat; i++) {
+            if (i > 0) out.add(_noisePcm(gapMs, gapRms, seed: i));
+            final startMs = out.length ~/ 32;
+            out.add(clip);
+            clipWindows.add({'startMs': startMs, 'endMs': out.length ~/ 32});
+          }
+          out.add(Uint8List(500 * 32));
+          final pcm = out.takeBytes();
+
+          final samples = <Map<String, Object?>>[];
+          StreamSubscription<Map<String, Object?>>? sub;
+          if (tester) {
+            sub = telemetry.listen(samples.add);
+            startTest();
+            // Let the isolate pick the tester flag up before audio arrives.
+            await Future<void>.delayed(const Duration(milliseconds: 200));
+          }
+          final startMs = await _engine.injectAudio(pcm);
+          if (startMs == null) {
+            await sub?.cancel();
+            if (tester) stopTest();
+            return const CommandResult.fail('engine could not inject');
+          }
+          // Wait for the isolate to chew through the queue: done when the
+          // telemetry clock passes the end of the injected audio, or when
+          // nothing arrives for a while.
+          final endMs = startMs + pcm.length ~/ 32;
+          final deadline = DateTime.now().add(const Duration(seconds: 20));
+          var lastCount = -1;
+          var idle = 0;
+          while (DateTime.now().isBefore(deadline)) {
+            await Future<void>.delayed(const Duration(milliseconds: 250));
+            final t =
+                samples.isEmpty ? -1 : (samples.last['t'] as num).toInt();
+            if (t >= endMs) break;
+            if (samples.length == lastCount) {
+              if (++idle >= (tester ? 8 : 4)) break;
+            } else {
+              idle = 0;
+              lastCount = samples.length;
+            }
+          }
+          await sub?.cancel();
+          if (tester) stopTest();
+
+          // Per clip: what the detector saw inside its window plus a second
+          // of slack for the sliding window to fill.
+          final perClip = <Map<String, Object?>>[];
+          for (final w in clipWindows) {
+            final lo = startMs + w['startMs']!;
+            final hi = startMs + w['endMs']! + 1000;
+            final inWin = samples.where((m) {
+              final t = (m['t'] as num).toInt();
+              return t >= lo && t <= hi && m['id'] != null;
+            }).toList();
+            double maxRaw = 0, maxScore = 0;
+            var fired = 0;
+            for (final m in inWin) {
+              final raw = (m['raw'] as num?)?.toDouble() ?? 0;
+              final sc = (m['score'] as num?)?.toDouble() ?? 0;
+              if (raw > maxRaw) maxRaw = raw;
+              if (sc > maxScore) maxScore = sc;
+              if (m['fired'] == true) fired++;
+            }
+            perClip.add({
+              'clipStartMs': w['startMs'],
+              'inferences': inWin.length,
+              'maxRaw': maxRaw,
+              'maxScore': maxScore,
+              'fired': fired,
+            });
+          }
+          return CommandResult.ok({
+            'fedMs': pcm.length ~/ 32,
+            'timelineStartMs': startMs,
+            'tester': tester,
+            'telemetrySamples': samples.length,
+            'firedAtMs': [
+              for (final m in samples)
+                if (m['fired'] == true) (m['t'] as num).toInt() - startMs
+            ],
+            'clips': perClip,
+          });
+        },
+      ))
+      ..register(Command(
         name: 'simulateWakeWord',
         description:
             'Fire a wake-word detection without the engine, for testing the '
@@ -1118,4 +1242,49 @@ class WakeWordManager extends Manager implements NativeAudioSource {
     _resumeTimer?.cancel();
     await _engine.stop();
   }
+}
+
+/// PCM16 payload of a 16 kHz mono WAV, or null when it is anything else.
+Uint8List? _wavPcm16k(Uint8List wav) {
+  if (wav.length < 12) return null;
+  final bd = ByteData.sublistView(wav);
+  if (String.fromCharCodes(wav.sublist(0, 4)) != 'RIFF' ||
+      String.fromCharCodes(wav.sublist(8, 12)) != 'WAVE') {
+    return null;
+  }
+  var off = 12;
+  var ok = false;
+  while (off + 8 <= wav.length) {
+    final id = String.fromCharCodes(wav.sublist(off, off + 4));
+    final size = bd.getUint32(off + 4, Endian.little);
+    final body = off + 8;
+    if (id == 'fmt ' && body + 16 <= wav.length) {
+      final format = bd.getUint16(body, Endian.little);
+      final channels = bd.getUint16(body + 2, Endian.little);
+      final rate = bd.getUint32(body + 4, Endian.little);
+      final bits = bd.getUint16(body + 14, Endian.little);
+      ok = format == 1 && channels == 1 && rate == 16000 && bits == 16;
+    } else if (id == 'data') {
+      if (!ok) return null;
+      final end = body + size > wav.length ? wav.length : body + size;
+      return Uint8List.sublistView(wav, body, end & ~1);
+    }
+    off = body + size + (size & 1);
+  }
+  return null;
+}
+
+/// [ms] of uniform noise at [rms] (full scale 1.0), deterministic per [seed].
+Uint8List _noisePcm(int ms, double rms, {int seed = 1}) {
+  final samples = ms * 16;
+  final out = Int16List(samples);
+  // Uniform on [-a, a] has rms a / sqrt(3).
+  final a = (rms * 1.7320508 * 32767).clamp(0, 32767).toDouble();
+  var state = 0x9E3779B9 ^ seed;
+  for (var i = 0; i < samples; i++) {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    final u = state / 0x7fffffff; // [0, 1)
+    out[i] = ((u * 2 - 1) * a).round();
+  }
+  return Uint8List.view(out.buffer);
 }

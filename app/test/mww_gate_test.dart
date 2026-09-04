@@ -78,6 +78,35 @@ void main() {
     expect(feed(g, 0.88, 5), MwwTrigger.immediate);
   });
 
+  test('warmup is counted in feature frames, not inferences', () {
+    // ok_nabu consumes 3 frames per inference: 100 warmup frames are 34
+    // inferences, about a second, the same second the browser discards.
+    final g = MwwGate(
+      cutoff: 0.85,
+      slidingWindowSize: 5,
+      framesPerInfer: 3,
+      warmupFrames: 100,
+    );
+    expect(feed(g, 0.99, 33), isNull);
+    expect(feed(g, 0.99, 5, startMs: 1500), MwwTrigger.immediate);
+  });
+
+  test('a reset that keeps the warmup does not discard audio again', () {
+    // The energy gate falling asleep: the window empties, but the next thing
+    // the gate hears must be scored at once, since it is the wake word.
+    final g = gate(warmup: 100);
+    feed(g, 0.1, 100);
+    g.reset(keepWarmup: true);
+    expect(feed(g, 0.99, 5, startMs: 5000), MwwTrigger.immediate);
+  });
+
+  test('a full reset pays the warmup again', () {
+    final g = gate(warmup: 100);
+    feed(g, 0.1, 100);
+    g.reset();
+    expect(feed(g, 0.99, 5, startMs: 5000), isNull);
+  });
+
   test('reset drops accumulated state', () {
     final g = gate();
     feed(g, 0.99, 4);

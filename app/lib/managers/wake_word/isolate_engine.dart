@@ -345,7 +345,35 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
         () => report?.call(EngineFailure.micLost, 'microphone failed: $e'));
   }
 
+  /// Real mic chunks are dropped while [injectAudio] feeds its own.
+  bool _injecting = false;
+
+  @override
+  Future<int?> injectAudio(Uint8List pcm) async {
+    if (!_running) return null;
+    final startMs = _preRoll.absSamples ~/ 16;
+    _injecting = true;
+    try {
+      // 80 ms chunks, the size the mic delivers.
+      const chunkBytes = 1280 * 2;
+      for (var off = 0; off < pcm.length; off += chunkBytes) {
+        final end =
+            off + chunkBytes > pcm.length ? pcm.length : off + chunkBytes;
+        _feed(Uint8List.sublistView(pcm, off, end));
+      }
+    } finally {
+      _injecting = false;
+    }
+    log.info(tag, 'injected ${pcm.length ~/ 32} ms of audio at $startMs ms');
+    return startMs;
+  }
+
   void _onMicChunk(Uint8List bytes) {
+    if (_injecting) return;
+    _feed(bytes);
+  }
+
+  void _feed(Uint8List bytes) {
     // Detection (skipped while a voice turn owns the audio). The stop word is
     // the exception: it only matters *during* a turn, so an armed stop
     // classifier keeps the audio flowing even with wake detection paused.

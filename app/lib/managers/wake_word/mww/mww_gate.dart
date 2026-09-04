@@ -7,8 +7,10 @@
 ///  - a sliding-window **mean** over the last `slidingWindowSize`
 ///    probabilities must exceed the model's cutoff (this is also what ESPHome
 ///    does, and what the manifest's `probability_cutoff` is calibrated for);
-///  - a warmup of [warmupFrames] inferences is discarded, because the model's
-///    internal streaming state may still be warm from a previous detection;
+///  - a warmup of [warmupFrames] feature frames is discarded, because the
+///    model's internal streaming state may still be warm from a previous
+///    detection. Counted in frames, not inferences, so it lasts the same
+///    second whatever the model's frames per inference;
 ///  - a cooldown stops one utterance cascading into several triggers;
 ///  - borderline means (within [borderlineConfirmMargin] of the cutoff) must
 ///    happen twice inside [borderlineConfirmWindowMs] before they count. A
@@ -27,6 +29,7 @@ class MwwGate {
   MwwGate({
     required this.cutoff,
     required this.slidingWindowSize,
+    this.framesPerInfer = 1,
     this.warmupFrames = 100,
     this.cooldownMs = 2000,
     this.borderlineConfirmMargin = 0.03,
@@ -36,6 +39,11 @@ class MwwGate {
   /// Model's `probability_cutoff`, already scaled by the card's sensitivity.
   final double cutoff;
   final int slidingWindowSize;
+
+  /// Feature frames the model consumes per [update], so the warmup can be
+  /// counted in frames (the browser's unit) while being advanced per
+  /// inference.
+  final int framesPerInfer;
   final int warmupFrames;
   final int cooldownMs;
   final double borderlineConfirmMargin;
@@ -57,7 +65,7 @@ class MwwGate {
   /// Feed one inference result. [nowMs] is a monotonic clock.
   /// Returns how it triggered, or null.
   MwwTrigger? update(double probability, int nowMs) {
-    _framesProcessed++;
+    _framesProcessed += framesPerInfer;
     // Discard warmup: state left over from a previous detection has to flush
     // through before the probabilities mean anything.
     if (_framesProcessed <= warmupFrames) return null;
@@ -106,14 +114,20 @@ class MwwGate {
 
   /// Drop everything the detector has accumulated. Used when re-arming after a
   /// turn, so speech from the turn just handled cannot fire a stale detection.
-  void reset() {
+  ///
+  /// [keepWarmup] clears the window but leaves the warmup done: the energy
+  /// gate falling asleep drops stale probabilities, but no detection happened
+  /// and the model state is not warm, so paying the warmup again would only
+  /// discard the first second of whatever wakes the gate, which is the wake
+  /// word itself.
+  void reset({bool keepWarmup = false}) {
     for (var i = 0; i < _probBuffer.length; i++) {
       _probBuffer[i] = 0;
     }
     _probIndex = 0;
     _probCount = 0;
     _probSum = 0;
-    _framesProcessed = 0;
+    if (!keepWarmup) _framesProcessed = 0;
     _clearPending();
   }
 }

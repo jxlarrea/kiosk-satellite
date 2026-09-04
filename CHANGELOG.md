@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **microWakeWord hears a wake word spoken into a quiet room again.** With the Wake word noise gate on, the engine falling asleep in silence reset its detector all the way, warmup included, and that warmup was counted in inferences rather than feature frames, so the first three seconds of audio after every wake of the gate were discarded and a wake word said from silence never scored. It only worked when the room had been loud for a few seconds beforehand, which read as a satellite that answers once and then goes deaf until a restart. The gate now keeps its warmup across sleep and counts it in feature frames, the same second the browser engine discards. A new `injectWakeAudio` diagnostic command feeds a WAV through the running engine as if the microphone had heard it, with the real capture muted, and reports the per-inference scores in tester mode.
+
 ## v2026.9.12 - 2026-09-03
 
 ### Fixed
