@@ -515,6 +515,14 @@ Map<String, Object?>? queueTrackSnapshot(Object? queue, {String? webBase}) {
 /// [webBase]) via the image's deterministic proxy id. Null when there is
 /// no image to offer.
 String? queueImageUrl(Object? image, String? webBase, {int size = 512}) {
+  // A media item with no image of its own may carry a list of them in
+  // its metadata, the way a radio station does: the thumbnail first,
+  // else whichever comes first.
+  if (image is List) {
+    final images = image.whereType<Map>().toList();
+    final thumb = images.where((i) => i['type'] == 'thumb').firstOrNull;
+    return queueImageUrl(thumb ?? images.firstOrNull, webBase, size: size);
+  }
   if (image is! Map) return null;
   final path = '${image['path'] ?? ''}';
   if (image['remotely_accessible'] == true && path.startsWith('http')) {

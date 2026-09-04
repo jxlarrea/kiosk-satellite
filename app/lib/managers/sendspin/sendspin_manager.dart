@@ -2081,7 +2081,11 @@ class SendspinManager extends Manager {
       // A row's thumbnail: the item's own image, small, through the
       // server's proxy where it is not a plain URL.
       ...switch (queueImageUrl(
-        it['image'] ?? media['image'],
+        it['image'] ??
+            media['image'] ??
+            (media['metadata'] is Map
+                ? (media['metadata'] as Map)['images']
+                : null),
         webBase,
         size: 128,
       )) {

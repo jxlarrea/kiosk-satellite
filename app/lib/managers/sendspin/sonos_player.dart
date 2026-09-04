@@ -153,21 +153,24 @@ class SonosPlayer implements RemotePlayer {
       final trackArt = SonosClient.parseDidlItems(
         position['TrackMetaData'] ?? '',
       ).firstOrNull?['art'];
-      if (trackArt == null && trackUri.isNotEmpty) {
-        if (_stationFor != trackUri) {
-          _stationFor = trackUri;
-          _station = null;
-          try {
-            _station = stationFrom(await co.mediaInfo(), co.host);
-          } catch (_) {
-            // No media info is no station; the track's own art may
-            // still come on a later poll.
-          }
-        }
-      } else {
-        _stationFor = '';
+      // The media the speaker was given, read once per track: whether it
+      // plays from its queue (a station or a line-in does not, and then
+      // there is nothing to skip to, whatever the track metadata says)
+      // and, for a track with no art of its own, the station's name and
+      // logo.
+      if (trackUri.isNotEmpty && _mediaFor != trackUri) {
+        _mediaFor = trackUri;
         _station = null;
+        try {
+          final media = await co.mediaInfo();
+          _inQueue = (media['CurrentURI'] ?? '').startsWith('x-rincon-queue:');
+          if (trackArt == null) _station = stationFrom(media, co.host);
+        } catch (_) {
+          // No media info: the next poll asks again.
+          _mediaFor = '';
+        }
       }
+      if (trackArt != null) _station = null;
       // The play mode and the volume change rarely and cost a call each:
       // read them at the start, then every few ticks.
       if (_ticks % 5 == 0) {
@@ -295,6 +298,7 @@ class SonosPlayer implements RemotePlayer {
       muted: _muted,
       sawPlayback: _sawPlayback,
       station: _station,
+      inQueue: _inQueue,
     );
     _playing = snap?['playing'] == true;
     if (_playing) _sawPlayback = true;
@@ -310,11 +314,11 @@ class SonosPlayer implements RemotePlayer {
     _emit(snap);
   }
 
-  /// The station the speaker plays, read from its media info for the
-  /// track URI in [_stationFor]; null when the media carried none or
-  /// was not read.
+  /// The station the speaker plays and whether it plays from its queue,
+  /// read from its media info for the track URI in [_mediaFor].
   SonosStation? _station;
-  String _stationFor = '';
+  bool _inQueue = true;
+  String _mediaFor = '';
 
   /// The station in a GetMediaInfo answer: the name and logo of the item
   /// the speaker was given to play, the logo made absolute on the
@@ -476,6 +480,7 @@ class SonosPlayer implements RemotePlayer {
     bool? muted,
     bool sawPlayback = false,
     SonosStation? station,
+    bool inQueue = true,
   }) {
     final state = transport['CurrentTransportState'] ?? '';
     final playing = state == 'PLAYING' || state == 'TRANSITIONING';
@@ -534,8 +539,10 @@ class SonosPlayer implements RemotePlayer {
         'play',
         'pause',
         'stop',
-        'next',
-        'previous',
+        // A stream has nothing to skip to, and neither does anything
+        // played outside the speaker's queue.
+        if (!isStream && inQueue) 'next',
+        if (!isStream && inQueue) 'previous',
         if (durationMs > 0) 'seek',
         'shuffle',
         'repeat',
@@ -697,8 +704,12 @@ class SonosPlayer implements RemotePlayer {
       final co = _coordinator;
       final media = await co.mediaInfo();
       final inQueue = (media['CurrentURI'] ?? '').startsWith('x-rincon-queue:');
+      // A station or a line-in plays outside the queue: the queue the
+      // speaker still holds is not what is playing, and next and
+      // previous do nothing, so the panel says nothing is queued.
+      if (!inQueue) return const RemoteQueue(items: [], upNext: 0);
       final (items, total) = await co.browseQueue();
-      final current = inQueue ? (_snapshot?['trackNumber'] as int? ?? 0) : 0;
+      final current = _snapshot?['trackNumber'] as int? ?? 0;
       final rows = [
         for (final (i, it) in items.indexed)
           {

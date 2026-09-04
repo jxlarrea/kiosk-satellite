@@ -281,6 +281,24 @@ void main() {
       expect(snap['album'], 'Groove Salad');
       expect(snap['stream'], isTrue);
       expect(snap['playing'], isTrue);
+      // Nothing to skip to on a stream.
+      expect(snap['supportedCommands'], isNot(contains('next')));
+      expect(snap['supportedCommands'], isNot(contains('previous')));
+      // Nor on a station that reports its songs like tracks, which the
+      // media info tells apart: it plays outside the queue.
+      final station = SonosPlayer.snapshotFrom(
+        transport: {'CurrentTransportState': 'PLAYING'},
+        position: {
+          'Track': '1',
+          'TrackDuration': '0:03:10',
+          'TrackMetaData': _trackMeta,
+          'RelTime': '0:00:30',
+        },
+        host: 'h',
+        inQueue: false,
+      )!;
+      expect(station['supportedCommands'], isNot(contains('next')));
+      expect(station['supportedCommands'], contains('seek'));
     });
 
     test('stopped shows nothing until playback was seen', () {

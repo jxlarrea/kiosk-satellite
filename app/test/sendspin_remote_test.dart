@@ -639,6 +639,33 @@ void main() {
         ).containsKey('artworkUrl'),
         isFalse,
       );
+      // A radio station carries its images in its metadata list, the
+      // thumbnail ahead of the rest.
+      expect(
+        SendspinManager.queueRow(
+          {
+            'queue_item_id': 'r',
+            'media_item': {
+              'media_type': 'radio',
+              'metadata': {
+                'images': [
+                  {
+                    'type': 'fanart',
+                    'path': 'https://img/fan.jpg',
+                    'remotely_accessible': true,
+                  },
+                  {'type': 'thumb', 'path': '/thumb.jpg', 'proxy_id': 'th'},
+                ],
+              },
+            },
+          },
+          0,
+          0,
+          '',
+          'https://ma.local:8095',
+        )['artworkUrl'],
+        'https://ma.local:8095/imageproxy/th?size=128&fmt=jpg',
+      );
     });
 
     test('mediaPlayerSet follows a player by name or id, per source', () async {
