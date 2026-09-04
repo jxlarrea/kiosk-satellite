@@ -6,6 +6,7 @@ import 'dart:math' show Random, min;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../core/logging.dart';
+import 'music_assistant_api.dart' show repeatMode;
 import 'remote_player.dart';
 
 /// The Now Playing surfaces following a Home Assistant media_player
@@ -42,6 +43,7 @@ class HaRemotePlayer implements RemotePlayer {
   static const featureStop = 4096;
   static const featurePlay = 16384;
   static const featureShuffle = 32768;
+  static const featureRepeatSet = 262144;
 
   final String baseUrl;
   final String token;
@@ -134,6 +136,14 @@ class HaRemotePlayer implements RemotePlayer {
   @override
   Future<bool> setShuffle(bool on) =>
       _callService('shuffle_set', {'shuffle': on});
+
+  @override
+  Future<bool> setRepeat(String mode) =>
+      _callService('repeat_set', {'repeat': mode});
+
+  /// No library of its own to favorite into.
+  @override
+  bool get hasFavorites => false;
 
   @override
   Future<bool> seek(int positionMs) =>
@@ -334,6 +344,7 @@ class HaRemotePlayer implements RemotePlayer {
       if (has(featurePrevious)) 'previous',
       if (has(featureSeek)) 'seek',
       if (has(featureShuffle)) 'shuffle',
+      if (has(featureRepeatSet)) 'repeat',
       if (has(featureVolumeSet)) 'volume',
     ];
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -364,6 +375,7 @@ class HaRemotePlayer implements RemotePlayer {
       'receivedAt': now,
       'playing': playing,
       'shuffle': attributes['shuffle'] == true,
+      'repeat': repeatMode('${attributes['repeat'] ?? ''}'),
       'supportedCommands': commands,
       if (volume != null) 'volume': (volume * 100).round(),
       if (attributes['is_volume_muted'] is bool)

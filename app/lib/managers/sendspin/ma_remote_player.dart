@@ -55,6 +55,7 @@ class MaRemotePlayer implements RemotePlayer {
     'previous',
     'seek',
     'shuffle',
+    'repeat',
     'volume',
   ];
 
@@ -253,6 +254,29 @@ class MaRemotePlayer implements RemotePlayer {
       return false;
     }
   }
+
+  /// Repeat the followed player's queue: off, one or all, a queue setting
+  /// like shuffle, echoed back by queue_updated.
+  @override
+  Future<bool> setRepeat(String mode) async {
+    final session = _session;
+    if (session == null || _queueId.isEmpty) return false;
+    try {
+      await session.send('player_queues/repeat', {
+        'queue_id': _queueId,
+        'repeat_mode': mode,
+      });
+      return true;
+    } catch (e) {
+      log.warn(_name, 'remote repeat failed: $e');
+      return false;
+    }
+  }
+
+  /// Music Assistant keeps a library the playing track can be marked a
+  /// favorite in, for the local player and its own players alike.
+  @override
+  bool get hasFavorites => true;
 
   /// Seek the followed player's queue: Music Assistant takes the position
   /// in whole seconds and answers with a queue_time_updated for the bar.

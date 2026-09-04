@@ -83,8 +83,17 @@ class SendspinManager extends Manager {
       _settings.get(defs.sendspinFullscreenQueue) && queueAvailable;
   String _queueId = '';
 
-  /// The track the queue lookup belongs to, so an answer arriving after
-  /// the song changed is dropped.
+  /// Whether the playing track is a favorite in Music Assistant: null
+  /// while unknown (no server configured, nothing playing, or the lookup
+  /// still out). The Now Playing view's heart reads and flips it.
+  final favorite = ValueNotifier<bool?>(null);
+
+  /// The Music Assistant item behind [favorite]: uri, media_type,
+  /// item_id and provider, what the add and remove commands need.
+  Map<String, Object?>? _favoriteItem;
+
+  /// The track the favorite and queue lookups belong to, so an answer
+  /// arriving after the song changed is dropped.
   String _trackKey = '';
 
   /// True from a lyrics lookup starting to its answer: the view holds
@@ -372,6 +381,11 @@ class SendspinManager extends Manager {
     log.info(name, '${grouped ? 'grouped' : 'ungrouped'} $id under $leader');
     return true;
   }
+
+  /// Whether the playing track can be marked a favorite: Music
+  /// Assistant's library, for the local player and its own players.
+  bool get favoriteAvailable =>
+      _remote == null ? _maConfigured : _remote!.hasFavorites;
 
   /// Whether the Now Playing view can list a queue: Music Assistant holds
   /// one for the local player and for any player it drives, a Sonos has
@@ -699,6 +713,14 @@ class SendspinManager extends Manager {
             for (final e in map.entries)
               if (e.key != 'shuffle' || _watcher == null) e.key: e.value,
           };
+          // The repeat mode the server reports back after a press is the
+          // one the view's toggle settles on.
+          if (map['repeat'] is String &&
+              _remote == null &&
+              nowPlaying.value != null &&
+              nowPlaying.value!['repeat'] != map['repeat']) {
+            nowPlaying.value = {...nowPlaying.value!, 'repeat': map['repeat']};
+          }
         case 'playingChanged':
           final playing = map['playing'] == true;
           if (playing != _playing) {
@@ -1776,6 +1798,14 @@ class SendspinManager extends Manager {
         nowPlaying.value = {...nowPlaying.value!, 'shuffle': shuffle};
       }
     }
+    // Repeat rides the same queue word, for the same reason.
+    final repeat = '${snapshot['repeat'] ?? 'off'}';
+    if (repeat != '${_status['repeat'] ?? 'off'}') {
+      _status = {..._status, 'repeat': repeat};
+      if (_remote == null && nowPlaying.value != null) {
+        nowPlaying.value = {...nowPlaying.value!, 'repeat': repeat};
+      }
+    }
     final sig =
         '${snapshot['queueItemId']}|${snapshot['currentIndex']}|'
         '${snapshot['queueLength']}|$shuffle';
@@ -1857,10 +1887,83 @@ class SendspinManager extends Manager {
     if (key == _trackKey) return;
     _trackKey = key;
     if (now == null) {
+      favorite.value = null;
+      _favoriteItem = null;
       queueItems.value = const [];
       return;
     }
+    unawaited(_refreshFavorite());
     if (queueOpen) unawaited(refreshQueue());
+  }
+
+  Future<void> _refreshFavorite() async {
+    final key = _trackKey;
+    favorite.value = null;
+    _favoriteItem = null;
+    if (!favoriteAvailable || key == '|') return;
+    final title = '${nowPlaying.value?['title'] ?? ''}';
+    // Music Assistant's queue can lag the Sendspin metadata by a beat at
+    // a track boundary: an item that is not the one on screen gets one
+    // more look after a moment.
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final queue = await _activeQueue();
+      if (_trackKey != key) return;
+      final media = (queue?['current_item'] as Map?)?['media_item'];
+      final uri = media is Map ? '${media['uri'] ?? ''}' : '';
+      final name = media is Map ? '${media['name'] ?? ''}' : '';
+      if (uri.isNotEmpty && (name == title || attempt == 1)) {
+        await _resolveFavorite(uri, key);
+        return;
+      }
+      await Future<void>.delayed(const Duration(seconds: 2));
+      if (_trackKey != key) return;
+    }
+  }
+
+  /// Read the item's library state: the library copy when it has one
+  /// (favorites always do), the provider item otherwise.
+  Future<void> _resolveFavorite(String uri, String key) async {
+    final res = await _api().call('music/item_by_uri', args: {'uri': uri});
+    final item = res.result;
+    if (_trackKey != key || !res.ok || item is! Map) return;
+    _favoriteItem = {
+      'uri': uri,
+      'media_type': item['media_type'],
+      'item_id': item['item_id'],
+      'provider': item['provider'],
+    };
+    favorite.value = item['favorite'] == true;
+  }
+
+  /// Flip the playing track's favorite in Music Assistant: the Now
+  /// Playing view's heart. Optimistic on screen, re-read from the server
+  /// after, and put back on a refusal.
+  Future<bool> toggleFavorite() async {
+    final item = _favoriteItem;
+    final current = favorite.value;
+    if (item == null || current == null) return false;
+    final key = _trackKey;
+    favorite.value = !current;
+    final res = current
+        ? await _api().call(
+            'music/favorites/remove_item',
+            args: {
+              'media_type': item['media_type'],
+              'library_item_id': item['item_id'],
+            },
+          )
+        : await _api().call(
+            'music/favorites/add_item',
+            args: {'item': item['uri']},
+          );
+    if (_trackKey != key) return res.ok;
+    if (!res.ok) {
+      log.warn(name, 'favorite toggle failed: ${res.error}');
+      favorite.value = current;
+      return false;
+    }
+    await _resolveFavorite('${item['uri']}', key);
+    return true;
   }
 
   /// The view's queue button: flip the persisted panel setting, taking
@@ -1978,6 +2081,14 @@ class SendspinManager extends Manager {
   /// Shuffle the queue on or off: the Now Playing view's shuffle toggle.
   /// Locally the controller role's shuffle and unshuffle commands; for a
   /// followed player its own system's queue setting.
+  /// Repeat the shown player's queue: off, one or all. A followed
+  /// player's own command; the local player's server takes it as a
+  /// transport command named after the mode.
+  Future<bool> setRepeat(String mode) async {
+    if (_remote case final remote?) return remote.setRepeat(mode);
+    return control('repeat_$mode');
+  }
+
   Future<bool> setShuffle(bool on) async {
     if (_remote case final remote?) return remote.setShuffle(on);
     return control(on ? 'shuffle' : 'unshuffle');

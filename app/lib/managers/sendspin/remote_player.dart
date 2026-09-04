@@ -5,7 +5,8 @@
 /// Every follower publishes the same map shape SendspinManager builds for
 /// the local player ('title', 'artist', 'album', 'durationMs',
 /// 'positionMs', 'receivedAt', 'artworkUrl', 'playing', 'shuffle',
-/// 'supportedCommands' and 'volume' when the source reports one), or
+/// 'repeat' ('off', 'one' or 'all'), 'supportedCommands' and 'volume'
+/// when the source reports one), or
 /// null when there is nothing to show, so the surfaces need not know which
 /// kind of player they are looking at.
 abstract interface class RemotePlayer {
@@ -41,6 +42,13 @@ abstract interface class RemotePlayer {
   Future<bool> control(String command);
 
   Future<bool> setShuffle(bool on);
+
+  /// Set the repeat mode: 'off', 'one' or 'all'.
+  Future<bool> setRepeat(String mode);
+
+  /// Whether the source keeps a library the playing track can be marked
+  /// a favorite in.
+  bool get hasFavorites;
 
   Future<bool> seek(int positionMs);
 

@@ -80,6 +80,33 @@ void main() {
     });
   });
 
+  group('SonosPlayer repeat', () {
+    test('the play mode carries shuffle and repeat together', () {
+      expect(SonosPlayer.repeatOfMode('NORMAL'), 'off');
+      expect(SonosPlayer.repeatOfMode('REPEAT_ALL'), 'all');
+      expect(SonosPlayer.repeatOfMode('REPEAT_ONE'), 'one');
+      expect(SonosPlayer.repeatOfMode('SHUFFLE'), 'all');
+      expect(SonosPlayer.repeatOfMode('SHUFFLE_NOREPEAT'), 'off');
+      expect(SonosPlayer.repeatOfMode('SHUFFLE_REPEAT_ONE'), 'one');
+      for (final mode in [
+        'NORMAL',
+        'REPEAT_ALL',
+        'REPEAT_ONE',
+        'SHUFFLE',
+        'SHUFFLE_NOREPEAT',
+        'SHUFFLE_REPEAT_ONE',
+      ]) {
+        expect(
+          SonosPlayer.modeFor(
+            shuffle: mode.contains('SHUFFLE'),
+            repeat: SonosPlayer.repeatOfMode(mode),
+          ),
+          mode,
+        );
+      }
+    });
+  });
+
   group('SonosPlayer.stationFrom', () {
     test('the station item in the media info carries the name and logo', () {
       // A TuneIn station as GetMediaInfo describes it: the track metadata
@@ -196,6 +223,8 @@ void main() {
       );
       expect(snap['volume'], 9);
       expect(snap['muted'], isTrue);
+      expect(snap['repeat'], 'off');
+      expect(snap['supportedCommands'], contains('repeat'));
       expect(snap['trackNumber'], 2);
       expect(
         snap['artworkUrl'],

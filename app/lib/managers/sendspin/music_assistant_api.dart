@@ -497,6 +497,7 @@ Map<String, Object?>? queueTrackSnapshot(Object? queue, {String? webBase}) {
     'positionMs': ((elapsed ?? 0) * 1000).round(),
     if (measuredAt != null) 'positionAtMs': (measuredAt * 1000).round(),
     'shuffle': queue['shuffle_enabled'] == true,
+    'repeat': repeatMode('${queue['repeat_mode'] ?? ''}'),
     // The queue's identity beside the track's, so a watcher can tell a
     // queue edit from a progress tick.
     'queueItemId': '${item['queue_item_id'] ?? ''}',
@@ -650,3 +651,11 @@ class MusicAssistantError implements Exception {
   @override
   String toString() => message;
 }
+
+/// A repeat mode as the surfaces name it: 'off', 'one' or 'all', out of
+/// Music Assistant's own words for it.
+String repeatMode(String raw) => switch (raw.trim().toLowerCase()) {
+  'one' || 'repeat_one' => 'one',
+  'all' || 'repeat_all' => 'all',
+  _ => 'off',
+};

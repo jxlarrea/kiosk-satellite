@@ -64,6 +64,7 @@ class SonosPlayer implements RemotePlayer {
   bool _sawPlayback = false;
   bool _playing = false;
   bool _shuffle = false;
+  String _repeat = 'off';
   int? _volume;
   bool? _muted;
   Map<String, Object?>? _snapshot;
@@ -172,6 +173,7 @@ class SonosPlayer implements RemotePlayer {
       if (_ticks % 5 == 0) {
         final settings = await co.transportSettings();
         _shuffle = (settings['PlayMode'] ?? '').contains('SHUFFLE');
+        _repeat = repeatOfMode(settings['PlayMode'] ?? '');
         if (_grouped && groupVolume) {
           _volume = await co.groupVolume();
           _muted = await co.groupMute();
@@ -288,6 +290,7 @@ class SonosPlayer implements RemotePlayer {
       position: position,
       host: _coordinator.host,
       shuffle: _shuffle,
+      repeat: _repeat,
       volume: _volume,
       muted: _muted,
       sawPlayback: _sawPlayback,
@@ -468,6 +471,7 @@ class SonosPlayer implements RemotePlayer {
     required Map<String, String> position,
     required String host,
     bool shuffle = false,
+    String repeat = 'off',
     int? volume,
     bool? muted,
     bool sawPlayback = false,
@@ -523,6 +527,7 @@ class SonosPlayer implements RemotePlayer {
       'receivedAt': DateTime.now().millisecondsSinceEpoch,
       'playing': playing,
       'shuffle': shuffle,
+      'repeat': repeat,
       'trackNumber': tracks,
       'stream': isStream,
       'supportedCommands': [
@@ -533,6 +538,7 @@ class SonosPlayer implements RemotePlayer {
         'previous',
         if (durationMs > 0) 'seek',
         'shuffle',
+        'repeat',
         'volume',
       ],
       'volume': ?volume,
@@ -576,28 +582,61 @@ class SonosPlayer implements RemotePlayer {
     }
   }
 
+  /// The repeat behind a Sonos play mode: 'one', 'all' or 'off'. The
+  /// plain SHUFFLE mode repeats all; SHUFFLE_NOREPEAT does not.
+  @visibleForTesting
+  static String repeatOfMode(String mode) {
+    if (mode.contains('REPEAT_ONE')) return 'one';
+    if (mode == 'REPEAT_ALL' || mode == 'SHUFFLE') return 'all';
+    return 'off';
+  }
+
+  /// The Sonos play mode for a shuffle and repeat pair.
+  @visibleForTesting
+  static String modeFor({required bool shuffle, required String repeat}) =>
+      switch ((shuffle, repeat)) {
+        (true, 'one') => 'SHUFFLE_REPEAT_ONE',
+        (true, 'all') => 'SHUFFLE',
+        (true, _) => 'SHUFFLE_NOREPEAT',
+        (false, 'one') => 'REPEAT_ONE',
+        (false, 'all') => 'REPEAT_ALL',
+        (false, _) => 'NORMAL',
+      };
+
+  /// Rooms have no library to favorite into.
+  @override
+  bool get hasFavorites => false;
+
   @override
   Future<bool> setShuffle(bool on) async {
     try {
       final co = _coordinator;
       final settings = await co.transportSettings();
-      final mode = settings['PlayMode'] ?? 'NORMAL';
-      final repeat = mode.contains('REPEAT');
-      final one = mode == 'REPEAT_ONE';
-      await co.setPlayMode(
-        on
-            ? (repeat && !one ? 'SHUFFLE' : 'SHUFFLE_NOREPEAT')
-            : (one
-                  ? 'REPEAT_ONE'
-                  : repeat
-                  ? 'REPEAT_ALL'
-                  : 'NORMAL'),
-      );
+      final repeat = repeatOfMode(settings['PlayMode'] ?? 'NORMAL');
+      await co.setPlayMode(modeFor(shuffle: on, repeat: repeat));
       _shuffle = on;
+      _repeat = repeat;
       unawaited(_poll());
       return true;
     } catch (e) {
       log.warn(_name, 'Sonos shuffle failed: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> setRepeat(String mode) async {
+    try {
+      final co = _coordinator;
+      final settings = await co.transportSettings();
+      final shuffle = (settings['PlayMode'] ?? '').contains('SHUFFLE');
+      await co.setPlayMode(modeFor(shuffle: shuffle, repeat: mode));
+      _shuffle = shuffle;
+      _repeat = mode;
+      unawaited(_poll());
+      return true;
+    } catch (e) {
+      log.warn(_name, 'Sonos repeat failed: $e');
       return false;
     }
   }

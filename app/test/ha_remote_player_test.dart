@@ -45,8 +45,10 @@ void main() {
           'shuffle': true,
           'volume_level': 0.62,
           'is_volume_muted': false,
-          // play, pause, next, previous, seek, volume set, shuffle.
-          'supported_features': 16384 | 1 | 32 | 16 | 2 | 4 | 32768,
+          'repeat': 'all',
+          // play, pause, next, previous, seek, volume set, shuffle,
+          // repeat set.
+          'supported_features': 16384 | 1 | 32 | 16 | 2 | 4 | 32768 | 262144,
         },
         baseUrl: base,
       );
@@ -60,6 +62,8 @@ void main() {
       expect(snap['positionMs'], lessThan(16500));
       expect(snap['playing'], isTrue);
       expect(snap['shuffle'], isTrue);
+      expect(snap['repeat'], 'all');
+      expect(snap['supportedCommands'], contains('repeat'));
       expect(snap['volume'], 62);
       expect(snap['muted'], isFalse);
       expect(

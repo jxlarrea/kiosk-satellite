@@ -1301,7 +1301,8 @@ class _GroupMenuState extends State<_GroupMenu> {
 /// large card's previous, play/pause and next at wall-tablet size, over a
 /// progress bar that seeks where the server allows it, flanked by the
 /// smaller toggles the way Music Assistant's own player lays them out:
-/// volume and shuffle to the left, lyrics and queue to the right. Its
+/// volume, favorite and shuffle to the left, repeat, lyrics and queue
+/// to the right. Its
 /// own widget with its own tick, so the position refresh rebuilds these
 /// few pixels and not the blurred backdrop behind them.
 class _NowPlayingControls extends StatefulWidget {
@@ -1343,6 +1344,10 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   /// the state again (or reports it unchanged, which means it refused).
   bool? _shuffleOverride;
   bool? _lastShuffle;
+
+  /// The repeat mode as just pressed, the same way.
+  String? _repeatOverride;
+  String? _lastRepeat;
 
   /// Where a dpad lands when the view comes up: play or pause, the
   /// middle of the transport, so left and right reach everything else.
@@ -1394,6 +1399,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   void initState() {
     super.initState();
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
+    c.sendspin.favorite.addListener(_rebuild);
     // Nothing else on the view takes focus, so without this a dpad had
     // nothing to walk from.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1411,6 +1417,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   @override
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
+    c.sendspin.favorite.removeListener(_rebuild);
     _settingsSub?.cancel();
     _tick?.cancel();
     _volumeClose?.cancel();
@@ -1428,6 +1435,11 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     final playing = now?['playing'] == true;
     // Any fresh word from the server on shuffle outranks the press.
     final shuffle = now?['shuffle'] == true;
+    final repeat = '${now?['repeat'] ?? 'off'}';
+    if (repeat != _lastRepeat) {
+      _lastRepeat = repeat;
+      _repeatOverride = null;
+    }
     if (shuffle != _lastShuffle) {
       _lastShuffle = shuffle;
       _shuffleOverride = null;
@@ -1456,6 +1468,18 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     setState(() => _shuffleOverride = on);
     final ok = await c.sendspin.setShuffle(on);
     if (!ok && mounted) setState(() => _shuffleOverride = null);
+  }
+
+  /// Off, all, one, off: the order every player app cycles in.
+  Future<void> _cycleRepeat(String current) async {
+    final next = switch (current) {
+      'off' => 'all',
+      'all' => 'one',
+      _ => 'off',
+    };
+    setState(() => _repeatOverride = next);
+    final ok = await c.sendspin.setRepeat(next);
+    if (!ok && mounted) setState(() => _repeatOverride = null);
   }
 
   Future<void> _seek(double ms) async {
@@ -1537,11 +1561,42 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     );
     Widget transport(IconData icon, String command, {required double size}) =>
         btn(icon, () => c.sendspin.control(command), size: size);
-    // The four toggles: lit when on, dimmed when off. A missing one
-    // leaves its width behind so the transport stays centered under the
-    // cover either way.
+    // The six toggles, three a side: lit when on, dimmed when off. A
+    // missing one leaves its width behind so the transport stays
+    // centered under the cover either way.
     const toggleSize = 32.0;
     final toggleBlank = SizedBox(width: (toggleSize + 16) * scale);
+    // The heart: unknown (the lookup still out) draws faint and inert,
+    // and without a Music Assistant library behind the source there is
+    // nothing to favorite into.
+    final favorite = c.sendspin.favorite.value;
+    final heart = c.sendspin.favoriteAvailable
+        ? btn(
+            favorite == true
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            favorite == null ? null : c.sendspin.toggleFavorite,
+            size: toggleSize,
+            color: favorite == true
+                ? Colors.white
+                : favorite == null
+                ? Colors.white24
+                : Colors.white38,
+          )
+        : toggleBlank;
+    // Repeat: off dim, all lit, one lit with the numbered glyph. The
+    // local player's server names it per mode in its command set.
+    final repeatMode = _repeatOverride ?? '${now['repeat'] ?? 'off'}';
+    final repeat = has('repeat') || has('repeat_all')
+        ? btn(
+            repeatMode == 'one'
+                ? Icons.repeat_one_rounded
+                : Icons.repeat_rounded,
+            () => _cycleRepeat(repeatMode),
+            size: toggleSize,
+            color: repeatMode == 'off' ? Colors.white38 : Colors.white,
+          )
+        : toggleBlank;
     final shuffleOn = _shuffleOverride ?? (now['shuffle'] == true);
     final shuffle = has('shuffle')
         ? btn(
@@ -1574,7 +1629,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
           )
         : toggleBlank;
     // The volume toggle leads the left cluster; the right one keeps a
-    // blank so the transport stays centered with two slots a side.
+    // blank so the transport stays centered with three slots a side.
     final volumeAvailable = c.sendspin.volumeAvailable;
     final volumeOpen = _volumeOpen && volumeAvailable;
     final level =
@@ -1625,7 +1680,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     // the screen's center line under the cover: a spare slot on one side
     // once shifted the whole row half a toggle off it.
     final rowWidth =
-        item(toggleSize) * 4 +
+        item(toggleSize) * 6 +
         item(44) * 2 +
         item(68) +
         (12 * 2 + 20 * 2 + 16 * 2) * scale;
@@ -1757,6 +1812,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                 children: [
                   ...cluster([
                     ('volume', volume),
+                    ('heart', heart),
                     ('shuffle', shuffle),
                   ], left: true),
                   SizedBox(width: 20 * scale),
@@ -1781,6 +1837,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                     transport(Icons.skip_next_rounded, 'next', size: 44),
                   SizedBox(width: 20 * scale),
                   ...cluster([
+                    ('repeat', repeat),
                     ('lyrics', lyrics),
                     ('queue', queue),
                   ], left: false),

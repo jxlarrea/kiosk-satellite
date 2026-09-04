@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **The favorite heart is back on the Now Playing view, and a repeat toggle joins it.** The toggles flanking the transport are three a side again: volume, the heart and shuffle on the left, repeat, lyrics and queue on the right, the way Music Assistant's own player lays them out. The heart marks the playing track as a favorite in Music Assistant, filled while it is one, for this device's own player and a followed Music Assistant player. Repeat cycles off, all and one on every source that reports it: Music Assistant's queue, a Sonos room's play mode and a Home Assistant player's repeat set, with the numbered glyph on one. A source without either leaves a blank in its place so the transport stays centered.
+
 ## v2026.9.16 - 2026-09-04
 
 ### Fixed
