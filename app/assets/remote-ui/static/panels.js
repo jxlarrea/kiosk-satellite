@@ -275,7 +275,8 @@ export async function updateSonosPage() {
         'Search this network or add a speaker by its address.', ''));
     }
     for (const p of speakers) {
-      const r = readOnlyRow(p.name, p.host, '');
+      // The address, and the id an automation can follow the room by.
+      const r = readOnlyRow(p.name, `${p.host} · ${p.id}`, '');
       r.querySelector('span')?.remove();
       const forget = document.createElement('button');
       forget.className = 'icon-btn';

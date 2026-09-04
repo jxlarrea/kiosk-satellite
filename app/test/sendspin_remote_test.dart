@@ -584,6 +584,104 @@ void main() {
       expect(settings.visible(defs.sendspinShowPlayer), isFalse);
     });
 
+    test('mediaPlayerSet follows a player by name or id, per source', () async {
+      await build();
+      sendspin.apiFactory = ({required baseUrl, required token}) => _FakeApi([
+        {
+          'player_id': 'b',
+          'display_name': 'Kitchen',
+          'available': true,
+          'enabled': true,
+        },
+        {
+          'player_id': 'a',
+          'display_name': 'Attic',
+          'available': false,
+          'enabled': true,
+        },
+      ]);
+      // By name, case aside, and the readable source spelling.
+      var result = await sendspin.commands.execute('mediaPlayerSet', {
+        'source': 'Music Assistant',
+        'player': 'kitchen',
+      });
+      expect(result.ok, isTrue);
+      expect(result.data, {
+        'source': 'music_assistant',
+        'id': 'b',
+        'name': 'Kitchen',
+      });
+      expect(settings.get(defs.sendspinPlayerSource), 'ma');
+      expect(settings.get(defs.sendspinPlayer), 'ma:b');
+      expect(settings.get(defs.sendspinPlayerName), 'Kitchen');
+      expect(settings.get(defs.sendspinPlayerActive), isTrue);
+      // By id, bare or prefixed.
+      result = await sendspin.commands.execute('mediaPlayerSet', {
+        'source': 'ma',
+        'player': 'a',
+      });
+      expect(result.ok, isTrue);
+      expect(settings.get(defs.sendspinPlayer), 'ma:a');
+      result = await sendspin.commands.execute('mediaPlayerSet', {
+        'source': 'ma',
+        'player': 'ma:b',
+      });
+      expect(settings.get(defs.sendspinPlayer), 'ma:b');
+      // Nobody of that name, and a source nobody knows: refused, and the
+      // pick stays.
+      result = await sendspin.commands.execute('mediaPlayerSet', {
+        'source': 'ma',
+        'player': 'Garage',
+      });
+      expect(result.ok, isFalse);
+      expect(settings.get(defs.sendspinPlayer), 'ma:b');
+      result = await sendspin.commands.execute('mediaPlayerSet', {
+        'source': 'spotify',
+        'player': 'Kitchen',
+      });
+      expect(result.ok, isFalse);
+      // The device source puts this device back on its own player.
+      result = await sendspin.commands.execute('mediaPlayerSet', {
+        'source': 'device',
+        'player': '',
+      });
+      expect(result.ok, isTrue);
+      expect(settings.get(defs.sendspinPlayerSource), '');
+      expect(settings.get(defs.sendspinPlayer), '');
+      expect(settings.get(defs.sendspinPlayerName), '');
+    });
+
+    test('the source and player helpers behind the actions', () {
+      expect(SendspinManager.sourceKey('Home Assistant'), 'ha');
+      expect(SendspinManager.sourceKey('home-assistant'), 'ha');
+      expect(SendspinManager.sourceKey('musicassistant'), 'ma');
+      expect(SendspinManager.sourceKey('SONOS'), 'sonos');
+      expect(SendspinManager.sourceKey('This device'), '');
+      expect(SendspinManager.sourceKey('spotify'), isNull);
+      expect(SendspinManager.sourceLabel('ha'), 'home_assistant');
+      expect(SendspinManager.sourceLabel(''), 'device');
+      final rows = <Map>[
+        {'id': 'sonos:RINCON_1', 'name': 'Office', 'available': false},
+        {'id': 'sonos:RINCON_2', 'name': 'Office', 'available': true},
+        {'id': 'sonos:RINCON_3', 'name': 'Hall'},
+      ];
+      // A shared name goes to the available one; an id matches bare or
+      // prefixed.
+      expect(
+        SendspinManager.pickPlayer(rows, 'office')!['id'],
+        'sonos:RINCON_2',
+      );
+      expect(
+        SendspinManager.pickPlayer(rows, 'RINCON_1')!['id'],
+        'sonos:RINCON_1',
+      );
+      expect(
+        SendspinManager.pickPlayer(rows, 'sonos:RINCON_3')!['name'],
+        'Hall',
+      );
+      expect(SendspinManager.pickPlayer(rows, 'Garage'), isNull);
+    });
+
     test('mediaPlayers lists, filters and sorts the server players', () async {
       await build();
       sendspin.apiFactory = ({required baseUrl, required token}) => _FakeApi([

@@ -56,7 +56,7 @@ Configures direct integration with local Sonos hardware.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Adjust the group volume | on | Controls whether the Now Playing volume slider adjusts the entire Sonos group volume or only the local room volume. |
-| Speakers | list | Displays discovered Sonos rooms with a **Forget** option to clear household pairings. **Search** discovers speakers on the local subnet via SSDP. **Add by address** allows manually targeting a speaker IP on a different VLAN. |
+| Speakers | list | Displays discovered Sonos rooms, each with its address and its id (the serial an automation can follow the room by), and a **Forget** option to clear household pairings. **Search** discovers speakers on the local subnet via SSDP. **Add by address** allows manually targeting a speaker IP on a different VLAN. |
 
 ### Floating Player
 

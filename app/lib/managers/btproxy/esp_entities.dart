@@ -14,6 +14,7 @@ import 'dashboard_views.dart';
 import 'interaction_stamp.dart';
 import '../sendspin/music_assistant_api.dart';
 import '../settings/definitions.dart' as defs;
+import '../sendspin/sendspin_manager.dart' show SendspinManager;
 import '../settings/settings_manager.dart';
 import 'countdown_stamp.dart';
 
@@ -937,6 +938,21 @@ class EspEntitySurface {
         {'name': 'id', 'type': 'int'},
       ],
     },
+    // The players the Now Playing surfaces can follow, as an automation
+    // reads them through response_variable: every source's list, the
+    // names and ids media_player_set takes, and the current pick.
+    {'name': 'media_player_list', 'supportsResponse': true, 'args': []},
+    // Follow a player: the source and the player by name or id, the way
+    // the Media Player page picks one. The device source puts this
+    // device back on its own player and needs no player.
+    {
+      'name': 'media_player_set',
+      'supportsResponse': true,
+      'args': [
+        {'name': 'source', 'type': 'string'},
+        {'name': 'player', 'type': 'string'},
+      ],
+    },
   ];
 
   /// An action call from Home Assistant landed (via the native hub). The
@@ -975,6 +991,39 @@ class EspEntitySurface {
       case 'notification_dismiss':
         await commands.execute('dismissNotification', {'id': args['id'] ?? 0});
         return null;
+      case 'media_player_list':
+        final listed = await commands.execute('mediaPlayers', const {});
+        if (!listed.ok) throw StateError(listed.error ?? 'refused');
+        final data = (listed.data as Map?) ?? const {};
+        final players = [
+          for (final p in (data['players'] as List? ?? const []))
+            if (p is Map)
+              {
+                'source': SendspinManager.sourceLabel('${p['group'] ?? ''}'),
+                'name': '${p['name'] ?? ''}',
+                'id': '${p['id'] ?? ''}'.replaceFirst(RegExp(r'^[a-z]+:'), ''),
+                'available': p['available'] != false,
+              },
+        ];
+        final pick = _settings.get(defs.sendspinPlayer);
+        return {
+          'players': players,
+          'current': {
+            'source': SendspinManager.sourceLabel(
+              _settings.get(defs.sendspinPlayerSource),
+            ),
+            'id': pick.replaceFirst(RegExp(r'^[a-z]+:'), ''),
+            'name': _settings.get(defs.sendspinPlayerName),
+          },
+          'notes': data['notes'] ?? const {},
+        };
+      case 'media_player_set':
+        final result = await commands.execute('mediaPlayerSet', {
+          'source': '${args['source'] ?? ''}',
+          'player': '${args['player'] ?? ''}',
+        });
+        if (!result.ok) throw StateError(result.error ?? 'refused');
+        return (result.data as Map?)?.cast<String, Object?>();
       default:
         log.warn('esphome', 'unknown action $name');
         return null;

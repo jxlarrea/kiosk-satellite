@@ -5490,7 +5490,9 @@ class _SonosSpeakersCardState extends State<_SonosSpeakersCard> {
             ListTile(
               leading: const Icon(Icons.speaker_outlined),
               title: Text('${p['name']}'),
-              subtitle: Text('${p['host']}'),
+              // The address, and the id an automation can follow the
+              // room by.
+              subtitle: Text('${p['host']} · ${p['id']}'),
               trailing: IconButton(
                 icon: const Icon(Icons.delete_outline),
                 tooltip: 'Forget',

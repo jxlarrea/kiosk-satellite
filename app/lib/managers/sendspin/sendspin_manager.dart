@@ -1101,6 +1101,58 @@ class SendspinManager extends Manager {
 
     commands.register(
       Command(
+        name: 'mediaPlayerSet',
+        description:
+            'Follow a player: the source (device, home_assistant, '
+            'music_assistant or sonos) and the player by name or id, the '
+            'way the Media Player page picks one. The device source needs '
+            'no player and puts this device back on its own.',
+        params: const {
+          'source': 'device | home_assistant | music_assistant | sonos',
+          'player': 'the player name, or its id',
+        },
+        handler: (p) async {
+          final source = sourceKey('${p['source'] ?? ''}');
+          if (source == null) return const CommandResult.fail('unknown source');
+          if (source.isEmpty) {
+            await _settings.set(defs.sendspinPlayer, '');
+            await _settings.set(defs.sendspinPlayerName, '');
+            await _settings.set(defs.sendspinPlayerSource, '');
+            return CommandResult.ok({'source': 'device', 'id': '', 'name': ''});
+          }
+          final wanted = '${p['player'] ?? ''}'.trim();
+          if (wanted.isEmpty) return const CommandResult.fail('no player');
+          final listed = await commands.execute('mediaPlayers', {
+            'source': source,
+          });
+          final rows = ((listed.data as Map?)?['players'] as List? ?? const [])
+              .whereType<Map>()
+              .toList();
+          final match = pickPlayer(rows, wanted);
+          if (match == null) {
+            return CommandResult.fail('no $wanted among the $source players');
+          }
+          final id = '${match['id']}';
+          final name = '${match['name']}';
+          // The source first, so the pick that follows is one of its own
+          // and the reconcile that trails a source change has nothing to
+          // clear.
+          await _settings.set(defs.sendspinPlayerSource, source);
+          await Future<void>.delayed(Duration.zero);
+          await _settings.set(defs.sendspinPlayer, id);
+          await _settings.set(defs.sendspinPlayerName, name);
+          await _settings.set(defs.sendspinPlayerActive, true);
+          return CommandResult.ok({
+            'source': sourceLabel(source),
+            'id': id.substring(id.indexOf(':') + 1),
+            'name': name,
+          });
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
         name: 'sonosSpeakers',
         description:
             'The Sonos speakers this device knows, by room: id, name and '
@@ -1331,6 +1383,46 @@ class SendspinManager extends Manager {
           '${b['name']}'.toLowerCase(),
         ),
       );
+
+  /// The source key behind a name an action or automation uses: the
+  /// setting's own keys, the readable forms and a few spellings people
+  /// reach for. Empty is this device; null is nothing known.
+  static String? sourceKey(String name) {
+    final n = name.trim().toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');
+    return switch (n) {
+      '' || 'device' || 'this_device' || 'local' || 'sendspin' => '',
+      'ha' || 'home_assistant' || 'homeassistant' => 'ha',
+      'ma' || 'music_assistant' || 'musicassistant' => 'ma',
+      'sonos' => 'sonos',
+      _ => null,
+    };
+  }
+
+  /// The readable form of a source key, what the actions answer with.
+  static String sourceLabel(String key) => switch (key) {
+    'ha' => 'home_assistant',
+    'ma' => 'music_assistant',
+    'sonos' => 'sonos',
+    _ => 'device',
+  };
+
+  /// The row of [rows] (mediaPlayers answers) that [wanted] names: its id
+  /// with or without the source prefix, or its name, case aside. Two
+  /// players of one name: the available one, else the first.
+  static Map<String, Object?>? pickPlayer(List<Map> rows, String wanted) {
+    final w = wanted.trim().toLowerCase();
+    Map<String, Object?>? cast(Map? m) => m?.cast<String, Object?>();
+    for (final r in rows) {
+      final id = '${r['id']}';
+      final bare = id.substring(id.indexOf(':') + 1);
+      if (id.toLowerCase() == w || bare.toLowerCase() == w) return cast(r);
+    }
+    final named = rows.where((r) => '${r['name']}'.toLowerCase() == w);
+    return cast(
+      named.where((r) => r['available'] != false).firstOrNull ??
+          named.firstOrNull,
+    );
+  }
 
   /// Music Assistant's players, for the picker. This device's own player
   /// has no business in the list: "This device" already is that choice,

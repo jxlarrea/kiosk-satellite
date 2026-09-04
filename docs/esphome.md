@@ -288,6 +288,28 @@ binary_sensor:
 
 For best results, assign unique `chime_file` names within your automations for distinct alerts (like a leak, a delivery, or the laundry finishing) and rely on the default settings for everything else.
 
+
+## Media player actions
+
+Two actions follow a player from an automation, the way the Media Player page's Player source and Player rows do by hand. Both come with **Expose kiosk entities**, under the same device as the notification action.
+
+`esphome.<node name>_media_player_list` takes no arguments and answers with every player the kiosk can follow, read through `response_variable`: each with its `source` (`device`, `home_assistant`, `music_assistant` or `sonos`), its `name`, its `id` and whether it is `available`, plus `current`, the pick in force. A Sonos room's id is the serial the Sonos page shows under its address.
+
+`esphome.<node name>_media_player_set` takes a `source` and a `player`, the player by its name as listed or by its id, and answers with what it picked. The `device` source puts the kiosk back on its own Sendspin player; its `player` is then ignored but must still be given, since no ESPHome action argument is optional.
+
+```yaml
+- action: esphome.kitchen_tablet_media_player_set
+  data:
+    source: sonos
+    player: Office
+- action: esphome.kitchen_tablet_media_player_set
+  data:
+    source: device
+    player: ""
+```
+
+A name that two players share goes to the available one. On the [remote API](remote-api.md) the same two are the `mediaPlayers` and `mediaPlayerSet` commands.
+
 ## GPS Sensor
 
 If your device travels (like a tablet mounted in an RV), it can transmit its exact location to Home Assistant using its built in GPS receiver. You must explicitly opt in via **Settings > ESPHome > GPS Sensor**.
