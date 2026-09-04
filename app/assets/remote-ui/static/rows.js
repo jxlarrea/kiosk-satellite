@@ -28,6 +28,16 @@ import {
 // The Immich name-picker rows (albums, people, tags): which command lists
 // the choices, and the words for an empty pick and an empty list, the same
 // as the device's.
+/* The warning that stands before real screen-off, on the slider and on a
+   schedule entry's own, word-for-word with the device's dialog. */
+const SCREEN_OFF_WARNING = "Once the display truly powers off, the tablet's own "
+  + 'power management takes over, and many Android models misbehave in that '
+  + 'state: Wi-Fi naps or drops, the Home Assistant entities go unavailable, '
+  + 'the camera can be revoked, and some models kill background apps '
+  + 'outright. What happens depends on the manufacturer.\n\n'
+  + 'The reliable alternative is the Black screensaver with this setting '
+  + 'left at 0: the panel looks just as dark, and the app keeps full control.';
+
 const IMMICH_NAMED_ROWS = {
   'screensaver.immich_album': {
     command: 'immichAlbums', empty: 'All media',
@@ -348,12 +358,14 @@ export function settingRow(s) {
 
     // The labeled editor modal, the same fields in the same order as the
     // device's dialog: time, screensaver, the brightness switch and its
-    // slider, then the four overrides. That many controls do not fit in a
-    // row on either UI.
+    // slider, the screen-off switch and its slider, then the overrides.
+    // That many controls do not fit in a row on either UI.
     const editEntry = async (existing) => {
       const others = entries.filter((e) => e !== existing);
       const brightnessDef = (state.settings || [])
         .find((o) => o.key === 'screensaver.brightness_level');
+      const screenOffDef = (state.settings || [])
+        .find((o) => o.key === 'screensaver.screen_off_minutes');
       const start = existing || {
         at: '19:00',
         mode: (modeDef && modeDef.value) || 'clock',
@@ -415,6 +427,68 @@ export function settingRow(s) {
           : 'Follows the Screensaver brightness setting.';
       });
 
+      // The same slider as the main screensaver page, behind a switch:
+      // off, the entry follows the Turn screen off after slider outside the
+      // schedule; on, the slider below is this entry's own countdown,
+      // starting from that slider's value, 0 keeping the panel on through
+      // its hours even when that slider is set (issue #437).
+      const globalOff = (screenOffDef && typeof screenOffDef.value === 'number')
+        ? screenOffDef.value : 0;
+      const hasOff = typeof start.screen_off === 'number';
+      const offDesc = (on, minutes) => !on
+        ? 'Follows the Turn screen off after setting.'
+        : minutes === 0
+          ? 'Keeps the screen on during these hours.'
+          : 'Powers down the display once the screensaver has run this '
+            + 'long. Requires Device Administrator permission.';
+      const offOn = cameraToggle('Turn screen off after', hasOff,
+        offDesc(hasOff, hasOff ? start.screen_off : 0));
+      const offWrap = document.createElement('label');
+      offWrap.className = 'form-field';
+      const offTitle = document.createElement('span');
+      offTitle.className = 'desc';
+      offTitle.textContent = 'Turn screen off after';
+      const offLine = document.createElement('div');
+      offLine.style.cssText = 'display:flex; align-items:center; gap:10px;';
+      const offRng = document.createElement('input');
+      offRng.type = 'range'; offRng.className = 'range';
+      offRng.min = '0'; offRng.max = '60'; offRng.step = '5';
+      offRng.value = String(hasOff ? Math.min(60, Math.max(0, start.screen_off)) : globalOff);
+      offRng.style.cssText = 'flex:1;';
+      const offLabel = document.createElement('span');
+      offLabel.className = 'device';
+      offLabel.style.cssText = 'width:52px; text-align:right; flex-shrink:0;';
+      const offPaint = () => {
+        offLabel.textContent = +offRng.value === 0 ? 'Never' : offRng.value + ' min';
+        offOn.wrap.querySelector('.desc').textContent =
+          offDesc(offOn.input.checked, +offRng.value);
+      };
+      offPaint();
+      let offBefore = +offRng.value;
+      offRng.addEventListener('input', offPaint);
+      // Leaving 0 gets the same warning as the slider outside the schedule.
+      offRng.addEventListener('change', async () => {
+        const next = +offRng.value;
+        if (offBefore === 0 && next > 0) {
+          const pick = await messageBox({
+            title: 'WARNING: Please Read!',
+            message: SCREEN_OFF_WARNING,
+            buttons: ['Cancel', 'Turn screen off anyway'],
+          });
+          if (pick === 'Cancel') { offRng.value = '0'; offPaint(); return; }
+        }
+        offBefore = next;
+      });
+      offLine.append(offRng, offLabel);
+      offWrap.append(offTitle, offLine);
+      // Inline display, not the hidden attribute: .form-field's own
+      // display:flex would outrank [hidden] and keep the slider showing.
+      offWrap.style.display = hasOff ? '' : 'none';
+      offOn.input.addEventListener('change', () => {
+        offWrap.style.display = offOn.input.checked ? '' : 'none';
+        offPaint();
+      });
+
       // The three overrides share one shape: Default follows the matching
       // setting outside the schedule, On and Off decide it for this entry's
       // hours.
@@ -445,11 +519,27 @@ export function settingRow(s) {
         face.select.title =
           state.visionSupport.hint || 'Not available on this device.';
       }
+      // The proximity override is offered wherever the sensor is not
+      // known to be missing (never disabled on a guess, like the switch),
+      // and the person override only where the Person Detection page
+      // exists at all (a Portal's sensor, hidden everywhere else).
+      const proximity = overrideField('Dismiss on proximity', start.proximity);
+      const prox = state.proximitySupport;
+      if (prox && prox.supported === false) {
+        proximity.select.disabled = true;
+        proximity.select.title = prox.hint || 'Not available on this device.';
+      }
+      const personDef = (state.settings || [])
+        .find((x) => x.key === 'screensaver.dismiss_on_person');
+      const personShown = !!personDef && !personDef.hidden;
+      const person = overrideField('Dismiss on person', start.person);
       const widgets = overrideField('Widgets', start.widgets);
       const glance = overrideField('At a glance', start.glance);
 
       body.append(timeWrap, modeSel.wrap, brightOn.wrap, brightWrap,
-        motion.wrap, face.wrap, widgets.wrap, glance.wrap);
+        offOn.wrap, offWrap, motion.wrap, face.wrap, proximity.wrap);
+      if (personShown) body.append(person.wrap);
+      body.append(widgets.wrap, glance.wrap);
 
       return cameraEditor({
         title: existing ? String(start.at) : 'Add time',
@@ -462,7 +552,11 @@ export function settingRow(s) {
             mode: modeSel.select.value,
           };
           if (brightOn.input.checked) entry.brightness = (+rng.value) / 100;
+          if (offOn.input.checked) entry.screen_off = +offRng.value;
+          // The person field rides along unseen where the page is hidden,
+          // so an entry's value from another device survives an edit here.
           for (const [key, field] of [['motion', motion], ['face', face],
+            ['proximity', proximity], ['person', person],
             ['widgets', widgets], ['glance', glance]]) {
             if (field.select.value) entry[key] = field.select.value === 'on';
           }
@@ -487,11 +581,21 @@ export function settingRow(s) {
       if (typeof e.face === 'boolean') {
         parts.push('Face ' + (e.face ? 'on' : 'off'));
       }
+      if (typeof e.proximity === 'boolean') {
+        parts.push('Proximity ' + (e.proximity ? 'on' : 'off'));
+      }
+      if (typeof e.person === 'boolean') {
+        parts.push('Person ' + (e.person ? 'on' : 'off'));
+      }
       if (typeof e.widgets === 'boolean') {
         parts.push('Widgets ' + (e.widgets ? 'on' : 'off'));
       }
       if (typeof e.glance === 'boolean') {
         parts.push('At a glance ' + (e.glance ? 'on' : 'off'));
+      }
+      if (typeof e.screen_off === 'number') {
+        parts.push(e.screen_off <= 0 ? 'Screen off never'
+          : 'Screen off after ' + Math.round(e.screen_off) + ' min');
       }
       return parts.join(' · ');
     };
@@ -1128,15 +1232,7 @@ export function settingRow(s) {
           Number(s.value || 0) === 0 && next > 0) {
         const pick = await messageBox({
           title: 'WARNING: Please Read!',
-          message: "Once the display truly powers off, the tablet's own "
-            + 'power management takes over, and many Android models '
-            + 'misbehave in that state: Wi-Fi naps or drops, the Home '
-            + 'Assistant entities go unavailable, the camera can be '
-            + 'revoked, and some models kill background apps outright. '
-            + 'What happens depends on the manufacturer.\n\n'
-            + 'The reliable alternative is the Black screensaver with this '
-            + 'setting left at 0: the panel looks just as dark, and the '
-            + 'app keeps full control.',
+          message: SCREEN_OFF_WARNING,
           buttons: ['Cancel', 'Turn screen off anyway'],
         });
         if (pick === 'Cancel') {

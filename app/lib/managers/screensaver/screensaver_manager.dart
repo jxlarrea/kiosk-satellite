@@ -54,12 +54,21 @@ List<Map<String, Object?>> parseScreensaverSchedule(String json) {
         // The same for "Dismiss on face" (issue #304): a day entry can
         // wake on faces while a night entry falls back to motion.
         if (e['face'] is bool) 'face': e['face'],
+        // And for "Dismiss on proximity" and "Dismiss on person" (issue
+        // #437), each gated by the device having the sensor at all.
+        if (e['proximity'] is bool) 'proximity': e['proximity'],
+        if (e['person'] is bool) 'person': e['person'],
         // Tri-state widgets override: absent shows whatever the Widgets
         // group configures, false hides the corner widgets for this
         // entry's hours.
         if (e['widgets'] is bool) 'widgets': e['widgets'],
         // The same for the At a glance row.
         if (e['glance'] is bool) 'glance': e['glance'],
+        // The entry's own "Turn screen off after" (issue #437), in minutes:
+        // absent follows the slider outside the schedule, 0 keeps the
+        // panel on for this entry's hours even when that slider is set.
+        if (e['screen_off'] is num)
+          'screen_off': (e['screen_off'] as num).clamp(0, 60).toInt(),
       });
     }
     entries.sort(
@@ -154,6 +163,19 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   /// One real minute, injectable for tests only.
   final Duration _screenOffUnit;
+
+  /// The minutes the running countdown was armed with, so a schedule
+  /// boundary or a slider move re-arms only when the effective value
+  /// actually changed: a notification lifting the brightness or music
+  /// starting under the screensaver reapplies the visuals too, and neither
+  /// is a reason to restart the clock. Null between sessions.
+  int? _armedScreenOffMinutes;
+
+  /// The panel went dark under the session (the timer's own power-off or
+  /// anyone else's). Nothing is counted down while it is, whatever the
+  /// schedule crosses into: a second lockNow on a dark panel does nothing
+  /// useful, and the wake paths re-arm on their own.
+  bool _panelDark = false;
 
   /// Another app is in front of the kiosk (an app from the launcher, a
   /// gesture or Home Assistant, Home pressed without kiosk mode). The
@@ -313,10 +335,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         return;
       }
       if (!e.on) {
+        _panelDark = true;
         _screenOffTimer?.cancel();
         _screenOffTimer = null;
         return;
       }
+      _panelDark = false;
       if (byHand) {
         notifyActivity('screen on');
         return;
@@ -434,7 +458,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         }
         return;
       }
-      if (!_settings.get(defs.screensaverDismissOnPerson)) return;
+      // The active schedule entry's override (issue #437) wins over the
+      // switch, as the motion override does.
+      if (!(_personPolicy ?? _settings.get(defs.screensaverDismissOnPerson))) {
+        return;
+      }
       // Dismiss acts on someone arriving. A held signal is someone who
       // was already there when the screensaver started: with Postpone off
       // that screensaver is wanted, and re-dismissing it on every
@@ -464,7 +492,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         }
         return;
       }
-      if (!_settings.get(defs.screensaverDismissOnProximity)) return;
+      // The active schedule entry's override (issue #437) wins over the
+      // switch, as the motion override does.
+      if (!(_proximityPolicy ??
+          _settings.get(defs.screensaverDismissOnProximity))) {
+        return;
+      }
       // The approach dismisses; something still close when the screensaver
       // starts does not (issue #369, the same rule as the person sensor).
       if (e.held) return;
@@ -549,9 +582,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         }
       }
       // Moving the screen-off slider under a running session applies to it:
-      // the countdown restarts at the new value (or stops at 0).
+      // the countdown restarts at the new value (or stops at 0), unless the
+      // active schedule entry carries its own, which the slider never
+      // reaches.
       if (_active && e.key == defs.screensaverScreenOffMinutes.key) {
-        _armScreenOffTimer();
+        _syncScreenOffTimer();
       }
       // Moving the screensaver-brightness controls while the screensaver is
       // showing applies immediately: the slider doubles as a live preview.
@@ -916,16 +951,35 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// The face override (issue #304), kept the same way.
   bool? _facePolicy;
 
-  /// Announce the active entry's motion and face overrides (issues #89 and
-  /// #304), each null between sessions and for entries without one.
-  void _publishMotionPolicy(bool? motion, bool? face) {
-    if (motion == _motionPolicy && face == _facePolicy) return;
+  /// The proximity and person overrides (issue #437), kept the same way.
+  bool? _proximityPolicy;
+  bool? _personPolicy;
+
+  /// Announce the active entry's motion, face, proximity and person
+  /// overrides (issues #89, #304 and #437), each null between sessions and
+  /// for entries without one.
+  void _publishMotionPolicy(
+    bool? motion,
+    bool? face,
+    bool? proximity,
+    bool? person,
+  ) {
+    if (motion == _motionPolicy &&
+        face == _facePolicy &&
+        proximity == _proximityPolicy &&
+        person == _personPolicy) {
+      return;
+    }
     _motionPolicy = motion;
     _facePolicy = face;
+    _proximityPolicy = proximity;
+    _personPolicy = person;
     bus.publish(
       ScreensaverMotionPolicyChanged(
         dismissOnMotion: motion,
         dismissOnFace: face,
+        dismissOnProximity: proximity,
+        dismissOnPerson: person,
       ),
     );
   }
@@ -959,6 +1013,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       return;
     }
     _active = true;
+    _panelDark = false;
     // A fresh session starts with no half-open double-tap chain.
     _tapChainStart = null;
     // Hold the panel on for the whole screensaver, every mode. The screensaver
@@ -988,7 +1043,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   void _armScreenOffTimer() {
     _screenOffTimer?.cancel();
     _screenOffTimer = null;
-    final minutes = _settings.get(defs.screensaverScreenOffMinutes).toInt();
+    final minutes = _effectiveScreenOffMinutes;
+    _armedScreenOffMinutes = minutes;
     if (minutes <= 0) return;
     _screenOffTimer = Timer(_screenOffUnit * minutes, () async {
       _screenOffTimer = null;
@@ -999,6 +1055,23 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         log.warn(name, 'could not power the panel off: ${r.error}');
       }
     });
+  }
+
+  /// The minutes in force right now: the active schedule entry's own
+  /// (issue #437), where 0 means never even over a set slider, or the
+  /// slider outside the schedule.
+  int get _effectiveScreenOffMinutes =>
+      (_scheduleEntry?['screen_off'] as int?) ??
+      _settings.get(defs.screensaverScreenOffMinutes).toInt();
+
+  /// Re-arm the countdown only when the effective minutes changed under the
+  /// session: a schedule boundary crossing into an entry with its own
+  /// value, the schedule edited live, or the slider moved. Never under a
+  /// dark panel, and never for a reapply that leaves the value alone.
+  void _syncScreenOffTimer() {
+    if (!_active || _panelDark) return;
+    if (_effectiveScreenOffMinutes == _armedScreenOffMinutes) return;
+    _armScreenOffTimer();
   }
 
   /// Save the restore point before the first brightness change of a
@@ -1062,9 +1135,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     final mode = _effectiveMode;
     final entry = _scheduleEntry;
     _appliedScheduleAt = entry?['at'] as String?;
-    _publishMotionPolicy(entry?['motion'] as bool?, entry?['face'] as bool?);
+    _publishMotionPolicy(
+      entry?['motion'] as bool?,
+      entry?['face'] as bool?,
+      entry?['proximity'] as bool?,
+      entry?['person'] as bool?,
+    );
     scheduleWidgets.value = entry?['widgets'] as bool?;
     scheduleGlance.value = entry?['glance'] as bool?;
+    _syncScreenOffTimer();
     // Modes that change brightness save their restore point first.
     if (mode == 'dim' || mode == 'black' || _contentDimEnabled(mode)) {
       await _ensureSavedBrightness();
@@ -1178,6 +1257,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _active = false;
     _screenOffTimer?.cancel();
     _screenOffTimer = null;
+    _armedScreenOffMinutes = null;
+    _panelDark = false;
     log.info(name, 'stop');
     // Thaw the dashboard while the overlay still covers it, so the wake
     // never shows a blank hole where the page is (a no-op unless the
@@ -1195,7 +1276,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       _savedBrightness = null;
       await _settings.set(defs.screensaverSavedBrightness, -1);
     }
-    _publishMotionPolicy(null, null);
+    _publishMotionPolicy(null, null, null, null);
     scheduleWidgets.value = null;
     scheduleGlance.value = null;
     claimedCorners.value = const {};

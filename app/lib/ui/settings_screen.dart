@@ -3544,6 +3544,42 @@ class _OverlayGrantRowState extends State<_OverlayGrantRow> {
   }
 }
 
+/// The warning that stands before real screen-off, on the slider and on a
+/// schedule entry's own (mirrored in the remote UI): what a dark panel does
+/// to Wi-Fi, the camera and the app itself is the manufacturer's call, not
+/// the app's (issue #184 and kin), and the Black screensaver avoids the
+/// whole regime. True when the person chose to go ahead.
+Future<bool> confirmScreenOff(BuildContext context) async {
+  final go = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('WARNING: Please Read!'),
+      content: const Text(
+        'Once the display truly powers off, the tablet\'s own '
+        'power management takes over, and many Android models '
+        'misbehave in that state: Wi-Fi naps or drops, the '
+        'Home Assistant entities go unavailable, the camera '
+        'can be revoked, and some models kill background apps '
+        'outright. What happens depends on the manufacturer.\n\n'
+        'The reliable alternative is the Black screensaver '
+        'with this setting left at 0: the panel looks just as '
+        'dark, and the app keeps full control.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Turn screen off anyway'),
+        ),
+      ],
+    ),
+  );
+  return go == true;
+}
+
 /// The device-admin grant, surfaced right under "Turn screen off after"
 /// (mirrored in the remote UI): the timer fails quietly without the grant,
 /// so this row is what says why nothing turned off. Same shape as the
@@ -3682,11 +3718,25 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
     if (entry['face'] is bool) {
       parts.add('Face ${entry['face'] == true ? 'on' : 'off'}');
     }
+    if (entry['proximity'] is bool) {
+      parts.add('Proximity ${entry['proximity'] == true ? 'on' : 'off'}');
+    }
+    if (entry['person'] is bool) {
+      parts.add('Person ${entry['person'] == true ? 'on' : 'off'}');
+    }
     if (entry['widgets'] is bool) {
       parts.add('Widgets ${entry['widgets'] == true ? 'on' : 'off'}');
     }
     if (entry['glance'] is bool) {
       parts.add('At a glance ${entry['glance'] == true ? 'on' : 'off'}');
+    }
+    final screenOff = entry['screen_off'];
+    if (screenOff is num) {
+      parts.add(
+        screenOff <= 0
+            ? 'Screen off never'
+            : 'Screen off after ${screenOff.round()} min',
+      );
     }
     return parts.join(' · ');
   }
@@ -3708,10 +3758,28 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
         'brightness': (existing!['brightness'] as num).toDouble(),
       if (existing?['motion'] is bool) 'motion': existing!['motion'],
       if (existing?['face'] is bool) 'face': existing!['face'],
+      if (existing?['proximity'] is bool) 'proximity': existing!['proximity'],
+      if (existing?['person'] is bool) 'person': existing!['person'],
       if (existing?['widgets'] is bool) 'widgets': existing!['widgets'],
       if (existing?['glance'] is bool) 'glance': existing!['glance'],
+      // Optional the same way (issue #437): absent follows the Turn screen
+      // off after slider outside the schedule, present it is this entry's
+      // own countdown, 0 keeping the panel on through its hours.
+      if (existing?['screen_off'] is num)
+        'screen_off': (existing!['screen_off'] as num).clamp(0, 60).toInt(),
     };
+    // The value a screen-off slider drag started from, for the warning.
+    var screenOffBefore = 0;
     final cameraOn = widget.container.deviceCamera.effectiveEnabled;
+    // The proximity override is offered wherever the sensor is not known
+    // to be missing (never disabled on a guess, like the switch), and the
+    // person override only where the Person Detection page exists at all
+    // (a Portal's sensor, hidden everywhere else).
+    final proximity = widget.container.proximity;
+    final noProximity = proximity.proximityKnownUnsupported;
+    final personShown = !deviceHiddenKeys.contains(
+      screensaverDismissOnPerson.key,
+    );
 
     final submitted = await showDialog<bool>(
       context: context,
@@ -3754,6 +3822,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
             ),
           );
           final level = (entry['brightness'] as num?)?.toDouble();
+          final screenOff = (entry['screen_off'] as num?)?.toInt();
           return AlertDialog(
             title: Text(existing == null ? 'Add time' : '${entry['at']}'),
             content: SizedBox(
@@ -3850,6 +3919,76 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                           ),
                         ],
                       ),
+                    // The same slider as the main screensaver page, behind
+                    // a switch: off, the entry follows the Turn screen off
+                    // after slider outside the schedule; on, the slider
+                    // below is this entry's own countdown, starting from
+                    // that slider's value, 0 keeping the panel on through
+                    // its hours even when that slider is set (issue #437).
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Turn screen off after'),
+                      subtitle: Text(
+                        screenOff == null
+                            ? 'Follows the Turn screen off after setting.'
+                            : screenOff == 0
+                            ? 'Keeps the screen on during these hours.'
+                            : 'Powers down the display once the '
+                                  'screensaver has run this long. Requires '
+                                  'Device Administrator permission.',
+                      ),
+                      value: screenOff != null,
+                      onChanged: (on) => setDialogState(() {
+                        if (on) {
+                          entry['screen_off'] = s
+                              .get(screensaverScreenOffMinutes)
+                              .toInt();
+                        } else {
+                          entry.remove('screen_off');
+                        }
+                      }),
+                    ),
+                    if (screenOff != null)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.power_settings_new,
+                            size: 18,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          Expanded(
+                            child: Slider(
+                              value: screenOff.clamp(0, 60).toDouble(),
+                              max: 60,
+                              divisions: 12,
+                              onChangeStart: (_) => screenOffBefore = screenOff,
+                              onChanged: (v) => setDialogState(
+                                () => entry['screen_off'] = v.round(),
+                              ),
+                              // Leaving 0 gets the same warning as the
+                              // slider outside the schedule.
+                              onChangeEnd: (v) async {
+                                if (screenOffBefore > 0 || v.round() == 0) {
+                                  return;
+                                }
+                                if (!await confirmScreenOff(context)) {
+                                  setDialogState(() => entry['screen_off'] = 0);
+                                }
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            width: 56,
+                            child: Text(
+                              screenOff == 0 ? 'Never' : '$screenOff min',
+                              textAlign: TextAlign.end,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
                     override(
                       'Dismiss on motion',
                       'motion',
@@ -3870,6 +4009,16 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                           : 'Requires the camera. Turn it on in the Camera '
                                 'settings first.',
                     ),
+                    override(
+                      'Dismiss on proximity',
+                      'proximity',
+                      enabled: !noProximity,
+                      helper: noProximity
+                          ? (proximity.proximityHint ??
+                                'Not available on this device.')
+                          : null,
+                    ),
+                    if (personShown) override('Dismiss on person', 'person'),
                     override('Widgets', 'widgets'),
                     override('At a glance', 'glance'),
                   ],
@@ -8287,34 +8436,8 @@ class _SliderTileState extends State<_SliderTile> {
               if (def.key == screensaverScreenOffMinutes.key &&
                   (widget.container.settings.get(def) as num) == 0 &&
                   parsed > 0) {
-                final go = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('WARNING: Please Read!'),
-                    content: const Text(
-                      'Once the display truly powers off, the tablet\'s own '
-                      'power management takes over, and many Android models '
-                      'misbehave in that state: Wi-Fi naps or drops, the '
-                      'Home Assistant entities go unavailable, the camera '
-                      'can be revoked, and some models kill background apps '
-                      'outright. What happens depends on the manufacturer.\n\n'
-                      'The reliable alternative is the Black screensaver '
-                      'with this setting left at 0: the panel looks just as '
-                      'dark, and the app keeps full control.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Turn screen off anyway'),
-                      ),
-                    ],
-                  ),
-                );
-                if (go != true) {
+                final go = await confirmScreenOff(context);
+                if (!go) {
                   // The slider snaps back to the stored 0.
                   if (mounted) setState(() {});
                   return;

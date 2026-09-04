@@ -3491,13 +3491,16 @@ const screensaverScheduleEnabled = SettingDef<bool>(
   subpage: 'Scheduled Screensavers',
 );
 
-/// JSON list of `{"at": "HH:MM", "mode": "...", "brightness": 0..1}`
-/// entries, kept sorted by time. Each entry applies from its
-/// time until the next entry's; the latest entry of the day carries over
-/// past midnight. The brightness, when present, overrides the global
-/// screensaver brightness while the entry is active; absent (issue #411)
-/// the entry follows the Screensaver brightness switch, which may leave
-/// the panel to the device or adaptive brightness.
+/// JSON list of `{"at": "HH:MM", "mode": "...", "brightness": 0..1,
+/// "screen_off": 0..60}` entries, kept sorted by time. Each entry applies
+/// from its time until the next entry's; the latest entry of the day
+/// carries over past midnight. The brightness, when present, overrides the
+/// global screensaver brightness while the entry is active; absent (issue
+/// #411) the entry follows the Screensaver brightness switch, which may
+/// leave the panel to the device or adaptive brightness. The screen-off
+/// minutes (issue #437) do the same for Turn screen off after: present,
+/// the entry's own countdown, 0 keeping the panel on through its hours;
+/// absent, the slider outside the schedule.
 const screensaverSchedule = SettingDef<String>(
   key: 'screensaver.schedule',
   type: SettingType.string,

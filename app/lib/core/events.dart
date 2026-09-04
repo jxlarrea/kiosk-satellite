@@ -90,12 +90,20 @@ class ScreensaverMotionPolicyChanged extends AppEvent {
   const ScreensaverMotionPolicyChanged({
     required this.dismissOnMotion,
     required this.dismissOnFace,
+    this.dismissOnProximity,
+    this.dismissOnPerson,
   });
   final bool? dismissOnMotion;
 
   /// The same override for "Dismiss on face" (issue #304), so a day entry
   /// can wake on faces while a night entry falls back to motion.
   final bool? dismissOnFace;
+
+  /// The same for "Dismiss on proximity" and "Dismiss on person" (issue
+  /// #437): the proximity and person sensor managers gate their sensors
+  /// off these the way the motion manager gates the camera.
+  final bool? dismissOnProximity;
+  final bool? dismissOnPerson;
 }
 
 /// The overlay the screensaver shows changed: a mode's view came up, a

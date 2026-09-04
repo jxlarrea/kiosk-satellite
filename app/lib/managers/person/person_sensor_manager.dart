@@ -231,7 +231,13 @@ class PersonSensorManager extends Manager {
   /// (lockdown, the postpone rule, the Now Playing gate), the same ones it
   /// applies to proximity.
   bool get wanted =>
-      _settings.get(defs.screensaverDismissOnPerson) && !knownUnsupported;
+      (_schedulePolicy ?? _settings.get(defs.screensaverDismissOnPerson)) &&
+      !knownUnsupported;
+
+  /// The active schedule entry's override (issue #437): true/false wins
+  /// over the switch for the entry's hours, null between sessions and for
+  /// entries without one.
+  bool? _schedulePolicy;
 
   /// Whether the tail is attached.
   bool get running => _sub != null;
@@ -282,6 +288,13 @@ class PersonSensorManager extends Manager {
     }
     await _guardSupport();
 
+    // The schedule's override, published at session start and on every
+    // boundary crossing, cleared on stop: the tail attaches or detaches
+    // to match, the way the camera does for motion.
+    bus.on<ScreensaverMotionPolicyChanged>().listen((e) {
+      _schedulePolicy = e.dismissOnPerson;
+      _sync();
+    });
     bus.on<SettingChanged>().listen((e) {
       if (e.key != defs.screensaverDismissOnPerson.key &&
           e.key != defs.screensaverPostponeOnPerson.key) {

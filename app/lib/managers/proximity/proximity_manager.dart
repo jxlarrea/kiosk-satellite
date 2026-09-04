@@ -106,9 +106,15 @@ class ProximityManager extends Manager {
   /// Why the switch is disabled, once known.
   String? get proximityHint => _support?.hint;
 
-  /// The dismiss leg's gate: the switch, on a device with a sensor.
+  /// The active schedule entry's override (issue #437): true/false wins
+  /// over the switch for the entry's hours, null between sessions and for
+  /// entries without one.
+  bool? _schedulePolicy;
+
+  /// The dismiss leg's gate: the switch (or the schedule's override of
+  /// it), on a device with a sensor.
   bool get enabled =>
-      _settings.get(defs.screensaverDismissOnProximity) &&
+      (_schedulePolicy ?? _settings.get(defs.screensaverDismissOnProximity)) &&
       !proximityKnownUnsupported;
 
   /// The postpone leg's gate: rides on Dismiss on proximity (the postpone
@@ -136,6 +142,13 @@ class ProximityManager extends Manager {
     });
     bus.on<ScreenStateChanged>().listen((e) {
       _screenOn = e.on;
+      _sync();
+    });
+    // Session start publishes the policy before the active event above,
+    // and boundary crossings mid-session publish on their own; either way
+    // the sensor starts or stops to match within a tick.
+    bus.on<ScreensaverMotionPolicyChanged>().listen((e) {
+      _schedulePolicy = e.dismissOnProximity;
       _sync();
     });
     bus.on<SettingChanged>().listen((e) {

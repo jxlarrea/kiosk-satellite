@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Turn screen off after, per schedule entry.** Every scheduled screensaver gets the same switch and slider as the Screensaver page: off, the entry follows the slider outside the schedule as before; on, the entry's own countdown runs for its hours, and 0 keeps the panel on even when that slider is set. A clock by day with the panel never powering off and Black by night with the panel truly off a few minutes in, which is darker than Black and saves battery, used to take one slider that reached both. The countdown starts over when the schedule crosses into an entry with a different value, a live edit under a running screensaver applies at once, a dark panel is left alone, and the warning that stands before real screen-off shows here too. On the device and in the remote admin alike.
+- **Dismiss on proximity and Dismiss on person, per schedule entry.** The two sensor switches join motion and face as overrides in every schedule entry, Default, On or Off: a night entry can wake on the proximity sensor alone while the day entry leaves it to the camera, and the sensor is watched or left alone to match, the way the camera is for the motion override. The proximity override is disabled with the reason on a device without a proximity sensor and the person override appears only where the device has a person sensor, the same gates as the switches. On the device and in the remote admin alike.
+
 ## v2026.9.13 - 2026-09-03
 
 ### Fixed

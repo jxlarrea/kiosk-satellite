@@ -90,6 +90,34 @@ void main() {
       expect(entries.single['brightness'], 0.4);
     });
 
+    test('the proximity and person overrides pass through only as bools '
+        '(issue #437)', () {
+      final entries = parseScreensaverSchedule(
+          '[{"at":"08:00","mode":"clock","proximity":true,"person":false},'
+          '{"at":"20:00","mode":"black","proximity":"on","person":1},'
+          '{"at":"23:00","mode":"black"}]');
+      expect(entries[0]['proximity'], isTrue);
+      expect(entries[0]['person'], isFalse);
+      expect(entries[1].containsKey('proximity'), isFalse);
+      expect(entries[1].containsKey('person'), isFalse);
+      expect(entries[2].containsKey('proximity'), isFalse);
+      expect(entries[2].containsKey('person'), isFalse);
+    });
+
+    test('the screen-off minutes pass through clamped, as a whole number '
+        '(issue #437)', () {
+      final entries = parseScreensaverSchedule(
+          '[{"at":"08:00","mode":"clock","screen_off":0},'
+          '{"at":"20:00","mode":"black","screen_off":90},'
+          '{"at":"22:00","mode":"black","screen_off":"10"},'
+          '{"at":"23:00","mode":"black"}]');
+      expect(entries[0]['screen_off'], 0);
+      expect(entries[1]['screen_off'], 60);
+      expect(entries[1]['screen_off'], isA<int>());
+      expect(entries[2].containsKey('screen_off'), isFalse);
+      expect(entries[3].containsKey('screen_off'), isFalse);
+    });
+
     test('garbage input is an empty schedule', () {
       expect(parseScreensaverSchedule('not json'), isEmpty);
       expect(parseScreensaverSchedule('{"at":"08:00"}'), isEmpty);
