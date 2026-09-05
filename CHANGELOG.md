@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.20 - 2026-09-05
 
 ### Added
 - **Tap edges to change slides.** A tap on the left or right fifth of the screen shows the previous or next slide of a Home Assistant Media folder, Local Media, Photo Gallery or Immich Media slideshow instead of dismissing it, holding the new slide for its full interval the way the ESPHome buttons do. The middle of the screen still dismisses. One switch on each slideshow's page, on by default, on the device and in the remote admin alike.
