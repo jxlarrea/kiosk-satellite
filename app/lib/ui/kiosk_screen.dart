@@ -14,6 +14,7 @@ import 'screensaver_view.dart';
 import '../core/events.dart';
 import '../managers/browser/carousel_script.dart';
 import '../managers/browser/disable_suspend_script.dart';
+import '../managers/browser/dashboard_camera_script.dart';
 import '../managers/browser/ha_session_script.dart';
 import '../managers/browser/vs_suppress_script.dart';
 import '../managers/browser/haptics_script.dart';
@@ -811,6 +812,13 @@ class _KioskScreenState extends State<KioskScreen>
     UserScript(
       source: visibilityMaskScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    UserScript(
+      source:
+          dashboardCameraScript +
+          pauseDashboardCamerasJs(c.browser.dashboardCameraStreamsPaused),
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      forMainFrameOnly: true,
     ),
     // Kiosk mode hides Home Assistant's own header and sidebar. It has to be
     // in place before the frontend builds anything, since it catches shadow

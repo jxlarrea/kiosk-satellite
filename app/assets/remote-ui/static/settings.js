@@ -1935,7 +1935,8 @@ export async function loadSettings() {
         const ds = byKey['browser.disable_suspend'];
         const fz = byKey['browser.freeze_on_screensaver'];
         const wf = byKey['browser.ws_filter'];
-        if (ds || fz || wf) {
+        const dc = byKey['browser.pause_dashboard_cameras'];
+        if (ds || fz || wf || dc) {
           const ocard = document.createElement('div');
           ocard.className = 'card';
           panelFor('Optimizations').appendChild(ocard);
@@ -1966,6 +1967,7 @@ export async function loadSettings() {
               if (fz.value === true && ds) ds.value = true;
               renderOpt();
             })));
+            if (dc) ocard.appendChild(optToggle(dc, renderOpt));
             if (wf) ocard.appendChild(optToggle(wf, renderOpt));
             if (wf && wf.value === true) {
               const tel = document.createElement('div');

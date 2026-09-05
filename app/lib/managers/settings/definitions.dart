@@ -190,7 +190,8 @@ const Map<String, String> subpageHints = {
   'Dashboard View Rotation': 'Cycle through views, dwell time, fade',
   'Return to home dashboard view': 'Go back to the home view when left idle',
   'Hold mode': 'Pin the current view, automatic release, menu entry',
-  'Optimizations': 'Background connection, screensaver pause, update filter',
+  'Optimizations':
+      'Background connection, dashboard and camera pause, update filter',
   // Voice Satellite. Both pages are mostly live rows from the
   // integration rather than settings, so the pages themselves are
   // placed by the Voice Satellite page; only their names live here.
@@ -387,6 +388,20 @@ const wsFilter = SettingDef<bool>(
       'Only process updates for entities on the current view, cutting '
       'stutter on low-powered tablets. Views that cannot be resolved '
       'stay unfiltered.',
+  category: 'Home Assistant',
+  section: 'Optimizations',
+  subpage: 'Optimizations',
+);
+
+const pauseDashboardCameras = SettingDef<bool>(
+  key: 'browser.pause_dashboard_cameras',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Pause HA dashboard camera streams during screensaver',
+  description:
+      'Pauses supported muted camera streams on the Home Assistant dashboard '
+      'while the screensaver covers it. Streams reconnect when it closes. '
+      'Does not affect the device camera or the Camera Streams feature.',
   category: 'Home Assistant',
   section: 'Optimizations',
   subpage: 'Optimizations',
@@ -6318,6 +6333,7 @@ const List<SettingDef<Object>> allSettings = [
   haHoldMenu,
   disableSuspend,
   freezeOnScreensaver,
+  pauseDashboardCameras,
   wsFilter,
   cameraAllowH265,
   cameraPreferMse,

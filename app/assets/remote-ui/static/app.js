@@ -79,6 +79,7 @@ export const WIZ_OPTIONAL = [
   ['remote.enabled', 'Remote management'],
   ['browser.disable_suspend', 'Keep connected in the background'],
   ['browser.freeze_on_screensaver', 'Pause dashboard during screensaver'],
+  ['browser.pause_dashboard_cameras', 'Pause HA dashboard camera streams during screensaver'],
   ['browser.ws_filter', 'Filter dashboard updates'],
 ];
 export const wizard = {

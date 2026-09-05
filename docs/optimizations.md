@@ -2,12 +2,13 @@
 
 The **Optimizations** group under **Settings > Home Assistant Configuration** contains the settings that keep your dashboard running fast and your connection stable. A wall mounted device operates differently than a laptop: it runs a single web page indefinitely, often on lower end hardware, and spends most of its life behind a screensaver or with the display turned off. Each optimization exists to address a specific bottleneck present in stock browser behavior.
 
-All three options are located in the same place in both the on device settings menu and the remote admin's Home Assistant tab.
+All four options are located in the same place in both the on device settings menu and the remote admin's Home Assistant tab.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Keep connected in the background | On | Prevents Home Assistant from disconnecting the WebSocket when the page is hidden. |
 | Pause dashboard during screensaver | On | Stops rendering the active dashboard while a screensaver covers the screen. |
+| Pause HA dashboard camera streams during screensaver | On | Releases supported muted dashboard camera streams until the screensaver closes. |
 | Filter dashboard updates | On | Ignores entity updates that are not displayed on the active view. |
 
 ## Keep Connected in the Background
@@ -51,6 +52,14 @@ The exact same rendering pause occurs automatically whenever another opaque surf
 * Overlay pages (such as the Music Assistant shortcut, tapped dashboard links, or external pages during view rotation)
 
 The only exception is a web page loaded on Home Assistant's own server address; because the app treats these as part of the dashboard itself, rendering continues.
+
+## Pause HA Dashboard Camera Streams During Screensaver
+
+Enabled by default. Pauses supported muted camera streams on the Home Assistant dashboard while an opaque screensaver covers it or the display is off during a screensaver. The visible Dim screensaver keeps dashboard cameras playing. This works independently of **Pause dashboard during screensaver**.
+
+Home Assistant's standard camera component releases its WebRTC or HLS player through its normal cleanup lifecycle. MJPEG image sources are cleared as well. When the screensaver closes, the players are recreated and reconnect automatically. Expect a short delay before live video returns. Turning the toggle off restores the streams immediately without reloading the dashboard.
+
+This setting applies only to camera streams inside Home Assistant's standard dashboard camera component. Custom camera components that use their own players are left alone. Unmuted camera streams keep playing to preserve intentional background audio. The device camera, person detection and the app's **Camera Streams** feature are unaffected. Voice Satellite and Home Assistant's connection continue running.
 
 ## Filter Dashboard Updates
 

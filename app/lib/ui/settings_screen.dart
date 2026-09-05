@@ -5847,7 +5847,7 @@ class _AmbientDisplayCardState extends State<_AmbientDisplayCard> {
   }
 }
 
-/// The Optimizations group: the two connection/performance toggles, with live
+/// The Optimizations group: connection and performance toggles, with live
 /// telemetry beneath the update filter so it is visible that it is working
 /// (how much of the Home Assistant update stream it is dropping for this view).
 class _OptimizationsCard extends StatefulWidget {
@@ -6038,6 +6038,11 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
         SettingTile(
           container: c,
           def: freezeOnScreensaver,
+          onChanged: _onToggle,
+        ),
+        SettingTile(
+          container: c,
+          def: pauseDashboardCameras,
           onChanged: _onToggle,
         ),
         SettingTile(container: c, def: wsFilter, onChanged: _onToggle),

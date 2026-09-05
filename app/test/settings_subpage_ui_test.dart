@@ -242,6 +242,11 @@ void main() {
           reason: entry.key,
         );
         expect(find.text(entry.value), findsOneWidget, reason: entry.key);
+        if (entry.key == 'Optimizations') {
+          expect(find.text(pauseDashboardCameras.title), findsOneWidget);
+          expect(find.text(pauseDashboardCameras.description), findsOneWidget);
+          expect(container.settings.get(pauseDashboardCameras), isTrue);
+        }
         // The page title says it; a heading repeating it would say it twice.
         expect(
           find.widgetWithText(SectionHeading, entry.key),

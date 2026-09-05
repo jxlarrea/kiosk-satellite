@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart'
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import 'no_cache_script.dart';
+import 'dashboard_camera_script.dart';
 import 'visibility_mask_script.dart';
 
 import '../../core/command_registry.dart';
@@ -182,6 +183,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
       _scheduleFreezeSync();
     });
     bus.on<ScreensaverViewChanged>().listen((e) {
+      _screensaverHasOverlay = e.view != null;
       _dashboardCovered = e.view != null && !_screensaverIsOwnOrigin(e.view);
       _scheduleFreezeSync();
     });
@@ -225,6 +227,9 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
       if (e.key == defs.haUrl.key) unawaited(_migrateStartUrlOrigin(e));
     });
     bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.pauseDashboardCameras.key) {
+        _scheduleDashboardCameraSync();
+      }
       if (e.key != defs.freezeOnScreensaver.key) return;
       // A paused page reports itself hidden, and Home Assistant suspends a
       // hidden page's connection after a few minutes — so freezing requires
@@ -648,6 +653,27 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
 
   bool _screensaverActive = false;
   bool _dashboardCovered = false;
+  bool _screensaverHasOverlay = false;
+  Timer? _cameraPauseDelay;
+
+  /// Camera suspension belongs to the main dashboard document. It also works
+  /// with rendering pause disabled and with a website screensaver on HA's
+  /// origin. A visible Dim dashboard keeps its streams playing.
+  bool get dashboardCameraStreamsPaused =>
+      _settings.get(defs.pauseDashboardCameras) &&
+      _screensaverActive &&
+      (_screensaverHasOverlay || !_screenIsOn);
+
+  void _scheduleDashboardCameraSync() {
+    _cameraPauseDelay?.cancel();
+    if (dashboardCameraStreamsPaused) {
+      _cameraPauseDelay = Timer(const Duration(seconds: 1), () {
+        unawaited(runJs(pauseDashboardCamerasJs(dashboardCameraStreamsPaused)));
+      });
+    } else {
+      unawaited(runJs(pauseDashboardCamerasJs(false)));
+    }
+  }
 
   /// Whether the screensaver on screen is a website screensaver showing a
   /// page from the dashboard's own origin — a Home Assistant page set as the
@@ -723,6 +749,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// before the screensaver appears), thawing applies immediately — the
   /// dashboard must be drawing again by the time it is uncovered.
   void _scheduleFreezeSync() {
+    _scheduleDashboardCameraSync();
     _freezeDelay?.cancel();
     final want = _wantFrozen;
     if (want && !_frozen) {
@@ -964,6 +991,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     // script's default), and would see the thaw's visible edge without ever
     // having been told it went hidden. Re-assert, as the flag-gated scripts do.
     if (_frozen) unawaited(runJs(maskVisibilityJs(true)));
+    unawaited(runJs(pauseDashboardCamerasJs(dashboardCameraStreamsPaused)));
     // A WebView rebuilt under an active screensaver reappears visible, and
     // attach() could not re-hide it (no URL to match yet). Now there is one.
     unawaited(_syncFreeze());
@@ -1091,6 +1119,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     _errorReload?.cancel();
     _freezeDelay?.cancel();
     _freezeKeepAlive?.cancel();
+    _cameraPauseDelay?.cancel();
     _healthTimer?.cancel();
     _closeRepair?.cancel();
   }

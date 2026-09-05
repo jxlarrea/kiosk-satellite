@@ -1,0 +1,977 @@
+{
+  "base_commit": "7dd99fa814d318e3504bd261b6fce4e511eb9219",
+  "branch": "perf/ha-dashboard-camera-streams",
+  "apk_sha256": "407e4b64b7f7f6bafda20ac56295f07c67cf647d74d50cf5fd2a9c1b7baa6836",
+  "device": {
+    "address": "192.168.1.5",
+    "model": "Samsung Galaxy Tab S8 (SM-X700)",
+    "android": "16",
+    "abi": "arm64-v8a"
+  },
+  "phases": {
+    "disabled": {
+      "duration_seconds": 65.434,
+      "cpu_mean_percent": 23.087797024571064,
+      "camera_rates": [
+        {
+          "bytes_per_second": 12385.625210135404,
+          "decoded_frames_per_second": 14.686554390683742
+        },
+        {
+          "bytes_per_second": 102956.39881407219,
+          "decoded_frames_per_second": 27.06543998532873
+        }
+      ],
+      "samples": [
+        {
+          "at": 1788644859264,
+          "cpu_percent": 20.37591094956945,
+          "cpu_temp_c": 59.0,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 74368,
+              "frames": 74,
+              "fps": 10
+            },
+            {
+              "state": "connected",
+              "bytes": 155119,
+              "frames": 161,
+              "fps": 26
+            }
+          ]
+        },
+        {
+          "at": 1788644861726,
+          "cpu_percent": 23.192161031871645,
+          "cpu_temp_c": 56.6,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 99870,
+              "frames": 113,
+              "fps": 17
+            },
+            {
+              "state": "connected",
+              "bytes": 487030,
+              "frames": 227,
+              "fps": 32
+            }
+          ]
+        },
+        {
+          "at": 1788644863870,
+          "cpu_percent": 25.12351592014092,
+          "cpu_temp_c": 53.5,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 135775,
+              "frames": 146,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 700118,
+              "frames": 291,
+              "fps": 29
+            }
+          ]
+        },
+        {
+          "at": 1788644866079,
+          "cpu_percent": 22.694674202697097,
+          "cpu_temp_c": 52.5,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 161337,
+              "frames": 179,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 915921,
+              "frames": 358,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644868222,
+          "cpu_percent": 24.805394526677738,
+          "cpu_temp_c": 52.9,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 187151,
+              "frames": 212,
+              "fps": 16
+            },
+            {
+              "state": "connected",
+              "bytes": 1132301,
+              "frames": 423,
+              "fps": 31
+            }
+          ]
+        },
+        {
+          "at": 1788644870369,
+          "cpu_percent": 23.93323689128355,
+          "cpu_temp_c": 51.1,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 212176,
+              "frames": 244,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 1310753,
+              "frames": 488,
+              "fps": 31
+            }
+          ]
+        },
+        {
+          "at": 1788644872478,
+          "cpu_percent": 22.617809795608494,
+          "cpu_temp_c": 51.8,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 236917,
+              "frames": 276,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 1487018,
+              "frames": 551,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644874899,
+          "cpu_percent": 24.1380038736112,
+          "cpu_temp_c": 51.8,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 273499,
+              "frames": 312,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 1661639,
+              "frames": 623,
+              "fps": 29
+            }
+          ]
+        },
+        {
+          "at": 1788644877003,
+          "cpu_percent": 21.915999331983866,
+          "cpu_temp_c": 50.1,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 298728,
+              "frames": 344,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 1832200,
+              "frames": 687,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644879125,
+          "cpu_percent": 25.772695747354664,
+          "cpu_temp_c": 52.2,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 323914,
+              "frames": 376,
+              "fps": 17
+            },
+            {
+              "state": "connected",
+              "bytes": 1996237,
+              "frames": 708
+            }
+          ]
+        },
+        {
+          "at": 1788644881743,
+          "cpu_percent": 24.95176901590172,
+          "cpu_temp_c": 49.4,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 349832,
+              "frames": 416,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 2355765,
+              "frames": 770,
+              "fps": 31
+            }
+          ]
+        },
+        {
+          "at": 1788644883858,
+          "cpu_percent": 21.65646932636205,
+          "cpu_temp_c": 49.8,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 385316,
+              "frames": 447,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 2562985,
+              "frames": 833,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644885937,
+          "cpu_percent": 22.828862545825235,
+          "cpu_temp_c": 48.4,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 410705,
+              "frames": 479,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 2773590,
+              "frames": 895,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644888049,
+          "cpu_percent": 24.03596924361604,
+          "cpu_temp_c": 50.5,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 435618,
+              "frames": 510,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 2980370,
+              "frames": 959,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644890130,
+          "cpu_percent": 21.76813632183377,
+          "cpu_temp_c": 47.7,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 460314,
+              "frames": 541,
+              "fps": 14
+            },
+            {
+              "state": "connected",
+              "bytes": 3188015,
+              "frames": 1021,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644892312,
+          "cpu_percent": 17.00731144906816,
+          "cpu_temp_c": 47.7,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 485606,
+              "frames": 571,
+              "fps": 18
+            },
+            {
+              "state": "connected",
+              "bytes": 3396386,
+              "frames": 1050,
+              "fps": 7
+            }
+          ]
+        },
+        {
+          "at": 1788644895406,
+          "cpu_percent": 23.39035443764229,
+          "cpu_temp_c": 47.4,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 522833,
+              "frames": 610,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 3645283,
+              "frames": 1101,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644898086,
+          "cpu_percent": 24.0070323615947,
+          "cpu_temp_c": 50.1,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 559655,
+              "frames": 649,
+              "fps": 14
+            },
+            {
+              "state": "connected",
+              "bytes": 4020515,
+              "frames": 1181,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644900176,
+          "cpu_percent": 32.39309894978767,
+          "cpu_temp_c": 48.7,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 584821,
+              "frames": 679,
+              "fps": 13
+            },
+            {
+              "state": "connected",
+              "bytes": 4232077,
+              "frames": 1244,
+              "fps": 31
+            }
+          ]
+        },
+        {
+          "at": 1788644902261,
+          "cpu_percent": 21.721901971475244,
+          "cpu_temp_c": 49.1,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 609757,
+              "frames": 698,
+              "fps": 6
+            },
+            {
+              "state": "connected",
+              "bytes": 4458663,
+              "frames": 1285,
+              "fps": 17
+            }
+          ]
+        },
+        {
+          "at": 1788644904524,
+          "cpu_percent": 21.334814789482305,
+          "cpu_temp_c": 48.4,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 634753,
+              "frames": 730,
+              "fps": 14
+            },
+            {
+              "state": "connected",
+              "bytes": 4705481,
+              "frames": 1348,
+              "fps": 25
+            }
+          ]
+        },
+        {
+          "at": 1788644906845,
+          "cpu_percent": 21.468832264505266,
+          "cpu_temp_c": 48.4,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 671088,
+              "frames": 767,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 4945969,
+              "frames": 1421,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644909345,
+          "cpu_percent": 21.014796312419087,
+          "cpu_temp_c": 46.7,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 696863,
+              "frames": 800,
+              "fps": 11
+            },
+            {
+              "state": "connected",
+              "bytes": 5189660,
+              "frames": 1483,
+              "fps": 18
+            }
+          ]
+        },
+        {
+          "at": 1788644911525,
+          "cpu_percent": 24.85629172914895,
+          "cpu_temp_c": 47.0,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 722149,
+              "frames": 836,
+              "fps": 14
+            },
+            {
+              "state": "connected",
+              "bytes": 5424259,
+              "frames": 1536,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644914150,
+          "cpu_percent": 22.451614258629398,
+          "cpu_temp_c": 46.7,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 758834,
+              "frames": 876,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 5805578,
+              "frames": 1615,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644916251,
+          "cpu_percent": 23.526156015548832,
+          "cpu_temp_c": 46.0,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 783955,
+              "frames": 908,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 6039716,
+              "frames": 1678,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644918397,
+          "cpu_percent": 23.303160815951557,
+          "cpu_temp_c": 46.0,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 809373,
+              "frames": 940,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 6264203,
+              "frames": 1743,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644920508,
+          "cpu_percent": 22.555152231500482,
+          "cpu_temp_c": 45.6,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 834445,
+              "frames": 972,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 6472470,
+              "frames": 1806,
+              "fps": 29
+            }
+          ]
+        },
+        {
+          "at": 1788644922602,
+          "cpu_percent": 22.414605261571765,
+          "cpu_temp_c": 45.6,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 859665,
+              "frames": 1003,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 6688924,
+              "frames": 1869,
+              "fps": 30
+            }
+          ]
+        },
+        {
+          "at": 1788644924698,
+          "cpu_percent": 21.37817916446873,
+          "cpu_temp_c": 45.6,
+          "camera_players": [
+            {
+              "state": "connected",
+              "bytes": 884809,
+              "frames": 1035,
+              "fps": 15
+            },
+            {
+              "state": "connected",
+              "bytes": 6891968,
+              "frames": 1932,
+              "fps": 30
+            }
+          ]
+        }
+      ]
+    },
+    "enabled": {
+      "duration_seconds": 69.17,
+      "cpu_mean_percent": 13.755235556805182,
+      "camera_rates": [],
+      "samples": [
+        {
+          "at": 1788644933181,
+          "cpu_percent": 10.576723492971425,
+          "cpu_temp_c": 46.0,
+          "camera_players": []
+        },
+        {
+          "at": 1788644935359,
+          "cpu_percent": 24.50029031236529,
+          "cpu_temp_c": 45.0,
+          "camera_players": []
+        },
+        {
+          "at": 1788644938056,
+          "cpu_percent": 10.349285704669288,
+          "cpu_temp_c": 43.9,
+          "camera_players": []
+        },
+        {
+          "at": 1788644940164,
+          "cpu_percent": 15.32522647487064,
+          "cpu_temp_c": 47.0,
+          "camera_players": []
+        },
+        {
+          "at": 1788644942317,
+          "cpu_percent": 12.990661839432477,
+          "cpu_temp_c": 45.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644944598,
+          "cpu_percent": 12.04480898546296,
+          "cpu_temp_c": 43.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644947015,
+          "cpu_percent": 10.823373802527993,
+          "cpu_temp_c": 46.7,
+          "camera_players": []
+        },
+        {
+          "at": 1788644949631,
+          "cpu_percent": 14.93431584240219,
+          "cpu_temp_c": 43.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644952030,
+          "cpu_percent": 11.921710153165412,
+          "cpu_temp_c": 45.0,
+          "camera_players": []
+        },
+        {
+          "at": 1788644954155,
+          "cpu_percent": 12.573500493204264,
+          "cpu_temp_c": 44.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644956529,
+          "cpu_percent": 11.842999750061777,
+          "cpu_temp_c": 42.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644958652,
+          "cpu_percent": 13.288466243153115,
+          "cpu_temp_c": 45.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644960757,
+          "cpu_percent": 14.019652669153333,
+          "cpu_temp_c": 44.3,
+          "camera_players": []
+        },
+        {
+          "at": 1788644962855,
+          "cpu_percent": 16.07546120609562,
+          "cpu_temp_c": 44.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644965185,
+          "cpu_percent": 11.909156914566369,
+          "cpu_temp_c": 46.0,
+          "camera_players": []
+        },
+        {
+          "at": 1788644967669,
+          "cpu_percent": 13.201554294318013,
+          "cpu_temp_c": 45.0,
+          "camera_players": []
+        },
+        {
+          "at": 1788644969994,
+          "cpu_percent": 13.085461536497817,
+          "cpu_temp_c": 43.2,
+          "camera_players": []
+        },
+        {
+          "at": 1788644972623,
+          "cpu_percent": 15.899232753853504,
+          "cpu_temp_c": 42.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644974750,
+          "cpu_percent": 11.91795809567799,
+          "cpu_temp_c": 42.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644976879,
+          "cpu_percent": 13.03711524596802,
+          "cpu_temp_c": 43.9,
+          "camera_players": []
+        },
+        {
+          "at": 1788644979371,
+          "cpu_percent": 16.97936234621252,
+          "cpu_temp_c": 43.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644982034,
+          "cpu_percent": 12.66265980312723,
+          "cpu_temp_c": 42.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644984991,
+          "cpu_percent": 12.228528060856165,
+          "cpu_temp_c": 44.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644987359,
+          "cpu_percent": 26.57541789100225,
+          "cpu_temp_c": 45.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644990023,
+          "cpu_percent": 13.878575097025129,
+          "cpu_temp_c": 44.3,
+          "camera_players": []
+        },
+        {
+          "at": 1788644992390,
+          "cpu_percent": 11.159844535413951,
+          "cpu_temp_c": 42.2,
+          "camera_players": []
+        },
+        {
+          "at": 1788644994559,
+          "cpu_percent": 11.492518887734834,
+          "cpu_temp_c": 44.3,
+          "camera_players": []
+        },
+        {
+          "at": 1788644997009,
+          "cpu_percent": 12.022711269331127,
+          "cpu_temp_c": 43.6,
+          "camera_players": []
+        },
+        {
+          "at": 1788644999959,
+          "cpu_percent": 14.949703978011867,
+          "cpu_temp_c": 42.2,
+          "camera_players": []
+        },
+        {
+          "at": 1788645002351,
+          "cpu_percent": 10.390789025022924,
+          "cpu_temp_c": 44.6,
+          "camera_players": []
+        }
+      ]
+    }
+  },
+  "recovery_cycles": [
+    {
+      "cycle": 1,
+      "suspend_seconds": 1.141,
+      "resume_seconds": 0.583,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 2,
+      "suspend_seconds": 1.158,
+      "resume_seconds": 1.035,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 3,
+      "suspend_seconds": 1.265,
+      "resume_seconds": 2.378,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 4,
+      "suspend_seconds": 1.211,
+      "resume_seconds": 0.707,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 5,
+      "suspend_seconds": 1.202,
+      "resume_seconds": 3.487,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 6,
+      "suspend_seconds": 1.554,
+      "resume_seconds": 1.346,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 7,
+      "suspend_seconds": 1.131,
+      "resume_seconds": 2.976,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 8,
+      "suspend_seconds": 1.29,
+      "resume_seconds": 0.592,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 9,
+      "suspend_seconds": 1.065,
+      "resume_seconds": 3.979,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    },
+    {
+      "cycle": 10,
+      "suspend_seconds": 2.166,
+      "resume_seconds": 1.388,
+      "same_ha_socket": true,
+      "ha_connected": true,
+      "wake_listening": true
+    }
+  ],
+  "edge_cases": {
+    "disable_while_hidden": {
+      "seconds": 4.759,
+      "pause": false,
+      "ha_connected": true,
+      "players": [
+        {
+          "tag": "ha-web-rtc-player",
+          "state": "connected",
+          "time": 0.305,
+          "frames": 7,
+          "w": 480
+        },
+        {
+          "tag": "ha-web-rtc-player",
+          "state": "connected",
+          "time": 1.147,
+          "frames": 18,
+          "w": 1280
+        }
+      ]
+    },
+    "enable_while_hidden": {
+      "seconds": 1.587,
+      "pause": true,
+      "ha_connected": true,
+      "players": []
+    },
+    "rendering_pause_disabled": {
+      "seconds": 1.135,
+      "pause": true,
+      "ha_connected": true,
+      "players": []
+    },
+    "dim_keeps_streams": {
+      "seconds": 0.027,
+      "pause": false,
+      "ha_connected": true,
+      "players": [
+        {
+          "tag": "ha-web-rtc-player",
+          "state": "connected",
+          "time": 2.186,
+          "frames": 33,
+          "w": 480
+        },
+        {
+          "tag": "ha-web-rtc-player",
+          "state": "connected",
+          "time": 2.782,
+          "frames": 83,
+          "w": 1280
+        }
+      ]
+    },
+    "dim_to_clock": {
+      "seconds": 1.132,
+      "pause": true,
+      "ha_connected": true,
+      "players": []
+    },
+    "reload_hidden": {
+      "seconds": 0.03,
+      "pause": true,
+      "ha_connected": true,
+      "players": []
+    },
+    "resume_after_reload": {
+      "seconds": 7.397,
+      "pause": false,
+      "ha_connected": true,
+      "players": [
+        {
+          "tag": "ha-web-rtc-player",
+          "state": "connected",
+          "time": 6.569,
+          "frames": 77,
+          "w": 480
+        },
+        {
+          "tag": "ha-web-rtc-player",
+          "state": "connected",
+          "time": 4.817,
+          "frames": 126,
+          "w": 1280
+        }
+      ]
+    },
+    "unmuted_camera_preserved": {
+      "seconds": 1.25,
+      "pause": true,
+      "ha_connected": true,
+      "players": [
+        {
+          "tag": "ha-hls-player",
+          "state": "connected",
+          "time": 21.696809,
+          "frames": 18,
+          "w": 480
+        }
+      ]
+    },
+    "mute_while_hidden": {
+      "seconds": 0.018,
+      "pause": true,
+      "ha_connected": true,
+      "players": []
+    }
+  },
+  "native_wake_after": true
+}
