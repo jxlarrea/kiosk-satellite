@@ -275,6 +275,24 @@
      a control beside the name) is switched back off for them: the name
      line keeps its width and truncates, the tags stay on their lines.
      The modal-card prefix outranks the reflow's .row .info rule. */
+  /* Fleet Management: the status word in a follower row's trailing slot,
+     the overflow's popover, the Custom and Leader tags, a dimmed candidate. */
+  .fleet-status { flex: none; font-size: 13px; white-space: nowrap; color: var(--muted); }
+  .fleet-status.ok { color: var(--ok); }
+  .fleet-status.warn { color: var(--warn); }
+  .fleet-row.dim { opacity: .45; cursor: default; }
+  .popmenu { position: absolute; z-index: 60; min-width: 180px; padding: 8px 0;
+    border-radius: 16px; background: var(--surface-high); border: 1px solid var(--border);
+    box-shadow: 0 2px 10px var(--shadow); display: flex; flex-direction: column; }
+  .popmenu button { display: block; width: 100%; text-align: left; padding: 12px 20px;
+    border: none; background: transparent; color: var(--text); font: inherit; font-size: 15px;
+    cursor: pointer; }
+  .popmenu button:hover { background: var(--surface-2); }
+  .popmenu button.danger { color: var(--error); }
+  .group-note a { color: var(--primary); text-decoration: none; font-weight: 500; }
+  .group-note a:hover { text-decoration: underline; }
+  .modal-body .fleet-cat .row { margin: 0; }
+  #tab-fleet .group-note { margin-bottom: 14px; }
   .fleet-row { cursor: pointer; }
   .fleet-row.self { cursor: default; }
   .fleet-row:focus-visible { outline: 2px solid var(--primary);

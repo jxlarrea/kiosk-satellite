@@ -42,6 +42,7 @@ import 'gesture_settings.dart';
 import 'entity_picker.dart';
 import 'glance_entity_picker.dart';
 import 'camera_settings.dart';
+import 'fleet_settings.dart';
 import 'camera_views_picker.dart';
 import 'import_options_dialog.dart';
 import 'kit.dart';
@@ -223,6 +224,12 @@ const _categories = <(String, String, Object, String)>[
     'Device',
     Icons.tablet_android_outlined,
     'Name, app theme, remote access',
+  ),
+  (
+    'Fleet',
+    'Fleet Management',
+    Icons.hub_outlined,
+    'Lead or follow other kiosks',
   ),
   ('About', 'About', Icons.info_outline, 'Version, author, license'),
   ('Logs', 'Logs', Icons.article_outlined, 'App log and web console'),
@@ -690,6 +697,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // does when the rail picks a different category.
                         child: _SubpageNav(
                           open: _openSubpage,
+                          close: () => setState(() => _subpage = null),
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
@@ -1014,9 +1022,17 @@ class CategorySettingsScreen extends StatelessWidget {
 /// the wide split view swaps its right pane instead, so the rail stays put.
 /// Absent (the narrow pushed pages), the entry row pushes a route.
 class _SubpageNav extends InheritedWidget {
-  const _SubpageNav({required this.open, required super.child});
+  const _SubpageNav({
+    required this.open,
+    required this.close,
+    required super.child,
+  });
 
   final void Function(String category, String subpage) open;
+
+  /// Back to the category pane, for a page that closes itself (a profile
+  /// just deleted).
+  final VoidCallback close;
 
   static _SubpageNav? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_SubpageNav>();
@@ -1025,8 +1041,45 @@ class _SubpageNav extends InheritedWidget {
   bool updateShouldNotify(_SubpageNav oldWidget) => false;
 }
 
+/// Open a second-level page from a hand-built entry row outside this file:
+/// the wide split view swaps its pane, a phone pushes the page. What
+/// [_SubpageEntryTile] does for declared pages, for pages made at runtime
+/// (a fleet profile).
+void openSettingsSubpage(
+  BuildContext context,
+  AppContainer container,
+  String category,
+  String subpage,
+) {
+  final nav = _SubpageNav.maybeOf(context);
+  if (nav != null) {
+    nav.open(category, subpage);
+    return;
+  }
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => SubpageSettingsScreen(
+        container: container,
+        category: category,
+        subpage: subpage,
+      ),
+    ),
+  );
+}
+
+/// Leave a second-level page from inside it: the pane goes back to the
+/// category on a wide screen, the route pops on a phone.
+void closeSettingsSubpage(BuildContext context) {
+  final nav = _SubpageNav.maybeOf(context);
+  if (nav != null) {
+    nav.close();
+  } else {
+    Navigator.of(context).maybePop();
+  }
+}
+
 /// Why the remote admin server is not listening, under the switch that says
-/// it should be. Silent while it is serving, or while it is off on purpose.
+/// it should be. Silent while it is serving or while it is off on purpose.
 class _RemoteStatusRow extends StatelessWidget {
   const _RemoteStatusRow({required this.container});
 
@@ -1245,9 +1298,15 @@ class _CategoryContentState extends State<_CategoryContent> {
 
   Future<bool>? _vsDetected;
 
+  StreamSubscription<FleetSyncChanged>? _fleetEcho;
+
   @override
   void initState() {
     super.initState();
+    // The Managed banner comes and goes with the leader's pushes.
+    _fleetEcho = widget.container.bus.on<FleetSyncChanged>().listen((_) {
+      if (mounted) setState(() {});
+    });
     if (widget.category == 'Voice Satellite') {
       _vsDetected = widget.container.homeAssistant.detectVoiceSatellite();
     }
@@ -1329,6 +1388,7 @@ class _CategoryContentState extends State<_CategoryContent> {
   @override
   void dispose() {
     _btAdapterTimer?.cancel();
+    _fleetEcho?.cancel();
     _keyEcho?.cancel();
     super.dispose();
   }
@@ -1849,8 +1909,12 @@ class _CategoryContentState extends State<_CategoryContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // A follower's page the leader syncs says so before its rows.
+        ...fleetManagedBanner(container, widget.category),
         if (widget.category == 'Home Assistant')
           ..._haConnectionCards(container)
+        else if (widget.category == 'Fleet')
+          FleetSettingsPanel(container: container)
         else if (widget.category == 'Voice Satellite')
           ValueListenableBuilder<bool>(
             valueListenable: container.homeAssistant.connectionOk,
@@ -2603,6 +2667,11 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// dashboard list, a cross-group disabled state, telemetry under a toggle)
   /// and simply moved with their group.
   List<Widget> _subpageCards(AppContainer container, String subpage) {
+    // Fleet profiles are pages made at runtime, one per profile, named
+    // after it.
+    if (widget.category == 'Fleet') {
+      return [FleetProfilePage(container: container, name: subpage)];
+    }
     void changed() => setState(() {});
     // The category's own replacements and extras come along: a validate row
     // or a notice belongs under the setting it explains, on whichever page

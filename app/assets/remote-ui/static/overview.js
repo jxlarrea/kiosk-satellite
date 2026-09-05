@@ -152,9 +152,10 @@ export function refreshHealth() {
   return healthInFlight;
 }
 async function readHealth() {
-  const [ha, wake, esp, media, svc, upd, perms, guard] = await Promise.all([
+  const [ha, wake, esp, media, svc, upd, perms, guard, fleet] = await Promise.all([
     'haStatus', 'getWakeWordState', 'esphomeStatus', 'sendspinStatus',
     'getServiceStatus', 'getUpdateStatus', 'getSystemPermissions', 'hasUiGuard',
+    'fleetStatus',
   ].map((c) => ask(c)));
 
   if (!ha) paintTile('ha', '', 'Status unavailable');
@@ -213,6 +214,34 @@ async function readHealth() {
   else paintTile('update', 'on', upd.currentVersion ? `Up to date: ${upd.currentVersion}` : 'Up to date');
 
   const items = [];
+  // A fleet invitation waits on the kiosk screen: nothing here can answer
+  // it, the row only says where to look. Followers behind the leader's
+  // release hold the sync until they update.
+  if (fleet?.invite?.leader) {
+    items.push({
+      key: 'fleet-invite',
+      name: `${fleet.invite.leader.name} wants to lead this kiosk`,
+      desc: 'Confirm on the kiosk screen or under Fleet Management there.',
+      action: (btn) => openButton(btn, 'Open', 'fleet'),
+    });
+  }
+  if (fleet?.leader && (fleet.outdated || []).length) {
+    const names = fleet.outdated;
+    items.push({
+      key: 'fleet-outdated',
+      name: `${names.length} follower${names.length === 1 ? '' : 's'} run${names.length === 1 ? 's' : ''} another release`,
+      desc: `${names.join(', ')}. Sync waits until ${names.length === 1 ? 'it runs' : 'they run'} ${fleet.self?.version || 'this release'}.`,
+      action: (btn) => {
+        btn.textContent = 'Update';
+        btn.onclick = async () => {
+          btn.disabled = true;
+          try { await cmd('fleetUpdate'); } catch (_) {}
+          btn.disabled = false;
+          refreshHealth();
+        };
+      },
+    });
+  }
   if (upd?.availableVersion) {
     items.push({
       key: 'update',

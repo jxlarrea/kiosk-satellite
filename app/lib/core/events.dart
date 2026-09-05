@@ -215,6 +215,17 @@ class FleetChanged extends AppEvent {
   Map<String, Object?> toJson() => {'devices': devices};
 }
 
+/// This kiosk's place in a fleet changed: an invitation arrived or was
+/// answered, a follower was added, accepted, synced, updated or removed,
+/// a leader pushed here or was left. Carries nothing: both UIs re-read
+/// the `fleetStatus` command, which is the one shape they draw from.
+class FleetSyncChanged extends AppEvent {
+  const FleetSyncChanged();
+
+  @override
+  String get wireName => 'fleetsync';
+}
+
 /// The page's Home Assistant connection reported that the dashboard set
 /// may have moved: a dashboard created, deleted or edited (HA's own
 /// `panels_updated` and `lovelace_updated` events), or the connection

@@ -54,6 +54,27 @@ class SettingsSearchEntry {
 /// "permissions" or "export" still lands somewhere. Mirrored in the remote
 /// admin's SEARCH_EXTRAS; keep the two lists in step.
 const List<SettingsSearchEntry> handBuiltSearchEntries = [
+  // Fleet Management: the hand-built cards on the leader's page.
+  SettingsSearchEntry(
+    category: 'Fleet',
+    title: 'Followers',
+    description: 'The kiosks this one leads, their state and a way to add one.',
+    anchorId: 'x:fleet_followers',
+  ),
+  SettingsSearchEntry(
+    category: 'Fleet',
+    title: 'Profiles',
+    description:
+        'The named lists a follower can be given: categories, credentials, '
+        'the dashboard and the settings left out.',
+    anchorId: 'x:fleet_default',
+  ),
+  SettingsSearchEntry(
+    category: 'Fleet',
+    title: 'Update the fleet',
+    description: 'Install the release offered to each follower, then here.',
+    anchorId: 'x:fleet_update',
+  ),
   SettingsSearchEntry(
     category: 'Home Assistant',
     title: 'Validate connection',

@@ -55,6 +55,8 @@ Transform any Android device into a beautiful, dedicated Home Assistant kiosk. B
 
 &bull; **Remote administration**: Manage everything from your computer. The embedded web admin (`http://<device-ip>:2324`) mirrors your settings, shows a live screenshot, provides a web console for logs, and handles configuration backups. With several kiosks on the network, a kiosk switcher under the logo jumps between their admin pages in one tab.
 
+&bull; **Fleet Management**: A primary kiosk acts as the fleet leader to manage and synchronize multiple follower devices. The leader assigns each follower a profile (a designated collection of configuration settings, credentials, and specific exclusions), pushes permitted settings and can coordinate fleet-wide updates to a single app release. See [Fleet Management](docs/fleet.md).
+
 &bull; **Dashboard view rotation**: Set your kiosk to automatically cycle through specific dashboard views on an endless loop, customizing how many seconds each view stays on screen.
 
 &bull; **DLNA renderer**: Push videos, images, and live cameras directly to the full screen using `media_player.play_media`, perfect for HA automations.
@@ -133,6 +135,7 @@ Kiosk Satellite is completely free and distributed as an APK for sideloading:
 - [Optimizations](docs/optimizations.md): Performance switches and connection tweaks for older hardware.
 - [Permissions](docs/permissions.md): A detailed breakdown of every Android permission the app requests, `adb` grant commands, and background service details.
 - [Updates](docs/updates.md): How updates work, required permissions, and enabling hands-free updates.
+- [Fleet Management](docs/fleet.md): Leading a fleet of kiosks, profiles, what syncs and what never does, and updating the whole fleet.
 
 ### Device Specific Guides
 - [Meta Portal](docs/portal.md): Running Kiosk Satellite on a Meta Portal and fixing Person detector permissions.

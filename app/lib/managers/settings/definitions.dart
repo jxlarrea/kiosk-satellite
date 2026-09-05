@@ -21,6 +21,7 @@ class SettingDef<T> {
     this.subpage,
     this.options,
     this.secret = false,
+    this.perDevice = false,
     this.dependsOn,
     this.dependsOnValue = true,
     this.alsoDependsOn,
@@ -63,6 +64,15 @@ class SettingDef<T> {
 
   /// Secrets are write-only over the remote API and masked in exports.
   final bool secret;
+
+  /// Never pushed to another kiosk by Fleet Management: the device's
+  /// identity (its name, its ESPHome node, its Sendspin player id, its
+  /// Voice Satellite selection), a pick of its own hardware (a camera, a
+  /// microphone, a renderer workaround), a followed speaker or state a
+  /// manager keeps for itself. Everything else travels with its category.
+  /// The fleet doc's "never synced" list is generated from this flag, and
+  /// a test keeps the two in step.
+  final bool perDevice;
 
   /// Key of another setting this one only makes sense under. Hidden — not
   /// disabled — unless that setting equals [dependsOnValue]: a control that
@@ -1107,6 +1117,7 @@ const screenAmbientDisplay = SettingDef<bool>(
       'lock screen.',
   category: 'Screen & Audio',
   hidden: true,
+  perDevice: true,
 );
 
 const keepScreenOn = SettingDef<bool>(
@@ -2309,6 +2320,7 @@ const screensaverImmichValidated = SettingDef<bool>(
   hidden: true,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'immich',
+  perDevice: true,
 );
 
 // The albums as [{id, name}], or an empty list for the whole library.
@@ -2888,6 +2900,7 @@ const screensaverSavedBrightness = SettingDef<num>(
   description: 'Internal restore point for the screensaver brightness.',
   category: 'Screensaver',
   hidden: true,
+  perDevice: true,
 );
 
 // Motion detection exists only to wake the screensaver for now, so this one
@@ -3072,6 +3085,7 @@ const motionCamera = SettingDef<String>(
   options: ['front', 'back'],
   optionLabels: {'front': 'Front', 'back': 'Back'},
   hidden: true,
+  perDevice: true,
 );
 
 // ── Screensaver: Face Detection ────────────────────────────────────────
@@ -3330,6 +3344,7 @@ const cameraDevice = SettingDef<String>(
   options: ['front', 'back'],
   optionLabels: {'front': 'Front', 'back': 'Back'},
   dependsOn: 'camera.enabled',
+  perDevice: true,
 );
 
 // The tiers are the standard 4:3 ladder (640x480, 960x720, 1440x1080)
@@ -3538,6 +3553,7 @@ const micAudioSource = SettingDef<String>(
   category: 'Screen & Audio',
   section: 'Microphone settings',
   subpage: 'Microphone settings',
+  perDevice: true,
 );
 
 // Hidden: rendered as a hand-built dropdown (device settings screen and the
@@ -3561,6 +3577,7 @@ const micChannel = SettingDef<num>(
   section: 'Microphone settings',
   subpage: 'Microphone settings',
   hidden: true,
+  perDevice: true,
 );
 
 const micAgc = SettingDef<bool>(
@@ -3575,6 +3592,7 @@ const micAgc = SettingDef<bool>(
   category: 'Screen & Audio',
   section: 'Microphone settings',
   subpage: 'Microphone settings',
+  perDevice: true,
 );
 
 const micGainDb = SettingDef<num>(
@@ -3597,6 +3615,7 @@ const micGainDb = SettingDef<num>(
   // adaptive one is two controls fighting over the same number.
   dependsOn: 'audio.mic_agc',
   dependsOnValue: false,
+  perDevice: true,
 );
 
 // ── Wake word ──────────────────────────────────────────────────────────
@@ -3678,6 +3697,7 @@ const audioMicDevice = SettingDef<String>(
       'The microphone wake word detection and voice turns capture from.',
   category: 'Screen & Audio',
   hidden: true,
+  perDevice: true,
 );
 
 const audioSpeakerDevice = SettingDef<String>(
@@ -3691,6 +3711,7 @@ const audioSpeakerDevice = SettingDef<String>(
       'on the same device.',
   category: 'Screen & Audio',
   hidden: true,
+  perDevice: true,
 );
 
 // Hidden: the pipeline delegation is negotiated transparently, exactly like
@@ -3765,6 +3786,7 @@ const haSatelliteEntity = SettingDef<String>(
   description: 'The assist_satellite this kiosk announces itself as.',
   category: 'Home Assistant',
   hidden: true,
+  perDevice: true,
 );
 
 const haKioskMode = SettingDef<bool>(
@@ -4342,6 +4364,7 @@ const sendspinPlayerSource = SettingDef<String>(
     'ma': 'Music Assistant',
     'sonos': 'Sonos',
   },
+  perDevice: true,
 );
 
 /// Which player the floating card, the full-screen view and the transport
@@ -4361,6 +4384,7 @@ const sendspinPlayer = SettingDef<String>(
   title: 'Player',
   description: 'The player of that source to show and control.',
   category: 'Sendspin',
+  perDevice: true,
 );
 
 /// The picked player's display name: what the settings rows show and what
@@ -4374,6 +4398,7 @@ const sendspinPlayerName = SettingDef<String>(
   description: 'Internal display name of the controlled player.',
   category: 'Sendspin',
   hidden: true,
+  perDevice: true,
 );
 
 /// Whether the Now Playing volume slider sets the whole group's volume
@@ -4421,6 +4446,7 @@ const sendspinSonosHosts = SettingDef<String>(
   description: 'Internal: the Sonos speakers found or added by address.',
   category: 'Sendspin',
   hidden: true,
+  perDevice: true,
 );
 
 const sendspinEnabled = SettingDef<bool>(
@@ -4571,6 +4597,7 @@ const sendspinLocalPlayerName = SettingDef<String>(
   description: 'Internal: the name the local player wears in Music Assistant.',
   category: 'Sendspin',
   hidden: true,
+  perDevice: true,
 );
 
 /// Whether the player surface (the card, the full-screen view, the menu
@@ -4586,6 +4613,7 @@ const sendspinPlayerActive = SettingDef<bool>(
   description: 'Internal: the player card has a source in either mode.',
   category: 'Sendspin',
   hidden: true,
+  perDevice: true,
 );
 
 /// The kiosk menu's way into Music Assistant itself (browsing, queueing,
@@ -4991,6 +5019,7 @@ const sendspinPlayerPos = SettingDef<String>(
   description: 'Internal position of the floating media player.',
   category: 'Sendspin',
   hidden: true,
+  perDevice: true,
 );
 
 /// Stable per-install player identity, so Music Assistant sees the same
@@ -5003,6 +5032,7 @@ const sendspinClientId = SettingDef<String>(
   description: 'Internal identity for the Sendspin player.',
   category: 'Sendspin',
   hidden: true,
+  perDevice: true,
 );
 
 // ── DLNA renderer ──────────────────────────────────────────────────────
@@ -5125,6 +5155,7 @@ const esphomeNodeName = SettingDef<String>(
   category: 'ESPHome',
   placeholder: 'Set on first start',
   dependsOn: 'esphome.enabled',
+  perDevice: true,
 );
 
 /// Off by default because flipping it changes the identity Home Assistant
@@ -5144,6 +5175,7 @@ const esphomeRealMac = SettingDef<bool>(
   category: 'ESPHome',
   subpage: 'Advanced settings',
   dependsOn: 'esphome.enabled',
+  perDevice: true,
 );
 
 /// The address typed in by hand (issue #300), for the devices where Android
@@ -5168,6 +5200,7 @@ const esphomeMacOverride = SettingDef<String>(
   hidden: true,
   validator: validateMacAddress,
   normalizer: normalizeMacAddressSetting,
+  perDevice: true,
 );
 
 /// Canonical uppercase colon form of a hardware address typed any of the
@@ -5453,6 +5486,7 @@ const btproxyKey = SettingDef<String>(
   category: 'ESPHome',
   placeholder: 'Generated on first start',
   dependsOn: 'esphome.enabled',
+  perDevice: true,
 );
 
 /// Off by default, and the description names the exact host: Home Assistant
@@ -5566,6 +5600,7 @@ const remoteEnabled = SettingDef<bool>(
   category: 'Device',
   section: 'Remote Administration',
   subpage: 'Remote Administration',
+  perDevice: true,
 );
 
 const remotePort = SettingDef<num>(
@@ -5577,6 +5612,7 @@ const remotePort = SettingDef<num>(
   category: 'Device',
   section: 'Remote Administration',
   subpage: 'Remote Administration',
+  perDevice: true,
 );
 
 const remotePassword = SettingDef<String>(
@@ -5589,6 +5625,7 @@ const remotePassword = SettingDef<String>(
   section: 'Remote Administration',
   subpage: 'Remote Administration',
   secret: true,
+  perDevice: true,
 );
 
 const remoteFleetDiscovery = SettingDef<bool>(
@@ -5603,6 +5640,274 @@ const remoteFleetDiscovery = SettingDef<bool>(
   section: 'Remote Administration',
   subpage: 'Remote Administration',
   dependsOn: 'remote.enabled',
+  perDevice: true,
+);
+
+// ── Fleet Management ───────────────────────────────────────────────────
+
+/// The categories a fleet leader can push, in the sidebar's order: the
+/// definitions category, the name both UIs show for it and what stays per
+/// kiosk inside it (the [SettingDef.perDevice] keys it holds, in words).
+/// The Web Content grants ride with Web Browsing, the one category without
+/// a page of its own.
+const fleetSyncCategories = <(String, String, String)>[
+  // ha.satellite_entity stays per kiosk; its row (Assigned satellite) is
+  // on the Voice Satellite page, so the note goes there.
+  ('Home Assistant', 'Home Assistant Setup', ''),
+  ('Voice Satellite', 'Voice Satellite', 'the assigned satellite'),
+  (
+    'Screen & Audio',
+    'Screen & Audio',
+    'microphone and speaker devices, mic gain',
+  ),
+  ('Browser', 'Web Browsing', ''),
+  // motion.camera is per device too, but hidden and legacy (the camera
+  // pick lives on the Camera page now), so nothing visible here stays.
+  ('Screensaver', 'Screensaver', ''),
+  ('Camera', 'Camera', 'the device camera'),
+  ('Sendspin', 'Media Player', 'the followed player, the Sendspin player id'),
+  ('Cameras', 'Camera Streams', ''),
+  ('DLNA', 'DLNA Renderer', ''),
+  ('ESPHome', 'ESPHome', 'node name, MAC, encryption key'),
+  ('Kiosk', 'Kiosk Mode', 'the PIN is also synced'),
+  ('Lockdown', 'Lockdown Mode', ''),
+  ('Home', 'Home Launcher', ''),
+  ('Launcher', 'App Launcher', ''),
+  ('Gestures', 'Gestures', ''),
+  (
+    'Device',
+    'Device',
+    'name, remote administration, renderer workarounds, scale',
+  ),
+];
+
+/// The category a setting syncs under: its own, except the Web Content
+/// grants, which have no page and go with Web Browsing.
+String fleetCategoryOf(SettingDef<Object> def) =>
+    def.category == 'Web Content' ? 'Browser' : def.category;
+
+/// The credentials a follower keeps unless the leader was told to include
+/// each one: what a kiosk running as another user keeps its own, picked
+/// one by one so a kiosk can keep its Home Assistant user and still share
+/// the Music Assistant and Immich ones. The other secrets (the kiosk PIN,
+/// the camera streams configuration) sync with their category; the admin
+/// password and the ESPHome key never do.
+const fleetCredentials = <(String, String)>[
+  ('ha.token', 'Home Assistant token'),
+  ('sendspin.ma_token', 'Music Assistant token'),
+  ('screensaver.immich_api_key', 'Immich API key'),
+];
+
+const fleetCredentialKeys = {
+  'ha.token',
+  'sendspin.ma_token',
+  'screensaver.immich_api_key',
+};
+
+/// The dashboard: synced only when the leader was told to include it.
+const fleetDashboardKeys = {'browser.start_url'};
+
+/// The credentials a new follower gets unless the leader says otherwise:
+/// the Music Assistant and Immich ones, which a household shares, not the
+/// Home Assistant token, which names a user.
+const fleetDefaultCredentials = {
+  'sendspin.ma_token',
+  'screensaver.immich_api_key',
+};
+
+/// Excluded from every new profile: what scales the UI, drives the
+/// backlight or sets a volume, files and picks that only resolve on the
+/// device that made them, and the tuning of its camera. A profile can bring
+/// any of them back and exclude any other setting, unlike the
+/// [SettingDef.perDevice] keys, which never travel and are nobody's to
+/// change.
+const fleetDefaultExcluded = {
+  'browser.zoom',
+  'screensaver.website_zoom',
+  'screensaver.clock_scale',
+  'screensaver.widget_scale',
+  'screensaver.glance_scale',
+  'face.preview_scale',
+  'sendspin.player_size',
+  'screen.default_brightness',
+  'screen.adaptive_min_brightness',
+  'screen.adaptive_max_brightness',
+  'screen.adaptive_dark_lux',
+  'screen.adaptive_bright_lux',
+  'screensaver.brightness_level',
+  'screensaver.dim_level',
+  // Volumes: every speaker is its own.
+  'audio.media_volume',
+  'audio.assistant_volume',
+  'notifications.volume',
+  'ha.tap_sound_volume',
+  // Files and picks that only resolve on the device that made them.
+  'screensaver.gallery_items',
+  'screensaver.local_folder',
+  'screensaver.clock_background',
+  'notifications.chime_file',
+  'launcher.apps',
+  // Camera and sensor tuning, for the camera and the room it faces.
+  'motion.sensitivity',
+  'motion.fps',
+  'face.sensitivity',
+  'camera.snapshot_resolution',
+  // The notch handling: a panel thing, but harmless to bring back.
+  'browser.cutout_mode',
+};
+
+/// What [fleetDefaultExcluded] used to be, oldest first: a profile still on
+/// exactly one of these lists never had its exclusions touched and moves
+/// to the current default at load. Empty until the list first grows after
+/// a release.
+const fleetFormerDefaultExcluded = <Set<String>>[];
+
+/// What a new follower gets unless the leader says otherwise.
+const fleetDefaultCategories = {
+  'Home Assistant',
+  'Voice Satellite',
+  'Browser',
+  'Screensaver',
+  'Sendspin',
+  'Cameras',
+  'Kiosk',
+  'Lockdown',
+  'Gestures',
+};
+
+// One kiosk leads, the others follow: the leader pushes the categories a
+// follower was given to it, once the follower accepted the invitation on
+// its own screen. Everything under `fleet.` describes this device's place
+// in a fleet and never travels itself.
+
+const fleetLeader = SettingDef<bool>(
+  key: 'fleet.leader',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Lead this fleet',
+  description:
+      "Sync this kiosk's settings to its followers. Requires all kiosks to "
+      'run the same version.',
+  category: 'Fleet',
+  perDevice: true,
+);
+
+/// The leader's profiles, JSON list of `{id, name, categories,
+/// credentials, dashboard, excluded}`. The built-in Default (id `default`)
+/// is always one of them; a follower names the one it gets.
+const fleetProfiles = SettingDef<String>(
+  key: 'fleet.profiles',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Fleet profiles',
+  description: 'Internal: the lists a follower can be given.',
+  category: 'Fleet',
+  hidden: true,
+  perDevice: true,
+);
+
+/// The followers this leader has, JSON list of `{id, name, address, port,
+/// token, invite, sync, addedAt, lastSyncAt}`: `invite` is the nonce of an
+/// unanswered invitation, `token` the fleet token an accepted one minted,
+/// `sync` null for the fleet default or the kiosk's own list.
+const fleetFollowers = SettingDef<String>(
+  key: 'fleet.followers',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Followers',
+  description: 'Internal: the kiosks this one leads.',
+  category: 'Fleet',
+  hidden: true,
+  perDevice: true,
+  // Carries fleet tokens: kept out of the log lines and exports.
+  secret: true,
+);
+
+const fleetAutoUpdate = SettingDef<bool>(
+  key: 'fleet.auto_update',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Keep followers on this version',
+  description:
+      'Automatically update all followers to the Kiosk Satellite version '
+      'running on the leader.',
+  category: 'Fleet',
+  section: 'Updates',
+  dependsOn: 'fleet.leader',
+  perDevice: true,
+);
+
+/// The invitation waiting on this kiosk, JSON `{invite, leader: {id, name,
+/// version, address, port}, at, status, token}`: pending until answered on
+/// the device, then accepted (with the token the leader collects once) or
+/// declined until the leader has read the answer.
+const fleetInvite = SettingDef<String>(
+  key: 'fleet.invite',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Fleet invitation',
+  description: 'Internal: the invitation waiting for an answer.',
+  category: 'Fleet',
+  hidden: true,
+  perDevice: true,
+  // Carries fleet tokens: kept out of the log lines and exports.
+  secret: true,
+);
+
+/// The leader this kiosk follows, JSON `{id, name, address, port, version}`;
+/// empty when it follows nobody. The one thing a fleet token is checked
+/// against: a token names its leader and is honored only while this is
+/// that leader.
+const fleetLeaderInfo = SettingDef<String>(
+  key: 'fleet.leader_info',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Leader',
+  description: 'Internal: the kiosk this one follows.',
+  category: 'Fleet',
+  hidden: true,
+  perDevice: true,
+);
+
+/// The leader revision this kiosk last applied in full or empty while
+/// dirty (a synced setting changed here since), which the leader answers
+/// with a fresh push.
+const fleetAppliedRevision = SettingDef<String>(
+  key: 'fleet.applied_revision',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Applied revision',
+  description: 'Internal: the leader revision applied last.',
+  category: 'Fleet',
+  hidden: true,
+  perDevice: true,
+);
+
+/// The keys the leader last pushed, JSON list. What the Managed banner on a
+/// category page reads and what a local change is checked against to mark
+/// this kiosk dirty.
+const fleetSyncedKeys = SettingDef<String>(
+  key: 'fleet.synced_keys',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Synced keys',
+  description: 'Internal: the settings the leader pushes here.',
+  category: 'Fleet',
+  hidden: true,
+  perDevice: true,
+);
+
+/// When the leader last pushed here, milliseconds since the epoch, for the
+/// Leader card.
+const fleetLastSyncAt = SettingDef<num>(
+  key: 'fleet.last_sync_at',
+  type: SettingType.number,
+  defaultValue: 0,
+  title: 'Last sync',
+  description: 'Internal: when the leader last pushed.',
+  category: 'Fleet',
+  hidden: true,
+  perDevice: true,
 );
 
 // ── Device ─────────────────────────────────────────────────────────────
@@ -5616,6 +5921,7 @@ const deviceName = SettingDef<String>(
       'Friendly name shown in remote management and used as the device '
       'name published to Home Assistant.',
   category: 'Device',
+  perDevice: true,
 );
 
 const uiTheme = SettingDef<String>(
@@ -5648,6 +5954,7 @@ const disableImpeller = SettingDef<bool>(
       'Turns itself on after two such crashes; takes effect on the next '
       'app start.',
   category: 'Device',
+  perDevice: true,
 );
 
 // The second half of the same escape hatch (issue #302). Hybrid composition
@@ -5670,6 +5977,7 @@ const legacyWebView = SettingDef<bool>(
       'appears. Turns itself on where the device needs it; takes effect on '
       'the next app start.',
   category: 'Device',
+  perDevice: true,
 );
 
 // Applied by UiScaler above the Navigator, so every route and overlay
@@ -5690,6 +5998,7 @@ const uiScale = SettingDef<num>(
   max: 150,
   step: 5,
   unit: '%',
+  perDevice: true,
 );
 
 /// All settings, in display order.
@@ -6032,4 +6341,13 @@ const List<SettingDef<Object>> allSettings = [
   remotePort,
   remotePassword,
   remoteFleetDiscovery,
+  fleetLeader,
+  fleetAutoUpdate,
+  fleetProfiles,
+  fleetFollowers,
+  fleetInvite,
+  fleetLeaderInfo,
+  fleetAppliedRevision,
+  fleetSyncedKeys,
+  fleetLastSyncAt,
 ];

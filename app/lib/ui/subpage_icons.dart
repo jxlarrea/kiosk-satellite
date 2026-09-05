@@ -75,7 +75,13 @@ const Set<String> remoteOnlySubpages = {
 /// The glyph for [subpage], or a neutral one for a page the map has not met,
 /// so a new page still draws a row rather than throwing.
 Object subpageIcon(String subpage) =>
-    subpageIcons[subpage] ?? Icons.article_outlined;
+    subpageIcons[subpage] ??
+    runtimeSubpageIcons[subpage] ??
+    Icons.article_outlined;
+
+/// Pages made at runtime (a fleet profile, named by its owner) register
+/// their glyph here so the page title and the entry row wear the same one.
+final Map<String, Object> runtimeSubpageIcons = {};
 
 /// [subpageIcon] drawn: an [Icon] for Material glyphs, and for an SVG mark
 /// a picture in the ambient icon color, so it takes the same ink as the

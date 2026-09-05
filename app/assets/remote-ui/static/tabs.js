@@ -2,6 +2,7 @@ import { loadCameras } from './cameras.js';
 import { $, state } from './core.js';
 import { loadAboutInfo, loadDeviceInfo } from './device.js';
 import { loadFiles } from './files.js';
+import { fleetShown } from './fleetsync.js';
 import { loadGestures } from './gestures.js';
 import { subpageIcon } from './icons.js';
 import { loadLogs } from './logs.js';
@@ -18,7 +19,7 @@ import { clearSearchReturnTab, searchReturnTab } from './search.js';
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 export const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'home', 'launcher', 'screenaudio', 'screensaver',
-  'camera', 'sendspin', 'cameras', 'dlna', 'esphome', 'files', 'gestures', 'device', 'about', 'logs'];
+  'camera', 'sendspin', 'cameras', 'dlna', 'esphome', 'files', 'gestures', 'device', 'fleet', 'about', 'logs'];
 // Old bookmarks from before the tabs were consolidated keep landing
 // somewhere sensible.
 export const LEGACY_TABS = { screen: 'screenaudio', audio: 'screenaudio', remote: 'device', console: 'logs', btproxy: 'esphome', mqtt: 'esphome' };
@@ -32,7 +33,7 @@ export const TAB_TITLES = {
   sendspin: 'Media Player',
   dlna: 'DLNA Renderer', esphome: 'ESPHome',
   files: 'File Manager', gestures: 'Gestures',
-  device: 'Device', about: 'About', logs: 'Logs',
+  device: 'Device', fleet: 'Fleet Management', about: 'About', logs: 'Logs',
 };
 
 // The row that opens a second-level page (One UI, and what the device does
@@ -175,6 +176,9 @@ export function showTab(name, { push = true } = {}) {
   if (tab === 'gestures') loadGestures();
   if (tab === 'cameras') loadCameras();
   if (tab === 'device') loadDeviceInfo();
+  // The fleet is other kiosks' state: re-read on every visit and polled
+  // while the page stays open.
+  if (tab === 'fleet') fleetShown();
   if (tab === 'about') loadAboutInfo();
   // Both notices track something changed on the tablet in Android's own
   // settings, so opening the tab is the moment to re-ask rather than

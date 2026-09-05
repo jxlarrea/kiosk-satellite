@@ -42,6 +42,10 @@ own login card shows first if its password differs.
 | Command | `fleet` answers the same list: `{enabled, devices: [{id, name, version, address, port, url, self}]}`. The WebSocket carries a `fleet` event on every change. |
 | Port 5353 | Hearing the others needs the mDNS port. Where something on the device holds it exclusively the kiosk still announces, and the log says the others will not be heard. |
 
+## Fleet Management
+
+With the switcher in place, one kiosk can lead the others: it pushes the settings categories each follower was given to it, holds off while their versions differ and can update the fleet. The page, the sync rules and the fleet endpoints are in [Fleet Management](fleet.md).
+
 ## Authentication
 
 - A device password (set in the wizard; required before the server starts).
@@ -85,6 +89,8 @@ is administrable here by construction.
 | `/api/camera/snapshot` | GET | The latest device-camera frame as JPEG (404 until one has been captured). `X-Snapshot-At` carries the capture time as ISO 8601 UTC. Serves the cached frame; it never triggers a capture (use the `takeCameraSnapshot` command for that). |
 | `/api/files/download` | GET | Stream a device file. Query params: `root` (`shared` or `app`), `path` (relative to the root) |
 | `/api/files/upload` | POST | Write the raw request body to a device file, same `root`/`path` query params. Parent folders are created |
+| `/api/fleet/identity`, `/api/fleet/invite`, `/api/fleet/invite/<nonce>` | GET, POST, GET | Fleet Management's public face, for a kiosk with no token here: who this kiosk is, an invitation to follow (answered on the kiosk screen, never here) and what became of one. See [Fleet Management](fleet.md) |
+| `/api/fleet/status`, `/api/fleet/apply`, `/api/fleet/leave` | GET, POST, POST | The follower's side of the fleet: opened by the fleet token a follower mints on accepting, which is good for these, `getUpdateStatus`, `checkUpdateNow` and `installUpdate` and nothing else, only while it names this kiosk's leader |
 | `/api/logs` | GET | Recent app log ring buffer |
 | `/api/console` | GET | Current WebView JS console buffer |
 

@@ -27,13 +27,28 @@ class AuthStore {
   /// A signed token. The default week suits the admin UI's session; an
   /// automation (a Home Assistant rest_command firing for years) passes its
   /// own [ttl], clamped to [maxTtl].
-  String issueToken({Duration? ttl}) {
+  ///
+  /// [claims] ride in the payload beside the expiry: a fleet token names
+  /// the leader it was minted for (`fleet`), which the server reads back
+  /// with [claimsOf] to keep it off everything but the fleet endpoints.
+  String issueToken({Duration? ttl, Map<String, Object?> claims = const {}}) {
     final effective = ttl == null || ttl <= Duration.zero
         ? _tokenTtl
         : (ttl > maxTtl ? maxTtl : ttl);
     final exp = DateTime.now().add(effective).millisecondsSinceEpoch;
-    final payload = base64Url.encode(utf8.encode(jsonEncode({'exp': exp})));
+    final payload = base64Url.encode(
+      utf8.encode(jsonEncode({...claims, 'exp': exp})),
+    );
     return '$payload.${_sign(payload)}';
+  }
+
+  /// The payload of a token that [validate] accepts or null for any other.
+  Map<String, Object?>? claimsOf(String? token) {
+    if (!validate(token)) return null;
+    final payload = jsonDecode(
+      utf8.decode(base64Url.decode(token!.split('.').first)),
+    );
+    return payload is Map ? payload.cast<String, Object?>() : null;
   }
 
   bool validate(String? token) {
@@ -52,7 +67,10 @@ class AuthStore {
   }
 
   String _sign(String data) {
-    final digest = Hmac(sha256, utf8.encode(_secret)).convert(utf8.encode(data));
+    final digest = Hmac(
+      sha256,
+      utf8.encode(_secret),
+    ).convert(utf8.encode(data));
     return base64Url.encode(digest.bytes);
   }
 
@@ -73,8 +91,7 @@ class AuthStore {
     return failures.length >= _maxFailures;
   }
 
-  void recordFailure(String ip) =>
-      (_failures[ip] ??= []).add(DateTime.now());
+  void recordFailure(String ip) => (_failures[ip] ??= []).add(DateTime.now());
 
   void clearFailures(String ip) => _failures.remove(ip);
 }

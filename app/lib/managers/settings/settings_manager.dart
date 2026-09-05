@@ -500,6 +500,8 @@ class SettingsManager extends Manager {
             ? ((get(def) as String).isNotEmpty ? '__set__' : '')
             : get(def),
         'secret': def.secret,
+        // What Fleet Management never pushes to another kiosk.
+        if (def.perDevice) 'perDevice': true,
       },
   ];
 
@@ -527,6 +529,10 @@ class SettingsManager extends Manager {
   /// ids regenerate at the next Sendspin connect, the name is the user's
   /// to re-set).
   Future<void> shedImportedIdentity(Map<String, Object?> map) async {
+    // A kiosk's place in a fleet is its own too: a clone must not lead the
+    // original's followers (their tokens name the original) or believe it
+    // follows the original's leader.
+    map.removeWhere((k, _) => k.startsWith('fleet.'));
     final importedName = map.remove(deviceName.key);
     final importedPlayer = map.remove(sendspinClientId.key);
     final importedNode = map.remove(esphomeNodeName.key);
@@ -547,7 +553,12 @@ class SettingsManager extends Manager {
     }
   }
 
-  Future<int> import(Map<String, Object?> config) async {
+  /// [source] names who the batch came from on the log lines: a backup
+  /// import by default, the fleet leader for a push.
+  Future<int> import(
+    Map<String, Object?> config, {
+    String source = 'import',
+  }) async {
     importing = true;
     try {
       var applied = 0;
@@ -555,7 +566,7 @@ class SettingsManager extends Manager {
         if (await setFromJson(
           entry.key,
           entry.value,
-          source: 'import',
+          source: source,
           batch: config,
         )) {
           applied++;

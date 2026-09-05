@@ -12,6 +12,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
@@ -72,6 +73,28 @@ class RemoteManager extends Manager {
       );
     });
     _auth = AuthStore(secret);
+    // Minted for a fleet leader when this kiosk accepts its invitation:
+    // the same signed token as a login, carrying the leader's id, which
+    // the gate below reads to keep it off everything but the fleet
+    // endpoints and only while that leader is this kiosk's. Ten years,
+    // like an automation token; leaving the fleet is what revokes it.
+    commands.register(
+      Command(
+        name: 'issueFleetToken',
+        description:
+            'A bearer token good only for the fleet endpoints, naming the '
+            'leader it was minted for (the fleet sync manager asks on '
+            'accept).',
+        params: const {'leader': "The leader's kiosk id"},
+        handler: (p) async {
+          final leader = '${p['leader'] ?? ''}';
+          if (leader.isEmpty) return const CommandResult.fail('leader required');
+          return CommandResult.ok(
+            _auth.issueToken(ttl: AuthStore.maxTtl, claims: {'fleet': leader}),
+          );
+        },
+      ),
+    );
 
     // The admin SPA: index.html plus the ES modules and stylesheet under
     // static/. Everything is loaded into memory up front (a few hundred KB)
@@ -388,11 +411,59 @@ class RemoteManager extends Manager {
     // no secrets, no page content.
     if (path == 'api/health' && request.method == 'GET') return _health();
 
+    // Fleet Management's public face, for a kiosk that has no token here
+    // yet: who this kiosk is, an invitation to follow (which waits on the
+    // screen and decides nothing by itself) and what became of one. The
+    // nonce in the invitation is the only secret in the exchange.
+    if (path == 'api/fleet/identity' && request.method == 'GET') {
+      final r = await commands.execute('fleetIdentity', const {});
+      return r.ok
+          ? _json(200, (r.data as Map).cast<String, Object?>())
+          : _json(503, {'error': r.error});
+    }
+    if (path == 'api/fleet/invite' && request.method == 'POST') {
+      final ip = _clientIp(request);
+      final last = _inviteAt[ip];
+      final now = DateTime.now();
+      if (last != null && now.difference(last) < const Duration(seconds: 3)) {
+        return _json(429, {'error': 'too many invitations'});
+      }
+      _inviteAt[ip] = now;
+      final body = await _body(request);
+      if (body == null) return _json(400, {'error': 'invalid JSON'});
+      final r = await commands.execute('fleetInviteReceived', {
+        ...body,
+        // Where it really came from, whatever the body says.
+        'address': ip,
+      });
+      return _json(r.ok ? 200 : 400, r.toJson());
+    }
+    if (path.startsWith('api/fleet/invite/') && request.method == 'GET') {
+      final r = await commands.execute('fleetInvitePoll', {
+        'invite': path.substring('api/fleet/invite/'.length),
+      });
+      return _json(200, (r.data as Map?)?.cast<String, Object?>() ?? {});
+    }
+
     if (!path.startsWith('api/')) return Response.notFound('not found');
 
     // Everything else under /api/ requires a bearer token.
-    if (!_auth.validate(_bearerToken(request))) {
+    final token = _bearerToken(request);
+    if (!_auth.validate(token)) {
       return _json(401, {'error': 'unauthorized'});
+    }
+    // A fleet token is a leader's, not an admin's: it opens the fleet
+    // endpoints and the update commands, nothing else and only while the
+    // leader it names is the one this kiosk follows. Leaving the fleet
+    // revokes every token that leader holds without a revocation list.
+    final fleetClaim = _auth.claimsOf(token)?['fleet'];
+    if (fleetClaim != null) {
+      if (fleetClaim != _followedLeaderId) {
+        return _json(403, {'error': "not this kiosk's leader"});
+      }
+      if (!_fleetScoped.contains(path)) {
+        return _json(403, {'error': 'fleet token'});
+      }
     }
 
     switch ((request.method, path)) {
@@ -468,6 +539,17 @@ class RemoteManager extends Manager {
             'X-Snapshot-At': _lastSnapshotAt!.toUtc().toIso8601String(),
           },
         );
+      case ('GET', 'api/fleet/status'):
+        final r = await commands.execute('fleetFollowerStatus', const {});
+        return _json(200, (r.data as Map?)?.cast<String, Object?>() ?? {});
+      case ('POST', 'api/fleet/apply'):
+        final body = await _body(request);
+        if (body == null) return _json(400, {'error': 'invalid JSON'});
+        final r = await commands.execute('fleetApply', body);
+        return _json(r.ok ? 200 : 400, r.toJson());
+      case ('POST', 'api/fleet/leave'):
+        final r = await commands.execute('fleetLeaderLeft', const {});
+        return _json(200, r.toJson());
       case ('GET', 'api/files/download'):
         return _fileDownload(request);
       case ('POST', 'api/files/upload'):
@@ -637,10 +719,50 @@ class RemoteManager extends Manager {
   }
 
   Future<Response> _command(Request request, String commandName) async {
+    if (_deviceOnly.contains(commandName)) {
+      return _json(403, {'error': 'answered on the kiosk itself'});
+    }
     final params = await _body(request) ?? const <String, Object?>{};
     final result = await commands.execute(commandName, params);
     return _json(result.ok ? 200 : 400, result.toJson());
   }
+
+  /// Commands that only the kiosk's own screen may run: accepting a fleet
+  /// invitation is the one confirmation the remote admin must not give.
+  static const _deviceOnly = {'fleetAccept', 'fleetDecline'};
+
+  /// What a fleet token opens: the follower's side of the fleet wire and
+  /// the update commands the leader drives.
+  static const _fleetScoped = {
+    'api/fleet/status',
+    'api/fleet/apply',
+    'api/fleet/leave',
+    'api/commands/getUpdateStatus',
+    'api/commands/checkUpdateNow',
+    'api/commands/installUpdate',
+  };
+
+  /// One invitation per client every few seconds: the endpoint is public.
+  final _inviteAt = <String, DateTime>{};
+
+  /// The id of the leader this kiosk follows or null.
+  String? get _followedLeaderId {
+    final raw = _settings.get(defs.fleetLeaderInfo);
+    if (raw.isEmpty) return null;
+    try {
+      final map = jsonDecode(raw);
+      final id = map is Map ? map['id'] : null;
+      return id is String && id.isNotEmpty ? id : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String _clientIp(Request request) =>
+      (request.context['shelf.io.connection_info'] as HttpConnectionInfo?)
+          ?.remoteAddress
+          .address ??
+      'unknown';
 
   /// Path safety for both file endpoints lives in the files manager
   /// (fileResolve refuses anything escaping its root); these only stream.
@@ -753,7 +875,9 @@ class RemoteManager extends Manager {
           (raw) async {
             try {
               final msg = jsonDecode(raw as String) as Map<String, dynamic>;
-              if (msg['type'] == 'command' && msg['name'] is String) {
+              if (msg['type'] == 'command' &&
+                  msg['name'] is String &&
+                  !_deviceOnly.contains(msg['name'])) {
                 final result = await commands.execute(
                   msg['name'] as String,
                   (msg['params'] as Map?)?.cast<String, Object?>() ?? const {},

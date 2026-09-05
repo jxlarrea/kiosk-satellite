@@ -111,6 +111,9 @@ class FleetManager extends Manager {
           if (running) await _refresh();
           return CommandResult.ok({
             'enabled': enabled,
+            // False where the mDNS port is taken: this kiosk announces but
+            // hears nobody, so an empty list says nothing about the network.
+            'listening': _listening,
             'devices': [for (final d in _devices) d.toJson()],
           });
         },
@@ -200,8 +203,12 @@ class FleetManager extends Manager {
   /// kiosk announces but hears nobody.
   bool _warnedDeaf = false;
 
+  /// Whether the socket has the mDNS port (see the warning below).
+  bool _listening = true;
+
   void _onSnapshot(Object? raw) {
     if (raw is! Map) return;
+    _listening = raw['listening'] != false;
     if (raw['listening'] == false && running && !_warnedDeaf) {
       _warnedDeaf = true;
       log.warn(

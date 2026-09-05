@@ -34,6 +34,7 @@ import {
   updateSonosPage,
   updateMaValidateRow,
 } from './panels.js';
+import { renderFleetPage } from './fleetsync.js';
 import { askImportOptions } from './pickers.js';
 import { settingRow } from './rows.js';
 import { applySubpageView, currentPath, setCurrentPath, subpageEntry } from './tabs.js';
@@ -1207,6 +1208,9 @@ export async function loadSettings() {
   updateMaValidateRow();
   updatePlayerRow();
   updateSonosPage();
+  // The Fleet Management tab, hand-built from the fleetStatus command, and
+  // the banner a follower's synced categories wear.
+  await renderFleetPage();
 
   // Mirror of the device's Access card, under the Remote Administration
   // group on the Device tab. Here the address is simply where this page

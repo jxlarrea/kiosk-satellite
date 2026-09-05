@@ -41,6 +41,7 @@ import 'offline_notice.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
 import 'face_preview_overlay.dart';
+import 'fleet_settings.dart';
 import 'back_nav.dart';
 import 'key_nav.dart';
 import 'kiosk_drawer.dart';
@@ -1482,6 +1483,9 @@ class _KioskScreenState extends State<KioskScreen>
                     LockdownShield(
                       blackout: c.settings.get(defs.lockdownBlackout),
                     ),
+                  // A fleet invitation: above the shield, since answering
+                  // it is an admin act the shield must not swallow.
+                  FleetInviteOverlay(container: c),
                 ],
               ),
             );

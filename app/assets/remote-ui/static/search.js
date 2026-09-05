@@ -14,6 +14,7 @@ export const SEARCH_CATEGORY_TABS = {
   'Sendspin': 'sendspin', 'DLNA': 'dlna',
   'ESPHome': 'esphome',
   'Device': 'device', 'Cameras': 'cameras', 'Gestures': 'gestures',
+  'Fleet': 'fleet',
 };
 // Second-level pages no setting declares: their rows come from the Voice
 // Satellite integration, not from the definitions, so the page that draws
@@ -22,6 +23,16 @@ export const SEARCH_CATEGORY_TABS = {
 export const DEFLESS_SUBPAGES = [['voicesatellite', 'Appearance'],
   ['device', 'Hardware'], ['device', 'Home Assistant'], ['device', 'WebView']];
 export const SEARCH_EXTRAS = [
+  // Fleet Management: the hand-built cards on the leader's page.
+  { tab: 'fleet', title: 'Followers',
+    desc: 'The kiosks this one leads, their state and a way to add one.',
+    heading: 'Followers' },
+  { tab: 'fleet', title: 'Profiles',
+    desc: 'The named lists a follower can be given: categories, credentials, the dashboard and the settings left out.',
+    heading: 'Profiles' },
+  { tab: 'fleet', title: 'Update the fleet',
+    desc: 'Install the release offered to each follower, then here.',
+    heading: 'Updates' },
   { tab: 'sendspin', title: 'Speakers', sub: 'Sonos',
     desc: 'The Sonos speakers this device knows, a search of the network and an address field.' },
   { tab: 'home', title: 'Home screen status',
