@@ -135,7 +135,7 @@ Kiosk Satellite is completely free and distributed as an APK for sideloading:
 - [Optimizations](docs/optimizations.md): Performance switches and connection tweaks for older hardware.
 - [Permissions](docs/permissions.md): A detailed breakdown of every Android permission the app requests, `adb` grant commands, and background service details.
 - [Updates](docs/updates.md): How updates work, required permissions, and enabling hands-free updates.
-- [Fleet Management](docs/fleet.md): Leading a fleet of kiosks, profiles, what syncs and what never does, and updating the whole fleet.
+- [Fleet Management](docs/fleet.md): Synchronize a fleet of kiosks, profiles, what syncs and updating the whole fleet.
 
 ### Device Specific Guides
 - [Meta Portal](docs/portal.md): Running Kiosk Satellite on a Meta Portal and fixing Person detector permissions.
