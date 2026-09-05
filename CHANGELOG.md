@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **A hairline at the top of the Followers and Profiles cards on the device's Fleet Management page.** The cards started with an empty search landing row, and the divider drawn after it sat on the card's top edge.
+
 ## v2026.9.20 - 2026-09-05
 
 ### Added

@@ -183,23 +183,25 @@ class _FleetSettingsPanelState extends State<FleetSettingsPanel> {
       for (final f in (status['followers'] as List? ?? const []))
         if (f is Map) f.cast<String, Object?>(),
     ];
-    return SettingsCard(
-      children: [
-        const SearchLandingTarget(id: 'x:fleet_followers', child: SizedBox()),
-        for (final f in rows) _followerRow(f),
-        SettingsRow(
-          title: const Text('Add a kiosk'),
-          subtitle: const Text(
-            'Kiosks member of the fleet. A follower must confirm the '
-            'invitation on device.',
+    return SearchLandingTarget(
+      id: 'x:fleet_followers',
+      child: SettingsCard(
+        children: [
+          for (final f in rows) _followerRow(f),
+          SettingsRow(
+            title: const Text('Add a kiosk'),
+            subtitle: const Text(
+              'Kiosks member of the fleet. A follower must confirm the '
+              'invitation on device.',
+            ),
+            trailing: OutlinedButton.icon(
+              onPressed: _busy ? null : _addKiosk,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add'),
+            ),
           ),
-          trailing: OutlinedButton.icon(
-            onPressed: _busy ? null : _addKiosk,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add'),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -310,31 +312,33 @@ class _FleetSettingsPanelState extends State<FleetSettingsPanel> {
 
   Widget _profilesCard(Map<String, Object?> status) {
     final profiles = _profiles();
-    return SettingsCard(
-      children: [
-        const SearchLandingTarget(id: 'x:fleet_default', child: SizedBox()),
-        // One entry row per profile, its page named after it, wearing the
-        // glyph the page title takes.
-        for (final p in profiles)
-          ListTile(
-            leading: SubpageGlyph(p.name),
-            title: Text(p.name),
-            subtitle: Text(p.describe()),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => openSettingsSubpage(context, c, 'Fleet', p.name),
+    return SearchLandingTarget(
+      id: 'x:fleet_default',
+      child: SettingsCard(
+        children: [
+          // One entry row per profile, its page named after it, wearing the
+          // glyph the page title takes.
+          for (final p in profiles)
+            ListTile(
+              leading: SubpageGlyph(p.name),
+              title: Text(p.name),
+              subtitle: Text(p.describe()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => openSettingsSubpage(context, c, 'Fleet', p.name),
+            ),
+          SettingsRow(
+            title: const Text('Add a profile'),
+            subtitle: const Text(
+              'The collection of settings, credentials and exclusions to sync.',
+            ),
+            trailing: OutlinedButton.icon(
+              onPressed: _busy ? null : _addProfile,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add'),
+            ),
           ),
-        SettingsRow(
-          title: const Text('Add a profile'),
-          subtitle: const Text(
-            'The collection of settings, credentials and exclusions to sync.',
-          ),
-          trailing: OutlinedButton.icon(
-            onPressed: _busy ? null : _addProfile,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add'),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
