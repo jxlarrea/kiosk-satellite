@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
+import 'package:kiosk_satellite/core/events.dart';
+import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/ui/screensaver_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -35,11 +37,15 @@ void main() {
   var listingDown = false;
   var thumbnailsDown = false;
   var listings = 0;
+  var portraitPair = false;
+  var imageRequests = 0;
 
   setUp(() async {
     listingDown = false;
     thumbnailsDown = false;
     listings = 0;
+    portraitPair = false;
+    imageRequests = 0;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) {
       final path = request.uri.path;
@@ -75,7 +81,14 @@ void main() {
           response.write(jsonEncode({'message': 'down'}));
         } else {
           response.headers.contentType = ContentType('image', 'png');
-          response.add(png);
+          imageRequests++;
+          response.add(
+            portraitPair
+                ? base64Decode(
+                    'iVBORw0KGgoAAAANSUhEUgAAAB4AAAAoCAIAAABmcd1FAAAALklEQVR4nO3MQQEAQAQAsHMttJJYNil4bQEWXfl2/KVXrVar1Wq1Wq1Wq9WH9QCo5QF3BVxaYAAAAABJRU5ErkJggg==',
+                  )
+                : png,
+          );
         }
       } else {
         response.statusCode = 404;
@@ -165,4 +178,41 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   });
+  testWidgets(
+    'a single portrait pair stays loaded across holds and screen-off',
+    (tester) async {
+      await tester.runAsync(() async {
+        portraitPair = true;
+        await container.settings.set(defs.screensaverImmichPairPortrait, true);
+        await container.settings.set(defs.screensaverImmichInterval, 2);
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        var changes = 0;
+        final sub = container.bus.on<ScreensaverSlideChanged>().listen(
+          (_) => changes++,
+        );
+        await mount(tester);
+        await pumpUntil(tester, () => changes == 1);
+        expect(find.byType(Image), findsNWidgets(2));
+        expect(imageRequests, 2);
+        await Future<void>.delayed(const Duration(seconds: 3));
+        await tester.pump();
+        expect(changes, 1);
+        container.bus.publish(const ScreenStateChanged(on: false));
+        await Future<void>.delayed(const Duration(seconds: 3));
+        await tester.pump();
+        expect(imageRequests, 2);
+        container.bus.publish(
+          const ScreenStateChanged(on: true, source: 'app'),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await tester.pump();
+        expect(changes, 1);
+        expect(imageRequests, 2);
+        await tester.pumpWidget(const SizedBox());
+        await sub.cancel();
+      });
+    },
+  );
 }

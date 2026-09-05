@@ -28,6 +28,7 @@
      blurred one is never re-rasterized per frame. */
   .t-kenburns.in > .photo {
     animation: kskb var(--kb-dur, 12s) linear forwards; }
+  .photo-paused .photo { animation-play-state: paused !important; }
   @keyframes kskb { to { transform: scale(1.1); } }
   /* 105%, not 100%: subpixel layout must never leave a seam mid-push. */
   .t-slide { opacity: 1; transform: translateX(105%);

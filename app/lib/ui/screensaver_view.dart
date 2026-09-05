@@ -13,7 +13,6 @@ import 'package:video_player/video_player.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
-import '../core/image_orientation.dart';
 import '../core/locale_dates.dart';
 import '../managers/browser/ha_session_script.dart';
 import '../managers/browser/viewport_zoom_script.dart';
@@ -44,31 +43,14 @@ import '../managers/settings/settings_manager.dart';
 
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
 import 'clock_faces.dart';
+import 'photo_frames.dart';
+
 import 'glance_row.dart';
 import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
 import 'ui_scale.dart' show UiScaleExempt;
 import 'video_surface.dart';
 
-/// Fill the screen, the one rule every photo mode follows.
-///
-/// [fill] is the mode's setting: 'off' never crops, 'always' always does,
-/// and 'smart' crops only a photo already shaped close to the frame it is
-/// given. "Close enough" caps the crop at roughly a quarter along one axis
-/// (a 1.45x ratio mismatch) — it admits the common cases (4:3 or 16:9
-/// camera frames on a 16:10 panel, either orientation, and a portrait shot
-/// in a portrait half) while shapes a crop would gut keep their full
-/// frame. True means cover-fit; false means the photo keeps its frame,
-/// over a blurred copy of itself unless [fill] is 'off'.
-///
-/// A null [photoAspect] is a shape that could not be read: Smart keeps the
-/// frame rather than guessing at a crop, while Always still covers, since
-/// the whole point of it is that no photo is ever framed.
-bool photoCovers(String fill, double? photoAspect, double frameAspect) {
-  if (fill == 'off') return false;
-  if (fill == 'always') return true;
-  if (photoAspect == null || photoAspect <= 0 || frameAspect <= 0) return false;
-  return max(photoAspect / frameAspect, frameAspect / photoAspect) <= 1.45;
-}
+export 'photo_frames.dart' show photoCovers;
 
 /// The Night mode decision (issue #391): whether the clock wears its night
 /// color, given the last decision.
@@ -532,7 +514,8 @@ class ClockScreensaver extends StatefulWidget {
   State<ClockScreensaver> createState() => _ClockScreensaverState();
 }
 
-class _ClockScreensaverState extends State<ClockScreensaver> {
+class _ClockScreensaverState extends State<ClockScreensaver>
+    with _PhotoScreenState<ClockScreensaver> {
   /// How far the At a Glance row sits above the bottom edge, as a fraction
   /// of the display height. Measured from the display, not from the clock,
   /// so the clock's size slider cannot move it.
@@ -548,10 +531,10 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   Offset _offset = Offset.zero;
 
   /// The background photo, resolved off the path setting: the provider and
-  /// the aspect its fill treatment keys off. [_bgPath] is what they were
-  /// resolved FROM, so a changed path re-resolves and an unchanged one
-  /// costs nothing per rebuild.
-  String? _bgPath;
+  /// the aspect its fill treatment keys off. The path and display size
+  /// form [_bgKey], so unchanged rebuilds do no image work.
+  Object? _bgKey;
+  PreparedPhoto? _bgPhoto;
   double? _bgAspect;
   ImageProvider? _bgImage;
   StreamSubscription<SettingChanged>? _bgSub;
@@ -559,8 +542,9 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   @override
   void initState() {
     super.initState();
+    _watchPhotoScreen(widget.container);
     _scheduleTick();
-    if (widget.container.settings.get(defs.screensaverPixelShift)) {
+    if (_awake && widget.container.settings.get(defs.screensaverPixelShift)) {
       // Nudge the whole face once a minute so a static clock cannot burn in.
       _shift = Timer.periodic(const Duration(minutes: 1), (_) => _nudge());
     }
@@ -577,6 +561,18 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
         setState(() {});
       }
     });
+  }
+
+  @override
+  void _photoScreenChanged(bool awake) {
+    _tick?.cancel();
+    _shift?.cancel();
+    if (!awake) return;
+    _now = DateTime.now();
+    _scheduleTick();
+    if (widget.container.settings.get(defs.screensaverPixelShift)) {
+      _shift = Timer.periodic(const Duration(minutes: 1), (_) => _nudge());
+    }
   }
 
   /// The digit color Night mode imposes, or null while it stands down.
@@ -600,6 +596,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   // rebuild would be 60x the wakeups for identical pixels) rather than
   // drifting off a fixed period.
   void _scheduleTick() {
+    if (!_awake) return;
     final now = DateTime.now();
     // Seconds only exist on the digital face. The flip face changes once a
     // minute, so ticking it per second would be 60x the wakeups (and 60x
@@ -636,6 +633,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     _tick?.cancel();
     _shift?.cancel();
     _bgSub?.cancel();
+    _bgPhoto?.dispose();
     super.dispose();
   }
 
@@ -669,41 +667,47 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   /// setting names a copy that never came along, just keeps the solid
   /// color instead of taking the clock down.
   void _ensureBackground(String path, Size size, double dpr) {
-    if (path == _bgPath) return;
+    final key = (path, size, dpr);
+    if (key == _bgKey) return;
+    _bgKey = key;
     if (path.isEmpty) {
-      _bgPath = path;
       _bgAspect = null;
       _bgImage = null;
+      _bgPhoto?.dispose();
+      _bgPhoto = null;
       return;
     }
     final file = File(path);
     if (!file.existsSync()) {
-      _bgPath = null;
+      _bgKey = null;
       _bgAspect = null;
       _bgImage = null;
       return;
     }
-    _bgPath = path;
     unawaited(() async {
-      // The header read costs one pass over the file, but the bytes are
-      // hot in the page cache when FileImage decodes them, and knowing
-      // the aspect up front means the fill decision never flickers.
-      double? aspect;
       try {
-        aspect = await _aspectOf(await file.readAsBytes());
-      } catch (_) {}
-      if (!mounted || _bgPath != path) return;
-      final old = _bgImage;
-      setState(() {
-        _bgAspect = aspect;
-        // Decoded at screen resolution, not the photo's — a 12MP shot
-        // would otherwise hold ~50MB of texture for the session.
-        _bgImage = ResizeImage(
-          FileImage(file),
-          width: (size.width * dpr).round(),
+        final bytes = await file.readAsBytes();
+        await _waitForPhotoScreen();
+        if (!mounted || _bgKey != key) return;
+        final photo = await PreparedPhoto.prepare(
+          bytes,
+          context: context,
+          frame: size * dpr,
+          fill: 'smart',
+          zoom: false,
+          valid: () => mounted && _bgKey == key,
+          beforeDecode: _waitForPhotoScreen,
         );
-      });
-      if (old != null) unawaited(old.evict());
+        final old = _bgPhoto;
+        setState(() {
+          _bgPhoto = photo;
+          _bgAspect = photo.aspect;
+          _bgImage = photo.image;
+        });
+        old?.dispose();
+      } catch (_) {
+        if (mounted && _bgKey == key) _bgKey = null;
+      }
     }());
   }
 
@@ -756,7 +760,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                       tileMode: ui.TileMode.clamp,
                     ),
                     child: Image(
-                      image: image,
+                      image: _bgPhoto?.background ?? image,
                       fit: BoxFit.cover,
                       gaplessPlayback: true,
                       errorBuilder: (_, _, _) => const SizedBox.expand(),
@@ -2118,6 +2122,20 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
   /// Kiosk mode changing while a Home Assistant page is on screen applies to
   /// it there and then, exactly as it does on the dashboard.
   StreamSubscription<SettingChanged>? _kioskSub;
+  StreamSubscription<ScreenStateChanged>? _photoScreenSub;
+  late bool _photoScreenOn = widget.container.screen.isScreenOn;
+
+  Future<void> _setPhotoActivity() async {
+    if (widget.mode != 'media') return;
+    try {
+      await _webView?.evaluateJavascript(
+        source:
+            'window.__ksPhotoActive && window.__ksPhotoActive($_photoScreenOn)',
+      );
+    } catch (_) {
+      // A navigating renderer receives the state again after its load.
+    }
+  }
 
   Future<void> _applyKiosk(InAppWebViewController controller) async {
     final settings = widget.container.settings;
@@ -2159,6 +2177,12 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
   void initState() {
     super.initState();
     if (widget.mode == 'media') {
+      _photoScreenSub = widget.container.bus.on<ScreenStateChanged>().listen((
+        e,
+      ) {
+        _photoScreenOn = e.on;
+        unawaited(_setPhotoActivity());
+      });
       widget.container.screensaver.attachSlides(_step);
     }
     _kioskSub = widget.container.bus.on<SettingChanged>().listen((e) {
@@ -2184,6 +2208,7 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
     widget.container.screensaver.detachSlides(_step);
     _retry?.cancel();
     _kioskSub?.cancel();
+    _photoScreenSub?.cancel();
     super.dispose();
   }
 
@@ -2216,6 +2241,7 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
       'haToken': s.get(defs.haToken),
       'websiteUrl': s.get(defs.screensaverWebsiteUrl),
       'mediaId': s.get(defs.screensaverMediaId),
+      'photoActive': _photoScreenOn,
       'mediaIntervalSeconds': s.get(defs.screensaverMediaInterval),
       'mediaShuffle': s.get(defs.screensaverMediaShuffle),
       'mediaRecursive': s.get(defs.screensaverMediaRecursive),
@@ -2353,6 +2379,7 @@ setInterval(function () {
       // (issue #224). Only the website mode has a page of theirs to run it
       // on; the bundled screensaver is ours.
       onLoadStop: (controller, url) async {
+        await _setPhotoActivity();
         if (!topLevel) {
           // WebViews older than 91 have no DOCUMENT_START_SCRIPT, and the
           // fallback injection of the config UserScript loses the race
@@ -2426,30 +2453,89 @@ setInterval(function () {
   }
 }
 
-/// The image's aspect ratio as it will appear on screen, read from its
-/// header — no full decode, so it costs microseconds, not a second of jank
-/// before every slide.
-///
-/// EXIF orientation included: a photo taken in portrait is commonly stored
-/// landscape with a "turn me" tag, and the renderer turns it. Measuring the
-/// stored dimensions alone called those photos landscape, so they were
-/// judged backwards by both the fill decision and the portrait pairing.
-Future<double?> _aspectOf(Uint8List bytes) async {
-  try {
-    final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-    try {
-      final descriptor = await ui.ImageDescriptor.encoded(buffer);
-      final width = descriptor.width;
-      final height = descriptor.height;
-      descriptor.dispose();
-      return orientationSwapsAxes(jpegOrientation(bytes))
-          ? height / width
-          : width / height;
-    } finally {
-      buffer.dispose();
+/// The display aspect from the image descriptor, without a full decode.
+/// The descriptor already accounts for EXIF orientation.
+Future<double?> _aspectOf(Uint8List bytes) => photoAspect(bytes);
+
+/// Screen-off preserves the slide and its remaining hold. In-flight reads
+/// finish, but decoding and committing a new slide wait for the panel.
+mixin _PhotoScreenState<T extends StatefulWidget> on State<T> {
+  bool _awake = true;
+  StreamSubscription<ScreenStateChanged>? _photoScreenSub;
+  Completer<void>? _wake;
+  StreamSubscription<SettingChanged>? _photoSettingsSub;
+  Future<void> Function()? _photoRefresh;
+  Object? _photoViewport;
+
+  void _watchPhotoSettings(
+    AppContainer c,
+    Set<String> keys,
+    Future<void> Function() refresh,
+  ) {
+    _photoRefresh = refresh;
+    _photoSettingsSub = c.bus.on<SettingChanged>().listen((e) {
+      if (keys.contains(e.key)) unawaited(refresh());
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final mq = MediaQuery.maybeOf(context);
+    final viewport = (mq?.size, mq?.devicePixelRatio);
+    if (_photoViewport != null && _photoViewport != viewport) {
+      final refresh = _photoRefresh;
+      if (refresh != null) unawaited(refresh());
     }
-  } catch (_) {
-    return null;
+    _photoViewport = viewport;
+  }
+
+  final _retiringPhotos = <PreparedPhoto>[];
+  final _photoRetireTimers = <Timer>[];
+
+  void _watchPhotoScreen(AppContainer c) {
+    _awake = c.screen.isScreenOn;
+    _photoScreenSub = c.bus.on<ScreenStateChanged>().listen((e) {
+      if (!mounted || _awake == e.on) return;
+      setState(() => _awake = e.on);
+      if (e.on) {
+        _wake?.complete();
+        _wake = null;
+      }
+      _photoScreenChanged(e.on);
+    });
+  }
+
+  Future<void> _waitForPhotoScreen() async {
+    if (!_awake && mounted) await (_wake ??= Completer<void>()).future;
+  }
+
+  void _photoScreenChanged(bool awake);
+
+  void _retirePhoto(PreparedPhoto? photo) {
+    if (photo == null) return;
+    _retiringPhotos.add(photo);
+    late Timer timer;
+    timer = Timer(const Duration(milliseconds: 1200), () {
+      _photoRetireTimers.remove(timer);
+      _retiringPhotos.remove(photo);
+      photo.dispose();
+    });
+    _photoRetireTimers.add(timer);
+  }
+
+  @override
+  void dispose() {
+    _photoScreenSub?.cancel();
+    _photoSettingsSub?.cancel();
+    _wake?.complete();
+    for (final timer in _photoRetireTimers) {
+      timer.cancel();
+    }
+    for (final photo in _retiringPhotos) {
+      photo.dispose();
+    }
+    super.dispose();
   }
 }
 
@@ -2476,13 +2562,17 @@ class LocalMediaScreensaver extends StatefulWidget {
   State<LocalMediaScreensaver> createState() => _LocalMediaScreensaverState();
 }
 
-class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
+class _LocalMediaScreensaverState extends State<LocalMediaScreensaver>
+    with _PhotoScreenState<LocalMediaScreensaver> {
   static const _imageExt = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'};
   static const _videoExt = {'.mp4', '.webm', '.mkv', '.mov', '.3gp'};
 
   List<File> _files = const [];
   int _index = 0;
-  Timer? _timer;
+  PausableTimer? _timer;
+  PreparedPhoto? _photo;
+  int _photoFailures = 0;
+  final _prepared = SlidePreloader<PreparedPhoto>((photo) => photo.dispose());
   VideoPlayerController? _video;
 
   /// The current slide's provider, decoded at screen size. Held so the
@@ -2506,6 +2596,16 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
   @override
   void initState() {
     super.initState();
+    _watchPhotoScreen(c);
+    _watchPhotoSettings(c, {
+      defs.screensaverLocalFill.key,
+      defs.screensaverGalleryFill.key,
+      defs.screensaverLocalTransition.key,
+      defs.screensaverGalleryTransition.key,
+      defs.screensaverLocalInterval.key,
+      defs.screensaverGalleryInterval.key,
+    }, _refreshPhoto);
+
     c.screensaver.attachSlides(_step);
     _load();
   }
@@ -2518,11 +2618,13 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
 
   /// The next or previous slide on request (the Home Assistant buttons),
   /// which restarts the hold from the new slide like any other hand-off.
-  Future<void> _step(int direction) {
+  Future<void> _step(int direction) => _go(_index + direction.sign);
+
+  Future<void> _go(int index) {
     if (_stepping != null || !mounted || _files.isEmpty) {
       return Future<void>.value();
     }
-    final pending = _show(_index + direction.sign);
+    final pending = _show(index);
     _stepping = pending;
     return pending.whenComplete(() => _stepping = null);
   }
@@ -2550,7 +2652,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         files.shuffle(Random());
       }
       setState(() => _files = files);
-      _show(0);
+      unawaited(_go(0));
       return;
     }
     final folder = c.settings.get(defs.screensaverLocalFolder);
@@ -2583,7 +2685,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
       }
       if (!mounted) return;
       setState(() => _files = files);
-      _show(0);
+      unawaited(_go(0));
     } catch (e) {
       c.log.warn('screensaver', 'local media listing failed: $e');
       if (mounted) {
@@ -2602,6 +2704,8 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
   }
 
   Future<void> _show(int index) async {
+    await _waitForPhotoScreen();
+    if (!mounted) return;
     _timer?.cancel();
     _rolled = _randomPool[_rand.nextInt(_randomPool.length)];
     // The outgoing video is not disposed here: it has to keep rendering
@@ -2652,14 +2756,17 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
           await old?.dispose();
           return;
         }
+        _photoFailures = 0;
         _video = video;
-        final oldImage = _image;
+        final oldPhoto = _photo;
+        _photo = null;
+        _prepared.clear();
         c.screensaver.notifySlideChanged();
         setState(() {
           _index = next;
           _image = null;
         });
-        if (oldImage != null) unawaited(oldImage.evict());
+        _retirePhoto(oldPhoto);
         await video.play();
       } catch (e) {
         // A codec the device lacks must not stall the slideshow. Skip past
@@ -2667,47 +2774,47 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         // forever would loop on the same broken file.
         c.log.warn('screensaver', 'video failed (${file.path}): $e');
         await opened?.dispose();
-        if (mounted) unawaited(_show(next + 1));
+        if (mounted) await _show(next + 1);
         await old?.dispose();
         return;
       }
     } else {
-      // The header read costs one extra pass over the file, but the bytes
-      // are hot in the OS page cache by the time FileImage decodes them,
-      // and knowing the aspect before the first frame means the backdrop
-      // decision never flickers in after the slide is already up.
-      double? aspect;
-      // Only Smart needs the shape: off never crops and Always always
-      // does, so neither has a decision to make from it.
-      if (c.settings.get(
-            _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
-          ) ==
-          'smart') {
-        try {
-          aspect = await _aspectOf(await file.readAsBytes());
-        } catch (_) {}
-        if (!mounted) {
-          await old?.dispose();
-          return;
+      PreparedPhoto photo;
+      try {
+        photo = await _prepared.take(
+          _prepareKey(next),
+          (valid) => _prepare(next, valid),
+        );
+      } catch (e) {
+        if (e is! PhotoPreparationCancelled) {
+          c.log.warn('screensaver', 'photo failed (${file.path}): $e');
+          _photoFailures++;
+          if (mounted && _photoFailures < _files.length) {
+            await _show(next + 1);
+          } else if (mounted) {
+            setState(() => _problem = 'Could not read photos.');
+          }
         }
-      }
-      final oldImage = _image;
-      final image = _screenSizedFile(file);
-      // Decode before the hand-off, same as the Immich path (#212): an
-      // undecoded slide paints as nothing, so the crossfade would dip
-      // through black instead of blending photo into photo.
-      await precacheImage(image, context, onError: (_, _) {});
-      if (!mounted) {
         await old?.dispose();
         return;
       }
+      await _waitForPhotoScreen();
+      if (!mounted) {
+        photo.dispose();
+        await old?.dispose();
+        return;
+      }
+      _photoFailures = 0;
+      final oldPhoto = _photo;
       c.screensaver.notifySlideChanged();
       setState(() {
+        _problem = null;
         _index = next;
-        _imageAspect = aspect;
-        _image = image;
+        _photo = photo;
+        _imageAspect = photo.aspect;
+        _image = photo.image;
       });
-      if (oldImage != null) unawaited(oldImage.evict());
+      _retirePhoto(oldPhoto);
       final seconds = c.settings
           .get(
             _gallery
@@ -2716,20 +2823,77 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
           )
           .toInt()
           .clamp(2, 3600);
-      _timer = Timer(Duration(seconds: seconds), _advance);
+      if (_files.length > 1) {
+        _timer = PausableTimer(
+          Duration(seconds: seconds),
+          _advance,
+          paused: !_awake,
+        );
+        _prefetch(next + 1);
+      }
     }
     _retire(old);
   }
 
-  /// Decode capped at the panel's physical width: originals can be 48MP
-  /// phone shots that decode to ~190MB of RGBA at full size, and the
-  /// screen can never show more pixels than it has.
-  ImageProvider _screenSizedFile(File file) {
+  Future<void> _refreshPhoto() async {
+    _prepared.clear();
+    await _stepping;
+    if (mounted && _image != null) await _go(_index);
+  }
+
+  String get _fill => c.settings.get(
+    _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
+  );
+
+  bool get _zoom => ['kenburns', 'zoom', 'random'].contains(
+    c.settings.get(
+      _gallery
+          ? defs.screensaverGalleryTransition
+          : defs.screensaverLocalTransition,
+    ),
+  );
+
+  Object _prepareKey(int index) => (
+    index,
+    MediaQuery.sizeOf(context),
+    MediaQuery.devicePixelRatioOf(context),
+    _fill,
+    _zoom,
+  );
+
+  Future<PreparedPhoto> _prepare(int index, bool Function() valid) async {
+    final bytes = await _files[index].readAsBytes();
+    if (!mounted || !valid()) throw PhotoPreparationCancelled();
+    await _waitForPhotoScreen();
+    if (!mounted || !valid()) throw PhotoPreparationCancelled();
     final mq = MediaQuery.of(context);
-    return ResizeImage(
-      FileImage(file),
-      width: (mq.size.width * mq.devicePixelRatio).round(),
+    return PreparedPhoto.prepare(
+      bytes,
+      context: context,
+      frame: mq.size * mq.devicePixelRatio,
+      fill: _fill,
+      zoom: _zoom,
+      valid: () => mounted && valid(),
+      beforeDecode: _waitForPhotoScreen,
     );
+  }
+
+  void _prefetch(int index) {
+    if (!_awake || _files.length < 2) return;
+    final next = index % _files.length;
+    if (_isVideo(_files[next])) return;
+    _prepared.warm(_prepareKey(next), (valid) => _prepare(next, valid));
+  }
+
+  @override
+  void _photoScreenChanged(bool awake) {
+    if (awake) {
+      _timer?.resume();
+      if (_image != null && _stepping == null) _prefetch(_index + 1);
+    } else {
+      _timer?.pause();
+      _prepared.clear();
+    }
   }
 
   /// Outgoing video controllers live until every transition that could
@@ -2751,7 +2915,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
 
   void _advance() {
     if (!mounted || _files.isEmpty) return;
-    _show(_index + 1);
+    unawaited(_step(1));
   }
 
   @override
@@ -2765,7 +2929,8 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
     for (final v in _retiring) {
       v.dispose();
     }
-    _image?.evict();
+    _prepared.clear();
+    _photo?.dispose();
     super.dispose();
   }
 
@@ -2838,6 +3003,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
           // re-blurring the whole screen on every animation frame.
           picture = _KenBurnsDrift(
             index: _index,
+            active: _awake,
             duration:
                 Duration(
                   seconds: c.settings
@@ -2873,7 +3039,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
                             tileMode: ui.TileMode.clamp,
                           ),
                           child: Image(
-                            image: _image!,
+                            image: _photo?.background ?? _image!,
                             fit: BoxFit.cover,
                             gaplessPlayback: true,
                             errorBuilder: (_, _, _) => const SizedBox.expand(),
@@ -2936,10 +3102,24 @@ class ImmichScreensaver extends StatefulWidget {
   State<ImmichScreensaver> createState() => _ImmichScreensaverState();
 }
 
-class _ImmichScreensaverState extends State<ImmichScreensaver> {
+class _ImmichSlide {
+  _ImmichSlide(this.photo, this.pair, this.pairIndex);
+  final PreparedPhoto photo;
+  final PreparedPhoto? pair;
+  final int? pairIndex;
+  void dispose() {
+    photo.dispose();
+    pair?.dispose();
+  }
+}
+
+class _ImmichScreensaverState extends State<ImmichScreensaver>
+    with _PhotoScreenState<ImmichScreensaver> {
   List<ImmichAsset> _assets = const [];
   int _index = 0;
-  Uint8List? _imageBytes;
+  PreparedPhoto? _photo;
+  PreparedPhoto? _pairPhoto;
+  final _prepared = SlidePreloader<_ImmichSlide>((slide) => slide.dispose());
 
   /// The current slide's provider, decoded at screen size and evicted
   /// from the engine's image cache when the slide leaves. Without the
@@ -2963,14 +3143,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   /// steps over both halves of a pair.
   int get _span => _pairIndex == null ? 1 : 2;
 
-  Timer? _timer;
+  PausableTimer? _timer;
   VideoPlayerController? _video;
   String? _problem;
-
-  /// Image slides fetched during the current hold, by playlist index. Two
-  /// at most: the next slide, and the portrait photo that may join it, so a
-  /// pair hands off as promptly as a single photo does.
-  final _warm = <int, Uint8List>{};
 
   /// Whether the metadata overlay is on and so the pair's two panels
   /// actually occupy the bottom corners. Every line turned off counts as
@@ -3001,7 +3176,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   /// the listing is tried again on a backoff from the widget's retryFloor
   /// to [_retryCeiling], and the slideshow resumes on its own once the
   /// server answers (issue #337).
-  Timer? _retry;
+  PausableTimer? _retry;
   late Duration _retryDelay = widget.retryFloor;
   static const _retryCeiling = Duration(seconds: 60);
 
@@ -3011,12 +3186,12 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     if (_retry?.isActive ?? false) return;
     final delay = _retryDelay;
     c.log.info('screensaver', 'immich retrying in ${delay.inSeconds}s');
-    _retry = Timer(delay, () {
+    _retry = PausableTimer(delay, () {
       if (!mounted) return;
       _failures = 0;
       _lastFailure = null;
       unawaited(_load());
-    });
+    }, paused: !_awake);
     _retryDelay = delay * 2 > _retryCeiling ? _retryCeiling : delay * 2;
   }
 
@@ -3025,6 +3200,14 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   @override
   void initState() {
     super.initState();
+    _watchPhotoScreen(c);
+    _watchPhotoSettings(c, {
+      defs.screensaverImmichFill.key,
+      defs.screensaverImmichTransition.key,
+      defs.screensaverImmichInterval.key,
+      defs.screensaverImmichPairPortrait.key,
+    }, _refreshPhoto);
+
     c.screensaver.attachSlides(_step);
     _load();
   }
@@ -3035,16 +3218,21 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   /// The next or previous slide on request. Forward steps over both halves
   /// of a showing pair, as the hold does; back goes to the photo before the
   /// pair's first, which may bring the first back as its partner.
-  Future<void> _step(int direction) {
+  Future<void> _step(int direction) =>
+      _go(direction > 0 ? _index + _span : _index - 1);
+
+  Future<void> _go(int index) {
     if (_stepping != null || !mounted || _assets.isEmpty) {
       return Future<void>.value();
     }
-    final pending = _show(direction > 0 ? _index + _span : _index - 1);
+    final pending = _show(index);
     _stepping = pending;
     return pending.whenComplete(() => _stepping = null);
   }
 
   Future<void> _load() async {
+    await _waitForPhotoScreen();
+    if (!mounted) return;
     if (!c.settings.get(defs.screensaverImmichValidated)) {
       setState(
         () => _problem = 'Immich is not connected. Validate it in Settings.',
@@ -3081,7 +3269,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         _assets = arranged;
         _problem = null;
       });
-      _show(0);
+      unawaited(_go(0));
     } catch (e) {
       c.log.warn('screensaver', 'immich listing failed: $e');
       if (mounted) {
@@ -3095,6 +3283,8 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   }
 
   Future<void> _show(int index) async {
+    await _waitForPhotoScreen();
+    if (!mounted) return;
     _timer?.cancel();
     _rolled = _randomPool[_rand.nextInt(_randomPool.length)];
     final old = _video;
@@ -3158,110 +3348,86 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         _failures = 0;
         _lastFailure = null;
         _video = video;
-        final oldImage = _image;
-        final oldPair = _pairImage;
+        final oldPhoto = _photo;
+        final oldPairPhoto = _pairPhoto;
         setState(() {
           _index = next;
-          _imageBytes = null;
+          _photo = null;
+          _pairPhoto = null;
           _image = null;
           _pairIndex = null;
           _pairImage = null;
           _pairAspect = null;
         });
         _claimCorners();
-        if (oldImage != null) unawaited(oldImage.evict());
-        if (oldPair != null) unawaited(oldPair.evict());
+        _retirePhoto(oldPhoto);
+        _retirePhoto(oldPairPhoto);
         // A warmed buffer for a slide we already passed would sit through
         // the whole video for nothing.
-        _warm.clear();
+        _prepared.clear();
         await video.play();
       } catch (e) {
         c.log.warn('screensaver', 'immich video failed (${asset.id}): $e');
         await opened?.dispose();
         _failures++;
         _lastFailure = c.immich.readableError(e);
-        if (mounted) unawaited(_show(next + 1));
+        if (mounted) await _show(next + 1);
         await old?.dispose();
         return;
       }
     } else {
-      Uint8List bytes;
+      _ImmichSlide slide;
       try {
-        // Consumed, so it never outlives its one use; the pairing below
-        // reads its own entry, and whatever is left is stale by then.
-        bytes = _warm.remove(next) ?? await c.immich.imageBytes(asset);
+        slide = await _prepared.take(
+          _prepareKey(next),
+          (valid) => _prepareSlide(next, valid),
+        );
       } catch (e) {
-        c.log.warn('screensaver', 'immich image failed (${asset.id}): $e');
-        _failures++;
-        _lastFailure = c.immich.readableError(e);
-        if (mounted) unawaited(_show(next + 1));
+        if (e is! PhotoPreparationCancelled) {
+          c.log.warn('screensaver', 'immich image failed (${asset.id}): $e');
+          _failures++;
+          _lastFailure = c.immich.readableError(e);
+          if (mounted) await _show(next + 1);
+        }
         await old?.dispose();
         return;
       }
-      final aspect = await _aspectOf(bytes);
+      await _waitForPhotoScreen();
       if (!mounted) {
+        slide.dispose();
         await old?.dispose();
         return;
       }
       _failures = 0;
       _lastFailure = null;
-      final oldImage = _image;
-      final oldPair = _pairImage;
-      final mq = MediaQuery.of(context);
-      // A portrait photo wastes most of a landscape panel on its own, so
-      // the one after it joins it when it is portrait too (each half then
-      // covers its own half-screen). Only worth the extra fetch once the
-      // first photo is portrait and the panel is wide enough, so an ordinary
-      // landscape slideshow does no extra work at all.
-      final pair = await _pairFor(next, aspect, mq.size);
-      if (!mounted) {
-        await old?.dispose();
-        return;
-      }
-      _warm.clear();
-      // Screen-width decode cap: server previews can still out-size a
-      // small panel (Echo Show class) several times over. A paired photo
-      // only ever paints half the width, so it decodes to half.
-      ImageProvider sized(Uint8List data) => ResizeImage(
-        MemoryImage(data),
-        width: (mq.size.width * mq.devicePixelRatio / (pair == null ? 1 : 2))
-            .round(),
-      );
-      final image = sized(bytes);
-      final pairImage = pair == null ? null : sized(pair.bytes);
-      // Decode before the hand-off: the switcher starts fading the moment
-      // the new slide mounts, and a decode still in flight paints as
-      // nothing, so the old photo would fade into black and the new one
-      // pop in late (#212). Waiting here just holds the current photo a
-      // beat longer, then the crossfade blends image into image.
-      await Future.wait([
-        precacheImage(image, context, onError: (_, _) {}),
-        if (pairImage != null)
-          precacheImage(pairImage, context, onError: (_, _) {}),
-      ]);
-      if (!mounted) {
-        await old?.dispose();
-        return;
-      }
+      final oldPhoto = _photo;
+      final oldPairPhoto = _pairPhoto;
       c.screensaver.notifySlideChanged();
       setState(() {
         _index = next;
-        _imageBytes = bytes;
-        _imageAspect = aspect;
-        _image = image;
-        _pairIndex = pair?.index;
-        _pairImage = pairImage;
-        _pairAspect = pair?.aspect;
+        _photo = slide.photo;
+        _pairPhoto = slide.pair;
+        _imageAspect = slide.photo.aspect;
+        _image = slide.photo.image;
+        _pairIndex = slide.pairIndex;
+        _pairImage = slide.pair?.image;
+        _pairAspect = slide.pair?.aspect;
       });
       _claimCorners();
-      if (oldImage != null) unawaited(oldImage.evict());
-      if (oldPair != null) unawaited(oldPair.evict());
+      _retirePhoto(oldPhoto);
+      _retirePhoto(oldPairPhoto);
       final seconds = c.settings
           .get(defs.screensaverImmichInterval)
           .toInt()
           .clamp(2, 3600);
-      _timer = Timer(Duration(seconds: seconds), _advance);
-      unawaited(_prefetch(next + _span));
+      if (_assets.length > _span) {
+        _timer = PausableTimer(
+          Duration(seconds: seconds),
+          _advance,
+          paused: !_awake,
+        );
+        _prefetch(next + _span);
+      }
     }
     _retire(old);
   }
@@ -3287,8 +3453,11 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     final candidate = (index + 1) % _assets.length;
     final asset = _assets[candidate];
     if (asset.isVideo) return null;
+    if (immichMetadataVisible(c.settings)) {
+      unawaited(c.immich.assetDetails(asset));
+    }
     try {
-      final bytes = _warm[candidate] ?? await c.immich.imageBytes(asset);
+      final bytes = await c.immich.imageBytes(asset);
       final pairAspect = await _aspectOf(bytes);
       if (!immichPairsPortrait(
         screenAspect: screenAspect,
@@ -3307,35 +3476,108 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     }
   }
 
-  /// Pull the next image into memory during the current hold. Videos are
-  /// skipped: they stream, and warming them means downloading them. The
-  /// metadata lookup is warmed for both, so the overlay appears with the
-  /// slide instead of trailing it.
-  /// [partner] marks the second call of a pair, which never warms a third
-  /// photo: a slideshow of portrait photos would otherwise warm its way
-  /// through the whole playlist.
-  Future<void> _prefetch(int index, {bool partner = false}) async {
-    if (_assets.isEmpty) return;
+  Future<void> _refreshPhoto() async {
+    _prepared.clear();
+    await _stepping;
+    if (mounted && _image != null) await _go(_index);
+  }
+
+  Object _prepareKey(int index) => (
+    index,
+    MediaQuery.sizeOf(context),
+    MediaQuery.devicePixelRatioOf(context),
+    c.settings.get(defs.screensaverImmichFill),
+    c.settings.get(defs.screensaverImmichTransition),
+    c.settings.get(defs.screensaverImmichPairPortrait),
+  );
+
+  Future<_ImmichSlide> _prepareSlide(int index, bool Function() valid) async {
+    bool current() => mounted && valid();
+    final bytes = await c.immich.imageBytes(_assets[index]);
+    if (!mounted || !valid()) throw PhotoPreparationCancelled();
+    await _waitForPhotoScreen();
+    if (!mounted || !valid()) throw PhotoPreparationCancelled();
+    final aspect = await _aspectOf(bytes);
+    if (!mounted || !valid()) throw PhotoPreparationCancelled();
+    final mq = MediaQuery.of(context);
+    final pair = await _pairFor(index, aspect, mq.size);
+    if (!mounted || !valid()) throw PhotoPreparationCancelled();
+    await _waitForPhotoScreen();
+    if (!mounted || !valid()) throw PhotoPreparationCancelled();
+    final frame =
+        Size(mq.size.width / (pair == null ? 1 : 2), mq.size.height) *
+        mq.devicePixelRatio;
+    final fill = c.settings.get(defs.screensaverImmichFill);
+    final zoom = [
+      'kenburns',
+      'zoom',
+      'random',
+    ].contains(c.settings.get(defs.screensaverImmichTransition));
+    final photo = await PreparedPhoto.prepare(
+      bytes,
+      context: context,
+      frame: frame,
+      fill: fill,
+      zoom: zoom,
+      aspect: aspect,
+      valid: current,
+      beforeDecode: _waitForPhotoScreen,
+    );
+    try {
+      if (!mounted || !valid()) throw PhotoPreparationCancelled();
+      final partner = pair == null
+          ? null
+          : await PreparedPhoto.prepare(
+              pair.bytes,
+              context: context,
+              frame: frame,
+              fill: fill,
+              zoom: zoom,
+              aspect: pair.aspect,
+              valid: current,
+              beforeDecode: _waitForPhotoScreen,
+            );
+      return _ImmichSlide(photo, partner, pair?.index);
+    } catch (e) {
+      photo.dispose();
+      if (e is PhotoPreparationCancelled || !mounted || !valid()) rethrow;
+      // A broken optional partner must not discard the usable first photo.
+      c.log.debug('screensaver', 'immich partner decode failed: $e');
+      final single = await PreparedPhoto.prepare(
+        bytes,
+        context: context,
+        frame: mq.size * mq.devicePixelRatio,
+        fill: fill,
+        zoom: zoom,
+        aspect: aspect,
+        valid: current,
+        beforeDecode: _waitForPhotoScreen,
+      );
+      return _ImmichSlide(single, null, null);
+    }
+  }
+
+  void _prefetch(int index) {
+    if (!_awake || _assets.length <= _span) return;
     final next = index % _assets.length;
     final asset = _assets[next];
     if (immichMetadataVisible(c.settings)) {
       unawaited(c.immich.assetDetails(asset));
     }
-    if (asset.isVideo || _warm.containsKey(next)) return;
-    try {
-      final bytes = await c.immich.imageBytes(asset);
-      if (!mounted) return;
-      _warm[next] = bytes;
-      // A portrait warm slide will most likely want a partner, and pairing
-      // at hand-off time would mean fetching it while the current photo
-      // waits. Warm that one too, so both halves are already in hand.
-      if (!partner &&
-          c.settings.get(defs.screensaverImmichPairPortrait) &&
-          immichPortraitPhoto(await _aspectOf(bytes))) {
-        unawaited(_prefetch(next + 1, partner: true));
-      }
-    } catch (_) {
-      // The show path retries and reports; a failed warm-up is not news.
+    if (asset.isVideo) return;
+    _prepared.warm(_prepareKey(next), (valid) => _prepareSlide(next, valid));
+  }
+
+  @override
+  void _photoScreenChanged(bool awake) {
+    if (awake) {
+      _timer?.resume();
+      _retry?.resume();
+      if (_image != null && _stepping == null) _prefetch(_index + _span);
+    } else {
+      _timer?.pause();
+      _retry?.pause();
+      _prepared.clear();
     }
   }
 
@@ -3358,7 +3600,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     if (!mounted || _assets.isEmpty) return;
     // Over both halves when a pair is showing: the second photo has had
     // its turn already.
-    _show(_index + _span);
+    unawaited(_step(1));
   }
 
   @override
@@ -3373,8 +3615,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     for (final v in _retiring) {
       v.dispose();
     }
-    _image?.evict();
-    _pairImage?.evict();
+    _prepared.clear();
+    _photo?.dispose();
+    _pairPhoto?.dispose();
     // The corners go back to the widgets with the screensaver.
     c.screensaver.claimedCorners.value = const {};
     super.dispose();
@@ -3397,6 +3640,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   /// bars — the Now Playing treatment.
   Widget _photoBlock({
     required ImageProvider image,
+    ImageProvider? background,
     required double? aspect,
     required double frameAspect,
     required int index,
@@ -3417,6 +3661,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       // re-blurring the whole screen on every animation frame.
       picture = _KenBurnsDrift(
         index: index,
+        active: _awake,
         duration:
             Duration(
               seconds: c.settings
@@ -3449,7 +3694,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
                   tileMode: ui.TileMode.clamp,
                 ),
                 child: Image(
-                  image: image,
+                  image: background ?? image,
                   fit: BoxFit.cover,
                   gaplessPlayback: true,
                   errorBuilder: (_, _, _) => const SizedBox.expand(),
@@ -3500,6 +3745,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       } else if (pairIndex == null) {
         inner = _photoBlock(
           image: _image!,
+          background: _photo?.background,
           aspect: _imageAspect,
           frameAspect: size.height == 0 ? 1 : size.width / size.height,
           index: _index,
@@ -3516,6 +3762,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
             Expanded(
               child: _photoBlock(
                 image: _image!,
+                background: _photo?.background,
                 aspect: _imageAspect,
                 frameAspect: half,
                 index: _index,
@@ -3525,6 +3772,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
             Expanded(
               child: _photoBlock(
                 image: _pairImage!,
+                background: _pairPhoto?.background,
                 aspect: _pairAspect,
                 frameAspect: half,
                 index: pairIndex,
@@ -3555,7 +3803,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     final showMetadata =
         _problem == null &&
         _assets.isNotEmpty &&
-        (_imageBytes != null || video != null) &&
+        (_image != null || video != null) &&
         immichMetadataVisible(c.settings);
     final pairIndex = _pairIndex;
     return ColoredBox(
@@ -3827,9 +4075,11 @@ class _KenBurnsDrift extends StatefulWidget {
   const _KenBurnsDrift({
     required this.index,
     required this.duration,
+    required this.active,
     required this.child,
   });
 
+  final bool active;
   final int index;
   final Duration duration;
   final Widget child;
@@ -3856,12 +4106,29 @@ class _KenBurnsDriftState extends State<_KenBurnsDrift> {
   static const _step = Duration(milliseconds: 80);
 
   final _progress = ValueNotifier<double>(0);
-  final _clock = Stopwatch()..start();
+  final _clock = Stopwatch();
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    _syncActivity();
+  }
+
+  @override
+  void didUpdateWidget(_KenBurnsDrift oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.active != widget.active) _syncActivity();
+  }
+
+  void _syncActivity() {
+    _timer?.cancel();
+    if (!widget.active) {
+      _clock.stop();
+      return;
+    }
+    if (_progress.value >= 1) return;
+    _clock.start();
     _timer = Timer.periodic(_step, (_) {
       final ms = widget.duration.inMilliseconds;
       final t = ms <= 0 ? 1.0 : _clock.elapsedMilliseconds / ms;

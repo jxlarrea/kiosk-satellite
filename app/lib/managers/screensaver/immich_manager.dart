@@ -296,15 +296,6 @@ class ImmichManager extends Manager {
       if (e.key == defs.screensaverImmichCacheMax.key) {
         unawaited(_evict());
       }
-      // Turning the album line back on has to re-look-up: the cached
-      // details were gathered while the line was off, so they carry no
-      // album and would keep the row empty until the app restarts. A
-      // changed album pick moves the line for every asset too.
-      if (e.key == defs.screensaverImmichMetadataAlbum.key ||
-          e.key == defs.screensaverImmichMetadata.key ||
-          e.key == defs.screensaverImmichAlbum.key) {
-        _details.clear();
-      }
       // A one-album pick from an older install or backup arrives as a bare
       // id with its name in a setting of its own, in either order.
       if (e.key == defs.screensaverImmichAlbum.key ||
@@ -567,9 +558,7 @@ class ImmichManager extends Manager {
     for (var page = 1; page <= _maxPeoplePages; page++) {
       final response = await http
           .get(
-            Uri.parse(
-              '$_base/api/people?withHidden=true&page=$page&size=1000',
-            ),
+            Uri.parse('$_base/api/people?withHidden=true&page=$page&size=1000'),
             headers: _headers,
           )
           .timeout(const Duration(seconds: 10));
@@ -795,7 +784,24 @@ class ImmichManager extends Manager {
   /// An image, from the cache when enabled and present, from the server
   /// otherwise. Returns the bytes either way; disk is an implementation
   /// detail of the cache, not the contract.
-  Future<Uint8List> imageBytes(ImmichAsset asset) async {
+  final _imageRequests = <(String, String, String), Future<Uint8List>>{};
+
+  Future<Uint8List> imageBytes(ImmichAsset asset) {
+    final key = (_base, _settings.get(defs.screensaverImmichApiKey), asset.id);
+    return _imageRequests.putIfAbsent(key, () async {
+      try {
+        return await _readImage(asset, _imageUri(asset), _headers);
+      } finally {
+        _imageRequests.remove(key);
+      }
+    });
+  }
+
+  Future<Uint8List> _readImage(
+    ImmichAsset asset,
+    Uri uri,
+    Map<String, String> headers,
+  ) async {
     final caching = _settings.get(defs.screensaverImmichCache);
     File? cached;
     if (caching) {
@@ -808,7 +814,7 @@ class ImmichManager extends Manager {
       }
     }
     final response = await http
-        .get(_imageUri(asset), headers: _headers)
+        .get(uri, headers: headers)
         .timeout(const Duration(seconds: 30));
     _throwUnlessOk(response, scope: 'asset.view');
     final bytes = response.bodyBytes;
@@ -836,7 +842,41 @@ class ImmichManager extends Manager {
   /// absent when the asset does not carry them. Errors return what is known
   /// (possibly nothing): the overlay is decoration, and a failed lookup must
   /// never disturb the slideshow.
-  Future<Map<String, String>> assetDetails(ImmichAsset asset) async {
+  int _detailsGeneration = 0;
+  Object? _detailsScope;
+  final _detailRequests = <(int, String), Future<Map<String, String>>>{};
+
+  Future<Map<String, String>> assetDetails(ImmichAsset asset) {
+    // Read settings here too: their event can arrive after a caller requests
+    // details for the newly selected connection or metadata configuration.
+    final scope = (
+      _base,
+      _settings.get(defs.screensaverImmichApiKey),
+      _settings.get(defs.screensaverImmichMetadata),
+      _settings.get(defs.screensaverImmichMetadataAlbum),
+      _settings.get(defs.screensaverImmichAlbum),
+      _settings.get(defs.screensaverImmichAlbumName),
+    );
+    if (scope != _detailsScope) {
+      _detailsScope = scope;
+      _detailsGeneration++;
+      _details.clear();
+    }
+    final generation = _detailsGeneration;
+    final key = (generation, asset.id);
+    return _detailRequests.putIfAbsent(key, () async {
+      try {
+        return await _readDetails(asset, generation);
+      } finally {
+        _detailRequests.remove(key);
+      }
+    });
+  }
+
+  Future<Map<String, String>> _readDetails(
+    ImmichAsset asset,
+    int generation,
+  ) async {
     final cached = _details[asset.id];
     if (cached != null) return cached;
     final out = <String, String>{};
@@ -905,7 +945,7 @@ class ImmichManager extends Manager {
       return out; // uncached, so a transient failure retries next loop
     }
     if (_details.length > 300) _details.clear();
-    _details[asset.id] = out;
+    if (generation == _detailsGeneration) _details[asset.id] = out;
     return out;
   }
 

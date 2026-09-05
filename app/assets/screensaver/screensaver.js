@@ -342,10 +342,59 @@ const failedWebrtc = new Set();
 /// The showing photo's hold timer, cleared when a step arrives before it
 /// fires; a video or a camera has no hold, its end (or nothing) is the cue.
 let hold = null;
+let holdCallback = null, holdRemaining = 0, holdStarted = 0;
+let photosActive = CFG.photoActive !== false;
+let pendingPhoto = null;
+let photoEpoch = 0;
+
+function clearPhotoHold() {
+  if (hold !== null) clearTimeout(hold);
+  hold = null;
+  holdCallback = null;
+}
+
+function resumePhotoHold() {
+  if (!photosActive || !holdCallback || hold !== null) return;
+  holdStarted = Date.now();
+  hold = setTimeout(() => {
+    const callback = holdCallback;
+    hold = null;
+    holdCallback = null;
+    callback();
+  }, Math.max(0, holdRemaining));
+}
+
+function startPhotoHold(callback, milliseconds) {
+  clearPhotoHold();
+  holdCallback = callback;
+  holdRemaining = milliseconds;
+  resumePhotoHold();
+}
+
+window.__ksPhotoActive = (active) => {
+  photosActive = !!active;
+  document.documentElement.classList.toggle('photo-paused', !photosActive);
+  if (!photosActive) {
+    if (hold !== null) {
+      clearTimeout(hold);
+      hold = null;
+      holdRemaining -= Date.now() - holdStarted;
+    }
+  } else if (pendingPhoto) {
+    const show = pendingPhoto;
+    pendingPhoto = null;
+    show();
+  } else {
+    resumePhotoHold();
+  }
+};
+window.__ksPhotoActive(photosActive);
 
 async function playItem(hass, id, playlist, advance, intervalMs) {
   if (cleanup) { cleanup(); cleanup = null; }
-  if (hold) { clearTimeout(hold); hold = null; }
+  clearPhotoHold();
+  pendingPhoto = null;
+  const epoch = ++photoEpoch;
   const cam = cameraOf(id);
   if (cam) {
     log('camera: ' + cam);
@@ -363,6 +412,7 @@ async function playItem(hass, id, playlist, advance, intervalMs) {
   let resolved;
   try { resolved = await hass.send({ type: 'media_source/resolve_media', media_content_id: id }); }
   catch (e) { advance(); return; }
+  if (epoch !== photoEpoch) return;
   let url = resolved.url;
   if (url && url.startsWith('/')) url = hass.hassUrl(url);
 
@@ -389,8 +439,10 @@ async function playItem(hass, id, playlist, advance, intervalMs) {
     // and the hold starts here too, not when the fetch starts.
     img.onload = () => {
       const show = () => {
+        if (epoch !== photoEpoch) return;
+        if (!photosActive) { pendingPhoto = show; return; }
         showElement(stillFor(img), { still: true, holdMs: intervalMs });
-        if (playlist.length > 1) hold = setTimeout(advance, intervalMs);
+        if (playlist.length > 1) startPhotoHold(advance, intervalMs);
       };
       if (img.decode) img.decode().then(show, show); else show();
     };
@@ -417,6 +469,7 @@ async function runMedia() {
   const intervalMs = Math.max(2, Number(CFG.mediaIntervalSeconds) || 10) * 1000;
   let i = 0, advancing = false;
   const step = (by) => {
+    if (!photosActive) { pendingPhoto = () => step(by); return; }
     if (advancing) return;       // ended + timeout can race
     advancing = true;
     i = (i + by + playlist.length) % playlist.length;
@@ -426,7 +479,7 @@ async function runMedia() {
   // The app's hand on the deck (the next and previous slide buttons in
   // Home Assistant). A slide's own hold is dropped so the new one gets a
   // full turn instead of the remainder of the old.
-  window.__ksSlide = (dir) => { if (hold) { clearTimeout(hold); hold = null; } step(dir < 0 ? -1 : 1); };
+  window.__ksSlide = (dir) => { clearPhotoHold(); step(dir < 0 ? -1 : 1); };
   playItem(hass, playlist[i], playlist, advance, intervalMs);
 }
 

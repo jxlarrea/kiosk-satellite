@@ -1,0 +1,763 @@
+{
+  "baselineCommit": "38904cbca2658c4621bc98412b56526ee192f93c",
+  "device": {
+    "adb": "192.168.1.5:5555",
+    "model": "Samsung Galaxy Tab S8 SM-X700",
+    "android": 16,
+    "physicalResolution": [
+      2560,
+      1600
+    ]
+  },
+  "workload": {
+    "mode": "gallery",
+    "fill": "smart",
+    "transition": "fade",
+    "intervalSeconds": 5,
+    "photos": 3,
+    "photoDimensions": [
+      3000,
+      4000
+    ],
+    "shuffle": false,
+    "widgets": []
+  },
+  "fixtureSha256": {
+    "2.jpg": "20367d1f8e366034c168ac8a986f9a8a8ea8303ce46fd32f76003d8d32d991db",
+    "1.jpg": "b417e5e988493940a4e7c3c225177b9aa70a27d724d84dd4b9420eeb54ec9b1b",
+    "0.jpg": "3bfe61c53e5f9e98651fbc19b38600f2e20a27c16a820000dfc3d787432154e5"
+  },
+  "phases": {
+    "baseline": {
+      "apkSha256": "2484826d16d50a3288ac2be4971dcb8df3fdde4f5422085f7996329bdc3c30da",
+      "data": {
+        "frames": {
+          "ok": true,
+          "data": {
+            "elapsedMs": 41450,
+            "frames": 395,
+            "slideChanges": 8,
+            "build": {
+              "meanMs": 0.42572405063291113,
+              "p95Ms": 1.15,
+              "maxMs": 6.423
+            },
+            "raster": {
+              "meanMs": 2.199549367088606,
+              "p95Ms": 4.171,
+              "maxMs": 9.685
+            },
+            "slowFrames16ms": 0,
+            "imageCacheBytes": 0,
+            "liveImages": 1,
+            "rssBytes": 416002048
+          }
+        },
+        "samples": [
+          {
+            "time": 1788647814.9554038,
+            "cpu": {
+              "usage": 19.937748998709417,
+              "temp": 50.8
+            },
+            "ram": {
+              "free": 2649845760,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647817.017992,
+            "cpu": {
+              "usage": 11.828733113963251,
+              "temp": 49.4
+            },
+            "ram": {
+              "free": 2680295424,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647819.0758722,
+            "cpu": {
+              "usage": 24.643970136399272,
+              "temp": 49.1
+            },
+            "ram": {
+              "free": 2662064128,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647821.1305308,
+            "cpu": {
+              "usage": 12.796658214710105,
+              "temp": 47.4
+            },
+            "ram": {
+              "free": 2658623488,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647823.18573,
+            "cpu": {
+              "usage": 13.035053108855221,
+              "temp": 52.5
+            },
+            "ram": {
+              "free": 2610003968,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647825.2521353,
+            "cpu": {
+              "usage": 24.861332754474113,
+              "temp": 47.7
+            },
+            "ram": {
+              "free": 2775040000,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647827.3192601,
+            "cpu": {
+              "usage": 11.064053706387405,
+              "temp": 45.6
+            },
+            "ram": {
+              "free": 2772525056,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647829.3855784,
+            "cpu": {
+              "usage": 19.730027600061817,
+              "temp": 47.7
+            },
+            "ram": {
+              "free": 2789703680,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647831.4610696,
+            "cpu": {
+              "usage": 13.579435114988803,
+              "temp": 45.6
+            },
+            "ram": {
+              "free": 2783260672,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647833.522457,
+            "cpu": {
+              "usage": 10.56170888023228,
+              "temp": 43.9
+            },
+            "ram": {
+              "free": 2772582400,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647835.5856223,
+            "cpu": {
+              "usage": 20.77502480815148,
+              "temp": 45.0
+            },
+            "ram": {
+              "free": 2779680768,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647837.641585,
+            "cpu": {
+              "usage": 10.921436967694811,
+              "temp": 44.3
+            },
+            "ram": {
+              "free": 2774257664,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647839.7191467,
+            "cpu": {
+              "usage": 15.359472428324928,
+              "temp": 47.4
+            },
+            "ram": {
+              "free": 2771156992,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647841.7812228,
+            "cpu": {
+              "usage": 16.987400497759523,
+              "temp": 43.9
+            },
+            "ram": {
+              "free": 2827063296,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647843.8446703,
+            "cpu": {
+              "usage": 13.651580926867378,
+              "temp": 43.6
+            },
+            "ram": {
+              "free": 2822615040,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647845.9037206,
+            "cpu": {
+              "usage": 20.080114613748652,
+              "temp": 44.6
+            },
+            "ram": {
+              "free": 2827415552,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647847.9576309,
+            "cpu": {
+              "usage": 15.950319310242067,
+              "temp": 44.3
+            },
+            "ram": {
+              "free": 2812624896,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647850.013707,
+            "cpu": {
+              "usage": 11.519104051894683,
+              "temp": 50.5
+            },
+            "ram": {
+              "free": 2776301568,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647852.1920996,
+            "cpu": {
+              "usage": 11.102438723418013,
+              "temp": 43.6
+            },
+            "ram": {
+              "free": 2761846784,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788647854.3365736,
+            "cpu": {
+              "usage": 11.891562360538758,
+              "temp": 45.3
+            },
+            "ram": {
+              "free": 2756362240,
+              "total": 7646343168,
+              "low": false
+            }
+          }
+        ]
+      },
+      "meanWholeDeviceCpuPercent": 15.513858815871098
+    },
+    "optimized-final": {
+      "apkSha256": "0496c99386b9e17d22112fad80e847b408c6e1c1f0f162b6a287c2866727f818",
+      "data": {
+        "frames": {
+          "ok": true,
+          "data": {
+            "elapsedMs": 41878,
+            "frames": 449,
+            "slideChanges": 8,
+            "build": {
+              "meanMs": 0.3549732739420934,
+              "p95Ms": 0.892,
+              "maxMs": 2.961
+            },
+            "raster": {
+              "meanMs": 1.7610935412026738,
+              "p95Ms": 2.872,
+              "maxMs": 9.484
+            },
+            "slowFrames16ms": 0,
+            "imageCacheBytes": 15753216,
+            "liveImages": 2,
+            "rssBytes": 407666688
+          }
+        },
+        "samples": [
+          {
+            "time": 1788649761.5198708,
+            "cpu": {
+              "usage": 11.580381774262289,
+              "temp": 45.6
+            },
+            "ram": {
+              "free": 2809151488,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649764.0812426,
+            "cpu": {
+              "usage": 40.461006155343085,
+              "temp": 47.7
+            },
+            "ram": {
+              "free": 2873286656,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649766.138965,
+            "cpu": {
+              "usage": 13.226130419260285,
+              "temp": 44.6
+            },
+            "ram": {
+              "free": 2869387264,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649768.1869602,
+            "cpu": {
+              "usage": 12.601487810414454,
+              "temp": 45.0
+            },
+            "ram": {
+              "free": 2858340352,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649770.2354596,
+            "cpu": {
+              "usage": 18.200859206050957,
+              "temp": 44.6
+            },
+            "ram": {
+              "free": 2881847296,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649772.3537905,
+            "cpu": {
+              "usage": 10.003272494450446,
+              "temp": 43.9
+            },
+            "ram": {
+              "free": 2875236352,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649774.4051404,
+            "cpu": {
+              "usage": 22.18683091461847,
+              "temp": 44.6
+            },
+            "ram": {
+              "free": 2913054720,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649776.4695508,
+            "cpu": {
+              "usage": 22.998726995492802,
+              "temp": 44.6
+            },
+            "ram": {
+              "free": 2908606464,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649778.524495,
+            "cpu": {
+              "usage": 11.424037161229968,
+              "temp": 43.6
+            },
+            "ram": {
+              "free": 2907340800,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649780.5797071,
+            "cpu": {
+              "usage": 11.67139943524721,
+              "temp": 44.3
+            },
+            "ram": {
+              "free": 2906427392,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649782.6226382,
+            "cpu": {
+              "usage": 13.277225647802881,
+              "temp": 46.0
+            },
+            "ram": {
+              "free": 2902728704,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649784.6736073,
+            "cpu": {
+              "usage": 22.921172916490644,
+              "temp": 45.3
+            },
+            "ram": {
+              "free": 2931802112,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649786.7282965,
+            "cpu": {
+              "usage": 13.307625493142899,
+              "temp": 43.9
+            },
+            "ram": {
+              "free": 2947293184,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649788.7975452,
+            "cpu": {
+              "usage": 14.994796570241665,
+              "temp": 45.6
+            },
+            "ram": {
+              "free": 2948882432,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649790.8964756,
+            "cpu": {
+              "usage": 16.244530660470407,
+              "temp": 41.9
+            },
+            "ram": {
+              "free": 2959839232,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649793.0829482,
+            "cpu": {
+              "usage": 11.817779263636076,
+              "temp": 42.2
+            },
+            "ram": {
+              "free": 2953113600,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649795.147959,
+            "cpu": {
+              "usage": 20.261393612191743,
+              "temp": 43.6
+            },
+            "ram": {
+              "free": 2946371584,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649797.2145257,
+            "cpu": {
+              "usage": 11.801482836911877,
+              "temp": 42.6
+            },
+            "ram": {
+              "free": 2942902272,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649799.2695196,
+            "cpu": {
+              "usage": 17.400750025699224,
+              "temp": 43.9
+            },
+            "ram": {
+              "free": 2943619072,
+              "total": 7646343168,
+              "low": false
+            }
+          },
+          {
+            "time": 1788649801.3343272,
+            "cpu": {
+              "usage": 17.08881476814743,
+              "temp": 42.9
+            },
+            "ram": {
+              "free": 2935816192,
+              "total": 7646343168,
+              "low": false
+            }
+          }
+        ]
+      },
+      "meanWholeDeviceCpuPercent": 16.67348520805524
+    }
+  },
+  "orientationProbe": {
+    "ok": true,
+    "data": {
+      "descriptorWidth": 3000,
+      "descriptorHeight": 4000,
+      "decodedWidth": 1200,
+      "decodedHeight": 1600,
+      "aspect": 0.75
+    }
+  },
+  "sourceSha256": {
+    "app/lib/ui/photo_frames.dart": "2ee088588886db86955a7f255ec017f0814b02023ca88a600e53fa1412863dac",
+    "app/lib/ui/screensaver_view.dart": "4d6de0808a4e8d492ae32347d7be3f79e224ec9125a2e7a42861f1d17f2eef54",
+    "app/lib/managers/screensaver/immich_manager.dart": "5544fc0f5861d03cd2d9d68e94fdb410f627951b9462b3e51e5c57bb9e37649d",
+    "app/assets/screensaver/screensaver.js": "d68e9ace8ee28414d9489521eb0291d63f5735e3c43817ae2f6ccdd7f64d2464",
+    "app/assets/screensaver/index.html": "ab7397fca48659ab76512b2c285823f0d5b7fc2a242776bd544e8f83d2fbaf27"
+  },
+  "singlePhoto": {
+    "baseline": {
+      "single": {
+        "ok": true,
+        "data": {
+          "elapsedMs": 17016,
+          "frames": 14,
+          "slideChanges": 3,
+          "build": {
+            "meanMs": 0.5817857142857144,
+            "p95Ms": 0.663,
+            "maxMs": 1.239
+          },
+          "raster": {
+            "meanMs": 3.692357142857143,
+            "p95Ms": 4.58,
+            "maxMs": 4.71
+          },
+          "slowFrames16ms": 0,
+          "imageCacheBytes": 0,
+          "liveImages": 0,
+          "rssBytes": 419037184
+        }
+      },
+      "off": {
+        "ok": true,
+        "data": {
+          "elapsedMs": 17135,
+          "frames": 1,
+          "slideChanges": 3,
+          "build": {
+            "meanMs": 0.176,
+            "p95Ms": 0.176,
+            "maxMs": 0.176
+          },
+          "raster": {
+            "meanMs": 2.59,
+            "p95Ms": 2.59,
+            "maxMs": 2.59
+          },
+          "slowFrames16ms": 0,
+          "imageCacheBytes": 0,
+          "liveImages": 0,
+          "rssBytes": 449077248
+        }
+      }
+    },
+    "optimized-final": {
+      "single": {
+        "ok": true,
+        "data": {
+          "elapsedMs": 17019,
+          "frames": 14,
+          "slideChanges": 0,
+          "build": {
+            "meanMs": 0.6609285714285714,
+            "p95Ms": 0.814,
+            "maxMs": 0.84
+          },
+          "raster": {
+            "meanMs": 3.8895714285714282,
+            "p95Ms": 4.138,
+            "maxMs": 5.843
+          },
+          "slowFrames16ms": 0,
+          "imageCacheBytes": 9489408,
+          "liveImages": 2,
+          "rssBytes": 409260032
+        }
+      },
+      "off": {
+        "ok": true,
+        "data": {
+          "elapsedMs": 17043,
+          "frames": 2,
+          "slideChanges": 0,
+          "build": {
+            "meanMs": 0.27549999999999997,
+            "p95Ms": 0.348,
+            "maxMs": 0.348
+          },
+          "raster": {
+            "meanMs": 2.37,
+            "p95Ms": 2.814,
+            "maxMs": 2.814
+          },
+          "slowFrames16ms": 0,
+          "imageCacheBytes": 9489408,
+          "liveImages": 2,
+          "rssBytes": 413036544
+        }
+      }
+    }
+  },
+  "productionApkSha256": "45be0137fc783ec42e12df99945ce55886e04bdd760dc95a9ff9e1a494bc7b60",
+  "deviceSmoke": {
+    "localOff": {
+      "ok": true,
+      "data": {
+        "elapsedMs": 11040,
+        "frames": 2,
+        "slideChanges": 0,
+        "build": {
+          "meanMs": 0.2535,
+          "p95Ms": 0.387,
+          "maxMs": 0.387
+        },
+        "raster": {
+          "meanMs": 1.744,
+          "p95Ms": 1.84,
+          "maxMs": 1.84
+        },
+        "slowFrames16ms": 0,
+        "imageCacheBytes": 7876608,
+        "liveImages": 2,
+        "rssBytes": 392728576
+      }
+    },
+    "localResumed": {
+      "ok": true,
+      "data": {
+        "elapsedMs": 11015,
+        "frames": 114,
+        "slideChanges": 2,
+        "build": {
+          "meanMs": 0.3514210526315789,
+          "p95Ms": 0.653,
+          "maxMs": 2.221
+        },
+        "raster": {
+          "meanMs": 1.993798245614036,
+          "p95Ms": 3.697,
+          "maxMs": 14.607
+        },
+        "slowFrames16ms": 0,
+        "imageCacheBytes": 15753216,
+        "liveImages": 2,
+        "rssBytes": 388722688
+      }
+    },
+    "immichNext": {
+      "ok": true,
+      "data": true
+    },
+    "immichPrevious": {
+      "ok": true,
+      "data": true
+    },
+    "immichNavigation": {
+      "ok": true,
+      "data": {
+        "elapsedMs": 17502,
+        "frames": 352,
+        "slideChanges": 2,
+        "build": {
+          "meanMs": 0.5348892045454547,
+          "p95Ms": 0.909,
+          "maxMs": 2.674
+        },
+        "raster": {
+          "meanMs": 3.086545454545455,
+          "p95Ms": 4.529,
+          "maxMs": 7.948
+        },
+        "slowFrames16ms": 0,
+        "imageCacheBytes": 7536640,
+        "liveImages": 1,
+        "rssBytes": 385261568
+      }
+    },
+    "immichWake": {
+      "ok": true
+    }
+  }
+}
