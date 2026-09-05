@@ -20,6 +20,7 @@ void main() {
 
   late EventBus bus;
   late ScreensaverManager saver;
+  late SettingsManager settings;
   late List<String?> views;
 
   Future<void> build(
@@ -33,7 +34,7 @@ void main() {
     bus = EventBus();
     final log = Logger();
     final commands = CommandRegistry(log);
-    final settings = SettingsManager(bus, commands, log);
+    settings = SettingsManager(bus, commands, log);
     await settings.init();
     saver = ScreensaverManager(bus, commands, log, settings);
     views = [];
@@ -269,6 +270,90 @@ void main() {
   // The Website screensaver's zoom level: a page built for a monitor lands
   // a little large on a wall tablet, so the group carries the same slider
   // the Browser page has, scaling this WebView alone.
+  group('edge taps', () {
+    // A tap on a slideshow's edge zone steps the deck instead of waking
+    // (issue #453). The zone marks the touch on the pointer's way down;
+    // the kiosk screen's raw Listener reports the same touch right after,
+    // and that report must not dismiss.
+    var now = DateTime(2026, 9, 5, 12);
+
+    Future<void> buildSlideshow() async {
+      await build('gallery');
+      now = DateTime(2026, 9, 5, 12);
+      saver.clock = () => now;
+      await saver.start();
+      await pumpEventQueue();
+      expect(saver.activeView.value, 'gallery');
+    }
+
+    test('a marked touch leaves the screensaver up', () async {
+      await buildSlideshow();
+      saver.markSlideTouch();
+      now = now.add(const Duration(milliseconds: 20));
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.activeView.value, 'gallery');
+    });
+
+    test('the mark expires: a later touch dismisses', () async {
+      await buildSlideshow();
+      saver.markSlideTouch();
+      now = now.add(const Duration(milliseconds: 400));
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.activeView.value, isNull);
+    });
+
+    test('an unmarked touch dismisses as before', () async {
+      await buildSlideshow();
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.activeView.value, isNull);
+    });
+
+    test('motion and keys still dismiss under a mark', () async {
+      await buildSlideshow();
+      saver.markSlideTouch();
+      saver.notifyActivity('motion');
+      await pumpEventQueue();
+      expect(saver.activeView.value, isNull);
+    });
+
+    test('one switch per slideshow mode, on by default', () {
+      expect(slideEdgeTapDefs.keys, ['media', 'local', 'gallery', 'immich']);
+      for (final def in slideEdgeTapDefs.values) {
+        expect(def.defaultValue, isTrue, reason: def.key);
+        expect(def.category, 'Screensaver', reason: def.key);
+      }
+      expect(
+        defs.screensaverMediaEdgeTaps.dependsOn,
+        'screensaver.media_is_folder',
+      );
+      expect(
+        defs.screensaverImmichEdgeTaps.dependsOn,
+        'screensaver.immich_validated',
+      );
+      expect(defs.screensaverLocalEdgeTaps.dependsOnValue, 'local');
+      expect(defs.screensaverGalleryEdgeTaps.dependsOnValue, 'gallery');
+    });
+
+    test('the zones show for slideshows only, folders for HA Media', () async {
+      await build('gallery');
+      expect(slideEdgeTapsEnabled(settings, 'gallery'), isTrue);
+      expect(slideEdgeTapsEnabled(settings, 'local'), isTrue);
+      expect(slideEdgeTapsEnabled(settings, 'immich'), isTrue);
+      expect(slideEdgeTapsEnabled(settings, 'clock'), isFalse);
+      expect(slideEdgeTapsEnabled(settings, 'camera'), isFalse);
+      expect(slideEdgeTapsEnabled(settings, 'website'), isFalse);
+      // A single image, video or camera has nothing to step.
+      expect(slideEdgeTapsEnabled(settings, 'media'), isFalse);
+      await settings.set(defs.screensaverMediaIsFolder, true);
+      expect(slideEdgeTapsEnabled(settings, 'media'), isTrue);
+      await settings.set(defs.screensaverGalleryEdgeTaps, false);
+      expect(slideEdgeTapsEnabled(settings, 'gallery'), isFalse);
+    });
+  });
+
   group('website zoom', () {
     test('the slider lives in the Website group, 1x by default', () {
       expect(defs.screensaverWebsiteZoom.defaultValue, 1);

@@ -37,8 +37,10 @@ import '../managers/screensaver/immich_manager.dart'
         immichPortraitPhoto;
 import '../managers/camera/models.dart'
     show CameraViewConfig, decodeCameraViewIds;
+import '../managers/device/haptics.dart';
 import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart' as defs;
+import '../managers/settings/settings_manager.dart';
 
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
 import 'clock_faces.dart';
@@ -142,6 +144,9 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       defs.screensaverGlanceScale.key,
       // The Now Playing transport, read at build by the full-screen view.
       defs.sendspinFullscreenControls.key,
+      // The edge zones (issue #453), read at build by the row below the
+      // mode, so the toggle mounts or unmounts them on the spot.
+      for (final def in slideEdgeTapDefs.values) def.key,
       for (final def in immichMetadataFields.values) def.key,
     };
     // The Night mode keys ride along so they can be tuned from the remote
@@ -283,6 +288,13 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                     ),
                   ),
                 },
+                // The slideshow modes' edge zones (issue #453): a tap on
+                // the outer fifth of either side steps the deck instead of
+                // waking. Over the mode, so the mode's tap-to-wake never
+                // sees those taps, and under the corner widgets and the
+                // At a Glance row, which ignore pointers anyway.
+                if (slideEdgeTapsEnabled(container.settings, view))
+                  _SlideEdges(container: container),
                 // The At a Glance row rides over the photo and web modes
                 // too, pinned to the bottom the way the Clock screensaver
                 // pins it. Black and Clock place their own row (centred,
@@ -393,6 +405,87 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       },
     );
   }
+}
+
+/// The edge-tap switch of each slideshow mode (issue #453), by the view
+/// name the overlay mounts it under.
+const slideEdgeTapDefs = <String, defs.SettingDef<bool>>{
+  'media': defs.screensaverMediaEdgeTaps,
+  'local': defs.screensaverLocalEdgeTaps,
+  'gallery': defs.screensaverGalleryEdgeTaps,
+  'immich': defs.screensaverImmichEdgeTaps,
+};
+
+/// The share of the width each edge zone takes: a fifth on either side,
+/// the middle three fifths still wake.
+const slideEdgeFraction = 0.2;
+
+/// Whether [view] shows edge zones: a slideshow mode with its switch on.
+/// Home Assistant Media only when it plays a folder; a single image, a
+/// video or a camera has nothing to step, so every tap wakes as before.
+bool slideEdgeTapsEnabled(SettingsManager settings, String view) {
+  final def = slideEdgeTapDefs[view];
+  if (def == null || !settings.get(def)) return false;
+  if (view == 'media' && !settings.get(defs.screensaverMediaIsFolder)) {
+    return false;
+  }
+  return true;
+}
+
+/// Two invisible strips, the outer fifth of either side: a tap on the left
+/// shows the previous slide, on the right the next, each resetting the
+/// slide's full dwell exactly as the ESPHome buttons do. The strips are
+/// opaque to hit testing, so neither the mode's tap-to-wake wrapper nor a
+/// WebView underneath sees the touch; the kiosk screen's raw Listener
+/// still does, and the mark on the pointer's way down tells the manager
+/// to let that report pass. A press that turns into a drag steps nothing
+/// and wakes nothing.
+class _SlideEdges extends StatelessWidget {
+  const _SlideEdges({required this.container});
+
+  final AppContainer container;
+
+  void _step(int direction) {
+    if (container.settings.get(defs.haHaptics)) {
+      Haptics.tap(strength: container.settings.get(defs.haHapticsStrength));
+    }
+    unawaited(container.screensaver.stepSlide(direction));
+  }
+
+  Widget _zone(int direction) => Listener(
+    onPointerDown: (_) => container.screensaver.markSlideTouch(),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _step(direction),
+      child: const SizedBox.expand(),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final width = constraints.maxWidth * slideEdgeFraction;
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: width,
+            child: _zone(-1),
+          ),
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: width,
+            child: _zone(1),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 /// Tap anywhere to wake. Used by the native views; the WebView reports its own

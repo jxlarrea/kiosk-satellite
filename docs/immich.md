@@ -23,6 +23,7 @@ The settings page is organized into five main sections: Server Connection, Media
 | Slideshow | Transition | Crossfade | Options include none, crossfade, slide, zoom, Ken Burns, or random. |
 | Slideshow | Fill the screen | Smart | Controls how aggressively photos are cropped to fit the screen. |
 | Slideshow | Pair portrait photos | on | Displays two portrait photos side by side in landscape mode. |
+| Slideshow | Tap edges to change slides | on | A tap on the left or right fifth of the screen shows the previous or next photo instead of dismissing the screensaver. |
 | Metadata | Show metadata | off | Displays photo details in a designated corner of the screen. |
 | Metadata | Album name, Date taken, Camera details, Location | on | Toggles individual metadata lines. |
 | Metadata | Metadata position | Bottom left | Specifies which corner holds the photo details. |

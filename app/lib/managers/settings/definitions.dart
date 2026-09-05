@@ -2054,6 +2054,28 @@ const screensaverMediaFill = SettingDef<String>(
   dependsOnValue: 'media',
 );
 
+// A tap on the outer fifth of either side steps the slideshow instead of
+// dismissing it (issue #453): a photo frame on a wall wants "back to that
+// one" without a Home Assistant button press. The middle three fifths
+// still dismiss, so the toggle costs nothing a person would miss, which
+// is why it is on by default; off, every tap dismisses as before. One
+// switch per slideshow mode, since each has its own page.
+const _edgeTapsDescription =
+    'A tap on the left or right fifth of the screen shows the previous or '
+    'next slide instead of dismissing.';
+
+const screensaverMediaEdgeTaps = SettingDef<bool>(
+  key: 'screensaver.media_edge_taps',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Tap edges to change slides',
+  description: _edgeTapsDescription,
+  category: 'Screensaver',
+  section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
+  dependsOn: 'screensaver.media_is_folder',
+);
+
 // ── Website (mode: website) ──
 
 const screensaverWebsiteUrl = SettingDef<String>(
@@ -2182,6 +2204,19 @@ const screensaverGalleryFill = SettingDef<String>(
   dependsOnValue: 'gallery',
 );
 
+const screensaverGalleryEdgeTaps = SettingDef<bool>(
+  key: 'screensaver.gallery_edge_taps',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Tap edges to change slides',
+  description: _edgeTapsDescription,
+  category: 'Screensaver',
+  section: 'Photo Gallery screensaver',
+  subpage: 'Photo Gallery screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'gallery',
+);
+
 // ── Local media (mode: local) ──
 
 const screensaverLocalFolder = SettingDef<String>(
@@ -2266,6 +2301,19 @@ const screensaverLocalFill = SettingDef<String>(
   subpage: 'Local Media screensaver',
   options: _fillOptions,
   optionLabels: _fillLabels,
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'local',
+);
+
+const screensaverLocalEdgeTaps = SettingDef<bool>(
+  key: 'screensaver.local_edge_taps',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Tap edges to change slides',
+  description: _edgeTapsDescription,
+  category: 'Screensaver',
+  section: 'Local Media screensaver',
+  subpage: 'Local Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -2432,6 +2480,18 @@ const screensaverImmichPairPortrait = SettingDef<bool>(
   defaultValue: true,
   title: 'Pair portrait photos',
   description: 'Show two portrait photos side by side so they fill the screen.',
+  category: 'Screensaver',
+  section: 'Slideshow',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichEdgeTaps = SettingDef<bool>(
+  key: 'screensaver.immich_edge_taps',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Tap edges to change slides',
+  description: _edgeTapsDescription,
   category: 'Screensaver',
   section: 'Slideshow',
   subpage: 'Immich Media screensaver',
@@ -6130,17 +6190,20 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMediaRecursive,
   screensaverMediaTransition,
   screensaverMediaFill,
+  screensaverMediaEdgeTaps,
   screensaverLocalFolder,
   screensaverLocalInterval,
   screensaverLocalShuffle,
   screensaverLocalRecursive,
   screensaverLocalTransition,
   screensaverLocalFill,
+  screensaverLocalEdgeTaps,
   screensaverGalleryItems,
   screensaverGalleryInterval,
   screensaverGalleryShuffle,
   screensaverGalleryTransition,
   screensaverGalleryFill,
+  screensaverGalleryEdgeTaps,
   screensaverImmichUrl,
   screensaverImmichApiKey,
   screensaverImmichValidated,
@@ -6154,6 +6217,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichTransition,
   screensaverImmichFill,
   screensaverImmichPairPortrait,
+  screensaverImmichEdgeTaps,
   screensaverImmichMetadata,
   screensaverImmichMetadataAlbum,
   screensaverImmichMetadataDate,

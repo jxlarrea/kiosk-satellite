@@ -61,15 +61,15 @@ When picking a **Background photo** on the device, the image file is copied into
 
 ### Home Assistant Media
 
-Streams media served by Home Assistant's media browser, including single images, image folders, video files, or `camera.*` entities (which stream over WebRTC with an MJPEG fallback). **Media source** opens the picker. Selecting an image folder unlocks playlist controls (**Seconds per image**, **Shuffle**, **Include subfolders**, and **Transition**). Video assets play through to completion. Photos follow standard [Slideshow behavior](#slideshow-behavior) scaling rules, whereas videos and camera streams preserve their native aspect ratio.
+Streams media served by Home Assistant's media browser, including single images, image folders, video files, or `camera.*` entities (which stream over WebRTC with an MJPEG fallback). **Media source** opens the picker. Selecting an image folder unlocks playlist controls (**Seconds per image**, **Shuffle**, **Include subfolders**, **Transition**, and **Tap edges to change slides**). Video assets play through to completion. Photos follow standard [Slideshow behavior](#slideshow-behavior) scaling rules, whereas videos and camera streams preserve their native aspect ratio.
 
 ### Local Media
 
-Displays an image slideshow loaded from a local folder on the device. Configuration options include **Local folder** (selected on device or typed into the remote admin), **Seconds per photo**, **Shuffle**, **Include subfolders**, **Transition**, and **Fill the screen**.
+Displays an image slideshow loaded from a local folder on the device. Configuration options include **Local folder** (selected on device or typed into the remote admin), **Seconds per photo**, **Shuffle**, **Include subfolders**, **Transition**, **Fill the screen**, and **Tap edges to change slides**.
 
 ### Photo Gallery
 
-Operates similarly to Local Media, but selects files using the native system gallery picker. This avoids needing broad storage permissions. Selected images are stored locally to survive device reboots. Options include **Photos** selection, **Seconds per photo**, **Shuffle**, **Transition**, and **Fill the screen**.
+Operates similarly to Local Media, but selects files using the native system gallery picker. This avoids needing broad storage permissions. Selected images are stored locally to survive device reboots. Options include **Photos** selection, **Seconds per photo**, **Shuffle**, **Transition**, **Fill the screen**, and **Tap edges to change slides**.
 
 ### Immich Media
 
@@ -109,6 +109,7 @@ Photo slideshow modes (Home Assistant Media, Local Media, Photo Gallery, Immich 
 * **Videos** play muted to completion, overriding image interval timers. Unplayable video files are skipped automatically.
 * The slideshow playlist builds upon screensaver activation. Newly added files appear during the next screensaver launch rather than mid-session.
 * Images decode at the native panel resolution, and memory for previous slides is released immediately to prevent memory exhaustion on low-RAM devices.
+* **Tap edges to change slides** (on by default): A tap on the left or right fifth of the screen shows the previous or next slide and resets its full display interval. Taps on the middle three fifths dismiss the screensaver as usual. Each slideshow mode has its own switch on its settings page, and turning it off makes every tap dismiss again. Home Assistant Media offers it for image folders only, since a single image, video, or camera stream has nothing to step.
 * **Manual Stepping via Home Assistant**: Triggering **Screensaver next slide** or **Screensaver previous slide** on the [ESPHome](esphome.md) device advances the slideshow by one item and resets the full display interval. These controls also step Camera Streams rotations. Triggering these actions while other screensaver modes are active performs no operation.
 
 ## Widgets
@@ -277,7 +278,7 @@ On Meta Portal hardware, this feature utilizes the Smart Camera background track
 
 The standard method for launching the screensaver is the idle timeout clock. Manual launch options include selecting **Start Screensaver** in the kiosk menu, triggering a mapped [gesture](gestures.md), toggling the ESPHome **Screensaver active** switch, or sending the `startScreensaver` command via the [remote API](remote-api.md) or [JavaScript API](js-api.md).
 
-Touch interactions instantly dismiss the screensaver and reset the idle clock. Additional dismissal triggers include:
+Touch interactions instantly dismiss the screensaver and reset the idle clock. The one exception is a tap on the left or right fifth of a photo slideshow with **Tap edges to change slides** on, which steps the slide instead (see [Slideshow behavior](#slideshow-behavior)). Additional dismissal triggers include:
 
 * **Wake Word**: Dismisses the screensaver immediately and pauses the idle clock for the entire voice turn so the display remains active during conversation.
 * **Camera Motion**: Triggers wake when Dismiss on motion is active.

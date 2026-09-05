@@ -262,11 +262,22 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   void markControlTouch() => _controlTouchAt = clock();
 
-  bool get _touchOnControl {
-    final at = _controlTouchAt;
-    return at != null &&
-        clock().difference(at) < const Duration(milliseconds: 150);
-  }
+  bool get _touchOnControl => _within(_controlTouchAt);
+
+  /// When a touch last landed on a slideshow's edge zone (issue #453):
+  /// the outer fifth of either side steps the deck instead of waking. The
+  /// zone reports from the pointer's way down, ahead of the kiosk screen's
+  /// own report of the same touch, which [notifyActivity] then drops
+  /// rather than dismissing. The zone sits over the mode's own tap-to-wake
+  /// wrapper, so no other echo of that touch arrives.
+  DateTime? _slideTouchAt;
+
+  void markSlideTouch() => _slideTouchAt = clock();
+
+  bool get _touchOnSlideEdge => _within(_slideTouchAt);
+
+  bool _within(DateTime? at) =>
+      at != null && clock().difference(at) < const Duration(milliseconds: 150);
 
   @override
   Future<void> init() async {
@@ -760,6 +771,13 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           _touchOnControl) {
         return;
       }
+    }
+    // A touch on a slideshow's edge zone stepped the deck (issue #453):
+    // the raw Listener's report of it is not a wake.
+    if (_active &&
+        _touchOnSlideEdge &&
+        (source == 'touch' || source == 'touch_page' || source == 'tap')) {
+      return;
     }
     if (_active &&
         _doubleTapToDismiss &&
