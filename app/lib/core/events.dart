@@ -200,6 +200,21 @@ class NetworkStateChanged extends AppEvent {
   final bool up;
 }
 
+/// The kiosks on this network changed: one was heard for the first time,
+/// renamed, updated, or went away. `devices` is the list the remote
+/// admin's kiosk switcher draws, this device first.
+class FleetChanged extends AppEvent {
+  const FleetChanged({required this.devices});
+
+  final List<Map<String, Object?>> devices;
+
+  @override
+  String get wireName => 'fleet';
+
+  @override
+  Map<String, Object?> toJson() => {'devices': devices};
+}
+
 /// The page's Home Assistant connection reported that the dashboard set
 /// may have moved: a dashboard created, deleted or edited (HA's own
 /// `panels_updated` and `lovelace_updated` events), or the connection

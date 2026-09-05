@@ -104,6 +104,11 @@ class KioskDrawer extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // The title sits three down from the mark's
+                          // center line, the name two under it: the
+                          // title's cap height reads level with the mark
+                          // that way.
+                          const SizedBox(height: 3),
                           Text(
                             'Kiosk Satellite',
                             // The display face ties the header to the page
@@ -113,9 +118,16 @@ class KioskDrawer extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          // A step below the title, a point over the
+                          // small body: the name reads as the header's
+                          // second line rather than a caption on it.
+                          const SizedBox(height: 2),
                           Text(
                             c.device.deviceName,
                             style: theme.textTheme.bodySmall?.copyWith(
+                              fontSize:
+                                  (theme.textTheme.bodySmall?.fontSize ?? 12) +
+                                  1,
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),

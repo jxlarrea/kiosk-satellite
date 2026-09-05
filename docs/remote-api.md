@@ -8,8 +8,8 @@ kept for Fully Kiosk familiarity) serving:
 3. A **WebSocket** at `/api/ws` for live state, events, and log tailing.
 
 On iOS the server runs while the app is foreground, which is always true in kiosk use.
-Devices advertise over mDNS as `_kiosksatellite._tcp` for discovery (and a
-future multi-device fleet view).
+Devices advertise over mDNS as `_kiosk-satellite._tcp` while the server runs,
+which is how the kiosk switcher below finds them.
 
 ## Enabling
 
@@ -23,6 +23,24 @@ or an Android provisioning intent:
 adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
   --es ks.provision '"{\"remote.enabled\":true,\"remote.password\":\"secret\"}"'
 ```
+
+## Kiosk switcher
+
+With several kiosks on one network, the device name under the logo in the
+remote admin becomes a dropdown. It opens **Switch kiosk**, a list of every
+kiosk heard on the network: this device first, then the others by name, each
+with its address and version. Picking one opens that kiosk's remote admin in
+the same tab, on the page you were on. A second-level page the other kiosk
+does not have (gated off by its own settings) lands on its parent tab. Its
+own login card shows first if its password differs.
+
+| | |
+| --- | --- |
+| How they find each other | Each kiosk announces `ks-<id>._kiosk-satellite._tcp.local` over mDNS with its name, version and admin port, every 30 seconds and on a query, and listens for the others. Raw multicast packets, not NsdManager, which never calls back on Fire OS and some LineageOS builds. |
+| What is listed | Kiosks with **Remote management** on, a password set and **Find other kiosks** on, on the same network segment. Multicast does not cross VLANs. |
+| Switch | **Find other kiosks** under Settings → Device → Remote Administration, on by default. Off, the kiosk neither announces nor listens, and the dropdown stays plain text. |
+| Command | `fleet` answers the same list: `{enabled, devices: [{id, name, version, address, port, url, self}]}`. The WebSocket carries a `fleet` event on every change. |
+| Port 5353 | Hearing the others needs the mDNS port. Where something on the device holds it exclusively the kiosk still announces, and the log says the others will not be heard. |
 
 ## Authentication
 

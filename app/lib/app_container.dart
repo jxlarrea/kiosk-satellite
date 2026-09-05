@@ -20,6 +20,7 @@ import 'managers/launcher/app_launcher_manager.dart';
 import 'managers/launcher/home_launcher_manager.dart';
 import 'managers/motion/motion_manager.dart';
 import 'managers/notifications/notification_manager.dart';
+import 'managers/fleet/fleet_manager.dart';
 import 'managers/location/location_manager.dart';
 import 'managers/person/person_sensor_manager.dart';
 import 'managers/proximity/proximity_manager.dart';
@@ -103,6 +104,7 @@ class AppContainer {
     // After homeAssistant: it reads states through it for the fallback.
     glance = GlanceManager(bus, commands, log, settings, homeAssistant);
     remote = RemoteManager(bus, commands, log, settings);
+    fleet = FleetManager(bus, commands, log, settings);
   }
 
   final bus = EventBus();
@@ -142,6 +144,7 @@ class AppContainer {
   late final NotificationManager notifications;
   late final UpdateManager update;
   late final RemoteManager remote;
+  late final FleetManager fleet;
 
   /// Built after [device.init] so it can carry the app version.
   late final JsApiManager jsApi;
@@ -187,6 +190,8 @@ class AppContainer {
     notifications,
     update,
     remote,
+    // After remote: it announces the admin server the remote manager runs.
+    fleet,
   ];
 
   Future<void> init() async {

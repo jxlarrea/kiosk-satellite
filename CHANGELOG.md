@@ -2,6 +2,15 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **A kiosk switcher in the remote admin.** Every kiosk with its remote admin on announces itself on the network over mDNS and hears the others, and the device name under the logo, in the rail and in the phone top bar, becomes a dropdown once another kiosk is heard. It opens **Switch kiosk**, this device first with a tag, then the others by name with their address and version. Picking one opens that kiosk's remote admin in the same tab on the page you were on, a second-level page it does not have landing on its parent tab. The list follows the network while it is open, so a kiosk that boots shows up without reopening. A **Find other kiosks** switch on the Remote Administration page, on by default, turns the announcing and listening off.
+
+### Changed
+- **The kiosk menu's header spaces its two lines better.** The device name under Kiosk Satellite sits a step lower and a point larger, and both lines a touch further down the mark.
+- **The remote admin's phone top bar shows the device name.** The mark grew a little and the title became two lines, Kiosk Satellite over the device name, so a phone says which kiosk it is looking at without opening the drawer.
+
 ## v2026.9.18 - 2026-09-04
 
 ### Fixed

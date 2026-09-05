@@ -71,8 +71,12 @@
   <div class="mobilebar">
     <button class="hamburger" id="navToggle" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <button type="button" class="brand-mark" data-home aria-label="Overview" title="Overview"></button>
-    <span class="mtitle">Kiosk Satellite</span>
-    <span class="spacer"></span>
+    <!-- The title over the device name, the name doubling as the kiosk
+         switcher once another kiosk is heard on the network (fleet.js). -->
+    <div class="mbrand">
+      <span class="mtitle">Kiosk Satellite</span>
+      <button type="button" class="brand-sub js-fleet-pick" aria-label="Switch kiosk"><span class="js-device-name"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
     <span class="stat js-cpu"></span>
     <span class="stat js-temp"></span>
     <span class="stat js-batt"></span>
@@ -84,7 +88,7 @@
         <button type="button" class="brand-mark" data-home aria-label="Overview" title="Overview"></button>
         <div class="brand-text">
           <div class="brand-title">Kiosk Satellite <span class="dot" id="connDot"></span></div>
-          <div class="brand-sub" id="deviceName"></div>
+          <button type="button" class="brand-sub js-fleet-pick" id="deviceName" aria-label="Switch kiosk"><span class="js-device-name"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         </div>
       </div>
       <!-- Settings search, mirroring the device's rail field: typing swaps

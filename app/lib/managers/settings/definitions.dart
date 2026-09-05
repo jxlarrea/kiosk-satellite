@@ -5591,6 +5591,20 @@ const remotePassword = SettingDef<String>(
   secret: true,
 );
 
+const remoteFleetDiscovery = SettingDef<bool>(
+  key: 'remote.fleet_discovery',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Find other kiosks',
+  description:
+      'Announce this device on the network and list the other kiosks in '
+      'the remote admin, to switch between them.',
+  category: 'Device',
+  section: 'Remote Administration',
+  subpage: 'Remote Administration',
+  dependsOn: 'remote.enabled',
+);
+
 // ── Device ─────────────────────────────────────────────────────────────
 
 const deviceName = SettingDef<String>(
@@ -6017,4 +6031,5 @@ const List<SettingDef<Object>> allSettings = [
   remoteEnabled,
   remotePort,
   remotePassword,
+  remoteFleetDiscovery,
 ];

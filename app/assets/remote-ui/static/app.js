@@ -1,10 +1,11 @@
 import { api, showView } from './core.js';
 import { refreshUpdateBadge } from './device.js';
+import { initFleet } from './fleet.js';
 import { loadConsole } from './logs.js';
 import { initOverview } from './overview.js';
 import { loadScreenshot, loadViewJump } from './panels.js';
 import { loadSettings } from './settings.js';
-import { showTab } from './tabs.js';
+import { currentPath, showTab } from './tabs.js';
 import { showImportPending, startWizard } from './wizard.js';
 import { applyInfo, connectWs } from './ws.js';
 
@@ -35,8 +36,16 @@ export async function start() {
   await initOverview();
   loadViewJump();
   // Whatever the URL asked for, now that the panels it needs exist.
-  showTab(decodeURIComponent(location.hash.slice(1)) || 'dashboard', { push: false });
+  const asked = decodeURIComponent(location.hash.slice(1));
+  showTab(asked || 'dashboard', { push: false });
+  // A second-level page this device does not have (gated away, or another
+  // kiosk's URL brought here by the switcher) landed on its tab: the
+  // address says so too, or a reload would repeat the fallback.
+  if (asked && asked !== currentPath) {
+    history.replaceState(null, '', '#' + currentPath);
+  }
   showView('app');
+  initFleet();
   // The screenshot is the one thing not worth holding the splash for: the
   // tablet reads back and encodes its screen, and the panel has its own
   // placeholder. It lands into the visible page.

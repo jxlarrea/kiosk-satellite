@@ -239,11 +239,65 @@
   #sidebar { width: 360px; flex: none; display: flex; flex-direction: column;
     position: sticky; top: 0; height: 100vh;
     background: var(--bg); border-right: 1px solid var(--border); }
-  .brand { display: flex; align-items: center; gap: 12px; padding: 22px 24px 18px; }
-  .brand-text { min-width: 0; }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 22px 24px 16px; }
+  .brand-text { min-width: 0; display: flex; flex-direction: column; }
   .brand-title { font-size: 18px; font-weight: 700; line-height: 1.25; }
-  .brand-sub { font-size: 12.5px; color: var(--muted);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* The device name under the title, and the kiosk switcher: plain muted
+     text while this is the only kiosk on the network, the text color with
+     a chevron once another is heard (body.has-fleet, fleet.js). Its text
+     keeps the title's left edge: the padding is pulled back into the
+     margin, so the hover pill grows around the name without moving it. */
+  .brand-sub { display: inline-flex; align-self: flex-start;
+    align-items: center; gap: 4px; max-width: calc(100% + 6px);
+    margin: 1px 0 0 -6px; padding: 2px 4px 2px 6px; border: 0;
+    border-radius: 999px; background: transparent; color: var(--muted);
+    font-size: 14px; font-weight: 500; line-height: 1.3; text-align: left;
+    cursor: default; }
+  .brand-sub .js-device-name { min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .brand-sub .chev { display: none; width: 18px; height: 18px; flex: none;
+    color: var(--muted); }
+  body.has-fleet .brand-sub { color: var(--text); cursor: pointer; }
+  body.has-fleet .brand-sub .chev { display: block; }
+  body.has-fleet .brand-sub:hover,
+  body.has-fleet .brand-sub:focus-visible { background: var(--surface-2);
+    outline: none; }
+  /* The switcher's tags: the version beside the address, This device
+     beside the name. 20 high, 11 semibold uppercase. */
+  .tag { display: inline-flex; align-items: center; height: 20px;
+    padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+    flex: none; background: var(--surface-2); color: var(--muted); }
+  .tag.device { background: var(--secondary-container);
+    color: var(--on-secondary-container); font-size: 10px; }
+  /* The picker's rows. A tap is the pick, so there is no control, and
+     the phone reflow (the row's info flattened into a wrapping line, for
+     a control beside the name) is switched back off for them: the name
+     line keeps its width and truncates, the tags stay on their lines.
+     The modal-card prefix outranks the reflow's .row .info rule. */
+  .fleet-row { cursor: pointer; }
+  .fleet-row.self { cursor: default; }
+  .fleet-row:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: -2px; border-radius: var(--radius-sm); }
+  .modal-card .fleet-row .info { display: block; flex: 1 1 0;
+    min-width: 0;
+    /* The info's content never sizes the card: without this the name
+       line's nowrap text plus its tag set the card's minimum width and
+       pushed it past a phone's edge. */
+    contain: inline-size; }
+  .modal-card .fleet-row .info .name { display: flex; align-items: center;
+    gap: 8px; min-width: 0; flex: none; }
+  .modal-card .fleet-row .info .name > span:first-child { flex: 0 1 auto;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; }
+  .modal-card .fleet-row .info .desc { display: flex; align-items: center;
+    flex-wrap: wrap; gap: 4px 8px; flex: none; margin-top: 3px; }
+  .fleet-looking { display: flex; align-items: center; gap: 10px;
+    padding: 8px 0 12px; font-size: 13px; color: var(--muted); }
+  .fleet-spinner { flex: none; width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--border); border-top-color: var(--primary);
+    animation: fleet-spin .9s linear infinite; }
+  @keyframes fleet-spin { to { transform: rotate(360deg); } }
   /* The mark, as vectors (branding/mark.svg). Its teal keyline is what
      keeps the white house readable on the light theme, so one asset
      serves both. */
@@ -397,7 +451,17 @@
     cursor: pointer; }
   .hamburger svg { display: block; }
   .hamburger:hover { border-color: var(--primary); color: var(--primary); }
-  .mobilebar .brand-mark { width: 28px; height: 28px; }
+  /* The phone bar's brand: a 34 mark beside the title over the device
+     name, the same switcher as the rail's. The block shrinks before the
+     stats do, so a long name truncates rather than pushing them out. */
+  .mobilebar .brand-mark { width: 34px; height: 34px; }
+  .mbrand { flex: 1 1 auto; min-width: 0; display: flex;
+    flex-direction: column; }
+  .mobilebar .mtitle { font-size: 15px; line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mobilebar .brand-sub { font-size: 13px; margin-top: 0; }
+  /* The stats never wrap or shrink: the brand block gives way first. */
+  .mobilebar .stat { flex: none; white-space: nowrap; }
   .nav-backdrop { display: none; position: fixed; inset: 0;
     background: rgba(0, 0, 0, .5); z-index: 19; }
 
@@ -741,7 +805,7 @@
   /* Phone: the rail becomes a drawer behind a slim top bar. */
   @media (max-width: 900px) {
     .mobilebar { display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; background: var(--bg);
+      padding: 7px 14px; background: var(--bg);
       border-bottom: 1px solid var(--border);
       position: sticky; top: 0; z-index: 10; }
     .shell { display: block; min-height: 0; }
@@ -766,6 +830,12 @@
      with a status span AND a grant button stacked them on top of each
      other (#202). `display: contents` promotes the .info's name/desc into
      the row's flex line; the name's flex:1 pushes the controls right. */
+  /* A tight phone drops the CPU figure from the bar; temperature and
+     battery stay, and the rail's foot still shows all three. */
+  @media (max-width: 400px) {
+    .mobilebar .js-cpu { display: none; }
+  }
+
   @media (max-width: 640px) {
     .row { flex-wrap: wrap; row-gap: 3px; }
     .row .info { display: contents; }

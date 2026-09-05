@@ -1,3 +1,4 @@
+import { setDeviceName } from './fleet.js';
 import { renderMicLevel } from './audio.js';
 import { $, state } from './core.js';
 import { appendLine, logView, updateConsoleMeta } from './logs.js';
@@ -112,7 +113,7 @@ export function setConn(s) { $('#connDot').className = `dot ${s}`; }
 export function applyInfo(device, currentUrl, keepQuick = {}) {
   if (!device) return;
   const name = device.name || device.model || '';
-  $('#deviceName').textContent = name;
+  setDeviceName(name);
   // The tab's name is the device's name: with several kiosks administered
   // side by side, "Kiosk Satellite Remote" three times is a guessing game.
   // Login keeps the static default; renames land on the next info refresh.
