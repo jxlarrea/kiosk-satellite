@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:onnxruntime/onnxruntime.dart';
 
 import '../vsww/ort_tensor_io.dart';
+import '../vsww/ort_float_runner.dart';
 
 /// openWakeWord's three-stage streaming pipeline.
 ///
@@ -28,11 +29,7 @@ import '../vsww/ort_tensor_io.dart';
 /// chunk in pure JS. Natively on the CPU the whole chain is ~3.8 ms, so there
 /// is nothing to accelerate.
 class OwwPipeline {
-  OwwPipeline({
-    required this.melSession,
-    required this.embeddingSession,
-  })  : _melInputName = melSession.inputNames.first,
-        _embInputName = embeddingSession.inputNames.first;
+  OwwPipeline({required this.melSession, required this.embeddingSession});
 
   static const chunkSamples = 1280;
   static const melBins = 32;
@@ -44,8 +41,6 @@ class OwwPipeline {
 
   final OrtSession melSession;
   final OrtSession embeddingSession;
-  final String _melInputName;
-  final String _embInputName;
 
   final Float32List _audioHistory = Float32List(melPrefixSamples);
   final Float32List _melInput = Float32List(chunkSamples + melPrefixSamples);
@@ -64,10 +59,8 @@ class OwwPipeline {
       ReusableInputTensor.create([1, melWindow, melBins, 1]);
   final OrtRunOptions _runOptions = OrtRunOptions();
 
-  // Reusable per-stage output buffers, sized from the session on first use
-  // (the mel output length is not knowable ahead of the first run).
-  Float32List? _melOut;
-  Float32List? _embOut;
+  OrtFloatRunner? _melRunner;
+  OrtFloatRunner? _embRunner;
 
   /// The noise-warmed classifier window, snapshotted after [warmup].
   ///
@@ -128,17 +121,30 @@ class OwwPipeline {
     _audioHistory.setRange(
         0, melPrefixSamples, scaledChunk, chunkSamples - melPrefixSamples);
 
-    final mel =
-        _melOut = _runStage(melSession, _melInputName, _melTensor, _melInput, _melOut);
-    if (mel == null) return null;
+    _melTensor.write(_melInput);
+    final mel = (_melRunner ??= OrtFloatRunner(
+      melSession,
+      _runOptions,
+      _melTensor,
+    ))
+        .run();
     _appendMel(mel);
 
     if (_melBufferLen < melWindow) return null;
     final start = (_melBufferLen - melWindow) * melBins;
     final window = Float32List.sublistView(
-        _melBuffer, start, start + melWindow * melBins);
-    return _embOut =
-        _runStage(embeddingSession, _embInputName, _embTensor, window, _embOut);
+      _melBuffer,
+      start,
+      start + melWindow * melBins,
+    );
+    _embTensor.write(window);
+    return (_embRunner ??= OrtFloatRunner(
+      embeddingSession,
+      _runOptions,
+      _embTensor,
+      expectedElements: embeddingDim,
+    ))
+        .run();
   }
 
   /// Apply `x / 10 + 2` and append each frame to the rolling mel buffer.
@@ -164,27 +170,10 @@ class OwwPipeline {
     _classifierInput.setRange(
         0, (embeddingWindow - 1) * embeddingDim, _classifierInput, embeddingDim);
     _classifierInput.setRange(
-        (embeddingWindow - 1) * embeddingDim, embeddingWindow * embeddingDim, emb);
-  }
-
-  /// Run one stage through its persistent input tensor, reading the float32
-  /// output straight out of ORT's buffer into the stage's reusable [out]
-  /// (allocated on the first run; the count is fixed after that because the
-  /// input shape never changes).
-  Float32List? _runStage(OrtSession session, String inputName,
-      ReusableInputTensor input, Float32List data, Float32List? out) {
-    input.write(data);
-    List<OrtValue?>? outputs;
-    try {
-      outputs = session.run(_runOptions, {inputName: input.tensor});
-      final value = outputs.isNotEmpty ? outputs[0] : null;
-      if (value == null) return null;
-      out ??= Float32List(tensorElementCount(value));
-      readFloatTensor(value, out);
-      return out;
-    } finally {
-      outputs?.forEach((o) => o?.release());
-    }
+      (embeddingWindow - 1) * embeddingDim,
+      embeddingWindow * embeddingDim,
+      emb,
+    );
   }
 
   /// Wipe per-stream history so the next chunk is treated as a cold start,
@@ -199,6 +188,8 @@ class OwwPipeline {
   /// Release the pipeline's native input tensors and run options. The two
   /// sessions stay alive; they belong to the caller.
   void dispose() {
+    _melRunner?.release();
+    _embRunner?.release();
     _melTensor.release();
     _embTensor.release();
     _runOptions.release();

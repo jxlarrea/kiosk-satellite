@@ -1,0 +1,14 @@
+{
+  "engine": "vsWakeWord",
+  "active": true,
+  "listening": true,
+  "stopWordAvailable": true,
+  "status": "listening",
+  "modelPrecision": "int8",
+  "models": [
+    "ok_nova"
+  ],
+  "suspendResume": "both commands succeeded; listening remains active",
+  "cpuLimitsRestored": true,
+  "wakeEngineWarningsOrErrors": 0
+}

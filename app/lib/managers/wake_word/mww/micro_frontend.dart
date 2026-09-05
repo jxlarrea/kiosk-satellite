@@ -645,17 +645,28 @@ class MicroFrontend {
   ///
   /// The returned list and the frames in it are owned by the frontend and
   /// reused by the next [feed] call: copy anything kept across calls.
-  List<Float32List> feed(List<double> samples) {
-    if (samples.isEmpty) return const [];
+  List<Float32List> feed(List<double> samples) =>
+      _feed(samples.length, floats: samples);
+
+  /// Feed native PCM16 directly, preserving every sample without converting
+  /// it to a normalized float and back. Returned frames have [feed]'s lifetime.
+  List<Float32List> feedPcm16(Int16List samples) =>
+      _feed(samples.length, pcm: samples);
+
+  List<Float32List> _feed(int length, {List<double>? floats, Int16List? pcm}) {
+    if (length == 0) return const [];
     _framesUsed = 0;
     _results.clear();
     var offset = 0;
 
-    while (offset < samples.length) {
-      final writable =
-          math.min(samples.length - offset, kWindowSize - _inputUsed);
-      for (var i = 0; i < writable; i++) {
-        _input[_inputUsed + i] = _floatToInt16(samples[offset + i]);
+    while (offset < length) {
+      final writable = math.min(length - offset, kWindowSize - _inputUsed);
+      if (pcm != null) {
+        _input.setRange(_inputUsed, _inputUsed + writable, pcm, offset);
+      } else {
+        for (var i = 0; i < writable; i++) {
+          _input[_inputUsed + i] = _floatToInt16(floats![offset + i]);
+        }
       }
       _inputUsed += writable;
       offset += writable;

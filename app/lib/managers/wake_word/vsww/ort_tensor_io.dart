@@ -55,6 +55,7 @@ class ReusableInputTensor {
   final OrtValueTensor tensor;
   final ffi.Pointer<ffi.Float> _buf;
   final int _length;
+  late final Float32List _view = _buf.asTypedList(_length);
 
   static ReusableInputTensor create(List<int> shape) {
     var count = 1;
@@ -96,6 +97,13 @@ class ReusableInputTensor {
       // Handing buf as dataPtr makes tensor.release() free it too.
       final tensor = OrtValueTensor(valuePP.value, buf.cast());
       return ReusableInputTensor._(tensor, buf, count);
+    } catch (_) {
+      if (valuePP.value != ffi.nullptr) {
+        OrtEnv.instance.ortApiPtr.ref.ReleaseValue
+            .asFunction<void Function(ffi.Pointer<bg.OrtValue>)>()(valuePP.value);
+      }
+      calloc.free(buf);
+      rethrow;
     } finally {
       calloc.free(valuePP);
       calloc.free(shapePtr);
@@ -106,7 +114,12 @@ class ReusableInputTensor {
   /// Copy [data] into the tensor's native buffer. [data] must have the
   /// tensor's element count.
   void write(Float32List data) {
-    _buf.asTypedList(_length).setAll(0, data);
+    if (data.length != _length) {
+      throw ArgumentError(
+        'expected $_length input elements, got ${data.length}',
+      );
+    }
+    _view.setAll(0, data);
   }
 
   /// Releases the ORT value and the native buffer backing it.

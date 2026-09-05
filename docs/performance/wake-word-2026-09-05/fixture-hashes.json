@@ -1,0 +1,14 @@
+{
+  "ok_nabu.json": "f8026e2ce93a0855ca23483036fd2d74ee924a2588d9ea6a6c6c7478fbf4be57",
+  "ok_nabu.tflite": "d89128c4d16a72de429119fb2254ce46649553c2a24f5dd840175c80d7b9d094",
+  "alexa.json": "1d999798b35b1fe2606465b75ab840be51c1811d2909d5e620cefb6e96f8abd0",
+  "alexa.tflite": "9011a8155b04de858c48038529235cbc0e42e9fca05a55bf588cb80a653a723b",
+  "vswakeword/ok_nova.json": "7519dd34f4e3af2e4ab9791f6b88c78f02ba901f60aa79a7f0a5d83b22f6af0f",
+  "vswakeword/alexa.json": "f95fcda40142c29553e27ddd108c4534c9ed6bbd6d6043d4659a99b854e02b76",
+  "vswakeword/int8/ok_nova.onnx": "66825c4611566499353fe6706048cc1d973710e837729e1d1b17b35d55ebb943",
+  "vswakeword/int8/alexa.onnx": "3cd014854efa8f4072e734fc650ac5c012c66c2a8249edd5fd0f0aaf9ea130a6",
+  "openwakeword/alexa.onnx": "2eccda7c388478d48ee2be9f97c6a34686b36812536e1d23258d753ae4da43b9",
+  "openwakeword/ok_nabu.onnx": "c01aaca3930a9ec81e9fffab8cf5d271435f38720b1fca394dda7a951dea4c9c",
+  "openwakeword/melspectrogram.onnx": "ba2b0e0f8b7b875369a2c89cb13360ff53bac436f2895cced9f479fa65eb176f",
+  "openwakeword/embedding_model.onnx": "70d164290c1d095d1d4ee149bc5e00543250a7316b59f31d056cff7bd3075c1f"
+}

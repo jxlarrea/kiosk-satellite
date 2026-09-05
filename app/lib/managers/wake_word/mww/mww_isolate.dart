@@ -8,6 +8,8 @@ import 'micro_frontend.dart';
 import 'mww_gate.dart';
 import 'xnnpack_variable_ops.dart';
 import '../wake_msg.dart';
+import '../pcm16.dart';
+import '../chunk_telemetry.dart';
 
 /// Entry point of the microWakeWord compute isolate.
 ///
@@ -68,6 +70,8 @@ class _Kw {
   final int framesPerInfer;
   final double inputScale;
   final int inputZeroPoint;
+  late final double scaleF32 = _fround32(inputScale);
+  late final double zeroPointF32 = _fround32(inputZeroPoint.toDouble());
 
   /// Preallocated frame slots, [accumLen] of them filled. Frames are copied in
   /// because the frontend reuses its buffers on the next feed.
@@ -91,13 +95,13 @@ class _Kw {
 class _MwwWorker {
   _MwwWorker(this._main);
   final SendPort _main;
+  late final _chunkTelemetry = ChunkTelemetry(_main);
 
   static const _chunkSamples = 1280; // 80 ms at 16 kHz, as the mic delivers
 
   final List<_Kw> _kws = [];
   MicroFrontend? _frontend;
   final _pending = BytesBuilder(copy: false);
-  final Float64List _chunk = Float64List(_chunkSamples);
   bool _stopped = false;
 
   /// A wake word fired and we await re-arming: wake models go quiet, but the
@@ -155,22 +159,24 @@ class _MwwWorker {
 
         final cutoff = (md['cutoff'] as num).toDouble();
         final window = (md['slidingWindowSize'] as num).toInt();
-        _kws.add(_Kw(
-          md['id'] as String,
-          md['wakeWord'] as String,
-          interpreter,
-          MwwGate(
-            cutoff: cutoff,
-            slidingWindowSize: window,
-            framesPerInfer: framesPerInfer < 1 ? 1 : framesPerInfer,
+        _kws.add(
+          _Kw(
+            md['id'] as String,
+            md['wakeWord'] as String,
+            interpreter,
+            MwwGate(
+              cutoff: cutoff,
+              slidingWindowSize: window,
+              framesPerInfer: framesPerInfer < 1 ? 1 : framesPerInfer,
+            ),
+            framesPerInfer < 1 ? 1 : framesPerInfer,
+            scale,
+            zeroPoint,
+            inputElements,
+            isStop: md['stop'] == true,
+            delegate: delegate,
           ),
-          framesPerInfer < 1 ? 1 : framesPerInfer,
-          scale,
-          zeroPoint,
-          inputElements,
-          isStop: md['stop'] == true,
-          delegate: delegate,
-        ));
+        );
         _log(
             'info',
             'loaded "${md['id']}"${md['stop'] == true ? ' (stop classifier)' : ''}'
@@ -192,16 +198,18 @@ class _MwwWorker {
     if (_stopped) return;
     if (_detected && !_stopArmed) return; // nothing left to score
     _pending.add(bytes);
-    final buf = _pending.toBytes();
+    final buf = _pending.takeBytes();
     const chunkBytes = _chunkSamples * 2;
     var offset = 0;
     while (buf.length - offset >= chunkBytes) {
-      final view = ByteData.sublistView(buf, offset, offset + chunkBytes);
-      for (var i = 0; i < _chunkSamples; i++) {
-        _chunk[i] = view.getInt16(i * 2, Endian.little) / 32768.0;
+      _chunkTelemetry.begin(_telemetry);
+      try {
+        final samples = pcm16Samples(buf, offset, offset + chunkBytes);
+        offset += chunkBytes;
+        _ingest(samples);
+      } finally {
+        _chunkTelemetry.end();
       }
-      offset += chunkBytes;
-      _ingest(_chunk);
       if (_detected && !_stopArmed) break;
     }
     _pending.clear();
@@ -224,22 +232,23 @@ class _MwwWorker {
     _tester = enabled && tester;
   }
 
-  void _ingest(Float64List chunk) {
+  void _ingest(Int16List chunk) {
     final frontend = _frontend;
     if (frontend == null) return;
     _absSamples += chunk.length;
-    if (_telemetry) {
+    if (_telemetry || _energyEnabled) {
       var sum = 0.0;
-      for (final s in chunk) {
+      for (final sample in chunk) {
+        final s = sample / 32768.0;
         sum += s * s;
       }
       _chunkRms = math.sqrt(sum / chunk.length);
     }
-    final scoreThisChunk = _shouldScore(chunk);
+    final scoreThisChunk = _shouldScore(_chunkRms);
 
     // One 80 ms chunk yields 8 feature frames (10 ms step). The frontend is fed
     // regardless of the energy gate so its window never goes stale.
-    for (final feature in frontend.feed(chunk)) {
+    for (final feature in frontend.feedPcm16(chunk)) {
       for (final k in _kws) {
         // Wake models go quiet once one has fired (until re-armed); the stop
         // classifier only runs while the card says playback is interruptible,
@@ -263,7 +272,7 @@ class _MwwWorker {
         if (_telemetry) {
           // The windowed mean is what the gate compares to the cutoff; the
           // raw per-inference probability is the spikier underlying signal.
-          _main.send({
+          _chunkTelemetry.add({
             'type': WakeMsg.telemetry,
             'id': k.id,
             'wakeWord': k.wakeWord,
@@ -316,13 +325,8 @@ class _MwwWorker {
   }
 
   /// The card's energy gate: is this chunk worth running inference on?
-  bool _shouldScore(Float64List chunk) {
+  bool _shouldScore(double rms) {
     if (!_energyEnabled) return true;
-    var sum = 0.0;
-    for (var i = 0; i < chunk.length; i++) {
-      sum += chunk[i] * chunk[i];
-    }
-    final rms = math.sqrt(sum / chunk.length);
     if (_sleeping) {
       if (rms < _wakeRms) return false;
       _sleeping = false;
@@ -371,8 +375,8 @@ class _MwwWorker {
     try {
       final input = k.inputBuf;
       final n = input.length;
-      final scaleF32 = _fround32(k.inputScale);
-      final zpF32 = _fround32(k.inputZeroPoint.toDouble());
+      final scaleF32 = k.scaleF32;
+      final zpF32 = k.zeroPointF32;
       var idx = 0;
       for (var f = 0; f < k.accumLen && idx < n; f++) {
         final frame = k.accum[f];

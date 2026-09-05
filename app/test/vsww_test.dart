@@ -234,6 +234,24 @@ void main() {
   group('CtcDecoder.match', () {
     final dec = CtcDecoder(_ctc);
 
+    test('reused edit rows preserve fuzzy matches after unrelated windows', () {
+      for (var iteration = 0; iteration < 25; iteration++) {
+        final target = List<int>.from(_ctc.wakeWordTargets.first);
+        target[0] = 7;
+        final fuzzy = dec.match(CtcDecode(target, List.filled(target.length, 5.0)));
+        expect(fuzzy.matched, isTrue);
+        expect(fuzzy.editDistance, 1);
+        final other = List<int>.filled(30 + iteration, 7);
+        expect(dec.match(CtcDecode(other, List.filled(other.length, 5.0))).matched,
+            isFalse);
+        final short = _ctc.wakeWordTargets.last;
+        final exact = dec.match(CtcDecode(short, List.filled(short.length, 7.0)));
+        expect(exact.matched, isTrue);
+        expect(exact.editDistance, 0);
+        expect(exact.targetIndex, 1);
+      }
+    });
+
     test('exact target 0 matches with edit distance 0', () {
       final logits = _logitsFor(_ctc.wakeWordTargets[0], 64, 52, logit: 5.0);
       final d = dec.decode(logits, 64, 52);

@@ -1,0 +1,154 @@
+// Standalone device benchmark. Build after prepare_wake_benchmark.py.
+// Fixtures and results live in files/wake_benchmark under the app data folder.
+import 'dart:convert';
+import 'dart:ffi';
+import 'dart:io';
+import 'dart:isolate';
+import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter/widgets.dart' hide Size;
+import 'package:path_provider/path_provider.dart';
+
+import 'mww.dart' as mww;
+import 'oww.dart' as oww;
+import 'vsww.dart' as vsww;
+import 'package:kiosk_satellite/managers/wake_word/oww/onnx_ir.dart';
+
+// Bionic uses size_t for mallinfo fields on both Android ABIs.
+final class Mallinfo extends Struct {
+  @Array(10)
+  external Array<Size> fields;
+}
+
+final _mallinfo = DynamicLibrary.open(
+  'libc.so',
+).lookupFunction<Mallinfo Function(), Mallinfo Function()>('mallinfo');
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ColoredBox(color: Color(0xff101010)));
+  final support = await getApplicationSupportDirectory();
+  final dir = Directory('${support.path}/wake_benchmark');
+  const label = String.fromEnvironment('BENCH_LABEL', defaultValue: 'baseline');
+  final resultFile = File('${dir.path}/$label.json');
+  final results = <String, Object?>{'label': label, 'runs': <Object>[]};
+  try {
+    Uint8List bytes(String name) => File('${dir.path}/$name').readAsBytesSync();
+    Map<String, dynamic> manifest(String name) =>
+        jsonDecode(File('${dir.path}/$name').readAsStringSync())
+            as Map<String, dynamic>;
+    // Deterministic PCM16: quiet, tones, clipped bursts, and seeded noise.
+    final pcm = Uint8List(2560 * 128);
+    final samples = ByteData.sublistView(pcm);
+    var seed = 0x2545f491;
+    for (var i = 0; i < pcm.length ~/ 2; i++) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      final segment = (i ~/ (1280 * 16)) % 8;
+      final value = switch (segment) {
+        0 => 0,
+        1 => ((seed >> 16) & 255) - 128,
+        2 || 3 => (((seed >> 8) & 65535) - 32768) ~/ 8,
+        4 => i % 40 < 20 ? 12000 : -12000,
+        5 => i.isEven ? 32767 : -32768,
+        _ => (((seed >> 8) & 65535) - 32768) ~/ 2,
+      };
+      samples.setInt16(i * 2, value, Endian.little);
+    }
+    final chunks = [
+      for (var i = 0; i < pcm.length; i += 2560)
+        // Nonzero odd offsets exercise the unaligned PCM fallback too.
+        Uint8List.sublistView(
+          Uint8List(2561)
+            ..setRange(1, 2561, Uint8List.sublistView(pcm, i, i + 2560)),
+          1,
+        ),
+    ];
+    results['pcmSha256'] = sha256.convert(pcm).toString();
+    final mwwModels = [
+      for (final id in ['ok_nabu', 'alexa'])
+        {
+          'id': id,
+          'wakeWord': id,
+          'tflite': bytes('$id.tflite'),
+          'cutoff': manifest('$id.json')['micro']['probability_cutoff'],
+          'slidingWindowSize': manifest(
+            '$id.json',
+          )['micro']['sliding_window_size'],
+        },
+    ];
+    final vswwModels = [
+      for (final id in ['ok_nova', 'alexa'])
+        {
+          'id': id,
+          'wakeWord': id,
+          'manifestJson': jsonEncode(manifest('vswakeword/$id.json')),
+          'onnx': bytes('vswakeword/int8/$id.onnx'),
+        },
+    ];
+    Uint8List onnx(String name) {
+      final data = bytes('openwakeword/$name.onnx');
+      // Same compatibility conversion used by OwwModelStore.
+      downgradeIrVersion(data);
+      return data;
+    }
+
+    final owwModels = [
+      for (final id in ['alexa', 'ok_nabu'])
+        {'id': id, 'wakeWord': id, 'onnx': onnx(id), 'cutoff': .5},
+    ];
+    for (var trial = 0; trial < 3; trial++) {
+      for (final engine in ['vsww', 'mww', 'oww']) {
+        for (final count in [1, 2]) {
+          final models = switch (engine) {
+            'mww' => mwwModels,
+            'oww' => owwModels,
+            _ => vswwModels,
+          };
+          final init = <String, Object>{
+            'models': models.take(count).toList(),
+            if (engine == 'oww') ...{
+              'melspectrogram': onnx('melspectrogram'),
+              'embedding': onnx('embedding_model'),
+            },
+          };
+          final benchmark = switch (engine) {
+            'mww' => mww.benchmark,
+            'oww' => oww.benchmark,
+            _ => vsww.benchmark,
+          };
+          final run = await Isolate.run(() => benchmark(
+            init, chunks, engine == 'oww' ? 300 : 1000, () => _mallinfo().fields[7]));
+          final scores = run.remove('scores');
+          final raw = run.remove('rawOutputs') as List;
+          final outputBytes = BytesBuilder(copy: false);
+          for (final values in raw.cast<Float32List>()) {
+            outputBytes.add(values.buffer.asUint8List(
+                values.offsetInBytes, values.lengthInBytes));
+          }
+          run['rawOutputSha256'] = sha256.convert(outputBytes.takeBytes()).toString();
+          run.addAll({
+            'engine': engine,
+            'models': count,
+            'trial': trial,
+            'scoreCount': (scores as List).length,
+            'scoreSha256': sha256
+                .convert(utf8.encode(jsonEncode(scores)))
+                .toString(),
+          });
+          (results['runs'] as List).add(run);
+          await resultFile.writeAsString(jsonEncode(results), flush: true);
+          // ignore: avoid_print
+          print('WAKE_BENCH ${jsonEncode(run)}');
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+        }
+      }
+    }
+    results['complete'] = true;
+  } catch (e, st) {
+    results['error'] = '$e\n$st';
+  }
+  await resultFile.writeAsString(jsonEncode(results), flush: true);
+  // ignore: avoid_print
+  print('WAKE_BENCH_DONE $label ${results['error'] ?? 'ok'}');
+}

@@ -20,7 +20,7 @@ class _Sample {
       editDistance = (m['editDistance'] as num?)?.toInt(),
       matchedConfidence = (m['matchedConfidence'] as num?)?.toDouble(),
       decoded = (m['decoded'] as String?) ?? '',
-      latencyUs = (m['latencyUs'] as num?)?.toInt() ?? 0;
+      latencyUs = ((m['chunkLatencyUs'] ?? m['latencyUs']) as num?)?.toInt() ?? 0;
 
   final double score;
   final double threshold;
@@ -364,7 +364,7 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
                   ),
                   _stat(
                     theme,
-                    'Latency (min / avg / max)',
+                    'Chunk processing (min / avg / max)',
                     '${lat.min} / ${lat.avg} / ${lat.max} ms',
                   ),
                 ],

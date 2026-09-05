@@ -60,6 +60,8 @@ class CtcDecoder {
   CtcDecoder(this.ctc, {this.confidenceScale = 1.0});
 
   final VswwCtcConfig ctc;
+  List<int> _editPrev = [];
+  List<int> _editCurr = [];
 
   /// Voice Satellite's Sensitivity setting, resolved by the card into a plain
   /// multiplier on our confidence gates (see [WakeWordModelRef.confidenceScale]).
@@ -154,7 +156,10 @@ class CtcDecoder {
       final maxEd = ctc.maxEditFor(ti);
 
       // 1) exact substring fast path (ed = 0)
-      for (var start = 0; start + tlen <= len; start++) {
+      final exactStart = ctc.trailTolerance >= 0
+          ? math.max(0, len - tlen - ctc.trailTolerance)
+          : 0;
+      for (var start = exactStart; start + tlen <= len; start++) {
         var exact = true;
         for (var k = 0; k < tlen; k++) {
           if (ids[start + k] != target[k]) {
@@ -197,8 +202,12 @@ class CtcDecoder {
     final sep = ctc.wordSepId;
     int cost(int t) => t == sep ? 2 : 1;
     final m = target.length;
-    var prev = List<int>.filled(m + 1, 0);
-    var curr = List<int>.filled(m + 1, 0);
+    if (_editPrev.length < m + 1) {
+      _editPrev = List<int>.filled(m + 1, 0);
+      _editCurr = List<int>.filled(m + 1, 0);
+    }
+    var prev = _editPrev;
+    var curr = _editCurr;
     for (var j = 0; j <= m; j++) {
       prev[j] = j == 0 ? 0 : prev[j - 1] + cost(target[j - 1]);
     }

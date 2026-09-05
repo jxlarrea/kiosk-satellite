@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/managers/wake_word/mww/micro_frontend.dart';
@@ -18,6 +19,32 @@ import 'package:kiosk_satellite/managers/wake_word/mww/micro_frontend.dart';
 /// here that is one obviously-wrong integer; caught only via features it is
 /// "detection got slightly worse", which is close to untraceable.
 void main() {
+  test('PCM16 input matches float input across fragmentation and resets', () {
+    final floats = MicroFrontend();
+    final pcm = MicroFrontend();
+    var seed = 34567;
+    for (final size in [0, 1, 159, 160, 161, 479, 480, 481, 1280, 8192]) {
+      final samples = Int16List(size);
+      for (var i = 0; i < size; i++) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        samples[i] = switch (i % 5) {
+          0 => -32768,
+          1 => 32767,
+          2 => 0,
+          _ => (seed >> 8) & 65535,
+        };
+      }
+      final normalized = [for (final s in samples) s / 32768.0];
+      final expected = floats.feed(normalized)
+          .map((f) => Float32List.fromList(f)).toList();
+      expect(pcm.feedPcm16(samples), expected, reason: '$size PCM samples');
+      if (size == 480) {
+        floats.reset();
+        pcm.reset();
+      }
+    }
+  });
+
   final fixture = File('test/fixtures/micro_frontend_golden.json');
   final golden = jsonDecode(fixture.readAsStringSync()) as Map<String, dynamic>;
 

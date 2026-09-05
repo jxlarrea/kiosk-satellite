@@ -11,8 +11,11 @@ import 'log_mel.dart';
 import 'manifest.dart';
 import 'ort_init.dart';
 import 'ort_tensor_io.dart';
+import 'ort_float_runner.dart';
 import 'stream_matcher.dart';
 import '../wake_msg.dart';
+import '../pcm16.dart';
+import '../chunk_telemetry.dart';
 
 /// Entry point of the vsWakeWord compute isolate. Pure Dart + FFI (no platform
 /// channels): the main isolate owns the mic and forwards raw PCM here as bare
@@ -46,9 +49,17 @@ void vswwIsolateEntry(SendPort mainPort) {
 }
 
 class _Kw {
-  _Kw(this.id, this.wakeWord, this.manifest, this.session, this.inputName,
-      this.decoder, this.stream, this.gate, {this.isStop = false})
-      : logitsBuf = Float32List(manifest.tOut * manifest.ctc.vocabSize);
+  _Kw(
+    this.id,
+    this.wakeWord,
+    this.manifest,
+    this.session,
+    this.inputName,
+    this.decoder,
+    this.stream,
+    this.gate, {
+    this.isStop = false,
+  });
   final String id;
   final String wakeWord;
 
@@ -62,13 +73,7 @@ class _Kw {
   final StreamMatcher stream;
   final DetectionGate gate;
 
-  /// Reused per-inference logits destination, [tOut * vocab].
-  final Float32List logitsBuf;
-
-  /// Whether the session's output element count was verified against the
-  /// manifest's [tOut * vocab] (checked on the first inference; a mismatched
-  /// model is dropped rather than read out of bounds).
-  bool outputChecked = false;
+  OrtFloatRunner? runner;
 
   /// Set when the first-inference output check fails: the session is released
   /// and the model never scored again (removing mid-iteration would break the
@@ -79,6 +84,7 @@ class _Kw {
 class _IsolateWorker {
   _IsolateWorker(this._main);
   final SendPort _main;
+  late final _chunkTelemetry = ChunkTelemetry(_main);
 
   static const _chunkSamples = 1280;
   static const _rmsVeto = 0.002;
@@ -160,7 +166,12 @@ class _IsolateWorker {
         final opts = OrtSessionOptions()
           ..setIntraOpNumThreads(1)
           ..setInterOpNumThreads(1);
-        final session = OrtSession.fromBuffer(md['onnx'] as Uint8List, opts);
+        final OrtSession session;
+        try {
+          session = OrtSession.fromBuffer(md['onnx'] as Uint8List, opts);
+        } finally {
+          opts.release();
+        }
         // The card's Sensitivity setting, already resolved to a multiplier.
         final scale = (md['confidenceScale'] as num?)?.toDouble() ?? 1.0;
         final decoder = CtcDecoder(manifest.ctc, confidenceScale: scale);
@@ -207,18 +218,21 @@ class _IsolateWorker {
     if (_stopped) return;
     if (_detected && !_stopArmed) return; // nothing left to score
     _pending.add(bytes);
-    final buf = _pending.toBytes();
+    final buf = _pending.takeBytes();
     const chunkBytes = _chunkSamples * 2;
     var offset = 0;
     while (buf.length - offset >= chunkBytes) {
-      // buf is freshly built (byte offset 0) and offset stays even, so an
-      // aligned Int16List view is safe; PCM16LE matches host endianness.
-      final samples = Int16List.sublistView(buf, offset, offset + chunkBytes);
-      for (var i = 0; i < _chunkSamples; i++) {
-        _chunk[i] = samples[i] / 32768.0;
+      _chunkTelemetry.begin(_telemetry);
+      try {
+        final samples = pcm16Samples(buf, offset, offset + chunkBytes);
+        for (var i = 0; i < _chunkSamples; i++) {
+          _chunk[i] = samples[i] / 32768.0;
+        }
+        offset += chunkBytes;
+        _ingest(_chunk);
+      } finally {
+        _chunkTelemetry.end();
       }
-      offset += chunkBytes;
-      _ingest(_chunk);
       if (_detected && !_stopArmed) break;
     }
     _pending.clear();
@@ -344,7 +358,9 @@ class _IsolateWorker {
 
       final decode = k.decoder.decode(logits, tOut, vocab);
       final perWindow = k.decoder.match(decode);
-      k.stream.update(logits, newSamples, tOut, vocab);
+      if (k.manifest.runtime.streamMatch) {
+        k.stream.update(logits, newSamples, tOut, vocab);
+      }
       final streamRes = k.manifest.runtime.streamMatch
           ? k.stream.analyze()
           : MatchResult.miss;
@@ -377,7 +393,7 @@ class _IsolateWorker {
         // present, so the log is signal not silence.
         final conf = combined.matchedConfidence;
         final decoded = k.manifest.ctc.phonemesFor(decode.ids);
-        _main.send({
+        _chunkTelemetry.add({
           'type': WakeMsg.telemetry,
           'id': k.id,
           'wakeWord': k.wakeWord,
@@ -458,30 +474,24 @@ class _IsolateWorker {
   }
 
   Float32List? _run(_Kw k) {
-    List<OrtValue?>? outputs;
     try {
-      outputs =
-          k.session.run(_runOptions!, {k.inputName: _input!.tensor}); // sync
-      final out = outputs.isNotEmpty ? outputs[0] : null;
-      if (out == null) return null;
-      if (!k.outputChecked) {
-        final count = tensorElementCount(out);
-        if (count != k.logitsBuf.length) {
-          _log('warn',
-              '"${k.id}": output has $count elements, manifest says ${k.logitsBuf.length}; dropping model');
-          k.dead = true;
-          k.session.release();
-          return null;
-        }
-        k.outputChecked = true;
-      }
-      readFloatTensor(out, k.logitsBuf);
-      return k.logitsBuf;
+      k.runner ??= OrtFloatRunner(
+        k.session,
+        _runOptions!,
+        _input!,
+        expectedElements: k.manifest.tOut * k.manifest.ctc.vocabSize,
+      );
+      return k.runner!.run();
     } catch (e) {
-      _log('warn', 'inference error: $e');
+      // A shape/type mismatch is permanent. Drop this model instead of
+      // retrying it and logging on every chunk.
+      if (e is StateError) {
+        k.dead = true;
+        k.runner?.release();
+        k.session.release();
+      }
+      _log('warn', 'inference error for "${k.id}": $e');
       return null;
-    } finally {
-      outputs?.forEach((o) => o?.release());
     }
   }
 
@@ -530,6 +540,7 @@ class _IsolateWorker {
     if (_stopped) return;
     _stopped = true;
     for (final k in _kws) {
+      k.runner?.release();
       if (!k.dead) k.session.release(); // dead models released at drop time
     }
     _kws.clear();

@@ -6,9 +6,12 @@ import 'package:onnxruntime/onnxruntime.dart';
 
 import '../vsww/ort_init.dart';
 import '../vsww/ort_tensor_io.dart';
+import '../vsww/ort_float_runner.dart';
 import 'oww_gate.dart';
 import 'oww_pipeline.dart';
 import '../wake_msg.dart';
+import '../pcm16.dart';
+import '../chunk_telemetry.dart';
 
 /// Entry point of the openWakeWord compute isolate.
 void owwIsolateEntry(SendPort mainPort) {
@@ -49,14 +52,13 @@ class _Kw {
   final OwwGate gate;
   final bool isStop;
 
-  /// Whether the classifier's output tensor was verified non-empty (checked on
-  /// the first inference, then read directly).
-  bool outputChecked = false;
+  OrtFloatRunner? runner;
 }
 
 class _OwwWorker {
   _OwwWorker(this._main);
   final SendPort _main;
+  late final _chunkTelemetry = ChunkTelemetry(_main);
 
   static const _chunkSamples = OwwPipeline.chunkSamples; // 1280 = 80 ms
 
@@ -70,7 +72,6 @@ class _OwwWorker {
   // lifetime (created in init, released in stop), as in the vsww isolate.
   OrtRunOptions? _runOptions;
   ReusableInputTensor? _clsInput;
-  final Float32List _clsOut = Float32List(1);
   bool _stopped = false;
   bool _detected = false;
   bool _stopArmed = false;
@@ -102,7 +103,12 @@ class _OwwWorker {
         final opts = OrtSessionOptions()
           ..setIntraOpNumThreads(1)
           ..setInterOpNumThreads(1);
-        final s = OrtSession.fromBuffer(bytes, opts);
+        final OrtSession s;
+        try {
+          s = OrtSession.fromBuffer(bytes, opts);
+        } finally {
+          opts.release();
+        }
         _sharedSessions.add(s);
         return s;
       }
@@ -154,16 +160,21 @@ class _OwwWorker {
     if (_stopped) return;
     if (_detected && !_stopArmed) return;
     _pending.add(bytes);
-    final buf = _pending.toBytes();
+    final buf = _pending.takeBytes();
     const chunkBytes = _chunkSamples * 2;
     var offset = 0;
     while (buf.length - offset >= chunkBytes) {
-      final view = ByteData.sublistView(buf, offset, offset + chunkBytes);
-      for (var i = 0; i < _chunkSamples; i++) {
-        _chunk[i] = view.getInt16(i * 2, Endian.little) / 32768.0;
+      _chunkTelemetry.begin(_telemetry);
+      try {
+        final samples = pcm16Samples(buf, offset, offset + chunkBytes);
+        for (var i = 0; i < _chunkSamples; i++) {
+          _chunk[i] = samples[i] / 32768.0;
+        }
+        offset += chunkBytes;
+        _ingest(_chunk);
+      } finally {
+        _chunkTelemetry.end();
       }
-      offset += chunkBytes;
-      _ingest(_chunk);
       if (_detected && !_stopArmed) break;
     }
     _pending.clear();
@@ -190,14 +201,14 @@ class _OwwWorker {
     final pipeline = _pipeline;
     if (pipeline == null) return;
     _absSamples += chunk.length;
-    if (_telemetry) {
+    if (_telemetry || _energyEnabled) {
       var sum = 0.0;
       for (final s in chunk) {
         sum += s * s;
       }
       _chunkRms = math.sqrt(sum / chunk.length);
     }
-    if (!_shouldScore(chunk)) return;
+    if (!_shouldScore(_chunkRms)) return;
 
     // mel + embedding run once per chunk and are shared by every classifier;
     // only the per-model head runs per wake word.
@@ -216,7 +227,7 @@ class _OwwWorker {
       if (probability == null) continue;
       final trigger = k.gate.update(probability, _absSamples ~/ 16);
       if (_telemetry) {
-        _main.send({
+        _chunkTelemetry.add({
           'type': WakeMsg.telemetry,
           'id': k.id,
           'wakeWord': k.wakeWord,
@@ -257,28 +268,17 @@ class _OwwWorker {
   }
 
   double? _classify(_Kw k) {
-    List<OrtValue?>? outputs;
     try {
-      outputs = k.session.run(_runOptions!, {k.inputName: _clsInput!.tensor});
-      final out = outputs.isNotEmpty ? outputs[0] : null;
-      if (out == null) return null;
-      if (!k.outputChecked) {
-        if (tensorElementCount(out) < 1) return null;
-        k.outputChecked = true;
-      }
-      readFloatTensor(out, _clsOut);
-      return _clsOut[0];
+      k.runner ??= OrtFloatRunner(k.session, _runOptions!, _clsInput!);
+      return k.runner!.run()[0];
     } catch (e) {
       _log('warn', 'inference error: $e');
       return null;
-    } finally {
-      outputs?.forEach((o) => o?.release());
     }
   }
 
-  bool _shouldScore(Float32List chunk) {
+  bool _shouldScore(double rms) {
     if (!_energyEnabled) return true;
-    final rms = OwwPipeline.rms(chunk);
     if (_sleeping) {
       if (rms < _wakeRms) return false;
       _sleeping = false;
@@ -328,13 +328,16 @@ class _OwwWorker {
   void stop() {
     if (_stopped) return;
     _stopped = true;
+    for (final k in _kws) {
+      k.runner?.release();
+    }
+    _pipeline?.dispose();
+    _pipeline = null;
     for (final s in _sharedSessions) {
       s.release();
     }
     _sharedSessions.clear();
     _kws.clear();
-    _pipeline?.dispose();
-    _pipeline = null;
     _clsInput?.release();
     _clsInput = null;
     _runOptions?.release();

@@ -19,7 +19,9 @@ class WakeMsg {
 
   /// Per-inference score, sent only while the wake-word tester is open. One
   /// per model per inference: {id, wakeWord, t, score, threshold, fired,
-  /// nearMiss, editDistance, latencyUs}. High volume, hence gated.
+  /// nearMiss, editDistance, latencyUs, chunkLatencyUs}. The chunk time includes
+  /// PCM conversion, shared features and all active models. High volume,
+  /// hence gated.
   static const telemetry = 'telemetry';
 
   // main -> isolate (control; audio arrives as a bare Uint8List)
