@@ -146,6 +146,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
 
   Uint8List? _artBytes;
   String _artUrl = '';
+  String _loadedArtUrl = '';
+  Object? _presentation;
 
   /// Whether the last build showed a panel beside or under the cover:
   /// with lyrics on and their lookup still out, the layout holds rather
@@ -160,43 +162,63 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
   void initState() {
     super.initState();
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
-    c.sendspin.lyrics.addListener(_onNowPlaying);
-    c.sendspin.lyricsPending.addListener(_onNowPlaying);
+    c.sendspin.lyrics.addListener(_onLayoutChanged);
+    c.sendspin.lyricsPending.addListener(_onLayoutChanged);
     _settingsSub = c.bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.sendspinLyrics.key ||
           e.key == defs.sendspinFullscreenQueue.key ||
           e.key == defs.sendspinSpeakerPill.key) {
-        _onNowPlaying();
+        _onLayoutChanged();
       }
     });
     // The entity list going from empty to populated (or back) changes the
     // whole layout, not just the row, so the view rebuilds with it.
-    c.glance.entities.addListener(_onNowPlaying);
+    c.glance.entities.addListener(_onLayoutChanged);
     _onNowPlaying();
   }
 
   @override
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
-    c.sendspin.lyrics.removeListener(_onNowPlaying);
-    c.sendspin.lyricsPending.removeListener(_onNowPlaying);
-    c.glance.entities.removeListener(_onNowPlaying);
+    c.sendspin.lyrics.removeListener(_onLayoutChanged);
+    c.sendspin.lyricsPending.removeListener(_onLayoutChanged);
+    c.glance.entities.removeListener(_onLayoutChanged);
     _settingsSub?.cancel();
     super.dispose();
   }
 
   void _onNowPlaying() {
-    final url = '${c.sendspin.nowPlaying.value?['artworkUrl'] ?? ''}';
+    final now = c.sendspin.nowPlaying.value;
+    final url = '${now?['artworkUrl'] ?? ''}';
     if (url != _artUrl) {
       _artUrl = url;
       _fetchArt(url);
     }
+    final presentation = (
+      now?['title'],
+      now?['artist'],
+      now?['album'],
+      url,
+      c.sendspin.playerChipName,
+      c.sendspin.queueOpen,
+    );
+    if (presentation == _presentation) return;
+    _presentation = presentation;
+    _onLayoutChanged();
+  }
+
+  void _onLayoutChanged() {
     if (mounted) setState(() {});
   }
 
   Future<void> _fetchArt(String url) async {
     final bytes = await fetchSendspinArtwork(c, url);
-    if (mounted && url == _artUrl) setState(() => _artBytes = bytes);
+    if (mounted && url == _artUrl) {
+      setState(() {
+        _artBytes = bytes;
+        _loadedArtUrl = url;
+      });
+    }
   }
 
   @override
@@ -374,26 +396,34 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         // Scaled to cover the full screen at its own aspect ratio; the
         // overflow is cropped, which under this much blur is invisible.
         Positioned.fill(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 700),
-            child: art == null
-                ? const SizedBox.expand(key: ValueKey('no-art'))
-                : Image.memory(
-                    art,
-                    key: ValueKey(_artUrl),
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    gaplessPlayback: true,
-                  ),
+          child: RepaintBoundary(
+            child: ClipRect(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(
+                  sigmaX: 40,
+                  sigmaY: 40,
+                  tileMode: TileMode.clamp,
+                ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 700),
+                  child: art == null
+                      ? const SizedBox.expand(key: ValueKey('no-art'))
+                      : Image.memory(
+                          art,
+                          key: ValueKey(_loadedArtUrl),
+                          cacheWidth: 256,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
+                        ),
+                ),
+              ),
+            ),
           ),
         ),
         // Blur + scrim so the backdrop reads as atmosphere, not content.
-        if (art != null)
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-            child: const ColoredBox(color: Color(0x99000000)),
-          ),
+        if (art != null) const ColoredBox(color: Color(0x99000000)),
         // The content above, the row and the transport pinned below it:
         // the transport keeps its place whatever the content does.
         Column(
@@ -519,6 +549,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
               borderRadius: BorderRadius.circular(24),
               child: Image.memory(
                 art,
+                cacheWidth: (artSize * MediaQuery.devicePixelRatioOf(context))
+                    .ceil(),
                 width: artSize,
                 height: artSize,
                 fit: BoxFit.cover,
@@ -1521,18 +1553,7 @@ class _NowPlayingControls extends StatefulWidget {
 class _NowPlayingControlsState extends State<_NowPlayingControls> {
   AppContainer get c => widget.container;
 
-  Timer? _tick;
-
-  /// The thumb while a finger holds it, in ms; null between drags.
-  double? _dragMs;
-
-  /// A seek just sent, held on screen until the next position report
-  /// replaces it, so the bar does not snap back for the beat the round
-  /// trip takes. The local engine adopts the target itself (Music
-  /// Assistant sends no fresh progress after a seek), so the report that
-  /// replaces this one already agrees with it.
-  int? _seekMs;
-  int? _seekAt;
+  Object? _presentation;
 
   /// The shuffle toggle as just pressed, shown until the server reports
   /// the state again (or reports it unchanged, which means it refused).
@@ -1613,7 +1634,6 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
     c.sendspin.favorite.removeListener(_rebuild);
     _settingsSub?.cancel();
-    _tick?.cancel();
     _volumeClose?.cancel();
     _volumeHold?.cancel();
     _playFocus.dispose();
@@ -1627,6 +1647,21 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   void _onNowPlaying() {
     final now = c.sendspin.nowPlaying.value;
     final playing = now?['playing'] == true;
+    final presentation = (
+      now == null,
+      playing,
+      now?['shuffle'],
+      now?['repeat'],
+      (now?['supportedCommands'] as List?)?.join(','),
+      c.sendspin.volumeAvailable,
+      c.sendspin.volumeLevel,
+      c.sendspin.muted,
+      c.sendspin.favoriteAvailable,
+      c.sendspin.lyricsAvailable,
+      c.sendspin.queueAvailable,
+    );
+    if (presentation == _presentation) return;
+    _presentation = presentation;
     // Any fresh word from the server on shuffle outranks the press.
     final shuffle = now?['shuffle'] == true;
     final repeat = '${now?['repeat'] ?? 'off'}';
@@ -1637,23 +1672,6 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     if (shuffle != _lastShuffle) {
       _lastShuffle = shuffle;
       _shuffleOverride = null;
-    }
-    // Half a second: the bar moves visibly without the tick showing up in
-    // a low-end panel's frame budget.
-    if (playing && _tick == null) {
-      _tick = Timer.periodic(
-        const Duration(milliseconds: 500),
-        (_) => setState(() {}),
-      );
-    } else if (!playing) {
-      _tick?.cancel();
-      _tick = null;
-    }
-    final receivedAt = (now?['receivedAt'] as num?)?.toInt();
-    final seekAt = _seekAt;
-    if (seekAt != null && receivedAt != null && receivedAt > seekAt) {
-      _seekMs = null;
-      _seekAt = null;
     }
     if (mounted) setState(() {});
   }
@@ -1676,56 +1694,16 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     if (!ok && mounted) setState(() => _repeatOverride = null);
   }
 
-  Future<void> _seek(double ms) async {
-    final target = ms.round();
-    setState(() {
-      _dragMs = null;
-      _seekMs = target;
-      _seekAt = DateTime.now().millisecondsSinceEpoch;
-    });
-    final ok = await c.sendspin.seek(target);
-    if (!ok && mounted) {
-      setState(() {
-        _seekMs = null;
-        _seekAt = null;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final now = c.sendspin.nowPlaying.value;
     if (now == null) return const SizedBox.shrink();
     final playing = now['playing'] == true;
-    final duration = (now['durationMs'] as num?)?.toInt() ?? 0;
-    // Live position: the last report plus the wall time since, the way
-    // the card and the lyrics extrapolate it; a seek in flight shows its
-    // target for at most a few seconds.
-    var position = (now['positionMs'] as num?)?.toInt() ?? 0;
-    final receivedAt = (now['receivedAt'] as num?)?.toInt();
-    final wall = DateTime.now().millisecondsSinceEpoch;
-    if (playing && receivedAt != null) position += wall - receivedAt;
-    final seekAt = _seekAt;
-    if (_seekMs != null && seekAt != null) {
-      if (wall - seekAt < 4000) {
-        position = _seekMs! + (playing ? wall - seekAt : 0);
-      } else {
-        _seekMs = null;
-        _seekAt = null;
-      }
-    }
-    if (duration > 0) position = position.clamp(0, duration);
-
+    final scale = widget.scale;
     final supported =
         (now['supportedCommands'] as List?)?.map((e) => '$e').toList() ??
         const <String>[];
     bool has(String cmd) => supported.isEmpty || supported.contains(cmd);
-    final canSeek = duration > 0 && has('seek');
-    final scale = widget.scale;
-    final shown = (_dragMs ?? position.toDouble()).clamp(
-      0.0,
-      duration > 0 ? duration.toDouble() : 0.0,
-    );
     final timeStyle = TextStyle(
       color: Colors.white70,
       fontSize: 17 * scale,
@@ -1951,48 +1929,16 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                 ),
               ],
             ),
-          ] else if (duration > 0) ...[
-            SizedBox(
-              height: 24 * scale,
-              child: SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 4 * scale,
-                  activeTrackColor: Colors.white,
-                  inactiveTrackColor: Colors.white30,
-                  disabledActiveTrackColor: Colors.white,
-                  disabledInactiveTrackColor: Colors.white30,
-                  thumbColor: Colors.white,
-                  disabledThumbColor: Colors.transparent,
-                  overlayColor: Colors.white24,
-                  // No thumb where a seek cannot land: the bar reads as
-                  // the card's progress line then.
-                  thumbShape: RoundSliderThumbShape(
-                    enabledThumbRadius: 7 * scale,
-                    disabledThumbRadius: 0,
-                  ),
-                  overlayShape: RoundSliderOverlayShape(
-                    overlayRadius: 16 * scale,
-                  ),
-                  trackShape: const RectangularSliderTrackShape(),
-                ),
-                child: Slider(
-                  value: shown,
-                  max: duration.toDouble(),
-                  onChanged: canSeek
-                      ? (v) => setState(() => _dragMs = v)
-                      : null,
-                  onChangeEnd: canSeek ? _seek : null,
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(_clock(shown.round()), style: timeStyle),
-                Text(_clock(duration), style: timeStyle),
-              ],
-            ),
           ],
+          Offstage(
+            key: const ValueKey('now-playing-progress'),
+            offstage: volumeOpen,
+            child: _NowPlayingProgress(
+              container: c,
+              scale: scale,
+              active: !volumeOpen,
+            ),
+          ),
           // The buttons ride up into the tap-target padding above them,
           // so the bar sits close over the transport instead of a line
           // of empty space away.
@@ -2045,10 +1991,188 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   }
 }
 
+/// Owns progress ticks and optimistic seeking without rebuilding transport.
+class _NowPlayingProgress extends StatefulWidget {
+  const _NowPlayingProgress({
+    required this.container,
+    required this.scale,
+    required this.active,
+  });
+  final AppContainer container;
+  final double scale;
+  final bool active;
+
+  @override
+  State<_NowPlayingProgress> createState() => _NowPlayingProgressState();
+}
+
+class _NowPlayingProgressState extends State<_NowPlayingProgress> {
+  AppContainer get c => widget.container;
+  Timer? _tick;
+
+  /// The thumb while a finger holds it, in ms; null between drags.
+  double? _dragMs;
+
+  /// A seek just sent, held on screen until the next position report
+  /// replaces it, so the bar does not snap back for the beat the round
+  /// trip takes. The local engine adopts the target itself (Music
+  /// Assistant sends no fresh progress after a seek), so the report that
+  /// replaces this one already agrees with it.
+  int? _seekMs;
+  int? _seekAt;
+
+  @override
+  void initState() {
+    super.initState();
+    c.sendspin.nowPlaying.addListener(_onNowPlaying);
+    _onNowPlaying();
+  }
+
+  @override
+  void didUpdateWidget(_NowPlayingProgress oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.active != widget.active) _onNowPlaying();
+  }
+
+  @override
+  void dispose() {
+    c.sendspin.nowPlaying.removeListener(_onNowPlaying);
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  void _onNowPlaying() {
+    final now = c.sendspin.nowPlaying.value;
+    final ticking =
+        widget.active &&
+        now?['playing'] == true &&
+        ((now?['durationMs'] as num?)?.toInt() ?? 0) > 0;
+    if (ticking && _tick == null) {
+      _tick = Timer.periodic(
+        const Duration(milliseconds: 500),
+        (_) => setState(() {}),
+      );
+    } else if (!ticking) {
+      _tick?.cancel();
+      _tick = null;
+    }
+    final receivedAt = (now?['receivedAt'] as num?)?.toInt();
+    if (_seekAt != null && receivedAt != null && receivedAt > _seekAt!) {
+      _seekMs = null;
+      _seekAt = null;
+    }
+    if (mounted && widget.active) setState(() {});
+  }
+
+  Future<void> _seek(double ms) async {
+    final target = ms.round();
+    setState(() {
+      _dragMs = null;
+      _seekMs = target;
+      _seekAt = DateTime.now().millisecondsSinceEpoch;
+    });
+    final ok = await c.sendspin.seek(target);
+    if (!ok && mounted) {
+      setState(() {
+        _seekMs = null;
+        _seekAt = null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = c.sendspin.nowPlaying.value;
+    if (now == null) return const SizedBox.shrink();
+    final playing = now['playing'] == true;
+    final duration = (now['durationMs'] as num?)?.toInt() ?? 0;
+    // Live position: the last report plus the wall time since, the way
+    // the card and the lyrics extrapolate it; a seek in flight shows its
+    // target for at most a few seconds.
+    var position = (now['positionMs'] as num?)?.toInt() ?? 0;
+    final receivedAt = (now['receivedAt'] as num?)?.toInt();
+    final wall = DateTime.now().millisecondsSinceEpoch;
+    if (playing && receivedAt != null) position += wall - receivedAt;
+    final seekAt = _seekAt;
+    if (_seekMs != null && seekAt != null) {
+      if (wall - seekAt < 4000) {
+        position = _seekMs! + (playing ? wall - seekAt : 0);
+      } else {
+        _seekMs = null;
+        _seekAt = null;
+      }
+    }
+    if (duration > 0) position = position.clamp(0, duration);
+
+    final supported =
+        (now['supportedCommands'] as List?)?.map((e) => '$e').toList() ??
+        const <String>[];
+    bool has(String cmd) => supported.isEmpty || supported.contains(cmd);
+    final canSeek = duration > 0 && has('seek');
+    final scale = widget.scale;
+    final shown = (_dragMs ?? position.toDouble()).clamp(
+      0.0,
+      duration > 0 ? duration.toDouble() : 0.0,
+    );
+    final timeStyle = TextStyle(
+      color: Colors.white70,
+      fontSize: 17 * scale,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+
+    if (duration <= 0) return const SizedBox.shrink();
+    return RepaintBoundary(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 24 * scale,
+            child: SliderTheme(
+              data: SliderThemeData(
+                trackHeight: 4 * scale,
+                activeTrackColor: Colors.white,
+                inactiveTrackColor: Colors.white30,
+                disabledActiveTrackColor: Colors.white,
+                disabledInactiveTrackColor: Colors.white30,
+                thumbColor: Colors.white,
+                disabledThumbColor: Colors.transparent,
+                overlayColor: Colors.white24,
+                // No thumb where a seek cannot land: the bar reads as
+                // the card's progress line then.
+                thumbShape: RoundSliderThumbShape(
+                  enabledThumbRadius: 7 * scale,
+                  disabledThumbRadius: 0,
+                ),
+                overlayShape: RoundSliderOverlayShape(
+                  overlayRadius: 16 * scale,
+                ),
+                trackShape: const RectangularSliderTrackShape(),
+              ),
+              child: Slider(
+                value: shown,
+                max: duration.toDouble(),
+                onChanged: canSeek ? (v) => setState(() => _dragMs = v) : null,
+                onChangeEnd: canSeek ? _seek : null,
+              ),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_clock(shown.round()), style: timeStyle),
+              Text(_clock(duration), style: timeStyle),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Shared by the floating card and the full-screen view: the manager's
 /// fetcher, which trusts the Sendspin and Music Assistant hosts.
 Future<Uint8List?> fetchSendspinArtwork(AppContainer c, String url) =>
-    c.sendspin.fetchArtwork(url);
+    c.sendspin.loadArtwork(url);
 
 class SendspinPlayerOverlay extends StatefulWidget {
   const SendspinPlayerOverlay({super.key, required this.container});
@@ -2070,6 +2194,41 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   double get _artSize => _large ? 128.0 : 72.0;
 
   AppContainer get c => widget.container;
+
+  bool get _covered => c.screensaver.activeView.value != null;
+  bool get _visible =>
+      !_covered &&
+      c.sendspin.nowPlaying.value != null &&
+      !c.sendspin.voiceActive.value &&
+      (_override.value ?? c.settings.get(defs.sendspinShowPlayer));
+
+  StreamSubscription<SettingChanged>? _settingsSub;
+
+  void _syncVisuals() {
+    final now = c.sendspin.nowPlaying.value;
+    final ticking =
+        _visible &&
+        now?['playing'] == true &&
+        ((now?['durationMs'] as num?)?.toInt() ?? 0) > 0;
+    if (ticking && _tick == null) {
+      _tick = Timer.periodic(
+        const Duration(seconds: 1),
+        (_) => setState(() {}),
+      );
+    } else if (!ticking) {
+      _tick?.cancel();
+      _tick = null;
+    }
+    if (_visible) {
+      final url = '${now?['artworkUrl'] ?? ''}';
+      if (url != _artUrl) _loadArtwork(url);
+    }
+  }
+
+  void _onVisibility() {
+    _syncVisuals();
+    if (mounted) setState(() {});
+  }
 
   /// Position as fractions of the free area (screen minus card), 0..1.
   late double _fx, _fy;
@@ -2116,6 +2275,10 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
         0.98;
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
     c.sendspin.voiceActive.addListener(_onVoiceActive);
+    c.screensaver.activeView.addListener(_onVisibility);
+    _settingsSub = c.bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.sendspinShowPlayer.key) _onVisibility();
+    });
     _override.addListener(_onOverride);
     // The "Show the Sendspin player" gesture and the kiosk menu entry: a
     // fling (or the paused-hide timer) hides the card via the override,
@@ -2134,6 +2297,8 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
     c.sendspin.voiceActive.removeListener(_onVoiceActive);
+    c.screensaver.activeView.removeListener(_onVisibility);
+    _settingsSub?.cancel();
     _override.removeListener(_onOverride);
     _reveal?.cancel();
     _tick?.cancel();
@@ -2142,27 +2307,16 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   }
 
   void _onVoiceActive() {
-    if (mounted) setState(() {});
+    _onVisibility();
   }
 
   void _onOverride() {
-    if (mounted) setState(() {});
+    _onVisibility();
   }
 
   void _onNowPlaying() {
     final now = c.sendspin.nowPlaying.value;
-    final artwork = '${now?['artworkUrl'] ?? ''}';
-    if (artwork != _artUrl) _loadArtwork(artwork);
     final playing = now?['playing'] == true;
-    if (playing && _tick == null) {
-      _tick = Timer.periodic(
-        const Duration(seconds: 1),
-        (_) => setState(() {}),
-      );
-    } else if (!playing) {
-      _tick?.cancel();
-      _tick = null;
-    }
     // A dismissal ends only when playback actually STARTS (false to true
     // transition) or the session ends. Level-checking `playing` here
     // un-dismissed a flung card during the stop's grace window, where the
@@ -2189,7 +2343,8 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
         },
       );
     }
-    if (mounted) setState(() {});
+    _syncVisuals();
+    if (mounted && !_covered) setState(() {});
   }
 
   /// The large card's transport row. Buttons appear only for commands the
@@ -2225,9 +2380,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
     final now = c.sendspin.nowPlaying.value;
     // Hidden during voice interactions: Voice Satellite's own UI owns the
     // screen for the duration, and the card would sit on top of it.
-    if (now == null ||
-        c.sendspin.voiceActive.value ||
-        !(_override.value ?? c.settings.get(defs.sendspinShowPlayer))) {
+    if (!_visible || now == null) {
       return const SizedBox.shrink();
     }
 
@@ -2321,6 +2474,12 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                         )
                                       : Image.memory(
                                           _artBytes!,
+                                          cacheWidth:
+                                              (_artSize *
+                                                      MediaQuery.devicePixelRatioOf(
+                                                        context,
+                                                      ))
+                                                  .ceil(),
                                           fit: BoxFit.cover,
                                           gaplessPlayback: true,
                                           errorBuilder: (_, _, _) => ColoredBox(

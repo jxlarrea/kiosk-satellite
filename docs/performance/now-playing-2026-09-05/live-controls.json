@@ -1,0 +1,68 @@
+{
+  "pause": {
+    "playing": false,
+    "title": "How to disappear",
+    "positionMs": 89981,
+    "durationMs": 228000,
+    "stats": {
+      "engine": "native",
+      "outputQueueMs": 0,
+      "framesWritten": 0,
+      "audioTrackUnderruns": 0,
+      "sinkLatencyMs": 109,
+      "timeSynced": true,
+      "progressMs": 228000
+    }
+  },
+  "resume": {
+    "playing": true,
+    "title": "How to disappear",
+    "positionMs": 104000,
+    "durationMs": 228000,
+    "stats": {
+      "engine": "native",
+      "outputQueueMs": 253,
+      "framesWritten": 60000,
+      "audioTrackUnderruns": 0,
+      "sinkLatencyMs": 109,
+      "timeSynced": true,
+      "progressMs": 157507
+    }
+  },
+  "seek": {
+    "playing": true,
+    "title": "How to disappear",
+    "positionMs": 60862,
+    "durationMs": 228000,
+    "stats": {
+      "engine": "native",
+      "outputQueueMs": 253,
+      "framesWritten": 257760,
+      "audioTrackUnderruns": 0,
+      "sinkLatencyMs": 109,
+      "timeSynced": true,
+      "progressMs": 162724
+    }
+  },
+  "next": {
+    "title": "Christine",
+    "playing": true,
+    "positionMs": 15
+  },
+  "visualChecks": {
+    "queuePanel": true,
+    "lyricsHighlight": true,
+    "newTrackArtwork": true,
+    "floatingPlayerRestoredWithCurrentTrack": true
+  },
+  "productionApkSha256": "a08545f560007f70550c7620b570b5775ccc4f6bdeac6b843ada304689f7e8c9",
+  "productionBenchmarkCommandResponse": {
+    "ok": false,
+    "error": "unknown command: nowPlayingPerf"
+  },
+  "restoredSettings": {
+    "sendspin.lyrics": false,
+    "sendspin.fullscreen_queue": true
+  },
+  "playbackStopped": true
+}

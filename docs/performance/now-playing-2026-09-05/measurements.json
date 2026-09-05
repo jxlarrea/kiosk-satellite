@@ -1,0 +1,1517 @@
+{
+  "baselineCommit": "e512c18642306cfb6ae3939bb8fb3036a4bc13e4",
+  "device": {
+    "adb": "192.168.1.5:5555",
+    "model": "Samsung Galaxy Tab S8 SM-X700",
+    "android": 16,
+    "physicalResolution": [
+      2560,
+      1600
+    ],
+    "devicePixelRatio": 2.125
+  },
+  "workload": {
+    "track": "How to disappear",
+    "artist": "Lana Del Rey",
+    "queue": false,
+    "lyrics": false,
+    "dashboardCameraSuspension": true
+  },
+  "phases": {
+    "baseline": {
+      "apkSha256": "9b33525f485e1bdbc19ef6d068769100a29c3bf0c4b36c7d72ae617db68c0e9e",
+      "timings": {
+        "elapsedMs": 73791,
+        "frames": 235,
+        "build": {
+          "meanMs": 5.5480340425531915,
+          "p95Ms": 9.433,
+          "maxMs": 13.686
+        },
+        "raster": {
+          "meanMs": 6.742251063829786,
+          "p95Ms": 8.854,
+          "maxMs": 14.161
+        },
+        "slowFrames16ms": 0,
+        "imageCacheBytes": 4881244,
+        "liveImages": 2,
+        "rssBytes": 372899840
+      },
+      "framesPerSecond": 3.184670217235164,
+      "meanWholeDeviceCpuPercent": 17.696420570428433,
+      "samples": [
+        {
+          "time": 1788646303.7398725,
+          "cpu": {
+            "usage": 18.041126999316166,
+            "temp": 45.0
+          },
+          "ram": {
+            "free": 3223588864,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 26364,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 236,
+            "framesWritten": 292320,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 47932
+          }
+        },
+        {
+          "time": 1788646305.870839,
+          "cpu": {
+            "usage": 17.73034694147301,
+            "temp": 44.3
+          },
+          "ram": {
+            "free": 3232108544,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 26364,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 246,
+            "framesWritten": 432480,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 50836
+          }
+        },
+        {
+          "time": 1788646308.7513635,
+          "cpu": {
+            "usage": 16.610648130970983,
+            "temp": 44.3
+          },
+          "ram": {
+            "free": 3233697792,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 31374,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 248,
+            "framesWritten": 534240,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 52963
+          }
+        },
+        {
+          "time": 1788646311.2913542,
+          "cpu": {
+            "usage": 17.845190904860065,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3225972736,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 31374,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 252,
+            "framesWritten": 692640,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 56259
+          }
+        },
+        {
+          "time": 1788646313.423929,
+          "cpu": {
+            "usage": 16.610094261485578,
+            "temp": 44.3
+          },
+          "ram": {
+            "free": 3223506944,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 36377,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 242,
+            "framesWritten": 795360,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 58404
+          }
+        },
+        {
+          "time": 1788646315.5669563,
+          "cpu": {
+            "usage": 17.48883838102796,
+            "temp": 44.3
+          },
+          "ram": {
+            "free": 3221229568,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 36377,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 244,
+            "framesWritten": 899040,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 60568
+          }
+        },
+        {
+          "time": 1788646317.6421392,
+          "cpu": {
+            "usage": 16.306925664827567,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3227148288,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 41389,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 256,
+            "framesWritten": 998880,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 62627
+          }
+        },
+        {
+          "time": 1788646319.7368333,
+          "cpu": {
+            "usage": 16.584489974357197,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3220688896,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 41389,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 253,
+            "framesWritten": 1099680,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 64732
+          }
+        },
+        {
+          "time": 1788646321.8193777,
+          "cpu": {
+            "usage": 17.258566460574905,
+            "temp": 43.6
+          },
+          "ram": {
+            "free": 3219443712,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 41389,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 252,
+            "framesWritten": 1199520,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 66815
+          }
+        },
+        {
+          "time": 1788646323.9097807,
+          "cpu": {
+            "usage": 18.25976774650966,
+            "temp": 43.6
+          },
+          "ram": {
+            "free": 3215753216,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 46384,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 240,
+            "framesWritten": 1299360,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 68910
+          }
+        },
+        {
+          "time": 1788646326.0295596,
+          "cpu": {
+            "usage": 15.357156002045835,
+            "temp": 45.3
+          },
+          "ram": {
+            "free": 3230486528,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 46384,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 248,
+            "framesWritten": 1401120,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 71023
+          }
+        },
+        {
+          "time": 1788646328.7836614,
+          "cpu": {
+            "usage": 19.19246058361755,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3227312128,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 51388,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 249,
+            "framesWritten": 1533600,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 73776
+          }
+        },
+        {
+          "time": 1788646330.8774416,
+          "cpu": {
+            "usage": 17.803397231360606,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3216265216,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 51388,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 246,
+            "framesWritten": 1633440,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 75866
+          }
+        },
+        {
+          "time": 1788646333.0060573,
+          "cpu": {
+            "usage": 16.73696025047247,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3216998400,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 56400,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 251,
+            "framesWritten": 1735200,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 77978
+          }
+        },
+        {
+          "time": 1788646335.4807818,
+          "cpu": {
+            "usage": 17.195024362064366,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3225653248,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 56400,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 256,
+            "framesWritten": 1838880,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 80134
+          }
+        },
+        {
+          "time": 1788646337.6431422,
+          "cpu": {
+            "usage": 17.115183737585937,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3223740416,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 61394,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 244,
+            "framesWritten": 1956000,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 82583
+          }
+        },
+        {
+          "time": 1788646340.7729828,
+          "cpu": {
+            "usage": 15.692195551560761,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3220447232,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 61394,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 254,
+            "framesWritten": 2096160,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 85491
+          }
+        },
+        {
+          "time": 1788646342.900138,
+          "cpu": {
+            "usage": 16.830425936197667,
+            "temp": 45.6
+          },
+          "ram": {
+            "free": 3221946368,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 66404,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 256,
+            "framesWritten": 2211360,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 87889
+          }
+        },
+        {
+          "time": 1788646345.2644365,
+          "cpu": {
+            "usage": 16.39901601165665,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3227762688,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 66404,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 250,
+            "framesWritten": 2323680,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 90240
+          }
+        },
+        {
+          "time": 1788646347.3495443,
+          "cpu": {
+            "usage": 17.97412047633441,
+            "temp": 44.3
+          },
+          "ram": {
+            "free": 3223162880,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 71406,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 242,
+            "framesWritten": 2424480,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 92350
+          }
+        },
+        {
+          "time": 1788646349.7025318,
+          "cpu": {
+            "usage": 20.322518750995204,
+            "temp": 45.3
+          },
+          "ram": {
+            "free": 3218264064,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 71406,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 244,
+            "framesWritten": 2535840,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 94659
+          }
+        },
+        {
+          "time": 1788646352.0723445,
+          "cpu": {
+            "usage": 17.98033521618205,
+            "temp": 46.0
+          },
+          "ram": {
+            "free": 3211653120,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 71406,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 257,
+            "framesWritten": 2638560,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 96787
+          }
+        },
+        {
+          "time": 1788646355.8808718,
+          "cpu": {
+            "usage": 16.154381864301065,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3207675904,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 76414,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 240,
+            "framesWritten": 2762400,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 99389
+          }
+        },
+        {
+          "time": 1788646357.9507728,
+          "cpu": {
+            "usage": 20.986172044943217,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3287162880,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 81414,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 239,
+            "framesWritten": 2933280,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 102948
+          }
+        },
+        {
+          "time": 1788646360.5885031,
+          "cpu": {
+            "usage": 21.715115788220295,
+            "temp": 45.3
+          },
+          "ram": {
+            "free": 3289010176,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 81414,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 248,
+            "framesWritten": 3059040,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 105563
+          }
+        },
+        {
+          "time": 1788646364.244781,
+          "cpu": {
+            "usage": 17.400278336586116,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3284791296,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 86417,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 248,
+            "framesWritten": 3225120,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 109015
+          }
+        },
+        {
+          "time": 1788646366.3726797,
+          "cpu": {
+            "usage": 16.99078413433082,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3284930560,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 86417,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 237,
+            "framesWritten": 3335520,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 111331
+          }
+        },
+        {
+          "time": 1788646369.8332503,
+          "cpu": {
+            "usage": 19.200697344982594,
+            "temp": 44.3
+          },
+          "ram": {
+            "free": 3270864896,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 91428,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 252,
+            "framesWritten": 3496800,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 114679
+          }
+        },
+        {
+          "time": 1788646372.2042265,
+          "cpu": {
+            "usage": 18.346061478159264,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3277869056,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 91428,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 252,
+            "framesWritten": 3606240,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 116952
+          }
+        },
+        {
+          "time": 1788646374.577487,
+          "cpu": {
+            "usage": 18.764336545853013,
+            "temp": 45.0
+          },
+          "ram": {
+            "free": 3270885376,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 96426,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 248,
+            "framesWritten": 3730080,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 119535
+          }
+        }
+      ]
+    },
+    "optimized": {
+      "apkSha256": "c91a68ff8b535bc2445e8b50e8a84bff70fda7bc8b54653b7ceec359897a1ae3",
+      "timings": {
+        "elapsedMs": 63851,
+        "frames": 145,
+        "build": {
+          "meanMs": 2.332379310344828,
+          "p95Ms": 5.025,
+          "maxMs": 7.11
+        },
+        "raster": {
+          "meanMs": 4.347027586206896,
+          "p95Ms": 6.241,
+          "maxMs": 9.579
+        },
+        "slowFrames16ms": 0,
+        "imageCacheBytes": 1310720,
+        "liveImages": 2,
+        "rssBytes": 362758144
+      },
+      "framesPerSecond": 2.2709119669229927,
+      "meanWholeDeviceCpuPercent": 18.550988122345146,
+      "samples": [
+        {
+          "time": 1788646816.709548,
+          "cpu": {
+            "usage": 20.22077436398294,
+            "temp": 48.0
+          },
+          "ram": {
+            "free": 3172048896,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 236,
+            "framesWritten": 258720,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 170677
+          }
+        },
+        {
+          "time": 1788646818.782324,
+          "cpu": {
+            "usage": 20.31673052499658,
+            "temp": 46.7
+          },
+          "ram": {
+            "free": 3222437888,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 244,
+            "framesWritten": 358560,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 172748
+          }
+        },
+        {
+          "time": 1788646820.8652813,
+          "cpu": {
+            "usage": 14.670552632049827,
+            "temp": 47.4
+          },
+          "ram": {
+            "free": 3220852736,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 241,
+            "framesWritten": 458400,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 174831
+          }
+        },
+        {
+          "time": 1788646822.9337597,
+          "cpu": {
+            "usage": 19.870146874016502,
+            "temp": 46.7
+          },
+          "ram": {
+            "free": 3213709312,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 251,
+            "framesWritten": 558240,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 176900
+          }
+        },
+        {
+          "time": 1788646825.0095322,
+          "cpu": {
+            "usage": 21.418858222628067,
+            "temp": 47.4
+          },
+          "ram": {
+            "free": 3207487488,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 257,
+            "framesWritten": 658080,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 178984
+          }
+        },
+        {
+          "time": 1788646827.0812416,
+          "cpu": {
+            "usage": 16.632555363959806,
+            "temp": 48.4
+          },
+          "ram": {
+            "free": 3215347712,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 245,
+            "framesWritten": 756960,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 181052
+          }
+        },
+        {
+          "time": 1788646829.1582441,
+          "cpu": {
+            "usage": 20.069395454712403,
+            "temp": 47.4
+          },
+          "ram": {
+            "free": 3212951552,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 249,
+            "framesWritten": 856800,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 183132
+          }
+        },
+        {
+          "time": 1788646831.7539897,
+          "cpu": {
+            "usage": 29.55538941076715,
+            "temp": 49.4
+          },
+          "ram": {
+            "free": 3193421824,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 252,
+            "framesWritten": 981600,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 185724
+          }
+        },
+        {
+          "time": 1788646833.831147,
+          "cpu": {
+            "usage": 18.541943368479284,
+            "temp": 45.6
+          },
+          "ram": {
+            "free": 3200659456,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 255,
+            "framesWritten": 1081440,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 187796
+          }
+        },
+        {
+          "time": 1788646835.9120076,
+          "cpu": {
+            "usage": 20.68698889422789,
+            "temp": 45.6
+          },
+          "ram": {
+            "free": 3196628992,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 255,
+            "framesWritten": 1181280,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 189882
+          }
+        },
+        {
+          "time": 1788646837.9739065,
+          "cpu": {
+            "usage": 16.294701813868947,
+            "temp": 46.7
+          },
+          "ram": {
+            "free": 3196325888,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 24929,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 252,
+            "framesWritten": 1280160,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 191946
+          }
+        },
+        {
+          "time": 1788646840.5598454,
+          "cpu": {
+            "usage": 23.61207662647481,
+            "temp": 47.4
+          },
+          "ram": {
+            "free": 3226566656,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 46424,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 247,
+            "framesWritten": 1404000,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 194531
+          }
+        },
+        {
+          "time": 1788646842.6388683,
+          "cpu": {
+            "usage": 16.683344636706288,
+            "temp": 48.7
+          },
+          "ram": {
+            "free": 3239542784,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 46424,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 247,
+            "framesWritten": 1503840,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 196606
+          }
+        },
+        {
+          "time": 1788646844.7306135,
+          "cpu": {
+            "usage": 18.064432833677436,
+            "temp": 44.3
+          },
+          "ram": {
+            "free": 3238871040,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 51432,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 256,
+            "framesWritten": 1604640,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 198696
+          }
+        },
+        {
+          "time": 1788646846.8120234,
+          "cpu": {
+            "usage": 16.319648228244837,
+            "temp": 46.0
+          },
+          "ram": {
+            "free": 3237912576,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 51432,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 254,
+            "framesWritten": 1704480,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 200781
+          }
+        },
+        {
+          "time": 1788646848.902908,
+          "cpu": {
+            "usage": 15.521280802994394,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3239890944,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 56433,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 256,
+            "framesWritten": 1804320,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 202856
+          }
+        },
+        {
+          "time": 1788646850.9833007,
+          "cpu": {
+            "usage": 18.112580980377587,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3236892672,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 56433,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 244,
+            "framesWritten": 1904160,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 204956
+          }
+        },
+        {
+          "time": 1788646853.0520287,
+          "cpu": {
+            "usage": 16.686167150328657,
+            "temp": 44.3
+          },
+          "ram": {
+            "free": 3244437504,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 56433,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 255,
+            "framesWritten": 2004000,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 207020
+          }
+        },
+        {
+          "time": 1788646855.120595,
+          "cpu": {
+            "usage": 16.336762230871386,
+            "temp": 47.0
+          },
+          "ram": {
+            "free": 3243433984,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 61436,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 246,
+            "framesWritten": 2102880,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 209088
+          }
+        },
+        {
+          "time": 1788646857.202,
+          "cpu": {
+            "usage": 15.490620268639885,
+            "temp": 45.0
+          },
+          "ram": {
+            "free": 3241201664,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 61436,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 246,
+            "framesWritten": 2202720,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 211175
+          }
+        },
+        {
+          "time": 1788646859.7900314,
+          "cpu": {
+            "usage": 22.136095771772148,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3239587840,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 66441,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 241,
+            "framesWritten": 2326560,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 213755
+          }
+        },
+        {
+          "time": 1788646861.8742826,
+          "cpu": {
+            "usage": 18.9628226681263,
+            "temp": 47.7
+          },
+          "ram": {
+            "free": 3249446912,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 66441,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 252,
+            "framesWritten": 2427360,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 215848
+          }
+        },
+        {
+          "time": 1788646863.943426,
+          "cpu": {
+            "usage": 18.582289882970983,
+            "temp": 48.0
+          },
+          "ram": {
+            "free": 3180118016,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 71443,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 246,
+            "framesWritten": 2526240,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 217914
+          }
+        },
+        {
+          "time": 1788646866.0173678,
+          "cpu": {
+            "usage": 15.798732331596261,
+            "temp": 45.0
+          },
+          "ram": {
+            "free": 3179163648,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 71443,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 249,
+            "framesWritten": 2626080,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 219985
+          }
+        },
+        {
+          "time": 1788646868.0815096,
+          "cpu": {
+            "usage": 17.607522702019967,
+            "temp": 46.3
+          },
+          "ram": {
+            "free": 3218620416,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 71443,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 245,
+            "framesWritten": 2724960,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 222047
+          }
+        },
+        {
+          "time": 1788646870.155703,
+          "cpu": {
+            "usage": 17.969070220990854,
+            "temp": 46.3
+          },
+          "ram": {
+            "free": 3216404480,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 76452,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 250,
+            "framesWritten": 2824800,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 224124
+          }
+        },
+        {
+          "time": 1788646872.237424,
+          "cpu": {
+            "usage": 17.02080679894287,
+            "temp": 46.3
+          },
+          "ram": {
+            "free": 3206721536,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 76452,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 249,
+            "framesWritten": 2924640,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 226208
+          }
+        },
+        {
+          "time": 1788646874.3439574,
+          "cpu": {
+            "usage": 17.496904446099364,
+            "temp": 43.9
+          },
+          "ram": {
+            "free": 3205124096,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 81451,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 244,
+            "framesWritten": 3025440,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 228000
+          }
+        },
+        {
+          "time": 1788646876.4069688,
+          "cpu": {
+            "usage": 15.845276256233722,
+            "temp": 48.0
+          },
+          "ram": {
+            "free": 3204194304,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 81451,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 239,
+            "framesWritten": 3124320,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 228000
+          }
+        },
+        {
+          "time": 1788646878.46871,
+          "cpu": {
+            "usage": 20.005171909597284,
+            "temp": 44.6
+          },
+          "ram": {
+            "free": 3172503552,
+            "total": 7646343168,
+            "low": false
+          },
+          "playing": true,
+          "title": "How to disappear",
+          "positionMs": 82385,
+          "stats": {
+            "engine": "native",
+            "outputQueueMs": 257,
+            "framesWritten": 3224160,
+            "audioTrackUnderruns": 0,
+            "sinkLatencyMs": 109,
+            "timeSynced": true,
+            "progressMs": 228000
+          }
+        }
+      ]
+    }
+  },
+  "optimizedSourceSha256": {
+    "app/lib/managers/sendspin/artwork_cache.dart": "ce803c3bf8fe88f2dd3b739c25626f8c5d58db85cd5df693e63e118f81879c4d",
+    "app/lib/managers/sendspin/sendspin_manager.dart": "51ce7f522dc73a8ba759a95263a7afb7f5b2f67aa5dbe45df2c44f755043d0eb",
+    "app/lib/ui/sendspin_player_overlay.dart": "86af685140c502d335391dc680da920f73b7240a99f1a2c99010e50c95e6d537"
+  }
+}
