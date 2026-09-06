@@ -25,7 +25,13 @@ String? lyricsRetryArtist(String artist) {
 /// A non-empty [player] lands the interface on that player instead of
 /// whichever one it showed last: Music Assistant's frontend routes in the
 /// URL fragment, so the parameter goes after the hash (issue #265).
-String? musicAssistantWebUrl(String raw, {String player = ''}) {
+/// [fullscreen] opens Music Assistant's Now Playing view, using its last
+/// selected player when no player is supplied.
+String? musicAssistantWebUrl(
+  String raw, {
+  String player = '',
+  bool fullscreen = false,
+}) {
   final trimmed = raw.trim().replaceAll(RegExp(r'/+$'), '');
   if (trimmed.isEmpty) return null;
   final withScheme = trimmed.startsWith('http') || trimmed.startsWith('ws')
@@ -42,8 +48,10 @@ String? musicAssistantWebUrl(String raw, {String player = ''}) {
         },
       )
       .toString();
-  if (player.trim().isEmpty) return base;
-  return '$base/#/?player=${Uri.encodeComponent(player.trim())}';
+  if (player.trim().isEmpty && !fullscreen) return base;
+  final target = player.trim().isEmpty ? 'true' : player.trim();
+  return '$base/#/?player=${Uri.encodeComponent(target)}'
+      '${fullscreen ? '&showFullscreenPlayer=true' : ''}';
 }
 
 /// The player the Music Assistant web interface should land on: the

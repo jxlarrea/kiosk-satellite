@@ -307,6 +307,10 @@ class GesturesManager extends Manager {
         // reveals the card while sendspin.show_player is off (the card
         // override), so the setting itself stays untouched.
         bus.publish(const SendspinShowPlayerRequested());
+      case 'now_playing':
+        await _run('showNowPlaying', const {});
+      case 'music_assistant':
+        await _run('showMusicAssistant', const {});
       case 'app_launcher':
         // Open only: the overlay's close button and its scrim already close
         // it. The command carries the launcher's own gates (master switch

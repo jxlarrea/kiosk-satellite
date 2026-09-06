@@ -117,6 +117,50 @@ void main() {
       expect(browser.overlayDismissible.value, isTrue);
     });
 
+    for (final fullscreen in [false, true]) {
+      test(
+        'Music Assistant landing follows fullscreen=$fullscreen with its menu hidden',
+        () async {
+          await build(
+            extra: {
+              'ks.sendspin.ma_url': 'https://ma.local:8095',
+              'ks.sendspin.ma_shortcut': false,
+              'ks.sendspin.ma_open_fullscreen': fullscreen,
+              'ks.sendspin.enabled': true,
+              'ks.sendspin.local_player_name': 'Kitchen & Dining',
+            },
+          );
+          final result = await commands.execute('showMusicAssistant', const {});
+          expect(result.ok, isTrue);
+          expect(
+            browser.overlayUrl.value,
+            'https://ma.local:8095/#/?player=Kitchen%20%26%20Dining'
+            '${fullscreen ? '&showFullscreenPlayer=true' : ''}',
+          );
+          expect(browser.overlayDismissible.value, isTrue);
+        },
+      );
+    }
+
+    test(
+      'Music Assistant fullscreen without a player uses the last selection',
+      () async {
+        await build(
+          extra: {
+            'ks.sendspin.ma_url': 'https://ma.local:8095',
+            'ks.sendspin.ma_open_fullscreen': true,
+            'ks.sendspin.enabled': false,
+          },
+        );
+        final result = await commands.execute('showMusicAssistant', const {});
+        expect(result.ok, isTrue);
+        expect(
+          browser.overlayUrl.value,
+          'https://ma.local:8095/#/?player=true&showFullscreenPlayer=true',
+        );
+      },
+    );
+
     test('dismissal clears both, from every path', () async {
       await build();
       browser.showLinkOverlay('https://example.com/a');

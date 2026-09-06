@@ -33,6 +33,8 @@
 ///  - camera_view:      mode (show|hide), viewId (empty = default view);
 ///                      show toggles: the same gesture again closes the view
 ///  - sendspin_player:  show the floating player card (a fling hides it)
+///  - now_playing:      show the full-screen Now Playing view
+///  - music_assistant:  open the Music Assistant web interface
 ///  - app_launcher:     open the app launcher overlay (issue #318)
 ///  - screensaver:      start the screensaver
 ///  - screensaver_stop: stop it (redundant for touch, made for claps)
@@ -193,6 +195,10 @@ String describeGestureAction(Map<String, Object?> action) {
           : 'Toggle camera view $name';
     case 'sendspin_player':
       return 'Show the floating player';
+    case 'now_playing':
+      return 'Show Now Playing';
+    case 'music_assistant':
+      return 'Open Music Assistant';
     case 'app_launcher':
       return 'Open the app launcher';
     case 'screensaver':

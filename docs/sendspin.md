@@ -45,6 +45,7 @@ The Sendspin protocol transmits audio data along with basic track name, artist, 
 | Auth token | empty | A long-lived access token generated in Music Assistant under **Settings > Users**. Read-only permissions suffice for lyrics, while menu shortcuts browse using the privileges of the token owner. |
 | Validate connection | button | Authenticates against the server API to verify credentials and port settings. |
 | Show in the kiosk menu | on | Toggles the Music Assistant web shortcut in the kiosk drawer menu. |
+| Open directly to Now Playing | off | Opens Music Assistant's full-screen player from the drawer shortcut or the Open Music Assistant gesture. |
 | Close after inactivity | 0s | Inactivity timer (in seconds) before the opened Music Assistant web overlay automatically closes and returns to the dashboard. Setting this to `0s` keeps the view open until closed manually. |
 | Hide the close button | off | Removes the floating close button from the Music Assistant web overlay, avoiding visual overlap with the page's native controls. The physical back button and inactivity timer still close the view. |
 
@@ -123,6 +124,8 @@ When configured to follow an external player, the kiosk acts purely as a remote 
 When a server address is configured, a **Music Assistant** entry appears in the kiosk drawer menu. Clicking this opens Music Assistant's web interface directly over the dashboard inside an overlay. Users can browse libraries, search, manage queues, and trigger playback without unloading the underlying dashboard or interrupting Voice Satellite background listening.
 
 The web interface automatically pre-selects the active player assigned in app settings.
+
+Enable **Open directly to Now Playing** under **Media Player > Music Assistant** to open Music Assistant's full-screen player immediately. The **Open Music Assistant** gesture uses the same preference and works even with **Show in the kiosk menu** turned off. When no player is assigned, Music Assistant uses its last selected player.
 
 * **Close after inactivity**: Automatically closes the web overlay after a set period of touch inactivity, returning the display to the dashboard. Scrolling and tapping reset the timer.
 * **Hide the close button**: Removes the overlay's top-right close button to prevent visual interference with Music Assistant's native interface elements.

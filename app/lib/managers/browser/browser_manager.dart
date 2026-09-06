@@ -309,6 +309,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
                 localPlayerName: _settings.get(defs.sendspinLocalPlayerName),
                 localPlayerEnabled: _settings.get(defs.sendspinEnabled),
               ),
+              fullscreen: _settings.get(defs.sendspinMaOpenFullscreen),
             );
             if (url == null) {
               return const CommandResult.fail(

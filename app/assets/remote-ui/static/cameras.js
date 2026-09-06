@@ -74,6 +74,8 @@ export const CAMERA_ICONS = {
     + '<path d="M3 12h18M12 3a13.5 13.5 0 0 1 0 18M12 3a13.5 13.5 0 0 0 0 18"/>',
   speaker: '<rect x="6" y="3" width="12" height="18" rx="2.5"/>'
     + '<circle cx="12" cy="14.5" r="3.5"/><circle cx="12" cy="7.5" r="1"/>',
+  music: '<rect x="6" y="3" width="15" height="15" rx="2"/>'
+    + '<path d="M3 6v15h15M15 13V6h3"/><circle cx="13" cy="13" r="2"/>',
   moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4'
     + 'm11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/>',

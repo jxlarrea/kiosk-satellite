@@ -4710,6 +4710,19 @@ const sendspinMaShortcut = SettingDef<bool>(
   section: 'Kiosk menu',
 );
 
+const sendspinMaOpenFullscreen = SettingDef<bool>(
+  key: 'sendspin.ma_open_fullscreen',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Open directly to Now Playing',
+  description:
+      "Open Music Assistant's full-screen player from the kiosk menu or "
+      'the Open Music Assistant gesture.',
+  category: 'Sendspin',
+  subpage: 'Music Assistant',
+  section: 'Kiosk menu',
+);
+
 /// A wall tablet's way back to the dashboard when whoever queued a song
 /// walked off: the dashboard is what the screen is for and a Music
 /// Assistant page left open is a screen doing nothing. Zero keeps it up
@@ -6357,6 +6370,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinMaUrl,
   sendspinMaToken,
   sendspinMaShortcut,
+  sendspinMaOpenFullscreen,
   sendspinMaAutoClose,
   sendspinMaHideClose,
   sendspinSonosGroupVolume,

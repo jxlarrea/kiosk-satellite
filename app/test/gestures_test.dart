@@ -202,6 +202,8 @@ void main() {
         'showCameraView',
         'hideCameraView',
         'showAppLauncher',
+        'showNowPlaying',
+        'showMusicAssistant',
         'launchApp',
         'openUri',
         'openSystemSettings',
@@ -411,6 +413,42 @@ void main() {
       await pumpEventQueue();
       expect(revealed, 1, reason: 'the overlay un-dismisses on this event');
     });
+
+    test(
+      'now_playing runs the full-screen command from a saved gesture',
+      () async {
+        await build(
+          '[{"id":"g1","trigger":{"type":"finger_hold","fingers":2,'
+          '"holdMs":1000},"action":{"type":"now_playing"}}]',
+        );
+        var floatingReveals = 0;
+        final subscription = bus.on<SendspinShowPlayerRequested>().listen(
+          (_) => floatingReveals++,
+        );
+        await fire('g1');
+        expect(executed, hasLength(1));
+        expect(executed.single.$1, 'showNowPlaying');
+        expect(executed.single.$2, isEmpty);
+        expect(floatingReveals, 0);
+        expect(outcomes, isEmpty);
+        await subscription.cancel();
+      },
+    );
+
+    test(
+      'music_assistant opens through the shared command with its menu hidden',
+      () async {
+        await build(
+          '[{"id":"g1","trigger":{"type":"finger_hold","fingers":2,'
+          '"holdMs":1000},"action":{"type":"music_assistant"}}]',
+        );
+        await settings.set(defs.sendspinMaShortcut, false);
+        await fire('g1');
+        expect(executed, hasLength(1));
+        expect(executed.single.$1, 'showMusicAssistant');
+        expect(executed.single.$2, isEmpty);
+      },
+    );
 
     test('camera_view show and hide pick the right command', () async {
       await build(

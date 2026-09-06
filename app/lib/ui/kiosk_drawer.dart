@@ -46,20 +46,9 @@ class KioskDrawer extends StatelessWidget {
 
   AppContainer get c => container;
 
-  /// The Music Assistant web interface to offer, or null when the shortcut
-  /// is switched off or no server address has been set.
-  String? get _musicUrl => c.settings.get(defs.sendspinMaShortcut)
-      ? musicAssistantWebUrl(
-          c.settings.get(defs.sendspinMaUrl),
-          // Land on the player this kiosk represents (issue #265): the
-          // followed remote player, or this device's own.
-          player: maLandingPlayer(
-            remotePlayerName: maFollowedPlayerName(c.settings),
-            localPlayerName: c.settings.get(defs.sendspinLocalPlayerName),
-            localPlayerEnabled: c.settings.get(defs.sendspinEnabled),
-          ),
-        )
-      : null;
+  bool get _showMusicAssistant =>
+      c.settings.get(defs.sendspinMaShortcut) &&
+      musicAssistantWebUrl(c.settings.get(defs.sendspinMaUrl)) != null;
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +228,7 @@ class KioskDrawer extends StatelessWidget {
                               // only fail is worse than no entry.
                               if (!restricted ||
                                   c.settings.get(defs.kioskAllowMusic))
-                                if (_musicUrl case final url?)
+                                if (_showMusicAssistant)
                                   _item(
                                     divided: sep(),
                                     context,
@@ -247,9 +236,10 @@ class KioskDrawer extends StatelessWidget {
                                     'Music Assistant',
                                     () {
                                       onClose();
-                                      c.commands.execute('showLinkPage', {
-                                        'url': url,
-                                      });
+                                      c.commands.execute(
+                                        'showMusicAssistant',
+                                        const {},
+                                      );
                                     },
                                   ),
                               // The floating player's menu entry (issue

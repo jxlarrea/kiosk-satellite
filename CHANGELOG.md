@@ -2,10 +2,18 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.21 - 2026-09-05
 
 ### Added
+- **Open Music Assistant directly to Now Playing.** A new **Open directly to Now Playing** toggle under Media Player > Music Assistant, off by default, opens Music Assistant's full-screen player from the drawer shortcut. A new **Open Music Assistant** gesture action uses the same preference and works even when the drawer shortcut is hidden. Both select the kiosk's player and use the existing web interface with automatic sign-in.
+- **Show Now Playing gesture action.** A new action in the Gestures editor on the device and in the remote admin opens the full-screen Now Playing view for the selected media player, including a paused track. It requires Now Playing to be enabled and a track to be loaded.
 - **Optional update helper for devices that require installation confirmation.** A helper bundled in the APK starts with one ADB command and lets Meta Portals, Amazon Fire tablets and other devices install Kiosk Satellite updates without a tap. An Optional update helper subpage appears in Device settings on the device and in the remote admin when native silent installation is unavailable, with status, setup instructions and a documentation link. Android's native silent installer takes priority when available. The helper survives app updates but needs restarting through ADB after each device reboot.
+- **Pause HA dashboard camera streams during screensaver.** A new switch under Home Assistant > Optimizations, on by default, releases supported muted camera streams in Home Assistant's standard dashboard camera component while an opaque screensaver covers the dashboard. The streams reconnect when the screensaver closes. The Dim screensaver keeps them playing, as do unmuted streams. Custom camera components, the device camera and the app's Camera Streams feature keep their existing behavior.
+
+### Changed
+- **Less processing overhead for wake word detection.** The wake word engines reuse audio and inference buffers and reduce repeated copying and diagnostic messages while listening.
+- **More efficient Now Playing rendering and artwork loading.** The view avoids rebuilding unchanged content as playback advances and shares cached covers and pending downloads between its surfaces and the remote admin.
+- **More efficient photo screensavers.** Photos decode at the size needed for the display, blurred backdrops use smaller images and upcoming slides are prepared before they appear. Immich requests are shared when multiple parts of the slideshow need the same image.
 
 ### Fixed
 - **Fleet Management documentation opens without replacing the Home Assistant dashboard.** The link now uses the dedicated external websites WebView with a close button.
