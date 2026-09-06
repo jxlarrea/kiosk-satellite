@@ -615,13 +615,13 @@ class DeviceDetails(
     /**
      * Live CPU load and temperature, both `null` when the platform won't answer.
      *
-     * Neither comes from `/proc/stat` — an app can't read it (SELinux denies
+     * Neither comes from `/proc/stat`: an app can't read it (SELinux denies
      * `proc_stat`), and on some kernels its idle field is broken anyway (an
      * Echo Show 5 reports idle jumps of half a million seconds). What sysfs
      * does let an untrusted app read, under the same label as the cpufreq
      * files, is cpuidle: each core's cumulative residency in its idle states.
-     * Time not spent idle is the definition of utilisation, so the usage
-     * number is derived from that (see [cpuUsage]), with the old
+     * Awake time not spent idle gives utilization, so the usage number
+     * is derived from that (see [cpuUsage]), with the old
      * frequency-position estimate as the fallback where cpuidle is absent.
      */
     private fun cpu(): Map<String, Any?> {
@@ -653,20 +653,11 @@ class DeviceDetails(
         }
     }
 
-    /** One reading of every core's summed idle-state residency (µs) and
-     *  entry count, with its online flag and when the reading was taken. */
-    private class IdleSnapshot(
-        val atNanos: Long,
-        val idleUs: Map<String, Long>,
-        val entries: Map<String, Long>,
-        val online: Map<String, Boolean>,
-    )
-
     /** The previous snapshot, so each report covers the window since the
      *  last one instead of blocking to measure a fresh window. */
-    private var lastIdle: IdleSnapshot? = null
+    private var lastIdle: CpuIdleSnapshot? = null
 
-    private fun idleSnapshot(): IdleSnapshot? {
+    private fun idleSnapshot(): CpuIdleSnapshot? {
         val cores = File("/sys/devices/system/cpu")
             .listFiles { f -> f.name.matches(Regex("cpu[0-9]+")) } ?: return null
         val idle = HashMap<String, Long>()
@@ -692,28 +683,35 @@ class DeviceDetails(
             online[core.name] = readLong(File(core, "online"))?.let { it != 0L } ?: true
         }
         if (idle.isEmpty()) return null
-        return IdleSnapshot(SystemClock.elapsedRealtimeNanos(), idle, entries, online)
+        // Android's System.nanoTime uses CLOCK_MONOTONIC, which excludes
+        // suspend on every supported API level. elapsedRealtime includes
+        // suspend and is only used to decide whether a sample is stale.
+        return CpuIdleSnapshot(
+            SystemClock.elapsedRealtimeNanos(), System.nanoTime(), idle, entries, online,
+        )
     }
 
     /**
-     * Utilisation as 1 minus idle residency, averaged over cores.
+     * Utilization as 1 minus idle residency during awake time, averaged over cores.
      *
      * The previous estimate read each core's position between its min and max
      * clock, which pins at 100% on any device whose governor parks the cores
-     * at max — LineageOS's interactive governor does exactly that, so Echo
+     * at max. LineageOS's interactive governor does exactly that, so Echo
      * Shows and ThinkSmarts reported a flat 100% forever (issue #76). Idle
      * residency is what the silicon actually did, whatever the clocks claim.
      *
-     * The window is whatever elapsed since the previous call (the admin polls
-     * every few seconds, ESPHome once a minute). A first call, or a window so
-     * stale it may span a suspend (cpuidle counters stop during suspend, the
-     * clock does not), takes a short paired sample instead.
+     * The window covers awake time since the previous call (the admin polls
+     * every few seconds, ESPHome once a minute). A first call, a window with
+     * less than half a second awake or a sample older than five minutes
+     * takes a short paired sample instead. Short suspends between regular
+     * polls are excluded from the calculation too.
      */
     @Synchronized
     private fun cpuUsage(): Double? {
         var first = lastIdle ?: idleSnapshot() ?: return frequencyLoad()
-        val age = SystemClock.elapsedRealtimeNanos() - first.atNanos
-        if (age < 500_000_000L || age > 300_000_000_000L) {
+        val age = SystemClock.elapsedRealtimeNanos() - first.elapsedNanos
+        val awakeAge = System.nanoTime() - first.awakeNanos
+        if (awakeAge < 500_000_000L || age > 300_000_000_000L) {
             first = idleSnapshot() ?: return frequencyLoad()
             try {
                 Thread.sleep(500)
@@ -723,35 +721,7 @@ class DeviceDetails(
         }
         val now = idleSnapshot() ?: return frequencyLoad()
         lastIdle = now
-        val wallUs = (now.atNanos - first.atNanos) / 1000.0
-        if (wallUs <= 0) return frequencyLoad()
-        var busySum = 0.0
-        var n = 0
-        for ((name, idleNow) in now.idleUs) {
-            val idleBefore = first.idleUs[name] ?: continue
-            // Hotplugging governors park idle cores, and a parked core's
-            // counters freeze, which is indistinguishable from pegged by the
-            // idle delta alone (issue #76: parked cores read as a permanent
-            // 100%). Rules, in order:
-            //  - offline at either edge of the window: parked for (most of)
-            //    it. That is free capacity, not load.
-            //  - online at both edges but the counters never moved: a core
-            //    that genuinely never idled, i.e. pegged.
-            //  - otherwise: one minus its idle share of the window.
-            val offlineAtEdge =
-                first.online[name] == false || now.online[name] == false
-            val frozen = idleNow == idleBefore &&
-                now.entries[name] == first.entries[name]
-            val busy = when {
-                offlineAtEdge -> 0.0
-                frozen -> 1.0
-                else -> (1.0 - (idleNow - idleBefore) / wallUs).coerceIn(0.0, 1.0)
-            }
-            busySum += busy
-            n++
-        }
-        if (n == 0) return frequencyLoad()
-        return busySum / n * 100.0
+        return now.usageSince(first) ?: frequencyLoad()
     }
 
     /**
