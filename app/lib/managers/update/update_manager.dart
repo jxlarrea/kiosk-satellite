@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import 'update_http_client.dart';
 
 /// A newer release on GitHub, ready to fetch.
 class UpdateInfo {
@@ -120,7 +121,7 @@ class UpdateManager extends Manager {
   /// Builds the client for the release query and the APK download. Swapped
   /// in tests; production always hands back a real one.
   @visibleForTesting
-  http.Client Function() clientFactory = http.Client.new;
+  http.Client Function() clientFactory = createUpdateHttpClient;
 
   Timer? _firstCheck;
   Timer? _timer;
