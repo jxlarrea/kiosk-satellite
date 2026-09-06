@@ -6,12 +6,32 @@ import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/managers/sendspin/lyrics.dart';
+import 'package:kiosk_satellite/managers/sendspin/music_assistant_api.dart';
+import 'package:kiosk_satellite/managers/sendspin/remote_player.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/ui/lyrics_view.dart';
 import 'package:kiosk_satellite/ui/photo_frames.dart';
 import 'package:kiosk_satellite/ui/screensaver_view.dart';
 import 'package:kiosk_satellite/ui/sendspin_player_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _GroupApi extends MusicAssistantApi {
+  _GroupApi() : super(baseUrl: 'http://ma.local', token: 'test');
+
+  @override
+  Future<RemoteGroup?> fetchGroup(
+    String playerId, {
+    String ownName = '',
+  }) async => RemoteGroup(
+    selfId: playerId,
+    leaderId: playerId,
+    leaderName: ownName,
+    members: [
+      for (var i = 0; i < 20; i++)
+        GroupMember(id: '$i', name: 'Speaker $i', inGroup: false),
+    ],
+  );
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +157,81 @@ void main() {
       await c.screensaver.dispose();
     });
   }
+
+  for (final size in [
+    const Size(1280, 800),
+    const Size(800, 1280),
+    const Size(800, 480),
+  ]) {
+    testWidgets(
+      'speaker menu stays below its pill inside the player at $size',
+      (tester) async {
+        await boot(
+          tester,
+          size: size,
+          prefs: {
+            'ks.sendspin.ma_url': 'http://ma.local',
+            'ks.sendspin.ma_token': 'test',
+            'ks.sendspin.client_id': 'tablet',
+          },
+        );
+        c.sendspin.apiFactory = ({required baseUrl, required token}) =>
+            _GroupApi();
+        final pane = tester.getRect(player);
+        final pill = find.ancestor(
+          of: find.byIcon(Icons.expand_more_rounded),
+          matching: find.byType(InkWell),
+        );
+        final pillRect = tester.getRect(pill);
+        await tester.tap(pill);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        final menu = tester.getRect(
+          find.byKey(const ValueKey('speaker-group-menu')),
+        );
+        expect(menu.left, closeTo(pillRect.left, 1));
+        expect(menu.top, closeTo(pillRect.bottom + 8, 1));
+        expect(menu.left, greaterThanOrEqualTo(pane.left));
+        expect(menu.right, lessThanOrEqualTo(pane.right));
+        expect(menu.bottom, lessThanOrEqualTo(pane.bottom));
+        expect(find.text('Speaker 0'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+        await c.screensaver.dispose();
+      },
+    );
+  }
+
+  testWidgets('widget text shadow switches live independently of metadata', (
+    tester,
+  ) async {
+    await boot(
+      tester,
+      mode: 'black',
+      prefs: {
+        'ks.screensaver.widgets':
+            '[{"type":"clock","position":"top_left","config":{}}]',
+        'ks.screensaver.immich_metadata_text_shadow': false,
+      },
+    );
+    final text = find
+        .descendant(
+          of: find.byType(ClockWidgetOverlay),
+          matching: find.byType(Text),
+        )
+        .first;
+    expect(tester.widget<Text>(text).style!.shadows, isNotEmpty);
+    await c.settings.set(defs.screensaverWidgetTextShadow, false);
+    await tester.pump();
+    await tester.pump();
+    expect(tester.widget<Text>(text).style!.shadows, isEmpty);
+    await c.settings.set(defs.screensaverWidgetTextShadow, true);
+    await tester.pump();
+    await tester.pump();
+    expect(tester.widget<Text>(text).style!.shadows, isNotEmpty);
+    await tester.pumpWidget(const SizedBox());
+    await c.screensaver.dispose();
+  });
 
   testWidgets('the toggle applies live and persists', (tester) async {
     await boot(tester, split: false);

@@ -1261,16 +1261,37 @@ class _PlayerChip extends StatelessWidget {
 /// the command, spins on its row until the source reports the group back
 /// and puts the box back if the source refused.
 class _GroupMenu extends StatefulWidget {
-  const _GroupMenu({required this.container});
+  const _GroupMenu({
+    required this.container,
+    required this.anchor,
+    required this.panelWidth,
+  });
 
   final AppContainer container;
+  final Rect anchor;
+  final double panelWidth;
 
-  static Future<void> show(BuildContext context, AppContainer container) =>
-      showDialog<void>(
-        context: context,
-        barrierColor: Colors.black26,
-        builder: (_) => _GroupMenu(container: container),
-      );
+  static Future<void> show(BuildContext context, AppContainer container) {
+    final box = context.findRenderObject()! as RenderBox;
+    final overlay =
+        Navigator.of(
+              context,
+              rootNavigator: true,
+            ).overlay!.context.findRenderObject()!
+            as RenderBox;
+    final anchor = box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
+    final panelWidth = MediaQuery.sizeOf(context).width;
+    return showDialog<void>(
+      context: context,
+      useSafeArea: false,
+      barrierColor: Colors.black26,
+      builder: (_) => _GroupMenu(
+        container: container,
+        anchor: anchor,
+        panelWidth: panelWidth,
+      ),
+    );
+  }
 
   @override
   State<_GroupMenu> createState() => _GroupMenuState();
@@ -1390,23 +1411,33 @@ class _GroupMenuState extends State<_GroupMenu> {
         style: const TextStyle(color: Colors.white54, fontSize: 14),
       ),
     );
+    final width = min(340.0, min(widget.panelWidth - 24, screen.width - 24));
+    final left = widget.anchor.left.clamp(12.0, screen.width - width - 12);
+    final top = widget.anchor.bottom + 8;
     return Align(
       alignment: Alignment.topLeft,
       child: Padding(
-        padding: EdgeInsets.only(
-          left: 12,
-          top: 12 + MediaQuery.paddingOf(context).top + 48,
-        ),
+        padding: EdgeInsets.only(left: left, top: top),
         child: Material(
+          key: const ValueKey('speaker-group-menu'),
           color: const Color(0xF0202020),
           elevation: 8,
           borderRadius: BorderRadius.circular(16),
           clipBehavior: Clip.antiAlias,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minWidth: 260,
-              maxWidth: 340,
-              maxHeight: screen.height * 0.7,
+              minWidth: width,
+              maxWidth: width,
+              maxHeight: min(
+                screen.height * 0.7,
+                max(
+                  0,
+                  screen.height -
+                      top -
+                      MediaQuery.paddingOf(context).bottom -
+                      12,
+                ),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

@@ -90,7 +90,7 @@ Each metadata line has its own toggle switch. If you point your screensaver at a
 
 When placed in a right hand corner, text and icons align to the right, mirroring the layout of right aligned widgets.
 
-The overlay rests on a subtle dark vignette to keep text readable against bright photos. You can adjust the **Vignette strength** slider from 0 to 100 percent (80 percent by default). Setting it to 0 removes the vignette entirely, leaving clean text over the photo.
+**Text drop shadow** is enabled by default and adds a defined shadow beneath metadata text. It is independent of the widget text shadow toggle and updates live. The overlay rests on a subtle dark vignette to keep text readable against bright photos. You can adjust the **Vignette strength** slider from 0 to 100 percent (40 percent by default). Setting it to 0 removes the vignette entirely, leaving clean text over the photo.
 
 When a pair of portrait photos is on screen, the overlay overrides your corner selection and uses both bottom corners so each photo's metadata sits directly underneath it.
 

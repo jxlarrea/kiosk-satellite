@@ -116,6 +116,8 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
     final live = {
       defs.screensaverWidgets.key,
       defs.screensaverWidgetScale.key,
+      defs.screensaverWidgetTextShadow.key,
+      defs.screensaverImmichMetadataTextShadow.key,
       defs.screensaverVignetteStrength.key,
       defs.screensaverImmichVignetteStrength.key,
       defs.screensaverImmichMetadata.key,
@@ -1130,10 +1132,8 @@ Alignment _cornerAlignment(String corner) => switch (corner) {
 /// The three stops of a corner vignette at [strength] percent, the corner's
 /// darkness. Front-loaded: still three quarters of the corner's darkness
 /// well past a third of the way out, so the text area is solidly backed
-/// before the long fade begins. At the default 80 the corner is 0xCC black
-/// and the middle stop 0x99, the look from before the Vignette strength
-/// slider: anything lighter left the widgets washing out on bright daylight
-/// photos, and the slider is there for whoever disagrees. Out-of-range
+/// before the long fade begins. The default 40 keeps the photo visible
+/// behind the text. Out-of-range
 /// values clamp, so an imported 250 is a full black corner, not an overflow.
 List<Color> vignetteColors(num strength) {
   final corner = (strength.toDouble().clamp(0, 100) / 100 * 255).round();
@@ -1143,6 +1143,13 @@ List<Color> vignetteColors(num strength) {
     const Color(0x00000000),
   ];
 }
+
+List<Shadow> _overlayTextShadows(
+  AppContainer container, {
+  defs.SettingDef<bool> setting = defs.screensaverWidgetTextShadow,
+}) => container.settings.get(setting)
+    ? const [Shadow(color: Colors.black87, offset: Offset(0, 2), blurRadius: 4)]
+    : const [];
 
 /// A soft radial darkening anchored to [corner], painted behind a corner
 /// overlay so its text survives a bright photo. Radial rather than a boxed
@@ -1265,7 +1272,7 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
         100;
     final clockSize = max(min(size.width, size.height) * 0.063, 44.0) * scale;
     // Readable over a bright photo without boxing the text in.
-    const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
+    final shadows = _overlayTextShadows(widget.container);
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,
@@ -1426,7 +1433,7 @@ class _BatteryWidgetOverlayState extends State<BatteryWidgetOverlay> {
         widget.container.settings.get(defs.screensaverWidgetScale).toDouble() /
         100;
     final textSize = max(min(size.width, size.height) * 0.042, 30.0) * scale;
-    const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
+    final shadows = _overlayTextShadows(widget.container);
     final glyph = Icon(
       _batteryIcon(level, charging: _charging),
       size: textSize * 1.15,
@@ -1707,7 +1714,7 @@ class _EntityWidgetOverlayState extends State<EntityWidgetOverlay> {
         widget.container.settings.get(defs.screensaverWidgetScale).toDouble() /
         100;
     final textSize = max(min(size.width, size.height) * 0.042, 30.0) * scale;
-    const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
+    final shadows = _overlayTextShadows(widget.container);
     final glyph = GlanceIcon(
       entity: _entity,
       size: textSize * 1.15,
@@ -2000,7 +2007,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
         widget.container.settings.get(defs.screensaverWidgetScale).toDouble() /
         100;
     final tempSize = max(min(size.width, size.height) * 0.063, 44.0) * scale;
-    const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
+    final shadows = _overlayTextShadows(widget.container);
 
     TextStyle line({
       double size = 16,
@@ -4075,7 +4082,10 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
 
   /// The panel itself, anchored to [corner].
   Widget _panel(Alignment corner) {
-    const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
+    final shadows = _overlayTextShadows(
+      widget.container,
+      setting: defs.screensaverImmichMetadataTextShadow,
+    );
     TextStyle style({double size = 16, FontWeight? weight, double alpha = 1}) =>
         TextStyle(
           fontFamily: 'Rubik',

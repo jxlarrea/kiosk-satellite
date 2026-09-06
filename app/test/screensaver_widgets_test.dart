@@ -277,10 +277,10 @@ void main() {
   });
 
   group('vignette strength', () {
-    test('is a Widgets group slider defaulting to the pre-slider look', () {
+    test('is a Widgets group slider defaulting to 40 percent', () {
       final def = defs.screensaverVignetteStrength;
       expect(defs.allSettings, contains(def));
-      expect(def.defaultValue, 80);
+      expect(def.defaultValue, 40);
       expect(def.min, 0);
       expect(def.max, 100);
       expect(def.subpage, defs.screensaverWidgetScale.subpage);
@@ -299,13 +299,13 @@ void main() {
       expect(def.dependsOn, defs.screensaverImmichMetadata.key);
     });
 
-    test('the default reproduces the original gradient', () {
+    test('the default uses a lighter gradient', () {
       final colors = vignetteColors(
         defs.screensaverVignetteStrength.defaultValue,
       );
       expect(colors, [
-        const Color(0xCC000000),
-        const Color(0x99000000),
+        const Color(0x66000000),
+        const Color(0x4D000000),
         const Color(0x00000000),
       ]);
     });

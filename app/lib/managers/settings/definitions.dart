@@ -1419,6 +1419,17 @@ const screensaverWidgetScale = SettingDef<num>(
   unit: '%',
 );
 
+const screensaverWidgetTextShadow = SettingDef<bool>(
+  key: 'screensaver.widget_text_shadow',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Text drop shadow',
+  description: 'Add a drop shadow to widget text for readability on photos.',
+  category: 'Screensaver',
+  section: 'Widgets',
+  subpage: 'Widgets',
+);
+
 // One knob for every widget's corner vignette: the corners all sit on the
 // same panel, so they want the same darkness. The value is the darkness at
 // the corner itself; 80 is the look every install had before the slider,
@@ -1428,7 +1439,7 @@ const screensaverWidgetScale = SettingDef<num>(
 const screensaverVignetteStrength = SettingDef<num>(
   key: 'screensaver.vignette_strength',
   type: SettingType.number,
-  defaultValue: 80,
+  defaultValue: 40,
   title: 'Vignette strength',
   description:
       'Darkness of the shading behind the widgets, for readability on '
@@ -2618,12 +2629,24 @@ const screensaverImmichMetadataPosition = SettingDef<String>(
   dependsOn: 'screensaver.immich_metadata',
 );
 
+const screensaverImmichMetadataTextShadow = SettingDef<bool>(
+  key: 'screensaver.immich_metadata_text_shadow',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Text drop shadow',
+  description: 'Add a drop shadow to metadata text for readability on photos.',
+  category: 'Screensaver',
+  section: 'Metadata',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_metadata',
+);
+
 // The metadata overlay's own vignette, the widgets' slider's twin (same
 // range, same default, same meaning) so the two can be set apart.
 const screensaverImmichVignetteStrength = SettingDef<num>(
   key: 'screensaver.immich_vignette_strength',
   type: SettingType.number,
-  defaultValue: 80,
+  defaultValue: 40,
   title: 'Vignette strength',
   description:
       'Darkness of the shading behind the details, for readability on '
@@ -6302,6 +6325,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichMetadataCamera,
   screensaverImmichMetadataLocation,
   screensaverImmichMetadataPosition,
+  screensaverImmichMetadataTextShadow,
   screensaverImmichVignetteStrength,
   screensaverImmichPeople,
   screensaverImmichExcludePeople,
@@ -6322,6 +6346,7 @@ const List<SettingDef<Object>> allSettings = [
   // so it sits between them and the other overlay group, At a Glance.
   screensaverWidgets,
   screensaverWidgetScale,
+  screensaverWidgetTextShadow,
   screensaverVignetteStrength,
   // The behavior rows first, then the Appearance group under its own
   // heading at the end of the subpage.
