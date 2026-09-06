@@ -5,6 +5,28 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+/// Overrides photo filling in a shared screensaver panel without changing
+/// the saved preference of any slideshow. Null keeps the slideshow's choice.
+class PhotoFillOverride extends InheritedWidget {
+  const PhotoFillOverride({
+    super.key,
+    required this.fill,
+    required super.child,
+  });
+
+  final String? fill;
+
+  static String? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<PhotoFillOverride>()?.fill;
+
+  static String resolve(BuildContext context, String fallback) =>
+      of(context) ?? fallback;
+
+  @override
+  bool updateShouldNotify(PhotoFillOverride oldWidget) =>
+      fill != oldWidget.fill;
+}
+
 /// Fill the screen, the one rule every photo mode follows.
 ///
 /// [fill] is the mode's setting: 'off' never crops, 'always' always does,

@@ -134,34 +134,52 @@ void main() {
 
   group('definitions', () {
     test('the rows form the Now Playing page under Media Player', () {
-      for (final def in [
+      final rows = defs.allSettings
+          .where((d) => d.subpage == 'Now Playing')
+          .toList();
+      expect(rows.map((d) => d.category).toSet(), {'Sendspin'});
+      expect(rows.map((d) => d.section).toSet().toList(), [
+        'User Interface',
+        'Screensaver',
+      ]);
+      final ui = rows.where((d) => d.section == 'User Interface').toList();
+      final screensaver = rows
+          .where((d) => d.section == 'Screensaver')
+          .toList();
+      expect(rows, [...ui, ...screensaver]);
+      expect(
+        ui,
+        containsAll([
+          defs.sendspinFullscreenOnPlay,
+          defs.sendspinFullscreenControls,
+          defs.sendspinFullscreenDoubleTap,
+          defs.sendspinFullscreenShortcut,
+          defs.sendspinSpeakerPill,
+          defs.sendspinQueueArt,
+        ]),
+      );
+      expect(screensaver, [
         defs.sendspinFullscreen,
-        defs.sendspinFullscreenControls,
-        defs.sendspinFullscreenOnPlay,
         defs.sendspinFullscreenMotion,
-      ]) {
-        expect(def.category, 'Sendspin');
-        expect(def.subpage, 'Now Playing');
-        expect(def.section, 'Now Playing');
-      }
-      // The page renders as one card only while its defs sit together.
-      final keys = defs.allSettings.map((d) => d.key).toList();
-      final first = keys.indexOf(defs.sendspinFullscreen.key);
-      expect(keys[first + 1], defs.sendspinFullscreenControls.key);
-      expect(keys[first + 2], defs.sendspinFullscreenDoubleTap.key);
-      expect(keys[first + 3], defs.sendspinFullscreenOnPlay.key);
-      expect(keys[first + 4], defs.sendspinFullscreenMotion.key);
-      expect(keys[first + 5], defs.sendspinFullscreenShortcut.key);
-      expect(keys[first + 6], defs.sendspinSpeakerPill.key);
-      expect(keys[first + 7], defs.sendspinQueueArt.key);
-      expect(keys[first + 8], defs.sendspinLyrics.key);
-      expect(keys[first + 9], defs.sendspinFullscreenQueue.key);
-      // The Lyrics page follows as one card of its own, the timing row
-      // moved there from this page.
-      expect(keys[first + 10], defs.sendspinLyricsEnabled.key);
-      expect(keys[first + 11], defs.sendspinLyricsSource.key);
-      expect(keys[first + 12], defs.sendspinLyricsFallback.key);
-      expect(keys[first + 13], defs.sendspinLyricsOffset.key);
+        defs.sendspinFullscreenSplit,
+        defs.sendspinFullscreenPhotoFill,
+      ]);
+      expect(defs.sendspinFullscreenSplit.defaultValue, isTrue);
+      expect(
+        defs.sendspinFullscreenSplit.dependsOn,
+        defs.sendspinFullscreen.key,
+      );
+      expect(defs.sendspinFullscreenPhotoFill.defaultValue, 'always');
+      expect(defs.sendspinFullscreenPhotoFill.options, [
+        'default',
+        'off',
+        'smart',
+        'always',
+      ]);
+      expect(
+        defs.sendspinFullscreenPhotoFill.dependsOn,
+        defs.sendspinFullscreenSplit.key,
+      );
       expect(defs.sendspinQueueArt.defaultValue, isTrue);
       expect(defs.sendspinQueueArt.subpage, 'Now Playing');
       expect(defs.sendspinSpeakerPill.subpage, 'Now Playing');
@@ -795,6 +813,7 @@ void main() {
       Map<String, Object> settings = const {},
       Size size = const Size(1280, 800),
       List<String>? supported,
+      bool alongsideScreensaver = false,
     }) async {
       SharedPreferences.setMockInitialValues({
         'ks.sendspin.fullscreen': true,
@@ -832,7 +851,12 @@ void main() {
       };
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: SendspinFullscreenView(container: container)),
+          home: Scaffold(
+            body: SendspinFullscreenView(
+              container: container,
+              alongsideScreensaver: alongsideScreensaver,
+            ),
+          ),
         ),
       );
       await tester.pump();
@@ -999,6 +1023,31 @@ void main() {
       await tester.pump();
       expect(repeatColor(Icons.repeat_rounded), Colors.white38);
       await settle(tester);
+    });
+
+    testWidgets('a narrow shared panel keeps transport and queue usable', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        settings: ma,
+        size: const Size(280, 480),
+        alongsideScreensaver: true,
+      );
+      await settle(tester);
+      await tester.tap(find.byIcon(Icons.pause_circle_filled_rounded));
+      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      await tester.pump();
+      expect(calls.map((c) => c.arguments['command']), ['pause', 'next']);
+      await tester.tap(find.byIcon(Icons.queue_music_rounded));
+      await settle(tester);
+      expect(find.text('Next'), findsOneWidget);
+      expect(find.byIcon(Icons.pause_circle_filled_rounded), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byIcon(Icons.queue_music_rounded));
+      await settle(tester);
+      expect(find.text('Next'), findsNothing);
+      expect(find.text('Song'), findsOneWidget);
     });
 
     testWidgets('the queue button opens the panel and persists it', (

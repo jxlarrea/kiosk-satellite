@@ -133,9 +133,16 @@ String _clock(int ms) {
 /// the queue take the space beside (landscape) or under (portrait) the
 /// cover; the transport never moves for them.
 class SendspinFullscreenView extends StatefulWidget {
-  const SendspinFullscreenView({super.key, required this.container});
+  const SendspinFullscreenView({
+    super.key,
+    required this.container,
+    this.alongsideScreensaver = false,
+  });
 
   final AppContainer container;
+
+  /// The host supplies a panel-sized MediaQuery while sharing the display.
+  final bool alongsideScreensaver;
 
   @override
   State<SendspinFullscreenView> createState() => _SendspinFullscreenViewState();
@@ -263,15 +270,18 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     final landscape = screen.width > screen.height;
     final sideBySide = havePanel && landscape && screen.width >= 560;
     final stacked = havePanel && !landscape && screen.height >= 620;
+    final panelOnly =
+        havePanel && widget.alongsideScreensaver && !sideBySide && !stacked;
     // The At a Glance row joins the plain layout only (issue #209): the
     // panel layouts already spend every free pixel on the words.
     final glance =
+        !widget.alongsideScreensaver &&
         !sideBySide &&
         !stacked &&
         c.settings.get(defs.screensaverGlanceNowPlaying) &&
         c.glance.entities.value.isNotEmpty;
     final edge = (screen.width * 0.06).clamp(16.0, 64.0);
-    _panelShown = sideBySide || stacked;
+    _panelShown = sideBySide || stacked || panelOnly;
 
     // On a Material of its own: the rows are ink wells, and their focus
     // highlight only paints on one.
@@ -297,7 +307,12 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     // small panel gives up less of it, and never enough to crowd the
     // transport.
     Widget content(double lift) {
-      if (sideBySide) {
+      if (panelOnly) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 64, 16, 0),
+          child: panel(),
+        );
+      } else if (sideBySide) {
         // Art and words to one side, the panel to the other: a lyric needs
         // the height, and stacking it under a 360px cover leaves room for
         // about two lines.
@@ -381,7 +396,10 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                 gap: gap,
                 horizontalPadding: 0,
               ),
-              width: min(screen.width - 96, artSize * 2.2),
+              width: min(
+                screen.width - (widget.alongsideScreensaver ? 32 : 96),
+                artSize * 2.2,
+              ),
             ),
           ),
         );
@@ -484,7 +502,15 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
           Positioned(
             top: 12,
             left: 12,
-            child: SafeArea(child: _PlayerChip(container: c)),
+            child: SafeArea(
+              child: _PlayerChip(
+                container: c,
+                maxWidth: max(
+                  80,
+                  screen.width - (controls && !doubleTap ? 80 : 24),
+                ),
+              ),
+            ),
           ),
         // With the transport up a tap is a button press, so the way out is
         // explicit: the same floating close the page overlays wear. It
@@ -1169,9 +1195,10 @@ class _QueueThumbState extends State<_QueueThumb> {
 /// a checkbox. Reports its touches as control touches so a tap on it is
 /// never a step of the double-tap dismiss chain.
 class _PlayerChip extends StatelessWidget {
-  const _PlayerChip({required this.container});
+  const _PlayerChip({required this.container, required this.maxWidth});
 
   final AppContainer container;
+  final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -1198,7 +1225,9 @@ class _PlayerChip extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 240),
+                  constraints: BoxConstraints(
+                    maxWidth: min(240, max(0, maxWidth - (grouping ? 74 : 56))),
+                  ),
                   child: Text(
                     c.sendspin.playerChipName,
                     maxLines: 1,
@@ -1856,9 +1885,25 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
         item(44) * 2 +
         item(68) +
         (12 * 2 + 20 * 2 + 16 * 2) * scale;
-    // Never wider than the screen: a portrait phone shrinks the row of
-    // buttons a little instead of overflowing it.
+    // Narrow panels give the transport its own row to preserve tap targets.
     final maxWidth = MediaQuery.sizeOf(context).width - 24 * scale;
+    final compact = maxWidth < rowWidth;
+    final transportButtons = <Widget>[
+      if (has('previous'))
+        transport(Icons.skip_previous_rounded, 'previous', size: 44),
+      SizedBox(width: 16 * scale),
+      if (has(playing ? 'pause' : 'play'))
+        btn(
+          playing
+              ? Icons.pause_circle_filled_rounded
+              : Icons.play_circle_fill_rounded,
+          () => c.sendspin.control(playing ? 'pause' : 'play'),
+          size: 68,
+          focusNode: _playFocus,
+        ),
+      SizedBox(width: 16 * scale),
+      if (has('next')) transport(Icons.skip_next_rounded, 'next', size: 44),
+    ];
     return SizedBox(
       width: max(widget.width, rowWidth).clamp(0.0, max(maxWidth, 200.0)),
       child: Column(
@@ -1939,52 +1984,54 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
               active: !volumeOpen,
             ),
           ),
-          // The buttons ride up into the tap-target padding above them,
-          // so the bar sits close over the transport instead of a line
-          // of empty space away.
-          Transform.translate(
-            offset: Offset(0, -12 * scale),
-            child: FittedBox(
+          if (compact) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: transportButtons,
+            ),
+            FittedBox(
               fit: BoxFit.scaleDown,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ...cluster([
-                    ('volume', volume),
-                    ('heart', heart),
-                    ('shuffle', shuffle),
-                  ], left: true),
-                  SizedBox(width: 20 * scale),
-                  if (has('previous'))
-                    transport(
-                      Icons.skip_previous_rounded,
-                      'previous',
-                      size: 44,
-                    ),
-                  SizedBox(width: 16 * scale),
-                  if (has(playing ? 'pause' : 'play'))
-                    btn(
-                      playing
-                          ? Icons.pause_circle_filled_rounded
-                          : Icons.play_circle_fill_rounded,
-                      () => c.sendspin.control(playing ? 'pause' : 'play'),
-                      size: 68,
-                      focusNode: _playFocus,
-                    ),
-                  SizedBox(width: 16 * scale),
-                  if (has('next'))
-                    transport(Icons.skip_next_rounded, 'next', size: 44),
-                  SizedBox(width: 20 * scale),
-                  ...cluster([
-                    ('repeat', repeat),
-                    ('lyrics', lyrics),
-                    ('queue', queue),
-                  ], left: false),
+                  for (final toggle in [
+                    volume,
+                    heart,
+                    shuffle,
+                    repeat,
+                    lyrics,
+                    queue,
+                  ])
+                    if (toggle != toggleBlank) toggle,
                 ],
               ),
             ),
-          ),
+          ] else
+            Transform.translate(
+              offset: Offset(0, -12 * scale),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ...cluster([
+                      ('volume', volume),
+                      ('heart', heart),
+                      ('shuffle', shuffle),
+                    ], left: true),
+                    SizedBox(width: 20 * scale),
+                    ...transportButtons,
+                    SizedBox(width: 20 * scale),
+                    ...cluster([
+                      ('repeat', repeat),
+                      ('lyrics', lyrics),
+                      ('queue', queue),
+                    ], left: false),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

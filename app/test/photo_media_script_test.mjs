@@ -72,3 +72,66 @@ test('a late previous image cannot replace the current image', async () => {
   images[0].onload();
   assert.deepEqual(shown, [images[1]]);
 });
+
+function fillHarness() {
+  const classes = (initial = '') => {
+    const values = new Set(initial.split(' '));
+    return {
+      add(value) { values.add(value); },
+      contains(value) { return values.has(value); },
+      toggle(value, on) { if (on) values.add(value); else values.delete(value); },
+    };
+  };
+  const node = () => ({
+    children: [], classList: classes(), parentElement: null,
+    appendChild(child) { this.children.push(child); child.parentElement = this; },
+    insertBefore(child, before) {
+      this.children.splice(this.children.indexOf(before), 0, child);
+      child.parentElement = this;
+    },
+    querySelector() { return this.children.find((c) => c.classList.contains('backdrop')); },
+    remove() { this.parentElement.children.splice(this.parentElement.children.indexOf(this), 1); },
+  });
+  const photos = [], events = {};
+  const c = vm.createContext({
+    CFG: { mediaFill: 'smart' },
+    window: { innerWidth: 800, innerHeight: 480, addEventListener(name, callback) { events[name] = callback; } },
+    content: { querySelectorAll(selector) { assert.equal(selector, 'img.photo'); return photos; } },
+    document: { createElement: node }, log() {},
+  });
+  const fillSource = source.slice(source.indexOf('function fillFor(img)'), source.indexOf('/* ── Camera WebRTC'));
+  vm.runInContext(fillSource, c);
+  c.backdropFor = () => { const backdrop = node(); backdrop.classList.add('backdrop'); return backdrop; };
+  const photo = { naturalWidth: 300, naturalHeight: 400, classList: classes() };
+  photos.push(photo);
+  const stage = c.stillFor(photo);
+  return { c, photo, stage, events };
+}
+
+test('live fill changes reframe the current photo without replacing it', () => {
+  const { c, photo, stage } = fillHarness();
+  assert.equal(stage.classList.contains('cover'), false);
+  assert.ok(stage.querySelector('.backdrop'));
+  c.window.__ksPhotoFill('always');
+  assert.equal(stage.classList.contains('cover'), true);
+  assert.equal(stage.querySelector('.backdrop'), undefined);
+  assert.equal(photo.parentElement, stage);
+  c.window.__ksPhotoFill('off');
+  assert.equal(stage.classList.contains('cover'), false);
+  assert.deepEqual(stage.children, [photo]);
+  c.window.__ksPhotoFill('smart');
+  assert.ok(stage.querySelector('.backdrop'));
+  assert.equal(photo.parentElement, stage);
+});
+
+test('resizing a shared panel reevaluates Smart filling', () => {
+  const { c, stage, events } = fillHarness();
+  c.window.innerWidth = 360;
+  events.resize();
+  assert.equal(stage.classList.contains('cover'), true);
+  assert.equal(stage.querySelector('.backdrop'), undefined);
+  c.window.innerWidth = 800;
+  events.resize();
+  assert.equal(stage.classList.contains('cover'), false);
+  assert.ok(stage.querySelector('.backdrop'));
+});

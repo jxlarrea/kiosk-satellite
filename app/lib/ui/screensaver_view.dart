@@ -126,6 +126,8 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       defs.screensaverGlanceScale.key,
       // The Now Playing transport, read at build by the full-screen view.
       defs.sendspinFullscreenControls.key,
+      defs.sendspinFullscreenSplit.key,
+      defs.sendspinFullscreenPhotoFill.key,
       // The edge zones (issue #453), read at build by the row below the
       // mode, so the toggle mounts or unmounts them on the spot.
       for (final def in slideEdgeTapDefs.values) def.key,
@@ -200,26 +202,28 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
         return ValueListenableBuilder<bool>(
           valueListenable: container.sendspin.fullscreenActive,
           builder: (context, nowPlaying, child) {
-            // Music playing with the full-screen player enabled: the
-            // screensaver slot shows the now-playing view instead of the
-            // configured mode, dismissed exactly like any screensaver
-            // (with its media controls up, the manager holds the touch
-            // reports and the view's own close button dismisses instead).
-            // Falls back live when playback ends mid-screensaver; a track
-            // merely PAUSED gets the regular screensaver, not a frozen
-            // now-playing panel, unless it was paused under the controls,
-            // which hold it with a play button for a while.
-            if (nowPlaying && container.settings.get(defs.sendspinFullscreen)) {
-              return Positioned.fill(
-                child: _Dismissable(
-                  container: container,
-                  child: SendspinFullscreenView(container: container),
+            final playing =
+                nowPlaying && container.settings.get(defs.sendspinFullscreen);
+            return Positioned.fill(
+              child: _ScreensaverPlayerLayout(
+                split: container.settings.get(defs.sendspinFullscreenSplit),
+                photoFill: container.settings.get(
+                  defs.sendspinFullscreenPhotoFill,
                 ),
-              );
-            }
-            return child!;
+                screensaver: child!,
+                player: playing
+                    ? (shared) => _Dismissable(
+                        container: container,
+                        child: SendspinFullscreenView(
+                          container: container,
+                          alongsideScreensaver: shared,
+                        ),
+                      )
+                    : null,
+              ),
+            );
           },
-          child: Positioned.fill(
+          child: SizedBox.expand(
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -387,6 +391,90 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       },
     );
   }
+}
+
+/// Gives each surface its own viewport so clocks, photos and player controls
+/// size themselves to their panel. Stable slots keep a slideshow running when
+/// playback ends and its panel expands back to the whole screen.
+class _ScreensaverPlayerLayout extends StatelessWidget {
+  const _ScreensaverPlayerLayout({
+    required this.split,
+    required this.photoFill,
+    required this.screensaver,
+    required this.player,
+  });
+
+  final bool split;
+  final String photoFill;
+  final Widget screensaver;
+  final Widget Function(bool shared)? player;
+
+  Widget _pane(BuildContext context, Rect rect, String name, Widget child) =>
+      Positioned.fromRect(
+        key: ValueKey(name),
+        rect: rect,
+        child: RepaintBoundary(
+          child: ClipRect(
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(size: rect.size),
+              child: child,
+            ),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final size = box.biggest;
+      final landscape = size.width > size.height;
+      final shared =
+          split &&
+          player != null &&
+          (landscape ? size.width >= 700 : size.height >= 700);
+      final full = Offset.zero & size;
+      final Rect saverRect;
+      final Rect playerRect;
+      if (shared && landscape) {
+        final playerWidth = (size.width / 3).clamp(280.0, size.width / 2);
+        saverRect = Rect.fromLTWH(0, 0, size.width - playerWidth, size.height);
+        playerRect = Rect.fromLTWH(
+          saverRect.right,
+          0,
+          playerWidth,
+          size.height,
+        );
+      } else if (shared) {
+        saverRect = Rect.fromLTWH(0, 0, size.width, size.height * 0.5);
+        playerRect = Rect.fromLTWH(
+          0,
+          saverRect.bottom,
+          size.width,
+          size.height - saverRect.height,
+        );
+      } else {
+        saverRect = full;
+        playerRect = full;
+      }
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          if (player == null || shared)
+            _pane(
+              context,
+              saverRect,
+              'screensaver-pane',
+              PhotoFillOverride(
+                fill: shared && photoFill != 'default' ? photoFill : null,
+                child: screensaver,
+              ),
+            ),
+          if (player != null)
+            _pane(context, playerRect, 'now-playing-pane', player!(shared)),
+        ],
+      );
+    },
+  );
 }
 
 /// The edge-tap switch of each slideshow mode (issue #453), by the view
@@ -2114,7 +2202,8 @@ class ScreensaverWebView extends StatefulWidget {
 }
 
 class _ScreensaverWebViewState extends State<ScreensaverWebView> {
-  late final String _configJson = _buildConfig();
+  String get _configJson => _buildConfig();
+  String? _photoFill;
 
   /// The live controller, for re-asserting kiosk mode on it.
   InAppWebViewController? _webView;
@@ -2134,6 +2223,28 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
       );
     } catch (_) {
       // A navigating renderer receives the state again after its load.
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _photoFill = PhotoFillOverride.resolve(
+      context,
+      widget.container.settings.get(defs.screensaverMediaFill),
+    );
+    unawaited(_applyPhotoFill());
+  }
+
+  Future<void> _applyPhotoFill() async {
+    if (widget.mode != 'media') return;
+    try {
+      await _webView?.evaluateJavascript(
+        source:
+            'window.__ksPhotoFill && window.__ksPhotoFill(${jsonEncode(_photoFill)})',
+      );
+    } catch (_) {
+      // The current fill is sent again when the page finishes loading.
     }
   }
 
@@ -2186,6 +2297,14 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
       widget.container.screensaver.attachSlides(_step);
     }
     _kioskSub = widget.container.bus.on<SettingChanged>().listen((e) {
+      if (!mounted) return;
+      if (e.key == defs.screensaverMediaFill.key) {
+        _photoFill = PhotoFillOverride.resolve(
+          context,
+          widget.container.settings.get(defs.screensaverMediaFill),
+        );
+        unawaited(_applyPhotoFill());
+      }
       final controller = _webView;
       if (controller == null) return;
       // The website's zoom level applies live too, through the viewport
@@ -2246,7 +2365,7 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
       'mediaShuffle': s.get(defs.screensaverMediaShuffle),
       'mediaRecursive': s.get(defs.screensaverMediaRecursive),
       'mediaTransition': s.get(defs.screensaverMediaTransition),
-      'mediaFill': s.get(defs.screensaverMediaFill),
+      'mediaFill': _photoFill ?? s.get(defs.screensaverMediaFill),
       'pixelShift': s.get(defs.screensaverPixelShift),
     });
   }
@@ -2389,6 +2508,7 @@ setInterval(function () {
           await controller.evaluateJavascript(
             source: 'window.ksSetConfig && window.ksSetConfig($_configJson);',
           );
+          await _applyPhotoFill();
           return;
         }
         // This view outlives a settings change, so the flags baked in at
@@ -2482,7 +2602,11 @@ mixin _PhotoScreenState<T extends StatefulWidget> on State<T> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final mq = MediaQuery.maybeOf(context);
-    final viewport = (mq?.size, mq?.devicePixelRatio);
+    final viewport = (
+      mq?.size,
+      mq?.devicePixelRatio,
+      PhotoFillOverride.of(context),
+    );
     if (_photoViewport != null && _photoViewport != viewport) {
       final refresh = _photoRefresh;
       if (refresh != null) unawaited(refresh());
@@ -2841,8 +2965,11 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver>
     if (mounted && _image != null) await _go(_index);
   }
 
-  String get _fill => c.settings.get(
-    _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
+  String get _fill => PhotoFillOverride.resolve(
+    context,
+    c.settings.get(
+      _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
+    ),
   );
 
   bool get _zoom => ['kenburns', 'zoom', 'random'].contains(
@@ -2972,9 +3099,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver>
       // Immich screensaver. A photo that keeps its frame gets the photo
       // itself, blurred and dimmed, as the backdrop instead of black bars.
       // Videos always keep their frame, in every mode.
-      final fill = c.settings.get(
-        _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
-      );
+      final fill = _fill;
       final fillWanted = !isVideoSlide && fill != 'off';
       final size = MediaQuery.of(context).size;
       final covers =
@@ -3486,7 +3611,10 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     index,
     MediaQuery.sizeOf(context),
     MediaQuery.devicePixelRatioOf(context),
-    c.settings.get(defs.screensaverImmichFill),
+    PhotoFillOverride.resolve(
+      context,
+      c.settings.get(defs.screensaverImmichFill),
+    ),
     c.settings.get(defs.screensaverImmichTransition),
     c.settings.get(defs.screensaverImmichPairPortrait),
   );
@@ -3507,7 +3635,10 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     final frame =
         Size(mq.size.width / (pair == null ? 1 : 2), mq.size.height) *
         mq.devicePixelRatio;
-    final fill = c.settings.get(defs.screensaverImmichFill);
+    final fill = PhotoFillOverride.resolve(
+      context,
+      c.settings.get(defs.screensaverImmichFill),
+    );
     final zoom = [
       'kenburns',
       'zoom',
@@ -3646,7 +3777,10 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     required int index,
     required String transition,
   }) {
-    final fill = c.settings.get(defs.screensaverImmichFill);
+    final fill = PhotoFillOverride.resolve(
+      context,
+      c.settings.get(defs.screensaverImmichFill),
+    );
     final fillWanted = fill != 'off';
     final covers = photoCovers(fill, aspect, frameAspect);
     Widget picture = Image(

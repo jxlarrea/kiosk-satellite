@@ -79,16 +79,25 @@ Configures direct integration with local Sonos hardware.
 
 ### Now Playing
 
+**User Interface**
+
 | Setting | Default | Notes |
 | --- | --- | --- |
-| "Now Playing" instead of the screensaver | off | Enables the full screen media view as an idle screensaver replacement during active playback. |
+| Launch Now Playing when music starts playing | on | Instantly launches the full screen view when playback starts rather than waiting for the idle screensaver timeout. |
 | Show media controls | on | Displays transport buttons and a progress bar over the background artwork. When enabled, a top-right close button appears and paused tracks remain on screen until the paused timeout expires. |
 | Double tap to dismiss | off | Allows a double tap anywhere on the full screen view to dismiss it, removing the explicit close button. Taps on controls or queue rows do not trigger dismissal. |
-| Launch Now Playing when music starts playing | on | Instantly launches the full screen view when playback starts rather than waiting for the idle screensaver timeout. |
-| Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the full screen music display. |
 | Show in the kiosk menu | off | Adds a menu shortcut to open the full screen view directly. Remains hidden if no media is playing or queued. |
 | Show album art in the queue | on | A cover on every row of the queue panel, the server's or the speaker's own thumbnail, fetched as the rows come into view. Off, the rows tighten back up. |
 | Show speaker selection pill | on | The chip in the Now Playing view's top left corner that names the player and opens the speaker group menu. Off, the view shows neither. |
+
+**Screensaver**
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| "Now Playing" instead of the screensaver | off | Enables the full screen media view as an idle screensaver replacement during active playback. |
+| Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the full screen music display. |
+| Show alongside screensaver | on | Keeps the screensaver on the left and Now Playing on the right. Portrait screens stack the two views. Small screens keep the full screen player. |
+| Fill the screen | Always | Overrides photo filling while sharing the display with Now Playing. Default follows each screensaver's setting. Off, Smart and Always use the same rules as the photo screensavers. |
 
 ### Lyrics
 
@@ -158,6 +167,12 @@ In Kiosk Mode, visibility controls for the card follow the **Floating Player** s
 ## Full Screen Now Playing
 
 When enabled, the full screen "Now Playing" view activates during active playback as an idle screensaver replacement. It features blurred, full screen album artwork in the background, sharp centered artwork, and prominent title and artist typography. Track changes cross-fade smoothly.
+
+**Show alongside screensaver**, enabled by default under **Settings > Media Player > Now Playing > Screensaver**, lets you keep photos, clocks or other screensaver content visible while music plays. In landscape, the screensaver takes about two thirds of the display and Now Playing fills the right panel. In portrait, the screensaver fills the top half and the player fills the bottom half. Screens smaller than 700 logical pixels along the split direction keep the full screen player. The Dim screensaver uses a black panel during Now Playing.
+
+**Fill the screen** in the same group defaults to **Always**, so photos fill the smaller panel. Choose **Default** to follow each photo screensaver's saved fill setting or select **Off** or **Smart** for a shared override. The override applies only while Now Playing shares the display and leaves each screensaver's saved setting unchanged.
+
+Artwork, track text and controls adapt to the player panel. Narrow panels put playback controls and secondary buttons on separate rows. Lyrics and the queue use the artwork space when the panel cannot fit both. Screensaver widgets stay inside the screensaver panel. When Now Playing closes after playback ends, the screensaver expands to fill the display.
 
 When **Launch Now Playing when music starts playing** is enabled, the view opens immediately upon track start rather than waiting for the idle timeout. Pausing playback returns the display to the standard screensaver once the pause timeout expires.
 

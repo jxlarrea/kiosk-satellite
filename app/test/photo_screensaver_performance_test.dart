@@ -8,6 +8,7 @@ import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/ui/screensaver_view.dart';
+import 'package:kiosk_satellite/ui/photo_frames.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -32,6 +33,8 @@ void main() {
     WidgetTester tester, {
     int count = 2,
     String transition = 'fade',
+    String mode = 'gallery',
+    ValueNotifier<String?>? fillOverride,
   }) async {
     await (() async {
       directory = await Directory.systemTemp.createTemp(
@@ -42,7 +45,9 @@ void main() {
         files.add(await File('${directory.path}/$i.png').writeAsBytes(png));
       }
       SharedPreferences.setMockInitialValues({
-        'ks.screensaver.mode': 'gallery',
+        'ks.screensaver.mode': mode,
+        'ks.screensaver.local_folder': directory.path,
+        'ks.screensaver.local_fill': 'smart',
         'ks.screensaver.gallery_items': jsonEncode(
           files.map((f) => f.path).toList(),
         ),
@@ -62,7 +67,14 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        home: LocalMediaScreensaver(container: c, mode: 'gallery'),
+        home: fillOverride == null
+            ? LocalMediaScreensaver(container: c, mode: mode)
+            : ValueListenableBuilder<String?>(
+                valueListenable: fillOverride,
+                builder: (context, fill, child) =>
+                    PhotoFillOverride(fill: fill, child: child!),
+                child: LocalMediaScreensaver(container: c, mode: mode),
+              ),
       ),
     );
     await drain(tester);
@@ -159,4 +171,48 @@ void main() {
       await finish(tester);
     });
   });
+  for (final mode in ['local', 'gallery']) {
+    testWidgets(
+      '$mode refreshes prepared photos when the fill override changes',
+      (tester) async {
+        await tester.runAsync(() async {
+          final fill = ValueNotifier<String?>('always');
+          await mount(tester, count: 1, mode: mode, fillOverride: fill);
+          await tester.pump(const Duration(seconds: 1));
+          expect(tester.widget<Image>(find.byType(Image)).fit, BoxFit.cover);
+          expect(
+            (tester.widget<Image>(find.byType(Image)).image as ResizeImage)
+                .width,
+            800,
+          );
+          fill.value = null;
+          await tester.pump();
+          await drain(tester);
+          await tester.pump(const Duration(seconds: 1));
+          expect(
+            c.settings.get(
+              mode == 'local'
+                  ? defs.screensaverLocalFill
+                  : defs.screensaverGalleryFill,
+            ),
+            'smart',
+          );
+          expect(
+            tester
+                .widgetList<Image>(find.byType(Image))
+                .map((image) => image.fit),
+            contains(BoxFit.contain),
+          );
+          fill.value = 'off';
+          await tester.pump();
+          await drain(tester);
+          await tester.pump(const Duration(seconds: 1));
+          expect(tester.widget<Image>(find.byType(Image)).fit, BoxFit.contain);
+          expect(tester.takeException(), isNull);
+          await finish(tester);
+          fill.dispose();
+        });
+      },
+    );
+  }
 }

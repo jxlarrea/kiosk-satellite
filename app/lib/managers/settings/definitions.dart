@@ -4869,8 +4869,40 @@ const sendspinFullscreen = SettingDef<bool>(
       'screensaver runs.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'Screensaver',
   dependsOn: 'sendspin.player_active',
+);
+
+const sendspinFullscreenSplit = SettingDef<bool>(
+  key: 'sendspin.fullscreen_split',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show alongside screensaver',
+  description:
+      'Keep the screensaver visible beside Now Playing. Portrait screens '
+      'stack the screensaver above the player. Small screens keep the '
+      'full-screen player.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Screensaver',
+  dependsOn: 'sendspin.fullscreen',
+);
+
+const sendspinFullscreenPhotoFill = SettingDef<String>(
+  key: 'sendspin.fullscreen_photo_fill',
+  type: SettingType.select,
+  defaultValue: 'always',
+  title: 'Fill the screen',
+  description:
+      'Override photo filling while the screensaver shares the display '
+      'with Now Playing. Default uses each screensaver\'s own setting. '
+      '$_fillDescription',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Screensaver',
+  options: ['default', ..._fillOptions],
+  optionLabels: {'default': 'Default', ..._fillLabels},
+  dependsOn: 'sendspin.fullscreen_split',
 );
 
 /// The transport on the full-screen view: the same previous, play/pause
@@ -4890,7 +4922,7 @@ const sendspinFullscreenControls = SettingDef<bool>(
       'instead of a tap anywhere.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'User Interface',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -4909,7 +4941,7 @@ const sendspinFullscreenDoubleTap = SettingDef<bool>(
       "close button won't be shown.",
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'User Interface',
   dependsOn: 'sendspin.fullscreen_controls',
 );
 
@@ -4926,7 +4958,7 @@ const sendspinFullscreenOnPlay = SettingDef<bool>(
       'waiting for the screensaver timeout.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'User Interface',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -4941,7 +4973,7 @@ const sendspinFullscreenMotion = SettingDef<bool>(
       'music display.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'Screensaver',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -4959,7 +4991,7 @@ const sendspinFullscreenShortcut = SettingDef<bool>(
       "player, it won't show up.",
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'User Interface',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -4973,7 +5005,7 @@ const sendspinSpeakerPill = SettingDef<bool>(
   description: 'Allows to add or remove speakers to the current group.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'User Interface',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -4987,7 +5019,7 @@ const sendspinQueueArt = SettingDef<bool>(
   description: 'A cover on every row of the queue panel.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'User Interface',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -5002,7 +5034,7 @@ const sendspinLyrics = SettingDef<bool>(
       '(local .lrc files included); other tracks are looked up on LRCLIB.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'User Interface',
   // The Now Playing view's own lyrics button flips this and the choice
   // sticks, so no settings row: two places to flip one thing only invite
   // confusion. The Lyrics page's Enable lyrics is the master switch
@@ -5023,7 +5055,7 @@ const sendspinFullscreenQueue = SettingDef<bool>(
       'Now Playing view.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Now Playing',
+  section: 'User Interface',
   hidden: true,
 );
 
@@ -6381,16 +6413,18 @@ const List<SettingDef<Object>> allSettings = [
   sendspinPausedHideMinutes,
   sendspinDismissKeepsPlaying,
   sendspinPlayerShortcut,
-  sendspinFullscreen,
+  sendspinFullscreenOnPlay,
   sendspinFullscreenControls,
   sendspinFullscreenDoubleTap,
-  sendspinFullscreenOnPlay,
-  sendspinFullscreenMotion,
   sendspinFullscreenShortcut,
   sendspinSpeakerPill,
   sendspinQueueArt,
   sendspinLyrics,
   sendspinFullscreenQueue,
+  sendspinFullscreen,
+  sendspinFullscreenMotion,
+  sendspinFullscreenSplit,
+  sendspinFullscreenPhotoFill,
   sendspinLyricsEnabled,
   sendspinLyricsSource,
   sendspinLyricsFallback,

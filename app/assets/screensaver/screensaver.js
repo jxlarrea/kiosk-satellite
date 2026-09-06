@@ -188,18 +188,37 @@ function backdropFor(img) {
 
 /* A still's stage: the photo, cover-fitted or framed over its backdrop.
    Built once the photo has pixels, since the decision needs its shape. */
-function stillFor(img) {
-  const wrap = document.createElement('div');
+function applyPhotoFill(img) {
+  const wrap = img.parentElement;
+  if (!wrap) return;
   const fill = fillFor(img);
-  if (fill === 'cover') wrap.classList.add('cover');
-  else if (fill === 'backdrop') {
-    try { wrap.appendChild(backdropFor(img)); }
+  wrap.classList.toggle('cover', fill === 'cover');
+  const old = wrap.querySelector('.backdrop');
+  if (old) old.remove();
+  if (fill === 'backdrop') {
+    try { wrap.insertBefore(backdropFor(img), img); }
     catch (e) { log('media: backdrop failed ' + e); }
   }
+}
+
+function stillFor(img) {
+  const wrap = document.createElement('div');
   img.classList.add('photo');
   wrap.appendChild(img);
+  applyPhotoFill(img);
   return wrap;
 }
+
+// Reframe visible photos without restarting the playlist or its hold timer.
+function refreshPhotoFill() {
+  content.querySelectorAll('img.photo').forEach(applyPhotoFill);
+}
+window.__ksPhotoFill = (fill) => {
+  if (!['off', 'smart', 'always'].includes(fill)) return;
+  CFG.mediaFill = fill;
+  refreshPhotoFill();
+};
+window.addEventListener('resize', refreshPhotoFill);
 
 /* ── Camera WebRTC ────────────────────────────────────────────────────────
    HA's native signalling (camera/webrtc/*), the same flow as ha-web-rtc-player:
