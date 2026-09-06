@@ -1052,7 +1052,9 @@ void main() {
     // a key flagged in the code must be there and the doc must not name a
     // key the code syncs.
     final doc = File('../docs/fleet.md').readAsStringSync();
-    final section = doc.split('## Never synced')[1].split('## Remote API')[0];
+    final section = doc
+        .split(RegExp('## Never synced', caseSensitive: false))[1]
+        .split('## Remote API')[0];
     final listed = RegExp(
       r'`([a-z_.*]+)`',
     ).allMatches(section).map((m) => m[1]!).toSet();

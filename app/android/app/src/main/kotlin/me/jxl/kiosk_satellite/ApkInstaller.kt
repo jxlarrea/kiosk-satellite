@@ -9,10 +9,14 @@ import android.content.IntentFilter
 import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Installs a downloaded update through a [PackageInstaller] session instead of
@@ -26,6 +30,7 @@ import java.io.File
  * update after that installs silently, which is what the Home Assistant
  * update entity needs on a wall tablet nobody is standing next to. A device
  * provisioned with this app as device owner installs silently on any version.
+ * Otherwise an available ADB helper installs with shell privileges.
  *
  * When confirmation is still required, the session reports
  * STATUS_PENDING_USER_ACTION with an Intent for Android's confirm screen,
@@ -40,6 +45,10 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
     }
 
     private val channel = MethodChannel(messenger, "kiosk_satellite/installer")
+    private val helper = UpdateHelperClient(context)
+    private val worker = Executors.newFixedThreadPool(2)
+    private val main = Handler(Looper.getMainLooper())
+    private val installing = AtomicBoolean(false)
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context, intent: Intent) {
@@ -112,10 +121,17 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "installApk" -> {
-                    try {
-                        result.success(install(File(call.argument<String>("path")!!)))
-                    } catch (e: Exception) {
-                        result.error("install", e.message, null)
+                    if (!installing.compareAndSet(false, true)) {
+                        result.error("install", "An update is already being installed", null)
+                    } else {
+                        work(result) {
+                            try {
+                                install(File(requireNotNull(call.argument<String>("path"))),
+                                    call.argument<Boolean>("useSystemInstaller") == true)
+                            } finally {
+                                installing.set(false)
+                            }
+                        }
                     }
                 }
                 // Asked before committing, so Dart can stand the kiosk down
@@ -123,14 +139,24 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                 // pinning blocks that screen outright (issue #170), and by
                 // the time the session reports PENDING_USER_ACTION the
                 // launch has already been refused once.
-                "needsConfirmation" -> result.success(!canInstallSilently())
+                "needsConfirmation" -> work(result) {
+                    !canInstallNativelySilently() && helper.status() != "ready"
+                }
+                "getInstallerStatus" -> work(result) {
+                    mapOf(
+                        "nativeSilent" to canInstallNativelySilently(),
+                        "helper" to helper.status(),
+                        "startCommand" to UpdateHelperClient.START_COMMAND,
+                    )
+                }
+                "stopUpdateHelper" -> work(result) { helper.stop() }
                 else -> result.notImplemented()
             }
         }
     }
 
     /** Whether this install can complete with no confirmation on screen. */
-    private fun canInstallSilently(): Boolean {
+    private fun canInstallNativelySilently(): Boolean {
         val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE)
             as DevicePolicyManager
         if (dpm.isDeviceOwnerApp(context.packageName)) return true
@@ -146,8 +172,27 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
         }
     }
 
-    /** Returns 'silent' or 'confirm', matching what the session will do. */
-    private fun install(apk: File): String {
+    private fun work(result: MethodChannel.Result, block: () -> Any?) {
+        worker.execute {
+            try {
+                val value = block()
+                main.post { result.success(value) }
+            } catch (e: Exception) {
+                main.post { result.error("install", e.message, null) }
+            }
+        }
+    }
+
+    /** A fallback asks Dart to release kiosk protections before creating a session. */
+    private fun install(apk: File, useSystemInstaller: Boolean): String {
+        val nativeSilent = canInstallNativelySilently()
+        if (!nativeSilent && !useSystemInstaller) {
+            Log.i(TAG, "trying the update helper")
+            if (helper.install(apk)) return "silent"
+            Log.i(TAG, "update helper unavailable before commit; requesting system installer fallback")
+            return "fallback"
+        }
+        Log.i(TAG, "using Android PackageInstaller (nativeSilent=$nativeSilent)")
         val installer = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(
             PackageInstaller.SessionParams.MODE_FULL_INSTALL)
@@ -165,7 +210,7 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
             params.setRequireUserAction(
                 PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
         }
-        val silent = canInstallSilently()
+        val silent = nativeSilent
         val sessionId = installer.createSession(params)
         installer.openSession(sessionId).use { session ->
             session.openWrite("app.apk", 0, apk.length()).use { out ->
@@ -189,5 +234,6 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
     fun dispose() {
         try { context.unregisterReceiver(receiver) } catch (_: Exception) {}
         channel.setMethodCallHandler(null)
+        worker.shutdownNow()
     }
 }

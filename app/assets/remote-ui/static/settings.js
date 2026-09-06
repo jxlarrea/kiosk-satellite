@@ -7,7 +7,7 @@ import {
 } from './audio.js';
 import { MIC_GROUP_NOTE, cameraAction, exportFileName } from './cameras.js';
 import { $, api, cmd, depSatisfied, state } from './core.js';
-import { readOnlyRow } from './device.js';
+import { readOnlyRow, renderUpdateHelper } from './device.js';
 import { permissionSpecs } from './permissions.js';
 import { renderServicePage } from './service.js';
 import { CATEGORY_TABS } from './gestures.js';
@@ -53,7 +53,11 @@ export async function loadSettings() {
   // mid-page toggle that reveals dependants yanks the view back to the top.
   const scroller = document.scrollingElement || document.documentElement;
   const keepScroll = scroller.scrollTop;
-  const { settings, subpageHints } = await (await api('/api/settings')).json();
+  const [{ settings, subpageHints }, installerResult] = await Promise.all([
+    api('/api/settings').then((r) => r.json()),
+    cmd('getUpdateInstallerStatus').catch(() => null),
+  ]);
+  const helperStatus = installerResult?.ok ? installerResult.data : null;
   state.settings = settings; // kept so a saved row can tell if it changes layout
   // Named once for every second-level page, including the ones with no
   // settings of their own (Voice Satellite's are live entity rows).
@@ -204,7 +208,10 @@ export async function loadSettings() {
   for (const [tabId, cats, opts] of CATEGORY_TABS) {
     if (tabId === 'tab-homeassistant') continue; // custom render below
     if (tabId === 'tab-voicesatellite') continue; // custom render below
-    render(document.getElementById(tabId), cats.filter((c) => byCat[c]), opts);
+    const helperPage = tabId === 'device-settings' && helperStatus?.nativeSilent === false;
+    const panels = render(document.getElementById(tabId), cats.filter((c) => byCat[c]),
+      helperPage ? { ...opts, extra: ['Optional update helper', ...(opts?.extra || [])] } : opts);
+    if (helperPage) renderUpdateHelper(panels.get('Optional update helper'), helperStatus);
   }
 
   // ── Required system permissions (Kiosk and Lockdown tabs) ────────────

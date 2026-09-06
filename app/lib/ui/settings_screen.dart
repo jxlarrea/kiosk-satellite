@@ -54,6 +54,7 @@ import 'mic_level_meter.dart';
 import 'settings_search.dart';
 import 'subpage_icons.dart';
 import 'wake_word_tester.dart';
+import 'update_helper_settings.dart';
 
 /// Render a category's settings as cards: consecutive settings sharing a
 /// `section` become one card under one [SectionHeading]; unsectioned runs
@@ -2064,6 +2065,14 @@ class _CategoryContentState extends State<_CategoryContent> {
           ),
         ],
         if (widget.category == 'Device') ...[
+          UpdateHelperSettings(
+            container: container,
+            entryBuilder: (_) => _subpageEntryCard(
+              container,
+              'Device',
+              'Optional update helper',
+            ),
+          ),
           const SectionHeading('Configuration'),
           SettingsCard(
             children: [
@@ -2814,6 +2823,10 @@ class _CategoryContentState extends State<_CategoryContent> {
           ),
         ),
       ];
+    }
+
+    if (widget.category == 'Device' && subpage == 'Optional update helper') {
+      return [UpdateHelperSettings(container: container)];
     }
 
     if (widget.category == 'Device' && subpage == 'Remote Administration') {

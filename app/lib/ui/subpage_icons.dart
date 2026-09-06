@@ -61,6 +61,7 @@ const Map<String, Object> subpageIcons = {
   // Device.
   'Kiosk Satellite Service': Icons.bolt_outlined,
   'Remote Administration': Icons.computer_outlined,
+  'Optional update helper': Icons.system_update_outlined,
 };
 
 /// The names in [subpageHints] the device never draws: read-only reports

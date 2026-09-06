@@ -47,6 +47,28 @@ adb shell settings put secure accessibility_enabled 1
 
 Finally, finish the setup wizard directly on the device or from a browser using `http://<fire ip>:2324`.
 
+## Updates
+
+The in-app update process functions on a Fire tablet as follows:
+
+| Step | Fire Behavior |
+| --- | --- |
+| Download | Downloads normally. |
+| Install unknown apps permission | Prompts once on Android's system screen during the initial update. |
+| Android install confirmation | Requires a tap unless the optional update helper is running. |
+| Installation | Completes through Android's installer or the update helper. |
+| Relaunch | The app automatically relaunches once installation completes if the **Display over other apps** permission is granted. |
+
+For updates without a confirmation tap, start the bundled helper:
+
+```sh
+adb shell "content read --uri content://me.jxl.kiosk_satellite.update-helper/start | sh"
+```
+
+The helper runs on the Fire tablet and survives app restarts and self-updates. It stops at reboot, so restore ADB access and rerun the command afterward. When it is unavailable, the app brings Android's confirmation screen forward and re-arms kiosk protections when the attempt ends. See [Optional Update Helper](updates.md#optional-update-helper) for status, setup instructions and installation behavior.
+
+Device ownership remains unavailable because Amazon's Parental Controls already hold the profile owner role. The helper does not require device ownership or accessibility access. Silent installation through the helper has been verified on a Fire HD 10 running Fire OS 8.
+
 ## The Lock Screen
 
 Turning the screen off (whether triggered by the Home Assistant **Screen** entity or the screensaver's **Turn screen off after** setting) utilizes Android's device admin lock. This call automatically arms the lock screen on any device that has one. A Fire tablet has one regardless of whether a passcode is set; if no passcode exists, it simply acts as a swipe away screen. 
@@ -103,4 +125,4 @@ There is currently no way to stop this behavior. Spoofing the installer package 
 | Sticky services restart slowly | A crashed kiosk on standard Android devices is back up in about a second; Fire OS takes considerably more time to restart the guard service. | Do nothing: the crash self heal mechanism has a dedicated heartbeat alarm to handle this. Keep the "Display over other apps" permission granted, as the relaunch requires it. |
 | Amazon's WebView can crash the process in its audio path | A native crash in `libaaudio` during the WebView's audio playback will take the entire app down. | There is nothing you can do to prevent it; the app's crash self heal will automatically relaunch the kiosk. |
 | The [Home Launcher](home-launcher.md) feature is unsupported | Fire OS firmly prohibits replacing its default launcher, preventing Kiosk Satellite from registering as the home screen. The Home Launcher page explicitly states this on a Fire tablet. The OS lock runs deep: Fire OS advertises the home role as available but silently denies every request, its default home settings screen forcefully closes itself the moment it opens, and even granting the role via ADB (`cmd role add-role-holder`) changes nothing (the physical home button still forces you to the Fire launcher). | Use **Start on boot** and rely on Kiosk Mode's protections instead. |
-| Fire OS already acts as its own device policy owner | Device ownership (which grants silent updates and true lock task mode on Android 11) cannot be applied to any Fire tablet. Amazon's Parental Controls are hard provisioned as the profile owner on user 0 during the very first boot. Because Android strictly allows only one owner per user, `dpm set-device-owner` will always answer "the user already has a profile owner". Since it is a core system package, it cannot be removed. Furthermore, ownership requires a device with absolutely no registered accounts, and a logged in Fire tablet carries several Amazon ones. | Each app update will require one physical tap on Android's confirmation dialog, which the app will bring to the front and automatically re arm the kiosk after. See [Updates](updates.md). |
+| Fire OS already acts as its own device policy owner | Device ownership (which grants silent updates and true lock task mode on Android 11) cannot be applied to any Fire tablet. Amazon's Parental Controls are hard provisioned as the profile owner on user 0 during the very first boot. Because Android strictly allows only one owner per user, `dpm set-device-owner` will always answer "the user already has a profile owner". Since it is a core system package, it cannot be removed. Furthermore, ownership requires a device with absolutely no registered accounts, and a logged in Fire tablet carries several Amazon ones. | Updates need one confirmation tap unless the [optional update helper](updates.md#optional-update-helper) is running. Start it through ADB and repeat after each reboot. |

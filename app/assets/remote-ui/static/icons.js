@@ -122,6 +122,8 @@ export const SUBPAGE_ICONS = {
   'Kiosk Satellite Service': svg('<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'),
   'Remote Administration': svg('<rect x="3" y="4" width="18" height="12" rx="2"/>'
     + '<path d="M8 20h8m-4-4v4"/>'),
+  'Optional update helper': svg('<rect x="5" y="2" width="14" height="20" rx="2"/>'
+    + '<path d="M12 5v10m-4-4 4 4 4-4M10 19h4"/>'),
   // The read-only reports the remote shows about the tablet; the device
   // has no page for them, so only this side names a glyph.
   'Hardware': svg('<rect x="5" y="5" width="14" height="14" rx="2"/>'

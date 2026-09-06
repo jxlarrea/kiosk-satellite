@@ -4,7 +4,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Optional update helper for devices that require installation confirmation.** A helper bundled in the APK starts with one ADB command and lets Meta Portals, Amazon Fire tablets and other devices install Kiosk Satellite updates without a tap. An Optional update helper subpage appears in Device settings on the device and in the remote admin when native silent installation is unavailable, with status, setup instructions and a documentation link. Android's native silent installer takes priority when available. The helper survives app updates but needs restarting through ADB after each device reboot.
+
 ### Fixed
+- **Fleet Management documentation opens without replacing the Home Assistant dashboard.** The link now uses the dedicated external websites WebView with a close button.
 - **A hairline at the top of the Followers and Profiles cards on the device's Fleet Management page.** The cards started with an empty search landing row, and the divider drawn after it sat on the card's top edge.
 
 ## v2026.9.20 - 2026-09-05

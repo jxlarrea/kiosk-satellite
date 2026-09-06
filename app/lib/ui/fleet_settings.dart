@@ -398,11 +398,10 @@ class _FleetSettingsPanelState extends State<FleetSettingsPanel> {
     );
   }
 
-  /// Leave the settings stack and show the doc in the kiosk browser, the
-  /// way the About page opens its links.
+  /// Leave settings and open the docs in the external websites WebView.
   void _openDocs() {
     Navigator.of(context).popUntil((route) => route.isFirst);
-    c.commands.execute('loadUrl', {'url': fleetDocsUrl});
+    c.commands.execute('showLinkPage', {'url': fleetDocsUrl});
   }
 
   Widget _updatesCard(Map<String, Object?> status) {

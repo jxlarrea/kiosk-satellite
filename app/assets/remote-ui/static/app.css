@@ -201,7 +201,7 @@
     display: inline-flex; align-items: center; justify-content: center;
     gap: 8px; box-sizing: border-box; min-width: 96px; height: 44px;
     padding: 0 20px; border-radius: 999px; font-size: 14.5px;
-    font-weight: 600; line-height: 1; white-space: nowrap; }
+    font-weight: 600; line-height: 1; white-space: nowrap; text-decoration: none; }
   .btn-primary { background: var(--primary-fill); color: var(--primary-ink);
     border: none; }
   .btn-primary:hover { filter: brightness(1.06); }

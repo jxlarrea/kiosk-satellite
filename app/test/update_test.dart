@@ -31,6 +31,8 @@ void main() {
   late List<String> installed;
   late List<String> kioskCalls;
   var needsConfirm = false;
+  var helperFallback = false;
+  var helperCommitFailure = false;
 
   /// One GitHub release object, as the releases list carries them.
   Map<String, Object?> entry(String tag,
@@ -68,10 +70,24 @@ void main() {
           call.method == 'getTemporaryDirectory' ? cache.path : null,
     );
     needsConfirm = false;
+    helperFallback = false;
+    helperCommitFailure = false;
     kioskCalls = [];
     messenger.setMockMethodCallHandler(installer, (call) async {
       if (call.method == 'needsConfirmation') return needsConfirm;
       if (call.method != 'installApk') return null;
+      if (helperCommitFailure) {
+        throw PlatformException(
+          code: 'install',
+          message: 'Lost contact after committing',
+        );
+      }
+      if (helperFallback) {
+        if ((call.arguments as Map)['useSystemInstaller'] != true) {
+          return 'fallback';
+        }
+        expect(kioskCalls, ['pause']);
+      }
       installed.add((call.arguments as Map)['path'] as String);
       return needsConfirm ? 'confirm' : 'silent';
     });
@@ -325,6 +341,67 @@ void main() {
 
     // The callback can only owe one re-arm; a stray repeat changes nothing.
     await installerEvent('installFailed');
+    expect(kioskCalls, ['pause', 'resume']);
+  });
+
+  test(
+    'helper loss after preflight releases kiosk before system fallback',
+    () async {
+      helperFallback = true;
+      await notice('1.1.0');
+      update.clientFactory = () => MockClient(
+        (request) async => isReleaseQuery(request)
+            ? http.Response(release('1.1.0'), 200)
+            : http.Response.bytes(List.filled(64, 7), 200),
+      );
+      expect(await update.downloadAndInstall(), isNull);
+      expect(kioskCalls, ['pause']);
+      expect(installed, hasLength(1));
+      await installerEvent('installDeclined');
+      expect(kioskCalls, ['pause', 'resume']);
+    },
+  );
+
+  test(
+    'uncertain helper commit does not retry through the system installer',
+    () async {
+      helperCommitFailure = true;
+      await notice('1.1.0');
+      update.clientFactory = () => MockClient(
+        (request) async => isReleaseQuery(request)
+            ? http.Response(release('1.1.0'), 200)
+            : http.Response.bytes(List.filled(64, 7), 200),
+      );
+      expect(
+        await update.downloadAndInstall(),
+        contains('Lost contact after committing'),
+      );
+      expect(installed, isEmpty);
+      expect(kioskCalls, isEmpty);
+      final status = await registry.execute('getUpdateStatus', const {});
+      expect((status.data as Map)['lastOutcome'], 'failed');
+    },
+  );
+
+  test('an early native failure survives the install method reply', () async {
+    await notice('1.1.0');
+    update.clientFactory = () => MockClient((request) async =>
+        isReleaseQuery(request)
+            ? http.Response(release('1.1.0'), 200)
+            : http.Response.bytes(List.filled(64, 7), 200));
+    messenger.setMockMethodCallHandler(installer, (call) async {
+      if (call.method == 'needsConfirmation') return true;
+      if (call.method == 'installApk') {
+        await installerEvent('installFailed');
+        return 'confirm';
+      }
+      return null;
+    });
+
+    await update.downloadAndInstall();
+
+    final status = await registry.execute('getUpdateStatus', const {});
+    expect((status.data as Map)['lastOutcome'], 'failed');
     expect(kioskCalls, ['pause', 'resume']);
   });
 

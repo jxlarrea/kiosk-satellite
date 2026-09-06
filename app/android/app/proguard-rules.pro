@@ -16,3 +16,6 @@
 -keep class com.google.common.flogger.** { *; }
 -keep class com.google.common.** { *; }
 -dontwarn com.google.common.**
+
+# ADB starts this entry point directly from the installed APK.
+-keep class me.jxl.kiosk_satellite.updates.UpdateHelper { public static void main(java.lang.String[]); }

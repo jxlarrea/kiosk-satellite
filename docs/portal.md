@@ -71,7 +71,7 @@ The in-app update process functions on a Portal as follows:
 | --- | --- |
 | Download | Downloads normally. |
 | Install unknown apps permission | Prompts once on Android's system screen during the initial update. |
-| Android install confirmation | Requires manual confirmation on every update because Android 10 does not allow silent updates for non-device-owner applications. |
+| Android install confirmation | Requires a tap unless the optional update helper is running. |
 | Installation | Fails with `INSTALL_FAILED_VERIFICATION_FAILURE` unless Meta's package verifier is disabled (see table above). |
 | Relaunch | The app automatically relaunches once the installation completes. |
 
@@ -81,7 +81,15 @@ To allow in-app updates to proceed, execute this command once from a computer:
 adb shell settings put global package_verifier_enable 0
 ```
 
-Silent, fully automated updates are not supported. Device ownership on Android 11 and older requires a device with no registered accounts; Portals carry unremovable Meta system accounts (`com.facebook.aloha.*`), causing `dpm set-device-owner` to fail. Each update requires a single tap on the onscreen confirmation prompt, which the app automatically brings to the foreground before re-arming kiosk protections.
+For updates without a confirmation tap, start the bundled helper:
+
+```sh
+adb shell "content read --uri content://me.jxl.kiosk_satellite.update-helper/start | sh"
+```
+
+The helper runs on the Portal and survives app restarts and self-updates. It stops at reboot, so restore ADB access and rerun the command afterward. When it is unavailable, the app brings Android's confirmation screen forward and re-arms kiosk protections when the attempt ends. See [Optional Update Helper](updates.md#optional-update-helper) for status, setup instructions and installation behavior.
+
+Device ownership remains unavailable because the Portal carries Meta system accounts (`com.facebook.aloha.*`) that prevent provisioning. The helper does not require device ownership or accessibility access.
 
 ## Person Detection
 

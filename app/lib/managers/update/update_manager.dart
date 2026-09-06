@@ -61,11 +61,8 @@ class UpdateManager extends Manager {
       'https://api.github.com/repos/jxlarrea/kiosk-satellite/'
       'releases?per_page=30';
 
-  /// App-scoped (see ApkInstaller): installs go through a PackageInstaller
-  /// session, which needs no Activity. On Android 12+ the session installs
-  /// silently once this app is the installer of record (i.e. from the second
-  /// update installed through here onward); everywhere else Android shows its
-  /// confirmation screen on the device.
+  /// App-scoped (see ApkInstaller). Native silent installation takes priority,
+  /// followed by the optional shell helper and Android's confirmation screen.
   static const _installer = MethodChannel('kiosk_satellite/installer');
 
   /// Same channel the kiosk manager's restart preflight uses: whether the
@@ -149,9 +146,11 @@ class UpdateManager extends Manager {
       switch (call.method) {
         case 'installDeclined':
           log.info(name, 'install declined on the device screen');
+          _lastOutcome = 'cancelled';
           await _resumeKioskIfPaused();
         case 'installFailed':
           log.warn(name, 'install failed: ${call.arguments}');
+          _fail('Install failed: ${call.arguments}');
           await _resumeKioskIfPaused();
       }
       bus.publish(const UpdateStateChanged());
@@ -183,6 +182,33 @@ class UpdateManager extends Manager {
     });
     // The remote admin mirrors the drawer's notice through these.
     commands
+      ..register(
+        Command(
+          name: 'getUpdateInstallerStatus',
+          description:
+              'Android silent installation and live update helper status',
+          quiet: true,
+          handler: (_) async => CommandResult.ok(await installerStatus()),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'stopUpdateHelper',
+          description:
+              'Stop the ADB update helper until it is started through ADB again',
+          handler: (_) async {
+            final state = await _installer.invokeMethod<String>(
+              'stopUpdateHelper',
+            );
+            if (state == 'busy') {
+              return CommandResult.fail(
+                'An update is being installed. Try again when it finishes.',
+              );
+            }
+            return CommandResult.ok(state);
+          },
+        ),
+      )
       ..register(
         Command(
           name: 'getUpdateStatus',
@@ -228,10 +254,9 @@ class UpdateManager extends Manager {
         Command(
           name: 'installUpdate',
           description:
-              'Download the newer release APK and install it. Silent on '
-              'Android 12+ once the app is the installer of record (from the '
-              'second in-app update onward); otherwise Android asks for '
-              'confirmation on the device screen',
+              'Download the newer release APK and install it. Silent when '
+              'Android permits it or the update helper is running. Otherwise '
+              'Android asks for confirmation on the device screen',
           handler: (_) async {
             if (available.value == null) {
               return CommandResult.fail('no update available');
@@ -577,10 +602,25 @@ class UpdateManager extends Manager {
           const {},
         )).ok;
       }
-      final mode = await _installer.invokeMethod<String>('installApk', {
+      var mode = await _installer.invokeMethod<String>('installApk', {
         'path': file.path,
       });
-      _lastOutcome = mode == 'silent' ? 'silent' : 'confirm';
+      if (mode == 'fallback') {
+        // The helper can disappear between preflight and upload. Native
+        // code only returns this before a commit could reach the helper.
+        if (!_kioskPaused) {
+          _kioskPaused = (await commands.execute(
+            'pauseKioskForInstall',
+            const {},
+          )).ok;
+        }
+        mode = await _installer.invokeMethod<String>('installApk', {
+          'path': file.path,
+          'useSystemInstaller': true,
+        });
+      }
+      // A native failure callback can arrive before the method reply.
+      _lastOutcome ??= mode == 'silent' ? 'silent' : 'confirm';
       log.info(
         name,
         mode == 'silent'
@@ -636,6 +676,13 @@ class UpdateManager extends Manager {
     } catch (_) {
       return false;
     }
+  }
+
+  Future<Map<String, dynamic>> installerStatus() async {
+    final status = await _installer.invokeMapMethod<String, dynamic>(
+      'getInstallerStatus',
+    );
+    return status ?? const {};
   }
 
   /// Whether the kiosk stood down for this install and still owes a

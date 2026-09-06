@@ -25,8 +25,9 @@ Here is how Android handles installation prompts based on your system version:
 | Device | Installation Behavior |
 | --- | --- |
 | Android 12 and newer | The initial in-app update displays Android's system installation confirmation on the screen. Subsequent updates install silently in the background. |
-| Android 11 and older | Every update requires manual confirmation on the device screen. |
+| Android 11 and older | Every update requires manual confirmation unless the optional update helper is running. |
 | Device Owner Provisioned | Every update installs silently across all Android versions. |
+| Update helper running | Updates install silently through the helper when Android's native silent path is unavailable. |
 
 On Android 12 and newer, silent updating relies on installer package tracking. Completing the initial in-app update registers Kiosk Satellite as its own installer, enabling silent background updates for future releases. Performing an `adb install` in between resets the installer role back to `adb`, requiring you to confirm one in-app update again.
 
@@ -66,19 +67,41 @@ You can disable this package verifier using a single `adb` command:
 adb shell settings put global package_verifier_enable 0
 ```
 
-After running this command, updates will proceed as they do on standard Android 10 devices. Note that every update still requires manual confirmation on the screen. Full device ownership is not supported on Meta Portals because their built-in system accounts (`com.facebook.aloha.*`) cannot be removed, causing the `dpm set-device-owner` command to fail.
+After running this command, updates proceed through Android's confirmation screen. The optional [update helper](#optional-update-helper) enables installation without that tap. Full device ownership is not supported on Meta Portals because their built-in system accounts (`com.facebook.aloha.*`) cannot be removed, causing the `dpm set-device-owner` command to fail.
 
 Full setup details for these devices are available in the [Meta Portal](portal.md) guide.
 
 ## Amazon Fire Tablets
 
-Updates on Amazon Fire tablets always require manual confirmation on screen. Fire OS 8 is based on Android 11, which forces on screen prompts for all updates. Furthermore, device ownership cannot be applied to Fire OS: Amazon hardwires Parental Controls as a profile owner during initial system setup, causing `dpm set-device-owner` to fail with a "the user already has a profile owner" error.
+Updates on Amazon Fire tablets require manual confirmation unless the optional [update helper](#optional-update-helper) is running. Fire OS 8 is based on Android 11, which requires confirmation for ordinary app installations. Device ownership cannot be applied to Fire OS: Amazon hardwires Parental Controls as a profile owner during initial system setup, causing `dpm set-device-owner` to fail with a "the user already has a profile owner" error.
 
 To update a Fire tablet: start the update from the device, Home Assistant, or the remote admin, then tap the confirmation prompt when it appears on the screen. The kiosk automatically re-arms itself afterward.
 
 The **Install unknown apps** grant works identically to standard Android devices, available via `adb` or under **Settings > Security & Privacy > Apps from Unknown Sources**.
 
 Full setup details for Fire OS devices are available in the [Amazon Fire tablets](fire.md) guide.
+
+## Optional Update Helper
+
+The update helper lets devices such as Meta Portals and Amazon Fire tablets install Kiosk Satellite updates without an on-screen confirmation. It is included in the APK and needs one ADB command to start:
+
+```sh
+adb shell "content read --uri content://me.jxl.kiosk_satellite.update-helper/start | sh"
+```
+
+Add `-s <device address>` after `adb` when multiple devices are connected. Wait for the command to report that the helper started. The computer can then disconnect. Repeating the command while the helper is ready leaves it running.
+
+Open **Settings > Device > Optional update helper** on the device or **Device > Optional update helper** in the remote admin. This subpage appears only when Android's native silent installation path is unavailable. It shows the helper's status with a **Refresh** action, a copyable startup command and a link to this guide.
+
+Detection uses the device's current installation permissions and installer tracking rather than its model. On Android 12 and newer, the group can disappear after the first confirmed in-app update makes Kiosk Satellite its own installer.
+
+**The helper stops after every reboot.** Enable ADB again if the device requires it and rerun the command. It continues running across Kiosk Satellite restarts and self-updates. No root access, device ownership or accessibility permission is needed.
+
+Kiosk Satellite checks Android's native silent installation path first. If that path is available, it uses Android directly even when the helper is running. Otherwise it checks the helper through an authenticated connection on the device. An unavailable helper falls back to the normal confirmation screen after releasing kiosk protections. A connection lost after an installation has been committed reports an uncertain result instead of automatically starting a second installation.
+
+The helper accepts only Kiosk Satellite APKs at the installed version or newer. Android verifies the signing certificate during installation. The helper has no network-facing endpoint and cannot run arbitrary commands or install unrelated apps. Its startup secret is available only to ADB and Kiosk Satellite.
+
+This changes how an update installs. Checks still run every 12 hours and an update still starts from the device, remote admin or Home Assistant.
 
 ## Hands-Free Updates on Android 11 and Older via Device Ownership
 
@@ -117,3 +140,5 @@ Manual updates preserve all local settings, Home Assistant connections, and ESPH
 | Nothing happens after the download completes on Android 11 or older | The system confirmation dialog could not be displayed. This usually indicates the OS lacks the "Install unknown apps" configuration screen. Grant the permission via `adb` or configure the app as the device owner. On Meta Portals, see the verifier fix above. On Fire tablets, see the Fire OS section above. |
 | The update download fails or stalls | The device cannot reach GitHub or the connection timed out. Check the app logs in the remote admin interface for detailed error messaging. |
 | An update on Android 12 or newer prompted for confirmation unexpectedly | An external tool (such as `adb`) was used to install an intermediate update, resetting the installer role. Confirming one in-app update restores silent updating for subsequent releases. |
+| Updates ask for confirmation after a reboot | The optional update helper stopped at reboot. Restore ADB access and rerun its startup command. |
+| The helper connection was lost after committing an update | Check the installed version and app logs before trying again. Kiosk Satellite does not automatically retry an installation whose outcome is uncertain. |

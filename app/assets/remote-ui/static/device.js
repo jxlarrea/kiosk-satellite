@@ -1,5 +1,90 @@
 import { $, api, cmd } from './core.js';
-import { messageBox, modalShell } from './widgets.js';
+import { copyBox, messageBox, modalShell } from './widgets.js';
+
+// The helper group belongs only on devices without native silent installation.
+export function renderUpdateHelper(root, initialStatus) {
+  const group = document.createElement('div');
+  root.appendChild(group);
+  let status = initialStatus;
+  let error = null;
+
+  const refresh = async () => {
+    try {
+      const result = await cmd('getUpdateInstallerStatus');
+      if (!result?.ok || typeof result.data?.nativeSilent !== 'boolean') {
+        throw new Error('Status unavailable');
+      }
+      status = result.data;
+      error = null;
+    } catch (_) {
+      error = 'Could not check the update helper.';
+    }
+    paint();
+  };
+
+  const paint = () => {
+    group.replaceChildren();
+    if (status?.nativeSilent === true) {
+      const note = document.createElement('div');
+      note.className = 'group-note';
+      note.textContent = 'Android can now install updates silently. The helper is not needed.';
+      group.appendChild(note);
+      return;
+    }
+    const intro = document.createElement('div');
+    intro.className = 'group-note';
+    intro.textContent = 'This device currently needs confirmation on the screen to install updates through Android. '
+      + 'The optional helper lets Kiosk Satellite install updates without a tap.';
+    const card = document.createElement('div');
+    card.className = 'card';
+    group.append(intro, card);
+
+    const note = (text) => {
+      const row = document.createElement('div');
+      row.className = 'row desc';
+      row.textContent = text;
+      card.appendChild(row);
+    };
+    const busy = status.helper === 'busy';
+    const active = busy || status.helper === 'ready';
+    const row = readOnlyRow('Helper status', error || (busy
+      ? 'Installing an update.' : active
+        ? 'Ready. Updates install without confirmation.'
+        : 'Unavailable. Start the helper through ADB to enable updates without confirmation.'), '');
+    row.querySelector('span').remove();
+    const button = document.createElement('button');
+    button.className = 'btn-ghost';
+    button.textContent = 'Refresh';
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      await refresh();
+    });
+    row.appendChild(button);
+    card.appendChild(row);
+
+    note('The helper survives app restarts and updates but stops after a device reboot. '
+      + 'Run the command from a computer with ADB to start it again. The computer can then disconnect.');
+    if (status.startCommand) {
+      const setup = readOnlyRow('Start through ADB', '', '');
+      setup.querySelector('span').remove();
+      const copy = copyBox(status.startCommand);
+      copy.el.style.cssText = 'width:100%; max-width:none;';
+      setup.querySelector('.info').appendChild(copy.el);
+      card.appendChild(setup);
+    }
+    const docs = readOnlyRow('Setup guide', 'Read the update helper instructions and requirements.', '');
+    docs.querySelector('span').remove();
+    const link = document.createElement('a');
+    link.className = 'btn-ghost';
+    link.textContent = 'Open guide';
+    link.href = 'https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/updates.md#optional-update-helper';
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    docs.appendChild(link);
+    card.appendChild(docs);
+  };
+  paint();
+}
 
 /* ---- Device Info ---- */
 // What this device is and what it is doing, read fresh each time the tab is
