@@ -1,5 +1,5 @@
 import { $, api, cmd } from './core.js';
-import { copyBox, messageBox, modalShell } from './widgets.js';
+import { copyBox, hintRow, messageBox, modalShell } from './widgets.js';
 
 // The helper group belongs only on devices without native silent installation.
 export function renderUpdateHelper(root, initialStatus) {
@@ -25,16 +25,12 @@ export function renderUpdateHelper(root, initialStatus) {
   const paint = () => {
     group.replaceChildren();
     if (status?.nativeSilent === true) {
-      const note = document.createElement('div');
-      note.className = 'group-note';
-      note.textContent = 'Android can now install updates silently. The helper is not needed.';
-      group.appendChild(note);
+      group.appendChild(hintRow('Android can now install updates silently. The helper is not needed.'));
       return;
     }
-    const intro = document.createElement('div');
-    intro.className = 'group-note';
-    intro.textContent = 'This device currently needs confirmation on the screen to install updates through Android. '
-      + 'The optional helper lets Kiosk Satellite install updates without a tap.';
+    const intro = hintRow('This device currently needs confirmation on the screen to install updates through Android. '
+      + 'The optional helper lets Kiosk Satellite install updates without a tap.');
+    intro.style.marginLeft = '4px';
     const card = document.createElement('div');
     card.className = 'card';
     group.append(intro, card);
