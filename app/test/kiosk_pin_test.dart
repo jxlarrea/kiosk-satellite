@@ -5,6 +5,7 @@ import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/btproxy/esp_entities.dart';
 import 'package:kiosk_satellite/managers/kiosk/kiosk_manager.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +24,8 @@ void main() {
   late EventBus bus;
   late CommandRegistry commands;
   late KioskManager kiosk;
+  late EspEntitySurface surface;
+  late List<MethodCall> backgroundCalls;
 
   /// Every outgoing call on the lock channel, in order.
   late List<String> lockCalls;
@@ -39,8 +42,10 @@ void main() {
     commands = CommandRegistry(log);
     final settings = SettingsManager(bus, commands, log);
     await settings.init();
+    surface = EspEntitySurface(bus, commands, log, settings);
 
     lockCalls = [];
+    backgroundCalls = [];
     binding.defaultBinaryMessenger.setMockMethodCallHandler(lockChannel, (
       call,
     ) async {
@@ -61,6 +66,7 @@ void main() {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(backgroundChannel, (
       call,
     ) async {
+      backgroundCalls.add(call);
       if (call.method == 'launchApp' ||
           call.method == 'openUri' ||
           call.method == 'openSystemSettings') {
@@ -77,6 +83,7 @@ void main() {
   }
 
   tearDown(() async {
+    surface.detach();
     await kiosk.dispose();
     binding.defaultBinaryMessenger.setMockMethodCallHandler(lockChannel, null);
     binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -151,6 +158,82 @@ void main() {
       final result = await commands.execute('openSystemSettings', const {});
       expect(result.ok, false);
       expect(lockCalls.indexOf('unpin'), lessThan(lockCalls.indexOf('apply')));
+    });
+  });
+
+  group('ESPHome launch_app', () {
+    test('launches the requested package through the kiosk command', () async {
+      pinned = true;
+      launchWorks = true;
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+      final action = surface.buildServices().singleWhere(
+        (service) => service['name'] == 'launch_app',
+      );
+      expect(action['supportsResponse'], true);
+      expect(action['args'], [
+        {'name': 'package_name', 'type': 'string'},
+      ]);
+      final launched = <String>[];
+      final sub = bus.on<AppLaunched>().listen((e) => launched.add(e.package));
+      addTearDown(sub.cancel);
+
+      expect(
+        await surface.handleService('launch_app', {
+          'package_name': ' com.android.deskclock ',
+        }),
+        isEmpty,
+      );
+      final call = backgroundCalls.singleWhere((c) => c.method == 'launchApp');
+      expect(call.arguments, {'package': 'com.android.deskclock'});
+      expect(lockCalls, contains('unpin'));
+      expect(lockCalls, isNot(contains('apply')));
+      await pumpEventQueue();
+      expect(launched, ['com.android.deskclock']);
+    });
+
+    test('reports a failed launch and restores the pin', () async {
+      pinned = true;
+      launchWorks = false;
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+
+      await expectLater(
+        surface.handleService('launch_app', {
+          'package_name': 'com.example.gone',
+        }),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('com.example.gone is not installed'),
+          ),
+        ),
+      );
+      expect(lockCalls.indexOf('unpin'), lessThan(lockCalls.indexOf('apply')));
+    });
+
+    test('rejects missing or blank packages without unpinning', () async {
+      pinned = true;
+      launchWorks = true;
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+
+      for (final args in <Map<String, Object?>>[
+        {},
+        {'package_name': ''},
+        {'package_name': '   '},
+      ]) {
+        await expectLater(
+          surface.handleService('launch_app', args),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              'package required',
+            ),
+          ),
+        );
+      }
+      expect(lockCalls, isNot(contains('unpin')));
+      expect(backgroundCalls.where((c) => c.method == 'launchApp'), isEmpty);
     });
   });
 

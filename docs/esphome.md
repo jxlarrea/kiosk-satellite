@@ -289,6 +289,20 @@ binary_sensor:
 For best results, assign unique `chime_file` names within your automations for distinct alerts (like a leak, a delivery, or the laundry finishing) and rely on the default settings for everything else.
 
 
+## Launch an app
+
+`esphome.<node name>_launch_app` opens an installed Android app by its package name from a Home Assistant automation or script. Enable **Expose kiosk entities** under **Settings > ESPHome** to make the action available. The App launcher overlay does not need to be enabled.
+
+```yaml
+- action: esphome.kitchen_tablet_launch_app
+  data:
+    package_name: com.android.deskclock
+```
+
+Replace `kitchen_tablet` with your kiosk's node name, using underscores in place of hyphens. `package_name` is required and must identify an installed app with a launchable activity. An empty package name or a failed launch reports an action error to Home Assistant.
+
+The action uses the same launch behavior as the App launcher and gestures, including unpinning before launch and the configured auto-return behavior. On the [remote API](remote-api.md), the equivalent command is `launchApp` with a `package` argument.
+
 ## Media player actions
 
 Two actions follow a player from an automation, the way the Media Player page's Player source and Player rows do by hand. Both come with **Expose kiosk entities**, under the same device as the notification action.

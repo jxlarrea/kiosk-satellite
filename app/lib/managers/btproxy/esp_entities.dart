@@ -956,6 +956,14 @@ class EspEntitySurface {
         {'name': 'player', 'type': 'string'},
       ],
     },
+    {
+      'name': 'launch_app',
+      // Acknowledge the launch so failures reach the calling automation.
+      'supportsResponse': true,
+      'args': [
+        {'name': 'package_name', 'type': 'string'},
+      ],
+    },
   ];
 
   /// An action call from Home Assistant landed (via the native hub). The
@@ -1027,6 +1035,12 @@ class EspEntitySurface {
         });
         if (!result.ok) throw StateError(result.error ?? 'refused');
         return (result.data as Map?)?.cast<String, Object?>();
+      case 'launch_app':
+        final result = await commands.execute('launchApp', {
+          'package': '${args['package_name'] ?? ''}',
+        });
+        if (!result.ok) throw StateError(result.error ?? 'refused');
+        return const {};
       default:
         log.warn('esphome', 'unknown action $name');
         return null;
