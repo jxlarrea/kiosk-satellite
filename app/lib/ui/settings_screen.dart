@@ -4015,7 +4015,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                             child: Slider(
                               value: screenOff.clamp(0, 60).toDouble(),
                               max: 60,
-                              divisions: 12,
+                              divisions: 60,
                               onChangeStart: (_) => screenOffBefore = screenOff,
                               onChanged: (v) => setDialogState(
                                 () => entry['screen_off'] = v.round(),

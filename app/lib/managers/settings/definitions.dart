@@ -2955,7 +2955,7 @@ const screensaverScreenOffMinutes = SettingDef<num>(
   defaultValue: 0,
   min: 0,
   max: 60,
-  step: 5,
+  step: 1,
   unit: ' min',
   title: 'Turn screen off after',
   description:
