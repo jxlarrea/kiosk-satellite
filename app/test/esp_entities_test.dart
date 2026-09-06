@@ -320,6 +320,30 @@ void main() {
     expect(pushed, contains(('now_playing', true)));
   });
 
+  test(
+    'Now Playing reflects a schedule hiding and restoring the view',
+    () async {
+      await settings.set(defs.screensaverScheduleEnabled, true);
+      await settings.set(
+        defs.screensaverSchedule,
+        '[{"at":"00:00","mode":"clock","now_playing":false}]',
+      );
+      await attach();
+      bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pumpEventQueue();
+      expect(pushed.last, ('now_playing', false));
+
+      await settings.set(
+        defs.screensaverSchedule,
+        '[{"at":"00:00","mode":"clock","now_playing":true}]',
+      );
+      bus.publish(const ScreensaverViewChanged(view: 'clock'));
+      await pumpEventQueue();
+      expect(pushed.last, ('now_playing', true));
+    },
+  );
+
   test('the catalog carries the full entity set', () async {
     final catalog = await surface.build();
     final ids = [for (final d in catalog) '${d['objectId']}'];

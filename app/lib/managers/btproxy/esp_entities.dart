@@ -13,6 +13,8 @@ import '../device/ip_addresses.dart';
 import 'dashboard_views.dart';
 import 'interaction_stamp.dart';
 import '../sendspin/music_assistant_api.dart';
+import '../screensaver/screensaver_manager.dart'
+    show currentScreensaverScheduleEntry;
 import '../settings/definitions.dart' as defs;
 import '../sendspin/sendspin_manager.dart' show SendspinManager;
 import '../settings/settings_manager.dart';
@@ -104,7 +106,8 @@ class EspEntitySurface {
   bool get _nowPlayingShown =>
       _screensaverActive &&
       _nowPlayingActive &&
-      _settings.get(defs.sendspinFullscreen);
+      _settings.get(defs.sendspinFullscreen) &&
+      currentScreensaverScheduleEntry(_settings)?['now_playing'] != false;
 
   /// Whether the Voice Satellite entities are in this run's catalog, so a
   /// push never names an entity Home Assistant was never told about.
@@ -1047,6 +1050,11 @@ class EspEntitySurface {
         _send('screensaver_active', e.active);
         _send('now_playing', _nowPlayingShown);
         _sendCountdown();
+      }),
+    );
+    _subs.add(
+      bus.on<ScreensaverViewChanged>().listen((_) {
+        _send('now_playing', _nowPlayingShown);
       }),
     );
     _subs.add(

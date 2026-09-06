@@ -104,6 +104,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
   @override
   void initState() {
     super.initState();
+    container.screensaver.scheduleNowPlaying.addListener(_scheduleChanged);
     // Editing the Widgets group while the screensaver shows (the remote
     // admin can) applies immediately: the widget list is read at build,
     // so a changed list needs this rebuild to mount or unmount overlays.
@@ -159,8 +160,13 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
     });
   }
 
+  void _scheduleChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    container.screensaver.scheduleNowPlaying.removeListener(_scheduleChanged);
     _widgetsSub?.cancel();
     _luxSub?.cancel();
     super.dispose();
@@ -202,11 +208,17 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
         return ValueListenableBuilder<bool>(
           valueListenable: container.sendspin.fullscreenActive,
           builder: (context, nowPlaying, child) {
+            final scheduled = container.screensaver.scheduleNowPlaying.value;
             final playing =
-                nowPlaying && container.settings.get(defs.sendspinFullscreen);
+                nowPlaying &&
+                container.settings.get(defs.sendspinFullscreen) &&
+                scheduled != false;
             return Positioned.fill(
               child: _ScreensaverPlayerLayout(
-                split: container.settings.get(defs.sendspinFullscreenSplit),
+                container: container,
+                split:
+                    scheduled ??
+                    container.settings.get(defs.sendspinFullscreenSplit),
                 photoFill: container.settings.get(
                   defs.sendspinFullscreenPhotoFill,
                 ),
@@ -398,12 +410,14 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
 /// playback ends and its panel expands back to the whole screen.
 class _ScreensaverPlayerLayout extends StatelessWidget {
   const _ScreensaverPlayerLayout({
+    required this.container,
     required this.split,
     required this.photoFill,
     required this.screensaver,
     required this.player,
   });
 
+  final AppContainer container;
   final bool split;
   final String photoFill;
   final Widget screensaver;
@@ -432,6 +446,7 @@ class _ScreensaverPlayerLayout extends StatelessWidget {
           split &&
           player != null &&
           (landscape ? size.width >= 700 : size.height >= 700);
+      container.screensaver.setNowPlayingShared(shared);
       final full = Offset.zero & size;
       final Rect saverRect;
       final Rect playerRect;
@@ -466,7 +481,14 @@ class _ScreensaverPlayerLayout extends StatelessWidget {
               'screensaver-pane',
               PhotoFillOverride(
                 fill: shared && photoFill != 'default' ? photoFill : null,
-                child: screensaver,
+                child: Listener(
+                  onPointerDown: shared
+                      ? (_) => container.screensaver.notifyActivity(
+                          'screensaver_touch',
+                        )
+                      : null,
+                  child: screensaver,
+                ),
               ),
             ),
           if (player != null)
@@ -2554,7 +2576,11 @@ setInterval(function () {
             // option (discussion #248) the manager must count each tap
             // once, so the bridge's reports carry their own name for it
             // to drop while that gate holds.
-            widget.container.screensaver.notifyActivity('touch_page');
+            widget.container.screensaver.notifyActivity(
+              widget.container.screensaver.nowPlayingShared
+                  ? 'screensaver_touch'
+                  : 'touch_page',
+            );
             return null;
           },
         );

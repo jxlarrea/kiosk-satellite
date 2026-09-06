@@ -85,7 +85,8 @@ Configures direct integration with local Sonos hardware.
 | --- | --- | --- |
 | Launch Now Playing when music starts playing | on | Instantly launches the full screen view when playback starts rather than waiting for the idle screensaver timeout. |
 | Show media controls | on | Displays transport buttons and a progress bar over the background artwork. When enabled, a top-right close button appears and paused tracks remain on screen until the paused timeout expires. |
-| Double tap to dismiss | off | Allows a double tap anywhere on the full screen view to dismiss it, removing the explicit close button. Taps on controls or queue rows do not trigger dismissal. |
+| Double tap to dismiss | off | Allows a double tap anywhere on the standalone Now Playing view to dismiss it, removing the close button. Taps on controls or queue rows do not trigger dismissal. Ignored while shown alongside a screensaver. |
+| Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the standalone music display. Ignored while Now Playing is shown alongside a screensaver. Shared layouts follow the screensaver's detection settings. |
 | Show in the kiosk menu | off | Adds a menu shortcut to open the full screen view directly. Remains hidden if no media is playing or queued. |
 | Show album art in the queue | on | A cover on every row of the queue panel, the server's or the speaker's own thumbnail, fetched as the rows come into view. Off, the rows tighten back up. |
 | Show speaker selection pill | on | The chip in the Now Playing view's top left corner that names the player and opens the speaker group menu. Off, the view shows neither. |
@@ -95,9 +96,9 @@ Configures direct integration with local Sonos hardware.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | "Now Playing" instead of the screensaver | off | Enables the full screen media view as an idle screensaver replacement during active playback. |
-| Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the full screen music display. |
 | Show alongside screensaver | on | Keeps the screensaver on the left and Now Playing on the right. Portrait screens stack the two views. Small screens keep the full screen player. |
 | Fill the screen | Always | Overrides photo filling while sharing the display with Now Playing. Default follows each screensaver's setting. Off, Smart and Always use the same rules as the photo screensavers. |
+| Override screensaver brightness | off | Uses normal brightness while Now Playing is shown alongside a screensaver, overriding its brightness and any scheduled brightness. |
 
 ### Lyrics
 
@@ -158,7 +159,7 @@ The Large card format adds touch-friendly previous, play/pause, and next control
 
 Card behavior:
 * **Paused State**: Remains on screen with a play button until the configured pause timeout expires.
-* **Dismissal**: A fast swipe gesture dismisses the card and stops audio playback (unless configured to keep playing). A slow drag repositions the card on screen.
+* **Dismissal**: On the standalone Now Playing view with media controls enabled, tap the close button or enable **Double tap to dismiss** and double tap the background. The physical back button also dismisses the view. When shown alongside a screensaver, tap the screensaver panel instead.
 * **Voice Interactions**: The card hides automatically during active voice interactions and reappears when the interaction ends.
 * **Track Transitions**: Retains the previous track artwork briefly during stream buffering to eliminate visual flickering.
 
@@ -168,11 +169,15 @@ In Kiosk Mode, visibility controls for the card follow the **Floating Player** s
 
 When enabled, the full screen "Now Playing" view activates during active playback as an idle screensaver replacement. It features blurred, full screen album artwork in the background, sharp centered artwork, and prominent title and artist typography. Track changes cross-fade smoothly.
 
-**Show alongside screensaver**, enabled by default under **Settings > Media Player > Now Playing > Screensaver**, lets you keep photos, clocks or other screensaver content visible while music plays. In landscape, the screensaver takes about two thirds of the display and Now Playing fills the right panel. In portrait, the screensaver fills the top half and the player fills the bottom half. Screens smaller than 700 logical pixels along the split direction keep the full screen player. The Dim screensaver uses a black panel during Now Playing.
+**Show alongside screensaver**, enabled by default under **Settings > Media Player > Now Playing > Screensaver**, lets you keep photos, clocks or other screensaver content visible while music plays. In landscape, the screensaver takes about two thirds of the display and Now Playing fills the right panel. In portrait, the screensaver fills the top half and the player fills the bottom half. Screens smaller than 700 logical pixels along the split direction keep the full screen player. The Dim screensaver uses a black panel beside Now Playing and keeps its configured dim level.
 
 **Fill the screen** in the same group defaults to **Always**, so photos fill the smaller panel. Choose **Default** to follow each photo screensaver's saved fill setting or select **Off** or **Smart** for a shared override. The override applies only while Now Playing shares the display and leaves each screensaver's saved setting unchanged.
 
+Each [scheduled screensaver](screensavers.md#schedule) also has a **Show Now Playing next to the screensaver** override. **Default** follows the global layout setting, **On** requests the shared layout when Now Playing is enabled and **Off** hides Now Playing during those hours. Use **Off** for a nighttime screensaver to keep its brightness and prevent automatic launches when music starts. Playback continues normally.
+
 Artwork, track text and controls adapt to the player panel. Narrow panels put playback controls and secondary buttons on separate rows. Lyrics and the queue use the artwork space when the panel cannot fit both. Screensaver widgets stay inside the screensaver panel. When Now Playing closes after playback ends, the screensaver expands to fill the display.
+
+When the views share the display, tap the screensaver panel to dismiss them. Slideshow edge taps still change photos when enabled. The player panel has no close button and ignores double-tap dismissal, regardless of that setting. The screensaver's configured motion, face, person and proximity dismissal rules also apply. Shared layouts respect screensaver brightness, including the active schedule's override. Enable **Override screensaver brightness** in **Now Playing > Screensaver** to use normal brightness instead. The toggle is off by default and applies immediately. Dismissing the shared view restores normal brightness.
 
 When **Launch Now Playing when music starts playing** is enabled, the view opens immediately upon track start rather than waiting for the idle timeout. Pausing playback returns the display to the standard screensaver once the pause timeout expires.
 
@@ -183,7 +188,7 @@ When **Show media controls** is enabled, transport buttons, a progress bar, and 
 * **Transport & Progress**: Displays previous, play/pause, and next buttons alongside elapsed and total track time. On supported players, dragging the progress bar thumb seeks within the track.
 * **Left Toggles**: Volume, favorite and shuffle. Toggling volume replaces the progress bar with a volume slider and a mute button. On Sonos devices, adjusting volume updates the entire group volume when group volume adjustment is enabled. The heart marks the playing track as a favorite, filled while it is one: in Music Assistant's library for this device's own player and a followed Music Assistant player, and in the household's My Sonos for a Sonos followed directly, where a station or a track is added the way the Sonos app's own heart adds it. A Home Assistant player shows no heart.
 * **Right Toggles**: Repeat, synchronized lyrics and the queue panel. Repeat cycles off, all and one on every source that reports it, lit while on and wearing the numbered glyph on one. Side-by-side or stacked layouts adapt dynamically based on screen orientation. The queue panel displays past tracks, the current track, and upcoming items, each with its cover while **Show album art in the queue** is on, allowing direct track jumping by tapping any row.
-* **Dismissal**: When media controls are enabled, tapping the background does not dismiss the view; users must tap the top-right close button, use a double tap gesture (if **Double tap to dismiss** is on), or press the physical back button.
+* **Dismissal**: On the standalone Now Playing view with media controls enabled, tapping the background does not dismiss the view; users must tap the top-right close button, use a double tap gesture (if **Double tap to dismiss** is on), or press the physical back button.
 
 ### Speaker groups
 

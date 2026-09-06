@@ -3783,6 +3783,9 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
     if (entry['glance'] is bool) {
       parts.add('At a glance ${entry['glance'] == true ? 'on' : 'off'}');
     }
+    if (entry['now_playing'] is bool) {
+      parts.add('Now Playing ${entry['now_playing'] == true ? 'on' : 'off'}');
+    }
     final screenOff = entry['screen_off'];
     if (screenOff is num) {
       parts.add(
@@ -3815,6 +3818,8 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
       if (existing?['person'] is bool) 'person': existing!['person'],
       if (existing?['widgets'] is bool) 'widgets': existing!['widgets'],
       if (existing?['glance'] is bool) 'glance': existing!['glance'],
+      if (existing?['now_playing'] is bool)
+        'now_playing': existing!['now_playing'],
       // Optional the same way (issue #437): absent follows the Turn screen
       // off after slider outside the schedule, present it is this entry's
       // own countdown, 0 keeping the panel on through its hours.
@@ -4074,6 +4079,14 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                     if (personShown) override('Dismiss on person', 'person'),
                     override('Widgets', 'widgets'),
                     override('At a glance', 'glance'),
+                    override(
+                      'Show Now Playing next to the screensaver',
+                      'now_playing',
+                      helper:
+                          'Default follows the global layout. On uses a '
+                          'shared layout when Now Playing is enabled. Off '
+                          'hides Now Playing during these hours.',
+                    ),
                   ],
                 ),
               ),

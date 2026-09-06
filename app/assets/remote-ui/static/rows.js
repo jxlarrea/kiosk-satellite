@@ -535,11 +535,17 @@ export function settingRow(s) {
       const person = overrideField('Dismiss on person', start.person);
       const widgets = overrideField('Widgets', start.widgets);
       const glance = overrideField('At a glance', start.glance);
+      const nowPlaying = overrideField('Show Now Playing next to the screensaver', start.now_playing);
+      const nowPlayingHint = document.createElement('span');
+      nowPlayingHint.className = 'desc';
+      nowPlayingHint.textContent = 'Default follows the global layout. On uses a '
+        + 'shared layout when Now Playing is enabled. Off hides Now Playing during these hours.';
+      nowPlaying.wrap.append(nowPlayingHint);
 
       body.append(timeWrap, modeSel.wrap, brightOn.wrap, brightWrap,
         offOn.wrap, offWrap, motion.wrap, face.wrap, proximity.wrap);
       if (personShown) body.append(person.wrap);
-      body.append(widgets.wrap, glance.wrap);
+      body.append(widgets.wrap, glance.wrap, nowPlaying.wrap);
 
       return cameraEditor({
         title: existing ? String(start.at) : 'Add time',
@@ -557,7 +563,7 @@ export function settingRow(s) {
           // so an entry's value from another device survives an edit here.
           for (const [key, field] of [['motion', motion], ['face', face],
             ['proximity', proximity], ['person', person],
-            ['widgets', widgets], ['glance', glance]]) {
+            ['widgets', widgets], ['glance', glance], ['now_playing', nowPlaying]]) {
             if (field.select.value) entry[key] = field.select.value === 'on';
           }
           entries = [...others, entry];
@@ -592,6 +598,9 @@ export function settingRow(s) {
       }
       if (typeof e.glance === 'boolean') {
         parts.push('At a glance ' + (e.glance ? 'on' : 'off'));
+      }
+      if (typeof e.now_playing === 'boolean') {
+        parts.push('Now Playing ' + (e.now_playing ? 'on' : 'off'));
       }
       if (typeof e.screen_off === 'number') {
         parts.push(e.screen_off <= 0 ? 'Screen off never'

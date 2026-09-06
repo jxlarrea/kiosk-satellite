@@ -174,7 +174,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     _settingsSub = c.bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.sendspinLyrics.key ||
           e.key == defs.sendspinFullscreenQueue.key ||
-          e.key == defs.sendspinSpeakerPill.key) {
+          e.key == defs.sendspinSpeakerPill.key ||
+          e.key == defs.sendspinFullscreenDoubleTap.key) {
         _onLayoutChanged();
       }
     });
@@ -254,6 +255,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     // manager runs the tap chain on touches off the controls.
     final doubleTap =
         controls && c.settings.get(defs.sendspinFullscreenDoubleTap);
+    final showClose = controls && !doubleTap && !widget.alongsideScreensaver;
     // The queue panel (controls only: its button lives there) and the
     // lyrics share one slot, the queue winning while it is open. Either
     // takes whatever spare axis the panel has: a second column on a
@@ -505,10 +507,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
             child: SafeArea(
               child: _PlayerChip(
                 container: c,
-                maxWidth: max(
-                  80,
-                  screen.width - (controls && !doubleTap ? 80 : 24),
-                ),
+                maxWidth: max(80, screen.width - (showClose ? 80 : 24)),
               ),
             ),
           ),
@@ -516,7 +515,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         // explicit: the same floating close the page overlays wear. It
         // reports its own source so the manager can tell it from the
         // touches it is holding.
-        if (controls && !doubleTap)
+        if (showClose)
           Positioned(
             top: 12,
             right: 12,

@@ -64,6 +64,7 @@ List<Map<String, Object?>> parseScreensaverSchedule(String json) {
         if (e['widgets'] is bool) 'widgets': e['widgets'],
         // The same for the At a glance row.
         if (e['glance'] is bool) 'glance': e['glance'],
+        if (e['now_playing'] is bool) 'now_playing': e['now_playing'],
         // The entry's own "Turn screen off after" (issue #437), in minutes:
         // absent follows the slider outside the schedule, 0 keeps the
         // panel on for this entry's hours even when that slider is set.
@@ -80,6 +81,19 @@ List<Map<String, Object?>> parseScreensaverSchedule(String json) {
   } catch (_) {
     return const [];
   }
+}
+
+/// The schedule entry in force now, or null when scheduling is disabled.
+Map<String, Object?>? currentScreensaverScheduleEntry(
+  SettingsManager settings, {
+  DateTime? now,
+}) {
+  if (!settings.get(defs.screensaverScheduleEnabled)) return null;
+  final entries = parseScreensaverSchedule(
+    settings.get(defs.screensaverSchedule),
+  );
+  final time = now ?? DateTime.now();
+  return activeScheduleEntry(entries, time.hour * 60 + time.minute);
 }
 
 /// [entry] written into [entries]: replacing the one at [index], or appended
@@ -238,9 +252,32 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   static const _tapDebounce = Duration(milliseconds: 120);
   static const _doubleTapWindow = Duration(milliseconds: 400);
 
-  /// Wall clock, injectable for the double-tap tests only.
+  /// Wall clock for dismissal timing and schedule boundaries.
   @visibleForTesting
   DateTime Function() clock = DateTime.now;
+
+  /// The rendered layout reports this because small screens can fall back
+  /// to the standalone player even when the shared-layout setting is on.
+  bool _nowPlayingShared = false;
+  bool get nowPlayingShared => _nowPlayingShared && _nowPlayingTakeover;
+
+  bool get _nowPlayingNormalBrightness =>
+      _nowPlayingTakeover &&
+      (!nowPlayingShared ||
+          _settings.get(defs.sendspinFullscreenOverrideBrightness));
+
+  void setNowPlayingShared(bool shared) {
+    if (!_active || _nowPlayingShared == shared) return;
+    _nowPlayingShared = shared;
+    _tapChainStart = null;
+    // Layout reports during build. Apply brightness after that frame's
+    // synchronous work so view notifications cannot rebuild its ancestors.
+    unawaited(
+      Future<void>.microtask(() async {
+        if (_active) await _applyVisuals();
+      }),
+    );
+  }
 
   /// Whether dismissal currently takes two taps: only the website
   /// screensaver offers the option (its page is the only thing a single
@@ -251,6 +288,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           !_nowPlayingTakeover &&
           _settings.get(defs.screensaverWebsiteDoubleTap)) ||
       (_nowPlayingHoldsTouch &&
+          !nowPlayingShared &&
           _settings.get(defs.sendspinFullscreenDoubleTap));
 
   /// When a touch last landed on one of the Now Playing view's controls,
@@ -377,6 +415,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // keeps every refusal it has for a timed start (hold mode, a
       // voice turn, another app in front, lockdown).
       if (startedPlaying &&
+          allowsNowPlaying &&
           _settings.get(defs.sendspinFullscreen) &&
           _settings.get(defs.sendspinFullscreenOnPlay)) {
         log.info(name, 'Now Playing launched by playback');
@@ -409,11 +448,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // The full-screen now-playing view has its own motion policy: it is
       // a music display, and someone walking past should not interrupt it
       // unless explicitly asked to (sendspin.fullscreen_motion).
-      final showingNowPlaying =
-          activeView.value != null &&
-          _sendspinNowPlaying &&
-          _settings.get(defs.sendspinFullscreen);
-      if (showingNowPlaying && !_settings.get(defs.sendspinFullscreenMotion)) {
+      final showingNowPlaying = activeView.value != null && _nowPlayingTakeover;
+      if (showingNowPlaying &&
+          !nowPlayingShared &&
+          !_settings.get(defs.sendspinFullscreenMotion)) {
         return;
       }
       notifyActivity('motion');
@@ -443,11 +481,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         return;
       }
       // Now Playing keeps its own policy; a face counts like motion there.
-      final showingNowPlaying =
-          activeView.value != null &&
-          _sendspinNowPlaying &&
-          _settings.get(defs.sendspinFullscreen);
-      if (showingNowPlaying && !_settings.get(defs.sendspinFullscreenMotion)) {
+      final showingNowPlaying = activeView.value != null && _nowPlayingTakeover;
+      if (showingNowPlaying &&
+          !nowPlayingShared &&
+          !_settings.get(defs.sendspinFullscreenMotion)) {
         return;
       }
       // Before the stop, so the camera preview's hold (MotionManager) is
@@ -481,11 +518,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (e.held) return;
       // Now Playing keeps its own policy; someone there counts like
       // motion there.
-      final showingNowPlaying =
-          activeView.value != null &&
-          _sendspinNowPlaying &&
-          _settings.get(defs.sendspinFullscreen);
-      if (showingNowPlaying && !_settings.get(defs.sendspinFullscreenMotion)) {
+      final showingNowPlaying = activeView.value != null && _nowPlayingTakeover;
+      if (showingNowPlaying &&
+          !nowPlayingShared &&
+          !_settings.get(defs.sendspinFullscreenMotion)) {
         return;
       }
       notifyActivity('person');
@@ -514,11 +550,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (e.held) return;
       // Now Playing keeps its own policy; something coming close counts
       // like motion there.
-      final showingNowPlaying =
-          activeView.value != null &&
-          _sendspinNowPlaying &&
-          _settings.get(defs.sendspinFullscreen);
-      if (showingNowPlaying && !_settings.get(defs.sendspinFullscreenMotion)) {
+      final showingNowPlaying = activeView.value != null && _nowPlayingTakeover;
+      if (showingNowPlaying &&
+          !nowPlayingShared &&
+          !_settings.get(defs.sendspinFullscreenMotion)) {
         return;
       }
       notifyActivity('proximity');
@@ -605,6 +640,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           (e.key == defs.screensaverBrightnessEnabled.key ||
               e.key == defs.screensaverBrightnessLevel.key)) {
         unawaited(_onBrightnessSettingChanged());
+      }
+      if (nowPlayingShared &&
+          e.key == defs.sendspinFullscreenOverrideBrightness.key) {
+        unawaited(_applyVisuals());
       }
       // Editing the schedule while the screensaver shows applies right
       // away, same as the brightness slider: the editor doubles as a
@@ -753,6 +792,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   void notifySlideChanged() => bus.publish(const ScreensaverSlideChanged());
 
   void notifyActivity(String source) {
+    // Shared layouts dismiss through the screensaver panel. Generic touch
+    // reports include player buttons and must leave the combined view up.
+    if (nowPlayingShared &&
+        (source == 'touch' || source == 'touch_page' || source == 'tap')) {
+      return;
+    }
     // Now Playing with its controls up: a touch there is a button press
     // or a seek and a key press is the dpad walking the buttons, so
     // neither dismisses. The view's close button reports as 'close', and
@@ -776,7 +821,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // the raw Listener's report of it is not a wake.
     if (_active &&
         _touchOnSlideEdge &&
-        (source == 'touch' || source == 'touch_page' || source == 'tap')) {
+        (source == 'touch' ||
+            source == 'touch_page' ||
+            source == 'tap' ||
+            source == 'screensaver_touch')) {
       return;
     }
     if (_active &&
@@ -881,7 +929,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// Whether the Sendspin "Now Playing" view is what the screensaver slot
   /// actually shows right now.
   bool get _nowPlayingTakeover =>
-      _sendspinNowPlaying && _settings.get(defs.sendspinFullscreen);
+      _sendspinNowPlaying &&
+      _settings.get(defs.sendspinFullscreen) &&
+      allowsNowPlaying;
+
+  /// An Off schedule suppresses both the shared and standalone player.
+  bool get allowsNowPlaying => _scheduleEntry?['now_playing'] != false;
 
   /// Whether the Now Playing view is on screen with its media controls
   /// (sendspin.fullscreen_controls), which is when a tap stops meaning
@@ -899,14 +952,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   /// The schedule entry in force right now, or null when the schedule is
   /// off or empty.
-  Map<String, Object?>? get _scheduleEntry {
-    if (!_settings.get(defs.screensaverScheduleEnabled)) return null;
-    final entries = parseScreensaverSchedule(
-      _settings.get(defs.screensaverSchedule),
-    );
-    final now = DateTime.now();
-    return activeScheduleEntry(entries, now.hour * 60 + now.minute);
-  }
+  Map<String, Object?>? get _scheduleEntry =>
+      currentScreensaverScheduleEntry(_settings, now: clock());
 
   /// The mode the screensaver should show: the scheduled one when an entry
   /// is in force, the configured mode otherwise.
@@ -925,6 +972,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// schedule boundary — the UI layer watches this to mount or unmount the
   /// overlays without the view itself having to change.
   final ValueNotifier<bool?> scheduleWidgets = ValueNotifier(null);
+
+  /// Null follows the global layout, true requests the shared layout and
+  /// false leaves only the scheduled screensaver visible.
+  final ValueNotifier<bool?> scheduleNowPlaying = ValueNotifier(null);
 
   /// Corners the running mode has taken for itself, which the corner
   /// widgets stand down from for as long as it holds them. The Immich
@@ -1147,8 +1198,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// configured mode, or the Sendspin "Now Playing" takeover. Called at
   /// start and again whenever the takeover flips mid-session (music
   /// starting or stopping under an active screensaver), so the brightness
-  /// policy always matches what is actually displayed — Now Playing is a
-  /// music display and must not inherit dim's backlight or black's zero.
+  /// policy matches the display. The standalone player keeps normal
+  /// brightness. Shared layouts follow the screensaver's brightness unless
+  /// their brightness override is enabled.
   Future<void> _applyVisuals() async {
     final mode = _effectiveMode;
     final entry = _scheduleEntry;
@@ -1159,6 +1211,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       entry?['proximity'] as bool?,
       entry?['person'] as bool?,
     );
+    scheduleNowPlaying.value = entry?['now_playing'] as bool?;
     scheduleWidgets.value = entry?['widgets'] as bool?;
     scheduleGlance.value = entry?['glance'] as bool?;
     _syncScreenOffTimer();
@@ -1166,7 +1219,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     if (mode == 'dim' || mode == 'black' || _contentDimEnabled(mode)) {
       await _ensureSavedBrightness();
     }
-    if (_nowPlayingTakeover) {
+    if (_nowPlayingNormalBrightness) {
       // A non-null view gives the override a slot to render into ('dim'
       // normally shows no overlay at all), at full brightness.
       _setView((mode == 'dim') ? 'black' : mode);
@@ -1189,7 +1242,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       case 'dim':
         // Backlight only — no overlay. stop() restores the saved level.
         // A scheduled brightness wins over the configured dim level.
-        _setView(null);
+        _setView(nowPlayingShared ? 'black' : null);
         final dim =
             _scheduleBrightness ??
             _settings.get(defs.screensaverDimLevel).toDouble();
@@ -1250,7 +1303,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// restores the pre-screensaver brightness right away.
   Future<void> _onBrightnessSettingChanged() async {
     final mode = _effectiveMode;
-    if (mode == 'dim' || mode == 'black' || _nowPlayingTakeover) return;
+    if (mode == 'dim' || mode == 'black' || _nowPlayingNormalBrightness) {
+      return;
+    }
     if (_contentDimEnabled(mode)) {
       await _ensureSavedBrightness();
       // An active schedule entry's brightness still wins over the slider.
@@ -1273,6 +1328,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   Future<void> stop() async {
     if (!_active) return;
     _active = false;
+    _nowPlayingShared = false;
+    _tapChainStart = null;
     _screenOffTimer?.cancel();
     _screenOffTimer = null;
     _armedScreenOffMinutes = null;
@@ -1295,6 +1352,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       await _settings.set(defs.screensaverSavedBrightness, -1);
     }
     _publishMotionPolicy(null, null, null, null);
+    scheduleNowPlaying.value = null;
     scheduleWidgets.value = null;
     scheduleGlance.value = null;
     claimedCorners.value = const {};
@@ -1373,5 +1431,6 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _scheduleTimer?.cancel();
     _screenOffTimer?.cancel();
     activeView.dispose();
+    scheduleNowPlaying.dispose();
   }
 }

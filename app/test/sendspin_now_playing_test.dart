@@ -153,6 +153,7 @@ void main() {
           defs.sendspinFullscreenOnPlay,
           defs.sendspinFullscreenControls,
           defs.sendspinFullscreenDoubleTap,
+          defs.sendspinFullscreenMotion,
           defs.sendspinFullscreenShortcut,
           defs.sendspinSpeakerPill,
           defs.sendspinQueueArt,
@@ -160,14 +161,19 @@ void main() {
       );
       expect(screensaver, [
         defs.sendspinFullscreen,
-        defs.sendspinFullscreenMotion,
         defs.sendspinFullscreenSplit,
         defs.sendspinFullscreenPhotoFill,
+        defs.sendspinFullscreenOverrideBrightness,
       ]);
       expect(defs.sendspinFullscreenSplit.defaultValue, isTrue);
       expect(
         defs.sendspinFullscreenSplit.dependsOn,
         defs.sendspinFullscreen.key,
+      );
+      expect(defs.sendspinFullscreenOverrideBrightness.defaultValue, isFalse);
+      expect(
+        defs.sendspinFullscreenOverrideBrightness.dependsOn,
+        defs.sendspinFullscreenSplit.key,
       );
       expect(defs.sendspinFullscreenPhotoFill.defaultValue, 'always');
       expect(defs.sendspinFullscreenPhotoFill.options, [
@@ -360,6 +366,23 @@ void main() {
       await pumpEventQueue();
       expect(saver.isActive, isFalse);
     });
+
+    test(
+      'a schedule can prevent Now Playing from launching on playback',
+      () async {
+        await build({
+          'ks.screensaver.schedule_enabled': true,
+          'ks.screensaver.schedule':
+              '[{"at":"00:00","mode":"clock","now_playing":false}]',
+        });
+        bus.publish(
+          const SendspinNowPlayingChanged(active: true, playing: true),
+        );
+        await pumpEventQueue();
+        expect(saver.isActive, isFalse);
+        await saver.dispose();
+      },
+    );
 
     test('launch on play needs the Now Playing view itself', () async {
       await build({

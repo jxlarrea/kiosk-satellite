@@ -4905,6 +4905,21 @@ const sendspinFullscreenPhotoFill = SettingDef<String>(
   dependsOn: 'sendspin.fullscreen_split',
 );
 
+const sendspinFullscreenOverrideBrightness = SettingDef<bool>(
+  key: 'sendspin.fullscreen_override_brightness',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Override screensaver brightness',
+  description:
+      'Use normal screen brightness instead of screensaver brightness '
+      'while Now Playing is shown alongside a screensaver. This also '
+      'overrides scheduled screensaver brightness.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'Screensaver',
+  dependsOn: 'sendspin.fullscreen_split',
+);
+
 /// The transport on the full-screen view: the same previous, play/pause
 /// and next buttons the large floating card carries, plus a progress bar
 /// that seeks where the server allows it. With controls on screen a tap
@@ -4938,7 +4953,8 @@ const sendspinFullscreenDoubleTap = SettingDef<bool>(
   title: 'Double tap to dismiss',
   description:
       'A double tap anywhere on the Now Playing view dismisses it. The '
-      "close button won't be shown.",
+      "close button won't be shown. Ignored while Now Playing is shown "
+      'alongside a screensaver.',
   category: 'Sendspin',
   subpage: 'Now Playing',
   section: 'User Interface',
@@ -4970,10 +4986,11 @@ const sendspinFullscreenMotion = SettingDef<bool>(
   description:
       'Let motion dismiss Now Playing like a regular screensaver. Off, '
       'only touch dismisses it, so a walk-past does not interrupt the '
-      'music display.',
+      'music display. Ignored while Now Playing is shown alongside a '
+      'screensaver.',
   category: 'Sendspin',
   subpage: 'Now Playing',
-  section: 'Screensaver',
+  section: 'User Interface',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -6416,15 +6433,16 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenOnPlay,
   sendspinFullscreenControls,
   sendspinFullscreenDoubleTap,
+  sendspinFullscreenMotion,
   sendspinFullscreenShortcut,
   sendspinSpeakerPill,
   sendspinQueueArt,
   sendspinLyrics,
   sendspinFullscreenQueue,
   sendspinFullscreen,
-  sendspinFullscreenMotion,
   sendspinFullscreenSplit,
   sendspinFullscreenPhotoFill,
+  sendspinFullscreenOverrideBrightness,
   sendspinLyricsEnabled,
   sendspinLyricsSource,
   sendspinLyricsFallback,
