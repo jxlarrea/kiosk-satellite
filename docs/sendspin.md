@@ -35,6 +35,14 @@ Configures the kiosk as a synchronized Music Assistant audio player. These setti
 
 Music Assistant includes native Sendspin support enabled by default, and players register automatically upon connection without requiring server side setup.
 
+### Audio synchronization
+
+The player uses Android's estimated presentation timestamps after checking that they advance at the audio sample rate. When a device cannot provide reliable timestamps, it uses a smoothed playback head with latency compensation. If timestamps stop working during playback, the fallback retains the last measured latency for that stream. These checks establish clock consistency, not acoustic alignment. A timestamp can advance consistently while the speakers still have a fixed relative delay.
+
+For manual adjustment, a negative **Audio sync offset** in Kiosk Satellite makes this device play earlier. Music Assistant's **Static playback delay** uses the opposite sign: increasing it compensates for additional output delay by playing earlier. Adjust one control at a time so the two corrections do not overlap.
+
+The `sendspinStatus` remote command includes timing diagnostics under `stats`. `sinkLatencyMs` estimates the delay from the smoothed playback head to Android's presentation reference. It is not an acoustic measurement. `timing.clockSource` reports `timestamp`, `playback_head` or `warming_up`. `timing.fallbackReason` explains why timestamps were rejected. `audioTrackUnderruns` counts buffer underruns for the current AudioTrack, including its previous streams when the track is reused. A connected or time-synced player alone does not confirm that its sound reaches the speaker at the correct time.
+
 ### Music Assistant
 
 The Sendspin protocol transmits audio data along with basic track name, artist, and album metadata. Extended information—including synchronized lyrics, queue management, player lists, and kiosk menu shortcuts—is fetched separately from Music Assistant's REST API.

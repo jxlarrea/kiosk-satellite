@@ -3,6 +3,7 @@ package me.jxl.kiosk_satellite.sendspin
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
+import android.media.AudioTimestamp
 import android.media.AudioTrack
 import android.os.SystemClock
 import android.util.Log
@@ -13,11 +14,10 @@ import java.util.concurrent.atomic.AtomicLong
  * AudioTrack output for the native SendSpin engine.
  *
  * sendspin-cpp owns all scheduling; this class only writes the PCM it is
- * handed and answers "how many frames have actually been presented since the
- * last poll". That progress feedback is deliberately delta-based and clamped
- * non-negative: on devices whose HAL freezes or rewinds AudioTrack timestamps
- * (Meta Portal, issue #163) a bad clock then degrades into a missed poll
- * instead of a false sync error.
+ * handed and reports Android's estimated presentation position. Advancing
+ * AudioTrack timestamps provide that reference. Drivers with unusable timestamps
+ * use a smoothed playback head with latency compensation instead. Feedback
+ * stays non-negative across either source and is timed at the position sample.
  */
 class NativeAudioOutput {
 
@@ -51,26 +51,15 @@ class NativeAudioOutput {
         get() = channels * (bitDepth / 8)
 
     private val framesWritten = AtomicLong(0)
-    private var headRaw = 0L
-    private var headWraps = 0L
     private var lastReportedFrames = 0L
+    private var lastFeedbackNs = 0L
 
     @Volatile private var halBufferUs = 0L
     @Volatile private var sinkLatencyUs = 0L
 
-    // Smooth playback clock slaved to the mixer head. The head is the only
-    // position source whose meaning is the same on every device
-    // (getTimestamp's reference varies per HAL: true DAC on some, mixer on
-    // the SM-X710 and Echo Show 8, frozen on issue #106/#163 hardware),
-    // but it advances in mixer-period strides, up to ~90ms on Samsung
-    // deep-buffer routes, and reporting those strides raw reads as phantom
-    // sync errors. So the clock advances at the nominal sample rate and a
-    // small servo bleeds any accumulated difference toward the head,
-    // filtering stride jitter while staying slaved to real consumption.
-    private var smoothFrames = 0.0
-    private var smoothLastNs = 0L
-    private var headLastValue = -1L
-    private var headLastChangedNs = 0L
+    private val headClock = PlaybackClock()
+    private val presentationClock = PresentationClock()
+    private val audioTimestamp = AudioTimestamp()
 
     @Volatile private var mediaGain = 1f
     @Volatile private var duckGain = 1f
@@ -90,6 +79,9 @@ class NativeAudioOutput {
                 try {
                     existing.pause()
                     existing.flush()
+                    sinkLatencyUs = measureSinkLatencyUs(
+                        existing, existing.bufferSizeInFrames * bytesPerFrame, bytesPerFrame,
+                    )
                     resetProgressLocked()
                     beginSoftStartLocked(existing)
                     existing.play()
@@ -158,7 +150,9 @@ class NativeAudioOutput {
             this.sampleRate = sampleRate
             this.channels = channels
             this.bitDepth = bitDepth
-            sinkLatencyUs = measureSinkLatencyUs(newTrack, bufferBytes, frameBytes)
+            sinkLatencyUs = measureSinkLatencyUs(
+                newTrack, newTrack.bufferSizeInFrames * frameBytes, frameBytes,
+            )
             resetProgressLocked()
             beginSoftStartLocked(newTrack)
             newTrack.play()
@@ -233,13 +227,8 @@ class NativeAudioOutput {
     class Progress(
         /** Frames presented since the previous poll, clamped non-negative. */
         @JvmField val frames: Long,
-        /**
-         * Microseconds until those frames actually exit the DAC: the HAL
-         * buffer depth, since the count is taken at the mixer head, which
-         * leads the speaker by exactly that. Without it the library sees a
-         * phantom lead and audibly corrects it every few seconds.
-         */
-        @JvmField val finishBiasUs: Long,
+        /** Monotonic time of the position sample, before any thread handoff. */
+        @JvmField val sampledAtUs: Long,
     )
 
     /**
@@ -250,11 +239,13 @@ class NativeAudioOutput {
     fun takePresentedFramesDelta(): Progress? {
         synchronized(lock) {
             if (!started) return null
-            val presented = presentedFramesLocked()
+            val sampledAtNs = System.nanoTime()
+            val presented = presentedFramesLocked(sampledAtNs)
             val delta = (presented - lastReportedFrames).coerceAtLeast(0)
             if (delta <= 0) return null
             lastReportedFrames = presented
-            return Progress(delta, sinkLatencyUs)
+            lastFeedbackNs = sampledAtNs
+            return Progress(delta, sampledAtNs / 1000)
         }
     }
 
@@ -277,8 +268,32 @@ class NativeAudioOutput {
         0
     }
 
-    /** The measured write-to-speaker latency, for diagnostics. */
-    fun sinkLatencyMs(): Long = sinkLatencyUs / 1000
+    /** Estimated delay from the smoothed head to Android's presentation reference. */
+    fun sinkLatencyMs(): Long = synchronized(lock) { presentationClock.latencyUs / 1000 }
+
+    /** Raw driver reports alongside the selected clock, for sync investigations. */
+    fun timingDiagnostics(): Map<String, Any?> = synchronized(lock) {
+        val t = track ?: return@synchronized emptyMap()
+        val timestamp = AudioTimestamp()
+        val valid = runCatching { t.getTimestamp(timestamp) }.getOrDefault(false)
+        val nowNs = System.nanoTime()
+        val latencyMs = runCatching {
+            AudioTrack::class.java.getMethod("getLatency").invoke(t) as Int
+        }.getOrNull()
+        mapOf(
+            "clockSource" to presentationClock.source,
+            "fallbackReason" to presentationClock.fallbackReason,
+            "sampleTimeNs" to nowNs,
+            "playbackHeadFrames" to (t.playbackHeadPosition.toLong() and 0xFFFF_FFFFL),
+            "reportedFrames" to lastReportedFrames,
+            "feedbackSampleTimeNs" to lastFeedbackNs,
+            "minimumBufferMs" to halBufferUs / 1000,
+            "trackBufferFrames" to t.bufferSizeInFrames,
+            "platformLatencyMs" to latencyMs,
+            "timestampFrames" to if (valid) timestamp.framePosition else null,
+            "timestampNs" to if (valid) timestamp.nanoTime else null,
+        )
+    }
 
     fun setMediaGain(gain: Float) {
         mediaGain = gain.coerceIn(0f, 1f)
@@ -315,73 +330,46 @@ class NativeAudioOutput {
 
     // ------------------------------------------------------------------
 
-    private fun presentedFramesLocked(): Long {
+    private fun presentedFramesLocked(nowNs: Long = System.nanoTime()): Long {
         val t = track ?: return 0
         if (t.state != AudioTrack.STATE_INITIALIZED) return 0
-
-        val nowNs = System.nanoTime()
-        val head = headPositionLocked()
-        if (smoothLastNs == 0L) {
-            smoothFrames = head.toDouble()
-            smoothLastNs = nowNs
-            return head
+        val written = framesWritten.get()
+        val head = headClock.position(
+            t.playbackHeadPosition.toLong(), nowNs, written, sampleRate,
+            halBufferUs * sampleRate / 1_000_000,
+        )
+        val valid = presentationClock.canPollTimestamp &&
+            runCatching { t.getTimestamp(audioTimestamp) }.getOrDefault(false)
+        val previousSource = presentationClock.source
+        val presented = presentationClock.position(
+            nowNs, head, written, sampleRate,
+            if (valid) audioTimestamp.framePosition else null,
+            if (valid) audioTimestamp.nanoTime else null,
+        )
+        if (presentationClock.source != previousSource) {
+            Log.i(
+                TAG,
+                "Playback clock=${presentationClock.source} " +
+                    "sinkLatency=${presentationClock.latencyUs / 1000}ms " +
+                    "reason=${presentationClock.fallbackReason ?: "validated"}",
+            )
         }
-        val elapsed = (nowNs - smoothLastNs).coerceAtLeast(0)
-        smoothLastNs = nowNs
-        if (head != headLastValue) {
-            headLastValue = head
-            headLastChangedNs = nowNs
-        }
-        // Nominal-rate advance plus a servo toward the head: ~1% of the
-        // remaining difference per 5ms poll, a time constant of roughly
-        // half a second, well under the stride period it must filter. A
-        // head that has not moved in over a stride is not quantization,
-        // it is a stall (stream priming, rebuffer, pause): freeze the
-        // nominal advance and let the servo hold position.
-        if (nowNs - headLastChangedNs < 300_000_000L) {
-            smoothFrames += elapsed * sampleRate / 1_000_000_000.0
-        }
-        smoothFrames += (head - smoothFrames) * 0.01
-        // Hard bounds: never report beyond what was actually written (the
-        // library counts played against sent and underflows otherwise),
-        // never lead the head by more than one Samsung-sized stride, and
-        // never trail it by more than the HAL buffer.
-        val maxLead = sampleRate / 10.0
-        val halFrames = (halBufferUs * sampleRate / 1_000_000).toDouble()
-        smoothFrames = smoothFrames
-            .coerceIn(head - halFrames, head + maxLead)
-            .coerceAtMost(framesWritten.get().toDouble())
-            .coerceAtLeast(0.0)
-        return smoothFrames.toLong()
-    }
-
-    private fun headPositionLocked(): Long {
-        val t = track ?: return 0
-        val raw = t.playbackHeadPosition.toLong() and 0xFFFF_FFFFL
-        if (raw < headRaw) headWraps++
-        headRaw = raw
-        return raw + (headWraps shl 32)
+        return presented
     }
 
     private fun resetProgressLocked() {
         framesWritten.set(0)
-        headRaw = 0
-        headWraps = 0
-        smoothFrames = 0.0
-        smoothLastNs = 0L
-        headLastValue = -1L
-        headLastChangedNs = 0L
-        lastReportedFrames = presentedFramesLocked()
+        headClock.reset()
+        presentationClock.reset(System.nanoTime(), sinkLatencyUs)
+        lastReportedFrames = 0
+        lastFeedbackNs = 0
     }
 
     /**
-     * The device's write-to-speaker latency beyond the mixer head, from
-     * AudioTrack.getLatency() (hidden API, the same source ExoPlayer uses)
-     * minus this track's own buffer duration; the HAL minimum buffer is
-     * the fallback and the floor. This is what makes ABSOLUTE timing agree
-     * across devices: each device's sync loop is self-consistent under any
-     * constant bias, so a wrong per-device value here is inaudible on the
-     * device itself and plainly audible between two rooms.
+     * Initial estimate for devices without usable presentation timestamps.
+     * getLatency includes the track buffer, so subtract its actual capacity.
+     * The minimum buffer is only a last-resort estimate, never a lower bound
+     * on a successful measurement. Valid timestamps calibrate this further.
      */
     private fun measureSinkLatencyUs(t: AudioTrack, bufferBytes: Int, frameBytes: Int): Long {
         val bufferUs = bufferBytes.toLong() * 1_000_000 / (sampleRate.toLong() * frameBytes)
@@ -389,7 +377,7 @@ class NativeAudioOutput {
         return try {
             val method = AudioTrack::class.java.getMethod("getLatency")
             val totalUs = (method.invoke(t) as Int).toLong() * 1000
-            (totalUs - bufferUs).coerceIn(fallback, 1_000_000L)
+            (totalUs - bufferUs).takeIf { it in 0..1_000_000L } ?: fallback
         } catch (e: Exception) {
             Log.i(TAG, "getLatency unavailable, using HAL buffer (${e.javaClass.simpleName})")
             fallback

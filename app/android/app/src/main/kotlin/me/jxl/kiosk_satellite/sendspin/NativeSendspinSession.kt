@@ -257,6 +257,7 @@ class NativeSendspinSession(
         "sinkLatencyMs" to output.sinkLatencyMs(),
         "timeSynced" to isTimeSynced,
         "progressMs" to trackProgressMs,
+        "timing" to output.timingDiagnostics(),
     )
 
     fun destroy() {
@@ -291,11 +292,10 @@ class NativeSendspinSession(
                 if (h != 0L && output.isStarted) {
                     val progress = output.takePresentedFramesDelta()
                     if (progress != null) {
-                        val bias = progress.finishBiasUs - syncOffsetMs * 1000
                         NativeSendspin.nativeNotifyAudioPlayed(
                             h,
                             progress.frames.toInt(),
-                            NativeSendspin.nativeMonotonicTimeUs() + bias,
+                            progress.sampledAtUs - syncOffsetMs * 1000,
                         )
                     }
                 }
