@@ -353,11 +353,11 @@ void main() {
     expect(glancePage.last.section, 'Appearance');
   });
 
-  test('the scaling slider registers with the Widget scaling range', () {
+  test('the scaling slider registers with its supported range', () {
     expect(defs.allSettings, contains(defs.screensaverGlanceScale));
     expect(defs.screensaverGlanceScale.defaultValue, 100);
-    expect(defs.screensaverGlanceScale.min, defs.screensaverWidgetScale.min);
-    expect(defs.screensaverGlanceScale.max, defs.screensaverWidgetScale.max);
+    expect(defs.screensaverGlanceScale.min, 50);
+    expect(defs.screensaverGlanceScale.max, 150);
     expect(
       defs.screensaverGlanceScale.dependsOn,
       defs.screensaverGlanceEnabled.key,

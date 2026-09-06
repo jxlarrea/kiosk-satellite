@@ -1414,7 +1414,7 @@ const screensaverWidgetScale = SettingDef<num>(
   section: 'Widgets',
   subpage: 'Widgets',
   min: 50,
-  max: 150,
+  max: 200,
   step: 5,
   unit: '%',
 );
@@ -3273,7 +3273,7 @@ const facePreviewSeconds = SettingDef<num>(
   unit: 's',
 );
 
-// Widget scaling's shape (50..150 percent of the base size) rather than a
+// Widget scaling's percentage of the base size rather than a
 // bare factor, so the slider reads the same as the screensaver's other
 // size knob on both surfaces.
 const facePreviewScale = SettingDef<num>(
