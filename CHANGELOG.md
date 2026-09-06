@@ -2,6 +2,25 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.9.22 - 2026-09-06
+
+### Added
+- **Show Now Playing alongside the screensaver.** A new **Show alongside screensaver** setting under Media Player > Now Playing > Screensaver, on by default, keeps the screensaver beside the player in landscape or above it in portrait. Small screens keep the full-screen player. A separate **Fill the screen** setting controls photo filling in the shared layout. Tap the screensaver panel to dismiss both views. The shared layout follows the screensaver's brightness and detection settings, with an optional **Override screensaver brightness** toggle to use normal brightness.
+- **Now Playing overrides for scheduled screensavers.** Each schedule entry can follow the global layout setting, request the shared layout or hide Now Playing during those hours. Hiding it also prevents music from opening the view automatically while playback continues normally. Changes apply immediately and at schedule boundaries.
+- **Launch Android apps from Home Assistant automations.** The new `esphome.<node name>_launch_app` action takes a required `package_name` argument and opens the installed app. It uses the existing kiosk unpinning and configured auto-return behavior and reports launch failures to Home Assistant. Requires **Expose kiosk entities**. The App launcher overlay does not need to be enabled.
+- **Text shadow controls for screensaver overlays.** Separate **Text drop shadow** toggles for widgets and Immich metadata, on by default, control text shadows with a live preview. Both vignette defaults are now 40% instead of 80%. Saved vignette settings are preserved.
+
+### Changed
+- **Larger screensaver widgets.** Widget scaling now reaches 200%, up from 150%, on the device and in the remote admin.
+- **More precise screen-off timers.** The global **Turn screen off after** setting and schedule overrides now use 1-minute steps from 1 to 60 minutes. A value of 0 still disables screen-off.
+- **Improved Sendspin playback timing.** Audio feedback uses the time at which playback progress was measured. The player checks Android's presentation timestamps and falls back to a smoothed playback clock when they are unreliable, retaining the last measured latency if timestamps stop working. The remote status includes timing diagnostics to help investigate synchronization problems.
+- **Less WebView rendering overhead.** The dashboard and external website views avoid an extra forced graphics layer while retaining hardware acceleration.
+
+### Fixed
+- **Update downloads on older Android devices.** The updater includes the trusted root certificate needed to verify GitHub release downloads on devices whose system certificate store lacks it. Download certificate verification stays enabled.
+- **CPU usage after deep sleep.** CPU usage calculations exclude time spent suspended so sleep does not appear as processor activity.
+- **The Now Playing speaker menu opens beneath its player selector.** The menu follows the selector's position and fits the player panel, including when Now Playing shares the screen with a screensaver.
+
 ## v2026.9.21 - 2026-09-05
 
 ### Added
