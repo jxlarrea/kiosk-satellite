@@ -1538,6 +1538,10 @@ class _KioskScreenState extends State<KioskScreen>
       // moment the dashboard appears (issue #302), and those devices draw
       // through the texture instead.
       useHybridComposition: !c.settings.get(defs.legacyWebView),
+      // The plugin maps false to LAYER_TYPE_NONE, which keeps the Activity's
+      // hardware acceleration without caching the live page in another GPU
+      // texture. A forced hardware layer adds work to every scrolling frame.
+      hardwareAcceleration: false,
       // Required for shouldOverrideUrlLoading to be called at all: without
       // it the callback is simply never invoked, and app:// navigations
       // would fall through to Chromium as an unknown scheme.
@@ -2293,6 +2297,8 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
           useHybridComposition: !widget.container.settings.get(
             defs.legacyWebView,
           ),
+          // Match the dashboard's direct hardware rendering path.
+          hardwareAcceleration: false,
           transparentBackground: false,
           supportZoom: false,
         ),
