@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **The Fire tablet docs now cover the microphone being revoked on a running tablet.** The [Amazon Fire tablets](docs/fire.md) page described the microphone revoke as a boot-time event only. Fire OS also strips the grant from a sideloaded app while it is running, most often right after a Wi-Fi reconnect, kills the app and re-prompts once it is back up. The page now explains the runtime case, why the **Update available** notice tends to appear at the same moment and lists Fire OS 7 alongside Fire OS 8.
+
 ## v2026.9.24 - 2026-09-07
 
 ### Fixed
