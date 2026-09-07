@@ -179,6 +179,11 @@ class EspEntitySurface {
           'mdi:camera-outline',
           defs.cameraEnabled,
         ),
+        'rtsp_streaming': (
+          'RTSP Streaming',
+          'mdi:video-wireless-outline',
+          defs.cameraRtspEnabled,
+        ),
         'screensaver_motion': (
           'Screensaver motion detection',
           'mdi:motion-sensor',
@@ -664,6 +669,7 @@ class EspEntitySurface {
       for (final e in _settingSwitches.entries)
         if ((cameraPresent ||
                 (e.key != 'camera_enabled' &&
+                    e.key != 'rtsp_streaming' &&
                     e.key != 'screensaver_motion' &&
                     e.key != 'screensaver_face')) &&
             (proximityPresent || e.key != 'screensaver_proximity') &&

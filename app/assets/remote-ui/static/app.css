@@ -744,6 +744,12 @@
   .copy-box.empty .copy-value { font-family: inherit; font-size: 15px;
     color: var(--muted); }
   .copy-box:disabled { cursor: default; }
+  .rtsp-state-icon { width: 20px; height: 20px; flex: 0 0 20px;
+    border-radius: 50%; background: var(--debug); }
+  .rtsp-state-icon.active { background: var(--ok); }
+  .rtsp-urls .row:last-child { border-bottom: 1px solid var(--divider); }
+  .rtsp-client .name, .rtsp-client .desc { overflow-wrap: anywhere; }
+  .rtsp-client .desc { white-space: pre-line; }
   /* The Log access adb command: shown whole, wrapping rather than cut. */
   .copy-box.person-grant-command .copy-value { white-space: normal;
     overflow: visible; text-overflow: clip; word-break: break-all;

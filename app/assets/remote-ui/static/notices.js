@@ -32,6 +32,8 @@ export async function updateNoCameraNotice() {
     'motion.start_delay']) {
     tab.querySelector(`[data-key="${key}"]`)?.remove();
   }
+  tab.querySelectorAll('[data-key^="camera.rtsp."], .subpage[data-subpage="RTSP Streaming"], .subpage-entry[data-subpage-entry="RTSP Streaming"]')
+    .forEach((row) => row.remove());
   // Emptied cards (the Motion Detection group) go too, headings included.
   for (const card of [...tab.querySelectorAll('.card')]) {
     if (card.children.length) continue;

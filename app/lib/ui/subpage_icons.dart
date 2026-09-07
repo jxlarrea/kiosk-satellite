@@ -38,6 +38,7 @@ const Map<String, Object> subpageIcons = {
   'Camera Streams screensaver': Icons.videocam_outlined,
   'Widgets': Icons.widgets_outlined,
   'At a Glance': Icons.visibility_outlined,
+  'RTSP Streaming': Icons.videocam_outlined,
   'Motion Detection': Icons.directions_walk,
   'Face Detection': Icons.face_outlined,
   'Proximity Detection': Icons.sensors,

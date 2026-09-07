@@ -42,6 +42,7 @@ class NativeMotion {
     bool fingers = false,
     bool paused = false,
     bool preview = false,
+    bool rtsp = false,
   }) {
     return _channel
         .receiveBroadcastStream(<String, Object?>{
@@ -77,6 +78,7 @@ class NativeMotion {
           // session (see [showPreview]): the analysis stream is sized up
           // for it, since its frames are what the preview is made of.
           'preview': preview,
+          'rtsp': rtsp,
         })
         .map(NativeMotionTick.fromNative);
   }

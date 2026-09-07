@@ -1,6 +1,6 @@
 # Device Camera
 
-The device's own physical camera can be put to work for your smart home. It provides a still camera entity in Home Assistant fed by JPEG snapshots, and functions as an on-device motion detector. This motion detector can wake the screensaver, keep the screen awake while someone is around, or feed a motion sensor entity directly into Home Assistant. Everything is processed locally on the device; no video ever streams anywhere.
+The device's physical camera supplies Home Assistant snapshots, motion detection and an optional RTSP video stream. Motion analysis stays on the device. RTSP lets go2rtc, Frigate or VLC watch the same camera over your network.
 
 Note: This is different from the [Camera Streams](cameras.md) feature, which displays *other* cameras on your kiosk screen. This documentation covers the physical camera pointing out of the kiosk itself.
 
@@ -85,26 +85,53 @@ Detection is engineered to be CPU efficient and to work effectively in the dark.
 
 Two related switches are located elsewhere: with **Allow screensaver** turned on under [Lockdown Mode](kiosk.md), Dismiss on motion remains deactivated until the lock lifts. Additionally, the Sendspin player's full screen view only reacts to motion if its own **Dismiss "Now Playing" on motion** setting is enabled.
 
+## RTSP Streaming
+
+Open **Settings -> Camera -> RTSP Streaming**, after **Motion Detection**, then turn on **Enable RTSP Streaming**. The page reveals the stream settings and its URL. The Camera master switch and Android camera permission must also be enabled.
+
+Tap the **Stream URL** field below **Port** to copy it. **Stream Status** shows a green icon while streaming and a gray icon while idle. **Connected Clients** lists each viewer's IP address, player name when available, connection port, transport and connection duration. The status and client list refresh every two seconds.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Port | 8554 | Connect to `rtsp://DEVICE_IP:8554/camera`. Choose a free port from 1024 to 65535. |
+| Resolution | 480p | 480p, 720p or 1080p. Android picks the closest supported size. Video uses the camera sensor's orientation. |
+| Frame rate | 10 fps | Target rate from 5 to 30 fps. Actual delivery depends on the hardware and lighting. |
+| Bitrate | 500 kbps | Target H.264 bitrate from 100 to 8000 kbps. |
+| Require authentication | off | Reveals Username and Password. Both must be set before an authenticated listener starts. |
+
+Use RTSP over TCP in your viewer. The stream contains H.264 video without audio. For go2rtc, add the URL as a stream source. Frigate can record the H.264 stream without transcoding it. Authentication uses RTSP Digest. Enter the credentials in your client or use `rtsp://USERNAME:PASSWORD@DEVICE_IP:8554/camera`, with URL encoding for special characters.
+
+One hardware encoder serves up to four connected viewers. It starts when the first authenticated viewer requests video and stops shortly after the last viewer disconnects. Enabling the listener alone does not open the camera or encode video. A recorder that stays connected keeps the encoder running. Slow viewers are disconnected instead of blocking the camera or growing an unlimited queue.
+
+Motion and face detection keep their own analysis rates. A voice interaction pauses that analysis while video continues. Snapshots share the same camera session. Hardware that cannot supply all three outputs reports a streaming error and preserves motion and snapshots. Changing the camera or video settings disconnects viewers so they can reconnect with the new configuration.
+
+The status row reports startup errors and the actual encoded resolution. Screen-off support follows the device's Android camera restrictions. A device that refuses camera access while dark may need to wake before a new viewer can connect.
+
 ## Home Assistant
 
 With [ESPHome](esphome.md) **Expose kiosk entities** turned on, the camera adds several features to the Kiosk Satellite device:
 
 | Entity | Type | Notes |
 | --- | --- | --- |
-| Camera | camera | Displays the latest snapshot. Because nothing streams, its internal state stays `idle` (an ESPHome camera cannot report off; read the **Camera enabled** switch for that status). While the camera is off, it displays a "Camera off" frame. The Screenshot camera exists alongside it on every device. |
+| Camera | camera | Displays the latest snapshot. This snapshot entity stays `idle` even while the separate RTSP stream is active (read the **Camera enabled** switch for the camera status). While the camera is off, it displays a "Camera off" frame. The Screenshot camera exists alongside it on every device. |
 | Take camera snapshot | button | Captures a fresh frame and hands it directly to Home Assistant. |
 | Last camera snapshot | sensor | Shows exactly when the current frame was captured, formatted as a timestamp. This allows an automation to react to a fresh frame arriving. |
 | Motion | binary_sensor | Reads motion for the duration of the configured **Clear after** window, then clears itself. Shows as unknown while the **Motion sensor** or the camera is off. |
 | Camera enabled | switch | The remote master toggle. This exists whenever the hardware does, even with the camera off, allowing an automation to arm the camera only when a room wide sensor indicates someone is home. |
+| RTSP Streaming | switch | Enables or disables RTSP using the saved stream settings. Appears under Configuration. |
 | Screensaver motion detection | switch | The remote Dismiss on motion toggle. Pairs nicely with the Camera enabled switch for staged wake ups. |
 | Screensaver face detection | switch | The remote Dismiss on face toggle. Motion maintains precedence on the device, allowing an automation to flip the motion switch to use faces by day and raw motion by night. |
 | Camera facing | select | The remote **Camera** pick: Front or Back, applying to every camera feature at once. Switching it captures a fresh frame from the newly selected camera a moment later, allowing an automation to flip a phone to its back camera for use as a baby monitor, and back again. Like the switches, it functions even with the camera off. Only available on devices with both cameras. |
 
 Disabling the camera keeps every one of these entities in place: the camera simply shows a "Camera off" frame, and the Motion sensor reads unknown until the camera is re-enabled. The entity list only changes if the hardware itself changes. This means an automation that arms the camera when someone is home and disarms it when they leave will never force the device to re-register with Home Assistant. On camera-less hardware, none of these entities will exist, though the Screenshot camera will be available either way.
 
+The **RTSP Streaming** switch appears under **Configuration** and controls the same setting as the local and remote settings pages. Turning it off disconnects viewers and stops the RTSP server. Turning it on starts the listener using the saved settings. The Camera master switch and Android camera permission still apply.
+
+To display the RTSP video in Home Assistant, add the [Generic Camera integration](https://www.home-assistant.io/integrations/generic/). Set **Stream Source** to the copied RTSP URL and **RTSP transport protocol** to **TCP**. Enter the RTSP username and password if authentication is enabled. You can leave **Still Image URL** empty when Home Assistant's stream integration is loaded. This creates a separate camera entity. The ESPHome Camera entity continues to provide JPEG snapshots because Home Assistant's ESPHome camera integration does not accept an RTSP stream source.
+
 ## Sharing the Camera
 
-Android only grants camera access to one session at a time, and Kiosk Satellite carefully manages whose session that is. While any motion feature is running, motion holds the camera open and snapshots safely ride along in the same session. This means a snapshot requires no secondary open command and no exposure resettle time (which the motion detector would falsely read as motion). 
+Android gives one session camera access at a time. Motion detection, snapshots and RTSP share that session so taking a snapshot does not reopen the camera or reset exposure.
 
 A few extremely low end devices cannot run motion analysis and JPEG capture in the same session. On those devices, motion wins, and snapshots will report the camera as busy while motion is running. If another app entirely is holding the camera open, captures will fail until that app lets go.
 
@@ -120,5 +147,5 @@ The remote admin's Camera tab mirrors every setting available on the device and 
 ## Privacy
 
 * Motion analysis happens entirely locally on the device. Motion frames are never stored or transmitted; only the fact that motion occurred leaves the app.
-* The only picture that ever leaves the device is the snapshot JPEG handed securely to your own Home Assistant instance over the ESPHome connection, and it is strictly one frame per request.
+* Snapshots go to Home Assistant over ESPHome and to authorized remote admin clients. RTSP video is available only when enabled and requested by a viewer. RTSP traffic is not encrypted, even with authentication enabled.
 * The **Enable webcam access** setting located under Web Content is completely unrelated. That setting governs whether the dashboard web page itself may use the camera, not this specific feature.

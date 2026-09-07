@@ -74,6 +74,8 @@ export const SUBPAGE_ICONS = {
     + '<path d="m17.5 2.5 4 4-4 4-4-4z"/>'),
   'At a Glance': svg('<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5'
     + 'S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  'RTSP Streaming': svg('<rect x="3" y="5" width="14" height="14" rx="2.5"/>'
+    + '<path d="m17 10 4-2v8l-4-2z"/>'),
   'Motion Detection': svg('<circle cx="13.5" cy="4.5" r="1.7"/>'
     + '<path d="m9 21 2.5-6 3 2.5V21"/><path d="m6.5 12 3-3.5 3 1.5 2.5 3.5 3 1"/>'
     + '<path d="M11.5 15.5 9.5 13"/>'),

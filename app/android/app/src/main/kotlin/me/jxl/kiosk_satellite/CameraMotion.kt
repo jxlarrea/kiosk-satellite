@@ -326,6 +326,28 @@ class CameraMotion(
      *  [analysisExecutor]. */
     @Volatile private var paused = false
 
+    private val rtspChannel = MethodChannel(messenger, "kiosk_satellite/camera/rtsp")
+    private var rtsp: CameraRtspServer? = null
+    private var rtspEncoder: CameraRtspEncoder? = null
+    private var rtspConfig: Map<*, *> = emptyMap<Any, Any>()
+    private var rtspError: String? = null
+    private var rtspGeneration = 0
+    private var boundRtsp = false
+    private var boundRtspServer: CameraRtspServer? = null
+    private var cancelPending: Runnable? = null
+    private var boundArguments: Map<*, *>? = null
+    private var disposed = false
+    @Volatile private var listenGeneration = 0
+    // The analyzer forwards to the current listener even when a motion policy
+    // change replaces Dart's subscription while the video surface stays bound.
+    private val sessionSink = object : EventChannel.EventSink {
+        override fun success(event: Any?) { activeSink?.success(event) }
+        override fun error(code: String, message: String?, details: Any?) {
+            rtsp?.fail(message ?: "Camera unavailable")
+            activeSink?.error(code, message, details)
+        }
+        override fun endOfStream() { activeSink?.endOfStream() }
+    }
     private var provider: ProcessCameraProvider? = null
     private var analysis: ImageAnalysis? = null
     private val analysisExecutor = Executors.newSingleThreadExecutor()
@@ -335,7 +357,7 @@ class CameraMotion(
      *  cancel (main thread only), so a callback from a session that was
      *  cancelled while the provider future was still resolving does not
      *  bind a camera nothing will ever release. */
-    private var session = 0
+    @Volatile private var session = 0
 
     /** Target for the pre-bound snapshot capture, from the listen args
      *  (the Camera settings' resolution tier). Main thread only. */
@@ -493,9 +515,85 @@ class CameraMotion(
     private var activitySize = 1f
 
     init {
+        rtspChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "configure" -> configureRtsp(call.arguments as? Map<*, *> ?: emptyMap<Any, Any>(), result)
+                "status" -> result.success(rtspStatus())
+                else -> result.notImplemented()
+            }
+        }
         eventChannel.setStreamHandler(this)
         controlChannel.setMethodCallHandler(::onControlCall)
     }
+
+    private fun configureRtsp(config: Map<*, *>, result: MethodChannel.Result) {
+        if (config == rtspConfig && (config["enabled"] != true || rtsp != null)) {
+            result.success(rtspStatus())
+            return
+        }
+        val generation = ++rtspGeneration
+        rtsp?.close()
+        rtsp = null
+        rtspConfig = config
+        rtspError = null
+        if (config["enabled"] != true) {
+            result.success(rtspStatus())
+            return
+        }
+        val auth = config["auth"] == true
+        val user = config["username"] as? String ?: ""
+        val password = config["password"] as? String ?: ""
+        if (auth && (user.isBlank() || password.isEmpty())) {
+            rtspError = "Set an RTSP username and password to enable authentication."
+            result.success(rtspStatus())
+            return
+        }
+        fun bind(attempt: Int) {
+            if (disposed || rtspGeneration != generation) {
+                result.error("detached", "RTSP configuration was superseded.", null)
+                return
+            }
+            try {
+                rtsp = CameraRtspServer(
+                    (config["port"] as? Number)?.toInt()?.coerceIn(1024, 65535) ?: 8554,
+                    if (auth) user else null, password,
+                    { android.util.Base64.encodeToString(it, android.util.Base64.NO_WRAP) },
+                    { wanted -> mainHandler.post {
+                        if (!disposed) rtspChannel.invokeMethod("demand", wanted)
+                    } },
+                    { rtspEncoder?.keyFrame() },
+                )
+                rtspError = null
+            } catch (e: Exception) {
+                // Some Android sockets take a moment to release their port
+                // after an authenticated viewer disconnects during a change.
+                // Yield the UI thread and retry for at most 3.1 seconds.
+                if ((e is java.net.BindException || e.message?.contains("EADDRINUSE") == true) && attempt < 5) {
+                    rtspError = "Waiting for the RTSP port to be released."
+                    mainHandler.postDelayed({ bind(attempt + 1) }, 100L shl attempt)
+                    return
+                }
+                rtspError = e.message ?: "Could not start the RTSP listener."
+                Log.w(TAG, "RTSP: $rtspError")
+            }
+            result.success(rtspStatus())
+        }
+        bind(0)
+    }
+
+    private fun rtspStatus(): Map<String, Any?> = mapOf(
+        "listening" to (rtsp != null), "clients" to (rtsp?.clientCount ?: 0),
+        "clientDetails" to (rtsp?.clientDetails ?: emptyList<Map<String, Any>>()),
+        "encoding" to (rtspEncoder != null), "encoder" to rtspEncoder?.codecName,
+        "resolution" to rtspEncoder?.actualSize, "error" to (rtspError ?: rtsp?.error),
+        "port" to (rtspConfig["port"] ?: 8554),
+        "urls" to try {
+            java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())
+                .flatMap { java.util.Collections.list(it.inetAddresses) }
+                .filter { !it.isLoopbackAddress && it is java.net.Inet4Address }
+                .map { "rtsp://${it.hostAddress}:${rtspConfig["port"] ?: 8554}/camera" }
+        } catch (_: Exception) { emptyList<String>() },
+    )
 
     private fun onControlCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
@@ -547,8 +645,19 @@ class CameraMotion(
     }
 
     override fun onListen(arguments: Any?, sink: EventChannel.EventSink?) {
-        if (sink == null) return
+        if (sink == null || disposed) return
+        val myListen = ++listenGeneration
+        cancelPending?.let { mainHandler.removeCallbacks(it) }
+        cancelPending = null
         val args = arguments as? Map<*, *>
+        val wantsRtsp = args?.get("rtsp") == true && rtsp?.demand == true
+        val canReuse = boundRtsp && wantsRtsp && boundCamera != null && boundRtspServer === rtsp &&
+            listOf("camera", "snapshotWidth", "snapshotHeight").all { boundArguments?.get(it) == args?.get(it) }
+        if (!canReuse) releaseCamera()
+        boundArguments = args
+        boundRtsp = wantsRtsp
+        boundRtspServer = if (wantsRtsp) rtsp else null
+        activeSink = sink
         val fps = (args?.get("fps") as? Number)?.toDouble()?.coerceIn(0.5, 30.0) ?: 2.0
         val sensitivity = (args?.get("sensitivity") as? Number)?.toInt()?.coerceIn(1, 100) ?: 40
         val facing = if (args?.get("camera") == "back") {
@@ -560,59 +669,65 @@ class CameraMotion(
         val snapH = (args?.get("snapshotHeight") as? Number)?.toInt()
         val startDelayMs =
             (args?.get("startDelayMs") as? Number)?.toLong()?.coerceIn(0L, 15_000L) ?: 0L
-        motionWanted = args?.get("motion") != false
-        facesWanted = args?.get("faces") == true
-        fingersWanted = args?.get("fingers") == true
-        palmsWanted = fingersWanted
+        // Controls remain on the UI thread so a later voice pause or preview
+        // command cannot be overwritten by queued analyzer configuration.
         paused = args?.get("paused") == true
-        faceMinWidth =
-            ((args?.get("faceMinWidth") as? Number)?.toFloat() ?: 0.1f).coerceIn(0.01f, 1f)
-        lastFaceEmitNs = 0L
-        previewWanted = args?.get("preview") == true
         previewUntilNs = 0L
-        lastPreviewNs = 0L
-        previewIntervalNs = PREVIEW_MIN_INTERVAL_NS
-        resetVisionGate()
+        analysisExecutor.execute {
+            if (listenGeneration != myListen) return@execute
+            motionWanted = args?.get("motion") != false
+            facesWanted = args?.get("faces") == true
+            fingersWanted = args?.get("fingers") == true
+            palmsWanted = fingersWanted
+            faceMinWidth =
+                ((args?.get("faceMinWidth") as? Number)?.toFloat() ?: 0.1f).coerceIn(0.01f, 1f)
+            lastFaceEmitNs = 0L
+            previewWanted = args?.get("preview") == true
+            lastPreviewNs = 0L
+            previewIntervalNs = PREVIEW_MIN_INTERVAL_NS
+            resetVisionGate()
 
-        // With hands wanted the analyzer samples at least 4 fps so a hand
-        // coming up is looked at within a quarter second; the motion
-        // grid then compares each frame with the one gridStride back, so
-        // its deltas stay those of the configured rate and motion
-        // detection is unchanged (see analyze).
-        frameIntervalNs = (1_000_000_000.0 / fps).toLong()
-        gridStride = 1
-        if (palmsWanted && frameIntervalNs > PALM_FRAME_SLOT_NS) {
-            gridStride = (frameIntervalNs / PALM_FRAME_SLOT_NS).toInt().coerceIn(1, 8)
-            frameIntervalNs /= gridStride
-        }
-        // Sensitivity → how many of the grid's cells must change. High
-        // sensitivity needs only a cell or two; low sensitivity needs roughly
-        // half the frame. Never zero.
-        minChangedCells = max(1, ((100 - sensitivity) * CELLS / 200.0).roundToInt())
-        prevGrid = null
-        recentGrids.clear()
-        noiseGrid = null
-        frameCount = 0
-        lastProcessedNs = 0L
-        lastEmitNs = 0L
-        startDelayNs = startDelayMs * 1_000_000L
-        analyzeFromNs = 0L
-        huntStreak = 0
-        slowAeApplied = false
-
-        requestedFps = fps
-
-        // CameraX binding must happen on the main thread.
-        mainHandler.post {
-            aeLevel = 0
-            activeFacing = facing
-            activeSink = sink
-            snapshotTarget = if (snapW != null && snapH != null) {
-                Size(snapW, snapH)
-            } else {
-                null
+            // With hands wanted the analyzer samples at least 4 fps so a hand
+            // coming up is looked at within a quarter second; the motion
+            // grid then compares each frame with the one gridStride back, so
+            // its deltas stay those of the configured rate and motion
+            // detection is unchanged (see analyze).
+            frameIntervalNs = (1_000_000_000.0 / fps).toLong()
+            gridStride = 1
+            if (palmsWanted && frameIntervalNs > PALM_FRAME_SLOT_NS) {
+                gridStride = (frameIntervalNs / PALM_FRAME_SLOT_NS).toInt().coerceIn(1, 8)
+                frameIntervalNs /= gridStride
             }
-            start(facing, sink)
+            // Sensitivity → how many of the grid's cells must change. High
+            // sensitivity needs only a cell or two; low sensitivity needs roughly
+            // half the frame. Never zero.
+            minChangedCells = max(1, ((100 - sensitivity) * CELLS / 200.0).roundToInt())
+            prevGrid = null
+            recentGrids.clear()
+            noiseGrid = null
+            frameCount = 0
+            lastProcessedNs = 0L
+            lastEmitNs = 0L
+            startDelayNs = startDelayMs * 1_000_000L
+            analyzeFromNs = 0L
+            huntStreak = 0
+            slowAeApplied = false
+
+            requestedFps = fps
+
+            // CameraX binding must happen on the main thread.
+            mainHandler.post {
+                if (disposed || listenGeneration != myListen) return@post
+                aeLevel = 0
+                activeFacing = facing
+                activeSink = sink
+                snapshotTarget = if (snapW != null && snapH != null) {
+                    Size(snapW, snapH)
+                } else {
+                    null
+                }
+                if (!canReuse) start(facing, sessionSink)
+            }
         }
     }
 
@@ -672,7 +787,7 @@ class CameraMotion(
             // wants it too: its frames are shown, and 320x240 in a
             // circle a few hundred pixels across is a blur.
             val analysisSize =
-                if (palmsWanted || previewWanted) Size(640, 480) else Size(320, 240)
+                if (palmsWanted || previewWanted || boundRtsp) Size(640, 480) else Size(320, 240)
             val resolution = ResolutionSelector.Builder()
                 .setResolutionStrategy(
                     ResolutionStrategy(
@@ -685,13 +800,45 @@ class CameraMotion(
             val analysisBuilder = ImageAnalysis.Builder()
                 .setResolutionSelector(resolution)
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            applyLowLightExposure(analysisBuilder, cameraProvider, selector)
+            if (boundRtsp) applyStreamingExposure(analysisBuilder, cameraProvider, selector)
+            else applyLowLightExposure(analysisBuilder, cameraProvider, selector)
             val imageAnalysis = analysisBuilder.build()
             imageAnalysis.setAnalyzer(analysisExecutor) { image ->
                 analyze(image, sink, mySession)
             }
             analysis = imageAnalysis
 
+            val videoServer = if (boundRtsp) rtsp else null
+            val videoPreview = videoServer?.let { server ->
+                val height = (rtspConfig["height"] as? Number)?.toInt() ?: 480
+                val width = (rtspConfig["width"] as? Number)?.toInt() ?: 640
+                val fps = (rtspConfig["fps"] as? Number)?.toInt()?.coerceIn(5, 30) ?: 10
+                val bitrate = (rtspConfig["bitrate"] as? Number)?.toInt()?.coerceIn(100_000, 8_000_000) ?: 500_000
+                androidx.camera.core.Preview.Builder()
+                    .setResolutionSelector(ResolutionSelector.Builder().setResolutionStrategy(
+                        ResolutionStrategy(Size(width, height), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER)
+                    ).build()).build().also { preview ->
+                        preview.setSurfaceProvider(ContextCompat.getMainExecutor(context)) { request ->
+                            if (session != mySession) { request.willNotProvideSurface(); return@setSurfaceProvider }
+                            val encoder = CameraRtspEncoder(fps, bitrate,
+                                { units -> if (session == mySession) server.config(units) },
+                                { units, time -> if (session == mySession) server.frame(units, time) }) { message ->
+                                mainHandler.post { if (session == mySession) server.fail(message) }
+                            }
+                            try {
+                                val surface = encoder.surface(request.resolution)
+                                rtspEncoder = encoder
+                                request.provideSurface(surface, ContextCompat.getMainExecutor(context)) {
+                                    if (rtspEncoder === encoder) rtspEncoder = null
+                                    kotlin.concurrent.thread(name = "camera-rtsp-release") { encoder.close() }
+                                }
+                            } catch (e: Exception) {
+                                request.willNotProvideSurface()
+                                server.fail(e.message ?: "Hardware H.264 encoding unavailable.")
+                            }
+                        }
+                    }
+            }
             val owner = CameraLifecycle().also { lifecycle = it }
             // Pre-bound so a snapshot never reconfigures this session (an
             // AE resettle would read as motion and wake the screensaver).
@@ -701,7 +848,24 @@ class CameraMotion(
             }
             try {
                 cameraProvider.unbindAll()
-                val camera = if (imageCapture != null) {
+                val camera = if (videoPreview != null) {
+                    try {
+                        if (imageCapture != null) {
+                            cameraProvider.bindToLifecycle(owner, selector, imageAnalysis, imageCapture, videoPreview)
+                                .also { deviceCamera?.sharedCapture = imageCapture }
+                        } else cameraProvider.bindToLifecycle(owner, selector, imageAnalysis, videoPreview)
+                    } catch (e: Exception) {
+                        // Keep existing motion and snapshot functionality if this
+                        // camera cannot supply the extra hardware video surface.
+                        videoServer?.fail("This camera cannot stream alongside motion and snapshots: ${e.message}")
+                        boundRtsp = false
+                        cameraProvider.unbindAll()
+                        if (imageCapture != null) {
+                            cameraProvider.bindToLifecycle(owner, selector, imageAnalysis, imageCapture)
+                                .also { deviceCamera?.sharedCapture = imageCapture }
+                        } else cameraProvider.bindToLifecycle(owner, selector, imageAnalysis)
+                    }
+                } else if (imageCapture != null) {
                     try {
                         cameraProvider.bindToLifecycle(
                             owner, selector, imageAnalysis, imageCapture)
@@ -840,6 +1004,7 @@ class CameraMotion(
     ) {
         try {
             lastFrameAtMs = SystemClock.elapsedRealtime()
+            if (!motionWanted && !facesWanted && !fingersWanted && !previewWanted) return
             val now = System.nanoTime()
             // The camera preview reads every frame the camera delivers
             // while its window is open, ahead of the analysis slots (see
@@ -1311,7 +1476,7 @@ class CameraMotion(
      * rate pinned low and only surrenders the oscillation freedom.
      */
     private fun onExposureHunt(boundSession: Int) {
-        if (session != boundSession || aeLevel >= 2) return
+        if (session != boundSession || aeLevel >= 2 || boundRtsp) return
         val facing = activeFacing ?: return
         val sink = activeSink ?: return
         aeLevel++
@@ -1449,6 +1614,20 @@ class CameraMotion(
         }
     }
 
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun applyStreamingExposure(builder: ImageAnalysis.Builder, cameraProvider: ProcessCameraProvider, selector: CameraSelector) {
+        try {
+            val info = selector.filter(cameraProvider.availableCameraInfos).first()
+            val ranges = Camera2CameraInfo.from(info).getCameraCharacteristic(
+                CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES) ?: return
+            val target = (rtspConfig["fps"] as? Number)?.toInt()?.coerceIn(5, 30) ?: 10
+            val range = if (ranges.any { it.contains(target) }) android.util.Range(target, target)
+                else ranges.minByOrNull { abs(it.upper - target) * 10 + abs(it.lower - target) } ?: return
+            Camera2Interop.Extender(builder).setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, range)
+            Log.i(TAG, "RTSP sensor FPS $range, requested $target")
+        } catch (e: Exception) { Log.w(TAG, "RTSP exposure setup skipped: ${e.message}") }
+    }
+
     /** Reduce the Y plane to a [CELLS]-long grid of sparse cell averages. */
     private fun sampleGrid(image: ImageProxy): IntArray {
         val plane = image.planes[0]
@@ -1486,23 +1665,29 @@ class CameraMotion(
     }
 
     override fun onCancel(arguments: Any?) {
-        mainHandler.post {
-            session++
-            activeFacing = null
-            activeSink = null
-            deviceCamera?.sharedCapture = null
-            deviceCamera?.motionSessionActive = false
-            boundCamera = null
-            analysis?.clearAnalyzer()
-            lifecycle?.destroy()
-            lifecycle = null
-            provider?.unbindAll()
-            analysis = null
-            prevGrid = null
-            recentGrids.clear()
-            noiseGrid = null
-            Log.i(TAG, "camera released")
-        }
+        listenGeneration++
+        activeSink = null
+        // Dart re-listens when motion policy changes. Allow that round trip
+        // to reuse the live video surface and encoder without a recording gap.
+        cancelPending?.let { mainHandler.removeCallbacks(it) }
+        cancelPending = Runnable { releaseCamera() }.also { mainHandler.postDelayed(it, if (boundRtsp) 250L else 0L) }
+    }
+
+    private fun releaseCamera() {
+        session++
+        if (boundRtsp && boundRtspServer?.demand == true) boundRtspServer?.resetVideo()
+        activeFacing = null
+        deviceCamera?.sharedCapture = null
+        deviceCamera?.motionSessionActive = false
+        boundCamera = null
+        analysis?.clearAnalyzer()
+        lifecycle?.destroy()
+        lifecycle = null
+        provider?.unbindAll()
+        analysis = null
+        rtspEncoder = null
+        boundRtsp = false
+        boundRtspServer = null
     }
 
     fun dispose() {
@@ -1514,9 +1699,16 @@ class CameraMotion(
         // and face detection stayed dead until a setting toggle). Dart
         // rebinds on the next Activity's attach.
         activeSink?.error("detached", "camera session torn down with its Activity", null)
+        disposed = true
+        listenGeneration++
+        rtspChannel.setMethodCallHandler(null)
+        rtsp?.close()
+        rtsp = null
+        cancelPending?.let { mainHandler.removeCallbacks(it) }
+        releaseCamera()
         eventChannel.setStreamHandler(null)
         controlChannel.setMethodCallHandler(null)
-        onCancel(null)
+        activeSink = null
         // On the analyzer's own thread, after any frame still in flight.
         analysisExecutor.execute {
             faceDetector?.close()

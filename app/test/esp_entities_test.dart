@@ -394,6 +394,7 @@ void main() {
         'screensaver',
         'hold_mode',
         'camera_enabled',
+        'rtsp_streaming',
         'screensaver_motion',
         'screensaver_face',
         'screensaver_proximity',
@@ -497,6 +498,7 @@ void main() {
     expect(ids, contains('take_screenshot'));
     expect(ids, contains('last_screenshot'));
     expect(ids, isNot(contains('device_camera')));
+    expect(ids, isNot(contains('rtsp_streaming')));
     expect(ids, isNot(contains('take_snapshot')));
     expect(ids, isNot(contains('motion'))); // rides the camera
   });
@@ -510,6 +512,7 @@ void main() {
       await settings.set(defs.cameraEnabled, false);
       final ids = [for (final d in await surface.build()) '${d['objectId']}'];
       expect(ids, contains('device_camera'));
+      expect(ids, contains('rtsp_streaming'));
       expect(ids, contains('take_snapshot'));
       expect(ids, contains('last_snapshot'));
       expect(ids, contains('motion'));
@@ -731,6 +734,7 @@ void main() {
     expect(byId['ipv6_interfaces'], 'wlan0: fe80::1');
     expect(byId['kiosk'], false);
     expect(byId['camera_enabled'], true);
+    expect(byId['rtsp_streaming'], false);
     expect(byId['screensaver_brightness_level'], 40);
     expect(byId['illuminance'], 42);
     // The selects report first values instead of sitting on "unknown".
@@ -858,6 +862,38 @@ void main() {
     expect(pushed, contains(('assistant_volume', 60)));
     expect(pushed, contains(('screensaver_brightness_level', 30)));
   });
+
+  test(
+    'RTSP configuration switch syncs both ways without changing the catalog',
+    () async {
+      final catalog = await surface.build();
+      final entity = catalog.singleWhere(
+        (e) => e['objectId'] == 'rtsp_streaming',
+      );
+      expect(entity['name'], 'RTSP Streaming');
+      expect(entity['type'], 'switch');
+      expect(entity['category'], 1);
+      await attach();
+      pushed.clear();
+
+      await surface.handleCommand('rtsp_streaming', true);
+      expect(settings.get(defs.cameraRtspEnabled), isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(pushed, contains(('rtsp_streaming', true)));
+
+      await surface.handleCommand('rtsp_streaming', false);
+      expect(settings.get(defs.cameraRtspEnabled), isFalse);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(pushed, contains(('rtsp_streaming', false)));
+
+      pushed.clear();
+      await settings.set(defs.cameraRtspEnabled, true);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(pushed, contains(('rtsp_streaming', true)));
+      expect(await surface.build(), catalog);
+      expect(catalogChanges, 0);
+    },
+  );
 
   test('a fetch of the screenshot camera captures the display', () async {
     cameraPresent = false;

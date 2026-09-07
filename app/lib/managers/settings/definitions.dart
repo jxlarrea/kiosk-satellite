@@ -213,6 +213,7 @@ const Map<String, String> subpageHints = {
   'Camera Streams screensaver': 'Views to show, seconds per view, sound',
   'Widgets': 'Corner overlays and their scale',
   'At a Glance': 'Entities shown over the screensaver',
+  'RTSP Streaming': 'Share the device camera with go2rtc, Frigate or VLC',
   'Motion Detection': 'Dismiss or postpone the screensaver on motion',
   'Face Detection': 'Dismiss the screensaver when someone looks at it',
   'Proximity Detection':
@@ -3661,6 +3662,137 @@ const motionSensitivity = SettingDef<num>(
   step: 1,
 );
 
+const cameraRtspEnabled = SettingDef<bool>(
+  key: 'camera.rtsp.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable RTSP Streaming',
+  description:
+      'Stream H.264 video over RTSP/TCP. The hardware encoder runs only while a viewer is connected. Uses the camera selected in Camera settings.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.enabled',
+);
+
+const cameraRtspPort = SettingDef<num>(
+  key: 'camera.rtsp.port',
+  type: SettingType.number,
+  defaultValue: 8554,
+  title: 'Port',
+  description: 'RTSP server port. Connect to rtsp://DEVICE_IP:PORT/camera.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.rtsp.enabled',
+  validator: validateRtspPort,
+);
+
+const cameraRtspResolution = SettingDef<String>(
+  key: 'camera.rtsp.resolution',
+  type: SettingType.select,
+  defaultValue: '480',
+  title: 'Resolution',
+  description:
+      'Camera sensor orientation. Android selects the closest supported size.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.rtsp.enabled',
+  options: ['480', '720', '1080'],
+  optionLabels: {'480': '480p', '720': '720p', '1080': '1080p'},
+);
+
+const cameraRtspFps = SettingDef<num>(
+  key: 'camera.rtsp.fps',
+  type: SettingType.number,
+  defaultValue: 10,
+  title: 'Frame rate',
+  description:
+      'Target video frames per second. Motion keeps its separate analysis rate. Actual delivery depends on the camera.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.rtsp.enabled',
+  min: 5,
+  max: 30,
+  step: 1,
+  unit: 'fps',
+);
+
+const cameraRtspBitrate = SettingDef<num>(
+  key: 'camera.rtsp.bitrate',
+  type: SettingType.number,
+  defaultValue: 500,
+  title: 'Bitrate',
+  description:
+      'Target video bitrate. Higher improves detail and uses more network bandwidth.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.rtsp.enabled',
+  min: 100,
+  max: 8000,
+  step: 100,
+  unit: 'kbps',
+);
+
+const cameraRtspAuth = SettingDef<bool>(
+  key: 'camera.rtsp.auth',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Require authentication',
+  description:
+      'Require a username and password to view the stream. RTSP traffic is not encrypted.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.rtsp.enabled',
+);
+
+const cameraRtspUsername = SettingDef<String>(
+  key: 'camera.rtsp.username',
+  type: SettingType.string,
+  defaultValue: 'kiosk',
+  title: 'Username',
+  description: 'Username for RTSP viewers.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.rtsp.auth',
+  validator: validateRtspUsername,
+);
+
+const cameraRtspPassword = SettingDef<String>(
+  key: 'camera.rtsp.password',
+  type: SettingType.password,
+  defaultValue: '',
+  title: 'Password',
+  description: 'Set a password to start the authenticated stream.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.rtsp.auth',
+  secret: true,
+);
+
+String? validateRtspPort(Object? value) {
+  final port = value is num ? value : num.tryParse('$value');
+  return port == null ||
+          port != port.roundToDouble() ||
+          port < 1024 ||
+          port > 65535
+      ? 'Enter a whole port number from 1024 to 65535.'
+      : null;
+}
+
+String? validateRtspUsername(Object? value) {
+  final text = '$value';
+  return text.isEmpty || text.length > 64 || RegExp(r'[\s:"\\]').hasMatch(text)
+      ? 'Use 1 to 64 characters without spaces, quotes, colons or backslashes.'
+      : null;
+}
+
 // ── Schedule ───────────────────────────────────────────────────────────
 // Time-of-day screensaver switching, the same idea as the Home Assistant
 // theme schedule: each entry names a time, the mode to show from then on,
@@ -6497,6 +6629,14 @@ const List<SettingDef<Object>> allSettings = [
   motionFps,
   motionSensitivity,
   motionStartDelay,
+  cameraRtspEnabled,
+  cameraRtspPort,
+  cameraRtspResolution,
+  cameraRtspFps,
+  cameraRtspBitrate,
+  cameraRtspAuth,
+  cameraRtspUsername,
+  cameraRtspPassword,
   screensaverScheduleEnabled,
   screensaverSchedule,
   wakeWordEnabled,

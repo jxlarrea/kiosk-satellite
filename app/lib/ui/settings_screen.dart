@@ -173,7 +173,7 @@ const _categories = <(String, String, Object, String)>[
     'Camera',
     'Camera',
     Icons.photo_camera_outlined,
-    'Device camera, motion detection',
+    'Device camera, motion, RTSP stream',
   ),
   (
     'Sendspin',
@@ -2697,6 +2697,24 @@ class _CategoryContentState extends State<_CategoryContent> {
       after: after ?? _rowExtras(container),
       subpage: subpage,
     );
+
+    if (widget.category == 'Camera' &&
+        subpage == 'RTSP Streaming' &&
+        container.settings.get(cameraRtspEnabled) &&
+        container.settings.get(cameraEnabled)) {
+      return [
+        _RtspPage(
+          container: container,
+          settingsCards: (url) => sectioned(
+            [
+              for (final def in _defsFor(widget.category))
+                if (def.subpage == subpage) def,
+            ],
+            after: {cameraRtspPort.key: url},
+          ),
+        ),
+      ];
+    }
 
     if (widget.category == 'ESPHome' && subpage == 'Bluetooth Proxy') {
       // The proxy's own settings, then the grants scanning needs, then the
@@ -9990,4 +10008,148 @@ class _ImmichNamedRow {
   final String empty;
   final String none;
   final String errorTitle;
+}
+
+class _RtspPage extends StatefulWidget {
+  const _RtspPage({required this.container, required this.settingsCards});
+  final List<Widget> Function(Widget url) settingsCards;
+  final AppContainer container;
+  @override
+  State<_RtspPage> createState() => _RtspPageState();
+}
+
+class _RtspPageState extends State<_RtspPage> {
+  Timer? _timer;
+  Map<String, dynamic>? _status;
+  bool _reading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _read();
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _read());
+  }
+
+  Future<void> _read() async {
+    if (_reading) return;
+    _reading = true;
+    try {
+      final result = await widget.container.commands.execute(
+        'getRtspStatus',
+        const {},
+      );
+      if (mounted) {
+        setState(() {
+          _status = result.ok && result.data is Map
+              ? Map<String, dynamic>.from(result.data as Map)
+              : null;
+        });
+      }
+    } finally {
+      _reading = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final st = _status;
+    final active =
+        st?['encoding'] == true &&
+        (st?['clients'] as num? ?? 0) > 0 &&
+        st?['error'] == null;
+    final label = st == null
+        ? 'Unavailable'
+        : st['error'] != null
+        ? 'Unavailable'
+        : st['listening'] != true
+        ? 'Stopped'
+        : active
+        ? 'Streaming'
+        : 'Idle';
+    final text = st == null
+        ? 'Stream status unavailable.'
+        : st['error'] != null
+        ? '${st['error']}'
+        : st['listening'] != true
+        ? 'Listener is stopped.'
+        : active
+        ? '${st['clients']} connected ${st['clients'] == 1 ? 'viewer' : 'viewers'}. ${st['resolution'] ?? ''}'
+              .trim()
+        : 'Ready. The encoder starts when a viewer connects.';
+    final urls = (st?['urls'] as List?)?.cast<String>() ?? const <String>[];
+    final clients = (st?['clientDetails'] as List?) ?? const [];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...widget.settingsCards(
+          Column(
+            children: [
+              for (final url in urls.isEmpty ? [''] : urls)
+                SettingsRow(
+                  stack: true,
+                  title: const Text('Stream URL'),
+                  trailing: CopyBox(
+                    value: url,
+                    placeholder: 'Waiting for a network address',
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SectionHeading('Stream Status'),
+        SettingsCard(
+          children: [
+            SettingsRow(
+              leading: Icon(
+                Icons.circle,
+                size: 20,
+                color: active ? Colors.green : Colors.grey,
+              ),
+              title: Text(label),
+              subtitle: Text(text),
+            ),
+          ],
+        ),
+        const SectionHeading('Connected Clients'),
+        SettingsCard(
+          children: [
+            if (clients.isEmpty)
+              SettingsRow(
+                title: Text(
+                  st == null
+                      ? 'Client information unavailable.'
+                      : 'No connected clients.',
+                ),
+              ),
+            for (final client in clients)
+              SettingsRow(
+                leading: const Icon(Icons.devices_outlined),
+                title: Text('${client['ip']}'),
+                subtitle: Text(
+                  [
+                    if ((client['userAgent'] as String? ?? '').isNotEmpty)
+                      '${client['userAgent']}',
+                    '${client['playing'] == true ? 'Streaming' : 'Connected'} · ${client['transport'] ?? 'TCP'} · Port ${client['port']}',
+                    'Connected for ${_connectedFor(client['connectedSeconds'] as num? ?? 0)}',
+                  ].join('\n'),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _connectedFor(num seconds) {
+    final s = seconds.toInt();
+    if (s < 60) return '${s}s';
+    if (s < 3600) return '${s ~/ 60}m ${s % 60}s';
+    return '${s ~/ 3600}h ${(s % 3600) ~/ 60}m';
+  }
 }

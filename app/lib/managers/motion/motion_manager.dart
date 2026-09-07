@@ -13,6 +13,7 @@ import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'native_motion.dart';
+import 'native_rtsp.dart';
 import 'vision_support.dart';
 
 /// Camera-based motion detection.
@@ -82,6 +83,48 @@ class MotionManager extends Manager {
   });
 
   final SettingsManager _settings;
+  bool _rtspDemand = false;
+  bool _streamRtsp = false;
+  bool _disposed = false;
+  Future<void> _rtspConfiguration = Future.value();
+  Map<String, Object>? _lastRtspConfig;
+
+  bool get _rtspEnabled =>
+      _settings.get(defs.cameraEnabled) &&
+      _settings.get(defs.cameraRtspEnabled);
+
+  void _configureRtsp({bool force = false}) {
+    final (width, height) = snapshotResolution(
+      _settings.get(defs.cameraRtspResolution),
+    );
+    final config = <String, Object>{
+      'enabled': _rtspEnabled,
+      'port': _settings.get(defs.cameraRtspPort).toInt(),
+      'width': width,
+      'height': height,
+      'fps': _settings.get(defs.cameraRtspFps).toInt().clamp(5, 30),
+      'bitrate':
+          _settings.get(defs.cameraRtspBitrate).toInt().clamp(100, 8000) * 1000,
+      'auth': _settings.get(defs.cameraRtspAuth),
+      'username': _settings.get(defs.cameraRtspUsername),
+      'password': _settings.get(defs.cameraRtspPassword),
+    };
+    if (!force && mapEquals(config, _lastRtspConfig)) return;
+    _lastRtspConfig = config;
+    _rtspDemand = false;
+    _sync();
+    _rtspConfiguration = _rtspConfiguration.then((_) async {
+      if (_disposed) return;
+      try {
+        if (config['enabled'] == true) await _ensurePermission();
+        final status = await NativeRtsp.configure(config);
+        if (status['error'] != null) log.warn(name, 'RTSP: ${status['error']}');
+      } catch (e) {
+        _lastRtspConfig = null;
+        log.debug(name, 'RTSP control unavailable: $e');
+      }
+    });
+  }
 
   /// How long motion ticks are suppressed after the app relights the room
   /// itself (screensaver transitions, screen power, brightness). The
@@ -180,7 +223,9 @@ class MotionManager extends Manager {
   bool _streamPreview = false;
   bool _streamPalms = false;
 
-  bool get _wantMotion => enabled || _postponeEnabled || _sensorEnabled;
+  bool get _wantMotion =>
+      _sensorEnabled ||
+      (_screensaverActive ? enabled : _postponeEnabled && _screenOn);
   bool get _wantFaces =>
       _screensaverActive ? faceEnabled : _postponeFaceEnabled;
 
@@ -304,6 +349,28 @@ class MotionManager extends Manager {
 
   @override
   Future<void> init() async {
+    NativeRtsp.onDemand((wanted) {
+      if (_disposed) return;
+      _rtspDemand = wanted && _rtspEnabled;
+      _sync();
+    });
+    commands.register(
+      Command(
+        name: 'getRtspStatus',
+        description:
+            'RTSP listener, connected viewers, stream URLs and encoder status.',
+        handler: (_) async {
+          try {
+            return CommandResult.ok(await NativeRtsp.status());
+          } catch (_) {
+            return const CommandResult.fail(
+              'RTSP is unavailable while the Activity is detached.',
+            );
+          }
+        },
+      ),
+    );
+    _configureRtsp();
     // Asked once, at init: the bridge answers within the same tick, long
     // before the first bind. A bind that raced it restarts with fresh
     // flags below; the native detectors survive the runtime failing to
@@ -359,6 +426,7 @@ class MotionManager extends Manager {
     // is the moment a rebind can land on the new native side. A session
     // still held here is stale by definition: nothing native backs it.
     bus.on<ActivityAttached>().listen((_) {
+      _configureRtsp(force: true);
       if (_camera != null) {
         log.info(name, 'the Activity was re-created; rebinding the camera');
         _stop();
@@ -382,6 +450,9 @@ class MotionManager extends Manager {
     // turning the feature on prompts for the camera up front so the first dim
     // can start it without a pause.
     bus.on<SettingChanged>().listen((e) {
+      if (e.key.startsWith('camera.rtsp.') || e.key == defs.cameraEnabled.key) {
+        _configureRtsp();
+      }
       final isGate =
           e.key == defs.screensaverDismissOnMotion.key ||
           e.key == defs.screensaverPostponeOnMotion.key ||
@@ -507,6 +578,7 @@ class MotionManager extends Manager {
   /// postpone leg between them (screen on), the hand leg whenever the
   /// screen is on, and the sensor leg always.
   bool get _shouldRun =>
+      (_rtspDemand && _rtspEnabled) ||
       _sensorEnabled ||
       _wantPalms ||
       _previewHolding ||
@@ -515,6 +587,7 @@ class MotionManager extends Manager {
           : (_postponeEnabled || _postponeFaceEnabled) && _screenOn);
 
   void _sync() {
+    if (_disposed) return;
     _warnUnsupported();
     if (!_shouldRun) {
       _stop();
@@ -522,14 +595,17 @@ class MotionManager extends Manager {
     }
     // A preview in progress keeps the session it is drawn from as it
     // is; the hold's end runs this again and settles it.
-    if (_previewHolding && _camera != null) return;
+    if (_previewHolding && _camera != null && _streamRtsp == _rtspDemand) {
+      return;
+    }
     // A session already up but asked for the wrong things restarts: the
     // native side takes its emission flags at bind time.
     if (_camera != null &&
         (_streamMotion != _wantMotion ||
             _streamFaces != _wantFaces ||
             _streamPalms != _wantPalms ||
-            _streamPreview != _wantPreview)) {
+            _streamPreview != _wantPreview ||
+            _streamRtsp != _rtspDemand)) {
       log.info(
         name,
         'camera restarting (motion=$_wantMotion faces=$_wantFaces '
@@ -549,7 +625,7 @@ class MotionManager extends Manager {
         return;
       }
       // State may have flipped while awaiting the permission check.
-      if (!_shouldRun || _camera != null) return;
+      if (_disposed || !_shouldRun || _camera != null) return;
       final fps = _settings.get(defs.motionFps).toDouble().clamp(0.5, 30.0);
       final sensitivity = _settings
           .get(defs.motionSensitivity)
@@ -574,6 +650,7 @@ class MotionManager extends Manager {
       _streamFaces = faces;
       _streamPalms = palms;
       _streamPreview = preview;
+      _streamRtsp = _rtspDemand;
       _boundBlind = !_screenOn;
       log.info(
         name,
@@ -599,6 +676,7 @@ class MotionManager extends Manager {
             fingers: palms,
             paused: _voiceTurn,
             preview: preview,
+            rtsp: _streamRtsp,
           ).listen(
             (tick) {
               // Frames flowing again: the session is healthy, forget any
@@ -757,6 +835,12 @@ class MotionManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    _disposed = true;
+    NativeRtsp.onDemand(null);
+    await _rtspConfiguration;
+    try {
+      await NativeRtsp.configure({'enabled': false});
+    } catch (_) {}
     _pauseTimer?.cancel();
     _stop();
     facePreview.dispose();

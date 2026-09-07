@@ -760,6 +760,7 @@ export async function loadSettings() {
   }
 
   updatePersonSensorRows();
+  updateRtspRows();
 
   // ── Bluetooth Proxy nearby devices ───────────────────────────────────
   // The live list the device shows under the lookup toggle, same data:
@@ -2312,4 +2313,103 @@ export function updatePersonSensorRows() {
   if (window.__personSensorTimer) clearInterval(window.__personSensorTimer);
   window.__personSensorTimer = setInterval(paint, 5000);
   paint();
+}
+
+
+export function updateRtspRows() {
+  clearInterval(window.__rtspTimer);
+  const panel = document.querySelector('#tab-camera .subpage[data-subpage="RTSP Streaming"]');
+  panel?.querySelectorAll('.rtsp-status').forEach((row) => row.remove());
+  const port = panel?.querySelector('[data-key="camera.rtsp.port"]');
+  if (!port || !state.settings.find((s) => s.key === 'camera.rtsp.enabled')?.value) return;
+  const urls = document.createElement('div');
+  urls.className = 'rtsp-status rtsp-urls';
+  port.after(urls);
+  const group = (title) => {
+    const heading = document.createElement('h2');
+    heading.className = 'card-title rtsp-status';
+    heading.textContent = title;
+    const card = document.createElement('div');
+    card.className = 'card rtsp-status';
+    panel.append(heading, card);
+    return card;
+  };
+  const status = readOnlyRow('Checking...', 'Checking stream status...', '');
+  status.lastElementChild.remove();
+  const icon = document.createElement('span');
+  icon.className = 'rtsp-state-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  status.prepend(icon);
+  group('Stream Status').append(status);
+  const clients = group('Connected Clients');
+  let lastUrls = null;
+  const clientRows = new Map();
+  const duration = (seconds = 0) => {
+    const s = Math.max(0, Math.floor(seconds));
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
+    return `${Math.floor(s / 3600)}h ${Math.floor(s % 3600 / 60)}m`;
+  };
+  const render = (st) => {
+    const active = !!st?.encoding && st.clients > 0 && !st.error;
+    icon.classList.toggle('active', active);
+    status.querySelector('.name').textContent = !st ? 'Unavailable'
+      : st.error ? 'Unavailable' : !st.listening ? 'Stopped' : active ? 'Streaming' : 'Idle';
+    status.querySelector('.desc').textContent = !st ? 'Stream status unavailable.'
+      : st.error || (!st.listening ? 'Listener is stopped.'
+        : active ? `${st.clients} connected ${st.clients === 1 ? 'viewer' : 'viewers'}. ${st.resolution || ''}`.trim()
+        : 'Ready. The encoder starts when a viewer connects.');
+    const addresses = st?.urls?.length ? st.urls : [''];
+    const signature = JSON.stringify(addresses);
+    if (signature !== lastUrls) {
+      lastUrls = signature;
+      urls.replaceChildren(...addresses.map((address) => {
+        const row = readOnlyRow('Stream URL', '', '');
+        row.lastElementChild.replaceWith(copyBox(address, {
+          placeholder: 'Waiting for a network address',
+        }).el);
+        return row;
+      }));
+    }
+    const details = st?.clientDetails || [];
+    const ids = new Set(details.map((client) => client.id));
+    for (const [id, row] of clientRows) {
+      if (!ids.has(id)) { row.remove(); clientRows.delete(id); }
+    }
+    clients.querySelector('.rtsp-empty')?.remove();
+    if (!details.length) {
+      const empty = readOnlyRow(st ? 'No connected clients.' : 'Client information unavailable.', '', '');
+      empty.classList.add('rtsp-empty');
+      clients.append(empty);
+    }
+    for (const client of details) {
+      let row = clientRows.get(client.id);
+      if (!row) {
+        row = readOnlyRow('', '', '');
+        row.classList.add('rtsp-client');
+        row.lastElementChild.remove();
+        clientRows.set(client.id, row);
+        clients.append(row);
+      }
+      row.querySelector('.name').textContent = client.ip;
+      row.querySelector('.desc').textContent = [
+        client.userAgent,
+        `${client.playing ? 'Streaming' : 'Connected'} · ${client.transport || 'TCP'} · Port ${client.port}`,
+        `Connected for ${duration(client.connectedSeconds)}`,
+      ].filter(Boolean).join('\n');
+    }
+  };
+  let reading = false;
+  const paint = async () => {
+    if (!status.isConnected || reading) return;
+    reading = true;
+    try {
+      const result = await cmd('getRtspStatus');
+      if (status.isConnected) render(result.ok ? result.data : null);
+    } catch (_) {
+      if (status.isConnected) render(null);
+    } finally { reading = false; }
+  };
+  paint();
+  window.__rtspTimer = setInterval(paint, 2000);
 }

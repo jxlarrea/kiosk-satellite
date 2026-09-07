@@ -87,6 +87,7 @@ Every item in this list corresponds directly to a kiosk setting. They are fully 
 | **Kiosk mode**, **Lockdown mode**, **HA kiosk mode**, **Keep screen on**, **Remote management**, **Screensaver brightness**, **Screensaver**, **Hold mode** | switch | Standard toggle switches. |
 | **Adaptive brightness** | switch | Requires a physical light sensor. |
 | **Camera enabled**, **Screensaver motion detection**, **Screensaver face detection** | switch | Requires physical camera hardware. The Camera enabled switch can be safely toggled throughout the day; the camera entities will remain listed. |
+| **RTSP Streaming** | switch | Enables or disables the RTSP server using the saved stream settings. Requires physical camera hardware. Camera enabled and Android camera permission must also be on. Changes sync with the local and remote settings pages without reconnecting ESPHome. |
 | **Screensaver proximity detection** | switch | Requires a physical proximity sensor. |
 | **Voice Satellite auto start** | switch | Controls whether the voice engine starts automatically with the dashboard. This allows an automation to delay voice services on slower devices that need all their processing power for the initial dashboard load. Requires a bound satellite. |
 | **Theme** | select | Options are Auto, Light, or Dark. Selecting Light or Dark forcibly pins the dashboard theme, overriding both the on device schedule and the app theme sync for as long as it is active. If theme sync is enabled, pinning the theme will flip the app's internal screens as well. |
