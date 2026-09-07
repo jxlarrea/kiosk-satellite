@@ -356,6 +356,13 @@ class SettingsManager extends Manager {
       default:
         throw ArgumentError('unsupported setting type: $value');
     }
+    // The renderer guard records when it turned Legacy renderer on by
+    // itself (RendererGuard.kt, render.disabled_by) so it can undo its own
+    // flips later. A change made here, by a person on either UI or through
+    // an import, makes the value theirs: the record goes with it.
+    if (def.key == 'render.disable_impeller') {
+      await _prefs.remove('${_prefix}render.disabled_by');
+    }
     log.info(
       name,
       'set ${def.key}${def.secret ? '' : ' = $value'}'

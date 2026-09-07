@@ -35,32 +35,45 @@ object RendererGuard {
     private const val BOOT_WINDOW_MS = 90_000L
     private const val TRIP_AFTER = 2L
 
-    /** Set once the Meta Portal rule below has written the setting, so a
-     *  person who later turns Legacy renderer off on purpose is obeyed. */
+    /** Who turned the setting on, when the app did it itself ("crashes"
+     *  for the crash net). Absent when a person set it, or when it is off:
+     *  the Dart settings manager drops it on every change a person makes,
+     *  so a later automatic revert can single out the app's own flips and
+     *  leave deliberate choices alone. */
+    private const val DISABLED_BY = "flutter.ks.render.disabled_by"
+
+    /** Written by a rule that ran on Meta Portals from 2026.8.9x up to
+     *  2026.9.22: Impeller's OpenGLES backend lost its context when the
+     *  Activity was destroyed and re-created under the cached engine and
+     *  never drew again, so the rule switched every Portal to Skia on its
+     *  first start. That was this app's own teardown ordering (fixed in
+     *  [MainThreadEgl]), not the Portal's GPU, so the rule is gone and
+     *  [PORTAL_RULE_REVERTED] marks the one-time switch back it earned. */
     private const val PORTAL_RULE_APPLIED = "flutter.ks.render.portal_rule_applied"
+    private const val PORTAL_RULE_REVERTED = "flutter.ks.render.portal_rule_reverted"
 
     /** The engine's shell arguments, or null for the defaults. Also runs
      *  the crash accounting, so call it exactly once per process. */
     fun engineArgs(context: Context): Array<String>? {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         var disabled = prefs.getBoolean(DISABLED, false)
-        // Meta Portal (Adreno 615, Android 10): Impeller rejects the Vulkan
-        // driver and runs its OpenGLES backend, which does not survive the
-        // Activity being destroyed and re-created under the cached engine
-        // (the home app restarting, a permission dialog on some builds):
-        // from the re-attach on, every frame fails with EGL_BAD_ACCESS and
-        // the Flutter UI is gone for good while Dart and the WebView carry
-        // on, which no watchdog can tell from a healthy kiosk. Skia has no
-        // such failure, so the setting is flipped once, the way the crash
-        // net flips it, so both settings UIs tell the truth.
-        if (!disabled && !prefs.getBoolean(PORTAL_RULE_APPLIED, false) &&
-            android.os.Build.MANUFACTURER.equals("Facebook", ignoreCase = true)
+        // A Portal the old rule put on Skia goes back to Impeller exactly
+        // once. After that the setting is a person's, whichever way it
+        // points, and the crash net below still stands behind Impeller.
+        if (prefs.getBoolean(PORTAL_RULE_APPLIED, false) &&
+            !prefs.getBoolean(PORTAL_RULE_REVERTED, false)
         ) {
-            disabled = true
-            prefs.edit().putBoolean(DISABLED, true)
-                .putBoolean(PORTAL_RULE_APPLIED, true).commit()
-            Log.w(TAG, "Meta Portal: Impeller's OpenGLES backend wedges on " +
-                "Activity re-creation; disabling Impeller for this device")
+            disabled = false
+            prefs.edit().putBoolean(DISABLED, false)
+                .putBoolean(PORTAL_RULE_REVERTED, true)
+                .remove(DISABLED_BY).commit()
+            Log.i(TAG, "Meta Portal: the re-creation wedge that put this " +
+                "device on Skia is fixed; Impeller is back on")
+        }
+        // Off means whoever put it on has been overruled since; a stale
+        // provenance would misfile the next deliberate flip as the app's.
+        if (!disabled && prefs.contains(DISABLED_BY)) {
+            prefs.edit().remove(DISABLED_BY).commit()
         }
         val pendingSince = prefs.getLong(PENDING_SINCE, 0L)
         if (!disabled && pendingSince > 0L &&
@@ -72,8 +85,10 @@ object RendererGuard {
                 Log.w(TAG, "$crashes boots died before the first frame; " +
                     "disabling Impeller for this device")
             }
-            prefs.edit().putLong(EARLY_CRASHES, crashes)
-                .putBoolean(DISABLED, disabled).commit()
+            val edit = prefs.edit().putLong(EARLY_CRASHES, crashes)
+                .putBoolean(DISABLED, disabled)
+            if (disabled) edit.putString(DISABLED_BY, "crashes")
+            edit.commit()
         }
         // commit(), not apply(): if the renderer takes the process down,
         // this marker is the only witness the next boot has.
