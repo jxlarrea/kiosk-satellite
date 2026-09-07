@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Screensavers, the drawer and settings went black after the app's screen was re-created.** On devices where Flutter renders through OpenGL ES, destroying and re-creating the app's Activity while the dashboard was on screen left the renderer's context bound to the wrong thread, and from then on every native frame failed silently: the dashboard kept working, but any screensaver other than Dim or Black showed a black screen and the drawer and settings never appeared. Android re-creates the Activity when the app is sent to the background and brought back on a phone, after the Back key on some launchers or under memory pressure. The app now hands the context back when the screen is torn down and again before a new one attaches, so the renderer recovers on its own. The Legacy renderer setting is no longer needed as a workaround for this.
+
 ## v2026.9.22 - 2026-09-06
 
 ### Added

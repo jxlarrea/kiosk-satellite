@@ -169,6 +169,18 @@ class MainActivity : FlutterActivity() {
     // The engine belongs to the process, not this Activity.
     override fun shouldDestroyEngineWithHost(): Boolean = false
 
+    override fun onDestroy() {
+        // super detaches the FlutterView, which tears the engine's surface
+        // down on this thread while a WebView is on screen. Hand back the
+        // context that leaves bound here, or the next Activity's frames all
+        // fail with EGL_BAD_ACCESS (issue #465, MainThreadEgl). Only here:
+        // a new Activity can be created while this one still renders (a
+        // clear-task launch), and a release before its attach would take
+        // the context away from a rasterizer that is still using it.
+        super.onDestroy()
+        MainThreadEgl.release("after detach")
+    }
+
     override fun onFlutterUiDisplayed() {
         super.onFlutterUiDisplayed()
         // A frame is on screen, so the renderer works on this GPU: stand
