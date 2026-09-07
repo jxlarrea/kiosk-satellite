@@ -1235,6 +1235,17 @@ export async function loadSettings() {
       'Open this address in a browser on your computer.',
       `http://${location.host}`));
     root.append(heading, card);
+    // The same admin by name (issue #470), once the device says what it
+    // answers to: the Hostname setting, or the device name as a DNS
+    // label. Nothing while it has no name.
+    cmd('fleet').then((r) => {
+      const url = r?.ok ? r.data?.hostUrl : null;
+      if (url && card.isConnected) {
+        card.appendChild(readOnlyRow('By name',
+          'The same address by hostname, on networks that resolve .local names.',
+          url));
+      }
+    }).catch(() => {});
   }
 
   // ── Kiosk Satellite Service page ──────────────────────────────────────

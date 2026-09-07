@@ -53,7 +53,7 @@ Transform any Android device into a beautiful, dedicated Home Assistant kiosk. B
 
 &bull; **Dynamic screensavers**: Choose from dim, black, clock, local photos, or a stunning [Immich](docs/immich.md) photo frame with transition effects (slide, zoom, Ken Burns) and metadata overlays. Includes support for waking up via motion, face, or presence detection.
 
-&bull; **Remote administration**: Manage everything from your computer. The embedded web admin (`http://<device-ip>:2324`) mirrors your settings, shows a live screenshot, provides a web console for logs, and handles configuration backups. With several kiosks on the network, a kiosk switcher under the logo jumps between their admin pages in one tab.
+&bull; **Remote administration**: Manage everything from your computer. The embedded web admin (`http://<device-ip>:2324`, or `http://<hostname>.local:2324` by name) mirrors your settings, shows a live screenshot, provides a web console for logs, and handles configuration backups. With several kiosks on the network, a kiosk switcher under the logo jumps between their admin pages in one tab.
 
 &bull; **Fleet Management**: A primary kiosk acts as the fleet leader to manage and synchronize multiple follower devices. The leader assigns each follower a profile (a designated collection of configuration settings, credentials, and specific exclusions), pushes permitted settings and can coordinate fleet-wide updates to a single app release. See [Fleet Management](docs/fleet.md).
 

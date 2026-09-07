@@ -332,6 +332,7 @@ void main() {
       });
       final map = <String, Object?>{
         'device.name': 'Living Room',
+        'device.hostname': 'living-room',
         'sendspin.client_id': 'source-player-id',
         'screensaver.timeout_seconds': 60,
       };
@@ -347,15 +348,19 @@ void main() {
     test('a device that had cloned the incoming identity sheds it', () async {
       await build({
         'ks.device.name': 'Living Room',
+        'ks.device.hostname': 'living-room',
         'ks.sendspin.client_id': 'source-player-id',
       });
       await settings.shedImportedIdentity(<String, Object?>{
         'device.name': 'Living Room',
+        'device.hostname': 'living-room',
         'sendspin.client_id': 'source-player-id',
       });
       // "Keeping its own" would keep the collision; empty makes the ids
-      // regenerate at the next Sendspin connect.
+      // regenerate at the next Sendspin connect, and the hostname fall
+      // back to this device's own name.
       expect(settings.get(defs.deviceName), isEmpty);
+      expect(settings.get(defs.deviceHostname), isEmpty);
       expect(settings.get(defs.sendspinClientId), isEmpty);
     });
   });

@@ -16,7 +16,8 @@ import java.net.NetworkInterface
 
 /**
  * How the kiosks on one network find each other, so the remote admin of
- * any of them can list the rest and jump to one.
+ * any of them can list the rest and jump to one, and how one kiosk is
+ * found by name.
  *
  * Each kiosk with its remote admin on announces
  * `ks-<id>._kiosk-satellite._tcp.local` over mDNS, with its name, version
@@ -29,11 +30,27 @@ import java.net.NetworkInterface
  * and a goodbye (TTL 0) on stop so a kiosk switched off leaves the list
  * instead of lingering until its records age out.
  *
+ * The same announcer carries the kiosk's hostname (issue #470): an A
+ * record for `<hostname>.local`, announced with the rest and answered
+ * when asked for. Answering is what makes the name usable from a
+ * laptop: a resolver that caches nothing it did not ask for (Windows,
+ * and macOS for a name it has not seen) sends a query for the A record
+ * and expects an answer, which an announce-only publisher never gives.
+ * The reply carries an NSEC record saying the name has no AAAA, so a
+ * resolver asking for both does not wait out the IPv6 half. Queries from
+ * a port other than 5353 are legacy unicast ones (`dig @<ip> -p 5353`)
+ * and are answered back to the sender, per RFC 6762 section 6.7. The
+ * hostname part runs with Find other kiosks off too: the service records
+ * and the listening for peers follow that switch, the A record follows
+ * the remote admin.
+ *
  * Peers are keyed by the announcing kiosk's id, dropped when their
  * goodbye arrives or when three announcements in a row went missing. The
  * sender's address is what the peer is listed under: it is the address
  * the packet actually came from, which on a device with several
- * interfaces is the one that reaches back.
+ * interfaces is the one that reaches back. A peer announcing the same
+ * hostname as this kiosk is reported in the snapshot: both answer, and a
+ * browser lands on either.
  *
  * A Wi-Fi MulticastLock is held while running: without it most Android
  * Wi-Fi drivers drop multicast frames with the screen off, which would
@@ -50,6 +67,7 @@ class FleetDiscovery(
         val address: String,
         val port: Int,
         val seenAt: Long,
+        val host: String = "",
     ) {
         fun toMap(): Map<String, Any?> = mapOf(
             "id" to id,
@@ -65,12 +83,20 @@ class FleetDiscovery(
      * `listening` is whether the socket got port 5353, which is what
      * hearing anyone takes; it is known once the socket thread has bound,
      * so it travels with the snapshot rather than the start call.
+     * `hostClash` is the hostname another kiosk was heard answering to as
+     * well, empty when none was.
      */
-    data class Snapshot(val self: Peer?, val peers: List<Peer>, val listening: Boolean) {
+    data class Snapshot(
+        val self: Peer?,
+        val peers: List<Peer>,
+        val listening: Boolean,
+        val hostClash: String = "",
+    ) {
         fun toMap(): Map<String, Any?> = mapOf(
             "self" to self?.toMap(),
             "peers" to peers.map { it.toMap() },
             "listening" to listening,
+            "hostClash" to hostClash,
         )
     }
 
@@ -89,7 +115,9 @@ class FleetDiscovery(
         const val TYPE_A = 1
         const val TYPE_PTR = 12
         const val TYPE_TXT = 16
+        const val TYPE_AAAA = 28
         const val TYPE_SRV = 33
+        const val TYPE_NSEC = 47
         const val TYPE_ANY = 255
     }
 
@@ -112,11 +140,18 @@ class FleetDiscovery(
 
     private var name: String = ""
     private var port: Int = 0
+    /** The label this kiosk answers to as `<hostname>.local`; empty for none. */
+    @Volatile private var hostname: String = ""
+    /** Whether the service records go out and the others are listened for. */
+    @Volatile private var fleet: Boolean = true
+    @Volatile private var hostClash: String = ""
     private val peers = LinkedHashMap<String, Peer>()
     private var lastAnsweredAt = 0L
+    private var lastHostAnsweredAt = 0L
 
     private val instance get() = "ks-$id.$SERVICE"
     private val host get() = "ks-$id.local"
+    private val userHost get() = if (hostname.isEmpty()) "" else "$hostname.local"
 
     private val announcer = object : Runnable {
         override fun run() {
@@ -127,13 +162,24 @@ class FleetDiscovery(
         }
     }
 
-    fun start(name: String, port: Int) {
+    fun start(name: String, port: Int, hostname: String = "", fleet: Boolean = true) {
         this.name = name.ifBlank { Build.MODEL ?: "Kiosk Satellite" }
         this.port = port
+        if (this.hostname != hostname) hostClash = ""
+        this.hostname = hostname.lowercase()
+        val fleetWas = this.fleet
+        this.fleet = fleet
         if (running) {
-            // A rename or a port change: the next announcement carries it,
-            // and it goes out now rather than at the tick.
+            // A rename, a port change or a new hostname: the next
+            // announcement carries it, and it goes out now rather than at
+            // the tick. Fleet switched off mid-run: the service records
+            // are retracted and the peers dropped.
+            if (fleetWas && !fleet) {
+                sendFleetGoodbye()
+                synchronized(peers) { peers.clear() }
+            }
             sendAnnouncement(RECORD_TTL, HOST_TTL)
+            if (fleet && !fleetWas) sendQuery()
             publish()
             return
         }
@@ -171,7 +217,7 @@ class FleetDiscovery(
             // their next tick.
             handler.postDelayed({ if (running) sendAnnouncement(RECORD_TTL, HOST_TTL) }, 1_000)
             handler.postDelayed({ if (running) sendAnnouncement(RECORD_TTL, HOST_TTL) }, 2_000)
-            sendQuery()
+            if (fleet) sendQuery()
             handler.post { publish() }
         }, "fleet-mdns-init").start()
     }
@@ -189,6 +235,7 @@ class FleetDiscovery(
         multicastLock?.let { runCatching { if (it.isHeld) it.release() } }
         multicastLock = null
         synchronized(peers) { peers.clear() }
+        hostClash = ""
         publish()
     }
 
@@ -196,20 +243,21 @@ class FleetDiscovery(
     fun nudge() {
         if (!running) return
         sendAnnouncement(RECORD_TTL, HOST_TTL)
-        sendQuery()
+        if (fleet) sendQuery()
     }
 
     fun snapshot(): Snapshot {
         val list = synchronized(peers) { peers.values.toList() }
-        val self = if (!running) null else Peer(
+        val self = if (!running || !fleet) null else Peer(
             id = id,
             name = name,
             version = version,
             address = localIpv4()?.hostAddress ?: "",
             port = port,
             seenAt = System.currentTimeMillis(),
+            host = hostname,
         )
-        return Snapshot(self, list, listening && running)
+        return Snapshot(self, list, listening && running, hostClash)
     }
 
     private fun publish() {
@@ -255,25 +303,10 @@ class FleetDiscovery(
         val qd = r.u16(); val an = r.u16(); val ns = r.u16(); val ar = r.u16()
         val isResponse = flags and 0x8000 != 0
         if (!isResponse) {
-            // A kiosk starting up asks for the service; answer, at most
-            // once a second, so a burst of queries is one announcement.
-            var asked = false
-            repeat(qd) {
-                val qname = r.name()
-                val qtype = r.u16(); r.u16()
-                if ((qtype == TYPE_PTR || qtype == TYPE_ANY) && qname.equals(SERVICE, true)) {
-                    asked = true
-                }
-            }
-            if (asked) {
-                val now = System.currentTimeMillis()
-                if (now - lastAnsweredAt > 1_000) {
-                    lastAnsweredAt = now
-                    handler.postDelayed({ if (running) sendAnnouncement(RECORD_TTL, HOST_TTL) }, 200)
-                }
-            }
+            handleQuery(packet, r, qd)
             return
         }
+        if (!fleet) return
         repeat(qd) { r.name(); r.u16(); r.u16() }
         // One packet, every record it carries; a kiosk's announcement holds
         // its PTR, SRV, TXT and A together, so a single pass finds the set.
@@ -342,16 +375,63 @@ class FleetDiscovery(
                         address = address,
                         port = entries["port"]?.toIntOrNull() ?: record.first,
                         seenAt = now,
+                        host = entries["host"]?.lowercase() ?: "",
                     )
                     val before = peers[peerId]
                     peers[peerId] = peer
                     if (before == null || before.copy(seenAt = 0) != peer.copy(seenAt = 0)) {
                         changed = true
                     }
+                    if (peer.host.isNotEmpty() && peer.host == hostname && hostClash != hostname) {
+                        Log.w(TAG, "${peer.name} (${peer.address}) also answers to $hostname.local")
+                        hostClash = hostname
+                        changed = true
+                    }
                 }
             }
         }
         if (changed) publish()
+    }
+
+    /**
+     * A query: for the fleet service, answered with an announcement (at
+     * most once a second, so a burst of queries is one announcement); for
+     * this kiosk's hostname or its fleet host, answered with the address.
+     * A query from a port other than 5353 is a legacy unicast one, and
+     * its answer goes back to the sender alone.
+     */
+    private fun handleQuery(packet: DatagramPacket, r: DnsReader, qd: Int) {
+        var asked = false
+        val hosts = LinkedHashSet<String>()
+        val mine = userHost
+        val fleetHost = host
+        repeat(qd) {
+            val qname = r.name()
+            val qtype = r.u16(); r.u16()
+            if (fleet && (qtype == TYPE_PTR || qtype == TYPE_ANY) && qname.equals(SERVICE, true)) {
+                asked = true
+            }
+            if (qtype == TYPE_A || qtype == TYPE_AAAA || qtype == TYPE_ANY) {
+                if (mine.isNotEmpty() && qname.equals(mine, true)) hosts.add(mine)
+                if (fleet && qname.equals(fleetHost, true)) hosts.add(fleetHost)
+            }
+        }
+        val now = System.currentTimeMillis()
+        if (asked && now - lastAnsweredAt > 1_000) {
+            lastAnsweredAt = now
+            handler.postDelayed({ if (running) sendAnnouncement(RECORD_TTL, HOST_TTL) }, 200)
+        }
+        if (hosts.isEmpty()) return
+        val address = localIpv4() ?: return
+        val legacy = packet.port != MDNS_PORT
+        if (!legacy && now - lastHostAnsweredAt < 1_000) return
+        val answer = buildHostAnswer(hosts, address)
+        if (legacy) {
+            send(answer, packet.address, packet.port)
+        } else {
+            lastHostAnsweredAt = now
+            send(answer)
+        }
     }
 
     /** A cursor over one DNS message, with name decompression. */
@@ -403,10 +483,10 @@ class FleetDiscovery(
 
     // ── Sending ───────────────────────────────────────────────────────
 
-    private fun send(packet: ByteArray) {
+    private fun send(packet: ByteArray, to: InetAddress = GROUP, port: Int = MDNS_PORT) {
         Thread({
             try {
-                socket?.send(DatagramPacket(packet, packet.size, GROUP, MDNS_PORT))
+                socket?.send(DatagramPacket(packet, packet.size, to, port))
             } catch (e: Exception) {
                 Log.w(TAG, "mDNS send failed: $e")
             }
@@ -425,7 +505,13 @@ class FleetDiscovery(
             if (ttl != 0) Log.w(TAG, "announce skipped: no IPv4 yet")
             return
         }
-        send(buildAnnouncement(address, ttl, hostTtl))
+        send(buildAnnouncement(address, ttl, hostTtl, fleet, userHost))
+    }
+
+    /** Retracts the service records alone; the hostname stays up. */
+    private fun sendFleetGoodbye() {
+        val address = localIpv4() ?: return
+        send(buildAnnouncement(address, 0, 0, fleet = true, userHost = ""))
     }
 
     /**
@@ -441,32 +527,84 @@ class FleetDiscovery(
             .firstOrNull { it.isSiteLocalAddress }
     }.getOrNull()
 
-    private fun buildAnnouncement(address: Inet4Address, ttl: Int, hostTtl: Int): ByteArray {
-        val out = ByteArrayOutputStream(512)
-        // Header: response + authoritative, five answers, no compression.
-        out.u16(0); out.u16(0x8400); out.u16(0); out.u16(5); out.u16(0); out.u16(0)
+    /**
+     * The unsolicited announcement: the fleet's five records when [fleet]
+     * is on, and the hostname's address and its NSEC when [userHost] is
+     * set. Neither and nothing goes out.
+     */
+    private fun buildAnnouncement(
+        address: Inet4Address,
+        ttl: Int,
+        hostTtl: Int,
+        fleet: Boolean,
+        userHost: String,
+    ): ByteArray {
+        val body = ByteArrayOutputStream(512)
+        var count = 0
+        if (fleet) {
+            body.name("_services._dns-sd._udp.local"); body.u16(TYPE_PTR); body.u16(1); body.u32(ttl)
+            body.lengthPrefixed { it.name(SERVICE) }
+            body.name(SERVICE); body.u16(TYPE_PTR); body.u16(1); body.u32(ttl)
+            body.lengthPrefixed { it.name(instance) }
 
-        out.name("_services._dns-sd._udp.local"); out.u16(TYPE_PTR); out.u16(1); out.u32(ttl)
-        out.lengthPrefixed { it.name(SERVICE) }
-        out.name(SERVICE); out.u16(TYPE_PTR); out.u16(1); out.u32(ttl)
-        out.lengthPrefixed { it.name(instance) }
+            body.name(instance); body.u16(TYPE_SRV); body.u16(0x8001); body.u32(hostTtl)
+            body.lengthPrefixed { it.u16(0); it.u16(0); it.u16(port); it.name(host) }
 
-        out.name(instance); out.u16(TYPE_SRV); out.u16(0x8001); out.u32(hostTtl)
-        out.lengthPrefixed { it.u16(0); it.u16(0); it.u16(port); it.name(host) }
-
-        out.name(instance); out.u16(TYPE_TXT); out.u16(0x8001); out.u32(ttl)
-        out.lengthPrefixed { t ->
-            for (entry in listOf("id=$id", "name=$name", "version=$version", "port=$port")) {
-                // A TXT entry is at most 255 bytes; a name past that is cut.
-                val bytes = entry.toByteArray(Charsets.UTF_8).take(255).toByteArray()
-                t.write(bytes.size)
-                t.write(bytes)
+            body.name(instance); body.u16(TYPE_TXT); body.u16(0x8001); body.u32(ttl)
+            body.lengthPrefixed { t ->
+                val entries = listOf("id=$id", "name=$name", "version=$version", "port=$port") +
+                    (if (hostname.isEmpty()) emptyList() else listOf("host=$hostname"))
+                for (entry in entries) {
+                    // A TXT entry is at most 255 bytes; a name past that is cut.
+                    val bytes = entry.toByteArray(Charsets.UTF_8).take(255).toByteArray()
+                    t.write(bytes.size)
+                    t.write(bytes)
+                }
             }
-        }
 
-        out.name(host); out.u16(TYPE_A); out.u16(0x8001); out.u32(hostTtl)
-        out.lengthPrefixed { it.write(address.address) }
+            body.name(host); body.u16(TYPE_A); body.u16(0x8001); body.u32(hostTtl)
+            body.lengthPrefixed { it.write(address.address) }
+            count += 5
+        }
+        if (userHost.isNotEmpty()) {
+            count += body.hostRecords(userHost, address, hostTtl)
+        }
+        val out = ByteArrayOutputStream(512 + body.size())
+        // Header: response + authoritative, no compression.
+        out.u16(0); out.u16(0x8400); out.u16(0); out.u16(count); out.u16(0); out.u16(0)
+        body.writeTo(out)
         return out.toByteArray()
+    }
+
+    /** The answer to a query for one or more of this kiosk's host names. */
+    private fun buildHostAnswer(hosts: Collection<String>, address: Inet4Address): ByteArray {
+        val body = ByteArrayOutputStream(128)
+        var count = 0
+        for (h in hosts) count += body.hostRecords(h, address, HOST_TTL)
+        val out = ByteArrayOutputStream(128 + body.size())
+        out.u16(0); out.u16(0x8400); out.u16(0); out.u16(count); out.u16(0); out.u16(0)
+        body.writeTo(out)
+        return out.toByteArray()
+    }
+
+    /**
+     * A host's A record and the NSEC that says it is the only record
+     * type the name has (RFC 6762 section 6.1): a resolver asking for
+     * AAAA as well gets its no at once instead of at a timeout. Both
+     * with cache-flush, since this kiosk alone owns the name.
+     * Returns how many records were written.
+     */
+    private fun ByteArrayOutputStream.hostRecords(host: String, address: Inet4Address, ttl: Int): Int {
+        name(host); u16(TYPE_A); u16(0x8001); u32(ttl)
+        lengthPrefixed { it.write(address.address) }
+        name(host); u16(TYPE_NSEC); u16(0x8001); u32(ttl)
+        lengthPrefixed {
+            // Next domain name: the name itself. Type bitmap window 0,
+            // one byte long, with the bit for type 1 (A) set.
+            it.name(host)
+            it.write(0); it.write(1); it.write(0x80)
+        }
+        return 2
     }
 
     private fun ByteArrayOutputStream.u16(v: Int) {

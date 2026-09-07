@@ -7,6 +7,8 @@ library;
 
 import 'dart:convert';
 
+import '../btproxy/node_name.dart';
+
 enum SettingType { string, boolean, number, select, password }
 
 class SettingDef<T> {
@@ -6157,6 +6159,45 @@ const deviceName = SettingDef<String>(
   perDevice: true,
 );
 
+/// The name this kiosk answers to on the local network, as
+/// `<hostname>.local` (issue #470): the remote admin at
+/// `http://<hostname>.local:2324` instead of an IP address to remember.
+/// Seeded from the device name the way the ESPHome node name is, under
+/// the same `ks-` prefix, so a kiosk left at its defaults is one name
+/// everywhere (`ks-kitchen.local`) and the field holds a value to copy
+/// rather than a hint (the fleet manager fills it as soon as the device
+/// has a name, and again whenever it is cleared). A typed value is
+/// slugified to a DNS label on write. Renaming the device leaves it
+/// alone. Announced and answered over mDNS by the fleet discovery while
+/// the remote admin serves, with or without Find other kiosks on. Per
+/// device: two kiosks answering to one name is a clash.
+const deviceHostname = SettingDef<String>(
+  key: 'device.hostname',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'mDNS name',
+  description:
+      'Reach the remote admin at http://<name>.local:<port> on the local '
+      'network. Clear it to take the device name again.',
+  category: 'Device',
+  placeholder: 'Set from the device name',
+  normalizer: normalizeHostnameSetting,
+  perDevice: true,
+);
+
+/// A typed hostname as the DNS label that goes on the wire, so what the
+/// row shows is what resolves.
+Object normalizeHostnameSetting(Object value) =>
+    value is String ? esphomeNodeSlug(value) : value;
+
+/// The hostname this kiosk announces: the typed one, else the device
+/// name under the `ks-` prefix, else nothing (no announcement).
+String effectiveHostname(String typed, String deviceName) {
+  final chosen = esphomeNodeSlug(typed);
+  if (chosen.isNotEmpty) return chosen;
+  return esphomeNodeFromDeviceName(deviceName);
+}
+
 const uiTheme = SettingDef<String>(
   key: 'ui.theme',
   type: SettingType.select,
@@ -6576,6 +6617,7 @@ const List<SettingDef<Object>> allSettings = [
   esphomeRealMac,
   esphomeMacOverride,
   deviceName,
+  deviceHostname,
   disableImpeller,
   legacyWebView,
   // The User Interface group: consecutive, or the heading would repeat.

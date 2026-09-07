@@ -528,7 +528,8 @@ class SettingsManager extends Manager {
   /// ESPHome node name goes with them: it is the mDNS instance and the
   /// `<name>.local` host, so two kiosks answering to it is a name clash
   /// on the network (the next start names this one after its own device
-  /// name, or falls back to its generated identity).
+  /// name, or falls back to its generated identity). The hostname is the
+  /// same kind of thing, and goes the same way.
   ///
   /// A device that inherited one of these identities from an older
   /// verbatim clone would keep colliding by "keeping its own"; equality
@@ -543,6 +544,7 @@ class SettingsManager extends Manager {
     final importedName = map.remove(deviceName.key);
     final importedPlayer = map.remove(sendspinClientId.key);
     final importedNode = map.remove(esphomeNodeName.key);
+    final importedHost = map.remove(deviceHostname.key);
     if (importedName is String &&
         importedName.isNotEmpty &&
         get(deviceName) == importedName) {
@@ -557,6 +559,11 @@ class SettingsManager extends Manager {
         importedNode.isNotEmpty &&
         get(esphomeNodeName) == importedNode) {
       await set(esphomeNodeName, '');
+    }
+    if (importedHost is String &&
+        importedHost.isNotEmpty &&
+        get(deviceHostname) == importedHost) {
+      await set(deviceHostname, '');
     }
   }
 

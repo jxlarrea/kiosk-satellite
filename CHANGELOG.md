@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Reach the remote admin by name.** Every kiosk with Remote management on now answers to a hostname on the local network, so the admin opens at `http://<hostname>.local:2324` from a computer without an IP address to remember. The new **mDNS name** setting under Settings > Device, right under Device name, holds it. It is filled in from the device name as a DNS label under `ks-` (`ks-kitchen-tablet.local`), the same name the ESPHome node takes on a fresh install, so the field holds the real name to copy. Renaming the device leaves it alone, and clearing the field takes the device name again. The Access card under Remote Administration, on the device and in the remote admin, shows the address by name next to the one by IP. The name resolves from macOS, iOS, Windows 10 and later and Linux with Avahi, works with **Find other kiosks** off, never syncs from a fleet leader and is dropped by a settings import that clones a kiosk. The log warns when another kiosk on the network answers to the same name.
+
 ### Changed
 - **The Fire tablet docs now cover the microphone being revoked on a running tablet.** The [Amazon Fire tablets](docs/fire.md) page described the microphone revoke as a boot-time event only. Fire OS also strips the grant from a sideloaded app while it is running, most often right after a Wi-Fi reconnect, kills the app and re-prompts once it is back up. The page now explains the runtime case, why the **Update available** notice tends to appear at the same moment and lists Fire OS 7 alongside Fire OS 8.
 

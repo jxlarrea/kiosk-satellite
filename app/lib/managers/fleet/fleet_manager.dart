@@ -70,6 +70,19 @@ class FleetDevice {
 /// The condition mirrors the remote manager's own, since what is
 /// announced is the admin server's address and port: a kiosk that does
 /// not serve the admin has nothing to be listed under.
+///
+/// The same announcer carries this kiosk's hostname (issue #470): while
+/// the admin serves it answers to `<hostname>.local`, so the admin is
+/// reachable by name from a laptop without the IP address. That part
+/// runs with Find other kiosks off too; only the service records and
+/// the listening for the others follow the switch.
+///
+/// The mDNS name setting is seeded here, the way the ESPHome node name
+/// is at its server's first start: as soon as the device has a name and
+/// the field is empty, the device name as a DNS label under `ks-` is
+/// written into it, so the settings row holds the real name to copy.
+/// Renaming the device afterwards leaves it alone; clearing the field
+/// seeds it again.
 class FleetManager extends Manager {
   FleetManager(super.bus, super.commands, super.log, this._settings);
 
@@ -86,6 +99,31 @@ class FleetManager extends Manager {
       _settings.get(defs.remoteEnabled) &&
       _settings.get(defs.remotePassword).isNotEmpty &&
       _settings.get(defs.remoteFleetDiscovery);
+
+  /// Whether the remote admin serves, which is when there is an address
+  /// worth a name.
+  bool get serving =>
+      _settings.get(defs.remoteEnabled) &&
+      _settings.get(defs.remotePassword).isNotEmpty;
+
+  /// The name this kiosk answers to on the network, without `.local`:
+  /// the mDNS name setting, else (before the seed lands) the device name
+  /// as a DNS label under `ks-`. Empty when neither yields one, and then
+  /// nothing is announced.
+  String get hostname => defs.effectiveHostname(
+    _settings.get(defs.deviceHostname),
+    _settings.get(defs.deviceName),
+  );
+
+  /// Where the admin answers by name, or null with no hostname or no
+  /// server.
+  String? get hostUrl => !serving || hostname.isEmpty
+      ? null
+      : 'http://$hostname.local:${_settings.get(defs.remotePort).toInt()}';
+
+  /// Whether the native announcer should run at all: for the fleet, for
+  /// the hostname, or both.
+  bool get active => enabled || (serving && hostname.isNotEmpty);
 
   /// Whether the native discovery is running.
   bool get running => _sub != null;
@@ -115,6 +153,10 @@ class FleetManager extends Manager {
             // hears nobody, so an empty list says nothing about the network.
             'listening': _listening,
             'devices': [for (final d in _devices) d.toJson()],
+            // The name this kiosk answers to while the admin serves, and
+            // the admin's address under it, for the Access cards.
+            'hostname': serving ? hostname : '',
+            'hostUrl': hostUrl,
           });
         },
       ),
@@ -126,8 +168,15 @@ class FleetManager extends Manager {
             e.key == defs.remotePassword.key ||
             e.key == defs.remotePort.key ||
             e.key == defs.remoteFleetDiscovery.key ||
-            e.key == defs.deviceName.key) {
-          _sync();
+            e.key == defs.deviceName.key ||
+            e.key == defs.deviceHostname.key) {
+          // The seed's own write comes back here, while the start that
+          // carries it may still be under way: not a second start.
+          if (e.key == defs.deviceHostname.key && _seedEcho) {
+            _seedEcho = false;
+            return;
+          }
+          _seed().then((_) => _sync());
         }
       }),
     );
@@ -140,11 +189,28 @@ class FleetManager extends Manager {
         }
       }),
     );
+    await _seed();
     await _sync();
   }
 
+  /// Fills an empty mDNS name from the device name. Nothing to write
+  /// while the device has no usable name yet (the wizard's first page
+  /// gives it one, and the change lands here).
+  Future<void> _seed() async {
+    if (_settings.get(defs.deviceHostname).isNotEmpty) return;
+    final derived = defs.effectiveHostname('', _settings.get(defs.deviceName));
+    if (derived.isEmpty) return;
+    _seedEcho = true;
+    await _settings.set(defs.deviceHostname, derived);
+    log.info(name, 'mDNS name set to $derived from the device name');
+  }
+
+  /// Set across a seed write, so its change event is told apart from a
+  /// user's edit.
+  bool _seedEcho = false;
+
   Future<void> _sync() async {
-    if (enabled) {
+    if (active) {
       await _start();
     } else if (running) {
       await _stop();
@@ -152,23 +218,34 @@ class FleetManager extends Manager {
   }
 
   Future<void> _start() async {
+    final host = hostname;
     final args = {
       'name': _settings.get(defs.deviceName),
       'port': _settings.get(defs.remotePort).toInt(),
+      'hostname': host,
+      'fleet': enabled,
     };
     try {
       await _methods.invokeMethod<void>('start', args);
+      final announced = host.isEmpty ? '' : ' as $host.local';
       if (!running) {
         _sub = _stream.receiveBroadcastStream().listen(
           _onSnapshot,
           onError: (Object e) => log.warn(name, 'discovery stream: $e'),
         );
         _warnedDeaf = false;
+        _warnedClash = null;
         log.info(
           name,
-          'announcing on :${args['port']} and listening for other kiosks',
+          enabled
+              ? 'announcing on :${args['port']}$announced and listening '
+                    'for other kiosks'
+              : 'announcing on :${args['port']}$announced',
         );
+      } else if (host != _announcedHost && host.isNotEmpty) {
+        log.info(name, 'now answering to $host.local');
       }
+      _announcedHost = host;
     } on MissingPluginException {
       // No bridge (tests, a desktop run): nothing to discover with.
     } catch (e) {
@@ -206,6 +283,13 @@ class FleetManager extends Manager {
   /// Whether the socket has the mDNS port (see the warning below).
   bool _listening = true;
 
+  /// The hostname last handed to the announcer, so a change is logged.
+  String _announcedHost = '';
+
+  /// The hostname another kiosk was heard answering to as well, warned
+  /// about once: two kiosks under one name resolve to either of them.
+  String? _warnedClash;
+
   void _onSnapshot(Object? raw) {
     if (raw is! Map) return;
     _listening = raw['listening'] != false;
@@ -215,6 +299,15 @@ class FleetManager extends Manager {
         name,
         'port 5353 is taken on this device, so other kiosks will not be '
         'heard; this one still announces itself',
+      );
+    }
+    final clash = raw['hostClash'];
+    if (clash is String && clash.isNotEmpty && clash != _warnedClash) {
+      _warnedClash = clash;
+      log.warn(
+        name,
+        'another kiosk also answers to $clash.local; give one of them '
+        'a different mDNS name under Settings, Device',
       );
     }
     final self = FleetDevice.fromMap(

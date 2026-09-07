@@ -101,9 +101,98 @@ void main() {
   test('announces with the device name and admin port while serving', () async {
     await build(serving);
     final start = calls.singleWhere((c) => c.method == 'start');
-    expect(start.arguments, {'name': 'Living Room', 'port': 2324});
+    expect(start.arguments, {
+      'name': 'Living Room',
+      'port': 2324,
+      // The device name as a DNS label under ks-, seeded at init.
+      'hostname': 'ks-living-room',
+      'fleet': true,
+    });
     expect(listens, 1);
     expect(fleet.running, isTrue);
+    expect(fleet.hostname, 'ks-living-room');
+    expect(fleet.hostUrl, 'http://ks-living-room.local:2324');
+  });
+
+  test('the mDNS name is seeded from the device name and then kept', () async {
+    await build(serving);
+    // Written into the setting, so the row holds the name to copy.
+    expect(settings.get(defs.deviceHostname), 'ks-living-room');
+    // A rename leaves it alone, as with the ESPHome node name.
+    await settings.set(defs.deviceName, 'Kitchen');
+    await pump();
+    expect(settings.get(defs.deviceHostname), 'ks-living-room');
+    expect(calls.last.arguments['hostname'], 'ks-living-room');
+    // Clearing it takes the device name again.
+    await settings.set(defs.deviceHostname, '');
+    await pump();
+    expect(settings.get(defs.deviceHostname), 'ks-kitchen');
+    expect(calls.last.arguments['hostname'], 'ks-kitchen');
+  });
+
+  test(
+    'no seed without a usable device name, then one when it comes',
+    () async {
+      await build({'ks.device.name': '!!!'});
+      expect(settings.get(defs.deviceHostname), isEmpty);
+      await settings.set(defs.deviceName, 'Hall');
+      await pump();
+      expect(settings.get(defs.deviceHostname), 'ks-hall');
+    },
+  );
+
+  test('a typed hostname wins and is a DNS label', () async {
+    await build({...serving, 'ks.device.hostname': 'Kitchen Tablet'});
+    final start = calls.singleWhere((c) => c.method == 'start');
+    expect(start.arguments['hostname'], 'kitchen-tablet');
+    expect(fleet.hostUrl, 'http://kitchen-tablet.local:2324');
+    final r = await commands.execute('fleet', const {});
+    expect((r.data as Map)['hostname'], 'kitchen-tablet');
+    expect((r.data as Map)['hostUrl'], 'http://kitchen-tablet.local:2324');
+    // Typed on a settings page, the label is what gets stored.
+    await settings.set(defs.deviceHostname, 'Hall Way (2)');
+    expect(settings.get(defs.deviceHostname), 'hall-way-2');
+  });
+
+  test('the hostname is announced with Find other kiosks off', () async {
+    await build({...serving, 'ks.remote.fleet_discovery': false});
+    final start = calls.singleWhere((c) => c.method == 'start');
+    expect(start.arguments, {
+      'name': 'Living Room',
+      'port': 2324,
+      'hostname': 'ks-living-room',
+      'fleet': false,
+    });
+    expect(fleet.enabled, isFalse);
+    expect(fleet.running, isTrue);
+    final r = await commands.execute('fleet', const {});
+    expect((r.data as Map)['enabled'], isFalse);
+    expect((r.data as Map)['hostUrl'], 'http://ks-living-room.local:2324');
+  });
+
+  test('a new hostname goes out at once', () async {
+    await build(serving);
+    calls.clear();
+    await settings.set(defs.deviceHostname, 'hall');
+    await pump();
+    final start = calls.singleWhere((c) => c.method == 'start');
+    expect(start.arguments['hostname'], 'hall');
+    expect(listens, 1);
+  });
+
+  test('nothing announced by name without a usable name', () async {
+    await build({...serving, 'ks.device.name': '!!!'});
+    final start = calls.singleWhere((c) => c.method == 'start');
+    expect(start.arguments['hostname'], '');
+    expect(fleet.hostUrl, isNull);
+    // And with the fleet off too there is nothing to run for.
+    await build({
+      ...serving,
+      'ks.device.name': '!!!',
+      'ks.remote.fleet_discovery': false,
+    });
+    expect(calls.where((c) => c.method == 'start'), isEmpty);
+    expect(fleet.running, isFalse);
   });
 
   test('stays off without remote management or a password', () async {
@@ -115,8 +204,27 @@ void main() {
     expect(calls.where((c) => c.method == 'start'), isEmpty);
   });
 
-  test('the switch stops and restarts it', () async {
+  test('the switch takes the fleet off the wire, not the hostname', () async {
     await build(serving);
+    await settings.set(defs.remoteFleetDiscovery, false);
+    await pump();
+    // Still running, for the hostname: the announcer is told the fleet
+    // part is off.
+    expect(calls.last.method, 'start');
+    expect(calls.last.arguments['fleet'], isFalse);
+    expect(cancels, 0);
+    expect(fleet.running, isTrue);
+    expect(fleet.enabled, isFalse);
+
+    await settings.set(defs.remoteFleetDiscovery, true);
+    await pump();
+    expect(calls.last.method, 'start');
+    expect(calls.last.arguments['fleet'], isTrue);
+    expect(fleet.running, isTrue);
+  });
+
+  test('the switch stops it outright with nothing to answer to', () async {
+    await build({...serving, 'ks.device.name': '!!!'});
     await settings.set(defs.remoteFleetDiscovery, false);
     await pump();
     expect(calls.last.method, 'stop');
@@ -135,7 +243,13 @@ void main() {
     await settings.set(defs.deviceName, 'Kitchen');
     await pump();
     final start = calls.singleWhere((c) => c.method == 'start');
-    expect(start.arguments, {'name': 'Kitchen', 'port': 2324});
+    expect(start.arguments, {
+      'name': 'Kitchen',
+      'port': 2324,
+      // Seeded at init and kept through the rename.
+      'hostname': 'ks-living-room',
+      'fleet': true,
+    });
     // Still the one stream: a restart is a re-announce, not a new listen.
     expect(listens, 1);
   });

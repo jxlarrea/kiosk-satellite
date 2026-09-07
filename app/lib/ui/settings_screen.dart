@@ -5714,6 +5714,13 @@ class _AdminAddressCardState extends State<_AdminAddressCard> {
   Widget build(BuildContext context) {
     final port = widget.container.settings.get(remotePort).toInt();
     final address = 'http://${_ip ?? '…'}:$port';
+    // The same admin by name (issue #470), while the kiosk has one: the
+    // Hostname setting or the device name as a DNS label.
+    final hostUrl = widget.container.fleet.hostUrl;
+    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: Theme.of(context).colorScheme.primary,
+      fontWeight: FontWeight.w600,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -5725,14 +5732,17 @@ class _AdminAddressCardState extends State<_AdminAddressCard> {
               subtitle: const Text(
                 'Open this address in a browser on your computer.',
               ),
-              trailing: Text(
-                address,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              trailing: Text(address, style: style),
             ),
+            if (hostUrl != null)
+              ListTile(
+                title: const Text('By name'),
+                subtitle: const Text(
+                  'The same address by hostname, on networks that resolve '
+                  '.local names.',
+                ),
+                trailing: Text(hostUrl, style: style),
+              ),
           ],
         ),
       ],

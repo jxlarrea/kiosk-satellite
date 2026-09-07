@@ -24,6 +24,29 @@ adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
   --es ks.provision '"{\"remote.enabled\":true,\"remote.password\":\"secret\"}"'
 ```
 
+## Reaching a kiosk by name
+
+Every kiosk with its remote admin on answers to a hostname on the local
+network, so the admin opens at `http://<hostname>.local:2324` from a laptop
+with no IP address to remember. The **mDNS name** setting under Settings →
+Device, right under Device name, holds it. It is filled in from the device
+name as a DNS label under `ks-` (the device name "Kitchen Tablet" becomes
+`ks-kitchen-tablet`, answering to `ks-kitchen-tablet.local`), the same name
+the ESPHome node takes on a fresh install, so the field holds the real name
+to copy. Renaming the device leaves it alone; clear the field to take the
+device name again. A typed name is slugified the same way: lowercase
+letters, digits and hyphens. The Access card under Remote Administration, on the device and
+in the remote admin, shows the address by name next to the one by IP.
+
+| | |
+| --- | --- |
+| How | The kiosk announces an A record for `<hostname>.local` over mDNS every 30 seconds and answers queries for it, unicast ones included (`dig @<ip> -p 5353 <hostname>.local`). The answer carries an NSEC record saying the name has no IPv6 address, so a resolver asking for both does not wait on the second. |
+| When | While **Remote management** is on with a password set, with or without **Find other kiosks**. |
+| Where it resolves | Any machine that resolves `.local` over mDNS: macOS and iOS, Windows 10 and later, Linux with Avahi (or systemd-resolved with mDNS turned on). Android's own resolver does not, so a browser on another tablet still needs the IP. Multicast does not cross VLANs without a reflector. |
+| Two kiosks, one name | Both answer, and a browser lands on either. The log warns when another kiosk is heard announcing this one's name; give one of them a different mDNS name. |
+| Port 5353 | Answering queries takes the mDNS port. Where something on the device holds it exclusively the kiosk still announces, and only resolvers that cache announcements they did not ask for (Avahi does) find it. |
+| Per device | The mDNS name never syncs from a fleet leader, and a settings import that clones a kiosk drops it. |
+
 ## Kiosk switcher
 
 With several kiosks on one network, the device name under the logo in the
