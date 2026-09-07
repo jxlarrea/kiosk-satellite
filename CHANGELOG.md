@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- **Clock colors change on the clock already on screen.** The digit, background and flip backdrop colors of the Digital, Flip and Roller clock screensavers used to be picked up at the next minute tick or the next start of the screensaver, so a color written through the remote API by an automation, say a green clock on trash day, showed up late or only after toggling the screensaver off and on. Every color now applies the moment it is written, from the settings page, the remote admin or the API.
 - **mDNS names now resolve from Windows.** The reply to a name lookup carried a second record stating that the kiosk has no IPv6 address, which macOS and Android accepted but the Windows resolver rejected outright, so `ping` and the browser on Windows reported no such host while the same name worked everywhere else. The reply is now the address alone.
 
 ### Added

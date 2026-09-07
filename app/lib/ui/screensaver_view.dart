@@ -658,6 +658,27 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   Timer? _bgRefresh;
   Timer? _bgRetry;
 
+  /// The settings the face reads at build and applies the moment they
+  /// change, rather than at the next minute tick: the background and its
+  /// refresh, the font, and every color of the three faces, so an
+  /// automation writing a color through the remote API (a trash-day
+  /// reminder turning the clock green) shows it on the clock already on
+  /// screen, the way the Night mode keys do through the overlay.
+  static final _liveKeys = {
+    defs.screensaverClockBackground.key,
+    defs.screensaverClockBackgroundRefresh.key,
+    defs.screensaverClockNightHideBackground.key,
+    defs.screensaverClockFont.key,
+    defs.screensaverClockFontWeight.key,
+    defs.screensaverClockColor.key,
+    defs.screensaverClockBgColor.key,
+    defs.screensaverFlipDigitColor.key,
+    defs.screensaverFlipBgColor.key,
+    defs.screensaverFlipBackdropColor.key,
+    defs.screensaverRollerDigitColor.key,
+    defs.screensaverRollerBgColor.key,
+  };
+
   /// Bounds a URL fetch: a host that accepts the connection and never
   /// answers would otherwise hold the clock's photo hostage.
   static const _bgFetchTimeout = Duration(seconds: 30);
@@ -687,13 +708,7 @@ class _ClockScreensaverState extends State<ClockScreensaver>
         _bgKey = null;
         _armBackgroundRefresh();
       }
-      if (e.key == defs.screensaverClockBackground.key ||
-          e.key == defs.screensaverClockBackgroundRefresh.key ||
-          e.key == defs.screensaverClockNightHideBackground.key ||
-          e.key == defs.screensaverClockFont.key ||
-          e.key == defs.screensaverClockFontWeight.key) {
-        setState(() {});
-      }
+      if (_liveKeys.contains(e.key)) setState(() {});
     });
     _armBackgroundRefresh();
   }
