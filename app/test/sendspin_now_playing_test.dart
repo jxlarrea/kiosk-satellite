@@ -10,11 +10,13 @@ import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
 import 'package:kiosk_satellite/managers/sendspin/ma_remote_player.dart';
+import 'package:kiosk_satellite/managers/sendspin/lyrics.dart';
 import 'package:kiosk_satellite/managers/sendspin/music_assistant_api.dart';
 import 'package:kiosk_satellite/managers/sendspin/sendspin_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/ui/sendspin_player_overlay.dart';
+import 'package:kiosk_satellite/ui/lyrics_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A Music Assistant that answers the few commands the view needs: one
@@ -152,6 +154,7 @@ void main() {
         containsAll([
           defs.sendspinFullscreenOnPlay,
           defs.sendspinFullscreenControls,
+          defs.sendspinFullscreenHorizontal,
           defs.sendspinFullscreenDoubleTap,
           defs.sendspinFullscreenMotion,
           defs.sendspinFullscreenShortcut,
@@ -166,6 +169,7 @@ void main() {
         defs.sendspinFullscreenOverrideBrightness,
       ]);
       expect(defs.sendspinFullscreenSplit.defaultValue, isTrue);
+      expect(defs.sendspinFullscreenHorizontal.defaultValue, isFalse);
       expect(
         defs.sendspinFullscreenSplit.dependsOn,
         defs.sendspinFullscreen.key,
@@ -990,6 +994,125 @@ void main() {
         await tester.pump(const Duration(milliseconds: 50));
       }
     }
+
+    for (final size in [
+      const Size(1280, 800),
+      const Size(800, 480),
+      const Size(480, 320),
+      const Size(360, 800),
+    ]) {
+      testWidgets(
+        'horizontal layout moves details and transport for panels at $size',
+        (tester) async {
+          await pump(
+            tester,
+            size: size,
+            settings: {...ma, 'ks.sendspin.fullscreen_horizontal': true},
+          );
+          container.sendspin.nowPlaying.value = {
+            ...container.sendspin.nowPlaying.value!,
+            'album': 'Album name',
+          };
+          await settle(tester);
+          final left = tester.getRect(
+            find.byKey(const ValueKey('horizontal-artwork-half')),
+          );
+          final right = tester.getRect(
+            find.byKey(const ValueKey('horizontal-controls-half')),
+          );
+          final details = find.byKey(
+            const ValueKey('horizontal-track-details'),
+          );
+          final play = find.byIcon(Icons.pause_circle_filled_rounded);
+          expect(left.width, size.width / 2);
+          expect(right.width, size.width / 2);
+          expect(left.right, right.left);
+          expect(
+            tester.getRect(details).left,
+            greaterThanOrEqualTo(right.left),
+          );
+          expect(find.text('Album name'), findsOneWidget);
+          final plainPlay = tester.getCenter(play);
+          expect(plainPlay.dx, greaterThan(right.left));
+          expect(plainPlay.dy, greaterThan(tester.getRect(details).bottom));
+          expect(tester.takeException(), isNull);
+
+          await tester.tap(find.byIcon(Icons.queue_music_rounded));
+          await settle(tester);
+          expect(tester.getRect(details).right, lessThanOrEqualTo(left.right));
+          expect(
+            tester.getRect(details).top,
+            greaterThanOrEqualTo(
+              tester
+                  .getRect(find.byKey(const ValueKey('horizontal-cover')))
+                  .bottom,
+            ),
+          );
+          expect(tester.getCenter(play).dy, greaterThan(plainPlay.dy));
+          expect(
+            tester.getRect(find.byType(ListView)).left,
+            greaterThanOrEqualTo(right.left),
+          );
+          expect(tester.takeException(), isNull);
+          await tester.tap(find.byIcon(Icons.skip_next_rounded));
+          await tester.pump();
+          expect(calls.last.arguments['command'], 'next');
+
+          await tester.tap(find.byIcon(Icons.queue_music_rounded));
+          await settle(tester);
+          expect(
+            tester.getRect(details).left,
+            greaterThanOrEqualTo(right.left),
+          );
+          await container.settings.set(defs.sendspinLyrics, true);
+          await settle(tester);
+          container.sendspin.lyrics.value = const [
+            LyricLine(Duration.zero, 'First lyric'),
+            LyricLine(Duration(seconds: 60), 'Second lyric'),
+          ];
+          await settle(tester);
+          expect(tester.getRect(details).right, lessThanOrEqualTo(left.right));
+          expect(
+            tester.getRect(find.byType(LyricsView)).left,
+            greaterThanOrEqualTo(right.left),
+          );
+          expect(tester.getCenter(play).dy, greaterThan(plainPlay.dy));
+          expect(tester.takeException(), isNull);
+          await tester.pump(const Duration(seconds: 2));
+        },
+      );
+    }
+
+    testWidgets(
+      'horizontal mode switches live and is ignored alongside a screensaver',
+      (tester) async {
+        await pump(tester);
+        final horizontal = find.byKey(
+          const ValueKey('horizontal-artwork-half'),
+        );
+        expect(horizontal, findsNothing);
+        await container.settings.set(defs.sendspinFullscreenHorizontal, true);
+        await settle(tester);
+        expect(horizontal, findsOneWidget);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SendspinFullscreenView(
+                container: container,
+                alongsideScreensaver: true,
+              ),
+            ),
+          ),
+        );
+        await settle(tester);
+        expect(horizontal, findsNothing);
+        expect(
+          container.settings.get(defs.sendspinFullscreenHorizontal),
+          isTrue,
+        );
+        await tester.pump(const Duration(seconds: 2));
+      },
+    );
 
     testWidgets('without a Music Assistant server the heart and queue '
         'stay out', (tester) async {

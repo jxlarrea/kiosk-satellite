@@ -358,6 +358,43 @@ void main() {
     await c.screensaver.dispose();
   });
 
+  for (final controls in [true, false]) {
+    testWidgets('horizontal artwork fits with controls $controls and lyrics', (
+      tester,
+    ) async {
+      await boot(
+        tester,
+        split: false,
+        controls: controls,
+        prefs: {'ks.sendspin.fullscreen_horizontal': true},
+      );
+      final half = find.byKey(const ValueKey('horizontal-artwork-half'));
+      final cover = find.byKey(const ValueKey('horizontal-cover'));
+      final image = find.descendant(of: cover, matching: find.byType(Image));
+      expect(image, findsOneWidget);
+      final rect = tester.getRect(image);
+      expect(rect.width, rect.height);
+      expect(rect.right, lessThanOrEqualTo(tester.getRect(half).right));
+      expect(play, controls ? findsOneWidget : findsNothing);
+      c.sendspin.lyrics.value = const [LyricLine(Duration.zero, 'A lyric')];
+      await c.settings.set(defs.sendspinLyrics, true);
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(LyricsView), findsOneWidget);
+      expect(
+        tester.getRect(image).bottom,
+        lessThanOrEqualTo(
+          tester
+              .getRect(find.byKey(const ValueKey('horizontal-track-details')))
+              .top,
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await c.screensaver.dispose();
+    });
+  }
+
   testWidgets('controls off still dismisses through the screensaver panel', (
     tester,
   ) async {

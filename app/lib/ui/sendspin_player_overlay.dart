@@ -131,7 +131,8 @@ String _clock(int ms) {
 /// holds the touch reports, the transport sits pinned along the bottom of
 /// the screen and a close button in the corner is the way out. Lyrics or
 /// the queue take the space beside (landscape) or under (portrait) the
-/// cover; the transport never moves for them.
+/// cover. Optional Horizontal mode gives artwork half the display and
+/// moves details beneath it while the transport moves down for a panel.
 class SendspinFullscreenView extends StatefulWidget {
   const SendspinFullscreenView({
     super.key,
@@ -175,6 +176,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       if (e.key == defs.sendspinLyrics.key ||
           e.key == defs.sendspinFullscreenQueue.key ||
           e.key == defs.sendspinSpeakerPill.key ||
+          e.key == defs.sendspinFullscreenHorizontal.key ||
           e.key == defs.sendspinFullscreenDoubleTap.key) {
         _onLayoutChanged();
       }
@@ -269,6 +271,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         (c.sendspin.lyrics.value.isNotEmpty ||
             (c.sendspin.lyricsPending.value && _panelShown));
     final havePanel = queue || haveLyrics;
+    final horizontal =
+        !widget.alongsideScreensaver &&
+        c.settings.get(defs.sendspinFullscreenHorizontal);
     final landscape = screen.width > screen.height;
     final sideBySide = havePanel && landscape && screen.width >= 560;
     final stacked = havePanel && !landscape && screen.height >= 620;
@@ -283,7 +288,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         c.settings.get(defs.screensaverGlanceNowPlaying) &&
         c.glance.entities.value.isNotEmpty;
     final edge = (screen.width * 0.06).clamp(16.0, 64.0);
-    _panelShown = sideBySide || stacked || panelOnly;
+    _panelShown =
+        sideBySide || stacked || panelOnly || (horizontal && havePanel);
 
     // On a Material of its own: the rows are ink wells, and their focus
     // highlight only paints on one.
@@ -301,8 +307,184 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         : LyricsView(
             container: c,
             fontSize: (short * 0.055).clamp(15.0, 26.0),
-            centred: stacked,
+            centred: stacked && !horizontal,
           );
+
+    Widget horizontalContent() {
+      final horizontalPadding = (screen.width * 0.04).clamp(32.0, 48.0);
+      Widget details() => Column(
+        key: const ValueKey('horizontal-track-details'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: titleSize,
+              fontWeight: FontWeight.w700,
+              height: 1.15,
+            ),
+          ),
+          for (final value in [now?['artist'], now?['album']])
+            if (value != null && '$value'.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  '$value',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: artistSize),
+                ),
+              ),
+        ],
+      );
+
+      Widget half(String key, Widget child) => Expanded(
+        child: SizedBox.expand(
+          key: ValueKey(key),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              64 + MediaQuery.paddingOf(context).top,
+              horizontalPadding,
+              24 + MediaQuery.paddingOf(context).bottom,
+            ),
+            child: child,
+          ),
+        ),
+      );
+
+      return Row(
+        children: [
+          half(
+            'horizontal-artwork-half',
+            LayoutBuilder(
+              builder: (context, box) {
+                final detailsHeight = havePanel
+                    ? titleSize * 2.3 + artistSize * 2.8 + 16 + gap * 0.5
+                    : 0.0;
+                final coverSize = min(
+                  box.maxWidth,
+                  max(48.0, box.maxHeight - detailsHeight),
+                );
+                return Center(
+                  child: _fitted(
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox.square(
+                          key: const ValueKey('horizontal-cover'),
+                          dimension: coverSize,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 700),
+                            child: art == null
+                                ? const Center(
+                                    key: ValueKey('horizontal-no-art'),
+                                    child: Icon(
+                                      Icons.music_note,
+                                      size: 96,
+                                      color: Colors.white24,
+                                    ),
+                                  )
+                                : ClipRRect(
+                                    key: ValueKey(_loadedArtUrl),
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: Image.memory(
+                                      art,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      cacheWidth:
+                                          (coverSize *
+                                                  MediaQuery.devicePixelRatioOf(
+                                                    context,
+                                                  ))
+                                              .ceil(),
+                                      fit: BoxFit.cover,
+                                      gaplessPlayback: true,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        if (havePanel) ...[
+                          SizedBox(height: gap * 0.5),
+                          details(),
+                        ],
+                      ],
+                    ),
+                    width: box.maxWidth,
+                  ),
+                );
+              },
+            ),
+          ),
+          half(
+            'horizontal-controls-half',
+            LayoutBuilder(
+              builder: (context, box) {
+                Widget transport() => _ControlTouch(
+                  container: c,
+                  child: _NowPlayingControls(
+                    container: c,
+                    width: box.maxWidth,
+                    scale: controlsScale,
+                  ),
+                );
+                if (havePanel) {
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, area) {
+                            final width = max(240.0, area.maxWidth);
+                            return FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.topCenter,
+                              child: SizedBox(
+                                width: width,
+                                height: area.maxHeight * width / area.maxWidth,
+                                child: panel(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      if (controls) ...[
+                        SizedBox(height: gap * 0.5),
+                        transport(),
+                      ],
+                    ],
+                  );
+                }
+                return Center(
+                  child: _fitted(
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        details(),
+                        if (controls) ...[SizedBox(height: gap), transport()],
+                        if (glance)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: GlanceRow(
+                              container: c,
+                              scale: controlsScale,
+                            ),
+                          ),
+                      ],
+                    ),
+                    width: box.maxWidth,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    }
 
     // The cover block sits a little below center, clear of the player
     // chip in the top left corner: a share of the slot's height, so a
@@ -446,56 +628,59 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         if (art != null) const ColoredBox(color: Color(0x99000000)),
         // The content above, the row and the transport pinned below it:
         // the transport keeps its place whatever the content does.
-        Column(
-          children: [
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, box) =>
-                    content((box.maxHeight * 0.08).clamp(0.0, 56.0)),
-              ),
-            ),
-            if (glance)
-              Padding(
-                padding: EdgeInsets.only(
-                  top: 8,
-                  bottom: controls
-                      ? 4
-                      : (screen.height * 0.06).clamp(12.0, 48.0),
-                ),
-                // The default cards carry their own backdrop, and the
-                // text-only style's grey-on-black palette reads over the
-                // black backdrop and the scrimmed art alike, so no tint.
-                child: GlanceRow(
-                  container: c,
-                  scale: min(1.0, screen.height / 480).clamp(0.75, 1.0),
+        if (horizontal)
+          horizontalContent()
+        else
+          Column(
+            children: [
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, box) =>
+                      content((box.maxHeight * 0.08).clamp(0.0, 56.0)),
                 ),
               ),
-            if (controls)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  16,
-                  gap * 0.4,
-                  16,
-                  (screen.height * 0.03).clamp(8.0, 24.0),
-                ),
-                child: Center(
-                  child: _ControlTouch(
+              if (glance)
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: 8,
+                    bottom: controls
+                        ? 4
+                        : (screen.height * 0.06).clamp(12.0, 48.0),
+                  ),
+                  // The default cards carry their own backdrop, and the
+                  // text-only style's grey-on-black palette reads over the
+                  // black backdrop and the scrimmed art alike, so no tint.
+                  child: GlanceRow(
                     container: c,
-                    child: _NowPlayingControls(
+                    scale: min(1.0, screen.height / 480).clamp(0.75, 1.0),
+                  ),
+                ),
+              if (controls)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    gap * 0.4,
+                    16,
+                    (screen.height * 0.03).clamp(8.0, 24.0),
+                  ),
+                  child: Center(
+                    child: _ControlTouch(
                       container: c,
-                      // A wide bar: most of the screen, so the thumb has
-                      // room to land and the times can read at a distance.
-                      width: min(
-                        max(artSize * 1.4, screen.width * 0.62),
-                        screen.width - 32,
+                      child: _NowPlayingControls(
+                        container: c,
+                        // A wide bar: most of the screen, so the thumb has
+                        // room to land and the times can read at a distance.
+                        width: min(
+                          max(artSize * 1.4, screen.width * 0.62),
+                          screen.width - 32,
+                        ),
+                        scale: controlsScale,
                       ),
-                      scale: controlsScale,
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
         // Whose music this is: the shown player's name in a chip opposite
         // the close button, and the way into its group where the source
         // can put other players in it.
@@ -2015,9 +2200,13 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
             ),
           ),
           if (compact) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: transportButtons,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: transportButtons,
+              ),
             ),
             FittedBox(
               fit: BoxFit.scaleDown,

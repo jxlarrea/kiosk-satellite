@@ -84,6 +84,7 @@ Configures direct integration with local Sonos hardware.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Launch Now Playing when music starts playing | on | Instantly launches the full screen view when playback starts rather than waiting for the idle screensaver timeout. |
+| Horizontal mode | off | Splits standalone Now Playing into equal artwork and controls halves. Track details move below the artwork when lyrics or the queue open. Ignored while shown alongside a screensaver. |
 | Show media controls | on | Displays transport buttons and a progress bar over the background artwork. When enabled, a top-right close button appears and paused tracks remain on screen until the paused timeout expires. |
 | Double tap to dismiss | off | Allows a double tap anywhere on the standalone Now Playing view to dismiss it, removing the close button. Taps on controls or queue rows do not trigger dismissal. Ignored while shown alongside a screensaver. |
 | Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the standalone music display. Ignored while Now Playing is shown alongside a screensaver. Shared layouts follow the screensaver's detection settings. |
@@ -170,6 +171,8 @@ In Kiosk Mode, visibility controls for the card follow the **Floating Player** s
 When enabled, the full screen "Now Playing" view activates during active playback as an idle screensaver replacement. It features blurred, full screen album artwork in the background, sharp centered artwork, and prominent title and artist typography. Track changes cross-fade smoothly.
 
 **Show alongside screensaver**, enabled by default under **Settings > Media Player > Now Playing > Screensaver**, lets you keep photos, clocks or other screensaver content visible while music plays. In landscape, the screensaver takes about two thirds of the display and Now Playing fills the right panel. In portrait, the screensaver fills the top half and the player fills the bottom half. Screens smaller than 700 logical pixels along the split direction keep the full screen player. The Dim screensaver uses a black panel beside Now Playing and keeps its configured dim level.
+
+Enable **Horizontal mode** under **Now Playing > User Interface** for a standalone layout with artwork in the left half and track details above the transport controls in the right half. The title, artist and album name appear on separate lines. With the queue and lyrics closed, the details and controls are centered together on the right. Opening either panel moves track details beneath the artwork and places the controls at the bottom right, leaving the space above them for the queue or lyrics. This setting is off by default and is ignored while Now Playing is shown alongside a screensaver.
 
 **Fill the screen** in the same group defaults to **Always**, so photos fill the smaller panel. Choose **Default** to follow each photo screensaver's saved fill setting or select **Off** or **Smart** for a shared override. The override applies only while Now Playing shares the display and leaves each screensaver's saved setting unchanged.
 

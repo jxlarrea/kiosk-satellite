@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+
+- **Horizontal Now Playing layout.** A new **Horizontal mode** toggle under Now Playing > User Interface, off by default, gives artwork the left half of the screen and centers the title, artist, album name and transport controls together in the right half. Opening the queue or lyrics moves track details beneath the artwork and transport controls to the bottom right, leaving space above them for the panel. Side padding gives the layout more breathing room. The toggle applies immediately and is ignored while Now Playing is shown alongside a screensaver.
+
 ## v2026.9.26 - 2026-09-07
 
 ### Added

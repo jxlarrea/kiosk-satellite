@@ -5170,6 +5170,21 @@ const sendspinFullscreenControls = SettingDef<bool>(
   dependsOn: 'sendspin.fullscreen',
 );
 
+const sendspinFullscreenHorizontal = SettingDef<bool>(
+  key: 'sendspin.fullscreen_horizontal',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Horizontal mode',
+  description:
+      'Split artwork and controls into equal left and right halves. '
+      'With lyrics or the queue open, track details move below the artwork. '
+      'Ignored while Now Playing is shown alongside a screensaver.',
+  category: 'Sendspin',
+  section: 'User Interface',
+  subpage: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
+);
+
 /// Dismiss the view with a double tap anywhere on it instead of the close
 /// button, which goes away (issue #409: hunting for the button on a
 /// screen everyone is used to tapping). Taps on the transport, the
@@ -6712,6 +6727,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinPlayerShortcut,
   sendspinFullscreenOnPlay,
   sendspinFullscreenControls,
+  sendspinFullscreenHorizontal,
   sendspinFullscreenDoubleTap,
   sendspinFullscreenMotion,
   sendspinFullscreenShortcut,
