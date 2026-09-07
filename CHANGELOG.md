@@ -2,13 +2,17 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.25 - 2026-09-07
 
 ### Added
+- **RTSP streaming from the device camera.** A new **RTSP Streaming** subpage under Settings > Camera, after Motion Detection, streams H.264 video over RTSP/TCP to go2rtc, Frigate, VLC or Home Assistant's Generic Camera integration. The feature is off by default and includes port, resolution, frame rate and bitrate settings with optional username and password authentication. Hardware encoding starts when a viewer connects and stops after the last viewer disconnects. Motion detection and snapshots share the camera session. A copyable **Stream URL** field sits below Port, **Stream Status** shows a green icon while streaming and a gray icon while idle and **Connected Clients** lists each client's IP address, player name, TCP port and connection duration. The local and remote settings pages update the status every two seconds. An **RTSP Streaming** switch under the ESPHome device's **Configuration** controls the same setting without reconnecting ESPHome. The stream carries video only. Camera permission and the Camera master switch still apply, and screen-off behavior depends on Android's camera restrictions.
 - **Reach the remote admin by name.** Every kiosk with Remote management on now answers to a hostname on the local network, so the admin opens at `http://<hostname>.local:2324` from a computer without an IP address to remember. The new **mDNS name** setting under Settings > Device, right under Device name, holds it. It is filled in from the device name as a DNS label under `ks-` (`ks-kitchen-tablet.local`), the same name the ESPHome node takes on a fresh install, so the field holds the real name to copy. Renaming the device leaves it alone, and clearing the field takes the device name again. The Access card under Remote Administration, on the device and in the remote admin, shows the address by name next to the one by IP. The name resolves from macOS, iOS, Android, Windows 10 and later and Linux with Avahi, also on Wi-Fi networks that filter multicast toward their clients, works with **Find other kiosks** off, never syncs from a fleet leader and is dropped by a settings import that clones a kiosk. The log warns when another kiosk on the network answers to the same name.
 
 ### Changed
 - **The Fire tablet docs now cover the microphone being revoked on a running tablet.** The [Amazon Fire tablets](docs/fire.md) page described the microphone revoke as a boot-time event only. Fire OS also strips the grant from a sideloaded app while it is running, most often right after a Wi-Fi reconnect, kills the app and re-prompts once it is back up. The page now explains the runtime case, why the **Update available** notice tends to appear at the same moment and lists Fire OS 7 alongside Fire OS 8.
+
+### Fixed
+- **Update buttons fit narrow screens in the remote admin.** Checking for an update by tapping the version number under Device added action buttons that crowded the row on phones. The controls now wrap and stack to fit the available width.
 
 ## v2026.9.24 - 2026-09-07
 
