@@ -2,10 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.23 - 2026-09-06
 
 ### Added
 - **Clock screensaver background from a URL.** The **Background photo** setting under Screensaver > Clock screensaver now accepts an `http(s)://` image URL as well as a path on the device, from the new **URL** button on the device, the remote admin or the ESPHome **Clock background** text entity. The device fetches the image itself, so a file under Home Assistant's `/local/` folder, an Immich shared link, a daily photo service or an image rendered by an automation all work with nothing pushed to the device. Every write reloads the image, an unchanged value included, so an automation can rewrite the entity to fetch a new image under the same URL. A new **Refresh URL background** setting fetches a URL again every N minutes on its own. A failed fetch keeps the current photo and tries again a minute later. The value is limited to 255 characters, the most Home Assistant allows in a text entity, on every writer.
+- **Hide the clock background photo in Night mode.** A new **Hide background photo** setting under Screensaver > Clock screensaver > Night mode, off by default, hides the photo while Night mode is active so the clock uses the Night background color instead. It works with every clock face, restores the photo when the room brightens and applies immediately.
+
+### Changed
+- **Less GPU work under the dashboard.** While the dashboard covers the screen, the app no longer composites the Flutter backdrop behind it, so the GPU draws one full-screen layer instead of two. Transparent overlays such as the screensaver and the drawer keep their backdrop.
 
 ### Fixed
 - **A clock background replaced under its old file name now shows up.** The Clock screensaver only reloaded its background photo when the setting's value changed, so overwriting the image file in place kept the old picture until the next restart. The file's stamp is now part of the check, so a replaced file is picked up within a minute, and rewriting the setting reloads it at once.
