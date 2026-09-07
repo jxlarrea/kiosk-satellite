@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Motion and face detection died after a restart or a Home press on a launcher kiosk.** The app's screen can be re-created while the app keeps running: the **Restart app** button relaunched the kiosk twice a few seconds apart, and on a kiosk set as the home app the Home button opened a second copy of the screen over the running one. Either way the camera session went with the old screen and the app never noticed, so Dismiss on motion, Dismiss on face, the motion sensor and the hand gestures stayed dead until a related setting was toggled. The camera now reports the loss and is bound again the moment the new screen is up, and a restart no longer relaunches the kiosk a second time.
+
 ## v2026.9.23 - 2026-09-06
 
 ### Added

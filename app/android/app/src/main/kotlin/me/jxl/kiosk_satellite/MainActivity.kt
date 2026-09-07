@@ -64,6 +64,12 @@ class MainActivity : FlutterActivity() {
         // next dispatch.
         val fuseTripped = HomeFuse.noteBootAttempt(this)
         super.onCreate(savedInstanceState)
+        // The kiosk is up, so a deliberate restart's alarm relaunch is
+        // redundant: the crash guard's sticky-service relaunch usually
+        // lands first, and the alarm then fired a second, clear-task
+        // launch a few seconds later that evicted this Activity from the
+        // engine, camera session and all (see BackgroundBridge.restartProcess).
+        BackgroundBridge.cancelRestartAlarm(this)
         if (fuseTripped) {
             finish()
             return
@@ -269,6 +275,9 @@ class MainActivity : FlutterActivity() {
         intent?.getStringExtra("ks.provision")?.let {
             provisionChannel?.invokeMethod("provision", it)
         }
+        // Last, with every bridge above in place: Dart rebinds what the
+        // evicted Activity took with it (the camera session) on this.
+        BackgroundBridge.notifyActivityAttached(messenger)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {

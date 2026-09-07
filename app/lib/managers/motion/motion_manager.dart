@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/command_registry.dart';
@@ -349,6 +350,21 @@ class MotionManager extends Manager {
     // round trip later), the page's resume ends it.
     bus.on<WakeWordDetected>().listen((_) => _setVoiceTurn(true));
     bus.on<WakeWordStateChanged>().listen((e) => _setVoiceTurn(!e.active));
+    // The native side is scoped to the Activity, and a new Activity
+    // attaching to the cached engine evicts the old one with its camera
+    // session: the restart alarm's clear-task launch landing after the
+    // crash guard's relaunch, the HOME intent on a kiosk that is the
+    // launcher, the OS re-creating the screen. The old session reports
+    // itself detached on the way out (handled in [_onCameraLost]); this
+    // is the moment a rebind can land on the new native side. A session
+    // still held here is stale by definition: nothing native backs it.
+    bus.on<ActivityAttached>().listen((_) {
+      if (_camera != null) {
+        log.info(name, 'the Activity was re-created; rebinding the camera');
+        _stop();
+      }
+      _sync();
+    });
     // The postpone leg follows the panel: a screen someone turned off has
     // no screensaver worth holding back, so the camera goes with it.
     bus.on<ScreenStateChanged>().listen((e) {
@@ -636,6 +652,18 @@ class MotionManager extends Manager {
               bus.publish(const MotionDetected());
             },
             onError: (Object e) {
+              // The session went with its Activity (see the
+              // ActivityAttached listener): no backoff, the next Activity
+              // attaching is the rebind.
+              if (e is PlatformException && e.code == 'detached') {
+                log.info(
+                  name,
+                  'camera session went with its Activity; rebinding when '
+                  'the next one attaches',
+                );
+                _onCameraLost(detached: true);
+                return;
+              }
               log.warn(name, 'camera error: $e');
               _onCameraLost();
             },
@@ -652,12 +680,12 @@ class MotionManager extends Manager {
   /// when the panel is off — rebinding under a dark panel is refused the
   /// same way the eviction happened, so the ScreenStateChanged listener
   /// owns that case.
-  void _onCameraLost() {
+  void _onCameraLost({bool detached = false}) {
     final dead = _camera;
     if (dead == null) return;
     _camera = null;
     unawaited(dead.cancel());
-    if (!_shouldRun) return;
+    if (detached || !_shouldRun) return;
     if (!_screenOn) {
       log.info(name, 'camera revoked with the screen off; rebinding on wake');
       return;

@@ -284,6 +284,16 @@ class DeviceManager extends Manager {
       ),
     );
 
+    // A kiosk Activity attached to the engine. The one that matters is a
+    // replacement: a second Activity attaching evicts the first, whose
+    // Activity-scoped native bridges go with it (the camera session among
+    // them) while this isolate never noticed. Managers holding such a
+    // session rebind on this.
+    BackgroundListening.onActivityAttached = () {
+      log.info(name, 'activity attached');
+      bus.publish(const ActivityAttached());
+    };
+
     // Default-network transitions from the platform side. The registration
     // replay (network already up at app start) arrives flagged initial and
     // is dropped here, so an `up` on the bus always means an outage ended.

@@ -1506,6 +1506,14 @@ class CameraMotion(
     }
 
     fun dispose() {
+        // The Activity is going, and this session with it, while the Dart
+        // side keeps running on the cached engine with its subscription
+        // intact: say so, or it never learns the camera is gone (measured
+        // on a Tab S9: a restart's clear-task relaunch and the HOME intent
+        // on a launcher kiosk both evict the running Activity, and motion
+        // and face detection stayed dead until a setting toggle). Dart
+        // rebinds on the next Activity's attach.
+        activeSink?.error("detached", "camera session torn down with its Activity", null)
         eventChannel.setStreamHandler(null)
         controlChannel.setMethodCallHandler(null)
         onCancel(null)

@@ -1,6 +1,7 @@
 package me.jxl.kiosk_satellite
 
 import android.app.AlarmManager
+import android.app.PendingIntent
 import android.app.DownloadManager
 import android.app.KeyguardManager
 import android.app.admin.DevicePolicyManager
@@ -20,6 +21,7 @@ import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.provider.Settings
+import android.util.Log
 import android.view.Display
 import androidx.core.content.ContextCompat
 import io.flutter.plugin.common.BinaryMessenger
@@ -43,7 +45,56 @@ class BackgroundBridge(
     private val context: Context,
     messenger: BinaryMessenger,
 ) {
-    private val channel = MethodChannel(messenger, "kiosk_satellite/background")
+    companion object {
+        private const val CHANNEL = "kiosk_satellite/background"
+        private const val RESTART_REQUEST = 7391
+
+        /** The deliberate restart's relaunch (restartProcess below): the
+         *  launcher intent as a clear-task launch, keyed so the schedule
+         *  and the cancel resolve the same PendingIntent. */
+        private fun restartIntent(context: Context, flags: Int): PendingIntent? {
+            val launch = context.packageManager
+                .getLaunchIntentForPackage(context.packageName) ?: return null
+            launch.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK,
+            )
+            return PendingIntent.getActivity(
+                context, RESTART_REQUEST, launch, flags or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
+        fun scheduleRestartAlarm(context: Context) {
+            val restart = restartIntent(context, PendingIntent.FLAG_CANCEL_CURRENT)
+                ?: return
+            val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarm.set(AlarmManager.RTC, System.currentTimeMillis() + 800, restart)
+        }
+
+        /** A kiosk Activity is up, so the relaunch above has nothing left
+         *  to do. A no-op when none is pending. */
+        fun cancelRestartAlarm(context: Context) {
+            try {
+                val restart = restartIntent(context, PendingIntent.FLAG_NO_CREATE)
+                    ?: return
+                val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                alarm.cancel(restart)
+                restart.cancel()
+                Log.i("BackgroundBridge", "restart alarm cancelled: the kiosk is up")
+            } catch (e: Exception) {
+                Log.w("BackgroundBridge", "restart alarm cancel failed: $e")
+            }
+        }
+
+        /** Tell Dart a kiosk Activity attached to the engine, from its
+         *  configureFlutterEngine once every Activity-scoped bridge is
+         *  registered. Dart's handler is per channel name, so a channel
+         *  built here reaches it like this bridge's own. */
+        fun notifyActivityAttached(messenger: BinaryMessenger) {
+            MethodChannel(messenger, CHANNEL).invokeMethod("activityAttached", null)
+        }
+    }
+
+    private val channel = MethodChannel(messenger, CHANNEL)
     private var lastTouchSeen = 0L
 
     init {
@@ -283,24 +334,11 @@ class BackgroundBridge(
                     context.getSharedPreferences(
                         "FlutterSharedPreferences", Context.MODE_PRIVATE)
                         .edit().remove("flutter.ks.crash.last_self_heal").commit()
-                    val alarm = context.getSystemService(Context.ALARM_SERVICE)
-                        as android.app.AlarmManager
-                    val launch = context.packageManager
-                        .getLaunchIntentForPackage(context.packageName)!!
-                        .addFlags(
-                            Intent.FLAG_ACTIVITY_NEW_TASK or
-                                Intent.FLAG_ACTIVITY_CLEAR_TASK,
-                        )
-                    val restart = android.app.PendingIntent.getActivity(
-                        context, 7391, launch,
-                        android.app.PendingIntent.FLAG_CANCEL_CURRENT or
-                            android.app.PendingIntent.FLAG_IMMUTABLE,
-                    )
-                    alarm.set(
-                        android.app.AlarmManager.RTC,
-                        System.currentTimeMillis() + 800,
-                        restart,
-                    )
+                    // Whichever relaunch lands first cancels this alarm
+                    // (MainActivity.onCreate): on One UI it fired within
+                    // five seconds, after the guard's relaunch was already
+                    // up, and its clear-task launch evicted that Activity.
+                    scheduleRestartAlarm(context)
                     result.success(true)
                     android.os.Process.killProcess(android.os.Process.myPid())
                 }

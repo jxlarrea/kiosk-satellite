@@ -127,6 +127,16 @@ class BackgroundListening {
   /// was up (issue #317); native throttles it to one a second.
   static void Function()? _onTouchSeen;
 
+  /// A kiosk Activity attached to the engine, pushed from its
+  /// configureFlutterEngine: the first at start, or a replacement for one
+  /// that was evicted while this isolate kept running.
+  static void Function()? _onActivityAttached;
+
+  static set onActivityAttached(void Function()? handler) {
+    _onActivityAttached = handler;
+    _installHandler();
+  }
+
   static set onDownloadComplete(
     void Function(int id, bool success, String? filename)? handler,
   ) {
@@ -177,7 +187,8 @@ class BackgroundListening {
         _onNextAlarmChanged == null &&
         _onAmbientDisplayChanged == null &&
         _onNetworkChanged == null &&
-        _onTouchSeen == null) {
+        _onTouchSeen == null &&
+        _onActivityAttached == null) {
       _channel.setMethodCallHandler(null);
       return;
     }
@@ -192,6 +203,7 @@ class BackgroundListening {
       }
       if (call.method == 'volumeChanged') _onVolumeChanged?.call();
       if (call.method == 'touchSeen') _onTouchSeen?.call();
+      if (call.method == 'activityAttached') _onActivityAttached?.call();
       if (call.method == 'screenStateChanged') {
         final args = (call.arguments as Map?) ?? const {};
         _onScreenStateChanged?.call(args['on'] == true);

@@ -25,6 +25,17 @@ class AmbientDisplayChanged extends AppEvent {
   final bool on;
 }
 
+/// A kiosk Activity attached to the engine: the first one at start, or a
+/// new one that replaced a still-running instance (a clear-task launch
+/// from the restart alarm, the HOME intent while the app is the launcher,
+/// the OS re-creating the screen). The engine and this isolate outlive the
+/// Activity, but the native bridges scoped to it do not: the camera
+/// session, for one, is torn down with the old Activity and has to be
+/// bound again on the new one.
+class ActivityAttached extends AppEvent {
+  const ActivityAttached();
+}
+
 class ScreenStateChanged extends AppEvent {
   const ScreenStateChanged({required this.on, this.source = 'system'});
   final bool on;

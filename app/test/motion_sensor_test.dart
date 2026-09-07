@@ -244,6 +244,44 @@ void main() {
     },
   );
 
+  test('a session torn down with its Activity waits for the next attach, '
+      'then rebinds', () async {
+    await build({'ks.camera.enabled': true, 'ks.motion.sensor': true});
+    await pump();
+    expect(listens, 1);
+
+    // A second Activity attaching to the cached engine evicts the first,
+    // whose native camera bridge is disposed with it: the session says so
+    // on the way out. Nothing native is left to rebind on until the new
+    // Activity's bridges are registered, so no backoff timer.
+    sink!.error(
+      code: 'detached',
+      message: 'camera session torn down with its Activity',
+    );
+    await pump();
+    expect(sink, isNull, reason: 'the dead session must be torn down');
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    await pump();
+    expect(listens, 1, reason: 'no timed rebind against a missing bridge');
+
+    bus.publish(const ActivityAttached());
+    await pump();
+    expect(listens, 2, reason: 'the new Activity attaching is the rebind');
+  });
+
+  test('a session still held when an Activity attaches is stale and is '
+      'rebound', () async {
+    await build({'ks.camera.enabled': true, 'ks.motion.sensor': true});
+    await pump();
+    expect(listens, 1);
+
+    // The old bridge went without a word (an older native side, or the
+    // error lost in flight): the subscription here has nothing behind it.
+    bus.publish(const ActivityAttached());
+    await pump();
+    expect(listens, 2, reason: 'a held session is rebound on the attach');
+  });
+
   test('a camera bound under a dark panel is restarted on wake', () async {
     await build({'ks.camera.enabled': true});
     await pump();
