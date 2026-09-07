@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.26 - 2026-09-07
 
 ### Added
 - **Android TV listing.** The app now registers as a TV app, so Android TV homes list it in their TV rows and draw the Kiosk Satellite banner instead of the square icon. Third-party homes such as Projectivy that separate TV apps from mobile apps pick it up the same way. Phone and tablet launchers are unaffected.
