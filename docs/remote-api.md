@@ -40,7 +40,7 @@ in the remote admin, shows the address by name next to the one by IP.
 
 | | |
 | --- | --- |
-| How | The kiosk announces an A record for `<hostname>.local` over mDNS every 30 seconds and answers queries for it, unicast ones included (`dig @<ip> -p 5353 <hostname>.local`). The answer carries an NSEC record saying the name has no IPv6 address, so a resolver asking for both does not wait on the second. |
+| How | The kiosk announces an A record for `<hostname>.local` over mDNS every 30 seconds and answers queries for it. A query that asks for a unicast reply (the first one macOS and iOS send) gets one straight back, and a plain DNS query sent to the multicast group from an ordinary port (Android's own resolver, `dig @224.0.0.251 -p 5353`) gets a matching unicast reply too. That is what makes the name resolve on a Wi-Fi network that filters multicast toward its clients: the queries still reach the kiosk, and the reply comes back unicast. |
 | When | While **Remote management** is on with a password set, with or without **Find other kiosks**. |
 | Where it resolves | Any machine that resolves `.local` over mDNS: macOS and iOS, Windows 10 and later, Linux with Avahi (or systemd-resolved with mDNS turned on). Android's own resolver does not, so a browser on another tablet still needs the IP. Multicast does not cross VLANs without a reflector. |
 | Two kiosks, one name | Both answer, and a browser lands on either. The log warns when another kiosk is heard announcing this one's name; give one of them a different mDNS name. |

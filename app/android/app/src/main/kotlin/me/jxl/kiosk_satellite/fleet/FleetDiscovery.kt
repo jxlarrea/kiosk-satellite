@@ -5,7 +5,10 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.provider.Settings
+import android.system.Os
+import android.system.OsConstants
 import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.net.DatagramPacket
@@ -36,13 +39,16 @@ import java.net.NetworkInterface
  * laptop: a resolver that caches nothing it did not ask for (Windows,
  * and macOS for a name it has not seen) sends a query for the A record
  * and expects an answer, which an announce-only publisher never gives.
- * The reply carries an NSEC record saying the name has no AAAA, so a
- * resolver asking for both does not wait out the IPv6 half. Queries from
- * a port other than 5353 are legacy unicast ones (`dig @<ip> -p 5353`)
- * and are answered back to the sender, per RFC 6762 section 6.7. The
- * hostname part runs with Find other kiosks off too: the service records
- * and the listening for peers follow that switch, the A record follows
- * the remote admin.
+ * How the answer is sent matters as much as sending one, see
+ * [handleQuery]: a plain multicast reply never reached a MacBook or a
+ * phone on a Wi-Fi network that filters multicast toward its clients,
+ * while their queries reached the kiosk fine. The reply is only the A
+ * record: an NSEC saying there is no AAAA is what RFC 6762 suggests, but
+ * the resolvers this was tested against did without it, and one fewer
+ * record is one fewer thing for a strict parser to reject. The hostname
+ * part runs with Find other kiosks off too: the service records and the
+ * listening for peers follow that switch, the A record follows the
+ * remote admin.
  *
  * Peers are keyed by the announcing kiosk's id, dropped when their
  * goodbye arrives or when three announcements in a row went missing. The
@@ -117,7 +123,6 @@ class FleetDiscovery(
         const val TYPE_TXT = 16
         const val TYPE_AAAA = 28
         const val TYPE_SRV = 33
-        const val TYPE_NSEC = 47
         const val TYPE_ANY = 255
     }
 
@@ -206,7 +211,17 @@ class FleetDiscovery(
                 Log.w(TAG, "no multicast socket, fleet discovery off")
                 return@Thread
             }
+            // TTL 255 on everything this socket sends. `timeToLive` only
+            // covers multicast; a unicast reply (to a legacy or a
+            // unicast-response query) would leave with the default 64,
+            // and RFC 6762 section 11 has receivers drop any mDNS packet
+            // that did not arrive with 255, which macOS does.
             runCatching { s.timeToLive = 255 }
+            runCatching {
+                val fd = ParcelFileDescriptor.fromDatagramSocket(s).fileDescriptor
+                Os.setsockoptInt(fd, OsConstants.IPPROTO_IP, OsConstants.IP_TTL, 255)
+                Os.setsockoptInt(fd, OsConstants.IPPROTO_IPV6, OsConstants.IPV6_UNICAST_HOPS, 255)
+            }.onFailure { Log.w(TAG, "unicast TTL not set: $it") }
             runCatching { @Suppress("DEPRECATION") s.joinGroup(GROUP) }
                 .onFailure { Log.w(TAG, "joinGroup failed: $it") }
             socket = s
@@ -298,12 +313,12 @@ class FleetDiscovery(
 
     private fun handle(packet: DatagramPacket) {
         val r = DnsReader(packet.data, packet.offset, packet.length)
-        r.u16() // transaction id
+        val qid = r.u16()
         val flags = r.u16()
         val qd = r.u16(); val an = r.u16(); val ns = r.u16(); val ar = r.u16()
         val isResponse = flags and 0x8000 != 0
         if (!isResponse) {
-            handleQuery(packet, r, qd)
+            handleQuery(packet, r, qd, qid)
             return
         }
         if (!fleet) return
@@ -397,38 +412,67 @@ class FleetDiscovery(
      * A query: for the fleet service, answered with an announcement (at
      * most once a second, so a burst of queries is one announcement); for
      * this kiosk's hostname or its fleet host, answered with the address.
-     * A query from a port other than 5353 is a legacy unicast one, and
-     * its answer goes back to the sender alone.
+     *
+     * Three kinds of asker, three replies (RFC 6762 sections 5.4 and 6.7):
+     *  - A query from a port other than 5353 is a legacy one, from a plain
+     *    DNS resolver that happens to send to the multicast group (Android's
+     *    own resolver for `.local` names does this, so does `dig`). It is
+     *    answered unicast to the sender, with the query's id and question
+     *    echoed, the TTL capped at ten seconds and no cache-flush bit, or
+     *    the resolver throws the reply away as not matching its question.
+     *  - A query with the unicast-response bit set (the first one macOS
+     *    and iOS send for a name) is answered unicast to the sender's
+     *    port 5353 as well as multicast. The unicast copy is what reaches
+     *    a client on an access point that does not deliver multicast to
+     *    it, which is common on Wi-Fi with multicast filtering on.
+     *  - Anything else is answered multicast, at most once a second.
      */
-    private fun handleQuery(packet: DatagramPacket, r: DnsReader, qd: Int) {
+    private fun handleQuery(packet: DatagramPacket, r: DnsReader, qd: Int, qid: Int) {
         var asked = false
+        var wantsUnicast = false
         val hosts = LinkedHashSet<String>()
         val mine = userHost
         val fleetHost = host
+        val questionsStart = r.pos
         repeat(qd) {
             val qname = r.name()
-            val qtype = r.u16(); r.u16()
+            val qtype = r.u16()
+            val qclass = r.u16()
             if (fleet && (qtype == TYPE_PTR || qtype == TYPE_ANY) && qname.equals(SERVICE, true)) {
                 asked = true
             }
             if (qtype == TYPE_A || qtype == TYPE_AAAA || qtype == TYPE_ANY) {
-                if (mine.isNotEmpty() && qname.equals(mine, true)) hosts.add(mine)
-                if (fleet && qname.equals(fleetHost, true)) hosts.add(fleetHost)
+                var hit = false
+                if (mine.isNotEmpty() && qname.equals(mine, true)) { hosts.add(mine); hit = true }
+                if (fleet && qname.equals(fleetHost, true)) { hosts.add(fleetHost); hit = true }
+                if (hit && qclass and 0x8000 != 0) wantsUnicast = true
             }
         }
+        val questionsEnd = r.pos
         val now = System.currentTimeMillis()
         if (asked && now - lastAnsweredAt > 1_000) {
             lastAnsweredAt = now
             handler.postDelayed({ if (running) sendAnnouncement(RECORD_TTL, HOST_TTL) }, 200)
         }
         if (hosts.isEmpty()) return
-        val address = localIpv4() ?: return
         val legacy = packet.port != MDNS_PORT
-        if (!legacy && now - lastHostAnsweredAt < 1_000) return
-        val answer = buildHostAnswer(hosts, address)
+        // Debug level: who asks for this kiosk by name is the first thing
+        // to know when a name resolves from one machine and not another.
+        Log.d(
+            TAG,
+            "query for ${hosts.joinToString()} from ${packet.address?.hostAddress}:${packet.port}" +
+                (if (legacy) " (legacy)" else if (wantsUnicast) " (unicast reply)" else ""),
+        )
+        val address = localIpv4() ?: return
         if (legacy) {
-            send(answer, packet.address, packet.port)
-        } else {
+            val questions = packet.data.copyOfRange(packet.offset + questionsStart, packet.offset + questionsEnd)
+            send(buildHostAnswer(hosts, address, qid = qid, questions = questions, qd = qd, legacy = true),
+                packet.address, packet.port)
+            return
+        }
+        val answer = buildHostAnswer(hosts, address)
+        if (wantsUnicast) send(answer, packet.address, MDNS_PORT)
+        if (now - lastHostAnsweredAt >= 1_000) {
             lastHostAnsweredAt = now
             send(answer)
         }
@@ -529,8 +573,8 @@ class FleetDiscovery(
 
     /**
      * The unsolicited announcement: the fleet's five records when [fleet]
-     * is on, and the hostname's address and its NSEC when [userHost] is
-     * set. Neither and nothing goes out.
+     * is on, and the hostname's address when [userHost] is set. Neither
+     * and nothing goes out.
      */
     private fun buildAnnouncement(
         address: Inet4Address,
@@ -576,35 +620,47 @@ class FleetDiscovery(
         return out.toByteArray()
     }
 
-    /** The answer to a query for one or more of this kiosk's host names. */
-    private fun buildHostAnswer(hosts: Collection<String>, address: Inet4Address): ByteArray {
+    /**
+     * The answer to a query for one or more of this kiosk's host names. A
+     * [legacy] answer echoes the query's id and [questions] (the raw
+     * question section, whose name pointers stay valid behind an
+     * identical header), caps the TTL at ten seconds and leaves the
+     * cache-flush bit off, as RFC 6762 section 6.7 has it.
+     */
+    private fun buildHostAnswer(
+        hosts: Collection<String>,
+        address: Inet4Address,
+        qid: Int = 0,
+        questions: ByteArray? = null,
+        qd: Int = 0,
+        legacy: Boolean = false,
+    ): ByteArray {
         val body = ByteArrayOutputStream(128)
         var count = 0
-        for (h in hosts) count += body.hostRecords(h, address, HOST_TTL)
-        val out = ByteArrayOutputStream(128 + body.size())
-        out.u16(0); out.u16(0x8400); out.u16(0); out.u16(count); out.u16(0); out.u16(0)
+        val ttl = if (legacy) minOf(HOST_TTL, 10) else HOST_TTL
+        for (h in hosts) count += body.hostRecords(h, address, ttl, flush = !legacy)
+        val out = ByteArrayOutputStream(128 + body.size() + (questions?.size ?: 0))
+        out.u16(qid); out.u16(0x8400); out.u16(if (questions != null) qd else 0)
+        out.u16(count); out.u16(0); out.u16(0)
+        questions?.let { out.write(it) }
         body.writeTo(out)
         return out.toByteArray()
     }
 
     /**
-     * A host's A record and the NSEC that says it is the only record
-     * type the name has (RFC 6762 section 6.1): a resolver asking for
-     * AAAA as well gets its no at once instead of at a timeout. Both
-     * with cache-flush, since this kiosk alone owns the name.
-     * Returns how many records were written.
+     * A host's A record, with cache-flush unless [flush] is off (a legacy
+     * reply), since this kiosk alone owns the name. Returns how many
+     * records were written.
      */
-    private fun ByteArrayOutputStream.hostRecords(host: String, address: Inet4Address, ttl: Int): Int {
-        name(host); u16(TYPE_A); u16(0x8001); u32(ttl)
+    private fun ByteArrayOutputStream.hostRecords(
+        host: String,
+        address: Inet4Address,
+        ttl: Int,
+        flush: Boolean = true,
+    ): Int {
+        name(host); u16(TYPE_A); u16(if (flush) 0x8001 else 1); u32(ttl)
         lengthPrefixed { it.write(address.address) }
-        name(host); u16(TYPE_NSEC); u16(0x8001); u32(ttl)
-        lengthPrefixed {
-            // Next domain name: the name itself. Type bitmap window 0,
-            // one byte long, with the bit for type 1 (A) set.
-            it.name(host)
-            it.write(0); it.write(1); it.write(0x80)
-        }
-        return 2
+        return 1
     }
 
     private fun ByteArrayOutputStream.u16(v: Int) {
