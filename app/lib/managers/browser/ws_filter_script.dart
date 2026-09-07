@@ -19,12 +19,12 @@
 /// navigation it recomputes the view's allowlist and replays a synthetic `a`
 /// for that view's entities from the shadow, so cards render fresh instantly.
 ///
-/// Safety: anything unexpected (parse error, unknown subscription, a view
-/// whose entities cannot be enumerated — e.g. a strategy dashboard) falls back
-/// to pass-through, so the page is never left showing wrong data. Filtering is
+/// Dashboard reads also add dependencies at runtime. Scanning all states or
+/// an unavailable tracking hook makes the view pass through unfiltered.
+/// Unknown subscriptions and unresolved views also pass through. Filtering is
 /// controlled at runtime by `window.__ksWs.setEnabled(bool)` so it can be
 /// A/B'd live, and `window.__ksWs` exposes counters for measurement.
-const wsFilterScript = '''
+const wsFilterScript = r'''
 (function () {
   if (window.__ksWs) return;
   var Native = window.WebSocket;
@@ -63,6 +63,8 @@ const wsFilterScript = '''
       if (S.subs[sid].indexOf('subscribe_events:state_changed') === 0) fire++;
     }
     return { enabled: S.enabled, allow: S.allow ? S.allow.size : null,
+      runtimeTracking: R.attached && !R.failed, runtimeEntities: R.ids.size,
+      runtimeAll: R.all, runtimeFailure: R.failure || null,
       subs: subs, stateChangedSubs: fire,
       mode: mode, subId: S.subId, shadow: Object.keys(S.shadow).length,
       cTotal: S.cTotal, cFwd: S.cFwd, evSeen: S.evSeen, evDropped: S.evDropped,
@@ -159,13 +161,219 @@ const wsFilterScript = '''
   function pushAdd(eids) {
     if (S.subId == null || !eids || !eids.length) return;
     if (eids.length <= CHUNK) { sendAdd(eids); return; }
-    var sub = S.subId, i = 0;
+    var sub = S.subId, socket = S.currentWs, i = 0;
     (function step() {
-      if (S.subId !== sub) return;
+      if (S.subId !== sub || S.currentWs !== socket) return;
       sendAdd(eids.slice(i, i + CHUNK));
       i += CHUNK;
       if (i < eids.length) setTimeout(step, 0);
     })();
+  }
+
+  // Track only the hass object delivered to the active Lovelace view. Instrumenting the
+  // global store would count HA's own immutable state copies as dashboard
+  // reads and allow every entity on every view.
+  var R = { ids: new Set(), all: false, attached: false, failed: false,
+    path: null, epoch: 0 };
+  var runtimeScopes = new WeakMap();
+  var runtimePending = new Set(), runtimeReplayAll = false, runtimeTimer, runtimeBuildTimer;
+  var runtimeRegistries = new WeakSet(), runtimePrototypes = new WeakSet();
+
+  function runtimeReplay(all, id) {
+    if (all) runtimeReplayAll = true;
+    else runtimePending.add(id);
+    if (runtimeTimer != null) return;
+    var socket = S.currentWs;
+    // Do not deliver synthetic updates inside a component's getter/render.
+    runtimeTimer = setTimeout(function () {
+      runtimeTimer = null;
+      var ids = runtimeReplayAll ? Object.keys(S.shadow) : Array.from(runtimePending);
+      runtimeReplayAll = false;
+      runtimePending.clear();
+      if (S.enabled && S.currentWs === socket) pushAdd(ids);
+    }, 0);
+  }
+
+  function runtimeLift() {
+    var had = !!S.allow;
+    S.allow = null;
+    if (had) runtimeReplay(true);
+  }
+
+  function runtimeFailure(reason) {
+    R.failed = true;
+    R.failure = reason;
+    runtimeLift();
+  }
+
+  function runtimeView() {
+    var l = loc(), path = l.dash + '/' + l.view;
+    if (R.path === path) return;
+    R.path = path;
+    R.epoch++;
+    R.ids = new Set();
+    R.all = false;
+    R.attached = false;
+    runtimeScopes = new WeakMap();
+    // A pending refresh might contain states withheld on the previous view.
+    // Keep it queued while the new view learns its dependencies.
+    runtimeLift();
+  }
+
+  function runtimeRead(id, scope) {
+    if (!runtimeCurrent(scope) || R.all || R.failed || typeof id !== 'string' ||
+        !/^[a-z_0-9]+\.[a-z0-9_]+$/.test(id) || R.ids.has(id)) return;
+    R.ids.add(id);
+    if (S.allow && !S.allow.has(id)) {
+      S.allow.add(id);
+      runtimeReplay(false, id);
+    } else if (!S.allow) {
+      // A view with only calculated ids initially has no config allowlist.
+      // Its first reads give us enough information to start filtering.
+      runtimeRebuild();
+    }
+  }
+
+  function runtimeRebuild() {
+    if (runtimeBuildTimer != null) return;
+    runtimeBuildTimer = setTimeout(function () {
+      runtimeBuildTimer = null;
+      if (S.enabled) recompute();
+    }, 0);
+  }
+
+  function runtimeScan(scope) {
+    if (!runtimeCurrent(scope) || R.all) return;
+    // Object.values/entries, spreads and other enumeration can select by
+    // changing state. Do not guess which candidates the component needs.
+    R.all = true;
+    runtimeLift();
+  }
+
+  function runtimeCurrent(scope) {
+    return scope.epoch === R.epoch && scope.view.isConnected &&
+      scope.view.index === scope.index;
+  }
+
+  function runtimeActive(view) {
+    if (!view.isConnected) return false;
+    var l = loc(), lv = view.lovelace, index = view.index;
+    var cfg = lv && lv.config, v = cfg && cfg.views && cfg.views[index];
+    if (!v || (lv.urlPath || 'lovelace') !== l.dash) return false;
+    var path = v.path == null ? String(index) : String(v.path);
+    return path === l.view || String(index) === l.view;
+  }
+
+  function trackHass(hass, view) {
+    runtimeView();
+    if (!hass || !hass.states || R.failed || R.all || !runtimeActive(view)) return hass;
+    var scope = runtimeScopes.get(view);
+    if (!scope || scope.index !== view.index) {
+      scope = { view: view, index: view.index, epoch: R.epoch,
+        hass: new WeakMap(), states: new WeakMap() };
+      runtimeScopes.set(view, scope);
+    }
+    var runtimeHass = scope.hass, runtimeStates = scope.states;
+    if (runtimeHass.has(hass)) return runtimeHass.get(hass);
+    var states = hass.states;
+    var descriptor = Object.getOwnPropertyDescriptor(hass, 'states');
+    // Respect Proxy invariants if a future frontend freezes this property.
+    if (descriptor && !descriptor.configurable && descriptor.writable === false) {
+      runtimeFailure('hass.states is frozen');
+      return hass;
+    }
+    var tracked = runtimeStates.get(states);
+    if (!tracked) {
+      tracked = new Proxy(states, {
+        get: function (target, key, receiver) {
+          runtimeRead(key, scope);
+          return Reflect.get(target, key, receiver);
+        },
+        has: function (target, key) {
+          runtimeRead(key, scope);
+          return Reflect.has(target, key);
+        },
+        getOwnPropertyDescriptor: function (target, key) {
+          runtimeRead(key, scope);
+          return Reflect.getOwnPropertyDescriptor(target, key);
+        },
+        ownKeys: function (target) {
+          runtimeScan(scope);
+          return Reflect.ownKeys(target);
+        }
+      });
+      runtimeStates.set(states, tracked);
+    }
+    var wrapped = new Proxy(hass, {
+      get: function (target, key, receiver) {
+        return key === 'states' ? tracked : Reflect.get(target, key, receiver);
+      }
+    });
+    runtimeHass.set(hass, wrapped);
+    runtimeHass.set(wrapped, wrapped);
+    if (!R.attached) {
+      R.attached = true;
+      runtimeRebuild();
+    }
+    return wrapped;
+  }
+
+  function installRuntime(ctor) {
+    var proto = ctor && ctor.prototype;
+    if (!proto || runtimePrototypes.has(proto)) return;
+    var owner = proto, descriptor;
+    while (owner && !descriptor) {
+      descriptor = Object.getOwnPropertyDescriptor(owner, 'hass');
+      owner = Object.getPrototypeOf(owner);
+    }
+    if (!descriptor || !descriptor.get || !descriptor.set || !descriptor.configurable) {
+      runtimeFailure('hass accessor unavailable');
+      return;
+    }
+    Object.defineProperty(proto, 'hass', {
+      configurable: descriptor.configurable, enumerable: descriptor.enumerable,
+      get: descriptor.get,
+      set: function (hass) {
+        var value = hass;
+        try { value = trackHass(hass, this); }
+        catch (e) { runtimeFailure(String(e)); }
+        return descriptor.set.call(this, value);
+      }
+    });
+    runtimePrototypes.add(proto);
+    // A scoped registry can expose a placeholder before the real class is
+    // ready. A later successful installation recovers that startup failure.
+    if (R.failure === 'hass accessor unavailable') {
+      R.failed = false;
+      R.failure = null;
+    }
+    // Definition can finish after the first hass assignment. Reassign once
+    // so existing views and their descendants also receive the tracked copy.
+    function attach(root) {
+      root.querySelectorAll('*').forEach(function (el) {
+        if (el.localName === 'hui-view' && el.hass) el.hass = el.hass;
+        if (el.shadowRoot) attach(el.shadowRoot);
+      });
+    }
+    attach(document);
+  }
+
+  function watchRuntime() {
+    var registry = window.customElements;
+    if (!registry || typeof Proxy === 'undefined') return;
+    try { installRuntime(registry.get('hui-view')); }
+    catch (e) { runtimeFailure(String(e)); }
+    if (runtimeRegistries.has(registry)) return;
+    runtimeRegistries.add(registry);
+    registry.whenDefined('hui-view').then(function (ctor) {
+      // The old native registry can resolve with the polyfill's stand-in
+      // after the real class has already been installed in the new registry.
+      if (registry !== window.customElements) { watchRuntime(); return; }
+      try {
+        installRuntime(ctor || registry.get('hui-view'));
+        if (R.failure === 'hass accessor unavailable') setTimeout(watchRuntime, 0);
+      } catch (e) { runtimeFailure(String(e)); }
+    });
   }
 
   // ---- per-view allowlist from lovelace config ----
@@ -173,13 +381,13 @@ const wsFilterScript = '''
     try { var el = document.querySelector('home-assistant'); return (el && el.hass && el.hass.connection) ? el.hass : null; } catch (e) { return null; }
   }
   function loc() {
-    var p = location.pathname.replace(/^\\/+/, '').split('/');
+    var p = location.pathname.replace(/^\/+/, '').split('/');
     return { dash: p[0] || 'lovelace', view: p[1] != null ? p[1] : '0' };
   }
   function collect(node, acc) {
     if (node == null) return;
     if (typeof node === 'string') {
-      if (/^[a-z_0-9]+\\.[a-z0-9_]+\$/.test(node)) { acc.add(node); return; }
+      if (/^[a-z_0-9]+\.[a-z0-9_]+$/.test(node)) { acc.add(node); return; }
       // Longer strings are templates and markdown (button-card JS,
       // card-mod styles, jinja), which name their entities verbatim —
       // states['sensor.x'] — so scan them for id-shaped substrings
@@ -188,7 +396,7 @@ const wsFilterScript = '''
       // dropped against hass.states by the caller, and over-collection
       // only passes a few extra updates.
       if (node.indexOf('.') >= 0) {
-        var m = node.match(/[a-z_0-9]+\\.[a-z0-9_]+/g);
+        var m = node.match(/[a-z_0-9]+\.[a-z0-9_]+/g);
         if (m) for (var mi = 0; mi < m.length; mi++) acc.add(m[mi]);
       }
       return;
@@ -211,16 +419,15 @@ const wsFilterScript = '''
   var AUTO_VOLATILE = ['state', 'attributes', 'last_changed', 'last_updated',
     'last_triggered', 'sort', 'options', 'type', 'active_choice'];
   function globRe(g) {
-    // Escape char-by-char (no regex-literal char class: its "\\]" escape does
-    // not survive this file being a Dart string). * is the only glob wildcard.
+    // Escape each character. * is the only supported glob wildcard.
     var s = String(g), esc = '';
     for (var gi = 0; gi < s.length; gi++) {
       var ch = s.charAt(gi);
       if (ch === '*') esc += '.*';
       else if (/[a-zA-Z0-9_]/.test(ch)) esc += ch;
-      else esc += '\\\\' + ch;
+      else esc += '\\' + ch;
     }
-    return new RegExp('^' + esc + '\$');
+    return new RegExp('^' + esc + '$');
   }
   // A filter value may be a string, an array, or (from the visual editor) an
   // object like {label: "x", active_choice: "label"}; flatten to strings.
@@ -305,6 +512,7 @@ const wsFilterScript = '''
 
   function build(cfg, view) {
     S.built = true;
+    if (!R.attached || R.failed || R.all) { lift(); return; }
     var views = (cfg && cfg.views) || [], v = null;
     for (var i = 0; i < views.length; i++) {
       var vp = views[i].path != null ? String(views[i].path) : String(i);
@@ -327,6 +535,9 @@ const wsFilterScript = '''
       var known = hass.states;
       acc.forEach(function (id) { if (!known[id]) acc.delete(id); });
     }
+    // Runtime reads include calculated ids and missing entities that may
+    // appear later. Rebuilding the config must retain these dependencies.
+    R.ids.forEach(function (id) { acc.add(id); });
     // An empty allowlist would go stale EVERYWHERE on the view — a view whose
     // entities cannot be determined must pass through, not filter to nothing.
     if (!acc.size) { lift(); return; }
@@ -377,9 +588,12 @@ const wsFilterScript = '''
     if (had) pushAdd(Object.keys(S.shadow));
   }
   function recompute() {
+    runtimeView();
+    watchRuntime();
     var hass = hassEl();
     if (!hass) { setTimeout(recompute, 500); return; }
     var l = loc();
+    var epoch = R.epoch;
     // Non-dashboard panels (Settings, Developer tools, History, custom
     // panels like Voice Satellite's) carry no lovelace config, so filtering
     // there leaves the page stale (issue #131). The frontend already knows
@@ -393,9 +607,12 @@ const wsFilterScript = '''
     if (S.configCache[l.dash]) { build(S.configCache[l.dash], l.view); return; }
     try {
       hass.connection.sendMessagePromise({ type: 'lovelace/config', url_path: l.dash === 'lovelace' ? null : l.dash })
-        .then(function (cfg) { S.configCache[l.dash] = cfg; build(cfg, l.view); })
+        .then(function (cfg) {
+          S.configCache[l.dash] = cfg;
+          if (S.enabled && epoch === R.epoch) build(cfg, l.view);
+        })
         // Strategy dashboard etc. -> do not filter.
-        .catch(function () { lift(); });
+        .catch(function () { if (epoch === R.epoch) lift(); });
     } catch (e) { lift(); }
   }
   window.addEventListener('location-changed', function () { if (S.enabled) recompute(); });
@@ -496,7 +713,7 @@ const wsFilterScript = '''
   // ---- wrap WebSocket ----
   window.WebSocket = function (url, protocols) {
     var ws = protocols === undefined ? new Native(url) : new Native(url, protocols);
-    if (!/\\/api\\/websocket\\/?(\$|\\?)/.test('' + url)) return ws;
+    if (!/\/api\/websocket\/?($|\?)/.test('' + url)) return ws;
 
     // New HA socket (fresh connect / reconnect): drop stale listeners and
     // re-learn the subscription id (haws re-subscribes with a new id). Keep
@@ -574,5 +791,9 @@ const wsFilterScript = '''
   window.WebSocket.OPEN = Native.OPEN;
   window.WebSocket.CLOSING = Native.CLOSING;
   window.WebSocket.CLOSED = Native.CLOSED;
+  // HA may replace customElements with its scoped registry after injection.
+  watchRuntime();
+  document.addEventListener('DOMContentLoaded', watchRuntime, { once: true });
+  window.addEventListener('load', watchRuntime, { once: true });
 })();
 ''';

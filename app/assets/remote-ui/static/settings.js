@@ -2021,7 +2021,9 @@ export async function loadSettings() {
                   }
                   if (st.mode === 'passthrough') {
                     hist.length = 0;
-                    t.textContent = "This view's entities can't be determined, so its updates are not filtered." + raw;
+                    t.textContent = (st.runtimeAll
+                      ? 'This view reads all entity states, so its updates are not filtered.'
+                      : "This view's entities can't be determined, so its updates are not filtered.") + raw;
                     return;
                   }
                   const now = Date.now();

@@ -5917,6 +5917,7 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
   Timer? _poll;
   ({int allow, int total, int dropped})? _stats;
   bool _ready = false;
+  bool _runtimeAll = false;
 
   /// The wrapper's reported mode: 'filtering', 'passthrough' (this view's
   /// entities cannot be determined, so it is deliberately unfiltered), or
@@ -5974,6 +5975,7 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
     // what gets a tablet dropped by Home Assistant for falling behind.
     _rawFirehose =
         decoded is Map && (decoded['stateChangedSubs'] as num? ?? 0) > 0;
+    _runtimeAll = decoded is Map && decoded['runtimeAll'] == true;
     if (decoded is! Map || decoded['mode'] == null) {
       setState(() {
         _ready = false;
@@ -6153,8 +6155,11 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
     }
     final note = _rawFirehose ? _rawFirehoseNote : '';
     final text = _ready && _mode == 'passthrough'
-        ? 'This view\'s entities can\'t be determined, so its updates '
-              'are not filtered.$note'
+        ? _runtimeAll
+              ? 'This view reads all entity states, so its updates '
+                    'are not filtered.$note'
+              : 'This view\'s entities can\'t be determined, so its updates '
+                    'are not filtered.$note'
         : 'Waiting for the dashboard to load...';
     return _telemetryRow(theme, Text(text, style: base));
   }
