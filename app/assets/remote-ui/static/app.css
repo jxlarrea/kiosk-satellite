@@ -560,6 +560,13 @@
      muted; inside a row it is the 13 description. */
   .desc { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
   .row .info .desc { font-size: 13px; line-height: 1.35; margin-top: 3px; }
+  .row.device-action-row { flex-wrap: wrap; gap: 12px; }
+  .row.device-action-row .info { flex: 1 1 180px; }
+  .device-actions { display: flex; flex-wrap: wrap; align-items: center;
+    justify-content: flex-end; gap: 8px; max-width: 100%; }
+  .device-actions > button { max-width: 100%; min-height: 44px;
+    height: auto; padding: 12px 20px; white-space: normal;
+    overflow-wrap: anywhere; }
   /* A description that leads with a glyph (the Immich pickers' Hidden),
      the icon sized to the text and sitting on its line. */
   .desc.with-icon { display: flex; align-items: center; gap: 5px; }
@@ -878,6 +885,8 @@
     .row select, .row textarea, .row .copy-box { flex: 1 1 100%;
       width: 100%; max-width: none; }
     .row input[type=number] { max-width: 90px; }
+    .row.device-action-row .info { display: block; flex-basis: 100%; }
+    .device-actions { flex: 1 1 100%; justify-content: center; }
   }
 
   /* Labeled fields in an editor stack 16 apart, like the device's dialogs. */

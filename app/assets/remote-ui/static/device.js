@@ -253,7 +253,6 @@ export function attachUpdateInstall(btn, upd) {
     const cancelBtn = document.createElement('button');
     cancelBtn.className = 'btn-ghost';
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.style.marginLeft = '8px';
     cancelBtn.addEventListener('click', () => {
       cancelBtn.disabled = true;
       cmd('cancelUpdateDownload').catch(() => null);
@@ -389,8 +388,14 @@ export async function loadAboutInfo() {
         cell.appendChild(dd);
       }
       row.appendChild(cell);
-      const val = document.createElement('span');
-      val.style.cssText = 'text-align:right; word-break:break-all; max-width:60%';
+      const isAction = v instanceof HTMLButtonElement;
+      const val = document.createElement(isAction ? 'div' : 'span');
+      if (isAction) {
+        row.classList.add('device-action-row');
+        val.className = 'device-actions';
+      } else {
+        val.style.cssText = 'text-align:right; word-break:break-all; max-width:60%';
+      }
       if (v instanceof Node) val.appendChild(v); else val.textContent = String(v);
       row.appendChild(val);
       c.appendChild(row);
