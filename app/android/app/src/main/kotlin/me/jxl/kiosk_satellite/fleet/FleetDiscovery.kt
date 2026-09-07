@@ -5,17 +5,20 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelFileDescriptor
 import android.provider.Settings
-import android.system.Os
-import android.system.OsConstants
 import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.net.DatagramPacket
 import java.net.Inet4Address
 import java.net.InetAddress
-import java.net.MulticastSocket
 import java.net.NetworkInterface
+import me.jxl.kiosk_satellite.fleet.MdnsPackets.DnsReader
+import me.jxl.kiosk_satellite.fleet.MdnsPackets.buildHostAnswer
+import me.jxl.kiosk_satellite.fleet.MdnsPackets.hostRecords
+import me.jxl.kiosk_satellite.fleet.MdnsPackets.lengthPrefixed
+import me.jxl.kiosk_satellite.fleet.MdnsPackets.name
+import me.jxl.kiosk_satellite.fleet.MdnsPackets.u16
+import me.jxl.kiosk_satellite.fleet.MdnsPackets.u32
 
 /**
  * How the kiosks on one network find each other, so the remote admin of
@@ -42,13 +45,11 @@ import java.net.NetworkInterface
  * How the answer is sent matters as much as sending one, see
  * [handleQuery]: a plain multicast reply never reached a MacBook or a
  * phone on a Wi-Fi network that filters multicast toward its clients,
- * while their queries reached the kiosk fine. The reply is only the A
- * record: an NSEC saying there is no AAAA is what RFC 6762 suggests, but
- * the resolvers this was tested against did without it, and one fewer
- * record is one fewer thing for a strict parser to reject. The hostname
- * part runs with Find other kiosks off too: the service records and the
- * listening for peers follow that switch, the A record follows the
- * remote admin.
+ * while their queries reached the kiosk fine. The reply includes an
+ * NSEC saying there is no AAAA, so IPv6 lookups can finish without a
+ * timeout. The hostname part runs with Find other kiosks off too: the
+ * service records and listening for peers follow that switch. The A
+ * record and hostname conflict checks follow the remote admin.
  *
  * Peers are keyed by the announcing kiosk's id, dropped when their
  * goodbye arrives or when three announcements in a row went missing. The
@@ -127,7 +128,7 @@ class FleetDiscovery(
     }
 
     private val handler = Handler(Looper.getMainLooper())
-    private var socket: MulticastSocket? = null
+    private var socket: MdnsSocket? = null
     private var multicastLock: WifiManager.MulticastLock? = null
     @Volatile private var running = false
 
@@ -201,27 +202,19 @@ class FleetDiscovery(
             // ephemeral fallback keeps this kiosk announcing (the others
             // read the sender's address, not the port) even where something
             // holds 5353 exclusively.
-            val s = runCatching { MulticastSocket(MDNS_PORT).also { listening = true } }
+            val s = runCatching { MdnsSocket(MDNS_PORT).also { listening = true } }
                 .getOrElse {
                     Log.w(TAG, "mDNS port 5353 unavailable, announce only")
                     listening = false
-                    runCatching { MulticastSocket() }.getOrNull()
+                    runCatching { MdnsSocket() }.getOrNull()
                 }
             if (s == null) {
                 Log.w(TAG, "no multicast socket, fleet discovery off")
                 return@Thread
             }
-            // TTL 255 on everything this socket sends. `timeToLive` only
-            // covers multicast; a unicast reply (to a legacy or a
-            // unicast-response query) would leave with the default 64,
-            // and RFC 6762 section 11 has receivers drop any mDNS packet
-            // that did not arrive with 255, which macOS does.
             runCatching { s.timeToLive = 255 }
-            runCatching {
-                val fd = ParcelFileDescriptor.fromDatagramSocket(s).fileDescriptor
-                Os.setsockoptInt(fd, OsConstants.IPPROTO_IP, OsConstants.IP_TTL, 255)
-                Os.setsockoptInt(fd, OsConstants.IPPROTO_IPV6, OsConstants.IPV6_UNICAST_HOPS, 255)
-            }.onFailure { Log.w(TAG, "unicast TTL not set: $it") }
+            runCatching { s.setUnicastTtl() }
+                .onFailure { Log.w(TAG, "unicast TTL not set: $it") }
             runCatching { @Suppress("DEPRECATION") s.joinGroup(GROUP) }
                 .onFailure { Log.w(TAG, "joinGroup failed: $it") }
             socket = s
@@ -321,6 +314,16 @@ class FleetDiscovery(
             handleQuery(packet, r, qd, qid)
             return
         }
+        val mine = userHost
+        if (mine.isNotEmpty() && hostClash != hostname) {
+            val localAddresses = localIpv4Addresses().mapNotNull { it.hostAddress }.toSet()
+            val conflict = MdnsPackets.conflictingHostAddress(packet, mine, localAddresses)
+            if (conflict != null) {
+                Log.w(TAG, "$conflict also answers to $mine")
+                hostClash = hostname
+                publish()
+            }
+        }
         if (!fleet) return
         repeat(qd) { r.name(); r.u16(); r.u16() }
         // One packet, every record it carries; a kiosk's announcement holds
@@ -397,11 +400,6 @@ class FleetDiscovery(
                     if (before == null || before.copy(seenAt = 0) != peer.copy(seenAt = 0)) {
                         changed = true
                     }
-                    if (peer.host.isNotEmpty() && peer.host == hostname && hostClash != hostname) {
-                        Log.w(TAG, "${peer.name} (${peer.address}) also answers to $hostname.local")
-                        hostClash = hostname
-                        changed = true
-                    }
                 }
             }
         }
@@ -465,63 +463,16 @@ class FleetDiscovery(
         )
         val address = localIpv4() ?: return
         if (legacy) {
-            val questions = packet.data.copyOfRange(packet.offset + questionsStart, packet.offset + questionsEnd)
-            send(buildHostAnswer(hosts, address, qid = qid, questions = questions, qd = qd, legacy = true),
+            val questions = packet.data.copyOfRange(questionsStart, questionsEnd)
+            send(buildHostAnswer(hosts, address, HOST_TTL, qid = qid, questions = questions, qd = qd, legacy = true),
                 packet.address, packet.port)
             return
         }
-        val answer = buildHostAnswer(hosts, address)
+        val answer = buildHostAnswer(hosts, address, HOST_TTL)
         if (wantsUnicast) send(answer, packet.address, MDNS_PORT)
         if (now - lastHostAnsweredAt >= 1_000) {
             lastHostAnsweredAt = now
             send(answer)
-        }
-    }
-
-    /** A cursor over one DNS message, with name decompression. */
-    private class DnsReader(private val buf: ByteArray, private val start: Int, length: Int) {
-        var pos = start
-        private val end = start + length
-
-        fun u8(): Int {
-            if (pos >= end) throw IndexOutOfBoundsException("dns")
-            return buf[pos++].toInt() and 0xFF
-        }
-        fun u16(): Int = (u8() shl 8) or u8()
-        fun u32(): Int = (u16() shl 16) or u16()
-        fun bytes(n: Int): ByteArray {
-            if (pos + n > end) throw IndexOutOfBoundsException("dns")
-            return buf.copyOfRange(pos, pos + n).also { pos += n }
-        }
-
-        fun name(): String {
-            val labels = ArrayList<String>()
-            var p = pos
-            var jumped = false
-            var hops = 0
-            while (true) {
-                if (p >= end) throw IndexOutOfBoundsException("dns name")
-                val len = buf[p].toInt() and 0xFF
-                when {
-                    len == 0 -> { p++; break }
-                    len and 0xC0 == 0xC0 -> {
-                        if (p + 1 >= end) throw IndexOutOfBoundsException("dns pointer")
-                        val target = start + (((len and 0x3F) shl 8) or (buf[p + 1].toInt() and 0xFF))
-                        if (!jumped) pos = p + 2
-                        jumped = true
-                        p = target
-                        if (++hops > 32) throw IllegalStateException("dns pointer loop")
-                    }
-                    else -> {
-                        p++
-                        if (p + len > end) throw IndexOutOfBoundsException("dns label")
-                        labels.add(String(buf, p, len, Charsets.UTF_8))
-                        p += len
-                    }
-                }
-            }
-            if (!jumped) pos = p
-            return labels.joinToString(".")
         }
     }
 
@@ -562,19 +513,21 @@ class FleetDiscovery(
      * The device's site-local IPv4, preferring wlan interfaces. Ethernet
      * docks and USB adapters still work through the general fallback.
      */
-    private fun localIpv4(): Inet4Address? = runCatching {
+    private fun localIpv4(): Inet4Address? =
+        localIpv4Addresses().firstOrNull { it.isSiteLocalAddress }
+
+    private fun localIpv4Addresses(): List<Inet4Address> = runCatching {
         NetworkInterface.getNetworkInterfaces().toList()
             .filter { it.isUp && !it.isLoopback }
             .sortedByDescending { it.name.startsWith("wlan") }
             .flatMap { nic -> nic.inetAddresses.toList() }
             .filterIsInstance<Inet4Address>()
-            .firstOrNull { it.isSiteLocalAddress }
-    }.getOrNull()
+    }.getOrDefault(emptyList())
 
     /**
      * The unsolicited announcement: the fleet's five records when [fleet]
-     * is on, and the hostname's address when [userHost] is set. Neither
-     * and nothing goes out.
+     * is on and the hostname's address and NSEC when [userHost] is set.
+     * Neither and nothing goes out.
      */
     private fun buildAnnouncement(
         address: Inet4Address,
@@ -618,73 +571,5 @@ class FleetDiscovery(
         out.u16(0); out.u16(0x8400); out.u16(0); out.u16(count); out.u16(0); out.u16(0)
         body.writeTo(out)
         return out.toByteArray()
-    }
-
-    /**
-     * The answer to a query for one or more of this kiosk's host names. A
-     * [legacy] answer echoes the query's id and [questions] (the raw
-     * question section, whose name pointers stay valid behind an
-     * identical header), caps the TTL at ten seconds and leaves the
-     * cache-flush bit off, as RFC 6762 section 6.7 has it.
-     */
-    private fun buildHostAnswer(
-        hosts: Collection<String>,
-        address: Inet4Address,
-        qid: Int = 0,
-        questions: ByteArray? = null,
-        qd: Int = 0,
-        legacy: Boolean = false,
-    ): ByteArray {
-        val body = ByteArrayOutputStream(128)
-        var count = 0
-        val ttl = if (legacy) minOf(HOST_TTL, 10) else HOST_TTL
-        for (h in hosts) count += body.hostRecords(h, address, ttl, flush = !legacy)
-        val out = ByteArrayOutputStream(128 + body.size() + (questions?.size ?: 0))
-        out.u16(qid); out.u16(0x8400); out.u16(if (questions != null) qd else 0)
-        out.u16(count); out.u16(0); out.u16(0)
-        questions?.let { out.write(it) }
-        body.writeTo(out)
-        return out.toByteArray()
-    }
-
-    /**
-     * A host's A record, with cache-flush unless [flush] is off (a legacy
-     * reply), since this kiosk alone owns the name. Returns how many
-     * records were written.
-     */
-    private fun ByteArrayOutputStream.hostRecords(
-        host: String,
-        address: Inet4Address,
-        ttl: Int,
-        flush: Boolean = true,
-    ): Int {
-        name(host); u16(TYPE_A); u16(if (flush) 0x8001 else 1); u32(ttl)
-        lengthPrefixed { it.write(address.address) }
-        return 1
-    }
-
-    private fun ByteArrayOutputStream.u16(v: Int) {
-        write((v ushr 8) and 0xFF); write(v and 0xFF)
-    }
-
-    private fun ByteArrayOutputStream.u32(v: Int) {
-        write((v ushr 24) and 0xFF); write((v ushr 16) and 0xFF)
-        write((v ushr 8) and 0xFF); write(v and 0xFF)
-    }
-
-    private fun ByteArrayOutputStream.name(dotted: String) {
-        for (label in dotted.split(".")) {
-            val bytes = label.toByteArray(Charsets.UTF_8)
-            write(bytes.size)
-            write(bytes)
-        }
-        write(0)
-    }
-
-    private fun ByteArrayOutputStream.lengthPrefixed(fill: (ByteArrayOutputStream) -> Unit) {
-        val body = ByteArrayOutputStream(64)
-        fill(body)
-        u16(body.size())
-        body.writeTo(this)
     }
 }
