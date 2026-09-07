@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Android TV listing.** The app now registers as a TV app, so Android TV homes list it in their TV rows and draw the Kiosk Satellite banner instead of the square icon. Third-party homes such as Projectivy that separate TV apps from mobile apps pick it up the same way. Phone and tablet launchers are unaffected.
+
 ### Fixed
 - **Live updates for dashboard components that discover entities dynamically.** With **Filter dashboard updates** enabled, components such as Maxi Media Player could keep showing old playback information until the dashboard was refreshed because their entities were missing from the filter's allowlist. The filter now learns which entities the active view reads and refreshes newly discovered dependencies. Views that scan all entity states automatically run unfiltered, while other views keep filtering normally. The device settings and remote admin explain when a full-state scan disables filtering for the view.
 

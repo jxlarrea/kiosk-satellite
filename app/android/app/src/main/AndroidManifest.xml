@@ -30,6 +30,9 @@
     <!-- Motion detection uses a camera when one is present, but the app is fully
          usable without it, so never let the Store filter the install. -->
     <uses-feature android:name="android.hardware.camera.any" android:required="false"/>
+    <!-- Android TV boxes have no touchscreen; the app is driven by d-pad
+         there, so a store must not filter the install on the feature. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
@@ -116,6 +119,7 @@
         android:label="Kiosk Satellite"
         android:name=".KioskApplication"
         android:icon="@mipmap/ic_launcher"
+        android:banner="@drawable/tv_banner"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
         <!-- singleTask with a real affinity: exactly one instance, ever.
@@ -142,6 +146,18 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- The Android TV entry. TV homes (the stock one and
+                 third-party ones such as Projectivy) list an app under
+                 their TV rows and draw its banner only when it answers
+                 to this category; without it the app files as a mobile
+                 app with the square icon. A second filter on the same
+                 Activity, so phone and tablet launchers, launch-intent
+                 resolution and every recovery path keep the LAUNCHER
+                 filter above unchanged. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
         </activity>
         <!-- The home-launcher registration (issue #219), disabled until the
