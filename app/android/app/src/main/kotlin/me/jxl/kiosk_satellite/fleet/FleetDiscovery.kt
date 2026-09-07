@@ -45,9 +45,10 @@ import me.jxl.kiosk_satellite.fleet.MdnsPackets.u32
  * How the answer is sent matters as much as sending one, see
  * [handleQuery]: a plain multicast reply never reached a MacBook or a
  * phone on a Wi-Fi network that filters multicast toward its clients,
- * while their queries reached the kiosk fine. The reply includes an
- * NSEC saying there is no AAAA, so IPv6 lookups can finish without a
- * timeout. The hostname part runs with Find other kiosks off too: the
+ * while their queries reached the kiosk fine. The reply is the A record
+ * alone: the NSEC that RFC 6762 suggests, saying there is no AAAA, made
+ * the Windows resolver drop the whole reply (see MdnsPackets.hostRecords).
+ * The hostname part runs with Find other kiosks off too: the
  * service records and listening for peers follow that switch. The A
  * record and hostname conflict checks follow the remote admin.
  *
@@ -526,8 +527,8 @@ class FleetDiscovery(
 
     /**
      * The unsolicited announcement: the fleet's five records when [fleet]
-     * is on and the hostname's address and NSEC when [userHost] is set.
-     * Neither and nothing goes out.
+     * is on and the hostname's address when [userHost] is set. Neither
+     * and nothing goes out.
      */
     private fun buildAnnouncement(
         address: Inet4Address,

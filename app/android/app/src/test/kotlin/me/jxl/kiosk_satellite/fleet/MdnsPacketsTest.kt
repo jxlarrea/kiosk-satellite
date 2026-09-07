@@ -36,35 +36,18 @@ class MdnsPacketsTest {
         assertEquals(ttl, input.readInt())
         assertEquals(4, input.readUnsignedShort())
         assertContentEquals(address.address, ByteArray(4).also { input.readFully(it) })
-
-        assertEquals(name, input.name())
-        assertEquals(47, input.readUnsignedShort())
-        assertEquals(klass, input.readUnsignedShort())
-        assertEquals(ttl, input.readInt())
-        val size = input.readUnsignedShort()
-        val end = input.available() - size
-        assertEquals(name, input.name())
-        assertEquals(0, input.readUnsignedByte())
-        val bitmapSize = input.readUnsignedByte()
-        assertTrue(bitmapSize in 1..32)
-        val types = mutableSetOf<Int>()
-        repeat(bitmapSize) { byte ->
-            val bits = input.readUnsignedByte()
-            repeat(8) { bit -> if (bits and (0x80 ushr bit) != 0) types.add(byte * 8 + bit) }
-        }
-        // A exists. AAAA, reserved type 0 and synthesized NSEC do not.
-        assertEquals(setOf(1), types)
-        assertEquals(end, input.available())
+        // The address alone: no NSEC, which the Windows resolver would not
+        // take (see hostRecords).
     }
 
     @Test
-    fun multicastAnswerHasValidNegativeRecordForEachHost() {
+    fun multicastAnswerHasOneAddressRecordPerHost() {
         val hosts = listOf(host, "ks-identity.local")
         val input = DataInputStream(ByteArrayInputStream(MdnsPackets.buildHostAnswer(hosts, address)))
         assertEquals(0, input.readUnsignedShort())
         assertEquals(0x8400, input.readUnsignedShort())
         assertEquals(0, input.readUnsignedShort())
-        assertEquals(4, input.readUnsignedShort())
+        assertEquals(2, input.readUnsignedShort())
         assertEquals(0, input.readUnsignedShort())
         assertEquals(0, input.readUnsignedShort())
         hosts.forEach { checkRecords(input, it, 120, 0x8001) }
@@ -87,7 +70,7 @@ class MdnsPacketsTest {
         assertEquals(0xbeef, input.readUnsignedShort())
         assertEquals(0x8400, input.readUnsignedShort())
         assertEquals(1, input.readUnsignedShort())
-        assertEquals(2, input.readUnsignedShort())
+        assertEquals(1, input.readUnsignedShort())
         assertEquals(0, input.readUnsignedShort())
         assertEquals(0, input.readUnsignedShort())
         assertContentEquals(question, ByteArray(question.size).also { input.readFully(it) })
@@ -96,7 +79,7 @@ class MdnsPacketsTest {
     }
 
     @Test
-    fun goodbyeRetractsBothAddressAndNegativeRecord() {
+    fun goodbyeRetractsTheAddressRecord() {
         val reply = MdnsPackets.buildHostAnswer(listOf(host), address, hostTtl = 0)
         val input = DataInputStream(ByteArrayInputStream(reply))
         input.skipBytes(12)

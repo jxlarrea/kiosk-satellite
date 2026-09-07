@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- **mDNS names now resolve from Windows.** The reply to a name lookup carried a second record stating that the kiosk has no IPv6 address, which macOS and Android accepted but the Windows resolver rejected outright, so `ping` and the browser on Windows reported no such host while the same name worked everywhere else. The reply is now the address alone.
+
 ### Added
 
 - **Horizontal Now Playing layout.** A new **Horizontal mode** toggle under Now Playing > User Interface, off by default, gives artwork the left half of the screen and centers the title, artist, album name and transport controls together in the right half. Opening the queue or lyrics moves track details beneath the artwork and transport controls to the bottom right, leaving space above them for the panel. Side padding gives the layout more breathing room. The toggle applies immediately and is ignored while Now Playing is shown alongside a screensaver.

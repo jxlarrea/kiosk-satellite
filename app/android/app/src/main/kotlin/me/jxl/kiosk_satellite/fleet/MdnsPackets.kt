@@ -115,9 +115,17 @@ internal object MdnsPackets {
     }
 
     /**
-     * A host's A record and an NSEC denying AAAA, with cache-flush unless
-     * [flush] is off for a legacy reply. Returns how many records were
-     * written.
+     * A host's A record, with cache-flush unless [flush] is off for a
+     * legacy reply. Returns how many records were written.
+     *
+     * The A record alone, no NSEC saying there is no AAAA. RFC 6762
+     * suggests one so a resolver asking for both families need not wait
+     * out the IPv6 half, and macOS and Android took a reply that carried
+     * one, but the Windows resolver did not: a capture on a Windows
+     * machine showed the unicast and the multicast reply arriving, A and
+     * a well-formed NSEC each, and ping reporting no such host, while the
+     * same reply without the NSEC resolved. Avahi hosts, which Windows
+     * resolves every day, send the address alone too.
      */
     internal fun ByteArrayOutputStream.hostRecords(
         host: String,
@@ -127,14 +135,7 @@ internal object MdnsPackets {
     ): Int {
         name(host); u16(1); u16(if (flush) 0x8001 else 1); u32(ttl)
         lengthPrefixed { it.write(address.address) }
-        name(host); u16(47); u16(if (flush) 0x8001 else 1); u32(ttl)
-        lengthPrefixed {
-            it.name(host)
-            // Window 0, one byte. Type A is bit 1 (0x40), not bit 0.
-            // Synthesized mDNS NSEC records must leave their own bit clear.
-            it.write(0); it.write(1); it.write(0x40)
-        }
-        return 2
+        return 1
     }
 
     internal fun ByteArrayOutputStream.u16(v: Int) {
