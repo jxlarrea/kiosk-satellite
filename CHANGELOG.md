@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Live updates for dashboard components that discover entities dynamically.** With **Filter dashboard updates** enabled, components such as Maxi Media Player could keep showing old playback information until the dashboard was refreshed because their entities were missing from the filter's allowlist. The filter now learns which entities the active view reads and refreshes newly discovered dependencies. Views that scan all entity states automatically run unfiltered, while other views keep filtering normally. The device settings and remote admin explain when a full-state scan disables filtering for the view.
+
 ## v2026.9.25 - 2026-09-07
 
 ### Added
@@ -12,7 +17,6 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **The Fire tablet docs now cover the microphone being revoked on a running tablet.** The [Amazon Fire tablets](docs/fire.md) page described the microphone revoke as a boot-time event only. Fire OS also strips the grant from a sideloaded app while it is running, most often right after a Wi-Fi reconnect, kills the app and re-prompts once it is back up. The page now explains the runtime case, why the **Update available** notice tends to appear at the same moment and lists Fire OS 7 alongside Fire OS 8.
 
 ### Fixed
-- **Live updates for dashboard components that discover entities dynamically.** With **Filter dashboard updates** enabled, components such as Maxi Media Player could keep showing old playback information until the dashboard was refreshed because their entities were missing from the filter's allowlist. The filter now learns which entities the active view reads and refreshes newly discovered dependencies. Views that scan all entity states automatically run unfiltered, while other views keep filtering normally. The device settings and remote admin explain when a full-state scan disables filtering for the view.
 - **Update buttons fit narrow screens in the remote admin.** Checking for an update by tapping the version number under Device added action buttons that crowded the row on phones. The controls now wrap and stack to fit the available width.
 
 ## v2026.9.24 - 2026-09-07
