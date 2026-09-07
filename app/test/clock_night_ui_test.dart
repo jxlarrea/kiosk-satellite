@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -86,6 +89,7 @@ void main() {
       expect(find.text('Light level'), findsOneWidget);
       expect(find.text('5 lx'), findsOneWidget);
       expect(find.text('Night color'), findsOneWidget);
+      expect(find.text('Hide background photo'), findsOneWidget);
     });
 
     testWidgets('off, the group is just the switch', (tester) async {
@@ -95,6 +99,7 @@ void main() {
       expect(find.text('Light level'), findsNothing);
       expect(find.text('Night color'), findsNothing);
       expect(find.text('Night card color'), findsNothing);
+      expect(find.text('Hide background photo'), findsNothing);
     });
 
     testWidgets('the card color needs the switch AND the Flip style', (
@@ -165,6 +170,32 @@ void main() {
   });
 
   group('clock face', () {
+    late Directory photoDirectory;
+    late File backgroundPhoto;
+
+    setUp(() {
+      photoDirectory = Directory.systemTemp.createTempSync('clock-night-test');
+      backgroundPhoto = File('${photoDirectory.path}/background.png')
+        ..writeAsBytesSync(
+          base64Decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAB4AAAAoCAIAAABmcd1FAAAALklEQVR4nO3MQQEAQAQAsHMttJJYNil4bQEWXfl2/KVXrVar1Wq1Wq1Wq9WH9QCo5QF3BVxaYAAAAABJRU5ErkJggg==',
+          ),
+        );
+    });
+
+    tearDown(() => photoDirectory.deleteSync(recursive: true));
+
+    Future<void> loadPhoto(WidgetTester tester) async {
+      await tester.runAsync(() async {
+        for (var i = 0; i < 50; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          await tester.pump();
+          if (find.byType(Image).evaluate().isNotEmpty) return;
+        }
+      });
+      expect(find.byType(Image), findsWidgets);
+    }
+
     Color? digitColor(WidgetTester tester) {
       for (final t in tester.widgetList<Text>(find.byType(Text))) {
         if ((t.data ?? '').contains(':')) return t.style?.color;
@@ -207,6 +238,98 @@ void main() {
       expect(digitColor(tester), nightRed);
       await tester.pumpWidget(const SizedBox());
     });
+
+    for (final style in ['digital', 'flip', 'roller']) {
+      testWidgets(
+        '$style hides the photo at night and restores it in daylight',
+        (tester) async {
+          final container = await pumpClock(
+            tester,
+            lux: 50,
+            prefs: {
+              'ks.screensaver.clock_style': style,
+              'ks.screensaver.clock_background': backgroundPhoto.path,
+              'ks.screensaver.clock_night_hide_background': true,
+              'ks.screensaver.clock_night_bg_color': '10,20,30',
+            },
+          );
+          await loadPhoto(tester);
+
+          container.device.lightLux = 2;
+          container.bus.publish(const LightLevelChanged(lux: 2));
+          await tester.pump();
+          await tester.pump();
+          expect(find.byType(Image), findsNothing);
+          final backdrop = tester.widget<ColoredBox>(
+            find
+                .descendant(
+                  of: find.byType(ClockScreensaver),
+                  matching: find.byType(ColoredBox),
+                )
+                .first,
+          );
+          expect(backdrop.color, const Color(0xFF0A141E));
+
+          container.device.lightLux = 50;
+          container.bus.publish(const LightLevelChanged(lux: 50));
+          await tester.pump();
+          await tester.pump();
+          expect(find.byType(Image), findsWidgets);
+          expect(
+            container.settings.get(defs.screensaverClockBackground),
+            backgroundPhoto.path,
+          );
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+    }
+
+    testWidgets(
+      'the photo stays visible by default and the toggle applies live',
+      (tester) async {
+        final container = await pumpClock(
+          tester,
+          lux: 2,
+          prefs: {'ks.screensaver.clock_background': backgroundPhoto.path},
+        );
+        await loadPhoto(tester);
+        await container.settings.set(
+          defs.screensaverClockNightHideBackground,
+          true,
+        );
+        await tester.pump();
+        await tester.pump();
+        expect(find.byType(Image), findsNothing);
+        await container.settings.set(
+          defs.screensaverClockNightHideBackground,
+          false,
+        );
+        await tester.pump();
+        await tester.pump();
+        expect(find.byType(Image), findsWidgets);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+
+    testWidgets(
+      'a clock started at night restores the photo when Night mode is disabled',
+      (tester) async {
+        final container = await pumpClock(
+          tester,
+          lux: 2,
+          prefs: {
+            'ks.screensaver.clock_background': backgroundPhoto.path,
+            'ks.screensaver.clock_night_hide_background': true,
+          },
+        );
+        expect(find.byType(Image), findsNothing);
+        await container.settings.set(defs.screensaverClockNight, false);
+        await tester.pump();
+        await tester.pump();
+        await loadPhoto(tester);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
 
     testWidgets('a dark room also takes the backdrop, black over whatever '
         'the lit face uses', (tester) async {

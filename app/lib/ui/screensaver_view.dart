@@ -668,6 +668,7 @@ class _ClockScreensaverState extends State<ClockScreensaver>
     _bgSub = widget.container.bus.on<SettingChanged>().listen((e) {
       if (!mounted) return;
       if (e.key == defs.screensaverClockBackground.key ||
+          e.key == defs.screensaverClockNightHideBackground.key ||
           e.key == defs.screensaverClockFont.key ||
           e.key == defs.screensaverClockFontWeight.key) {
         setState(() {});
@@ -831,6 +832,12 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   /// of black bars. The scrim on top keeps the clock and the row readable
   /// over either.
   List<Widget> _background(Size size, double dpr) {
+    if (widget.night &&
+        widget.container.settings.get(
+          defs.screensaverClockNightHideBackground,
+        )) {
+      return const [];
+    }
     _ensureBackground(
       widget.container.settings.get(defs.screensaverClockBackground),
       size,

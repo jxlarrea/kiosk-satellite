@@ -1920,6 +1920,19 @@ const screensaverClockNightBgColor = SettingDef<String>(
   dependsOn: 'screensaver.clock_night',
 );
 
+const screensaverClockNightHideBackground = SettingDef<bool>(
+  key: 'screensaver.clock_night_hide_background',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Hide background photo',
+  description:
+      'Use the night background color instead of the photo while Night mode is active.',
+  category: 'Screensaver',
+  section: 'Night mode',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.clock_night',
+);
+
 // The flip cards in the dark: the one part of a face the night background
 // does not cover, and a card color tuned for daylight kept glowing on the
 // night's black wall. Near-black by default, the day card default, so a
@@ -6283,6 +6296,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverClockNightLux,
   screensaverClockNightColor,
   screensaverClockNightBgColor,
+  screensaverClockNightHideBackground,
   screensaverClockNightCardColor,
   screensaverMediaId,
   screensaverMediaIsFolder,

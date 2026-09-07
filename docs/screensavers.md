@@ -57,6 +57,7 @@ When picking a **Background photo** on the device, the image file is copied into
 | Light level | Configurable from 1 to 100 lx (5 lx by default). The clock transitions to night mode at or below this ambient threshold and returns to normal slightly above it to prevent color flickering. |
 | Night color | Sets the accent color for digits, dates, At a Glance elements, and corner widgets (muted red by default). |
 | Night background | Sets the background display color in dark environments (pure black by default) to eliminate panel glow. |
+| Hide background photo | Disabled by default. Hides the photo while Night mode is active so the clock uses the Night background color. Works with every clock face and restores the photo when the room brightens. Changes apply immediately. |
 | Night card color | Flip Clock face only. Sets the card color in the dark (near-black by default). |
 
 ### Home Assistant Media
