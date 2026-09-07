@@ -772,7 +772,7 @@ class CameraMotion(
             // when there is none (a closed privacy shutter unplugs it).
             val selector = resolveCameraSelector(cameraProvider, facing)
             if (selector == null) {
-                sink.error("camera", NO_CAMERA_MESSAGE, null)
+                sink.error("camera", rejectedCamerasMessage(context), null)
                 return@addListener
             }
 

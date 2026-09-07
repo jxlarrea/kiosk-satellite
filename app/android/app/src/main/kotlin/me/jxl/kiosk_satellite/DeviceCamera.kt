@@ -233,7 +233,7 @@ class DeviceCamera(
             }
             val selector = resolveCameraSelector(provider, facing)
             if (selector == null) {
-                done(null, NO_CAMERA_MESSAGE)
+                done(null, rejectedCamerasMessage(context))
                 return@addListener
             }
             val capture = buildCapture(target)
@@ -318,17 +318,105 @@ internal fun cameraFacings(context: Context): List<String> = try {
     val manager =
         context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     manager.cameraIdList.mapNotNull { id ->
-        when (
+        // One entry whose characteristics cannot be read (a HAL padding
+        // its list with an id it cannot describe) drops that entry, not
+        // the cameras that answer.
+        val facing = try {
             manager.getCameraCharacteristics(id)
                 .get(CameraCharacteristics.LENS_FACING)
-        ) {
+        } catch (e: Exception) {
+            Log.w("DeviceCamera", "camera $id: characteristics unreadable: $e")
+            null
+        }
+        when (facing) {
             CameraCharacteristics.LENS_FACING_FRONT -> "front"
             CameraCharacteristics.LENS_FACING_BACK -> "back"
             else -> null
         }
     }.distinct()
-} catch (_: Exception) {
+} catch (e: Exception) {
+    Log.w("DeviceCamera", "camera enumeration failed: $e")
     emptyList()
+}
+
+/** Every camera Camera2 lists, one clause each, with the facts CameraX's
+ *  own filters read (lens facing, the backward compatible capability) and
+ *  the hardware level. Camera2 only, for the report that a camera Android
+ *  lists is one CameraX refuses: the clause is the reason, on hardware
+ *  nobody here can hold. */
+internal fun cameraInventory(context: Context): String = try {
+    val manager =
+        context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+    val ids = manager.cameraIdList
+    if (ids.isEmpty()) {
+        "Android lists no camera"
+    } else {
+        ids.joinToString("; ") { id ->
+            try {
+                val c = manager.getCameraCharacteristics(id)
+                describeCamera(
+                    id,
+                    c.get(CameraCharacteristics.LENS_FACING),
+                    c.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL),
+                    c.get(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES),
+                )
+            } catch (e: Exception) {
+                "id $id: unreadable (${e.javaClass.simpleName}: ${e.message})"
+            }
+        }
+    }
+} catch (e: Exception) {
+    "camera enumeration failed (${e.javaClass.simpleName}: ${e.message})"
+}
+
+/** One camera's clause for [cameraInventory]. The raw Camera2 values are
+ *  spelled out here (LENS_FACING 0 front, 1 back, 2 external;
+ *  INFO_SUPPORTED_HARDWARE_LEVEL 0 limited, 1 full, 2 legacy, 3 level 3,
+ *  4 external; capability 0 is BACKWARD_COMPATIBLE) so the helper stays
+ *  free of Android classes for the unit tests. CameraX drops a camera
+ *  whose facing is none of the three, and one whose capabilities lack
+ *  backward compatibility unless its id is 0 or 1. */
+internal fun describeCamera(
+    id: String,
+    facing: Int?,
+    level: Int?,
+    capabilities: IntArray?,
+): String {
+    val facingName = when (facing) {
+        0 -> "front"
+        1 -> "back"
+        2 -> "external"
+        null -> "facing unknown"
+        else -> "facing $facing"
+    }
+    val levelName = when (level) {
+        0 -> "limited"
+        1 -> "full"
+        2 -> "legacy"
+        3 -> "level 3"
+        4 -> "external level"
+        null -> "level unknown"
+        else -> "level $level"
+    }
+    val compat = when {
+        capabilities == null -> "no capability list"
+        capabilities.contains(0) -> "backward compatible"
+        else -> "not backward compatible"
+    }
+    return "id $id: $facingName, $levelName, $compat"
+}
+
+/** The report when CameraX has no camera it can use although Camera2
+ *  listed one (else [cameraFacings] answered first, with
+ *  [NO_CAMERA_MESSAGE]): the inventory is the reason, and it travels in
+ *  the message so it reaches the app log and the remote admin on a
+ *  device whose logcat cannot be read. */
+internal fun rejectedCamerasMessage(context: Context): String {
+    val message =
+        "the camera library accepts none of the cameras Android lists " +
+            "(${cameraInventory(context)})"
+    Log.w("DeviceCamera", message)
+    return message
 }
 
 /** The cameras whose lens facing CameraX can read, as the selector for
