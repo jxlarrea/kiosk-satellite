@@ -44,6 +44,7 @@ class MainActivity : FlutterActivity() {
     private var screenCapture: ScreenCapture? = null
     private var kioskLock: KioskLock? = null
     private var webViewFreeze: WebViewFreeze? = null
+    private var webViewBackdrop: WebViewBackdrop? = null
 
     /** See dispatchKeyEvent: where native focus sits while Flutter owns
      *  the navigation keys. */
@@ -204,6 +205,7 @@ class MainActivity : FlutterActivity() {
         screenCapture = ScreenCapture(this, messenger)
         kioskLock = KioskLock(this, messenger)
         webViewFreeze = WebViewFreeze(this, messenger)
+        webViewBackdrop = WebViewBackdrop(this)
         provisionChannel = MethodChannel(messenger, "kiosk_satellite/provision")
         provisionChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -270,6 +272,8 @@ class MainActivity : FlutterActivity() {
         kioskLock?.dispose()
         kioskLock = null
         webViewFreeze?.dispose()
+        webViewBackdrop?.dispose()
+        webViewBackdrop = null
         webViewFreeze = null
         provisionChannel?.setMethodCallHandler(null)
         provisionChannel = null
