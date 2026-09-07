@@ -9,6 +9,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
 import '../app_container.dart';
@@ -651,6 +652,17 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   ImageProvider? _bgImage;
   StreamSubscription<SettingChanged>? _bgSub;
 
+  /// The Refresh URL background interval (issue #464), and the one-shot
+  /// retry a failed URL fetch arms so a clock started before Wi-Fi came
+  /// up still gets its photo.
+  Timer? _bgRefresh;
+  Timer? _bgRetry;
+
+  /// Bounds a URL fetch: a host that accepts the connection and never
+  /// answers would otherwise hold the clock's photo hostage.
+  static const _bgFetchTimeout = Duration(seconds: 30);
+  static const _bgRetryDelay = Duration(minutes: 1);
+
   @override
   void initState() {
     super.initState();
@@ -668,11 +680,41 @@ class _ClockScreensaverState extends State<ClockScreensaver>
     _bgSub = widget.container.bus.on<SettingChanged>().listen((e) {
       if (!mounted) return;
       if (e.key == defs.screensaverClockBackground.key ||
+          e.key == defs.screensaverClockBackgroundRefresh.key) {
+        // Every write reloads, an unchanged value included (issue #464):
+        // rewriting the entity is how Home Assistant asks for a fresh
+        // copy of a URL, or of a file replaced under its old name.
+        _bgKey = null;
+        _armBackgroundRefresh();
+      }
+      if (e.key == defs.screensaverClockBackground.key ||
+          e.key == defs.screensaverClockBackgroundRefresh.key ||
           e.key == defs.screensaverClockNightHideBackground.key ||
           e.key == defs.screensaverClockFont.key ||
           e.key == defs.screensaverClockFontWeight.key) {
         setState(() {});
       }
+    });
+    _armBackgroundRefresh();
+  }
+
+  /// Fetch a URL background again every Refresh URL background minutes
+  /// (issue #464); nothing for a file, a blank, or a zero interval. Only
+  /// while the screen is lit: the dark clock does no image work.
+  void _armBackgroundRefresh() {
+    _bgRefresh?.cancel();
+    _bgRefresh = null;
+    if (!_awake) return;
+    final s = widget.container.settings;
+    final minutes = s.get(defs.screensaverClockBackgroundRefresh);
+    if (minutes <= 0 ||
+        !defs.isClockBackgroundUrl(s.get(defs.screensaverClockBackground))) {
+      return;
+    }
+    _bgRefresh = Timer.periodic(Duration(minutes: minutes.round()), (_) {
+      if (!mounted) return;
+      _bgKey = null;
+      setState(() {});
     });
   }
 
@@ -680,6 +722,9 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   void _photoScreenChanged(bool awake) {
     _tick?.cancel();
     _shift?.cancel();
+    _bgRetry?.cancel();
+    _bgRetry = null;
+    _armBackgroundRefresh();
     if (!awake) return;
     _now = DateTime.now();
     _scheduleTick();
@@ -746,6 +791,8 @@ class _ClockScreensaverState extends State<ClockScreensaver>
     _tick?.cancel();
     _shift?.cancel();
     _bgSub?.cancel();
+    _bgRefresh?.cancel();
+    _bgRetry?.cancel();
     _bgPhoto?.dispose();
     super.dispose();
   }
@@ -773,33 +820,47 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   // Dutch one.
   String _date() => fullDate(_now);
 
-  /// Re-resolve the background provider when the path setting moved. A
-  /// missing file resolves to nothing but is not marked seen, so a path
-  /// published before its file lands (issue #150) starts showing on the
-  /// rebuild after the file appears; a restore onto another device, whose
-  /// setting names a copy that never came along, just keeps the solid
-  /// color instead of taking the clock down.
-  void _ensureBackground(String path, Size size, double dpr) {
-    final key = (path, size, dpr);
+  /// Re-resolve the background provider when the setting moved. A file is
+  /// keyed with its stamp too, so an image overwritten under an unchanged
+  /// name (issue #464) is picked up on the next tick, no rotating filename
+  /// needed. A missing file resolves to nothing but is not marked seen, so
+  /// a path published before its file lands (issue #150) starts showing
+  /// on the rebuild after the file appears; a restore onto another
+  /// device, whose setting names a copy that never came along, just keeps
+  /// the solid color instead of taking the clock down. A URL (issue #464)
+  /// is fetched by the app itself, through the same certificate policy as
+  /// every other client in the process; a failed fetch keeps whatever
+  /// photo is up and tries again in a minute rather than blanking the
+  /// clock over a transient outage.
+  void _ensureBackground(String value, Size size, double dpr) {
+    final url = defs.isClockBackgroundUrl(value);
+    FileStat? stat;
+    if (!url && value.isNotEmpty) {
+      stat = FileStat.statSync(value);
+      if (stat.type == FileSystemEntityType.notFound) {
+        _bgKey = null;
+        _bgAspect = null;
+        _bgImage = null;
+        return;
+      }
+    }
+    final key = (value, size, dpr, stat?.modified, stat?.size);
     if (key == _bgKey) return;
     _bgKey = key;
-    if (path.isEmpty) {
+    _bgRetry?.cancel();
+    _bgRetry = null;
+    if (value.isEmpty) {
       _bgAspect = null;
       _bgImage = null;
       _bgPhoto?.dispose();
       _bgPhoto = null;
       return;
     }
-    final file = File(path);
-    if (!file.existsSync()) {
-      _bgKey = null;
-      _bgAspect = null;
-      _bgImage = null;
-      return;
-    }
     unawaited(() async {
       try {
-        final bytes = await file.readAsBytes();
+        final bytes = url
+            ? await _fetchBackground(value)
+            : await File(value).readAsBytes();
         await _waitForPhotoScreen();
         if (!mounted || _bgKey != key) return;
         final photo = await PreparedPhoto.prepare(
@@ -818,10 +879,36 @@ class _ClockScreensaverState extends State<ClockScreensaver>
           _bgImage = photo.image;
         });
         old?.dispose();
-      } catch (_) {
-        if (mounted && _bgKey == key) _bgKey = null;
+      } catch (e) {
+        if (!mounted || _bgKey != key) return;
+        if (!url) {
+          _bgKey = null;
+          return;
+        }
+        widget.container.log.warn(
+          'screensaver',
+          'clock background fetch failed: $e; retrying in 1 min',
+        );
+        _bgRetry = Timer(_bgRetryDelay, () {
+          if (!mounted || _bgKey != key) return;
+          _bgKey = null;
+          setState(() {});
+        });
       }
     }());
+  }
+
+  Future<Uint8List> _fetchBackground(String url) async {
+    final uri = Uri.parse(url.trim());
+    // No conditional caching: the point of a re-fetch is a new image
+    // under the same URL, and a proxy answering 304 would defeat it.
+    final response = await http
+        .get(uri, headers: const {'Cache-Control': 'no-cache'})
+        .timeout(_bgFetchTimeout);
+    if (response.statusCode != 200) {
+      throw HttpException('HTTP ${response.statusCode}', uri: uri);
+    }
+    return response.bodyBytes;
   }
 
   /// The background photo layers, or nothing when none is set. Fill the

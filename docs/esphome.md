@@ -83,7 +83,7 @@ Every item in this list corresponds directly to a kiosk setting. They are fully 
 | Entity | Type | Notes |
 |---|---|---|
 | **Screensaver brightness level**, **Assistant volume**, **Media volume** | number | Values in percentage. |
-| **Clock background** | text | Defines the background for the Clock screensaver. |
+| **Clock background** | text | The Clock screensaver's background photo: a path to an image on the device or an image URL the device fetches. Every write reloads the image, an unchanged value included. |
 | **Kiosk mode**, **Lockdown mode**, **HA kiosk mode**, **Keep screen on**, **Remote management**, **Screensaver brightness**, **Screensaver**, **Hold mode** | switch | Standard toggle switches. |
 | **Adaptive brightness** | switch | Requires a physical light sensor. |
 | **Camera enabled**, **Screensaver motion detection**, **Screensaver face detection** | switch | Requires physical camera hardware. The Camera enabled switch can be safely toggled throughout the day; the camera entities will remain listed. |

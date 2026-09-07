@@ -8691,18 +8691,25 @@ class SettingTile extends StatelessWidget {
         }
         // The clock's background photo (issue #132): one image via the
         // system photo picker, copied into app documents the same way the
-        // gallery set is. Clear returns to the solid color and removes
-        // the copy.
+        // gallery set is, or an image URL typed in (issue #464), the same
+        // text editor the remote admin's row is. Clear returns to the
+        // solid color and removes the copy when the value is one.
         if (def.key == screensaverClockBackground.key) {
           final path = value as String;
+          final isUrl = isClockBackgroundUrl(path);
           return SettingsRow(
             stack: true,
             title: Text(def.title),
             subtitle: Text(
-              path.isEmpty ? 'No photo selected' : path.split('/').last,
+              path.isEmpty
+                  ? 'No photo selected'
+                  : isUrl
+                  ? path
+                  : path.split('/').last,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            onTap: () => _editText(context),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -8710,21 +8717,22 @@ class SettingTile extends StatelessWidget {
                   TextButton(
                     onPressed: () async {
                       await c.settings.setFromJson(def.key, '');
-                      try {
-                        await File(path).parent.delete(recursive: true);
-                      } catch (_) {}
+                      await _deleteClockBackgroundCopy(path);
                       onChanged();
                     },
                     child: const Text('Clear'),
                   ),
+                TextButton(
+                  onPressed: () => _editText(context),
+                  child: const Text('URL'),
+                ),
                 TextButton(
                   onPressed: () async {
                     final picked = await ImagePicker().pickImage(
                       source: ImageSource.gallery,
                     );
                     if (picked == null) return;
-                    final docs = await getApplicationDocumentsDirectory();
-                    final dir = Directory('${docs.path}/clock_bg');
+                    final dir = await _clockBackgroundCopies();
                     if (await dir.exists()) await dir.delete(recursive: true);
                     await dir.create(recursive: true);
                     final dest =
@@ -9239,6 +9247,24 @@ class SettingTile extends StatelessWidget {
     if (picked == null) return;
     await c.settings.setFromJson(def.key, picked);
     onChanged();
+  }
+
+  /// Where Browse keeps its copy of the picked clock background.
+  Future<Directory> _clockBackgroundCopies() async {
+    final docs = await getApplicationDocumentsDirectory();
+    return Directory('${docs.path}/clock_bg');
+  }
+
+  /// Remove Browse's copy behind a cleared clock background, and only
+  /// that: a raw device path or a URL written from the remote admin or
+  /// Home Assistant is not the app's to delete.
+  Future<void> _deleteClockBackgroundCopy(String path) async {
+    try {
+      final copies = await _clockBackgroundCopies();
+      if (path.startsWith('${copies.path}/')) {
+        await copies.delete(recursive: true);
+      }
+    } catch (_) {}
   }
 
   Future<void> _editText(BuildContext context) async {

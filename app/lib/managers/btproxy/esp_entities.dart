@@ -1382,12 +1382,19 @@ class EspEntitySurface {
           await commands.execute('installUpdate', const {});
         }
       case 'clock_background':
-        await _settings.set(
-          defs.screensaverClockBackground,
+        // Through the validator (issue #464): the 255 character cap and
+        // the URL shape. A rejected write echoes the stored value so the
+        // entity snaps back instead of showing a value the clock never
+        // took.
+        await _settings.setFromJson(
+          defs.screensaverClockBackground.key,
           '$value'.trim(),
           source: 'esphome',
         );
-        _send('clock_background', '$value'.trim());
+        _send(
+          'clock_background',
+          _settings.get(defs.screensaverClockBackground),
+        );
       case 'device_camera':
         // A frame request from Home Assistant; the capture event pushes
         // the image. Off, the "Camera off" frame answers instead.

@@ -1758,25 +1758,84 @@ const screensaverClockBgColor = SettingDef<String>(
   dependsOnValue: 'digital',
 );
 
-// A local photo behind the clock (issue #132), any face. The device picker
+// A photo behind the clock (issue #132), any face: a device path or an
+// http(s) URL the app fetches itself (issue #464). The device picker
 // stores the path of a copy in app documents, made when the photo is
 // picked; the original may live in picker cache the OS purges. The remote
-// admin and the ESPHome Clock background entity (issue #150) write a raw
-// device path into the same setting instead — the renderer fails soft on
-// a missing file, so an unvalidated path costs nothing.
+// admin and the ESPHome Clock background entity (issue #150) write the
+// raw value into the same setting instead. The renderer fails soft on a
+// missing file or an unreachable URL, so beyond the validator below an
+// unresolved value costs nothing.
 const screensaverClockBackground = SettingDef<String>(
   key: 'screensaver.clock_background',
   type: SettingType.string,
   defaultValue: '',
   title: 'Background photo',
-  description: 'Show a photo behind the clock instead of the solid color.',
+  description:
+      'Show a photo behind the clock instead of the solid color. A path '
+      'to an image on the device, or an image URL the device fetches.',
   category: 'Screensaver',
   section: 'Clock screensaver',
   subpage: 'Clock screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
-  placeholder: 'Path to an image on the device',
+  placeholder: 'Path to an image on the device, or an image URL',
+  validator: validateClockBackground,
 );
+
+/// Home Assistant caps a text entity's state at this many characters, so
+/// the same cap holds on every writer: a longer value set from the remote
+/// admin would never read back over the ESPHome Clock background entity.
+const clockBackgroundMaxLength = 255;
+
+/// Whether a Clock background value is fetched over the network rather
+/// than read from the device. Both UIs and the renderer key off this.
+bool isClockBackgroundUrl(String value) {
+  final v = value.trim().toLowerCase();
+  return v.startsWith('http://') || v.startsWith('https://');
+}
+
+String? validateClockBackground(Object? value) {
+  final text = '${value ?? ''}'.trim();
+  if (text.length > clockBackgroundMaxLength) {
+    return 'Use at most $clockBackgroundMaxLength characters';
+  }
+  if (isClockBackgroundUrl(text)) {
+    final uri = Uri.tryParse(text);
+    if (uri == null || uri.host.isEmpty) return 'Enter a full image URL';
+  }
+  return null;
+}
+
+// How often a URL background is fetched again on its own (issue #464): a
+// daily photo service or a dashboard image rendered on a schedule keeps
+// the same URL, so nothing else would ever reload it. Rewriting the
+// setting, over ESPHome or the remote admin, fetches at once regardless.
+// A free-typed number rather than a slider: a day in minutes makes a
+// useless slider.
+const screensaverClockBackgroundRefresh = SettingDef<num>(
+  key: 'screensaver.clock_background_refresh',
+  type: SettingType.number,
+  defaultValue: 0,
+  title: 'Refresh URL background',
+  description:
+      'Minutes between fetches of a URL background. 0 fetches it only '
+      'when the setting is written.',
+  category: 'Screensaver',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+  validator: validateClockBackgroundRefresh,
+);
+
+String? validateClockBackgroundRefresh(Object? value) {
+  final n = value is num ? value : num.tryParse('${value ?? ''}'.trim());
+  if (n == null || n < 0 || n > 1440 || n != n.roundToDouble()) {
+    return 'Enter whole minutes from 0 to 1440';
+  }
+  return null;
+}
 
 // One color set per face rather than a shared one: visibility can only
 // key off a single setting value, and each face wants its own defaults.
@@ -6285,6 +6344,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverClockDate,
   screensaverClockScale,
   screensaverClockBackground,
+  screensaverClockBackgroundRefresh,
   screensaverClockColor,
   screensaverClockBgColor,
   screensaverFlipDigitColor,

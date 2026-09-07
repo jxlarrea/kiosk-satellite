@@ -45,9 +45,12 @@ Renders a full screen clock with three selectable styles via **Style**: **Digita
 | Clock size | Scales the display size from 50% to 300%. |
 | Clock color | Digital face only. Flip and Roller styles utilize dedicated custom color controls for cards, digits, and backgrounds. |
 | Background color | Digital face only. Sets the solid color behind the clock (black by default). Setting a white background with a black clock color creates a high-contrast inverted face ideal for e-ink panels. |
-| Background photo | Displays a custom background image behind any clock face instead of a solid color. |
+| Background photo | Displays a custom background image behind any clock face instead of a solid color. Accepts a path to an image on the device or an `http(s)://` image URL the device fetches itself. |
+| Refresh URL background | Minutes between fetches of a URL background. 0 by default, which only fetches when the setting is written. |
 
-When picking a **Background photo** on the device, the image file is copied into internal app storage. It can also be set remotely via the remote admin interface or by writing a file path to the ESPHome **Clock background** text entity. Remote path changes apply live while the clock is running, and writing an empty value clears the photo. Background images use the **Smart** scaling mode with a dark scrim overlay to maintain clock legibility.
+When picking a **Background photo** on the device, the image file is copied into internal app storage. The **URL** button on the same row, the remote admin interface and the ESPHome **Clock background** text entity all take a device path or an image URL instead. A URL is fetched by the device, so it can point at anything the device can reach: a file under Home Assistant's `/local/` folder, an Immich shared link, a daily photo service or an image an automation renders. Background images use the **Smart** scaling mode with a dark scrim overlay to maintain clock legibility.
+
+Changes apply live while the clock is running, and writing an empty value clears the photo. Every write reloads the image, even when the value did not change, so an automation can rewrite the entity to fetch a new image served under the same URL, or to pick up a file replaced under its old name. A file replaced in place is also picked up on its own within a minute. The value is limited to 255 characters, the most Home Assistant allows in a text entity, and a failed fetch keeps the current photo and tries again a minute later.
 
 **Night mode** recolors on screen text when the room gets dark to reduce room illumination. It relies on a physical ambient light sensor and is automatically disabled on hardware lacking one.
 
