@@ -87,6 +87,13 @@ class CameraRtspServer(
                 7 -> sps = unit
                 8 -> pps = unit
             }
+            // An encoder handing over its parameter sets is producing again,
+            // which ends whatever failure was recorded: a camera revoked
+            // mid-stream closes the viewers, and a viewer that reconnects
+            // inside the idle window keeps demand up, so nothing else would
+            // clear the error and Stream Status stayed Unavailable while the
+            // rebound session was streaming to it.
+            if (sps != null && pps != null) error = null
             formatReady.notifyAll()
         }
     }

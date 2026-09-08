@@ -4,8 +4,12 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **A lost camera says why.** When Android takes a running camera away from motion detection, snapshots or the RTSP stream, the app log and Stream Status used to print only the camera library's error number. The message now names the cause in plain words next to the number, such as another app or a session still closing holding the camera, a device policy disabling it or the camera service failing.
+
 ### Fixed
 - **The floating player's Now Playing badge lines up with the art.** The open badge in the card's top right corner sat deeper in the corner than the album art on the left, since it rode the title line instead of the card's edge. It now keeps the same distance from the top and the right as the art does from the top and the left, on both card sizes.
+- **Stream Status no longer stays Unavailable after the camera comes back.** A camera revoked mid-stream closed the connected viewers and recorded the error under Stream Status. A viewer that reconnected within two seconds kept the stream in demand, so the error was never cleared and the panel kept reading Unavailable while the rebound camera was already streaming to it. The error now clears the moment the encoder produces again.
 
 ## v2026.9.28 - 2026-09-07
 

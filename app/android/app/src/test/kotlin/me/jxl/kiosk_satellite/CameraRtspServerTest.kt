@@ -149,6 +149,30 @@ class CameraRtspServerTest {
         } finally { server.close() }
         CameraRtspServer(port, null, "", { "" }, {}, {}).close()
     }
+    @Test fun encoderProducingAgainClearsTheError() {
+        val demand = LinkedBlockingQueue<Boolean>()
+        val server = server(demand)
+        val port = server.localPort
+        try {
+            server.config(listOf(sps, pps))
+            val first = Peer(port)
+            first.request("DESCRIBE")
+            assertEquals(true, demand.poll(1, TimeUnit.SECONDS))
+            server.fail("camera revoked by the OS")
+            assertEquals("camera revoked by the OS", server.error)
+            // A viewer back inside the idle window keeps demand up, so the
+            // demand flip that used to clear the error never comes.
+            val second = Peer(port)
+            second.request("DESCRIBE")
+            assertNull(demand.poll(500, TimeUnit.MILLISECONDS))
+            assertEquals("camera revoked by the OS", server.error)
+            // The rebound encoder handing over its parameter sets is the end
+            // of the failure.
+            server.config(listOf(sps, pps))
+            assertNull(server.error)
+            first.close(); second.close()
+        } finally { server.close() }
+    }
     @Test fun repeatedRestartClosesAcceptedClientsAndReleasesThePort() {
         val demand = LinkedBlockingQueue<Boolean>()
         var server = server(demand)

@@ -10,6 +10,7 @@ import android.util.Size
 import android.view.Surface
 import android.view.WindowManager
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraState
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -503,4 +504,21 @@ internal class CameraLifecycle : LifecycleOwner {
         }
         registry.currentState = Lifecycle.State.DESTROYED
     }
+}
+
+/** The plain words for a CameraX [CameraState] error code, so the app log
+ *  and Stream Status say why a running camera was lost instead of only
+ *  printing the number: an Honor tablet reported "error 2" during an
+ *  Activity re-creation, which is CameraX for another client holding the
+ *  camera, here its own session still closing. */
+internal fun cameraStateErrorName(code: Int): String = when (code) {
+    CameraState.ERROR_MAX_CAMERAS_IN_USE -> "too many cameras are open"
+    CameraState.ERROR_CAMERA_IN_USE -> "another app or a closing session still holds the camera"
+    CameraState.ERROR_OTHER_RECOVERABLE_ERROR -> "a recoverable camera error"
+    CameraState.ERROR_STREAM_CONFIG -> "the camera rejected the stream configuration"
+    CameraState.ERROR_CAMERA_DISABLED -> "a device policy disables the camera"
+    CameraState.ERROR_CAMERA_FATAL_ERROR -> "the camera service failed"
+    CameraState.ERROR_DO_NOT_DISTURB_MODE_ENABLED -> "Do Not Disturb blocks the camera"
+    CameraState.ERROR_CAMERA_REMOVED -> "the camera was removed"
+    else -> "an unknown camera error"
 }

@@ -919,7 +919,8 @@ class CameraMotion(
                     Log.w(TAG, "camera lost: ${state.type} error ${err.code}")
                     sink.error(
                         "camera",
-                        "camera revoked by the OS (error ${err.code})",
+                        "camera revoked by the OS: " +
+                            "${cameraStateErrorName(err.code)} (error ${err.code})",
                         null,
                     )
                 }

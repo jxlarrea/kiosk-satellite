@@ -27,4 +27,14 @@ class CameraInventoryTest {
             describeCamera("1", null, 7, intArrayOf(0)),
         )
     }
+
+    @Test
+    fun namesTheCameraStateErrorCodes() {
+        assertEquals(
+            "another app or a closing session still holds the camera",
+            cameraStateErrorName(2),
+        )
+        assertEquals("the camera service failed", cameraStateErrorName(6))
+        assertEquals("an unknown camera error", cameraStateErrorName(42))
+    }
 }
