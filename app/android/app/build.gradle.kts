@@ -122,6 +122,8 @@ configurations.all {
 }
 
 dependencies {
+    // Match flutter_inappwebview for renderer recovery on older Android versions.
+    implementation("androidx.webkit:webkit:1.14.0")
     // CameraX for low-cost motion detection (YUV luminance analysis only).
     // Ceiling: 1.5.x is the last line whose Camera2Config is the legacy
     // camera2 backend. 1.6.0 replaced it with camera-pipe (CXCP) with no

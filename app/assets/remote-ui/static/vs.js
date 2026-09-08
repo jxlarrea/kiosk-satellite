@@ -48,7 +48,7 @@ export let vsControlsJson = null;
 export async function renderVsControls(root, { auto = false } = {}) {
   let data = null;
   try {
-    const r = await cmd('vsControls');
+    const r = await cmd('vsControls', {}, { timeoutMs: 15000 });
     if (r.ok) data = r.data;
   } catch (_) {}
   // Auto refreshes (the poll, a wake state push) follow external changes

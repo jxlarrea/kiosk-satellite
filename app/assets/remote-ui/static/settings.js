@@ -1433,7 +1433,9 @@ export async function loadSettings() {
       // renderVsControls then puts into both panels.
       render(root, ['Voice Satellite'].filter((c) => (byCat[c] || []).length),
         { extra: ['Appearance'] });
-      await renderVsControls(root);
+      // Page-local controls can be unavailable while the dashboard recovers.
+      // Keep the rest of Remote Admin accessible during that wait.
+      renderVsControls(root).catch((error) => console.warn('Voice Satellite controls failed', error));
     }
   }
 
@@ -1562,7 +1564,7 @@ export async function loadSettings() {
         // Home Assistant every time blanked the pane for seconds - the
         // "whole page refreshed" feel. Validate clears the cache.
         if (!state.dashboardsCache) {
-          state.dashboardsCache = (await (await api('/api/commands/haListDashboards', { method: 'POST', body: '{}' })).json()).data || [];
+          state.dashboardsCache = (await cmd('haListDashboards', {}, { timeoutMs: 10000 })).data || [];
         }
         const dashboards = state.dashboardsCache;
         dashList = dashboards;
@@ -1775,8 +1777,8 @@ export async function loadSettings() {
           if (!Array.isArray(sel)) sel = [];
           const viewLists = await Promise.all(dashList.map(async (d) => {
             try {
-              const r = await (await api('/api/commands/haListDashboardViews', {
-                method: 'POST', body: JSON.stringify({ url_path: d.url_path }) })).json();
+              const r = await cmd('haListDashboardViews',
+                { url_path: d.url_path }, { timeoutMs: 10000 });
               if (r.ok && Array.isArray(r.data) && r.data.length) return r.data;
             } catch (_) {}
             // Auto-generated dashboards store no view list; the whole

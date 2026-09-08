@@ -15,6 +15,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../device/screen_capture.dart';
 import '../device/webview_freeze.dart';
+import '../device/webview_recovery.dart';
 import '../sendspin/music_assistant_api.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
@@ -494,10 +495,10 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
           handler: (p) async {
             final code = p['code'] as String?;
             final controller = _controller;
-            if (code == null || controller == null) {
+            if (code == null || (controller == null && evalOverride == null)) {
               return const CommandResult.fail('code required / no webview');
             }
-            final result = await controller.evaluateJavascript(source: code);
+            final result = await _eval(code).timeout(javaScriptTimeout);
             return CommandResult.ok('$result');
           },
         ),
@@ -644,12 +645,77 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   }
 
   void attach(InAppWebViewController controller) {
+    _rendererRecovery?.cancel();
+    _rendererRecovery = null;
+    _rendererRebuildPending = false;
+    _unresponsiveStrikes = 0;
+    _rendererDeadChecks = 0;
+    _webViewGeneration++;
     _controller = controller;
     // A rebuilt WebView is a fresh, visible native view. Its URL is not up
     // yet (the freeze matches by URL, so this sync usually finds nothing);
     // onPageLoaded retries once the page — and its URL — exist.
     _frozen = false;
     unawaited(_syncFreeze());
+  }
+
+  bool isAttached(InAppWebViewController controller) =>
+      identical(_controller?.platform, controller.platform);
+
+  @visibleForTesting
+  Duration javaScriptTimeout = const Duration(seconds: 5);
+
+  @visibleForTesting
+  Duration rendererRecoveryGrace = const Duration(seconds: 5);
+
+  Timer? _rendererRecovery;
+  int _unresponsiveStrikes = 0;
+  int _rendererDeadChecks = 0;
+  int _webViewGeneration = 0;
+  bool _rendererRebuildPending = false;
+
+  /// Termination can fail without delivering onRenderProcessGone. Give it
+  /// a short grace period then replace the WebView even without a callback.
+  bool onRendererUnresponsive() {
+    if (_rendererRebuildPending || _rendererRecovery != null) return false;
+    _unresponsiveStrikes++;
+    log.warn(
+      name,
+      'WebView renderer unresponsive (strike $_unresponsiveStrikes)',
+    );
+    if (_unresponsiveStrikes < 2) return false;
+    _rendererRecovery = Timer(rendererRecoveryGrace, () {
+      unawaited(
+        rebuildFailedRenderer(
+          'renderer termination did not restore the WebView',
+        ),
+      );
+    });
+    return true;
+  }
+
+  void onRendererResponsive() {
+    _rendererRecovery?.cancel();
+    _rendererRecovery = null;
+    _unresponsiveStrikes = 0;
+    _rendererDeadChecks = 0;
+  }
+
+  Future<void> rebuildFailedRenderer(String reason) async {
+    if (_rendererRebuildPending) return;
+    _rendererRebuildPending = true;
+    _rendererRecovery?.cancel();
+    _rendererRecovery = null;
+    final viewId = _controller?.getViewId();
+    _controller = null;
+    _webViewGeneration++;
+    _rendererDeadChecks = 0;
+    _unresponsiveStrikes = 0;
+    log.warn(name, '$reason; rebuilding the WebView');
+    final generation = _webViewGeneration;
+    if (viewId is int) await WebViewRecovery.prepare(viewId);
+    if (generation != _webViewGeneration) return;
+    bus.publish(const WebViewRebuildRequested());
   }
 
   bool _screensaverActive = false;
@@ -1122,6 +1188,8 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     _freezeKeepAlive?.cancel();
     _cameraPauseDelay?.cancel();
     _healthTimer?.cancel();
+    _rendererRecovery?.cancel();
+    _webViewGeneration++;
     _closeRepair?.cancel();
   }
 
@@ -1171,7 +1239,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   Future<String?> eval(String code) async {
     final controller = _controller;
     if (controller == null) return null;
-    final result = await controller.evaluateJavascript(source: code);
+    final result = await _eval(code).timeout(javaScriptTimeout);
     return '$result';
   }
 
@@ -1216,7 +1284,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
           return 'socket-closed';
         } catch (e) { return 'error: ' + e; }
       })()
-    ''');
+    ''').timeout(javaScriptTimeout, onTimeout: () => 'renderer-unresponsive');
     log.info(name, 'HA socket nudge: $result');
   }
 
@@ -1269,12 +1337,14 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
           return 'pending';
         } catch (e) { return 'no-connection'; }
       })()
-    ''');
+    ''').timeout(javaScriptTimeout, onTimeout: () => 'renderer-unresponsive');
     if ('$started' == 'pending') {
       final deadline = DateTime.now().add(timeout);
       while (DateTime.now().isBefore(deadline)) {
         await Future<void>.delayed(const Duration(milliseconds: 250));
-        final state = await _eval('window.__ksPingCheck');
+        final state = await _eval(
+          'window.__ksPingCheck',
+        ).timeout(javaScriptTimeout, onTimeout: () => 'dead');
         if ('$state' == 'alive') {
           log.info(name, 'HA socket answered the resume ping; leaving it be');
           return;
@@ -1296,6 +1366,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   Duration? healthRepairTimeout;
   static const _deadChecksBeforeRepair = 3;
   Timer? _healthTimer;
+  bool _healthCheckBusy = false;
   int _deadChecks = 0;
   DateTime _lastHealthReload = DateTime.fromMillisecondsSinceEpoch(0);
   static const _healthReloadCooldown = Duration(minutes: 15);
@@ -1317,11 +1388,32 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// a row find it down, because a page that is merely mid-reconnect looks
   /// identical to a dead one for a few seconds and must not be interrupted.
   Future<void> checkDashboardHealth() async {
+    if (_healthCheckBusy || _rendererRebuildPending) return;
+    _healthCheckBusy = true;
+    try {
+      await _checkDashboardHealth();
+    } finally {
+      _healthCheckBusy = false;
+    }
+  }
+
+  Future<void> _checkDashboardHealth() async {
     if (_controller == null && evalOverride == null) return;
     // A load that failed has its own retry ladder, and an outage repair in
     // flight is already doing this.
     if (loadFailed.value || _networkRepairBusy) return;
+    final generation = _webViewGeneration;
     final state = await _probePageState();
+    if (generation != _webViewGeneration) return;
+    if (state == 'unresponsive') {
+      _deadChecks = 0;
+      _rendererDeadChecks++;
+      if (_rendererDeadChecks >= 2 && _settings.get(defs.autoReloadOnError)) {
+        await rebuildFailedRenderer('dashboard JavaScript timed out twice');
+      }
+      return;
+    }
+    _rendererDeadChecks = 0;
     // Only a Home Assistant page that is not talking to Home Assistant is
     // this watchdog's business: the loaded frontend with a dead connection,
     // and the launch screen that never got one. Anything else is somebody
@@ -1564,8 +1656,10 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
             return 'other';
           } catch (e) { return 'other'; }
         })()
-      ''');
+      ''').timeout(javaScriptTimeout);
       return '$r'.replaceAll('"', '');
+    } on TimeoutException {
+      return 'unresponsive';
     } catch (_) {
       return 'none';
     }
@@ -1582,7 +1676,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
           return !!(c && c.connected && c.socket && c.socket.readyState === 1);
         } catch (e) { return false; }
       })()
-    ''');
+    ''').timeout(javaScriptTimeout, onTimeout: () => false);
     return r == true || r == 'true' || r == 1;
   }
 
@@ -1635,7 +1729,9 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// UI layer, e.g. applying or lifting HA kiosk mode).
   Future<void> runJs(String source) async {
     try {
-      await _controller?.evaluateJavascript(source: source);
+      await _controller
+          ?.evaluateJavascript(source: source)
+          .timeout(javaScriptTimeout);
     } catch (e) {
       log.debug(name, 'runJs failed: $e');
     }

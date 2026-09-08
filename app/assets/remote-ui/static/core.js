@@ -46,9 +46,19 @@ export async function api(path, opts = {}) {
   if (res.status === 401) { logout(); throw new Error('unauthorized'); }
   return res;
 }
-export const cmd = (name, params = {}) =>
-  api(`/api/commands/${name}`, { method: 'POST', body: JSON.stringify(params) })
-    .then((r) => r.json());
+export async function cmd(name, params = {}, { timeoutMs = 0 } = {}) {
+  const controller = new AbortController();
+  const timer = timeoutMs > 0
+    ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    const response = await api(`/api/commands/${name}`, {
+      method: 'POST', body: JSON.stringify(params), signal: controller.signal,
+    });
+    return await response.json();
+  } finally {
+    if (timer !== null) clearTimeout(timer);
+  }
+}
 
 /* ---- Views ---- */
 // Login, wizard and app are three full-page sections of one document, and

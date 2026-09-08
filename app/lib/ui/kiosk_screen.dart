@@ -317,10 +317,6 @@ class _KioskScreenState extends State<KioskScreen>
   /// where the current page was (a token change, see _onSettingChanged).
   bool _rebuildFromStart = false;
 
-  /// Consecutive renderer-unresponsive callbacks; two in a row means a
-  /// wedged renderer, not a transient stall, and earns a terminate.
-  int _unresponsiveStrikes = 0;
-
   /// Pull-to-refresh, Fully style. The native wrapper handles pages that fit
   /// the screen; scrollable pages never hand it the gesture (Chromium claims
   /// every vertical drag), so those report their pulls through the JS probe
@@ -1796,44 +1792,21 @@ class _KioskScreenState extends State<KioskScreen>
       return null; // handled outside the WebView; nothing for it to do
     },
     onRenderProcessGone: (controller, detail) {
-      // The WebView's renderer process died — OOM on low-RAM panels (NSPanel
-      // Pro, Echo Show), GPU faults, classically right at screensaver wake
-      // when the surface recomposites. Handling this callback is what stops
-      // Android from killing the WHOLE APP in response; rebuild the WebView
-      // in place instead, which reloads the current page, and the kiosk
-      // carries on.
-      c.browser.log.warn(
-        'browser',
-        'WebView renderer gone (crashed: ${detail.didCrash}) — rebuilding '
-            'the WebView',
+      if (!c.browser.isAttached(controller)) return;
+      c.browser.rebuildFailedRenderer(
+        'WebView renderer gone (crashed: ${detail.didCrash}, '
+        'priority: ${detail.rendererPriorityAtExit})',
       );
-      _unresponsiveStrikes = 0;
-      if (mounted) setState(() => _webViewEpoch++);
     },
     onRenderProcessUnresponsive: (controller, url) async {
-      // The renderer HUNG rather than died — the other way a memory-starved
-      // device loses the dashboard (the renderer thrashes, stalls, and
-      // Chromium waits for us to act; unhandled, the page sits white
-      // forever while the rest of the app runs on). One strike is grace
-      // for a transient stall; on the second, terminate the renderer,
-      // which fires onRenderProcessGone above and rebuilds the WebView.
-      _unresponsiveStrikes++;
-      c.browser.log.warn(
-        'browser',
-        'WebView renderer unresponsive '
-            '(strike $_unresponsiveStrikes) at $url',
-      );
-      if (_unresponsiveStrikes >= 2) {
-        _unresponsiveStrikes = 0;
+      if (!c.browser.isAttached(controller)) return null;
+      if (c.browser.onRendererUnresponsive()) {
         return WebViewRenderProcessAction.TERMINATE;
       }
       return null;
     },
     onRenderProcessResponsive: (controller, url) async {
-      if (_unresponsiveStrikes > 0) {
-        c.browser.log.info('browser', 'WebView renderer responsive again');
-      }
-      _unresponsiveStrikes = 0;
+      if (c.browser.isAttached(controller)) c.browser.onRendererResponsive();
       return null;
     },
     onConsoleMessage: (controller, message) {

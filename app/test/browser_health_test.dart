@@ -1,11 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/browser/browser_manager.dart';
+import 'package:kiosk_satellite/managers/home_assistant/home_assistant_manager.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _PlatformController extends Fake
+    implements PlatformInAppWebViewController {
+  @override
+  int getViewId() => 1;
+}
 
 /// The dashboard connection watchdog (issue #228).
 ///
@@ -19,22 +30,169 @@ void main() {
 
   late BrowserManager browser;
   late SettingsManager settings;
+  late EventBus bus;
+  late CommandRegistry commands;
+  late Logger log;
 
   Future<void> build() async {
     SharedPreferences.setMockInitialValues({
       'ks.browser.start_url': 'http://192.168.1.10:8123/lovelace/home',
     });
-    final bus = EventBus();
-    final log = Logger();
-    final commands = CommandRegistry(log);
+    bus = EventBus();
+    log = Logger();
+    commands = CommandRegistry(log);
     settings = SettingsManager(bus, commands, log);
     await settings.init();
     browser = BrowserManager(bus, commands, log, settings);
     await browser.init();
     browser.healthRepairTimeout = const Duration(milliseconds: 400);
+    browser.javaScriptTimeout = const Duration(milliseconds: 20);
+    browser.rendererRecoveryGrace = const Duration(milliseconds: 20);
   }
 
-  tearDown(() async => browser.dispose());
+  tearDown(() async {
+    await browser.dispose();
+    await bus.dispose();
+  });
+
+  test(
+    'renderer callbacks recognize a new wrapper for the attached platform',
+    () async {
+      await build();
+      final platform = _PlatformController();
+      final created = InAppWebViewController.fromPlatform(platform: platform);
+      final callback = InAppWebViewController.fromPlatform(platform: platform);
+      browser.attach(created);
+      expect(identical(created, callback), isFalse);
+      expect(browser.isAttached(callback), isTrue);
+      browser.attach(
+        InAppWebViewController.fromPlatform(platform: _PlatformController()),
+      );
+      expect(browser.isAttached(callback), isFalse);
+    },
+  );
+
+  test(
+    'evalJs fails when the renderer never answers and later calls work',
+    () async {
+      await build();
+      browser.evalOverride = (_) => Completer<Object?>().future;
+      final failed = await commands.execute('evalJs', {'code': '1 + 1'});
+      expect(failed.ok, isFalse);
+      expect(failed.error, contains('TimeoutException'));
+      browser.evalOverride = (_) async => 2;
+      final recovered = await commands.execute('evalJs', {'code': '1 + 1'});
+      expect(recovered.ok, isTrue);
+      expect(recovered.data, '2');
+    },
+  );
+
+  test('Voice Satellite snapshot completes with a hung renderer', () async {
+    await build();
+    browser.evalOverride = (_) => Completer<Object?>().future;
+    final ha = HomeAssistantManager(bus, commands, log, settings);
+    final snapshot = await ha.vsControlsSnapshot().timeout(
+      const Duration(seconds: 1),
+    );
+    expect(snapshot['browserState'], 'unavailable');
+    expect(snapshot['browser'], isNull);
+  });
+
+  test(
+    'a renderer hang during connection repair releases the health check',
+    () async {
+      await build();
+      browser.healthRepairTimeout = const Duration(milliseconds: 20);
+      browser.evalOverride = (source) => source.contains('ha-init-page')
+          ? Future.value('stale')
+          : Completer<Object?>().future;
+      for (var i = 0; i < 3; i++) {
+        await browser.checkDashboardHealth().timeout(
+          const Duration(seconds: 1),
+        );
+      }
+      var probed = false;
+      browser.evalOverride = (_) async {
+        probed = true;
+        return 'connected';
+      };
+      await browser.checkDashboardHealth();
+      expect(probed, isTrue);
+    },
+  );
+
+  test('termination without a gone callback rebuilds once', () async {
+    await build();
+    final rebuilds = <WebViewRebuildRequested>[];
+    bus.on<WebViewRebuildRequested>().listen(rebuilds.add);
+    expect(browser.onRendererUnresponsive(), isFalse);
+    expect(browser.onRendererUnresponsive(), isTrue);
+    expect(browser.onRendererUnresponsive(), isFalse);
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    browser.rebuildFailedRenderer('late gone callback');
+    await Future<void>.delayed(Duration.zero);
+    expect(rebuilds, hasLength(1));
+  });
+
+  test('a responsive callback cancels the fallback rebuild', () async {
+    await build();
+    final rebuilds = <WebViewRebuildRequested>[];
+    bus.on<WebViewRebuildRequested>().listen(rebuilds.add);
+    browser.onRendererUnresponsive();
+    browser.onRendererUnresponsive();
+    browser.onRendererResponsive();
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    expect(rebuilds, isEmpty);
+    expect(browser.onRendererUnresponsive(), isFalse);
+  });
+
+  test(
+    'hung health probes do not overlap and repeated timeouts rebuild',
+    () async {
+      await build();
+      final rebuilds = <WebViewRebuildRequested>[];
+      bus.on<WebViewRebuildRequested>().listen(rebuilds.add);
+      var probes = 0;
+      browser.evalOverride = (_) {
+        probes++;
+        return Completer<Object?>().future;
+      };
+      await Future.wait(
+        List.generate(4, (_) => browser.checkDashboardHealth()),
+      );
+      expect(probes, 1);
+      expect(rebuilds, isEmpty);
+      await browser.checkDashboardHealth();
+      await Future<void>.delayed(Duration.zero);
+      expect(rebuilds, hasLength(1));
+      expect(browser.renavigations, 0);
+    },
+  );
+
+  test('a successful probe resets renderer timeout strikes', () async {
+    await build();
+    final rebuilds = <WebViewRebuildRequested>[];
+    bus.on<WebViewRebuildRequested>().listen(rebuilds.add);
+    browser.evalOverride = (_) => Completer<Object?>().future;
+    await browser.checkDashboardHealth();
+    browser.evalOverride = (_) async => 'connected';
+    await browser.checkDashboardHealth();
+    browser.evalOverride = (_) => Completer<Object?>().future;
+    await browser.checkDashboardHealth();
+    expect(rebuilds, isEmpty);
+  });
+
+  test('auto-reload off prevents a watchdog rebuild after timeouts', () async {
+    await build();
+    await settings.set(defs.autoReloadOnError, false);
+    final rebuilds = <WebViewRebuildRequested>[];
+    bus.on<WebViewRebuildRequested>().listen(rebuilds.add);
+    browser.evalOverride = (_) => Completer<Object?>().future;
+    for (var i = 0; i < 3; i++) {
+      await browser.checkDashboardHealth();
+    }
+    expect(rebuilds, isEmpty);
+  });
 
   /// A page probe answering [state], with the nudge and liveness evals
   /// counted. [recovers] makes the connection come back after the nudge.
@@ -111,15 +269,17 @@ void main() {
     expect(browser.renavigations, 1);
   });
 
-  test('a dashboard that cannot connect at all is not reloaded in a loop',
-      () async {
-    await build();
-    page('stale');
-    for (var i = 0; i < 12; i++) {
-      await browser.checkDashboardHealth();
-    }
-    expect(browser.renavigations, 1);
-  });
+  test(
+    'a dashboard that cannot connect at all is not reloaded in a loop',
+    () async {
+      await build();
+      page('stale');
+      for (var i = 0; i < 12; i++) {
+        await browser.checkDashboardHealth();
+      }
+      expect(browser.renavigations, 1);
+    },
+  );
 
   test('auto-reload off keeps the nudge and withholds the reload', () async {
     await build();
@@ -143,19 +303,21 @@ void main() {
     expect(browser.renavigations, 0);
   });
 
-  test('a socket that closes and comes back on its own is left alone',
-      () async {
-    await build();
-    browser.socketCloseGrace = const Duration(milliseconds: 200);
-    final sources = <String>[];
-    browser.evalOverride = (source) async {
-      sources.add(source);
-      return source.contains('readyState === 1') ? true : null;
-    };
-    browser.onHaSocketClosed();
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    expect(sources.where((s) => s.contains('dispatchEvent')), isEmpty);
-  });
+  test(
+    'a socket that closes and comes back on its own is left alone',
+    () async {
+      await build();
+      browser.socketCloseGrace = const Duration(milliseconds: 200);
+      final sources = <String>[];
+      browser.evalOverride = (source) async {
+        sources.add(source);
+        return source.contains('readyState === 1') ? true : null;
+      };
+      browser.onHaSocketClosed();
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      expect(sources.where((s) => s.contains('dispatchEvent')), isEmpty);
+    },
+  );
 
   test('a socket still down after the grace period is unblocked', () async {
     await build();
