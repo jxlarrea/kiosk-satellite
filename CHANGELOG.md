@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.29 - 2026-09-08
 
 ### Changed
 - **A lost camera says why.** When Android takes a running camera away from motion detection, snapshots or the RTSP stream, the app log and Stream Status used to print only the camera library's error number. The message now names the cause in plain words next to the number, such as another app or a session still closing holding the camera, a device policy disabling it or the camera service failing.
