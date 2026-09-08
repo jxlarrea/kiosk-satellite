@@ -3551,6 +3551,19 @@ const cameraSnapshotResolution = SettingDef<String>(
   dependsOn: 'camera.enabled',
 );
 
+const cameraDisableDetectionSnapshots = SettingDef<bool>(
+  key: 'camera.disable_detection_snapshots',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable snapshots on detection',
+  description:
+      'Prevent automatic snapshots triggered by detection. Motion, face, '
+      'presence and gesture detection keep working. Manual requests and '
+      'Continuous snapshots can still capture images.',
+  category: 'Camera',
+  dependsOn: 'camera.enabled',
+);
+
 const cameraSnapshots = SettingDef<bool>(
   key: 'camera.snapshots',
   type: SettingType.boolean,
@@ -6666,6 +6679,7 @@ const List<SettingDef<Object>> allSettings = [
   cameraEnabled,
   cameraDevice,
   cameraSnapshotResolution,
+  cameraDisableDetectionSnapshots,
   cameraSnapshots,
   cameraSnapshotInterval,
   motionSensor,

@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Detection snapshots can be disabled.** The new **Disable snapshots on detection** switch in Camera settings prevents automatic detection captures while keeping motion, face, presence and gesture detection working. It also skips pending detection snapshots and withholds results from captures still in progress when the switch is enabled. Manual requests and continuous snapshots keep working. The switch is off by default.
+
 ### Fixed
 - **The screensaver recovers after a dashboard reload during playback.** A page could report an active media interaction and reload without sending its end event, leaving the screensaver paused indefinitely. Full navigation and WebView replacement now release the old page's interactions. Native playback and remote pauses keep their own holds until they end. Fixes [#271](https://github.com/jxlarrea/kiosk-satellite/issues/271).
 

@@ -47,6 +47,9 @@ class DeviceCameraManager extends Manager {
 
   bool get enabled => _settings.get(defs.cameraEnabled);
 
+  bool get _detectionSnapshotsDisabled =>
+      _settings.get(defs.cameraDisableDetectionSnapshots);
+
   /// Whether this device has a usable camera at all. Hardware whose ROM
   /// ships no camera HAL (LineageOS ports on Echo Shows) has none, and
   /// both settings surfaces warn instead of offering switches that can
@@ -114,6 +117,9 @@ class DeviceCameraManager extends Manager {
 
     bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('camera.')) return;
+      // This switch only gates detection captures. Changing it must not
+      // restart the continuous timer and take an immediate snapshot.
+      if (e.key == defs.cameraDisableDetectionSnapshots.key) return;
       // Turning the feature on asks for the camera up front, like motion
       // detection used to, so the first capture does not stall on a prompt.
       if (e.key == defs.cameraEnabled.key && e.value == true) {
@@ -139,7 +145,7 @@ class DeviceCameraManager extends Manager {
     // without the session gate, the always-on sensor leg turned sustained
     // motion into a JPEG hose.
     bus.on<MotionDetected>().listen((_) {
-      if (!enabled) return;
+      if (!enabled || _detectionSnapshotsDisabled) return;
       final now = DateTime.now();
       final last = _lastMotionTick;
       _lastMotionTick = now;
@@ -147,7 +153,7 @@ class DeviceCameraManager extends Manager {
         seconds: _settings.get(defs.motionSensorOffDelay).toInt().clamp(1, 300),
       );
       if (last != null && now.difference(last) < clear) return;
-      unawaited(_settledSnapshot('motion'));
+      unawaited(_settledSnapshot('motion', detection: true));
     });
 
     commands.register(
@@ -241,13 +247,14 @@ class DeviceCameraManager extends Manager {
   /// motion is still in front of the kiosk a second later. A facing change
   /// rides the same grace: motion detection rebinds onto the new camera at
   /// the same moment.
-  Future<void> _settledSnapshot(String why) async {
+  Future<void> _settledSnapshot(String why, {bool detection = false}) async {
     await Future<void>.delayed(const Duration(seconds: 1));
-    final result = await _snapshot();
+    if (detection && _detectionSnapshotsDisabled) return;
+    final result = await _snapshot(detection: detection);
     if (!result.ok) log.warn(name, '$why snapshot failed: ${result.error}');
   }
 
-  Future<CommandResult> _snapshot() async {
+  Future<CommandResult> _snapshot({bool detection = false}) async {
     if (!enabled) {
       return const CommandResult.fail(
         'The camera is disabled in the Camera settings.',
@@ -261,6 +268,11 @@ class DeviceCameraManager extends Manager {
     if (!await Permission.camera.isGranted) {
       log.warn(name, 'camera permission not granted; snapshot skipped');
       return const CommandResult.fail('Camera permission not granted.');
+    }
+    // The setting can change while permission or the native camera is
+    // answering. Check before capture and before publishing its result.
+    if (detection && _detectionSnapshotsDisabled) {
+      return const CommandResult.fail('Detection snapshots are disabled.');
     }
     _capturing = true;
     try {
@@ -276,6 +288,9 @@ class DeviceCameraManager extends Manager {
       ).timeout(const Duration(seconds: 30));
       if (jpeg == null || jpeg.isEmpty) {
         return const CommandResult.fail('The camera returned no image.');
+      }
+      if (detection && _detectionSnapshotsDisabled) {
+        return const CommandResult.fail('Detection snapshots are disabled.');
       }
       bus.publish(CameraSnapshotTaken(jpeg: jpeg));
       return CommandResult.ok({'bytes': jpeg.length});

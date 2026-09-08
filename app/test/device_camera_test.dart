@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
@@ -16,7 +18,7 @@ void main() {
 
   // Camera permission answers "denied": snapshot attempts stop there with a
   // countable warn instead of reaching the (absent) camera plugin.
-  setUpAll(() {
+  setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('flutter.baseflow.com/permissions/methods'),
@@ -51,6 +53,7 @@ void main() {
       expect(settings.get(defs.cameraEnabled), isFalse);
       expect(settings.get(defs.cameraDevice), 'front');
       expect(settings.get(defs.cameraSnapshotResolution), '480');
+      expect(settings.get(defs.cameraDisableDetectionSnapshots), isFalse);
       expect(settings.get(defs.cameraSnapshots), isFalse);
       expect(settings.get(defs.cameraSnapshotInterval), 60);
     },
@@ -179,6 +182,169 @@ void main() {
       ),
       isFalse,
     );
+  });
+
+  group('detection snapshot privacy', () {
+    late int captures;
+    late List<CameraSnapshotTaken> published;
+    Completer<Uint8List>? pendingImage;
+    Completer<int>? pendingPermission;
+
+    setUp(() {
+      captures = 0;
+      published = [];
+      pendingImage = null;
+      pendingPermission = null;
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        const MethodChannel('flutter.baseflow.com/permissions/methods'),
+        (call) async => call.method == 'checkPermissionStatus'
+            ? await (pendingPermission?.future ?? Future.value(1))
+            : null,
+      );
+      messenger.setMockMethodCallHandler(
+        const MethodChannel('kiosk_satellite/camera'),
+        (call) async {
+          switch (call.method) {
+            case 'hasCamera':
+              return true;
+            case 'facings':
+              return ['front', 'back'];
+            case 'snapshot':
+              captures++;
+              return await (pendingImage?.future ??
+                  Future.value(Uint8List.fromList([1, 2, 3])));
+            default:
+              return null;
+          }
+        },
+      );
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('kiosk_satellite/camera'),
+            null,
+          );
+    });
+
+    Future<void> start([Map<String, Object> initial = const {}]) async {
+      await build({'ks.camera.enabled': true, ...initial});
+      bus.on<CameraSnapshotTaken>().listen(published.add);
+      final manager = camera();
+      await manager.init();
+      addTearDown(() async {
+        await manager.dispose();
+        await settings.dispose();
+        await bus.dispose();
+      });
+    }
+
+    testWidgets('detections stay available without capturing images', (
+      tester,
+    ) async {
+      await start({'ks.camera.disable_detection_snapshots': true});
+      final detections = <AppEvent>[];
+      bus.stream.listen(detections.add);
+      const events = [
+        MotionDetected(),
+        FaceDetected(),
+        PersonSensorChanged(present: true),
+        PalmDetected(hands: 1, fingers: 3),
+      ];
+      for (final event in events) {
+        bus.publish(event);
+      }
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      expect(detections, containsAllInOrder(events));
+      expect(captures, 0);
+      expect(published, isEmpty);
+    });
+
+    testWidgets('enabling the switch skips a queued detection capture', (
+      tester,
+    ) async {
+      await start();
+      bus.publish(const MotionDetected());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await settings.set(defs.cameraDisableDetectionSnapshots, true);
+      await tester.pump(const Duration(seconds: 1));
+      expect(captures, 0);
+      expect(published, isEmpty);
+    });
+
+    testWidgets('permission replies cannot bypass the switch', (tester) async {
+      await start();
+      pendingPermission = Completer<int>();
+      bus.publish(const MotionDetected());
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await settings.set(defs.cameraDisableDetectionSnapshots, true);
+      pendingPermission!.complete(1);
+      await tester.pump();
+      expect(captures, 0);
+      expect(published, isEmpty);
+    });
+
+    testWidgets('an in-flight detection image is withheld', (tester) async {
+      await start();
+      pendingImage = Completer<Uint8List>();
+      bus.publish(const MotionDetected());
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(captures, 1);
+      await settings.set(defs.cameraDisableDetectionSnapshots, true);
+      pendingImage!.complete(Uint8List.fromList([1, 2, 3]));
+      await tester.pump();
+      expect(published, isEmpty);
+
+      // The discarded result must release the capture for manual requests.
+      pendingImage = null;
+      expect((await commands.execute('takeCameraSnapshot', {})).ok, isTrue);
+      await tester.pump();
+      expect(published, hasLength(1));
+    });
+
+    testWidgets('manual requests and the continuous schedule keep working', (
+      tester,
+    ) async {
+      await start({
+        'ks.camera.snapshots': true,
+        'ks.camera.snapshot_interval': 5,
+      });
+      await tester.pump();
+      expect(captures, 1);
+      await tester.pump(const Duration(seconds: 2));
+      await settings.set(defs.cameraDisableDetectionSnapshots, true);
+      await tester.pump();
+      expect(captures, 1);
+      await tester.pump(const Duration(seconds: 3));
+      expect(captures, 2);
+      expect((await commands.execute('takeCameraSnapshot', {})).ok, isTrue);
+      await tester.pump();
+      expect(captures, 3);
+      expect(published, hasLength(3));
+      await settings.set(defs.cameraSnapshots, false);
+      await tester.pump();
+    });
+
+    testWidgets('turning the switch off restores detection snapshots', (
+      tester,
+    ) async {
+      await start({'ks.camera.disable_detection_snapshots': true});
+      bus.publish(const MotionDetected());
+      await tester.pump();
+      await settings.set(defs.cameraDisableDetectionSnapshots, false);
+      bus.publish(const MotionDetected());
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(captures, 1);
+      expect(published, hasLength(1));
+    });
   });
 
   test('importing a new backup leaves its camera choice alone', () async {

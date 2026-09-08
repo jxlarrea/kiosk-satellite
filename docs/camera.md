@@ -19,6 +19,7 @@ For devices that were already using the **Dismiss on motion** feature before the
 | Enable camera | off | The master switch. All settings below depend on this being turned on. |
 | Camera | Front | Choose Front or Back. This single choice applies to every camera feature. On devices with only one camera, this picker acts as a plain label. |
 | Snapshot resolution | 480p | Choose 480p, 720p, or 1080p on the 4:3 ladder. This maps to the nearest resolution the hardware offers. A single 480p frame is approximately 30 KB. |
+| Disable snapshots on detection | off | Prevent automatic snapshots triggered by detection while keeping motion, face, presence and gesture detection working. Manual requests and continuous snapshots can still capture images. |
 | Continuous snapshots | off | Capture a new snapshot for Home Assistant at a fixed, recurring interval. |
 | Snapshot interval | 60 | The time in seconds between snapshots, ranging from 5 to 300. The first frame is captured immediately when the timer starts. |
 
@@ -28,8 +29,10 @@ A frame is captured and published to the Camera entity under the following condi
 
 * **On demand:** When you press the **Take camera snapshot** button in Home Assistant, or **Take snapshot** in the remote admin.
 * **On an interval:** If **Continuous snapshots** is turned on.
-* **On motion:** Once per motion session. When motion is detected, it captures a single frame upon arrival, rather than a continuous stream of frames while someone stands there.
+* **On motion:** Once per motion session, unless **Disable snapshots on detection** is turned on. When motion is detected, it captures a single frame upon arrival, rather than a continuous stream of frames while someone stands there.
 * **When requested:** Whenever Home Assistant explicitly asks the camera entity for a picture, ensuring a dashboard card or a system restart never returns a blank image.
+
+**Disable snapshots on detection** applies to automatic detection captures only. It leaves detection running and does not remove previously captured images. Continuous snapshots, Home Assistant image requests, manual snapshots and RTSP streaming have their own controls.
 
 Only one capture can run at a time; if requests overlap, the system reports that a snapshot is already in progress. The camera is opened solely for the capture and is released immediately afterward. This means interval snapshots only use resources for the capture itself, rather than keeping the camera running permanently. 
 
