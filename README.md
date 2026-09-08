@@ -51,11 +51,10 @@
 Also built in: [PIN-protected kiosk mode](docs/kiosk.md), [touch, clap and camera gestures](docs/gestures.md), [live camera views](docs/cameras.md), [DLNA media playback](docs/dlna.md), dashboard rotation and start on boot.
 
 <p align="center">
+  <a href="assets/screenshots/screensaver-np.png"><img src="assets/screenshots/screensaver-np.png" alt="Settings in Kiosk Satellite" width="320" /></a>
   <a href="assets/screenshots/now-playing.png"><img src="assets/screenshots/now-playing.png" alt="Now Playing with album artwork and music controls" width="320" /></a>
   <a href="assets/screenshots/camera-1.png"><img src="assets/screenshots/camera-1.png" alt="Live camera feeds in Kiosk Satellite" width="320" /></a>
-</p>
-<p align="center">
-  <a href="docs/sendspin.md">Now Playing</a> · <a href="docs/cameras.md">Camera views</a>
+
 </p>
 
 ## Get started
