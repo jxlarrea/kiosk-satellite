@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **The floating player's Now Playing badge lines up with the art.** The open badge in the card's top right corner sat deeper in the corner than the album art on the left, since it rode the title line instead of the card's edge. It now keeps the same distance from the top and the right as the art does from the top and the left, on both card sizes.
+
 ## v2026.9.28 - 2026-09-07
 
 ### Added

@@ -2463,6 +2463,9 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   /// The title line's trailing badge slot (the equalizer while playing),
   /// constant in both states so the marquee width never changes.
   double get _corner => _large ? 24.0 : 20.0;
+
+  /// The title line's glyph, and the Now Playing badge in the corner.
+  double get _badgeSize => _large ? 20.0 : 16.0;
   double get _cardWidth => _large ? 480.0 : 320.0;
   double get _cardHeight => _large ? 152.0 : 96.0;
   double get _artSize => _large ? 128.0 : 72.0;
@@ -2800,19 +2803,24 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                         // the equalizer while playing,
                                         // empty while paused, so the
                                         // marquee width never changes
-                                        // with the state.
+                                        // with the state. With the Now
+                                        // Playing view on, the corner
+                                        // badge below takes its place
+                                        // and the slot only keeps the
+                                        // marquee clear of it.
                                         const SizedBox(width: 10),
                                         SizedBox(
                                           width: _corner,
-                                          child: Icon(
-                                            fullscreen
-                                                ? Icons.fullscreen_rounded
-                                                : playing
-                                                ? Icons.graphic_eq
-                                                : Icons.pause_circle_outline,
-                                            size: _large ? 20 : 16,
-                                            color: scheme.primary,
-                                          ),
+                                          child: fullscreen
+                                              ? null
+                                              : Icon(
+                                                  playing
+                                                      ? Icons.graphic_eq
+                                                      : Icons
+                                                            .pause_circle_outline,
+                                                  size: _badgeSize,
+                                                  color: scheme.primary,
+                                                ),
                                         ),
                                       ],
                                     ),
@@ -2902,6 +2910,11 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                         ),
                         // Last, so it sits over the title row: the glyph
                         // there is drawn text and would take the tap.
+                        // The badge is inset so its visible corners sit
+                        // at the same 12 from the edges as the art
+                        // opposite: the glyph fills 14 of its 24 unit
+                        // box, so the box is set 5/24 of its size
+                        // closer to the corner.
                         if (fullscreen)
                           Positioned(
                             top: 0,
@@ -2915,7 +2928,24 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                 // a ring on a card nobody is walking.
                                 canRequestFocus: false,
                                 onTap: () => c.sendspin.showFullscreen(),
-                                child: const SizedBox(width: 48, height: 48),
+                                child: SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: Align(
+                                    alignment: Alignment.topRight,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        top: 12 - _badgeSize * 5 / 24,
+                                        right: 12 - _badgeSize * 5 / 24,
+                                      ),
+                                      child: Icon(
+                                        Icons.fullscreen_rounded,
+                                        size: _badgeSize,
+                                        color: scheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
