@@ -72,7 +72,7 @@ This same watchdog monitors a lit screen: if a camera opens but delivers no fram
 
 To achieve a screen that *looks* off but keeps every camera feature working perfectly across all devices, use the **Black screensaver** (which sets the backlight to zero under a black overlay). Use this, or a scheduled Black entry, in situations where Fully Kiosk users would normally use a "fake screen off" feature.
 
-The tuning for these features lives under Camera, **Motion Detection**:
+The tuning for these features lives under **Camera > Motion Sensor**:
 
 | Setting | Default | Notes |
 | --- | --- | --- |
@@ -90,7 +90,7 @@ Two related switches are located elsewhere: with **Allow screensaver** turned on
 
 ## RTSP Streaming
 
-Open **Settings -> Camera -> RTSP Streaming**, after **Motion Detection**, then turn on **Enable RTSP Streaming**. The page reveals the stream settings and its URL. The Camera master switch and Android camera permission must also be enabled.
+Open **Settings -> Camera -> RTSP Streaming**, after **Motion Sensor**, then turn on **Enable RTSP Streaming**. The page reveals the stream settings and its URL. The Camera master switch and Android camera permission must also be enabled.
 
 Tap the **Stream URL** field below **Port** to copy it. **Stream Status** shows a green icon while streaming and a gray icon while idle. **Connected Clients** lists each viewer's IP address, player name when available, connection port, transport and connection duration. The status and client list refresh every two seconds.
 

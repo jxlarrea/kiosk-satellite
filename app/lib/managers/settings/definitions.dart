@@ -213,7 +213,8 @@ const Map<String, String> subpageHints = {
   'Camera Streams screensaver': 'Views to show, seconds per view, sound',
   'Widgets': 'Corner overlays and their scale',
   'At a Glance': 'Entities shown over the screensaver',
-  'RTSP Streaming': 'Share the device camera with go2rtc, Frigate or VLC',
+  'RTSP Streaming': 'Share the device camera via RTSP',
+  'Motion Sensor': 'Home Assistant motion sensor and shared detection settings',
   'Motion Detection': 'Dismiss or postpone the screensaver on motion',
   'Face Detection': 'Dismiss the screensaver when someone looks at it',
   'Proximity Detection':
@@ -3590,7 +3591,7 @@ const cameraSnapshotInterval = SettingDef<num>(
   unit: 's',
 );
 
-// ── Camera: Motion Detection ───────────────────────────────────────────
+// Camera: Motion Sensor
 // Motion detection's home: the standalone sensor and the shared tuning.
 // The sensor is motion exposed as its own HA binary sensor, independent
 // of the screensaver's motion features. Users asked for the sensor without
@@ -3611,7 +3612,8 @@ const motionSensor = SettingDef<bool>(
       'Expose motion as a Home Assistant sensor. WARNING: Keeps the '
       'camera running permanently, even with the screen off.',
   category: 'Camera',
-  section: 'Motion Detection',
+  section: 'Motion Sensor',
+  subpage: 'Motion Sensor',
   dependsOn: 'camera.enabled',
 );
 
@@ -3624,7 +3626,8 @@ const motionSensorOffDelay = SettingDef<num>(
   title: 'Clear after',
   description: 'Seconds without motion before the sensor reads clear.',
   category: 'Camera',
-  section: 'Motion Detection',
+  section: 'Motion Sensor',
+  subpage: 'Motion Sensor',
   dependsOn: 'motion.sensor',
   min: 1,
   max: 300,
@@ -3641,7 +3644,8 @@ const motionFps = SettingDef<num>(
       'Frames per second the camera checks for motion. Lower is lighter '
       'on the CPU; 2 is plenty to notice someone approaching.',
   category: 'Camera',
-  section: 'Motion Detection',
+  section: 'Motion Sensor',
+  subpage: 'Motion Sensor',
   dependsOn: 'camera.enabled',
 );
 
@@ -3663,7 +3667,8 @@ const motionStartDelay = SettingDef<num>(
       'Ignore motion for this long after the camera starts, for devices '
       'whose camera physically moves as it opens.',
   category: 'Camera',
-  section: 'Motion Detection',
+  section: 'Motion Sensor',
+  subpage: 'Motion Sensor',
   dependsOn: 'camera.enabled',
   min: 0,
   max: 15,
@@ -3680,7 +3685,8 @@ const motionSensitivity = SettingDef<num>(
       'Higher trips on smaller movements. 1 needs a large change across '
       'the frame; 100 reacts to the slightest motion.',
   category: 'Camera',
-  section: 'Motion Detection',
+  section: 'Motion Sensor',
+  subpage: 'Motion Sensor',
   dependsOn: 'camera.enabled',
   min: 1,
   max: 100,

@@ -79,6 +79,9 @@ export const SUBPAGE_ICONS = {
   'Motion Detection': svg('<circle cx="13.5" cy="4.5" r="1.7"/>'
     + '<path d="m9 21 2.5-6 3 2.5V21"/><path d="m6.5 12 3-3.5 3 1.5 2.5 3.5 3 1"/>'
     + '<path d="M11.5 15.5 9.5 13"/>'),
+  'Motion Sensor': svg('<circle cx="13.5" cy="4.5" r="1.7"/>'
+    + '<path d="m9 21 2.5-6 3 2.5V21"/><path d="m6.5 12 3-3.5 3 1.5 2.5 3.5 3 1"/>'
+    + '<path d="M11.5 15.5 9.5 13"/>'),
   'Face Detection': svg('<circle cx="12" cy="12" r="9"/>'
     + '<path d="M8.5 14.5s1.2 1.5 3.5 1.5 3.5-1.5 3.5-1.5"/>'
     + '<path d="M9 9.5h.01M15 9.5h.01"/>'),

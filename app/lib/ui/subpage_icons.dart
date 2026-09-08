@@ -40,6 +40,7 @@ const Map<String, Object> subpageIcons = {
   'At a Glance': Icons.visibility_outlined,
   'RTSP Streaming': Icons.videocam_outlined,
   'Motion Detection': Icons.directions_walk,
+  'Motion Sensor': Icons.directions_walk,
   'Face Detection': Icons.face_outlined,
   'Proximity Detection': Icons.sensors,
   'Person Detection': Icons.sensor_occupied_outlined,
