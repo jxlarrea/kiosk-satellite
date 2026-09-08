@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  Kiosk Satellite is an Android app designed for dedicated Home Assistant dashboards, with native Voice Satellite support, synchronized music playback and photo screensavers.<br />
+  Kiosk Satellite is an Android app designed for dedicated Home Assistant kiosks, with native Voice Satellite support, synchronized music playback and photo screensavers.<br />
   Kiosk Satellite is fully local and free for personal, non-commercial use.
 </p>
 
@@ -42,7 +42,7 @@
 
 &bull; **[Music playback](docs/sendspin.md):** Synchronized Music Assistant audio through Sendspin, with the option to follow a Home Assistant or Sonos player. The full-screen Now Playing view shows album art, playback controls and supported lyrics.
 
-&bull; **Screensavers:** [Immich albums](docs/immich.md), local photos and clocks, with motion, face or presence detection to wake the dashboard.
+&bull; **Screensavers:** [Immich albums](docs/immich.md), local photos and clocks, with motion, face or presence detection to wake the kiosk.
 
 &bull; **Home Assistant integration:** The built-in [ESPHome connection](docs/esphome.md) exposes screen controls, volume and device sensors. An optional Bluetooth proxy relays nearby Bluetooth devices to Home Assistant.
 
