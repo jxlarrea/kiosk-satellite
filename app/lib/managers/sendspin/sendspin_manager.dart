@@ -23,6 +23,7 @@ import 'music_assistant_api.dart';
 import 'remote_player.dart';
 import 'sonos_client.dart';
 import 'sonos_player.dart';
+import 'volume_ducker.dart';
 
 /// The device as a synchronized Sendspin audio player.
 ///
@@ -164,6 +165,9 @@ class SendspinManager extends Manager {
       nowPlaying.value != null &&
       (cardOverride.value ?? _settings.get(defs.sendspinShowPlayer));
   final _voiceReasons = <String>{};
+  VolumeDucker? _remoteDucker;
+  Map<String, Object?>? _remoteVolumeSnapshot;
+  final _retiringRemotes = <Future<void>>{};
 
   Timer? _idleGrace;
 
@@ -789,10 +793,7 @@ class SendspinManager extends Manager {
       final active = _voiceReasons.isNotEmpty;
       if (active == voiceActive.value) return;
       voiceActive.value = active;
-      final factor = active
-          ? _settings.get(defs.sendspinDuckPercent) / 100.0
-          : 1.0;
-      _channel.invokeMethod('duck', {'factor': factor}).catchError((_) {});
+      _syncDucking();
     });
 
     // The "Show the Sendspin player" gesture with nothing on screen to
@@ -803,6 +804,7 @@ class SendspinManager extends Manager {
     });
 
     bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.sendspinDuckPercent.key) _syncDucking();
       // The card-surface flag rides the settings that decide it.
       if (e.key == defs.sendspinPlayer.key ||
           e.key == defs.sendspinPlayerSource.key ||
@@ -1546,6 +1548,30 @@ class SendspinManager extends Manager {
     }
   }
 
+  void _syncDucking() {
+    final factor = _settings.get(defs.sendspinDuckPercent) / 100.0;
+    // Keep the local engine's gain in sync even while it is offline so
+    // selecting this device in the middle of a voice turn starts quietly.
+    unawaited(
+      _channel
+          .invokeMethod('duck', {'factor': voiceActive.value ? factor : 1.0})
+          .catchError((_) {}),
+    );
+    unawaited(_remoteDucker?.update(active: voiceActive.value, factor: factor));
+  }
+
+  Future<void> _retireRemote(RemotePlayer remote, VolumeDucker? ducker) async {
+    try {
+      await ducker?.close();
+    } finally {
+      try {
+        await remote.stop();
+      } catch (error) {
+        log.warn(name, 'old player connection could not close: $error');
+      }
+    }
+  }
+
   /// Bring the remote follower in line with the settings: build one when a
   /// player is picked (and the server is configured), tear it down when
   /// the pick is cleared, rebuild it when the pick or the credentials
@@ -1579,9 +1605,14 @@ class SendspinManager extends Manager {
     if (key == _remoteKey) return;
     _remoteKey = key;
     final old = _remote;
+    final oldDucker = _remoteDucker;
     _remote = null;
+    _remoteDucker = null;
+    _remoteVolumeSnapshot = null;
     if (old != null) {
-      unawaited(old.stop());
+      final retiring = _retireRemote(old, oldDucker);
+      _retiringRemotes.add(retiring);
+      unawaited(retiring.whenComplete(() => _retiringRemotes.remove(retiring)));
       // Whatever the remote showed is over; the local player's own state
       // repopulates the card (or clears it) through the normal path.
       _setNowPlaying(null);
@@ -1592,18 +1623,23 @@ class SendspinManager extends Manager {
     _setNowPlaying(null);
     lyrics.value = const [];
     _lyricsKey = '';
-    _remote = switch (source.kind) {
+    late final RemotePlayer remote;
+    void snapshot(Map<String, Object?>? value) {
+      if (identical(_remote, remote)) _onRemoteSnapshot(value);
+    }
+
+    remote = switch (source.kind) {
       PlayerSourceKind.homeAssistant => haRemoteFactory(
         baseUrl: haUrl,
         token: haToken,
         entityId: source.id,
-        onSnapshot: _onRemoteSnapshot,
+        onSnapshot: snapshot,
         log: log,
       ),
       PlayerSourceKind.sonos => sonosRemoteFactory(
         host: sonosHost,
         uuid: source.id,
-        onSnapshot: _onRemoteSnapshot,
+        onSnapshot: snapshot,
         log: log,
         groupVolume: _settings.get(defs.sendspinSonosGroupVolume),
         showInputs: _settings.get(defs.sendspinSonosInputs),
@@ -1612,22 +1648,64 @@ class SendspinManager extends Manager {
         baseUrl: maUrl,
         token: maToken,
         playerId: source.id,
-        onSnapshot: _onRemoteSnapshot,
+        onSnapshot: snapshot,
         log: log,
       ),
-    }..start();
+    };
+    _remote = remote;
+    _remoteDucker = VolumeDucker(
+      capture: () async {
+        final snapshot = _remoteVolumeSnapshot;
+        final volume = snapshot?['volume'];
+        final supported = snapshot?['supportedCommands'];
+        if (volume is! num ||
+            supported is! List ||
+            !supported.contains('volume')) {
+          return null;
+        }
+        if (remote is SonosPlayer) return remote.captureDuckingVolumes();
+        return [DuckingVolume(volume.round().clamp(0, 100), remote.setVolume)];
+      },
+      onError: (error) =>
+          log.warn(name, 'voice volume adjustment failed: $error'),
+    );
+    void start() {
+      if (!identical(_remote, remote)) return;
+      remote.start();
+      _syncDucking();
+    }
+
+    // A replacement may point at the same speaker with new settings.
+    // Finish restoring it before the replacement captures its volume.
+    if (_retiringRemotes.isEmpty) {
+      start();
+    } else {
+      unawaited(Future.wait(_retiringRemotes.toList()).then((_) => start()));
+    }
     log.info(name, 'following player ${source.value}');
   }
 
   void _onRemoteSnapshot(Map<String, Object?>? snapshot) {
     // A follower being torn down may answer one last time.
     if (_remote == null) return;
+    _remoteVolumeSnapshot = snapshot;
+    unawaited(
+      _remoteDucker?.update(
+        active: voiceActive.value,
+        factor: _settings.get(defs.sendspinDuckPercent) / 100.0,
+      ),
+    );
     // A source that keeps its own favorites says so in the snapshot; the
     // heart follows it rather than Music Assistant's library.
     if (_remote is SonosPlayer) {
       favorite.value = snapshot?['favorite'] as bool?;
     }
-    _setNowPlaying(snapshot);
+    final normalVolume = _remoteDucker?.volume;
+    _setNowPlaying(
+      snapshot == null || normalVolume == null
+          ? snapshot
+          : {...snapshot, 'volume': normalVolume},
+    );
     _syncQueuePoll();
     unawaited(_refreshLyrics());
   }
@@ -1641,8 +1719,11 @@ class SendspinManager extends Manager {
     _watcher = null;
     await watcher?.stop();
     final remote = _remote;
+    final ducker = _remoteDucker;
     _remote = null;
-    await remote?.stop();
+    _remoteDucker = null;
+    if (remote != null) await _retireRemote(remote, ducker);
+    await Future.wait(_retiringRemotes.toList());
     await _stop();
   }
 
@@ -2168,7 +2249,13 @@ class SendspinManager extends Manager {
   /// device's media volume for the local player. A level set by hand
   /// ends a local mute.
   Future<bool> setVolume(int percent) async {
-    if (_remote case final remote?) return remote.setVolume(percent);
+    if (_remote case final remote?) {
+      return _remoteDucker?.setVolume(
+            percent.clamp(0, 100),
+            remote.setVolume,
+          ) ??
+          remote.setVolume(percent);
+    }
     _localMuteLevel = null;
     await _settings.set(defs.mediaVolume, percent.clamp(0, 100));
     return true;

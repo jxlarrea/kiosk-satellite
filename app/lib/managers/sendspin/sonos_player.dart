@@ -8,6 +8,7 @@ import '../../core/logging.dart';
 import '../dlna/upnp_xml.dart' show parseUpnpTime;
 import 'remote_player.dart';
 import 'sonos_client.dart';
+import 'volume_ducker.dart';
 
 /// The Now Playing surfaces following a Sonos speaker directly, over the
 /// speaker's own local interface: no Home Assistant, no Music Assistant
@@ -815,6 +816,37 @@ class SonosPlayer implements RemotePlayer {
       log.warn(_name, 'Sonos seek failed: $e');
       return false;
     }
+  }
+
+  /// Capture each affected room before ducking. Restoring a group slider
+  /// after rounding its rooms down to zero would lose their balance.
+  Future<List<DuckingVolume>?> captureDuckingVolumes() async {
+    if (groupVolume) await _refreshTopology();
+    final hosts = _grouped && groupVolume
+        ? _group!.members.map((member) => member.host).toSet()
+        : {host};
+    return Future.wait([
+      for (final address in hosts)
+        () async {
+          final client = clientFactory(address);
+          final int? level;
+          try {
+            level = await client.volume();
+          } finally {
+            client.close();
+          }
+          if (level == null) throw StateError('Sonos room volume unavailable');
+          return DuckingVolume(level, (percent) async {
+            final client = clientFactory(address);
+            try {
+              await client.setVolume(percent);
+              return true;
+            } finally {
+              client.close();
+            }
+          });
+        }(),
+    ]);
   }
 
   /// The room's own volume or the group's when the room plays in one.

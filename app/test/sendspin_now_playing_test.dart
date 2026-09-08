@@ -826,6 +826,9 @@ void main() {
         async.elapse(const Duration(seconds: 61));
         expect(sendspin.fullscreenActive.value, isFalse);
         expect(events.last.active, isFalse);
+        // Finish asynchronous player cleanup in the fake clock's zone.
+        sendspin.dispose();
+        async.flushMicrotasks();
       });
     });
   });

@@ -552,7 +552,7 @@ void main() {
       expect(settings.visible(defs.sendspinServer), isFalse);
       expect(settings.visible(defs.sendspinCodec), isFalse);
       expect(settings.visible(defs.sendspinSyncOffset), isFalse);
-      expect(settings.visible(defs.sendspinDuckPercent), isFalse);
+      expect(settings.visible(defs.sendspinDuckPercent), isTrue);
       // The card rows stay: they are what the mode is for.
       expect(settings.get(defs.sendspinPlayerActive), isTrue);
       expect(settings.visible(defs.sendspinShowPlayer), isTrue);

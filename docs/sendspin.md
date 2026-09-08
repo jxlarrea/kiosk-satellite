@@ -20,6 +20,7 @@ A core rule applies to all media sources: both the floating player card and the 
 | --- | --- | --- |
 | Player source | This device | Selects what the floating player and Now Playing view display and control: the native Sendspin player, or an external player from Home Assistant, Music Assistant, or a Sonos household. Selecting an external source takes the local Sendspin player offline. |
 | Player | Sendspin Player | When "This device" is selected, it defaults to the native Sendspin player. For external sources, this dropdown populates with players available from that specific provider. |
+| Duck volume during voice interactions | 10% | Lowers the selected player to this percentage of its current volume during voice interactions, then restores its previous volume. Applies to every source with volume control. Sonos groups restore each room to its own previous level. The maximum is 25%. |
 
 ### Sendspin Player
 
@@ -31,7 +32,6 @@ Configures the kiosk as a synchronized Music Assistant audio player. These setti
 | Server | empty | The `host:port` address of the Sendspin server (Music Assistant listens on port 8927). Leave empty for automatic mDNS discovery. Specify the address manually if the kiosk and server reside on different subnets, as mDNS does not cross subnet boundaries. |
 | Preferred audio codec | FLAC | Selects between FLAC (lossless), Opus (efficient), or PCM (uncompressed). The server selects the final format based on device capabilities. |
 | Audio sync offset | 0 ms | Adjusts audio timing in milliseconds. Use negative values if local output lags behind other speakers in a group (e.g., when outputting to Bluetooth). Applies live. |
-| Duck volume during voice interactions | 10% | Reduces music volume to this percentage when the voice assistant listens or speaks. Capped at a maximum of 25% to ensure reliable wake word and speech detection. |
 
 Music Assistant includes native Sendspin support enabled by default, and players register automatically upon connection without requiring server side setup.
 
@@ -214,9 +214,9 @@ The **Lyrics timing** setting applies a global offset (defaulting to +0.3 second
 
 ## Voice Assistant Interplay
 
-Local audio playback interacts directly with the voice assistant:
+The selected media player works with the voice assistant:
 
-* **Audio Ducking**: Media volume automatically attenuates to the configured percentage during voice turns (wake word listening, announcements, questions, and timers) and restores instantly upon completion. Ducking occurs directly within the audio pipeline without altering system master volume settings.
+* **Audio Ducking**: Music drops to the configured percentage during voice turns, announcements, questions and timers. It returns to its previous volume after the last interaction ends. Local Sendspin playback uses audio gain without changing the system volume. Music Assistant, Home Assistant and Sonos use temporary volume commands to the selected player. Changing players restores the previous player before closing its connection.
 * **Stop Command**: Saying the wake word followed by "stop" silences active music or alerts.
 * **Screensaver Management**: Active audio playback suppresses standard screensavers. Dashboard view rotation and home return timers continue operating in the background unless Hold Mode is engaged.
 

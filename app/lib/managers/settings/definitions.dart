@@ -4722,6 +4722,23 @@ const sendspinPlayer = SettingDef<String>(
   perDevice: true,
 );
 
+const sendspinDuckPercent = SettingDef<num>(
+  key: 'sendspin.duck_percent',
+  type: SettingType.number,
+  defaultValue: 10,
+  title: 'Duck volume during voice interactions',
+  description:
+      'While the assistant listens or speaks, music drops to this '
+      'fraction of its volume so the microphone hears you. Capped at '
+      '25% to keep detection reliable. Applies to every player source '
+      'with volume control and restores the previous volume afterward.',
+  category: 'Sendspin',
+  min: 0,
+  max: 25,
+  step: 5,
+  unit: '%',
+);
+
 /// The picked player's display name: what the settings rows show and what
 /// the Now Playing view's chip says. Stored beside the id so neither
 /// surface needs the player's system just to say what is selected.
@@ -4858,25 +4875,6 @@ const sendspinSyncOffset = SettingDef<num>(
   category: 'Sendspin',
   subpage: 'Sendspin Player',
   section: 'Sendspin Player',
-  dependsOn: 'sendspin.enabled',
-);
-
-const sendspinDuckPercent = SettingDef<num>(
-  key: 'sendspin.duck_percent',
-  type: SettingType.number,
-  defaultValue: 10,
-  title: 'Duck volume during voice interactions',
-  description:
-      'While the assistant listens or speaks, music drops to this '
-      'fraction of its volume so the microphone hears you. Capped at '
-      '25% to keep detection reliable.',
-  category: 'Sendspin',
-  subpage: 'Sendspin Player',
-  section: 'Sendspin Player',
-  min: 0,
-  max: 25,
-  step: 5,
-  unit: '%',
   dependsOn: 'sendspin.enabled',
 );
 
@@ -6737,12 +6735,12 @@ const List<SettingDef<Object>> allSettings = [
   // Sendspin player below is one of the things it drives.
   sendspinPlayerSource,
   sendspinPlayer,
+  sendspinDuckPercent,
   sendspinPlayerName,
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
   sendspinSyncOffset,
-  sendspinDuckPercent,
   sendspinMaUrl,
   sendspinMaToken,
   sendspinMaShortcut,
