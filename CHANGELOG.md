@@ -9,6 +9,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Fixed
 
+- **Sonos group volume keeps the rooms' current balance.** Moving the Now Playing slider for a grouped Sonos room scaled the rooms by the balance they had at the last group write, not the one they have now, so a room adjusted on its own in the Sonos app snapped back to the old ratio on the next kiosk move. The kiosk now takes a fresh snapshot of the rooms before every group write, the way the Sonos app does when its group slider is picked up.
 - **Horizontal Now Playing sits evenly on the screen.** The artwork and track controls were pushed down by extra space reserved above them, even when the speaker pill was hidden. Centered content now has equal top and bottom spacing, with extra room for the speaker pill or close button only while they are visible. Queue and lyrics controls remain near the bottom of the right half. Fixes [#472](https://github.com/jxlarrea/kiosk-satellite/issues/472).
 
 ## v2026.9.27 - 2026-09-07

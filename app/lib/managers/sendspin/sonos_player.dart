@@ -818,11 +818,16 @@ class SonosPlayer implements RemotePlayer {
   }
 
   /// The room's own volume or the group's when the room plays in one.
+  /// A group write scales the rooms by the ratio of the last snapshot,
+  /// so one is taken first: the rooms keep the balance they have now,
+  /// not the one they had at the last group write.
   @override
   Future<bool> setVolume(int percent) async {
     try {
       if (_grouped && groupVolume) {
-        await _coordinator.setGroupVolume(percent);
+        final co = _coordinator;
+        await co.snapshotGroupVolume();
+        await co.setGroupVolume(percent);
       } else {
         await _room.setVolume(percent);
       }

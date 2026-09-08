@@ -222,6 +222,15 @@ class SonosClient {
     return int.tryParse(r['CurrentVolume'] ?? '');
   }
 
+  /// Take the rooms' current volumes as the ratio a group volume write
+  /// scales them by. The coordinator keeps the last snapshot, not the
+  /// live volumes: a room set on its own since then (the Sonos app's room
+  /// slider, its buttons) would otherwise be pulled back to the stale
+  /// ratio by the next group write. The Sonos app takes one as its group
+  /// slider is picked up.
+  Future<void> snapshotGroupVolume() =>
+      call(groupRendering, 'SnapshotGroupVolume', {'InstanceID': '0'});
+
   Future<void> setGroupVolume(int level) => call(
     groupRendering,
     'SetGroupVolume',
