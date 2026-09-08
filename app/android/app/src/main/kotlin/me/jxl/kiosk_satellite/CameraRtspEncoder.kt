@@ -16,6 +16,7 @@ class CameraRtspEncoder(
     private val bitrate: Int,
     private val onConfig: (List<ByteArray>) -> Unit,
     private val onFrame: (List<ByteArray>, Long) -> Unit,
+    private val diagnosticSession: String = "encoder",
     private val onError: (String) -> Unit,
 ) {
     @Volatile private var running = true
@@ -48,6 +49,7 @@ class CameraRtspEncoder(
             try { it.getCapabilitiesForType("video/avc").isFormatSupported(format) }
             catch (_: Exception) { false }
         } ?: error("No hardware H.264 encoder supports $size at $fps fps")
+        CameraDiagnostics.record(diagnosticSession, "encoder selected", "codec=${chosen.name}, resolution=$size, fps=$fps, bitrate=$bitrate")
         val encoder = MediaCodec.createByCodecName(chosen.name)
         codec = encoder
         try {
@@ -61,6 +63,7 @@ class CameraRtspEncoder(
             drain = thread(name = "camera-rtsp-encode") { drain(encoder) }
             return surface
         } catch (e: Exception) {
+            CameraDiagnostics.record(diagnosticSession, "encoder start failure", "codec=${chosen.name}, resolution=$size", true, e)
             onError("Hardware H.264 encoder could not start: ${e.message}")
             close()
 
@@ -75,10 +78,12 @@ class CameraRtspEncoder(
 
     private fun drain(encoder: MediaCodec) {
         val info = MediaCodec.BufferInfo()
+        var firstFrame = true
         try {
             while (running) {
                 val index = encoder.dequeueOutputBuffer(info, 100_000)
                 if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    CameraDiagnostics.record(diagnosticSession, "encoder format", "codec=$codecName, resolution=$actualSize, fps=$fps")
                     for (key in arrayOf("csd-0", "csd-1")) {
                         val buffer = encoder.outputFormat.getByteBuffer(key) ?: continue
                         val bytes = ByteArray(buffer.remaining()); buffer.get(bytes)
@@ -92,13 +97,23 @@ class CameraRtspEncoder(
                         val units = nals(bytes)
                         onConfig(units)
                         if (info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG == 0) {
+                            if (firstFrame) {
+                                firstFrame = false
+                                CameraDiagnostics.record(diagnosticSession, "first encoded frame", "codec=$codecName, resolution=$actualSize, " +
+                                    "bytes=${info.size}, keyFrame=${info.flags and MediaCodec.BUFFER_FLAG_KEY_FRAME != 0}")
+                            }
                             onFrame(units, info.presentationTimeUs)
                         }
                     }
                     encoder.releaseOutputBuffer(index, false)
                 }
             }
-        } catch (e: Exception) { if (running) onError("Hardware H.264 encoder stopped: ${e.message}") }
+        } catch (e: Exception) {
+            if (running) {
+                CameraDiagnostics.record(diagnosticSession, "encoder stopped unexpectedly", "codec=$codecName, resolution=$actualSize", true, e)
+                onError("Hardware H.264 encoder stopped: ${e.message}")
+            }
+        }
     }
 
 

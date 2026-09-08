@@ -14,6 +14,7 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'native_motion.dart';
 import 'native_rtsp.dart';
+import 'camera_diagnostics.dart';
 import 'vision_support.dart';
 
 /// Camera-based motion detection.
@@ -83,6 +84,7 @@ class MotionManager extends Manager {
   });
 
   final SettingsManager _settings;
+  late final CameraDiagnostics _diagnostics = CameraDiagnostics(log);
   bool _rtspDemand = false;
   bool _streamRtsp = false;
   bool _disposed = false;
@@ -349,6 +351,7 @@ class MotionManager extends Manager {
 
   @override
   Future<void> init() async {
+    await _diagnostics.start();
     NativeRtsp.onDemand((wanted) {
       if (_disposed) return;
       _rtspDemand = wanted && _rtspEnabled;
@@ -836,6 +839,7 @@ class MotionManager extends Manager {
   @override
   Future<void> dispose() async {
     _disposed = true;
+    await _diagnostics.dispose();
     NativeRtsp.onDemand(null);
     await _rtspConfiguration;
     try {

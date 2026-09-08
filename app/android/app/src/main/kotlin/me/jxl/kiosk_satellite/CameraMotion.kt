@@ -334,6 +334,8 @@ class CameraMotion(
     private var rtspConfig: Map<*, *> = emptyMap<Any, Any>()
     private var rtspError: String? = null
     private var rtspGeneration = 0
+    @Volatile private var diagnosticSession = CameraDiagnostics.session("camera")
+    private var listenerSession = CameraDiagnostics.session("rtsp")
     private val capturePolicy = CameraCapturePolicy()
     private var captureCameraId: String? = null
     private var closingCamera: CameraInfo? = null
@@ -349,6 +351,7 @@ class CameraMotion(
     private val sessionSink = object : EventChannel.EventSink {
         override fun success(event: Any?) { activeSink?.success(event) }
         override fun error(code: String, message: String?, details: Any?) {
+            CameraDiagnostics.record(diagnosticSession, "failure", message ?: code, failure = true)
             rtsp?.fail(message ?: "Camera unavailable")
             activeSink?.error(code, message, details)
         }
@@ -538,6 +541,11 @@ class CameraMotion(
             return
         }
         val generation = ++rtspGeneration
+        listenerSession = CameraDiagnostics.session("rtsp")
+        val listenerId = listenerSession
+        CameraDiagnostics.record(listenerId, "configure", "enabled=${config["enabled"]}, port=${config["port"]}, " +
+            "video=${config["width"]}x${config["height"]}, fps=${config["fps"]}, bitrate=${config["bitrate"]}, " +
+            "authentication=${config["auth"]}")
         rtsp?.close()
         rtsp = null
         if (config != rtspConfig) capturePolicy.reset()
@@ -569,19 +577,24 @@ class CameraMotion(
                         if (!disposed) rtspChannel.invokeMethod("demand", wanted)
                     } },
                     { rtspEncoder?.keyFrame() },
+                    { event, message, cause -> CameraDiagnostics.record(listenerId, event, message,
+                        failure = cause != null, cause = cause) },
                 )
                 rtspError = null
+                CameraDiagnostics.record(listenerId, "listening", "port=${rtsp?.localPort}")
             } catch (e: Exception) {
                 // Some Android sockets take a moment to release their port
                 // after an authenticated viewer disconnects during a change.
                 // Yield the UI thread and retry for at most 3.1 seconds.
                 if ((e is java.net.BindException || e.message?.contains("EADDRINUSE") == true) && attempt < 5) {
                     rtspError = "Waiting for the RTSP port to be released."
+                    CameraDiagnostics.record(listenerId, "port retry", "attempt=${attempt + 1}, delayMs=${100L shl attempt}: ${e.message}")
                     mainHandler.postDelayed({ bind(attempt + 1) }, 100L shl attempt)
                     return
                 }
                 rtspError = e.message ?: "Could not start the RTSP listener."
                 Log.w(TAG, "RTSP: $rtspError")
+                CameraDiagnostics.record(listenerId, "listener failure", rtspError!!, failure = true, cause = e)
             }
             result.success(rtspStatus())
         }
@@ -740,6 +753,13 @@ class CameraMotion(
 
     private fun start(facing: CameraSelector, sink: EventChannel.EventSink) {
         val mySession = ++session
+        val previousDiagnostic = diagnosticSession
+        diagnosticSession = CameraDiagnostics.session("camera")
+        val diagnosticId = diagnosticSession
+        val startedAt = SystemClock.elapsedRealtime()
+        CameraDiagnostics.record(diagnosticId, "start", "camera=${boundArguments?.get("camera")}, " +
+            "motion=$motionWanted, faces=$facesWanted, hands=$fingersWanted, paused=$paused, " +
+            "RTSP=$boundRtsp, listener=$listenerSession, previous=$previousDiagnostic, analysisFps=$requestedFps, snapshot=$snapshotTarget")
         val deadline = SystemClock.elapsedRealtime() + 5_000L
         lateinit var awaitClose: Runnable
         awaitClose = Runnable {
@@ -748,11 +768,16 @@ class CameraMotion(
                 closingCamera?.cameraState?.value?.type == CameraState.Type.CLOSED
             val encoderClosed = closingEncoder == null || closingEncoder?.isClosed == true
             if (cameraClosed && encoderClosed) {
+                if (closingCamera != null || closingEncoder != null) {
+                    CameraDiagnostics.record(diagnosticId, "previous session closed", "waitMs=${SystemClock.elapsedRealtime() - startedAt}")
+                }
                 closingCamera = null
                 closingEncoder = null
                 bindCamera(facing, sink, mySession)
             } else if (SystemClock.elapsedRealtime() >= deadline) {
-                sink.error("camera", "previous camera session has not finished closing", null)
+                sink.error("camera", "previous camera session has not finished closing: " +
+                    "cameraClosed=$cameraClosed, cameraState=${closingCamera?.cameraState?.value?.type}, " +
+                    "encoderClosed=$encoderClosed, waitMs=${SystemClock.elapsedRealtime() - startedAt}", null)
             } else mainHandler.postDelayed(awaitClose, 50L)
         }
         awaitClose.run()
@@ -763,6 +788,7 @@ class CameraMotion(
         if (!boundRtsp || !capturePolicy.advance(id)) return false
         val server = boundRtspServer
         Log.w(TAG, "RTSP camera $id retry with capture fallback ${capturePolicy.level(id)}: $reason")
+        CameraDiagnostics.record(diagnosticSession, "fallback", "camera=$id, next=${capturePolicy.level(id)}: $reason")
         releaseCamera(keepPendingRtspClients = capturePolicy.level(id) < 3)
         boundRtsp = true
         boundRtspServer = server
@@ -772,6 +798,7 @@ class CameraMotion(
     }
 
     private fun bindCamera(facing: CameraSelector, sink: EventChannel.EventSink, mySession: Int) {
+        val diagnosticId = diagnosticSession
         // No camera hardware: say so without waking CameraX, whose presence
         // tracking would retry the missing camera service every second
         // forever (see DeviceCamera's hasCamera comment, issue #193).
@@ -801,6 +828,7 @@ class CameraMotion(
             val cameraProvider = try {
                 future.get()
             } catch (e: Exception) {
+                CameraDiagnostics.record(diagnosticId, "provider failure", "CameraX initialization", true, e)
                 sink.error("camera", "camera provider unavailable: ${e.message}", null)
                 return@addListener
             }
@@ -819,7 +847,9 @@ class CameraMotion(
             @OptIn(ExperimentalCamera2Interop::class)
             val cameraId = Camera2CameraInfo.from(cameraInfo).cameraId
             captureCameraId = cameraId
+            CameraDiagnostics.record(diagnosticId, "camera inventory", cameraInventory(context))
             if (boundRtsp && capturePolicy.level(cameraId) >= 3) {
+                CameraDiagnostics.record(diagnosticId, "RTSP exhausted", "camera=$cameraId, continuing with detection and snapshots")
                 rtsp?.fail("This camera could not start RTSP after trying simpler capture configurations. " +
                     "Motion detection and snapshots remain available.")
                 boundRtsp = false
@@ -867,6 +897,9 @@ class CameraMotion(
                     resetVisionGate()
                     Log.i(TAG, "camera $cameraId first frame ${image.width}x${image.height}, " +
                         "capture fallback=$captureLevel, RTSP=$boundRtsp")
+                    CameraDiagnostics.record(diagnosticId, if (captureLevel > 0) "analysis recovered" else "first analysis frame", "camera=$cameraId, " +
+                        "actual=${image.width}x${image.height}, rotation=${image.imageInfo.rotationDegrees}, " +
+                        "fallback=$captureLevel, RTSP=$boundRtsp")
                 }
                 analyze(image, sink, mySession)
             }
@@ -886,7 +919,8 @@ class CameraMotion(
                             if (session != mySession) { request.willNotProvideSurface(); return@setSurfaceProvider }
                             val encoder = CameraRtspEncoder(fps, bitrate,
                                 { units -> if (session == mySession) server.config(units) },
-                                { units, time -> if (session == mySession) server.frame(units, time) }) { message ->
+                                { units, time -> if (session == mySession) server.frame(units, time) },
+                                diagnosticSession = diagnosticId) { message ->
                                 mainHandler.post { if (session == mySession) server.fail(message) }
                             }
                             try {
@@ -898,6 +932,8 @@ class CameraMotion(
                                 }
                             } catch (e: Exception) {
                                 request.willNotProvideSurface()
+                                CameraDiagnostics.record(diagnosticId, "video surface failure",
+                                    "requested=${width}x$height, actual=${request.resolution}", true, e)
                                 server.fail(e.message ?: "Hardware H.264 encoding unavailable.")
                             }
                         }
@@ -919,6 +955,7 @@ class CameraMotion(
                                 .also { deviceCamera?.sharedCapture = imageCapture }
                         } else cameraProvider.bindToLifecycle(owner, selector, imageAnalysis, videoPreview)
                     } catch (e: Exception) {
+                        CameraDiagnostics.record(diagnosticId, "bind failure", "camera=$cameraId, fallback=$captureLevel", true, e)
                         if (retryRtsp(facing, sink, e.message ?: "capture binding failed")) return@addListener
                         throw e
                     }
@@ -931,6 +968,7 @@ class CameraMotion(
                         // Reuse an analysis frame for snapshots if this camera
                         // cannot provide a separate JPEG output.
                         Log.w(TAG, "no capture alongside analysis: ${e.message}")
+                        CameraDiagnostics.record(diagnosticId, "snapshot output rejected", "camera=$cameraId, using analysis snapshots", true, e)
                         cameraProvider.bindToLifecycle(owner, selector, imageAnalysis)
                     }
                 } else {
@@ -938,6 +976,12 @@ class CameraMotion(
                 }
                 boundCamera = camera
                 deviceCamera?.sharedAnalysis = deviceCamera?.sharedCapture == null
+                deviceCamera?.sharedDiagnosticSession = diagnosticId
+                CameraDiagnostics.record(diagnosticId, "bound", "camera=$cameraId, fallback=$captureLevel, " +
+                    "analysisRequested=$analysisSize, analysisActual=${imageAnalysis.resolutionInfo?.resolution}, " +
+                    "snapshotRequested=$snapshotTarget, snapshotActual=${imageCapture?.resolutionInfo?.resolution}, " +
+                    "snapshotMode=${if (deviceCamera?.sharedAnalysis == true) "analysis" else "JPEG"}, " +
+                    "videoActual=${videoPreview?.resolutionInfo?.resolution}")
                 Log.i(TAG, "camera $cameraId capture fallback=$captureLevel, analysis=$analysisSize, " +
                     "snapshot=${if (deviceCamera?.sharedAnalysis == true) "analysis" else "JPEG"}, RTSP=$boundRtsp")
                 boundFront = try {
@@ -977,6 +1021,8 @@ class CameraMotion(
                     if (session != mySession) return@observe
                     val reason = "${cameraStateErrorName(err.code)} (${err.code}): ${err.cause?.message ?: state.type}"
                     Log.w(TAG, "camera lost: $reason", err.cause)
+                    CameraDiagnostics.record(diagnosticId, "camera state failure", "camera=$cameraId, " +
+                        "state=${state.type}, fallback=$captureLevel: $reason", true, err.cause)
                     if ((err.code == CameraState.ERROR_STREAM_CONFIG || err.code == CameraState.ERROR_CAMERA_FATAL_ERROR ||
                             err.code == CameraState.ERROR_OTHER_RECOVERABLE_ERROR) &&
                         retryRtsp(facing, sink, reason)) return@observe
@@ -1004,6 +1050,7 @@ class CameraMotion(
                 deviceCamera?.sharedCapture = null
                 deviceCamera?.clearSharedAnalysis()
                 deviceCamera?.motionSessionActive = false
+                CameraDiagnostics.record(diagnosticId, "open failure", "camera=$cameraId, fallback=$captureLevel", true, e)
                 sink.error("camera", "could not open camera: ${e.message}", null)
             }
         }, ContextCompat.getMainExecutor(context))
@@ -1036,6 +1083,7 @@ class CameraMotion(
             if (quiet >= SUSPEND_AFTER_MS) {
                 if (power.isInteractive) {
                     Log.w(TAG, "no frames for ${quiet / 1000}s with the screen on; reopening")
+                    CameraDiagnostics.record(diagnosticSession, "frame timeout", "screenOn=true, noFramesMs=$quiet", true)
                     val facing = activeFacing
                     if (facing != null && retryRtsp(facing, sink, "no camera frames")) return@Runnable
                     sink.error(
@@ -1562,6 +1610,7 @@ class CameraMotion(
         boundCamera = null
         deviceCamera?.sharedCapture = null
         deviceCamera?.clearSharedAnalysis()
+        deviceCamera?.sharedDiagnosticSession = null
         deviceCamera?.motionSessionActive = false
         analysis?.clearAnalyzer()
         lifecycle?.destroy()
@@ -1676,6 +1725,8 @@ class CameraMotion(
                     boost = true
                 }
             }
+            CameraDiagnostics.record(diagnosticSession, "sensor FPS", "requested=$requestedFps, supported=${ranges.joinToString()}, " +
+                "selected=$range, lowLightBoost=$boost, exposureFallback=$aeLevel")
             Log.i(
                 TAG,
                 "AE fps range $range of ${ranges.joinToString()}, " +
@@ -1683,6 +1734,7 @@ class CameraMotion(
             )
         } catch (e: Exception) {
             Log.w(TAG, "low-light exposure setup skipped: ${e.message}")
+            CameraDiagnostics.record(diagnosticSession, "exposure setup failure", "using camera defaults", true, e)
         }
     }
 
@@ -1697,7 +1749,11 @@ class CameraMotion(
             val range = android.util.Range(selected.first, selected.last)
             Camera2Interop.Extender(builder).setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, range)
             Log.i(TAG, "RTSP sensor FPS $range, requested $target")
-        } catch (e: Exception) { Log.w(TAG, "RTSP exposure setup skipped: ${e.message}") }
+            CameraDiagnostics.record(diagnosticSession, "sensor FPS", "requested=$target, supported=${ranges.joinToString()}, selected=$range")
+        } catch (e: Exception) {
+            Log.w(TAG, "RTSP exposure setup skipped: ${e.message}")
+            CameraDiagnostics.record(diagnosticSession, "RTSP exposure setup failure", "using camera defaults", true, e)
+        }
     }
 
     /** Reduce the Y plane to a [CELLS]-long grid of sparse cell averages. */
@@ -1746,6 +1802,11 @@ class CameraMotion(
     }
 
     private fun releaseCamera(keepPendingRtspClients: Boolean = false) {
+        if (boundCamera != null || rtspEncoder != null) {
+            CameraDiagnostics.record(diagnosticSession, "release", "camera=$captureCameraId, " +
+                "state=${boundCamera?.cameraInfo?.cameraState?.value?.type}, encoder=${rtspEncoder?.codecName}, " +
+                "RTSP=$boundRtsp, retry=$keepPendingRtspClients")
+        }
         session++
         boundCamera?.let { closingCamera = it.cameraInfo }
         rtspEncoder?.let { closingEncoder = it }
@@ -1755,6 +1816,7 @@ class CameraMotion(
         activeFacing = null
         deviceCamera?.sharedCapture = null
         deviceCamera?.clearSharedAnalysis()
+        deviceCamera?.sharedDiagnosticSession = null
         deviceCamera?.motionSessionActive = false
         boundCamera = null
         analysis?.clearAnalyzer()

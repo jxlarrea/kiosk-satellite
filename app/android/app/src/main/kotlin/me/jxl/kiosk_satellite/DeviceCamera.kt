@@ -80,6 +80,8 @@ class DeviceCamera(
     /** The motion session's pre-bound capture use case. Main thread only;
      *  set by [CameraMotion] while its session is up. */
     var sharedCapture: ImageCapture? = null
+    var sharedDiagnosticSession: String? = null
+    private var snapshotDiagnostic = "snapshot"
 
     /** A fallback snapshot uses the next analysis frame without another output. */
     var sharedAnalysis = false
@@ -93,6 +95,7 @@ class DeviceCamera(
     /** Called before analyzer throttling. Conversion runs only for a requested still. */
     fun captureAnalysisFrame(image: ImageProxy) {
         val done = pendingAnalysis.getAndSet(null) ?: return
+        val diagnosticId = snapshotDiagnostic
         var bitmap: Bitmap? = null
         var rotated: Bitmap? = null
         try {
@@ -105,8 +108,10 @@ class DeviceCamera(
             val out = ByteArrayOutputStream()
             check(rotated.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out))
             val bytes = out.toByteArray()
+            CameraDiagnostics.record(diagnosticId, "analysis snapshot", "actual=${image.width}x${image.height}, rotation=$rotation")
             mainHandler.post { done(bytes, null) }
         } catch (e: Exception) {
+            CameraDiagnostics.record(diagnosticId, "analysis snapshot failure", "frame conversion", true, e)
             mainHandler.post { done(null, "analysis snapshot failed: ${e.message}") }
         } finally {
             if (rotated !== bitmap) rotated?.recycle()
@@ -204,6 +209,12 @@ class DeviceCamera(
             return
         }
         busy = true
+        snapshotDiagnostic = CameraDiagnostics.session("snapshot")
+        val diagnosticId = snapshotDiagnostic
+        val startedAt = android.os.SystemClock.elapsedRealtime()
+        CameraDiagnostics.record(diagnosticId, "request", "parent=$sharedDiagnosticSession, " +
+            "camera=${if (facing == CameraSelector.DEFAULT_FRONT_CAMERA) "front" else "back"}, requested=$target, " +
+            "mode=${if (sharedCapture != null) "shared JPEG" else if (sharedAnalysis) "analysis" else "standalone"}")
         var completed = false
         // The idle path parks its teardown here so that EVERY exit — a
         // frame, a capture error, or the watchdog below — releases the
@@ -217,9 +228,12 @@ class DeviceCamera(
             completed = true
             busy = false
             cleanup?.invoke()
+            val elapsed = android.os.SystemClock.elapsedRealtime() - startedAt
             if (bytes != null) {
+                CameraDiagnostics.record(diagnosticId, "complete", "bytes=${bytes.size}, elapsedMs=$elapsed")
                 result.success(bytes)
             } else {
+                CameraDiagnostics.record(diagnosticId, "snapshot failure", "elapsedMs=$elapsed: ${error ?: "capture failed"}", true)
                 result.error("camera", error ?: "capture failed", null)
             }
         }
@@ -265,6 +279,7 @@ class DeviceCamera(
             val provider = try {
                 future.get()
             } catch (e: Exception) {
+                CameraDiagnostics.record(diagnosticId, "snapshot provider failure", "CameraX initialization", true, e)
                 done(null, "camera provider unavailable: ${e.message}")
                 return@addListener
             }
@@ -294,6 +309,7 @@ class DeviceCamera(
                 provider.bindToLifecycle(owner, selector, capture)
                 owner.resume()
             } catch (e: Exception) {
+                CameraDiagnostics.record(diagnosticId, "snapshot bind failure", "requested=$target", true, e)
                 done(null, "could not open camera: ${e.message}")
                 return@addListener
             }
@@ -304,6 +320,7 @@ class DeviceCamera(
     private fun take(
         capture: ImageCapture,
         done: (ByteArray?, String?) -> Unit,
+        diagnosticId: String = snapshotDiagnostic,
     ) {
         // Only assign on an actual change (a rotated kiosk since the use
         // case was built): the assignment itself resets a bound pipeline,
@@ -316,6 +333,7 @@ class DeviceCamera(
             ContextCompat.getMainExecutor(context),
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
+                    CameraDiagnostics.record(diagnosticId, "JPEG snapshot", "actual=${image.width}x${image.height}, rotation=${image.imageInfo.rotationDegrees}")
                     val bytes = try {
                         jpegBytes(image)
                     } finally {
@@ -330,6 +348,7 @@ class DeviceCamera(
                 }
 
                 override fun onError(e: ImageCaptureException) {
+                    CameraDiagnostics.record(diagnosticId, "JPEG capture failure", "code=${e.imageCaptureError}", true, e)
                     done(null, "capture failed: ${e.message}")
                 }
             },

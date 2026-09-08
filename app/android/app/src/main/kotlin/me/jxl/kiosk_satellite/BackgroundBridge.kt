@@ -98,6 +98,7 @@ class BackgroundBridge(
     private var lastTouchSeen = 0L
 
     init {
+        CameraDiagnostics.attach(context, messenger)
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 // The keep-alive service's inputs (see KioskSatelliteService):
@@ -1236,6 +1237,7 @@ class BackgroundBridge(
 
     fun dispose() {
         channel.setMethodCallHandler(null)
+        CameraDiagnostics.detach()
         try {
             context.unregisterReceiver(downloadReceiver)
         } catch (_: Exception) {

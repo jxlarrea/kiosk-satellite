@@ -22,6 +22,7 @@ class CameraRtspServer(
     private val base64: (ByteArray) -> String,
     private val onDemand: (Boolean) -> Unit,
     private val onKeyFrame: () -> Unit,
+    private val onDiagnostic: (String, String, Throwable?) -> Unit = { _, _, _ -> },
 ) {
     @Volatile private var running = true
     @Volatile private var sps: ByteArray? = null
@@ -58,6 +59,7 @@ class CameraRtspServer(
                     thread(name = "camera-rtsp-client", isDaemon = true) { client.readRequests() }
                 } catch (e: Exception) {
                     if (running) {
+                        onDiagnostic("listener stopped", "port=$localPort", e)
                         listenerError = "RTSP listener stopped: ${e.message}"
                         fail(listenerError!!)
                         close()
@@ -73,13 +75,18 @@ class CameraRtspServer(
         if (!running) return
         idleTask?.cancel(false)
         if (clients.any { it.wantsVideo }) {
-            if (!demand) { demand = true; videoError = null; onDemand(true) }
+            if (!demand) {
+                demand = true; videoError = null
+                onDiagnostic("video demand", "active=true", null)
+                onDemand(true)
+            }
         } else if (demand) {
             idleTask = scheduler.schedule({
                 synchronized(this) {
                     if (running && clients.none { it.wantsVideo }) {
                         demand = false
                         sps = null; pps = null
+                        onDiagnostic("video demand", "active=false", null)
                         onDemand(false)
                     }
                 }
