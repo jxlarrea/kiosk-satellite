@@ -358,6 +358,56 @@ void main() {
     await c.screensaver.dispose();
   });
 
+  for (final size in [
+    const Size(1280, 800),
+    const Size(1280, 695),
+    const Size(800, 480),
+  ]) {
+    testWidgets('horizontal content stays vertically centered at $size', (
+      tester,
+    ) async {
+      await boot(
+        tester,
+        size: size,
+        split: false,
+        prefs: {'ks.sendspin.fullscreen_horizontal': true},
+      );
+      final cover = find.byKey(const ValueKey('horizontal-cover'));
+      final trackControls = find.byKey(
+        const ValueKey('horizontal-track-controls'),
+      );
+      void expectCentered() {
+        expect(tester.getCenter(cover).dy, closeTo(size.height / 2, 0.1));
+        expect(
+          tester.getCenter(trackControls).dy,
+          closeTo(size.height / 2, 0.1),
+        );
+        expect(tester.takeException(), isNull);
+      }
+
+      expectCentered();
+      final initialCover = tester.getSize(cover);
+      await c.settings.set(defs.sendspinSpeakerPill, false);
+      await tester.pump();
+      await tester.pump();
+      expectCentered();
+      await c.settings.set(defs.sendspinFullscreenDoubleTap, true);
+      await tester.pump();
+      await tester.pump();
+      expectCentered();
+      expect(
+        tester.getSize(cover).height,
+        greaterThanOrEqualTo(initialCover.height),
+      );
+      await c.settings.set(defs.sendspinFullscreenControls, false);
+      await tester.pump();
+      await tester.pump();
+      expectCentered();
+      await tester.pumpWidget(const SizedBox());
+      await c.screensaver.dispose();
+    });
+  }
+
   for (final controls in [true, false]) {
     testWidgets('horizontal artwork fits with controls $controls and lyrics', (
       tester,

@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+
+- **Horizontal Now Playing sits evenly on the screen.** The artwork and track controls were pushed down by extra space reserved above them, even when the speaker pill was hidden. Centered content now has equal top and bottom spacing, with extra room for the speaker pill or close button only while they are visible. Queue and lyrics controls remain near the bottom of the right half. Fixes [#472](https://github.com/jxlarrea/kiosk-satellite/issues/472).
+
 ## v2026.9.27 - 2026-09-07
 
 ### Added

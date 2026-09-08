@@ -258,6 +258,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     final doubleTap =
         controls && c.settings.get(defs.sendspinFullscreenDoubleTap);
     final showClose = controls && !doubleTap && !widget.alongsideScreensaver;
+    final showPlayerChip =
+        c.settings.get(defs.sendspinSpeakerPill) &&
+        c.sendspin.playerChipName.isNotEmpty;
     // The queue panel (controls only: its button lives there) and the
     // lyrics share one slot, the queue winning while it is open. Either
     // takes whatever spare axis the panel has: a second column on a
@@ -312,6 +315,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
 
     Widget horizontalContent() {
       final horizontalPadding = (screen.width * 0.04).clamp(32.0, 48.0);
+      // Reserve space for visible corner buttons on both ends so centered
+      // content stays centered. Hidden buttons need no extra clearance.
+      final verticalPadding = showPlayerChip || showClose ? 64.0 : 24.0;
       Widget details() => Column(
         key: const ValueKey('horizontal-track-details'),
         mainAxisSize: MainAxisSize.min,
@@ -343,15 +349,16 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         ],
       );
 
-      Widget half(String key, Widget child) => Expanded(
+      Widget half(String key, Widget child, {bool centered = true}) => Expanded(
         child: SizedBox.expand(
           key: ValueKey(key),
           child: Padding(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
-              64 + MediaQuery.paddingOf(context).top,
+              verticalPadding + MediaQuery.paddingOf(context).top,
               horizontalPadding,
-              24 + MediaQuery.paddingOf(context).bottom,
+              (centered ? verticalPadding : 24) +
+                  MediaQuery.paddingOf(context).bottom,
             ),
             child: child,
           ),
@@ -462,6 +469,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                 return Center(
                   child: _fitted(
                     Column(
+                      key: const ValueKey('horizontal-track-controls'),
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         details(),
@@ -481,6 +489,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                 );
               },
             ),
+            centered: !havePanel,
           ),
         ],
       );
@@ -684,8 +693,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         // Whose music this is: the shown player's name in a chip opposite
         // the close button, and the way into its group where the source
         // can put other players in it.
-        if (c.settings.get(defs.sendspinSpeakerPill) &&
-            c.sendspin.playerChipName.isNotEmpty)
+        if (showPlayerChip)
           Positioned(
             top: 12,
             left: 12,
