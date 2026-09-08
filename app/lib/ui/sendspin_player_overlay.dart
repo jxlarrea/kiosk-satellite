@@ -1212,8 +1212,8 @@ class _QueueViewState extends State<_QueueView> {
 /// Built to survive a thousand-row queue flung end to end: the rows
 /// themselves are lazy and only visible rows request images after the
 /// scroll settles. Downloads shared by an album's rows are cancelled
-/// once no visible row needs them. Images decode at the drawn size and
-/// the cache evicts by age past a few megabytes. A total timeout bounds
+/// once no visible row needs them. Small thumbnails persist on disk and
+/// recently used images stay in memory. A total timeout bounds
 /// each transfer because a speaker's art proxy can hang.
 class _QueueThumb extends StatefulWidget {
   const _QueueThumb({
@@ -1226,7 +1226,6 @@ class _QueueThumb extends StatefulWidget {
   final String url;
   final double size;
 
-  static final cache = ThumbCache();
   static final lane = FetchLane();
 
   /// One fetch per URL however many rows share it (an album's tracks
@@ -1352,7 +1351,7 @@ class _QueueThumbState extends State<_QueueThumb> {
   void _load() {
     final url = widget.url;
     if (url.isEmpty) return;
-    final cache = _QueueThumb.cache;
+    final cache = widget.container.sendspin.queueArtworkCache.memory;
     if (cache.contains(url)) {
       setState(() => _bytes = cache.get(url));
       return;
@@ -1371,7 +1370,7 @@ class _QueueThumbState extends State<_QueueThumb> {
 
   void _ask(String url) {
     _attempted = true;
-    final cache = _QueueThumb.cache;
+    final cache = widget.container.sendspin.queueArtworkCache.memory;
     if (cache.contains(url)) {
       setState(() => _bytes = cache.get(url));
       return;
@@ -1384,18 +1383,17 @@ class _QueueThumbState extends State<_QueueThumb> {
       fresh.ticket = _QueueThumb.lane.schedule(() async {
         Uint8List? bytes;
         try {
-          bytes = await player.fetchArtwork(
+          bytes = await player.queueArtworkCache.load(
             url,
-            timeout: const Duration(seconds: 8),
-            cancelled: fresh.cancelled.future,
+            () => player.fetchArtwork(
+              url,
+              timeout: const Duration(seconds: 8),
+              cancelled: fresh.cancelled.future,
+            ),
+            cancelled: () => fresh.cancelled.isCompleted,
           );
         } catch (_) {
           bytes = null;
-        }
-        // An empty answer is not remembered: a server resizing its
-        // first thumbnail can be slow, and the next visit may do better.
-        if (bytes != null && !fresh.cancelled.isCompleted) {
-          cache.put(url, bytes);
         }
         if (identical(_QueueThumb._pending[url], fresh)) {
           _QueueThumb._pending.remove(url);

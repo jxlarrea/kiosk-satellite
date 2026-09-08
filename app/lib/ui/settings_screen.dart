@@ -2525,6 +2525,8 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// Extra widgets rendered directly under a setting: notices, validate
   /// rows, live telemetry. Keyed and forwarded the same way.
   Map<String, Widget> _rowExtras(AppContainer container) => {
+    if (widget.category == 'Sendspin')
+      sendspinDuckPercent.key: AlbumArtCacheRow(container: container),
     if (widget.category == 'Browser' &&
         container.settings.get(autoReloadOnError))
       autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
@@ -5652,6 +5654,90 @@ class _SonosSpeakersCardState extends State<_SonosSpeakersCard> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// The queue artwork stored on this device, below the ducking slider.
+class AlbumArtCacheRow extends StatefulWidget {
+  const AlbumArtCacheRow({super.key, required this.container});
+  final AppContainer container;
+
+  @override
+  State<AlbumArtCacheRow> createState() => _AlbumArtCacheRowState();
+}
+
+class _AlbumArtCacheRowState extends State<AlbumArtCacheRow> {
+  Map<String, Object?>? _stats;
+  String? _error;
+  bool _busy = false;
+  Timer? _refresh;
+  int _revision = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _read();
+    _refresh = Timer.periodic(const Duration(seconds: 5), (_) => _read());
+  }
+
+  @override
+  void dispose() {
+    _refresh?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _read() async {
+    if (_busy) return;
+    final revision = _revision;
+    try {
+      final stats = await widget.container.sendspin.queueArtworkCache.stats();
+      if (mounted && !_busy && revision == _revision) {
+        setState(() {
+          _stats = stats;
+          _error = null;
+        });
+      }
+    } catch (_) {
+      if (mounted && revision == _revision) {
+        setState(() => _error = 'Could not read cache size.');
+      }
+    }
+  }
+
+  Future<void> _clear() async {
+    _revision++;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.container.sendspin.queueArtworkCache.clear();
+      final stats = await widget.container.sendspin.queueArtworkCache.stats();
+      if (mounted) setState(() => _stats = stats);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Could not clear the cache.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = _stats;
+    return SettingsRow(
+      title: const Text('Album art cache'),
+      subtitle: Text(
+        _error ??
+            (stats == null
+                ? 'Checking cache size...'
+                : '${formatBytes(stats['bytes'] as int)} used of '
+                      '${formatBytes(stats['maxBytes'] as int)}. Queue thumbnails are cached automatically.'),
+      ),
+      trailing: OutlinedButton(
+        onPressed: _busy ? null : _clear,
+        child: Text(_busy ? 'Clearing...' : 'Clear'),
+      ),
     );
   }
 }

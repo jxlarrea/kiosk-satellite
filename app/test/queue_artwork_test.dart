@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
+import 'package:kiosk_satellite/managers/sendspin/queue_artwork_cache.dart';
 import 'package:kiosk_satellite/ui/sendspin_player_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -93,6 +94,10 @@ void main() {
       'ks.sendspin.queue_art': true,
     });
     c = AppContainer();
+    c.sendspin.queueArtworkCache = QueueArtworkCache(
+      directory: () async => null,
+      prepare: (bytes) async => bytes,
+    );
     await c.settings.init();
     c.sendspin.nowPlaying.value = {
       'title': 'Song',

@@ -122,6 +122,64 @@ function showRowError(row, message) {
 }
 function clearRowError(row) { row.querySelector('.row-error')?.remove(); }
 
+function albumArtCacheRow() {
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.dataset.key = 'albumArtCache';
+  const info = document.createElement('div');
+  info.className = 'info';
+  const name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = 'Album art cache';
+  const note = document.createElement('div');
+  note.className = 'desc';
+  note.textContent = 'Checking cache size...';
+  info.append(name, note);
+  const button = document.createElement('button');
+  button.className = 'btn-ghost';
+  button.textContent = 'Clear';
+  row.append(info, button);
+  let revision = 0;
+  const format = (bytes) => bytes < 1024 ? `${bytes} B`
+    : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB`
+    : `${(bytes / 1048576).toFixed(1)} MB`;
+  const show = (data) => {
+    note.textContent = `${format(data.bytes)} used of ${format(data.maxBytes)}. `
+      + 'Queue thumbnails are cached automatically.';
+  };
+  const command = async (name) => {
+    const response = await api(`/api/commands/${name}`, { method: 'POST', body: '{}' });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error('Cache command failed');
+    return result.data;
+  };
+  const read = async () => {
+    const current = revision;
+    try {
+      const data = await command('albumArtCacheStats');
+      if (current === revision) show(data);
+    } catch (_) {
+      if (current === revision) note.textContent = 'Could not read cache size.';
+    }
+  };
+  button.addEventListener('click', async () => {
+    revision++;
+    button.disabled = true;
+    button.textContent = 'Clearing...';
+    try { show(await command('clearAlbumArtCache')); }
+    catch (_) { note.textContent = 'Could not clear the cache.'; }
+    finally { button.disabled = false; button.textContent = 'Clear'; }
+  });
+  const refresh = async () => {
+    if (!row.isConnected) return;
+    if (!button.disabled && !document.hidden && row.getClientRects().length) await read();
+    setTimeout(refresh, 5000);
+  };
+  read();
+  setTimeout(refresh, 5000);
+  return row;
+}
+
 export function settingRow(s) {
   const row = document.createElement('div'); row.className = 'row';
   // Lets a saved row find another row without a re-render (see save()).
@@ -1254,6 +1312,11 @@ export function settingRow(s) {
       // it here first made a refused value snap "back" to itself.
       save(next);
     });
+    if (s.key === 'sendspin.duck_percent') {
+      const fragment = document.createDocumentFragment();
+      fragment.append(row, albumArtCacheRow());
+      return fragment;
+    }
     return row;
   }
 

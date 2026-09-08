@@ -16,6 +16,7 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'ha_remote_player.dart';
 import 'artwork_cache.dart';
+import 'queue_artwork_cache.dart';
 import 'lrclib.dart';
 import 'lyrics.dart';
 import 'ma_remote_player.dart';
@@ -213,6 +214,8 @@ class SendspinManager extends Manager {
   late Future<Uint8List?> Function(String url) artworkFetcher = fetchArtwork;
 
   final _covers = ArtworkCache();
+
+  QueueArtworkCache queueArtworkCache = QueueArtworkCache();
 
   Future<Uint8List?> loadArtwork(String url) =>
       _covers.load(url, artworkFetcher);
@@ -935,6 +938,24 @@ class SendspinManager extends Manager {
         });
       });
     });
+
+    commands.register(
+      Command(
+        name: 'albumArtCacheStats',
+        description: 'Disk space used by cached queue artwork thumbnails.',
+        handler: (_) async => CommandResult.ok(await queueArtworkCache.stats()),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'clearAlbumArtCache',
+        description: 'Clear queue artwork thumbnails from disk and memory.',
+        handler: (_) async {
+          await queueArtworkCache.clear();
+          return CommandResult.ok(await queueArtworkCache.stats());
+        },
+      ),
+    );
 
     commands.register(
       Command(

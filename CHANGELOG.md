@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Queue album art stays cached across app restarts.** Visible queue covers are saved as thumbnails up to 256 pixels in a disk cache capped at 100 MB. Older entries are evicted automatically. The new Album art cache row below Duck volume during voice interactions shows disk usage and provides a Clear button in the app and remote settings.
+
 ### Fixed
 - **Volume ducking works with every player source.** Duck volume during voice interactions now sits below Player on the main Media Player page and applies to local Sendspin playback, Music Assistant, Home Assistant and Sonos players with volume control. The previous volume returns after the last interaction ends or the selected player changes. Sonos groups preserve each room's level, including when ducking to zero. Volume adjustments during a voice turn set the level restored afterward.
 - **Queue artwork follows the visible tracks.** Now Playing waits for scrolling to settle before requesting covers and skips rows outside the screen. Scrolling away cancels downloads that no visible row needs, freeing slots for the new rows. Shared album covers still use one download and a total timeout prevents a slow Sonos image response from holding a slot indefinitely.
