@@ -1210,11 +1210,11 @@ class _QueueViewState extends State<_QueueView> {
 /// A queue row's cover: fetched once per URL and kept in a cache bounded
 /// by bytes, a placeholder glyph while it loads and when nothing comes.
 /// Built to survive a thousand-row queue flung end to end: the rows
-/// themselves are lazy, the fetches run a few at a time and a row that
-/// scrolls away before its turn withdraws, the bytes are decoded at the
-/// drawn size rather than the cover's own, and the cache evicts by age
-/// past a few megabytes. On a short leash, since a speaker's art proxy
-/// can hang on an image it cannot reach and a row must not wait on it.
+/// themselves are lazy and only visible rows request images after the
+/// scroll settles. Downloads shared by an album's rows are cancelled
+/// once no visible row needs them. Images decode at the drawn size and
+/// the cache evicts by age past a few megabytes. A total timeout bounds
+/// each transfer because a speaker's art proxy can hang.
 class _QueueThumb extends StatefulWidget {
   const _QueueThumb({
     required this.container,
@@ -1241,6 +1241,7 @@ class _QueueThumb extends StatefulWidget {
 
 class _SharedFetch {
   final completer = Completer<Uint8List?>();
+  final cancelled = Completer<void>();
   FetchTicket? ticket;
   int waiters = 0;
 }
@@ -1248,30 +1249,82 @@ class _SharedFetch {
 class _QueueThumbState extends State<_QueueThumb> {
   Uint8List? _bytes;
   String _waitingOn = '';
+  _SharedFetch? _fetch;
+  ScrollPosition? _position;
+  bool _visibilityScheduled = false;
+  bool _attempted = false;
 
   /// A beat before asking: the panel lands on the playing track a frame
   /// after it opens, and the rows built at the top in between are gone
   /// before this fires.
   Timer? _grace;
 
-  /// Stop waiting. The last row to leave takes the fetch out of the
-  /// line when it has not started; one already running finishes and
-  /// lands in the cache for the next time a row comes by.
+  /// Release a download once no visible row needs it.
   void _withdraw() {
     final url = _waitingOn;
     _waitingOn = '';
-    final shared = _QueueThumb._pending[url];
+    final shared = _fetch;
+    _fetch = null;
     if (shared == null) return;
     shared.waiters--;
-    if (shared.waiters <= 0 && (shared.ticket?.cancel() ?? false)) {
-      _QueueThumb._pending.remove(url);
+    if (shared.waiters <= 0) {
+      shared.ticket?.cancel();
+      shared.cancelled.complete();
+      if (identical(_QueueThumb._pending[url], shared)) {
+        _QueueThumb._pending.remove(url);
+      }
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-    _load();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final position = Scrollable.of(context).position;
+    if (!identical(position, _position)) {
+      _position?.removeListener(_checkAfterLayout);
+      _position?.isScrollingNotifier.removeListener(_checkAfterLayout);
+      _position = position;
+      position.addListener(_checkAfterLayout);
+      position.isScrollingNotifier.addListener(_checkAfterLayout);
+    }
+    _checkAfterLayout();
+  }
+
+  void _checkAfterLayout() {
+    if (_visibilityScheduled) return;
+    _visibilityScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _visibilityScheduled = false;
+      if (mounted) _checkVisibility();
+    });
+  }
+
+  bool get _visible {
+    final box = context.findRenderObject();
+    final position = _position;
+    if (box is! RenderBox || !box.hasSize || position == null) return false;
+    final viewport = RenderAbstractViewport.of(box);
+    final top = viewport.getOffsetToReveal(box, 0).offset;
+    return top < position.pixels + position.viewportDimension &&
+        top + box.size.height > position.pixels;
+  }
+
+  void _checkVisibility() {
+    if (!_visible) {
+      _attempted = false;
+      _grace?.cancel();
+      _grace = null;
+      _withdraw();
+      return;
+    }
+    if (_position!.isScrollingNotifier.value) {
+      _grace?.cancel();
+      _grace = null;
+      return;
+    }
+    if (!_attempted && _bytes == null && _fetch == null && _grace == null) {
+      _load();
+    }
   }
 
   @override
@@ -1279,17 +1332,18 @@ class _QueueThumbState extends State<_QueueThumb> {
     super.didUpdateWidget(old);
     if (old.url != widget.url) {
       _grace?.cancel();
+      _grace = null;
       _withdraw();
       _bytes = null;
-      _load();
+      _attempted = false;
+      _checkAfterLayout();
     }
   }
 
   @override
   void dispose() {
-    // Scrolled away before its turn: out of the line. One already
-    // running finishes and lands in the cache for the next time the row
-    // comes by.
+    _position?.removeListener(_checkAfterLayout);
+    _position?.isScrollingNotifier.removeListener(_checkAfterLayout);
     _grace?.cancel();
     _withdraw();
     super.dispose();
@@ -1300,16 +1354,23 @@ class _QueueThumbState extends State<_QueueThumb> {
     if (url.isEmpty) return;
     final cache = _QueueThumb.cache;
     if (cache.contains(url)) {
-      _bytes = cache.get(url);
+      setState(() => _bytes = cache.get(url));
       return;
     }
     _grace?.cancel();
     _grace = Timer(const Duration(milliseconds: 250), () {
-      if (mounted && widget.url == url) _ask(url);
+      _grace = null;
+      if (mounted &&
+          widget.url == url &&
+          _visible &&
+          !_position!.isScrollingNotifier.value) {
+        _ask(url);
+      }
     });
   }
 
   void _ask(String url) {
+    _attempted = true;
     final cache = _QueueThumb.cache;
     if (cache.contains(url)) {
       setState(() => _bytes = cache.get(url));
@@ -1318,20 +1379,24 @@ class _QueueThumbState extends State<_QueueThumb> {
     var shared = _QueueThumb._pending[url];
     if (shared == null) {
       final fresh = _SharedFetch();
+      final player = widget.container.sendspin;
       _QueueThumb._pending[url] = fresh;
       fresh.ticket = _QueueThumb.lane.schedule(() async {
         Uint8List? bytes;
         try {
-          bytes = await widget.container.sendspin.fetchArtwork(
+          bytes = await player.fetchArtwork(
             url,
             timeout: const Duration(seconds: 8),
+            cancelled: fresh.cancelled.future,
           );
         } catch (_) {
           bytes = null;
         }
         // An empty answer is not remembered: a server resizing its
         // first thumbnail can be slow, and the next visit may do better.
-        if (bytes != null) cache.put(url, bytes);
+        if (bytes != null && !fresh.cancelled.isCompleted) {
+          cache.put(url, bytes);
+        }
         if (identical(_QueueThumb._pending[url], fresh)) {
           _QueueThumb._pending.remove(url);
         }
@@ -1341,16 +1406,18 @@ class _QueueThumbState extends State<_QueueThumb> {
     }
     shared.waiters++;
     _waitingOn = url;
-    shared.completer.future.then(_landed(url));
+    _fetch = shared;
+    shared.completer.future.then((bytes) {
+      if (!mounted || !identical(_fetch, shared)) return;
+      _fetch = null;
+      _waitingOn = '';
+      setState(() => _bytes = bytes);
+    });
   }
-
-  void Function(Uint8List?) _landed(String url) => (bytes) {
-    if (_waitingOn == url) _waitingOn = '';
-    if (mounted && widget.url == url) setState(() => _bytes = bytes);
-  };
 
   @override
   Widget build(BuildContext context) {
+    _checkAfterLayout();
     final bytes = _bytes;
     // Decoded at the drawn size: a speaker's thumbnail is the whole
     // cover, and a full decode per row is what fills memory on a fling.

@@ -216,6 +216,7 @@ class SendspinManager extends Manager {
   Future<Uint8List?> fetchArtwork(
     String url, {
     Duration timeout = const Duration(seconds: 12),
+    Future<void>? cancelled,
   }) async {
     if (url.isEmpty) return null;
     HttpClient? client;
@@ -231,17 +232,24 @@ class SendspinManager extends Manager {
       client = HttpClient()
         ..badCertificateCallback = (cert, host, port) =>
             host.isNotEmpty && (host == serverHost || host == maHost);
-      final request = await client.getUrl(Uri.parse(url)).timeout(timeout);
-      // Bounded: a speaker's art proxy can hang on an image it cannot
-      // fetch, and a fetch that never ends would hold the cover blank for
-      // the next track too.
-      final response = await request.close().timeout(timeout);
-      final bytes = BytesBuilder(copy: false);
-      await for (final part in response.timeout(timeout)) {
-        bytes.add(part);
+      final http = client;
+      Future<Uint8List?> download() async {
+        final request = await http.getUrl(Uri.parse(url));
+        final response = await request.close();
+        if (response.statusCode != 200) return null;
+        final bytes = BytesBuilder(copy: false);
+        await for (final part in response) {
+          bytes.add(part);
+        }
+        return bytes.takeBytes();
       }
-      if (response.statusCode != 200) return null;
-      return bytes.takeBytes();
+
+      // Bound the whole transfer, including a proxy that trickles bytes.
+      // Withdrawing the last visible queue row also closes the socket.
+      return await Future.any<Uint8List?>([
+        download(),
+        if (cancelled != null) cancelled.then<Uint8List?>((_) => null),
+      ]).timeout(timeout);
     } catch (_) {
       return null;
     } finally {
