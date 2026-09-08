@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/jxlarrea/kiosk-satellite/releases/latest">Download the APK</a> · <a href="#get-started">Get started</a> · <a href="#documentation">Documentation</a>
+  <a href="https://github.com/jxlarrea/kiosk-satellite/releases/latest">Download</a> · <a href="#get-started">Get started</a> · <a href="#documentation">Documentation</a>
 </p>
 
 <p align="center">
