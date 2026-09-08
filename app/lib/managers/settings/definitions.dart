@@ -2893,6 +2893,18 @@ const screensaverPixelShift = SettingDef<bool>(
   category: 'Screensaver',
 );
 
+/// The kiosk menu's Start Screensaver row, on by default since it always
+/// was. Off takes the row out of the menu (issue #473); the idle timeout,
+/// the gestures, the ESPHome switch and the API commands still start it.
+const screensaverMenu = SettingDef<bool>(
+  key: 'screensaver.menu',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show in the kiosk menu',
+  description: 'Add a Start Screensaver entry to the kiosk menu.',
+  category: 'Screensaver',
+);
+
 // ── Camera Streams (mode: camera) ──
 // The views the screensaver cycles through, as a JSON array of view ids in
 // rotation order. Picked from the views configured under Camera Streams in
@@ -4128,6 +4140,24 @@ const haKioskHideSidebar = SettingDef<bool>(
   defaultValue: true,
   title: 'Hide the sidebar',
   description: 'Hide the navigation sidebar while HA kiosk mode is on.',
+  category: 'Home Assistant',
+  section: 'User Interface',
+  subpage: 'User Interface',
+);
+
+/// The kiosk menu's HA Kiosk Mode row, on by default since it always was.
+/// Off takes the row out of the menu on a device that never toggles the
+/// header at the wall (issue #473): a smaller menu keeps the entries that
+/// are used above the fold. The setting itself, the gesture and the
+/// ESPHome switch keep working with the row gone.
+const haKioskMenu = SettingDef<bool>(
+  key: 'ha.kiosk_menu',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show in the kiosk menu',
+  description:
+      'Add an HA Kiosk Mode entry to the kiosk menu that turns it '
+      'on and off.',
   category: 'Home Assistant',
   section: 'User Interface',
   subpage: 'User Interface',
@@ -6510,6 +6540,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverScreenOffMinutes,
   // Pixel shift sits with the general controls: it applies to every mode.
   screensaverPixelShift,
+  screensaverMenu,
   // The legacy small clock rows, hidden since the Widgets group took over;
   // registered so old backups still import (then migrate on startup).
   screensaverMiniClock,
@@ -6666,6 +6697,7 @@ const List<SettingDef<Object>> allSettings = [
   haKioskMode,
   haKioskHideHeader,
   haKioskHideSidebar,
+  haKioskMenu,
   haDashboardCarousel,
   haCarouselOverCards,
   haHaptics,

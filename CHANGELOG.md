@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Kiosk menu entries you can leave out.** Two new **Show in the kiosk menu** toggles, both on by default, decide whether the **HA Kiosk Mode** and **Start Screensaver** entries appear in the kiosk menu. The first sits under Home Assistant > User Interface, after Hide the sidebar, and the second under Screensaver, after Pixel shift. Turning one off drops its entry from both the full menu and the quick actions menu, so a small screen keeps the entries it actually uses above the fold. The settings themselves, gestures, ESPHome switches and API commands keep working with the entry gone.
+
 ### Fixed
 
 - **Horizontal Now Playing sits evenly on the screen.** The artwork and track controls were pushed down by extra space reserved above them, even when the speaker pill was hidden. Centered content now has equal top and bottom spacing, with extra room for the speaker pill or close button only while they are visible. Queue and lyrics controls remain near the bottom of the right half. Fixes [#472](https://github.com/jxlarrea/kiosk-satellite/issues/472).

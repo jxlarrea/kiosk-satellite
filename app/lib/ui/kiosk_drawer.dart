@@ -183,23 +183,27 @@ class KioskDrawer extends StatelessWidget {
                               // restricted menu (issue #422): the owner
                               // who hid the header and sidebar decides
                               // whether a visitor may bring them back.
-                              if (!restricted ||
-                                  c.settings.get(defs.kioskAllowHaKiosk))
-                                _item(
-                                  divided: sep(),
-                                  context,
-                                  c.settings.get(defs.haKioskMode)
-                                      ? Icons.fullscreen_exit
-                                      : Icons.fullscreen,
-                                  'HA Kiosk Mode',
-                                  () async {
-                                    onClose();
-                                    await c.settings.set(
-                                      defs.haKioskMode,
-                                      !c.settings.get(defs.haKioskMode),
-                                    );
-                                  },
-                                ),
+                              // Its own opt-out (issue #473) drops the row
+                              // from both menus; the kiosk screen rebuilds
+                              // the drawer when the toggle flips.
+                              if (c.settings.get(defs.haKioskMenu))
+                                if (!restricted ||
+                                    c.settings.get(defs.kioskAllowHaKiosk))
+                                  _item(
+                                    divided: sep(),
+                                    context,
+                                    c.settings.get(defs.haKioskMode)
+                                        ? Icons.fullscreen_exit
+                                        : Icons.fullscreen,
+                                    'HA Kiosk Mode',
+                                    () async {
+                                      onClose();
+                                      await c.settings.set(
+                                        defs.haKioskMode,
+                                        !c.settings.get(defs.haKioskMode),
+                                      );
+                                    },
+                                  ),
                               // Only once the default view actually holds
                               // cameras: an empty one is the placeholder
                               // every install starts with, and a menu entry
@@ -266,21 +270,25 @@ class KioskDrawer extends StatelessWidget {
                                       defs.sendspinFullscreenShortcut,
                                     ))
                                   _nowPlayingItem(context, divided: sep()),
-                              if (!restricted ||
-                                  c.settings.get(defs.kioskAllowScreensaver))
-                                _item(
-                                  divided: sep(),
-                                  context,
-                                  Icons.dark_mode_outlined,
-                                  'Start Screensaver',
-                                  () {
-                                    onClose();
-                                    c.commands.execute(
-                                      'startScreensaver',
-                                      const {},
-                                    );
-                                  },
-                                ),
+                              // Same opt-out shape as HA Kiosk Mode (issue
+                              // #473): the screensaver setting decides
+                              // whether the row is offered at all.
+                              if (c.settings.get(defs.screensaverMenu))
+                                if (!restricted ||
+                                    c.settings.get(defs.kioskAllowScreensaver))
+                                  _item(
+                                    divided: sep(),
+                                    context,
+                                    Icons.dark_mode_outlined,
+                                    'Start Screensaver',
+                                    () {
+                                      onClose();
+                                      c.commands.execute(
+                                        'startScreensaver',
+                                        const {},
+                                      );
+                                    },
+                                  ),
                               // Hold mode's menu entry (issue #266): opt-in
                               // like the Sendspin one, and unlike the notice
                               // below it can also ENGAGE a hold. The label

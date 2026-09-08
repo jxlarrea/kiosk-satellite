@@ -17,6 +17,7 @@ Navigate to **Settings > Screensaver** (available in the on device settings and 
 | Brighten for notifications | on | Automatically restores full display brightness while an incoming notification is visible. Appears when Screensaver brightness is enabled. |
 | Turn screen off after | 0 (never) | Powers off the physical display panel after the screensaver has been running for the specified duration. |
 | Pixel shift | off | Periodically shifts on screen elements every minute to prevent image retention on OLED displays. Not applicable to Black mode. |
+| Show in the kiosk menu | on | Keeps the **Start Screensaver** entry in the kiosk menu. Turn it off to shorten the menu on a device that never starts the screensaver by hand. The idle timeout, gestures, the ESPHome switch and the API commands still start it. |
 | Screensaver mode | Black | Selects the active screensaver display mode. Options for the chosen mode appear directly below this selector. |
 
 The **Widgets** configuration group sits directly beneath the mode settings, allowing small overlays to be anchored to display corners.

@@ -270,8 +270,10 @@ class _KioskScreenState extends State<KioskScreen>
         c.settings.get(defs.launcherEnabled) && c.launcher.apps.isNotEmpty;
     final hasHold = c.settings.get(defs.haHoldMenu);
     return c.settings.get(defs.kioskAllowDashboard) ||
-        c.settings.get(defs.kioskAllowHaKiosk) ||
-        c.settings.get(defs.kioskAllowScreensaver) ||
+        (c.settings.get(defs.kioskAllowHaKiosk) &&
+            c.settings.get(defs.haKioskMenu)) ||
+        (c.settings.get(defs.kioskAllowScreensaver) &&
+            c.settings.get(defs.screensaverMenu)) ||
         c.settings.get(defs.kioskAllowTheme) ||
         (c.settings.get(defs.kioskAllowCamera) && hasCameras) ||
         (c.settings.get(defs.kioskAllowMusic) && hasMusic) ||
@@ -520,11 +522,14 @@ class _KioskScreenState extends State<KioskScreen>
       return;
     }
     // The Music Assistant shortcut and the address it opens both decide
-    // whether the drawer offers the entry at all, and the drawer is built
-    // from here — so a flip in the remote admin shows up on the device
-    // without waiting for the next rebuild.
+    // whether the drawer offers the entry at all, as do the HA Kiosk Mode
+    // and Start Screensaver menu toggles (issue #473), and the drawer is
+    // built from here — so a flip in the remote admin shows up on the
+    // device without waiting for the next rebuild.
     if (e.key == defs.sendspinMaShortcut.key ||
-        e.key == defs.sendspinMaUrl.key) {
+        e.key == defs.sendspinMaUrl.key ||
+        e.key == defs.haKioskMenu.key ||
+        e.key == defs.screensaverMenu.key) {
       setState(() {});
       return;
     }
