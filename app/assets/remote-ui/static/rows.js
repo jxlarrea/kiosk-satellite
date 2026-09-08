@@ -511,7 +511,7 @@ export function settingRow(s) {
       offLine.style.cssText = 'display:flex; align-items:center; gap:10px;';
       const offRng = document.createElement('input');
       offRng.type = 'range'; offRng.className = 'range';
-      offRng.min = '0'; offRng.max = '60'; offRng.step = '5';
+      offRng.min = '0'; offRng.max = '60'; offRng.step = '1';
       offRng.value = String(hasOff ? Math.min(60, Math.max(0, start.screen_off)) : globalOff);
       offRng.style.cssText = 'flex:1;';
       const offLabel = document.createElement('span');
