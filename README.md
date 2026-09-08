@@ -75,7 +75,7 @@ For voice control, install [Voice Satellite](https://github.com/jxlarrea/voice-s
 
 <details>
 <summary><strong>All guides and API references</strong></summary>
-
+<br />
 &bull; **Display:** [Screen settings](docs/screen.md), [screensavers](docs/screensavers.md), [Immich](docs/immich.md) and [At a Glance widgets](docs/at-a-glance.md).
 
 &bull; **Voice and media:** [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration), [microphone](docs/microphone.md), [media player](docs/sendspin.md), [camera views](docs/cameras.md), [device camera](docs/camera.md) and [DLNA](docs/dlna.md).
@@ -98,7 +98,7 @@ Free for personal, non-commercial use under [CC BY-NC-ND 4.0](LICENSE). Commerci
 
 <details>
 <summary>Built with these projects</summary>
-
+<br />
 Thanks to [Home Assistant](https://www.home-assistant.io/), [ESPHome](https://esphome.io/), [Music Assistant](https://www.music-assistant.io/), [Immich](https://immich.app/), [Flutter](https://flutter.dev/), [flutter_inappwebview](https://inappwebview.dev/) and [ONNX Runtime](https://onnxruntime.ai/).
 
 Wake-word support builds on [vsWakeWord](https://github.com/jxlarrea/voice-satellite-card-integration), [openWakeWord](https://github.com/dscripka/openWakeWord) and [microWakeWord](https://github.com/kahrendt/microWakeWord). Icons come from [Material Design Icons](https://pictogrammers.com/library/mdi/). Fonts include [Rubik](https://fonts.google.com/specimen/Rubik), [Nunito](https://fonts.google.com/specimen/Nunito), [Inter](https://rsms.me/inter/) and [DSEG](https://github.com/keshikan/DSEG).
