@@ -26,6 +26,7 @@ class JsApiManager extends Manager {
   String get name => 'js_api';
 
   InAppWebViewController? _controller;
+  final _pageInteractions = <String>{};
 
   /// Methods pages may call, mapped to registry command names. Anything not
   /// listed here is not reachable from page JS regardless of registry
@@ -91,11 +92,9 @@ class JsApiManager extends Manager {
               "'start_conversation', 'timer', 'media' (optional)",
         },
         handler: (p) async {
-          bus.publish(
-            VoiceInteractionChanged(
-              active: p['active'] == true,
-              reason: p['reason'] is String ? p['reason'] as String : '',
-            ),
+          _setPageInteraction(
+            p['active'] == true,
+            p['reason'] is String ? p['reason'] as String : '',
           );
           return const CommandResult.ok();
         },
@@ -130,12 +129,68 @@ class JsApiManager extends Manager {
 
   /// Called by the UI layer from onWebViewCreated.
   void attach(InAppWebViewController controller) {
+    detach();
     _controller = controller;
     controller.addJavaScriptHandler(
       handlerName: 'ksApi',
-      callback: (args) => _onCall(args),
+      callback: (args) => identical(_controller?.platform, controller.platform)
+          ? _onCall(args)
+          : null,
     );
   }
+
+  void _setPageInteraction(bool active, String reason) {
+    if (!active && reason.isEmpty && _pageInteractions.isNotEmpty) {
+      final pendingReasons = _pageInteractions.toList();
+      _pageInteractions.clear();
+      for (final pending in pendingReasons) {
+        _setPageInteraction(false, pending);
+      }
+      return;
+    }
+    if (active) {
+      _pageInteractions.add(reason);
+    } else {
+      _pageInteractions.remove(reason);
+    }
+    bus.publish(
+      VoiceInteractionChanged(
+        active: active,
+        reason: reason,
+        source: InteractionSource.page,
+      ),
+    );
+  }
+
+  /// A full navigation replaces the document. SPA view switches do not.
+  void onPageStarted() {
+    if (_pageInteractions.isEmpty) return;
+    log.info(
+      name,
+      'page replaced, releasing interactions: '
+      '${_pageInteractions.map((reason) => reason.isEmpty ? "legacy" : reason).join(", ")}',
+    );
+    final pending = _pageInteractions.toList();
+    _pageInteractions.clear();
+    for (final reason in pending) {
+      bus.publish(
+        VoiceInteractionChanged(
+          active: false,
+          reason: reason,
+          source: InteractionSource.page,
+        ),
+      );
+    }
+  }
+
+  /// Stop dispatching to a discarded WebView and release its holds.
+  void detach() {
+    _controller = null;
+    onPageStarted();
+  }
+
+  @override
+  Future<void> dispose() async => detach();
 
   /// The ksApi handler body, reachable for tests (attach needs a live
   /// WebView controller).
@@ -149,10 +204,16 @@ class JsApiManager extends Manager {
         ? (args[1] as Map).cast<String, Object?>()
         : <String, Object?>{};
 
-    final commandName = _exposedMethods[method];
+    var commandName = _exposedMethods[method];
     if (commandName == null) {
       log.warn(name, 'page called unknown method $method');
       return null;
+    }
+    if (method == 'pauseScreensaver') {
+      // Legacy page calls need the same document ownership as the modern API.
+      commandName = 'setInteractionActive';
+      params['active'] = params.remove('paused') == true;
+      params.remove('reason');
     }
     // Assistant loudness belongs to this app, not the page (issue #294):
     // Voice Satellite scales every sound it delegates by its own HA

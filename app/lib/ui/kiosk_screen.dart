@@ -591,7 +591,10 @@ class _KioskScreenState extends State<KioskScreen>
     // the platform-view creation, which heals a create that raced the
     // Activity attach at boot (issue #145).
     _rebuildSub = c.bus.on<WebViewRebuildRequested>().listen((_) {
-      if (mounted) setState(() => _webViewEpoch++);
+      if (mounted) {
+        c.jsApi.detach();
+        setState(() => _webViewEpoch++);
+      }
     });
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
@@ -1258,6 +1261,7 @@ class _KioskScreenState extends State<KioskScreen>
   @override
   void dispose() {
     BackgroundListening.onDownloadComplete = null;
+    c.jsApi.detach();
     _refreshingFailsafe?.cancel();
     HardwareKeyboard.instance.removeHandler(_onKey);
     FocusManager.instance.removeEarlyKeyEventHandler(_onEarlyKey);
@@ -1707,6 +1711,9 @@ class _KioskScreenState extends State<KioskScreen>
         },
       );
     },
+    onLoadStart: (controller, url) {
+      if (c.browser.isAttached(controller)) c.jsApi.onPageStarted();
+    },
     onUpdateVisitedHistory: (controller, url, isReload) {
       // SPA navigations inside HA (view switches, rotation's pushState)
       // surface here and nowhere else.
@@ -1793,6 +1800,7 @@ class _KioskScreenState extends State<KioskScreen>
     },
     onRenderProcessGone: (controller, detail) {
       if (!c.browser.isAttached(controller)) return;
+      c.jsApi.detach();
       c.browser.rebuildFailedRenderer(
         'WebView renderer gone (crashed: ${detail.didCrash}, '
         'priority: ${detail.rendererPriorityAtExit})',

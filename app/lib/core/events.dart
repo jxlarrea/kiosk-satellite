@@ -341,6 +341,9 @@ class ActivityDetected extends AppEvent {
   final String source; // 'touch' | 'motion' | 'remote' | 'page'
 }
 
+/// The owner whose interactions end together when it is replaced.
+enum InteractionSource { page, sendspin, command }
+
 /// A voice interaction is in progress (or has ended). Driven by Voice
 /// Satellite, which brackets every turn — wake, listen, respond, speak — by
 /// asking the app to hold its ambient behaviors (it calls pauseScreensaver
@@ -348,8 +351,13 @@ class ActivityDetected extends AppEvent {
 /// duration of a conversation (the screensaver, the dashboard view
 /// rotation) observe this rather than reaching into each other.
 class VoiceInteractionChanged extends AppEvent {
-  const VoiceInteractionChanged({required this.active, this.reason = ''});
+  const VoiceInteractionChanged({
+    required this.active,
+    this.reason = '',
+    this.source = InteractionSource.command,
+  });
   final bool active;
+  final InteractionSource source;
 
   /// What kind of interaction, as reported by the page: 'voice',
   /// 'announcement', 'ask_question', 'start_conversation', 'timer', 'media',

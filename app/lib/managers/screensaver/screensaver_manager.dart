@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
+import '../../core/active_interactions.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
@@ -168,6 +169,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   Timer? _scheduleTimer;
   bool _active = false;
   bool _paused = false;
+  final _interactions = ActiveInteractions();
 
   /// "Turn screen off after": armed when a session starts (and re-armed on
   /// a mid-session wake, so a power-button wake that dismisses nothing gets
@@ -328,7 +330,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // alert, media playback), whichever API the page signalled it through:
     // setInteractionActive, or the legacy pauseScreensaver fallback.
     bus.on<VoiceInteractionChanged>().listen((e) {
-      _paused = e.active;
+      _paused = _interactions.update(e);
       if (_paused) unawaited(stop());
       _resetIdleTimer();
     });

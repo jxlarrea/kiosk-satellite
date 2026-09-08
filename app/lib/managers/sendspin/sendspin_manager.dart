@@ -753,11 +753,19 @@ class SendspinManager extends Manager {
             // must keep firing, because it IS the now-playing display.
             if (!_settings.get(defs.sendspinFullscreen)) {
               bus.publish(
-                VoiceInteractionChanged(active: playing, reason: 'media'),
+                VoiceInteractionChanged(
+                  active: playing,
+                  reason: 'media',
+                  source: InteractionSource.sendspin,
+                ),
               );
             } else if (!playing) {
               bus.publish(
-                const VoiceInteractionChanged(active: false, reason: 'media'),
+                const VoiceInteractionChanged(
+                  active: false,
+                  reason: 'media',
+                  source: InteractionSource.sendspin,
+                ),
               );
             }
           }
@@ -2381,7 +2389,11 @@ class SendspinManager extends Manager {
     if (_playing) {
       _playing = false;
       bus.publish(
-        const VoiceInteractionChanged(active: false, reason: 'media'),
+        const VoiceInteractionChanged(
+          active: false,
+          reason: 'media',
+          source: InteractionSource.sendspin,
+        ),
       );
     }
     _status = const {};

@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **The screensaver recovers after a dashboard reload during playback.** A page could report an active media interaction and reload without sending its end event, leaving the screensaver paused indefinitely. Full navigation and WebView replacement now release the old page's interactions. Native playback and remote pauses keep their own holds until they end. Fixes [#271](https://github.com/jxlarrea/kiosk-satellite/issues/271).
+
 ## v2026.9.30 - 2026-09-08
 
 ### Added

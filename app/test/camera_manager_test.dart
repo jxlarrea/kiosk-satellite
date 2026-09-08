@@ -284,6 +284,26 @@ void main() {
       expect(cameras.activeViewId.value, viewId);
       expect(cameras.focusedCameraId.value, cameraId);
 
+      bus.publish(const VoiceInteractionChanged(
+        active: true, reason: 'media', source: InteractionSource.sendspin,
+      ));
+      bus.publish(const VoiceInteractionChanged(
+        active: true, reason: 'media', source: InteractionSource.page,
+      ));
+      await pumpEventQueue();
+      bus.publish(const VoiceInteractionChanged(
+        active: false, reason: 'media', source: InteractionSource.page,
+      ));
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, isNull,
+          reason: 'discarding the page must preserve native playback');
+      bus.publish(const VoiceInteractionChanged(
+        active: false, reason: 'media', source: InteractionSource.sendspin,
+      ));
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, viewId);
+      expect(cameras.focusedCameraId.value, cameraId);
+
       bus.publish(const VoiceInteractionChanged(active: true));
       await Future<void>.delayed(Duration.zero);
       cameras.hideView();

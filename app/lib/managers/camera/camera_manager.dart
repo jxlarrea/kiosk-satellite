@@ -5,6 +5,7 @@ import 'dart:math' show Random;
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/active_interactions.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
@@ -51,6 +52,7 @@ class CameraManager extends Manager {
 
   bool _saving = false;
   bool _voiceActive = false;
+  final _interactions = ActiveInteractions();
   int _voiceChange = 0;
   String? _interruptedViewId;
   String? _interruptedCameraId;
@@ -741,9 +743,9 @@ class CameraManager extends Manager {
   }
 
   void _onVoiceInteraction(VoiceInteractionChanged event) {
-    _voiceActive = event.active;
+    _voiceActive = _interactions.update(event);
     final change = ++_voiceChange;
-    if (event.active) {
+    if (_voiceActive) {
       interruptForVoice();
       return;
     }
