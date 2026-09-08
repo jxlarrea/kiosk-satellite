@@ -1,6 +1,8 @@
 package me.jxl.kiosk_satellite
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.os.Handler
@@ -24,6 +26,8 @@ import androidx.lifecycle.LifecycleRegistry
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.ByteArrayOutputStream
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Single-shot stills from the device's own camera (the Camera settings
@@ -40,7 +44,10 @@ import io.flutter.plugin.common.MethodChannel
  *    important one: binding a use case on demand instead would make AE
  *    resettle, and a global luminance swing is exactly what the motion
  *    analyzer reads as motion, so every snapshot would wake the screensaver.
- *    A dormant ImageCapture costs nothing until takePicture is called.
+ *    ImageCapture encodes a JPEG only when takePicture is called, but its
+ *    output still counts toward the camera's simultaneous stream limit.
+ *    On cameras that reject that combination, [sharedAnalysis] serves a
+ *    requested still from the next analysis frame at its capture resolution.
  *
  *  - With no motion session up, a snapshot opens the camera, takes one
  *    frame, and releases everything. Nothing stays open between snapshots,
@@ -74,10 +81,42 @@ class DeviceCamera(
      *  set by [CameraMotion] while its session is up. */
     var sharedCapture: ImageCapture? = null
 
+    /** A fallback snapshot uses the next analysis frame without another output. */
+    var sharedAnalysis = false
+    private val pendingAnalysis = AtomicReference<((ByteArray?, String?) -> Unit)?>(null)
+
+    fun clearSharedAnalysis() {
+        sharedAnalysis = false
+        pendingAnalysis.getAndSet(null)?.invoke(null, "camera session ended during snapshot")
+    }
+
+    /** Called before analyzer throttling. Conversion runs only for a requested still. */
+    fun captureAnalysisFrame(image: ImageProxy) {
+        val done = pendingAnalysis.getAndSet(null) ?: return
+        var bitmap: Bitmap? = null
+        var rotated: Bitmap? = null
+        try {
+            bitmap = image.toBitmap()
+            val rotation = image.imageInfo.rotationDegrees
+            rotated = if (rotation == 0) bitmap else Bitmap.createBitmap(
+                bitmap, 0, 0, bitmap.width, bitmap.height,
+                Matrix().apply { postRotate(rotation.toFloat()) }, true,
+            )
+            val out = ByteArrayOutputStream()
+            check(rotated.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out))
+            val bytes = out.toByteArray()
+            mainHandler.post { done(bytes, null) }
+        } catch (e: Exception) {
+            mainHandler.post { done(null, "analysis snapshot failed: ${e.message}") }
+        } finally {
+            if (rotated !== bitmap) rotated?.recycle()
+            bitmap?.recycle()
+        }
+    }
+
     /** Whether [CameraMotion] currently owns the camera. Main thread only.
-     *  With this up and no [sharedCapture] (hardware that could not fit
-     *  both use cases in one session), snapshots refuse rather than evict
-     *  the motion stream. */
+     *  Without a shared capture or analysis frame, snapshots report busy
+     *  rather than evict the motion stream. */
     var motionSessionActive = false
 
     /** One capture at a time; the Dart side serializes too, this is the
@@ -200,6 +239,11 @@ class DeviceCamera(
         // already matches the request.
         sharedCapture?.let {
             take(it, done)
+            return
+        }
+        if (sharedAnalysis) {
+            pendingAnalysis.set(done)
+            cleanup = { pendingAnalysis.compareAndSet(done, null) }
             return
         }
         if (motionSessionActive) {

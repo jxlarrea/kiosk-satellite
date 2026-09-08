@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Camera streaming recovers with simpler capture settings.** RTSP uses a frame rate range advertised by the camera and limits hardware encoding to the requested rate. When a camera rejects the capture configuration, the app waits for the previous camera and encoder to close before retrying without a separate JPEG output, then at a lower resolution. Fallback snapshots use an analysis frame without interrupting motion, face or gesture detection. If streaming still cannot start, detection and snapshots can continue. Changing RTSP settings allows a fresh attempt.
+- **RTSP errors reflect the failed component.** Encoder callbacks no longer hide a stopped RTSP listener or clear a camera failure using stale parameter sets. Closing clients release their sockets before they disappear from the server's client list.
+
 ## v2026.9.29 - 2026-09-08
 
 ### Changed

@@ -22,6 +22,8 @@ class CameraRtspEncoder(
     @Volatile private var codec: MediaCodec? = null
     private var input: Surface? = null
     private var drain: Thread? = null
+    @Volatile var isClosed = false
+        private set
     var codecName = ""
         private set
     var actualSize = ""
@@ -33,6 +35,8 @@ class CameraRtspEncoder(
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
             setInteger(MediaFormat.KEY_BIT_RATE, bitrate)
             setInteger(MediaFormat.KEY_FRAME_RATE, fps)
+            // The sensor can run faster when its supported range is variable.
+            setFloat(MediaFormat.KEY_MAX_FPS_TO_ENCODER, fps.toFloat())
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
         }
         val candidates = MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.filter {
@@ -107,6 +111,7 @@ class CameraRtspEncoder(
         codec = null
         input?.release()
         input = null
+        isClosed = true
     }
 
     companion object {

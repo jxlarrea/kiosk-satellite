@@ -26,8 +26,10 @@ class CameraRtspServer(
     @Volatile private var running = true
     @Volatile private var sps: ByteArray? = null
     @Volatile private var pps: ByteArray? = null
-    @Volatile var error: String? = null
-        private set
+    @Volatile private var videoError: String? = null
+    @Volatile private var listenerError: String? = null
+    val error: String? get() = listenerError ?: videoError
+    val listening: Boolean get() = running && !server.isClosed && listenerError == null
     @Volatile var demand = false
         private set
     private val formatReady = Object()
@@ -55,7 +57,11 @@ class CameraRtspServer(
                     if (client == null) { socket.close(); continue }
                     thread(name = "camera-rtsp-client", isDaemon = true) { client.readRequests() }
                 } catch (e: Exception) {
-                    if (running) fail("RTSP listener stopped: ${e.message}")
+                    if (running) {
+                        listenerError = "RTSP listener stopped: ${e.message}"
+                        fail(listenerError!!)
+                        close()
+                    }
                     break
                 }
             }
@@ -67,7 +73,7 @@ class CameraRtspServer(
         if (!running) return
         idleTask?.cancel(false)
         if (clients.any { it.wantsVideo }) {
-            if (!demand) { demand = true; error = null; onDemand(true) }
+            if (!demand) { demand = true; videoError = null; onDemand(true) }
         } else if (demand) {
             idleTask = scheduler.schedule({
                 synchronized(this) {
@@ -87,13 +93,8 @@ class CameraRtspServer(
                 7 -> sps = unit
                 8 -> pps = unit
             }
-            // An encoder handing over its parameter sets is producing again,
-            // which ends whatever failure was recorded: a camera revoked
-            // mid-stream closes the viewers, and a viewer that reconnects
-            // inside the idle window keeps demand up, so nothing else would
-            // clear the error and Stream Status stayed Unavailable while the
-            // rebound session was streaming to it.
-            if (sps != null && pps != null) error = null
+            // New parameter sets can recover video, never a failed listener.
+            if (sps != null && pps != null) videoError = null
             formatReady.notifyAll()
         }
     }
@@ -106,14 +107,18 @@ class CameraRtspServer(
     }
 
     fun fail(message: String) {
-        error = message
-        synchronized(formatReady) { formatReady.notifyAll() }
+        synchronized(formatReady) {
+            videoError = message
+            sps = null
+            pps = null
+            formatReady.notifyAll()
+        }
         clients.filter { it.playing }.forEach { it.close() }
     }
 
-    fun resetVideo() {
-        sps = null; pps = null
-        clients.forEach { it.close() }
+    fun resetVideo(keepPendingClients: Boolean = false) {
+        synchronized(formatReady) { sps = null; pps = null }
+        clients.filter { !keepPendingClients || it.playing }.forEach { it.close() }
     }
 
     @Synchronized fun close() {
@@ -382,9 +387,11 @@ class CameraRtspServer(
 
         fun close() {
             open = false; playing = false
+            // Keep the client visible until its socket releases the port.
+            // A simultaneous server restart must not miss a closing socket.
+            try { socket.close() } catch (_: Exception) { }
             if (!clients.remove(this)) return
             queue.clear()
-            try { socket.close() } catch (_: Exception) { }
             updateDemand()
         }
     }

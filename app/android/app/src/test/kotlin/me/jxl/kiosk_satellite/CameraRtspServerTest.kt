@@ -10,6 +10,51 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 class CameraRtspServerTest {
+    @Test fun captureFallbackKeepsTheWaitingDescribeClient() {
+        val demand = LinkedBlockingQueue<Boolean>()
+        val server = server(demand)
+        try {
+            Peer(server.localPort).use { peer ->
+                val response = java.util.concurrent.CompletableFuture.supplyAsync { peer.request("DESCRIBE") }
+                assertEquals(true, demand.poll(2, TimeUnit.SECONDS))
+                server.resetVideo(keepPendingClients = true)
+                assertTrue(server.demand)
+                assertEquals(1, server.clientDetails.size)
+                server.config(listOf(sps, pps))
+                assertTrue(response.get(2, TimeUnit.SECONDS).startsWith("RTSP/1.0 200"))
+            }
+        } finally { server.close() }
+    }
+
+    @Test fun encoderCannotHideAStoppedListener() {
+        val server = server(LinkedBlockingQueue())
+        try {
+            server.config(listOf(sps, pps))
+            val field = CameraRtspServer::class.java.getDeclaredField("server").apply { isAccessible = true }
+            (field.get(server) as java.net.ServerSocket).close()
+            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+            while (server.error == null && System.nanoTime() < deadline) Thread.sleep(5)
+            assertNotNull(server.error)
+            server.config(listOf(sps, pps))
+            assertFalse(server.listening)
+            assertTrue(server.error!!.startsWith("RTSP listener stopped:"))
+        } finally { server.close() }
+    }
+
+    @Test fun staleFramesCannotClearCameraFailure() {
+        val server = server(LinkedBlockingQueue())
+        try {
+            server.config(listOf(sps, pps))
+            server.fail("camera failed")
+            server.config(listOf(byteArrayOf(0x41, 1, 2)))
+            assertEquals("camera failed", server.error)
+            server.config(listOf(sps))
+            assertNotNull(server.error)
+            server.config(listOf(pps))
+            assertNull(server.error)
+        } finally { server.close() }
+    }
+
     private class Peer(port: Int) : AutoCloseable {
         private val socket = Socket("127.0.0.1", port).apply { soTimeout = 3000 }
         private val input = BufferedInputStream(socket.getInputStream())
