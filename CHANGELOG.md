@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.30 - 2026-09-08
 
 ### Added
 - **Queue album art stays cached across app restarts.** Visible queue covers are saved as thumbnails up to 256 pixels in a disk cache capped at 100 MB. Older entries are evicted automatically. The new Album art cache row below Duck volume during voice interactions shows disk usage and provides a Clear button in the app and remote settings.
