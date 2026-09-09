@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.33 - 2026-09-09
 
 ### Changed
 - **RTSP video uses a graphics bridge between the camera and encoder.** The camera supplies a SurfaceTexture and a dedicated graphics worker renders frames into the H.264 encoder at the requested rate. Hardware encoders are tried first with software fallback if preparation fails. Motion, face and hand detection, snapshots, microphone audio and authenticated streaming keep their existing controls.
