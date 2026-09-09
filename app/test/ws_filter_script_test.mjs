@@ -9,6 +9,7 @@ async function page({ hook = true, config, deferredConfig = false } = {}) {
   const timers = new Map();
   const listeners = {};
   const frames = [];
+  const warnings = [];
   const requests = [];
   let nextTimer = 0;
   let define;
@@ -54,6 +55,7 @@ async function page({ hook = true, config, deferredConfig = false } = {}) {
     window: { WebSocket: Socket, customElements: registry,
       addEventListener: (type, fn) => { listeners[type] = fn; } },
     document, location: { pathname: '/lovelace/home' },
+    console: { warn: message => warnings.push(message) },
     localStorage: { getItem: () => null },
     setTimeout: fn => { timers.set(++nextTimer, fn); return nextTimer; },
     clearTimeout: id => timers.delete(id),
@@ -101,7 +103,7 @@ async function page({ hook = true, config, deferredConfig = false } = {}) {
   }
   await drain();
   return {
-    context, get root() { return root; }, host, frames, emit, drain, listeners, requests, cfg, Root,
+    context, get root() { return root; }, host, frames, warnings, emit, drain, listeners, requests, cfg, Root,
     api: context.window.__ksWs,
     navigate(path) {
       context.location.pathname = path;
@@ -182,6 +184,119 @@ test('full scans lift filtering and refresh candidates before future state chang
   p.api.setEnabled(false);
   p.api.setEnabled(true);
   assert.equal(p.api.allow, null);
+});
+
+test('captures a caller trace once and leaves it out of polled stats', async () => {
+  const p = await page();
+  assert.equal(p.api.scanDiagnostic(), null);
+  p.context.statesToScan = p.root.hass.states;
+  vm.runInContext('function buildEntityList() { return Object.values(statesToScan); } buildEntityList();',
+    p.context, { filename: 'https://ha/local/example-card.js' });
+  const details = p.api.scanDiagnostic();
+  assert.match(details, /View: \/lovelace\/home/);
+  assert.match(details, /buildEntityList.*example-card\.js/);
+  assert.match(details, /does not identify the exact card instance/);
+  assert.equal(p.warnings.length, 1);
+  assert.equal(p.warnings[0], '[Kiosk Satellite] ' + details);
+  assert.equal(JSON.stringify(p.api.stats()).includes('example-card.js'), false);
+  await p.drain();
+  assert.equal(p.api.stats().mode, 'passthrough');
+});
+
+test('reads and updates never capture stacks and repeated scans capture only once per visit', async () => {
+  const p = await page();
+  let captures = 0, formats = 0;
+  p.context.Error = class {
+    constructor() { captures++; }
+    get stack() { formats++; return 'example-card.js:42:5'; }
+  };
+  for (let i = 0; i < 1000; i++) {
+    void p.root.hass.states['sun.sun'];
+    void ('sun.sun' in p.root.hass.states);
+    Object.getOwnPropertyDescriptor(p.root.hass.states, 'sun.sun');
+    p.emit({ c: { 'sun.sun': { '+': { s: String(i) } },
+      'sensor.other': { '+': { s: String(i) } } } });
+  }
+  assert.equal(p.root.hass.states['sun.sun'].state, '999');
+  assert.equal(p.host.hass.states['sensor.other'].state, '10');
+  assert.equal(captures, 0);
+  assert.equal(formats, 0);
+  assert.equal(p.warnings.length, 0);
+  const old = p.root.hass.states;
+  for (let i = 0; i < 50; i++) Object.keys(old);
+  await p.drain();
+  p.api.reset();
+  p.api.setEnabled(false);
+  p.api.setEnabled(true);
+  p.reconnect();
+  await p.drain();
+  for (let i = 0; i < 50; i++) {
+    Object.values(old);
+    p.api.scanDiagnostic();
+    p.api.stats();
+    p.emit({ c: { 'sensor.other': { '+': { s: String(i) } } } });
+  }
+  assert.equal(p.host.hass.states['sensor.other'].state, '49');
+  assert.equal(captures, 1);
+  assert.equal(formats, 1);
+  assert.equal(p.warnings.length, 1);
+  p.navigate('/lovelace/other');
+  await p.drain();
+  assert.equal(p.api.scanDiagnostic(), null);
+  Object.values(old);
+  assert.equal(p.api.scanDiagnostic(), null);
+  assert.equal(captures, 1);
+  Object.keys(p.root.hass.states);
+  assert.equal(captures, 2);
+  assert.equal(formats, 2);
+  assert.equal(p.warnings.length, 2);
+  assert.match(p.api.scanDiagnostic(), /View: \/lovelace\/other/);
+});
+
+test('bounds diagnostic storage and console output without changing the global stack limit', async () => {
+  const p = await page();
+  p.context.Error = class {
+    static stackTraceLimit = 7;
+    get stack() { return 'x'.repeat(20000); }
+  };
+  Object.keys(p.root.hass.states);
+  assert.ok(p.api.scanDiagnostic().length < 5000);
+  assert.match(p.api.scanDiagnostic(), /x{4084}\n\[truncated\]/);
+  assert.equal(p.warnings.length, 1);
+  assert.ok(p.warnings[0].length < 5000);
+  assert.equal(p.context.Error.stackTraceLimit, 7);
+});
+
+test('unavailable or broken stack capture and logging never interrupt state delivery', async () => {
+  for (const kind of ['missing', 'getter throws', 'constructor throws']) {
+    const p = await page();
+    p.context.Error = class {
+      constructor() { if (kind === 'constructor throws') throw 'capture failed'; }
+      get stack() { if (kind === 'getter throws') throw 'format failed'; }
+    };
+    p.context.console.warn = () => { throw 'console failed'; };
+    p.emit({ c: { 'sensor.other': { '+': { s: '20' } } } });
+    assert.doesNotThrow(() => Object.values(p.root.hass.states));
+    assert.match(p.api.scanDiagnostic(), /Stack trace unavailable/);
+    await p.drain();
+    assert.equal(p.api.stats().mode, 'passthrough');
+    assert.equal(p.api.stats().runtimeFailure, null);
+    assert.equal(p.host.hass.states['sensor.other'].state, '20');
+    p.emit({ c: { 'sensor.other': { '+': { s: '30' } } } });
+    assert.equal(p.host.hass.states['sensor.other'].state, '30');
+  }
+});
+
+test('does not capture traces while filtering is disabled', async () => {
+  const p = await page();
+  const tracked = p.root.hass.states;
+  p.api.setEnabled(false);
+  let captures = 0;
+  p.context.Error = class { constructor() { captures++; } };
+  Object.keys(tracked);
+  assert.equal(captures, 0);
+  assert.equal(p.warnings.length, 0);
+  assert.equal(p.api.scanDiagnostic(), null);
 });
 
 test('tracks existence and property descriptor reads including entities created later', async () => {

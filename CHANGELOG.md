@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Dashboard scan diagnostics.** When a component enumerates all entity states and disables filtering, the **Show scan details** link in device settings and remote admin opens a copyable call stack that may identify the responsible resource or function. The same diagnostic appears once in the Web Console log. Capture runs only once per view visit with a bounded trace, adds no stack tracing to normal entity reads or updates and leaves filtering behavior unchanged. Adds diagnostics for [#482](https://github.com/jxlarrea/kiosk-satellite/issues/482).
+
 ## v2026.9.31 - 2026-09-08
 
 ### Added

@@ -1,6 +1,6 @@
 import { api } from './core.js';
 import { readOnlyRow } from './device.js';
-import { messageBox, modalShell } from './widgets.js';
+import { copyText, messageBox, modalShell } from './widgets.js';
 
 // The navigation path of a view within a dashboard: "url_path/route", or
 // just the dashboard when the route is empty (its default first view).
@@ -38,6 +38,37 @@ export function pickView(urlPath, views, currentRoute) {
     cancel.addEventListener('click', () => { back.remove(); resolve(null); });
     foot.appendChild(cancel);
   });
+}
+
+// Read the saved scan trace on demand, outside the telemetry poll.
+export async function showScanDiagnostic() {
+  let details = null;
+  try {
+    const r = await (await api('/api/commands/evalJs', { method: 'POST',
+      body: JSON.stringify({ code: 'JSON.stringify({details: window.__ksWs && window.__ksWs.scanDiagnostic '
+        + '? window.__ksWs.scanDiagnostic() : null})' }) })).json();
+    let decoded = JSON.parse(r.data);
+    if (typeof decoded === 'string') decoded = JSON.parse(decoded);
+    details = decoded?.details;
+  } catch (_) {}
+  if (typeof details !== 'string' || !details) {
+    details = 'Scan details are not available for the current view.';
+  }
+  const { back, body, foot } = modalShell({ title: 'Dashboard scan details', width: 620,
+    onDismiss: () => back.remove() });
+  const text = document.createElement('pre');
+  text.style.cssText = 'white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px;';
+  text.textContent = details;
+  body.appendChild(text);
+  const copy = document.createElement('button');
+  copy.className = 'btn-text';
+  copy.textContent = 'Copy';
+  copy.addEventListener('click', () => copyText(details));
+  const close = document.createElement('button');
+  close.className = 'btn-primary';
+  close.textContent = 'Close';
+  close.addEventListener('click', () => back.remove());
+  foot.append(copy, close);
 }
 
 // The update filter's watched-entities modal: the current allowlist with

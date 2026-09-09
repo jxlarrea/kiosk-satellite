@@ -174,7 +174,9 @@ const wsFilterScript = r'''
   // global store would count HA's own immutable state copies as dashboard
   // reads and allow every entity on every view.
   var R = { ids: new Set(), all: false, attached: false, failed: false,
-    path: null, epoch: 0 };
+    path: null, epoch: 0, scanDiagnostic: null };
+  // Fetch only when requested. Keep the trace out of the regular stats poll.
+  S.scanDiagnostic = function () { return R.scanDiagnostic; };
   var runtimeScopes = new WeakMap();
   var runtimePending = new Set(), runtimeReplayAll = false, runtimeTimer, runtimeBuildTimer;
   var runtimeRegistries = new WeakSet(), runtimePrototypes = new WeakSet();
@@ -213,6 +215,7 @@ const wsFilterScript = r'''
     R.epoch++;
     R.ids = new Set();
     R.all = false;
+    R.scanDiagnostic = null;
     R.attached = false;
     runtimeScopes = new WeakMap();
     // A pending refresh might contain states withheld on the previous view.
@@ -248,6 +251,22 @@ const wsFilterScript = r'''
     // changing state. Do not guess which candidates the component needs.
     R.all = true;
     runtimeLift();
+    if (!S.enabled) return;
+    // Capture once per view visit, after the existing R.all guard. Entity
+    // reads and incoming updates never create or format a stack trace.
+    // Do not change the page's Error.stackTraceLimit or retain the Error.
+    var trace = 'Stack trace unavailable.';
+    try {
+      var stack = new Error('Full entity-state scan').stack;
+      if (typeof stack === 'string' && stack) {
+        trace = stack.length > 4096 ? stack.slice(0, 4084) + '\n[truncated]' : stack;
+      }
+    } catch (e) {}
+    R.scanDiagnostic = 'Dashboard filtering disabled\nView: /' + R.path.slice(0, 512) +
+      '\nReason: A component enumerated hass.states.\n\nCall stack:\n' + trace +
+      '\n\nThe stack may identify a resource or function. It does not identify the exact card instance.';
+    // A missing or overridden console must not affect state delivery.
+    try { console.warn('[Kiosk Satellite] ' + R.scanDiagnostic); } catch (e) {}
   }
 
   function runtimeCurrent(scope) {

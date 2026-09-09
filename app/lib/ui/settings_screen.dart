@@ -6013,6 +6013,8 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
   /// Tap on the "Watching N entities" link: opens the watched-entities list.
   late final TapGestureRecognizer _watchLink = TapGestureRecognizer()
     ..onTap = _showWatched;
+  late final TapGestureRecognizer _scanLink = TapGestureRecognizer()
+    ..onTap = _showScanDiagnostic;
 
   /// Samples of the wrapper's cumulative counters, kept for the last minute
   /// so the row reports a live rate — the raw counters run since page load
@@ -6108,12 +6110,50 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
   void dispose() {
     _poll?.cancel();
     _watchLink.dispose();
+    _scanLink.dispose();
     super.dispose();
   }
 
   void _onToggle() {
     _syncPolling();
     if (mounted) setState(() {});
+  }
+
+  Future<void> _showScanDiagnostic() async {
+    final raw = await c.browser.eval(
+      'JSON.stringify({details: window.__ksWs && window.__ksWs.scanDiagnostic '
+      '? window.__ksWs.scanDiagnostic() : null})',
+    );
+    Object? decoded;
+    try {
+      decoded = raw == null ? null : jsonDecode(raw);
+      if (decoded is String) decoded = jsonDecode(decoded);
+    } catch (_) {}
+    if (!mounted) return;
+    final saved = decoded is Map ? decoded['details'] : null;
+    final details = saved is String && saved.isNotEmpty
+        ? saved
+        : 'Scan details are not available for the current view.';
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Dashboard scan details'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(child: SelectableText(details)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Clipboard.setData(ClipboardData(text: details)),
+            child: const Text('Copy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// The filter's current allowlist, with friendly names from the page's own
@@ -6247,7 +6287,27 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
               : 'This view\'s entities can\'t be determined, so its updates '
                     'are not filtered.$note'
         : 'Waiting for the dashboard to load...';
-    return _telemetryRow(theme, Text(text, style: base));
+    return _telemetryRow(
+      theme,
+      Text.rich(
+        TextSpan(
+          style: base,
+          children: [
+            TextSpan(text: text),
+            if (_ready && _mode == 'passthrough' && _runtimeAll)
+              TextSpan(
+                text: ' Show scan details.',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                  decorationColor: theme.colorScheme.primary,
+                ),
+                recognizer: _scanLink,
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _telemetryRow(ThemeData theme, Widget child) => Padding(

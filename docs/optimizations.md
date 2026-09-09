@@ -69,6 +69,8 @@ When enabled, Kiosk Satellite inspects the active dashboard view, identifies whi
 
 While filtering is active, a status line beneath the setting shows real time telemetry detailing which entities are being tracked and what percentage of updates are being dropped. Tapping the tracked entity count opens a full list of allowed entities for easy verification.
 
+If a component enumerates `hass.states`, the status says the view reads all entity states. **Show scan details** in device settings and remote admin opens a copyable call stack from the first scan. The same diagnostic appears once in the Web Console log. The stack may point to a custom resource or function but cannot identify the exact card instance. A trace is captured only once per view visit while filtering is enabled, is limited to 4,096 characters and is fetched by the settings dialog only when requested. Normal entity reads and incoming updates do not capture traces. Filtering behavior stays the same.
+
 As you navigate between different dashboard views, the filter updates automatically. If the app encounters a view containing dynamic or complex custom cards whose entity dependencies cannot be reliably parsed (such as heavily templated cards), it safely bypasses the filter for that specific view to prevent breaking your layout. This fallback mechanism ensures that, at worst, the dashboard simply reverts to standard, unfiltered Home Assistant behavior. This feature works best on dedicated, single view kiosk setups.
 
 ## Measured Against Fully Kiosk

@@ -42,6 +42,7 @@ import {
   fetchViews,
   pickView,
   radioRow,
+  showScanDiagnostic,
   showWatchedEntities,
   viewPath,
 } from './views.js';
@@ -2026,6 +2027,13 @@ export async function loadSettings() {
                     t.textContent = (st.runtimeAll
                       ? 'This view reads all entity states, so its updates are not filtered.'
                       : "This view's entities can't be determined, so its updates are not filtered.") + raw;
+                    if (st.runtimeAll) {
+                      const details = document.createElement('span');
+                      details.style.cssText = 'color:var(--primary); text-decoration:underline; cursor:pointer;';
+                      details.textContent = 'Show scan details.';
+                      details.addEventListener('click', showScanDiagnostic);
+                      t.append(' ', details);
+                    }
                     return;
                   }
                   const now = Date.now();
