@@ -177,12 +177,15 @@ void main() {
     // existed: everything at the master (device) volume.
     expect(settings.get(defs.mediaVolume), 100);
     expect(settings.get(defs.assistantVolume), 100);
+    expect(settings.get(defs.assistantFullVolumeRange), isTrue);
     // Both render on the Screen & Audio page's Audio Volume card, in both
     // UIs.
     expect(defs.mediaVolume.category, 'Screen & Audio');
     expect(defs.assistantVolume.category, 'Screen & Audio');
     expect(defs.mediaVolume.section, 'Audio Volume');
     expect(defs.assistantVolume.section, 'Audio Volume');
+    expect(defs.assistantFullVolumeRange.category, 'Screen & Audio');
+    expect(defs.assistantFullVolumeRange.section, 'Audio Volume');
   });
 
   test('the dashboard optimizations are on by default', () async {

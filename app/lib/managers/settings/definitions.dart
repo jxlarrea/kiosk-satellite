@@ -1358,6 +1358,19 @@ const assistantVolume = SettingDef<num>(
   section: 'Audio Volume',
 );
 
+const assistantFullVolumeRange = SettingDef<bool>(
+  key: 'audio.assistant_full_volume_range',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Full assistant volume range',
+  description:
+      "Initialize the built-in speaker's call volume at 100% when assistant "
+      'audio first starts. Master and assistant volume still apply. Other '
+      'apps share this call volume, which is not restored afterward.',
+  category: 'Screen & Audio',
+  section: 'Audio Volume',
+);
+
 // ── Screensaver ────────────────────────────────────────────────────────
 
 const screensaverEnabled = SettingDef<bool>(
@@ -6552,6 +6565,7 @@ const List<SettingDef<Object>> allSettings = [
   adaptiveBrightLux,
   mediaVolume,
   assistantVolume,
+  assistantFullVolumeRange,
   audioMicDevice,
   audioSpeakerDevice,
   micAudioSource,

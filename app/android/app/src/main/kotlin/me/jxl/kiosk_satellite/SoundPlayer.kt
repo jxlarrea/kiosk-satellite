@@ -121,8 +121,25 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     private fun effectiveVolume(id: String): Float {
         val base = baseVolumes[id] ?: 1f
         val gain = if (id in absoluteVolumes) 1f else VolumeController.assistGain
-        return (base * gain).coerceIn(0f, 1f)
+        val master = if (communicationSound(id)) {
+            VolumeController.communicationGain(requests[id]?.output?.type ?: AudioDeviceInfo.TYPE_BUILTIN_SPEAKER)
+        } else 1f
+        return PlaybackVolume.level(base, gain, master)
     }
+
+    private class PlaybackRequest(
+        val lease: AutoCloseable?,
+        val output: AudioDeviceInfo?,
+    )
+    private val communication = CommunicationPlayback(appContext)
+    private val requests = java.util.concurrent.ConcurrentHashMap<String, PlaybackRequest>()
+
+    private fun communicationSound(id: String): Boolean = requests[id]?.lease != null
+
+    private fun attributes(id: String): AudioAttributes = AudioAttributes.Builder()
+        .setUsage(if (communicationSound(id)) AudioAttributes.USAGE_VOICE_COMMUNICATION else AudioAttributes.USAGE_MEDIA)
+        .setContentType(if (communicationSound(id)) AudioAttributes.CONTENT_TYPE_SPEECH else AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build()
 
     /** Per-sound level taps, feeding the page's reactive bar. */
     private val visualizers = mutableMapOf<String, Visualizer>()
@@ -162,7 +179,6 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 "stop" -> {
                     val id = call.argument<String>("id") ?: ""
                     // Whichever path it took; only one of these does anything.
-                    endClip(id, null)
                     finish(id, null)
                     result.success(true)
                 }
@@ -215,10 +231,12 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         if (id.isEmpty() || source.isEmpty()) return false
         // Same id twice = replace: the page re-firing a chime wants the new
         // one, not two overlapped copies.
-        players.remove(id)?.release()
-        exoPlayers.remove(id)?.release()
-        stopTrack(id)
-        val target = AudioRouting.currentOutput()
+        val selected = AudioRouting.currentOutput()
+        val lease = communication.acquire(selected)
+        val target = if (lease != null) communication.output else selected
+        finish(id, null)
+        val request = PlaybackRequest(lease, target)
+        requests[id] = request
         val callRouteWanted =
             target != null && target.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
         val v = volume.toFloat().coerceIn(0f, 1f)
@@ -230,7 +248,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         // Everything else - streamed TTS above all - goes to ExoPlayer.
         if (callRouteWanted) return playWithMediaPlayer(id, source, target)
         if (!source.startsWith("http")) {
-            workerHandler.post { startClip(id, source, target) }
+            workerHandler.post { startClip(id, source, target, request) }
             return true
         }
         return playWithExo(id, source, target)
@@ -257,16 +275,10 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         players[id] = mp
         return try {
             mp.setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(
-                        if (callRoute) AudioAttributes.USAGE_VOICE_COMMUNICATION
-                        else AudioAttributes.USAGE_MEDIA,
-                    )
-                    .setContentType(
-                        if (callRoute) AudioAttributes.CONTENT_TYPE_SPEECH
-                        else AudioAttributes.CONTENT_TYPE_MUSIC,
-                    )
-                    .build(),
+                if (callRoute) AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
+                else attributes(id),
             )
             if (callRoute) ensureScoLink(id, target!!)
             mp.setDataSource(source)
@@ -286,9 +298,9 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 channel.invokeMethod("started", mapOf("id" to id))
                 startLevelCapture(id, player)
             }
-            mp.setOnCompletionListener { finish(id, null) }
-            mp.setOnErrorListener { _, what, extra ->
-                finish(id, "MediaPlayer error $what/$extra")
+            mp.setOnCompletionListener { if (players[id] === it) finish(id, null) }
+            mp.setOnErrorListener { player, what, extra ->
+                if (players[id] === player) finish(id, "MediaPlayer error $what/$extra")
                 true
             }
             mp.prepareAsync()
@@ -307,10 +319,12 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
      * hold - a long download, or something it could not decode - so the
      * caller never has to know which path a sound took.
      */
-    private fun startClip(id: String, source: String, target: AudioDeviceInfo?) {
+    private fun startClip(id: String, source: String, target: AudioDeviceInfo?, request: PlaybackRequest) {
+        if (requests[id] !== request) return
         val clip = SoundClips.get(source)
+        if (requests[id] !== request) return
         if (clip == null) {
-            mainHandler.post { playWithExo(id, source, target) }
+            mainHandler.post { if (requests[id] === request) playWithExo(id, source, target) }
             return
         }
         val channelMask = if (clip.channels >= 2) {
@@ -320,12 +334,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         }
         val track = try {
             AudioTrack.Builder()
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build(),
-                )
+                .setAudioAttributes(attributes(id))
                 .setAudioFormat(
                     AudioFormat.Builder()
                         .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
@@ -339,7 +348,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 .build()
         } catch (e: Exception) {
             Log.w(TAG, "clip track failed for $id: ${e.message}")
-            mainHandler.post { playWithExo(id, source, target) }
+            mainHandler.post { if (requests[id] === request) playWithExo(id, source, target) }
             return
         }
         try {
@@ -351,20 +360,30 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                     enforceRouting(id, track)
                 }
             }
-            synchronized(tracks) { tracks[id] = track }
-            track.play()
+            synchronized(tracks) {
+                if (requests[id] !== request) {
+                    track.release()
+                    return
+                }
+                tracks[id] = track
+                track.play()
+            }
         } catch (e: Exception) {
             Log.w(TAG, "clip play failed for $id: ${e.message}")
-            synchronized(tracks) { tracks.remove(id) }
+            synchronized(tracks) { if (tracks[id] === track) tracks.remove(id) }
             try { track.release() } catch (_: Exception) {}
-            mainHandler.post { playWithExo(id, source, target) }
+            mainHandler.post { if (requests[id] === request) playWithExo(id, source, target) }
             return
         }
-        mainHandler.post { channel.invokeMethod("started", mapOf("id" to id)) }
-        emitClipLevels(id, clip)
+        mainHandler.post {
+            if (requests[id] === request) channel.invokeMethod("started", mapOf("id" to id))
+        }
+        emitClipLevels(id, clip, request)
         // AudioTrack has no completion callback worth trusting on a static
         // buffer, and the duration is known exactly, so the end is scheduled.
-        workerHandler.postDelayed({ endClip(id, null) }, clip.durationMs.toLong() + 60)
+        workerHandler.postDelayed({
+            mainHandler.post { if (requests[id] === request) finish(id, null) }
+        }, clip.durationMs.toLong() + 60)
     }
 
     /**
@@ -417,8 +436,8 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             exoPlayers[id] = player
             player.setAudioAttributes(
                 androidx.media3.common.AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .setUsage(if (communicationSound(id)) C.USAGE_VOICE_COMMUNICATION else C.USAGE_MEDIA)
+                    .setContentType(if (communicationSound(id)) C.AUDIO_CONTENT_TYPE_SPEECH else C.AUDIO_CONTENT_TYPE_MUSIC)
                     .build(),
                 /* handleAudioFocus = */ false,
             )
@@ -620,7 +639,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
      * else. No Visualizer, which means no RECORD_AUDIO and no per-sound
      * effect attach.
      */
-    private fun emitClipLevels(id: String, clip: SoundClips.Clip) {
+    private fun emitClipLevels(id: String, clip: SoundClips.Clip, request: PlaybackRequest) {
         val step = SoundClips.LEVEL_WINDOW_MS.toLong()
         var lastSent = -1f
         for ((i, level) in clip.levels.withIndex()) {
@@ -630,7 +649,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             if (abs(level - lastSent) < 0.008f) continue
             lastSent = level
             workerHandler.postDelayed({
-                val live = synchronized(tracks) { tracks.containsKey(id) }
+                val live = requests[id] === request && synchronized(tracks) { tracks.containsKey(id) }
                 if (!live) return@postDelayed
                 mainHandler.post {
                     channel.invokeMethod(
@@ -656,17 +675,6 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         } catch (_: Exception) {
         }
         return true
-    }
-
-    /** A clip reaching its end, or being stopped: reported like any sound. */
-    private fun endClip(id: String, error: String?) {
-        if (!stopTrack(id)) return
-        baseVolumes.remove(id)
-        mainHandler.post {
-            absoluteVolumes.remove(id)
-            routingReasserts.remove(id)
-            channel.invokeMethod("ended", mapOf("id" to id, "error" to error))
-        }
     }
 
     /**
@@ -791,6 +799,8 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     }
 
     private fun finish(id: String, error: String?) {
+        val request = synchronized(tracks) { requests.remove(id) } ?: return
+        stopTrack(id)
         visualizers.remove(id)?.let {
             try {
                 it.enabled = false
@@ -808,7 +818,6 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         routingReasserts.remove(id)
         val mp = players.remove(id)
         val exo = exoPlayers.remove(id)
-        if (mp == null && exo == null) return
         // The ended event goes out BEFORE any teardown. Everything the user
         // is waiting for hangs off it - the page's completion logic and the
         // done chime it fires - and player release is pure cleanup. It used
@@ -828,8 +837,10 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         if (mp != null) {
             workerHandler.post {
                 try { mp.release() } catch (_: Exception) {}
+                mainHandler.post { request.lease?.close() }
             }
         }
         try { exo?.release() } catch (_: Exception) {}
+        if (mp == null) request.lease?.close()
     }
 }

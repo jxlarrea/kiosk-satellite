@@ -324,7 +324,9 @@ class DeviceManager extends Manager {
     // applies them (issue #79), so hand them down at start and on every
     // slider move, then re-read the composed gain for the Dart players.
     _mixSub = bus.on<SettingChanged>().listen((e) async {
-      if (e.key != defs.mediaVolume.key && e.key != defs.assistantVolume.key) {
+      if (e.key != defs.mediaVolume.key &&
+          e.key != defs.assistantVolume.key &&
+          e.key != defs.assistantFullVolumeRange.key) {
         return;
       }
       await _pushVolumeMix();
@@ -672,6 +674,9 @@ class DeviceManager extends Manager {
       await background.invokeMethod<void>('setVolumeMix', {
         'media': _settings.get(defs.mediaVolume).toInt(),
         'assistant': _settings.get(defs.assistantVolume).toInt(),
+        'assistantFullVolumeRange': _settings.get(
+          defs.assistantFullVolumeRange,
+        ),
       });
     } catch (_) {}
   }

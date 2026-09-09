@@ -42,6 +42,9 @@ import kotlin.math.max
  * usually attaches and then silently does nothing. The tradeoff is that this
  * source also applies the platform's own NS/AGC by default, which is exactly
  * what [applyDsp] turns back off.
+ * SoundPlayer must also use communication playback and a communication
+ * session. Enabling the capture effect alone does not cancel media playback
+ * on devices such as the Samsung Galaxy Tab S8.
  *
  * All three of those choices are overridable from settings, because on custom
  * ROMs they are exactly what goes wrong: VOICE_COMMUNICATION is the phone-call
@@ -63,6 +66,8 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         const val CHANNEL = "kiosk_satellite/mic"
         private const val TAG = "MicRecorder"
         @Volatile var rtspAudioTap: ((ByteArray, Long) -> Unit)? = null
+        @Volatile var inputSelector: String? = null
+            private set
         private const val SAMPLE_RATE = 16000
         private const val CHUNK_BYTES = 1280 * 2 // 80 ms of 16-bit mono
 
@@ -78,8 +83,9 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
 
         /**
          * How much all-zero audio after open before concluding the capture
-         * is broken (2 s at 16 kHz). Real capture never does this - even a
-         * silent room floors at nonzero ADC noise.
+         * is broken (2 s at 16 kHz). Echo cancellation can produce exact
+         * silence, so communication playback and its settling time are
+         * excluded from this watchdog.
          */
         private const val SILENT_FALLBACK_BYTES = 2L * SAMPLE_RATE * 2
     }
@@ -113,6 +119,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         // exactly 1 lets the read loop skip the sample walk entirely.
         val gain = gainFactor((args?.get("gainDb") as? Number)?.toDouble() ?: 0.0)
         val selector = args?.get("device") as? String
+        inputSelector = selector
         val wantChannel = (args?.get("channel") as? Number)?.toInt() ?: 0
         // The mask must reach the chosen channel even when the device cannot
         // be resolved right now (it may still appear by open time), and must
@@ -181,7 +188,8 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                 // audio is no consolation when the chosen one is dead.
                 val mono = if (chansNow > 1) extractChannel(buf, read, chansNow, channelIdx) else null
                 val monoLen = mono?.size ?: read
-                if (allZero(mono ?: buf, monoLen)) {
+                val silent = allZero(mono ?: buf, monoLen)
+                if (silent && !CommunicationPlayback.maySuppressCapture()) {
                     zeroRun += monoLen
                     if (!fellBack && zeroRun >= SILENT_FALLBACK_BYTES) {
                         fellBack = true
@@ -219,7 +227,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                     }
                 } else {
                     zeroRun = 0
-                    if (decimate && !announcedFallbackAudio) {
+                    if (!silent && decimate && !announcedFallbackAudio) {
                         announcedFallbackAudio = true
                         Log.i(TAG, "$FALLBACK_RATE Hz fallback capture is delivering audio")
                     }

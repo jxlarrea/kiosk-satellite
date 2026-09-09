@@ -3,6 +3,7 @@ package me.jxl.kiosk_satellite
 import android.content.Context
 import android.content.SharedPreferences
 import android.media.AudioManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import java.util.concurrent.CopyOnWriteArrayList
@@ -27,9 +28,9 @@ import kotlin.math.roundToInt
  * Media and assistant live in Dart settings (persisted, exported,
  * rendered by both settings UIs); Dart pushes them here so the values are
  * available synchronously on the audio paths and to SendSpin's native
- * volume reporting. Nothing but master ever touches the stream: no
- * temporary overrides, no compensation, and therefore none of the level
- * wobble those caused.
+ * volume reporting. Only master changes STREAM_MUSIC. Assistant AEC playback
+ * maps the master into its software gain. The optional full-range setting
+ * initializes speaker call volume once, without restoring it afterward.
  *
  * All percents map to linear amplitude through a squared taper: sink gain
  * APIs are linear, and a linear slider crams all the audible change into
@@ -60,6 +61,8 @@ object VolumeController {
     @Volatile private var mediaPct = 100
     @Volatile private var assistPct = 100
     @Volatile private var mediaMutedFlag = false
+
+    internal val assistantCallVolume = CallVolumeBaseline()
 
     fun init(context: Context) {
         audioManager =
@@ -178,10 +181,11 @@ object VolumeController {
     // ── Media and assistant faders ────────────────────────────────────
 
     /** The Dart settings arriving; both at once, one notification. */
-    fun setMix(media: Int, assistant: Int) {
+    fun setMix(media: Int, assistant: Int, fullAssistantRange: Boolean) {
         val m = media.coerceIn(0, 100)
         val a = assistant.coerceIn(0, 100)
-        if (m == mediaPct && a == assistPct) return
+        val rangeChanged = assistantCallVolume.setEnabled(fullAssistantRange)
+        if (m == mediaPct && a == assistPct && !rangeChanged) return
         mediaPct = m
         assistPct = a
         notifyChanged()
@@ -219,6 +223,32 @@ object VolumeController {
     /** Linear amplitude for Voice Satellite sounds (SoundPlayer). */
     val assistGain: Float
         get() = masterSoftGain() * curve(assistPct)
+
+    /** Keep communication sounds under the same master as media playback. */
+    fun communicationGain(deviceType: Int): Float {
+        if (isFixed) return 1f // assistGain already includes the software master.
+        if (muted() || percent() == 0) return 0f
+        if (Build.VERSION.SDK_INT >= 28) {
+            try {
+                val mediaDb = audioManager.getStreamVolumeDb(
+                    AudioManager.STREAM_MUSIC,
+                    audioManager.getStreamVolume(AudioManager.STREAM_MUSIC), deviceType,
+                )
+                val voiceDb = audioManager.getStreamVolumeDb(
+                    AudioManager.STREAM_VOICE_CALL,
+                    audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL), deviceType,
+                )
+                if (mediaDb == Float.NEGATIVE_INFINITY) return 0f
+                if (mediaDb.isFinite() && voiceDb.isFinite()) {
+                    return PlaybackVolume.compensation(mediaDb, voiceDb)
+                }
+            } catch (_: IllegalArgumentException) {}
+        }
+        return curve(percent())
+    }
+
+    /** Master and call-volume changes affect communication playback gain. */
+    fun systemVolumeChanged() = notifyChanged()
 
     private fun notifyChanged() {
         if (Looper.myLooper() == Looper.getMainLooper()) {

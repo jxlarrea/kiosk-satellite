@@ -23,12 +23,18 @@ Speak at a normal volume from the distance where you typically use the device. I
 
 This setting determines which of Android's internal microphone audio paths the app records from.
 
-* **Voice communication** (Default): Uses the phone call capture path. This is the only path that supports hardware echo cancellation, which is why it is enabled by default. It allows the kiosk to listen for a stop word while simultaneously playing audio through its speaker.
+* **Voice communication** (Default): Requests Android's call capture path and hardware echo cancellation. Native assistant playback also uses a communication audio session on supported outputs so the canceller can remove speaker audio while the kiosk listens for a stop word.
 * **Voice recognition** and **Raw microphone**: Completely bypass the phone call capture path.
 
 On custom ROMs, the call capture path is frequently miscalibrated because it undergoes the least testing during development. A custom ROM might deliver audio on the call path 20 dB quieter than the raw microphone, even though a standard recording app on the raw source sounds perfectly clear. This setting exists specifically to resolve that issue.
 
-The trade off of switching away from Voice communication is the loss of echo cancellation. The kiosk may pick up its own speaker output and process it, leading to the device talking over itself or falsely triggering on its own voice. If this occurs, lower the speaker volume or increase the physical distance between the speaker and the microphone.
+Echo cancellation on other capture modes depends on the device. An enabled effect does not guarantee that Android supplies the playback signal it needs. The kiosk may then hear its own speaker output and process it as speech.
+
+Native assistant sounds share the communication session until the last sound ends. The app then releases its audio mode and routing request. Master and assistant volume controls apply through software gain. External microphones and media outputs such as Bluetooth A2DP and HDMI keep their selected routes. Devices without an Android echo canceller need echo processing in their microphone hardware or another audio path.
+
+**Full assistant volume range**, below Assistant volume in Screen & Audio, is on by default. It sets the built-in speaker's call volume to 100% on the first eligible assistant playback after startup or re-enabling the setting. Initialization waits until the app can acquire its communication route without taking over an existing call. The level is an intentional baseline shared with other apps using call audio. Playback cleanup and turning the toggle off do not restore the previous level. Later call-volume adjustments are preserved until the next startup or explicit re-enable. With the toggle off or call volume subsequently reduced, the system call volume can limit maximum assistant output.
+
+Android can briefly mute other media when switching into or out of communication playback. This routing transition is separate from the app's voice-interaction ducking setting.
 
 ## Automatic Gain Control
 

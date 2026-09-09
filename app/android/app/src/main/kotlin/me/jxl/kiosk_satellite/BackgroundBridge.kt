@@ -301,6 +301,7 @@ class BackgroundBridge(
                     VolumeController.setMix(
                         (call.argument<Number>("media"))?.toInt() ?: 100,
                         (call.argument<Number>("assistant"))?.toInt() ?: 100,
+                        call.argument<Boolean>("assistantFullVolumeRange") ?: true,
                     )
                     result.success(true)
                 }
@@ -508,14 +509,15 @@ class BackgroundBridge(
 
     // Hardware volume changes (rocker, other apps), pushed to Dart so the
     // ESPHome volume entity tracks reality instead of drifting until the next
-    // poll. The extra filters to STREAM_MUSIC: ring/alarm changes are not
-    // the media volume the entity models.
+    // poll. Call-volume changes also refresh assistant compensation. Dart
+    // still reads STREAM_MUSIC as its master, never the call-volume index.
     private val volumeReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             val stream = intent?.getIntExtra(
                 "android.media.EXTRA_VOLUME_STREAM_TYPE", -1) ?: return
-            if (stream != android.media.AudioManager.STREAM_MUSIC) return
-            channel.invokeMethod("volumeChanged", null)
+            if (stream != android.media.AudioManager.STREAM_MUSIC &&
+                stream != android.media.AudioManager.STREAM_VOICE_CALL) return
+            VolumeController.systemVolumeChanged()
         }
     }
 

@@ -65,6 +65,8 @@ class MainActivity : FlutterActivity() {
         // next dispatch.
         val fuseTripped = HomeFuse.noteBootAttempt(this)
         super.onCreate(savedInstanceState)
+        // The master volume stays on the media stream during assistant speech.
+        volumeControlStream = android.media.AudioManager.STREAM_MUSIC
         // The kiosk is up, so a deliberate restart's alarm relaunch is
         // redundant: the crash guard's sticky-service relaunch usually
         // lands first, and the alarm then fired a second, clear-task
