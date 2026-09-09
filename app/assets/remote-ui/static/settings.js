@@ -2371,6 +2371,11 @@ export function updateRtspRows() {
       : st.error || (!st.listening ? 'Listener is stopped.'
         : active ? `${st.clients} connected ${st.clients === 1 ? 'viewer' : 'viewers'}. ${st.resolution || ''}`.trim()
         : 'Ready. The encoder starts when a viewer connects.');
+    if (st?.audioEnabled) {
+      status.querySelector('.desc').textContent += st.audioError ? ` Audio: ${st.audioError}`
+        : st.audioSuspended ? ' Audio paused while the browser uses the microphone.'
+        : st.audioEncoding ? ' Microphone audio streaming.' : ' Microphone audio idle.';
+    }
     const addresses = st?.urls?.length ? st.urls : [''];
     const signature = JSON.stringify(addresses);
     if (signature !== lastUrls) {

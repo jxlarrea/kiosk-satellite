@@ -80,6 +80,7 @@ class KioskSatelliteService : Service() {
         const val REASON_ESPHOME = "esphome"
         const val REASON_BLUETOOTH = "bluetooth"
         const val REASON_LISTENING = "listening"
+        const val REASON_RTSP_AUDIO = "rtsp_audio"
         const val REASON_CAMERA = "camera"
         const val REASON_KIOSK = "kiosk"
         const val REASON_LOCATION = "location"
@@ -287,7 +288,7 @@ class KioskSatelliteService : Service() {
         if (Build.VERSION.SDK_INT >= 34) {
             types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
         }
-        if (REASON_LISTENING in reasons && Build.VERSION.SDK_INT >= 30 &&
+        if ((REASON_LISTENING in reasons || REASON_RTSP_AUDIO in reasons) && Build.VERSION.SDK_INT >= 30 &&
             granted(android.Manifest.permission.RECORD_AUDIO)
         ) {
             types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
@@ -476,6 +477,7 @@ class KioskSatelliteService : Service() {
     private fun summary(reasons: Set<String>): String {
         val labels = mutableListOf<String>()
         if (REASON_LISTENING in reasons) labels.add("listening for a wake word")
+        if (REASON_RTSP_AUDIO in reasons) labels.add("RTSP microphone audio enabled")
         if (REASON_ESPHOME in reasons) labels.add("serving ESPHome")
         if (REASON_BLUETOOTH in reasons) labels.add("relaying Bluetooth devices")
         if (REASON_CAMERA in reasons) labels.add("watching the camera")

@@ -1,67 +1,62 @@
 import 'dart:async';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 
 import '../wake_word/vsww/native_mic.dart';
 
-/// The one native microphone capture, shared by every consumer.
-///
-/// MicRecorder is single-client: a second EventChannel listen while capture
-/// runs is silently ignored, so two Dart subscribers opening [NativeMic]
-/// directly would leave one of them deaf with no error. This hub owns the
-/// single native subscription and fans the PCM chunks out: the wake-word
-/// engine is one subscriber, the clap detector another, and whichever of them
-/// is around keeps the capture open. Reference counting is the broadcast
-/// controller's: the native stream opens with the first listener and closes
-/// with the last, so a Voice Satellite device pays nothing extra for claps
-/// and a clapper-only device never opens a second capture.
+/// One native microphone capture shared by wake detection, claps and RTSP.
+/// Capture opens for the first subscriber and closes after the last leaves.
 class MicHub {
   MicHub._();
 
   static final MicHub instance = MicHub._();
 
-  /// Opens the underlying native capture; swapped in tests.
+  /// Opens the underlying native capture. Replaced in tests.
   Stream<Uint8List> Function() opener = () => NativeMic().stream();
-
+  final browserCapturing = ValueNotifier<bool>(false);
   StreamController<Uint8List>? _out;
   StreamSubscription<Uint8List>? _native;
+  Future<void> _pending = Future.value();
 
-  /// Whether the native capture is currently open.
   bool get capturing => _native != null;
 
-  /// 16 kHz mono PCM16 chunks, shared. Listening opens the native capture if
-  /// this is the first subscriber; cancelling closes it if it was the last.
-  /// A capture failure surfaces as a stream error to every subscriber.
   Stream<Uint8List> stream() {
     _out ??= StreamController<Uint8List>.broadcast(
-      onListen: _open,
-      onCancel: _close,
+      onListen: () => unawaited(_sync()),
+      onCancel: () => unawaited(_sync()),
     );
     return _out!.stream;
   }
 
-  void _open() {
-    _native = opener().listen(
-      (chunk) => _out?.add(chunk),
-      onError: (Object e) => _out?.addError(e),
-    );
+  Future<void> _sync({bool reopen = false}) {
+    _pending = _pending
+        .then((_) async {
+          final wanted = _out?.hasListener == true && !browserCapturing.value;
+          if (!wanted || reopen) {
+            final sub = _native;
+            _native = null;
+            await sub?.cancel();
+          }
+          if (wanted && _native == null) {
+            _native = opener().listen(
+              (chunk) => _out?.add(chunk),
+              onError: (Object e) => _out?.addError(e),
+            );
+          }
+        })
+        .catchError((Object e) {
+          _out?.addError(e);
+        });
+    return _pending;
   }
 
-  Future<void> _close() async {
-    final sub = _native;
-    _native = null;
-    await sub?.cancel();
+  /// Browser capture gets exclusive ownership until its last track stops.
+  /// Wait for native cancellation before allowing getUserMedia to proceed.
+  Future<void> setBrowserCapturing(bool active) {
+    browserCapturing.value = active;
+    return _sync();
   }
 
-  /// Reopen the native capture without disturbing subscribers.
-  ///
-  /// Capture settings (device, source, gain, AGC, channel) are fixed when the
-  /// session opens, so a change needs a fresh open. With a single consumer
-  /// that came free — its stop/start was the reopen — but with the capture
-  /// shared, one consumer's restart no longer closes the stream, so the
-  /// settings change itself must bounce it. No-op while nothing is capturing.
-  Future<void> bounce() async {
-    if (_native == null) return;
-    await _close();
-    _open();
-  }
+  /// Apply changed device, source, gain, AGC or channel settings.
+  Future<void> bounce() => _sync(reopen: true);
 }

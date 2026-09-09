@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kiosk_satellite/managers/audio/mic_hub.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/logging.dart';
@@ -36,6 +37,30 @@ void main() {
       );
     }
   }
+
+  test(
+    'browser microphone holds survive another track stopping and clear on navigation',
+    () async {
+      await build();
+      final hub = MicHub.instance;
+      await api.handleCall([
+        'browserMicrophone',
+        {'id': 'one', 'active': true},
+      ]);
+      await api.handleCall([
+        'browserMicrophone',
+        {'id': 'two', 'active': true},
+      ]);
+      await api.handleCall([
+        'browserMicrophone',
+        {'id': 'one', 'active': false},
+      ]);
+      expect(hub.browserCapturing.value, true);
+      api.onPageStarted();
+      expect(hub.browserCapturing.value, false);
+      await api.dispose();
+    },
+  );
 
   test('a page playSound loses its volume opinion, keeps the rest', () async {
     await build();

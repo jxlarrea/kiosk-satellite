@@ -100,11 +100,16 @@ Tap the **Stream URL** field below **Port** to copy it. **Stream Status** shows 
 | Resolution | 480p | 480p, 720p or 1080p. Android picks the closest supported size. Video uses the camera sensor's orientation. |
 | Frame rate | 10 fps | Target rate from 5 to 30 fps. Actual delivery depends on the hardware and lighting. |
 | Bitrate | 500 kbps | Target H.264 bitrate from 100 to 8000 kbps. |
+| Include microphone audio | off | Add 16 kHz mono AAC audio at 32 kbps. Continues when Voice Satellite is muted or Lockdown Mode is on. |
 | Require authentication | off | Reveals Username and Password. Both must be set before an authenticated listener starts. |
 
-Use RTSP over TCP in your viewer. The stream contains H.264 video without audio. For go2rtc, add the URL as a stream source. Frigate can record the H.264 stream without transcoding it. Authentication uses RTSP Digest. Enter the credentials in your client or use `rtsp://USERNAME:PASSWORD@DEVICE_IP:8554/camera`, with URL encoding for special characters.
+Use RTSP over TCP in your viewer. The stream contains H.264 video and optional AAC microphone audio. For go2rtc, add the URL as a stream source. Frigate can record the H.264 stream without transcoding it. Authentication uses RTSP Digest. Enter the credentials in your client or use `rtsp://USERNAME:PASSWORD@DEVICE_IP:8554/camera`, with URL encoding for special characters.
 
 One hardware encoder serves up to four connected viewers. It starts when the first authenticated viewer requests video and stops shortly after the last viewer disconnects. Enabling the listener alone does not open the camera or encode video. A recorder that stays connected keeps the encoder running. Slow viewers are disconnected instead of blocking the camera or growing an unlimited queue.
+
+Microphone audio shares the capture used by native wake word detection and voice interactions, including the selected device, channel, gain and echo cancellation settings. The AAC encoder runs on a separate worker only while a viewer requests the audio track. Video-only viewers do not start it. Audio encoding and slow viewers cannot block microphone capture.
+
+RTSP audio is independent of Voice Satellite mute and Lockdown Mode. Turn off **Include microphone audio** or RTSP Streaming to stop broadcasting the microphone. Android microphone permission still applies. While the dashboard captures audio through the browser, native capture yields and RTSP audio pauses. It resumes after the browser releases its last microphone track. Native voice interactions continue sharing capture without pausing RTSP audio. **Stream Status** reports audio activity, browser pauses and audio errors separately from video.
 
 Motion and face detection keep their own analysis rates. A voice interaction pauses that analysis while video continues. Snapshots share the same camera session. Hardware that cannot supply all three outputs reports a streaming error and preserves motion and snapshots. Changing the camera or video settings disconnects viewers so they can reconnect with the new configuration.
 

@@ -3768,6 +3768,19 @@ const cameraRtspBitrate = SettingDef<num>(
   unit: 'kbps',
 );
 
+const cameraRtspAudio = SettingDef<bool>(
+  key: 'camera.rtsp.audio',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Include microphone audio',
+  description:
+      'Encode microphone audio in the RTSP stream. Shares your microphone settings. WARNING: Increased CPU usage.',
+  category: 'Camera',
+  section: 'RTSP Streaming',
+  subpage: 'RTSP Streaming',
+  dependsOn: 'camera.rtsp.enabled',
+);
+
 const cameraRtspAuth = SettingDef<bool>(
   key: 'camera.rtsp.auth',
   type: SettingType.boolean,
@@ -6698,6 +6711,7 @@ const List<SettingDef<Object>> allSettings = [
   cameraRtspResolution,
   cameraRtspFps,
   cameraRtspBitrate,
+  cameraRtspAudio,
   cameraRtspAuth,
   cameraRtspUsername,
   cameraRtspPassword,

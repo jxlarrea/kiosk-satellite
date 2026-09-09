@@ -14,6 +14,7 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'native_motion.dart';
 import 'native_rtsp.dart';
+import 'rtsp_audio.dart';
 import 'camera_diagnostics.dart';
 import 'vision_support.dart';
 
@@ -85,6 +86,7 @@ class MotionManager extends Manager {
 
   final SettingsManager _settings;
   late final CameraDiagnostics _diagnostics = CameraDiagnostics(log);
+  final _rtspAudio = RtspAudio();
   bool _rtspDemand = false;
   bool _streamRtsp = false;
   bool _disposed = false;
@@ -101,6 +103,7 @@ class MotionManager extends Manager {
     );
     final config = <String, Object>{
       'enabled': _rtspEnabled,
+      'audio': _settings.get(defs.cameraRtspAudio),
       'port': _settings.get(defs.cameraRtspPort).toInt(),
       'width': width,
       'height': height,
@@ -114,11 +117,17 @@ class MotionManager extends Manager {
     if (!force && mapEquals(config, _lastRtspConfig)) return;
     _lastRtspConfig = config;
     _rtspDemand = false;
+    _rtspAudio.demand(false);
     _sync();
     _rtspConfiguration = _rtspConfiguration.then((_) async {
       if (_disposed) return;
       try {
-        if (config['enabled'] == true) await _ensurePermission();
+        if (config['enabled'] == true) {
+          await _ensurePermission();
+          if (config['audio'] == true) {
+            await ensureOsPermission(Permission.microphone);
+          }
+        }
         final status = await NativeRtsp.configure(config);
         if (status['error'] != null) log.warn(name, 'RTSP: ${status['error']}');
       } catch (e) {
@@ -352,11 +361,19 @@ class MotionManager extends Manager {
   @override
   Future<void> init() async {
     await _diagnostics.start();
-    NativeRtsp.onDemand((wanted) {
-      if (_disposed) return;
-      _rtspDemand = wanted && _rtspEnabled;
-      _sync();
-    });
+    NativeRtsp.onDemand(
+      (wanted) {
+        if (_disposed) return;
+        _rtspDemand = wanted && _rtspEnabled;
+        _sync();
+      },
+      onAudioDemand: (wanted) => _rtspAudio.demand(
+        wanted &&
+            !_disposed &&
+            _rtspEnabled &&
+            _settings.get(defs.cameraRtspAudio),
+      ),
+    );
     commands.register(
       Command(
         name: 'getRtspStatus',
@@ -364,7 +381,11 @@ class MotionManager extends Manager {
             'RTSP listener, connected viewers, stream URLs and encoder status.',
         handler: (_) async {
           try {
-            return CommandResult.ok(await NativeRtsp.status());
+            return CommandResult.ok({
+              ...await NativeRtsp.status(),
+              if (_rtspAudio.error != null) 'audioError': _rtspAudio.error,
+              'audioSuspended': _rtspAudio.suspended,
+            });
           } catch (_) {
             return const CommandResult.fail(
               'RTSP is unavailable while the Activity is detached.',
@@ -841,6 +862,7 @@ class MotionManager extends Manager {
     _disposed = true;
     await _diagnostics.dispose();
     NativeRtsp.onDemand(null);
+    await _rtspAudio.dispose();
     await _rtspConfiguration;
     try {
       await NativeRtsp.configure({'enabled': false});

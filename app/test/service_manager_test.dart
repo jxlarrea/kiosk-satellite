@@ -42,6 +42,25 @@ void main() {
     },
   );
 
+  test(
+    'RTSP audio requests microphone service support without background wake detection',
+    () async {
+      await build();
+      await settings.set(defs.wakeWordBackground, false);
+      await settings.set(defs.cameraEnabled, true);
+      await settings.set(defs.cameraRtspEnabled, true);
+      await settings.set(defs.cameraRtspAudio, true);
+      await Future<void>.delayed(Duration.zero);
+      expect(ids(), contains('rtsp_audio'));
+      expect(ids(), isNot(contains('listening')));
+      expect(service.neededGrants()['microphone'], true);
+      await settings.set(defs.cameraEnabled, false);
+      await Future<void>.delayed(Duration.zero);
+      expect(ids(), isNot(contains('rtsp_audio')));
+      expect(service.neededGrants()['microphone'], false);
+    },
+  );
+
   test('every feature that needs the process adds its reason', () async {
     await build();
     await settings.set(defs.wakeWordEnabled, true);

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
+import 'package:kiosk_satellite/managers/audio/mic_hub.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -75,6 +78,56 @@ void main() {
     await motion.dispose();
     await bus.dispose();
   });
+
+  test(
+    'audio is opt in and stays captured through mute and Lockdown Mode',
+    () async {
+      final hub = MicHub.instance;
+      final previous = hub.opener;
+      var opens = 0;
+      final mic = StreamController<Uint8List>();
+      hub.opener = () {
+        opens++;
+        return mic.stream;
+      };
+      Future<void> audioDemand(bool value) async {
+        await messenger.handlePlatformMessage(
+          'kiosk_satellite/camera/rtsp',
+          const StandardMethodCodec().encodeMethodCall(
+            MethodCall('audioDemand', value),
+          ),
+          (_) {},
+        );
+        await settle();
+      }
+
+      try {
+        expect(configurations.last['audio'], false);
+        await audioDemand(true);
+        expect(opens, 0);
+        await settings.set(defs.cameraRtspAudio, true);
+        await settle();
+        await audioDemand(true);
+        expect(opens, 1);
+        bus.publish(
+          const WakeWordStateChanged(
+            active: true,
+            listening: false,
+            muted: true,
+          ),
+        );
+        await settings.set(defs.lockdownEnabled, true);
+        await settle();
+        expect(hub.capturing, true);
+        await audioDemand(false);
+        expect(hub.capturing, false);
+      } finally {
+        await audioDemand(false);
+        hub.opener = previous;
+        await mic.close();
+      }
+    },
+  );
 
   test(
     'listener is idle until demand and releases the camera after the last viewer',

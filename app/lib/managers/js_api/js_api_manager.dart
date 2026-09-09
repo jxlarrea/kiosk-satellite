@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
@@ -6,6 +7,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../audio/mic_hub.dart';
 import 'user_script.dart';
 
 /// The `window.kioskSatellite` bridge (see docs/js-api.md).
@@ -27,6 +29,7 @@ class JsApiManager extends Manager {
 
   InAppWebViewController? _controller;
   final _pageInteractions = <String>{};
+  final _browserMicrophones = <String>{};
 
   /// Methods pages may call, mapped to registry command names. Anything not
   /// listed here is not reachable from page JS regardless of registry
@@ -164,6 +167,8 @@ class JsApiManager extends Manager {
 
   /// A full navigation replaces the document. SPA view switches do not.
   void onPageStarted() {
+    _browserMicrophones.clear();
+    unawaited(MicHub.instance.setBrowserCapturing(false));
     if (_pageInteractions.isEmpty) return;
     log.info(
       name,
@@ -204,6 +209,17 @@ class JsApiManager extends Manager {
         ? (args[1] as Map).cast<String, Object?>()
         : <String, Object?>{};
 
+    if (method == 'browserMicrophone') {
+      final id = params['id'];
+      if (id is! String || id.length > 64) return false;
+      if (params['active'] == true) {
+        _browserMicrophones.add(id);
+      } else {
+        _browserMicrophones.remove(id);
+      }
+      await MicHub.instance.setBrowserCapturing(_browserMicrophones.isNotEmpty);
+      return true;
+    }
     var commandName = _exposedMethods[method];
     if (commandName == null) {
       log.warn(name, 'page called unknown method $method');

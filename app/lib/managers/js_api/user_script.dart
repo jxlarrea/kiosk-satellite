@@ -1,3 +1,5 @@
+import 'browser_microphone_script.dart';
+
 /// The `window.kioskSatellite` facade injected into every page at document
 /// start. Pages never touch the flutter_inappwebview transport directly.
 ///
@@ -17,6 +19,8 @@ String buildKioskSatelliteScript({required String version, required String os}) 
       return Promise.resolve(null);
     }
   }
+
+  $browserMicrophoneScript
 
   window.kioskSatellite = {
     platform: 'kiosksatellite',

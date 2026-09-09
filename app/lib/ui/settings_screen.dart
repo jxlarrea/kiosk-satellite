@@ -10233,6 +10233,15 @@ class _RtspPageState extends State<_RtspPage> {
         ? '${st['clients']} connected ${st['clients'] == 1 ? 'viewer' : 'viewers'}. ${st['resolution'] ?? ''}'
               .trim()
         : 'Ready. The encoder starts when a viewer connects.';
+    final audioText = st?['audioEnabled'] != true
+        ? ''
+        : st?['audioError'] != null
+        ? ' Audio: ${st!['audioError']}'
+        : st?['audioSuspended'] == true
+        ? ' Audio paused while the browser uses the microphone.'
+        : st?['audioEncoding'] == true
+        ? ' Microphone audio streaming.'
+        : ' Microphone audio idle.';
     final urls = (st?['urls'] as List?)?.cast<String>() ?? const <String>[];
     final clients = (st?['clientDetails'] as List?) ?? const [];
     return Column(
@@ -10263,7 +10272,7 @@ class _RtspPageState extends State<_RtspPage> {
                 color: active ? Colors.green : Colors.grey,
               ),
               title: Text(label),
-              subtitle: Text(text),
+              subtitle: Text(text + audioText),
             ),
           ],
         ),

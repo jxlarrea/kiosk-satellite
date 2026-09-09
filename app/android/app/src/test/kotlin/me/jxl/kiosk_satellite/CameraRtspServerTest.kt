@@ -55,6 +55,62 @@ class CameraRtspServerTest {
         } finally { server.close() }
     }
 
+    @Test fun audioTrackIsOptInAndOnlyPlayingAudioViewersCreateDemand() {
+        val audioDemand = LinkedBlockingQueue<Boolean>()
+        val server = CameraRtspServer(0, null, "", { Base64.getEncoder().encodeToString(it) }, {}, {},
+            audioEnabled = true, onAudioDemand = { audioDemand.offer(it) })
+        try {
+            server.config(listOf(sps, pps))
+            Peer(server.localPort).use { peer ->
+                val sdp = peer.request("DESCRIBE")
+                assertTrue(sdp.contains("MPEG4-GENERIC/16000/1"))
+                assertTrue(sdp.contains("config=1408"))
+                assertNull(audioDemand.poll())
+                peer.request("SETUP", "Transport: RTP/AVP/TCP;interleaved=0-1\r\n", peer.uri + "/trackID=0")
+                assertTrue(peer.request("SETUP", "Transport: RTP/AVP/TCP;interleaved=1-2\r\n", peer.uri + "/trackID=1").contains("461"))
+                val setup = peer.request("SETUP", "Transport: RTP/AVP/TCP;interleaved=4-5\r\n", peer.uri + "/trackID=1")
+                val session = Regex("Session: ([^;\\n]+)").find(setup)!!.groupValues[1]
+                assertNull(audioDemand.poll())
+                peer.request("PLAY", "Session: $session\r\n")
+                assertEquals(true, audioDemand.poll(1, TimeUnit.SECONDS))
+                val bytes = ByteArray(1800) { (it % 251).toByte() }
+                server.audioFrame(bytes, 2_000_000)
+                val report = peer.packet()
+                assertEquals(5, report.first)
+                assertEquals(32000, java.nio.ByteBuffer.wrap(report.second, 16, 4).int)
+                val payload = java.io.ByteArrayOutputStream()
+                repeat(2) { i ->
+                    val (channel, packet) = peer.packet()
+                    assertEquals(4, channel)
+                    assertEquals(97, packet[1].toInt() and 127)
+                    assertEquals(if (i == 1) 128 else 0, packet[1].toInt() and 128)
+                    assertEquals(32000, java.nio.ByteBuffer.wrap(packet, 4, 4).int)
+                    assertEquals(16, packet[13].toInt())
+                    assertEquals(1800, ((packet[14].toInt() and 255) shl 5) or ((packet[15].toInt() and 255) shr 3))
+                    payload.write(packet, 16, packet.size - 16)
+                }
+                assertArrayEquals(bytes, payload.toByteArray())
+                peer.request("TEARDOWN", "Session: $session\r\n")
+                assertEquals(false, audioDemand.poll(1, TimeUnit.SECONDS))
+            }
+            Peer(server.localPort).use { peer ->
+                peer.request("DESCRIBE")
+                val setup = peer.request("SETUP", "Transport: RTP/AVP/TCP;interleaved=0-1\r\n", peer.uri + "/trackID=0")
+                val session = Regex("Session: ([^;\\n]+)").find(setup)!!.groupValues[1]
+                peer.request("PLAY", "Session: $session\r\n")
+                assertNull(audioDemand.poll(100, TimeUnit.MILLISECONDS))
+            }
+        } finally { server.close() }
+        val silent = server(LinkedBlockingQueue())
+        try {
+            silent.config(listOf(sps, pps))
+            Peer(silent.localPort).use { peer ->
+                assertFalse(peer.request("DESCRIBE").contains("m=audio"))
+                assertTrue(peer.request("SETUP", target = peer.uri + "/trackID=1").contains("404"))
+            }
+        } finally { silent.close() }
+    }
+
     private class Peer(port: Int) : AutoCloseable {
         private val socket = Socket("127.0.0.1", port).apply { soTimeout = 3000 }
         private val input = BufferedInputStream(socket.getInputStream())

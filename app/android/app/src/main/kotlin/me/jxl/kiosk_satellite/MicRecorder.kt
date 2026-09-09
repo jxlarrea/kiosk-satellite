@@ -62,6 +62,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
     companion object {
         const val CHANNEL = "kiosk_satellite/mic"
         private const val TAG = "MicRecorder"
+        @Volatile var rtspAudioTap: ((ByteArray, Long) -> Unit)? = null
         private const val SAMPLE_RATE = 16000
         private const val CHUNK_BYTES = 1280 * 2 // 80 ms of 16-bit mono
 
@@ -229,6 +230,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                     else -> buf.copyOf(read)
                 }
                 if (gain != 1.0) amplify(chunk, chunk.size, gain)
+                rtspAudioTap?.invoke(chunk, System.nanoTime() / 1000 - chunk.size * 1_000_000L / 32000)
                 mainHandler.post {
                     if (recording) sink.success(chunk)
                 }

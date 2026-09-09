@@ -330,6 +330,7 @@ class CameraMotion(
 
     private val rtspChannel = MethodChannel(messenger, "kiosk_satellite/camera/rtsp")
     private var rtsp: CameraRtspServer? = null
+    private var rtspAudio: RtspAudioEncoder? = null
     private var rtspEncoder: CameraRtspEncoder? = null
     private var rtspConfig: Map<*, *> = emptyMap<Any, Any>()
     private var rtspError: String? = null
@@ -528,6 +529,10 @@ class CameraMotion(
             when (call.method) {
                 "configure" -> configureRtsp(call.arguments as? Map<*, *> ?: emptyMap<Any, Any>(), result)
                 "status" -> result.success(rtspStatus())
+                "audioCapture" -> {
+                    setRtspAudio(call.arguments == true)
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -540,6 +545,7 @@ class CameraMotion(
             result.success(rtspStatus())
             return
         }
+        setRtspAudio(false)
         val generation = ++rtspGeneration
         listenerSession = CameraDiagnostics.session("rtsp")
         val listenerId = listenerSession
@@ -579,6 +585,13 @@ class CameraMotion(
                     { rtspEncoder?.keyFrame() },
                     { event, message, cause -> CameraDiagnostics.record(listenerId, event, message,
                         failure = cause != null, cause = cause) },
+                    audioEnabled = config["audio"] == true,
+                    onAudioDemand = { wanted -> mainHandler.post {
+                        if (!disposed && rtspGeneration == generation) {
+                            if (!wanted) setRtspAudio(false)
+                            rtspChannel.invokeMethod("audioDemand", wanted)
+                        }
+                    } },
                 )
                 rtspError = null
                 CameraDiagnostics.record(listenerId, "listening", "port=${rtsp?.localPort}")
@@ -601,7 +614,30 @@ class CameraMotion(
         bind(0)
     }
 
+    private fun setRtspAudio(enabled: Boolean) {
+        if (!enabled) {
+            MicRecorder.rtspAudioTap = null
+            rtspAudio?.close()
+            rtspAudio = null
+            return
+        }
+        val server = rtsp ?: return
+        if (rtspConfig["audio"] != true || !server.audioDemand || rtspAudio != null) return
+        // The microphone grant may have arrived after the service reasons changed.
+        KioskSatelliteService.ensureRunning(context)
+        val encoder = RtspAudioEncoder { bytes, time -> server.audioFrame(bytes, time) }
+        rtspAudio = encoder
+        MicRecorder.rtspAudioTap = encoder::offer
+    }
+
     private fun rtspStatus(): Map<String, Any?> = mapOf(
+        "audioEnabled" to (rtspConfig["audio"] == true),
+        "audioEncoding" to (rtspAudio?.codecName != null && rtspAudio?.error == null),
+        "audioEncoder" to rtspAudio?.codecName,
+        "audioError" to rtspAudio?.error,
+        "audioFrames" to (rtspAudio?.frames ?: 0),
+        "audioDroppedChunks" to (rtspAudio?.dropped ?: 0),
+        "audioWorkerCpuMs" to ((rtspAudio?.workerCpuNs ?: 0) / 1_000_000.0),
         "listening" to (rtsp?.listening == true), "clients" to (rtsp?.clientCount ?: 0),
         "clientDetails" to (rtsp?.clientDetails ?: emptyList<Map<String, Any>>()),
         "encoding" to (rtspEncoder != null), "encoder" to rtspEncoder?.codecName,
@@ -1840,6 +1876,7 @@ class CameraMotion(
         activeSink?.error("detached", "camera session torn down with its Activity", null)
         disposed = true
         listenGeneration++
+        setRtspAudio(false)
         rtspChannel.setMethodCallHandler(null)
         rtsp?.close()
         rtsp = null

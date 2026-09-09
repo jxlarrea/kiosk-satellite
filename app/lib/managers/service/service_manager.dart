@@ -80,6 +80,8 @@ class ServiceManager extends Manager {
     'wake_word.enabled',
     'wake_word.background',
     'camera.enabled',
+    'camera.rtsp.enabled',
+    'camera.rtsp.audio',
     'kiosk.enabled',
     'lockdown.enabled',
     'browser.auto_reload_on_error',
@@ -136,6 +138,13 @@ class ServiceManager extends Manager {
           'Background listening',
           'Keeps the wake word engine and its microphone running behind '
               'other apps.',
+        ),
+      if (s.get(defs.cameraEnabled) &&
+          s.get(defs.cameraRtspEnabled) && s.get(defs.cameraRtspAudio))
+        const ServiceReason(
+          'rtsp_audio',
+          'RTSP microphone audio',
+          'Keeps microphone streaming available to connected RTSP viewers.',
         ),
       if (s.get(defs.esphomeEnabled))
         const ServiceReason(
@@ -204,7 +213,7 @@ class ServiceManager extends Manager {
       'notification': true,
       'displayOverOtherApps':
           ids.contains('kiosk') || _settings.get(defs.autoReloadOnError),
-      'microphone': ids.contains('listening'),
+      'microphone': ids.contains('listening') || ids.contains('rtsp_audio'),
       'camera': ids.contains('camera'),
       'bluetooth': ids.contains('bluetooth'),
     };

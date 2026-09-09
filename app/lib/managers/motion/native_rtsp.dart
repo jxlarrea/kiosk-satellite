@@ -4,12 +4,18 @@ import 'package:flutter/services.dart';
 class NativeRtsp {
   static const _channel = MethodChannel('kiosk_satellite/camera/rtsp');
 
-  static void onDemand(void Function(bool)? callback) {
+  static void onDemand(
+    void Function(bool)? callback, {
+    void Function(bool)? onAudioDemand,
+  }) {
     _channel.setMethodCallHandler(
       callback == null
           ? null
           : (call) async {
               if (call.method == 'demand') callback(call.arguments == true);
+              if (call.method == 'audioDemand') {
+                onAudioDemand?.call(call.arguments == true);
+              }
             },
     );
   }
