@@ -6,6 +6,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
+import android.media.AudioTimestamp
 import android.media.MediaPlayer
 import android.media.audiofx.Visualizer
 import android.os.Build
@@ -131,7 +132,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         val lease: AutoCloseable?,
         val output: AudioDeviceInfo?,
     )
-    private val communication = CommunicationPlayback(appContext)
+    private val communication = CommunicationPlayback.get(appContext)
     private val requests = java.util.concurrent.ConcurrentHashMap<String, PlaybackRequest>()
 
     private fun communicationSound(id: String): Boolean = requests[id]?.lease != null
@@ -379,11 +380,40 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             if (requests[id] === request) channel.invokeMethod("started", mapOf("id" to id))
         }
         emitClipLevels(id, clip, request)
-        // AudioTrack has no completion callback worth trusting on a static
-        // buffer, and the duration is known exactly, so the end is scheduled.
-        workerHandler.postDelayed({
-            mainHandler.post { if (requests[id] === request) finish(id, null) }
-        }, clip.durationMs.toLong() + 60)
+        awaitClipDrain(id, track, clip, request)
+    }
+
+    private fun awaitClipDrain(id: String, track: AudioTrack, clip: SoundClips.Clip, request: PlaybackRequest) {
+        val beganNs = System.nanoTime()
+        val timeoutNs = beganNs + (clip.durationMs + 5000L) * 1_000_000L
+        val drain = ClipDrain(clip.frames.toLong(), clip.sampleRate)
+        val timestamp = AudioTimestamp()
+        // The playback head precedes the speaker on buffered output paths.
+        // Use the driver's latency only when presentation timestamps fail.
+        val latencyNs = runCatching {
+            (AudioTrack::class.java.getMethod("getLatency").invoke(track) as Int)
+                .coerceIn(20, 2000).toLong() * 1_000_000L
+        }.getOrDefault(500_000_000L)
+        val poll = object : Runnable {
+            override fun run() {
+                if (requests[id] !== request) return
+                val now = System.nanoTime()
+                val head = runCatching { track.playbackHeadPosition.toLong() and 0xffff_ffffL }.getOrDefault(0L)
+                val valid = runCatching { track.getTimestamp(timestamp) }.getOrDefault(false) &&
+                    timestamp.nanoTime >= beganNs - 100_000_000L
+                val done = drain.complete(now, head,
+                    if (valid) timestamp.framePosition else null,
+                    if (valid) timestamp.nanoTime else null, latencyNs)
+                if (done || now >= timeoutNs) {
+                    Log.d(TAG, "clip drain $id: elapsed=${(now - beganNs) / 1_000_000}ms duration=${clip.durationMs}ms head=$head frames=${clip.frames} timestamp=$valid")
+                    mainHandler.post {
+                        if (requests[id] === request) finish(id,
+                            if (done) null else "AudioTrack playback did not finish")
+                    }
+                } else workerHandler.postDelayed(this, 25)
+            }
+        }
+        workerHandler.postDelayed(poll, clip.durationMs.toLong())
     }
 
     /**
@@ -661,9 +691,8 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         }
     }
 
-    /** Stop and release a clip's track, if it has one. Returns whether it did. */
-    private fun stopTrack(id: String): Boolean {
-        val track = synchronized(tracks) { tracks.remove(id) } ?: return false
+    /** Stop and release a detached clip on the audio worker. */
+    private fun releaseTrack(track: AudioTrack) {
         try {
             track.pause()
             track.flush()
@@ -674,7 +703,6 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             track.release()
         } catch (_: Exception) {
         }
-        return true
     }
 
     /**
@@ -799,8 +827,9 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     }
 
     private fun finish(id: String, error: String?) {
+        val beganNs = System.nanoTime()
         val request = synchronized(tracks) { requests.remove(id) } ?: return
-        stopTrack(id)
+        val track = synchronized(tracks) { tracks.remove(id) }
         visualizers.remove(id)?.let {
             try {
                 it.enabled = false
@@ -834,13 +863,15 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         // map, so nothing can reach it while the worker lets it go.
         // ExoPlayer must be released from its application thread (this
         // one); the builder caps how long that call may block.
-        if (mp != null) {
+        if (mp != null || track != null) {
             workerHandler.post {
-                try { mp.release() } catch (_: Exception) {}
+                track?.let { releaseTrack(it) }
+                try { mp?.release() } catch (_: Exception) {}
                 mainHandler.post { request.lease?.close() }
             }
         }
         try { exo?.release() } catch (_: Exception) {}
-        if (mp == null) request.lease?.close()
+        if (mp == null && track == null) request.lease?.close()
+        Log.d(TAG, "sound finish $id: main=${(System.nanoTime() - beganNs) / 1_000_000}ms error=$error")
     }
 }

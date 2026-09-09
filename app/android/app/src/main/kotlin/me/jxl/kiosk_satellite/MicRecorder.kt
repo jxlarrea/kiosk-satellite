@@ -168,6 +168,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         applyDsp(opened.audioSessionId, wantAgc)
         recording = true
         opened.startRecording()
+        CommunicationPlayback.get(appContext).captureStarted()
         val channelIdx = wantChannel - 1
         worker = thread(name = "vsww-mic") {
             var cur = opened
@@ -527,6 +528,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             it.release()
         }
         record = null
+        CommunicationPlayback.get(appContext).captureStopped()
         // Only tear down Bluetooth routing this recorder brought up; a stop
         // with automatic routing must not disturb whatever else holds it.
         if (commDeviceSet || scoStarted) {

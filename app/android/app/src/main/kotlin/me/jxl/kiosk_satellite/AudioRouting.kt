@@ -42,6 +42,7 @@ object AudioRouting {
     fun setOutput(selector: String?) {
         outputSelector = selector?.takeIf { it.isNotBlank() }
         Log.i(TAG, "output selector = ${outputSelector ?: "automatic"}")
+        CommunicationPlayback.routingChanged()
     }
 
     /** The selected output as a live device, or null for automatic. Resolved
@@ -183,10 +184,12 @@ class AudioRoutingBridge(context: Context, messenger: BinaryMessenger) {
         am.registerAudioDeviceCallback(
             object : android.media.AudioDeviceCallback() {
                 override fun onAudioDevicesAdded(added: Array<out AudioDeviceInfo>) {
+                    CommunicationPlayback.routingChanged()
                     channel.invokeMethod("devicesChanged", null)
                 }
 
                 override fun onAudioDevicesRemoved(removed: Array<out AudioDeviceInfo>) {
+                    CommunicationPlayback.routingChanged()
                     channel.invokeMethod("devicesChanged", null)
                 }
             },

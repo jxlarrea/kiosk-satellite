@@ -4,6 +4,20 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PlaybackLeasePoolTest {
+    @Test fun captureKeepsRouteAcrossChimeSpeechAndTheGapBetweenThem() {
+        var starts = 0
+        var stops = 0
+        val pool = PlaybackLeasePool({ starts++; true }, { stops++ })
+        val capture = pool.acquire()!!
+        pool.acquire()!!.close()
+        assertEquals(0, stops)
+        pool.acquire()!!.close()
+        assertEquals(1, starts)
+        assertEquals(0, stops)
+        capture.close()
+        assertEquals(1, stops)
+    }
+
     @Test fun overlappingSoundsRestoreOnlyAfterTheLastRelease() {
         var starts = 0
         var stops = 0
