@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.31 - 2026-09-08
 
 ### Added
 - **Detection snapshots can be disabled.** The new **Disable snapshots on detection** switch in Camera settings prevents automatic detection captures while keeping motion, face, presence and gesture detection working. It also skips pending detection snapshots and withholds results from captures still in progress when the switch is enabled. Manual requests and continuous snapshots keep working. The switch is off by default.
