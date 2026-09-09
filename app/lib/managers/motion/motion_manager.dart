@@ -394,7 +394,6 @@ class MotionManager extends Manager {
         },
       ),
     );
-    _configureRtsp();
     // Asked once, at init: the bridge answers within the same tick, long
     // before the first bind. A bind that raced it restarts with fresh
     // flags below; the native detectors survive the runtime failing to
@@ -555,6 +554,9 @@ class MotionManager extends Manager {
     // and the next ScreenStateChanged corrects it.
     final on = await commands.execute('isScreenOn', const {});
     if (on.ok && on.data is bool) _screenOn = on.data as bool;
+    // Configuring RTSP also synchronizes camera demand. Do it after the
+    // event subscriptions and initial screen state are ready.
+    _configureRtsp();
     _sync();
   }
 

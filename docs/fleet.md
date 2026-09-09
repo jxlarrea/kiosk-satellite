@@ -97,7 +97,7 @@ Certain settings remain unique to each kiosk regardless of the profile configura
 | --- | --- |
 | Identity | `device.name`, `device.hostname`, `esphome.node_name`, `esphome.mac_override`, `esphome.real_mac`, `btproxy.key`, `sendspin.client_id`, `sendspin.local_player_name`, `ha.satellite_entity` |
 | Remote admin & fleet | `remote.enabled`, `remote.port`, `remote.password`, `remote.fleet_discovery`, `fleet.*` |
-| Hardware picks | `camera.device`, `motion.camera`, `audio.mic_device`, `audio.speaker_device`, `audio.mic_channel`, `audio.mic_source`, `audio.mic_gain_db`, `audio.mic_agc`, `render.disable_impeller`, `render.legacy_webview`, `ui.scale`, `screen.ambient_display` |
+| Hardware picks | `camera.device`, `motion.camera`, `audio.mic_device`, `audio.speaker_device`, `audio.mic_channel`, `audio.mic_source`, `audio.mic_gain_db`, `audio.mic_agc`, `audio.mic_noise_suppression`, `render.disable_impeller`, `render.legacy_webview`, `ui.scale`, `screen.ambient_display` |
 | Followed player | `sendspin.player`, `sendspin.player_source`, `sendspin.player_name` |
 | Local state | `screensaver.saved_brightness`, `screensaver.immich_validated`, `sendspin.player_active`, `sendspin.player_pos`, `sendspin.sonos_hosts` |
 

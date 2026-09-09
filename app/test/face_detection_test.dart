@@ -1,4 +1,3 @@
-
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -325,52 +324,37 @@ void main() {
     });
 
     test('a face postpones the screensaver between sessions under Postpone '
-        'on face, and not without it', () {
-      fakeAsync((async) {
-        buildAll({
+        'on face, and not without it', () async {
+      for (final postpone in [true, false]) {
+        await buildAll({
           'ks.screensaver.enabled': true,
           'ks.screensaver.timeout_seconds': 5,
           'ks.screensaver.dismiss_on_face': true,
-          'ks.screensaver.postpone_on_face': true,
+          'ks.screensaver.postpone_on_face': postpone,
           'ks.screensaver.dismiss_on_motion': false,
           'ks.camera.enabled': true,
         });
-        async.flushMicrotasks();
-        saver.init();
-        async.flushMicrotasks();
-
-        async.elapse(const Duration(seconds: 3));
-        bus.publish(const FaceDetected());
-        async.flushMicrotasks();
-        async.elapse(const Duration(seconds: 3));
-        async.flushMicrotasks();
-        expect(
-          saver.isActive,
-          isFalse,
-          reason: 'the face at 3s must have reset the idle clock',
-        );
-        async.elapse(const Duration(seconds: 3));
-        async.flushMicrotasks();
-        expect(saver.isActive, isTrue);
-      });
-      fakeAsync((async) {
-        buildAll({
-          'ks.screensaver.enabled': true,
-          'ks.screensaver.timeout_seconds': 5,
-          'ks.screensaver.dismiss_on_face': true,
-          'ks.screensaver.postpone_on_face': false,
-          'ks.camera.enabled': true,
+        fakeAsync((async) {
+          saver.init();
+          async.flushMicrotasks();
+          async.elapse(const Duration(seconds: 3));
+          bus.publish(const FaceDetected());
+          async.flushMicrotasks();
+          async.elapse(const Duration(seconds: 3));
+          expect(
+            saver.isActive,
+            !postpone,
+            reason: 'only the postpone setting resets the idle clock',
+          );
+          async.elapse(const Duration(seconds: 3));
+          expect(saver.isActive, isTrue);
+          saver.dispose();
+          async.flushMicrotasks();
         });
-        async.flushMicrotasks();
-        saver.init();
-        async.flushMicrotasks();
-        async.elapse(const Duration(seconds: 3));
-        bus.publish(const FaceDetected());
-        async.flushMicrotasks();
-        async.elapse(const Duration(seconds: 3));
-        async.flushMicrotasks();
-        expect(saver.isActive, isTrue, reason: 'no postpone leg without it');
-      });
+        await motion.dispose();
+        await settings.dispose();
+        await bus.dispose();
+      }
     });
 
     test('a face never dismisses or postpones with the postpone switch off '
@@ -417,45 +401,46 @@ void main() {
 
     test('a face dismissing the screensaver holds the camera for the '
         'configured span, asks the native side to show the preview, and '
-        'releases it when the span ends', () {
-      fakeAsync((async) {
-        build({...previewOn, 'ks.face.preview_seconds': 4});
-        async.flushMicrotasks();
-        bus.publish(const ScreensaverStateChanged(active: true));
-        async.flushMicrotasks();
-        expect(listens, 1);
+        'releases it when the span ends', () async {
+      await build({...previewOn, 'ks.face.preview_seconds': 4});
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pump();
+      expect(listens, 1);
 
-        // The screensaver's order: the dismissal event, then the stop.
-        bus.publish(const FaceDismissedScreensaver());
-        bus.publish(const ScreensaverStateChanged(active: false));
-        async.flushMicrotasks();
-        expect(controlCalls.map((c) => c.method), contains('showPreview'));
-        final show = controlCalls.firstWhere((c) => c.method == 'showPreview');
-        expect((show.arguments as Map)['ms'], 4000);
-        expect(listens, 1, reason: 'no rebind under the preview');
-        expect(sink, isNotNull, reason: 'the camera stays bound');
+      // The screensaver publishes the dismissal before the stop.
+      bus.publish(const FaceDismissedScreensaver());
+      bus.publish(const ScreensaverStateChanged(active: false));
+      await pump();
+      expect(controlCalls.map((c) => c.method), contains('showPreview'));
+      final show = controlCalls.firstWhere((c) => c.method == 'showPreview');
+      expect((show.arguments as Map)['ms'], 4000);
+      expect(listens, 1, reason: 'no rebind under the preview');
+      expect(sink, isNotNull, reason: 'the camera stays bound');
 
-        async.elapse(const Duration(seconds: 3));
-        expect(sink, isNotNull);
-        async.elapse(const Duration(seconds: 2));
-        async.flushMicrotasks();
-        expect(sink, isNull, reason: 'released when the span ends');
-        expect(motion.facePreview.value, isNull);
-      });
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expect(sink, isNotNull);
+      await Future<void>.delayed(const Duration(seconds: 3));
+      await pump();
+      expect(sink, isNull, reason: 'released when the span ends');
+      expect(motion.facePreview.value, isNull);
+      await motion.dispose();
+      await settings.dispose();
+      await bus.dispose();
     });
 
-    test('with the switch off a face dismissal changes nothing', () {
-      fakeAsync((async) {
-        build(faceOnly);
-        async.flushMicrotasks();
-        bus.publish(const ScreensaverStateChanged(active: true));
-        async.flushMicrotasks();
-        bus.publish(const FaceDismissedScreensaver());
-        bus.publish(const ScreensaverStateChanged(active: false));
-        async.flushMicrotasks();
-        expect(controlCalls.where((c) => c.method == 'showPreview'), isEmpty);
-        expect(sink, isNull, reason: 'released with the session');
-      });
+    test('with the switch off a face dismissal changes nothing', () async {
+      await build(faceOnly);
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pump();
+      expect(sink, isNotNull);
+      bus.publish(const FaceDismissedScreensaver());
+      bus.publish(const ScreensaverStateChanged(active: false));
+      await pump();
+      expect(controlCalls.where((c) => c.method == 'showPreview'), isEmpty);
+      expect(sink, isNull, reason: 'released with the session');
+      await motion.dispose();
+      await settings.dispose();
+      await bus.dispose();
     });
 
     test(

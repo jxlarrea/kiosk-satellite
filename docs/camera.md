@@ -105,7 +105,9 @@ Tap the **Stream URL** field below **Port** to copy it. **Stream Status** shows 
 
 Use RTSP over TCP in your viewer. The stream contains H.264 video and optional AAC microphone audio. For go2rtc, add the URL as a stream source. Frigate can record the H.264 stream without transcoding it. Authentication uses RTSP Digest. Enter the credentials in your client or use `rtsp://USERNAME:PASSWORD@DEVICE_IP:8554/camera`, with URL encoding for special characters.
 
-One hardware encoder serves up to four connected viewers. It starts when the first authenticated viewer requests video and stops shortly after the last viewer disconnects. Enabling the listener alone does not open the camera or encode video. A recorder that stays connected keeps the encoder running. Slow viewers are disconnected instead of blocking the camera or growing an unlimited queue.
+One H.264 encoder serves up to four connected viewers. Hardware encoding is preferred. If no compatible hardware encoder can start, the app tries software encoding, which can use more CPU. It starts when the first authenticated viewer requests video and stops shortly after the last viewer disconnects. Enabling the listener alone does not open the camera or encode video. A recorder that stays connected keeps the encoder running. Slow viewers are disconnected instead of blocking the camera or growing an unlimited queue.
+
+The camera sends video to a SurfaceTexture. A dedicated graphics worker draws those frames into the encoder and limits video to the requested frame rate while motion analysis keeps its own cadence. Detection and snapshots continue sharing the camera session. Encoder selection and graphics failures appear in App Logs.
 
 Microphone audio shares the capture used by native wake word detection and voice interactions, including the selected device, channel, gain and echo cancellation settings. The AAC encoder runs on a separate worker only while a viewer requests the audio track. Video-only viewers do not start it. Audio encoding and slow viewers cannot block microphone capture.
 

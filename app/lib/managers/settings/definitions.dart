@@ -3712,7 +3712,7 @@ const cameraRtspEnabled = SettingDef<bool>(
   defaultValue: false,
   title: 'Enable RTSP Streaming',
   description:
-      'Stream H.264 video over RTSP/TCP. The hardware encoder runs only while a viewer is connected. Uses the camera selected in Camera settings.',
+      'Stream H.264 video over RTSP/TCP. Video encoding runs only while a viewer is connected. Hardware encoding is preferred with software fallback when needed. Uses the camera selected in Camera settings.',
   category: 'Camera',
   section: 'RTSP Streaming',
   subpage: 'RTSP Streaming',

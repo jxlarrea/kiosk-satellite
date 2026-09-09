@@ -641,7 +641,8 @@ class CameraMotion(
         "listening" to (rtsp?.listening == true), "clients" to (rtsp?.clientCount ?: 0),
         "clientDetails" to (rtsp?.clientDetails ?: emptyList<Map<String, Any>>()),
         "encoding" to (rtspEncoder != null), "encoder" to rtspEncoder?.codecName,
-        "resolution" to rtspEncoder?.actualSize, "error" to (rtspError ?: rtsp?.error),
+        "resolution" to rtspEncoder?.actualSize, "softwareEncoder" to rtspEncoder?.software,
+        "cameraInput" to if (rtspEncoder != null) "SurfaceTexture" else null, "error" to (rtspError ?: rtsp?.error),
         "port" to (rtspConfig["port"] ?: 8554),
         "urls" to try {
             java.util.Collections.list(java.net.NetworkInterface.getNetworkInterfaces())
@@ -970,7 +971,7 @@ class CameraMotion(
                                 request.willNotProvideSurface()
                                 CameraDiagnostics.record(diagnosticId, "video surface failure",
                                     "requested=${width}x$height, actual=${request.resolution}", true, e)
-                                server.fail(e.message ?: "Hardware H.264 encoding unavailable.")
+                                server.fail(e.message ?: "H.264 video encoding unavailable.")
                             }
                         }
                     }
