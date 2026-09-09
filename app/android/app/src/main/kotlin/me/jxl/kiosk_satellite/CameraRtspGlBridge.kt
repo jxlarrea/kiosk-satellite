@@ -19,7 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Camera-facing texture and a GPU pass into the encoder, owned by one GL thread. */
 internal class CameraRtspGlBridge(
     private val encoderSurface: Surface,
+    private val inputSize: Size,
     private val size: Size,
+    private val initialTransform: RtspVideoTransform,
     fps: Int,
     private val diagnosticSession: String,
     private val onError: (String) -> Unit,
@@ -74,6 +76,7 @@ internal class CameraRtspGlBridge(
     }
 
     private fun initialize() {
+        applyTransform(initialTransform)
         display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
         check(display != EGL14.EGL_NO_DISPLAY) { "No EGL display" }
         val version = IntArray(2)
@@ -124,12 +127,33 @@ internal class CameraRtspGlBridge(
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
         texture = SurfaceTexture(textureId).also {
-            it.setDefaultBufferSize(size.width, size.height)
+            it.setDefaultBufferSize(inputSize.width, inputSize.height)
             it.setOnFrameAvailableListener({ source -> render(source) }, handler)
             cameraSurface = Surface(it)
         }
         CameraDiagnostics.record(diagnosticSession, "graphics ready",
-            "cameraInput=SurfaceTexture, encoderInput=EGL, size=$size")
+            "cameraInput=SurfaceTexture, encoderInput=EGL, input=$inputSize, output=$size")
+    }
+
+    fun updateTransform(value: RtspVideoTransform) {
+        if (!closing.get()) handler.post { if (!closing.get()) applyTransform(value) }
+    }
+
+    private fun applyTransform(value: RtspVideoTransform) {
+        val uv = value.textureCoordinates()
+        val (scaleX, scaleY) = value.vertexScale(inputSize.width, inputSize.height, size.width, size.height)
+        vertices.position(0)
+        for (i in 0..3) {
+            vertices.put(if (i % 2 == 0) -scaleX else scaleX)
+            vertices.put(if (i < 2) -scaleY else scaleY)
+            vertices.put(uv[i * 2])
+            vertices.put(uv[i * 2 + 1])
+        }
+        vertices.position(0)
+        CameraDiagnostics.record(diagnosticSession, "video transform",
+            "rotation=${value.rotationDegrees}, sensorRotation=${value.sensorRotationDegrees}, " +
+                "front=${value.frontFacing}, cameraTransform=${value.hasCameraTransform}, " +
+                "input=$inputSize, output=$size, scale=$scaleX,$scaleY")
     }
 
     private fun render(source: SurfaceTexture) {
@@ -140,6 +164,8 @@ internal class CameraRtspGlBridge(
             if (!pacer.accept(timestamp)) return
             source.getTransformMatrix(matrix)
             GLES20.glViewport(0, 0, size.width, size.height)
+            GLES20.glClearColor(0f, 0f, 0f, 1f)
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
             GLES20.glUseProgram(program)
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
             GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)

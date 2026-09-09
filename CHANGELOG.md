@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **RTSP video follows the device's orientation.** The graphics bridge corrects the camera texture's built-in rotation and mirroring so streamed video matches snapshots. Portrait streams use portrait dimensions and rotation changes during streaming preserve the image's proportions.
+
 ## v2026.9.33 - 2026-09-09
 
 ### Changed

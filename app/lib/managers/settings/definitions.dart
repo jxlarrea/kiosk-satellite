@@ -3738,7 +3738,7 @@ const cameraRtspResolution = SettingDef<String>(
   defaultValue: '480',
   title: 'Resolution',
   description:
-      'Camera sensor orientation. Android selects the closest supported size.',
+      'Video follows the device orientation. Android selects the closest supported size.',
   category: 'Camera',
   section: 'RTSP Streaming',
   subpage: 'RTSP Streaming',

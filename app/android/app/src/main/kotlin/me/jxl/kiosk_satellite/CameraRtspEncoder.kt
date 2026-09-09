@@ -33,8 +33,10 @@ class CameraRtspEncoder(
     var software = false
         private set
 
-    fun surface(size: Size): Surface {
+    internal fun surface(inputSize: Size, transform: RtspVideoTransform): Surface {
         check(codec == null)
+        val (width, height) = transform.outputDimensions(inputSize.width, inputSize.height)
+        val size = Size(width, height)
         fun format() = MediaFormat.createVideoFormat("video/avc", size.width, size.height).apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
             setInteger(MediaFormat.KEY_BIT_RATE, bitrate)
@@ -59,7 +61,7 @@ class CameraRtspEncoder(
                 encoder.configure(format(), null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
                 val output = encoder.createInputSurface().also { attemptSurface = it }
                 encoder.start()
-                val bridge = CameraRtspGlBridge(output, size, fps, diagnosticSession, onError)
+                val bridge = CameraRtspGlBridge(output, inputSize, size, transform, fps, diagnosticSession, onError)
                     .also { attemptGraphics = it }
                 val cameraInput = bridge.surface()
                 codec = encoder
@@ -84,6 +86,10 @@ class CameraRtspEncoder(
         }
         isClosed = true
         throw IllegalStateException("No H.264 encoder could start at $size and $fps fps", lastFailure)
+    }
+
+    internal fun updateTransform(transform: RtspVideoTransform) {
+        graphics?.updateTransform(transform)
     }
 
     fun keyFrame() {

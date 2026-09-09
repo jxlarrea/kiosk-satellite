@@ -4,6 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
+import android.hardware.display.DisplayManager
+import android.view.Surface
+import android.view.WindowManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -948,34 +951,82 @@ class CameraMotion(
                 val width = if (captureLevel >= 2) 640 else (rtspConfig["width"] as? Number)?.toInt() ?: 640
                 val fps = (rtspConfig["fps"] as? Number)?.toInt()?.coerceIn(5, 30) ?: 10
                 val bitrate = (rtspConfig["bitrate"] as? Number)?.toInt()?.coerceIn(100_000, 8_000_000) ?: 500_000
+                fun displayRotation(): Int = try {
+                    @Suppress("DEPRECATION")
+                    (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.rotation
+                } catch (_: Exception) { Surface.ROTATION_0 }
                 androidx.camera.core.Preview.Builder()
+                    .setTargetRotation(displayRotation())
                     .setResolutionSelector(ResolutionSelector.Builder().setResolutionStrategy(
                         ResolutionStrategy(Size(width, height), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER)
                     ).build()).build().also { preview ->
-                        preview.setSurfaceProvider(ContextCompat.getMainExecutor(context)) { request ->
+                        val executor = ContextCompat.getMainExecutor(context)
+                        preview.setSurfaceProvider(executor) { request ->
                             if (session != mySession) { request.willNotProvideSurface(); return@setSurfaceProvider }
-                            val encoder = CameraRtspEncoder(fps, bitrate,
-                                { units -> if (session == mySession) server.config(units) },
-                                { units, time -> if (session == mySession) server.frame(units, time) },
-                                diagnosticSession = diagnosticId) { message ->
-                                mainHandler.post { if (session == mySession) server.fail(message) }
-                            }
-                            try {
-                                val surface = encoder.surface(request.resolution)
-                                rtspEncoder = encoder
-                                request.provideSurface(surface, ContextCompat.getMainExecutor(context)) {
-                                    if (rtspEncoder === encoder) rtspEncoder = null
-                                    kotlin.concurrent.thread(name = "camera-rtsp-release") { encoder.close() }
+                            val displays = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+                            var finished = false
+                            var prepared: CameraRtspEncoder? = null
+                            val listener = object : DisplayManager.DisplayListener {
+                                override fun onDisplayAdded(id: Int) {}
+                                override fun onDisplayRemoved(id: Int) {}
+                                override fun onDisplayChanged(id: Int) {
+                                    if (!finished && session == mySession) {
+                                        val rotation = displayRotation()
+                                        imageAnalysis.targetRotation = rotation
+                                        preview.targetRotation = rotation
+                                    }
                                 }
-                            } catch (e: Exception) {
-                                request.willNotProvideSurface()
-                                CameraDiagnostics.record(diagnosticId, "video surface failure",
-                                    "requested=${width}x$height, actual=${request.resolution}", true, e)
-                                server.fail(e.message ?: "H.264 video encoding unavailable.")
+                            }
+                            fun finishRequest() {
+                                finished = true
+                                displays.unregisterDisplayListener(listener)
+                                request.clearTransformationInfoListener()
+                            }
+                            displays.registerDisplayListener(listener, mainHandler)
+                            request.addRequestCancellationListener(executor) { finishRequest() }
+                            request.setTransformationInfoListener(executor) { info ->
+                                if (finished) return@setTransformationInfoListener
+                                if (session != mySession) {
+                                    request.willNotProvideSurface()
+                                    finishRequest()
+                                    return@setTransformationInfoListener
+                                }
+                                val transform = RtspVideoTransform(info.rotationDegrees,
+                                    cameraInfo.sensorRotationDegrees,
+                                    cameraInfo.lensFacing == CameraSelector.LENS_FACING_FRONT,
+                                    info.hasCameraTransform())
+                                val existing = prepared
+                                if (existing != null) {
+                                    existing.updateTransform(transform)
+                                    return@setTransformationInfoListener
+                                }
+                                val encoder = CameraRtspEncoder(fps, bitrate,
+                                    { units -> if (session == mySession) server.config(units) },
+                                    { units, time -> if (session == mySession) server.frame(units, time) },
+                                    diagnosticSession = diagnosticId) { message ->
+                                    mainHandler.post { if (session == mySession) server.fail(message) }
+                                }
+                                try {
+                                    val surface = encoder.surface(request.resolution, transform)
+                                    prepared = encoder
+                                    rtspEncoder = encoder
+                                    request.provideSurface(surface, executor) {
+                                        finishRequest()
+                                        if (rtspEncoder === encoder) rtspEncoder = null
+                                        kotlin.concurrent.thread(name = "camera-rtsp-release") { encoder.close() }
+                                    }
+                                } catch (e: Exception) {
+                                    request.willNotProvideSurface()
+                                    finishRequest()
+                                    CameraDiagnostics.record(diagnosticId, "video surface failure",
+                                        "requested=${width}x$height, actual=${request.resolution}", true, e)
+                                    server.fail(e.message ?: "H.264 video encoding unavailable.")
+                                }
                             }
                         }
                     }
             }
+
             val owner = CameraLifecycle().also { lifecycle = it }
             // Pre-bound so a snapshot never reconfigures this session (an
             // AE resettle would read as motion and wake the screensaver).
