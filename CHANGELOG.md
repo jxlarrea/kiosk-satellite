@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.32 - 2026-09-09
 
 ### Added
 - **Microphone noise suppression.** A new toggle below Automatic gain control in Microphone settings reduces background noise on supported Android devices. It is on by default and applies to the shared microphone audio used by native wake detection, voice interactions and RTSP streaming.
@@ -12,7 +12,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Dashboard scan diagnostics.** When a component enumerates all entity states and disables filtering, the **Show scan details** link in device settings and remote admin opens a copyable call stack that may identify the responsible resource or function. The same diagnostic appears once in the Web Console log. Capture runs only once per view visit with a bounded trace, adds no stack tracing to normal entity reads or updates and leaves filtering behavior unchanged. Adds diagnostics for [#482](https://github.com/jxlarrea/kiosk-satellite/issues/482).
 
 ### Fixed
-- **Native assistant echo cancellation.** Chimes and TTS use communication playback on supported audio routes so Android can cancel speaker audio from the shared microphone signal. Native microphone capture keeps the built-in communication output available between sounds, avoiding repeated music-muting route transitions during voice interactions. Chimes wait for buffered audio to reach the speaker before completing and their audio resources are released off the UI thread. Master and assistant volume controls apply through software gain. A low call volume can limit maximum assistant output when Full assistant volume range is off or call volume is adjusted after initialization. Expected silence from echo cancellation no longer triggers microphone recovery during playback.
+- **Massive improvement to native assistant echo cancellation.** Improved playback routing helps supported devices keep chimes and TTS out of the shared microphone signal, making it easier to hear the user while the assistant speaks. Native microphone capture keeps the built-in communication output available between sounds, avoiding repeated music-muting route transitions during voice interactions. Chimes wait for buffered audio to reach the speaker before completing and their audio resources are released off the UI thread. Master and assistant volume controls apply through software gain. A low call volume can limit maximum assistant output when Full assistant volume range is off or call volume is adjusted after initialization. Expected silence from echo cancellation no longer triggers microphone recovery during playback.
 
 ## v2026.9.31 - 2026-09-08
 
