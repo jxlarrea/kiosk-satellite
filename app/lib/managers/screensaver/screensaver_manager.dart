@@ -217,6 +217,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// idle timer is held the whole time, so the screensaver cannot return while
   /// the user is mid-interaction.
   bool _voiceTurn = false;
+  bool _restoreNowPlaying = false;
+  Future<void>? _interactionStop;
   bool _cameraViewActive = false;
   double? _savedBrightness;
 
@@ -331,8 +333,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // setInteractionActive, or the legacy pauseScreensaver fallback.
     bus.on<VoiceInteractionChanged>().listen((e) {
       _paused = _interactions.update(e);
-      if (_paused) unawaited(stop());
+      if (_paused) _stopForInteraction();
       _resetIdleTimer();
+      if (!_paused) unawaited(_restoreAfterInteraction());
     });
     bus.on<CameraViewStateChanged>().listen((event) {
       _cameraViewActive = event.active;
@@ -351,7 +354,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       _voiceTurn = true;
       if (_active) {
         log.debug(name, 'dismissed by wake word');
-        stop();
+        _stopForInteraction();
       }
       _cancelIdleTimer();
     });
@@ -362,6 +365,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (e.active && _voiceTurn) {
         _voiceTurn = false;
         _resetIdleTimer();
+        unawaited(_restoreAfterInteraction());
       }
     });
     // The panel changing state under an active session: a power-off — ours
@@ -909,6 +913,26 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _setIdleDue(clock().add(wait));
   }
 
+  void _stopForInteraction() {
+    if (!_active) return;
+    final restore = activeView.value != null && _nowPlayingTakeover;
+    _interactionStop = stop();
+    _restoreNowPlaying = restore;
+  }
+
+  Future<void> _restoreAfterInteraction() async {
+    if (!_restoreNowPlaying) return;
+    // Dismissal may still be thawing the dashboard or restoring brightness.
+    // Let it finish before bringing the player back over the page.
+    await _interactionStop;
+    if (!_restoreNowPlaying || _paused || _voiceTurn) return;
+    _restoreNowPlaying = false;
+    if (!_nowPlayingTakeover) return;
+    _cancelIdleTimer();
+    await start();
+    if (!_active) _resetIdleTimer();
+  }
+
   /// Stops the idle clock without re-arming it; the countdown sensor
   /// reads unknown until the next [_resetIdleTimer].
   void _cancelIdleTimer() {
@@ -1064,7 +1088,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   }
 
   Future<void> start() async {
-    if (_active || _paused || _cameraViewActive) return;
+    if (_active || _paused || _voiceTurn || _cameraViewActive) return;
     // Another app owns the screen; a dim now would dim it (the brightness
     // is the device's), and the idle clock is on hold for the same reason.
     if (_behindAnotherApp) {
@@ -1328,6 +1352,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   }
 
   Future<void> stop() async {
+    // An explicit dismissal also cancels a player waiting to return.
+    _restoreNowPlaying = false;
     if (!_active) return;
     _active = false;
     _nowPlayingShared = false;

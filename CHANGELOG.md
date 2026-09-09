@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- **Now Playing returns after a voice interaction.** A voice turn that interrupts the view now brings it back when the interaction finishes, as long as the track and Now Playing view are still available.
 - **RTSP video follows the device's orientation.** The graphics bridge corrects the camera texture's built-in rotation and mirroring so streamed video matches snapshots. Portrait streams use portrait dimensions and rotation changes during streaming preserve the image's proportions.
 
 ## v2026.9.33 - 2026-09-09
