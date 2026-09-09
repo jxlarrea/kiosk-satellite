@@ -42,6 +42,10 @@
 
 &bull; **[Music playback](docs/sendspin.md):** Synchronized Music Assistant audio through Sendspin, with the option to follow a Home Assistant or Sonos player. The full-screen Now Playing view shows album art, playback controls and supported lyrics.
 
+<p align="center">
+  <a href="assets/screenshots/screensaver-np.png"><img src="assets/screenshots/screensaver-np.png" alt="Settings in Kiosk Satellite" width="650" /></a>
+</p>
+
 &bull; **Screensavers:** [Immich albums](docs/immich.md), local photos and clocks, with motion, face or presence detection to wake the kiosk.
 
 &bull; **Home Assistant integration:** The built-in [ESPHome connection](docs/esphome.md) exposes screen controls, volume and device sensors. An optional Bluetooth proxy relays nearby Bluetooth devices to Home Assistant.
@@ -53,7 +57,6 @@
 Also built in: [PIN-protected kiosk mode](docs/kiosk.md), [touch and clap gestures](docs/gestures.md), [DLNA media playback](docs/dlna.md), dashboard rotation and start on boot.
 
 <p align="center">
-  <a href="assets/screenshots/screensaver-np.png"><img src="assets/screenshots/screensaver-np.png" alt="Settings in Kiosk Satellite" width="320" /></a>
   <a href="assets/screenshots/now-playing.png"><img src="assets/screenshots/now-playing.png" alt="Now Playing with album artwork and music controls" width="320" /></a>
   <a href="assets/screenshots/camera-1.png"><img src="assets/screenshots/camera-1.png" alt="Live camera feeds in Kiosk Satellite" width="320" /></a>
 
