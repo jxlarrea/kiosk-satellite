@@ -3957,6 +3957,20 @@ const micAgc = SettingDef<bool>(
   perDevice: true,
 );
 
+const micNoiseSuppression = SettingDef<bool>(
+  key: 'audio.mic_noise_suppression',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Noise suppression',
+  description:
+      'Reduce microphone background noise using Android processing. '
+      'It may help or hurt wake word detection depending on the device.',
+  category: 'Screen & Audio',
+  section: 'Microphone settings',
+  subpage: 'Microphone settings',
+  perDevice: true,
+);
+
 const micGainDb = SettingDef<num>(
   key: 'audio.mic_gain_db',
   type: SettingType.number,
@@ -6570,6 +6584,7 @@ const List<SettingDef<Object>> allSettings = [
   audioSpeakerDevice,
   micAudioSource,
   micAgc,
+  micNoiseSuppression,
   micGainDb,
   // Hand-built row: renders after the gain in both UIs, and only when the
   // selected microphone reports more than one channel.

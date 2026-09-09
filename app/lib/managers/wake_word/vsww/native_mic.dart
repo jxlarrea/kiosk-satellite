@@ -20,6 +20,7 @@ class NativeMic {
   static String source = 'voice_communication';
   static num gainDb = 0;
   static bool agc = false;
+  static bool noiseSuppression = true;
 
   /// 1-based channel of a multichannel microphone to capture; 0 lets the
   /// platform downmix (which averages every channel together).
@@ -31,6 +32,7 @@ class NativeMic {
         'source': source,
         'gainDb': gainDb,
         'agc': agc,
+        'noiseSuppression': noiseSuppression,
         'channel': channel,
       })
       .map((e) => e as Uint8List);

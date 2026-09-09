@@ -892,6 +892,7 @@ void main() {
       // Its rows went with it.
       expect(find.text(micAudioSource.title), findsNothing);
       expect(find.text(micAgc.title), findsNothing);
+      expect(find.text(micNoiseSuppression.title), findsNothing);
       // The groups that stayed are still here.
       expect(
         find.widgetWithText(SectionHeading, 'Audio Volume'),
@@ -916,6 +917,11 @@ void main() {
       );
       expect(find.text(micAudioSource.title), findsOneWidget);
       expect(find.text(micAgc.title), findsOneWidget);
+      expect(find.text(micNoiseSuppression.title), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text(micNoiseSuppression.title)).dy,
+        greaterThan(tester.getTopLeft(find.text(micAgc.title)).dy),
+      );
       // The caveat that used to sit under the heading came along.
       expect(find.byType(GroupNote), findsOneWidget);
       // The page title says it; a heading repeating it would say it twice.

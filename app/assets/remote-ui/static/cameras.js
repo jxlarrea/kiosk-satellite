@@ -306,8 +306,8 @@ export const GLANCE_MAX = 4;
 /* The Microphone settings warning. Kept identical to the device's copy in
    settings_screen.dart, which is the one users read on the tablet. */
 export const MIC_GROUP_NOTE =
-  'Only for devices that capture too quietly. Wrong values make wake word ' +
-  'detection worse.';
+  'Adjust capture for your microphone and room. Test wake words and voice ' +
+  'interactions after changing these settings.';
 
 /* One chosen glance entity's editable pieces in a single modal, mirroring
    the device's dialog: the name the row shows (issue #206) — a custom one,

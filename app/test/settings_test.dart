@@ -162,13 +162,14 @@ void main() {
     expect(defs.dlnaPort.validator!('nonsense'), isNotNull);
   });
 
-  test('microphone capture defaults are the long-standing behaviour', () async {
+  test('microphone capture defaults include noise suppression', () async {
     await build({});
-    // An untouched install must capture exactly as it did before these
-    // settings existed: the call-audio source, no gain, platform AGC off.
+    // Default to the call-audio source with noise suppression, no gain
+    // and platform AGC off.
     expect(settings.get(defs.micAudioSource), 'voice_communication');
     expect(settings.get(defs.micGainDb), 0);
     expect(settings.get(defs.micAgc), isFalse);
+    expect(settings.get(defs.micNoiseSuppression), isTrue);
   });
 
   test('the audio faders default to full, matching old behavior', () async {

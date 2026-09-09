@@ -26,27 +26,26 @@ import kotlin.math.max
  * capture; onCancel (Dart cancelling the subscription) stops it and releases
  * the mic — which is what frees it for the WebView's getUserMedia during STT.
  *
- * Capture DSP: echo cancellation on, everything else off. We are the audio
- * source for wake-word inference, the stop word and STT, and only the first of
- * those is helped by the platform's other processing:
+ * Capture DSP: echo cancellation on, with optional noise suppression and AGC.
+ * We share capture settings across wake word inference, the stop word, STT
+ * and RTSP audio:
  *
  *  - Echo cancellation earns its keep because the stop word listens *while*
  *    TTS plays out of this same device. Without it the mic hears our own
  *    speech and scores it.
- *  - Noise suppression and AGC are off: they reshape the signal the wake
- *    models were trained on (AGC in particular pumps the level between
- *    utterances), and STT engines do better with the unprocessed stream.
+ *  - Noise suppression defaults to on and AGC defaults to off. Users can
+ *    adjust both for their microphone. Both change the signal recognition receives.
  *
  * VOICE_COMMUNICATION rather than MIC is deliberate: it is the capture path
  * that carries the playback reference AEC needs. On a MIC session the effect
  * usually attaches and then silently does nothing. The tradeoff is that this
  * source also applies the platform's own NS/AGC by default, which is exactly
- * what [applyDsp] turns back off.
+ * what [applyDsp] configures from the user's settings.
  * SoundPlayer must also use communication playback and a communication
  * session. Enabling the capture effect alone does not cancel media playback
  * on devices such as the Samsung Galaxy Tab S8.
  *
- * All three of those choices are overridable from settings, because on custom
+ * Capture tuning is configurable because on custom
  * ROMs they are exactly what goes wrong: VOICE_COMMUNICATION is the phone-call
  * capture path, and a ROM that never had its call audio calibrated can deliver
  * it 20 dB down while a recorder app on plain MIC sounds fine. The defaults are
@@ -115,6 +114,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         val args = arguments as? Map<*, *>
         val source = audioSource(args?.get("source") as? String)
         val wantAgc = args?.get("agc") == true
+        val wantNs = args?.get("noiseSuppression") != false
         // A gain of 0 dB is the overwhelmingly common case, and a factor of
         // exactly 1 lets the read loop skip the sample walk entirely.
         val gain = gainFactor((args?.get("gainDb") as? Number)?.toDouble() ?: 0.0)
@@ -161,11 +161,11 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             TAG,
             "capture opening (device=${selector ?: "automatic"} " +
                 "source=${sourceName(source)} gain=${"%.1f".format(gainDbOf(gain))}dB " +
-                "agc=$wantAgc" +
+                "agc=$wantAgc ns=$wantNs" +
                 (if (openChans > 1) " channel=$wantChannel/$openChans" else "") + ")",
         )
         applyPreferredDevice(opened, selector)
-        applyDsp(opened.audioSessionId, wantAgc)
+        applyDsp(opened.audioSessionId, wantAgc, wantNs)
         recording = true
         opened.startRecording()
         CommunicationPlayback.get(appContext).captureStarted()
@@ -215,7 +215,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                             try { cur.stop() } catch (_: IllegalStateException) {}
                             cur.release()
                             applyPreferredDevice(next, selector)
-                            applyDsp(next.audioSessionId, wantAgc)
+                            applyDsp(next.audioSessionId, wantAgc, wantNs)
                             next.startRecording()
                             cur = next
                             record = next
@@ -454,14 +454,14 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
     }
 
     /**
-     * Echo cancellation on, noise suppression and AGC off, on this capture
+     * Echo cancellation on, noise suppression and AGC as configured, on this capture
      * session. Each effect is device-optional, so every step is best-effort:
      * a tablet without an AEC implementation still captures fine, it just does
      * not cancel. The resulting state is logged rather than assumed, since
      * "created the effect" and "the effect is actually running" are different
      * things on Android and vary by OEM.
      */
-    private fun applyDsp(sessionId: Int, wantAgc: Boolean) {
+    private fun applyDsp(sessionId: Int, wantAgc: Boolean, wantNs: Boolean) {
         if (AcousticEchoCanceler.isAvailable()) {
             aec = try {
                 AcousticEchoCanceler.create(sessionId)?.also { it.setEnabled(true) }
@@ -470,12 +470,11 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                 null
             }
         }
-        // Creating these and disabling them is how you turn off the processing
-        // VOICE_COMMUNICATION applies by default; there is no "raw" flavour of
-        // this source.
+        // Explicitly set the effect state because VOICE_COMMUNICATION can
+        // enable platform processing by default.
         if (NoiseSuppressor.isAvailable()) {
             ns = try {
-                NoiseSuppressor.create(sessionId)?.also { it.setEnabled(false) }
+                NoiseSuppressor.create(sessionId)?.also { it.setEnabled(wantNs) }
             } catch (e: RuntimeException) {
                 Log.w(TAG, "NS control unavailable: ${e.message}")
                 null

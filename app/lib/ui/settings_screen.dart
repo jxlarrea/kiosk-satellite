@@ -6843,8 +6843,8 @@ class _MadeByFooter extends StatelessWidget {
 /// Wording for the Microphone settings group, shared with the remote admin
 /// (which carries its own copy in the HTML).
 const _micGroupNote =
-    'Only for devices that capture too quietly. Wrong values make wake word '
-    'detection worse.';
+    'Adjust capture for your microphone and room. Test wake words and voice '
+    'interactions after changing these settings.';
 
 const _permissionsGroupNote =
     'Grants are given on this device, so each button opens an Android '

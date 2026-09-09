@@ -166,6 +166,7 @@ void main() {
     expect(moved, [
       defs.micAudioSource.key,
       defs.micAgc.key,
+      defs.micNoiseSuppression.key,
       defs.micGainDb.key,
       // Hidden and hand-built (its options run to the mic's channel count),
       // but it belongs to that page too.
