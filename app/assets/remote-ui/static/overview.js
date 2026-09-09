@@ -1,5 +1,6 @@
 import { $, api, cmd, state } from './core.js';
 import { attachUpdateInstall, refreshUpdateBadge } from './device.js';
+import { readFilterStatus } from './filter_status.js';
 import { agoLabel } from './notices.js';
 import { loadScreenshot, quick } from './panels.js';
 import { permissionSpecs } from './permissions.js';
@@ -145,6 +146,25 @@ function openButton(btn, label, tab) {
 }
 
 let healthInFlight = null;
+let haStatusRevision = 0;
+async function paintHaStatus(ha) {
+  const revision = ++haStatusRevision;
+  const filtering = settingOn('browser.ws_filter');
+  if (!ha) paintTile('ha', '', 'Status unavailable');
+  else if (!ha.configured) paintTile('ha', 'warn', 'Not set up');
+  else if (!ha.connected) paintTile('ha', 'off', 'Disconnected');
+  else paintTile('ha', 'on', filtering ? 'Checking filter...' : 'Connected');
+  // Keep the rest of Overview responsive if the dashboard cannot answer.
+  // Disabled or disconnected panels do not get a JavaScript request.
+  if (!onOverview()) return;
+  const filter = await readFilterStatus(filtering && !!ha?.configured && !!ha?.connected);
+  if (revision !== haStatusRevision || !onOverview() || !ha?.configured || !ha?.connected) return;
+  const enabled = settingOn('browser.ws_filter');
+  const current = enabled ? filter : null;
+  paintTile('ha', current?.unfiltered ? 'warn' : 'on',
+    enabled ? current?.label || 'Filter status unavailable' : 'Connected');
+}
+
 export function refreshHealth() {
   // One read at a time: a tab shown during a read joins it.
   if (healthInFlight) return healthInFlight;
@@ -158,10 +178,7 @@ async function readHealth() {
     'fleetStatus',
   ].map((c) => ask(c)));
 
-  if (!ha) paintTile('ha', '', 'Status unavailable');
-  else if (!ha.configured) paintTile('ha', 'warn', 'Not set up');
-  else if (!ha.connected) paintTile('ha', 'off', 'Disconnected');
-  else paintTile('ha', 'on', 'Connected');
+  void paintHaStatus(ha);
 
   if (!settingOn('wake_word.enabled')) paintTile('voice', '', 'Wake word detection off');
   else if (!wake) paintTile('voice', '', 'Status unavailable');

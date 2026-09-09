@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Overview shows dashboard filtering status.** The Home Assistant pill shows **Watching N entities** when filtering is active or **Updates unfiltered** with the shared amber warning style when the view runs unfiltered. With the optimization disabled, it shows **Connected**. Status reads use existing filter flags and the allowlist count, are cached for 30 seconds and are skipped while Overview is hidden or filtering is disabled. Adds the Overview status requested in [#482](https://github.com/jxlarrea/kiosk-satellite/issues/482).
 - **Dashboard scan diagnostics.** When a component enumerates all entity states and disables filtering, the **Show scan details** link in device settings and remote admin opens a copyable call stack that may identify the responsible resource or function. The same diagnostic appears once in the Web Console log. Capture runs only once per view visit with a bounded trace, adds no stack tracing to normal entity reads or updates and leaves filtering behavior unchanged. Adds diagnostics for [#482](https://github.com/jxlarrea/kiosk-satellite/issues/482).
 
 ## v2026.9.31 - 2026-09-08
