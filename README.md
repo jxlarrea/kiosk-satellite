@@ -48,7 +48,9 @@
 
 &bull; **Remote administration:** Configure the app, view live screenshots, read logs and back up settings from a browser. [Fleet management](docs/fleet.md) shares configuration profiles and coordinates updates across multiple kiosks.
 
-Also built in: [PIN-protected kiosk mode](docs/kiosk.md), [touch, clap and camera gestures](docs/gestures.md), [live camera views](docs/cameras.md), [DLNA media playback](docs/dlna.md), dashboard rotation and start on boot.
+&bull; **Kiosk conveniences:** Use [hand gestures](docs/gestures.md#show-fingers) to run Home Assistant actions or open a camera view by holding up fingers to the device camera. Set Kiosk Satellite as the [home launcher](docs/home-launcher.md) on supported devices so the Home button returns to your dashboard. Arrange up to twelve live feeds in [camera views](docs/cameras.md), with camera imports from Home Assistant or Go2RTC.
+
+Also built in: [PIN-protected kiosk mode](docs/kiosk.md), [touch and clap gestures](docs/gestures.md), [DLNA media playback](docs/dlna.md), dashboard rotation and start on boot.
 
 <p align="center">
   <a href="assets/screenshots/screensaver-np.png"><img src="assets/screenshots/screensaver-np.png" alt="Settings in Kiosk Satellite" width="320" /></a>
