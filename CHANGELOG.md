@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.34 - 2026-09-09
 
 ### Fixed
 - **Now Playing returns after a voice interaction.** A voice turn that interrupts the view now brings it back when the interaction finishes, as long as the track and Now Playing view are still available.
