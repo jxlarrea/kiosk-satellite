@@ -7,6 +7,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - **Install plugins from their own GitHub repositories.** Use Add plugin in Settings or remote admin to review a repository manifest and README before installing a checksum-verified release. The page uses standard introduction and warning rows, grouped settings and puzzle piece icons. Progress stays inside the active control without shifting the page. Installed plugins appear as subpage entry rows with enable, disable and uninstall controls. Each plugin's settings, commands and saved README live inside its subpage. SDK 1 supports draggable windows above the dashboard with package validation, bounded callbacks and startup recovery. Hello World provides a standalone template. The SDK uses Apache-2.0 with an additional permission for independent plugins.
 
+### Changed
+- **Plugin documentation lives with Hello World.** Installation instructions, the SDK reference and author tooling now share the standalone plugin template repository.
+
 ### Fixed
 - **Debug builds can open the dashboard.** Navigation key capture now initializes after the kiosk screen's inherited dependencies are available, preventing a startup assertion that blocks the WebView. Fixes [#493](https://github.com/jxlarrea/kiosk-satellite/issues/493).
 - **Unused overlays dispose cleanly.** Browser and camera overlay animation controllers now initialize while their widgets are mounted, preventing a debug assertion when the kiosk screen closes before either overlay has opened.
