@@ -4,7 +4,7 @@ import { hintRow, messageBox, modalShell, showToast } from './widgets.js';
 import { marked } from './vendor-marked.js';
 import DOMPurify from './vendor-purify.js';
 
-const introText = 'Plugins add optional features to Kiosk Satellite, such as floating windows over your dashboard. Each plugin has its own settings and can be enabled or removed independently.';
+const introText = 'Plugins add additional community developed features to Kiosk Satellite.';
 const trustNotice = 'Plugins run code inside Kiosk Satellite and can access app data and granted Android permissions. A faulty or malicious plugin can expose private information or stop the app from working. Only install plugins from authors you trust.';
 let busy = false;
 const maxZipBytes = 4 * 1024 * 1024;
@@ -45,11 +45,11 @@ export async function loadPlugins() {
   if (!root || busy) return;
   busy = true;
   try {
-    const result = await cmd('listPlugins');
+    const result = await cmd('getPluginState');
     if (!result.ok) throw new Error(result.error);
-    render(root, result.data || []);
+    render(root, result.data);
   } catch (error) {
-    showToast({ title: 'Plugins', message: error.message, kind: 'error' });
+    showToast({ title: 'Plugin Manager', message: error.message, kind: 'error' });
   } finally { busy = false; }
 }
 
@@ -129,16 +129,25 @@ function info(title, description = '') {
   return node;
 }
 
-function render(root, plugins) {
+function render(root, state) {
+  const plugins = state.plugins || [];
+  const pluginsEnabled = state.enabled === true;
   const scroll = document.scrollingElement?.scrollTop || 0;
   root.replaceChildren();
   const introduction = element('div', undefined, 'card');
-  introduction.append(hintRow(introText), hintRow(trustNotice, { warn: true }));
+  const masterRow = element('div', undefined, 'row');
+  masterRow.append(info('Enable Plugins', introText));
+  const masterToggle = element('label', undefined, 'switch plugin-master-switch');
+  const master = element('input'); master.type = 'checkbox'; master.checked = pluginsEnabled;
+  master.setAttribute('aria-label', 'Enable Plugins');
+  masterToggle.append(master, element('span', undefined, 'slider')); masterRow.append(masterToggle);
+  introduction.append(masterRow);
   const installCard = element('div', undefined, 'card');
   const addRow = element('div', undefined, 'row plugin-add-row');
   addRow.append(info('Add plugin', 'Install from a GitHub repository'));
   const add = iconButton('Add plugin', 'M12 5v14M5 12h14'); addRow.append(add);
-  installCard.append(addRow);
+  const warning = hintRow(trustNotice, { warn: true }); warning.classList.add('plugin-install-warning');
+  installCard.append(addRow, warning);
   const list = element('div', undefined, 'card');
   const developerTools = element('div', undefined, 'card');
   const zipRow = element('div', undefined, 'row plugin-add-row');
@@ -147,7 +156,7 @@ function render(root, plugins) {
   const fileInput = element('input'); fileInput.type = 'file'; fileInput.accept = '.zip,application/zip'; fileInput.hidden = true;
   fileInput.setAttribute('aria-label', 'Plugin ZIP');
   zipRow.append(upload, fileInput); developerTools.append(zipRow);
-  root.append(introduction, installCard, heading('Installed plugins'), list, heading('Developer Tools'), developerTools);
+  root.append(introduction);
 
   async function command(name, params) {
     const result = await cmd(name, params, { timeoutMs: 95000 });
@@ -161,19 +170,32 @@ function render(root, plugins) {
     root.querySelectorAll('button,input').forEach((el) => { el.disabled = true; });
     trigger.classList.add('plugin-busy');
     try { await action(); }
-    catch (failure) { showToast({ title: 'Plugins', message: failure.message, kind: 'error' }); }
+    catch (failure) { showToast({ title: 'Plugin Manager', message: failure.message, kind: 'error' }); }
     finally {
       trigger.classList.remove('plugin-busy'); busy = false;
       root.removeAttribute('aria-busy');
       root.querySelectorAll('button,input').forEach((el) => { el.disabled = el.dataset.pluginDisabled === 'true'; });
     }
   }
-  const update = (name, params, trigger) => run(async () => render(root, await command(name, params)), trigger);
+  const refresh = async () => render(root, await command('getPluginState'));
+  const update = (name, params, trigger) => run(async () => { await command(name, params); await refresh(); }, trigger);
+  master.onchange = () => run(async () => {
+    try { render(root, await command('setPluginsEnabled', { enabled: master.checked })); }
+    finally { master.checked = pluginsEnabled; }
+  }, masterToggle);
+  if (!pluginsEnabled) {
+    if (currentPath.split('/')[0] === 'plugins') showTab('plugins', { refresh: false });
+    return;
+  }
+  root.append(installCard, heading('Installed plugins'), list, heading('Developer Tools'), developerTools);
   add.onclick = () => run(async () => {
     const url = await repositoryDialog();
     if (url === null) return;
     const result = await command('previewPluginRepository', { url });
-    if (await confirmPreview(result)) render(root, await command('installPluginRepository', { previewId: result.previewId, trusted: true }));
+    if (await confirmPreview(result)) {
+      await command('installPluginRepository', { previewId: result.previewId, trusted: true });
+      await refresh();
+    }
   });
   upload.onclick = () => { if (!busy) fileInput.click(); };
   zipRow.onclick = (event) => { if (!event.target.closest('button,input') && !busy) upload.click(); };
@@ -184,7 +206,8 @@ function render(root, plugins) {
       if (!file.size || file.size > maxZipBytes) throw new Error('Plugin ZIP must be at most 4 MB');
       if (!await confirmZip(file)) return;
       const data = await zipBase64(file);
-      render(root, await command('installPlugin', { data, trusted: true }));
+      await command('installPlugin', { data, trusted: true });
+      await refresh();
     }, upload);
   };
   addRow.onclick = (event) => { if (!event.target.closest('button') && !busy) add.click(); };
@@ -192,7 +215,7 @@ function render(root, plugins) {
   for (const plugin of plugins) {
     const row = subpageEntry('plugins', plugin.id, { iconName: 'Plugins' });
     row.querySelector('.name').textContent = plugin.name;
-    row.querySelector('.desc').textContent = `${plugin.version} · ${plugin.enabled ? 'Enabled' : 'Disabled'}`;
+    row.querySelector('.desc').textContent = `${plugin.version} · ${plugin.enabled ? (pluginsEnabled ? 'Enabled' : 'Paused') : 'Disabled'}`;
     row.addEventListener('click', (event) => { if (busy) event.stopImmediatePropagation(); }, true);
     row.setAttribute('role', 'link'); row.tabIndex = 0;
     row.onkeydown = (event) => {
@@ -201,6 +224,7 @@ function render(root, plugins) {
     const toggle = element('label', undefined, 'switch');
     const enabled = element('input'); enabled.type = 'checkbox'; enabled.checked = plugin.enabled;
     enabled.setAttribute('aria-label', `Enable ${plugin.name}`);
+    enabled.disabled = !pluginsEnabled; enabled.dataset.pluginDisabled = String(!pluginsEnabled);
     enabled.onchange = () => update(enabled.checked ? 'enablePlugin' : 'disablePlugin', { id: plugin.id }, row.querySelector('.chev'));
     toggle.onclick = (event) => event.stopPropagation();
     toggle.append(enabled, element('span', undefined, 'slider'));
@@ -208,7 +232,9 @@ function render(root, plugins) {
     remove.onclick = (event) => {
       event.stopPropagation();
       run(async () => {
-        if (await messageBox({ title: `Uninstall ${plugin.name}?`, message: 'This removes the plugin and its settings.', buttons: ['Cancel', 'Uninstall'] }) === 'Uninstall') render(root, await command('removePlugin', { id: plugin.id }));
+        if (await messageBox({ title: `Uninstall ${plugin.name}?`, message: 'This removes the plugin and its settings.', buttons: ['Cancel', 'Uninstall'] }) === 'Uninstall') {
+          await command('removePlugin', { id: plugin.id }); await refresh();
+        }
       }, remove);
     };
     row.insertBefore(toggle, row.lastChild); row.insertBefore(remove, row.lastChild);
@@ -217,7 +243,8 @@ function render(root, plugins) {
     const description = element('div', undefined, 'card');
     description.append(hintRow(plugin.description || ''));
     if (plugin.error) description.append(hintRow(plugin.error, { warn: true }));
-    if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to use its actions.'));
+    if (!pluginsEnabled) description.append(hintRow('Enable Plugins to run this plugin.'));
+    else if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to use its actions.'));
     page.append(description);
     const panel = element('div', undefined, 'card');
     const values = { ...plugin.values };
@@ -246,7 +273,7 @@ function render(root, plugins) {
       for (const action of plugin.commands) {
         const row = element('div', undefined, 'row'); row.append(info(action.title));
         const button = iconButton(action.title, 'm8 5 11 7-11 7V5z');
-        button.disabled = !plugin.enabled; button.dataset.pluginDisabled = String(!plugin.enabled);
+        button.disabled = !pluginsEnabled || !plugin.enabled; button.dataset.pluginDisabled = String(button.disabled);
         button.onclick = () => update('runPluginCommand', { id: plugin.id, command: action.id }, button);
         row.append(button); actions.append(row);
       }

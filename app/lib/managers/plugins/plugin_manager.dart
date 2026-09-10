@@ -38,6 +38,7 @@ class PluginManager extends Manager {
   final installed = ValueNotifier<List<Map<String, Object?>>>(const []);
   final windows = ValueNotifier<List<PluginWindow>>(const []);
   final status = ValueNotifier<String>('');
+  final enabled = ValueNotifier<bool>(false);
   bool _disposed = false;
 
   @override
@@ -103,6 +104,23 @@ class PluginManager extends Manager {
       'List installed plugins and their settings.',
       (_) => refresh(),
       const {},
+    );
+    register(
+      'getPluginState',
+      'Read the master plugin switch and installed plugins.',
+      (_) => getState(),
+      const {},
+    );
+    register(
+      'setPluginsEnabled',
+      'Enable or pause plugin execution without changing individual plugin choices.',
+      (p) {
+        if (p['enabled'] is! bool) {
+          throw const FormatException('Missing enabled flag');
+        }
+        return setEnabled(p['enabled'] as bool);
+      },
+      const {'enabled': 'Master plugin switch'},
     );
     register(
       'previewPluginRepository',
@@ -227,6 +245,21 @@ class PluginManager extends Manager {
     return update('install', {'bytes': bytes, 'trusted': true});
   }
 
+  Map<String, Object?> get _state => {
+    'enabled': enabled.value,
+    'plugins': installed.value,
+  };
+
+  Future<Map<String, Object?>> getState() async {
+    await refresh();
+    return _state;
+  }
+
+  Future<Map<String, Object?>> setEnabled(bool value) async {
+    await update('setEnabled', {'enabled': value});
+    return _state;
+  }
+
   Future<List<Map<String, Object?>>> refresh() => update('list', const {});
 
   Future<List<Map<String, Object?>>> update(
@@ -249,6 +282,10 @@ class PluginManager extends Manager {
   }
 
   void _readInstalled(Object? value) {
+    if (value is Map) {
+      enabled.value = value['enabled'] == true;
+      value = value['plugins'];
+    }
     if (value is! List) return;
     installed.value = [
       for (final item in value) Map<String, Object?>.from(item as Map),
@@ -296,5 +333,6 @@ class PluginManager extends Manager {
     installed.dispose();
     windows.dispose();
     status.dispose();
+    enabled.dispose();
   }
 }

@@ -234,7 +234,12 @@ const _categories = <(String, String, Object, String)>[
     Icons.hub_outlined,
     'Lead or follow other kiosks',
   ),
-  ('Plugins', 'Plugins', Icons.extension_rounded, 'Install and manage plugins'),
+  (
+    'Plugins',
+    'Plugin Manager',
+    Icons.extension_rounded,
+    'Install and manage plugins',
+  ),
   ('About', 'About', Icons.info_outline, 'Version, author, license'),
   ('Logs', 'Logs', Icons.article_outlined, 'App log and web console'),
 ];
@@ -2727,7 +2732,13 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// and simply moved with their group.
   List<Widget> _subpageCards(AppContainer container, String subpage) {
     if (widget.category == 'Plugins') {
-      return [PluginDetailPanel(plugins: container.plugins, id: subpage)];
+      return [
+        PluginDetailPanel(
+          plugins: container.plugins,
+          id: subpage,
+          onDisabled: () => closeSettingsSubpage(context),
+        ),
+      ];
     }
     // Fleet profiles are pages made at runtime, one per profile, named
     // after it.

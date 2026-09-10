@@ -1125,6 +1125,8 @@
 #tab-plugins .subpage-entry .info { min-width: 120px; }
 
 .plugin-add-row { cursor: pointer; }
+.plugin-install-warning { padding-top: 12px; padding-bottom: 16px; }
+.plugin-master-switch.plugin-busy .slider { opacity: 0; }
 .plugin-repository-field { flex-wrap: wrap; }
 .plugin-repository-field .info { flex-basis: 100%; }
 .plugin-repository-field input[type=url] { width: 100%; max-width: none; }

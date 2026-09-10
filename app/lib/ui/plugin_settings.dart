@@ -11,7 +11,7 @@ import 'kit.dart';
 import 'toast.dart';
 
 const pluginIntro =
-    'Plugins add optional features to Kiosk Satellite, such as floating windows over your dashboard. Each plugin has its own settings and can be enabled or removed independently.';
+    'Plugins add additional community developed features to Kiosk Satellite.';
 
 const pluginTrustNotice =
     'Plugins run code inside Kiosk Satellite and can access '
@@ -111,7 +111,7 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
       if (mounted) {
         showToast(
           context,
-          title: 'Plugins',
+          title: 'Plugin Manager',
           message: '$error',
           kind: ToastKind.error,
         );
@@ -293,98 +293,130 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      const SettingsCard(
-        children: [HintRow(pluginIntro), WarnRow(pluginTrustNotice)],
-      ),
-      SettingsCard(
-        children: [
-          SettingsRow(
-            title: const Text('Add plugin'),
-            subtitle: const Text('Install from a GitHub repository'),
-            trailing: _busy && _busyId == null
-                ? const _PluginProgress()
-                : const Icon(Icons.add_rounded),
-            enabled: !_busy,
-            onTap: () => _run(_preview),
-          ),
-        ],
-      ),
-      const SectionHeading('Installed plugins'),
-      ValueListenableBuilder<String>(
-        valueListenable: widget.plugins.status,
-        builder: (_, status, _) =>
-            status.isEmpty ? const SizedBox.shrink() : WarnRow(status),
-      ),
-      ValueListenableBuilder<List<Map<String, Object?>>>(
-        valueListenable: widget.plugins.installed,
-        builder: (context, plugins, _) => SettingsCard(
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+    valueListenable: widget.plugins.enabled,
+    builder: (context, enabled, _) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SettingsCard(
           children: [
-            if (plugins.isEmpty)
-              const HintRow(
-                'No plugins installed. Add a repository to get started.',
-              ),
-            for (final plugin in plugins)
-              SettingsRow(
-                leading: const Icon(Icons.extension_rounded),
-                title: Text('${plugin['name']}'),
-                subtitle: Text(
-                  '${plugin['version']} · ${plugin['enabled'] == true ? 'Enabled' : 'Disabled'}',
-                ),
-                onTap: _busy
-                    ? null
-                    : () => widget.onOpen(plugin['id'] as String),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Switch(
-                      value: plugin['enabled'] == true,
+            SettingsRow(
+              title: const Text('Enable Plugins'),
+              subtitle: const Text(pluginIntro),
+              trailing: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Opacity(
+                    opacity: _busy && _busyId == '_master' ? 0 : 1,
+                    child: Switch(
+                      value: enabled,
                       onChanged: _busy
                           ? null
                           : (value) => _run(
-                              () => widget.plugins.update(
-                                value ? 'enable' : 'disable',
-                                {'id': plugin['id']},
-                              ),
-                              id: plugin['id'] as String,
+                              () => widget.plugins.setEnabled(value),
+                              id: '_master',
                             ),
                     ),
-                    IconButton(
-                      tooltip: 'Uninstall ${plugin['name']}',
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      onPressed: _busy
-                          ? null
-                          : () => _run(
-                              () => _remove(plugin),
-                              id: plugin['id'] as String,
-                            ),
-                    ),
-                    _busy && _busyId == plugin['id']
-                        ? const _PluginProgress()
-                        : const Icon(Icons.chevron_right),
-                  ],
-                ),
+                  ),
+                  if (_busy && _busyId == '_master') const _PluginProgress(),
+                ],
               ),
+            ),
           ],
         ),
-      ),
-      const SectionHeading('Developer Tools'),
-      SettingsCard(
-        children: [
-          SettingsRow(
-            title: const Text('Install from ZIP'),
-            subtitle: const Text('Install a local build for testing'),
-            trailing: _busy && _busyId == '_zip'
-                ? const _PluginProgress()
-                : const Icon(Icons.upload_file_rounded),
-            enabled: !_busy,
-            onTap: () => _run(_installZip, id: '_zip'),
+        if (enabled) ...[
+          SettingsCard(
+            children: [
+              SettingsRow(
+                title: const Text('Add plugin'),
+                subtitle: const Text('Install from a GitHub repository'),
+                trailing: _busy && _busyId == null
+                    ? const _PluginProgress()
+                    : const Icon(Icons.add_rounded),
+                enabled: !_busy,
+                onTap: () => _run(_preview),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: WarnRow(pluginTrustNotice),
+              ),
+            ],
+          ),
+          const SectionHeading('Installed plugins'),
+          ValueListenableBuilder<String>(
+            valueListenable: widget.plugins.status,
+            builder: (_, status, _) =>
+                status.isEmpty ? const SizedBox.shrink() : WarnRow(status),
+          ),
+          ValueListenableBuilder<List<Map<String, Object?>>>(
+            valueListenable: widget.plugins.installed,
+            builder: (context, plugins, _) => SettingsCard(
+              children: [
+                if (plugins.isEmpty)
+                  const HintRow(
+                    'No plugins installed. Add a repository to get started.',
+                  ),
+                for (final plugin in plugins)
+                  SettingsRow(
+                    leading: const Icon(Icons.extension_rounded),
+                    title: Text('${plugin['name']}'),
+                    subtitle: Text(
+                      '${plugin['version']} · ${plugin['enabled'] == true ? (enabled ? 'Enabled' : 'Paused') : 'Disabled'}',
+                    ),
+                    onTap: _busy
+                        ? null
+                        : () => widget.onOpen(plugin['id'] as String),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Switch(
+                          value: plugin['enabled'] == true,
+                          onChanged: _busy || !enabled
+                              ? null
+                              : (value) => _run(
+                                  () => widget.plugins.update(
+                                    value ? 'enable' : 'disable',
+                                    {'id': plugin['id']},
+                                  ),
+                                  id: plugin['id'] as String,
+                                ),
+                        ),
+                        IconButton(
+                          tooltip: 'Uninstall ${plugin['name']}',
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          onPressed: _busy
+                              ? null
+                              : () => _run(
+                                  () => _remove(plugin),
+                                  id: plugin['id'] as String,
+                                ),
+                        ),
+                        _busy && _busyId == plugin['id']
+                            ? const _PluginProgress()
+                            : const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SectionHeading('Developer Tools'),
+          SettingsCard(
+            children: [
+              SettingsRow(
+                title: const Text('Install from ZIP'),
+                subtitle: const Text('Install a local build for testing'),
+                trailing: _busy && _busyId == '_zip'
+                    ? const _PluginProgress()
+                    : const Icon(Icons.upload_file_rounded),
+                enabled: !_busy,
+                onTap: () => _run(_installZip, id: '_zip'),
+              ),
+            ],
           ),
         ],
-      ),
-    ],
+      ],
+    ),
   );
 }
 
@@ -402,9 +434,15 @@ class _PluginProgress extends StatelessWidget {
 }
 
 class PluginDetailPanel extends StatefulWidget {
-  const PluginDetailPanel({super.key, required this.plugins, required this.id});
+  const PluginDetailPanel({
+    super.key,
+    required this.plugins,
+    required this.id,
+    this.onDisabled,
+  });
   final PluginManager plugins;
   final String id;
+  final VoidCallback? onDisabled;
   @override
   State<PluginDetailPanel> createState() => _PluginDetailPanelState();
 }
@@ -412,6 +450,26 @@ class PluginDetailPanel extends StatefulWidget {
 class _PluginDetailPanelState extends State<PluginDetailPanel> {
   bool _busy = false;
   String? _action;
+  @override
+  void initState() {
+    super.initState();
+    widget.plugins.enabled.addListener(_masterChanged);
+    _masterChanged();
+  }
+
+  void _masterChanged() {
+    if (widget.plugins.enabled.value) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !widget.plugins.enabled.value) widget.onDisabled?.call();
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.plugins.enabled.removeListener(_masterChanged);
+    super.dispose();
+  }
+
   Future<void> _run(String method, Map<String, Object?> args) async {
     if (_busy) return;
     setState(() {
@@ -435,11 +493,14 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) => ValueListenableBuilder<List<Map<String, Object?>>>(
-    valueListenable: widget.plugins.installed,
-    builder: (context, plugins, _) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([
+      widget.plugins.installed,
+      widget.plugins.enabled,
+    ]),
+    builder: (context, _) {
+      if (!widget.plugins.enabled.value) return const SizedBox.shrink();
+      final plugins = widget.plugins.installed.value;
       final plugin = plugins.where((p) => p['id'] == widget.id).firstOrNull;
       if (plugin == null) {
         return const Text('This plugin is no longer installed.');
@@ -450,7 +511,9 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
           SettingsCard(
             children: [
               HintRow('${plugin['description'] ?? ''}'),
-              if (plugin['enabled'] != true)
+              if (!widget.plugins.enabled.value)
+                const HintRow('Enable Plugins to run this plugin.')
+              else if (plugin['enabled'] != true)
                 const HintRow(
                   'Enable this plugin from its entry row to use its actions.',
                 ),
@@ -461,6 +524,7 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
           _PluginSettings(
             key: ValueKey(widget.id),
             plugin: plugin,
+            pluginsEnabled: widget.plugins.enabled.value,
             busy: _busy,
             action: _action,
             run: _run,
@@ -497,11 +561,13 @@ class _PluginSettings extends StatefulWidget {
   const _PluginSettings({
     super.key,
     required this.plugin,
+    required this.pluginsEnabled,
     required this.busy,
     required this.action,
     required this.run,
   });
   final Map<String, Object?> plugin;
+  final bool pluginsEnabled;
   final bool busy;
   final String? action;
   final Future<void> Function(String, Map<String, Object?>) run;
@@ -530,7 +596,7 @@ class _PluginSettingsState extends State<_PluginSettings> {
   Widget build(BuildContext context) {
     final plugin = widget.plugin;
     final id = plugin['id'] as String;
-    final enabled = plugin['enabled'] == true;
+    final enabled = widget.pluginsEnabled && plugin['enabled'] == true;
     final settings = plugin['settings'] as List? ?? const [];
     final commands = plugin['commands'] as List? ?? const [];
     return Column(

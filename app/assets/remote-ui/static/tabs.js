@@ -34,7 +34,7 @@ export const TAB_TITLES = {
   sendspin: 'Media Player',
   dlna: 'DLNA Renderer', esphome: 'ESPHome',
   files: 'File Manager', gestures: 'Gestures',
-  device: 'Device', fleet: 'Fleet Management', plugins: 'Plugins', about: 'About', logs: 'Logs',
+  device: 'Device', fleet: 'Fleet Management', plugins: 'Plugin Manager', about: 'About', logs: 'Logs',
 };
 
 // The row that opens a second-level page (One UI, and what the device does

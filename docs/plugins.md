@@ -1,4 +1,4 @@
-# Plugins
+# Plugin Manager
 
 Plugin documentation lives in the [Hello World template repository](https://github.com/jxlarrea/kiosk-satellite-plugin-hello-world).
 

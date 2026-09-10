@@ -26,6 +26,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private val prefs = context.getSharedPreferences("kiosk_plugins", Context.MODE_PRIVATE)
     private val root = File(context.filesDir, "plugins-v1").apply { mkdirs() }
     private var records = JSONObject(prefs.getString("installed", "{}") ?: "{}")
+    @Volatile private var pluginsEnabled = prefs.getBoolean("pluginsEnabled", records.length() > 0)
+    private var startupGeneration = 0
     private val sessions = mutableMapOf<String, Session>()
     private val loadedIds = mutableSetOf<String>()
     private var initialized = false
@@ -65,6 +67,11 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                     val value: Any? = when (call.method) {
                         "initialize" -> { initialize(); snapshot() }
                         "list" -> snapshot()
+                        "setEnabled" -> {
+                            val enabled = args["enabled"] as? Boolean ?: throw IllegalArgumentException("Missing enabled flag")
+                            setEnabled(enabled)
+                            snapshot()
+                        }
                         "validateManifest" -> {
                             try {
                                 val manifest = PluginManifest(JSONObject(args["manifest"] as String))
@@ -117,7 +124,9 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
 
     private fun manifest(id: String) = PluginManifest(JSONObject(PluginPackage.installedManifest(directory(id)).readText()))
 
-    private fun snapshot(): List<Any?> = records.keys().asSequence().sorted().map { id ->
+    private fun snapshot(): Map<String, Any?> = mapOf("enabled" to pluginsEnabled, "plugins" to installedSnapshot())
+
+    private fun installedSnapshot(): List<Any?> = records.keys().asSequence().sorted().map { id ->
         val record = records.getJSONObject(id)
         try {
             val manifest = manifest(id)
@@ -141,7 +150,15 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private fun initialize() {
         if (initialized) return
         initialized = true
-        val enabled = records.keys().asSequence().filter { records.getJSONObject(it).optBoolean("enabled") }.toList()
+        // Existing installations keep running. New installations start with plugins off.
+        if (!prefs.contains("pluginsEnabled")) {
+            check(prefs.edit().putBoolean("pluginsEnabled", pluginsEnabled).commit())
+        }
+        if (!pluginsEnabled) {
+            check(prefs.edit().putBoolean("startupPending", false).commit())
+            return
+        }
+        val enabled = enabledIds()
         if (prefs.getBoolean("startupPending", false)) {
             for (id in enabled) records.getJSONObject(id).put("enabled", false)
                 .put("error", "Disabled after an incomplete plugin startup. Enable it to try again.")
@@ -149,15 +166,49 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             prefs.edit().putBoolean("startupPending", false).commit()
             return
         }
+        startEnabled()
+    }
+
+    private fun enabledIds(): List<String> = records.keys().asSequence()
+        .filter { records.getJSONObject(it).optBoolean("enabled") }.toList()
+
+    private fun startEnabled() {
+        val enabled = enabledIds()
         if (enabled.isEmpty()) return
+        val generation = ++startupGeneration
         check(prefs.edit().putBoolean("startupPending", true).commit())
         for (id in enabled) {
             try { enable(id) } catch (_: Throwable) { /* Failure is recorded by enable. */ }
         }
-        main.postDelayed({ worker.execute { prefs.edit().putBoolean("startupPending", false).commit() } }, 30_000)
+        main.postDelayed({ worker.execute {
+            if (startupGeneration == generation) prefs.edit().putBoolean("startupPending", false).commit()
+        } }, 30_000)
     }
 
-    private fun install(args: Map<String, Any?>): List<Any?> {
+    private fun setEnabled(enabled: Boolean) {
+        if (pluginsEnabled == enabled) return
+        check(prefs.edit().putBoolean("pluginsEnabled", enabled).commit()) { "Cannot save plugin state" }
+        pluginsEnabled = enabled
+        if (enabled) {
+            startEnabled()
+        } else {
+            startupGeneration++
+            // Revoke every host before waiting for stop callbacks from individual plugins.
+            sessions.forEach { (id, session) ->
+                session.alive.set(false)
+                emit("hideWindow", mapOf("id" to id))
+            }
+            for (id in sessions.keys.toList()) {
+                try { stopSession(id) } catch (error: Throwable) {
+                    records.getJSONObject(id).put("error", error.message ?: error.javaClass.simpleName)
+                }
+            }
+            save()
+            check(prefs.edit().putBoolean("startupPending", false).commit())
+        }
+    }
+
+    private fun install(args: Map<String, Any?>): Map<String, Any?> {
         require(args["trusted"] == true) { "Confirm that you trust the plugin author" }
         val bytes = args["bytes"] as? ByteArray ?: throw IllegalArgumentException("Missing plugin ZIP")
         val hash = PluginPackage.sha256(bytes)
@@ -210,6 +261,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     }
 
     private fun enable(id: String) {
+        check(pluginsEnabled) { "Enable Plugins first" }
         if (sessions.containsKey(id)) return
         val record = records.getJSONObject(id)
         var session: Session? = null
@@ -283,6 +335,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     }
 
     private fun execute(id: String, args: Map<String, Any?>) {
+        check(pluginsEnabled) { "Enable Plugins first" }
         val session = sessions[id] ?: throw IllegalStateException("Enable the plugin first")
         val command = args["command"] as? String ?: throw IllegalArgumentException("Missing command")
         require(session.manifest.hasCommand(command)) { "Unknown plugin command" }

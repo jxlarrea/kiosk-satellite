@@ -33,6 +33,7 @@ plugin = {
 installed = [copy.deepcopy(plugin)]
 requests = []
 compatible = True
+plugins_enabled = True
 held = []
 delay_preview = False
 delay_zip = False
@@ -48,11 +49,18 @@ preview = {
 
 
 def api(route):
-    global installed
+    global installed, plugins_enabled
     name = route.request.url.rsplit('/', 1)[-1]
     params = route.request.post_data_json or {}
     requests.append((name, params))
-    if name == 'previewPluginRepository':
+    if name == 'getPluginState':
+        result = {'enabled': plugins_enabled, 'plugins': installed}
+    elif name == 'setPluginsEnabled':
+        plugins_enabled = params['enabled']
+        for item in installed:
+            item['running'] = plugins_enabled and item['enabled']
+        result = {'enabled': plugins_enabled, 'plugins': installed}
+    elif name == 'previewPluginRepository':
         result = {**preview, 'compatible': compatible, 'compatibilityError': 'Unsupported SDK' if not compatible else ''}
         if delay_preview:
             held.append((route, result))
@@ -99,6 +107,34 @@ try:
         row = root.locator('.subpage-entry')
         expect(row.get_by_text('Hello World', exact=True)).to_be_visible()
         expect(root.get_by_role('button', name='Save settings')).not_to_be_visible()
+        master = root.get_by_role('checkbox', name='Enable Plugins', exact=True)
+        expect(master).to_be_checked()
+        expect(root.get_by_text('Plugins add additional community developed features to Kiosk Satellite.', exact=True)).to_be_visible()
+        expect(root.get_by_text('Plugins add optional features', exact=False)).to_have_count(0)
+        warning = root.locator('.plugin-install-warning')
+        assert warning.bounding_box()['y'] > root.get_by_role('button', name='Add plugin', exact=True).bounding_box()['y']
+        expect(page.locator('#pageTitle')).to_contain_text('Plugin Manager')
+        expect(page.locator('#tabs button[data-tab=plugins] .nav-title')).to_have_text('Plugin Manager')
+        colors = [page.locator(f'#tabs button[data-tab={tab}] .disc').evaluate('(el) => getComputedStyle(el).backgroundColor') for tab in ['fleet', 'files', 'plugins', 'about', 'logs']]
+        assert all(a != b for a, b in zip(colors, colors[1:])), 'Adjacent menu icons repeat a color'
+        assert colors[0] == colors[4], 'Menu colors should continue the four-color cycle'
+        before_master = root.locator('.plugin-master-switch').bounding_box()
+        root.locator('.plugin-master-switch').click()
+        expect(master).not_to_be_checked()
+        expect(row).to_have_count(0)
+        expect(root.get_by_text('Add plugin', exact=True)).to_have_count(0)
+        expect(root.get_by_text('Developer Tools', exact=True)).to_have_count(0)
+        expect(root.locator('.plugin-install-warning')).to_have_count(0)
+        assert root.locator('.plugin-master-switch').bounding_box() == before_master
+        assert installed[0]['enabled'] is True and installed[0]['running'] is False
+        page.evaluate("async () => (await import('/static/tabs.js')).showTab('plugins/hello-world', {refresh:false})")
+        expect(page.locator('#pageTitle')).to_contain_text('Plugin Manager')
+        expect(root.get_by_role('button', name='Show window')).to_have_count(0)
+        assert page.url.endswith('#plugins')
+        root.locator('.plugin-master-switch').click()
+        expect(master).to_be_checked()
+        expect(row.get_by_role('checkbox')).to_be_checked()
+        expect(row.get_by_role('checkbox')).to_be_enabled()
         row.locator('label.switch').click()
         expect(row.get_by_role('checkbox')).not_to_be_checked()
         assert page.url.endswith('#plugins')

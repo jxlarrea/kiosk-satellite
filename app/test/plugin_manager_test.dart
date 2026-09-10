@@ -11,6 +11,7 @@ import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/plugins/plugin_manager.dart';
 import 'package:kiosk_satellite/ui/plugin_overlay.dart';
+import 'package:kiosk_satellite/ui/kit.dart';
 import 'package:kiosk_satellite/ui/plugin_settings.dart';
 
 class _ZipPicker extends FilePicker {
@@ -52,6 +53,7 @@ void main() {
   late CommandRegistry commands;
   late List<MethodCall> calls;
   late List<Map<String, Object?>> installed;
+  late bool masterEnabled;
 
   Future<void> native(String method, Object? args) async {
     await messenger.handlePlatformMessage(
@@ -80,6 +82,7 @@ void main() {
     commands = CommandRegistry(log);
     plugins = PluginManager(bus, commands, log);
     calls = [];
+    masterEnabled = true;
     installed = [
       {
         'id': 'hello-world',
@@ -104,13 +107,26 @@ void main() {
     ];
     messenger.setMockMethodCallHandler(PluginManager.channel, (call) async {
       calls.add(call);
+      if (call.method == 'setEnabled') {
+        masterEnabled = (call.arguments as Map)['enabled'] as bool;
+        installed = [
+          for (final p in installed)
+            {...p, 'running': masterEnabled && p['enabled'] == true},
+        ];
+      }
+      if (call.method == 'enable' && !masterEnabled) {
+        throw PlatformException(
+          code: 'plugin_error',
+          message: 'Enable Plugins first',
+        );
+      }
       if (call.method == 'disable') {
         installed = [
           {...installed.first, 'running': false, 'enabled': false},
         ];
       }
       if (call.method == 'remove') installed = [];
-      return installed;
+      return {'enabled': masterEnabled, 'plugins': installed};
     });
     await plugins.init();
     await plugins.refresh();
@@ -123,6 +139,143 @@ void main() {
     messenger.setMockMethodCallHandler(PluginManager.channel, null);
   });
 
+  test(
+    'master switch preserves selections, hides windows and exposes state through the command API',
+    () async {
+      await window();
+      final before = Map<String, Object?>.from(installed.single);
+      final paused = await commands.execute('setPluginsEnabled', {
+        'enabled': false,
+      });
+      expect(paused.ok, isTrue);
+      expect(plugins.enabled.value, isFalse);
+      expect(plugins.windows.value, isEmpty);
+      expect(plugins.installed.value.single['enabled'], before['enabled']);
+      expect(plugins.installed.value.single['values'], before['values']);
+      expect(plugins.installed.value.single['running'], isFalse);
+      final enable = await commands.execute('enablePlugin', {
+        'id': 'hello-world',
+      });
+      expect(enable.ok, isFalse);
+      expect(enable.error, 'Enable Plugins first');
+      final resumed = await commands.execute('setPluginsEnabled', {
+        'enabled': true,
+      });
+      expect(resumed.ok, isTrue);
+      expect(plugins.enabled.value, isTrue);
+      expect(plugins.installed.value.single['running'], isTrue);
+      final state = await commands.execute('getPluginState', {});
+      expect(state.data, {'enabled': true, 'plugins': installed});
+      final list = await commands.execute('listPlugins', {});
+      expect(list.data, installed);
+      final count = calls.length;
+      expect((await commands.execute('setPluginsEnabled', {})).ok, isFalse);
+      expect(
+        (await commands.execute('setPluginsEnabled', {'enabled': 'false'})).ok,
+        isFalse,
+      );
+      expect(calls.length, count);
+    },
+  );
+  testWidgets(
+    'master switch keeps its hint visible and hides follow-up settings while off',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PluginSettingsPanel(plugins: plugins, onOpen: (_) {}),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Plugins add additional community developed features to Kiosk Satellite.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Plugins add optional features'),
+        findsNothing,
+      );
+      final masterRow = find.widgetWithText(SettingsRow, 'Enable Plugins');
+      final masterSwitch = find.descendant(
+        of: masterRow,
+        matching: find.byType(Switch),
+      );
+      final add = tester.getRect(find.text('Add plugin'));
+      final warning = tester.getRect(find.text(pluginTrustNotice));
+      expect(warning.top, greaterThan(add.bottom));
+      expect(
+        warning.bottom,
+        lessThan(tester.getRect(find.text('Installed plugins')).top),
+      );
+      final before = tester.getRect(find.text('Hello World'));
+      final masterBefore = tester.getRect(masterRow);
+      await tester.tap(masterSwitch);
+      await tester.pumpAndSettle();
+      expect(plugins.enabled.value, isFalse);
+      expect(find.byType(Switch), findsOneWidget);
+      expect(find.text('Add plugin'), findsNothing);
+      expect(find.text(pluginTrustNotice), findsNothing);
+      expect(find.text('Installed plugins'), findsNothing);
+      expect(find.text('Hello World'), findsNothing);
+      expect(find.text('Developer Tools'), findsNothing);
+      expect(find.text('Install from ZIP'), findsNothing);
+      expect(tester.getRect(masterRow), masterBefore);
+      await tester.tap(masterSwitch);
+      await tester.pumpAndSettle();
+      expect(tester.getRect(find.text('Hello World')), before);
+      expect(
+        tester.widget<Switch>(find.byType(Switch).last).onChanged,
+        isNotNull,
+      );
+    },
+  );
+  testWidgets(
+    'plugin subpages close when the master switch is disabled from another interface',
+    (tester) async {
+      var closed = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PluginDetailPanel(
+                plugins: plugins,
+                id: 'hello-world',
+                onDisabled: () => closed = true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await native('changed', {
+        'enabled': false,
+        'plugins': [
+          {...installed.single, 'running': false},
+        ],
+      });
+      await tester.pumpAndSettle();
+      expect(closed, isTrue);
+      expect(find.byTooltip('Show window'), findsNothing);
+      expect(find.text('Save settings'), findsNothing);
+      await native('changed', {'enabled': true, 'plugins': installed});
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byWidgetPredicate(
+                (w) => w is IconButton && w.tooltip == 'Show window',
+              ),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    },
+  );
   test(
     'ZIP command requires trust and rejects invalid or oversized input before native install',
     () async {
@@ -389,7 +542,7 @@ void main() {
       await tester.tap(find.text('Hello World'));
       expect(opened, 'hello-world');
       opened = null;
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.byType(Switch).last);
       await tester.pumpAndSettle();
       expect(opened, isNull);
       expect(calls.lastWhere((c) => c.method == 'disable').arguments, {
@@ -428,7 +581,7 @@ void main() {
         if (call.method == 'disable') await pending.future;
         return installed;
       });
-      await tester.tap(find.byType(Switch));
+      await tester.tap(find.byType(Switch).last);
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsNothing);
