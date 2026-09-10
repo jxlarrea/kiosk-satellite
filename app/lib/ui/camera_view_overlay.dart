@@ -94,12 +94,7 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
   /// content ([ClosingCameraPlayer.interactive] off), where it is scenery
   /// the screensaver fades in on its own terms — sliding it would make the
   /// panel appear to move by itself.
-  late final AnimationController _slide = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 280),
-    reverseDuration: const Duration(milliseconds: 220),
-    value: widget.interactive && widget.view != null ? 0 : 1,
-  )..addStatusListener(_onSlideStatus);
+  late final AnimationController _slide;
 
   late final Animation<Offset> _slideOffset =
       Tween(begin: const Offset(0, 1), end: Offset.zero).animate(
@@ -113,6 +108,14 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
   @override
   void initState() {
     super.initState();
+    // Create the ticker while mounted, even if no camera view ever opens.
+    // Lazy initialization in dispose would look up a deactivated ancestor.
+    _slide = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+      reverseDuration: const Duration(milliseconds: 220),
+      value: widget.interactive && widget.view != null ? 0 : 1,
+    )..addStatusListener(_onSlideStatus);
     _mounted = widget.view;
     // A view already open when this mounts (the overlay is built with one,
     // or the app restored into one) still gets its entrance.

@@ -86,6 +86,9 @@ class _KioskScreenState extends State<KioskScreen>
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route != null) kioskRouteObserver.subscribe(this, route);
+    // ModalRoute.of registers an inherited dependency, so navigation capture
+    // must initialize here after initState completes (issue #493).
+    _syncNavCapture();
   }
 
   /// A route was pushed over the kiosk (a dialog, the settings) or popped
@@ -602,7 +605,6 @@ class _KioskScreenState extends State<KioskScreen>
     // of the key pipeline; see _onKey for why it takes two.
     HardwareKeyboard.instance.addHandler(_onKey);
     FocusManager.instance.addEarlyKeyEventHandler(_onEarlyKey);
-    _syncNavCapture();
     // A service call, script, automation or event fired from a gesture
     // changes nothing on this screen, so the toast is the only sign the
     // gesture landed, or the only word on why it did not.
@@ -1879,12 +1881,7 @@ class _OverlayHostState extends State<_OverlayHost>
   /// Not for the rotation, which shows nobody's page in particular on a
   /// timer and would just make the wall panel move by itself; its overlay
   /// sits at rest (value 1) and keeps today's instant swap.
-  late final AnimationController _slide = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 280),
-    reverseDuration: const Duration(milliseconds: 220),
-    value: 1,
-  )..addStatusListener(_onSlideStatus);
+  late final AnimationController _slide;
 
   late final Animation<Offset> _slideOffset =
       Tween(begin: const Offset(0, 1), end: Offset.zero).animate(
@@ -1898,6 +1895,14 @@ class _OverlayHostState extends State<_OverlayHost>
   @override
   void initState() {
     super.initState();
+    // Create the ticker while mounted, even if no overlay ever opens.
+    // Lazy initialization in dispose would look up a deactivated ancestor.
+    _slide = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+      reverseDuration: const Duration(milliseconds: 220),
+      value: 1,
+    )..addStatusListener(_onSlideStatus);
     widget.container.browser.overlayUrl.addListener(_onOverlayUrl);
   }
 
