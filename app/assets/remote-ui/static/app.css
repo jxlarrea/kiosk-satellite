@@ -1114,3 +1114,24 @@
     .np { flex-wrap: wrap; }
     .np .ctl { flex-basis: 100%; justify-content: center; }
   }
+
+/* Repository previews share the settings typography and stay within the pane. */
+.plugin-readme { overflow-wrap: anywhere; line-height: 1.6; }
+.plugin-readme img { max-width: 100%; max-height: 360px; object-fit: contain; }
+.plugin-readme pre { overflow-x: auto; padding: 12px; background: var(--bg); }
+.plugin-readme table { display: block; overflow-x: auto; border-collapse: collapse; }
+.plugin-readme th, .plugin-readme td { padding: 8px; border: 1px solid var(--border); }
+#tab-plugins .subpage-entry { flex-wrap: wrap; }
+#tab-plugins .subpage-entry .info { min-width: 120px; }
+
+.plugin-add-row { cursor: pointer; }
+.plugin-repository-field { flex-wrap: wrap; }
+.plugin-repository-field .info { flex-basis: 100%; }
+.plugin-repository-field input[type=url] { width: 100%; max-width: none; }
+.plugin-busy { position: relative; color: transparent !important; }
+.plugin-busy > svg { opacity: 0; }
+.plugin-busy::after { content: ''; position: absolute; width: 16px; height: 16px;
+  top: calc(50% - 8px); left: calc(50% - 8px); box-sizing: border-box;
+  border: 2px solid var(--primary); border-right-color: transparent;
+  border-radius: 50%; animation: plugin-spin .8s linear infinite; }
+@keyframes plugin-spin { to { transform: rotate(360deg); } }

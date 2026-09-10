@@ -56,6 +56,7 @@ import 'settings_search.dart';
 import 'subpage_icons.dart';
 import 'wake_word_tester.dart';
 import 'update_helper_settings.dart';
+import 'plugin_settings.dart';
 
 /// Render a category's settings as cards: consecutive settings sharing a
 /// `section` become one card under one [SectionHeading]; unsectioned runs
@@ -233,6 +234,7 @@ const _categories = <(String, String, Object, String)>[
     Icons.hub_outlined,
     'Lead or follow other kiosks',
   ),
+  ('Plugins', 'Plugins', Icons.extension_rounded, 'Install and manage plugins'),
   ('About', 'About', Icons.info_outline, 'Version, author, license'),
   ('Logs', 'Logs', Icons.article_outlined, 'App log and web console'),
 ];
@@ -733,8 +735,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   context,
                                   storageKey:
                                       'settings-sub-$category-$_subpage',
-                                  title: _subpage!,
-                                  icon: subpageIcon(_subpage!),
+                                  title: pluginSubpageTitle(
+                                    widget.container,
+                                    category,
+                                    _subpage!,
+                                  ),
+                                  icon: category == 'Plugins'
+                                      ? Icons.extension_rounded
+                                      : subpageIcon(_subpage!),
                                   onBack: () => setState(() => _subpage = null),
                                   child: _CategoryContent(
                                     key: ValueKey('$category/$_subpage'),
@@ -1164,6 +1172,19 @@ class _SubpageEntryTile extends StatelessWidget {
 /// wide screens show the same content in the split view's right pane). The
 /// bar carries the entry row's title and the implicit back arrow; the system
 /// back gesture pops the same route.
+String pluginSubpageTitle(
+  AppContainer container,
+  String category,
+  String subpage,
+) {
+  if (category != 'Plugins') return subpage;
+  return container.plugins.installed.value
+              .where((p) => p['id'] == subpage)
+              .firstOrNull?['name']
+          as String? ??
+      subpage;
+}
+
 class SubpageSettingsScreen extends StatelessWidget {
   const SubpageSettingsScreen({
     super.key,
@@ -1189,9 +1210,16 @@ class SubpageSettingsScreen extends StatelessWidget {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SubpageGlyph(subpage, size: 24),
+            category == 'Plugins'
+                ? const Icon(Icons.extension_rounded)
+                : SubpageGlyph(subpage, size: 24),
             const SizedBox(width: 12),
-            Flexible(child: Text(subpage, overflow: TextOverflow.ellipsis)),
+            Flexible(
+              child: Text(
+                pluginSubpageTitle(container, category, subpage),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),
@@ -1889,7 +1917,9 @@ class _CategoryContentState extends State<_CategoryContent> {
         child: Text(
           'Kiosk Satellite is free for personal, non-commercial use. It is '
           'licensed under CC BY-NC-ND 4.0: you may use and share it, but '
-          'commercial use and derivative works are not permitted.',
+          'commercial use of the app and redistribution of modified app '
+          'builds are not permitted. Independent plugins have additional '
+          'permission under PLUGIN-EXCEPTION.md.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -1917,6 +1947,12 @@ class _CategoryContentState extends State<_CategoryContent> {
           ..._haConnectionCards(container)
         else if (widget.category == 'Fleet')
           FleetSettingsPanel(container: container)
+        else if (widget.category == 'Plugins')
+          PluginSettingsPanel(
+            plugins: container.plugins,
+            onOpen: (id) =>
+                openSettingsSubpage(context, container, 'Plugins', id),
+          )
         else if (widget.category == 'Voice Satellite')
           ValueListenableBuilder<bool>(
             valueListenable: container.homeAssistant.connectionOk,
@@ -2690,6 +2726,9 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// dashboard list, a cross-group disabled state, telemetry under a toggle)
   /// and simply moved with their group.
   List<Widget> _subpageCards(AppContainer container, String subpage) {
+    if (widget.category == 'Plugins') {
+      return [PluginDetailPanel(plugins: container.plugins, id: subpage)];
+    }
     // Fleet profiles are pages made at runtime, one per profile, named
     // after it.
     if (widget.category == 'Fleet') {

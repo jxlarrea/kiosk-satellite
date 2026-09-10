@@ -502,7 +502,8 @@ export async function loadAboutInfo() {
   p.style.cssText = 'color:var(--muted); font-size:.85rem; margin:4px 4px 0; line-height:1.5;';
   p.textContent = 'Kiosk Satellite is free for personal, non-commercial use. ' +
     'It is licensed under CC BY-NC-ND 4.0: you may use and share it, but ' +
-    'commercial use and derivative works are not permitted.';
+    'commercial use of the app and redistribution of modified app builds are not permitted. ' +
+    'Independent plugins have additional permission under PLUGIN-EXCEPTION.md.';
   root.appendChild(p);
 }
 

@@ -66,6 +66,7 @@ class KioskApplication : Application(), CameraXConfig.Provider {
     private lateinit var haptics: HapticsBridge
     private lateinit var tapSound: TapSoundBridge
     private lateinit var bluetoothProxy: BluetoothProxyBridge
+    private lateinit var plugins: me.jxl.kiosk_satellite.plugins.PluginBridge
     private lateinit var fleet: FleetBridge
 
     override fun onCreate() {
@@ -134,5 +135,6 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         tapSound = TapSoundBridge(applicationContext, messenger)
         bluetoothProxy = BluetoothProxyBridge(applicationContext, messenger)
         fleet = FleetBridge(applicationContext, messenger)
+        plugins = me.jxl.kiosk_satellite.plugins.PluginBridge(applicationContext, messenger)
     }
 }

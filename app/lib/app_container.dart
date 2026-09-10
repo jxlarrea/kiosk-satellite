@@ -2,6 +2,7 @@ import 'core/command_registry.dart';
 import 'core/event_bus.dart';
 import 'core/logging.dart';
 import 'core/manager.dart';
+import 'managers/plugins/plugin_manager.dart';
 import 'managers/assist_pipeline/assist_pipeline_manager.dart';
 import 'managers/audio/audio_routing_manager.dart';
 import 'managers/browser/browser_manager.dart';
@@ -104,6 +105,7 @@ class AppContainer {
     update = UpdateManager(bus, commands, log);
     // After homeAssistant: it reads states through it for the fallback.
     glance = GlanceManager(bus, commands, log, settings, homeAssistant);
+    plugins = PluginManager(bus, commands, log);
     remote = RemoteManager(bus, commands, log, settings);
     fleet = FleetManager(bus, commands, log, settings);
     fleetSync = FleetSyncManager(bus, commands, log, settings);
@@ -145,6 +147,7 @@ class AppContainer {
   late final SoundManager sound;
   late final NotificationManager notifications;
   late final UpdateManager update;
+  late final PluginManager plugins;
   late final RemoteManager remote;
   late final FleetManager fleet;
   late final FleetSyncManager fleetSync;
@@ -192,6 +195,7 @@ class AppContainer {
     sound,
     notifications,
     update,
+    plugins,
     remote,
     // After remote: it announces the admin server the remote manager runs.
     fleet,

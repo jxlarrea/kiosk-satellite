@@ -13,6 +13,7 @@ const svg = (body, attrs = STROKE, viewBox = '0 0 24 24') =>
   `<svg viewBox="${viewBox}" ${attrs}>${body}</svg>`;
 
 export const SUBPAGE_ICONS = {
+  'Plugins': svg('<path d="M20 11h-1V7a2 2 0 0 0-2-2h-4V4a3 3 0 0 0-6 0v1H3a2 2 0 0 0-2 2v3.8h1.5a3.25 3.25 0 0 1 0 6.5H1V21a2 2 0 0 0 2 2h3.8v-1.5a3.25 3.25 0 0 1 6.5 0V23H17a2 2 0 0 0 2-2v-4h1a3 3 0 0 0 0-6z"/>', 'fill="currentColor"'),
   // Home Assistant.
   'User Interface': svg('<rect x="3" y="3" width="7" height="9" rx="1.5"/>'
     + '<rect x="14" y="3" width="7" height="5" rx="1.5"/>'

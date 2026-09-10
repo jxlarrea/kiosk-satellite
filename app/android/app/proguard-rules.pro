@@ -19,3 +19,6 @@
 
 # ADB starts this entry point directly from the installed APK.
 -keep class me.jxl.kiosk_satellite.updates.UpdateHelper { public static void main(java.lang.String[]); }
+
+# Downloaded plugins link to this separately licensed SDK.
+-keep class me.jxl.kiosk.plugins.** { *; }

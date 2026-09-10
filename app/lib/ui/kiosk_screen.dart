@@ -38,6 +38,7 @@ import 'app_launcher_overlay.dart';
 import 'ui_scale.dart' show UiScaleExempt;
 import 'lockdown_shield.dart';
 import 'notification_overlay.dart';
+import 'plugin_overlay.dart';
 import 'offline_notice.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
@@ -161,6 +162,17 @@ class _KioskScreenState extends State<KioskScreen>
   /// build) and the KeyEvent path KioskLock routes here as KioskBackPressed
   /// land in the same place, so the two can never drift apart.
   void _handleBack() {
+    if (_drawer.value == 0 &&
+        !c.screensaver.isActive &&
+        !c.launcher.visible.value &&
+        c.camera.activeViewId.value == null &&
+        !c.kiosk.lockdownActive &&
+        c.plugins.windows.value.isNotEmpty) {
+      unawaited(
+        c.plugins.windowEvent(c.plugins.windows.value.last.id, closed: true),
+      );
+      return;
+    }
     final deadline = _backArmedUntil;
     final armed = deadline != null && DateTime.now().isBefore(deadline);
     _backArmedUntil = null;
@@ -667,6 +679,7 @@ class _KioskScreenState extends State<KioskScreen>
     // The build and the native key routing both follow these surfaces.
     c.browser.overlayUrl.addListener(_onOverlayChanged);
     c.launcher.visible.addListener(_onOverlayChanged);
+    c.plugins.windows.addListener(_onOverlayChanged);
     c.homeLauncher.roleHeld.addListener(_onOverlayChanged);
 
     // Download feedback lives in-app: the kiosk hides the status bar, so the
@@ -1016,7 +1029,8 @@ class _KioskScreenState extends State<KioskScreen>
         c.screensaver.isActive ||
         c.kiosk.lockdownActive ||
         c.launcher.visible.value ||
-        c.camera.activeViewId.value != null;
+        c.camera.activeViewId.value != null ||
+        c.plugins.windows.value.isNotEmpty;
     if (capture == _lastNavCapture) return;
     _lastNavCapture = capture;
     unawaited(c.kiosk.setNavCapture(capture));
@@ -1282,6 +1296,7 @@ class _KioskScreenState extends State<KioskScreen>
     _saverSub?.cancel();
     c.browser.overlayUrl.removeListener(_onOverlayChanged);
     c.launcher.visible.removeListener(_onOverlayChanged);
+    c.plugins.windows.removeListener(_onOverlayChanged);
     c.homeLauncher.roleHeld.removeListener(_onOverlayChanged);
     super.dispose();
   }
@@ -1330,6 +1345,7 @@ class _KioskScreenState extends State<KioskScreen>
         // unloads. A wake detection hides this instantly, revealing the
         // live dashboard underneath (see initState).
         _OverlayHost(container: c),
+        PluginOverlay(plugins: c.plugins),
         SendspinPlayerOverlay(container: c),
         if (_consoleOpen)
           WebConsolePanel(

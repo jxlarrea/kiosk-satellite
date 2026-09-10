@@ -102,9 +102,11 @@ For voice control, install [Voice Satellite](https://github.com/jxlarrea/voice-s
 
 Thank you to everyone who supports my work through [Buy Me a Coffee](https://buymeacoffee.com/jxlarrea). I test everything on real hardware, which means buying devices to reproduce issues and check changes across different manufacturers and Android flavors. Your contributions help cover those purchases and make that testing possible.
 
+Plugin development and installation: [Plugins](docs/plugins.md).
+
 ## License and credits
 
-Free for personal, non-commercial use under [CC BY-NC-ND 4.0](LICENSE). Commercial use and derivative works are not permitted.
+Free for personal, non-commercial use under [CC BY-NC-ND 4.0](LICENSE). Commercial use of the application and redistribution of modified application builds are not permitted. Independent plugins have [additional permission](PLUGIN-EXCEPTION.md).
 
 <details>
 <summary>Built with these projects</summary>

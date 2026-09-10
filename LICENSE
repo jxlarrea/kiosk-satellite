@@ -32,3 +32,8 @@ noninfringement.
 
 The full legal text of the license is available at:
 https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
+
+Independent plugins have the additional permission described in
+PLUGIN-EXCEPTION.md. The plugin SDK interfaces under
+app/android/app/src/main/java/me/jxl/kiosk/plugins/ are separately licensed
+under Apache-2.0, with the license included in that directory.

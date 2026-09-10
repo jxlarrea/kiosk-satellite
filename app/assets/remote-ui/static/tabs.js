@@ -6,6 +6,7 @@ import { fleetShown } from './fleetsync.js';
 import { loadGestures } from './gestures.js';
 import { subpageIcon } from './icons.js';
 import { loadLogs } from './logs.js';
+import { loadPlugins } from './plugins.js';
 import { overviewShown } from './overview.js';
 import {
   updateAmbientDisplayNotice,
@@ -19,7 +20,7 @@ import { clearSearchReturnTab, searchReturnTab } from './search.js';
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 export const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'home', 'launcher', 'screenaudio', 'screensaver',
-  'camera', 'sendspin', 'cameras', 'dlna', 'esphome', 'files', 'gestures', 'device', 'fleet', 'about', 'logs'];
+  'camera', 'sendspin', 'cameras', 'dlna', 'esphome', 'files', 'gestures', 'device', 'fleet', 'plugins', 'about', 'logs'];
 // Old bookmarks from before the tabs were consolidated keep landing
 // somewhere sensible.
 export const LEGACY_TABS = { screen: 'screenaudio', audio: 'screenaudio', remote: 'device', console: 'logs', btproxy: 'esphome', mqtt: 'esphome' };
@@ -33,7 +34,7 @@ export const TAB_TITLES = {
   sendspin: 'Media Player',
   dlna: 'DLNA Renderer', esphome: 'ESPHome',
   files: 'File Manager', gestures: 'Gestures',
-  device: 'Device', fleet: 'Fleet Management', about: 'About', logs: 'Logs',
+  device: 'Device', fleet: 'Fleet Management', plugins: 'Plugins', about: 'About', logs: 'Logs',
 };
 
 // The row that opens a second-level page (One UI, and what the device does
@@ -41,13 +42,13 @@ export const TAB_TITLES = {
 // rather than inline, so opening it can hide the rest of the tab and the
 // search can still find its rows under #tab-<name>. Module scope because
 // the Voice Satellite page places entry rows of its own.
-export function subpageEntry(tab, sub) {
+export function subpageEntry(tab, sub, { iconName = sub } = {}) {
   const row = document.createElement('div');
   row.className = 'row subpage-entry';
   row.dataset.subpageEntry = sub;
   // The page's glyph ahead of the name, the same one its title wears, so
   // the row and the page it opens answer to each other.
-  const icon = subpageIcon(sub);
+  const icon = subpageIcon(iconName);
   const info = document.createElement('div');
   info.className = 'info';
   const name = document.createElement('div');
@@ -100,7 +101,7 @@ export function setCurrentPath(path) { currentPath = path; }
 // hiding the parent's cards collapses the page and the scroll goes with them.
 export let subpageReturnScroll = 0;
 
-export function showTab(name, { push = true } = {}) {
+export function showTab(name, { push = true, refresh = true } = {}) {
   // Picking a tab while searching leaves the search: clear the field so the
   // results do not linger under a pane the person just chose over them.
   const search = document.getElementById('settingsSearch');
@@ -148,7 +149,7 @@ export function showTab(name, { push = true } = {}) {
   if (sub) {
     // Second level: the page wears the entry row's title behind a back
     // arrow, the shape the device's app bar takes.
-    titleEl.textContent = sub;
+    titleEl.textContent = tab === 'plugins' ? [...document.querySelectorAll('#tab-plugins > .subpage')].find(p => p.dataset.subpage === sub)?.dataset.title || sub : sub;
     const back = document.createElement('button');
     back.type = 'button';
     back.className = 'title-back';
@@ -159,7 +160,7 @@ export function showTab(name, { push = true } = {}) {
     back.addEventListener('click', () => showTab(tab));
     // Then the entry row's glyph, bare, the way a tab's title wears the
     // nav rail's.
-    titleEl.prepend(back, subpageIcon(sub));
+    titleEl.prepend(back, subpageIcon(tab === 'plugins' ? 'Plugins' : sub));
   } else {
     // The nav rail's glyph, bare, same drawing, no disc.
     titleEl.textContent = TAB_TITLES[tab];
@@ -179,6 +180,7 @@ export function showTab(name, { push = true } = {}) {
   // The fleet is other kiosks' state: re-read on every visit and polled
   // while the page stays open.
   if (tab === 'fleet') fleetShown();
+  if (tab === 'plugins' && refresh && !sameTab) loadPlugins();
   if (tab === 'about') loadAboutInfo();
   // Both notices track something changed on the tablet in Android's own
   // settings, so opening the tab is the moment to re-ask rather than
