@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **Microphone noise suppression defaults to off.** Upgrading turns it off once for users who already have it enabled. Users can enable it again in Microphone settings and that choice persists across restarts.
+
 ### Fixed
 - **Music Assistant external playback appears in Now Playing.** The floating player and Now Playing use the player's track metadata when sources such as Spotify Connect play without an active Music Assistant queue. Track changes and playback state update from player events. Queue controls return when playback switches back to a Music Assistant queue. Fixes [#487](https://github.com/jxlarrea/kiosk-satellite/issues/487).
 

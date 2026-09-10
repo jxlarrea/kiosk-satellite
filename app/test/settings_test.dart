@@ -162,15 +162,36 @@ void main() {
     expect(defs.dlnaPort.validator!('nonsense'), isNotNull);
   });
 
-  test('microphone capture defaults include noise suppression', () async {
+  test('microphone capture defaults leave noise suppression off', () async {
     await build({});
-    // Default to the call-audio source with noise suppression, no gain
-    // and platform AGC off.
+    // Default to the call-audio source with no gain, noise suppression
+    // or platform AGC.
     expect(settings.get(defs.micAudioSource), 'voice_communication');
     expect(settings.get(defs.micGainDb), 0);
     expect(settings.get(defs.micAgc), isFalse);
-    expect(settings.get(defs.micNoiseSuppression), isTrue);
+    expect(settings.get(defs.micNoiseSuppression), isFalse);
   });
+
+  for (final stored in [null, true, false]) {
+    test('noise suppression migrates off once (stored: $stored)', () async {
+      await build({'ks.audio.mic_noise_suppression': ?stored});
+      expect(settings.get(defs.micNoiseSuppression), isFalse);
+      final described = settings.describe().firstWhere(
+        (s) => s['key'] == defs.micNoiseSuppression.key,
+      );
+      expect(described['value'], isFalse);
+      expect(described['default'], isFalse);
+
+      // A user can enable it again after upgrading or on a fresh install.
+      await settings.set(defs.micNoiseSuppression, true);
+      final bus = EventBus();
+      final reopened = SettingsManager(bus, CommandRegistry(log), log);
+      await reopened.init();
+      expect(reopened.get(defs.micNoiseSuppression), isTrue);
+      await reopened.dispose();
+      await bus.dispose();
+    });
+  }
 
   test('the audio faders default to full, matching old behavior', () async {
     await build({});

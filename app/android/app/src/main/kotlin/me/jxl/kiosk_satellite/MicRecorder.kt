@@ -33,7 +33,7 @@ import kotlin.math.max
  *  - Echo cancellation earns its keep because the stop word listens *while*
  *    TTS plays out of this same device. Without it the mic hears our own
  *    speech and scores it.
- *  - Noise suppression defaults to on and AGC defaults to off. Users can
+ *  - Noise suppression and AGC default to off. Users can
  *    adjust both for their microphone. Both change the signal recognition receives.
  *
  * VOICE_COMMUNICATION rather than MIC is deliberate: it is the capture path
@@ -114,7 +114,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         val args = arguments as? Map<*, *>
         val source = audioSource(args?.get("source") as? String)
         val wantAgc = args?.get("agc") == true
-        val wantNs = args?.get("noiseSuppression") != false
+        val wantNs = args?.get("noiseSuppression") == true
         // A gain of 0 dB is the overwhelmingly common case, and a factor of
         // exactly 1 lets the read loop skip the sample walk entirely.
         val gain = gainFactor((args?.get("gainDb") as? Number)?.toDouble() ?: 0.0)

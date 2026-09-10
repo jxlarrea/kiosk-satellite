@@ -3960,7 +3960,7 @@ const micAgc = SettingDef<bool>(
 const micNoiseSuppression = SettingDef<bool>(
   key: 'audio.mic_noise_suppression',
   type: SettingType.boolean,
-  defaultValue: true,
+  defaultValue: false,
   title: 'Noise suppression',
   description:
       'Reduce microphone background noise using Android processing. '

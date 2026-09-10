@@ -226,6 +226,17 @@ class SettingsManager extends Manager {
   /// back to the default — so a rename in place has to be rewritten once,
   /// here, before anything reads it.
   Future<void> _migrate() async {
+    // Turn noise suppression off once for existing installs. Record this
+    // on fresh installs too so later choices survive app restarts.
+    const noiseSuppressionMigration =
+        'audio.mic_noise_suppression_off.migrated';
+    if (internal(noiseSuppressionMigration).isEmpty) {
+      if (get(micNoiseSuppression)) {
+        await _prefs.setBool(_prefix + micNoiseSuppression.key, false);
+        log.info(name, 'turned microphone noise suppression off on upgrade');
+      }
+      await setInternal(noiseSuppressionMigration, '1');
+    }
     // HA kiosk mode was a strategy choice (off/auto/plugin/css) while the
     // hiding could be handed to the kiosk-mode resource. It does the hiding
     // itself now, so the setting is a plain switch: anything that was not
