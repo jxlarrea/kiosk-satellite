@@ -11,48 +11,71 @@ void main() {
   final ref = 'a' * 40;
   final bytes = utf8.encode('test package bytes');
   late List<Uri> requests;
-  late Map<String, Object?> descriptor;
+  late Map<String, Object?> manifest;
+  late Map<String, Object?> release;
   late PluginRepository repository;
   late String readme;
+  late String checksum;
   late int status;
   late bool wrongBytes;
+  Map<String, Object?> asset(String name, int size) => {
+    'name': name,
+    'state': 'uploaded',
+    'size': size,
+    'browser_download_url': '$url/releases/download/v1.0.0/$name',
+  };
+  List<Map<String, Object?>> assets() =>
+      release['assets'] as List<Map<String, Object?>>;
   setUp(() {
     requests = [];
     readme = '# Hello\nReviewed README';
+    checksum = '${sha256.convert(bytes)}  hello-1.0.0.zip\n';
     status = 200;
     wrongBytes = false;
-    descriptor = {
+    manifest = {
       'schemaVersion': 1,
-      'manifest': {
-        'id': 'hello',
-        'version': '1.0.0',
-        'capabilities': ['overlay'],
-      },
-      'download': {
-        'tag': 'v1.0.0',
-        'asset': 'hello-1.0.0.zip',
-        'sha256': sha256.convert(bytes).toString(),
-      },
+      'id': 'hello',
+      'version': '1.0.0',
+      'capabilities': ['overlay'],
+    };
+    release = {
+      'tag_name': 'v1.0.0',
+      'draft': false,
+      'prerelease': false,
+      'target_commitish': 'main',
+      'assets': [
+        asset('kiosk-satellite-plugin.json', 100),
+        asset('hello-1.0.0.zip', bytes.length),
+        asset('hello-1.0.0.zip.sha256', 100),
+      ],
     };
     repository = PluginRepository(
       client: MockClient((request) async {
         requests.add(request.url);
         if (status != 200) return http.Response('failure', status);
-        if (request.url.host == 'api.github.com') {
-          return http.Response(
-            jsonEncode([
-              {'sha': ref},
-            ]),
-            200,
-          );
+        if (request.url.path == '/repos/example/hello/releases/latest') {
+          return http.Response(jsonEncode(release), 200);
         }
-        if (request.url.path.endsWith('kiosk-plugin.json')) {
-          return http.Response(jsonEncode(descriptor), 200);
+        if (request.url.path ==
+            '/repos/example/hello/commits/refs/tags/v1.0.0') {
+          expect(request.headers['Accept'], 'application/vnd.github.sha');
+          return http.Response(ref, 200);
         }
-        if (request.url.path.endsWith('README.md')) {
+        if (request.url.path.endsWith('/kiosk-satellite-plugin.json')) {
+          return http.Response(jsonEncode(manifest), 200);
+        }
+        if (request.url.path.endsWith('.sha256')) {
+          return http.Response(checksum, 200);
+        }
+        if (request.url.toString() ==
+            'https://raw.githubusercontent.com/example/hello/$ref/README.md') {
           return http.Response(readme, 200);
         }
-        return http.Response.bytes(wrongBytes ? [0] : bytes, 200);
+        if (request.url.toString() ==
+            '$url/releases/download/v1.0.0/hello-1.0.0.zip') {
+          return http.Response.bytes(wrongBytes ? [0] : bytes, 200);
+        }
+        fail('Unexpected request: ${request.url}');
       }),
     );
   });
@@ -86,15 +109,20 @@ void main() {
     },
   );
   test(
-    'pins README and manifest to one commit and installs only the reviewed release',
+    'discovers a stable release and pins README to its tag commit before downloading code',
     () async {
       final preview = await repository.preview(url);
-      expect(requests, hasLength(3));
-      expect(requests.skip(1).every((u) => u.path.contains('/$ref/')), isTrue);
+      expect(requests, hasLength(5));
+      expect(requests.first.path, '/repos/example/hello/releases/latest');
+      expect(requests.any((u) => u.path.endsWith('.zip')), isFalse);
+      expect(requests.any((u) => u.path.contains('/main/')), isFalse);
       expect(preview['readme'], readme);
-      expect(requests.any((u) => u.path.contains('/releases/')), isFalse);
+      expect(preview['ref'], ref);
+      expect(preview['releaseTag'], 'v1.0.0');
       (preview['manifest'] as Map)['version'] = '9.9.9';
-      descriptor['download'] = {'tag': 'v9.9.9'};
+      release['tag_name'] = 'v9.9.9';
+      manifest['version'] = '9.9.9';
+      checksum = 'changed after review';
       final args = await repository.installArguments(
         preview['previewId'] as String,
         trusted: true,
@@ -107,7 +135,10 @@ void main() {
         jsonDecode(args['expectedManifest'] as String)['version'],
         '1.0.0',
       );
-      expect(jsonDecode(args['source'] as String)['repository'], url);
+      final source = jsonDecode(args['source'] as String);
+      expect(source['repository'], url);
+      expect(source['releaseTag'], 'v1.0.0');
+      expect(source['ref'], ref);
       expect(args['bytes'], bytes);
     },
   );
@@ -128,7 +159,7 @@ void main() {
     expect(requests, hasLength(count));
   });
   test(
-    'rejects a release whose checksum differs from the reviewed checksum',
+    'rejects a package whose checksum differs from the reviewed checksum',
     () async {
       final preview = await repository.preview(url);
       wrongBytes = true;
@@ -141,14 +172,84 @@ void main() {
       );
     },
   );
-  test('rejects unsafe release names and oversized repository files', () async {
-    (descriptor['download'] as Map)['asset'] = '../../outside.zip';
+  test('rejects draft and prerelease responses', () async {
+    release['draft'] = true;
     await expectLater(repository.preview(url), throwsFormatException);
-    (descriptor['download'] as Map)['asset'] = 'hello.zip';
+    release['draft'] = false;
+    release['prerelease'] = true;
+    await expectLater(repository.preview(url), throwsFormatException);
+    expect(requests.every((u) => u.path.endsWith('/releases/latest')), isTrue);
+  });
+  test('rejects missing and duplicate release assets', () async {
+    assets().removeLast();
+    await expectLater(repository.preview(url), throwsFormatException);
+    assets().add(asset('hello-1.0.0.zip.sha256', 100));
+    assets().add(asset('kiosk-satellite-plugin.json', 100));
+    await expectLater(repository.preview(url), throwsFormatException);
+  });
+  test(
+    'rejects unuploaded and oversized release assets before downloading them',
+    () async {
+      assets().first['state'] = 'new';
+      await expectLater(repository.preview(url), throwsFormatException);
+      assets().first['state'] = 'uploaded';
+      assets().first['size'] = 32 * 1024 + 1;
+      await expectLater(repository.preview(url), throwsFormatException);
+      expect(
+        requests.every((u) => u.path.endsWith('/releases/latest')),
+        isTrue,
+      );
+      assets().first['size'] = 100;
+      assets()[1]['size'] = PluginRepository.maxPackageBytes + 1;
+      await expectLater(repository.preview(url), throwsFormatException);
+      expect(requests.any((u) => u.path.endsWith('.zip')), isFalse);
+    },
+  );
+  test('rejects asset URLs from another repository or release', () async {
+    for (final download in [
+      'https://evil.test/package',
+      'https://github.com/other/hello/releases/download/v1.0.0/kiosk-satellite-plugin.json',
+      '$url/releases/download/v2.0.0/kiosk-satellite-plugin.json',
+      '$url/releases/download/V1.0.0/kiosk-satellite-plugin.json',
+      '$url/releases/download/v1.0.0/kiosk-satellite-plugin.json?x=y',
+    ]) {
+      assets().first['browser_download_url'] = download;
+      await expectLater(repository.preview(url), throwsFormatException);
+    }
+    expect(requests.every((u) => u.path.endsWith('/releases/latest')), isTrue);
+  });
+  test(
+    'rejects malformed checksums and checksums naming another package',
+    () async {
+      for (final invalid in [
+        'not a checksum',
+        '${sha256.convert(bytes)}',
+        '${sha256.convert(bytes)}  other.zip',
+        '${sha256.convert(bytes)}  hello-1.0.0.zip\nextra',
+      ]) {
+        checksum = invalid;
+        await expectLater(repository.preview(url), throwsFormatException);
+      }
+    },
+  );
+  test('rejects unsafe tags and manifest package names', () async {
+    release['tag_name'] = '../../outside';
+    await expectLater(repository.preview(url), throwsFormatException);
+    release['tag_name'] = 'v1.0.0';
+    manifest['id'] = '../outside';
+    await expectLater(repository.preview(url), throwsFormatException);
+    manifest['id'] = 'hello';
+    manifest['version'] = '1.0.0/extra';
+    await expectLater(repository.preview(url), throwsFormatException);
+  });
+  test('enforces manifest and README response size limits', () async {
+    manifest['description'] = 'x' * (32 * 1024);
+    await expectLater(repository.preview(url), throwsFormatException);
+    manifest.remove('description');
     readme = 'x' * (128 * 1024 + 1);
     await expectLater(repository.preview(url), throwsFormatException);
   });
-  test('reports unavailable repositories and rate limiting', () async {
+  test('reports unavailable stable releases and rate limiting', () async {
     for (final code in [404, 403, 429]) {
       status = code;
       await expectLater(repository.preview(url), throwsStateError);

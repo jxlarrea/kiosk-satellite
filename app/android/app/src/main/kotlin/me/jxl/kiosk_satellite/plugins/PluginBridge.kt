@@ -115,7 +115,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
         return File(root, hash)
     }
 
-    private fun manifest(id: String) = PluginManifest(JSONObject(File(directory(id), "manifest.json").readText()))
+    private fun manifest(id: String) = PluginManifest(JSONObject(PluginPackage.installedManifest(directory(id)).readText()))
 
     private fun snapshot(): List<Any?> = records.keys().asSequence().sorted().map { id ->
         val record = records.getJSONObject(id)
@@ -197,7 +197,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             val record = JSONObject().put("hash", hash).put("enabled", false)
                 .put("config", JSONObject(config)).put("error", "").put("source", source)
                 .put("jarSha256", PluginPackage.sha256(File(target, "plugin.jar").readBytes()))
-                .put("manifestSha256", PluginPackage.sha256(File(target, "manifest.json").readBytes()))
+                .put("manifestSha256", PluginPackage.sha256(File(target, PluginPackage.MANIFEST_NAME).readBytes()))
             records.put(manifest.id, record)
             try { save() } catch (error: Throwable) {
                 if (previous == null) records.remove(manifest.id) else records.put(manifest.id, previous)
@@ -217,7 +217,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             val dir = directory(id)
             val jar = File(dir, "plugin.jar")
             require(PluginPackage.sha256(jar.readBytes()) == record.getString("jarSha256") &&
-                PluginPackage.sha256(File(dir, "manifest.json").readBytes()) == record.getString("manifestSha256")) { "Installed plugin failed its integrity check. Reinstall it." }
+                PluginPackage.sha256(PluginPackage.installedManifest(dir).readBytes()) == record.getString("manifestSha256")) { "Installed plugin failed its integrity check. Reinstall it." }
             val manifest = manifest(id)
             require(manifest.minAndroidSdk <= Build.VERSION.SDK_INT) { "Android version is too old" }
             val config = manifest.config(record.optJSONObject("config") ?: JSONObject())

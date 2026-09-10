@@ -26,7 +26,7 @@ class PluginPackageTest {
         return bytes.toByteArray()
     }
     private fun packageBytes(manifest: JSONObject = manifest(), dex: ByteArray = "dex\n035\u0000test".toByteArray()) = zip(
-        "manifest.json" to manifest.toString().toByteArray(),
+        "kiosk-satellite-plugin.json" to manifest.toString().toByteArray(),
         "plugin.jar" to zip("classes.dex" to dex),
         "LICENSE" to "Apache-2.0".toByteArray(),
     )
@@ -54,7 +54,25 @@ class PluginPackageTest {
     @Test fun packageExtractsWithoutLoadingCode() = inTemp { dir ->
         val manifest = PluginPackage.extract(packageBytes(), dir)
         assertEquals("hello-world", manifest.id)
-        assertEquals(setOf("LICENSE", "manifest.json", "plugin.jar"), dir.list()!!.toSet())
+        assertEquals(setOf("LICENSE", "kiosk-satellite-plugin.json", "plugin.jar"), dir.list()!!.toSet())
+    }
+    @Test fun oldPackagesAreRejectedForNewInstalls() = inTemp { dir ->
+        rejects { PluginPackage.extract(zip(
+            "manifest.json" to manifest().toString().toByteArray(),
+            "plugin.jar" to zip("classes.dex" to "dex\n035\u0000test".toByteArray()),
+            "LICENSE" to "Apache-2.0".toByteArray(),
+        ), dir) }
+        assertFalse(dir.exists())
+    }
+    @Test fun existingPackagesKeepTheirManifestAndDigest() = inTemp { dir ->
+        dir.mkdirs()
+        val original = manifest().toString().toByteArray()
+        File(dir, "manifest.json").writeBytes(original)
+        val stored = PluginPackage.installedManifest(dir)
+        assertEquals("hello-world", PluginManifest(JSONObject(stored.readText())).id)
+        assertEquals(PluginPackage.sha256(original), PluginPackage.sha256(stored.readBytes()))
+        File(dir, PluginPackage.MANIFEST_NAME).writeText(manifest().put("version", "1.0.1").toString())
+        assertEquals("1.0.1", PluginManifest(JSONObject(PluginPackage.installedManifest(dir).readText())).version)
     }
     @Test fun traversalAndUnexpectedFilesNeverEscapeStaging() = inTemp { dir ->
         for (name in listOf("../outside", "/tmp/outside", "nested/plugin.jar", "native/lib.so")) {

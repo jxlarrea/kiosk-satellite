@@ -10,12 +10,19 @@ import org.json.JSONObject
 /** Extract only the SDK 1 files into a new private directory. No plugin code runs here. */
 object PluginPackage {
     const val MAX_BYTES = 4 * 1024 * 1024
-    private val allowed = setOf("manifest.json", "plugin.jar", "LICENSE")
+    const val MANIFEST_NAME = "kiosk-satellite-plugin.json"
+
+    // Previously installed packages retain their original filename and integrity digest.
+    fun installedManifest(directory: File): File = File(directory, MANIFEST_NAME).let { current ->
+        if (current.exists()) current else File(directory, "manifest.json")
+    }
+
+    private val allowed = setOf("kiosk-satellite-plugin.json", "plugin.jar", "LICENSE")
 
     fun verifyManifest(actual: PluginManifest, expected: String) {
         val reviewed = PluginManifest(JSONObject(expected))
         require(jsonValue(actual.json) == jsonValue(reviewed.json)) {
-            "Package manifest does not match the reviewed repository manifest"
+            "Package manifest does not match the reviewed release manifest"
         }
     }
 
@@ -42,15 +49,15 @@ object PluginPackage {
                             expanded += count
                             fileSize += count
                             require(expanded <= MAX_BYTES) { "Expanded plugin exceeds 4 MB" }
-                            require(entry.name != "manifest.json" || fileSize <= 32768) { "Manifest exceeds 32 KB" }
+                            require(entry.name != "kiosk-satellite-plugin.json" || fileSize <= 32768) { "Manifest exceeds 32 KB" }
                             output.write(buffer, 0, count)
                         }
                     }
                 }
             }
-            require(seen == allowed) { "Package needs manifest.json, plugin.jar and LICENSE" }
+            require(seen == allowed) { "Package needs kiosk-satellite-plugin.json, plugin.jar and LICENSE" }
             validateDex(File(destination, "plugin.jar"))
-            return PluginManifest(JSONObject(File(destination, "manifest.json").readText()))
+            return PluginManifest(JSONObject(File(destination, "kiosk-satellite-plugin.json").readText()))
         } catch (error: Throwable) {
             destination.deleteRecursively()
             throw error
