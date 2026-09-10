@@ -2,6 +2,7 @@
 
 Run with Python 3 and Playwright's Chromium installed. No device is contacted.
 """
+import base64
 import copy
 import json
 from functools import partial
@@ -34,6 +35,7 @@ requests = []
 compatible = True
 held = []
 delay_preview = False
+delay_zip = False
 preview = {
     'previewId': 'reviewed-token', 'repository': 'https://github.com/example/hello',
     'manifest': plugin, 'compatible': True,
@@ -53,6 +55,13 @@ def api(route):
     if name == 'previewPluginRepository':
         result = {**preview, 'compatible': compatible, 'compatibilityError': 'Unsupported SDK' if not compatible else ''}
         if delay_preview:
+            held.append((route, result))
+            return
+    elif name == 'installPlugin':
+        assert params == {'data': base64.b64encode(b'development package').decode(), 'trusted': True}
+        installed = [{**copy.deepcopy(plugin), 'enabled': False}]
+        result = installed
+        if delay_zip:
             held.append((route, result))
             return
     elif name == 'installPluginRepository':
@@ -108,8 +117,34 @@ try:
         expect(root.get_by_role('button', name='Add plugin')).to_be_enabled()
         page.screenshot(path='/tmp/kiosk-plugins-restyled.png', full_page=True)
         expect(root.get_by_text('Refresh', exact=True)).to_have_count(0)
-        expect(root.locator('input[type=file]')).to_have_count(0)
+        expect(root.get_by_text('Developer Tools', exact=True)).to_be_visible()
+        expect(root.get_by_role('button', name='Install from ZIP')).to_be_enabled()
         expect(root.locator('.hint-row.warn')).to_contain_text('expose private information')
+        def choose_zip(content=b'development package'):
+            with page.expect_file_chooser() as chooser:
+                root.get_by_role('button', name='Install from ZIP', exact=True).click()
+            chooser.value.set_files({'name': 'development.zip', 'mimeType': 'application/zip', 'buffer': content})
+        zip_before = row.bounding_box()
+        choose_zip()
+        modal = page.locator('.modal-card')
+        expect(modal.get_by_text('development.zip', exact=True)).to_be_visible()
+        modal.get_by_role('button', name='Cancel').click()
+        assert not any(name == 'installPlugin' for name, _ in requests)
+        choose_zip(b'x' * (4 * 1024 * 1024 + 1))
+        expect(page.get_by_text('Plugin ZIP must be at most 4 MB', exact=True)).to_be_visible()
+        assert not any(name == 'installPlugin' for name, _ in requests)
+        delay_zip = True
+        choose_zip()
+        modal.get_by_role('button', name='Trust and install').click()
+        expect(root.get_by_role('button', name='Install from ZIP')).to_have_class('icon-btn plugin-busy')
+        assert row.bounding_box() == zip_before, 'ZIP installation moved the installed plugin row'
+        page.wait_for_timeout(100)
+        assert held, 'ZIP upload was not made'
+        route, response = held.pop()
+        route.fulfill(json={'ok': True, 'data': response})
+        delay_zip = False
+        expect(row.get_by_role('checkbox')).not_to_be_checked()
+        expect(root.get_by_role('button', name='Install from ZIP')).to_be_enabled()
         def open_preview():
             root.get_by_role('button', name='Add plugin', exact=True).click()
             modal = page.locator('.modal-card')

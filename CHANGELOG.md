@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Install local plugin builds from Developer Tools.** The Plugins page and remote admin include an Install from ZIP row with trust confirmation, package validation and progress inside the row. Developers can test builds without publishing a GitHub release.
 - **Install plugins from their own GitHub repositories.** Use Add plugin in Settings or remote admin to review a repository manifest and README before installing a checksum-verified release. The page uses standard introduction and warning rows, grouped settings and puzzle piece icons. Progress stays inside the active control without shifting the page. Installed plugins appear as subpage entry rows with enable, disable and uninstall controls. Each plugin's settings, commands and saved README live inside its subpage. SDK 1 supports draggable windows above the dashboard with package validation, bounded callbacks and startup recovery. Hello World provides a standalone template. The SDK uses Apache-2.0 with an additional permission for independent plugins.
 
 ### Changed

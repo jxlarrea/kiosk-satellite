@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +32,7 @@ class PluginManager extends Manager {
   }) : repository = repository ?? PluginRepository();
 
   final PluginRepository repository;
+  static const maxZipBytes = PluginRepository.maxPackageBytes;
 
   static const channel = MethodChannel('kiosk_satellite/plugins');
   final installed = ValueNotifier<List<Map<String, Object?>>>(const []);
@@ -120,6 +122,26 @@ class PluginManager extends Manager {
         'trusted': 'Explicit trust acknowledgment',
       },
     );
+    register(
+      'installPlugin',
+      'Install a local plugin ZIP for development. Installed plugins start disabled.',
+      (p) async {
+        if (p['trusted'] != true) {
+          throw StateError('Confirm that you trust the plugin author');
+        }
+        final data = p['data'];
+        if (data is! String ||
+            data.isEmpty ||
+            data.length > ((maxZipBytes + 2) ~/ 3) * 4) {
+          throw const FormatException('Plugin ZIP must be at most 4 MB');
+        }
+        return installZip(base64Decode(data), trusted: true);
+      },
+      const {
+        'data': 'Base64-encoded plugin ZIP, at most 4 MB',
+        'trusted': 'Explicit trust acknowledgment',
+      },
+    );
     for (final entry in {
       'enablePlugin': 'enable',
       'disablePlugin': 'disable',
@@ -177,6 +199,32 @@ class PluginManager extends Manager {
   }) async {
     final args = await repository.installArguments(token, trusted: trusted);
     return update('install', args);
+  }
+
+  Future<List<Map<String, Object?>>> installZipStream(
+    Stream<List<int>> stream, {
+    required bool trusted,
+  }) async {
+    if (!trusted) throw StateError('Confirm that you trust the plugin author');
+    final data = BytesBuilder(copy: false);
+    await for (final chunk in stream) {
+      if (data.length + chunk.length > maxZipBytes) {
+        throw const FormatException('Plugin ZIP must be at most 4 MB');
+      }
+      data.add(chunk);
+    }
+    return installZip(data.takeBytes(), trusted: true);
+  }
+
+  Future<List<Map<String, Object?>>> installZip(
+    Uint8List bytes, {
+    required bool trusted,
+  }) async {
+    if (!trusted) throw StateError('Confirm that you trust the plugin author');
+    if (bytes.isEmpty || bytes.length > maxZipBytes) {
+      throw const FormatException('Plugin ZIP must be at most 4 MB');
+    }
+    return update('install', {'bytes': bytes, 'trusted': true});
   }
 
   Future<List<Map<String, Object?>>> refresh() => update('list', const {});

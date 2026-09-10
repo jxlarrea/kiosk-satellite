@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,12 +13,40 @@ import 'package:kiosk_satellite/managers/plugins/plugin_manager.dart';
 import 'package:kiosk_satellite/ui/plugin_overlay.dart';
 import 'package:kiosk_satellite/ui/plugin_settings.dart';
 
+class _ZipPicker extends FilePicker {
+  FilePickerResult? result;
+  @override
+  Future<FilePickerResult?> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Function(FilePickerStatus)? onFileLoading,
+    bool allowCompression = true,
+    int compressionQuality = 30,
+    bool allowMultiple = false,
+    bool withData = false,
+    bool withReadStream = false,
+    bool lockParentWindow = false,
+    bool readSequential = false,
+  }) async {
+    expect(type, FileType.custom);
+    expect(allowedExtensions, ['zip']);
+    expect(withReadStream, isTrue);
+    expect(withData, isFalse);
+    return result;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  FilePicker.platform = _ZipPicker();
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   const codec = StandardMethodCodec();
   late PluginManager plugins;
+  late FilePicker originalPicker;
+  late _ZipPicker picker;
   late Logger log;
   late EventBus bus;
   late CommandRegistry commands;
@@ -41,6 +72,9 @@ void main() {
   });
 
   setUp(() async {
+    originalPicker = FilePicker.platform;
+    picker = _ZipPicker();
+    FilePicker.platform = picker;
     log = Logger();
     bus = EventBus();
     commands = CommandRegistry(log);
@@ -82,21 +116,156 @@ void main() {
     await plugins.refresh();
   });
   tearDown(() async {
+    FilePicker.platform = originalPicker;
     await plugins.dispose();
     await bus.dispose();
     await log.dispose();
     messenger.setMockMethodCallHandler(PluginManager.channel, null);
   });
 
-  test('local ZIP installation is not exposed as a command', () async {
+  test(
+    'ZIP command requires trust and rejects invalid or oversized input before native install',
+    () async {
+      final count = calls.length;
+      for (final params in [
+        {'data': 'AQID', 'trusted': false},
+        {'data': 'AQID'},
+        {'data': '', 'trusted': true},
+        {'data': '!invalid!', 'trusted': true},
+        {
+          'data': 'A' * (((PluginManager.maxZipBytes + 2) ~/ 3) * 4 + 1),
+          'trusted': true,
+        },
+        {
+          'data': base64Encode(Uint8List(PluginManager.maxZipBytes + 1)),
+          'trusted': true,
+        },
+      ]) {
+        final result = await commands.execute('installPlugin', params);
+        expect(result.ok, isFalse);
+      }
+      expect(calls.length, count);
+      final result = await commands.execute('installPlugin', {
+        'data': 'AQID',
+        'trusted': true,
+        'source': 'untrusted override',
+      });
+      expect(result.ok, isTrue);
+      expect(calls.last.method, 'install');
+      expect(calls.last.arguments, {
+        'bytes': Uint8List.fromList([1, 2, 3]),
+        'trusted': true,
+      });
+    },
+  );
+  test('direct ZIP installs also enforce trust and size', () async {
     final count = calls.length;
-    final result = await commands.execute('installPlugin', {
-      'data': 'AQID',
-      'trusted': true,
-    });
-    expect(result.ok, isFalse);
+    await expectLater(
+      plugins.installZip(Uint8List.fromList([1]), trusted: false),
+      throwsStateError,
+    );
+    await expectLater(
+      plugins.installZip(Uint8List(0), trusted: true),
+      throwsFormatException,
+    );
+    await expectLater(
+      plugins.installZip(
+        Uint8List(PluginManager.maxZipBytes + 1),
+        trusted: true,
+      ),
+      throwsFormatException,
+    );
     expect(calls.length, count);
   });
+  testWidgets(
+    'Developer Tools ZIP flow handles picker cancel, trust cancel and confirmed install without shifting rows',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PluginSettingsPanel(plugins: plugins, onOpen: (_) {}),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Developer Tools'), findsOneWidget);
+      await tester.ensureVisible(find.text('Install from ZIP'));
+      await tester.tap(find.text('Install from ZIP'));
+      await tester.pumpAndSettle();
+      expect(calls.where((c) => c.method == 'install'), isEmpty);
+      picker.result = FilePickerResult([
+        PlatformFile(
+          name: 'development.zip',
+          size: 3,
+          readStream: Stream.value([1, 2, 3]),
+        ),
+      ]);
+      await tester.tap(find.text('Install from ZIP'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('development.zip'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(calls.where((c) => c.method == 'install'), isEmpty);
+      final before = tester.getRect(find.text('Hello World'));
+      final pending = Completer<void>();
+      messenger.setMockMethodCallHandler(PluginManager.channel, (call) async {
+        calls.add(call);
+        if (call.method == 'install') await pending.future;
+        return installed;
+      });
+      await tester.tap(find.text('Install from ZIP'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Trust and install'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(calls.last.method, 'install');
+      expect(calls.last.arguments, {
+        'bytes': Uint8List.fromList([1, 2, 3]),
+        'trusted': true,
+      });
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(tester.getRect(find.text('Hello World')), before);
+      pending.complete();
+      await tester.pumpAndSettle();
+    },
+  );
+  test(
+    'ZIP streams enforce the actual size and stop reading oversized files',
+    () async {
+      final count = calls.length;
+      var canceled = false;
+      final stream = StreamController<List<int>>(
+        onCancel: () {
+          canceled = true;
+        },
+      );
+      final result = expectLater(
+        plugins.installZipStream(stream.stream, trusted: true),
+        throwsFormatException,
+      );
+      stream.add(Uint8List(PluginManager.maxZipBytes));
+      stream.add([1]);
+      await result;
+      expect(canceled, isTrue);
+      expect(calls.length, count);
+      await stream.close();
+      await plugins.installZipStream(
+        Stream.fromIterable([
+          [1],
+          [2, 3],
+        ]),
+        trusted: true,
+      );
+      expect(calls.last.arguments, {
+        'bytes': Uint8List.fromList([1, 2, 3]),
+        'trusted': true,
+      });
+    },
+  );
   test(
     'updates replace only the owning window and disable removes it',
     () async {
@@ -252,7 +421,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Refresh'), findsNothing);
-      expect(find.text('Install local ZIP'), findsNothing);
+      expect(find.text('Install from ZIP'), findsOneWidget);
       final before = tester.getRect(find.text('Hello World'));
       final pending = Completer<void>();
       messenger.setMockMethodCallHandler(PluginManager.channel, (call) async {

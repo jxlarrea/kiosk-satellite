@@ -7,6 +7,7 @@ import DOMPurify from './vendor-purify.js';
 const introText = 'Plugins add optional features to Kiosk Satellite, such as floating windows over your dashboard. Each plugin has its own settings and can be enabled or removed independently.';
 const trustNotice = 'Plugins run code inside Kiosk Satellite and can access app data and granted Android permissions. A faulty or malicious plugin can expose private information or stop the app from working. Only install plugins from authors you trust.';
 let busy = false;
+const maxZipBytes = 4 * 1024 * 1024;
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
@@ -90,6 +91,29 @@ function confirmPreview(preview) {
   });
 }
 
+function confirmZip(file) {
+  return new Promise((resolve) => {
+    const modal = modalShell({ title: 'Install from ZIP', width: 520 });
+    modal.body.append(hintRow(file.name), hintRow(trustNotice, { warn: true }),
+      hintRow('Installed plugins start disabled. Enable this plugin from its entry row when you are ready.'));
+    const cancel = element('button', 'Cancel', 'btn-text');
+    cancel.onclick = () => { modal.close(); resolve(false); };
+    const install = element('button', 'Trust and install', 'btn-primary');
+    install.onclick = () => { modal.close(); resolve(true); };
+    modal.foot.append(cancel, install);
+  });
+}
+
+async function zipBase64(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!bytes.length || bytes.length > maxZipBytes) throw new Error('Plugin ZIP must be at most 4 MB');
+  let binary = '';
+  for (let start = 0; start < bytes.length; start += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(start, start + 8192));
+  }
+  return btoa(binary);
+}
+
 function iconButton(label, path) {
   const button = element('button', undefined, 'icon-btn'); button.type = 'button';
   button.title = label; button.setAttribute('aria-label', label);
@@ -116,7 +140,14 @@ function render(root, plugins) {
   const add = iconButton('Add plugin', 'M12 5v14M5 12h14'); addRow.append(add);
   installCard.append(addRow);
   const list = element('div', undefined, 'card');
-  root.append(introduction, installCard, heading('Installed plugins'), list);
+  const developerTools = element('div', undefined, 'card');
+  const zipRow = element('div', undefined, 'row plugin-add-row');
+  zipRow.append(info('Install from ZIP', 'Install a local build for testing'));
+  const upload = iconButton('Install from ZIP', 'M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4');
+  const fileInput = element('input'); fileInput.type = 'file'; fileInput.accept = '.zip,application/zip'; fileInput.hidden = true;
+  fileInput.setAttribute('aria-label', 'Plugin ZIP');
+  zipRow.append(upload, fileInput); developerTools.append(zipRow);
+  root.append(introduction, installCard, heading('Installed plugins'), list, heading('Developer Tools'), developerTools);
 
   async function command(name, params) {
     const result = await cmd(name, params, { timeoutMs: 95000 });
@@ -144,6 +175,18 @@ function render(root, plugins) {
     const result = await command('previewPluginRepository', { url });
     if (await confirmPreview(result)) render(root, await command('installPluginRepository', { previewId: result.previewId, trusted: true }));
   });
+  upload.onclick = () => { if (!busy) fileInput.click(); };
+  zipRow.onclick = (event) => { if (!event.target.closest('button,input') && !busy) upload.click(); };
+  fileInput.onchange = () => {
+    const file = fileInput.files?.[0]; fileInput.value = '';
+    if (!file) return;
+    run(async () => {
+      if (!file.size || file.size > maxZipBytes) throw new Error('Plugin ZIP must be at most 4 MB');
+      if (!await confirmZip(file)) return;
+      const data = await zipBase64(file);
+      render(root, await command('installPlugin', { data, trusted: true }));
+    }, upload);
+  };
   addRow.onclick = (event) => { if (!event.target.closest('button') && !busy) add.click(); };
   if (!plugins.length) list.append(hintRow('No plugins installed. Add a repository to get started.'));
   for (const plugin of plugins) {

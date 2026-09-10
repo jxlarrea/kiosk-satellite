@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -219,6 +221,54 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
     }
   }
 
+  Future<void> _installZip() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['zip'],
+      withReadStream: true,
+    );
+    if (picked == null || !mounted) return;
+    final file = picked.files.single;
+    if (file.size <= 0 || file.size > PluginManager.maxZipBytes) {
+      throw const FormatException('Plugin ZIP must be at most 4 MB');
+    }
+    final trusted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Install from ZIP'),
+        content: SizedBox(
+          width: 480,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HintRow(file.name),
+                const WarnRow(pluginTrustNotice),
+                const HintRow(
+                  'Installed plugins start disabled. Enable this plugin from its entry row when you are ready.',
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Trust and install'),
+          ),
+        ],
+      ),
+    );
+    if (trusted != true || !mounted) return;
+    final stream = file.readStream;
+    if (stream == null) throw StateError('Could not read the selected ZIP');
+    await widget.plugins.installZipStream(stream, trusted: true);
+  }
+
   Future<void> _remove(Map<String, Object?> plugin) async {
     final remove = await showDialog<bool>(
       context: context,
@@ -319,6 +369,20 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
               ),
           ],
         ),
+      ),
+      const SectionHeading('Developer Tools'),
+      SettingsCard(
+        children: [
+          SettingsRow(
+            title: const Text('Install from ZIP'),
+            subtitle: const Text('Install a local build for testing'),
+            trailing: _busy && _busyId == '_zip'
+                ? const _PluginProgress()
+                : const Icon(Icons.upload_file_rounded),
+            enabled: !_busy,
+            onTap: () => _run(_installZip, id: '_zip'),
+          ),
+        ],
       ),
     ],
   );
