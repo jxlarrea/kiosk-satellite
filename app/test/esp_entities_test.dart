@@ -250,6 +250,27 @@ void main() {
 
   tearDown(() => surface.detach());
 
+  test('picker groups honor categories before the entity type', () {
+    expect(
+      EspEntitySurface.categoryLabel({'type': 'switch', 'category': 1}),
+      'Configuration',
+    );
+    expect(
+      EspEntitySurface.categoryLabel({'type': 'sensor', 'category': 2}),
+      'Diagnostics',
+    );
+    expect(
+      EspEntitySurface.categoryLabel({'type': 'text', 'category': 1}),
+      'Configuration',
+    );
+    for (final type in ['sensor', 'text_sensor', 'binary_sensor', 'camera']) {
+      expect(EspEntitySurface.categoryLabel({'type': type}), 'Sensor');
+    }
+    for (final type in ['light', 'switch', 'select', 'button', 'update']) {
+      expect(EspEntitySurface.categoryLabel({'type': type}), 'Control');
+    }
+  });
+
   /// The frames sent so far as "id:bytes" strings, comparable by value.
   List<String> frames() => [
     for (final (id, jpeg) in images) '$id:${jpeg.join(',')}',
@@ -262,6 +283,72 @@ void main() {
     );
     await Future<void>.delayed(const Duration(milliseconds: 80));
   }
+
+  test(
+    'exclusions default to empty and filter only selected entity IDs',
+    () async {
+      final all = await surface.build();
+      expect(settings.get(defs.esphomeExcludedEntities), '[]');
+      expect(await surface.build(includeExcluded: true), all);
+      const excluded = ['screen', 'battery', 'screenshot', 'kiosk', 'update'];
+      expect(all.map((e) => e['objectId']), containsAll(excluded));
+      await settings.set(defs.esphomeExcludedEntities, jsonEncode(excluded));
+      expect(
+        await surface.build(),
+        all.where((e) => !excluded.contains(e['objectId'])).toList(),
+      );
+      expect(await surface.build(includeExcluded: true), all);
+      await settings.set(defs.esphomeExcludedEntities, '[]');
+      expect(await surface.build(), all);
+    },
+  );
+
+  test('excluded entities receive no state, images or commands', () async {
+    await settings.set(
+      defs.esphomeExcludedEntities,
+      jsonEncode(['kiosk', 'screenshot', 'battery', 'device_camera']),
+    );
+    await surface.build();
+    await attach();
+    expect(pushed.any((p) => p.$1 == 'battery' || p.$1 == 'kiosk'), isFalse);
+    expect(pushed.any((p) => p.$1 == 'charging'), isTrue);
+    executed.clear();
+    final kioskBefore = settings.get(defs.kioskEnabled);
+    await surface.handleCommand('kiosk', !kioskBefore);
+    await surface.handleCommand('screenshot', 'capture');
+    await surface.handleCommand('device_camera', 'capture');
+    expect(settings.get(defs.kioskEnabled), kioskBefore);
+    expect(executed, isEmpty);
+    bus.publish(ScreenshotTaken(jpeg: Uint8List.fromList([9, 8, 7])));
+    await pumpEventQueue();
+    expect(images, isEmpty);
+    expect(pushed.any((p) => p.$1 == 'last_screenshot'), isTrue);
+
+    await settings.set(defs.esphomeExcludedEntities, '[]');
+    await surface.handleCommand('kiosk', !kioskBefore);
+    bus.publish(ScreenshotTaken(jpeg: Uint8List.fromList([9, 8, 7])));
+    await pumpEventQueue();
+    expect(settings.get(defs.kioskEnabled), !kioskBefore);
+    expect(frames(), ['screenshot:9,8,7']);
+  });
+
+  test(
+    'exclusions validate a string list and survive settings reload',
+    () async {
+      for (final invalid in ['{}', '[1]', '[""]', 'broken']) {
+        expect(
+          settings.validate(defs.esphomeExcludedEntities, invalid),
+          isNotNull,
+        );
+      }
+      const value = '["battery","temporarily_missing_entity"]';
+      expect(settings.validate(defs.esphomeExcludedEntities, value), isNull);
+      await settings.set(defs.esphomeExcludedEntities, value);
+      final reloaded = SettingsManager(EventBus(), CommandRegistry(log), log);
+      await reloaded.init();
+      expect(reloaded.get(defs.esphomeExcludedEntities), value);
+    },
+  );
 
   test('Now Playing follows the view and brings it up', () async {
     commands.register(

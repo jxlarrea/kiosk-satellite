@@ -5606,6 +5606,38 @@ const esphomeEntities = SettingDef<bool>(
   dependsOn: 'esphome.enabled',
 );
 
+const esphomeExcludedEntities = SettingDef<String>(
+  key: 'esphome.excluded_entities',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Excluded entities',
+  description:
+      'Pick entities to exclude from Home Assistant. All other available '
+      'entities are exposed. Saving reconnects ESPHome.',
+  category: 'ESPHome',
+  dependsOn: 'esphome.entities',
+  validator: _validateEspHomeExcludedEntities,
+);
+
+Set<String> decodeEspHomeExcludedEntities(String value) {
+  try {
+    final decoded = json.decode(value);
+    if (decoded is List) return decoded.whereType<String>().toSet();
+  } catch (_) {}
+  return {};
+}
+
+String? _validateEspHomeExcludedEntities(Object? value) {
+  try {
+    final decoded = json.decode(value as String);
+    if (decoded is List &&
+        decoded.every((id) => id is String && id.trim().isNotEmpty)) {
+      return null;
+    }
+  } catch (_) {}
+  return 'Choose a list of entity IDs.';
+}
+
 /// Empty until the first start, which fills it in: a fresh install takes
 /// a slug of the device name, so Home Assistant's action names read like
 /// the kiosk (`esphome.kitchen_tablet_notification`), and an install that
@@ -6845,6 +6877,7 @@ const List<SettingDef<Object>> allSettings = [
   dlnaPort,
   esphomeEnabled,
   esphomeEntities,
+  esphomeExcludedEntities,
   btproxyKey,
   btproxyPort,
   esphomeNodeName,

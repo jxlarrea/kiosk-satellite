@@ -73,6 +73,23 @@ void main() {
     },
   );
 
+  test(
+    'changing exclusions restarts the server with a filtered catalog',
+    () async {
+      final (settings, _) = await boot();
+      await settings.set(defs.esphomeEntities, true);
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      final before = starts().length;
+      final all = (starts().last.arguments as Map)['entities'] as List;
+      expect(all.any((e) => e['objectId'] == 'screen'), isTrue);
+      await settings.set(defs.esphomeExcludedEntities, '["screen"]');
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(starts(), hasLength(before + 1));
+      final filtered = (starts().last.arguments as Map)['entities'] as List;
+      expect(filtered, all.where((e) => e['objectId'] != 'screen').toList());
+    },
+  );
+
   test('the definition offers the three Android scan modes', () {
     expect(defs.btproxyScanDuty.options, [
       'low_latency',

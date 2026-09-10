@@ -10,6 +10,7 @@ import {
 } from './cameras.js';
 import { api, depSatisfied, gatedOn, state } from './core.js';
 import { readOnlyRow } from './device.js';
+import { openEspHomeEntityPicker } from './esphome.js';
 import { updateAdaptiveBrightnessRows, updateFaceRows } from './notices.js';
 import {
   openImmichNamesPicker,
@@ -346,6 +347,34 @@ export function settingRow(s) {
       'display:flex; gap:10px; align-items:center; min-width:0; max-width:60%; flex:0 1 auto';
     controls.append(val, btn);
     row.appendChild(controls);
+    return row;
+  }
+
+  if (s.key === 'esphome.excluded_entities') {
+    const chosen = () => {
+      try { return JSON.parse(s.value || '[]'); } catch (_) { return []; }
+    };
+    const summary = document.createElement('span');
+    summary.className = 'device';
+    const refresh = () => {
+      const count = new Set(chosen()).size;
+      summary.textContent = count ? `${count} excluded` : 'All available entities exposed';
+    };
+    refresh();
+    const button = document.createElement('button');
+    button.className = 'btn-ghost';
+    button.textContent = 'Edit';
+    button.addEventListener('click', async () => {
+      const picked = await openEspHomeEntityPicker(chosen());
+      if (picked === null) return;
+      try {
+        await save(JSON.stringify(picked));
+        refresh();
+      } catch (_) {
+        showRowError(row, 'Could not save exclusions. Try again.');
+      }
+    });
+    row.append(summary, button);
     return row;
   }
 

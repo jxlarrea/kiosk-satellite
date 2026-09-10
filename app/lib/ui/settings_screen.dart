@@ -40,6 +40,7 @@ import 'color_picker.dart';
 import 'date_picker.dart';
 import 'gesture_settings.dart';
 import 'entity_picker.dart';
+import 'esphome_entity_picker.dart';
 import 'glance_entity_picker.dart';
 import 'camera_settings.dart';
 import 'fleet_settings.dart';
@@ -2345,6 +2346,17 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// key and handed to every render of the category, the pages below it
   /// included, so a replacement follows its row onto its page.
   Map<String, Widget> _rowReplacements(AppContainer container) => {
+    if (widget.category == 'ESPHome')
+      esphomeExcludedEntities.key: SearchLandingTarget(
+        id: esphomeExcludedEntities.key,
+        child: EspHomeExcludedEntitiesRow(
+          settings: container.settings,
+          commands: container.commands,
+          onChanged: () {
+            if (mounted) setState(() {});
+          },
+        ),
+      ),
     // The player pick (issue #265): a grouped picker fed by the live
     // player lists, in the place of the plain text field its definition
     // would draw.

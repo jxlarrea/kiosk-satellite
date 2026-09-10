@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Choose which kiosk entities appear in Home Assistant.** The new **Excluded entities** row under Settings > ESPHome opens a searchable picker in the app and remote admin. Each entity shows its Home Assistant category and type. **Select all** and **Clear** make bulk changes easier. All available entities stay exposed unless excluded. Saving reconnects ESPHome to apply the list and exclusions persist across restarts.
+
 ### Changed
 - **Microphone noise suppression defaults to off.** Upgrading turns it off once for users who already have it enabled. Users can enable it again in Microphone settings and that choice persists across restarts.
 

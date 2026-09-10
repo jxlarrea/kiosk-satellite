@@ -37,6 +37,8 @@ Each connection attempt temporarily pauses scanning to perform its handshake (si
 
 Turn on **Expose kiosk entities** to add all the entities listed below to the device in Home Assistant. This is off by default, meaning if you only enable ESPHome for the Bluetooth proxy, no extra entities are created. Rows marked with a requirement only appear if that hardware is present; for example, a kiosk with no camera simply will not have camera entities, rather than displaying dead ones. Because the ESPHome protocol does not use attributes, any hardware details that would normally ride on a sensor as an attribute are split into their own distinct entities.
 
+Use **Settings > ESPHome > Excluded entities** to pick entities that should stay out of Home Assistant. All available entities are exposed unless you select them here. Clear an entity's checkbox to expose it again or use **Clear** to expose all available entities. **Select all** selects every entity for exclusion, including entities outside the current search results. Saving reconnects ESPHome so Home Assistant receives the updated entity list. Each row shows its Home Assistant category before its entity type. You can search by name, category or type. The same picker is available in the remote admin.
+
 ### Controls
 
 | Entity | Type | Notes |

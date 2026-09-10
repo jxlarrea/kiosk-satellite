@@ -60,6 +60,16 @@ class EspEntitySurface {
 
   static const _pollInterval = Duration(seconds: 60);
 
+  /// The group used on Home Assistant's device page, before the entity type.
+  static String categoryLabel(Map<String, Object?> entity) {
+    if (entity['category'] == 1) return 'Configuration';
+    if (entity['category'] == 2) return 'Diagnostics';
+    return switch (entity['type']) {
+      'sensor' || 'text_sensor' || 'binary_sensor' || 'camera' => 'Sensor',
+      _ => 'Control',
+    };
+  }
+
   /// Sends one entity's fresh value to the native hub; set while attached.
   Future<void> Function(String objectId, Object? value)? _push;
 
@@ -257,7 +267,9 @@ class EspEntitySurface {
   /// Probes the hardware and Home Assistant, then lays out the catalog.
   /// The set is fixed for one server run; the manager restarts the server
   /// on the settings that change it.
-  Future<List<Map<String, Object?>>> build() async {
+  Future<List<Map<String, Object?>>> build({
+    bool includeExcluded = false,
+  }) async {
     final light = await commands.execute('getLightLevel', const {});
     final lightSensorPresent =
         light.ok && light.data is Map && (light.data as Map)['present'] == true;
@@ -369,7 +381,7 @@ class EspEntitySurface {
       'category': 2,
     };
 
-    return [
+    final catalog = <Map<String, Object?>>[
       // ── Controls ─────────────────────────────────────────────────────
       {
         'type': 'light',
@@ -900,6 +912,25 @@ class EspEntitySurface {
         type: 'text_sensor',
       ),
     ];
+    if (includeExcluded) return catalog;
+    final excluded = defs.decodeEspHomeExcludedEntities(
+      _settings.get(defs.esphomeExcludedEntities),
+    );
+    return catalog
+        .where((entity) => !excluded.contains(entity['objectId']))
+        .toList();
+  }
+
+  String? _excludedValue;
+  Set<String> _excludedIds = {};
+
+  bool _isExcluded(String objectId) {
+    final value = _settings.get(defs.esphomeExcludedEntities);
+    if (value != _excludedValue) {
+      _excludedValue = value;
+      _excludedIds = defs.decodeEspHomeExcludedEntities(value);
+    }
+    return _excludedIds.contains(objectId);
   }
 
   /// The user-defined actions served next to the entities, as Home
@@ -1256,6 +1287,7 @@ class EspEntitySurface {
   /// echoes ride the ordinary change events the acted-on managers publish,
   /// so HA sees the real outcome, not an optimistic assumption.
   Future<void> handleCommand(String objectId, Object? value) async {
+    if (_isExcluded(objectId)) return;
     // Logged under its own source, so a setting flipped from Home
     // Assistant reads as such in the log instead of looking like the app's
     // own doing.
@@ -1515,6 +1547,7 @@ class EspEntitySurface {
   }
 
   Future<void> _send(String objectId, Object? value) async {
+    if (_isExcluded(objectId)) return;
     try {
       await _push?.call(objectId, value);
     } catch (_) {}
@@ -1538,6 +1571,7 @@ class EspEntitySurface {
   }
 
   Future<void> _sendImage(String objectId, Uint8List jpeg) async {
+    if (_isExcluded(objectId)) return;
     try {
       await _pushImage?.call(objectId, jpeg);
     } catch (_) {}

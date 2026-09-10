@@ -111,6 +111,29 @@ class BtProxyManager extends Manager {
 
   @override
   Future<void> init() async {
+    commands.register(
+      Command(
+        name: 'getEspHomeEntities',
+        description:
+            'List available kiosk entities, including excluded entities.',
+        quiet: true,
+        handler: (_) async {
+          final catalog = await EspEntitySurface(
+            bus,
+            commands,
+            log,
+            _settings,
+          ).build(includeExcluded: true);
+          return CommandResult.ok([
+            for (final entity in catalog)
+              {
+                ...entity,
+                'categoryLabel': EspEntitySurface.categoryLabel(entity),
+              },
+          ]);
+        },
+      ),
+    );
     // Entity commands from Home Assistant, relayed by the native hub.
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'entityCommand' && call.arguments is Map) {
