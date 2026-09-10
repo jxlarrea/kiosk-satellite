@@ -61,7 +61,7 @@ function repositoryDialog() {
     const label = element('label', 'Repository URL', 'info'); label.htmlFor = 'plugin-repository-url';
     const input = element('input'); input.id = 'plugin-repository-url'; input.type = 'url'; input.required = true;
     input.placeholder = 'https://github.com/owner/plugin'; input.autocomplete = 'url';
-    row.append(label, input); form.append(row, hintRow('Review the plugin before installing it.')); modal.body.append(form);
+    row.append(label, input); form.append(row, hintRow("Make sure you trust the plugin's author and its code before installing it.")); modal.body.append(form);
     const cancel = element('button', 'Cancel', 'btn-text');
     cancel.onclick = () => { modal.close(); resolve(null); };
     const preview = element('button', 'Preview', 'btn-primary'); preview.type = 'submit'; preview.setAttribute('form', form.id);

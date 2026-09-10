@@ -10,6 +10,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Install plugins from their own GitHub repositories.** Use Add plugin in Settings or remote admin to review a repository manifest and README before installing a checksum-verified release. The page uses standard introduction and warning rows, grouped settings and puzzle piece icons. Progress stays inside the active control without shifting the page. Installed plugins appear as subpage entry rows with enable, disable and uninstall controls. Each plugin's settings, commands and saved README live inside its subpage. SDK 1 supports draggable windows above the dashboard with package validation, bounded callbacks and startup recovery. Hello World provides a standalone template. The SDK uses Apache-2.0 with an additional permission for independent plugins.
 
 ### Changed
+- **Plugin installation includes a clearer trust reminder.** The app and Remote Admin ask users to trust the plugin's author and its code before installing it.
 - **Plugin installs follow GitHub releases.** KS previews the latest stable release using its attached `kiosk-satellite-plugin.json`, checksum and README from the release tag. The ZIP contains the same manifest. Existing installations keep their settings and continue to load.
 - **Plugin documentation lives with Hello World.** Installation instructions, the SDK reference and author tooling now share the standalone plugin template repository.
 

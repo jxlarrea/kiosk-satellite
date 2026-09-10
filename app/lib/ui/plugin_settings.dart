@@ -136,7 +136,8 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
             decoration: const InputDecoration(
               labelText: 'Repository URL',
               hintText: 'https://github.com/owner/plugin',
-              helperText: 'Review the plugin before installing it.',
+              helperText:
+                  "Make sure you trust the plugin's author and its code before installing it.",
             ),
             onSubmitted: (value) => Navigator.pop(context, value.trim()),
           ),
