@@ -227,6 +227,45 @@ void main() {
     expect(sensor.present, isFalse);
   });
 
+  for (final state in ['STANDBY', 'AMBIENT']) {
+    for (final alreadyPresent in [false, true]) {
+      test('Portal $state notification preserves presence=$alreadyPresent '
+          '(issue #489)', () async {
+        await build(on);
+        await pump();
+        final faces = <PersonDetected>[];
+        final states = <bool>[];
+        bus.on<PersonDetected>().listen(faces.add);
+        bus.on<PersonSensorChanged>().listen((e) => states.add(e.present));
+
+        if (alreadyPresent) {
+          lines.add(beat(clock));
+          await pump();
+        }
+        final lastBeat = sensor.lastBeat;
+        final lastLine = sensor.lastLine;
+        faces.clear();
+        states.clear();
+        clock = clock.add(const Duration(seconds: 1));
+
+        lines.add(
+          beat(
+            clock,
+            text:
+                'PresenceManager: Global state notification changed to '
+                '[$state] by [com.facebook.alohaservices.presence]',
+          ),
+        );
+        await pump();
+        expect(sensor.present, alreadyPresent);
+        expect(sensor.lastBeat, lastBeat);
+        expect(sensor.lastLine, lastLine);
+        expect(faces, isEmpty);
+        expect(states, isEmpty);
+      });
+    }
+  }
+
   test('the framing director tracking a person counts as a beat, its '
       'reframe moves do not', () async {
     await build(on);
@@ -430,6 +469,43 @@ void main() {
       saver = ScreensaverManager(bus, commands, Logger(), settings);
       await saver.init();
     }
+
+    test('Portal screen-state notifications leave the screensaver active '
+        'until a real arrival (issue #489)', () async {
+      await buildSaver({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.dismiss_on_person': true,
+        'ks.screensaver.postpone_on_person': false,
+      });
+      addTearDown(saver.dispose);
+      await saver.start();
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+
+      for (final state in ['STANDBY', 'AMBIENT']) {
+        lines.add(
+          beat(
+            clock,
+            text:
+                'PresenceManager: Global state notification changed to '
+                '[$state] by [com.facebook.alohaservices.presence]',
+          ),
+        );
+        await pumpEventQueue();
+        expect(saver.isActive, isTrue);
+        expect(sensor.present, isFalse);
+      }
+
+      lines.add(
+        beat(
+          clock,
+          text: 'aloha.CameraServiceController: Notify people presence',
+        ),
+      );
+      await pumpEventQueue();
+      expect(sensor.present, isTrue);
+      expect(saver.isActive, isFalse);
+    });
 
     test('Dismiss on, Postpone off: someone already there leaves a new '
         'screensaver up, someone arriving dismisses it', () async {

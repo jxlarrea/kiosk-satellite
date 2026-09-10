@@ -197,6 +197,9 @@ class PersonSensorManager extends Manager {
 
   /// Engine lifecycle and camera arbitration: says nothing either way.
   static const _lifecycle = [
+    // Portal screen-state notifications name the presence package but say
+    // nothing about whether a person is in view (issue #489).
+    'global state notification changed',
     'start',
     'resum',
     'enable',

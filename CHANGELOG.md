@@ -10,6 +10,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - **Speaker selection floats over Now Playing.** The pill keeps its top left position without reserving space for it. A touch or navigation key press shows it for 5 seconds before it fades out. Further interaction restarts the timer. Applies to both orientations and shared screensaver layouts.
 
+### Fixed
+- **Portal screensavers stay asleep after turning the screen off.** Firmware screen-state notifications no longer count as person detections or refresh existing presence. Real person arrivals still dismiss the screensaver. Fixes [#489](https://github.com/jxlarrea/kiosk-satellite/issues/489).
+
 ## v2026.9.35 - 2026-09-09
 
 ### Added
