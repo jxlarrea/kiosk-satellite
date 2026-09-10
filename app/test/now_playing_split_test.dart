@@ -116,6 +116,171 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
+  for (final split in [false, true]) {
+    for (final horizontal in [false, true]) {
+      testWidgets(
+        'speaker pill floats without shifting content: split $split, horizontal $horizontal',
+        (tester) async {
+          await boot(
+            tester,
+            split: split,
+            prefs: {'ks.sendspin.fullscreen_horizontal': horizontal},
+          );
+          final visibility = find.byKey(
+            const ValueKey('speaker-pill-visibility'),
+          );
+          final title = find.text(
+            'A long song title that needs to fit inside the player panel',
+          );
+          final originalTitle = tester.getRect(title);
+          final originalPlay = tester.getRect(play);
+          expect(tester.widget<AnimatedOpacity>(visibility).opacity, 0);
+          expect(
+            find.byIcon(Icons.speaker_outlined).hitTestable(),
+            findsNothing,
+          );
+
+          final view = tester.getRect(find.byType(SendspinFullscreenView));
+          await tester.tapAt(view.topLeft + const Offset(8, 80));
+          await tester.pump();
+          expect(tester.widget<AnimatedOpacity>(visibility).opacity, 1);
+          expect(
+            find.byIcon(Icons.speaker_outlined).hitTestable(),
+            findsOneWidget,
+          );
+          expect(tester.getRect(title), originalTitle);
+          expect(tester.getRect(play), originalPlay);
+
+          await tester.pump(const Duration(seconds: 5));
+          expect(tester.widget<AnimatedOpacity>(visibility).opacity, 0);
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(
+            find.byIcon(Icons.speaker_outlined).hitTestable(),
+            findsNothing,
+          );
+          expect(tester.getRect(title), originalTitle);
+          expect(tester.getRect(play), originalPlay);
+
+          await c.settings.set(defs.sendspinSpeakerPill, false);
+          await tester.pump();
+          expect(visibility, findsNothing);
+          expect(tester.getRect(title), originalTitle);
+          expect(tester.getRect(play), originalPlay);
+          await tester.pumpWidget(const SizedBox());
+          await c.screensaver.dispose();
+        },
+      );
+    }
+  }
+
+  testWidgets('speaker pill restarts its timer on touch and key activity', (
+    tester,
+  ) async {
+    await boot(tester);
+    final visibility = find.byKey(const ValueKey('speaker-pill-visibility'));
+    final fade = find.descendant(
+      of: visibility,
+      matching: find.byType(FadeTransition),
+    );
+    c.bus.publish(const ActivityDetected(source: 'touch'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 4));
+    c.bus.publish(const ActivityDetected(source: 'key'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 4));
+    expect(tester.widget<FadeTransition>(fade).opacity.value, 1);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(
+      tester.widget<FadeTransition>(fade).opacity.value,
+      closeTo(0.5, 0.01),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(tester.widget<FadeTransition>(fade).opacity.value, 0);
+
+    // Metadata updates must leave the pill hidden.
+    c.sendspin.nowPlaying.value = {
+      ...c.sendspin.nowPlaying.value!,
+      'title': 'Next',
+    };
+    await tester.pump();
+    expect(tester.widget<AnimatedOpacity>(visibility).opacity, 0);
+    c.bus.publish(const ActivityDetected(source: 'touch'));
+    await tester.pump();
+    expect(tester.widget<AnimatedOpacity>(visibility).opacity, 1);
+    // Dispose while the timer is active.
+    await tester.pumpWidget(const SizedBox());
+    await c.screensaver.dispose();
+  });
+
+  testWidgets('shared controls start at full size and honor Button scale', (
+    tester,
+  ) async {
+    await boot(tester);
+    final pane = tester.getRect(player);
+    expect(tester.getRect(play).width, closeTo(68, 0.01));
+    expect(
+      tester.getRect(find.byIcon(Icons.skip_next_rounded)).width,
+      closeTo(44, 0.01),
+    );
+    await c.settings.set(defs.sendspinFullscreenButtonScale, 150);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.getRect(play).width, closeTo(102, 0.01));
+    expect(pane.contains(tester.getRect(play).topLeft), isTrue);
+    expect(pane.contains(tester.getRect(play).bottomRight), isTrue);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await c.screensaver.dispose();
+  });
+
+  for (final size in [
+    const Size(960, 480),
+    const Size(800, 1280),
+    const Size(360, 800),
+  ]) {
+    testWidgets('independent scales fit the shared player at $size', (
+      tester,
+    ) async {
+      await boot(tester, size: size);
+      final bounds = tester.getRect(player);
+      final saverBounds = tester.getRect(saver);
+      for (final textScale in [50, 100, 150, 200]) {
+        for (final buttonScale in [50, 100, 150, 200]) {
+          await c.settings.set(defs.sendspinFullscreenTextScale, textScale);
+          await c.settings.set(defs.sendspinFullscreenButtonScale, buttonScale);
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          for (final icon in [
+            Icons.skip_previous_rounded,
+            Icons.pause_circle_filled_rounded,
+            Icons.skip_next_rounded,
+          ]) {
+            final rect = tester.getRect(find.byIcon(icon));
+            expect(bounds.contains(rect.topLeft), isTrue);
+            expect(bounds.contains(rect.bottomRight), isTrue);
+          }
+          expect(tester.getRect(saver), saverBounds);
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: 'text=$textScale buttons=$buttonScale',
+          );
+        }
+      }
+      await c.settings.set(defs.sendspinLyrics, true);
+      c.sendspin.lyrics.value = const [
+        LyricLine(Duration.zero, 'A lyric that wraps on narrow screens'),
+      ];
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(LyricsView), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await c.screensaver.dispose();
+    });
+  }
+
   for (final size in [
     const Size(1280, 800),
     const Size(800, 480),
@@ -178,6 +343,8 @@ void main() {
         c.sendspin.apiFactory = ({required baseUrl, required token}) =>
             _GroupApi();
         final pane = tester.getRect(player);
+        await tester.tapAt(pane.topLeft + const Offset(8, 80));
+        await tester.pump();
         final pill = find.ancestor(
           of: find.byIcon(Icons.expand_more_rounded),
           matching: find.byType(InkWell),
@@ -195,6 +362,12 @@ void main() {
         expect(menu.right, lessThanOrEqualTo(pane.right));
         expect(menu.bottom, lessThanOrEqualTo(pane.bottom));
         expect(find.text('Speaker 0'), findsOneWidget);
+        await tester.pump(const Duration(seconds: 5));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(
+          find.byKey(const ValueKey('speaker-group-menu')),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
         await c.screensaver.dispose();

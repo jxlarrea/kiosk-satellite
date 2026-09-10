@@ -176,6 +176,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       if (e.key == defs.sendspinLyrics.key ||
           e.key == defs.sendspinFullscreenQueue.key ||
           e.key == defs.sendspinSpeakerPill.key ||
+          e.key == defs.sendspinFullscreenTextScale.key ||
+          e.key == defs.sendspinFullscreenButtonScale.key ||
           e.key == defs.sendspinFullscreenHorizontal.key ||
           e.key == defs.sendspinFullscreenDoubleTap.key) {
         _onLayoutChanged();
@@ -240,19 +242,26 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       now?['album'],
     ].where((v) => v != null && '$v'.isNotEmpty).join(' · ');
     final art = _artBytes;
-    // Sized off the panel, not fixed: a 360px cover with 40px type fits a
-    // tablet but overflows small panels (the Echo Show's 480px-tall
-    // screen). Everything scales from the shortest side and caps at the
-    // tablet design sizes; a panel that still does not fit its slot is
-    // scaled down as one piece.
+    // Start with panel-sized defaults, then apply the independent scales.
+    // Artwork gives up space before text needs to shrink.
     final screen = MediaQuery.sizeOf(context);
     final short = screen.shortestSide;
     final artSize = (short * 0.52).clamp(120.0, 360.0);
-    final titleSize = (short * 0.085).clamp(20.0, 40.0);
-    final artistSize = (short * 0.047).clamp(13.0, 22.0);
+    final textScale =
+        c.settings.get(defs.sendspinFullscreenTextScale).toDouble() / 100;
+    final titleSize = (short * 0.085).clamp(20.0, 40.0) * textScale;
+    final artistSize = (short * 0.047).clamp(13.0, 22.0) * textScale;
     final gap = (screen.height * 0.05).clamp(12.0, 40.0);
     final controls = c.settings.get(defs.sendspinFullscreenControls);
-    final controlsScale = (short / 800).clamp(0.7, 1.0);
+    // Sharing the screen should not shrink the base touch targets just
+    // because the player pane is narrow. Controls still fit their slot.
+    final baseControlsScale = widget.alongsideScreensaver
+        ? 1.0
+        : (short / 800).clamp(0.7, 1.0);
+    final controlsScale =
+        baseControlsScale *
+        c.settings.get(defs.sendspinFullscreenButtonScale).toDouble() /
+        100;
     // Double tap to dismiss (issue #409) replaces the close button: the
     // manager runs the tap chain on touches off the controls.
     final doubleTap =
@@ -303,21 +312,21 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
               type: MaterialType.transparency,
               child: _QueueView(
                 container: c,
-                fontSize: (short * 0.035).clamp(14.0, 21.0),
+                fontSize: (short * 0.035).clamp(14.0, 21.0) * textScale,
               ),
             ),
           )
         : LyricsView(
             container: c,
-            fontSize: (short * 0.055).clamp(15.0, 26.0),
+            fontSize: (short * 0.055).clamp(15.0, 26.0) * textScale,
             centred: stacked && !horizontal,
           );
 
     Widget horizontalContent() {
       final horizontalPadding = (screen.width * 0.04).clamp(32.0, 48.0);
-      // Reserve space for visible corner buttons on both ends so centered
-      // content stays centered. Hidden buttons need no extra clearance.
-      final verticalPadding = showPlayerChip || showClose ? 64.0 : 24.0;
+      // Only the close button needs clearance. The speaker pill floats
+      // over the content briefly after interaction.
+      final verticalPadding = showClose ? 64.0 : 24.0;
       Widget details() => Column(
         key: const ValueKey('horizontal-track-details'),
         mainAxisSize: MainAxisSize.min,
@@ -438,27 +447,13 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                     container: c,
                     width: box.maxWidth,
                     scale: controlsScale,
+                    maxHeight: box.maxHeight * (havePanel ? 0.6 : 0.65),
                   ),
                 );
                 if (havePanel) {
                   return Column(
                     children: [
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, area) {
-                            final width = max(240.0, area.maxWidth);
-                            return FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.topCenter,
-                              child: SizedBox(
-                                width: width,
-                                height: area.maxHeight * width / area.maxWidth,
-                                child: panel(),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                      Expanded(child: panel()),
                       if (controls) ...[
                         SizedBox(height: gap * 0.5),
                         transport(),
@@ -479,7 +474,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                             padding: const EdgeInsets.only(top: 16),
                             child: GlanceRow(
                               container: c,
-                              scale: controlsScale,
+                              scale: (short / 800).clamp(0.7, 1.0),
                             ),
                           ),
                       ],
@@ -495,14 +490,10 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       );
     }
 
-    // The cover block sits a little below center, clear of the player
-    // chip in the top left corner: a share of the slot's height, so a
-    // small panel gives up less of it, and never enough to crowd the
-    // transport.
-    Widget content(double lift) {
+    Widget content() {
       if (panelOnly) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 64, 16, 0),
+          padding: EdgeInsets.fromLTRB(16, showClose ? 64 : 12, 16, 0),
           child: panel(),
         );
       } else if (sideBySide) {
@@ -516,21 +507,18 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
             children: [
               Expanded(
                 flex: 5,
-                child: Padding(
-                  padding: EdgeInsets.only(top: lift),
-                  child: _fitted(
-                    _trackPanel(
-                      art: art,
-                      title: title,
-                      artist: artist,
-                      artSize: artSize * 0.85,
-                      titleSize: titleSize * 0.75,
-                      artistSize: artistSize * 0.85,
-                      gap: gap * 0.5,
-                      horizontalPadding: 8,
-                    ),
-                    width: artSize * 0.85 * 1.5,
+                child: _fitTrack(
+                  _trackPanel(
+                    art: art,
+                    title: title,
+                    artist: artist,
+                    artSize: artSize * 0.85,
+                    titleSize: titleSize * 0.75,
+                    artistSize: artistSize * 0.85,
+                    gap: gap * 0.5,
+                    horizontalPadding: 8,
                   ),
+                  width: artSize * 0.85 * 1.5 * max(1.0, textScale),
                 ),
               ),
               SizedBox(width: (screen.width * 0.04).clamp(12.0, 48.0)),
@@ -545,7 +533,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         return Padding(
           padding: EdgeInsets.fromLTRB(
             20,
-            (screen.height * 0.05).clamp(12.0, 48.0) + lift,
+            (screen.height * 0.05).clamp(12.0, 48.0),
             20,
             0,
           ),
@@ -554,7 +542,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
               children: [
                 ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: box.maxHeight * 0.5),
-                  child: _fitted(
+                  child: _fitTrack(
                     _trackPanel(
                       art: art,
                       title: title,
@@ -576,23 +564,20 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         );
       } else {
         return Center(
-          child: Padding(
-            padding: EdgeInsets.only(top: lift),
-            child: _fitted(
-              _trackPanel(
-                art: art,
-                title: title,
-                artist: artist,
-                artSize: artSize,
-                titleSize: titleSize,
-                artistSize: artistSize,
-                gap: gap,
-                horizontalPadding: 0,
-              ),
-              width: min(
-                screen.width - (widget.alongsideScreensaver ? 32 : 96),
-                artSize * 2.2,
-              ),
+          child: _fitTrack(
+            _trackPanel(
+              art: art,
+              title: title,
+              artist: artist,
+              artSize: artSize,
+              titleSize: titleSize,
+              artistSize: artistSize,
+              gap: gap,
+              horizontalPadding: 0,
+            ),
+            width: min(
+              screen.width - (widget.alongsideScreensaver ? 32 : 96),
+              artSize * 2.2 * max(1.0, textScale),
             ),
           ),
         );
@@ -642,12 +627,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         else
           Column(
             children: [
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, box) =>
-                      content((box.maxHeight * 0.08).clamp(0.0, 56.0)),
-                ),
-              ),
+              Expanded(child: content()),
               if (glance)
                 Padding(
                   padding: EdgeInsets.only(
@@ -684,6 +664,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                           screen.width - 32,
                         ),
                         scale: controlsScale,
+                        maxHeight: screen.height * 0.5,
                       ),
                     ),
                   ),
@@ -698,7 +679,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
             top: 12,
             left: 12,
             child: SafeArea(
-              child: _PlayerChip(
+              child: _TransientPlayerChip(
                 container: c,
                 maxWidth: max(80, screen.width - (showClose ? 80 : 24)),
               ),
@@ -741,6 +722,11 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     child: SizedBox(width: width, child: panel),
   );
 
+  Widget _fitTrack(Widget panel, {required double width}) => LayoutBuilder(
+    builder: (context, box) =>
+        SizedBox(width: min(width, box.maxWidth), child: panel),
+  );
+
   /// The cover, title and artist as one block. Shared by every layout so
   /// a change to the look lands in each: on its own in the middle, or
   /// beside the panel at reduced size.
@@ -754,64 +740,111 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     required double gap,
     required double horizontalPadding,
   }) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 700),
-      child: Column(
-        // Keyed on the track so the whole panel (art + text) fades as
-        // one between songs.
-        key: ValueKey('$title|$_artUrl'),
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (art != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.memory(
-                art,
-                cacheWidth: (artSize * MediaQuery.devicePixelRatioOf(context))
-                    .ceil(),
-                width: artSize,
-                height: artSize,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-              ),
-            )
-          else
-            Icon(Icons.music_note, size: artSize * 0.45, color: Colors.white24),
-          SizedBox(height: gap),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            child: Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: titleSize,
-                fontWeight: FontWeight.w700,
-                height: 1.15,
+    return LayoutBuilder(
+      builder: (context, box) {
+        final titleStyle = TextStyle(
+          color: Colors.white,
+          fontSize: titleSize,
+          fontWeight: FontWeight.w700,
+          height: 1.15,
+        );
+        final artistStyle = TextStyle(
+          color: Colors.white70,
+          fontSize: artistSize,
+          fontWeight: FontWeight.w400,
+        );
+        double textHeight(String text, TextStyle style) {
+          final painter = TextPainter(
+            text: TextSpan(
+              text: text,
+              style: DefaultTextStyle.of(context).style.merge(style),
+            ),
+            maxLines: 2,
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout(maxWidth: max(1, box.maxWidth - horizontalPadding * 2));
+          final height = painter.height;
+          painter.dispose();
+          return height;
+        }
+
+        final titleHeight = textHeight(title, titleStyle);
+        final artistHeight = artist.isEmpty
+            ? 0.0
+            : textHeight(artist, artistStyle);
+        final spare = max(0.0, box.maxHeight - titleHeight - artistHeight);
+        final fittedGap = min(gap, spare * 0.15);
+        final artistGap = artist.isEmpty ? 0.0 : min(12.0, spare * 0.1);
+        final coverSize = min(
+          min(art == null ? artSize * 0.45 : artSize, box.maxWidth),
+          max(0.0, spare - fittedGap - artistGap),
+        );
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(
+            width: box.maxWidth,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 700),
+              child: Column(
+                // Keyed on the track so the whole panel (art + text) fades as
+                // one between songs.
+                key: ValueKey('$title|$_artUrl'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (art != null && coverSize > 0)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.memory(
+                        art,
+                        cacheWidth:
+                            (coverSize * MediaQuery.devicePixelRatioOf(context))
+                                .ceil(),
+                        width: coverSize,
+                        height: coverSize,
+                        fit: BoxFit.cover,
+                        gaplessPlayback: true,
+                      ),
+                    )
+                  else if (coverSize > 0)
+                    Icon(
+                      Icons.music_note,
+                      size: coverSize,
+                      color: Colors.white24,
+                    ),
+                  SizedBox(height: fittedGap),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: titleStyle,
+                    ),
+                  ),
+                  if (artist.isNotEmpty) ...[
+                    SizedBox(height: artistGap),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                      ),
+                      child: Text(
+                        artist,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: artistStyle,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
-          if (artist.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              child: Text(
-                artist,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: artistSize,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -906,6 +939,12 @@ class _QueueViewState extends State<_QueueView> {
       if (e.key == defs.sendspinQueueArt.key && mounted) setState(() {});
     });
     container.sendspin.nowPlaying.addListener(_onNowPlaying);
+  }
+
+  @override
+  void didUpdateWidget(covariant _QueueView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.fontSize != widget.fontSize) _scrolledFor = null;
   }
 
   @override
@@ -1005,13 +1044,17 @@ class _QueueViewState extends State<_QueueView> {
     padding: EdgeInsets.fromLTRB(12, fontSize * 0.9, 12, fontSize * 0.4),
     child: Row(
       children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: fontSize * 0.7,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.5,
+        Flexible(
+          child: Text(
+            label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: fontSize * 0.7,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
         if (count != null) ...[
@@ -1069,78 +1112,85 @@ class _QueueViewState extends State<_QueueView> {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              child: Row(
-                children: [
-                  if (container.settings.get(defs.sendspinQueueArt)) ...[
-                    Opacity(
-                      opacity: played && !current && !focused ? 0.45 : 1,
-                      child: _QueueThumb(
-                        container: container,
-                        url: '${item['artworkUrl'] ?? ''}',
-                        size: fontSize * 2.4,
-                      ),
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final compact = box.maxWidth < fontSize * 12;
+                  final durationLabel = Text(
+                    _clock(duration),
+                    style: TextStyle(
+                      color: subColor,
+                      fontSize: fontSize * 0.8,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${item['title'] ?? ''}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: Ks.displayFont,
-                            color: titleColor,
-                            fontSize: current ? fontSize : fontSize * 0.9,
-                            fontWeight: current
-                                ? FontWeight.w700
-                                : FontWeight.w500,
+                  );
+                  return Row(
+                    children: [
+                      if (container.settings.get(defs.sendspinQueueArt)) ...[
+                        Opacity(
+                          opacity: played && !current && !focused ? 0.45 : 1,
+                          child: _QueueThumb(
+                            container: container,
+                            url: '${item['artworkUrl'] ?? ''}',
+                            size: min(fontSize * 2.4, box.maxWidth * 0.2),
                           ),
                         ),
-                        if ('${item['artist'] ?? ''}'.isNotEmpty)
-                          Text(
-                            '${item['artist']}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: subColor,
-                              fontSize: fontSize * 0.8,
-                            ),
-                          ),
+                        const SizedBox(width: 12),
                       ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // A constant slot before the duration: the spinner while a
-                  // tap is on its way, nothing otherwise, so the durations line
-                  // up whatever a row is doing.
-                  SizedBox(
-                    width: fontSize,
-                    height: fontSize,
-                    child: waiting
-                        ? Padding(
-                            padding: EdgeInsets.all(fontSize * 0.1),
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white70,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${item['title'] ?? ''}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: Ks.displayFont,
+                                color: titleColor,
+                                fontSize: current ? fontSize : fontSize * 0.9,
+                                fontWeight: current
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
                             ),
-                          )
-                        : null,
-                  ),
-                  if (duration > 0) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      _clock(duration),
-                      style: TextStyle(
-                        color: subColor,
-                        fontSize: fontSize * 0.8,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+                            if ('${item['artist'] ?? ''}'.isNotEmpty)
+                              Text(
+                                '${item['artist']}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: subColor,
+                                  fontSize: fontSize * 0.8,
+                                ),
+                              ),
+                            if (compact && duration > 0) durationLabel,
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ],
+                      const SizedBox(width: 12),
+                      // A constant slot before the duration: the spinner while a
+                      // tap is on its way, nothing otherwise, so the durations line
+                      // up whatever a row is doing.
+                      SizedBox(
+                        width: fontSize,
+                        height: fontSize,
+                        child: waiting
+                            ? Padding(
+                                padding: EdgeInsets.all(fontSize * 0.1),
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white70,
+                                ),
+                              )
+                            : null,
+                      ),
+                      if (!compact && duration > 0) ...[
+                        const SizedBox(width: 8),
+                        durationLabel,
+                      ],
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -1444,6 +1494,61 @@ class _QueueThumbState extends State<_QueueThumb> {
       ),
     );
   }
+}
+
+/// Reveals the floating speaker pill briefly after screen interaction.
+/// Listening to activity also covers touches in the shared screensaver.
+class _TransientPlayerChip extends StatefulWidget {
+  const _TransientPlayerChip({required this.container, required this.maxWidth});
+
+  final AppContainer container;
+  final double maxWidth;
+
+  @override
+  State<_TransientPlayerChip> createState() => _TransientPlayerChipState();
+}
+
+class _TransientPlayerChipState extends State<_TransientPlayerChip> {
+  StreamSubscription<ActivityDetected>? _activitySub;
+  Timer? _hide;
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _activitySub = widget.container.bus.on<ActivityDetected>().listen((event) {
+      if (event.source != 'touch' && event.source != 'key') return;
+      _hide?.cancel();
+      if (!_visible) setState(() => _visible = true);
+      _hide = Timer(const Duration(seconds: 5), () {
+        if (mounted) setState(() => _visible = false);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _hide?.cancel();
+    _activitySub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    ignoring: !_visible,
+    child: ExcludeFocus(
+      excluding: !_visible,
+      child: AnimatedOpacity(
+        key: const ValueKey('speaker-pill-visibility'),
+        opacity: _visible ? 1 : 0,
+        duration: _visible ? Duration.zero : const Duration(milliseconds: 300),
+        child: _PlayerChip(
+          container: widget.container,
+          maxWidth: widget.maxWidth,
+        ),
+      ),
+    ),
+  );
 }
 
 /// The chip naming the shown player. Where the source can group players
@@ -1853,6 +1958,7 @@ class _NowPlayingControls extends StatefulWidget {
     required this.container,
     required this.width,
     required this.scale,
+    required this.maxHeight,
   });
 
   final AppContainer container;
@@ -1862,6 +1968,8 @@ class _NowPlayingControls extends StatefulWidget {
 
   /// Everything scales down from the tablet sizes on a small panel.
   final double scale;
+
+  final double maxHeight;
 
   @override
   State<_NowPlayingControls> createState() => _NowPlayingControlsState();
@@ -2012,11 +2120,15 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      LayoutBuilder(builder: (context, box) => _buildControls(context, box));
+
+  Widget _buildControls(BuildContext context, BoxConstraints box) {
     final now = c.sendspin.nowPlaying.value;
     if (now == null) return const SizedBox.shrink();
     final playing = now['playing'] == true;
-    final scale = widget.scale;
+    // Leave room above the controls for artwork, track details or lyrics.
+    final scale = min(widget.scale, widget.maxHeight / 184);
     final supported =
         (now['supportedCommands'] as List?)?.map((e) => '$e').toList() ??
         const <String>[];
@@ -2165,16 +2277,19 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     // tap targets and the bar widens to match.
     double item(double size) =>
         max((size + 16) * scale, kMinInteractiveDimension);
-    // Two toggles a side, present or blank, so the play button sits on
+    // Three toggles a side, present or blank, so the play button sits on
     // the screen's center line under the cover: a spare slot on one side
     // once shifted the whole row half a toggle off it.
     final rowWidth =
         item(toggleSize) * 6 +
         item(44) * 2 +
         item(68) +
-        (12 * 2 + 20 * 2 + 16 * 2) * scale;
+        (12 * 4 + 20 * 2 + 16 * 2) * scale;
     // Narrow panels give the transport its own row to preserve tap targets.
-    final maxWidth = MediaQuery.sizeOf(context).width - 24 * scale;
+    final maxWidth = min(
+      box.maxWidth,
+      MediaQuery.sizeOf(context).width - 24 * scale,
+    );
     final compact = maxWidth < rowWidth;
     final transportButtons = <Widget>[
       if (has('previous'))
@@ -2192,8 +2307,13 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
       SizedBox(width: 16 * scale),
       if (has('next')) transport(Icons.skip_next_rounded, 'next', size: 44),
     ];
+    final width = max(widget.width, rowWidth).clamp(0.0, maxWidth);
+    final secondaryButtons = [
+      for (final toggle in [volume, heart, shuffle, repeat, lyrics, queue])
+        if (toggle != toggleBlank) toggle,
+    ];
     return SizedBox(
-      width: max(widget.width, rowWidth).clamp(0.0, max(maxWidth, 200.0)),
+      width: width,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -2283,19 +2403,17 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
             ),
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final toggle in [
-                    volume,
-                    heart,
-                    shuffle,
-                    repeat,
-                    lyrics,
-                    queue,
-                  ])
-                    if (toggle != toggleBlank) toggle,
-                ],
+              child: SizedBox(
+                key: const ValueKey('now-playing-secondary-controls'),
+                width: max(
+                  width,
+                  secondaryButtons.length * item(toggleSize) +
+                      max(0, secondaryButtons.length - 1) * 16 * scale,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: secondaryButtons,
+                ),
               ),
             ),
           ] else
@@ -2498,8 +2616,18 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(_clock(shown.round()), style: timeStyle),
-              Text(_clock(duration), style: timeStyle),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(_clock(shown.round()), style: timeStyle),
+                ),
+              ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(_clock(duration), style: timeStyle),
+                ),
+              ),
             ],
           ),
         ],

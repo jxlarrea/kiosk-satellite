@@ -892,6 +892,36 @@ void main() {
       await tester.pump();
     }
 
+    testWidgets('size and layout settings keep native playback running', (
+      tester,
+    ) async {
+      await pump(tester, settings: {'ks.sendspin.enabled': true});
+      await tester.pump(const Duration(seconds: 2));
+      expect(calls.where((call) => call.method == 'start'), hasLength(1));
+      calls.clear();
+      final now = container.sendspin.nowPlaying.value;
+      for (final entry in {
+        'sendspin.fullscreen_text_scale': 150,
+        'sendspin.fullscreen_button_scale': 200,
+        'sendspin.fullscreen_horizontal': true,
+        'sendspin.fullscreen_split': false,
+        'sendspin.fullscreen_photo_fill': 'off',
+        'sendspin.fullscreen_override_brightness': true,
+      }.entries) {
+        await container.settings.setFromJson(entry.key, entry.value);
+        await tester.pump(const Duration(seconds: 2));
+        await tester.pump();
+        expect(
+          calls.where(
+            (call) => call.method == 'start' || call.method == 'stop',
+          ),
+          isEmpty,
+          reason: entry.key,
+        );
+        expect(container.sendspin.nowPlaying.value, same(now));
+      }
+    });
+
     testWidgets('controls on: transport, bar, times and the close button', (
       tester,
     ) async {
@@ -996,6 +1026,201 @@ void main() {
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 50));
       }
+    }
+
+    for (final horizontal in [false, true]) {
+      for (final shared in [false, true]) {
+        testWidgets('queue text scales horizontal=$horizontal shared=$shared', (
+          tester,
+        ) async {
+          await pump(
+            tester,
+            alongsideScreensaver: shared,
+            settings: {...ma, 'ks.sendspin.fullscreen_horizontal': horizontal},
+          );
+          await tester.tap(find.byIcon(Icons.queue_music_rounded));
+          await settle(tester);
+          final queue = find.byType(ListView);
+          final title = find.descendant(of: queue, matching: find.text('Song'));
+          final artist = find.descendant(of: queue, matching: find.text('A'));
+          final duration = find.descendant(
+            of: queue,
+            matching: find.text('1:40'),
+          );
+          final initial = [
+            for (final text in [title, artist, duration])
+              tester.getRect(text).height,
+          ];
+          await container.settings.set(defs.sendspinFullscreenTextScale, 200);
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          for (final (i, text) in [title, artist, duration].indexed) {
+            expect(tester.getRect(text).height, closeTo(initial[i] * 2, 1));
+          }
+          await container.settings.set(defs.sendspinFullscreenButtonScale, 150);
+          await settle(tester);
+          expect(tester.getRect(title).height, closeTo(initial.first * 2, 1));
+          expect(tester.takeException(), isNull);
+          await tester.pump(const Duration(seconds: 2));
+        });
+      }
+    }
+
+    for (final size in [
+      const Size(1280, 800),
+      const Size(800, 480),
+      const Size(360, 800),
+    ]) {
+      testWidgets('secondary controls have separate touch targets at $size', (
+        tester,
+      ) async {
+        await pump(
+          tester,
+          size: size,
+          settings: {...ma, 'ks.sendspin.fullscreen_horizontal': true},
+        );
+        final row = find.byKey(
+          const ValueKey('now-playing-secondary-controls'),
+        );
+        for (final scale in [100, 200]) {
+          await container.settings.set(
+            defs.sendspinFullscreenButtonScale,
+            scale,
+          );
+          await settle(tester);
+          final buttons = find.descendant(
+            of: row,
+            matching: find.byType(IconButton),
+          );
+          expect(buttons, findsNWidgets(6));
+          for (var i = 1; i < buttons.evaluate().length; i++) {
+            expect(
+              tester.getRect(buttons.at(i)).left -
+                  tester.getRect(buttons.at(i - 1)).right,
+              greaterThan(0),
+            );
+          }
+          expect(tester.takeException(), isNull);
+        }
+        await tester.tap(find.byIcon(Icons.queue_music_rounded));
+        await settle(tester);
+        expect(find.byType(ListView), findsOneWidget);
+        await tester.pump(const Duration(seconds: 2));
+      });
+    }
+
+    for (final horizontal in [false, true]) {
+      for (final size in [
+        const Size(1280, 800),
+        const Size(960, 480),
+        const Size(480, 320),
+        const Size(360, 800),
+      ]) {
+        testWidgets('scales fit horizontal=$horizontal at $size', (
+          tester,
+        ) async {
+          await pump(
+            tester,
+            size: size,
+            settings: {...ma, 'ks.sendspin.fullscreen_horizontal': horizontal},
+          );
+          container.sendspin.nowPlaying.value = {
+            ...container.sendspin.nowPlaying.value!,
+            'title': 'A long track title that wraps onto two lines',
+            'artist': 'A long artist name',
+            'album': 'Album name',
+          };
+          for (final textScale in [50, 100, 150, 200]) {
+            for (final buttonScale in [50, 100, 150, 200]) {
+              await container.settings.set(
+                defs.sendspinFullscreenTextScale,
+                textScale,
+              );
+              await container.settings.set(
+                defs.sendspinFullscreenButtonScale,
+                buttonScale,
+              );
+              await settle(tester);
+              for (final icon in [
+                Icons.skip_previous_rounded,
+                Icons.pause_circle_filled_rounded,
+                Icons.skip_next_rounded,
+              ]) {
+                final rect = tester.getRect(find.byIcon(icon));
+                expect(rect.left, greaterThanOrEqualTo(0));
+                expect(rect.top, greaterThanOrEqualTo(0));
+                expect(rect.right, lessThanOrEqualTo(size.width));
+                expect(rect.bottom, lessThanOrEqualTo(size.height));
+              }
+              expect(
+                tester.takeException(),
+                isNull,
+                reason: 'text=$textScale buttons=$buttonScale',
+              );
+            }
+          }
+          await tester.tap(find.byIcon(Icons.skip_next_rounded));
+          await tester.pump();
+          expect(calls.last.arguments['command'], 'next');
+          await container.settings.set(defs.sendspinLyrics, true);
+          await settle(tester);
+          container.sendspin.lyrics.value = const [
+            LyricLine(Duration.zero, 'First lyric with enough words to wrap'),
+            LyricLine(Duration(seconds: 60), 'Second lyric'),
+          ];
+          await settle(tester);
+          expect(tester.takeException(), isNull);
+          await tester.tap(find.byIcon(Icons.queue_music_rounded));
+          await settle(tester);
+          expect(tester.takeException(), isNull);
+          await tester.pump(const Duration(seconds: 2));
+        });
+      }
+
+      testWidgets(
+        'text and buttons scale independently horizontal=$horizontal',
+        (tester) async {
+          await pump(
+            tester,
+            settings: {'ks.sendspin.fullscreen_horizontal': horizontal},
+          );
+          final title = find.text('Song');
+          final play = find.byIcon(Icons.pause_circle_filled_rounded);
+          final initialTitle = tester.getRect(title).size;
+          final initialPlay = tester.getRect(play).size;
+          await container.settings.set(defs.sendspinFullscreenTextScale, 150);
+          await settle(tester);
+          expect(
+            tester.getRect(title).size.height,
+            closeTo(initialTitle.height * 1.5, 1),
+          );
+          expect(tester.getRect(play).size, initialPlay);
+          final scaledTitle = tester.getRect(title).size;
+          await container.settings.set(defs.sendspinFullscreenButtonScale, 150);
+          await settle(tester);
+          expect(
+            tester.getRect(play).size.height,
+            closeTo(initialPlay.height * 1.5, 1),
+          );
+          expect(tester.getRect(title).size, scaledTitle);
+          await container.settings.set(defs.sendspinLyrics, true);
+          await settle(tester);
+          container.sendspin.lyrics.value = const [
+            LyricLine(Duration.zero, 'First lyric'),
+          ];
+          await settle(tester);
+          final lyrics = tester.widget<LyricsView>(find.byType(LyricsView));
+          expect(lyrics.fontSize, 26 * 1.5);
+          await container.settings.set(defs.sendspinFullscreenTextScale, 200);
+          await settle(tester);
+          expect(
+            tester.widget<LyricsView>(find.byType(LyricsView)).fontSize,
+            26 * 2,
+          );
+          expect(tester.takeException(), isNull);
+          await tester.pump(const Duration(seconds: 2));
+        },
+      );
     }
 
     for (final size in [

@@ -64,6 +64,15 @@ class _LyricsViewState extends State<LyricsView> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant LyricsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.fontSize != widget.fontSize ||
+        oldWidget.centred != widget.centred) {
+      _scrollToCurrent(animate: false);
+    }
+  }
+
   void _onLyricsChanged() {
     _index = -1;
     _lineContexts.clear();

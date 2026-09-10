@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Independent Now Playing text and button sizes.** New Text scale and Button scale sliders under Media Player > Now Playing adjust sizes from 50% to 200%. Text scale changes the title, artist, album, lyrics and queue text. Button scale changes playback buttons and the progress bar. Both work in vertical mode, horizontal mode and alongside a screensaver. Artwork, spacing and controls adapt to the available player space. Secondary buttons have more room between their touch targets. Shared screensaver layouts use a larger base control size. Adds [#488](https://github.com/jxlarrea/kiosk-satellite/issues/488).
+
+### Changed
+- **Speaker selection floats over Now Playing.** The pill keeps its top left position without reserving space for it. A touch or navigation key press shows it for 5 seconds before it fades out. Further interaction restarts the timer. Applies to both orientations and shared screensaver layouts.
+
 ## v2026.9.35 - 2026-09-09
 
 ### Added

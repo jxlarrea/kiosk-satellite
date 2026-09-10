@@ -5257,6 +5257,44 @@ const sendspinFullscreenControls = SettingDef<bool>(
   dependsOn: 'sendspin.fullscreen',
 );
 
+const sendspinFullscreenTextScale = SettingDef<num>(
+  key: 'sendspin.fullscreen_text_scale',
+  type: SettingType.number,
+  defaultValue: 100,
+  title: 'Text scale',
+  description:
+      'Size of the track title, artist, album, lyrics and queue text. '
+      'Applies in both layouts and alongside the screensaver. Artwork '
+      'adjusts to leave room for the text.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'User Interface',
+  min: 50,
+  max: 200,
+  step: 5,
+  unit: '%',
+  dependsOn: 'sendspin.fullscreen',
+);
+
+const sendspinFullscreenButtonScale = SettingDef<num>(
+  key: 'sendspin.fullscreen_button_scale',
+  type: SettingType.number,
+  defaultValue: 100,
+  title: 'Button scale',
+  description:
+      'Size of the playback buttons and progress bar, independent of '
+      'text size. Applies in both layouts and alongside the screensaver. '
+      'Controls fit the space available in the player.',
+  category: 'Sendspin',
+  subpage: 'Now Playing',
+  section: 'User Interface',
+  min: 50,
+  max: 200,
+  step: 5,
+  unit: '%',
+  dependsOn: 'sendspin.fullscreen_controls',
+);
+
 const sendspinFullscreenHorizontal = SettingDef<bool>(
   key: 'sendspin.fullscreen_horizontal',
   type: SettingType.boolean,
@@ -5350,7 +5388,8 @@ const sendspinSpeakerPill = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: true,
   title: 'Show speaker selection pill',
-  description: 'Allows to add or remove speakers to the current group.',
+  description:
+      'Shows speaker selection for 5 seconds after screen interaction. Add or remove speakers from the current group.',
   category: 'Sendspin',
   subpage: 'Now Playing',
   section: 'User Interface',
@@ -6852,6 +6891,8 @@ const List<SettingDef<Object>> allSettings = [
   sendspinPlayerShortcut,
   sendspinFullscreenOnPlay,
   sendspinFullscreenControls,
+  sendspinFullscreenTextScale,
+  sendspinFullscreenButtonScale,
   sendspinFullscreenHorizontal,
   sendspinFullscreenDoubleTap,
   sendspinFullscreenMotion,

@@ -85,13 +85,15 @@ Configures direct integration with local Sonos hardware.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Launch Now Playing when music starts playing | on | Instantly launches the full screen view when playback starts rather than waiting for the idle screensaver timeout. |
+| Text scale | 100% | Scales the track title, artist, album, lyrics and queue text from 50% to 200%. Applies in vertical mode, horizontal mode and alongside a screensaver. Artwork adjusts to leave room for the text. |
+| Button scale | 100% | Scales playback buttons and the progress bar from 50% to 200%, independently of text. Controls adjust to the available space and move onto separate rows in narrow panels. |
 | Horizontal mode | off | Splits standalone Now Playing into equal artwork and controls halves. Track details move below the artwork when lyrics or the queue open. Ignored while shown alongside a screensaver. |
 | Show media controls | on | Displays transport buttons and a progress bar over the background artwork. When enabled, a top-right close button appears and paused tracks remain on screen until the paused timeout expires. |
 | Double tap to dismiss | off | Allows a double tap anywhere on the standalone Now Playing view to dismiss it, removing the close button. Taps on controls or queue rows do not trigger dismissal. Ignored while shown alongside a screensaver. |
 | Dismiss "Now Playing" on motion | off | When disabled, motion events will not dismiss the standalone music display. Ignored while Now Playing is shown alongside a screensaver. Shared layouts follow the screensaver's detection settings. |
 | Show in the kiosk menu | off | Adds a menu shortcut to open the full screen view directly. Remains hidden if no media is playing or queued. |
 | Show album art in the queue | on | A cover on every row of the queue panel, the server's or the speaker's own thumbnail, fetched as the rows come into view. Off, the rows tighten back up. |
-| Show speaker selection pill | on | The chip in the Now Playing view's top left corner that names the player and opens the speaker group menu. Off, the view shows neither. |
+| Show speaker selection pill | on | Floats in the top left corner without reserving space. Appears for 5 seconds after a touch or navigation key press, then fades out. Names the player and opens the speaker group menu. Off, the view shows neither. |
 
 **Screensaver**
 
@@ -178,6 +180,8 @@ Enable **Horizontal mode** under **Now Playing > User Interface** for a standalo
 **Fill the screen** in the same group defaults to **Always**, so photos fill the smaller panel. Choose **Default** to follow each photo screensaver's saved fill setting or select **Off** or **Smart** for a shared override. The override applies only while Now Playing shares the display and leaves each screensaver's saved setting unchanged.
 
 Each [scheduled screensaver](screensavers.md#schedule) also has a **Show Now Playing next to the screensaver** override. **Default** follows the global layout setting, **On** requests the shared layout when Now Playing is enabled and **Off** hides Now Playing during those hours. Use **Off** for a nighttime screensaver to keep its brightness and prevent automatic launches when music starts. Playback continues normally.
+
+**Text scale** and **Button scale** under **Now Playing > User Interface** adjust text and controls independently in 5% steps, from 50% to 200%. Both default to 100% and update the view immediately in vertical mode, horizontal mode and alongside a screensaver. Text scale affects the title, artist, album, lyrics and queue text. Button scale affects playback buttons, the progress bar and its time labels. Shared screensaver layouts start with full-size controls at 100% Button scale. When space is tight, artwork and spacing shrink and controls fit the available panel.
 
 Artwork, track text and controls adapt to the player panel. Narrow panels put playback controls and secondary buttons on separate rows. Lyrics and the queue use the artwork space when the panel cannot fit both. Screensaver widgets stay inside the screensaver panel. When Now Playing closes after playback ends, the screensaver expands to fill the display.
 
