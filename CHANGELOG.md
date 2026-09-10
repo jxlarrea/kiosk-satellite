@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Music Assistant external playback appears in Now Playing.** The floating player and Now Playing use the player's track metadata when sources such as Spotify Connect play without an active Music Assistant queue. Track changes and playback state update from player events. Queue controls return when playback switches back to a Music Assistant queue. Fixes [#487](https://github.com/jxlarrea/kiosk-satellite/issues/487).
+
 ## v2026.9.34 - 2026-09-09
 
 ### Fixed

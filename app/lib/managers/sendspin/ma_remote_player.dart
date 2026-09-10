@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' show Random, min;
+import 'dart:math' show Random, max, min;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
@@ -14,9 +14,9 @@ import 'remote_player.dart';
 ///
 /// Where the local player learns about its track from the Sendspin stream
 /// itself, a remote player has no stream here — everything comes from
-/// Music Assistant's API over one long-lived socket: the active queue on
-/// connect, then the queue_updated / queue_time_updated / player_updated
-/// events the server pushes at every authenticated client. Transport
+/// Music Assistant's API over one long-lived socket: the active queue and
+/// player metadata on connect, then queue and player events. External
+/// sources such as Spotify Connect can supply a track without a queue. Transport
 /// commands go back over the same socket as players/cmd calls.
 ///
 /// Output is [onSnapshot]: the same map shape SendspinManager publishes
@@ -68,10 +68,9 @@ class MaRemotePlayer implements RemotePlayer {
   final String playerId;
   final void Function(Map<String, Object?>? snapshot) onSnapshot;
 
-  /// Music Assistant keeps a queue for every player it drives, read by
-  /// the manager through the API.
+  /// External sources can play without a Music Assistant queue.
   @override
-  bool get hasQueue => true;
+  bool get hasQueue => !_usingPlayerMedia;
 
   @override
   Future<RemoteQueue?> fetchQueue() async => null;
@@ -114,7 +113,7 @@ class MaRemotePlayer implements RemotePlayer {
   /// The queue's live elapsed time, read every few seconds while playing,
   /// keeps the position within a moment of the audio.
   @override
-  bool get lyricsSynced => true;
+  bool get lyricsSynced => !_usingPlayerMedia || _playerPosition != null;
 
   bool _stopped = false;
   HttpClient? _client;
@@ -127,6 +126,9 @@ class MaRemotePlayer implements RemotePlayer {
   /// another player's, so it is whatever the last lookup answered, not
   /// [playerId].
   String _queueId = '';
+  Object? _queue;
+  Map? _player;
+  bool _usingPlayerMedia = false;
   Timer? _refreshDebounce;
 
   /// Whether this session has seen the queue actually play. An idle queue
@@ -173,27 +175,30 @@ class MaRemotePlayer implements RemotePlayer {
     unawaited(refresh());
   }
 
-  /// Ask for the player's active queue and republish from the answer.
+  /// Read the active queue and player metadata, including external sources.
   @override
   Future<void> refresh() async {
     final session = _session;
     if (session == null) return;
+    Object? queue;
     try {
-      final queue = await session.send('player_queues/get_active_queue', {
+      queue = await session.send('player_queues/get_active_queue', {
         'player_id': playerId,
       });
-      try {
-        final player = await session.send('players/get', {
-          'player_id': playerId,
-        });
-        _readVolume(player);
-      } catch (_) {
-        // The queue is the thing; a missing volume is a slider at rest.
-      }
-      publishQueue(queue);
     } catch (e) {
       log.warn(_name, '$label queue lookup failed: $e');
     }
+    try {
+      final player = await session.send('players/get', {'player_id': playerId});
+      if (player is Map) {
+        _player = player;
+        _readVolume(player);
+      }
+    } catch (e) {
+      log.warn(_name, '$label player lookup failed: $e');
+    }
+    if (_stopped || !identical(_session, session)) return;
+    publishQueue(queue);
   }
 
   void _readVolume(Object? player) {
@@ -242,7 +247,7 @@ class MaRemotePlayer implements RemotePlayer {
   @override
   Future<bool> setShuffle(bool on) async {
     final session = _session;
-    if (session == null || _queueId.isEmpty) return false;
+    if (session == null || !hasQueue || _queueId.isEmpty) return false;
     try {
       await session.send('player_queues/shuffle', {
         'queue_id': _queueId,
@@ -260,7 +265,7 @@ class MaRemotePlayer implements RemotePlayer {
   @override
   Future<bool> setRepeat(String mode) async {
     final session = _session;
-    if (session == null || _queueId.isEmpty) return false;
+    if (session == null || !hasQueue || _queueId.isEmpty) return false;
     try {
       await session.send('player_queues/repeat', {
         'queue_id': _queueId,
@@ -276,7 +281,7 @@ class MaRemotePlayer implements RemotePlayer {
   /// Music Assistant keeps a library the playing track can be marked a
   /// favorite in, for the local player and its own players alike.
   @override
-  bool get hasFavorites => true;
+  bool get hasFavorites => !_usingPlayerMedia;
 
   /// The manager marks the track through Music Assistant's own library;
   /// nothing to do here.
@@ -376,6 +381,9 @@ class MaRemotePlayer implements RemotePlayer {
     _socket = null;
     _session = null;
     _client = null;
+    _player = null;
+    _queue = null;
+    _queueId = '';
     try {
       await socket?.close();
     } catch (_) {}
@@ -389,7 +397,9 @@ class MaRemotePlayer implements RemotePlayer {
         // The event's payload is the full queue dict; no round trip.
         publishQueue(data);
       case 'queue_time_updated'
-          when objectId == _queueId && _queueId.isNotEmpty:
+          when objectId == _queueId &&
+              _queueId.isNotEmpty &&
+              !_usingPlayerMedia:
         final snap = _snapshot;
         final elapsed = data as num?;
         if (snap != null && elapsed != null) {
@@ -404,16 +414,19 @@ class MaRemotePlayer implements RemotePlayer {
           });
         }
       case 'player_updated' when objectId == playerId:
-        // Play, pause, a queue handoff into or out of a group — all land
-        // here. The queue answer is authoritative, so just look it up,
-        // debounced: one action fires a handful of these back to back.
-        // The volume rides the event itself and lands at once.
+        // External sources report track changes here without queue events.
+        // Publish their metadata now and refresh the queue for handoffs.
+        if (data is Map) _player = data;
         _readVolume(data);
-        final snap = _snapshot;
-        if (snap != null &&
-            ((_volume != null && snap['volume'] != _volume) ||
-                (_muted != null && snap['muted'] != _muted))) {
-          _emit({...snap, 'volume': ?_volume, 'muted': ?_muted});
+        if (_usingPlayerMedia || _hasExternalSource || _queue == null) {
+          _publishSnapshot();
+        } else {
+          final snap = _snapshot;
+          if (snap != null &&
+              ((_volume != null && snap['volume'] != _volume) ||
+                  (_muted != null && snap['muted'] != _muted))) {
+            _emit({...snap, 'volume': ?_volume, 'muted': ?_muted});
+          }
         }
         _refreshDebounce?.cancel();
         _refreshDebounce = Timer(
@@ -421,6 +434,9 @@ class MaRemotePlayer implements RemotePlayer {
           () => unawaited(refresh()),
         );
       case 'player_removed' when objectId == playerId:
+        _player = null;
+        _queue = null;
+        _queueId = '';
         _emit(null);
     }
   }
@@ -429,14 +445,23 @@ class MaRemotePlayer implements RemotePlayer {
   /// queue_updated event's payload, which are the same shape.
   @visibleForTesting
   void publishQueue(Object? queue) {
-    if (queue is Map) _queueId = '${queue['queue_id'] ?? ''}';
+    _queue = queue;
+    _queueId = queue is Map ? '${queue['queue_id'] ?? ''}' : '';
+    _publishSnapshot();
+  }
+
+  void _publishSnapshot() {
+    final queue = _queue;
     final snap = queueTrackSnapshot(
-      queue,
+      _hasExternalSource || (queue is Map && queue['active'] == false)
+          ? null
+          : queue,
       webBase: musicAssistantWebUrl(_api.baseUrl),
     );
+    _usingPlayerMedia = snap == null;
     queueEmpty = queue is Map && snap == null;
     if (snap == null) {
-      _emit(null);
+      _publishPlayerMedia();
       return;
     }
     final playing = snap['state'] == 'playing';
@@ -463,6 +488,81 @@ class MaRemotePlayer implements RemotePlayer {
       // A time the server just measured, in a queue dict or a time
       // event alike: what the local player's position follows.
       'timeFresh': true,
+    });
+  }
+
+  bool get _hasExternalSource {
+    final source = '${_player?['active_source'] ?? ''}';
+    // Group members and protocol players can report their own player id
+    // while get_active_queue resolves the leader's or parent's queue.
+    return source.isNotEmpty &&
+        source != _queueId &&
+        source != playerId &&
+        source != _player?['synced_to'] &&
+        source != _player?['active_group'];
+  }
+
+  num? get _playerPosition {
+    final media = _player?['current_media'];
+    final elapsed =
+        _player?['elapsed_time'] ??
+        (media is Map ? media['elapsed_time'] : null);
+    return elapsed is num ? elapsed : null;
+  }
+
+  void _publishPlayerMedia() {
+    final player = _player;
+    final media = player?['current_media'];
+    final state = player?['playback_state'] ?? player?['state'];
+    final title = media is Map ? '${media['title'] ?? ''}'.trim() : '';
+    if (player == null ||
+        player['available'] == false ||
+        media is! Map ||
+        title.isEmpty ||
+        (state != 'playing' && state != 'paused')) {
+      queueEmpty = player != null;
+      _emit(null);
+      return;
+    }
+    queueEmpty = false;
+    final playing = state == 'playing';
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final elapsed = _playerPosition;
+    final measuredAt = player['elapsed_time'] is num
+        ? player['elapsed_time_last_updated']
+        : media['elapsed_time_last_updated'];
+    var position = ((elapsed ?? 0) * 1000).round();
+    if (playing && elapsed != null && measuredAt is num) {
+      position += max(0, now - (measuredAt * 1000).round());
+    }
+    final duration = media['duration'];
+    final durationMs = duration is num ? (duration * 1000).round() : 0;
+    position = max(0, durationMs > 0 ? min(position, durationMs) : position);
+    Map? source;
+    if (player['source_list'] case final List sources) {
+      for (final item in sources) {
+        if (item is Map && item['id'] == player['active_source']) source = item;
+      }
+    }
+    _emit({
+      'title': title,
+      'artist': '${media['artist'] ?? ''}',
+      'album': '${media['album'] ?? ''}',
+      'artworkUrl': '${media['image_url'] ?? ''}',
+      'durationMs': durationMs,
+      'positionMs': position,
+      'receivedAt': now,
+      'playing': playing,
+      'supportedCommands': [
+        'stop',
+        if (source?['can_play_pause'] == true) ...['play', 'pause'],
+        if (source?['can_next_previous'] == true) ...['next', 'previous'],
+        if (source?['can_seek'] == true) 'seek',
+        if (_volume != null) 'volume',
+      ],
+      'volume': ?_volume,
+      'muted': ?_muted,
+      'timeFresh': elapsed != null,
     });
   }
 
