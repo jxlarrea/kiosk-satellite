@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.35 - 2026-09-09
 
 ### Added
 - **Choose which kiosk entities appear in Home Assistant.** The new **Excluded entities** row under Settings > ESPHome opens a searchable picker in the app and remote admin. Each entity shows its Home Assistant category and type. **Select all** and **Clear** make bulk changes easier. All available entities stay exposed unless excluded. Saving reconnects ESPHome to apply the list and exclusions persist across restarts.
