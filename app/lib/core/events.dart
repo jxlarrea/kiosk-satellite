@@ -806,3 +806,14 @@ class SettingChanged extends AppEvent {
   /// HA base URL.
   final Object? previous;
 }
+
+/// Internal plugin entity changes. These do not enter dashboard JavaScript.
+class PluginEntityCatalogChanged extends AppEvent {
+  const PluginEntityCatalogChanged();
+}
+
+class PluginEntityStateChanged extends AppEvent {
+  const PluginEntityStateChanged(this.objectId, this.value);
+  final String objectId;
+  final Map<String, Object?> value;
+}

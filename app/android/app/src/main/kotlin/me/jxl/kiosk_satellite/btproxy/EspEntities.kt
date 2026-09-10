@@ -116,6 +116,8 @@ internal sealed class EspEntity {
         override val icon: String = "",
         override val category: Int = 0,
         override val disabledByDefault: Boolean = false,
+        val colorCapable: Boolean = false,
+        val effects: List<String> = emptyList(),
     ) : EspEntity() {
         override val deviceClass: String get() = ""
     }
@@ -207,7 +209,7 @@ internal sealed class EspEntity {
                 "button" -> Button(objectId, name, s("icon"), s("deviceClass"),
                     i("category"), b("disabled"))
                 "light" -> Light(objectId, name, s("icon"), i("category"),
-                    b("disabled"))
+                    b("disabled"), b("colorCapable"), (m["effects"] as? List<*>)?.map { "$it" } ?: emptyList())
                 "text" -> Text(objectId, name, s("icon"), i("category"),
                     b("disabled"),
                     (m["maxLength"] as? kotlin.Number)?.toInt() ?: 255)
@@ -299,7 +301,9 @@ internal object EntityCodec {
                 // legacy field whenever the API version is 1.6+, so without
                 // this the light renders as bare on/off (issue #242).
                 // COLOR_MODE_BRIGHTNESS (3) carries the on/off bit too.
-                w.varint(12, 3)
+                if (entity.colorCapable) w.bool(6, true)
+                for (effect in entity.effects) w.string(11, effect)
+                w.varint(12, if (entity.colorCapable) 35 else 3)
                 w.bool(13, entity.disabledByDefault)
                 w.string(14, entity.icon)
                 w.varint(15, entity.category)
@@ -374,7 +378,14 @@ internal object EntityCodec {
                 // color_mode: matches the single mode the description
                 // advertises; a color-mode client shows the brightness
                 // slider only when the state claims the mode (issue #242).
-                w.varint(11, 3)
+                if (entity.colorCapable) {
+                    for ((field, key) in listOf(4 to "red", 5 to "green", 6 to "blue")) {
+                        (map[key] as? kotlin.Number)?.let { w.float(field, it.toFloat()) }
+                    }
+                    w.float(10, 1f)
+                    w.string(9, map["effect"] as? String ?: "None")
+                }
+                w.varint(11, if (entity.colorCapable) 35 else 3)
                 Msg.LIGHT_STATE_RESPONSE to w.toByteArray()
             }
             is EspEntity.Text -> {
@@ -416,6 +427,12 @@ internal object EntityCodec {
         var lightOn = false
         var hasBrightness = false
         var brightness = 0f
+        var hasRgb = false
+        var red = 0f
+        var green = 0f
+        var blue = 0f
+        var hasEffect = false
+        var effect = ""
         var updateCommand = 0
         val r = ProtoReader(payload)
         while (r.next()) when (type) {
@@ -425,6 +442,12 @@ internal object EntityCodec {
                 3 -> lightOn = r.asBool()
                 4 -> hasBrightness = r.asBool()
                 5 -> brightness = r.asFloat()
+                6 -> hasRgb = r.asBool()
+                7 -> red = r.asFloat()
+                8 -> green = r.asFloat()
+                9 -> blue = r.asFloat()
+                18 -> hasEffect = r.asBool()
+                19 -> effect = r.asString()
             }
             Msg.UPDATE_COMMAND_REQUEST -> when (r.field) {
                 1 -> key = r.asFixed32()
@@ -448,7 +471,11 @@ internal object EntityCodec {
             Msg.BUTTON_COMMAND_REQUEST -> Command(key, null)
             Msg.LIGHT_COMMAND_REQUEST -> Command(key, buildMap<String, Any> {
                 if (hasState) put("on", lightOn)
-                if (hasBrightness) put("brightness", brightness.toDouble())
+                if (hasBrightness && brightness.isFinite()) put("brightness", brightness.coerceIn(0f, 1f).toDouble())
+                if (hasRgb && red.isFinite() && green.isFinite() && blue.isFinite()) {
+                    put("red", red.coerceIn(0f, 1f).toDouble()); put("green", green.coerceIn(0f, 1f).toDouble()); put("blue", blue.coerceIn(0f, 1f).toDouble())
+                }
+                if (hasEffect) put("effect", effect)
             })
             Msg.UPDATE_COMMAND_REQUEST ->
                 Command(key, if (updateCommand == 1) "install" else "check")

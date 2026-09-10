@@ -183,13 +183,15 @@ class AioesphomeapiE2eTest {
             await cli.connect(login=True)
             entities, services = await cli.list_entities_services()
             by_obj = {e.object_id: e for e in entities}
-            expected = {"screen", "clock_background", "update", "snap", "shot"}
+            expected = {"screen", "plugin_led", "clock_background", "update", "snap", "shot"}
             assert set(by_obj) == expected, sorted(by_obj)
             assert type(by_obj["screen"]).__name__ == "LightInfo", by_obj
             # Modern clients ignore legacy_supports_brightness (issue #242):
             # the color-mode list is what makes the light dimmable.
             modes = list(by_obj["screen"].supported_color_modes)
             assert [int(m) for m in modes] == [3], modes  # BRIGHTNESS
+            assert [int(m) for m in by_obj["plugin_led"].supported_color_modes] == [35]
+            assert by_obj["plugin_led"].effects == ["None", "Pulse"]
             assert type(by_obj["snap"]).__name__ == "CameraInfo", by_obj
             assert type(by_obj["shot"]).__name__ == "CameraInfo", by_obj
             print("LIST_OK", flush=True)
@@ -229,6 +231,9 @@ class AioesphomeapiE2eTest {
             assert light is not None and light.state, light
             assert abs(light.brightness - 0.75) < 1e-3, light
             assert int(light.color_mode) == 3, light  # BRIGHTNESS
+            rgb = states[by_obj["plugin_led"].key]
+            assert int(rgb.color_mode) == 35 and rgb.effect == "Pulse", rgb
+            assert abs(rgb.red - 1.0) < 1e-3 and abs(rgb.green - 0.25) < 1e-3 and abs(rgb.blue - 0.5) < 1e-3, rgb
             update = states.get(by_obj["update"].key)
             assert update is not None, states
             assert update.current_version == "1.0.0", update
@@ -238,6 +243,7 @@ class AioesphomeapiE2eTest {
             print("STATES_OK", flush=True)
 
             cli.light_command(by_obj["screen"].key, state=True, brightness=0.5)
+            cli.light_command(by_obj["plugin_led"].key, state=True, brightness=0.5, rgb=(0.25, 0.5, 1.0), effect="Pulse")
             cli.text_command(by_obj["clock_background"].key, "sunset.jpg")
             await asyncio.sleep(0.5)
             print("COMMANDS_OK", flush=True)
@@ -316,6 +322,7 @@ class AioesphomeapiE2eTest {
         lateinit var server: ApiServer
         val hub = EntityHub(listOf(
             EspEntity.Light("screen", "Screen"),
+            EspEntity.Light("plugin_led", "Plugin LED", colorCapable = true, effects = listOf("None", "Pulse")),
             EspEntity.Text("clock_background", "Clock background"),
             EspEntity.Update("update", "Update", deviceClass = "firmware"),
             EspEntity.Camera("snap", "Snapshot"),
@@ -346,6 +353,7 @@ class AioesphomeapiE2eTest {
             reply(true, null, "{\"id\": 7}")
         })
         hub.updateState("screen", mapOf("on" to true, "brightness" to 0.75))
+        hub.updateState("plugin_led", mapOf("on" to true, "brightness" to 0.5, "red" to 1.0, "green" to 0.25, "blue" to 0.5, "effect" to "Pulse"))
         hub.updateState("clock_background", "kitchen.jpg")
         hub.updateState("update", mapOf(
             "current" to "1.0.0", "latest" to "1.1.0",
@@ -372,6 +380,7 @@ class AioesphomeapiE2eTest {
             // Light command decoded with its typed fields, text as string.
             val light = commands.firstOrNull { it.first == "screen" }?.second
             assertEquals(mapOf("on" to true, "brightness" to 0.5), light)
+            assertEquals(mapOf("on" to true, "brightness" to 0.5, "red" to 0.25, "green" to 0.5, "blue" to 1.0, "effect" to "Pulse"), commands.firstOrNull { it.first == "plugin_led" }?.second)
             assertEquals("sunset.jpg",
                 commands.firstOrNull { it.first == "clock_background" }?.second)
             assertEquals(

@@ -5,6 +5,7 @@ import org.json.JSONObject
 
 /** The SDK 1 package contract. Unknown capabilities never silently succeed. */
 class PluginManifest(val json: JSONObject) {
+    val apiVersion = json.getInt("apiVersion")
     val id: String = text(json, "id", 64).also {
         require(it.matches(Regex("[a-z][a-z0-9]*(?:-[a-z0-9]+)*"))) { "Invalid plugin ID" }
     }
@@ -24,9 +25,9 @@ class PluginManifest(val json: JSONObject) {
 
     init {
         require(json.getInt("schemaVersion") == 1) { "Unsupported manifest schema" }
-        require(json.getInt("apiVersion") == 1) { "This plugin needs a different SDK version" }
+        require(apiVersion in 1..2) { "This plugin needs a different SDK version" }
         require(minAndroidSdk >= 24) { "Minimum Android SDK must be at least 24" }
-        require(capabilities.all { it == "overlay" }) { "Unsupported plugin capability" }
+        require(capabilities.all { it == "overlay" || (apiVersion >= 2 && it in setOf("native", "entities")) }) { "Unsupported plugin capability" }
         text(json, "description", 1000)
         text(json, "author", 120)
         text(json, "license", 120)
@@ -37,6 +38,8 @@ class PluginManifest(val json: JSONObject) {
             val key = text(setting, "key", 64)
             require(key.matches(Regex("[a-zA-Z][a-zA-Z0-9_]*")) && keys.add(key)) { "Invalid or duplicate setting key" }
             text(setting, "title", 80)
+            if (setting.has("description")) text(setting, "description", 400)
+            if (setting.has("group")) text(setting, "group", 80)
             validateValue(setting, setting.get("default"))
         }
         val ids = mutableSetOf<String>()
@@ -66,6 +69,23 @@ class PluginManifest(val json: JSONObject) {
         when (setting.getString("type")) {
             "string" -> require(value is String && value.length <= 512) { "Text settings must be at most 512 characters" }
             "boolean" -> require(value is Boolean) { "Expected a boolean setting" }
+            "color" -> require(apiVersion >= 2 && value is String && value.matches(Regex("#[a-fA-F0-9]{6}"))) { "Expected an RGB hex color" }
+            "number" -> {
+                require(apiVersion >= 2 && value is Number) { "Expected a numeric setting" }
+                val min = setting.getDouble("min")
+                val max = setting.getDouble("max")
+                val step = setting.optDouble("step", 1.0)
+                val number = (value as Number).toDouble()
+                require(min.isFinite() && max.isFinite() && min < max && step.isFinite() && step > 0 &&
+                    (max - min) / step in 1.0..10000.0 && kotlin.math.abs((max - min) / step - kotlin.math.round((max - min) / step)) < 0.00001 && number.isFinite() && number in min..max) { "Numeric setting is outside its range" }
+                require(kotlin.math.abs((number - min) / step - kotlin.math.round((number - min) / step)) < 0.00001) { "Numeric setting does not match its step" }
+            }
+            "select" -> {
+                val options = setting.getJSONArray("options")
+                require(apiVersion >= 2 && options.length() in 1..32 && value is String) { "Invalid selection setting" }
+                val choices = (0 until options.length()).map { options.getString(it) }
+                require(choices.all { it.isNotBlank() && it.length <= 80 } && choices.toSet().size == choices.size && value in choices) { "Unknown selection option" }
+            }
             else -> throw IllegalArgumentException("Unsupported setting type")
         }
     }

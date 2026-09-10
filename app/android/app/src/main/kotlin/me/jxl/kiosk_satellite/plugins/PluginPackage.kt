@@ -19,6 +19,9 @@ object PluginPackage {
 
     private val allowed = setOf("kiosk-satellite-plugin.json", "plugin.jar", "LICENSE")
 
+    private val nativePath = Regex("native/(arm64-v8a|armeabi-v7a|x86_64)/lib[a-zA-Z0-9_]+\\.so")
+    fun nativeFiles(directory: File): List<File> = File(directory, "native").walkTopDown().filter { it.isFile }.toList()
+
     fun verifyManifest(actual: PluginManifest, expected: String) {
         val reviewed = PluginManifest(JSONObject(expected))
         require(jsonValue(actual.json) == jsonValue(reviewed.json)) {
@@ -36,8 +39,9 @@ object PluginPackage {
             ZipInputStream(ByteArrayInputStream(bytes)).use { zip ->
                 while (true) {
                     val entry = zip.nextEntry ?: break
-                    require(!entry.isDirectory && entry.name in allowed && seen.add(entry.name)) { "Unexpected or duplicate ZIP entry: ${entry.name}" }
+                    require(!entry.isDirectory && (entry.name in allowed || nativePath.matches(entry.name)) && seen.add(entry.name)) { "Unexpected or duplicate ZIP entry: ${entry.name}" }
                     val file = File(destination, entry.name)
+                    file.parentFile!!.mkdirs()
                     FileOutputStream(file).use { output ->
                         // Android 14 requires DEX containers to be read-only before writing.
                         check(file.setReadOnly()) { "Cannot protect plugin file" }
@@ -55,9 +59,20 @@ object PluginPackage {
                     }
                 }
             }
-            require(seen == allowed) { "Package needs kiosk-satellite-plugin.json, plugin.jar and LICENSE" }
+            require(seen.containsAll(allowed)) { "Package needs kiosk-satellite-plugin.json, plugin.jar and LICENSE" }
             validateDex(File(destination, "plugin.jar"))
-            return PluginManifest(JSONObject(File(destination, "kiosk-satellite-plugin.json").readText()))
+            val manifest = PluginManifest(JSONObject(File(destination, MANIFEST_NAME).readText()))
+            val native = nativeFiles(destination)
+            require(native.size <= 12 && (native.isEmpty() || (manifest.apiVersion >= 2 && "native" in manifest.capabilities))) { "Native libraries require SDK 2 and native capability" }
+            for (file in native) {
+                val header = file.readBytes().take(20).toByteArray()
+                require(header.size == 20 && header.take(4) == listOf<Byte>(127, 69, 76, 70) && header[5] == 1.toByte()) { "Invalid native ELF library" }
+                val abi = file.parentFile!!.name
+                val machine = (header[18].toInt() and 255) or ((header[19].toInt() and 255) shl 8)
+                require(machine == when (abi) { "arm64-v8a" -> 183; "armeabi-v7a" -> 40; else -> 62 } &&
+                    header[4].toInt() == if (abi == "armeabi-v7a") 1 else 2) { "Native library ABI does not match its directory" }
+            }
+            return manifest
         } catch (error: Throwable) {
             destination.deleteRecursively()
             throw error

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/plugins/plugin_manager.dart';
 import 'package:kiosk_satellite/ui/plugin_overlay.dart';
@@ -631,6 +632,130 @@ void main() {
       await tester.pumpAndSettle();
     },
   );
+  test(
+    'plugin lights publish namespaced catalogs and route commands',
+    () async {
+      var catalogs = 0;
+      final states = <PluginEntityStateChanged>[];
+      final catalogSub = bus.on<PluginEntityCatalogChanged>().listen(
+        (_) => catalogs++,
+      );
+      final stateSub = bus.on<PluginEntityStateChanged>().listen(states.add);
+      installed[0]['lights'] = [
+        {
+          'key': 'panel',
+          'name': 'Panel LED',
+          'effects': ['None', 'Pulse'],
+          'state': {
+            'on': true,
+            'brightness': 0.5,
+            'red': 1.0,
+            'green': 0.0,
+            'blue': 0.0,
+            'effect': 'None',
+          },
+        },
+      ];
+      await plugins.refresh();
+      await Future<void>.delayed(Duration.zero);
+      expect(catalogs, 1);
+      expect(states.single.objectId, 'plugin_hello_world__panel');
+      final catalog = await commands.execute('getPluginEntities', const {});
+      final entity = (catalog.data as List).single as Map;
+      expect(entity['colorCapable'], true);
+      await commands.execute('pluginEntityCommand', {
+        'objectId': entity['objectId'],
+        'value': {'on': false},
+      });
+      expect(calls.lastWhere((c) => c.method == 'entityCommand').arguments, {
+        'id': 'hello-world',
+        'key': 'panel',
+        'value': {'on': false},
+      });
+      final light = (installed[0]['lights'] as List).single as Map;
+      (light['state'] as Map)['brightness'] = 0.75;
+      await plugins.refresh();
+      await Future<void>.delayed(Duration.zero);
+      expect(catalogs, 1);
+      expect(states.last.value['brightness'], 0.75);
+      await plugins.setEnabled(false);
+      await Future<void>.delayed(Duration.zero);
+      expect(catalogs, 2);
+      expect(
+        (await commands.execute('getPluginEntities', const {})).data,
+        isEmpty,
+      );
+      await catalogSub.cancel();
+      await stateSub.cancel();
+    },
+  );
+  testWidgets('SDK 2 controls retain edits during runtime status updates', (
+    tester,
+  ) async {
+    installed[0]['settings'] = [
+      {
+        'key': 'brightness',
+        'title': 'Brightness',
+        'type': 'number',
+        'min': 0,
+        'max': 100,
+        'step': 1,
+        'default': 50,
+        'group': 'LED',
+      },
+      {
+        'key': 'effect',
+        'title': 'Effect',
+        'type': 'select',
+        'options': ['None', 'Pulse'],
+        'default': 'None',
+        'group': 'LED',
+      },
+      {
+        'key': 'color',
+        'title': 'Color',
+        'type': 'color',
+        'default': '#123456',
+        'group': 'LED',
+      },
+    ];
+    installed[0]['values'] = {
+      'brightness': 50,
+      'effect': 'None',
+      'color': '#123456',
+    };
+    await plugins.refresh();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PluginDetailPanel(plugins: plugins, id: 'hello-world'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('LED'), findsOneWidget);
+    tester.widget<Slider>(find.byType(Slider)).onChanged!(75);
+    await tester.pump();
+    installed[0]['status'] = 'Connected';
+    await plugins.refresh();
+    await tester.pumpAndSettle();
+    expect(tester.widget<Slider>(find.byType(Slider)).value, 75);
+    await tester.tap(find.text('None'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pulse').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Save settings'));
+    await tester.tap(find.text('Save settings'));
+    await tester.pumpAndSettle();
+    expect(
+      (calls.lastWhere((c) => c.method == 'configure').arguments
+          as Map)['values'],
+      {'brightness': 75.0, 'effect': 'Pulse', 'color': '#123456'},
+    );
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('settings save edited values and invoke declared commands', (
     tester,
   ) async {

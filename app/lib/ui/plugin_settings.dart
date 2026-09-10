@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 
@@ -8,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../managers/plugins/plugin_manager.dart';
 import 'kit.dart';
+import 'color_picker.dart';
 import 'toast.dart';
 
 const pluginIntro =
@@ -583,6 +585,10 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
           SettingsCard(
             children: [
               SettingsRow(title: Text('${plugin['description'] ?? ''}')),
+              if ('${plugin['status'] ?? ''}'.isNotEmpty)
+                plugin['statusError'] == true
+                    ? WarnRow('${plugin['status']}')
+                    : HintRow('${plugin['status']}'),
               if (!widget.plugins.enabled.value)
                 const HintRow('Enable Plugins to run this plugin.')
               else if (plugin['enabled'] != true)
@@ -636,12 +642,124 @@ class _PluginSettingsState extends State<_PluginSettings> {
   @override
   void didUpdateWidget(covariant _PluginSettings oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.plugin, widget.plugin)) _reset();
+    if (oldWidget.plugin['id'] != widget.plugin['id'] ||
+        jsonEncode(oldWidget.plugin['values']) !=
+            jsonEncode(widget.plugin['values'])) {
+      _reset();
+    }
   }
 
   void _reset() => _values = Map<String, Object?>.from(
     widget.plugin['values'] as Map? ?? const {},
   );
+  Widget _control(Map raw) {
+    final key = '${raw['key']}';
+    final value = _values[key] ?? raw['default'];
+    switch (raw['type']) {
+      case 'boolean':
+        return Switch(
+          value: value == true,
+          onChanged: widget.busy
+              ? null
+              : (v) => setState(() => _values[key] = v),
+        );
+      case 'number':
+        final min = (raw['min'] as num).toDouble();
+        final max = (raw['max'] as num).toDouble();
+        final step = (raw['step'] as num? ?? 1).toDouble();
+        return SizedBox(
+          width: 260,
+          child: Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  value: (value as num).toDouble().clamp(min, max),
+                  min: min,
+                  max: max,
+                  divisions: ((max - min) / step).round(),
+                  label: '$value ${raw['unit'] ?? ''}',
+                  onChanged: widget.busy
+                      ? null
+                      : (v) => setState(
+                          () => _values[key] = double.parse(
+                            (min + ((v - min) / step).round() * step)
+                                .toStringAsFixed(6),
+                          ),
+                        ),
+                ),
+              ),
+              Text('$value ${raw['unit'] ?? ''}'.trim()),
+            ],
+          ),
+        );
+      case 'select':
+        return SizedBox(
+          width: 220,
+          child: DropdownButtonFormField<String>(
+            key: ValueKey('$key-$value'),
+            initialValue: '$value',
+            isExpanded: true,
+            items: [
+              for (final option in raw['options'] as List)
+                DropdownMenuItem(value: '$option', child: Text('$option')),
+            ],
+            onChanged: widget.busy
+                ? null
+                : (v) => setState(() => _values[key] = v),
+          ),
+        );
+      case 'color':
+        final hex = '$value';
+        final color = Color(
+          0xff000000 | int.parse(hex.substring(1), radix: 16),
+        );
+        return IconButton(
+          tooltip: '${raw['title']}',
+          icon: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+            ),
+          ),
+          onPressed: widget.busy
+              ? null
+              : () async {
+                  final rgb = [1, 3, 5]
+                      .map((i) => int.parse(hex.substring(i, i + 2), radix: 16))
+                      .join(',');
+                  final selected = await pickColor(
+                    context,
+                    initial: rgb,
+                    title: '${raw['title']}',
+                  );
+                  if (selected != null && mounted) {
+                    setState(
+                      () => _values[key] =
+                          '#${selected.split(',').map((c) => int.parse(c.trim()).toRadixString(16).padLeft(2, '0')).join().toUpperCase()}',
+                    );
+                  }
+                },
+        );
+      default:
+        return SizedBox(
+          width: 220,
+          child: TextFormField(
+            key: ValueKey(
+              '${widget.plugin['id']}-$key-${(widget.plugin['values'] as Map?)?[key]}',
+            ),
+            initialValue: '$value',
+            enabled: !widget.busy,
+            maxLength: 512,
+            decoration: const InputDecoration(counterText: '', isDense: true),
+            onChanged: (v) => _values[key] = v,
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final plugin = widget.plugin;
@@ -653,41 +771,29 @@ class _PluginSettingsState extends State<_PluginSettings> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (settings.isNotEmpty) ...[
-          const SectionHeading('Settings'),
+          for (final group
+              in settings
+                  .map((raw) => '${(raw as Map)['group'] ?? 'Settings'}')
+                  .toSet()) ...[
+            SectionHeading(group),
+            SettingsCard(
+              children: [
+                for (final raw in settings.where(
+                  (raw) => '${(raw as Map)['group'] ?? 'Settings'}' == group,
+                ))
+                  SettingsRow(
+                    title: Text('${(raw as Map)['title']}'),
+                    subtitle: raw['description'] == null
+                        ? null
+                        : Text('${raw['description']}'),
+                    stack: raw['type'] != 'boolean' && raw['type'] != 'color',
+                    trailing: _control(raw),
+                  ),
+              ],
+            ),
+          ],
           SettingsCard(
             children: [
-              for (final raw in settings)
-                SettingsRow(
-                  title: Text('${(raw as Map)['title']}'),
-                  stack: raw['type'] != 'boolean',
-                  trailing: raw['type'] == 'boolean'
-                      ? Switch(
-                          value: _values[raw['key']] == true,
-                          onChanged: widget.busy
-                              ? null
-                              : (value) => setState(
-                                  () => _values['${raw['key']}'] = value,
-                                ),
-                        )
-                      : SizedBox(
-                          width: 220,
-                          child: TextFormField(
-                            key: ValueKey(
-                              '$id-${raw['key']}-${(plugin['values'] as Map?)?[raw['key']]}',
-                            ),
-                            initialValue:
-                                '${_values[raw['key']] ?? raw['default'] ?? ''}',
-                            enabled: !widget.busy,
-                            maxLength: 512,
-                            decoration: const InputDecoration(
-                              counterText: '',
-                              isDense: true,
-                            ),
-                            onChanged: (value) =>
-                                _values['${raw['key']}'] = value,
-                          ),
-                        ),
-                ),
               SettingsRow(
                 title: const Text('Save changes'),
                 trailing: TextButton.icon(

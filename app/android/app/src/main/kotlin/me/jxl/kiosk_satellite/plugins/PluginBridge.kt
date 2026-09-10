@@ -34,7 +34,24 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private val restartRequired = mutableSetOf<String>()
     private var initialized = false
 
-    private inner class Session(val id: String, val manifest: PluginManifest) {
+    private inner class Session(val id: String, val manifest: PluginManifest, val packageDir: File) {
+        val nativeDir = File(root, ".runtime-${UUID.randomUUID()}")
+        var status = ""
+        var statusError = false
+        val lights = linkedMapOf<String, Map<String, Any?>>()
+        init {
+            if ("native" in manifest.capabilities) {
+                val abis = if (android.os.Process.is64Bit()) Build.SUPPORTED_64_BIT_ABIS else Build.SUPPORTED_32_BIT_ABIS
+                val source = abis.map { File(packageDir, "native/$it") }.firstOrNull { it.isDirectory }
+                    ?: throw IllegalArgumentException("Plugin has no native library for this device ABI")
+                check(nativeDir.mkdirs())
+                source.listFiles()?.forEach { file ->
+                    val target = File(nativeDir, file.name)
+                    file.copyTo(target)
+                    check(target.setReadOnly())
+                }
+            }
+        }
         val alive = AtomicBoolean(true)
         val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "plugin-$id").apply { isDaemon = true } }
         var plugin: KioskPlugin? = null
@@ -46,6 +63,44 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             }
             override fun hideWindow() = emit("hideWindow", mapOf("id" to id), alive)
             override fun log(message: String) = emit("log", mapOf("id" to id, "message" to message.take(1000)), alive)
+            override fun nativeLibraryPath(name: String): String {
+                check(alive.get() && "native" in manifest.capabilities)
+                require(name.matches(Regex("[a-zA-Z0-9_]+")))
+                return File(nativeDir, "lib$name.so").also { require(it.isFile) { "Native library is not packaged" } }.absolutePath
+            }
+            override fun packagePath(): String {
+                check(alive.get() && "native" in manifest.capabilities)
+                return File(packageDir, "plugin.jar").absolutePath
+            }
+            override fun status(message: String, error: Boolean) {
+                require(message.length <= 1000)
+                worker.execute { if (alive.get()) {
+                    status = message; statusError = error
+                    emit("changed", snapshot())
+                } }
+            }
+            override fun saveSettings(values: Map<String, Any>) {
+                val config = manifest.config(JSONObject(values))
+                worker.execute { if (alive.get()) {
+                    records.getJSONObject(id).put("config", JSONObject(config)); save()
+                    emit("changed", snapshot())
+                } }
+            }
+            override fun publishLight(key: String, name: String, effects: Array<String>, state: Map<String, Any>) {
+                require("entities" in manifest.capabilities)
+                require(key.matches(Regex("[a-z][a-z0-9_]{0,39}")) && name.length in 1..80)
+                require(effects.size <= 24 && effects.all { it.length in 1..80 } && effects.toSet().size == effects.size)
+                val normalized = PluginLightState.validate(state, effects.toList())
+                val light = mapOf("key" to key, "name" to name, "effects" to effects.toList(), "state" to normalized)
+                worker.execute { if (alive.get()) {
+                    if (lights.size < 4 || lights.containsKey(key)) {
+                        lights[key] = light; emit("changed", snapshot())
+                    }
+                } }
+            }
+            override fun removeLight(key: String) {
+                worker.execute { if (alive.get() && lights.remove(key) != null) emit("changed", snapshot()) }
+            }
         }
         fun <T> call(action: () -> T): T {
             val future = executor.submit(Callable { action() })
@@ -90,6 +145,15 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                         "remove" -> { remove(id(args)); snapshot() }
                         "configure" -> { configure(id(args), args); snapshot() }
                         "execute" -> { execute(id(args), args); snapshot() }
+                        "entityCommand" -> {
+                            val session = sessions[id(args)] ?: throw IllegalStateException("Enable the plugin first")
+                            val key = args["key"] as? String ?: throw IllegalArgumentException("Missing light key")
+                            require(session.lights.containsKey(key)) { "Plugin light is not available" }
+                            val value = (args["value"] as? Map<String, Any?>) ?: emptyMap()
+                            try { session.call { session.plugin!!.onEvent("light.$key", value) } }
+                            catch (error: Throwable) { fail(session.id, error); throw error }
+                            snapshot()
+                        }
                         "windowEvent" -> { windowEvent(id(args), args); null }
                         "stopAll" -> {
                             sessions.keys.toList().forEach { id ->
@@ -139,6 +203,9 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 .put("loaded", id in loadedIds)
                 .put("sha256", record.getString("hash"))
                 .put("source", record.optJSONObject("source"))
+                .put("status", sessions[id]?.status ?: "")
+                .put("statusError", sessions[id]?.statusError ?: false)
+                .put("lights", org.json.JSONArray(sessions[id]?.lights?.values?.toList() ?: emptyList<Any>()))
                 .put("values", record.optJSONObject("config") ?: JSONObject())
                 .put("error", record.optString("error"))
             jsonValue(value)
@@ -250,8 +317,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 require(previous?.optString("hash") != hash) { "This package is already installed" }
                 if (reuse) {
                     // Never rewrite files that a class loader may still reference.
-                    for (file in staging.listFiles() ?: emptyArray()) {
-                        require(File(target, file.name).readBytes().contentEquals(file.readBytes())) {
+                    for (file in staging.walkTopDown().filter { it.isFile }) {
+                        require(File(target, file.relativeTo(staging).path).readBytes().contentEquals(file.readBytes())) {
                             "Previously loaded package failed its integrity check. Restart Kiosk Satellite before reinstalling it."
                         }
                     }
@@ -266,6 +333,9 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 .put("config", JSONObject(config)).put("error", "").put("source", source)
                 .put("jarSha256", PluginPackage.sha256(File(target, "plugin.jar").readBytes()))
                 .put("manifestSha256", PluginPackage.sha256(File(target, PluginPackage.MANIFEST_NAME).readBytes()))
+            val nativeDigests = JSONObject()
+            for (file in PluginPackage.nativeFiles(target)) nativeDigests.put(file.relativeTo(target).invariantSeparatorsPath, PluginPackage.sha256(file.readBytes()))
+            record.put("nativeSha256", nativeDigests)
             var committed = false
             try {
                 // Validate and prepare the replacement before interrupting the active plugin.
@@ -328,14 +398,18 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             require(manifest.minAndroidSdk <= Build.VERSION.SDK_INT) { "Android version is too old" }
             val config = manifest.config(record.optJSONObject("config") ?: JSONObject())
             check(jar.setReadOnly())
-            val current = Session(id, manifest)
+            val digests = record.optJSONObject("nativeSha256") ?: JSONObject()
+            val nativeFiles = PluginPackage.nativeFiles(dir)
+            require(nativeFiles.size == digests.length()) { "Installed native libraries failed their integrity check" }
+            for (file in nativeFiles) require(PluginPackage.sha256(file.readBytes()) == digests.getString(file.relativeTo(dir).invariantSeparatorsPath)) { "Installed native library failed its integrity check" }
+            val current = Session(id, manifest, dir)
             session = current
             sessions[id] = current
             loadedIds.add(id)
             loadedHashes.add(record.getString("hash"))
             current.call {
                 val optimized = File(context.codeCacheDir, "plugins/${record.getString("hash")}").apply { mkdirs() }
-                val loader = DexClassLoader(jar.absolutePath, optimized.absolutePath, null, KioskPlugin::class.java.classLoader)
+                val loader = DexClassLoader(jar.absolutePath, optimized.absolutePath, current.nativeDir.absolutePath, KioskPlugin::class.java.classLoader)
                 val plugin = loader.loadClass(manifest.entryClass).getDeclaredConstructor().newInstance() as KioskPlugin
                 current.plugin = plugin
                 plugin.start(current.host, Collections.unmodifiableMap(config))

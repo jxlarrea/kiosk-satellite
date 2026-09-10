@@ -912,6 +912,17 @@ class EspEntitySurface {
         type: 'text_sensor',
       ),
     ];
+    final pluginEntities = await commands.execute(
+      'getPluginEntities',
+      const {},
+    );
+    if (pluginEntities.ok && pluginEntities.data is List) {
+      catalog.addAll(
+        (pluginEntities.data as List).whereType<Map>().map(
+          (e) => Map<String, Object?>.from(e),
+        ),
+      );
+    }
     if (includeExcluded) return catalog;
     final excluded = defs.decodeEspHomeExcludedEntities(
       _settings.get(defs.esphomeExcludedEntities),
@@ -1091,6 +1102,16 @@ class EspEntitySurface {
   ) {
     _push = push;
     _pushImage = pushImage;
+    _subs.add(
+      bus.on<PluginEntityCatalogChanged>().listen(
+        (_) => onCatalogChanged?.call(),
+      ),
+    );
+    _subs.add(
+      bus.on<PluginEntityStateChanged>().listen(
+        (e) => _send(e.objectId, e.value),
+      ),
+    );
     // Every attach faces a fresh native hub with no values: the anchors
     // must go out again even when they did not move, or the uptime
     // sensors sit on "unknown" until the app itself restarts.
@@ -1288,6 +1309,13 @@ class EspEntitySurface {
   /// so HA sees the real outcome, not an optimistic assumption.
   Future<void> handleCommand(String objectId, Object? value) async {
     if (_isExcluded(objectId)) return;
+    if (objectId.startsWith('plugin_')) {
+      await commands.execute('pluginEntityCommand', {
+        'objectId': objectId,
+        'value': value,
+      });
+      return;
+    }
     // Logged under its own source, so a setting flipped from Home
     // Assistant reads as such in the log instead of looking like the app's
     // own doing.
@@ -1578,6 +1606,15 @@ class EspEntitySurface {
   }
 
   Future<void> _sendInitial() async {
+    final pluginEntities = await commands.execute(
+      'getPluginEntities',
+      const {},
+    );
+    if (pluginEntities.ok && pluginEntities.data is List) {
+      for (final entity in (pluginEntities.data as List).whereType<Map>()) {
+        await _send('${entity['objectId']}', entity['state']);
+      }
+    }
     await _refresh();
     await _sendScreen();
     await _sendPanelBrightness();

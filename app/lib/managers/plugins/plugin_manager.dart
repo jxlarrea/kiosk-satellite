@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/manager.dart';
+import '../../core/events.dart';
 import 'plugin_repository.dart';
 
 class PluginWindow {
@@ -32,6 +33,7 @@ class PluginManager extends Manager {
   }) : repository = repository ?? PluginRepository();
 
   final PluginRepository repository;
+  List<Map<String, Object?>> _entities = [];
   static const maxZipBytes = PluginRepository.maxPackageBytes;
 
   static const channel = MethodChannel('kiosk_satellite/plugins');
@@ -99,6 +101,28 @@ class PluginManager extends Manager {
       );
     }
 
+    register(
+      'getPluginEntities',
+      'Read active plugin entities.',
+      (_) async => _entities,
+      const {},
+    );
+    register(
+      'pluginEntityCommand',
+      'Send a command to an active plugin entity.',
+      (p) async {
+        final entity = _entities
+            .where((e) => e['objectId'] == p['objectId'])
+            .firstOrNull;
+        if (entity == null) throw StateError('Plugin entity is not available');
+        return update('entityCommand', {
+          'id': entity['pluginId'],
+          'key': entity['key'],
+          'value': p['value'],
+        });
+      },
+      const {'objectId': 'Plugin entity object ID', 'value': 'Light command'},
+    );
     register(
       'listPlugins',
       'List installed plugins and their settings.',
@@ -314,6 +338,44 @@ class PluginManager extends Manager {
     installed.value = [
       for (final item in value) Map<String, Object?>.from(item as Map),
     ];
+    final nextEntities = <Map<String, Object?>>[
+      for (final plugin in installed.value)
+        if (enabled.value && plugin['running'] == true)
+          for (final light
+              in (plugin['lights'] as List? ?? const []).whereType<Map>())
+            {
+              'objectId':
+                  'plugin_${plugin['id'].toString().replaceAll('-', '_')}__${light['key']}',
+              'pluginId': plugin['id'],
+              'key': light['key'],
+              'name': light['name'],
+              'type': 'light',
+              'icon': 'mdi:led-on',
+              'colorCapable': true,
+              'effects': light['effects'],
+              'state': light['state'],
+            },
+    ];
+    List<Map<String, Object?>> catalog(List<Map<String, Object?>> entries) => [
+      for (final entry in entries) {...entry}..remove('state'),
+    ];
+    if (jsonEncode(catalog(nextEntities)) != jsonEncode(catalog(_entities))) {
+      bus.publish(const PluginEntityCatalogChanged());
+    }
+    for (final entity in nextEntities) {
+      final previous = _entities
+          .where((e) => e['objectId'] == entity['objectId'])
+          .firstOrNull;
+      if (jsonEncode(previous?['state']) != jsonEncode(entity['state'])) {
+        bus.publish(
+          PluginEntityStateChanged(
+            entity['objectId'] as String,
+            Map<String, Object?>.from(entity['state'] as Map),
+          ),
+        );
+      }
+    }
+    _entities = nextEntities;
     final running = installed.value
         .where((p) => p['running'] == true)
         .map((p) => p['id'])

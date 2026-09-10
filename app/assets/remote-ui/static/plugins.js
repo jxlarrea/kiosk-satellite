@@ -1,6 +1,6 @@
 import { cmd } from './core.js';
 import { currentPath, showTab, subpageEntry } from './tabs.js';
-import { hintRow, messageBox, modalShell, showToast } from './widgets.js';
+import { hintRow, messageBox, modalShell, showToast, swatch } from './widgets.js';
 import { marked } from './vendor-marked.js';
 import DOMPurify from './vendor-purify.js';
 
@@ -271,20 +271,45 @@ function render(root, state) {
     const introRow = element('div', undefined, 'row');
     introRow.append(info(plugin.description || ''));
     description.append(introRow);
+    if (plugin.status) description.append(hintRow(plugin.status, { warn: plugin.statusError === true }));
     if (plugin.error) description.append(hintRow(plugin.error, { warn: true }));
     if (!pluginsEnabled) description.append(hintRow('Enable Plugins to run this plugin.'));
     else if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to use its actions.'));
     page.append(description);
-    const panel = element('div', undefined, 'card');
+    const groups = new Map();
     const values = { ...plugin.values };
     for (const setting of plugin.settings || []) {
+      const group = setting.group || 'Settings';
+      if (!groups.has(group)) {
+        const panel = element('div', undefined, 'card'); groups.set(group, panel);
+        page.append(heading(group), panel);
+      }
+      const panel = groups.get(group);
       const settingRow = element('div', undefined, 'row');
-      settingRow.append(info(setting.title));
+      settingRow.append(info(setting.title, setting.description));
       const input = element('input'); input.setAttribute('aria-label', setting.title);
       if (setting.type === 'boolean') {
         input.type = 'checkbox'; input.checked = values[setting.key] ?? setting.default;
         input.onchange = () => { values[setting.key] = input.checked; };
         const toggle = element('label', undefined, 'switch'); toggle.append(input, element('span', undefined, 'slider')); settingRow.append(toggle);
+      } else if (setting.type === 'number') {
+        input.type = 'range'; input.min = setting.min; input.max = setting.max; input.step = setting.step || 1;
+        input.value = values[setting.key] ?? setting.default;
+        const control = element('div', undefined, 'plugin-range');
+        const output = element('span', `${input.value} ${setting.unit || ''}`.trim(), 'desc');
+        input.oninput = () => { values[setting.key] = Number(input.value); output.textContent = `${input.value} ${setting.unit || ''}`.trim(); };
+        control.append(input, output); settingRow.append(control);
+      } else if (setting.type === 'select') {
+        const select = element('select'); select.setAttribute('aria-label', setting.title);
+        for (const choice of setting.options) { const option = element('option', choice); option.value = choice; select.append(option); }
+        select.value = values[setting.key] ?? setting.default;
+        select.onchange = () => { values[setting.key] = select.value; }; settingRow.append(select);
+      } else if (setting.type === 'color') {
+        const hex = values[setting.key] ?? setting.default;
+        const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',');
+        settingRow.append(swatch(rgb, setting.title, (selected) => {
+          values[setting.key] = '#' + selected.split(',').map((c) => Number(c).toString(16).padStart(2, '0')).join('').toUpperCase();
+        }));
       } else {
         input.type = 'text'; input.maxLength = 512; input.value = values[setting.key] ?? setting.default;
         input.oninput = () => { values[setting.key] = input.value; }; settingRow.append(input);
@@ -295,7 +320,7 @@ function render(root, state) {
       const saveRow = element('div', undefined, 'row'); saveRow.append(info('Save changes'));
       const save = element('button', 'Save settings', 'btn-text');
       save.onclick = () => update('configurePlugin', { id: plugin.id, values }, save);
-      saveRow.append(save); panel.append(saveRow); page.append(heading('Settings'), panel);
+      saveRow.append(save); const savePanel = element('div', undefined, 'card'); savePanel.append(saveRow); page.append(savePanel);
     }
     if (plugin.commands?.length) {
       const actions = element('div', undefined, 'card');

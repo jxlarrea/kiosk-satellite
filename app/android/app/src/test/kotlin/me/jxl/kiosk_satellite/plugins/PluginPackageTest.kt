@@ -97,7 +97,7 @@ class PluginPackageTest {
         assertFalse(dir.exists())
     }
     @Test fun unsupportedApiAndCapabilitiesAreRejected() {
-        rejects { PluginManifest(manifest().put("apiVersion", 2)) }
+        rejects { PluginManifest(manifest().put("apiVersion", 3)) }
         rejects { PluginManifest(manifest().put("capabilities", org.json.JSONArray("[\"root\"]"))) }
         rejects { PluginManifest(manifest().put("id", "../../host")) }
     }
@@ -116,6 +116,35 @@ class PluginPackageTest {
         val commands = manifest()
         commands.getJSONArray("commands").put(commands.getJSONArray("commands").getJSONObject(0))
         rejects { PluginManifest(commands) }
+    }
+    @Test fun sdkTwoValidatesRichSettingsAndNativePackages() = inTemp { dir ->
+        val metadata = manifest().put("apiVersion", 2).put("capabilities", org.json.JSONArray("[\"native\",\"entities\"]"))
+        metadata.put("settings", org.json.JSONArray("""[
+          {"key":"brightness","title":"Brightness","type":"number","min":0,"max":100,"step":1,"default":50},
+          {"key":"color","title":"Color","type":"color","default":"#123456"},
+          {"key":"effect","title":"Effect","type":"select","options":["None","Pulse"],"default":"None"}
+        ]"""))
+        val model = PluginManifest(metadata)
+        rejects { model.config(JSONObject().put("brightness", 101)) }
+        rejects { model.config(JSONObject().put("brightness", 0.5)) }
+        rejects { model.config(JSONObject().put("brightness", "50")) }
+        rejects { model.config(JSONObject().put("color", "red")) }
+        rejects { model.config(JSONObject().put("effect", "Other")) }
+        val elf = ByteArray(20)
+        byteArrayOf(127,69,76,70,2,1).copyInto(elf); elf[18] = 183.toByte()
+        val bytes = zip(
+            "kiosk-satellite-plugin.json" to metadata.toString().toByteArray(),
+            "plugin.jar" to zip("classes.dex" to "dex\n035\u0000test".toByteArray()),
+            "LICENSE" to "Apache-2.0".toByteArray(), "native/arm64-v8a/libtest.so" to elf)
+        assertEquals(2, PluginPackage.extract(bytes, dir).apiVersion)
+        assertEquals(1, PluginPackage.nativeFiles(dir).size)
+    }
+    @Test fun rgbStateRejectsUnknownOrInvalidFields() {
+        val state = mapOf<String, Any>("on" to true, "brightness" to 0.5, "red" to 1.0, "green" to 0.0, "blue" to 0.2, "effect" to "Pulse")
+        assertEquals(state, PluginLightState.validate(state, listOf("Pulse")))
+        rejects { PluginLightState.validate(state + ("red" to Double.NaN), listOf("Pulse")) }
+        rejects { PluginLightState.validate(state + ("effect" to "Missing"), listOf("Pulse")) }
+        rejects { PluginLightState.validate(state + ("other" to 1), listOf("Pulse")) }
     }
     @Test fun digestMatchesKnownVector() {
         assertEquals("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", PluginPackage.sha256("abc".toByteArray()))
