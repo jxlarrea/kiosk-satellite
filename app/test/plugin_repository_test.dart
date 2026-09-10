@@ -7,6 +7,43 @@ import 'package:http/testing.dart';
 import 'package:kiosk_satellite/managers/plugins/plugin_repository.dart';
 
 void main() {
+  test(
+    'update checks compare versions and package digests without offering downgrades',
+    () {
+      final installed = {'id': 'hello', 'version': '1.9.0', 'sha256': 'old'};
+      Map preview(String version, [String hash = 'new', String id = 'hello']) =>
+          {
+            'manifest': {'id': id, 'version': version},
+            'sha256': hash,
+          };
+      expect(PluginRepository.hasUpdate(preview('1.10.0'), installed), isTrue);
+      expect(PluginRepository.hasUpdate(preview('1.8.0'), installed), isFalse);
+      expect(
+        PluginRepository.hasUpdate(preview('1.9.0', 'old'), installed),
+        isFalse,
+      );
+      expect(PluginRepository.hasUpdate(preview('1.9.0'), installed), isTrue);
+      expect(
+        () => PluginRepository.hasUpdate(
+          preview('2.0.0', 'new', 'other'),
+          installed,
+        ),
+        throwsFormatException,
+      );
+      expect(
+        PluginRepository.compareVersions('1.0.0', '1.0.0-rc.1'),
+        greaterThan(0),
+      );
+      expect(
+        PluginRepository.compareVersions('1.0.0-rc.10', '1.0.0-rc.2'),
+        greaterThan(0),
+      );
+      expect(
+        PluginRepository.compareVersions('1.0.0-alpha', '1.0.0-beta'),
+        lessThan(0),
+      );
+    },
+  );
   const url = 'https://github.com/example/hello';
   final ref = 'a' * 40;
   final bytes = utf8.encode('test package bytes');

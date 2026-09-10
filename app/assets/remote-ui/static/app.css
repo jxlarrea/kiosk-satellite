@@ -1121,8 +1121,11 @@
 .plugin-readme pre { overflow-x: auto; padding: 12px; background: var(--bg); }
 .plugin-readme table { display: block; overflow-x: auto; border-collapse: collapse; }
 .plugin-readme th, .plugin-readme td { padding: 8px; border: 1px solid var(--border); }
-#tab-plugins .subpage-entry { flex-wrap: wrap; }
-#tab-plugins .subpage-entry .info { min-width: 120px; }
+#tab-plugins .subpage-entry { flex-wrap: nowrap; gap: 8px; }
+#tab-plugins .subpage-entry .info { display: block; flex: 1; min-width: 0; margin-left: 4px; }
+#tab-plugins .subpage-entry .info .desc { margin-left: 0; }
+#tab-plugins .subpage-entry .icon-btn { flex-shrink: 0; }
+#tab-plugins .subpage-entry .switch { flex-shrink: 0; }
 
 .plugin-add-row { cursor: pointer; }
 .plugin-install-warning { padding-top: 12px; padding-bottom: 16px; }

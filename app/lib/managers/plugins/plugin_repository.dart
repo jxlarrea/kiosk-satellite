@@ -13,6 +13,52 @@ class PluginRepository {
   final _previews = <String, _Preview>{};
   static const maxPackageBytes = 4 * 1024 * 1024;
 
+  static bool hasUpdate(Map preview, Map installed) {
+    final manifest = preview['manifest'] as Map;
+    if (manifest['id'] != installed['id']) {
+      throw const FormatException(
+        'The repository release belongs to a different plugin.',
+      );
+    }
+    final comparison = compareVersions(
+      '${manifest['version']}',
+      '${installed['version']}',
+    );
+    return comparison > 0 ||
+        (comparison == 0 && preview['sha256'] != installed['sha256']);
+  }
+
+  static int compareVersions(String a, String b) {
+    final first = a.split('-');
+    final second = b.split('-');
+    final coreA = first.first.split('.');
+    final coreB = second.first.split('.');
+    for (var i = 0; i < 3; i++) {
+      final comparison = BigInt.parse(
+        coreA[i],
+      ).compareTo(BigInt.parse(coreB[i]));
+      if (comparison != 0) return comparison;
+    }
+    if (first.length == 1 || second.length == 1) {
+      return (first.length == 1 ? 1 : 0) - (second.length == 1 ? 1 : 0);
+    }
+    final preA = first.skip(1).join('-').split('.');
+    final preB = second.skip(1).join('-').split('.');
+    for (var i = 0; i < preA.length && i < preB.length; i++) {
+      final numberA = BigInt.tryParse(preA[i]);
+      final numberB = BigInt.tryParse(preB[i]);
+      final comparison = numberA != null && numberB != null
+          ? numberA.compareTo(numberB)
+          : numberA != null
+          ? -1
+          : numberB != null
+          ? 1
+          : preA[i].compareTo(preB[i]);
+      if (comparison != 0) return comparison;
+    }
+    return preA.length.compareTo(preB.length);
+  }
+
   static Uri repositoryUrl(String input) {
     final uri = Uri.tryParse(input.trim());
     if (uri == null ||

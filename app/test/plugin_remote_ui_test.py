@@ -34,6 +34,7 @@ installed = [copy.deepcopy(plugin)]
 requests = []
 compatible = True
 plugins_enabled = True
+update_available = False
 held = []
 delay_preview = False
 delay_zip = False
@@ -72,9 +73,12 @@ def api(route):
         if delay_zip:
             held.append((route, result))
             return
+    elif name == 'checkPluginUpdate':
+        assert params == {'id': 'hello-world'}
+        result = {**preview, 'installedVersion': installed[0]['version'], 'updateAvailable': update_available, 'compatible': compatible, 'compatibilityError': 'Unsupported SDK' if not compatible else ''}
     elif name == 'installPluginRepository':
         assert params == {'previewId': 'reviewed-token', 'trusted': True}
-        installed = [{**copy.deepcopy(plugin), 'enabled': False, 'source': preview}]
+        installed = [{**copy.deepcopy(plugin), 'enabled': installed[0]['enabled'] if installed else False, 'source': preview}]
         result = installed
     else:
         if name in ('enablePlugin', 'disablePlugin'):
@@ -213,13 +217,51 @@ try:
         open_preview()
         modal.get_by_role('button', name='Trust and install').click()
         expect(row.get_by_role('checkbox')).not_to_be_checked()
+        check = row.get_by_role('button', name='Check for updates for Hello World')
+        check.click()
+        expect(page.get_by_text('No updates available.', exact=True)).to_be_visible()
+        assert page.url.endswith('#plugins')
+        update_available = True
+        installs_before = sum(name == 'installPluginRepository' for name, _ in requests)
+        check.click()
+        expect(modal.get_by_text('Installed version', exact=True)).to_be_visible()
+        modal.get_by_role('button', name='Cancel', exact=True).click()
+        assert sum(name == 'installPluginRepository' for name, _ in requests) == installs_before
+        compatible = False
+        check.click()
+        expect(modal.get_by_role('button', name='Trust and update')).to_be_disabled()
+        modal.get_by_role('button', name='Cancel', exact=True).click()
+        compatible = True
+        row.locator('label.switch').click()
+        expect(row.get_by_role('checkbox')).to_be_checked()
+        check.click()
+        modal.get_by_role('button', name='Trust and update').click()
+        expect(row.get_by_role('checkbox')).to_be_checked()
+        assert sum(name == 'installPluginRepository' for name, _ in requests) == installs_before + 1
+        assert row.locator(':scope > :first-child').get_attribute('class') == 'switch'
+        row.get_by_role('button', name='About Hello World').click()
+        expect(modal.get_by_role('heading', name='Reviewed README')).to_be_visible()
+        assert page.url.endswith('#plugins'), 'Info opened the plugin settings'
+        expect(modal.locator('script,[onerror]')).to_have_count(0)
+        modal.get_by_role('button', name='Close', exact=True).click()
         row.get_by_text('Hello World', exact=True).click()
-        expect(root.get_by_role('heading', name='Reviewed README')).to_be_visible()
+        expect(root.locator('.plugin-readme')).to_have_count(0)
         page.set_viewport_size({'width': 390, 'height': 844})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         page.locator('#pageTitle').get_by_role('button', name='Back').click()
         expect(row).to_be_visible()
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        toggle_bounds = row.locator('label.switch').bounding_box()
+        title_bounds = row.locator('.info').bounding_box()
+        about_bounds = row.get_by_role('button', name='About Hello World').bounding_box()
+        delete_bounds = row.get_by_role('button', name='Uninstall Hello World').bounding_box()
+        assert toggle_bounds['x'] < title_bounds['x'] < about_bounds['x'] < delete_bounds['x']
+        assert abs(toggle_bounds['y'] + toggle_bounds['height']/2 - delete_bounds['y'] - delete_bounds['height']/2) < 2
+        page.screenshot(path='/tmp/kiosk-plugin-row-mobile.png', full_page=True)
+        row.get_by_role('button', name='About Hello World').click()
+        expect(modal.get_by_role('heading', name='Reviewed README')).to_be_visible()
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        modal.get_by_role('button', name='Close', exact=True).click()
         row.get_by_role('button', name='Uninstall Hello World').click()
         modal.get_by_role('button', name='Uninstall', exact=True).click()
         expect(root.get_by_text('No plugins installed. Add a repository to get started.')).to_be_visible()

@@ -129,6 +129,12 @@ class PluginManager extends Manager {
       const {'url': 'Public GitHub repository URL'},
     );
     register(
+      'checkPluginUpdate',
+      'Check an installed plugin repository for an updated release without installing it.',
+      (p) => checkUpdate(p['id'] as String? ?? ''),
+      const {'id': 'Installed plugin ID'},
+    );
+    register(
       'installPluginRepository',
       'Install the release from a reviewed repository preview.',
       (p) => installRepository(
@@ -142,7 +148,7 @@ class PluginManager extends Manager {
     );
     register(
       'installPlugin',
-      'Install a local plugin ZIP for development. Installed plugins start disabled.',
+      'Install a local plugin ZIP for development. New plugins start disabled. Updates preserve the enabled state.',
       (p) async {
         if (p['trusted'] != true) {
           throw StateError('Confirm that you trust the plugin author');
@@ -209,6 +215,24 @@ class PluginManager extends Manager {
         })
         .timeout(const Duration(seconds: 10));
     return {...preview, ...?compatibility};
+  }
+
+  Future<Map<String, Object?>> checkUpdate(String id) async {
+    await refresh();
+    final plugin = installed.value.where((p) => p['id'] == id).firstOrNull;
+    if (plugin == null) throw StateError('Plugin is not installed');
+    final source = plugin['source'];
+    if (source is! Map || source['repository'] is! String) {
+      throw StateError(
+        'This plugin was installed from ZIP. Use Install from ZIP to update it.',
+      );
+    }
+    final preview = await previewRepository(source['repository'] as String);
+    return {
+      ...preview,
+      'installedVersion': plugin['version'],
+      'updateAvailable': PluginRepository.hasUpdate(preview, plugin),
+    };
   }
 
   Future<List<Map<String, Object?>>> installRepository(

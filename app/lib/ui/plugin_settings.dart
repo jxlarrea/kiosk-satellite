@@ -156,7 +156,26 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
     );
     if (url == null) return;
     final preview = await widget.plugins.previewRepository(url);
+    await _confirmPreview(preview);
+  }
+
+  Future<void> _checkUpdate(Map<String, Object?> plugin) async {
+    final preview = await widget.plugins.checkUpdate(plugin['id'] as String);
     if (!mounted) return;
+    if (preview['updateAvailable'] != true) {
+      showToast(
+        context,
+        title: '${plugin['name']}',
+        message: 'No updates available.',
+      );
+      return;
+    }
+    await _confirmPreview(preview);
+  }
+
+  Future<void> _confirmPreview(Map<String, Object?> preview) async {
+    if (!mounted) return;
+    final isUpdate = preview.containsKey('installedVersion');
     final manifest = preview['manifest'] as Map;
     final install = await showDialog<bool>(
       context: context,
@@ -171,6 +190,8 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                 Text('${manifest['description']}'),
                 const SizedBox(height: 16),
                 for (final entry in {
+                  if (isUpdate)
+                    'Installed version': preview['installedVersion'],
                   'Version': manifest['version'],
                   'Author': manifest['author'],
                   'License': manifest['license'],
@@ -186,7 +207,7 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                 const WarnRow(pluginTrustNotice),
                 const SizedBox(height: 12),
                 const HintRow(
-                  'Installed plugins start disabled. Enable this plugin from its entry row when you are ready.',
+                  'New plugins start disabled. Updates preserve the enabled state and automatically restart running plugins.',
                 ),
                 if (preview['compatible'] != true)
                   Text(
@@ -208,7 +229,7 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
             onPressed: preview['compatible'] == true
                 ? () => Navigator.pop(context, true)
                 : null,
-            child: const Text('Trust and install'),
+            child: Text(isUpdate ? 'Trust and update' : 'Trust and install'),
           ),
         ],
       ),
@@ -246,7 +267,7 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                 HintRow(file.name),
                 const WarnRow(pluginTrustNotice),
                 const HintRow(
-                  'Installed plugins start disabled. Enable this plugin from its entry row when you are ready.',
+                  'New plugins start disabled. Updates preserve the enabled state and automatically restart running plugins.',
                 ),
               ],
             ),
@@ -292,6 +313,29 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
       await widget.plugins.update('remove', {'id': plugin['id']});
     }
   }
+
+  Future<void> _showInfo(Map<String, Object?> plugin) => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('${plugin['name']}'),
+      content: SizedBox(
+        width: 720,
+        child: SingleChildScrollView(
+          child: plugin['source'] is Map
+              ? PluginReadme(source: plugin['source'] as Map)
+              : const Text(
+                  'This plugin was installed from ZIP and has no repository README.',
+                ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
@@ -359,10 +403,32 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                   ),
                 for (final plugin in plugins)
                   SettingsRow(
-                    leading: const Icon(Icons.extension_rounded),
-                    title: Text('${plugin['name']}'),
-                    subtitle: Text(
-                      '${plugin['version']} · ${plugin['enabled'] == true ? (enabled ? 'Enabled' : 'Paused') : 'Disabled'}',
+                    leading: Switch(
+                      value: plugin['enabled'] == true,
+                      onChanged: _busy || !enabled
+                          ? null
+                          : (value) => _run(
+                              () => widget.plugins.update(
+                                value ? 'enable' : 'disable',
+                                {'id': plugin['id']},
+                              ),
+                              id: plugin['id'] as String,
+                            ),
+                    ),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${plugin['name']}'),
+                        Text(
+                          '${plugin['version']} · ${plugin['enabled'] == true ? (enabled ? 'Enabled' : 'Paused') : 'Disabled'}',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
                     ),
                     onTap: _busy
                         ? null
@@ -370,17 +436,22 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Switch(
-                          value: plugin['enabled'] == true,
-                          onChanged: _busy || !enabled
+                        IconButton(
+                          tooltip: 'Check for updates for ${plugin['name']}',
+                          icon: _busy && _busyId == '${plugin['id']}:update'
+                              ? const _PluginProgress()
+                              : const Icon(Icons.update_rounded),
+                          onPressed: _busy || plugin['source'] is! Map
                               ? null
-                              : (value) => _run(
-                                  () => widget.plugins.update(
-                                    value ? 'enable' : 'disable',
-                                    {'id': plugin['id']},
-                                  ),
-                                  id: plugin['id'] as String,
+                              : () => _run(
+                                  () => _checkUpdate(plugin),
+                                  id: '${plugin['id']}:update',
                                 ),
+                        ),
+                        IconButton(
+                          tooltip: 'About ${plugin['name']}',
+                          icon: const Icon(Icons.info_outline_rounded),
+                          onPressed: _busy ? null : () => _showInfo(plugin),
                         ),
                         IconButton(
                           tooltip: 'Uninstall ${plugin['name']}',
@@ -511,7 +582,7 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
         children: [
           SettingsCard(
             children: [
-              HintRow('${plugin['description'] ?? ''}'),
+              SettingsRow(title: Text('${plugin['description'] ?? ''}')),
               if (!widget.plugins.enabled.value)
                 const HintRow('Enable Plugins to run this plugin.')
               else if (plugin['enabled'] != true)
@@ -530,28 +601,6 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
             action: _action,
             run: _run,
           ),
-          if (plugin['loaded'] == true)
-            const HintRow(
-              'To install another version, disable this plugin and restart Kiosk first.',
-            ),
-          if (plugin['source'] is Map)
-            const SectionHeading('About this plugin'),
-          if (plugin['source'] is Map)
-            SettingsCard(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${(plugin['source'] as Map)['repository']}'),
-                      const Divider(height: 32),
-                      PluginReadme(source: plugin['source'] as Map),
-                    ],
-                  ),
-                ),
-              ],
-            ),
         ],
       );
     },

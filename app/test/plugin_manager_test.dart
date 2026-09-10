@@ -539,6 +539,47 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Save settings'), findsNothing);
       expect(find.text('Show window'), findsNothing);
+      expect(
+        tester.getCenter(find.byType(Switch).last).dx,
+        lessThan(tester.getTopLeft(find.text('Hello World')).dx),
+      );
+      await tester.tap(find.byTooltip('About Hello World'));
+      await tester.pumpAndSettle();
+      expect(opened, isNull);
+      expect(
+        find.text(
+          'This plugin was installed from ZIP and has no repository README.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      installed[0]['source'] = {
+        'readme': '# Saved README',
+        'readmeBaseUrl': 'https://example.com/',
+      };
+      await plugins.refresh();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('About Hello World'));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved README'), findsOneWidget);
+      expect(opened, isNull);
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getCenter(find.byType(Switch).last).dx,
+        lessThan(tester.getTopLeft(find.text('Hello World')).dx),
+      );
+      expect(
+        tester.getCenter(find.byTooltip('About Hello World')).dx,
+        lessThan(tester.getCenter(find.byTooltip('Uninstall Hello World')).dx),
+      );
       await tester.tap(find.text('Hello World'));
       expect(opened, 'hello-world');
       opened = null;

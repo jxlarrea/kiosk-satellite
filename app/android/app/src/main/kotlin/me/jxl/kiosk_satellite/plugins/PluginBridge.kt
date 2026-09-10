@@ -30,6 +30,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private var startupGeneration = 0
     private val sessions = mutableMapOf<String, Session>()
     private val loadedIds = mutableSetOf<String>()
+    private val loadedHashes = mutableSetOf<String>()
+    private val restartRequired = mutableSetOf<String>()
     private var initialized = false
 
     private inner class Session(val id: String, val manifest: PluginManifest) {
@@ -51,6 +53,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 return future.get(3, TimeUnit.SECONDS)
             } catch (error: java.util.concurrent.TimeoutException) {
                 future.cancel(true)
+                restartRequired.add(id)
                 throw IllegalStateException("Plugin callback timed out. Restart Kiosk if the plugin left work running.")
             } catch (error: java.util.concurrent.ExecutionException) {
                 throw error.cause ?: error
@@ -150,6 +153,9 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private fun initialize() {
         if (initialized) return
         initialized = true
+        val installedHashes = records.keys().asSequence().map { records.getJSONObject(it).optString("hash") }.toSet()
+        root.listFiles()?.filter { it.name !in installedHashes && it.name !in loadedHashes }
+            ?.forEach { it.deleteRecursively() }
         // Existing installations keep running. New installations start with plugins off.
         if (!prefs.contains("pluginsEnabled")) {
             check(prefs.edit().putBoolean("pluginsEnabled", pluginsEnabled).commit())
@@ -227,8 +233,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 "This plugin ID belongs to another repository. Uninstall it before changing sources."
             }
             require(manifest.minAndroidSdk <= Build.VERSION.SDK_INT) { "Plugin needs Android API ${manifest.minAndroidSdk}" }
-            require(!records.has(manifest.id) || !records.getJSONObject(manifest.id).optBoolean("enabled")) { "Disable the plugin before replacing it" }
-            require(manifest.id !in loadedIds) { "Restart Kiosk after disabling this plugin before replacing it" }
+            require(manifest.id !in restartRequired) { "This plugin did not stop cleanly. Restart Kiosk Satellite before replacing it." }
             require(records.has(manifest.id) || records.length() < 8) { "At most 8 plugins can be installed" }
             val previous = records.optJSONObject(manifest.id)
             // Keep only settings still declared by the new version. Reject changed types.
@@ -240,28 +245,77 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             }
             val config = manifest.config(overrides)
             val target = File(root, hash)
+            val reuse = target.exists() && hash in loadedHashes
             if (target.exists()) {
                 require(previous?.optString("hash") != hash) { "This package is already installed" }
-                check(target.deleteRecursively()) { "Cannot remove unused package" }
+                if (reuse) {
+                    // Never rewrite files that a class loader may still reference.
+                    for (file in staging.listFiles() ?: emptyArray()) {
+                        require(File(target, file.name).readBytes().contentEquals(file.readBytes())) {
+                            "Previously loaded package failed its integrity check. Restart Kiosk Satellite before reinstalling it."
+                        }
+                    }
+                } else {
+                    check(target.deleteRecursively()) { "Cannot remove unused package" }
+                }
             }
-            check(staging.renameTo(target)) { "Cannot install plugin package" }
-            val record = JSONObject().put("hash", hash).put("enabled", false)
+            if (!reuse) check(staging.renameTo(target)) { "Cannot install plugin package" }
+            val wasEnabled = previous?.optBoolean("enabled") == true
+            val wasRunning = sessions.containsKey(manifest.id)
+            val record = JSONObject().put("hash", hash).put("enabled", wasEnabled)
                 .put("config", JSONObject(config)).put("error", "").put("source", source)
                 .put("jarSha256", PluginPackage.sha256(File(target, "plugin.jar").readBytes()))
                 .put("manifestSha256", PluginPackage.sha256(File(target, PluginPackage.MANIFEST_NAME).readBytes()))
-            records.put(manifest.id, record)
-            try { save() } catch (error: Throwable) {
-                if (previous == null) records.remove(manifest.id) else records.put(manifest.id, previous)
-                target.deleteRecursively()
-                throw error
+            var committed = false
+            try {
+                // Validate and prepare the replacement before interrupting the active plugin.
+                if (wasRunning) {
+                    try { stopSession(manifest.id) } catch (error: Throwable) {
+                        previous!!.put("enabled", false).put("error", "Update canceled because the plugin did not stop cleanly. Restart Kiosk Satellite before trying again.")
+                        save()
+                        throw IllegalStateException(previous.getString("error"), error)
+                    }
+                }
+                records.put(manifest.id, record)
+                try {
+                    save()
+                    if (wasEnabled && pluginsEnabled) enable(manifest.id)
+                    committed = true
+                } catch (error: Throwable) {
+                    // Restore the previous package and settings if activation fails.
+                    if (previous == null) records.remove(manifest.id) else {
+                        previous.put("enabled", wasEnabled && manifest.id !in restartRequired)
+                        records.put(manifest.id, previous)
+                    }
+                    save()
+                    var recovery = "The previous version was retained."
+                    if (previous != null && manifest.id in restartRequired) {
+                        recovery = "The previous version was retained but is disabled. Restart Kiosk Satellite before enabling it."
+                    } else if (wasRunning) {
+                        try {
+                            enable(manifest.id)
+                            recovery = "The previous version is running again."
+                        } catch (resumeError: Throwable) {
+                            recovery = "The previous version could not restart: ${resumeError.message}"
+                        }
+                    }
+                    val message = "Plugin update failed: ${error.message}. $recovery"
+                    previous?.put("error", message)
+                    save()
+                    throw IllegalStateException(message, error)
+                }
+            } finally {
+                if (!committed && !reuse && hash !in loadedHashes) target.deleteRecursively()
             }
-            previous?.optString("hash")?.takeIf { it != hash }?.let { File(root, it).deleteRecursively() }
+            previous?.optString("hash")?.takeIf { it != hash && it !in loadedHashes }
+                ?.let { File(root, it).deleteRecursively() }
             return snapshot()
         } finally { staging.deleteRecursively() }
     }
 
     private fun enable(id: String) {
         check(pluginsEnabled) { "Enable Plugins first" }
+        check(id !in restartRequired) { "This plugin did not stop cleanly. Restart Kiosk Satellite before enabling it." }
         if (sessions.containsKey(id)) return
         val record = records.getJSONObject(id)
         var session: Session? = null
@@ -278,8 +332,9 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             session = current
             sessions[id] = current
             loadedIds.add(id)
+            loadedHashes.add(record.getString("hash"))
             current.call {
-                val optimized = File(context.codeCacheDir, "plugins/$id").apply { mkdirs() }
+                val optimized = File(context.codeCacheDir, "plugins/${record.getString("hash")}").apply { mkdirs() }
                 val loader = DexClassLoader(jar.absolutePath, optimized.absolutePath, null, KioskPlugin::class.java.classLoader)
                 val plugin = loader.loadClass(manifest.entryClass).getDeclaredConstructor().newInstance() as KioskPlugin
                 current.plugin = plugin
@@ -299,13 +354,18 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
         session.alive.set(false)
         emit("hideWindow", mapOf("id" to id))
         try { session.call { session.plugin?.stop() } }
+        catch (error: Throwable) {
+            restartRequired.add(id)
+            throw error
+        }
         finally { session.executor.shutdownNow() }
     }
 
     private fun fail(id: String, error: Throwable) {
         records.getJSONObject(id).put("enabled", false).put("error", error.message ?: error.javaClass.simpleName)
-        save()
-        try { stopSession(id) } catch (_: Throwable) { /* Host callbacks are already revoked. */ }
+        try { save() } finally {
+            try { stopSession(id) } catch (_: Throwable) { /* Host callbacks are already revoked. */ }
+        }
     }
 
     private fun disable(id: String) {
@@ -319,7 +379,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
         val dir = directory(id)
         records.remove(id)
         save()
-        dir.deleteRecursively()
+        if (dir.name !in loadedHashes) dir.deleteRecursively()
     }
 
     private fun configure(id: String, args: Map<String, Any?>) {

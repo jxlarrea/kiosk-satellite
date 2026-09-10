@@ -75,16 +75,16 @@ function confirmPreview(preview) {
     const plugin = preview.manifest;
     const modal = modalShell({ title: plugin.name, width: 760 });
     modal.body.append(hintRow(plugin.description));
-    for (const [title, value] of Object.entries({ Version: plugin.version, Author: plugin.author, License: plugin.license })) {
+    for (const [title, value] of Object.entries({ ...(preview.installedVersion ? { 'Installed version': preview.installedVersion } : {}), Version: plugin.version, Author: plugin.author, License: plugin.license })) {
       const row = element('div', undefined, 'row');
       row.append(element('span', title, 'info'), element('span', value, 'desc')); modal.body.append(row);
     }
     modal.body.append(pluginReadme(preview), hintRow(trustNotice, { warn: true }),
-      hintRow('Installed plugins start disabled. Enable this plugin from its entry row when you are ready.'));
+      hintRow('New plugins start disabled. Updates preserve the enabled state and automatically restart running plugins.'));
     if (!preview.compatible) modal.body.append(hintRow(preview.compatibilityError, { warn: true }));
     const cancel = element('button', 'Cancel', 'btn-text');
     cancel.onclick = () => { modal.close(); resolve(false); };
-    const install = element('button', 'Trust and install', 'btn-primary');
+    const install = element('button', preview.installedVersion ? 'Trust and update' : 'Trust and install', 'btn-primary');
     install.disabled = !preview.compatible;
     install.onclick = () => { modal.close(); resolve(true); };
     modal.foot.append(cancel, install);
@@ -95,7 +95,7 @@ function confirmZip(file) {
   return new Promise((resolve) => {
     const modal = modalShell({ title: 'Install from ZIP', width: 520 });
     modal.body.append(hintRow(file.name), hintRow(trustNotice, { warn: true }),
-      hintRow('Installed plugins start disabled. Enable this plugin from its entry row when you are ready.'));
+      hintRow('New plugins start disabled. Updates preserve the enabled state and automatically restart running plugins.'));
     const cancel = element('button', 'Cancel', 'btn-text');
     cancel.onclick = () => { modal.close(); resolve(false); };
     const install = element('button', 'Trust and install', 'btn-primary');
@@ -237,11 +237,40 @@ function render(root, state) {
         }
       }, remove);
     };
-    row.insertBefore(toggle, row.lastChild); row.insertBefore(remove, row.lastChild);
+    row.firstElementChild.replaceWith(toggle);
+    const about = iconButton(`About ${plugin.name}`, 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 11v6M12 7h.01');
+    about.onclick = (event) => {
+      event.stopPropagation();
+      const modal = modalShell({ title: plugin.name, width: 760 });
+      modal.body.append(plugin.source ? pluginReadme(plugin.source)
+        : element('p', 'This plugin was installed from ZIP and has no repository README.'));
+      const close = element('button', 'Close', 'btn-text'); close.onclick = () => modal.close();
+      modal.foot.append(close);
+    };
+    const check = iconButton(`Check for updates for ${plugin.name}`, 'M3 11a9 9 0 1 1 2.6 7.4M3 4v7h7M12 7v5l3 2');
+    check.disabled = !plugin.source?.repository; check.dataset.pluginDisabled = String(check.disabled);
+    check.onclick = (event) => {
+      event.stopPropagation();
+      run(async () => {
+        const preview = await command('checkPluginUpdate', { id: plugin.id });
+        if (!preview.updateAvailable) {
+          showToast({ title: plugin.name, message: 'No updates available.' });
+          return;
+        }
+        if (await confirmPreview(preview)) {
+          try { await command('installPluginRepository', { previewId: preview.previewId, trusted: true }); }
+          finally { await refresh(); }
+        }
+      }, check);
+    };
+    row.insertBefore(check, row.lastChild);
+    row.insertBefore(about, row.lastChild); row.insertBefore(remove, row.lastChild);
     list.append(row);
     const page = element('div', undefined, 'subpage'); page.dataset.subpage = plugin.id; page.dataset.title = plugin.name;
     const description = element('div', undefined, 'card');
-    description.append(hintRow(plugin.description || ''));
+    const introRow = element('div', undefined, 'row');
+    introRow.append(info(plugin.description || ''));
+    description.append(introRow);
     if (plugin.error) description.append(hintRow(plugin.error, { warn: true }));
     if (!pluginsEnabled) description.append(hintRow('Enable Plugins to run this plugin.'));
     else if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to use its actions.'));
@@ -278,11 +307,6 @@ function render(root, state) {
         row.append(button); actions.append(row);
       }
       page.append(heading('Actions'), actions);
-    }
-    if (plugin.loaded) page.append(hintRow('To install another version, disable this plugin and restart Kiosk first.'));
-    if (plugin.source) {
-      const readme = element('div', undefined, 'card'); readme.append(hintRow(plugin.source.repository), pluginReadme(plugin.source));
-      page.append(heading('About this plugin'), readme);
     }
     root.append(page);
   }
