@@ -51,6 +51,27 @@ class PluginEntitiesTest {
         rejects { store.select("same", "Auto") }
         assertEquals(false, store.snapshot().single()["state"])
     }
+    @Test fun switchesRequireBooleansAndWaitForPluginConfirmation() {
+        val store = PluginEntities()
+        store.publish("binary_sensor", "power", "Observed", emptyMap(), true)
+        store.publish("switch", "power", "Power", emptyMap(), true)
+        assertEquals(mapOf("on" to false), store.switchCommand("power", false))
+        assertEquals(true, store.snapshot().last()["state"])
+        for (invalid in listOf(null, "false", 0, mapOf("on" to false))) {
+            rejects { store.switchCommand("power", invalid) }
+            rejects { store.publish("switch", "power", "Power", emptyMap(), invalid) }
+        }
+        rejects { store.publish("switch", "power", "Power", mapOf("options" to emptyList<String>()), false) }
+        assertEquals(true, store.snapshot().last()["state"])
+        store.publish("switch", "power", "Power", emptyMap(), false)
+        assertEquals(false, store.snapshot().last()["state"])
+        store.remove("switch", "power")
+        rejects { store.switchCommand("power", true) }
+        assertEquals("binary_sensor", store.snapshot().single()["type"])
+        store.publish("switch", "power", "Power", emptyMap(), false)
+        store.close()
+        rejects { store.switchCommand("power", true) }
+    }
     @Test fun capacityRateAndSessionRevocationAreBounded() {
         var now = 0L
         val store = PluginEntities { now }

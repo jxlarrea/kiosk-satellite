@@ -313,6 +313,12 @@ void main() {
           'options': ['Auto', 'Fast'],
           'state': null,
         },
+        {
+          'objectId': 'plugin_demo____switch_power',
+          'name': 'Power',
+          'type': 'switch',
+          'state': false,
+        },
       ];
       commands.register(
         Command(
@@ -335,7 +341,7 @@ void main() {
         (await surface.build())
             .where((e) => '${e['objectId']}'.startsWith('plugin_'))
             .length,
-        4,
+        5,
       );
       await attach();
       for (final entity in pluginEntities) {
@@ -351,6 +357,7 @@ void main() {
         jsonEncode([
           'plugin_demo____text_sensor_link',
           'plugin_demo____select_mode',
+          'plugin_demo____switch_power',
         ]),
       );
       final filtered = await surface.build();
@@ -366,7 +373,15 @@ void main() {
         ),
       );
       await surface.handleCommand('plugin_demo____select_mode', 'Fast');
+      await surface.handleCommand('plugin_demo____switch_power', false);
+      bus.publish(
+        const PluginEntityStateChanged('plugin_demo____switch_power', true),
+      );
       await pumpEventQueue();
+      expect(
+        pushed.where((e) => e.$1 == 'plugin_demo____switch_power'),
+        isEmpty,
+      );
       expect(
         pushed.where((e) => e.$1 == 'plugin_demo____text_sensor_link'),
         isEmpty,
@@ -378,6 +393,12 @@ void main() {
       expect(executed.last.$2, {
         'objectId': 'plugin_demo____select_mode',
         'value': 'Fast',
+      });
+      await surface.handleCommand('plugin_demo____switch_power', false);
+      expect(executed.last.$1, 'pluginEntityCommand');
+      expect(executed.last.$2, {
+        'objectId': 'plugin_demo____switch_power',
+        'value': false,
       });
     },
   );

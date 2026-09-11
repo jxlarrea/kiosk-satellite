@@ -212,12 +212,15 @@ class PluginManager extends Manager {
             'command': entity['command'],
           });
         }
-        if (!const ['light', 'select'].contains(entity['type'])) {
+        if (!const ['light', 'select', 'switch'].contains(entity['type'])) {
           throw StateError('Plugin entity is read-only');
         }
         if (entity['type'] == 'select' &&
             !(entity['options'] as List).contains(p['value'])) {
           throw ArgumentError('Selection is not an advertised option');
+        }
+        if (entity['type'] == 'switch' && p['value'] is! bool) {
+          throw ArgumentError('Switch command must be boolean');
         }
         return update('entityCommand', {
           'id': entity['pluginId'],
@@ -228,7 +231,7 @@ class PluginManager extends Manager {
       },
       const {
         'objectId': 'Plugin entity object ID',
-        'value': 'Light command map or select option string',
+        'value': 'Light command map, select option string or switch boolean',
       },
     );
     register(
@@ -548,6 +551,7 @@ class PluginManager extends Manager {
                 'sensor' => 'mdi:gauge',
                 'text_sensor' => 'mdi:text-box-outline',
                 'binary_sensor' => 'mdi:checkbox-marked-circle-outline',
+                'switch' => 'mdi:toggle-switch',
                 _ => 'mdi:form-select',
               },
             },
@@ -557,6 +561,7 @@ class PluginManager extends Manager {
     ];
     final previousEntities = _entities;
     _entities = nextEntities;
+    // Only these entity types support a missing-state frame in ESPHome.
     for (final previous in previousEntities) {
       if (const [
             'sensor',

@@ -5,6 +5,32 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PluginEntityWireTest {
+    @Test fun switchStatesAndCommandsPreserveBothBooleans() {
+        val store = PluginEntities()
+        for (on in listOf(true, false)) {
+            store.publish("switch", "power", "Power", emptyMap(), on)
+            val entry = store.snapshot().single()
+            val entity = EspEntity.fromMap(entry + ("objectId" to "plugin_demo____switch_power"))
+            assertTrue(entity is EspEntity.Switch)
+            assertEquals(Msg.LIST_ENTITIES_SWITCH_RESPONSE, EntityCodec.describe(entity, "demo").first)
+            val frame = EntityCodec.state(entity, entry["state"])!!
+            assertEquals(Msg.SWITCH_STATE_RESPONSE, frame.first)
+            var state = false
+            var key = 0
+            ProtoReader(frame.second).let { r -> while (r.next()) when (r.field) {
+                1 -> key = r.asFixed32()
+                2 -> state = r.asBool()
+            } }
+            assertEquals(on, state)
+            assertEquals(entity.key, key)
+            assertNull(EntityCodec.state(entity, null))
+            val request = EntityCodec.parseCommand(Msg.SWITCH_COMMAND_REQUEST,
+                ProtoWriter().apply { fixed32(1, entity.key); bool(2, !on) }.toByteArray())!!
+            assertEquals(entity.key, request.key)
+            assertEquals(mapOf("on" to !on), store.switchCommand("power", request.value))
+            assertEquals(on, store.snapshot().single()["state"])
+        }
+    }
     @Test fun pluginReadingsAndSelectsUseNativeEntityDescriptionsAndMissingStates() {
         val store = PluginEntities()
         store.publish("sensor", "latency", "Latency", mapOf("unit" to "ms", "stateClass" to "measurement", "accuracyDecimals" to 2), 12.5)

@@ -278,6 +278,94 @@ void main() {
     },
   );
 
+  test(
+    'switch commands preserve false, wait for confirmation and stop with their session',
+    () async {
+      await native('hostSession', {
+        'id': 'hello-world',
+        'session': 'switches',
+        'capabilities': ['entities'],
+      });
+      var settingsUpdates = 0;
+      var catalogs = 0;
+      final states = <PluginEntityStateChanged>[];
+      plugins.installed.addListener(() => settingsUpdates++);
+      final catalogSub = bus.on<PluginEntityCatalogChanged>().listen(
+        (_) => catalogs++,
+      );
+      final stateSub = bus.on<PluginEntityStateChanged>().listen(states.add);
+      Future<void> publish(bool on) async {
+        final entries = [
+          {'type': 'switch', 'key': 'power', 'name': 'Power', 'state': on},
+        ];
+        installed[0]['entities'] = entries;
+        await native('entities', {
+          'id': 'hello-world',
+          'session': 'switches',
+          'entities': entries,
+        });
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      await publish(true);
+      expect(settingsUpdates, 0);
+      expect(catalogs, 1);
+      const id = 'plugin_hello_world____switch_power';
+      for (final invalid in [
+        null,
+        'false',
+        0,
+        {'on': false},
+      ]) {
+        expect(
+          (await commands.execute('pluginEntityCommand', {
+            'objectId': id,
+            'value': invalid,
+          })).ok,
+          false,
+        );
+      }
+      expect(calls.where((c) => c.method == 'entityCommand'), isEmpty);
+      final result = await commands.execute('pluginEntityCommand', {
+        'objectId': id,
+        'value': false,
+      });
+      expect(result.ok, true);
+      expect(calls.lastWhere((c) => c.method == 'entityCommand').arguments, {
+        'id': 'hello-world',
+        'key': 'power',
+        'type': 'switch',
+        'value': false,
+      });
+      expect(
+        ((await commands.execute('getPluginEntities', {})).data as List)
+            .single['state'],
+        true,
+      );
+      final before = settingsUpdates;
+      await publish(false);
+      expect(settingsUpdates, before);
+      expect(catalogs, 1);
+      expect(states.last.value, false);
+      await native('hostSessionClosed', {
+        'id': 'hello-world',
+        'session': 'switches',
+      });
+      expect((await commands.execute('getPluginEntities', {})).data, isEmpty);
+      expect(
+        (await commands.execute('pluginEntityCommand', {
+          'objectId': id,
+          'value': true,
+        })).ok,
+        false,
+      );
+      await publish(true);
+      expect((await commands.execute('getPluginEntities', {})).data, isEmpty);
+      await catalogSub.cancel();
+      await stateSub.cancel();
+    },
+  );
+
   setUp(() async {
     originalPicker = FilePicker.platform;
     picker = _ZipPicker();

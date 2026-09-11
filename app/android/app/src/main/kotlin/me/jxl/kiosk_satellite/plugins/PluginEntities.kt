@@ -1,6 +1,6 @@
 package me.jxl.kiosk_satellite.plugins
 
-/** Session-owned sensor and select declarations with bounded state publication. */
+/** Session-owned sensor, select and switch declarations with bounded state publication. */
 internal class PluginEntities(private val clock: () -> Long = System::nanoTime) {
     private val entries = linkedMapOf<String, Map<String, Any?>>()
     private var closed = false
@@ -9,10 +9,10 @@ internal class PluginEntities(private val clock: () -> Long = System::nanoTime) 
 
     @Synchronized fun publish(type: String, key: String, name: String, metadata: Map<String, Any>, state: Any?) {
         check(!closed) { "Plugin session has ended" }
-        require(type in setOf("sensor", "text_sensor", "binary_sensor", "select")) { "Unknown entity type" }
+        require(type in setOf("sensor", "text_sensor", "binary_sensor", "select", "switch")) { "Unknown entity type" }
         require(key.matches(Regex("[a-z][a-z0-9_]{0,39}")) && name.length in 1..80) { "Invalid entity key or name" }
         val id = "$type.$key"
-        require(id in entries || entries.size < 32) { "At most 32 sensor and select entities are supported" }
+        require(id in entries || entries.size < 32) { "At most 32 sensor, select and switch entities are supported" }
         val entity = linkedMapOf<String, Any?>("type" to type, "key" to key, "name" to name)
         when (type) {
             "sensor" -> {
@@ -40,6 +40,11 @@ internal class PluginEntities(private val clock: () -> Long = System::nanoTime) 
                 validateDeviceClass(deviceClass)
                 require(state == null || state is Boolean) { "Binary sensor state must be boolean or null" }
                 entity.putAll(mapOf("deviceClass" to deviceClass, "state" to state))
+            }
+            "switch" -> {
+                require(metadata.isEmpty()) { "Unknown switch metadata" }
+                require(state is Boolean) { "Switch state must be boolean" }
+                entity["state"] = state
             }
             "select" -> {
                 require(metadata.keys == setOf("options")) { "A select requires options" }
@@ -69,6 +74,13 @@ internal class PluginEntities(private val clock: () -> Long = System::nanoTime) 
         val entity = entries["select.$key"] ?: error("Plugin select is not available")
         require(option is String && option in entity["options"] as List<*>) { "Selection is not an advertised option" }
         return mapOf("option" to option)
+    }
+
+    @Synchronized fun switchCommand(key: String, on: Any?): Map<String, Any> {
+        check(!closed) { "Plugin session has ended" }
+        check("switch.$key" in entries) { "Plugin switch is not available" }
+        require(on is Boolean) { "Switch command must be boolean" }
+        return mapOf("on" to on)
     }
 
     @Synchronized fun remove(type: String, key: String) {

@@ -178,6 +178,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             override fun removeTextSensor(key: String) = removeEntity("text_sensor", key)
             override fun publishBinarySensor(key: String, name: String, deviceClass: String, state: Boolean?) = publishEntity("binary_sensor", key, name, mapOf("deviceClass" to deviceClass), state)
             override fun removeBinarySensor(key: String) = removeEntity("binary_sensor", key)
+            override fun publishSwitch(key: String, name: String, state: Boolean) = publishEntity("switch", key, name, emptyMap(), state)
+            override fun removeSwitch(key: String) = removeEntity("switch", key)
             override fun publishSelect(key: String, name: String, options: Array<String>, state: String?) = publishEntity("select", key, name, mapOf("options" to options.toList()), state)
             override fun removeSelect(key: String) = removeEntity("select", key)
             override fun publishLight(key: String, name: String, effects: Array<String>, state: Map<String, Any>) {
@@ -249,6 +251,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                                     require(session.lights.containsKey(key)) { "Plugin light is not available" }
                                     (args["value"] as? Map<String, Any?>) ?: emptyMap()
                                 }
+                                "switch" -> session.entities.switchCommand(key, args["value"])
                                 "select" -> session.entities.select(key, args["value"])
                                 else -> throw IllegalArgumentException("Plugin entity is read-only")
                             }

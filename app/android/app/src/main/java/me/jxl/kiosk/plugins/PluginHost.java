@@ -44,6 +44,9 @@ public interface PluginHost {
     /** SDK 1, entities. Boolean state or null for unknown. Empty deviceClass means none. */
     default void publishBinarySensor(String key, String name, String deviceClass, Boolean state) { throw new UnsupportedOperationException("SDK 1 required"); }
     default void removeBinarySensor(String key) { throw new UnsupportedOperationException("SDK 1 required"); }
+    /** SDK 1, entities. Confirmed boolean state. Commands arrive as switch.KEY with {on: boolean}. */
+    default void publishSwitch(String key, String name, boolean state) { throw new UnsupportedOperationException("SDK 1 required"); }
+    default void removeSwitch(String key) { throw new UnsupportedOperationException("SDK 1 required"); }
     /** SDK 1, entities. Changes arrive as select.KEY with {option: string}. Publish the applied option to confirm it. */
     default void publishSelect(String key, String name, String[] options, String state) { throw new UnsupportedOperationException("SDK 1 required"); }
     default void removeSelect(String key) { throw new UnsupportedOperationException("SDK 1 required"); }
