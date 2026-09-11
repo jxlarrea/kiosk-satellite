@@ -332,6 +332,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // alert, media playback), whichever API the page signalled it through:
     // setInteractionActive, or the legacy pauseScreensaver fallback.
     bus.on<VoiceInteractionChanged>().listen((e) {
+      // Local music can play behind any screensaver. Other managers can
+      // still observe its playback interaction.
+      if (e.source == InteractionSource.sendspin && e.reason == 'media') return;
       _paused = _interactions.update(e);
       if (_paused) _stopForInteraction();
       _resetIdleTimer();

@@ -263,18 +263,46 @@ void main() {
     expect(ended, hasLength(2));
   });
 
-  test('reload preserves native playback until it ends', () async {
+  test('reload releases page media during Sendspin playback', () async {
     await build();
     await page(true);
     await nativeMedia(true);
     api.onPageStarted();
     await pumpEventQueue();
-    expect(saver.idleDue, isNull);
+    expect(saver.idleDue, isNotNull);
     await saver.start();
-    expect(saver.isActive, isFalse);
+    expect(saver.isActive, isTrue);
     await nativeMedia(false);
     expect(saver.idleDue, isNotNull);
   });
+
+  test('Sendspin playback allows a commanded screensaver', () async {
+    await build();
+    await nativeMedia(true);
+    await commands.execute('startScreensaver', const {});
+    expect(saver.isActive, isTrue);
+    expect(saver.activeView.value, 'black');
+  });
+
+  test('Sendspin playback leaves a running screensaver visible', () async {
+    await build();
+    await saver.start();
+    await nativeMedia(true);
+    expect(saver.isActive, isTrue);
+    await nativeMedia(false);
+    expect(saver.isActive, isTrue);
+  });
+
+  test(
+    'the idle timeout starts the screensaver during Sendspin playback',
+    () async {
+      await build(timeout: 1);
+      await nativeMedia(true);
+      expect(saver.idleDue, isNotNull);
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      expect(saver.isActive, isTrue);
+    },
+  );
 
   test('native playback ending cannot release ongoing page media', () async {
     await build();
@@ -328,7 +356,7 @@ void main() {
         {'paused': false},
       ]);
       await pumpEventQueue();
-      expect(saver.idleDue, isNull);
+      expect(saver.idleDue, isNotNull);
       await nativeMedia(false);
       expect(saver.idleDue, isNotNull);
     },

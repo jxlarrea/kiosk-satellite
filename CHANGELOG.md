@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- **Screensavers work during internal Sendspin playback.** Turning off Now Playing instead of the screensaver now allows the configured screensaver to start manually or after the idle timeout and keeps it visible when music starts. Voice interactions, dashboard media and explicit pauses still hold the screensaver. Fixes [#506](https://github.com/jxlarrea/kiosk-satellite/issues/506).
 - **Release APK validation supports Android Build Tools 37.** Signing checks accept numbered signers and labels based on signature schemes or SDK ranges while still rejecting mismatched certificates. Release retries can use corrected workflow scripts while building the original tag without moving it.
 
 ## v2026.9.40 - 2026-09-11

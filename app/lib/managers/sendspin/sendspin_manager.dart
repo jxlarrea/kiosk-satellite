@@ -35,9 +35,8 @@ import 'volume_ducker.dart';
 /// lifecycle (settings in, state out) and translates player activity into
 /// the same app-wide events every other feature speaks:
 ///
-///  - [VoiceInteractionChanged] (reason 'media') while audio plays, so the
-///    screensaver and dashboard rotation stand down exactly as they do for
-///    Voice Satellite media.
+///  - [VoiceInteractionChanged] (reason 'media') announces local playback.
+///    Screensavers allow music to keep playing behind the configured view.
 ///  - Status/discovery commands for the settings surfaces.
 class SendspinManager extends Manager {
   SendspinManager(super.bus, super.commands, super.log, this._settings);
@@ -773,10 +772,9 @@ class SendspinManager extends Manager {
             _playing = playing;
             _syncQueuePoll();
             if (!playing) unawaited(_watcher?.refresh());
-            // The same signal Voice Satellite media playback raises: hold
-            // the screensaver and rotation while music is audible here.
-            // NOT raised in full-screen player mode: there the screensaver
-            // must keep firing, because it IS the now-playing display.
+            // Announce local playback outside full-screen player mode.
+            // Screensavers allow this music behind their configured view.
+            // A stop always releases any previously announced interaction.
             if (!_settings.get(defs.sendspinFullscreen)) {
               bus.publish(
                 VoiceInteractionChanged(
@@ -797,8 +795,8 @@ class SendspinManager extends Manager {
           }
       }
       // With a remote player followed, the local stream's metadata stays
-      // off screen: the side effects above (volume, ducking, the
-      // screensaver hold for audible local audio) still count, but the
+      // off screen: the side effects above (volume, ducking and local
+      // playback notifications) still count, but the
       // card belongs to the remote snapshot.
       if (_remote == null) {
         _publishNowPlaying();
