@@ -18,6 +18,14 @@ Home Assistant cannot force a check, so a newly published release may take a few
 
 Triggering an update from any interface starts the same local download on the device. Before downloading, the app queries GitHub to confirm the latest release, ensuring it always fetches the newest version available. Download progress displays on the device, in the remote admin, and via the Home Assistant update entity. You can cancel active downloads from either the device or the remote admin interface.
 
+## APK Downloads
+
+Releases include a universal APK and smaller APKs for `armeabi-v7a`, `arm64-v8a` and `x86_64`. Each architecture APK is a complete app that installs on its own. It does not need the universal APK alongside it.
+
+The updater selects an APK using Android's supported architectures in preference order. If a compatible architecture APK is missing or the architecture cannot be detected, it uses the universal APK. A 64-bit processor running a 32-bit Android installation receives the 32-bit APK.
+
+The universal filename remains `kiosk-satellite-v<version>.apk`. Architecture downloads use `kiosk-satellite-v<version>.<abi>.apk`. Older app versions continue to download universal because it remains the first APK asset. The release workflow preserves this order during reruns and checks it after uploading. Every APK in a release uses the same signing key and version code so an installed app can move between universal and architecture downloads.
+
 ## System Permission Requirements
 
 Here is how Android handles installation prompts based on your system version:

@@ -25,6 +25,13 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    // Keep the universal download available alongside --split-per-abi builds.
+    splits.abi.isUniversalApk = true
+
+    // AGP's universal split includes dependency ABIs outside Flutter's list.
+    // Flutter has no 32-bit x86 engine, so keep those libraries out as before.
+    packaging.jniLibs.excludes.add("**/x86/**")
+
     // The face detection model (FaceDetector.kt) is memory-mapped straight
     // out of the APK, which only works on an asset stored uncompressed.
     androidResources {
@@ -95,6 +102,15 @@ android {
                 signingConfigs.getByName("debug")
             }
         }
+    }
+}
+
+// Flutter adds ABI offsets to split APK version codes. Our updater can move
+// between universal and split downloads, so every output needs the same code.
+android.applicationVariants.configureEach {
+    outputs.forEach { output ->
+        (output as com.android.build.gradle.api.ApkVariantOutput).versionCodeOverride =
+            flutter.versionCode
     }
 }
 

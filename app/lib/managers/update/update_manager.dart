@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart' show sha256;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import 'release_apk.dart';
 import 'update_http_client.dart';
 
 /// A newer release on GitHub, ready to fetch.
@@ -118,6 +120,10 @@ class UpdateManager extends Manager {
   /// second call for one integer. Null off Android.
   int? _sdkInt;
 
+  /// Android's ABI preference order. Empty off Android, using universal.
+  @visibleForTesting
+  List<String> supportedAbis = const [];
+
   /// Builds the client for the release query and the APK download. Swapped
   /// in tests; production always hands back a real one.
   @visibleForTesting
@@ -138,7 +144,9 @@ class UpdateManager extends Manager {
   Future<void> init() async {
     _currentVersion = (await PackageInfo.fromPlatform()).version;
     if (Platform.isAndroid) {
-      _sdkInt = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+      final android = await DeviceInfoPlugin().androidInfo;
+      _sdkInt = android.version.sdkInt;
+      supportedAbis = android.supportedAbis;
     }
     // The installer's asynchronous outcomes. Success never arrives: Android
     // kills the process as it swaps the code, and the relaunch receiver
@@ -338,13 +346,15 @@ class UpdateManager extends Manager {
       final tag = tagOf(latest);
       final assets = (latest['assets'] as List? ?? const [])
           .cast<Map<String, dynamic>>();
-      final apk = assets.firstWhere(
-        (a) => (a['name'] as String? ?? '').endsWith('.apk'),
-        orElse: () => const {},
-      );
+      final apk = selectReleaseApk(assets, tag, supportedAbis);
+      if (apk == null) {
+        log.warn(name, 'release $tag has no compatible APK');
+        return (reachable: false, info: null);
+      }
       final url = apk['browser_download_url'] as String?;
       if (tag.isEmpty || url == null) return (reachable: false, info: null);
       final newer = _isNewer(tag, _currentVersion);
+      if (newer) log.info(name, 'selected APK: ${apk['name']}');
       log.info(
         name,
         'latest release $tag, running $_currentVersion: '
@@ -478,7 +488,7 @@ class UpdateManager extends Manager {
         info = fresh;
       }
       // The updates/ folder is what the manifest's FileProvider maps. One
-      // file per version, anything else swept first, so the cache never
+      // file per release asset, anything else swept first, so the cache never
       // accumulates old APKs and a leftover from an earlier release can
       // never impersonate the new one. The name must carry the version
       // because byte size alone cannot tell releases apart: two builds
@@ -488,8 +498,14 @@ class UpdateManager extends Manager {
       // new download, "updating" the device to the version it already ran.
       final dir = Directory('${(await getTemporaryDirectory()).path}/updates');
       await dir.create(recursive: true);
+      // A release can gain a split after its universal APK was cached.
+      // Include asset identity so equal-sized variants never share a file.
+      final assetKey = sha256
+          .convert(utf8.encode(info.apkUrl))
+          .toString()
+          .substring(0, 12);
       final file = File(
-        '${dir.path}/kiosk-satellite-update-${info.version}.apk',
+        '${dir.path}/kiosk-satellite-update-${info.version}-$assetKey.apk',
       );
       await for (final stale in dir.list()) {
         if (stale.path != file.path) await stale.delete();

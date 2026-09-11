@@ -1,6 +1,6 @@
 name: Release
 
-# Publishing a GitHub release builds the signed APK and attaches it.
+# Publishing a GitHub release builds signed universal and ABI-specific APKs.
 # The app version comes from the tag (v1.2.3 becomes 1.2.3), so a release can never disagree with
 # what the app reports about itself.
 #
@@ -14,6 +14,10 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   apk:
@@ -50,7 +54,7 @@ jobs:
           storeFile=upload-keystore.jks
           EOF
 
-      - name: Build the signed APK
+      - name: Build the signed APKs
         working-directory: app
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
@@ -60,15 +64,20 @@ jobs:
           # Android refuses to install over them.
           BUILD_NUMBER="$(sed -n 's/^version:.*+//p' pubspec.yaml)"
           flutter pub get
-          flutter build apk --release \
+          flutter build apk --release --split-per-abi \
             --build-name="$VERSION" \
             --build-number="$BUILD_NUMBER"
+          python3 ../.github/scripts/check_apks.py \
+            build/app/outputs/flutter-apk "$VERSION" "$BUILD_NUMBER"
           mv build/app/outputs/flutter-apk/app-release.apk \
              "kiosk-satellite-${GITHUB_REF_NAME}.apk"
+          for ABI in armeabi-v7a arm64-v8a x86_64; do
+            mv "build/app/outputs/flutter-apk/app-${ABI}-release.apk" \
+               "kiosk-satellite-${GITHUB_REF_NAME}.${ABI}.apk"
+          done
 
-      - name: Attach the APK to the release
+      - name: Attach the APKs to the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" \
-            "app/kiosk-satellite-${GITHUB_REF_NAME}.apk" --clobber
+          python3 .github/scripts/publish_apks.py "$GITHUB_REF_NAME" app

@@ -295,7 +295,10 @@ void main() {
     expect(await update.downloadAndInstall(), isNull);
 
     expect(asked, contains('https://example.invalid/1.1.0.apk'));
-    expect(installed.single, endsWith('kiosk-satellite-update-1.1.0.apk'));
+    expect(
+      installed.single,
+      matches(r'kiosk-satellite-update-1\.1\.0-[0-9a-f]{12}\.apk$'),
+    );
     expect((await File(installed.single).readAsBytes()).first, 7);
     expect(await stale.exists(), isFalse); // swept, not left to linger
   });
@@ -303,10 +306,6 @@ void main() {
   test('a mismatched leftover file is downloaded fresh, not installed',
       () async {
     await notice('1.1.0');
-    final dir = Directory('${cache.path}/updates');
-    await dir.create(recursive: true);
-    await File('${dir.path}/kiosk-satellite-update-1.1.0.apk')
-        .writeAsBytes(List.filled(100, 1)); // truncated earlier attempt
     final asked = <String>[];
     update.clientFactory = () => MockClient((request) async {
           asked.add(request.url.toString());
@@ -316,9 +315,51 @@ void main() {
         });
 
     expect(await update.downloadAndInstall(), isNull);
+    await File(installed.single).writeAsBytes(List.filled(100, 1));
+    installed.clear();
+    asked.clear();
+    await installerEvent('installDeclined');
+    expect(await update.downloadAndInstall(), isNull);
 
     expect(asked, contains('https://example.invalid/1.1.0.apk'));
     expect(await File(installed.single).length(), 2048);
+  });
+
+  test('refresh switches a cached universal APK to the matching split', () async {
+    await update.init();
+    update.supportedAbis = ['armeabi-v7a', 'armeabi'];
+    var splitReady = false;
+    final downloads = <String>[];
+    update.clientFactory = () => MockClient((request) async {
+      if (isReleaseQuery(request)) {
+        final latest = entry('1.1.0', size: 64);
+        if (splitReady) {
+          (latest['assets'] as List).insert(0, {
+            'name': 'kiosk-satellite-v1.1.0.armeabi-v7a.apk',
+            'browser_download_url': 'https://example.invalid/arm.apk',
+            'size': 64,
+          });
+        }
+        return http.Response(releases([latest]), 200);
+      }
+      downloads.add(request.url.toString());
+      return http.Response.bytes(List.filled(64, splitReady ? 2 : 1), 200);
+    });
+    expect(await update.check(), true);
+    expect(await update.downloadAndInstall(), isNull);
+    final universalFile = File(installed.single);
+    await installerEvent('installDeclined');
+    splitReady = true;
+    expect(await update.downloadAndInstall(), isNull);
+    expect(update.available.value!.apkUrl, 'https://example.invalid/arm.apk');
+    expect(update.available.value!.apkSize, 64);
+    expect(downloads, [
+      'https://example.invalid/1.1.0.apk',
+      'https://example.invalid/arm.apk',
+    ]);
+    expect(installed.last, isNot(installed.first));
+    expect(await universalFile.exists(), false);
+    expect((await File(installed.last).readAsBytes()).first, 2);
   });
 
   test('an install that needs confirming stands the kiosk down first and '
