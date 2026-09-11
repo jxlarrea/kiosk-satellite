@@ -1128,6 +1128,7 @@
 #tab-plugins .subpage-entry .switch { flex-shrink: 0; }
 
 .plugin-add-row { cursor: pointer; }
+.plugin-guide-row { color: inherit; text-decoration: none; }
 .plugin-install-warning { padding-top: 12px; padding-bottom: 16px; }
 .plugin-master-switch.plugin-busy .slider { opacity: 0; }
 .plugin-repository-field { flex-wrap: wrap; }

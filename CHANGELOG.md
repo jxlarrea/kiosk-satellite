@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Developer Tools links to the plugin template.** The Create a plugin row opens the Hello World repository and its documentation in on-device settings and Remote Admin.
 - **Lock the screen from the kiosk menu.** The new opt-in **Show in the kiosk menu** toggle under Lockdown Mode in Remote Admin adds a **Lockdown Mode** entry for screen cleaning or other temporary locks. A matching Allowed Action controls its visibility in the restricted quick actions menu. Unlock with the existing exit gesture and kiosk PIN if configured, Remote Admin or Home Assistant. Adds [#495](https://github.com/jxlarrea/kiosk-satellite/issues/495).
 - **Plugins can observe and control live KS features.** The first public SDK 1 includes explicit state queries, passive event subscriptions and transient controls for the screensaver, display, camera views, Now Playing, media transport, launcher and browser navigation. Host capabilities, bounded requests and session revocation protect the supported interface. Saved KS settings and content management remain unavailable.
 - **Plugin release checks and layout.** Repository installs require GitHub Actions asset publication and a matching GitHub SHA-256 digest. Local ZIPs are labeled for developers only.

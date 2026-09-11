@@ -176,6 +176,13 @@ function render(root, state) {
   const fileInput = element('input'); fileInput.type = 'file'; fileInput.accept = '.zip,application/zip'; fileInput.hidden = true;
   fileInput.setAttribute('aria-label', 'Plugin ZIP');
   zipRow.append(upload, fileInput); developerTools.append(zipRow);
+  const guideRow = element('a', undefined, 'row plugin-guide-row');
+  guideRow.href = 'https://github.com/jxlarrea/kiosk-satellite-plugin-hello-world';
+  guideRow.target = '_blank'; guideRow.rel = 'noopener noreferrer';
+  guideRow.append(info('Create a plugin', 'Learn how to create plugins with the Hello World template and documentation.'));
+  const guideIcon = element('span', undefined, 'icon-btn'); guideIcon.setAttribute('aria-hidden', 'true');
+  guideIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M21 3 10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg>';
+  guideRow.append(guideIcon); developerTools.append(guideRow);
   root.append(introduction);
 
   async function command(name, params) {

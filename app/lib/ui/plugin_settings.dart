@@ -496,6 +496,24 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                 enabled: !_busy,
                 onTap: () => _run(_installZip, id: '_zip'),
               ),
+              SettingsRow(
+                title: const Text('Create a plugin'),
+                subtitle: const Text(
+                  'Learn how to create plugins with the Hello World template and documentation.',
+                ),
+                trailing: const Icon(Icons.open_in_new),
+                enabled: !_busy,
+                onTap: () => _run(() async {
+                  final opened = await launchUrl(
+                    Uri.parse(
+                      'https://github.com/jxlarrea/kiosk-satellite-plugin-hello-world',
+                    ),
+                    mode: LaunchMode.externalApplication,
+                  );
+                  if (!opened) throw StateError('Could not open this link.');
+                  return opened;
+                }),
+              ),
             ],
           ),
         ],
