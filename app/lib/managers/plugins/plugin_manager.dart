@@ -39,6 +39,8 @@ class PluginManager extends Manager {
 
   static const channel = MethodChannel('kiosk_satellite/plugins');
   final installed = ValueNotifier<List<Map<String, Object?>>>(const []);
+  final charts = ValueNotifier<Map<String, List<Map<String, Object?>>>>({});
+  final _chartSessions = <String, String>{};
   final windows = ValueNotifier<List<PluginWindow>>(const []);
   final status = ValueNotifier<String>('');
   final enabled = ValueNotifier<bool>(false);
@@ -86,13 +88,27 @@ class PluginManager extends Manager {
       if (_disposed) return null;
       switch (call.method) {
         case 'hostSession':
+          final data = call.arguments as Map;
+          _chartSessions[data['id'] as String] = data['session'] as String;
+          _setCharts(data['id'] as String, const []);
           _hostReads.open(call.arguments as Map);
         case 'hostSessionClosed':
+          final data = call.arguments as Map;
+          if (_chartSessions[data['id']] == data['session']) {
+            _chartSessions.remove(data['id']);
+            _setCharts(data['id'] as String, const []);
+          }
           _hostReads.close(call.arguments as Map);
         case 'hostSubscription':
           _hostReads.subscription(call.arguments as Map);
         case 'hostCommand':
           return _hostReads.execute(call.arguments as Map);
+        case 'charts':
+          final data = call.arguments as Map;
+          if (_chartSessions[data['id']] == data['session'] &&
+              data['session'] != null) {
+            _setCharts(data['id'] as String, data['charts'] as List);
+          }
         case 'changed':
           _readInstalled(call.arguments);
         case 'window':
@@ -144,6 +160,12 @@ class PluginManager extends Manager {
       );
     }
 
+    register(
+      'getPluginCharts',
+      'Read current plugin chart snapshots without refreshing settings.',
+      (p) async => charts.value[p['id']] ?? const [],
+      const {'id': 'Plugin ID'},
+    );
     register(
       'getPluginActions',
       'List declared plugin actions and their availability.',
@@ -395,15 +417,42 @@ class PluginManager extends Manager {
     }
   }
 
+  void _setCharts(String id, List value) {
+    final next = value.map((v) => Map<String, Object?>.from(v as Map)).toList();
+    if (jsonEncode(charts.value[id] ?? const []) == jsonEncode(next)) return;
+    charts.value = {...charts.value}
+      ..remove(id)
+      ..addAll(next.isEmpty ? {} : {id: next});
+  }
+
   void _readInstalled(Object? value) {
     if (value is Map) {
       enabled.value = value['enabled'] == true;
       value = value['plugins'];
     }
     if (value is! List) return;
-    installed.value = [
+    final items = [
       for (final item in value) Map<String, Object?>.from(item as Map),
     ];
+    for (final item in items) {
+      final data = item.remove('charts');
+      if (!enabled.value || item['running'] != true) {
+        _chartSessions.remove(item['id']);
+      }
+      _setCharts(
+        item['id'] as String,
+        enabled.value && item['running'] == true
+            ? data as List? ?? const []
+            : const [],
+      );
+    }
+    for (final id in charts.value.keys.toList()) {
+      if (!items.any((p) => p['id'] == id)) {
+        _chartSessions.remove(id);
+        _setCharts(id, const []);
+      }
+    }
+    installed.value = [for (final item in items) item];
     final nextEntities = <Map<String, Object?>>[
       for (final action in actions)
         if (action['available'] == true && action['homeAssistant'] == true)
@@ -495,6 +544,7 @@ class PluginManager extends Manager {
           .invokeMethod<void>('stopAll')
           .timeout(const Duration(seconds: 30));
     } catch (_) {}
+    charts.dispose();
     installed.dispose();
     windows.dispose();
     status.dispose();

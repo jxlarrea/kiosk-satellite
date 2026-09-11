@@ -232,6 +232,7 @@ void main() {
       );
       for (final command in [
         'getPluginState',
+        'getPluginCharts',
         'listPlugins',
         'setPluginsEnabled',
         'installPlugin',

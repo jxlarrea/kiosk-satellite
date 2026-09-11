@@ -1146,3 +1146,19 @@
 .plugin-range input[type=range] { flex: 1; min-width: 0; width: 150px; }
 .plugin-range .desc { min-width: 50px; text-align: right; }
 @media (max-width: 640px) { .plugin-range { flex-basis: 100%; width: 100%; order: 2; } }
+
+.plugin-chart { padding: 16px; }
+.plugin-chart-title { font-size: 16px; font-weight: 600; }
+.plugin-chart-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0; }
+.plugin-chart-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.plugin-chart-marker { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; }
+.plugin-chart-plot { display: flex; height: 160px; margin-top: 12px; }
+.plugin-chart-scale { flex: 0 0 64px; display: flex; flex-direction: column; justify-content: space-between; }
+.plugin-chart-plot svg { flex: 1; min-width: 0; height: 160px; touch-action: pan-y; }
+.plugin-chart-plot svg:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.plugin-chart-empty { flex: 1; align-self: center; text-align: center; }
+.plugin-chart-dates { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; margin: 8px 0 0 64px; }
+.plugin-chart-help { margin-top: 8px; }
+
+.plugin-chart.compact .plugin-chart-plot, .plugin-chart.compact svg { height: 56px; }
+.plugin-chart.compact .plugin-chart-scale, .plugin-chart.compact .plugin-chart-dates, .plugin-chart.compact .plugin-chart-help { display: none; }

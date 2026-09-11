@@ -16,6 +16,10 @@ public interface PluginHost {
     default void subscribe(String event) { throw new UnsupportedOperationException("SDK 1 required"); }
     /** SDK 1. Stop observing an event. All subscriptions end with the session. */
     default void unsubscribe(String event) { throw new UnsupportedOperationException("SDK 1 required"); }
+    /** Publish a bounded chart snapshot. SDK 1. */
+    default void publishSeries(String key, Map<String, Object> chart) { throw new UnsupportedOperationException("Charts are unavailable"); }
+    /** Remove this session's chart with the given key. */
+    default void removeSeries(String key) { throw new UnsupportedOperationException("Charts are unavailable"); }
     /** Show or update this plugin's one floating window. Text is plain text. */
     void showWindow(String title, String message, String buttonLabel);
     void hideWindow();

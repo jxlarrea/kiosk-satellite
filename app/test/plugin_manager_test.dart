@@ -74,6 +74,71 @@ void main() {
     'buttonLabel': 'Say hello',
   });
 
+  test(
+    'charts are session scoped and do not notify setting listeners',
+    () async {
+      var settingsUpdates = 0;
+      plugins.installed.addListener(() => settingsUpdates++);
+      await native('hostSession', {
+        'id': 'hello-world',
+        'session': 'first',
+        'capabilities': [],
+      });
+      final chart = {
+        'key': 'cpu',
+        'title': 'CPU',
+        'unit': '%',
+        'timestamps': [1000],
+        'series': [
+          {
+            'name': 'CPU',
+            'values': [12],
+          },
+        ],
+      };
+      await native('charts', {
+        'id': 'hello-world',
+        'session': 'first',
+        'charts': [chart],
+      });
+      expect(plugins.charts.value['hello-world'], [chart]);
+      expect(settingsUpdates, 0);
+      final response = await commands.execute('getPluginCharts', {
+        'id': 'hello-world',
+      });
+      expect(response.data, [chart]);
+      await native('hostSessionClosed', {
+        'id': 'hello-world',
+        'session': 'first',
+      });
+      expect(plugins.charts.value, isEmpty);
+      await native('hostSession', {
+        'id': 'hello-world',
+        'session': 'second',
+        'capabilities': [],
+      });
+      await native('charts', {
+        'id': 'hello-world',
+        'session': 'first',
+        'charts': [chart],
+      });
+      expect(plugins.charts.value, isEmpty);
+      await native('charts', {
+        'id': 'hello-world',
+        'session': 'second',
+        'charts': [chart],
+      });
+      await native('hostSessionClosed', {
+        'id': 'hello-world',
+        'session': 'first',
+      });
+      expect(plugins.charts.value['hello-world'], [chart]);
+      await plugins.setEnabled(false);
+      expect(plugins.charts.value, isEmpty);
+      expect(plugins.installed.value.first.containsKey('charts'), false);
+    },
+  );
+
   setUp(() async {
     originalPicker = FilePicker.platform;
     picker = _ZipPicker();
@@ -844,6 +909,31 @@ void main() {
       await tester.tap(find.text('Greeting'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField), 'Edited greeting');
+      await native('hostSession', {
+        'id': 'hello-world',
+        'session': 'editing',
+        'capabilities': [],
+      });
+      await native('charts', {
+        'id': 'hello-world',
+        'session': 'editing',
+        'charts': [
+          {
+            'key': 'cpu',
+            'title': 'CPU',
+            'timestamps': [1000],
+            'series': [
+              {
+                'name': 'CPU',
+                'values': [12],
+              },
+            ],
+          },
+        ],
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Edited greeting'), findsOneWidget);
+
       installed[0]['status'] = 'Connected';
       await plugins.refresh();
       await tester.pumpAndSettle();

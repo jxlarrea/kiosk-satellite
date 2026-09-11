@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Plugins can publish live charts.** SDK 1 supports bounded time-series charts and compact sparklines in on-device and Remote Admin plugin subpages, with sample inspection and updates that preserve settings edits. Chart history stays local to the running session.
+
 ### Fixed
 - **Go to home works from Home Assistant Area pages.** Navigation to a dashboard root no longer treats its child views as the requested destination. Gestures targeting `home` now return from an Area page to Overview. Fixes [#496](https://github.com/jxlarrea/kiosk-satellite/issues/496).
 

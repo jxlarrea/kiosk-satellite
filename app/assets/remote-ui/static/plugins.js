@@ -1,4 +1,5 @@
 import { cmd } from './core.js';
+import { updatePluginCharts } from './plugin-charts.js';
 import { currentPath, showTab, subpageEntry } from './tabs.js';
 import { hintRow, messageBox, modalShell, showToast, swatch } from './widgets.js';
 import { marked } from './vendor-marked.js';
@@ -304,6 +305,7 @@ function render(root, state) {
     if (!pluginsEnabled) description.append(hintRow('Enable Plugins to run this plugin.'));
     else if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to run it.'));
     page.append(description);
+    const charts = element('div', undefined, 'plugin-charts'); charts.hidden = true; page.append(charts);
     const groups = new Map();
     const values = { ...plugin.values };
     const saveSetting = (key, value, trigger) => run(async () => {
@@ -375,3 +377,18 @@ function render(root, state) {
     if (document.scrollingElement) document.scrollingElement.scrollTop = scroll;
   }
 }
+
+let chartsLoading = false;
+setInterval(async () => {
+  const [tab, id] = currentPath.split('/');
+  if (tab !== 'plugins' || !id || document.hidden || chartsLoading || busy) return;
+  const page = [...document.querySelectorAll('#tab-plugins > .subpage')].find(el => el.dataset.subpage === id);
+  const container = page?.querySelector('.plugin-charts');
+  if (!container) return;
+  chartsLoading = true;
+  try {
+    const result = await cmd('getPluginCharts', { id }, { timeoutMs: 5000 });
+    if (container.isConnected && currentPath === `plugins/${id}` && result.ok) updatePluginCharts(container, result.data);
+  } catch (_) { /* The next poll retries when the connection returns. */ }
+  finally { chartsLoading = false; }
+}, 1000);

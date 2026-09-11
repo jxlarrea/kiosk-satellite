@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../managers/plugins/plugin_manager.dart';
 import 'kit.dart';
+import 'plugin_chart.dart';
 import 'color_picker.dart';
 import 'toast.dart';
 
@@ -624,6 +625,22 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
               if ('${plugin['error'] ?? ''}'.isNotEmpty)
                 WarnRow('${plugin['error']}'),
             ],
+          ),
+          ValueListenableBuilder<Map<String, List<Map<String, Object?>>>>(
+            valueListenable: widget.plugins.charts,
+            builder: (context, charts, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if ((charts[widget.id] ?? const []).isNotEmpty)
+                  const SectionHeading('Charts'),
+                for (final chart
+                    in charts[widget.id] ?? const <Map<String, Object?>>[])
+                  PluginChart(
+                    key: ValueKey('${widget.id}:${chart['key']}'),
+                    chart: chart,
+                  ),
+              ],
+            ),
           ),
           _PluginSettings(
             key: ValueKey(widget.id),
