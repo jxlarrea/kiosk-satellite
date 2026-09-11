@@ -110,10 +110,11 @@ class SendspinManager extends Manager {
   /// shuffled or edited from elsewhere, so shuffle and the queue panel
   /// would otherwise only catch up at the next track. The same follower
   /// class as the remote player's, pointed at this device's own player,
-  /// its snapshots read for the queue state only, never for the card.
+  /// Its snapshots also supply chapter metadata for the audible book.
   MaRemotePlayer? _watcher;
   String _watcherKey = '';
   String _watchSig = '';
+  Map<String, Object?>? _localQueueSnapshot;
 
   /// When the local player last sent a seek, epoch ms: the re-base stands
   /// down for a moment after it.
@@ -530,6 +531,18 @@ class SendspinManager extends Manager {
   }
 
   void _setNowPlaying(Map<String, Object?>? value) {
+    if (_remote == null && value != null) {
+      // Sendspin omits chapters. Match the queue to the audible title so
+      // chapter metadata survives progress deltas and leaves with the book.
+      final queue = _localQueueSnapshot;
+      final matches = queue != null && queue['title'] == value['title'];
+      value = {
+        ...value,
+        'mediaType': matches ? queue['mediaType'] : null,
+        'mediaUri': matches ? queue['mediaUri'] : null,
+        'chapters': matches ? queue['chapters'] : null,
+      };
+    }
     final wasPlaying = nowPlaying.value?['playing'] == true;
     final wasShowing = fullscreenActive.value;
     nowPlaying.value = value;
@@ -702,8 +715,20 @@ class SendspinManager extends Manager {
           // the server's queue time was taken instead (see
           // _rebaseFromQueue): its extrapolation is the thing that
           // drifts, and every push would drag the bar back to it.
+          final title = map['title'];
+          if (title is String &&
+              title.isNotEmpty &&
+              title != 'null' &&
+              title != _status['title']) {
+            _maPositionAt = 0;
+          }
+          // A paused queue has no more progress polls. Keep its corrected
+          // position until playback resumes or a different item arrives.
           final engineTime =
-              DateTime.now().millisecondsSinceEpoch - _maPositionAt > 20000;
+              _maPositionAt == 0 ||
+              (_playing &&
+                  DateTime.now().millisecondsSinceEpoch - _maPositionAt >
+                      20000);
           _status = {
             ..._status,
             for (final e in map.entries)
@@ -747,6 +772,7 @@ class SendspinManager extends Manager {
           if (playing != _playing) {
             _playing = playing;
             _syncQueuePoll();
+            if (!playing) unawaited(_watcher?.refresh());
             // The same signal Voice Satellite media playback raises: hold
             // the screensaver and rotation while music is audible here.
             // NOT raised in full-screen player mode: there the screensaver
@@ -1818,6 +1844,7 @@ class SendspinManager extends Manager {
         return;
       }
       if (track['state'] == 'playing') return;
+      _localQueueSnapshot = track;
       _status = {
         ..._status,
         for (final e in track.entries)
@@ -1910,6 +1937,7 @@ class SendspinManager extends Manager {
     final old = _watcher;
     _watcher = null;
     _watchSig = '';
+    _localQueueSnapshot = null;
     if (old != null) unawaited(old.stop());
     _syncQueuePoll();
     if (!want) return;
@@ -1924,11 +1952,14 @@ class SendspinManager extends Manager {
     _syncQueuePoll();
   }
 
-  /// A queue snapshot for the local player: only its shuffle flag and
-  /// its identity are read. Shuffle lands on the card state; a queue
-  /// edit refreshes the panel while it is open.
+  /// A queue snapshot supplies chapter metadata and playback position.
+  /// Shuffle and repeat follow the queue too. An edit refreshes the panel.
   void _onWatchSnapshot(Map<String, Object?>? snapshot) {
     if (_watcher == null) return;
+    _localQueueSnapshot = snapshot;
+    if (_remote == null && nowPlaying.value != null) {
+      _setNowPlaying(nowPlaying.value);
+    }
     if (snapshot == null) {
       // The queue cleared in Music Assistant: the stream merely ended,
       // which read as a pause, and the last track sat on the card and
@@ -1990,16 +2021,19 @@ class SendspinManager extends Manager {
   /// jump or a seek (or freezes it), so the engine can run a whole minute
   /// ahead of the audio or stand still. The watcher reads the queue's
   /// live elapsed time every few seconds; when it disagrees with what is
-  /// on screen by more than a moment, for the same track and with both
-  /// sides playing, the position is re-based on it here and in the
+  /// on screen by more than a moment, for the same track and playback
+  /// state, the position is re-based on it here and in the
   /// engine's pushes alike, so the two cannot ping-pong.
   void _rebaseFromQueue(Map<String, Object?> snapshot) {
-    if (_remote != null || !_playing || snapshot['playing'] != true) return;
+    if (_remote != null || _playing != (snapshot['playing'] == true)) return;
     if (snapshot['timeFresh'] != true) return;
     if ('${snapshot['title'] ?? ''}' != '${_status['title'] ?? ''}') return;
     // Our own seek is in flight for a moment: the server's next time
     // reports may still describe the place it left.
-    if (DateTime.now().millisecondsSinceEpoch - _seekSentAt < 4000) return;
+    if (_playing &&
+        DateTime.now().millisecondsSinceEpoch - _seekSentAt < 4000) {
+      return;
+    }
     final maPos = (snapshot['positionMs'] as num?)?.toInt();
     final maAt = (snapshot['receivedAt'] as num?)?.toInt();
     final ourPos = (_status['positionMs'] as num?)?.toInt();
@@ -2008,8 +2042,8 @@ class SendspinManager extends Manager {
       return;
     }
     final now = DateTime.now().millisecondsSinceEpoch;
-    final maNow = maPos + (now - maAt);
-    final ourNow = ourPos + (now - ourAt);
+    final maNow = maPos + (_playing ? now - maAt : 0);
+    final ourNow = ourPos + (_playing ? now - ourAt : 0);
     if ((maNow - ourNow).abs() < 2500) return;
     log.info(
       name,

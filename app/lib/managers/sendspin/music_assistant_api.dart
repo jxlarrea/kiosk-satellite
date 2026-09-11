@@ -499,6 +499,11 @@ Map<String, Object?>? queueTrackSnapshot(Object? queue, {String? webBase}) {
   return {
     'state': '${queue['state'] ?? ''}',
     'title': title,
+    'mediaType': '${media['media_type'] ?? ''}',
+    'mediaUri': '${media['uri'] ?? ''}',
+    'chapters': media['metadata'] is Map
+        ? (media['metadata'] as Map)['chapters']
+        : null,
     if (artist.isNotEmpty) 'artist': artist,
     if (album.isNotEmpty) 'album': album,
     if (duration != null) 'durationMs': (duration * 1000).round(),

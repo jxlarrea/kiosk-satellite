@@ -675,6 +675,106 @@ void main() {
       expect(native.where((c) => c.method == 'rebasePosition'), hasLength(1));
     });
 
+    test(
+      'local chapter metadata follows the audible book and clears on a song',
+      () async {
+        await build(
+          extra: {
+            'ks.sendspin.player': '',
+            'ks.sendspin.player_source': '',
+            'ks.sendspin.enabled': true,
+            'ks.sendspin.client_id': 'abc123',
+          },
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        Future<void> native(String method, Map<String, Object?> args) =>
+            messenger.handlePlatformMessage(
+              channel.name,
+              const StandardMethodCodec().encodeMethodCall(
+                MethodCall(method, args),
+              ),
+              (_) {},
+            );
+        fake!.onSnapshot({
+          'title': 'Book',
+          'mediaType': 'audiobook',
+          'mediaUri': 'library://audiobook/1',
+          'chapters': [
+            {'name': 'Opening', 'start': 0, 'end': 120},
+          ],
+        });
+        await native('metadataChanged', {
+          'title': 'Book',
+          'durationMs': 120000,
+        });
+        await native('playingChanged', {'playing': true});
+        expect(sendspin.nowPlaying.value?['mediaType'], 'audiobook');
+        expect(sendspin.nowPlaying.value?['chapters'], hasLength(1));
+        await native('metadataChanged', {'positionMs': 5000});
+        expect(sendspin.nowPlaying.value?['chapters'], hasLength(1));
+        await native('metadataChanged', {
+          'title': 'Song',
+          'durationMs': 200000,
+        });
+        expect(sendspin.nowPlaying.value?['chapters'], isNull);
+        expect(sendspin.nowPlaying.value?['mediaType'], isNull);
+      },
+    );
+
+    test('pausing after a seek keeps the absolute queue position', () async {
+      await build(
+        extra: {
+          'ks.sendspin.player': '',
+          'ks.sendspin.player_source': '',
+          'ks.sendspin.enabled': true,
+          'ks.sendspin.client_id': 'abc123',
+        },
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      fakeAsync((clock) {
+        void native(String method, Map<String, Object?> args) {
+          messenger.handlePlatformMessage(
+            channel.name,
+            const StandardMethodCodec().encodeMethodCall(
+              MethodCall(method, args),
+            ),
+            (_) {},
+          );
+          clock.flushMicrotasks();
+        }
+
+        native('stateChanged', {'connected': true});
+        native('metadataChanged', {
+          'title': 'Book',
+          'positionMs': 60000,
+          'durationMs': 3000000,
+        });
+        native('playingChanged', {'playing': true});
+        native('playingChanged', {'playing': false});
+        fake!.onSnapshot({
+          'title': 'Book',
+          'playing': false,
+          'positionMs': 1320000,
+          'receivedAt': DateTime.now().millisecondsSinceEpoch - 10000,
+          'timeFresh': true,
+        });
+        clock.flushMicrotasks();
+        expect(sendspin.nowPlaying.value?['positionMs'], 1320000);
+        clock.elapse(const Duration(seconds: 25));
+        native('metadataChanged', {'positionMs': 65000});
+        expect(sendspin.nowPlaying.value?['positionMs'], 1320000);
+        expect(sendspin.nowPlaying.value?['playing'], isFalse);
+        // The paused correction belongs only to that item.
+        native('metadataChanged', {'title': 'Next', 'positionMs': 1000});
+        expect(sendspin.nowPlaying.value?['positionMs'], 1000);
+        clock.elapse(const Duration(seconds: 3));
+      });
+    });
+
     /// The view on screen: a screensaver session up with a playing track.
     Future<void> showView() async {
       bus.publish(const ScreensaverStateChanged(active: true));
@@ -1027,6 +1127,144 @@ void main() {
         await tester.pump(const Duration(milliseconds: 50));
       }
     }
+
+    void showBook({int position = 125000, bool playing = false}) {
+      container.sendspin.nowPlaying.value = {
+        'title': 'Book',
+        'mediaUri': 'library://audiobook/1',
+        'mediaType': 'audiobook',
+        'durationMs': 300000,
+        'positionMs': position,
+        'playing': playing,
+        'receivedAt': DateTime.now().millisecondsSinceEpoch,
+        'chapters': [
+          {'name': 'Opening', 'start': 0, 'end': 120},
+          {'name': 'The Journey', 'start': 120, 'end': 240},
+          {'name': 'Ending', 'start': 240},
+        ],
+      };
+    }
+
+    testWidgets(
+      'chapter progress seeks in absolute book time and falls back for songs',
+      (tester) async {
+        await pump(tester);
+        showBook();
+        await tester.pump();
+        var slider = tester.widget<Slider>(find.byType(Slider));
+        expect(slider.max, 120000);
+        expect(slider.value, 5000);
+        expect(find.text('The Journey'), findsOneWidget);
+        slider.onChangeStart!(5000);
+        slider.onChanged!(30000);
+        await tester.pump();
+        slider = tester.widget<Slider>(find.byType(Slider));
+        slider.onChangeEnd!(30000);
+        await tester.pump();
+        expect(calls.last.arguments, {'command': 'seek', 'value': 150000});
+        expect(tester.widget<Slider>(find.byType(Slider)).value, 30000);
+        container.sendspin.nowPlaying.value = {
+          'title': 'Song',
+          'durationMs': 200000,
+          'positionMs': 10000,
+          'playing': false,
+        };
+        await tester.pump();
+        slider = tester.widget<Slider>(find.byType(Slider));
+        expect(slider.max, 200000);
+        expect(slider.value, 10000);
+        expect(find.text('The Journey'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'a drag stays in its chapter when playback crosses a boundary',
+      (tester) async {
+        await pump(tester);
+        showBook(position: 119000);
+        await tester.pump();
+        var slider = tester.widget<Slider>(find.byType(Slider));
+        slider.onChangeStart!(119000);
+        slider.onChanged!(30000);
+        showBook(position: 121000);
+        await tester.pump();
+        expect(find.text('Opening'), findsOneWidget);
+        slider = tester.widget<Slider>(find.byType(Slider));
+        slider.onChangeEnd!(30000);
+        await tester.pump();
+        expect(calls.last.arguments, {'command': 'seek', 'value': 30000});
+      },
+    );
+
+    testWidgets(
+      'chapter rows seek and update the active chapter without a queue change',
+      (tester) async {
+        await pump(
+          tester,
+          settings: {...ma, 'ks.sendspin.fullscreen_queue': true},
+        );
+        showBook();
+        await settle(tester);
+        expect(find.text('CHAPTERS'), findsOneWidget);
+        final list = find.byType(ListView);
+        FontWeight? weight(String title) => tester
+            .widget<Text>(find.descendant(of: list, matching: find.text(title)))
+            .style
+            ?.fontWeight;
+        expect(weight('The Journey'), FontWeight.w700);
+        await tester.tap(
+          find.descendant(of: list, matching: find.text('Ending')),
+        );
+        await tester.pump();
+        expect(calls.last.arguments, {'command': 'seek', 'value': 240000});
+        expect(_FakeApi.calls, isNot(contains('player_queues/play_index')));
+        showBook(position: 240000);
+        await settle(tester);
+        expect(weight('Ending'), FontWeight.w700);
+        expect(weight('The Journey'), FontWeight.w500);
+        expect(tester.widget<Slider>(find.byType(Slider)).max, 60000);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.pump(const Duration(seconds: 2));
+      },
+    );
+
+    testWidgets(
+      'chapter controls fit a narrow panel and disable unavailable seeking',
+      (tester) async {
+        await pump(
+          tester,
+          settings: {...ma, 'ks.sendspin.fullscreen_queue': true},
+          size: const Size(280, 480),
+          alongsideScreensaver: true,
+        );
+        showBook();
+        container.sendspin.nowPlaying.value = {
+          ...container.sendspin.nowPlaying.value!,
+          'supportedCommands': ['play', 'pause'],
+        };
+        await settle(tester);
+        expect(tester.widget<Slider>(find.byType(Slider)).onChanged, isNull);
+        final ending = find.descendant(
+          of: find.byType(ListView),
+          matching: find.text('Ending'),
+        );
+        expect(
+          tester
+              .widget<InkWell>(
+                find.ancestor(of: ending, matching: find.byType(InkWell)).first,
+              )
+              .onTap,
+          isNull,
+        );
+        expect(
+          calls.where((call) => call.arguments['command'] == 'seek'),
+          isEmpty,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pump(const Duration(seconds: 2));
+      },
+    );
 
     for (final horizontal in [false, true]) {
       for (final shared in [false, true]) {

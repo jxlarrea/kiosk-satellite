@@ -12,6 +12,7 @@ import 'thumb_cache.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
+import '../managers/sendspin/audiobook_chapters.dart';
 import '../managers/sendspin/remote_player.dart';
 import '../managers/settings/definitions.dart' as defs;
 
@@ -931,6 +932,10 @@ class _QueueViewState extends State<_QueueView> {
   String? _pendingId;
   String _pendingTitle = '';
   Timer? _pendingTimeout;
+  Timer? _chapterTick;
+  int? _pendingChapterStart;
+  int? _chapterRowsSignature;
+  List<Map<String, Object?>> _chapterRows = const [];
 
   @override
   void initState() {
@@ -939,6 +944,7 @@ class _QueueViewState extends State<_QueueView> {
       if (e.key == defs.sendspinQueueArt.key && mounted) setState(() {});
     });
     container.sendspin.nowPlaying.addListener(_onNowPlaying);
+    _onNowPlaying();
   }
 
   @override
@@ -951,34 +957,76 @@ class _QueueViewState extends State<_QueueView> {
   void dispose() {
     container.sendspin.nowPlaying.removeListener(_onNowPlaying);
     _pendingTimeout?.cancel();
+    _chapterTick?.cancel();
     _scroll.dispose();
     _artSub?.cancel();
     super.dispose();
   }
 
   void _onNowPlaying() {
-    if (_pendingId == null || !mounted) return;
-    final title = '${container.sendspin.nowPlaying.value?['title'] ?? ''}';
-    if (title == _pendingTitle) _clearPending();
+    if (!mounted) return;
+    final now = container.sendspin.nowPlaying.value;
+    final chapters = audiobookChapters(now);
+    if (chapters.isNotEmpty && now?['playing'] == true) {
+      _chapterTick ??= Timer.periodic(
+        const Duration(milliseconds: 500),
+        (_) => _onNowPlaying(),
+      );
+    } else {
+      _chapterTick?.cancel();
+      _chapterTick = null;
+    }
+    if (_pendingId != null) {
+      if (_pendingChapterStart case final start?) {
+        final position = now == null
+            ? 0
+            : playbackPositionMs(now, DateTime.now().millisecondsSinceEpoch);
+        final index = currentChapterIndex(
+          chapters,
+          position,
+          (now?['durationMs'] as num?)?.toInt() ?? 0,
+        );
+        if ('${now?['title'] ?? ''}' != _pendingTitle ||
+            (index >= 0 && chapters[index].startMs == start)) {
+          _clearPending();
+        }
+      } else if ('${now?['title'] ?? ''}' == _pendingTitle) {
+        _clearPending();
+      }
+    }
+    if (chapters.isNotEmpty || _chapterRowsSignature != null) setState(() {});
   }
 
   void _clearPending() {
     _pendingTimeout?.cancel();
     _pendingTimeout = null;
-    if (mounted) setState(() => _pendingId = null);
+    if (mounted) {
+      setState(() {
+        _pendingId = null;
+        _pendingChapterStart = null;
+      });
+    }
   }
 
-  Future<void> _play(String id, String title) async {
+  Future<void> _play(Map<String, Object?> item) async {
+    final id = '${item['id'] ?? ''}';
     if (id.isEmpty) return;
+    final start = item['chapterStartMs'] as int?;
     _pendingTimeout?.cancel();
     setState(() {
       _pendingId = id;
-      _pendingTitle = title;
+      _pendingChapterStart = start;
+      _pendingTitle = start == null
+          ? '${item['title'] ?? ''}'
+          : '${container.sendspin.nowPlaying.value?['title'] ?? ''}';
     });
     _pendingTimeout = Timer(const Duration(seconds: 15), () {
       if (_pendingId == id) _clearPending();
     });
-    final ok = await container.sendspin.playQueueItem(id);
+    final ok = start == null
+        ? await container.sendspin.playQueueItem(id)
+        : await container.sendspin.seek(start);
+    if (!mounted) return;
     if (!ok && _pendingId == id) _clearPending();
   }
 
@@ -1097,7 +1145,7 @@ class _QueueViewState extends State<_QueueView> {
             ? Colors.white24
             : Colors.white38;
         return InkWell(
-          onTap: () => _play(id, '${item['title'] ?? ''}'),
+          onTap: item['canSeek'] == false ? null : () => _play(item),
           borderRadius: BorderRadius.circular(10),
           onFocusChange: onFocusChange,
           // A dpad walking the rows needs to see where it is, whatever the
@@ -1204,6 +1252,56 @@ class _QueueViewState extends State<_QueueView> {
     return ValueListenableBuilder<List<Map<String, Object?>>>(
       valueListenable: container.sendspin.queueItems,
       builder: (context, items, _) {
+        final now = container.sendspin.nowPlaying.value;
+        final chapters = audiobookChapters(now);
+        final chapterMode = chapters.isNotEmpty;
+        if (chapterMode) {
+          final position = playbackPositionMs(
+            now!,
+            DateTime.now().millisecondsSinceEpoch,
+          );
+          final active = currentChapterIndex(
+            chapters,
+            position,
+            (now['durationMs'] as num?)?.toInt() ?? 0,
+          );
+          final commands = now['supportedCommands'] as List?;
+          final canSeek =
+              commands == null || commands.isEmpty || commands.contains('seek');
+          final signature = Object.hash(
+            now['mediaUri'],
+            now['queueItemId'],
+            now['title'],
+            now['artworkUrl'],
+            active,
+            canSeek,
+            Object.hashAll(
+              chapters.map(
+                (chapter) =>
+                    Object.hash(chapter.name, chapter.startMs, chapter.endMs),
+              ),
+            ),
+          );
+          if (signature != _chapterRowsSignature) {
+            _chapterRowsSignature = signature;
+            _chapterRows = [
+              for (final (i, chapter) in chapters.indexed)
+                {
+                  'id': 'chapter:${chapter.startMs}',
+                  'title': chapter.name,
+                  'durationMs': chapter.durationMs,
+                  'chapterStartMs': chapter.startMs,
+                  'canSeek': canSeek,
+                  'current': i == active,
+                  'played': chapter.endMs <= position && i != active,
+                  'artworkUrl': now['artworkUrl'],
+                },
+            ];
+          }
+          items = _chapterRows;
+        } else {
+          _chapterRowsSignature = null;
+        }
         if (items.isEmpty) {
           return Center(
             child: Text(
@@ -1237,6 +1335,7 @@ class _QueueViewState extends State<_QueueView> {
               controller: _scroll,
               padding: const EdgeInsets.symmetric(vertical: 24),
               children: [
+                if (chapterMode) _heading('Chapters', count: items.length),
                 for (final (i, item) in played.indexed)
                   _row(
                     item,
@@ -1246,7 +1345,10 @@ class _QueueViewState extends State<_QueueView> {
                   _heading('Now playing', key: _nowPlayingKey),
                   _row(items[current]),
                 ],
-                _heading('Up next', count: upNext),
+                _heading(
+                  'Up next',
+                  count: chapterMode ? upcoming.length : upNext,
+                ),
                 for (final item in upcoming) _row(item),
               ],
             ),
@@ -2469,6 +2571,9 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
 
   /// The thumb while a finger holds it, in ms; null between drags.
   double? _dragMs;
+  bool _dragging = false;
+  AudiobookChapter? _dragChapter;
+  String? _progressKey;
 
   /// A seek just sent, held on screen until the next position report
   /// replaces it, so the bar does not snap back for the beat the round
@@ -2500,6 +2605,15 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
 
   void _onNowPlaying() {
     final now = c.sendspin.nowPlaying.value;
+    final key = '${now?['mediaUri']}|${now?['title']}|${now?['artist']}';
+    if (key != _progressKey) {
+      _progressKey = key;
+      _dragMs = null;
+      _dragging = false;
+      _dragChapter = null;
+      _seekMs = null;
+      _seekAt = null;
+    }
     final ticking =
         widget.active &&
         now?['playing'] == true &&
@@ -2525,6 +2639,8 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
     final target = ms.round();
     setState(() {
       _dragMs = null;
+      _dragging = false;
+      _dragChapter = null;
       _seekMs = target;
       _seekAt = DateTime.now().millisecondsSinceEpoch;
     });
@@ -2542,7 +2658,7 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
     final now = c.sendspin.nowPlaying.value;
     if (now == null) return const SizedBox.shrink();
     final playing = now['playing'] == true;
-    final duration = (now['durationMs'] as num?)?.toInt() ?? 0;
+    final bookDuration = (now['durationMs'] as num?)?.toInt() ?? 0;
     // Live position: the last report plus the wall time since, the way
     // the card and the lyrics extrapolate it; a seek in flight shows its
     // target for at most a few seconds.
@@ -2559,7 +2675,14 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
         _seekAt = null;
       }
     }
-    if (duration > 0) position = position.clamp(0, duration);
+    if (bookDuration > 0) position = position.clamp(0, bookDuration);
+    final chapters = audiobookChapters(now);
+    final chapterIndex = currentChapterIndex(chapters, position, bookDuration);
+    final chapter = _dragging
+        ? _dragChapter
+        : (chapterIndex < 0 ? null : chapters[chapterIndex]);
+    final duration = chapter?.durationMs ?? bookDuration;
+    final relativePosition = position - (chapter?.startMs ?? 0);
 
     final supported =
         (now['supportedCommands'] as List?)?.map((e) => '$e').toList() ??
@@ -2567,7 +2690,7 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
     bool has(String cmd) => supported.isEmpty || supported.contains(cmd);
     final canSeek = duration > 0 && has('seek');
     final scale = widget.scale;
-    final shown = (_dragMs ?? position.toDouble()).clamp(
+    final shown = (_dragMs ?? relativePosition.toDouble()).clamp(
       0.0,
       duration > 0 ? duration.toDouble() : 0.0,
     );
@@ -2582,6 +2705,13 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (chapter != null)
+            Text(
+              chapter.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: timeStyle,
+            ),
           SizedBox(
             height: 24 * scale,
             child: SliderTheme(
@@ -2608,8 +2738,18 @@ class _NowPlayingProgressState extends State<_NowPlayingProgress> {
               child: Slider(
                 value: shown,
                 max: duration.toDouble(),
+                onChangeStart: canSeek
+                    ? (_) => setState(() {
+                        _dragging = true;
+                        _dragChapter = chapter;
+                      })
+                    : null,
                 onChanged: canSeek ? (v) => setState(() => _dragMs = v) : null,
-                onChangeEnd: canSeek ? _seek : null,
+                onChangeEnd: canSeek
+                    ? (v) => _seek(
+                        chapter?.absolutePosition(v.round()).toDouble() ?? v,
+                      )
+                    : null,
               ),
             ),
           ),
@@ -2866,15 +3006,19 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
     // it; without, it stays the state glyph it always was.
     final fullscreen = c.settings.get(defs.sendspinFullscreen);
 
-    // Live position: last reported position plus wall time since it was
-    // reported, frozen while paused, clamped to the track.
-    final duration = (now['durationMs'] as num?)?.toInt() ?? 0;
-    var position = (now['positionMs'] as num?)?.toInt() ?? 0;
-    final receivedAt = (now['receivedAt'] as num?)?.toInt();
-    if (playing && receivedAt != null) {
-      position += DateTime.now().millisecondsSinceEpoch - receivedAt;
+    // The floating progress follows the same chapter as the full view.
+    var duration = (now['durationMs'] as num?)?.toInt() ?? 0;
+    var position = playbackPositionMs(
+      now,
+      DateTime.now().millisecondsSinceEpoch,
+    );
+    final chapters = audiobookChapters(now);
+    final chapterIndex = currentChapterIndex(chapters, position, duration);
+    if (chapterIndex >= 0) {
+      final chapter = chapters[chapterIndex];
+      duration = chapter.durationMs;
+      position -= chapter.startMs;
     }
-    if (duration > 0) position = position.clamp(0, duration);
 
     return LayoutBuilder(
       builder: (context, constraints) {

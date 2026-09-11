@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Audiobooks show chapter progress and navigation.** Now Playing uses Music Assistant's chapter metadata to show the current chapter's progress and list chapters in the queue panel. Tap a chapter to seek to its start. Pausing after a seek keeps Music Assistant's corrected position. Books without usable chapter metadata keep the full book timeline. Adds [#503](https://github.com/jxlarrea/kiosk-satellite/issues/503).
+
 ### Changed
 - **Remote Admin assets load when first opened.** Startup and API-only use skip loading and preparing the admin page bundle. Concurrent page requests share one load and retain the existing versioned caching behavior. Addresses the remote admin startup overhead in [#502](https://github.com/jxlarrea/kiosk-satellite/issues/502).
 
