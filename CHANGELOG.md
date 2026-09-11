@@ -24,6 +24,8 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Plugin documentation lives with Hello World.** Installation instructions, the SDK reference and author tooling now share the standalone plugin template repository.
 
 ### Fixed
+- **Plugin entry hints show the repository and version.** On-device settings and Remote Admin display `user/repo · version`, with `ZIP` for local developer installs.
+- **Fleet sync leaves plugin gestures on each kiosk.** Leaders omit plugin action mappings and followers preserve their own while applying ordinary gestures. Plugin-only gesture edits do not trigger sync drift. Plugin Manager state, including Enable Plugins, remains local and fleet tokens cannot call plugin commands.
 - **Disabled plugin subpages explain how to enable them.** The hint also appears for plugins without actions.
 - **Debug builds can open the dashboard.** Navigation key capture now initializes after the kiosk screen's inherited dependencies are available, preventing a startup assertion that blocks the WebView. Fixes [#493](https://github.com/jxlarrea/kiosk-satellite/issues/493).
 - **Unused overlays dispose cleanly.** Browser and camera overlay animation controllers now initialize while their widgets are mounted, preventing a debug assertion when the kiosk screen closes before either overlay has opened.

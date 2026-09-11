@@ -230,6 +230,30 @@ void main() {
         )).$1,
         403,
       );
+      for (final command in [
+        'getPluginState',
+        'listPlugins',
+        'setPluginsEnabled',
+        'installPlugin',
+        'installPluginRepository',
+        'enablePlugin',
+        'disablePlugin',
+        'removePlugin',
+        'configurePlugin',
+        'configurePluginAction',
+        'runPluginCommand',
+      ]) {
+        expect(
+          (await call(
+            'POST',
+            '/api/commands/$command',
+            body: {'enabled': false},
+            token: token,
+          )).$1,
+          403,
+          reason: command,
+        );
+      }
       final (s3, _) = await call('POST', '/api/fleet/leave', token: token);
       expect(s3, 200);
       expect(executed.any((e) => e.$1 == 'fleetLeaderLeft'), isTrue);

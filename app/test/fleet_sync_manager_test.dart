@@ -138,6 +138,173 @@ void main() {
     await fleet.dispose();
   });
 
+  Map<String, Object?> gesture(
+    String id,
+    String action, {
+    String command = 'show',
+  }) => {
+    'id': id,
+    'trigger': {'type': 'corner_taps', 'corner': 'tl', 'taps': 3},
+    'action': {
+      'type': action,
+      if (action == 'plugin_action') ...{
+        'pluginId': 'hello-world',
+        'command': command,
+      },
+    },
+  };
+
+  group('plugins stay local', () {
+    test(
+      'leader payloads and revisions exclude plugin gesture actions and plugin state',
+      () async {
+        await build();
+        final regular = gesture('normal', 'screensaver');
+        final plugin = gesture('plugin', 'plugin_action');
+        await settings.set(defs.gestureMappings, jsonEncode([regular, plugin]));
+        final profile = SyncProfile(
+          categories: {
+            for (final category in defs.fleetSyncCategories) category.$1,
+            'Plugins',
+            'Plugin Manager',
+          },
+          excluded: const {},
+          credentials: defs.fleetCredentialKeys,
+          dashboard: true,
+        );
+        final before = fleet.profileSettings(profile);
+        expect(jsonDecode(before[defs.gestureMappings.key] as String), [
+          regular,
+        ]);
+        expect(
+          before.keys.any((key) => key.toLowerCase().contains('plugin')),
+          false,
+        );
+        expect(
+          fleet.syncable().any(
+            (row) => '${row['key']}'.toLowerCase().contains('plugin'),
+          ),
+          false,
+        );
+        await settings.set(
+          defs.gestureMappings,
+          jsonEncode([
+            gesture('other-plugin', 'plugin_action', command: 'hide'),
+            regular,
+          ]),
+        );
+        expect(
+          FleetSyncManager.fingerprintOf(fleet.profileSettings(profile)),
+          FleetSyncManager.fingerprintOf(before),
+        );
+      },
+    );
+
+    test(
+      'followers reject plugin state and retain their own plugin gestures on every push',
+      () async {
+        await build(
+          prefs: {
+            'ks.fleet.leader_info': jsonEncode({
+              'id': 'lead',
+              'name': 'Leader',
+            }),
+          },
+        );
+        final localPlugin = gesture('local', 'plugin_action');
+        await settings.set(
+          defs.gestureMappings,
+          jsonEncode([localPlugin, gesture('old', 'screensaver')]),
+        );
+        final regular = gesture('new', 'screensaver_stop');
+        final incoming = {
+          'pluginsEnabled': false,
+          'plugins.enabled': false,
+          'plugins.installed': '[untrusted]',
+          'plugins.settings': {'message': 'leader'},
+          'plugins.actionOptions': {'drawer': true},
+          defs.gestureMappings.key: jsonEncode([
+            gesture('remote-plugin', 'plugin_action'),
+            gesture('local', 'screensaver'),
+            regular,
+          ]),
+        };
+        final accepted = FleetSyncManager.acceptable(incoming);
+        expect(accepted.keys, [defs.gestureMappings.key]);
+        expect(
+          (accepted[defs.gestureMappings.key] as String).contains(
+            'plugin_action',
+          ),
+          false,
+        );
+        Future<CommandResult> push(Map<String, Object?> values) =>
+            commands.execute('fleetApply', {
+              'revision': 'clean',
+              'version': '2026.9.19',
+              'settings': values,
+            });
+        final result = await push(incoming);
+        expect(result.ok, true, reason: result.error);
+        expect((result.data as Map)['received'], 1);
+        expect((result.data as Map)['skipped'], 5);
+        expect(jsonDecode(settings.get(defs.gestureMappings)), [
+          regular,
+          localPlugin,
+        ]);
+        expect(fleet.syncedKeys, {defs.gestureMappings.key});
+        final repeated = await push(incoming);
+        expect((repeated.data as Map)['applied'], 0);
+        final invalid = await push({defs.gestureMappings.key: null});
+        expect((invalid.data as Map)['applied'], 0);
+        expect(jsonDecode(settings.get(defs.gestureMappings)), [
+          regular,
+          localPlugin,
+        ]);
+        await push({defs.gestureMappings.key: '[]'});
+        expect(jsonDecode(settings.get(defs.gestureMappings)), [localPlugin]);
+      },
+    );
+
+    test(
+      'editing local plugin gestures does not mark a follower out of sync',
+      () async {
+        final regular = gesture('normal', 'screensaver');
+        await build(
+          prefs: {
+            'ks.fleet.leader_info': jsonEncode({
+              'id': 'lead',
+              'name': 'Leader',
+            }),
+            'ks.fleet.synced_keys': jsonEncode([defs.gestureMappings.key]),
+            'ks.fleet.applied_revision': 'clean',
+            'ks.gestures.mappings': jsonEncode([regular]),
+          },
+        );
+        await settings.set(
+          defs.gestureMappings,
+          jsonEncode([regular, gesture('local', 'plugin_action')]),
+        );
+        await settle();
+        expect(settings.get(defs.fleetAppliedRevision), 'clean');
+        await settings.set(
+          defs.gestureMappings,
+          jsonEncode([
+            regular,
+            gesture('local', 'plugin_action', command: 'hide'),
+          ]),
+        );
+        await settle();
+        expect(settings.get(defs.fleetAppliedRevision), 'clean');
+        await settings.set(defs.gestureMappings, jsonEncode([regular]));
+        await settle();
+        expect(settings.get(defs.fleetAppliedRevision), 'clean');
+        await settings.set(defs.gestureMappings, '[]');
+        await settle();
+        expect(settings.get(defs.fleetAppliedRevision), '');
+      },
+    );
+  });
+
   group('what travels', () {
     test('the identity, hardware and remote keys stay per kiosk', () async {
       await build();

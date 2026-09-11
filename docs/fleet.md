@@ -101,6 +101,10 @@ Certain settings remain unique to each kiosk regardless of the profile configura
 | Followed player | `sendspin.player`, `sendspin.player_source`, `sendspin.player_name` |
 | Local state | `screensaver.saved_brightness`, `screensaver.immich_validated`, `sendspin.player_active`, `sendspin.player_pos`, `sendspin.sonos_hosts` |
 
+Plugin Manager stays entirely local. Fleet sync does not copy installed plugins, packages, plugin settings, per-plugin enabled states, drawer or Home Assistant action placements or the **Enable Plugins** master switch. A fleet token cannot call plugin management commands.
+
+Gestures assigned to plugin actions also stay local, even when the profile includes Gestures. The leader omits them from its payload and the follower ignores any received plugin actions while preserving its own. A local plugin gesture takes precedence if an incoming ordinary gesture has the same ID. Adding, editing or removing a local plugin gesture does not mark the follower out of sync. Other gesture mappings still follow the profile.
+
 Files referenced by settings (like notification chimes, gallery photos, or local media folders) do not sync; only their file paths travel. If a follower lacks the corresponding file, it defaults back just as it would for a missing local file. The Voice Satellite selection lives on the page itself and also stays strictly local to the kiosk.
 
 ## Remote API

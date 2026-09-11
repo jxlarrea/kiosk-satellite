@@ -235,7 +235,8 @@ function render(root, state) {
   for (const plugin of plugins) {
     const row = subpageEntry('plugins', plugin.id, { iconName: 'Plugins' });
     row.querySelector('.name').textContent = plugin.name;
-    row.querySelector('.desc').textContent = `${plugin.version} · ${plugin.enabled ? (pluginsEnabled ? 'Enabled' : 'Paused') : 'Disabled'}`;
+    const repository = plugin.source?.repository?.match(/^https:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/?$/i)?.[1];
+    row.querySelector('.desc').textContent = `${repository || 'ZIP'} · ${plugin.version}`;
     row.addEventListener('click', (event) => { if (busy) event.stopImmediatePropagation(); }, true);
     row.setAttribute('role', 'link'); row.tabIndex = 0;
     row.onkeydown = (event) => {

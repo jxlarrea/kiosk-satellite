@@ -20,6 +20,16 @@ const pluginTrustNotice =
     'app data and granted Android permissions. A faulty or malicious plugin can '
     'expose private information or stop the app from working. Only install plugins from authors you trust.';
 
+String _pluginEntryHint(Map<String, Object?> plugin) {
+  final source = plugin['source'];
+  final repository = source is Map ? '${source['repository'] ?? ''}' : '';
+  final name = RegExp(
+    r'^https://github\.com/([^/]+/[^/]+?)(?:\.git)?/?$',
+    caseSensitive: false,
+  ).firstMatch(repository)?.group(1);
+  return '${name ?? 'ZIP'} · ${plugin['version']}';
+}
+
 class PluginReadme extends StatelessWidget {
   const PluginReadme({super.key, required this.source});
   final Map source;
@@ -422,7 +432,7 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                       children: [
                         Text('${plugin['name']}'),
                         Text(
-                          '${plugin['version']} · ${plugin['enabled'] == true ? (enabled ? 'Enabled' : 'Paused') : 'Disabled'}',
+                          _pluginEntryHint(plugin),
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: Theme.of(

@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -509,6 +510,13 @@ class FleetSyncManager extends Manager {
     if (e.key.startsWith('fleet.')) return;
     final def = _settings.defByKey(e.key);
     if (def == null || def.perDevice) return;
+    if (e.key == defs.gestureMappings.key &&
+        _sameValue(
+          _fleetValue(e.key, e.previous),
+          _fleetValue(e.key, e.value),
+        )) {
+      return;
+    }
     // A leader: what the followers get changed, tell them (after the burst
     // a slider or an import makes has settled).
     if (leading) {
@@ -777,7 +785,7 @@ class FleetSyncManager extends Manager {
     final out = <String, Object?>{};
     for (final def in defs.allSettings) {
       if (!syncs(def, profile)) continue;
-      out[def.key] = _settings.get(def);
+      out[def.key] = _fleetValue(def.key, _settings.get(def));
     }
     return out;
   }
@@ -800,8 +808,33 @@ class FleetSyncManager extends Manager {
     final byKey = {for (final d in defs.allSettings) d.key: d};
     return {
       for (final e in incoming.entries)
-        if (byKey[e.key] case final def? when !def.perDevice) e.key: e.value,
+        if (byKey[e.key] case final def?
+            when !def.perDevice &&
+                (e.key != defs.gestureMappings.key || e.value is String))
+          e.key: _fleetValue(e.key, e.value),
     };
+  }
+
+  /// Plugin state lives outside SettingsManager. Its only embedded reference
+  /// is a gesture action, which must stay on the kiosk that configured it.
+  static Object? _fleetValue(String key, Object? value) {
+    if (key != defs.gestureMappings.key) return value;
+    return jsonEncode([
+      for (final mapping in decodeGestureMappings(value is String ? value : ''))
+        if (mapping.actionType != 'plugin_action') mapping.toJson(),
+    ]);
+  }
+
+  String _preservePluginGestures(Object? incoming) {
+    final local = decodeGestureMappings(
+      _settings.get(defs.gestureMappings),
+    ).where((mapping) => mapping.actionType == 'plugin_action').toList();
+    final localIds = {for (final mapping in local) mapping.id};
+    return jsonEncode([
+      for (final mapping in decodeGestureMappings(incoming as String))
+        if (!localIds.contains(mapping.id)) mapping.toJson(),
+      for (final mapping in local) mapping.toJson(),
+    ]);
   }
 
   // ── Commands ────────────────────────────────────────────────────────
@@ -1543,8 +1576,11 @@ class FleetSyncManager extends Manager {
     for (final e in wanted.entries) {
       final def = _settings.defByKey(e.key);
       if (def == null) continue;
-      if (_sameValue(_settings.get(def), e.value)) continue;
-      changes[e.key] = e.value;
+      final value = e.key == defs.gestureMappings.key
+          ? _preservePluginGestures(e.value)
+          : e.value;
+      if (_sameValue(_settings.get(def), value)) continue;
+      changes[e.key] = value;
     }
     final applied = changes.isEmpty
         ? 0
