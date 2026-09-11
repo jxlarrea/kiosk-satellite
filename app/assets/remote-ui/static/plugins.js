@@ -355,7 +355,7 @@ function render(root, state) {
         }, button);
         row.append(button); actions.append(row);
       }
-      page.append(heading('Actions'), actions, hintRow('Assign actions in Gestures or choose which ones appear in the kiosk drawer and Home Assistant.'));
+      page.append(heading('Actions'), actions);
     }
     root.append(page);
   }

@@ -899,9 +899,6 @@ class _PluginSettingsState extends State<_PluginSettings> {
                 ),
             ],
           ),
-          const GroupNote(
-            'Assign actions in Gestures or choose which ones appear in the kiosk drawer and Home Assistant.',
-          ),
         ],
       ],
     );
