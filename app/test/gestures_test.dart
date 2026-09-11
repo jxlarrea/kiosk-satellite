@@ -209,6 +209,7 @@ void main() {
         'openSystemSettings',
         'haCallService',
         'haFireEvent',
+        'runPluginCommand',
       ]) {
         commands.register(
           Command(
@@ -233,6 +234,24 @@ void main() {
       bus.publish(GestureDetected(id: id));
       await Future<void>.delayed(Duration.zero);
     }
+
+    test('plugin gestures route stable IDs and report completion', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl","taps":3},"action":{"type":"plugin_action","pluginId":"hello-world","command":"show","pluginName":"Hello World","title":"Show window"}}]',
+      );
+      await fire('g1');
+      expect(executed.single.$1, 'runPluginCommand');
+      expect(executed.single.$2, {'id': 'hello-world', 'command': 'show'});
+      expect(outcomes.single.ok, isTrue);
+      expect(gestureActionKindTitle(outcomes.single.action), 'Plugin action');
+      expect(
+        describeGestureAction(outcomes.single.action),
+        'Hello World: Show window',
+      );
+      await gestures.dispose();
+      await settings.dispose();
+      await bus.dispose();
+    });
 
     test('a detected gesture runs its mapped command', () async {
       await build(

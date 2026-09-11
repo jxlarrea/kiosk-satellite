@@ -593,7 +593,7 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
                 const HintRow('Enable Plugins to run this plugin.')
               else if (plugin['enabled'] != true)
                 const HintRow(
-                  'Enable this plugin from its entry row to use its actions.',
+                  'Enable this plugin from its entry row to run it.',
                 ),
               if ('${plugin['error'] ?? ''}'.isNotEmpty)
                 WarnRow('${plugin['error']}'),
@@ -602,7 +602,6 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
           _PluginSettings(
             key: ValueKey(widget.id),
             plugin: plugin,
-            pluginsEnabled: widget.plugins.enabled.value,
             busy: _busy,
             action: _action,
             run: _run,
@@ -617,13 +616,11 @@ class _PluginSettings extends StatefulWidget {
   const _PluginSettings({
     super.key,
     required this.plugin,
-    required this.pluginsEnabled,
     required this.busy,
     required this.action,
     required this.run,
   });
   final Map<String, Object?> plugin;
-  final bool pluginsEnabled;
   final bool busy;
   final String? action;
   final Future<void> Function(String, Map<String, Object?>) run;
@@ -652,6 +649,83 @@ class _PluginSettingsState extends State<_PluginSettings> {
   void _reset() => _values = Map<String, Object?>.from(
     widget.plugin['values'] as Map? ?? const {},
   );
+  String _actionSummary(String command) {
+    final options = (widget.plugin['actionOptions'] as Map?)?[command] as Map?;
+    return [
+      'Gestures',
+      if (options?['drawer'] == true) 'Kiosk drawer',
+      if (options?['homeAssistant'] == true) 'Home Assistant',
+    ].join(' · ');
+  }
+
+  Future<void> _configureAction(Map command) async {
+    final options =
+        (widget.plugin['actionOptions'] as Map?)?[command['id']] as Map?;
+    var drawer = options?['drawer'] == true;
+    var homeAssistant = options?['homeAssistant'] == true;
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('${command['title']}'),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const HintRow(
+                    'To assign a gesture, open Gestures and choose Run a plugin action.',
+                  ),
+                  SettingsRow(
+                    title: const Text('Show in kiosk drawer'),
+                    subtitle: const Text(
+                      'Also available while locked if the kiosk drawer is allowed.',
+                    ),
+                    trailing: Switch(
+                      value: drawer,
+                      onChanged: (value) =>
+                          setDialogState(() => drawer = value),
+                    ),
+                  ),
+                  SettingsRow(
+                    title: const Text('Expose to Home Assistant'),
+                    subtitle: const Text(
+                      'Adds a button to the kiosk ESPHome device. Requires ESPHome and native entities.',
+                    ),
+                    trailing: Switch(
+                      value: homeAssistant,
+                      onChanged: (value) =>
+                          setDialogState(() => homeAssistant = value),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (save == true && mounted) {
+      await widget.run('configureAction', {
+        'id': widget.plugin['id'],
+        'command': command['id'],
+        'drawer': drawer,
+        'homeAssistant': homeAssistant,
+      });
+    }
+  }
+
   Widget _control(Map raw) {
     final key = '${raw['key']}';
     final value = _values[key] ?? raw['default'];
@@ -764,7 +838,6 @@ class _PluginSettingsState extends State<_PluginSettings> {
   Widget build(BuildContext context) {
     final plugin = widget.plugin;
     final id = plugin['id'] as String;
-    final enabled = widget.pluginsEnabled && plugin['enabled'] == true;
     final settings = plugin['settings'] as List? ?? const [];
     final commands = plugin['commands'] as List? ?? const [];
     return Column(
@@ -796,7 +869,7 @@ class _PluginSettingsState extends State<_PluginSettings> {
             children: [
               SettingsRow(
                 title: const Text('Save changes'),
-                trailing: TextButton.icon(
+                trailing: FilledButton.icon(
                   onPressed: widget.busy
                       ? null
                       : () => widget.run('configure', {
@@ -814,23 +887,18 @@ class _PluginSettingsState extends State<_PluginSettings> {
         ],
         if (commands.isNotEmpty) ...[
           const SectionHeading('Actions'),
+          const GroupNote(
+            'Assign actions in Gestures or choose which ones appear in the kiosk drawer and Home Assistant.',
+          ),
           SettingsCard(
             children: [
               for (final raw in commands)
                 SettingsRow(
                   title: Text('${(raw as Map)['title']}'),
-                  trailing: IconButton(
-                    tooltip: '${raw['title']}',
-                    onPressed: widget.busy || !enabled
-                        ? null
-                        : () => widget.run('execute', {
-                            'id': id,
-                            'command': raw['id'],
-                          }),
-                    icon: widget.busy && widget.action == raw['id']
-                        ? const _PluginProgress()
-                        : const Icon(Icons.play_arrow_rounded),
-                  ),
+                  subtitle: Text(_actionSummary(raw['id'].toString())),
+                  enabled: !widget.busy,
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _configureAction(raw),
                 ),
             ],
           ),

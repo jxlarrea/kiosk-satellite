@@ -43,6 +43,33 @@ class PluginManager extends Manager {
   final enabled = ValueNotifier<bool>(false);
   bool _disposed = false;
 
+  List<Map<String, Object?>> get actions => [
+    for (final plugin in installed.value)
+      for (final command
+          in (plugin['commands'] as List? ?? const []).whereType<Map>())
+        {
+          'pluginId': plugin['id'],
+          'pluginName': plugin['name'],
+          'command': command['id'],
+          'title': command['title'],
+          'available': enabled.value && plugin['running'] == true,
+          'drawer':
+              ((plugin['actionOptions'] as Map?)?[command['id']]
+                  as Map?)?['drawer'] ==
+              true,
+          'homeAssistant':
+              ((plugin['actionOptions'] as Map?)?[command['id']]
+                  as Map?)?['homeAssistant'] ==
+              true,
+        },
+  ];
+
+  List<Map<String, Object?>> get drawerActions => actions
+      .where(
+        (action) => action['available'] == true && action['drawer'] == true,
+      )
+      .toList();
+
   @override
   String get name => 'plugins';
 
@@ -102,6 +129,23 @@ class PluginManager extends Manager {
     }
 
     register(
+      'getPluginActions',
+      'List declared plugin actions and their availability.',
+      (_) async => actions,
+      const {},
+    );
+    register(
+      'configurePluginAction',
+      'Choose where a plugin action is available.',
+      (p) => update('configureAction', p),
+      const {
+        'id': 'Plugin ID',
+        'command': 'Command ID',
+        'drawer': 'Show in kiosk drawer',
+        'homeAssistant': 'Expose an ESPHome button',
+      },
+    );
+    register(
       'getPluginEntities',
       'Read active plugin entities.',
       (_) async => _entities,
@@ -115,6 +159,12 @@ class PluginManager extends Manager {
             .where((e) => e['objectId'] == p['objectId'])
             .firstOrNull;
         if (entity == null) throw StateError('Plugin entity is not available');
+        if (entity['type'] == 'button') {
+          return update('execute', {
+            'id': entity['pluginId'],
+            'command': entity['command'],
+          });
+        }
         return update('entityCommand', {
           'id': entity['pluginId'],
           'key': entity['key'],
@@ -339,6 +389,17 @@ class PluginManager extends Manager {
       for (final item in value) Map<String, Object?>.from(item as Map),
     ];
     final nextEntities = <Map<String, Object?>>[
+      for (final action in actions)
+        if (action['available'] == true && action['homeAssistant'] == true)
+          {
+            'objectId':
+                'plugin_${action['pluginId'].toString().replaceAll('-', '_')}___${action['command'].toString().replaceAllMapped(RegExp('[A-Z]'), (m) => '_${m[0]!.toLowerCase()}')}',
+            'pluginId': action['pluginId'],
+            'command': action['command'],
+            'name': '${action['pluginName']}: ${action['title']}',
+            'type': 'button',
+            'icon': 'mdi:puzzle',
+          },
       for (final plugin in installed.value)
         if (enabled.value && plugin['running'] == true)
           for (final light
@@ -363,6 +424,7 @@ class PluginManager extends Manager {
       bus.publish(const PluginEntityCatalogChanged());
     }
     for (final entity in nextEntities) {
+      if (entity['type'] != 'light') continue;
       final previous = _entities
           .where((e) => e['objectId'] == entity['objectId'])
           .firstOrNull;

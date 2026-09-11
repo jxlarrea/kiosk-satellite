@@ -144,6 +144,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                         "disable" -> { disable(id(args)); snapshot() }
                         "remove" -> { remove(id(args)); snapshot() }
                         "configure" -> { configure(id(args), args); snapshot() }
+                        "configureAction" -> { configureAction(id(args), args); snapshot() }
                         "execute" -> { execute(id(args), args); snapshot() }
                         "entityCommand" -> {
                             val session = sessions[id(args)] ?: throw IllegalStateException("Enable the plugin first")
@@ -207,6 +208,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 .put("statusError", sessions[id]?.statusError ?: false)
                 .put("lights", org.json.JSONArray(sessions[id]?.lights?.values?.toList() ?: emptyList<Any>()))
                 .put("values", record.optJSONObject("config") ?: JSONObject())
+                .put("actionOptions", record.optJSONObject("actionOptions") ?: JSONObject())
                 .put("error", record.optString("error"))
             jsonValue(value)
         } catch (error: Throwable) {
@@ -331,6 +333,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             val wasRunning = sessions.containsKey(manifest.id)
             val record = JSONObject().put("hash", hash).put("enabled", wasEnabled)
                 .put("config", JSONObject(config)).put("error", "").put("source", source)
+                .put("actionOptions", PluginActionOptions.retain(manifest, previous?.optJSONObject("actionOptions")))
                 .put("jarSha256", PluginPackage.sha256(File(target, "plugin.jar").readBytes()))
                 .put("manifestSha256", PluginPackage.sha256(File(target, PluginPackage.MANIFEST_NAME).readBytes()))
             val nativeDigests = JSONObject()
@@ -465,6 +468,13 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             catch (error: Throwable) { fail(id, error); throw error }
         }
         records.getJSONObject(id).put("config", JSONObject(config))
+        save()
+    }
+
+    private fun configureAction(id: String, args: Map<String, Any?>) {
+        val record = records.getJSONObject(id)
+        val options = PluginActionOptions.configure(manifest(id), record.optJSONObject("actionOptions"), args)
+        record.put("actionOptions", options)
         save()
     }
 

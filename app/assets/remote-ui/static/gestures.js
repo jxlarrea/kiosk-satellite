@@ -44,6 +44,7 @@ export const GESTURE_ACTION_GROUPS = [
     ['screensaver_stop', 'Stop the screensaver', 'sun'],
     ['hold_mode', 'Toggle hold mode', 'pauseCircle'],
     ['ha_kiosk', 'Toggle HA kiosk mode', 'fullscreen'],
+    ['plugin_action', 'Run a plugin action', 'playCircle'],
   ]],
   ['Android', [
     ['launch_app', 'Open another app', 'apps'],
@@ -88,6 +89,7 @@ export function describeGestureTrigger(t) {
 }
 
 export function describeGestureAction(a) {
+  if (a.type === 'plugin_action') return `${a.pluginName || a.pluginId}: ${a.title || a.command}`;
   switch (a.type) {
     case 'navigate': return `Go to ${a.path}`;
     case 'url': return `Open ${a.url}`;
@@ -429,6 +431,17 @@ export async function pickGestureAction(current) {
   if (!type) return null;
   const carried = current?.type === type ? current : null;
   switch (type) {
+    case 'plugin_action': {
+      const result = await cmd('getPluginActions');
+      if (!result.ok) { await messageBox({ title: 'Plugin actions', message: result.error || 'Could not load plugin actions.' }); return null; }
+      const actions = (result.data || []).filter((action) => action.available);
+      if (!actions.length) { await messageBox({ title: 'Plugin actions', message: 'Enable a plugin with actions in Plugin Manager first.' }); return null; }
+      return gestureListModal('Plugin action', actions.map((action) => ({
+        name: action.title, desc: action.pluginName,
+        value: { type, pluginId: action.pluginId, command: action.command, pluginName: action.pluginName, title: action.title },
+        selected: carried?.pluginId === action.pluginId && carried?.command === action.command,
+      })));
+    }
     case 'android_settings': case 'sendspin_player': case 'app_launcher':
     case 'screensaver': case 'screensaver_stop': case 'hold_mode':
     case 'ha_kiosk': case 'now_playing': case 'music_assistant':

@@ -41,6 +41,7 @@ const _actionGroups = <(String, List<(String, String, IconData)>)>[
       ('screensaver_stop', 'Stop the screensaver', Icons.light_mode_outlined),
       ('hold_mode', 'Toggle hold mode', Icons.pause_circle_outline),
       ('ha_kiosk', 'Toggle HA kiosk mode', Icons.fullscreen),
+      ('plugin_action', 'Run a plugin action', Icons.extension_outlined),
     ],
   ),
   (
@@ -517,6 +518,41 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
   }
 
   /// The action chooser, then the chosen type's own configuration dialog.
+  Future<Map<String, Object?>?> _configurePluginAction() async {
+    final actions = c.plugins.actions
+        .where((action) => action['available'] == true)
+        .toList();
+    return showDialog<Map<String, Object?>>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Plugin action'),
+        children: [
+          if (actions.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Enable a plugin with actions in Plugin Manager first.',
+              ),
+            ),
+          for (final action in actions)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, <String, Object?>{
+                'type': 'plugin_action',
+                'pluginId': action['pluginId'],
+                'command': action['command'],
+                'pluginName': action['pluginName'],
+                'title': action['title'],
+              }),
+              child: ListTile(
+                title: Text('${action['title']}'),
+                subtitle: Text('${action['pluginName']}'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Future<Map<String, Object?>?> _pickAction(
     Map<String, Object?>? current,
   ) async {
@@ -555,6 +591,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
         ? current
         : null;
     return switch (type) {
+      'plugin_action' => _configurePluginAction(),
       // Actions with nothing to configure skip the second dialog.
       'android_settings' ||
       'sendspin_player' ||

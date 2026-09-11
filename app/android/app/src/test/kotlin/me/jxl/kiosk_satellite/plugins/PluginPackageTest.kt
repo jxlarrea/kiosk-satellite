@@ -10,6 +10,20 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PluginPackageTest {
+    @Test fun actionPlacementsValidateAndSurviveOnlyForRetainedCommands() {
+        val manifest = PluginManifest(manifest())
+        val options = PluginActionOptions.configure(manifest, null,
+            mapOf("command" to "show", "drawer" to true, "homeAssistant" to false))
+        assertTrue(options.getJSONObject("show").getBoolean("drawer"))
+        assertFalse(options.getJSONObject("show").getBoolean("homeAssistant"))
+        options.put("removed", JSONObject().put("drawer", true))
+        val retained = PluginActionOptions.retain(manifest, options)
+        assertTrue(retained.has("show"))
+        assertFalse(retained.has("removed"))
+        assertEquals(0, PluginActionOptions.retain(manifest, null).length())
+        rejects { PluginActionOptions.configure(manifest, options, mapOf("command" to "removed", "drawer" to true, "homeAssistant" to true)) }
+        rejects { PluginActionOptions.configure(manifest, options, mapOf("command" to "show", "drawer" to "true", "homeAssistant" to true)) }
+    }
     private fun manifest() = JSONObject("""{
       "schemaVersion":1,"apiVersion":1,"id":"hello-world","name":"Hello World",
       "version":"1.0.0","minAndroidSdk":24,"entryClass":"example.Hello",

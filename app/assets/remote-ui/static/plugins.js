@@ -129,6 +129,26 @@ function info(title, description = '') {
   return node;
 }
 
+function actionOptionsDialog(action, options) {
+  return new Promise((resolve) => {
+    const shell = modalShell({ title: action.title, onDismiss: () => { shell.close(); resolve(null); } });
+    shell.body.append(hintRow('To assign a gesture, open Gestures and choose Run a plugin action.'));
+    const selected = { drawer: options.drawer === true, homeAssistant: options.homeAssistant === true };
+    for (const [key, title, description] of [
+      ['drawer', 'Show in kiosk drawer', 'Also available while locked if the kiosk drawer is allowed.'],
+      ['homeAssistant', 'Expose to Home Assistant', 'Adds a button to the kiosk ESPHome device. Requires ESPHome and native entities.'],
+    ]) {
+      const row = element('div', undefined, 'row'); row.append(info(title, description));
+      const input = element('input'); input.type = 'checkbox'; input.checked = selected[key]; input.setAttribute('aria-label', title);
+      input.onchange = () => { selected[key] = input.checked; };
+      const toggle = element('label', undefined, 'switch'); toggle.append(input, element('span', undefined, 'slider')); row.append(toggle); shell.body.append(row);
+    }
+    const cancel = element('button', 'Cancel', 'btn-text'); cancel.onclick = () => { shell.close(); resolve(null); };
+    const save = element('button', 'Save', 'btn-primary'); save.onclick = () => { shell.close(); resolve(selected); };
+    shell.foot.append(cancel, save);
+  });
+}
+
 function render(root, state) {
   const plugins = state.plugins || [];
   const pluginsEnabled = state.enabled === true;
@@ -274,7 +294,7 @@ function render(root, state) {
     if (plugin.status) description.append(hintRow(plugin.status, { warn: plugin.statusError === true }));
     if (plugin.error) description.append(hintRow(plugin.error, { warn: true }));
     if (!pluginsEnabled) description.append(hintRow('Enable Plugins to run this plugin.'));
-    else if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to use its actions.'));
+    else if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to run it.'));
     page.append(description);
     const groups = new Map();
     const values = { ...plugin.values };
@@ -318,7 +338,7 @@ function render(root, state) {
     }
     if (plugin.settings?.length) {
       const saveRow = element('div', undefined, 'row'); saveRow.append(info('Save changes'));
-      const save = element('button', 'Save settings', 'btn-text');
+      const save = element('button', 'Save settings', 'btn-primary');
       save.onclick = () => update('configurePlugin', { id: plugin.id, values }, save);
       saveRow.append(save); const savePanel = element('div', undefined, 'card'); savePanel.append(saveRow); page.append(savePanel);
     }
@@ -326,12 +346,16 @@ function render(root, state) {
       const actions = element('div', undefined, 'card');
       for (const action of plugin.commands) {
         const row = element('div', undefined, 'row'); row.append(info(action.title));
-        const button = iconButton(action.title, 'm8 5 11 7-11 7V5z');
-        button.disabled = !pluginsEnabled || !plugin.enabled; button.dataset.pluginDisabled = String(button.disabled);
-        button.onclick = () => update('runPluginCommand', { id: plugin.id, command: action.id }, button);
+        const options = plugin.actionOptions?.[action.id] || {};
+        row.replaceChildren(info(action.title, ['Gestures', options.drawer && 'Kiosk drawer', options.homeAssistant && 'Home Assistant'].filter(Boolean).join(' · ')));
+        const button = iconButton(`Configure ${action.title}`, 'm9 5 7 7-7 7');
+        button.onclick = () => run(async () => {
+          const selected = await actionOptionsDialog(action, options);
+          if (selected) { await command('configurePluginAction', { id: plugin.id, command: action.id, ...selected }); await refresh(); }
+        }, button);
         row.append(button); actions.append(row);
       }
-      page.append(heading('Actions'), actions);
+      page.append(heading('Actions'), hintRow('Assign actions in Gestures or choose which ones appear in the kiosk drawer and Home Assistant.'), actions);
     }
     root.append(page);
   }

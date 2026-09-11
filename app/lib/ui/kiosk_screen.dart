@@ -284,7 +284,8 @@ class _KioskScreenState extends State<KioskScreen>
     final hasApps =
         c.settings.get(defs.launcherEnabled) && c.launcher.apps.isNotEmpty;
     final hasHold = c.settings.get(defs.haHoldMenu);
-    return c.settings.get(defs.kioskAllowDashboard) ||
+    return c.plugins.drawerActions.isNotEmpty ||
+        c.settings.get(defs.kioskAllowDashboard) ||
         (c.settings.get(defs.kioskAllowHaKiosk) &&
             c.settings.get(defs.haKioskMenu)) ||
         (c.settings.get(defs.kioskAllowScreensaver) &&
@@ -680,6 +681,7 @@ class _KioskScreenState extends State<KioskScreen>
     c.browser.overlayUrl.addListener(_onOverlayChanged);
     c.launcher.visible.addListener(_onOverlayChanged);
     c.plugins.windows.addListener(_onOverlayChanged);
+    c.plugins.installed.addListener(_onOverlayChanged);
     c.homeLauncher.roleHeld.addListener(_onOverlayChanged);
 
     // Download feedback lives in-app: the kiosk hides the status bar, so the
@@ -1297,6 +1299,7 @@ class _KioskScreenState extends State<KioskScreen>
     c.browser.overlayUrl.removeListener(_onOverlayChanged);
     c.launcher.visible.removeListener(_onOverlayChanged);
     c.plugins.windows.removeListener(_onOverlayChanged);
+    c.plugins.installed.removeListener(_onOverlayChanged);
     c.homeLauncher.roleHeld.removeListener(_onOverlayChanged);
     super.dispose();
   }

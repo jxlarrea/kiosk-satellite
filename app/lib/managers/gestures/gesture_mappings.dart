@@ -28,6 +28,7 @@
 ///  - fingers:         fingers (1..5): a hand showing that many
 ///
 /// Action types (run in GesturesManager):
+///  - plugin_action:    pluginId, command (a declared plugin command)
 ///  - navigate:         path (a dashboard view, via haNavigate)
 ///  - url:              url (opened in the external link overlay)
 ///  - camera_view:      mode (show|hide), viewId (empty = default view);
@@ -183,6 +184,8 @@ bool hasFingersTrigger(List<GestureMapping> mappings) =>
 /// "Open camera view Front door": the row subtitle in both UIs.
 String describeGestureAction(Map<String, Object?> action) {
   switch ('${action['type']}') {
+    case 'plugin_action':
+      return '${action['pluginName'] ?? action['pluginId']}: ${action['title'] ?? action['command']}';
     case 'navigate':
       return 'Go to ${action['path']}';
     case 'url':
@@ -230,6 +233,7 @@ String describeGestureAction(Map<String, Object?> action) {
 /// The toast title for a Home Assistant action: the kind of thing it is.
 String gestureActionKindTitle(Map<String, Object?> action) =>
     switch ('${action['type']}') {
+      'plugin_action' => 'Plugin action',
       'ha_service' => 'Home Assistant Service',
       'ha_script' => 'Home Assistant Script',
       'ha_automation' => 'Home Assistant Automation',
@@ -244,6 +248,9 @@ String describeGestureActionOutcome(
   required bool ok,
 }) {
   switch ('${action['type']}') {
+    case 'plugin_action':
+      final title = describeGestureAction(action);
+      return ok ? 'Ran $title' : 'Could not run $title';
     case 'ha_service':
       final s = '${action['domain']}.${action['service']}';
       return ok ? 'Called $s' : 'Could not call $s';

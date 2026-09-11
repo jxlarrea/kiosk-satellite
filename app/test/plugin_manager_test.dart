@@ -265,16 +265,7 @@ void main() {
       expect(find.text('Save settings'), findsNothing);
       await native('changed', {'enabled': true, 'plugins': installed});
       await tester.pumpAndSettle();
-      expect(
-        tester
-            .widget<IconButton>(
-              find.byWidgetPredicate(
-                (w) => w is IconButton && w.tooltip == 'Show window',
-              ),
-            )
-            .onPressed,
-        isNotNull,
-      );
+      expect(find.text('Show window'), findsOneWidget);
     },
   );
   test(
@@ -756,31 +747,100 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
-  testWidgets('settings save edited values and invoke declared commands', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: PluginDetailPanel(plugins: plugins, id: 'hello-world'),
+  testWidgets(
+    'settings save values and configure action placements without executing them',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PluginDetailPanel(plugins: plugins, id: 'hello-world'),
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('Uninstall Hello World'), findsNothing);
-    expect(find.byType(Switch), findsNothing);
-    await tester.enterText(find.byType(TextFormField), 'Edited greeting');
-    await tester.tap(find.text('Save settings'));
-    await tester.pumpAndSettle();
-    final configure = calls.lastWhere((c) => c.method == 'configure');
-    expect(configure.arguments, {
-      'id': 'hello-world',
-      'values': {'message': 'Edited greeting'},
-    });
-    await tester.tap(find.byTooltip('Show window'));
-    await tester.pumpAndSettle();
-    expect(calls.last.arguments, {'id': 'hello-world', 'command': 'show'});
-  });
+      );
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Uninstall Hello World'), findsNothing);
+      expect(find.byType(Switch), findsNothing);
+      await tester.enterText(find.byType(TextFormField), 'Edited greeting');
+      await tester.tap(find.text('Save settings'));
+      await tester.pumpAndSettle();
+      final configure = calls.lastWhere((c) => c.method == 'configure');
+      expect(configure.arguments, {
+        'id': 'hello-world',
+        'values': {'message': 'Edited greeting'},
+      });
+      expect(
+        find.widgetWithText(FilledButton, 'Save settings'),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(find.text('Show window'));
+      await tester.tap(find.text('Show window'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch).first);
+      await tester.tap(find.byType(Switch).last);
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+      expect(calls.last.arguments, {
+        'id': 'hello-world',
+        'command': 'show',
+        'drawer': true,
+        'homeAssistant': true,
+      });
+      expect(calls.last.method, 'configureAction');
+      expect(calls.where((call) => call.method == 'execute'), isEmpty);
+    },
+  );
+
+  test(
+    'action placements publish buttons and disappear when plugins stop',
+    () async {
+      expect(plugins.actions.single['available'], isTrue);
+      expect(plugins.drawerActions, isEmpty);
+      expect((await commands.execute('getPluginEntities', {})).data, isEmpty);
+      installed[0]['actionOptions'] = {
+        'show': {'drawer': true, 'homeAssistant': true},
+      };
+      installed.add({
+        'id': 'action-hello-world',
+        'name': 'Other plugin',
+        'running': true,
+        'enabled': true,
+        'lights': [
+          {
+            'key': 'show',
+            'name': 'Light',
+            'effects': [],
+            'state': {'on': false},
+          },
+        ],
+      });
+      await plugins.refresh();
+      expect(plugins.drawerActions.single['command'], 'show');
+      final entities =
+          (await commands.execute('getPluginEntities', {})).data as List;
+      expect(entities.map((e) => (e as Map)['objectId']).toSet(), hasLength(2));
+      final button =
+          entities.firstWhere((e) => (e as Map)['type'] == 'button') as Map;
+      expect(button['type'], 'button');
+      expect(button['objectId'], 'plugin_hello_world___show');
+      await commands.execute('pluginEntityCommand', {
+        'objectId': button['objectId'],
+        'value': true,
+      });
+      expect(calls.last.method, 'execute');
+      expect(calls.last.arguments, {'id': 'hello-world', 'command': 'show'});
+      await plugins.update('disable', {'id': 'hello-world'});
+      expect(plugins.actions.single['available'], isFalse);
+      expect(plugins.drawerActions, isEmpty);
+      expect((await commands.execute('getPluginEntities', {})).data, isEmpty);
+      expect(
+        (await commands.execute('pluginEntityCommand', {
+          'objectId': button['objectId'],
+          'value': true,
+        })).ok,
+        isFalse,
+      );
+    },
+  );
 }

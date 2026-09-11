@@ -285,6 +285,11 @@ class GesturesManager extends Manager {
   Future<void> runGestureAction(Map<String, Object?> action) async {
     final a = action;
     switch ('${a['type']}') {
+      case 'plugin_action':
+        await _runHa(a, 'runPluginCommand', {
+          'id': a['pluginId'],
+          'command': a['command'],
+        });
       case 'navigate':
         await _run('haNavigate', {'path': a['path']});
       case 'url':

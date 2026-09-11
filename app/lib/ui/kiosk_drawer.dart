@@ -149,6 +149,31 @@ class KioskDrawer extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              for (final action in c.plugins.drawerActions)
+                                _item(
+                                  context,
+                                  Icons.extension_outlined,
+                                  '${action['pluginName']}: ${action['title']}',
+                                  () async {
+                                    onClose();
+                                    final result = await c.commands
+                                        .execute('runPluginCommand', {
+                                          'id': action['pluginId'],
+                                          'command': action['command'],
+                                        });
+                                    if (!result.ok && context.mounted) {
+                                      showToast(
+                                        context,
+                                        title: 'Plugin action',
+                                        message:
+                                            result.error ??
+                                            'Could not run this action.',
+                                        kind: ToastKind.error,
+                                      );
+                                    }
+                                  },
+                                  divided: sep(),
+                                ),
                               if (!restricted ||
                                   c.settings.get(defs.kioskAllowDashboard))
                                 _item(

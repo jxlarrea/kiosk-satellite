@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Plugin actions work outside Settings.** Assign a declared action to a gesture, opt it into the kiosk drawer or expose it as a Home Assistant button through ESPHome. Plugin subpages configure these placements instead of running actions. Placements survive updates for retained command IDs and shortcuts become unavailable when the plugin stops.
 - **Plugins can control hardware and publish RGB lights.** SDK 2 adds verified native libraries, runtime status, grouped settings with color pickers, sliders and dropdowns and namespaced ESPHome RGB entities. SDK 1 plugins remain compatible. The Rockchip LED plugin keeps its driver, effects and root helper in a separate repository.
 - **Plugin Manager has a master switch.** Enable Plugins controls startup and execution while retaining each plugin's enabled choice and settings. Turning it off hides the remaining settings and closes plugin subpages. The page uses the shorter community features hint and places the trust warning beneath Add plugin with matching padding. Remote Admin menu icons continue their alternating color sequence through Plugin Manager, About and Logs.
 - **Install local plugin builds from Developer Tools.** The Plugins page and remote admin include an Install from ZIP row with trust confirmation, package validation and progress inside the row. Developers can test builds without publishing a GitHub release.
@@ -18,6 +19,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Plugin documentation lives with Hello World.** Installation instructions, the SDK reference and author tooling now share the standalone plugin template repository.
 
 ### Fixed
+- **Plugin settings use a primary Save settings button.** The kiosk and Remote Admin use the standard filled button style and disabled plugins show a hint that also applies to plugins without actions.
 - **Debug builds can open the dashboard.** Navigation key capture now initializes after the kiosk screen's inherited dependencies are available, preventing a startup assertion that blocks the WebView. Fixes [#493](https://github.com/jxlarrea/kiosk-satellite/issues/493).
 - **Unused overlays dispose cleanly.** Browser and camera overlay animation controllers now initialize while their widgets are mounted, preventing a debug assertion when the kiosk screen closes before either overlay has opened.
 
