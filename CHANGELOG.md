@@ -2,9 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.38 - 2026-09-11
 
 ### Added
+- **Adjust the fade duration between dashboard views.** A new Fade duration (seconds) slider in on-device settings and Remote Admin controls the combined fade-out and fade-in time from 0.2 to 5 seconds. The default of 1.4 seconds preserves the current fade speed. Loading the next view can add time, especially on its first visit.
+- **Choose a preferred protocol for each Home Assistant camera.** Add and Edit camera dialogs in on-device settings and Remote Admin offer Auto, WebRTC, HLS or MJPEG. Auto follows the existing playback setting. An explicit choice starts with that supported protocol and keeps the others as fallbacks. Preferences apply to camera views and the screensaver and survive re-importing cameras. Adds [#498](https://github.com/jxlarrea/kiosk-satellite/issues/498).
 - **Detection can dismiss the screensaver only when the screen is off.** Motion, Face, Proximity and Person Detection each have an opt-in **Only when screen is off** toggle in the app and Remote Admin. Detection leaves the visible screensaver and its screen-off countdown alone, then wakes the dashboard after the display powers off. Touch still dismisses the screensaver. Adds [#499](https://github.com/jxlarrea/kiosk-satellite/issues/499).
 - **Plugin charts support bars.** SDK 1 accepts grouped time-series bars in regular and mini layouts, with a zero baseline, negative values and sample inspection on-device and in Remote Admin.
 - **Plugins can expose sensors and selects to Home Assistant.** SDK 1 supports numeric, text and binary readings plus writable selects, with bounded publication, unknown states and validated select callbacks. Value updates preserve settings edits and use the existing ESPHome state channel. Plugin entity exclusions remain local during fleet sync.
@@ -16,8 +18,6 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## v2026.9.37 - 2026-09-10
 
 ### Added
-- **Adjust the fade duration between dashboard views.** A new Fade duration (seconds) slider in on-device settings and Remote Admin controls the combined fade-out and fade-in time from 0.2 to 5 seconds. The default of 1.4 seconds preserves the current fade speed. Loading the next view can add time, especially on its first visit.
-- **Choose a preferred protocol for each Home Assistant camera.** Add and Edit camera dialogs in on-device settings and Remote Admin offer Auto, WebRTC, HLS or MJPEG. Auto follows the existing playback setting. An explicit choice starts with that supported protocol and keeps the others as fallbacks. Preferences apply to camera views and the screensaver and survive re-importing cameras. Adds [#498](https://github.com/jxlarrea/kiosk-satellite/issues/498).
 - **Ambient light diagnostics appear in App Logs.** Logs include the selected sensor's name, vendor and capabilities, registration results and the first lux reading. A warning reports when no readings arrive after the existing retries. Helps investigate [#497](https://github.com/jxlarrea/kiosk-satellite/issues/497).
 - **Developer Tools links to the plugin template.** The Create a plugin row opens the Hello World repository and its documentation in on-device settings and Remote Admin.
 - **Lock the screen from the kiosk menu.** The new opt-in **Show in the kiosk menu** toggle under Lockdown Mode in Remote Admin adds a **Lockdown Mode** entry for screen cleaning or other temporary locks. A matching Allowed Action controls its visibility in the restricted quick actions menu. Unlock with the existing exit gesture and kiosk PIN if configured, Remote Admin or Home Assistant. Adds [#495](https://github.com/jxlarrea/kiosk-satellite/issues/495).
