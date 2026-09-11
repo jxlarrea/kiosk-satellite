@@ -657,6 +657,12 @@ export async function editCameraSource(config, camera) {
   );
   const whep = cameraField('WHEP URL', camera?.whepUrl || '');
   const entity = cameraField('Camera entity', camera?.entityId || '');
+  const preferredProtocol = cameraSelectField('Preferred protocol', [
+    { value: 'auto', label: 'Auto' },
+    { value: 'webrtc', label: 'WebRTC' },
+    { value: 'hls', label: 'HLS' },
+    { value: 'mjpeg', label: 'MJPEG' },
+  ], camera?.preferredProtocol || 'auto');
   body.append(
     name.wrap,
     kind.wrap,
@@ -665,6 +671,7 @@ export async function editCameraSource(config, camera) {
     fullscreen.wrap,
     whep.wrap,
     entity.wrap,
+    preferredProtocol.wrap,
   );
   const updateKind = () => {
     const value = kind.select.value;
@@ -674,6 +681,7 @@ export async function editCameraSource(config, camera) {
     fullscreen.wrap.style.display = go2rtc ? '' : 'none';
     whep.wrap.style.display = value === 'whep' ? '' : 'none';
     entity.wrap.style.display = value === 'ha' ? '' : 'none';
+    preferredProtocol.wrap.style.display = value === 'ha' ? '' : 'none';
   };
   kind.select.addEventListener('change', updateKind);
   updateKind();
@@ -689,6 +697,8 @@ export async function editCameraSource(config, camera) {
       fullscreenStreamName: fullscreen.input.value,
       whepUrl: whep.input.value,
       entityId: entity.input.value,
+      ...(kind.select.value === 'ha'
+        ? { preferredProtocol: preferredProtocol.select.value } : {}),
     }),
   });
 }

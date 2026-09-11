@@ -560,6 +560,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
       text: camera?.fullscreenStreamName ?? '',
     );
     var kind = camera?.kind ?? 'go2rtc';
+    var preferredProtocol = camera?.preferredProtocol ?? 'auto';
     var serverId =
         camera?.serverId ??
         (config.servers.isEmpty ? '' : config.servers.first.id);
@@ -606,7 +607,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                             setDialogState(() => kind = value ?? kind),
                       ),
                     ),
-                    if (kind == 'ha')
+                    if (kind == 'ha') ...[
                       LabeledField(
                         label: 'Camera entity',
                         child: TextField(
@@ -615,8 +616,26 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                             hintText: 'camera.front_door',
                           ),
                         ),
-                      )
-                    else if (kind == 'go2rtc') ...[
+                      ),
+                      LabeledField(
+                        label: 'Preferred protocol',
+                        child: DropdownButtonFormField<String>(
+                          initialValue: preferredProtocol,
+                          decoration: const InputDecoration(),
+                          items: [
+                            for (final entry
+                                in CameraSource.preferredProtocols.entries)
+                              DropdownMenuItem(
+                                value: entry.key,
+                                child: Text(entry.value),
+                              ),
+                          ],
+                          onChanged: (value) => setDialogState(
+                            () => preferredProtocol = value ?? 'auto',
+                          ),
+                        ),
+                      ),
+                    ] else if (kind == 'go2rtc') ...[
                       LabeledField(
                         label: 'Server',
                         child: DropdownButtonFormField<String>(
@@ -690,6 +709,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             'streamName': stream.text,
             'whepUrl': whep.text,
             'entityId': entity.text,
+            if (kind == 'ha') 'preferredProtocol': preferredProtocol,
             'fullscreenStreamName': fullscreen.text,
           });
       if (!result.ok) {

@@ -40,6 +40,8 @@ Please note that raw RTSP URLs are not supported directly by the app player. To 
 
 For Go2RTC cameras, you can configure an optional full screen stream. This lets you use a lightweight, lower resolution substream for the grid view, but automatically switch to a high resolution stream when you tap to focus on it full screen.
 
+For Home Assistant cameras, the **Add camera** and **Edit camera** dialogs include **Preferred protocol** in both on-device settings and Remote Admin. Choose **Auto**, **WebRTC**, **HLS** or **MJPEG**. Auto follows the **Prefer HLS over WebRTC** playback setting. An explicit choice starts with that protocol when the camera supports it and keeps the other available protocols as fallbacks. The preference applies to every view and the screensaver. It survives re-importing cameras. Choose MJPEG to skip WebRTC and HLS startup attempts on devices that cannot play them. MJPEG has no audio.
+
 ## Create a View
 
 A view holds anywhere from one to twelve cameras, displayed in the exact order you set. In the view editor, your selected cameras appear in a list. You can add or remove cameras, and reorder them by dragging the handles (or tapping the arrows on a touch screen). If you want text labels to appear over the video feeds, toggle the **Show camera names** option.
@@ -121,7 +123,7 @@ If you are using a device you know struggles with WebRTC, you can enable **Prefe
 
 ## Home Assistant Cameras and HLS
 
-Most Home Assistant cameras lack a native WebRTC path unless you have specifically configured a provider like go2rtc. Because of this, they default to streaming over HLS, which is the exact same method the standard Home Assistant dashboard uses. Kiosk Satellite simply requests the stream and plays it using normal video buffering. This approach is highly compatible and works beautifully on almost any device, including Fire tablets. The only downside is a typical HLS latency of a few seconds. For this reason, if a camera supports both protocols, the app will always try WebRTC first and only fall back to HLS if necessary.
+Most Home Assistant cameras lack a native WebRTC path unless you have specifically configured a provider like go2rtc. Because of this, they default to streaming over HLS, which is the exact same method the standard Home Assistant dashboard uses. Kiosk Satellite simply requests the stream and plays it using normal video buffering. This approach is highly compatible and works beautifully on almost any device, including Fire tablets. The only downside is a typical HLS latency of a few seconds. For this reason, if a camera supports both protocols, the app tries WebRTC first by default and falls back to HLS if necessary.
 
 Because the app plays whatever stream Home Assistant provides, the H.265 decoding rules mentioned earlier still apply. If the device cannot decode the format, the camera tile will display a clear error message instead of sitting silently blank.
 
@@ -131,9 +133,9 @@ To make things easy, every camera listed in your settings menu will clearly disp
 
 ## MJPEG Cameras
 
-Every camera entity in Home Assistant is capable of serving its picture as an MJPEG stream, regardless of whether it supports true video streaming. Kiosk Satellite uses this as a foolproof transport of last resort. If a camera fails on both WebRTC and HLS, it will automatically switch to MJPEG. For cameras that cannot stream video at all, like UniFi package cameras or other stills only entities, the app will use MJPEG right from the start.
+Every camera entity in Home Assistant is capable of serving its picture as an MJPEG stream, regardless of whether it supports true video streaming. Kiosk Satellite uses this as a fallback by default. If a camera fails on both WebRTC and HLS, it will automatically switch to MJPEG. For cameras that cannot stream video at all, like UniFi package cameras or other stills only entities, the app will use MJPEG right from the start.
 
-With MJPEG, the frame rate depends entirely on what the camera can push, and there is absolutely no audio support. Because Home Assistant has to transcode the stream on the server side, Kiosk Satellite will always try the more advanced protocols first to save resources.
+With MJPEG, the frame rate depends entirely on what the camera can push, and there is absolutely no audio support. Kiosk Satellite tries WebRTC and HLS first by default. Set **Preferred protocol** to **MJPEG** in the camera editor to start with MJPEG instead.
 
 ## Performance
 

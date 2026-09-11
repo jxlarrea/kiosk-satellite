@@ -349,40 +349,10 @@ class _CameraPlayerState extends State<CameraPlayer> {
     );
   }
 
-  /// The transports this camera can use, in the order the page should try
-  /// them. A Go2RTC server serves the same stream over WebRTC and MSE
-  /// (issue #160, "Prefer MSE" flips that order); an `ha` camera offers
-  /// what Home Assistant reported at import — WebRTC signaling (issue
-  /// #124), HLS, or both, with "Prefer HLS" flipping that order — and one
-  /// added by hand (unknown types) is offered both; WHEP is WebRTC by
-  /// definition.
-  List<String> _transportsFor(CameraSource camera) {
-    switch (camera.kind) {
-      case 'go2rtc':
-        if (camera.missing) return const ['webrtc'];
-        return widget.container.settings.get(defs.cameraPreferMse)
-            ? const ['mse', 'webrtc']
-            : const ['webrtc', 'mse'];
-      case 'ha':
-        final types = camera.streamTypes;
-        // MJPEG closes every list: Home Assistant's camera proxy serves
-        // it for every camera entity, so a stills-only camera (empty
-        // types) plays over it alone and everything else keeps it as the
-        // rung of last resort.
-        final transports = [
-          if (types == null || types.contains('web_rtc')) 'webrtc',
-          if (types == null || types.contains('hls')) 'hls',
-          'mjpeg',
-        ];
-        if (widget.container.settings.get(defs.cameraPreferHls) &&
-            transports.remove('hls')) {
-          transports.insert(0, 'hls');
-        }
-        return transports;
-      default:
-        return const ['webrtc'];
-    }
-  }
+  List<String> _transportsFor(CameraSource camera) => camera.playbackTransports(
+    preferMse: widget.container.settings.get(defs.cameraPreferMse),
+    preferHls: widget.container.settings.get(defs.cameraPreferHls),
+  );
 
   String _buildConfig() {
     final camerasById = {

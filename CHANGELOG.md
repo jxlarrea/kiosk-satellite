@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## v2026.9.37 - 2026-09-10
 
 ### Added
+- **Choose a preferred protocol for each Home Assistant camera.** Add and Edit camera dialogs in on-device settings and Remote Admin offer Auto, WebRTC, HLS or MJPEG. Auto follows the existing playback setting. An explicit choice starts with that supported protocol and keeps the others as fallbacks. Preferences apply to camera views and the screensaver and survive re-importing cameras. Adds [#498](https://github.com/jxlarrea/kiosk-satellite/issues/498).
 - **Ambient light diagnostics appear in App Logs.** Logs include the selected sensor's name, vendor and capabilities, registration results and the first lux reading. A warning reports when no readings arrive after the existing retries. Helps investigate [#497](https://github.com/jxlarrea/kiosk-satellite/issues/497).
 - **Developer Tools links to the plugin template.** The Create a plugin row opens the Hello World repository and its documentation in on-device settings and Remote Admin.
 - **Lock the screen from the kiosk menu.** The new opt-in **Show in the kiosk menu** toggle under Lockdown Mode in Remote Admin adds a **Lockdown Mode** entry for screen cleaning or other temporary locks. A matching Allowed Action controls its visibility in the restricted quick actions menu. Unlock with the existing exit gesture and kiosk PIN if configured, Remote Admin or Home Assistant. Adds [#495](https://github.com/jxlarrea/kiosk-satellite/issues/495).

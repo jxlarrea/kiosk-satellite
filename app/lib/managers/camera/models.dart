@@ -64,6 +64,7 @@ class CameraSource {
     this.whepUrl,
     this.entityId,
     this.streamTypes,
+    this.preferredProtocol = 'auto',
     this.fullscreenStreamName,
     this.imported = false,
     this.missing = false,
@@ -84,12 +85,45 @@ class CameraSource {
 
   /// The frontend stream types Home Assistant reported for a `ha` camera
   /// when it was imported (`web_rtc`, `hls`). Null means unknown (a camera
-  /// added by hand, or imported before HLS support existed): the player
-  /// tries WebRTC first and falls back to HLS.
+  /// added by hand or imported before HLS support existed).
   final List<String>? streamTypes;
+  final String preferredProtocol;
   final String? fullscreenStreamName;
   final bool imported;
   final bool missing;
+
+  static const preferredProtocols = {
+    'auto': 'Auto',
+    'webrtc': 'WebRTC',
+    'hls': 'HLS',
+    'mjpeg': 'MJPEG',
+  };
+
+  /// Available playback protocols in preference order. Auto follows the
+  /// global preference. An explicit choice leads only when supported.
+  List<String> playbackTransports({
+    bool preferMse = false,
+    bool preferHls = false,
+  }) {
+    if (kind == 'go2rtc') {
+      if (missing) return const ['webrtc'];
+      return preferMse ? const ['mse', 'webrtc'] : const ['webrtc', 'mse'];
+    }
+    if (kind != 'ha') return const ['webrtc'];
+    final types = streamTypes;
+    final transports = [
+      if (types == null || types.contains('web_rtc')) 'webrtc',
+      if (types == null || types.contains('hls')) 'hls',
+      'mjpeg',
+    ];
+    if (preferHls && transports.remove('hls')) {
+      transports.insert(0, 'hls');
+    }
+    if (transports.remove(preferredProtocol)) {
+      transports.insert(0, preferredProtocol);
+    }
+    return transports;
+  }
 
   CameraSource copyWith({
     String? name,
@@ -98,6 +132,7 @@ class CameraSource {
     String? whepUrl,
     String? entityId,
     List<String>? streamTypes,
+    String? preferredProtocol,
     String? fullscreenStreamName,
     bool? imported,
     bool? missing,
@@ -110,6 +145,7 @@ class CameraSource {
     whepUrl: whepUrl ?? this.whepUrl,
     entityId: entityId ?? this.entityId,
     streamTypes: streamTypes ?? this.streamTypes,
+    preferredProtocol: preferredProtocol ?? this.preferredProtocol,
     fullscreenStreamName: fullscreenStreamName ?? this.fullscreenStreamName,
     imported: imported ?? this.imported,
     missing: missing ?? this.missing,
@@ -124,6 +160,7 @@ class CameraSource {
     if (whepUrl != null) 'whepUrl': whepUrl,
     if (entityId != null) 'entityId': entityId,
     if (streamTypes != null) 'streamTypes': streamTypes,
+    if (kind == 'ha') 'preferredProtocol': preferredProtocol,
     if (fullscreenStreamName != null && fullscreenStreamName!.isNotEmpty)
       'fullscreenStreamName': fullscreenStreamName,
     if (imported) 'imported': imported,
@@ -138,6 +175,11 @@ class CameraSource {
     streamName: json['streamName'] as String?,
     whepUrl: json['whepUrl'] as String?,
     entityId: json['entityId'] as String?,
+    preferredProtocol:
+        json['kind'] == 'ha' &&
+            preferredProtocols.containsKey(json['preferredProtocol'])
+        ? json['preferredProtocol'] as String
+        : 'auto',
     streamTypes: json['streamTypes'] is List
         ? [
             for (final type in json['streamTypes'] as List)

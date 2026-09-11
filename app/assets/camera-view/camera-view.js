@@ -482,10 +482,9 @@ async function start(cameraId, fullscreen) {
 
   // Home Assistant's camera proxy stream: multipart JPEG into an <img>,
   // no decoder negotiation at all. The only transport a stills-only
-  // camera (UniFi package cameras and their kin) has, and the last rung
-  // for every other Home Assistant camera. Video only, frame rates are
-  // whatever the camera produces, and the proxy transcodes server-side,
-  // so the fancier transports always get their chance first.
+  // camera (UniFi package cameras and their kin) has. Other Home Assistant
+  // cameras use it as a fallback unless selected as the preferred protocol.
+  // Video only, with frame rates determined by the camera.
   const connectMjpeg = async () => {
     setStatus(cameraId, 'Connecting...');
     let info = null;
@@ -708,8 +707,8 @@ async function start(cameraId, fullscreen) {
   // Home Assistant cameras with no WebRTC path stream HLS through the
   // app's loopback relay (hls.js on top of the same MediaSource the MSE
   // rung uses; the relay handles Home Assistant's CORS and certificates).
-  // Latency is HLS-typical — seconds, not the near-realtime of WebRTC —
-  // which is why this rung never outranks a WebRTC transport.
+  // HLS adds seconds of latency. The configured preference determines
+  // whether it leads or follows WebRTC.
   const connectHls = async () => {
     setStatus(cameraId, 'Connecting...');
     // hls.js loads deferred (see the script tag); it has run by

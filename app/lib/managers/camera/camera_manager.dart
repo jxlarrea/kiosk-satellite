@@ -177,6 +177,7 @@ class CameraManager extends Manager {
             'streamName': 'Go2RTC stream name',
             'whepUrl': 'Direct WHEP endpoint',
             'entityId': 'Home Assistant camera.* entity id (kind ha)',
+            'preferredProtocol': 'auto, webrtc, hls or mjpeg (kind ha)',
             'fullscreenStreamName':
                 'Optional higher-quality Go2RTC stream for focus mode',
           },
@@ -526,6 +527,14 @@ class CameraManager extends Manager {
         .trim();
     final whepUrl = '${params['whepUrl'] ?? existing?.whepUrl ?? ''}'.trim();
     final entityId = '${params['entityId'] ?? existing?.entityId ?? ''}'.trim();
+    final preferredProtocol = kind == 'ha'
+        ? '${params['preferredProtocol'] ?? existing?.preferredProtocol ?? 'auto'}'
+        : 'auto';
+    if (!CameraSource.preferredProtocols.containsKey(preferredProtocol)) {
+      return const CommandResult.fail(
+        'preferredProtocol must be auto, webrtc, hls or mjpeg',
+      );
+    }
     if (kind == 'go2rtc') {
       if (!_config.servers.any((server) => server.id == serverId)) {
         return const CommandResult.fail('valid serverId required');
@@ -568,6 +577,7 @@ class CameraManager extends Manager {
       whepUrl: kind == 'whep' ? whepUrl : null,
       entityId: kind == 'ha' ? entityId : null,
       streamTypes: streamTypes,
+      preferredProtocol: preferredProtocol,
       fullscreenStreamName:
           '${params['fullscreenStreamName'] ?? existing?.fullscreenStreamName ?? ''}'
               .trim(),
