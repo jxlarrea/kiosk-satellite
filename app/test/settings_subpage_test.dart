@@ -202,13 +202,14 @@ void main() {
     expect(defs.subpageHints, contains('Notifications'));
   });
 
-  test('the Person Detection page holds its two switches, under Proximity', () {
+  test('the Person Detection page holds its switches, under Proximity', () {
     final page = [
       for (final d in defs.allSettings)
         if (d.subpage == 'Person Detection') d.key,
     ];
     expect(page, [
       defs.screensaverDismissOnPerson.key,
+      defs.screensaverDismissOnPersonScreenOffOnly.key,
       defs.screensaverPostponeOnPerson.key,
     ]);
     expect(defs.screensaverDismissOnPerson.section, 'Person Detection');

@@ -3272,6 +3272,21 @@ const screensaverDismissOnMotion = SettingDef<bool>(
   subpage: 'Motion Detection',
 );
 
+const screensaverDismissOnMotionScreenOffOnly = SettingDef<bool>(
+  key: 'screensaver.dismiss_on_motion_screen_off_only',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Only when screen is off',
+  description:
+      'Keep the screensaver visible when motion is detected while the screen '
+      'is on. Once the screen turns off, detection wakes the dashboard. '
+      'Touch still dismisses the screensaver.',
+  category: 'Screensaver',
+  section: 'Motion Detection',
+  subpage: 'Motion Detection',
+  dependsOn: 'screensaver.dismiss_on_motion',
+);
+
 // Opt-in because it is the expensive direction (discussion #126): unlike
 // dismiss_on_motion, the camera must run the whole time the screensaver is
 // NOT showing, which is most of the day. An extension of Dismiss on
@@ -3333,6 +3348,21 @@ const screensaverDismissOnFace = SettingDef<bool>(
   category: 'Screensaver',
   section: 'Face Detection',
   subpage: 'Face Detection',
+);
+
+const screensaverDismissOnFaceScreenOffOnly = SettingDef<bool>(
+  key: 'screensaver.dismiss_on_face_screen_off_only',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Only when screen is off',
+  description:
+      'Keep the screensaver visible when a face is detected while the screen '
+      'is on. Once the screen turns off, detection wakes the dashboard. '
+      'Touch still dismisses the screensaver.',
+  category: 'Screensaver',
+  section: 'Face Detection',
+  subpage: 'Face Detection',
+  dependsOn: 'screensaver.dismiss_on_face',
 );
 
 // The face counterpart of Postpone screensaver on motion, with the same
@@ -3476,6 +3506,21 @@ const screensaverDismissOnProximity = SettingDef<bool>(
   subpage: 'Proximity Detection',
 );
 
+const screensaverDismissOnProximityScreenOffOnly = SettingDef<bool>(
+  key: 'screensaver.dismiss_on_proximity_screen_off_only',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Only when screen is off',
+  description:
+      'Keep the screensaver visible when something approaches while the '
+      'screen is on. Once the screen turns off, detection wakes the dashboard. '
+      'Touch still dismisses the screensaver.',
+  category: 'Screensaver',
+  section: 'Proximity Detection',
+  subpage: 'Proximity Detection',
+  dependsOn: 'screensaver.dismiss_on_proximity',
+);
+
 // An extension of Dismiss on proximity, like Postpone on motion is of
 // Dismiss on motion: shown and acting only with that switch on, so
 // proximity detection has exactly one master toggle. Cheap where the
@@ -3517,6 +3562,21 @@ const screensaverDismissOnPerson = SettingDef<bool>(
   category: 'Screensaver',
   section: 'Person Detection',
   subpage: 'Person Detection',
+);
+
+const screensaverDismissOnPersonScreenOffOnly = SettingDef<bool>(
+  key: 'screensaver.dismiss_on_person_screen_off_only',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Only when screen is off',
+  description:
+      'Keep the screensaver visible when someone arrives while the screen '
+      'is on. Once the screen turns off, detection wakes the dashboard. '
+      'Touch still dismisses the screensaver.',
+  category: 'Screensaver',
+  section: 'Person Detection',
+  subpage: 'Person Detection',
+  dependsOn: 'screensaver.dismiss_on_person',
 );
 
 // An extension of Dismiss on person, like Postpone on motion is of
@@ -6830,9 +6890,11 @@ const List<SettingDef<Object>> allSettings = [
   screensaverGlanceBwIcons,
   screensaverGlanceTextOnly,
   screensaverDismissOnMotion,
+  screensaverDismissOnMotionScreenOffOnly,
   screensaverPostponeOnMotion,
   motionCamera,
   screensaverDismissOnFace,
+  screensaverDismissOnFaceScreenOffOnly,
   screensaverPostponeOnFace,
   faceSensitivity,
   facePreview,
@@ -6840,9 +6902,11 @@ const List<SettingDef<Object>> allSettings = [
   facePreviewScale,
   facePreviewPosition,
   screensaverDismissOnProximity,
+  screensaverDismissOnProximityScreenOffOnly,
   screensaverPostponeOnProximity,
   // The Person Detection page (Meta Portal only) sits under Proximity.
   screensaverDismissOnPerson,
+  screensaverDismissOnPersonScreenOffOnly,
   screensaverPostponeOnPerson,
   cameraEnabled,
   cameraDevice,

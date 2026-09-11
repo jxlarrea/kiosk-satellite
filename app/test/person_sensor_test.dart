@@ -430,6 +430,7 @@ void main() {
       defs.deviceHiddenKeys,
       containsAll([
         defs.screensaverDismissOnPerson.key,
+        defs.screensaverDismissOnPersonScreenOffOnly.key,
         defs.screensaverPostponeOnPerson.key,
       ]),
     );

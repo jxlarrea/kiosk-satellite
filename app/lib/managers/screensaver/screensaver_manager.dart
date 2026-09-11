@@ -446,6 +446,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         }
         return;
       }
+      if (!_panelDark &&
+          _settings.get(defs.screensaverDismissOnMotionScreenOffOnly)) {
+        return;
+      }
       // The active schedule entry's motion override (issue #89) wins over
       // the switch, matching the camera's own gating in MotionManager.
       if (!(_motionPolicy ?? _settings.get(defs.screensaverDismissOnMotion))) {
@@ -475,6 +479,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
             !_settings.get(defs.screensaverDismissOnMotion)) {
           _resetIdleTimer();
         }
+        return;
+      }
+      if (!_panelDark &&
+          _settings.get(defs.screensaverDismissOnFaceScreenOffOnly)) {
         return;
       }
       // Dismiss on motion (or its schedule override) takes precedence:
@@ -512,6 +520,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         }
         return;
       }
+      if (!_panelDark &&
+          _settings.get(defs.screensaverDismissOnPersonScreenOffOnly)) {
+        return;
+      }
       // The active schedule entry's override (issue #437) wins over the
       // switch, as the motion override does.
       if (!(_personPolicy ?? _settings.get(defs.screensaverDismissOnPerson))) {
@@ -543,6 +555,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
             _settings.get(defs.screensaverDismissOnProximity)) {
           _resetIdleTimer();
         }
+        return;
+      }
+      if (!_panelDark &&
+          _settings.get(defs.screensaverDismissOnProximityScreenOffOnly)) {
         return;
       }
       // The active schedule entry's override (issue #437) wins over the

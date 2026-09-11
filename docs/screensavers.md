@@ -223,6 +223,7 @@ Widget and At a glance overrides control [widgets](#widgets) and the [At a Glanc
 When the [device camera](camera.md) is enabled, two Motion Detection settings control screensaver wake behavior:
 
 * **Dismiss on motion**: Monitors the camera while the screensaver is active, waking the display when motion is detected. The camera runs strictly while the screensaver is on screen.
+* **Only when screen is off**: Keeps the visible screensaver up when motion is detected. Once the display turns off, motion dismisses the screensaver and wakes the dashboard. Requires Dismiss on motion.
 * **Postpone screensaver on motion**: Monitors the camera between screensaver sessions, continuously resetting the idle timeout clock whenever room movement is detected. This keeps the camera active continuously and requires Dismiss on motion to be enabled.
 
 Motion analysis functions in total darkness, filters out whole-room light shifts (such as TV flashes or turning on a lamp), and suppresses detection for a few seconds during internal app brightness and slide transitions to prevent false wakes. Sensitivity, frame rates, and camera selection are configured in Camera settings (see [Device Camera](camera.md)). Under [Lockdown Mode](kiosk.md), motion events will neither dismiss nor postpone screensavers.
@@ -230,6 +231,8 @@ Motion analysis functions in total darkness, filters out whole-room light shifts
 ## Face Detection
 
 **Dismiss on face** (under Face Detection) wakes the display only when a person looks directly at the kiosk camera. Someone walking past the device leaves the screensaver active, while turning to face the screen wakes the dashboard. Face detection performs on-device visual analysis without identifying individuals, storing images, or transmitting data. The camera operates strictly during screensaver playback, matching Dismiss on motion behavior.
+
+Enable **Only when screen is off** under Face Detection to keep the visible screensaver up when a face is detected. Once the display turns off, a face dismisses the screensaver and wakes the dashboard. This requires Dismiss on face. Camera Preview appears only when the face actually dismisses the screensaver.
 
 **Face sensitivity** adjusts the required distance for face detection, calibrated on a scale from 1 to 100:
 * A setting of 1 requires a face positioned directly in front of the screen.
@@ -264,6 +267,7 @@ The preview triggers exclusively when a face dismisses an active screensaver; it
 Proximity Detection uses the device's physical proximity sensor instead of the camera:
 
 * **Dismiss on proximity**: Monitors the proximity sensor while the screensaver is active, waking the display when an object approaches.
+* **Only when screen is off**: Keeps the visible screensaver up when something approaches. Once the display turns off, a new approach dismisses the screensaver and wakes the dashboard. Requires Dismiss on proximity.
 * **Postpone screensaver on proximity**: Monitors the sensor between screensaver sessions, resetting the idle timeout clock while an object remains close. Requires Dismiss on proximity. Proximity sensing incurs virtually zero power overhead as it relies on hardware interrupt lines.
 
 Proximity sensing requires no camera permissions and functions in complete darkness. However, hardware availability is limited: most kiosk-class tablets (such as Galaxy Tab devices, Fire tablets, and Echo Show hardware) lack physical proximity sensors. On unsupported devices, this setting appears disabled. While modern smartphones include proximity sensors, many use virtual "palm proximity" software sensors designed for phone calls that only trigger on direct screen contact. The settings page displays the reported sensor hardware name: physical infrared or time-of-flight sensors (such as STK3310, VCNL4040, or TMD2755) support hover detection at a few centimeters, whereas virtual "palm" or "touch" sensors do not.
@@ -275,6 +279,7 @@ Objects resting on the sensor when monitoring begins do not trigger an approach 
 Person Detection utilizes native hardware person sensors on supported devices (such as the Meta Portal):
 
 * **Dismiss on person**: Monitors the hardware sensor while the screensaver is active, waking the display when a person is detected in front of the device.
+* **Only when screen is off**: Keeps the visible screensaver up when someone arrives. Once the display turns off, a new arrival dismisses the screensaver and wakes the dashboard. Requires Dismiss on person.
 * **Postpone screensaver on person**: Monitors the sensor between screensaver sessions, continuously resetting the idle timeout clock while a person remains present. Requires Dismiss on person.
 
 Dismiss triggers on person arrival events. If a person is already present when the screensaver launches, it remains active until they leave and return, or until a touch event occurs.
@@ -282,6 +287,10 @@ Dismiss triggers on person arrival events. If a person is already present when t
 On Meta Portal hardware, this feature utilizes the Smart Camera background tracking service, operating on an internal video feed that never illuminates the camera LED. It detects human bodies at any angle rather than requiring facing faces, and requires a one-time ADB permission grant. It operates independently alongside camera motion and face detection. Full setup details are available in the [Meta Portal](portal.md) guide.
 
 ## Starting and Dismissing
+
+Each detection page has its own **Only when screen is off** toggle in the app and Remote Admin. These toggles default to off. Enable them for each detection type you use to enjoy a photo slideshow without nearby activity dismissing it. Set **Turn screen off after** to the desired viewing time. Detection during that time leaves the countdown alone and touch still dismisses the screensaver. Black mode and zero brightness do not count as screen-off. The display must actually power off.
+
+The toggles restrict dismissal, so the camera and sensors keep monitoring while the screensaver is visible and after the display turns off. Postpone settings still control activity before the screensaver starts. Schedule detection overrides still decide whether a detection type is enabled and **Only when screen is off** also applies when a schedule enables it. Motion retains priority over face detection.
 
 The standard method for launching the screensaver is the idle timeout clock. Manual launch options include selecting **Start Screensaver** in the kiosk menu, triggering a mapped [gesture](gestures.md), toggling the ESPHome **Screensaver active** switch, or sending the `startScreensaver` command via the [remote API](remote-api.md) or [JavaScript API](js-api.md).
 

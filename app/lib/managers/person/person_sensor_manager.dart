@@ -287,6 +287,7 @@ class PersonSensorManager extends Manager {
     if (!support.supported) {
       defs.deviceHiddenKeys
         ..add(defs.screensaverDismissOnPerson.key)
+        ..add(defs.screensaverDismissOnPersonScreenOffOnly.key)
         ..add(defs.screensaverPostponeOnPerson.key);
     }
     await _guardSupport();
