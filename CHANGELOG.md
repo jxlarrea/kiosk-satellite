@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **Remote Admin assets load when first opened.** Startup and API-only use skip loading and preparing the admin page bundle. Concurrent page requests share one load and retain the existing versioned caching behavior. Addresses the remote admin startup overhead in [#502](https://github.com/jxlarrea/kiosk-satellite/issues/502).
+
 ## v2026.9.38 - 2026-09-11
 
 ### Added

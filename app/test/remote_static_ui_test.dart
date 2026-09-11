@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -26,6 +28,8 @@ void main() {
   late SettingsManager settings;
   late RemoteManager remote;
   late int port;
+  late _TrackedAssets assets;
+  late HttpClient client;
 
   setUp(() async {
     final probe = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
@@ -43,17 +47,19 @@ void main() {
     final commands = CommandRegistry(log);
     settings = SettingsManager(bus, commands, log);
     await settings.init();
-    remote = RemoteManager(bus, commands, log, settings);
+    assets = _TrackedAssets();
+    client = HttpClient();
+    remote = RemoteManager(bus, commands, log, settings, assetBundle: assets);
     await remote.init();
   });
 
   tearDown(() async {
+    client.close(force: true);
     await settings.set(defs.remoteEnabled, false);
     await remote.dispose();
   });
 
   Future<HttpClientResponse> get(String path) async {
-    final client = HttpClient();
     final request = await client.getUrl(
       Uri.parse('http://127.0.0.1:$port$path'),
     );
@@ -62,6 +68,77 @@ void main() {
 
   Future<String> body(HttpClientResponse response) =>
       utf8.decodeStream(response);
+
+  test('startup and API requests do not load admin assets', () async {
+    expect(assets.loads, isEmpty);
+    final status = await get('/api/setup/status');
+    expect(status.statusCode, 200);
+    expect(jsonDecode(await body(status))['setupNeeded'], false);
+    final gated = await get('/api/logs');
+    expect(gated.statusCode, 401);
+    await gated.drain<void>();
+    expect(assets.loads, isEmpty);
+  });
+
+  test(
+    'overlapping first requests share a load without blocking the API',
+    () async {
+      assets.gate = Completer<void>();
+      final page = get('/');
+      await assets.started.future.timeout(const Duration(seconds: 5));
+      final module = get('/static/main.js');
+      try {
+        final status = await get(
+          '/api/setup/status',
+        ).timeout(const Duration(seconds: 5));
+        expect(status.statusCode, 200);
+        await status.drain<void>();
+      } finally {
+        assets.gate!.complete();
+      }
+      final html = await body(await page);
+      final version = RegExp(
+        r'static/main\.js\?v=([0-9a-f]+)',
+      ).firstMatch(html)!.group(1);
+      final source = await body(await module);
+      expect(source, contains('?v=$version'));
+      expect(assets.loads.values, everyElement(1));
+      final loaded = Map.of(assets.loads);
+      expect(await body(await get('/index.html')), html);
+      expect(await body(await get('/static/main.js')), source);
+      expect(
+        assets.loads,
+        loaded,
+        reason: 'subsequent requests reuse the bundle',
+      );
+    },
+  );
+
+  test(
+    'missing assets preserve the fallback and expose no partial bundle',
+    () async {
+      assets.failOn = 'assets/remote-ui/static/main.js';
+      final page = await get('/');
+      expect(page.statusCode, 200);
+      expect(
+        await body(page),
+        contains('The remote admin UI is not built yet.'),
+      );
+      expect(assets.loads, contains('assets/remote-ui/static/app.css'));
+      final loaded = Map.of(assets.loads);
+      final css = await get('/static/app.css');
+      expect(css.statusCode, 404);
+      await css.drain<void>();
+      expect(
+        assets.loads,
+        loaded,
+        reason: 'missing bundled assets are not retried',
+      );
+      final status = await get('/api/setup/status');
+      expect(status.statusCode, 200);
+      await status.drain<void>();
+    },
+  );
 
   test('index is version-stamped and never cached', () async {
     final response = await get('/');
@@ -87,36 +164,37 @@ void main() {
     }
   });
 
-  test('served modules import only version-stamped, resolvable files', () async {
-    final html = await body(await get('/'));
-    final version = RegExp(
-      r'static/main\.js\?v=([0-9a-f]+)',
-    ).firstMatch(html)!.group(1);
-    // Walk the import graph as the browser would, starting from the page's
-    // entry module. Bare './x.js' imports (no ?v=) fail here: with the
-    // immutable cache header they would pin stale modules across updates.
-    final queue = ['main.js'];
-    final seen = <String>{};
-    while (queue.isNotEmpty) {
-      final name = queue.removeLast();
-      if (!seen.add(name)) continue;
-      final response = await get('/static/$name?v=$version');
-      expect(response.statusCode, 200, reason: name);
-      final source = await body(response);
-      for (final m in RegExp(
-        r"from\s+'\./([^']+)'",
-      ).allMatches(source)) {
-        final spec = m.group(1)!;
-        expect(
-          spec,
-          endsWith('?v=$version'),
-          reason: 'unstamped import in $name: $spec',
-        );
-        queue.add(spec.substring(0, spec.indexOf('?')));
+  test(
+    'served modules import only version-stamped, resolvable files',
+    () async {
+      final html = await body(await get('/'));
+      final version = RegExp(
+        r'static/main\.js\?v=([0-9a-f]+)',
+      ).firstMatch(html)!.group(1);
+      // Walk the import graph as the browser would, starting from the page's
+      // entry module. Bare './x.js' imports (no ?v=) fail here: with the
+      // immutable cache header they would pin stale modules across updates.
+      final queue = ['main.js'];
+      final seen = <String>{};
+      while (queue.isNotEmpty) {
+        final name = queue.removeLast();
+        if (!seen.add(name)) continue;
+        final response = await get('/static/$name?v=$version');
+        expect(response.statusCode, 200, reason: name);
+        final source = await body(response);
+        for (final m in RegExp(r"from\s+'\./([^']+)'").allMatches(source)) {
+          final spec = m.group(1)!;
+          expect(
+            spec,
+            endsWith('?v=$version'),
+            reason: 'unstamped import in $name: $spec',
+          );
+          queue.add(spec.substring(0, spec.indexOf('?')));
+        }
       }
-    }
-    expect(seen.length, greaterThan(15), reason: 'the whole graph resolves');
-  });
+      expect(seen.length, greaterThan(15), reason: 'the whole graph resolves');
+    },
+  );
 
   test('static files carry type and immutable caching', () async {
     final response = await get('/static/app.css');
@@ -135,4 +213,22 @@ void main() {
     expect(response.statusCode, 404);
     await response.drain<void>();
   });
+}
+
+class _TrackedAssets extends AssetBundle {
+  final loads = <String, int>{};
+  final started = Completer<void>();
+  Completer<void>? gate;
+  String? failOn;
+
+  @override
+  Future<ByteData> load(String key) async {
+    loads.update(key, (count) => count + 1, ifAbsent: () => 1);
+    if (key == 'assets/remote-ui/index.html') {
+      if (!started.isCompleted) started.complete();
+      await gate?.future;
+    }
+    if (key == failOn) throw StateError('missing test asset: $key');
+    return rootBundle.load(key);
+  }
 }
