@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Release APK validation supports Android Build Tools 37.** Signing checks accept numbered signers and labels based on signature schemes or SDK ranges while still rejecting mismatched certificates. Release retries can use corrected workflow scripts while building the original tag without moving it.
+
 ## v2026.9.40 - 2026-09-11
 
 ### Changed

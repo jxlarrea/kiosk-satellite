@@ -4,19 +4,26 @@ name: Release
 # The app version comes from the tag (v1.2.3 becomes 1.2.3), so a release can never disagree with
 # what the app reports about itself.
 #
-# Manual fallback for when GitHub drops the release event (it happened during
-# the 2026-08-06 Actions outage): dispatch the workflow ON THE TAG REF and it
-# behaves identically, because GITHUB_REF_NAME is the tag either way:
-#   gh workflow run release.yml --ref <tag>
-# The release (draft or published) must already exist for the upload step.
+# Retry an existing release with the latest workflow fixes without moving its
+# tag: gh workflow run release.yml --ref main -f release_tag=<tag>
+# App sources always come from that tag. Release scripts come from the workflow
+# revision. Without release_tag, dispatch on the tag itself as before.
 
 on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to rebuild
+        required: false
+        type: string
+
+env:
+  RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.release_tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -26,6 +33,16 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+
+      - name: Check out release scripts from the workflow revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: .release-workflow
+          sparse-checkout: .github/scripts
+          persist-credentials: false
 
       - uses: actions/setup-java@v4
         with:
@@ -57,7 +74,7 @@ jobs:
       - name: Build the signed APKs
         working-directory: app
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_TAG#v}"
           # The build number comes from pubspec.yaml, NOT the workflow run
           # counter: dev builds side-loaded during testing carry the pubspec
           # number, and a release with a lower versionCode is a downgrade
@@ -67,17 +84,17 @@ jobs:
           flutter build apk --release --split-per-abi \
             --build-name="$VERSION" \
             --build-number="$BUILD_NUMBER"
-          python3 ../.github/scripts/check_apks.py \
+          python3 ../.release-workflow/.github/scripts/check_apks.py \
             build/app/outputs/flutter-apk "$VERSION" "$BUILD_NUMBER"
           mv build/app/outputs/flutter-apk/app-release.apk \
-             "kiosk-satellite-${GITHUB_REF_NAME}.apk"
+             "kiosk-satellite-${RELEASE_TAG}.apk"
           for ABI in armeabi-v7a arm64-v8a x86_64; do
             mv "build/app/outputs/flutter-apk/app-${ABI}-release.apk" \
-               "kiosk-satellite-${GITHUB_REF_NAME}.${ABI}.apk"
+               "kiosk-satellite-${RELEASE_TAG}.${ABI}.apk"
           done
 
       - name: Attach the APKs to the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 .github/scripts/publish_apks.py "$GITHUB_REF_NAME" app
+          python3 .release-workflow/.github/scripts/publish_apks.py "$RELEASE_TAG" app

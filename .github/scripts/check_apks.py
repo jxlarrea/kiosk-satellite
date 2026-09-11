@@ -8,6 +8,20 @@ import sys
 from zipfile import ZipFile
 
 
+def signing_certificates(output):
+    # New build tools identify signers by signature scheme or SDK range.
+    # Compare all signer certificates and ignore public-key and stamp hashes.
+    digests = re.findall(
+        r"^(?:Signer|V\d+(?:\.\d+)? Signer)[^\r\n]* certificate SHA-256 digest: "
+        r"([0-9a-fA-F]{64})[ \t]*\r?$",
+        output,
+        re.MULTILINE,
+    )
+    if not digests:
+        raise RuntimeError("apksigner reported no signing certificate SHA-256 digests")
+    return frozenset(digest.lower() for digest in digests)
+
+
 def check(directory, version, build_number, sdk):
     abis = {"armeabi-v7a", "arm64-v8a", "x86_64"}
     tools = max(
@@ -35,7 +49,7 @@ def check(directory, version, build_number, sdk):
         certificate = subprocess.check_output(
             [str(tools / "apksigner"), "verify", "--print-certs", str(apk)], text=True,
         )
-        signatures.add(re.search(r"Signer #1 certificate SHA-256 digest: (.+)", certificate).group(1))
+        signatures.add(signing_certificates(certificate))
         print(f"Verified {name}: version {version}+{build_number}, {', '.join(sorted(actual))}")
     if len(signatures) != 1:
         raise RuntimeError("APK signing certificates differ")
