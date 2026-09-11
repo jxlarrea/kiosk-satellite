@@ -66,6 +66,7 @@ class DeviceManager extends Manager {
   /// Whether [lightLux] came from the sensor this session.
   bool lightLive = false;
   StreamSubscription<dynamic>? _lightSub;
+  static const _lightMethods = MethodChannel('kiosk_satellite/light_sensor');
 
   /// Where the last reading is kept across restarts. The ESPHome entity
   /// reads the same key for its own last-known fallback.
@@ -620,13 +621,23 @@ class DeviceManager extends Manager {
   }
 
   /// Hook up the ambient light stream when the hardware exists. The native
-  /// side damps the event rate (5 lx / 10% deadband, 2s minimum spacing);
+  /// side damps the event rate (1 lx / 10% deadband, 2s minimum spacing);
   /// listeners downstream (the ESPHome sensor) add their own coarser limits.
   Future<void> _initLightSensor() async {
     if (!Platform.isAndroid) return;
     try {
-      const methods = MethodChannel('kiosk_satellite/light_sensor');
-      hasLightSensor = await methods.invokeMethod<bool>('hasSensor') ?? false;
+      _lightMethods.setMethodCallHandler((call) async {
+        if (call.method != 'diagnostic') return;
+        final entry = Map<String, dynamic>.from(call.arguments as Map);
+        final message = 'ambient light sensor: ${entry['message']}';
+        if (entry['level'] == 'warn') {
+          log.warn(name, message);
+        } else {
+          log.info(name, message);
+        }
+      });
+      hasLightSensor =
+          await _lightMethods.invokeMethod<bool>('hasSensor') ?? false;
       if (!hasLightSensor) {
         log.info(name, 'no ambient light sensor');
         return;
@@ -650,7 +661,7 @@ class DeviceManager extends Manager {
       );
       log.info(
         name,
-        'ambient light sensor streaming'
+        'ambient light sensor detected, waiting for the first reading'
         '${remembered == null ? '' : ' (last known ${remembered.round()} lx '
                   'until the first reading)'}',
       );
@@ -685,6 +696,7 @@ class DeviceManager extends Manager {
   Future<void> dispose() async {
     await _powerSub?.cancel();
     await _lightSub?.cancel();
+    _lightMethods.setMethodCallHandler(null);
     await _volumeSub?.cancel();
     await _mixSub?.cancel();
   }

@@ -68,6 +68,19 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
         sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
             ?: sensorManager.getDynamicSensorList(Sensor.TYPE_LIGHT).firstOrNull()
 
+    private fun diagnostic(message: String, warning: Boolean = false) {
+        methods.invokeMethod("diagnostic", mapOf(
+            "level" to if (warning) "warn" else "info",
+            "message" to message,
+        ))
+    }
+
+    private fun describe(s: Sensor): String =
+        "name=${s.name}, vendor=${s.vendor}, type=${s.type} (${s.stringType}), " +
+            "reportingMode=${s.reportingMode}, wakeUp=${s.isWakeUpSensor}, " +
+            "dynamic=${s.isDynamicSensor}, minDelay=${s.minDelay} us, " +
+            "resolution=${s.resolution} lx, maxRange=${s.maximumRange} lx"
+
     // Delivered on [handler] (the main looper), same thread as the channel
     // callbacks, so sensor/listener/sink need no locking.
     private val dynamicCallback = object : SensorManager.DynamicSensorCallback() {
@@ -79,6 +92,7 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
 
         override fun onDynamicSensorDisconnected(disconnected: Sensor) {
             if (disconnected !== sensor) return
+            diagnostic("disconnected: ${describe(disconnected)}", warning = true)
             listener?.let { sensorManager.unregisterListener(it) }
             listener = null
             sensor = null
@@ -98,9 +112,11 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
         sensor = s
         damper.reset()
         receivedAny = false
+        diagnostic("selected: ${describe(s)}")
         val l = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 val lux = event.values.firstOrNull() ?: return
+                if (!receivedAny) diagnostic("first reading: $lux lx")
                 receivedAny = true
                 damper.offer(lux)
             }
@@ -108,8 +124,21 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
         listener = l
-        sensorManager.registerListener(
-            l, s, SensorManager.SENSOR_DELAY_NORMAL)
+        fun register(attempt: Int) {
+            try {
+                val registered = sensorManager.registerListener(
+                    l, s, SensorManager.SENSOR_DELAY_NORMAL)
+                diagnostic(
+                    "registration attempt $attempt/4: " +
+                        if (registered) "succeeded" else "failed (registerListener returned false)",
+                    warning = !registered,
+                )
+            } catch (e: RuntimeException) {
+                diagnostic("registration attempt $attempt/4 failed: " +
+                    "${e.javaClass.simpleName}: ${e.message}", warning = true)
+            }
+        }
+        register(1)
         // On-change sensors owe one sample at registration, but some
         // drivers (the Echo Show's amazon-oss one) lose it when the
         // register races boot. In a room where the light then never
@@ -120,10 +149,15 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
         fun nudge(remaining: Int) {
             handler.postDelayed({
                 if (receivedAny || listener !== l) return@postDelayed
+                if (remaining == 0) {
+                    diagnostic("no readings after 4 registration attempts over 16 seconds. " +
+                        "The sensor is detected but has not delivered a sample. " +
+                        "Sensor: ${describe(s)}", warning = true)
+                    return@postDelayed
+                }
                 sensorManager.unregisterListener(l)
-                sensorManager.registerListener(
-                    l, s, SensorManager.SENSOR_DELAY_NORMAL)
-                if (remaining > 1) nudge(remaining - 1)
+                register(5 - remaining)
+                nudge(remaining - 1)
             }, 4_000)
         }
         nudge(3)
@@ -146,6 +180,8 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
                     // gone away. Keep the stream open rather than ending
                     // it; dynamicCallback attaches when one returns.
                     sensor = null
+                    diagnostic("sensor disappeared before streaming started. " +
+                        "Waiting for a dynamic light sensor", warning = true)
                     return
                 }
                 attach(s, sink)
