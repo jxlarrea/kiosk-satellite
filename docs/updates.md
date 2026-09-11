@@ -24,7 +24,7 @@ Releases include a universal APK and smaller APKs for `armeabi-v7a`, `arm64-v8a`
 
 The updater selects an APK using Android's supported architectures in preference order. If a compatible architecture APK is missing or the architecture cannot be detected, it uses the universal APK. A 64-bit processor running a 32-bit Android installation receives the 32-bit APK.
 
-The universal filename remains `kiosk-satellite-v<version>.apk`. Architecture downloads use `kiosk-satellite-v<version>.<abi>.apk`. Older app versions continue to download universal because it remains the first APK asset. The release workflow preserves this order during reruns and checks it after uploading. Every APK in a release uses the same signing key and version code so an installed app can move between universal and architecture downloads.
+The universal filename remains `kiosk-satellite-<tag>.apk`. Architecture downloads use `kiosk-satellite-<tag>.<abi>.apk`. Older app versions continue to download universal because it remains the first APK asset. The release workflow preserves this order during reruns and checks it after uploading. Every APK in a release uses the same signing key and version code so an installed app can move between universal and architecture downloads.
 
 ## System Permission Requirements
 

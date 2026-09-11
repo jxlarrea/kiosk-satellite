@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.40 - 2026-09-11
 
 ### Changed
 - **Updates download an APK for the device's architecture.** Releases include smaller ARM 32-bit, ARM 64-bit and x86_64 downloads alongside the universal APK. The updater chooses a compatible build and falls back to universal when needed. The universal filename stays unchanged and remains first for older updaters. All variants share the same version code and signing key. Addresses APK download size in [#502](https://github.com/jxlarrea/kiosk-satellite/issues/502).
