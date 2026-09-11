@@ -40,6 +40,7 @@ class PluginManager extends Manager {
 
   static const channel = MethodChannel('kiosk_satellite/plugins');
   final installed = ValueNotifier<List<Map<String, Object?>>>(const []);
+  final readings = ValueNotifier<Map<String, List<Map<String, Object?>>>>({});
   final charts = ValueNotifier<Map<String, List<Map<String, Object?>>>>({});
   final _runtimeSessions = <String, String>{};
   final windows = ValueNotifier<List<PluginWindow>>(const []);
@@ -169,6 +170,12 @@ class PluginManager extends Manager {
       );
     }
 
+    register(
+      'getPluginReadings',
+      'Read current plugin readings without refreshing settings.',
+      (p) async => readings.value[p['id']] ?? const [],
+      const {'id': 'Plugin ID'},
+    );
     register(
       'getPluginCharts',
       'Read current plugin chart snapshots without refreshing settings.',
@@ -508,6 +515,14 @@ class PluginManager extends Manager {
   }
 
   void _refreshEntities() {
+    // Keep live readings separate from settings and independent of ESPHome.
+    final nextReadings = <String, List<Map<String, Object?>>>{
+      for (final entry in _runtimeEntities.entries)
+        if (enabled.value && entry.value.isNotEmpty) entry.key: entry.value,
+    };
+    if (jsonEncode(readings.value) != jsonEncode(nextReadings)) {
+      readings.value = nextReadings;
+    }
     final nextEntities = <Map<String, Object?>>[
       for (final action in actions)
         if (action['available'] == true && action['homeAssistant'] == true)
@@ -630,6 +645,7 @@ class PluginManager extends Manager {
           .invokeMethod<void>('stopAll')
           .timeout(const Duration(seconds: 30));
     } catch (_) {}
+    readings.dispose();
     charts.dispose();
     installed.dispose();
     windows.dispose();

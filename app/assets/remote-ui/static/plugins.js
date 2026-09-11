@@ -1,5 +1,6 @@
 import { cmd } from './core.js';
 import { updatePluginCharts } from './plugin-charts.js';
+import { updatePluginReadings } from './plugin-readings.js';
 import { currentPath, showTab, subpageEntry } from './tabs.js';
 import { hintRow, messageBox, modalShell, showToast, swatch } from './widgets.js';
 import { marked } from './vendor-marked.js';
@@ -300,11 +301,15 @@ function render(root, state) {
     const introRow = element('div', undefined, 'row');
     introRow.append(info(plugin.description || ''));
     description.append(introRow);
-    if (plugin.status) description.append(hintRow(plugin.status, { warn: plugin.statusError === true }));
+    if (plugin.status) {
+      const status = hintRow(plugin.status, { warn: plugin.statusError === true });
+      status.classList.add('plugin-runtime-status'); description.append(status);
+    }
     if (plugin.error) description.append(hintRow(plugin.error, { warn: true }));
     if (!pluginsEnabled) description.append(hintRow('Enable Plugins to run this plugin.'));
     else if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to run it.'));
     page.append(description);
+    const readings = element('div', undefined, 'plugin-readings'); readings.hidden = true; page.append(readings);
     const charts = element('div', undefined, 'plugin-charts'); charts.hidden = true; page.append(charts);
     const groups = new Map();
     const values = { ...plugin.values };
@@ -378,17 +383,22 @@ function render(root, state) {
   }
 }
 
-let chartsLoading = false;
+let runtimeLoading = false;
 setInterval(async () => {
   const [tab, id] = currentPath.split('/');
-  if (tab !== 'plugins' || !id || document.hidden || chartsLoading || busy) return;
+  if (tab !== 'plugins' || !id || document.hidden || runtimeLoading || busy) return;
   const page = [...document.querySelectorAll('#tab-plugins > .subpage')].find(el => el.dataset.subpage === id);
   const container = page?.querySelector('.plugin-charts');
   if (!container) return;
-  chartsLoading = true;
+  runtimeLoading = true;
   try {
-    const result = await cmd('getPluginCharts', { id }, { timeoutMs: 5000 });
-    if (container.isConnected && currentPath === `plugins/${id}` && result.ok) updatePluginCharts(container, result.data);
+    await Promise.allSettled([
+      ['getPluginCharts', container, updatePluginCharts],
+      ['getPluginReadings', page.querySelector('.plugin-readings'), updatePluginReadings],
+    ].map(async ([command, target, update]) => {
+      const result = await cmd(command, { id }, { timeoutMs: 5000 });
+      if (target?.isConnected && currentPath === `plugins/${id}` && result.ok) update(target, result.data);
+    }));
   } catch (_) { /* The next poll retries when the connection returns. */ }
-  finally { chartsLoading = false; }
+  finally { runtimeLoading = false; }
 }, 1000);

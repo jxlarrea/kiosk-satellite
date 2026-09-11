@@ -1162,3 +1162,16 @@
 
 .plugin-chart.compact .plugin-chart-plot, .plugin-chart.compact svg { height: 56px; }
 .plugin-chart.compact .plugin-chart-scale, .plugin-chart.compact .plugin-chart-dates, .plugin-chart.compact .plugin-chart-help { display: none; }
+
+.plugin-runtime-status { white-space: pre-line; }
+.plugin-readings-list { margin-top: 0; padding-top: 0; padding-bottom: 0; }
+.plugin-reading { display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 11fr);
+  gap: 8px 16px; padding: 16px 0; border-bottom: 1px solid var(--divider);
+  font-size: 17px; line-height: 1.4; overflow-wrap: anywhere; }
+.plugin-reading:last-child { border-bottom: none; }
+.plugin-reading dt { color: var(--muted); }
+.plugin-reading dd { margin: 0; text-align: right; font-weight: 400;
+  font-variant-numeric: tabular-nums; white-space: pre-wrap; }
+.plugin-reading-unit { font-size: inherit; font-weight: inherit; color: var(--muted); }
+.plugin-reading.multiline { grid-template-columns: minmax(0, 1fr); }
+.plugin-reading.multiline dd { text-align: left; }

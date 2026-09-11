@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../managers/plugins/plugin_manager.dart';
 import 'kit.dart';
 import 'plugin_chart.dart';
+import 'plugin_readings.dart';
 import 'color_picker.dart';
 import 'toast.dart';
 
@@ -625,6 +626,11 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
               if ('${plugin['error'] ?? ''}'.isNotEmpty)
                 WarnRow('${plugin['error']}'),
             ],
+          ),
+          ValueListenableBuilder<Map<String, List<Map<String, Object?>>>>(
+            valueListenable: widget.plugins.readings,
+            builder: (_, readings, _) =>
+                PluginReadings(readings: readings[widget.id] ?? const []),
           ),
           ValueListenableBuilder<Map<String, List<Map<String, Object?>>>>(
             valueListenable: widget.plugins.charts,

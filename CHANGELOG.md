@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Plugin subpages show live readings.** Published sensors, selects and switches appear as read-only label/value rows with units, numeric precision and multiline text on-device and in Remote Admin. Updates preserve settings edits and work without ESPHome.
 - **Plugins can read dashboard URLs and follow view changes.** SDK 1 exposes configured Home Assistant and Start URLs plus the current main WebView URL and path. User information, queries and fragments are omitted. The browser state event tells subscribers to read a fresh snapshot.
 - **Plugins can expose writable switches to Home Assistant.** SDK 1 delivers boolean requests to the owning plugin and publishes its confirmed state. Hello World demonstrates a switch for its chart.
 - **Audiobooks show chapter progress and navigation.** Now Playing uses Music Assistant's chapter metadata to show the current chapter's progress and list chapters in the queue panel. Tap a chapter to seek to its start. Pausing after a seek keeps Music Assistant's corrected position. Books without usable chapter metadata keep the full book timeline. Adds [#503](https://github.com/jxlarrea/kiosk-satellite/issues/503).

@@ -234,6 +234,7 @@ void main() {
         'getDashboardState',
         'getPluginState',
         'getPluginCharts',
+        'getPluginReadings',
         'getPluginEntities',
         'pluginEntityCommand',
         'listPlugins',

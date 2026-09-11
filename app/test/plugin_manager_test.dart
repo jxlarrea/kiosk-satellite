@@ -75,6 +75,80 @@ void main() {
   });
 
   test(
+    'local readings update without settings refresh and clear with their session',
+    () async {
+      var settingsUpdates = 0;
+      var readingUpdates = 0;
+      plugins.installed.addListener(() => settingsUpdates++);
+      plugins.readings.addListener(() => readingUpdates++);
+      await native('hostSession', {
+        'id': 'hello-world',
+        'session': 'readings',
+        'capabilities': ['entities'],
+      });
+      final reading = <String, Object?>{
+        'type': 'sensor',
+        'key': 'cpu',
+        'name': 'CPU',
+        'unit': '%',
+        'accuracyDecimals': 2,
+        'state': 12.5,
+      };
+      Future<void> publish(
+        List<Map<String, Object?>> values, {
+        String session = 'readings',
+      }) => native('entities', {
+        'id': 'hello-world',
+        'session': session,
+        'entities': values,
+      });
+      await publish([reading]);
+      expect(plugins.readings.value['hello-world'], [reading]);
+      expect(readingUpdates, 1);
+      await publish([reading]);
+      expect(readingUpdates, 1);
+      final beforeCalls = calls.length;
+      expect(
+        (await commands.execute('getPluginReadings', {
+          'id': 'hello-world',
+        })).data,
+        [reading],
+      );
+      expect(
+        (await commands.execute('getPluginReadings', {
+          'id': 'another-plugin',
+        })).data,
+        isEmpty,
+      );
+      expect(calls.length, beforeCalls);
+      await publish([
+        {...reading, 'state': null},
+      ]);
+      expect(plugins.readings.value['hello-world']!.single['state'], isNull);
+      expect(settingsUpdates, 0);
+      await publish([]);
+      expect(plugins.readings.value, isEmpty);
+      await publish([reading]);
+      await native('hostSessionClosed', {
+        'id': 'hello-world',
+        'session': 'readings',
+      });
+      expect(plugins.readings.value, isEmpty);
+      await native('hostSession', {
+        'id': 'hello-world',
+        'session': 'replacement',
+        'capabilities': ['entities'],
+      });
+      await publish([reading]);
+      expect(plugins.readings.value, isEmpty);
+      await publish([reading], session: 'replacement');
+      expect(plugins.readings.value['hello-world'], [reading]);
+      await plugins.setEnabled(false);
+      expect(plugins.readings.value, isEmpty);
+    },
+  );
+
+  test(
     'charts are session scoped and do not notify setting listeners',
     () async {
       var settingsUpdates = 0;
