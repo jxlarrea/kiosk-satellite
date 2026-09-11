@@ -309,6 +309,23 @@ function render(root, state) {
     if (!pluginsEnabled) description.append(hintRow('Enable Plugins to run this plugin.'));
     else if (!plugin.enabled) description.append(hintRow('Enable this plugin from its entry row to run it.'));
     page.append(description);
+    if (plugin.capabilities?.includes('shizuku')) {
+      const access = element('div', undefined, 'card plugin-shizuku');
+      const row = element('div', undefined, 'row');
+      row.append(info('Shizuku access', 'Checking availability'));
+      const button = element('button', 'Set up', 'btn-ghost'); button.type = 'button'; button.disabled = true;
+      button.onclick = () => {
+        if (access.dataset.status === 'permission_required') {
+          run(async () => {
+            const state = await command('requestPluginShizukuPermission', { id: plugin.id });
+            updatePluginShizuku(access, state);
+            showToast({ title: 'Shizuku', message: 'Approve the permission request on the kiosk.' });
+          }, button);
+        } else window.open('https://shizuku.rikka.app/guide/setup/', '_blank', 'noopener,noreferrer');
+      };
+      row.append(button); access.append(row, hintRow('Shizuku grants Kiosk Satellite shell or root access. Installed plugins run inside KS, so only grant access if you trust them.'));
+      page.append(access);
+    }
     const readings = element('div', undefined, 'plugin-readings'); readings.hidden = true; page.append(readings);
     const charts = element('div', undefined, 'plugin-charts'); charts.hidden = true; page.append(charts);
     const groups = new Map();
@@ -383,6 +400,23 @@ function render(root, state) {
   }
 }
 
+function updatePluginShizuku(container, state) {
+  const status = state?.status || 'unavailable';
+  container.dataset.status = status;
+  const descriptions = {
+    ready: state?.uid === 0 ? 'Connected with root access' : 'Connected with shell access',
+    permission_required: 'Grant access and approve the request on this kiosk.',
+    denied: 'Allow Kiosk Satellite in the Shizuku app.',
+    unsupported: 'Shizuku 13 or later is required.',
+    unavailable: 'Start Shizuku on this device.',
+  };
+  container.querySelector('.desc').textContent = descriptions[status] || descriptions.unavailable;
+  const button = container.querySelector('button');
+  button.style.display = status === 'ready' ? 'none' : '';
+  button.disabled = false;
+  button.textContent = status === 'permission_required' ? 'Grant access' : 'Set up';
+}
+
 let runtimeLoading = false;
 setInterval(async () => {
   const [tab, id] = currentPath.split('/');
@@ -395,6 +429,7 @@ setInterval(async () => {
     await Promise.allSettled([
       ['getPluginCharts', container, updatePluginCharts],
       ['getPluginReadings', page.querySelector('.plugin-readings'), updatePluginReadings],
+      ...(page.querySelector('.plugin-shizuku') ? [['getPluginShizukuState', page.querySelector('.plugin-shizuku'), updatePluginShizuku]] : []),
     ].map(async ([command, target, update]) => {
       const result = await cmd(command, { id }, { timeoutMs: 5000 });
       if (target?.isConnected && currentPath === `plugins/${id}` && result.ok) update(target, result.data);

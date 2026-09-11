@@ -128,6 +128,7 @@ export const SUBPAGE_ICONS = {
   'Kiosk Satellite Service': svg('<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'),
   'Remote Administration': svg('<rect x="3" y="4" width="18" height="12" rx="2"/>'
     + '<path d="M8 20h8m-4-4v4"/>'),
+  'Shizuku': svg('<path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>'),
   'Optional update helper': svg('<rect x="5" y="2" width="14" height="20" rx="2"/>'
     + '<path d="M12 5v10m-4-4 4 4 4-4M10 19h4"/>'),
   // The read-only reports the remote shows about the tablet; the device

@@ -10,6 +10,7 @@ import { $, api, cmd, depSatisfied, state } from './core.js';
 import { readOnlyRow, renderUpdateHelper } from './device.js';
 import { permissionSpecs } from './permissions.js';
 import { renderServicePage } from './service.js';
+import { renderShizukuPage } from './shizuku.js';
 import { CATEGORY_TABS } from './gestures.js';
 import {
   updateAdaptiveBrightnessRows,
@@ -211,7 +212,14 @@ export async function loadSettings() {
     if (tabId === 'tab-voicesatellite') continue; // custom render below
     const helperPage = tabId === 'device-settings' && helperStatus?.nativeSilent === false;
     const panels = render(document.getElementById(tabId), cats.filter((c) => byCat[c]),
-      helperPage ? { ...opts, extra: ['Optional update helper', ...(opts?.extra || [])] } : opts);
+      tabId === 'device-settings' ? { ...opts, extra: ['Shizuku', ...(helperPage ? ['Optional update helper'] : []), ...(opts?.extra || [])] } : opts);
+    if (tabId === 'device-settings') {
+      renderShizukuPage(panels.get('Shizuku'));
+      const entries = document.getElementById('device-pages');
+      const remote = entries?.querySelector('[data-subpage-entry="Remote Administration"]')?.closest('.card');
+      const shizuku = entries?.querySelector('[data-subpage-entry="Shizuku"]')?.closest('.card');
+      if (remote && shizuku) remote.after(shizuku);
+    }
     if (helperPage) renderUpdateHelper(panels.get('Optional update helper'), helperStatus);
   }
 

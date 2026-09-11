@@ -34,6 +34,20 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private val loadedHashes = mutableSetOf<String>()
     private val restartRequired = mutableSetOf<String>()
     private var initialized = false
+    private val shizukuDevice = ShizukuDeviceBridge(context, messenger) { shizuku }
+    private val shizuku: PluginShizuku by lazy {
+        PluginShizuku(context) { state ->
+            emit("shizukuState", state)
+            shizukuDevice.changed(state)
+            worker.execute {
+                sessions.values.toList().filter { it.alive.get() && "shizuku" in it.manifest.capabilities }.forEach { session ->
+                    try { session.call { session.plugin?.onEvent("shizuku.state", state) } }
+                    catch (error: Throwable) { fail(session.id, error); emit("changed", snapshot()) }
+                }
+            }
+        }
+    }
+
 
     private inner class Session(val id: String, val manifest: PluginManifest, val packageDir: File) {
         val nativeDir = File(root, ".runtime-${UUID.randomUUID()}")
@@ -76,10 +90,30 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
         val token = UUID.randomUUID().toString()
         val subscriptions = ConcurrentHashMap.newKeySet<String>()
         val commandBudget = PluginCommandBudget()
+        private var shizukuClient: PluginShizuku.Client? = null
+        @Synchronized fun closeShizuku() { shizukuClient?.close(); shizukuClient = null }
+        @Synchronized fun shizukuClient(): PluginShizuku.Client {
+            check(alive.get() && "shizuku" in manifest.capabilities) { "SDK 1 shizuku access is required" }
+            return shizukuClient ?: shizuku.client().also { shizukuClient = it }
+        }
         val alive = AtomicBoolean(true)
         val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "plugin-$id").apply { isDaemon = true } }
         var plugin: KioskPlugin? = null
         val host = object : PluginHost {
+            override fun shizukuState(): Map<String, Any> {
+                check(alive.get() && "shizuku" in manifest.capabilities) { "SDK 1 shizuku access is required" }
+                return shizuku.state()
+            }
+            override fun executeShizuku(command: Array<String>, timeoutMs: Int, callback: PluginHost.CommandCallback) {
+                shizukuClient().execute(command, timeoutMs) { ok, data, error ->
+                    worker.execute {
+                        if (alive.get() && sessions[id] === this@Session) {
+                            try { call { callback.onResult(ok, data, error) } }
+                            catch (failure: Throwable) { fail(id, failure); emit("changed", snapshot()) }
+                        }
+                    }
+                }
+            }
             override fun executeCommand(command: String, arguments: Map<String, Any>, callback: PluginHost.CommandCallback) {
                 check(alive.get() && manifest.capabilities.any { it == "host.read" || it == "host.control" }) { "Host capability is required" }
                 require(command.length in 1..80 && arguments.size <= 2 && arguments.all { it.key.length <= 32 && (it.value is Boolean || (it.value is String && (it.value as String).length <= 2048)) }) { "Invalid host request" }
@@ -221,6 +255,12 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                     val value: Any? = when (call.method) {
                         "initialize" -> { initialize(); snapshot() }
                         "list" -> snapshot()
+                        "shizukuState" -> shizuku.state()
+                        "requestShizukuPermission" -> {
+                            check(pluginsEnabled && "shizuku" in manifest(id(args)).capabilities) { "Enable Plugins and select a plugin that declares Shizuku access" }
+                            shizuku.requestPermission()
+                            shizuku.state()
+                        }
                         "setEnabled" -> {
                             val enabled = args["enabled"] as? Boolean ?: throw IllegalArgumentException("Missing enabled flag")
                             setEnabled(enabled)
@@ -387,7 +427,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             // Revoke every host before waiting for stop callbacks from individual plugins.
             sessions.forEach { (id, session) ->
                 session.alive.set(false)
-                session.closeCharts(); session.closeEntities()
+                session.closeShizuku(); session.closeCharts(); session.closeEntities()
                 emit("hideWindow", mapOf("id" to id))
             }
             for (id in sessions.keys.toList()) {
@@ -528,6 +568,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             emit("hostSession", mapOf("id" to id, "session" to current.token, "capabilities" to manifest.capabilities.toList()), current.alive)
             loadedIds.add(id)
             loadedHashes.add(record.getString("hash"))
+            if ("shizuku" in manifest.capabilities) shizuku.state()
             current.call {
                 val optimized = File(context.codeCacheDir, "plugins/${record.getString("hash")}").apply { mkdirs() }
                 val loader = DexClassLoader(jar.absolutePath, optimized.absolutePath, current.nativeDir.absolutePath, KioskPlugin::class.java.classLoader)
@@ -547,7 +588,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private fun stopSession(id: String) {
         val session = sessions.remove(id) ?: return
         session.alive.set(false)
-        session.closeCharts(); session.closeEntities()
+        session.closeShizuku(); session.closeCharts(); session.closeEntities()
         session.subscriptions.clear()
         emit("hostSessionClosed", mapOf("id" to id, "session" to session.token))
         emit("hideWindow", mapOf("id" to id))

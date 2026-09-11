@@ -11,6 +11,7 @@ import '../managers/plugins/plugin_manager.dart';
 import 'kit.dart';
 import 'plugin_chart.dart';
 import 'plugin_readings.dart';
+import 'plugin_shizuku.dart';
 import 'color_picker.dart';
 import 'toast.dart';
 
@@ -627,6 +628,8 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
                 WarnRow('${plugin['error']}'),
             ],
           ),
+          if ((plugin['capabilities'] as List? ?? const []).contains('shizuku'))
+            PluginShizukuPanel(plugins: widget.plugins, id: widget.id),
           ValueListenableBuilder<Map<String, List<Map<String, Object?>>>>(
             valueListenable: widget.plugins.readings,
             builder: (_, readings, _) =>

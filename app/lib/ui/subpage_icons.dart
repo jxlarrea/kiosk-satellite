@@ -63,6 +63,7 @@ const Map<String, Object> subpageIcons = {
   // Device.
   'Kiosk Satellite Service': Icons.bolt_outlined,
   'Remote Administration': Icons.computer_outlined,
+  'Shizuku': Icons.admin_panel_settings_outlined,
   'Optional update helper': Icons.system_update_outlined,
 };
 

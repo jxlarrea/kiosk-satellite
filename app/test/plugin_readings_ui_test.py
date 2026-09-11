@@ -26,13 +26,18 @@ readings = [
 ]
 polls = 0
 writes = 0
+permission_requests = 0
+shizuku_polls = 0
+shizuku_state = dict(status='permission_required', available=True, granted=False)
 
 def api(route):
-    global polls, writes
+    global polls, writes, permission_requests, shizuku_polls
     name = route.request.url.rsplit('/', 1)[-1]
     if name == 'getPluginState': data = dict(enabled=True, plugins=[plugin])
     elif name == 'getPluginReadings':
         polls += 1; assert route.request.post_data_json == dict(id='hello-world'); data = readings
+    elif name == 'getPluginShizukuState': shizuku_polls += 1; data = shizuku_state
+    elif name == 'requestPluginShizukuPermission': permission_requests += 1; data = shizuku_state
     elif name == 'configurePlugin': writes += 1; data = [plugin]
     else: data = []
     route.fulfill(json=dict(ok=True, data=data))
@@ -94,6 +99,22 @@ try:
         expect(panel.locator('dd')).to_have_text('1.00e+12')
         page.evaluate("async () => (await import('/static/tabs.js')).showTab('plugins', {refresh:false})")
         baseline = polls; page.wait_for_timeout(1200); assert polls == baseline
+        assert shizuku_polls == 0 and permission_requests == 0
+        plugin['capabilities'] = ['shizuku']
+        page.evaluate("async () => { await (await import('/static/plugins.js')).loadPlugins(); (await import('/static/tabs.js')).showTab('plugins/hello-world', {refresh:false}); }")
+        access = root.locator('.plugin-shizuku')
+        expect(access.get_by_role('button', name='Grant access')).to_be_visible()
+        assert permission_requests == 0
+        access.get_by_role('button', name='Grant access').click()
+        page.wait_for_function("document.querySelector('#tab-plugins').getAttribute('aria-busy') !== 'true'")
+        assert permission_requests == 1
+        shizuku_state = dict(status='ready', available=True, granted=True, uid=2000)
+        expect(access.get_by_text('Connected with shell access')).to_be_visible()
+        expect(access.locator('button')).to_be_hidden()
+        shizuku_state = dict(status='unavailable', available=False, granted=False)
+        expect(access.get_by_text('Start Shizuku on this device.')).to_be_visible()
+        expect(access.get_by_role('button', name='Set up')).to_be_visible()
+        assert permission_requests == 1
         assert not errors, errors
         browser.close()
         print('PASS: live readings, precision, missing states, removal, multiline text, safe rendering, narrow layouts, settings focus and scoped polling.')

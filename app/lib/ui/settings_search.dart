@@ -306,6 +306,13 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Device',
+    title: 'Shizuku',
+    description: 'Connection, shell access, Android permissions and setup.',
+    subpage: 'Shizuku',
+    anchorId: 'sub:Shizuku',
+  ),
+  SettingsSearchEntry(
+    category: 'Device',
     title: 'Permissions Manager',
     description:
         'Every Android grant the app can use, with its status: microphone, '

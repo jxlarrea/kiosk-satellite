@@ -122,6 +122,14 @@
         android:banner="@drawable/tv_banner"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
         <!-- singleTask with a real affinity: exactly one instance, ever.
              The scaffold's singleTop + empty affinity meant no launch could
              find the existing task, so the boot receiver (or a redeploy

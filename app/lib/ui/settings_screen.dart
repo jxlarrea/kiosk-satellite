@@ -54,6 +54,8 @@ import 'toast.dart';
 import 'mic_level_meter.dart';
 import 'settings_search.dart';
 import 'subpage_icons.dart';
+import 'shizuku_settings.dart';
+import '../managers/wake_word/permission_descriptions.dart';
 import 'wake_word_tester.dart';
 import 'update_helper_settings.dart';
 import 'plugin_settings.dart';
@@ -69,6 +71,8 @@ List<Widget> _sectionedCards(
   // under that setting's row (a permission notice living with the switch
   // that needs it).
   Map<String, Widget> after = const {},
+  // Hand-built destinations placed directly after a declared subpage.
+  Map<String, Widget> afterSubpage = const {},
   // Full replacements keyed by setting key: the widget renders instead of
   // the generic tile (the motion switch shown disabled while the Camera
   // section's master switch is off).
@@ -112,6 +116,10 @@ List<Widget> _sectionedCards(
             subpage: def.subpage!,
           ),
         );
+        if (subpage == null && afterSubpage[def.subpage] != null) {
+          flush();
+          out.add(afterSubpage[def.subpage]!);
+        }
       }
       continue;
     }
@@ -2065,6 +2073,14 @@ class _CategoryContentState extends State<_CategoryContent> {
               () => setState(() {}),
               replace: _rowReplacements(container),
               after: _rowExtras(container),
+              afterSubpage: {
+                if (widget.category == 'Device')
+                  'Remote Administration': _subpageEntryCard(
+                    container,
+                    'Device',
+                    'Shizuku',
+                  ),
+              },
             ),
           ),
         ],
@@ -2905,6 +2921,10 @@ class _CategoryContentState extends State<_CategoryContent> {
           ),
         ),
       ];
+    }
+
+    if (widget.category == 'Device' && subpage == 'Shizuku') {
+      return [ShizukuSettingsPanel(manager: container.shizuku)];
     }
 
     if (widget.category == 'Device' && subpage == 'Optional update helper') {
@@ -7584,9 +7604,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.microphone,
           needed: settings.get(wakeWordEnabled),
           missingIcon: Icons.mic_off_outlined,
-          title: 'Microphone',
-          held:
-              'Allows microphone usage for wake word detection and speech to text.',
+          title: devicePermissionDescriptions['microphone']!.title,
+          held: devicePermissionDescriptions['microphone']!.description,
           missing: micBlocked
               ? 'Blocked. Android will not ask again, so allow it in the '
                     'app settings.'
@@ -7610,9 +7629,9 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.batteryUnrestricted,
           needed: true,
           missingIcon: Icons.battery_alert_outlined,
-          title: 'Unrestricted battery',
+          title: devicePermissionDescriptions['batteryUnrestricted']!.title,
           held:
-              'Allows the process to run in the background without being paused or killed.',
+              devicePermissionDescriptions['batteryUnrestricted']!.description,
           missing:
               'Android may pause the app when the screen is off, dropping '
               'the Home Assistant connection and the ESPHome entities with it.',
@@ -7624,8 +7643,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.camera,
           needed: settings.get(cameraEnabled),
           missingIcon: Icons.videocam_off_outlined,
-          title: 'Camera',
-          held: 'Motion detection and snapshots can use the camera.',
+          title: devicePermissionDescriptions['camera']!.title,
+          held: devicePermissionDescriptions['camera']!.description,
           missing: 'The camera is switched on and cannot be opened.',
           idle:
               'Needed by motion detection, camera snapshots and pages '
@@ -7636,8 +7655,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.bluetooth,
           needed: settings.get(btproxyEnabled),
           missingIcon: Icons.bluetooth_disabled_outlined,
-          title: 'Nearby devices',
-          held: 'The Bluetooth proxy can scan for nearby devices.',
+          title: devicePermissionDescriptions['bluetooth']!.title,
+          held: devicePermissionDescriptions['bluetooth']!.description,
           // Name the actual blocker: the pair, the location grant, or the
           // system-wide location switch (issues #240, #246; location gates
           // Bluetooth scanning on every Android version).
@@ -7658,10 +7677,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           // The service's notification is part of every install's deal.
           needed: true,
           missingIcon: Icons.notifications_off_outlined,
-          title: 'Notifications',
-          held:
-              "Allows the Kiosk Satellite Service's ongoing notification, "
-              'which says what it is keeping alive.',
+          title: devicePermissionDescriptions['notification']!.title,
+          held: devicePermissionDescriptions['notification']!.description,
           missing:
               "Needed to show the Kiosk Satellite Service's ongoing notification.",
           idle: '',
@@ -7675,8 +7692,9 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               settings.get(kioskStartOnBoot) ||
               settings.get(kioskDisableStatusBar),
           missingIcon: Icons.open_in_new_off_outlined,
-          title: 'Display over other apps',
-          held: 'Kiosk Satellite can bring itself back in the foreground.',
+          title: devicePermissionDescriptions['displayOverOtherApps']!.title,
+          held:
+              devicePermissionDescriptions['displayOverOtherApps']!.description,
           missing:
               'Without this the app cannot reopen itself after a crash, an '
               'update or a wake word heard behind another app.',
@@ -7693,8 +7711,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               settings.get(screensaverBrightnessEnabled) ||
               settings.get(adaptiveBrightness),
           missingIcon: Icons.brightness_6_outlined,
-          title: 'Modify system settings',
-          held: "Brightness changes set the panel's real brightness.",
+          title: devicePermissionDescriptions['writeSettings']!.title,
+          held: devicePermissionDescriptions['writeSettings']!.description,
           missing:
               'Brightness only dims the app window, so the panel and Home '
               'Assistant never see the change.',
@@ -7708,10 +7726,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           needed:
               settings.get(kioskEnabled) && settings.get(kioskDisableStatusBar),
           missingIcon: Icons.shield_outlined,
-          title: 'System UI guard',
-          held:
-              'The notification shade and recents close on their own while '
-              'the screen is protected.',
+          title: devicePermissionDescriptions['uiGuard']!.title,
+          held: devicePermissionDescriptions['uiGuard']!.description,
           missing:
               'The notification shade and recents stay reachable. Enable '
               'Kiosk Satellite under Accessibility.',
@@ -7728,8 +7744,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.deviceAdmin,
           needed: false,
           missingIcon: Icons.admin_panel_settings_outlined,
-          title: 'Device admin',
-          held: 'Allows the app to turn the screen off.',
+          title: devicePermissionDescriptions['deviceAdmin']!.title,
+          held: devicePermissionDescriptions['deviceAdmin']!.description,
           missing: '',
           idle:
               'Lets Screen off power the panel down instead of only '
@@ -7744,8 +7760,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.allFiles,
           needed: false,
           missingIcon: Icons.folder_off_outlined,
-          title: 'All files access',
-          held: 'The File Manager can browse the shared storage.',
+          title: devicePermissionDescriptions['allFiles']!.title,
+          held: devicePermissionDescriptions['allFiles']!.description,
           missing: '',
           idle:
               'Lets the File Manager browse the shared storage instead of '
@@ -7758,10 +7774,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.usageAccess,
           needed: false,
           missingIcon: Icons.apps_outage,
-          title: 'Usage access',
-          held:
-              'The Foreground app sensor can name whichever app is on '
-              'screen.',
+          title: devicePermissionDescriptions['usageAccess']!.title,
+          held: devicePermissionDescriptions['usageAccess']!.description,
           missing: '',
           idle:
               'Lets the Foreground app sensor name apps other than '
@@ -7777,10 +7791,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.location,
           needed: settings.get(btproxyEnabled) || settings.get(locationEnabled),
           missingIcon: Icons.location_off_outlined,
-          title: 'Location',
-          held:
-              'Pages, Bluetooth scanning and the location sensors can use '
-              'the device position.',
+          title: devicePermissionDescriptions['location']!.title,
+          held: devicePermissionDescriptions['location']!.description,
           missing:
               'Android will not deliver Bluetooth scan results without '
               'Location, and the location sensors cannot read the GPS '

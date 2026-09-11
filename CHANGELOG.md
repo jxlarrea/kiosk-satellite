@@ -4,6 +4,10 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Manage Shizuku from Device settings.** The new subpage shows connection status, requests access and tests the connection. Buttons grant individual permissions or all 12 permissions from Permissions Manager, including optional features, System UI guard and Device admin. Both interfaces use matching permission titles and descriptions. Results are verified with Android. The page also works in Remote Admin with Plugin Manager disabled and does not sync through fleet management.
+- **Plugins can use Shizuku through SDK 1.** Plugins can declare optional Shizuku access, inspect availability and run bounded asynchronous commands after the user grants KS permission. A dedicated permission row appears only for plugins that request this capability. Existing plugins retain their current behavior.
+
 ### Fixed
 - **Radio playback shows the current song.** Music Assistant radio queues use live song titles, artists, albums and artwork in the floating player and Now Playing. Station details remain the fallback when song metadata is unavailable. Fixes [#507](https://github.com/jxlarrea/kiosk-satellite/issues/507).
 - **Screensavers work during internal Sendspin playback.** Turning off Now Playing instead of the screensaver now allows the configured screensaver to start manually or after the idle timeout and keeps it visible when music starts. Voice interactions, dashboard media and explicit pauses still hold the screensaver. Fixes [#506](https://github.com/jxlarrea/kiosk-satellite/issues/506).

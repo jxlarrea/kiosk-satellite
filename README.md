@@ -90,7 +90,7 @@ For voice control, install [Voice Satellite](https://github.com/jxlarrea/voice-s
 
 &bull; **Voice and media:** [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration), [microphone](docs/microphone.md), [media player](docs/sendspin.md), [camera views](docs/cameras.md), [device camera](docs/camera.md) and [DLNA](docs/dlna.md).
 
-&bull; **Kiosk setup:** [Lockdown](docs/kiosk.md), [home launcher](docs/home-launcher.md), [gestures](docs/gestures.md), [optimizations](docs/optimizations.md), [permissions](docs/permissions.md) and [updates](docs/updates.md).
+&bull; **Kiosk setup:** [Lockdown](docs/kiosk.md), [home launcher](docs/home-launcher.md), [gestures](docs/gestures.md), [optimizations](docs/optimizations.md), [permissions](docs/permissions.md), [Shizuku](docs/shizuku.md) and [updates](docs/updates.md).
 
 &bull; **Automation and management:** [ESPHome](docs/esphome.md), [fleet management](docs/fleet.md), [Remote API](docs/remote-api.md) and [JavaScript API](docs/js-api.md).
 

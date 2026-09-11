@@ -11,7 +11,7 @@ import org.junit.Test
 
 class PluginPackageTest {
     @Test fun firstPublicSdkSupportsAllExplicitCapabilities() {
-        for (capability in listOf("overlay", "native", "entities", "host.read", "host.control")) {
+        for (capability in listOf("overlay", "native", "entities", "host.read", "host.control", "shizuku")) {
             assertTrue(capability in PluginManifest(manifest().put("capabilities", org.json.JSONArray(listOf(capability)))).capabilities)
         }
         for (version in listOf(0, 2, 3, 4)) {

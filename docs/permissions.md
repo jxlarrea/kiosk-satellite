@@ -6,6 +6,8 @@ In the app, navigating to **Settings > Device > Permissions Manager** displays t
 
 This documentation covers the alternative approach: provisioning a wall panel from a computer. Tapping through a dozen permission screens on a touchscreen is slow; executing everything over `adb` takes seconds and requires no root access.
 
+If Shizuku is running on the kiosk, **Settings > Device > Shizuku** can grant supported permissions without a computer. See the [Shizuku guide](shizuku.md) for setup and available actions.
+
 ## Granted at Install
 
 The following permissions are bundled directly inside the APK and require no user interaction:

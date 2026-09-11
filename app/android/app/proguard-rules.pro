@@ -22,3 +22,6 @@
 
 # Downloaded plugins link to this separately licensed SDK.
 -keep class me.jxl.kiosk.plugins.** { *; }
+
+# Shizuku instantiates the helper by class name in its own process.
+-keep class me.jxl.kiosk_satellite.plugins.PluginShizukuService { *; }

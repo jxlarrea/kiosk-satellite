@@ -44,6 +44,9 @@ class PluginManager extends Manager {
   final charts = ValueNotifier<Map<String, List<Map<String, Object?>>>>({});
   final _runtimeSessions = <String, String>{};
   final windows = ValueNotifier<List<PluginWindow>>(const []);
+  final shizuku = ValueNotifier<Map<String, Object?>>(const {
+    'status': 'checking',
+  });
   final status = ValueNotifier<String>('');
   final enabled = ValueNotifier<bool>(false);
   bool _disposed = false;
@@ -119,6 +122,8 @@ class PluginManager extends Manager {
               data['session'] != null) {
             _setCharts(data['id'] as String, data['charts'] as List);
           }
+        case 'shizukuState':
+          shizuku.value = Map<String, Object?>.from(call.arguments as Map);
         case 'changed':
           _readInstalled(call.arguments);
         case 'window':
@@ -170,6 +175,18 @@ class PluginManager extends Manager {
       );
     }
 
+    register(
+      'getPluginShizukuState',
+      'Read Shizuku availability and the permission granted to KS.',
+      (_) => refreshShizuku(),
+      const {},
+    );
+    register(
+      'requestPluginShizukuPermission',
+      'Ask Shizuku to show its permission prompt on the kiosk.',
+      (p) => refreshShizuku(requestFor: p['id'] as String? ?? ''),
+      const {'id': 'Installed plugin declaring the shizuku capability'},
+    );
     register(
       'getPluginReadings',
       'Read current plugin readings without refreshing settings.',
@@ -416,6 +433,18 @@ class PluginManager extends Manager {
     'plugins': installed.value,
   };
 
+  Future<Map<String, Object?>> refreshShizuku({String? requestFor}) async {
+    final value = await channel
+        .invokeMapMethod<String, Object?>(
+          requestFor == null ? 'shizukuState' : 'requestShizukuPermission',
+          requestFor == null ? null : {'id': requestFor},
+        )
+        .timeout(const Duration(seconds: 10));
+    final state = value ?? const <String, Object?>{'status': 'unavailable'};
+    if (!_disposed) shizuku.value = state;
+    return state;
+  }
+
   Future<Map<String, Object?>> getState() async {
     await refresh();
     return _state;
@@ -649,6 +678,7 @@ class PluginManager extends Manager {
     charts.dispose();
     installed.dispose();
     windows.dispose();
+    shizuku.dispose();
     status.dispose();
     enabled.dispose();
   }

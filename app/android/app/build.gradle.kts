@@ -25,6 +25,8 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    buildFeatures { aidl = true }
+
     // Keep the universal download available alongside --split-per-abi builds.
     splits.abi.isUniversalApk = true
 
@@ -138,6 +140,8 @@ configurations.all {
 }
 
 dependencies {
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
     // Match flutter_inappwebview for renderer recovery on older Android versions.
     implementation("androidx.webkit:webkit:1.14.0")
     // CameraX for low-cost motion detection (YUV luminance analysis only).

@@ -884,6 +884,8 @@
     .row.subpage-entry .info .desc { margin-left: 36px;
       flex-basis: calc(100% - 36px); }
     .row.subpage-entry .info .name { flex-basis: 0; }
+    .row.shizuku-action .info .name { flex-basis: 0; }
+    .row.shizuku-action > button { flex: none; }
     /* A control wider than that stacks: it takes the next line and
        stretches across the row, on the name's left edge, the way dropdown
        rows stack on the device. Never right aligned on its own line. */

@@ -74,6 +74,67 @@ void main() {
     'buttonLabel': 'Say hello',
   });
 
+  testWidgets('Shizuku is opt-in and permission requests require a user tap', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PluginDetailPanel(plugins: plugins, id: 'hello-world'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Shizuku access'), findsNothing);
+    expect(
+      calls.where((c) => c.method.toLowerCase().contains('shizuku')),
+      isEmpty,
+    );
+    installed[0]['capabilities'] = ['shizuku'];
+    await plugins.refresh();
+    await tester.pumpAndSettle();
+    expect(find.text('Shizuku access'), findsOneWidget);
+    expect(calls.where((c) => c.method == 'requestShizukuPermission'), isEmpty);
+    await tester.tap(find.text('Shizuku access'));
+    await tester.pumpAndSettle();
+    expect(
+      calls
+          .where((c) => c.method == 'requestShizukuPermission')
+          .single
+          .arguments,
+      {'id': 'hello-world'},
+    );
+    var settingUpdates = 0;
+    plugins.installed.addListener(() => settingUpdates++);
+    await native('shizukuState', {
+      'status': 'ready',
+      'available': true,
+      'granted': true,
+      'uid': 2000,
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Connected with shell access'), findsOneWidget);
+    expect(settingUpdates, 0);
+    await tester.tap(find.text('Shizuku access'));
+    await tester.pumpAndSettle();
+    expect(
+      calls.where((c) => c.method == 'requestShizukuPermission').length,
+      1,
+    );
+    await native('shizukuState', {
+      'status': 'unavailable',
+      'available': false,
+      'granted': false,
+    });
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Start Shizuku on this device. Tap for setup instructions.'),
+      findsOneWidget,
+    );
+  });
+
   test(
     'local readings update without settings refresh and clear with their session',
     () async {
@@ -474,6 +535,14 @@ void main() {
     ];
     messenger.setMockMethodCallHandler(PluginManager.channel, (call) async {
       calls.add(call);
+      if (call.method == 'shizukuState' ||
+          call.method == 'requestShizukuPermission') {
+        return {
+          'status': 'permission_required',
+          'available': true,
+          'granted': false,
+        };
+      }
       if (call.method == 'setEnabled') {
         masterEnabled = (call.arguments as Map)['enabled'] as bool;
         installed = [

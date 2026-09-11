@@ -241,6 +241,7 @@ const Map<String, String> subpageHints = {
   'Kiosk Satellite Service':
       'Status, what keeps it running, required permissions',
   'Remote Administration': 'Manage this kiosk from a browser on your network',
+  'Shizuku': 'Connection, Android permissions and setup',
   'Optional update helper': 'Silent update status, ADB setup and instructions',
   // Read-only reports the remote admin shows about the tablet; the
   // device's own settings page has no equivalent.
