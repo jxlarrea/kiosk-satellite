@@ -314,6 +314,22 @@ class KioskDrawer extends StatelessWidget {
                                       );
                                     },
                                   ),
+                              if (c.settings.get(defs.lockdownMenu) &&
+                                  (!restricted ||
+                                      c.settings.get(defs.kioskAllowLockdown)))
+                                _item(
+                                  divided: sep(),
+                                  context,
+                                  Icons.lock_outline,
+                                  'Lockdown Mode',
+                                  () async {
+                                    onClose();
+                                    await c.settings.set(
+                                      defs.lockdownEnabled,
+                                      true,
+                                    );
+                                  },
+                                ),
                               // Hold mode's menu entry (issue #266): opt-in
                               // like the Sendspin one, and unlike the notice
                               // below it can also ENGAGE a hold. The label

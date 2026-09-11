@@ -918,6 +918,18 @@ const kioskAllowHold = SettingDef<bool>(
   dependsOn: 'kiosk.allow_drawer',
 );
 
+const kioskAllowLockdown = SettingDef<bool>(
+  key: 'kiosk.allow_lockdown',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Lockdown Mode',
+  description: 'Lock the screen until the exit gesture or a remote unlock.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
 const kioskAllowTheme = SettingDef<bool>(
   key: 'kiosk.allow_theme',
   type: SettingType.boolean,
@@ -949,10 +961,8 @@ const kioskAllowApps = SettingDef<bool>(
 // and unhearable without dismantling the owner's kiosk configuration.
 // While it holds, every kiosk protection arms whatever its individual
 // switch says, and wake word detection is muted; the PIN stays the kiosk
-// PIN. Remote-only by design, so the category never appears in the device
-// settings rail: the only person standing at a locked tablet is the one
-// being locked out, and a device-side toggle would lock out its own
-// operator one tap after enabling it. While lockdown is on, its own exit
+// PIN. Setup stays in Remote Admin, with an opt-in menu shortcut for
+// locking the screen at the device. While lockdown is on, its own exit
 // gesture below replaces the kiosk one, so the two can share a value
 // without ever being armed together.
 
@@ -964,6 +974,17 @@ const lockdownEnabled = SettingDef<bool>(
   description:
       'Disables screen interactions until turned off either from Home '
       'Assistant or with the exit gesture.',
+  category: 'Lockdown',
+);
+
+const lockdownMenu = SettingDef<bool>(
+  key: 'lockdown.menu',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show in the kiosk menu',
+  description:
+      'Add a Lockdown Mode entry to the kiosk menu that locks the screen. '
+      'Use the exit gesture, Remote Admin or Home Assistant to unlock it.',
   category: 'Lockdown',
 );
 
@@ -6621,9 +6642,11 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowSendspinPlayer,
   kioskAllowScreensaver,
   kioskAllowHold,
+  kioskAllowLockdown,
   kioskAllowTheme,
   kioskAllowApps,
   lockdownEnabled,
+  lockdownMenu,
   lockdownBlackout,
   lockdownAllowScreensaver,
   lockdownExitGesture,

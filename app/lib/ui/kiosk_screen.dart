@@ -295,6 +295,8 @@ class _KioskScreenState extends State<KioskScreen>
         (c.settings.get(defs.kioskAllowMusic) && hasMusic) ||
         (c.settings.get(defs.kioskAllowSendspinPlayer) && hasPlayer) ||
         (c.settings.get(defs.kioskAllowHold) && hasHold) ||
+        (c.settings.get(defs.kioskAllowLockdown) &&
+            c.settings.get(defs.lockdownMenu)) ||
         (c.settings.get(defs.kioskAllowApps) && hasApps);
   }
 
@@ -541,7 +543,8 @@ class _KioskScreenState extends State<KioskScreen>
     if (e.key == defs.sendspinMaShortcut.key ||
         e.key == defs.sendspinMaUrl.key ||
         e.key == defs.haKioskMenu.key ||
-        e.key == defs.screensaverMenu.key) {
+        e.key == defs.screensaverMenu.key ||
+        e.key == defs.lockdownMenu.key) {
       setState(() {});
       return;
     }
