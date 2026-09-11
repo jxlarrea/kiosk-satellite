@@ -523,7 +523,6 @@ class PluginDetailPanel extends StatefulWidget {
 
 class _PluginDetailPanelState extends State<PluginDetailPanel> {
   bool _busy = false;
-  String? _action;
   @override
   void initState() {
     super.initState();
@@ -548,7 +547,6 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
     if (_busy) return;
     setState(() {
       _busy = true;
-      _action = method == 'execute' ? args['command'] as String : method;
     });
     try {
       await widget.plugins.update(method, args);
@@ -603,7 +601,6 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
             key: ValueKey(widget.id),
             plugin: plugin,
             busy: _busy,
-            action: _action,
             run: _run,
           ),
         ],
@@ -617,12 +614,10 @@ class _PluginSettings extends StatefulWidget {
     super.key,
     required this.plugin,
     required this.busy,
-    required this.action,
     required this.run,
   });
   final Map<String, Object?> plugin;
   final bool busy;
-  final String? action;
   final Future<void> Function(String, Map<String, Object?>) run;
   @override
   State<_PluginSettings> createState() => _PluginSettingsState();
@@ -630,6 +625,8 @@ class _PluginSettings extends StatefulWidget {
 
 class _PluginSettingsState extends State<_PluginSettings> {
   late Map<String, Object?> _values;
+  bool _saving = false;
+  bool get _busy => widget.busy || _saving;
   @override
   void initState() {
     super.initState();
@@ -656,6 +653,90 @@ class _PluginSettingsState extends State<_PluginSettings> {
       if (options?['drawer'] == true) 'Kiosk drawer',
       if (options?['homeAssistant'] == true) 'Home Assistant',
     ].join(' · ');
+  }
+
+  Future<void> _saveValue(String key, Object? value) async {
+    if (_busy) return;
+    setState(() {
+      _saving = true;
+      _values[key] = value;
+    });
+    try {
+      await widget.run('configure', {
+        'id': widget.plugin['id'],
+        'values': {...?widget.plugin['values'] as Map?, key: value},
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _reset();
+        });
+      }
+    }
+  }
+
+  Future<void> _editText(Map raw) async {
+    final key = '${raw['key']}';
+    var draft = '${_values[key] ?? raw['default']}';
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${raw['title']}'),
+        content: SizedBox(
+          width: 420,
+          child: TextFormField(
+            initialValue: draft,
+            autofocus: true,
+            maxLength: 512,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
+              hintText: raw['description'] as String?,
+            ),
+            onChanged: (value) => draft = value,
+            onFieldSubmitted: (value) => Navigator.pop(context, value),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, draft),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (result != null && mounted && !_busy) {
+      await _saveValue(key, result);
+    }
+  }
+
+  Widget _settingRow(Map raw) {
+    if (raw['type'] == 'string') {
+      final value = '${_values[raw['key']] ?? raw['default']}';
+      return SettingsRow(
+        title: Text('${raw['title']}'),
+        subtitle: Text(
+          value.isEmpty ? '${raw['description'] ?? 'Not set'}' : value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: const Icon(Icons.edit_outlined),
+        enabled: !_busy,
+        onTap: _busy ? null : () => _editText(raw),
+      );
+    }
+    return SettingsRow(
+      title: Text('${raw['title']}'),
+      subtitle: raw['description'] == null
+          ? null
+          : Text('${raw['description']}'),
+      stack: raw['type'] != 'boolean' && raw['type'] != 'color',
+      trailing: _control(raw),
+    );
   }
 
   Future<void> _configureAction(Map command) async {
@@ -733,9 +814,7 @@ class _PluginSettingsState extends State<_PluginSettings> {
       case 'boolean':
         return Switch(
           value: value == true,
-          onChanged: widget.busy
-              ? null
-              : (v) => setState(() => _values[key] = v),
+          onChanged: _busy ? null : (v) => _saveValue(key, v),
         );
       case 'number':
         final min = (raw['min'] as num).toDouble();
@@ -752,7 +831,10 @@ class _PluginSettingsState extends State<_PluginSettings> {
                   max: max,
                   divisions: ((max - min) / step).round(),
                   label: '$value ${raw['unit'] ?? ''}',
-                  onChanged: widget.busy
+                  onChangeEnd: _busy
+                      ? null
+                      : (_) => _saveValue(key, _values[key] ?? value),
+                  onChanged: _busy
                       ? null
                       : (v) => setState(
                           () => _values[key] = double.parse(
@@ -777,9 +859,7 @@ class _PluginSettingsState extends State<_PluginSettings> {
               for (final option in raw['options'] as List)
                 DropdownMenuItem(value: '$option', child: Text('$option')),
             ],
-            onChanged: widget.busy
-                ? null
-                : (v) => setState(() => _values[key] = v),
+            onChanged: _busy ? null : (v) => _saveValue(key, v),
           ),
         );
       case 'color':
@@ -798,7 +878,7 @@ class _PluginSettingsState extends State<_PluginSettings> {
               border: Border.all(color: Theme.of(context).colorScheme.outline),
             ),
           ),
-          onPressed: widget.busy
+          onPressed: _busy
               ? null
               : () async {
                   final rgb = [1, 3, 5]
@@ -810,34 +890,21 @@ class _PluginSettingsState extends State<_PluginSettings> {
                     title: '${raw['title']}',
                   );
                   if (selected != null && mounted) {
-                    setState(
-                      () => _values[key] =
-                          '#${selected.split(',').map((c) => int.parse(c.trim()).toRadixString(16).padLeft(2, '0')).join().toUpperCase()}',
+                    await _saveValue(
+                      key,
+                      '#${selected.split(',').map((c) => int.parse(c.trim()).toRadixString(16).padLeft(2, '0')).join().toUpperCase()}',
                     );
                   }
                 },
         );
       default:
-        return SizedBox(
-          width: 220,
-          child: TextFormField(
-            key: ValueKey(
-              '${widget.plugin['id']}-$key-${(widget.plugin['values'] as Map?)?[key]}',
-            ),
-            initialValue: '$value',
-            enabled: !widget.busy,
-            maxLength: 512,
-            decoration: const InputDecoration(counterText: '', isDense: true),
-            onChanged: (v) => _values[key] = v,
-          ),
-        );
+        return const SizedBox.shrink();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final plugin = widget.plugin;
-    final id = plugin['id'] as String;
     final settings = plugin['settings'] as List? ?? const [];
     final commands = plugin['commands'] as List? ?? const [];
     return Column(
@@ -854,36 +921,10 @@ class _PluginSettingsState extends State<_PluginSettings> {
                 for (final raw in settings.where(
                   (raw) => '${(raw as Map)['group'] ?? 'Settings'}' == group,
                 ))
-                  SettingsRow(
-                    title: Text('${(raw as Map)['title']}'),
-                    subtitle: raw['description'] == null
-                        ? null
-                        : Text('${raw['description']}'),
-                    stack: raw['type'] != 'boolean' && raw['type'] != 'color',
-                    trailing: _control(raw),
-                  ),
+                  _settingRow(raw as Map),
               ],
             ),
           ],
-          SettingsCard(
-            children: [
-              SettingsRow(
-                title: const Text('Save changes'),
-                trailing: FilledButton.icon(
-                  onPressed: widget.busy
-                      ? null
-                      : () => widget.run('configure', {
-                          'id': id,
-                          'values': _values,
-                        }),
-                  icon: widget.busy && widget.action == 'configure'
-                      ? const _PluginProgress()
-                      : const Icon(Icons.check_rounded, size: 24),
-                  label: const Text('Save settings'),
-                ),
-              ),
-            ],
-          ),
         ],
         if (commands.isNotEmpty) ...[
           const SectionHeading('Actions'),
@@ -893,7 +934,7 @@ class _PluginSettingsState extends State<_PluginSettings> {
                 SettingsRow(
                   title: Text('${(raw as Map)['title']}'),
                   subtitle: Text(_actionSummary(raw['id'].toString())),
-                  enabled: !widget.busy,
+                  enabled: !_busy,
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _configureAction(raw),
                 ),

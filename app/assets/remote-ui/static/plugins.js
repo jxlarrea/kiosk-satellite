@@ -187,14 +187,14 @@ function render(root, state) {
     if (busy) return;
     busy = true;
     root.setAttribute('aria-busy', 'true');
-    root.querySelectorAll('button,input').forEach((el) => { el.disabled = true; });
+    root.querySelectorAll('button,input,select').forEach((el) => { el.disabled = true; });
     trigger.classList.add('plugin-busy');
     try { await action(); }
     catch (failure) { showToast({ title: 'Plugin Manager', message: failure.message, kind: 'error' }); }
     finally {
       trigger.classList.remove('plugin-busy'); busy = false;
       root.removeAttribute('aria-busy');
-      root.querySelectorAll('button,input').forEach((el) => { el.disabled = el.dataset.pluginDisabled === 'true'; });
+      root.querySelectorAll('button,input,select').forEach((el) => { el.disabled = el.dataset.pluginDisabled === 'true'; });
     }
   }
   const refresh = async () => render(root, await command('getPluginState'));
@@ -298,6 +298,13 @@ function render(root, state) {
     page.append(description);
     const groups = new Map();
     const values = { ...plugin.values };
+    const saveSetting = (key, value, trigger) => run(async () => {
+      try {
+        await command('configurePlugin', { id: plugin.id, values: { ...plugin.values, [key]: value } });
+      } finally {
+        await refresh();
+      }
+    }, trigger);
     for (const setting of plugin.settings || []) {
       const group = setting.group || 'Settings';
       if (!groups.has(group)) {
@@ -310,7 +317,7 @@ function render(root, state) {
       const input = element('input'); input.setAttribute('aria-label', setting.title);
       if (setting.type === 'boolean') {
         input.type = 'checkbox'; input.checked = values[setting.key] ?? setting.default;
-        input.onchange = () => { values[setting.key] = input.checked; };
+        input.onchange = () => saveSetting(setting.key, input.checked, input);
         const toggle = element('label', undefined, 'switch'); toggle.append(input, element('span', undefined, 'slider')); settingRow.append(toggle);
       } else if (setting.type === 'number') {
         input.type = 'range'; input.min = setting.min; input.max = setting.max; input.step = setting.step || 1;
@@ -318,29 +325,25 @@ function render(root, state) {
         const control = element('div', undefined, 'plugin-range');
         const output = element('span', `${input.value} ${setting.unit || ''}`.trim(), 'desc');
         input.oninput = () => { values[setting.key] = Number(input.value); output.textContent = `${input.value} ${setting.unit || ''}`.trim(); };
+        input.onchange = () => saveSetting(setting.key, Number(input.value), input);
         control.append(input, output); settingRow.append(control);
       } else if (setting.type === 'select') {
         const select = element('select'); select.setAttribute('aria-label', setting.title);
         for (const choice of setting.options) { const option = element('option', choice); option.value = choice; select.append(option); }
         select.value = values[setting.key] ?? setting.default;
-        select.onchange = () => { values[setting.key] = select.value; }; settingRow.append(select);
+        select.onchange = () => saveSetting(setting.key, select.value, select); settingRow.append(select);
       } else if (setting.type === 'color') {
         const hex = values[setting.key] ?? setting.default;
         const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',');
         settingRow.append(swatch(rgb, setting.title, (selected) => {
-          values[setting.key] = '#' + selected.split(',').map((c) => Number(c).toString(16).padStart(2, '0')).join('').toUpperCase();
+          saveSetting(setting.key, '#' + selected.split(',').map((c) => Number(c).toString(16).padStart(2, '0')).join('').toUpperCase(), settingRow.querySelector('button'));
         }));
       } else {
         input.type = 'text'; input.maxLength = 512; input.value = values[setting.key] ?? setting.default;
-        input.oninput = () => { values[setting.key] = input.value; }; settingRow.append(input);
+        input.onchange = () => saveSetting(setting.key, input.value, input);
+        input.onkeydown = (event) => { if (event.key === 'Enter') input.blur(); }; settingRow.append(input);
       }
       panel.append(settingRow);
-    }
-    if (plugin.settings?.length) {
-      const saveRow = element('div', undefined, 'row'); saveRow.append(info('Save changes'));
-      const save = element('button', 'Save settings', 'btn-primary');
-      save.onclick = () => update('configurePlugin', { id: plugin.id, values }, save);
-      saveRow.append(save); const savePanel = element('div', undefined, 'card'); savePanel.append(saveRow); page.append(savePanel);
     }
     if (plugin.commands?.length) {
       const actions = element('div', undefined, 'card');

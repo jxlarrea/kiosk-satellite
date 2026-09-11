@@ -126,6 +126,19 @@ void main() {
           {...installed.first, 'running': false, 'enabled': false},
         ];
       }
+      if (call.method == 'configure') {
+        final args = call.arguments as Map;
+        installed = [
+          for (final plugin in installed)
+            if (plugin['id'] == args['id'])
+              {
+                ...plugin,
+                'values': Map<String, Object?>.from(args['values'] as Map),
+              }
+            else
+              plugin,
+        ];
+      }
       if (call.method == 'remove') installed = [];
       return {'enabled': masterEnabled, 'plugins': installed};
     });
@@ -680,6 +693,57 @@ void main() {
       await stateSub.cancel();
     },
   );
+  testWidgets(
+    'switches save immediately and failed saves restore the stored value',
+    (tester) async {
+      installed[0]['settings'] = [
+        {
+          'key': 'automatic',
+          'title': 'Show automatically',
+          'type': 'boolean',
+          'default': false,
+        },
+      ];
+      installed[0]['values'] = {'automatic': false};
+      await plugins.refresh();
+      final completion = Completer<Object?>();
+      messenger.setMockMethodCallHandler(PluginManager.channel, (call) async {
+        calls.add(call);
+        if (call.method == 'configure') return completion.future;
+        return {'enabled': masterEnabled, 'plugins': installed};
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PluginDetailPanel(plugins: plugins, id: 'hello-world'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch));
+      await tester.pump();
+      expect(
+        (calls.lastWhere((c) => c.method == 'configure').arguments
+            as Map)['values'],
+        {'automatic': true},
+      );
+      expect(tester.widget<Switch>(find.byType(Switch)).onChanged, isNull);
+      completion.completeError(
+        PlatformException(code: 'plugin_error', message: 'Setting rejected'),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.widget<Switch>(find.byType(Switch)).value, false);
+      expect(tester.widget<Switch>(find.byType(Switch)).onChanged, isNotNull);
+      expect(find.textContaining('Setting rejected'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 8));
+      await tester.pumpAndSettle();
+      expect(find.text('Save settings'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('SDK 1 controls retain edits during runtime status updates', (
     tester,
   ) async {
@@ -733,13 +797,19 @@ void main() {
     await plugins.refresh();
     await tester.pumpAndSettle();
     expect(tester.widget<Slider>(find.byType(Slider)).value, 75);
+    expect(calls.where((c) => c.method == 'configure'), isEmpty);
+    tester.widget<Slider>(find.byType(Slider)).onChangeEnd!(75);
+    await tester.pumpAndSettle();
+    expect(
+      (calls.lastWhere((c) => c.method == 'configure').arguments
+          as Map)['values'],
+      {'brightness': 75.0, 'effect': 'None', 'color': '#123456'},
+    );
     await tester.tap(find.text('None'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Pulse').last);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Save settings'));
-    await tester.tap(find.text('Save settings'));
-    await tester.pumpAndSettle();
+    expect(find.text('Save settings'), findsNothing);
     expect(
       (calls.lastWhere((c) => c.method == 'configure').arguments
           as Map)['values'],
@@ -762,18 +832,32 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byTooltip('Uninstall Hello World'), findsNothing);
       expect(find.byType(Switch), findsNothing);
+      expect(find.byType(TextFormField), findsNothing);
+      expect(find.text('Hello'), findsOneWidget);
+      await tester.tap(find.text('Greeting'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'Canceled greeting');
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hello'), findsOneWidget);
+      expect(calls.where((c) => c.method == 'configure'), isEmpty);
+      await tester.tap(find.text('Greeting'));
+      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField), 'Edited greeting');
-      await tester.tap(find.text('Save settings'));
+      installed[0]['status'] = 'Connected';
+      await plugins.refresh();
+      await tester.pumpAndSettle();
+      expect(find.text('Edited greeting'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
       final configure = calls.lastWhere((c) => c.method == 'configure');
       expect(configure.arguments, {
         'id': 'hello-world',
         'values': {'message': 'Edited greeting'},
       });
-      expect(
-        find.widgetWithText(FilledButton, 'Save settings'),
-        findsOneWidget,
-      );
+      expect(find.widgetWithText(FilledButton, 'Save settings'), findsNothing);
+      expect(find.text('Edited greeting'), findsOneWidget);
+      expect(find.byType(TextFormField), findsNothing);
       await tester.ensureVisible(find.text('Show window'));
       await tester.tap(find.text('Show window'));
       await tester.pumpAndSettle();
