@@ -1052,7 +1052,8 @@ class HomeAssistantManager extends Manager {
   var base = ${jsonEncode(effectiveBase)};
   if (!location.href.startsWith(base)) return 'off-origin';
   var path = '/' + ${jsonEncode(viewPath)};
-  if (location.pathname === path || location.pathname.indexOf(path + '/') === 0) return 'already';
+  // A child view is not the dashboard root requested by Go to home (#496).
+  if (location.pathname === path) return 'already';
   history.pushState(null, '', path);
   window.dispatchEvent(new CustomEvent('location-changed'));
   return 'navigated';

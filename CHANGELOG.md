@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Go to home works from Home Assistant Area pages.** Navigation to a dashboard root no longer treats its child views as the requested destination. Gestures targeting `home` now return from an Area page to Overview. Fixes [#496](https://github.com/jxlarrea/kiosk-satellite/issues/496).
+
 ## v2026.9.37 - 2026-09-10
 
 ### Added

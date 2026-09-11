@@ -76,8 +76,7 @@ String rotationCrossfadeJs({
   try {
     if (!location.href.startsWith(base)) return 'plain';
     var path = '/' + viewPath;
-    if (location.pathname === path ||
-        location.pathname.indexOf(path + '/') === 0) {
+    if (location.pathname === path) {
       return 'plain'; // "already there": let the instant path answer it
     }
     if (window.__ksRotFadeBusy && window.__ksRotFadeBusy > Date.now()) {
