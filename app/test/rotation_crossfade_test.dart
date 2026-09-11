@@ -20,6 +20,7 @@ void main() {
 
   late List<String> evalCalls;
   late HomeAssistantManager ha;
+  late SettingsManager settings;
 
   Future<void> build({String fadeAnswer = 'fade'}) async {
     SharedPreferences.setMockInitialValues({
@@ -30,20 +31,22 @@ void main() {
     final bus = EventBus();
     final log = Logger();
     final commands = CommandRegistry(log);
-    final settings = SettingsManager(bus, commands, log);
+    settings = SettingsManager(bus, commands, log);
     await settings.init();
     evalCalls = [];
-    commands.register(Command(
-      name: 'evalJs',
-      description: 'stub',
-      handler: (p) async {
-        final code = '${p['code']}';
-        evalCalls.add(code);
-        return CommandResult.ok(
-          code.contains('__ksRotFadeBusy') ? fadeAnswer : 'navigated',
-        );
-      },
-    ));
+    commands.register(
+      Command(
+        name: 'evalJs',
+        description: 'stub',
+        handler: (p) async {
+          final code = '${p['code']}';
+          evalCalls.add(code);
+          return CommandResult.ok(
+            code.contains('__ksRotFadeBusy') ? fadeAnswer : 'navigated',
+          );
+        },
+      ),
+    );
     ha = HomeAssistantManager(bus, commands, log, settings);
     await ha.init();
   }
@@ -54,14 +57,16 @@ void main() {
     expect(defs.allSettings, contains(defs.haRotationCrossfade));
   });
 
-  test('a started fade owns the navigation - no instant path after it',
-      () async {
-    await build();
-    unawaited(ha.navigateToViewPath('lovelace/kitchen', crossfade: true));
-    await pumpEventQueue();
-    expect(evalCalls, hasLength(1));
-    expect(evalCalls.single, contains('__ksRotFadeBusy'));
-  });
+  test(
+    'a started fade owns the navigation - no instant path after it',
+    () async {
+      await build();
+      unawaited(ha.navigateToViewPath('lovelace/kitchen', crossfade: true));
+      await pumpEventQueue();
+      expect(evalCalls, hasLength(1));
+      expect(evalCalls.single, contains('__ksRotFadeBusy'));
+    },
+  );
 
   test("'plain' from the fade falls through to the instant path", () async {
     await build(fadeAnswer: 'plain');
@@ -71,6 +76,38 @@ void main() {
     expect(evalCalls.first, contains('__ksRotFadeBusy'));
     expect(evalCalls.last, contains('pushState'));
     expect(evalCalls.last, isNot(contains('__ksRotFadeBusy')));
+  });
+
+  test('fade duration changes apply on the next navigation', () async {
+    await build();
+    await ha.navigateToViewPath('lovelace/kitchen', crossfade: true);
+    expect(evalCalls.last, contains('var OUT_MS = 600;'));
+    expect(evalCalls.last, contains('var IN_MS = 800;'));
+
+    expect(
+      await settings.setFromJson(defs.haRotationFadeSeconds.key, 2.8),
+      isTrue,
+    );
+    await ha.navigateToViewPath('lovelace/home', crossfade: true);
+    expect(evalCalls.last, contains('var OUT_MS = 1200;'));
+    expect(evalCalls.last, contains('var IN_MS = 1600;'));
+  });
+
+  test('invalid fade durations do not replace the saved duration', () async {
+    await build();
+    for (final value in [0.2, 1.4, 5]) {
+      expect(
+        await settings.setFromJson(defs.haRotationFadeSeconds.key, value),
+        isTrue,
+      );
+    }
+    for (final value in [0, -1, 5.1, double.nan, double.infinity, '2']) {
+      expect(
+        await settings.setFromJson(defs.haRotationFadeSeconds.key, value),
+        isFalse,
+      );
+      expect(settings.get(defs.haRotationFadeSeconds), 5);
+    }
   });
 
   test('without crossfade the fade script is never sent', () async {

@@ -4554,6 +4554,32 @@ const haRotationCrossfade = SettingDef<bool>(
   dependsOn: 'ha.rotation_enabled',
 );
 
+const haRotationFadeSeconds = SettingDef<num>(
+  key: 'ha.rotation_fade_seconds',
+  type: SettingType.number,
+  defaultValue: 1.4,
+  title: 'Fade duration (seconds)',
+  description:
+      'Combined fade-out and fade-in time. Loading the next view can add '
+      'time, especially on its first visit.',
+  category: 'Home Assistant',
+  section: 'Dashboard View Rotation',
+  subpage: 'Dashboard View Rotation',
+  dependsOn: 'ha.rotation_crossfade',
+  min: 0.2,
+  max: 5,
+  step: 0.1,
+  unit: ' s',
+  validator: _validateRotationFadeSeconds,
+);
+
+String? _validateRotationFadeSeconds(Object? value) {
+  if (value is! num || !value.isFinite || value < 0.2 || value > 5) {
+    return 'Choose a fade duration from 0.2 to 5 seconds.';
+  }
+  return null;
+}
+
 /// Return to the configured dashboard after inactivity (issue #83): the
 /// Fully Kiosk "Return to Start URL" for people who wander to a lights
 /// page and walk away. Runs its own idle clock, independent of the
@@ -6871,6 +6897,7 @@ const List<SettingDef<Object>> allSettings = [
   haRotationSeconds,
   haRotationPauseSeconds,
   haRotationCrossfade,
+  haRotationFadeSeconds,
   haReturnHomeEnabled,
   haReturnHomeSeconds,
   haHoldMode,

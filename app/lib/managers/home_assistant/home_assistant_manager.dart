@@ -656,8 +656,8 @@ class HomeAssistantManager extends Manager {
         // New dwell time, same ring position.
         if (_rotationTimer != null) _armRotationTimer();
       }
-      // haRotationPauseSeconds is read at pause time and
-      // haRotationCrossfade at tick time; nothing to rebuild for either.
+      // Pause duration is read at pause time. Fade settings are read on
+      // each navigation, so changes need no timer rebuild.
     });
     // While the screensaver is up (or the app is not on screen) rotation
     // would navigate views nobody sees — and a strategy view's hard load
@@ -1027,7 +1027,11 @@ class HomeAssistantManager extends Manager {
         : baseUrl;
     if (crossfade) {
       final fade = await commands.execute('evalJs', {
-        'code': rotationCrossfadeJs(base: effectiveBase, viewPath: viewPath),
+        'code': rotationCrossfadeJs(
+          base: effectiveBase,
+          viewPath: viewPath,
+          durationSeconds: _settings.get(defs.haRotationFadeSeconds),
+        ),
       });
       if (fade.ok && '${fade.data}' == 'fade') {
         // The dissolve navigates on its own, always within a working

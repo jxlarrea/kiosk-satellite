@@ -52,13 +52,24 @@ import 'dart:convert';
 /// and let the next tick start a second choreography over the first
 /// (observed live on an Echo Show 8). Ticks landing inside the window
 /// cut instead, which is always safe.
-String rotationCrossfadeJs({required String base, required String viewPath}) {
+String rotationCrossfadeJs({
+  required String base,
+  required String viewPath,
+  num durationSeconds = 1.4,
+}) {
+  final seconds = durationSeconds.isFinite
+      ? durationSeconds.clamp(0.2, 5)
+      : 1.4;
+  final totalMs = (seconds * 1000).round();
+  // Preserve the existing 600:800 timing ratio, with a gentler reveal.
+  final outMs = (totalMs * 3 / 7).round();
+  final inMs = totalMs - outMs;
   return '''
 (function () {
   var base = ${jsonEncode(base)};
   var viewPath = ${jsonEncode(viewPath)};
-  var OUT_MS = 600;     // fade to the background color
-  var IN_MS = 800;      // fade back into the new view
+  var OUT_MS = $outMs;  // fade to the background color
+  var IN_MS = $inMs;    // fade back into the new view
   var SETTLE_MS = 250;  // raster beat after the new view appears
   var POLL_MS = 100;    // swap-watch cadence while covered
   var POLL_MAX = 2500;  // longest covered wait for the swap

@@ -1766,12 +1766,23 @@ export async function loadSettings() {
           // Crossfade toggle, saved in place like the numbers above.
           const rotFade = byKey['ha.rotation_crossfade'];
           if (rotFade) {
+            const fadeDuration = byKey['ha.rotation_fade_seconds'];
+            const fadeSettings = document.createElement('div');
+            const renderFadeSettings = () => {
+              fadeSettings.replaceChildren();
+              if (rotFade.value === true && fadeDuration) {
+                fadeSettings.appendChild(settingRow(fadeDuration));
+              }
+            };
             rcard.appendChild(toggleRow(rotFade.title, rotFade.description,
               rotFade.value === true, async (on) => {
                 rotFade.value = on;
                 await api('/api/settings', { method: 'PATCH',
                   body: JSON.stringify({ 'ha.rotation_crossfade': on }) });
+                renderFadeSettings();
               }));
+            renderFadeSettings();
+            rcard.appendChild(fadeSettings);
           }
           let sel = [];
           try { sel = JSON.parse(byKey['ha.rotation_dashboards']?.value || '[]'); } catch (_) {}
