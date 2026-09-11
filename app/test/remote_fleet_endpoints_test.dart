@@ -231,6 +231,7 @@ void main() {
         403,
       );
       for (final command in [
+        'getDashboardState',
         'getPluginState',
         'getPluginCharts',
         'getPluginEntities',

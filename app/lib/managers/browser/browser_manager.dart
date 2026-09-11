@@ -8,6 +8,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import 'no_cache_script.dart';
 import 'dashboard_camera_script.dart';
+import 'dashboard_state.dart';
 import 'visibility_mask_script.dart';
 
 import '../../core/command_registry.dart';
@@ -242,6 +243,20 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
       unawaited(_syncFreeze());
     });
     commands
+      ..register(
+        Command(
+          name: 'getDashboardState',
+          description:
+              'Read configured dashboard and current main WebView URLs without credentials, queries or fragments',
+          handler: (_) async => CommandResult.ok(
+            DashboardState.fromUrls(
+              homeAssistantUrl: _settings.get(defs.haUrl),
+              startUrl: startUrl,
+              currentUrl: currentUrl,
+            ),
+          ),
+        ),
+      )
       ..register(
         Command(
           name: 'unfreezeRendering',

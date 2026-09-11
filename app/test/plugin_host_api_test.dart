@@ -272,6 +272,76 @@ void main() {
     },
   );
 
+  test(
+    'dashboard reads require host.read and expose only sanitized URL fields',
+    () async {
+      register(
+        'getDashboardState',
+        (_) async => const CommandResult.ok({
+          'homeAssistantUrl':
+              'https://name:password@ha.test?access_token=secret',
+          'startUrl': 'https://ha.test/dashboard/main?kiosk=true#secret',
+          'currentUrl': 'http://127.0.0.1:18123/dashboard/kitchen?token=secret',
+          'currentPath': 'do-not-trust-this-field',
+          'accessToken': 'secret',
+        }),
+      );
+      final result = await read('getDashboardState');
+      expect(result['ok'], true);
+      expect(result['data'], {
+        'homeAssistantUrl': 'https://ha.test',
+        'startUrl': 'https://ha.test/dashboard/main',
+        'currentUrl': 'http://127.0.0.1:18123/dashboard/kitchen',
+        'currentPath': '/dashboard/kitchen',
+      });
+      expect(
+        (await read(
+          'getDashboardState',
+          params: {'url': 'https://other.test'},
+        ))['ok'],
+        false,
+      );
+      api.open({
+        ...session,
+        'capabilities': ['host.control'],
+      });
+      executed.clear();
+      expect((await read('getDashboardState'))['ok'], false);
+      expect(executed, isEmpty);
+    },
+  );
+
+  test(
+    'browser notifications follow routes and URL settings without exposing their values',
+    () async {
+      subscribe('browser.state');
+      bus.publish(const UrlChanged(url: 'https://ha.test/room?secret=one'));
+      bus.publish(const PageChanged(url: 'https://ha.test/room#secret'));
+      bus.publish(
+        const SettingChanged(
+          key: 'browser.start_url',
+          value: 'https://user:secret@ha.test',
+        ),
+      );
+      bus.publish(
+        const SettingChanged(key: 'ha.url', value: 'https://other.test'),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 180));
+      expect(sent, hasLength(1));
+      expect(sent.single['event'], 'browser.state');
+      expect((sent.single['payload'] as Map).keys, ['time']);
+      sent.clear();
+      bus.publish(const SettingChanged(key: 'ha.token', value: 'secret'));
+      await Future<void>.delayed(const Duration(milliseconds: 130));
+      expect(sent, isEmpty);
+      bus.publish(const UrlChanged(url: 'https://ha.test/next'));
+      await Future<void>.delayed(Duration.zero);
+      api.close(session);
+      await Future<void>.delayed(const Duration(milliseconds: 130));
+      expect(sent, isEmpty);
+    },
+  );
+
   test('errors do not expose internal response details', () async {
     register(
       'haStatus',

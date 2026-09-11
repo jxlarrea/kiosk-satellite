@@ -4,6 +4,8 @@ import 'dart:convert';
 import '../../core/command_registry.dart';
 import '../../core/event_bus.dart';
 import '../../core/events.dart';
+import '../browser/dashboard_state.dart';
+import '../settings/definitions.dart' as defs;
 
 /// Explicit SDK 1 host surface. Registry additions do not expand plugin access.
 class PluginHostApi {
@@ -36,6 +38,7 @@ class PluginHostApi {
     'getCameraViewState',
     'getWakeWordState',
     'haStatus',
+    'getDashboardState',
   ];
   static const controlNames = [
     'startScreensaver',
@@ -143,6 +146,7 @@ class PluginHostApi {
     'wakeword.detected',
     'stopword.detected',
     'camera.view',
+    'browser.state',
   ];
   static const _fields = {
     'getLightLevel': ['present', 'lux', 'live'],
@@ -172,6 +176,12 @@ class PluginHostApi {
       'statusLabel',
     ],
     'haStatus': ['configured', 'connected'],
+    'getDashboardState': [
+      'homeAssistantUrl',
+      'startUrl',
+      'currentUrl',
+      'currentPath',
+    ],
   };
 
   void open(Map args) {
@@ -319,6 +329,14 @@ class PluginHostApi {
           'KS returned an unexpected read response',
         ).toJson();
       }
+      if (name == 'getDashboardState') {
+        final state = data as Map;
+        data = DashboardState.fromUrls(
+          homeAssistantUrl: state['homeAssistantUrl'],
+          startUrl: state['startUrl'],
+          currentUrl: state['currentUrl'],
+        );
+      }
       if (utf8.encode(jsonEncode(data)).length > 32768) {
         return const CommandResult.fail('Read response is too large').toJson();
       }
@@ -333,6 +351,11 @@ class PluginHostApi {
   static (String, Map<String, Object?>)? project(
     AppEvent event,
   ) => switch (event) {
+    UrlChanged _ => ('browser.state', {}),
+    PageChanged _ => ('browser.state', {}),
+    SettingChanged e
+        when e.key == defs.haUrl.key || e.key == defs.startUrl.key =>
+      ('browser.state', {}),
     ScreensaverStateChanged e => ('screensaver.state', {'active': e.active}),
     ScreensaverCountdownChanged e => (
       'screensaver.countdown',
