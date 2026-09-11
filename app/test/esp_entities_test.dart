@@ -285,6 +285,104 @@ void main() {
   }
 
   test(
+    'plugin scalar states replay on attach and honor exclusions and commands',
+    () async {
+      final pluginEntities = [
+        {
+          'objectId': 'plugin_demo____sensor_ping',
+          'name': 'Ping',
+          'type': 'sensor',
+          'state': 12.5,
+        },
+        {
+          'objectId': 'plugin_demo____text_sensor_link',
+          'name': 'Link',
+          'type': 'text_sensor',
+          'state': 'WiFi',
+        },
+        {
+          'objectId': 'plugin_demo____binary_sensor_ready',
+          'name': 'Ready',
+          'type': 'binary_sensor',
+          'state': false,
+        },
+        {
+          'objectId': 'plugin_demo____select_mode',
+          'name': 'Mode',
+          'type': 'select',
+          'options': ['Auto', 'Fast'],
+          'state': null,
+        },
+      ];
+      commands.register(
+        Command(
+          name: 'getPluginEntities',
+          description: 'fixture',
+          handler: (_) async => CommandResult.ok(pluginEntities),
+        ),
+      );
+      commands.register(
+        Command(
+          name: 'pluginEntityCommand',
+          description: 'fixture',
+          handler: (p) async {
+            executed.add(('pluginEntityCommand', p));
+            return CommandResult.ok(null);
+          },
+        ),
+      );
+      expect(
+        (await surface.build())
+            .where((e) => '${e['objectId']}'.startsWith('plugin_'))
+            .length,
+        4,
+      );
+      await attach();
+      for (final entity in pluginEntities) {
+        expect(pushed, contains((entity['objectId'], entity['state'])));
+      }
+      bus.publish(
+        const PluginEntityStateChanged('plugin_demo____sensor_ping', null),
+      );
+      await pumpEventQueue();
+      expect(pushed.last, ('plugin_demo____sensor_ping', null));
+      await settings.set(
+        defs.esphomeExcludedEntities,
+        jsonEncode([
+          'plugin_demo____text_sensor_link',
+          'plugin_demo____select_mode',
+        ]),
+      );
+      final filtered = await surface.build();
+      expect(
+        filtered.any((e) => e['objectId'] == 'plugin_demo____text_sensor_link'),
+        false,
+      );
+      pushed.clear();
+      bus.publish(
+        const PluginEntityStateChanged(
+          'plugin_demo____text_sensor_link',
+          'Ethernet',
+        ),
+      );
+      await surface.handleCommand('plugin_demo____select_mode', 'Fast');
+      await pumpEventQueue();
+      expect(
+        pushed.where((e) => e.$1 == 'plugin_demo____text_sensor_link'),
+        isEmpty,
+      );
+      expect(executed.where((e) => e.$1 == 'pluginEntityCommand'), isEmpty);
+      await settings.set(defs.esphomeExcludedEntities, '[]');
+      await surface.handleCommand('plugin_demo____select_mode', 'Fast');
+      expect(executed.last.$1, 'pluginEntityCommand');
+      expect(executed.last.$2, {
+        'objectId': 'plugin_demo____select_mode',
+        'value': 'Fast',
+      });
+    },
+  );
+
+  test(
     'exclusions default to empty and filter only selected entity IDs',
     () async {
       final all = await surface.build();

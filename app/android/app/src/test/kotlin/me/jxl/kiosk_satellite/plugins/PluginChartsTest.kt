@@ -43,6 +43,21 @@ class PluginChartsTest {
         assertEquals(1, store.snapshot().size)
         assertEquals(listOf(1000L, 2000L), store.snapshot().single()["timestamps"])
     }
+    @Test fun barTypesAreValidatedAndCanChangeAtTheSameKey() {
+        val store = PluginCharts()
+        store.publish("cpu", chart())
+        assertEquals("line", store.snapshot().single()["type"])
+        store.publish("cpu", chart(values = listOf(-5, 0)) + mapOf("type" to "bar", "compact" to true))
+        val bars = store.snapshot().single()
+        assertEquals("bar", bars["type"])
+        assertEquals(true, bars["compact"])
+        for (type in listOf("pie", "Bar", "", 1, false)) {
+            rejects { store.publish("cpu", chart() + ("type" to type)) }
+            assertEquals(bars, store.snapshot().single())
+        }
+        store.publish("cpu", chart() + ("type" to "line"))
+        assertEquals("line", store.snapshot().single()["type"])
+    }
     @Test fun boundsChartsAndUpdatesWithoutRetainingRemovedCharts() {
         var now = 0L
         val store = PluginCharts { now }

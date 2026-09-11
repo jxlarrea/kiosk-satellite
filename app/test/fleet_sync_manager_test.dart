@@ -156,6 +156,69 @@ void main() {
 
   group('plugins stay local', () {
     test(
+      'plugin entity exclusions stay local while core exclusions follow the leader',
+      () async {
+        await build(
+          prefs: {
+            'ks.fleet.leader_info': jsonEncode({
+              'id': 'lead',
+              'name': 'Leader',
+            }),
+            'ks.fleet.synced_keys': jsonEncode([
+              defs.esphomeExcludedEntities.key,
+            ]),
+            'ks.fleet.applied_revision': 'clean',
+          },
+        );
+        const local = 'plugin_local____sensor_ping';
+        await settings.set(defs.esphomeExcludedEntities, jsonEncode([local]));
+        await settle();
+        expect(settings.get(defs.fleetAppliedRevision), 'clean');
+        final profile = SyncProfile(
+          categories: {'ESPHome'},
+          excluded: const {},
+        );
+        expect(
+          fleet.profileSettings(profile)[defs.esphomeExcludedEntities.key],
+          '[]',
+        );
+        await settings.set(
+          defs.esphomeExcludedEntities,
+          jsonEncode(['battery', local]),
+        );
+        final result = await commands.execute('fleetApply', {
+          'revision': 'updated',
+          'version': '2026.9.19',
+          'settings': {
+            defs.esphomeExcludedEntities.key: jsonEncode([
+              'screen',
+              'plugin_leader____select_mode',
+            ]),
+          },
+        });
+        expect(result.ok, true, reason: result.error);
+        expect(
+          defs.decodeEspHomeExcludedEntities(
+            settings.get(defs.esphomeExcludedEntities),
+          ),
+          {'screen', local},
+        );
+        expect(
+          FleetSyncManager.acceptable({
+            defs.esphomeExcludedEntities.key: 'invalid',
+          }),
+          isEmpty,
+        );
+        await settings.set(
+          defs.esphomeExcludedEntities,
+          jsonEncode(['screen', local, 'plugin_other__light']),
+        );
+        await settle();
+        expect(settings.get(defs.fleetAppliedRevision), 'updated');
+      },
+    );
+
+    test(
       'leader payloads and revisions exclude plugin gesture actions and plugin state',
       () async {
         await build();

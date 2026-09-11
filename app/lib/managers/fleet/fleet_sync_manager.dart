@@ -510,7 +510,7 @@ class FleetSyncManager extends Manager {
     if (e.key.startsWith('fleet.')) return;
     final def = _settings.defByKey(e.key);
     if (def == null || def.perDevice) return;
-    if (e.key == defs.gestureMappings.key &&
+    if (_containsPluginReferences(e.key) &&
         _sameValue(
           _fleetValue(e.key, e.previous),
           _fleetValue(e.key, e.value),
@@ -810,19 +810,46 @@ class FleetSyncManager extends Manager {
       for (final e in incoming.entries)
         if (byKey[e.key] case final def?
             when !def.perDevice &&
-                (e.key != defs.gestureMappings.key || e.value is String))
+                (!_containsPluginReferences(e.key) || e.value is String) &&
+                (e.key != defs.esphomeExcludedEntities.key ||
+                    defs.esphomeExcludedEntities.validator!(e.value) == null))
           e.key: _fleetValue(e.key, e.value),
     };
   }
 
-  /// Plugin state lives outside SettingsManager. Its only embedded reference
-  /// is a gesture action, which must stay on the kiosk that configured it.
+  static bool _containsPluginReferences(String key) =>
+      key == defs.gestureMappings.key ||
+      key == defs.esphomeExcludedEntities.key;
+
+  /// Plugin gesture assignments and entity exclusions stay on their kiosk.
   static Object? _fleetValue(String key, Object? value) {
+    if (key == defs.esphomeExcludedEntities.key) {
+      final ids =
+          defs
+              .decodeEspHomeExcludedEntities(value is String ? value : '')
+              .where((id) => !id.startsWith('plugin_'))
+              .toList()
+            ..sort();
+      return jsonEncode(ids);
+    }
     if (key != defs.gestureMappings.key) return value;
     return jsonEncode([
       for (final mapping in decodeGestureMappings(value is String ? value : ''))
         if (mapping.actionType != 'plugin_action') mapping.toJson(),
     ]);
+  }
+
+  String _preservePluginEntityExclusions(Object? incoming) {
+    final local = defs
+        .decodeEspHomeExcludedEntities(
+          _settings.get(defs.esphomeExcludedEntities),
+        )
+        .where((id) => id.startsWith('plugin_'));
+    final ids = {
+      ...defs.decodeEspHomeExcludedEntities(incoming as String),
+      ...local,
+    }.toList()..sort();
+    return jsonEncode(ids);
   }
 
   String _preservePluginGestures(Object? incoming) {
@@ -1576,9 +1603,11 @@ class FleetSyncManager extends Manager {
     for (final e in wanted.entries) {
       final def = _settings.defByKey(e.key);
       if (def == null) continue;
-      final value = e.key == defs.gestureMappings.key
-          ? _preservePluginGestures(e.value)
-          : e.value;
+      final value = switch (e.key) {
+        'gestures.mappings' => _preservePluginGestures(e.value),
+        'esphome.excluded_entities' => _preservePluginEntityExclusions(e.value),
+        _ => e.value,
+      };
       if (_sameValue(_settings.get(def), value)) continue;
       changes[e.key] = value;
     }

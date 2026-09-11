@@ -89,6 +89,43 @@ try:
         plot.focus(); plot.press('ArrowLeft')
         expect(root.get_by_text('Wave: 40 %', exact=True)).to_be_visible()
         page.screenshot(path='/tmp/kiosk-plugin-charts-mini.png', full_page=True)
+        bars = dict(key='demo', title='Bar activity', type='bar', unit='%', timestamps=[1000, 2000, 5000],
+                    series=[dict(name='Wave', color='#1976D2', values=[10, -10, None]), dict(name='Reference', values=[2, 2, 2])])
+        for compact in [False, True]:
+            bars['compact'] = compact; charts = [copy.deepcopy(bars)]
+            expect(plot.locator('rect')).to_have_count(5)
+            expect(root.locator('.plugin-chart')).to_have_class('card plugin-chart' + (' compact' if compact else ''))
+            expect(plot.locator('path')).to_have_count(0)
+            geometry = plot.evaluate("""el => ({
+                bars: [...el.querySelectorAll('rect')].map(r => ({x:+r.getAttribute('x'),y:+r.getAttribute('y'),w:+r.getAttribute('width'),h:+r.getAttribute('height')})),
+                zero: +el.querySelector('[data-baseline]').getAttribute('y1')
+            })""")
+            rects = geometry['bars']; zero = geometry['zero']
+            assert abs(zero - 80) < .001
+            assert abs(rects[0]['y'] + rects[0]['h'] - zero) < .001
+            assert abs(rects[1]['y'] - zero) < .001
+            assert rects[0]['x'] + rects[0]['w'] < rects[2]['x']
+            assert all(r['x'] >= 0 and r['x'] + r['w'] <= 600 and r['h'] > 0 for r in rects)
+            assert abs(rects[3]['x'] - rects[2]['x'] - 120) < .001
+            assert abs(rects[4]['x'] - rects[3]['x'] - 360) < .001
+            plot.click(position=dict(x=plot.bounding_box()['width'] * .3, y=20))
+            expect(root.get_by_text('Wave: -10 %', exact=True)).to_be_visible()
+            assert plot.bounding_box()['height'] == (56 if compact else 160)
+            page.screenshot(path=f'/tmp/kiosk-plugin-bars-{compact}.png', full_page=True)
+        field.fill('Draft while bars update')
+        bars['series'][1]['values'][-1] = 4; charts = [copy.deepcopy(bars)]
+        # A selected timestamp and the active settings field survive bar updates.
+        page.wait_for_function("Math.abs(+document.querySelector('.plugin-chart rect:last-child').getAttribute('height') - 160 * 4 / 22) < .001")
+        expect(root.get_by_text('Wave: -10 %', exact=True)).to_be_visible()
+        expect(field).to_be_focused(); expect(field).to_have_value('Draft while bars update')
+        assert writes == 1
+        for values in [[0], [-5], [5], [None], []]:
+            charts = [dict(key='demo', title='Bar edge cases', type='bar', timestamps=list(range(len(values))), series=[dict(name='Only', values=values)])]
+            expect(root.get_by_text('Bar edge cases', exact=True)).to_be_visible()
+            expect(root.get_by_text('Only: ' + ('No data' if not values or values[0] is None else str(values[0])), exact=True)).to_be_visible()
+            if values and values[0] is not None:
+                expect(plot.locator('rect')).to_have_count(1)
+                assert plot.locator('rect').evaluate("el => +el.getAttribute('height') > 0")
         charts = [dict(key='demo', title='<img src=x onerror=alert(1)>', timestamps=[1000], series=[dict(name='Only', values=[-5])])]
         expect(root.get_by_text('Only: -5', exact=True)).to_be_visible()
         expect(root.locator('.plugin-chart img')).to_have_count(0)
@@ -100,6 +137,6 @@ try:
         baseline = polls; page.wait_for_timeout(1200); assert polls == baseline
         assert not errors, errors
         browser.close()
-        print('PASS: chart inspection, gaps, updates, settings focus, autosave, layouts, safe labels, removal and polling scope.')
+        print('PASS: line and bar inspection, grouped geometry, negative and zero values, gaps, updates, settings focus, layouts and lifecycle.')
 finally:
     server.shutdown(); server.server_close()

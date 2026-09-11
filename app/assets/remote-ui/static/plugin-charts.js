@@ -16,6 +16,12 @@ function svg(tag, attributes) {
 function number(value) { return value == null ? 'No data' : Math.abs(value) >= 1e6 ? value.toExponential(2) : Number(value.toFixed(2)).toString(); }
 function time(value) { return new Date(value).toLocaleString([], { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); }
 
+function domain(times, bars) {
+  const step = times.length > 1 ? Math.min(...times.slice(1).map((time, i) => time - times[i])) : 1;
+  const padding = bars || times.length === 1 ? step / 2 : 0;
+  return [times[0] - padding, times.at(-1) + padding, step];
+}
+
 function createChart() {
   const card = node('div', 'card plugin-chart');
   const title = node('div', 'plugin-chart-title');
@@ -34,7 +40,8 @@ function createChart() {
     const times = state.chart.timestamps;
     if (!times.length) return;
     const bounds = drawing.getBoundingClientRect();
-    const target = times[0] + Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width)) * (times.at(-1) - times[0]);
+    const [start, end] = domain(times, state.chart.type === 'bar');
+    const target = start + Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width)) * (end - start);
     state.timestamp = times.reduce((a, b) => Math.abs(a - target) <= Math.abs(b - target) ? a : b);
     paint(state);
   }
@@ -76,22 +83,32 @@ function paint(state) {
   state.empty.hidden = !!values.length; state.drawing.style.display = values.length ? '' : 'none';
   if (times.length) state.dates.append(node('span', '', time(times[0])), node('span', '', time(times.at(-1))));
   if (!values.length) return;
-  const low = Math.min(...values), high = Math.max(...values);
+  const bars = chart.type === 'bar';
+  const low = Math.min(...values, ...(bars ? [0] : [])), high = Math.max(...values, ...(bars ? [0] : []));
   const margin = high === low ? Math.max(1, Math.abs(high) * .05) : (high - low) * .05;
-  const min = low - margin, max = high + margin;
+  const min = bars && low === 0 && high !== 0 ? 0 : low - margin, max = bars && high === 0 && low !== 0 ? 0 : high + margin;
   state.labels.append(node('span', '', number(max)), node('span', '', number(min)));
-  const x = (i) => times.length === 1 ? 300 : (times[i] - times[0]) / (times.at(-1) - times[0]) * 600;
+  const [start, end, step] = domain(times, bars);
+  const x = (i) => (times[i] - start) / (end - start) * 600;
   const y = (value) => 160 * (1 - (value - min) / (max - min));
   for (let i = 0; !chart.compact && i <= 4; i++) state.drawing.append(svg('line', { x1: 0, x2: 600, y1: i * 40, y2: i * 40, stroke: 'var(--border)', 'vector-effect': 'non-scaling-stroke' }));
   if (selected >= 0) state.drawing.append(svg('line', { x1: x(selected), x2: x(selected), y1: 0, y2: 160, stroke: 'var(--muted)', 'vector-effect': 'non-scaling-stroke' }));
+  if (bars) state.drawing.append(svg('line', { x1: 0, x2: 600, y1: y(0), y2: y(0), stroke: 'var(--muted)', 'vector-effect': 'non-scaling-stroke', 'data-baseline': 'zero' }));
+  const groupWidth = step / (end - start) * 600 * .8, slotWidth = groupWidth / chart.series.length;
   for (const [i, series] of chart.series.entries()) {
     let path = '', connected = false;
     for (const [j, value] of series.values.entries()) {
       if (value == null) { connected = false; continue; }
+      if (bars) {
+        state.drawing.append(svg('rect', { x: x(j) - groupWidth / 2 + i * slotWidth + slotWidth * .05,
+          y: Math.max(0, Math.min(159, y(value), y(0))), width: slotWidth * .9, height: Math.max(1, Math.abs(y(value) - y(0))),
+          fill: series.color || palette[i], opacity: j === selected ? 1 : .78 }));
+        continue;
+      }
       path += `${connected ? 'L' : 'M'}${x(j)},${y(value)} `; connected = true;
       if (!chart.compact || j === selected) state.drawing.append(svg('circle', { cx: x(j), cy: y(value), r: j === selected ? 4 : 1.5, fill: series.color || palette[i] }));
     }
-    state.drawing.append(svg('path', { d: path, fill: 'none', stroke: series.color || palette[i], 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }));
+    if (!bars) state.drawing.append(svg('path', { d: path, fill: 'none', stroke: series.color || palette[i], 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }));
   }
 }
 

@@ -1612,7 +1612,7 @@ class EspEntitySurface {
     );
     if (pluginEntities.ok && pluginEntities.data is List) {
       for (final entity in (pluginEntities.data as List).whereType<Map>()) {
-        if (entity['type'] != 'light') continue;
+        if (entity['type'] == 'button') continue;
         await _send('${entity['objectId']}', entity['state']);
       }
     }

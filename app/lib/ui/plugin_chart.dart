@@ -19,6 +19,20 @@ String chartNumber(num? value) {
       : value.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
 }
 
+// Bar groups retain time spacing and reserve half an interval at each edge.
+(double, double, double) _chartDomain(List<num> times, bool bars) {
+  if (times.isEmpty) return (0, 1, 1);
+  var step = 1.0;
+  if (times.length > 1) {
+    step = (times[1] - times[0]).toDouble();
+    for (var i = 2; i < times.length; i++) {
+      step = math.min(step, (times[i] - times[i - 1]).toDouble());
+    }
+  }
+  final padding = bars || times.length == 1 ? step / 2 : 0.0;
+  return (times.first - padding, times.last + padding, step);
+}
+
 /// Read-only runtime data with sample inspection, independent of setting edits.
 class PluginChart extends StatefulWidget {
   const PluginChart({super.key, required this.chart});
@@ -29,6 +43,7 @@ class PluginChart extends StatefulWidget {
 
 class _PluginChartState extends State<PluginChart> {
   int? _selected;
+  bool get _bars => widget.chart['type'] == 'bar';
   List<num> get _times => (widget.chart['timestamps'] as List).cast<num>();
   List<Map> get _series => (widget.chart['series'] as List).cast<Map>();
   int get _index {
@@ -52,8 +67,8 @@ class _PluginChartState extends State<PluginChart> {
 
   void _select(double dx, double width) {
     if (_times.isEmpty) return;
-    final target =
-        _times.first + (dx / width).clamp(0, 1) * (_times.last - _times.first);
+    final (start, end, _) = _chartDomain(_times, _bars);
+    final target = start + (dx / width).clamp(0, 1) * (end - start);
     var nearest = 0;
     for (var i = 1; i < _times.length; i++) {
       if ((_times[i] - target).abs() < (_times[nearest] - target).abs()) {
@@ -82,13 +97,17 @@ class _PluginChartState extends State<PluginChart> {
       for (final series in _series)
         ...(series['values'] as List).whereType<num>(),
     ];
-    final low = values.isEmpty ? 0.0 : values.reduce(math.min).toDouble();
-    final high = values.isEmpty ? 1.0 : values.reduce(math.max).toDouble();
+    var low = values.isEmpty ? 0.0 : values.reduce(math.min).toDouble();
+    var high = values.isEmpty ? 1.0 : values.reduce(math.max).toDouble();
+    if (_bars) {
+      low = math.min(0, low);
+      high = math.max(0, high);
+    }
     final margin = high == low
         ? math.max(1.0, high.abs() * .05)
         : (high - low) * .05;
-    final min = low - margin;
-    final max = high + margin;
+    final min = _bars && low == 0 && high != 0 ? 0.0 : low - margin;
+    final max = _bars && high == 0 && low != 0 ? 0.0 : high + margin;
     final theme = Theme.of(context);
     final readings = [
       for (final series in _series)
@@ -219,6 +238,7 @@ class _PluginChartState extends State<PluginChart> {
                                     index,
                                     theme.colorScheme.outlineVariant,
                                     compact,
+                                    _bars,
                                   ),
                                 ),
                               ),
@@ -271,6 +291,7 @@ class _ChartPainter extends CustomPainter {
     this.selected,
     this.grid,
     this.compact,
+    this.bars,
   );
   final List<num> times;
   final List<Map> series;
@@ -278,7 +299,7 @@ class _ChartPainter extends CustomPainter {
   final double min, max;
   final int selected;
   final Color grid;
-  final bool compact;
+  final bool compact, bars;
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
@@ -289,9 +310,8 @@ class _ChartPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
     if (times.isEmpty) return;
-    double x(int i) => times.length == 1
-        ? size.width / 2
-        : (times[i] - times.first) / (times.last - times.first) * size.width;
+    final (start, end, step) = _chartDomain(times, bars);
+    double x(int i) => (times[i] - start) / (end - start) * size.width;
     double y(num value) => size.height * (1 - (value - min) / (max - min));
     canvas.save();
     canvas.clipRect(Offset.zero & size);
@@ -302,6 +322,11 @@ class _ChartPainter extends CustomPainter {
         paint,
       );
     }
+    if (bars) {
+      canvas.drawLine(Offset(0, y(0)), Offset(size.width, y(0)), paint);
+    }
+    final groupWidth = step / (end - start) * size.width * .8;
+    final slotWidth = groupWidth / series.length;
     for (var s = 0; s < series.length; s++) {
       final values = series[s]['values'] as List;
       final path = Path();
@@ -312,6 +337,21 @@ class _ChartPainter extends CustomPainter {
           continue;
         }
         final point = Offset(x(i), y(values[i] as num));
+        if (bars) {
+          final left = point.dx - groupWidth / 2 + s * slotWidth;
+          final top = math.min(point.dy, y(0)).clamp(0.0, size.height - 1);
+          canvas.drawRect(
+            Rect.fromLTWH(
+              left + slotWidth * .05,
+              top,
+              slotWidth * .9,
+              math.max(1.0, (point.dy - y(0)).abs()),
+            ),
+            Paint()
+              ..color = colors[s].withValues(alpha: i == selected ? 1 : .78),
+          );
+          continue;
+        }
         if (connected) {
           path.lineTo(point.dx, point.dy);
         } else {
@@ -326,13 +366,15 @@ class _ChartPainter extends CustomPainter {
           );
         }
       }
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = colors[s]
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke,
-      );
+      if (!bars) {
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = colors[s]
+            ..strokeWidth = 2
+            ..style = PaintingStyle.stroke,
+        );
+      }
     }
     canvas.restore();
   }

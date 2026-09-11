@@ -815,5 +815,5 @@ class PluginEntityCatalogChanged extends AppEvent {
 class PluginEntityStateChanged extends AppEvent {
   const PluginEntityStateChanged(this.objectId, this.value);
   final String objectId;
-  final Map<String, Object?> value;
+  final Object? value;
 }

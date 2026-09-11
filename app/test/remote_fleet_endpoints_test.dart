@@ -233,6 +233,8 @@ void main() {
       for (final command in [
         'getPluginState',
         'getPluginCharts',
+        'getPluginEntities',
+        'pluginEntityCommand',
         'listPlugins',
         'setPluginsEnabled',
         'installPlugin',

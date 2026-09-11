@@ -35,12 +35,13 @@ class PluginManager extends Manager {
 
   final PluginRepository repository;
   List<Map<String, Object?>> _entities = [];
+  final _runtimeEntities = <String, List<Map<String, Object?>>>{};
   static const maxZipBytes = PluginRepository.maxPackageBytes;
 
   static const channel = MethodChannel('kiosk_satellite/plugins');
   final installed = ValueNotifier<List<Map<String, Object?>>>(const []);
   final charts = ValueNotifier<Map<String, List<Map<String, Object?>>>>({});
-  final _chartSessions = <String, String>{};
+  final _runtimeSessions = <String, String>{};
   final windows = ValueNotifier<List<PluginWindow>>(const []);
   final status = ValueNotifier<String>('');
   final enabled = ValueNotifier<bool>(false);
@@ -89,23 +90,31 @@ class PluginManager extends Manager {
       switch (call.method) {
         case 'hostSession':
           final data = call.arguments as Map;
-          _chartSessions[data['id'] as String] = data['session'] as String;
+          _runtimeSessions[data['id'] as String] = data['session'] as String;
           _setCharts(data['id'] as String, const []);
+          _setEntities(data['id'] as String, const []);
           _hostReads.open(call.arguments as Map);
         case 'hostSessionClosed':
           final data = call.arguments as Map;
-          if (_chartSessions[data['id']] == data['session']) {
-            _chartSessions.remove(data['id']);
+          if (_runtimeSessions[data['id']] == data['session']) {
+            _runtimeSessions.remove(data['id']);
             _setCharts(data['id'] as String, const []);
+            _setEntities(data['id'] as String, const []);
           }
           _hostReads.close(call.arguments as Map);
         case 'hostSubscription':
           _hostReads.subscription(call.arguments as Map);
         case 'hostCommand':
           return _hostReads.execute(call.arguments as Map);
+        case 'entities':
+          final data = call.arguments as Map;
+          if (_runtimeSessions[data['id']] == data['session'] &&
+              data['session'] != null) {
+            _setEntities(data['id'] as String, data['entities'] as List);
+          }
         case 'charts':
           final data = call.arguments as Map;
-          if (_chartSessions[data['id']] == data['session'] &&
+          if (_runtimeSessions[data['id']] == data['session'] &&
               data['session'] != null) {
             _setCharts(data['id'] as String, data['charts'] as List);
           }
@@ -203,13 +212,24 @@ class PluginManager extends Manager {
             'command': entity['command'],
           });
         }
+        if (!const ['light', 'select'].contains(entity['type'])) {
+          throw StateError('Plugin entity is read-only');
+        }
+        if (entity['type'] == 'select' &&
+            !(entity['options'] as List).contains(p['value'])) {
+          throw ArgumentError('Selection is not an advertised option');
+        }
         return update('entityCommand', {
           'id': entity['pluginId'],
           'key': entity['key'],
+          'type': entity['type'],
           'value': p['value'],
         });
       },
-      const {'objectId': 'Plugin entity object ID', 'value': 'Light command'},
+      const {
+        'objectId': 'Plugin entity object ID',
+        'value': 'Light command map or select option string',
+      },
     );
     register(
       'listPlugins',
@@ -425,6 +445,19 @@ class PluginManager extends Manager {
       ..addAll(next.isEmpty ? {} : {id: next});
   }
 
+  void _setEntities(String id, List value) {
+    final next = value.map((v) => Map<String, Object?>.from(v as Map)).toList();
+    if (jsonEncode(_runtimeEntities[id] ?? const []) == jsonEncode(next)) {
+      return;
+    }
+    if (next.isEmpty) {
+      _runtimeEntities.remove(id);
+    } else {
+      _runtimeEntities[id] = next;
+    }
+    _refreshEntities();
+  }
+
   void _readInstalled(Object? value) {
     if (value is Map) {
       enabled.value = value['enabled'] == true;
@@ -436,8 +469,13 @@ class PluginManager extends Manager {
     ];
     for (final item in items) {
       final data = item.remove('charts');
+      final entities = item.remove('entities') as List? ?? const [];
+      _runtimeEntities[item['id']
+          as String] = enabled.value && item['running'] == true
+          ? entities.map((e) => Map<String, Object?>.from(e as Map)).toList()
+          : const [];
       if (!enabled.value || item['running'] != true) {
-        _chartSessions.remove(item['id']);
+        _runtimeSessions.remove(item['id']);
       }
       _setCharts(
         item['id'] as String,
@@ -448,11 +486,25 @@ class PluginManager extends Manager {
     }
     for (final id in charts.value.keys.toList()) {
       if (!items.any((p) => p['id'] == id)) {
-        _chartSessions.remove(id);
+        _runtimeSessions.remove(id);
         _setCharts(id, const []);
       }
     }
+    _runtimeEntities.removeWhere(
+      (id, _) => !items.any(
+        (item) => item['id'] == id && item['running'] == true && enabled.value,
+      ),
+    );
     installed.value = [for (final item in items) item];
+    _refreshEntities();
+    final running = installed.value
+        .where((p) => p['running'] == true)
+        .map((p) => p['id'])
+        .toSet();
+    windows.value = windows.value.where((w) => running.contains(w.id)).toList();
+  }
+
+  void _refreshEntities() {
     final nextEntities = <Map<String, Object?>>[
       for (final action in actions)
         if (action['available'] == true && action['homeAssistant'] == true)
@@ -481,33 +533,62 @@ class PluginManager extends Manager {
               'effects': light['effects'],
               'state': light['state'],
             },
+      for (final plugin in installed.value)
+        if (enabled.value && plugin['running'] == true)
+          for (final entity
+              in _runtimeEntities[plugin['id']] ??
+                  const <Map<String, Object?>>[])
+            {
+              ...entity,
+              'objectId':
+                  'plugin_${plugin['id'].toString().replaceAll('-', '_')}____${entity['type']}_${entity['key']}',
+              'pluginId': plugin['id'],
+              'name': '${plugin['name']}: ${entity['name']}',
+              'icon': switch (entity['type']) {
+                'sensor' => 'mdi:gauge',
+                'text_sensor' => 'mdi:text-box-outline',
+                'binary_sensor' => 'mdi:checkbox-marked-circle-outline',
+                _ => 'mdi:form-select',
+              },
+            },
     ];
     List<Map<String, Object?>> catalog(List<Map<String, Object?>> entries) => [
       for (final entry in entries) {...entry}..remove('state'),
     ];
-    if (jsonEncode(catalog(nextEntities)) != jsonEncode(catalog(_entities))) {
+    final previousEntities = _entities;
+    _entities = nextEntities;
+    for (final previous in previousEntities) {
+      if (const [
+            'sensor',
+            'text_sensor',
+            'binary_sensor',
+            'select',
+          ].contains(previous['type']) &&
+          !nextEntities.any((e) => e['objectId'] == previous['objectId'])) {
+        bus.publish(
+          PluginEntityStateChanged(previous['objectId'] as String, null),
+        );
+      }
+    }
+    if (jsonEncode(catalog(nextEntities)) !=
+        jsonEncode(catalog(previousEntities))) {
       bus.publish(const PluginEntityCatalogChanged());
     }
     for (final entity in nextEntities) {
-      if (entity['type'] != 'light') continue;
-      final previous = _entities
+      if (entity['type'] == 'button') continue;
+      final previous = previousEntities
           .where((e) => e['objectId'] == entity['objectId'])
           .firstOrNull;
-      if (jsonEncode(previous?['state']) != jsonEncode(entity['state'])) {
+      if (previous == null ||
+          jsonEncode(previous['state']) != jsonEncode(entity['state'])) {
         bus.publish(
           PluginEntityStateChanged(
             entity['objectId'] as String,
-            Map<String, Object?>.from(entity['state'] as Map),
+            entity['state'],
           ),
         );
       }
     }
-    _entities = nextEntities;
-    final running = installed.value
-        .where((p) => p['running'] == true)
-        .map((p) => p['id'])
-        .toSet();
-    windows.value = windows.value.where((w) => running.contains(w.id)).toList();
   }
 
   void _hide(String id) =>

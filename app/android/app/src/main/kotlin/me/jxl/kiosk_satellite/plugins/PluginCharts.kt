@@ -11,10 +11,12 @@ internal class PluginCharts(private val clock: () -> Long = System::nanoTime) {
         check(!closed) { "Plugin session has ended" }
         require(key.matches(Regex("[a-z][a-z0-9_]{0,39}"))) { "Invalid chart key" }
         require(charts.containsKey(key) || charts.size < 4) { "At most four charts are supported" }
-        require(chart.keys.all { it in setOf("title", "unit", "compact", "timestamps", "series") }) { "Unknown chart field" }
+        require(chart.keys.all { it in setOf("title", "unit", "type", "compact", "timestamps", "series") }) { "Unknown chart field" }
         val title = chart["title"] as? String ?: error("Missing chart title")
         require(!chart.containsKey("unit") || chart["unit"] is String) { "Invalid chart unit" }
         require(!chart.containsKey("compact") || chart["compact"] is Boolean) { "Invalid compact flag" }
+        val type = if (chart.containsKey("type")) chart["type"] else "line"
+        require(type == "line" || type == "bar") { "Invalid chart type" }
         val compact = chart["compact"] == true
         val unit = chart["unit"] as? String ?: ""
         require(title.length in 1..80 && unit.length <= 16) { "Invalid chart label" }
@@ -45,7 +47,7 @@ internal class PluginCharts(private val clock: () -> Long = System::nanoTime) {
         }
         require(series.map { it["name"] }.toSet().size == series.size) { "Series names must be unique" }
         budget()
-        charts[key] = mapOf("key" to key, "title" to title, "unit" to unit, "compact" to compact, "timestamps" to times, "series" to series)
+        charts[key] = mapOf("key" to key, "title" to title, "unit" to unit, "type" to type, "compact" to compact, "timestamps" to times, "series" to series)
     }
 
     private fun budget() {

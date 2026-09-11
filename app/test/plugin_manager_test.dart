@@ -139,6 +139,145 @@ void main() {
     },
   );
 
+  test(
+    'sensor and select catalogs separate metadata, state and session lifetime',
+    () async {
+      var catalogs = 0;
+      var settingsUpdates = 0;
+      final states = <PluginEntityStateChanged>[];
+      final catalogSub = bus.on<PluginEntityCatalogChanged>().listen(
+        (_) => catalogs++,
+      );
+      final stateSub = bus.on<PluginEntityStateChanged>().listen(states.add);
+      plugins.installed.addListener(() => settingsUpdates++);
+      await native('hostSession', {
+        'id': 'hello-world',
+        'session': 'sensors',
+        'capabilities': ['entities'],
+      });
+      var entities = <Map<String, Object?>>[
+        {
+          'type': 'sensor',
+          'key': 'reading',
+          'name': 'Reading',
+          'unit': 'ms',
+          'stateClass': 1,
+          'accuracyDecimals': 2,
+          'state': 12.5,
+        },
+        {
+          'type': 'text_sensor',
+          'key': 'reading',
+          'name': 'Link',
+          'state': 'WiFi',
+        },
+        {
+          'type': 'binary_sensor',
+          'key': 'reading',
+          'name': 'Connected',
+          'state': false,
+        },
+        {
+          'type': 'select',
+          'key': 'reading',
+          'name': 'Mode',
+          'options': ['Auto', 'Fast'],
+          'state': 'Auto',
+        },
+      ];
+      Future<void> publish(String session) async {
+        installed[0]['entities'] = entities;
+        await native('entities', {
+          'id': 'hello-world',
+          'session': session,
+          'entities': entities,
+        });
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      await publish('sensors');
+      expect(catalogs, 1);
+      expect(states.length, 4);
+      expect(settingsUpdates, 0);
+      final catalog =
+          (await commands.execute('getPluginEntities', {})).data as List;
+      expect(catalog.map((e) => (e as Map)['objectId']).toSet().length, 4);
+      expect(catalog.first['objectId'], 'plugin_hello_world____sensor_reading');
+      for (final type in ['sensor', 'text_sensor', 'binary_sensor']) {
+        final result = await commands.execute('pluginEntityCommand', {
+          'objectId': 'plugin_hello_world____${type}_reading',
+          'value': 'Fast',
+        });
+        expect(result.ok, false);
+      }
+      final invalid = await commands.execute('pluginEntityCommand', {
+        'objectId': 'plugin_hello_world____select_reading',
+        'value': 'Other',
+      });
+      expect(invalid.ok, false);
+      expect(calls.where((c) => c.method == 'entityCommand'), isEmpty);
+      final select = await commands.execute('pluginEntityCommand', {
+        'objectId': 'plugin_hello_world____select_reading',
+        'value': 'Fast',
+      });
+      expect(select.ok, true);
+      expect(calls.lastWhere((c) => c.method == 'entityCommand').arguments, {
+        'id': 'hello-world',
+        'type': 'select',
+        'key': 'reading',
+        'value': 'Fast',
+      });
+      expect(
+        ((await commands.execute('getPluginEntities', {})).data as List)
+            .last['state'],
+        'Auto',
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(catalogs, 1);
+      entities = [
+        {...entities[0], 'state': null},
+        entities[1],
+        entities[2],
+        {...entities[3], 'state': 'Fast'},
+      ];
+      final before = settingsUpdates;
+      await publish('sensors');
+      expect(catalogs, 1);
+      expect(settingsUpdates, before);
+      expect(states.last.value, 'Fast');
+      expect(
+        states
+            .where((e) => e.objectId == 'plugin_hello_world____sensor_reading')
+            .last
+            .value,
+        isNull,
+      );
+      entities = [
+        ...entities.take(3),
+        {
+          ...entities[3],
+          'options': ['Auto', 'Fast', 'Quiet'],
+        },
+      ];
+      await publish('sensors');
+      expect(catalogs, 2);
+      await native('hostSessionClosed', {
+        'id': 'hello-world',
+        'session': 'sensors',
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect((await commands.execute('getPluginEntities', {})).data, isEmpty);
+      expect(
+        states.skip(states.length - 4).every((e) => e.value == null),
+        true,
+      );
+      await publish('sensors');
+      expect((await commands.execute('getPluginEntities', {})).data, isEmpty);
+      await catalogSub.cancel();
+      await stateSub.cancel();
+    },
+  );
+
   setUp(() async {
     originalPicker = FilePicker.platform;
     picker = _ZipPicker();
@@ -739,6 +878,7 @@ void main() {
       expect(calls.lastWhere((c) => c.method == 'entityCommand').arguments, {
         'id': 'hello-world',
         'key': 'panel',
+        'type': 'light',
         'value': {'on': false},
       });
       final light = (installed[0]['lights'] as List).single as Map;
@@ -746,7 +886,7 @@ void main() {
       await plugins.refresh();
       await Future<void>.delayed(Duration.zero);
       expect(catalogs, 1);
-      expect(states.last.value['brightness'], 0.75);
+      expect((states.last.value as Map)['brightness'], 0.75);
       await plugins.setEnabled(false);
       await Future<void>.delayed(Duration.zero);
       expect(catalogs, 2);

@@ -5,6 +5,8 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Plugin charts support bars.** SDK 1 accepts grouped time-series bars in regular and mini layouts, with a zero baseline, negative values and sample inspection on-device and in Remote Admin.
+- **Plugins can expose sensors and selects to Home Assistant.** SDK 1 supports numeric, text and binary readings plus writable selects, with bounded publication, unknown states and validated select callbacks. Value updates preserve settings edits and use the existing ESPHome state channel. Plugin entity exclusions remain local during fleet sync.
 - **Plugins can publish live charts.** SDK 1 supports bounded time-series charts and compact sparklines in on-device and Remote Admin plugin subpages, with sample inspection and updates that preserve settings edits. Chart history stays local to the running session.
 
 ### Fixed

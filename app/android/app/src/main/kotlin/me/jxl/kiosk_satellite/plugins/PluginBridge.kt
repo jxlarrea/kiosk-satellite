@@ -37,6 +37,16 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
 
     private inner class Session(val id: String, val manifest: PluginManifest, val packageDir: File) {
         val nativeDir = File(root, ".runtime-${UUID.randomUUID()}")
+        val entities = PluginEntities()
+        private val entityPending = AtomicBoolean(false)
+        private val entityUpdate = Runnable {
+            entityPending.set(false)
+            if (alive.get()) emit("entities", mapOf("id" to id, "session" to token, "entities" to entities.snapshot()), alive)
+        }
+        fun notifyEntities() {
+            if (entityPending.compareAndSet(false, true)) main.postDelayed(entityUpdate, 250)
+        }
+        fun closeEntities() { entities.close(); main.removeCallbacks(entityUpdate) }
         val charts = PluginCharts()
         private val chartPending = AtomicBoolean(false)
         private val chartUpdate = Runnable {
@@ -152,6 +162,24 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                     emit("changed", snapshot())
                 } }
             }
+            private fun publishEntity(type: String, key: String, name: String, metadata: Map<String, Any>, state: Any?) {
+                check(alive.get() && "entities" in manifest.capabilities) { "SDK 1 entities access is required" }
+                entities.publish(type, key, name, metadata, state)
+                notifyEntities()
+            }
+            private fun removeEntity(type: String, key: String) {
+                check(alive.get() && "entities" in manifest.capabilities) { "SDK 1 entities access is required" }
+                entities.remove(type, key)
+                notifyEntities()
+            }
+            override fun publishSensor(key: String, name: String, metadata: Map<String, Any>, state: Double?) = publishEntity("sensor", key, name, metadata, state)
+            override fun removeSensor(key: String) = removeEntity("sensor", key)
+            override fun publishTextSensor(key: String, name: String, state: String?) = publishEntity("text_sensor", key, name, emptyMap(), state)
+            override fun removeTextSensor(key: String) = removeEntity("text_sensor", key)
+            override fun publishBinarySensor(key: String, name: String, deviceClass: String, state: Boolean?) = publishEntity("binary_sensor", key, name, mapOf("deviceClass" to deviceClass), state)
+            override fun removeBinarySensor(key: String) = removeEntity("binary_sensor", key)
+            override fun publishSelect(key: String, name: String, options: Array<String>, state: String?) = publishEntity("select", key, name, mapOf("options" to options.toList()), state)
+            override fun removeSelect(key: String) = removeEntity("select", key)
             override fun publishLight(key: String, name: String, effects: Array<String>, state: Map<String, Any>) {
                 require("entities" in manifest.capabilities)
                 require(key.matches(Regex("[a-z][a-z0-9_]{0,39}")) && name.length in 1..80)
@@ -214,10 +242,17 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                         "execute" -> { execute(id(args), args); snapshot() }
                         "entityCommand" -> {
                             val session = sessions[id(args)] ?: throw IllegalStateException("Enable the plugin first")
-                            val key = args["key"] as? String ?: throw IllegalArgumentException("Missing light key")
-                            require(session.lights.containsKey(key)) { "Plugin light is not available" }
-                            val value = (args["value"] as? Map<String, Any?>) ?: emptyMap()
-                            try { session.call { session.plugin!!.onEvent("light.$key", value) } }
+                            val key = args["key"] as? String ?: throw IllegalArgumentException("Missing entity key")
+                            val type = args["type"] as? String ?: "light"
+                            val value = when (type) {
+                                "light" -> {
+                                    require(session.lights.containsKey(key)) { "Plugin light is not available" }
+                                    (args["value"] as? Map<String, Any?>) ?: emptyMap()
+                                }
+                                "select" -> session.entities.select(key, args["value"])
+                                else -> throw IllegalArgumentException("Plugin entity is read-only")
+                            }
+                            try { session.call { session.plugin!!.onEvent("$type.$key", value) } }
                             catch (error: Throwable) { fail(session.id, error); throw error }
                             snapshot()
                         }
@@ -282,6 +317,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 .put("source", record.optJSONObject("source"))
                 .put("status", sessions[id]?.status ?: "")
                 .put("statusError", sessions[id]?.statusError ?: false)
+                .put("entities", org.json.JSONArray(sessions[id]?.entities?.snapshot() ?: emptyList<Any>()))
                 .put("charts", org.json.JSONArray(sessions[id]?.charts?.snapshot() ?: emptyList<Any>()))
                 .put("lights", org.json.JSONArray(sessions[id]?.lights?.values?.toList() ?: emptyList<Any>()))
                 .put("values", record.optJSONObject("config") ?: JSONObject())
@@ -348,7 +384,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             // Revoke every host before waiting for stop callbacks from individual plugins.
             sessions.forEach { (id, session) ->
                 session.alive.set(false)
-                session.closeCharts()
+                session.closeCharts(); session.closeEntities()
                 emit("hideWindow", mapOf("id" to id))
             }
             for (id in sessions.keys.toList()) {
@@ -508,7 +544,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private fun stopSession(id: String) {
         val session = sessions.remove(id) ?: return
         session.alive.set(false)
-        session.closeCharts()
+        session.closeCharts(); session.closeEntities()
         session.subscriptions.clear()
         emit("hostSessionClosed", mapOf("id" to id, "session" to session.token))
         emit("hideWindow", mapOf("id" to id))
