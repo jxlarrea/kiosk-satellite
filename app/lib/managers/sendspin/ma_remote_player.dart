@@ -418,8 +418,11 @@ class MaRemotePlayer implements RemotePlayer {
         // Publish their metadata now and refresh the queue for handoffs.
         if (data is Map) _player = data;
         _readVolume(data);
-        if (_usingPlayerMedia || _hasExternalSource || _queue == null) {
-          _publishSnapshot();
+        if (_usingPlayerMedia ||
+            _hasExternalSource ||
+            _queue == null ||
+            _radioQueueItem != null) {
+          _publishSnapshot(preservePosition: true);
         } else {
           final snap = _snapshot;
           if (snap != null &&
@@ -450,13 +453,14 @@ class MaRemotePlayer implements RemotePlayer {
     _publishSnapshot();
   }
 
-  void _publishSnapshot() {
+  void _publishSnapshot({bool preservePosition = false}) {
     final queue = _queue;
     final snap = queueTrackSnapshot(
       _hasExternalSource || (queue is Map && queue['active'] == false)
           ? null
           : queue,
       webBase: musicAssistantWebUrl(_api.baseUrl),
+      currentMedia: _radioPlayerMedia,
     );
     _usingPlayerMedia = snap == null;
     queueEmpty = queue is Map && snap == null;
@@ -471,6 +475,13 @@ class MaRemotePlayer implements RemotePlayer {
       _emit(null);
       return;
     }
+    final previous = _snapshot;
+    final keepPosition =
+        preservePosition &&
+        previous != null &&
+        previous['queueItemId'] == snap['queueItemId'] &&
+        previous['mediaUri'] == snap['mediaUri'] &&
+        previous['playing'] == playing;
     // The elapsed time in a queue dict is live at the moment the server
     // serializes it, while its stamp ('positionAtMs') marks when the
     // server last heard from the player, which for a Sendspin player can
@@ -488,7 +499,40 @@ class MaRemotePlayer implements RemotePlayer {
       // A time the server just measured, in a queue dict or a time
       // event alike: what the local player's position follows.
       'timeFresh': true,
+      if (keepPosition) ...{
+        'positionMs': previous['positionMs'],
+        'receivedAt': previous['receivedAt'],
+        'timeFresh': false,
+      },
     });
+  }
+
+  Map? get _radioQueueItem {
+    final queue = _queue;
+    if (queue is! Map) return null;
+    final item = queue['current_item'];
+    if (item is! Map) return null;
+    final media = item['media_item'];
+    return media is Map && media['media_type'] == 'radio' ? item : null;
+  }
+
+  /// Player metadata is a fallback for radio queues without stream metadata.
+  /// Match the item before using it so a station change cannot reuse an old
+  /// song. Ordinary tracks and their queue timing keep their existing path.
+  Map? get _radioPlayerMedia {
+    final item = _radioQueueItem;
+    final current = _player?['current_media'];
+    if (item == null || current is! Map) return null;
+    final media = item['media_item'] as Map;
+    final source = '${current['source_id'] ?? ''}';
+    if (source.isNotEmpty && source != _queueId) return null;
+    final itemId = '${item['queue_item_id'] ?? ''}';
+    final currentId = '${current['queue_item_id'] ?? ''}';
+    if (currentId.isNotEmpty) {
+      return itemId.isNotEmpty && currentId == itemId ? current : null;
+    }
+    final uri = '${item['uri'] ?? media['uri'] ?? ''}';
+    return uri.isNotEmpty && current['uri'] == uri ? current : null;
   }
 
   bool get _hasExternalSource {

@@ -475,25 +475,48 @@ class MusicAssistantApi {
 /// [MusicAssistantApi.fetchActiveQueueTrack] and the live queue_updated
 /// events a remote-controlled player streams (issue #265) — the event's
 /// data IS the queue dict.
-Map<String, Object?>? queueTrackSnapshot(Object? queue, {String? webBase}) {
+/// [currentMedia] is an optional fallback already matched to this radio
+/// queue item by the caller. Queue stream metadata takes precedence.
+Map<String, Object?>? queueTrackSnapshot(
+  Object? queue, {
+  String? webBase,
+  Map? currentMedia,
+}) {
   if (queue is! Map) return null;
   final item = queue['current_item'];
   if (item is! Map) return null;
   final media = item['media_item'] is Map
       ? (item['media_item'] as Map).cast<String, Object?>()
       : const <String, Object?>{};
-  final title = '${media['name'] ?? item['name'] ?? ''}';
+  final details = item['streamdetails'];
+  final stream = details is Map ? details['stream_metadata'] : null;
+  // A radio queue item describes the station. Its stream describes the
+  // current song. Use one song's metadata at a time so missing fields do
+  // not pick up the previous song from a delayed player update.
+  final live = stream is Map && stream.isNotEmpty ? stream : currentMedia;
+  String liveText(String key) =>
+      live?[key] is String ? (live![key] as String).trim() : '';
+  final title = liveText('title').isNotEmpty
+      ? liveText('title')
+      : '${media['name'] ?? item['name'] ?? ''}';
   if (title.trim().isEmpty) return null;
   // Sendspin credits multiple artists as one slash-joined string; the
   // recovered card reads the same as a live one.
-  final artist = ((media['artists'] as List?) ?? const [])
+  final itemArtist = ((media['artists'] as List?) ?? const [])
       .map((a) => a is Map ? '${a['name'] ?? ''}' : '')
       .where((s) => s.isNotEmpty)
       .join('/');
-  final album = media['album'] is Map
+  final artist = liveText('artist').isNotEmpty
+      ? liveText('artist')
+      : itemArtist;
+  final itemAlbum = media['album'] is Map
       ? '${(media['album'] as Map)['name'] ?? ''}'
       : '';
-  final duration = (item['duration'] as num?) ?? (media['duration'] as num?);
+  final album = liveText('album').isNotEmpty ? liveText('album') : itemAlbum;
+  final liveDuration = live?['duration'];
+  final duration = liveDuration is num && liveDuration > 0
+      ? liveDuration
+      : (item['duration'] as num?) ?? (media['duration'] as num?);
   final elapsed = queue['elapsed_time'] as num?;
   final measuredAt = queue['elapsed_time_last_updated'] as num?;
   return {
@@ -516,7 +539,9 @@ Map<String, Object?>? queueTrackSnapshot(Object? queue, {String? webBase}) {
     'queueItemId': '${item['queue_item_id'] ?? ''}',
     'currentIndex': (queue['current_index'] as num?)?.toInt() ?? 0,
     'queueLength': (queue['items'] as num?)?.toInt() ?? 0,
-    ...switch (queueImageUrl(item['image'], webBase)) {
+    ...switch (liveText('image_url').isNotEmpty
+        ? liveText('image_url')
+        : queueImageUrl(item['image'], webBase)) {
       final url? => {'artworkUrl': url},
       null => const <String, Object?>{},
     },
