@@ -10,6 +10,7 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.util.Collections
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -52,10 +53,57 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 }
             }
         }
+        val token = UUID.randomUUID().toString()
+        val subscriptions = ConcurrentHashMap.newKeySet<String>()
+        val commandBudget = PluginCommandBudget()
         val alive = AtomicBoolean(true)
         val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "plugin-$id").apply { isDaemon = true } }
         var plugin: KioskPlugin? = null
         val host = object : PluginHost {
+            override fun executeCommand(command: String, arguments: Map<String, Any>, callback: PluginHost.CommandCallback) {
+                check(alive.get() && manifest.capabilities.any { it == "host.read" || it == "host.control" }) { "Host capability is required" }
+                require(command.length in 1..80 && arguments.size <= 2 && arguments.all { it.key.length <= 32 && (it.value is Boolean || (it.value is String && (it.value as String).length <= 2048)) }) { "Invalid host request" }
+                commandBudget.acquire()
+                val copied = HashMap(arguments)
+                val completed = AtomicBoolean(false)
+                lateinit var timeout: Runnable
+                fun finish(ok: Boolean, data: Any?, error: String?) {
+                    if (!completed.compareAndSet(false, true)) return
+                    main.removeCallbacks(timeout)
+                    worker.execute {
+                        try {
+                            if (alive.get() && sessions[id] === this@Session) {
+                                try { call { callback.onResult(ok, data, error) } }
+                                catch (failure: Throwable) { fail(id, failure); emit("changed", snapshot()) }
+                            }
+                        } finally { commandBudget.release() }
+                    }
+                }
+                timeout = Runnable { finish(false, null, "KS command timed out") }
+                main.post {
+                    if (!alive.get()) { commandBudget.release(); return@post }
+                    main.postDelayed(timeout, 10_000)
+                    channel.invokeMethod("hostCommand", mapOf("id" to id, "session" to token, "command" to command, "arguments" to copied), object : MethodChannel.Result {
+                        override fun success(result: Any?) {
+                            val value = result as? Map<*, *>
+                            val ok = value?.get("ok") == true
+                            finish(ok, if (ok) value?.get("data") else null, if (ok) null else (value?.get("error") as? String ?: "KS command bridge is unavailable"))
+                        }
+                        override fun error(code: String, message: String?, details: Any?) = finish(false, null, "KS command bridge is unavailable")
+                        override fun notImplemented() = finish(false, null, "KS command bridge is unavailable")
+                    })
+                }
+            }
+            override fun subscribe(event: String) {
+                check(alive.get() && "host.read" in manifest.capabilities) { "SDK 1 host.read access is required" }
+                require(event in PluginHostPolicy.events) { "Unknown KS event" }
+                if (subscriptions.add(event)) emit("hostSubscription", mapOf("id" to id, "session" to token, "event" to event, "subscribed" to true), alive)
+            }
+            override fun unsubscribe(event: String) {
+                check(alive.get() && "host.read" in manifest.capabilities) { "SDK 1 host.read access is required" }
+                require(event in PluginHostPolicy.events) { "Unknown KS event" }
+                if (subscriptions.remove(event)) emit("hostSubscription", mapOf("id" to id, "session" to token, "event" to event, "subscribed" to false), alive)
+            }
             override fun showWindow(title: String, message: String, buttonLabel: String) {
                 require("overlay" in manifest.capabilities) { "Plugin did not declare overlay access" }
                 require(title.length in 1..80 && message.length <= 4096 && buttonLabel.length <= 80) { "Window text is too long" }
@@ -154,6 +202,16 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                             try { session.call { session.plugin!!.onEvent("light.$key", value) } }
                             catch (error: Throwable) { fail(session.id, error); throw error }
                             snapshot()
+                        }
+                        "hostEvent" -> {
+                            val session = sessions[args["id"]]
+                            val event = args["event"] as? String
+                            if (session != null && session.alive.get() && session.token == args["session"] && event in session.subscriptions) {
+                                val payload = args["payload"] as? Map<String, Any?> ?: emptyMap()
+                                try { session.call { session.plugin!!.onEvent("ks.$event", payload) } }
+                                catch (error: Throwable) { fail(session.id, error); emit("changed", snapshot()); throw error }
+                            }
+                            null
                         }
                         "windowEvent" -> { windowEvent(id(args), args); null }
                         "stopAll" -> {
@@ -408,6 +466,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             val current = Session(id, manifest, dir)
             session = current
             sessions[id] = current
+            if (manifest.capabilities.any { it == "host.read" || it == "host.control" }) emit("hostSession", mapOf("id" to id, "session" to current.token, "capabilities" to manifest.capabilities.toList()), current.alive)
             loadedIds.add(id)
             loadedHashes.add(record.getString("hash"))
             current.call {
@@ -429,6 +488,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private fun stopSession(id: String) {
         val session = sessions.remove(id) ?: return
         session.alive.set(false)
+        session.subscriptions.clear()
+        emit("hostSessionClosed", mapOf("id" to id, "session" to session.token))
         emit("hideWindow", mapOf("id" to id))
         try { session.call { session.plugin?.stop() } }
         catch (error: Throwable) {

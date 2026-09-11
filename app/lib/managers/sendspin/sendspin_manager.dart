@@ -1063,6 +1063,23 @@ class SendspinManager extends Manager {
 
     commands.register(
       Command(
+        name: 'hideNowPlaying',
+        description:
+            'Dismiss the full-screen Now Playing view without stopping music '
+            'or changing its saved settings.',
+        handler: (_) async {
+          if (_screensaverActive &&
+              fullscreenActive.value &&
+              _settings.get(defs.sendspinFullscreen)) {
+            return commands.execute('stopScreensaver', const {});
+          }
+          return const CommandResult.ok();
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
         name: 'sendspinControl',
         description:
             'Send a transport command to the Sendspin group this player '

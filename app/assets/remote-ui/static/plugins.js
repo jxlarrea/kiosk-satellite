@@ -171,7 +171,7 @@ function render(root, state) {
   const list = element('div', undefined, 'card');
   const developerTools = element('div', undefined, 'card');
   const zipRow = element('div', undefined, 'row plugin-add-row');
-  zipRow.append(info('Install from ZIP', 'Install a local build for testing'));
+  zipRow.append(info('Install from ZIP', 'For developers only: test a local build'));
   const upload = iconButton('Install from ZIP', 'M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4');
   const fileInput = element('input'); fileInput.type = 'file'; fileInput.accept = '.zip,application/zip'; fileInput.hidden = true;
   fileInput.setAttribute('aria-label', 'Plugin ZIP');
@@ -355,7 +355,7 @@ function render(root, state) {
         }, button);
         row.append(button); actions.append(row);
       }
-      page.append(heading('Actions'), hintRow('Assign actions in Gestures or choose which ones appear in the kiosk drawer and Home Assistant.'), actions);
+      page.append(heading('Actions'), actions, hintRow('Assign actions in Gestures or choose which ones appear in the kiosk drawer and Home Assistant.'));
     }
     root.append(page);
   }

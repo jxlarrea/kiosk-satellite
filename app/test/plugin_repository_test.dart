@@ -58,6 +58,8 @@ void main() {
   Map<String, Object?> asset(String name, int size) => {
     'name': name,
     'state': 'uploaded',
+    'uploader': {'id': 41898282, 'login': 'github-actions[bot]', 'type': 'Bot'},
+    'digest': 'sha256:${sha256.convert(bytes)}',
     'size': size,
     'browser_download_url': '$url/releases/download/v1.0.0/$name',
   };
@@ -117,6 +119,29 @@ void main() {
     );
   });
   tearDown(() => repository.close());
+
+  test(
+    'manual release uploads and missing or mismatched GitHub digests are rejected',
+    () async {
+      for (final uploader in [
+        null,
+        {'id': 1, 'login': 'author', 'type': 'User'},
+        {'id': 1, 'login': 'github-actions[bot]', 'type': 'Bot'},
+      ]) {
+        assets()[1]['uploader'] = uploader;
+        await expectLater(repository.preview(url), throwsFormatException);
+      }
+      assets()[1]['uploader'] = {
+        'id': 41898282,
+        'login': 'github-actions[bot]',
+        'type': 'Bot',
+      };
+      for (final digest in [null, 'sha256:wrong']) {
+        assets()[1]['digest'] = digest;
+        await expectLater(repository.preview(url), throwsFormatException);
+      }
+    },
+  );
 
   test(
     'accepts canonical repository URLs and rejects paths and other origins',

@@ -63,7 +63,7 @@ object PluginPackage {
             validateDex(File(destination, "plugin.jar"))
             val manifest = PluginManifest(JSONObject(File(destination, MANIFEST_NAME).readText()))
             val native = nativeFiles(destination)
-            require(native.size <= 12 && (native.isEmpty() || (manifest.apiVersion >= 2 && "native" in manifest.capabilities))) { "Native libraries require SDK 2 and native capability" }
+            require(native.size <= 12 && (native.isEmpty() || ("native" in manifest.capabilities))) { "Native libraries require native capability" }
             for (file in native) {
                 val header = file.readBytes().take(20).toByteArray()
                 require(header.size == 20 && header.take(4) == listOf<Byte>(127, 69, 76, 70) && header[5] == 1.toByte()) { "Invalid native ELF library" }

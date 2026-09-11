@@ -9,6 +9,7 @@ import '../../core/command_registry.dart';
 import '../../core/manager.dart';
 import '../../core/events.dart';
 import 'plugin_repository.dart';
+import 'plugin_host_api.dart';
 
 class PluginWindow {
   const PluginWindow({
@@ -42,6 +43,7 @@ class PluginManager extends Manager {
   final status = ValueNotifier<String>('');
   final enabled = ValueNotifier<bool>(false);
   bool _disposed = false;
+  late final PluginHostApi _hostReads;
 
   List<Map<String, Object?>> get actions => [
     for (final plugin in installed.value)
@@ -75,9 +77,22 @@ class PluginManager extends Manager {
 
   @override
   Future<void> init() async {
+    _hostReads = PluginHostApi(
+      commands,
+      bus,
+      (event) => channel.invokeMethod<void>('hostEvent', event),
+    );
     channel.setMethodCallHandler((call) async {
-      if (_disposed) return;
+      if (_disposed) return null;
       switch (call.method) {
+        case 'hostSession':
+          _hostReads.open(call.arguments as Map);
+        case 'hostSessionClosed':
+          _hostReads.close(call.arguments as Map);
+        case 'hostSubscription':
+          _hostReads.subscription(call.arguments as Map);
+        case 'hostCommand':
+          return _hostReads.execute(call.arguments as Map);
         case 'changed':
           _readInstalled(call.arguments);
         case 'window':
@@ -103,6 +118,7 @@ class PluginManager extends Manager {
           final data = call.arguments as Map;
           log.info('plugin:${data['id']}', '${data['message']}');
       }
+      return null;
     });
     void register(
       String command,
@@ -471,6 +487,7 @@ class PluginManager extends Manager {
   @override
   Future<void> dispose() async {
     _disposed = true;
+    await _hostReads.dispose();
     repository.close();
     channel.setMethodCallHandler(null);
     try {

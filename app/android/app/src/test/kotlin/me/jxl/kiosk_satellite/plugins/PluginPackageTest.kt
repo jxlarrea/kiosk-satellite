@@ -10,6 +10,26 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PluginPackageTest {
+    @Test fun firstPublicSdkSupportsAllExplicitCapabilities() {
+        for (capability in listOf("overlay", "native", "entities", "host.read", "host.control")) {
+            assertTrue(capability in PluginManifest(manifest().put("capabilities", org.json.JSONArray(listOf(capability)))).capabilities)
+        }
+        for (version in listOf(0, 2, 3, 4)) {
+            rejects { PluginManifest(manifest().put("apiVersion", version)) }
+        }
+    }
+    @Test fun asynchronousReadBudgetBoundsPendingAndRate() {
+        val budget = PluginCommandBudget()
+        val now = 2_000_000_000L
+        repeat(8) { budget.acquire(now) }
+        try { budget.acquire(now); fail("Pending limit") } catch (_: IllegalStateException) {}
+        repeat(8) { budget.release() }
+        repeat(12) { budget.acquire(now); budget.release() }
+        try { budget.acquire(now); fail("Rate limit") } catch (_: IllegalStateException) {}
+        budget.acquire(now + 1_000_000_000L)
+        budget.release()
+    }
+
     @Test fun actionPlacementsValidateAndSurviveOnlyForRetainedCommands() {
         val manifest = PluginManifest(manifest())
         val options = PluginActionOptions.configure(manifest, null,
@@ -111,7 +131,7 @@ class PluginPackageTest {
         assertFalse(dir.exists())
     }
     @Test fun unsupportedApiAndCapabilitiesAreRejected() {
-        rejects { PluginManifest(manifest().put("apiVersion", 3)) }
+        rejects { PluginManifest(manifest().put("apiVersion", 4)) }
         rejects { PluginManifest(manifest().put("capabilities", org.json.JSONArray("[\"root\"]"))) }
         rejects { PluginManifest(manifest().put("id", "../../host")) }
     }
@@ -131,8 +151,8 @@ class PluginPackageTest {
         commands.getJSONArray("commands").put(commands.getJSONArray("commands").getJSONObject(0))
         rejects { PluginManifest(commands) }
     }
-    @Test fun sdkTwoValidatesRichSettingsAndNativePackages() = inTemp { dir ->
-        val metadata = manifest().put("apiVersion", 2).put("capabilities", org.json.JSONArray("[\"native\",\"entities\"]"))
+    @Test fun sdkOneValidatesRichSettingsAndNativePackages() = inTemp { dir ->
+        val metadata = manifest().put("apiVersion", 1).put("capabilities", org.json.JSONArray("[\"native\",\"entities\"]"))
         metadata.put("settings", org.json.JSONArray("""[
           {"key":"brightness","title":"Brightness","type":"number","min":0,"max":100,"step":1,"default":50},
           {"key":"color","title":"Color","type":"color","default":"#123456"},
@@ -150,7 +170,7 @@ class PluginPackageTest {
             "kiosk-satellite-plugin.json" to metadata.toString().toByteArray(),
             "plugin.jar" to zip("classes.dex" to "dex\n035\u0000test".toByteArray()),
             "LICENSE" to "Apache-2.0".toByteArray(), "native/arm64-v8a/libtest.so" to elf)
-        assertEquals(2, PluginPackage.extract(bytes, dir).apiVersion)
+        assertEquals(1, PluginPackage.extract(bytes, dir).apiVersion)
         assertEquals(1, PluginPackage.nativeFiles(dir).size)
     }
     @Test fun rgbStateRejectsUnknownOrInvalidFields() {

@@ -479,7 +479,7 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
             children: [
               SettingsRow(
                 title: const Text('Install from ZIP'),
-                subtitle: const Text('Install a local build for testing'),
+                subtitle: const Text('For developers only: test a local build'),
                 trailing: _busy && _busyId == '_zip'
                     ? const _PluginProgress()
                     : const Icon(Icons.upload_file_rounded),
@@ -887,9 +887,6 @@ class _PluginSettingsState extends State<_PluginSettings> {
         ],
         if (commands.isNotEmpty) ...[
           const SectionHeading('Actions'),
-          const GroupNote(
-            'Assign actions in Gestures or choose which ones appear in the kiosk drawer and Home Assistant.',
-          ),
           SettingsCard(
             children: [
               for (final raw in commands)
@@ -901,6 +898,9 @@ class _PluginSettingsState extends State<_PluginSettings> {
                   onTap: () => _configureAction(raw),
                 ),
             ],
+          ),
+          const GroupNote(
+            'Assign actions in Gestures or choose which ones appear in the kiosk drawer and Home Assistant.',
           ),
         ],
       ],

@@ -680,7 +680,7 @@ void main() {
       await stateSub.cancel();
     },
   );
-  testWidgets('SDK 2 controls retain edits during runtime status updates', (
+  testWidgets('SDK 1 controls retain edits during runtime status updates', (
     tester,
   ) async {
     installed[0]['settings'] = [

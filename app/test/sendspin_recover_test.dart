@@ -121,6 +121,38 @@ void main() {
     await Future<void>.delayed(Duration.zero);
   }
 
+  test(
+    'hiding Now Playing dismisses its view without stopping playback or changing preferences',
+    () async {
+      await build(null);
+      await settings.set(defs.sendspinFullscreen, true);
+      var dismissed = 0;
+      sendspin.commands.register(
+        Command(
+          name: 'stopScreensaver',
+          description: 'test',
+          handler: (_) async {
+            dismissed++;
+            return const CommandResult.ok();
+          },
+        ),
+      );
+      sendspin.nowPlaying.value = {'playing': true, 'title': 'Test'};
+      sendspin.fullscreenActive.value = true;
+      expect((await sendspin.commands.execute('hideNowPlaying', {})).ok, true);
+      expect(dismissed, 0);
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await Future<void>.delayed(Duration.zero);
+      expect((await sendspin.commands.execute('hideNowPlaying', {})).ok, true);
+      expect(dismissed, 1);
+      expect(sendspin.nowPlaying.value?['playing'], true);
+      expect(settings.get(defs.sendspinFullscreen), true);
+      sendspin.fullscreenActive.value = false;
+      await sendspin.commands.execute('hideNowPlaying', {});
+      expect(dismissed, 1);
+    },
+  );
+
   test('the reveal recovers a paused queue as a paused card', () async {
     await build({
       'state': 'paused',

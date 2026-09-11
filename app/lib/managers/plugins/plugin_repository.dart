@@ -200,6 +200,17 @@ class PluginRepository {
         throw FormatException('Release needs exactly one uploaded $name asset');
       }
       final asset = matches.single;
+      final uploader = asset['uploader'];
+      if (uploader is! Map ||
+          uploader['id'] != 41898282 ||
+          uploader['login'] != 'github-actions[bot]' ||
+          uploader['type'] != 'Bot') {
+        throw FormatException(
+          'Release asset $name must be published by GitHub Actions. '
+          'Manually uploaded files are not supported.',
+        );
+      }
+
       if (asset['size'] is! int ||
           (asset['size'] as int) <= 0 ||
           (asset['size'] as int) > limit) {
@@ -272,6 +283,15 @@ class PluginRepository {
       );
     }
     final digest = checksum.group(1)!;
+    final packageAsset = assets.whereType<Map>().singleWhere(
+      (a) => a['name'] == packageName,
+    );
+    if (packageAsset['digest'] != 'sha256:$digest') {
+      throw const FormatException(
+        'The release checksum must match GitHub asset SHA-256 digest',
+      );
+    }
+
     final ref = utf8.decode(files[1]).trim();
     if (!RegExp(r'^[a-f0-9]{40}$').hasMatch(ref)) {
       throw const FormatException(

@@ -25,9 +25,9 @@ class PluginManifest(val json: JSONObject) {
 
     init {
         require(json.getInt("schemaVersion") == 1) { "Unsupported manifest schema" }
-        require(apiVersion in 1..2) { "This plugin needs a different SDK version" }
+        require(apiVersion == 1) { "This plugin needs a different SDK version" }
         require(minAndroidSdk >= 24) { "Minimum Android SDK must be at least 24" }
-        require(capabilities.all { it == "overlay" || (apiVersion >= 2 && it in setOf("native", "entities")) }) { "Unsupported plugin capability" }
+        require(capabilities.all { it in setOf("overlay", "native", "entities", "host.read", "host.control") }) { "Unsupported plugin capability" }
         text(json, "description", 1000)
         text(json, "author", 120)
         text(json, "license", 120)
@@ -69,9 +69,9 @@ class PluginManifest(val json: JSONObject) {
         when (setting.getString("type")) {
             "string" -> require(value is String && value.length <= 512) { "Text settings must be at most 512 characters" }
             "boolean" -> require(value is Boolean) { "Expected a boolean setting" }
-            "color" -> require(apiVersion >= 2 && value is String && value.matches(Regex("#[a-fA-F0-9]{6}"))) { "Expected an RGB hex color" }
+            "color" -> require(value is String && value.matches(Regex("#[a-fA-F0-9]{6}"))) { "Expected an RGB hex color" }
             "number" -> {
-                require(apiVersion >= 2 && value is Number) { "Expected a numeric setting" }
+                require(value is Number) { "Expected a numeric setting" }
                 val min = setting.getDouble("min")
                 val max = setting.getDouble("max")
                 val step = setting.optDouble("step", 1.0)
@@ -82,7 +82,7 @@ class PluginManifest(val json: JSONObject) {
             }
             "select" -> {
                 val options = setting.getJSONArray("options")
-                require(apiVersion >= 2 && options.length() in 1..32 && value is String) { "Invalid selection setting" }
+                require(options.length() in 1..32 && value is String) { "Invalid selection setting" }
                 val choices = (0 until options.length()).map { options.getString(it) }
                 require(choices.all { it.isNotBlank() && it.length <= 80 } && choices.toSet().size == choices.size && value in choices) { "Unknown selection option" }
             }
