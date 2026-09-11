@@ -96,6 +96,8 @@ For voice control, install [Voice Satellite](https://github.com/jxlarrea/voice-s
 
 &bull; **Device guides:** [Amazon Fire tablets](docs/fire.md) and [Meta Portal](docs/portal.md).
 
+&bull; **Plugin Manager:** Install and create [community plugins](docs/plugins.md) for Kiosk Satellite.
+
 </details>
 
 ## Thank you for your support
