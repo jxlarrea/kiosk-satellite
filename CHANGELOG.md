@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.39 - 2026-09-11
 
 ### Added
 - **Plugin subpages show live readings.** Published sensors, selects and switches appear as read-only label/value rows with units, numeric precision and multiline text on-device and in Remote Admin. Updates preserve settings edits and work without ESPHome.
