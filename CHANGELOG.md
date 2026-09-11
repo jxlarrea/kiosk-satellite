@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.37 - 2026-09-10
 
 ### Added
 - **Ambient light diagnostics appear in App Logs.** Logs include the selected sensor's name, vendor and capabilities, registration results and the first lux reading. A warning reports when no readings arrive after the existing retries. Helps investigate [#497](https://github.com/jxlarrea/kiosk-satellite/issues/497).
