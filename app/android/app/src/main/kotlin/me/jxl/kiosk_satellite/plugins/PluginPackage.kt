@@ -22,6 +22,33 @@ object PluginPackage {
     private val nativePath = Regex("native/(arm64-v8a|armeabi-v7a|x86_64)/lib[a-zA-Z0-9_]+\\.so")
     fun nativeFiles(directory: File): List<File> = File(directory, "native").walkTopDown().filter { it.isFile }.toList()
 
+    fun validAssetPath(path: String): Boolean = path.length in 1..240 &&
+        path.split('/').all { it != "." && it != ".." && it.matches(Regex("[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}")) }
+
+    fun assetFile(directory: File, path: String): File {
+        require(validAssetPath(path)) { "Invalid asset path" }
+        val base = File(directory.canonicalFile, "assets")
+        val file = File(base, path)
+        require(base.canonicalFile == base.absoluteFile && file.canonicalFile == file.absoluteFile && file.isFile) { "Asset is missing or outside its package" }
+        return file
+    }
+
+    fun assetFiles(directory: File): List<File> {
+        val base = File(directory.canonicalFile, "assets")
+        require(base.canonicalFile == base.absoluteFile) { "Asset directory cannot be a symbolic link" }
+        return base.walkTopDown().onEnter {
+            require(it.canonicalFile == it.absoluteFile) { "Asset directories cannot be symbolic links" }; true
+        }.filter { it.isFile }.map {
+            assetFile(directory, it.relativeTo(base).invariantSeparatorsPath)
+        }.toList()
+    }
+
+    fun verifyAssets(directory: File, digests: JSONObject) {
+        val files = assetFiles(directory)
+        require(files.size == digests.length()) { "Installed assets failed their integrity check" }
+        for (file in files) require(sha256(file.readBytes()) == digests.getString(file.relativeTo(directory.canonicalFile).invariantSeparatorsPath)) { "Installed asset failed its integrity check" }
+    }
+
     fun verifyManifest(actual: PluginManifest, expected: String) {
         val reviewed = PluginManifest(JSONObject(expected))
         require(jsonValue(actual.json) == jsonValue(reviewed.json)) {
@@ -39,7 +66,8 @@ object PluginPackage {
             ZipInputStream(ByteArrayInputStream(bytes)).use { zip ->
                 while (true) {
                     val entry = zip.nextEntry ?: break
-                    require(!entry.isDirectory && (entry.name in allowed || nativePath.matches(entry.name)) && seen.add(entry.name)) { "Unexpected or duplicate ZIP entry: ${entry.name}" }
+                    require(!entry.isDirectory && (entry.name in allowed || nativePath.matches(entry.name) || (entry.name.startsWith("assets/") && validAssetPath(entry.name.removePrefix("assets/")))) && seen.add(entry.name)) { "Unexpected or duplicate ZIP entry: ${entry.name}" }
+                    require(seen.size <= 512) { "At most 512 package files are supported" }
                     val file = File(destination, entry.name)
                     file.parentFile!!.mkdirs()
                     FileOutputStream(file).use { output ->

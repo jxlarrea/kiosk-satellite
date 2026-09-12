@@ -16,6 +16,16 @@ String pluginScreensaverDocument(String html) => '''<!doctype html>
 <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}iframe{border:0;width:100%;height:100%;pointer-events:none}</style></head>
 <body><iframe sandbox="allow-scripts" srcdoc="${const HtmlEscape(HtmlEscapeMode.attribute).convert(html)}"></iframe></body></html>''';
 
+/// Configuration travels in the fragment, never in the local asset request path.
+Uri? pluginScreensaverAssetUrl(Map<String, Object?> renderer) {
+  final entry = renderer['entry'] as String?;
+  final origin = renderer['assetOrigin'] as String?;
+  if (entry == null || origin == null) return null;
+  return Uri.parse(origin)
+      .resolve('/assets/$entry')
+      .replace(fragment: renderer['dataJson'] as String? ?? '{}');
+}
+
 class PluginScreensaver extends StatelessWidget {
   const PluginScreensaver({
     super.key,
@@ -30,21 +40,21 @@ class PluginScreensaver extends StatelessWidget {
       ValueListenableBuilder<Map<String, Map<String, Object?>>>(
         valueListenable: container.plugins.screensavers,
         builder: (context, renderers, _) {
-          final html = renderers[mode]?['html'] as String?;
-          if (html == null) return const ColoredBox(color: Colors.black);
+          final renderer = renderers[mode];
+          if (renderer == null) return const ColoredBox(color: Colors.black);
           return _Document(
-            key: ValueKey((mode, html)),
+            key: ValueKey((mode, jsonEncode(renderer))),
             container: container,
-            html: html,
+            renderer: renderer,
           );
         },
       );
 }
 
 class _Document extends StatefulWidget {
-  const _Document({super.key, required this.container, required this.html});
+  const _Document({super.key, required this.container, required this.renderer});
   final AppContainer container;
-  final String html;
+  final Map<String, Object?> renderer;
   @override
   State<_Document> createState() => _DocumentState();
 }
@@ -124,54 +134,82 @@ class _DocumentState extends State<_Document> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) => ColoredBox(
-    color: Colors.black,
-    child: _failed
-        ? const SizedBox.expand()
-        : ClipRect(
-            child: Transform.translate(
-              offset: _offset,
-              child: IgnorePointer(
-                child: InAppWebView(
-                  initialData: InAppWebViewInitialData(
-                    data: pluginScreensaverDocument(widget.html),
+  Widget build(BuildContext context) {
+    final assetUrl = pluginScreensaverAssetUrl(widget.renderer);
+    return ColoredBox(
+      color: Colors.black,
+      child: _failed
+          ? const SizedBox.expand()
+          : ClipRect(
+              child: Transform.translate(
+                offset: _offset,
+                child: IgnorePointer(
+                  child: InAppWebView(
+                    initialUrlRequest: assetUrl == null
+                        ? null
+                        : URLRequest(url: WebUri.uri(assetUrl)),
+                    initialData: assetUrl != null
+                        ? null
+                        : InAppWebViewInitialData(
+                            data: pluginScreensaverDocument(
+                              widget.renderer['html'] as String,
+                            ),
+                          ),
+                    initialSettings: InAppWebViewSettings(
+                      webViewAssetLoader: assetUrl == null
+                          ? null
+                          : WebViewAssetLoader(
+                              domain: assetUrl.host,
+                              httpAllowed: false,
+                              pathHandlers: [
+                                InternalStoragePathHandler(
+                                  path: '/assets/',
+                                  directory:
+                                      widget.renderer['assetDirectory']
+                                          as String,
+                                ),
+                              ],
+                            ),
+                      javaScriptEnabled: true,
+                      javaScriptBridgeEnabled: false,
+                      blockNetworkLoads: true,
+                      allowFileAccess: false,
+                      allowContentAccess: false,
+                      allowFileAccessFromFileURLs: false,
+                      allowUniversalAccessFromFileURLs: false,
+                      domStorageEnabled: false,
+                      supportZoom: false,
+                      disableDefaultErrorPage: true,
+                      useShouldOverrideUrlLoading: true,
+                      mediaPlaybackRequiresUserGesture: true,
+                    ),
+                    shouldOverrideUrlLoading: (_, action) async =>
+                        (assetUrl == null
+                            ? const [
+                                'about:blank',
+                                'about:srcdoc',
+                              ].contains(action.request.url.toString())
+                            : action.request.url?.origin == assetUrl.origin &&
+                                  action.request.url?.path == assetUrl.path)
+                        ? NavigationActionPolicy.ALLOW
+                        : NavigationActionPolicy.CANCEL,
+                    onPermissionRequest: (_, request) async =>
+                        PermissionResponse(
+                          resources: request.resources,
+                          action: PermissionResponseAction.DENY,
+                        ),
+                    onCreateWindow: (_, action) async => false,
+                    onWebViewCreated: (controller) {
+                      _controller = controller;
+                      unawaited(_activity());
+                    },
+                    onRenderProcessGone: (_, detail) {
+                      if (mounted) setState(() => _failed = true);
+                    },
                   ),
-                  initialSettings: InAppWebViewSettings(
-                    javaScriptEnabled: true,
-                    javaScriptBridgeEnabled: false,
-                    blockNetworkLoads: true,
-                    allowFileAccess: false,
-                    allowContentAccess: false,
-                    allowFileAccessFromFileURLs: false,
-                    allowUniversalAccessFromFileURLs: false,
-                    domStorageEnabled: false,
-                    supportZoom: false,
-                    disableDefaultErrorPage: true,
-                    useShouldOverrideUrlLoading: true,
-                    mediaPlaybackRequiresUserGesture: true,
-                  ),
-                  shouldOverrideUrlLoading: (_, action) async =>
-                      const [
-                        'about:blank',
-                        'about:srcdoc',
-                      ].contains(action.request.url.toString())
-                      ? NavigationActionPolicy.ALLOW
-                      : NavigationActionPolicy.CANCEL,
-                  onPermissionRequest: (_, request) async => PermissionResponse(
-                    resources: request.resources,
-                    action: PermissionResponseAction.DENY,
-                  ),
-                  onCreateWindow: (_, action) async => false,
-                  onWebViewCreated: (controller) {
-                    _controller = controller;
-                    unawaited(_activity());
-                  },
-                  onRenderProcessGone: (_, detail) {
-                    if (mounted) setState(() => _failed = true);
-                  },
                 ),
               ),
             ),
-          ),
-  );
+    );
+  }
 }

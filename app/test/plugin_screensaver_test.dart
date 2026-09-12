@@ -103,6 +103,23 @@ void main() {
       expect(brightness.last, .8);
     },
   );
+  test(
+    'asset URLs retain relative file paths and encode configuration as a fragment',
+    () {
+      final data = jsonEncode({'text': '</script>#?&%', 'color': '#00D4FF'});
+      final url = pluginScreensaverAssetUrl({
+        'entry': 'dvd/index.html',
+        'assetOrigin': 'https://ks-plugin-test.invalid',
+        'dataJson': data,
+      })!;
+      expect(url.path, '/assets/dvd/index.html');
+      expect(url.query, isEmpty);
+      expect(Uri.decodeComponent(Uri.parse(url.toString()).fragment), data);
+      expect(url.resolve('dvd.css').path, '/assets/dvd/dvd.css');
+      expect(pluginScreensaverAssetUrl({'html': '<h1>inline</h1>'}), isNull);
+    },
+  );
+
   test('render document isolates plugin markup and denies host access', () {
     final document = pluginScreensaverDocument(
       '<script>window.demo = "test";</script>',

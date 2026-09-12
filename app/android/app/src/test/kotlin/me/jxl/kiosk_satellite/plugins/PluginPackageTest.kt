@@ -85,6 +85,34 @@ class PluginPackageTest {
         actual.keys().asSequence().toList().reversed().forEach { reversed.put(it, actual.get(it)) }
         PluginPackage.verifyManifest(PluginManifest(actual), reversed.toString())
     }
+    @Test fun assetsExtractAndTheirStoredDigestsDetectChanges() = inTemp { dir ->
+        val data = ByteArray(300000) { 42 }
+        PluginPackage.extract(zip(
+            "kiosk-satellite-plugin.json" to manifest().toString().toByteArray(),
+            "plugin.jar" to zip("classes.dex" to "dex\n035\u0000test".toByteArray()),
+            "LICENSE" to "Apache-2.0".toByteArray(),
+            "assets/photos/photo.png" to data,
+        ), dir)
+        val file = PluginPackage.assetFile(dir, "photos/photo.png")
+        assertArrayEquals(data, file.readBytes())
+        val digests = JSONObject().put("assets/photos/photo.png", PluginPackage.sha256(data))
+        PluginPackage.verifyAssets(dir, digests)
+        file.setWritable(true)
+        file.writeText("changed")
+        rejects { PluginPackage.verifyAssets(dir, digests) }
+        rejects { PluginPackage.assetFile(dir, "../plugin.jar") }
+    }
+    @Test fun assetTraversalAndSymlinksAreRejected() = inTemp { dir ->
+        for (path in listOf("assets/../outside", "assets//file", "assets/a/../../file", "assets/%2e%2e/file", "assets/a\\file")) {
+            rejects { PluginPackage.extract(zip(path to byteArrayOf(1)), dir) }
+            assertFalse(dir.exists())
+        }
+        File(dir, "assets").mkdirs()
+        val outside = File(dir.parentFile, "outside").apply { writeText("private") }
+        Files.createSymbolicLink(File(dir, "assets/link").toPath(), outside.toPath())
+        rejects { PluginPackage.assetFiles(dir) }
+    }
+
     @Test fun packageExtractsWithoutLoadingCode() = inTemp { dir ->
         val manifest = PluginPackage.extract(packageBytes(), dir)
         assertEquals("hello-world", manifest.id)

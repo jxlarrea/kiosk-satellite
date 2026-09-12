@@ -61,11 +61,17 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             if (entityPending.compareAndSet(false, true)) main.postDelayed(entityUpdate, 250)
         }
         fun closeEntities() { entities.close(); main.removeCallbacks(entityUpdate) }
-        val screensavers = PluginScreensavers()
+        val screensavers = PluginScreensavers(packageDir)
+        fun screensaverSnapshot(): List<Map<String, String>> = screensavers.snapshot().map { item ->
+            if (item.containsKey("entry")) item + mapOf(
+                "assetDirectory" to File(packageDir, "assets").canonicalPath,
+                "assetOrigin" to "https://ks-plugin-$token.invalid"
+            ) else item
+        }
         private val screensaverPending = AtomicBoolean(false)
         private val screensaverUpdate = Runnable {
             screensaverPending.set(false)
-            if (alive.get()) emit("screensavers", mapOf("id" to id, "session" to token, "screensavers" to screensavers.snapshot()), alive)
+            if (alive.get()) emit("screensavers", mapOf("id" to id, "session" to token, "screensavers" to screensaverSnapshot()), alive)
         }
         fun notifyScreensavers() {
             if (screensaverPending.compareAndSet(false, true)) main.postDelayed(screensaverUpdate, 250)
@@ -171,6 +177,11 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             override fun publishScreensaver(key: String, title: String, html: String) {
                 check(alive.get() && "screensaver" in manifest.capabilities) { "Screensaver capability is required" }
                 screensavers.publish(key, title, html)
+                notifyScreensavers()
+            }
+            override fun publishScreensaverAsset(key: String, title: String, entry: String, data: Map<String, Any>) {
+                check(alive.get() && "screensaver" in manifest.capabilities) { "Screensaver capability is required" }
+                screensavers.publishAsset(key, title, entry, data)
                 notifyScreensavers()
             }
             override fun removeScreensaver(key: String) {
@@ -381,7 +392,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 .put("status", sessions[id]?.status ?: "")
                 .put("statusError", sessions[id]?.statusError ?: false)
                 .put("entities", org.json.JSONArray(sessions[id]?.entities?.snapshot() ?: emptyList<Any>()))
-                .put("screensavers", org.json.JSONArray(sessions[id]?.screensavers?.snapshot() ?: emptyList<Any>()))
+                .put("screensavers", org.json.JSONArray(sessions[id]?.screensaverSnapshot() ?: emptyList<Any>()))
                 .put("charts", org.json.JSONArray(sessions[id]?.charts?.snapshot() ?: emptyList<Any>()))
                 .put("lights", org.json.JSONArray(sessions[id]?.lights?.values?.toList() ?: emptyList<Any>()))
                 .put("values", record.optJSONObject("config") ?: JSONObject())
@@ -517,6 +528,9 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             val nativeDigests = JSONObject()
             for (file in PluginPackage.nativeFiles(target)) nativeDigests.put(file.relativeTo(target).invariantSeparatorsPath, PluginPackage.sha256(file.readBytes()))
             record.put("nativeSha256", nativeDigests)
+            val assetDigests = JSONObject()
+            for (file in PluginPackage.assetFiles(target)) assetDigests.put(file.relativeTo(target.canonicalFile).invariantSeparatorsPath, PluginPackage.sha256(file.readBytes()))
+            record.put("assetSha256", assetDigests)
             var committed = false
             try {
                 // Validate and prepare the replacement before interrupting the active plugin.
@@ -583,6 +597,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             val nativeFiles = PluginPackage.nativeFiles(dir)
             require(nativeFiles.size == digests.length()) { "Installed native libraries failed their integrity check" }
             for (file in nativeFiles) require(PluginPackage.sha256(file.readBytes()) == digests.getString(file.relativeTo(dir).invariantSeparatorsPath)) { "Installed native library failed its integrity check" }
+            PluginPackage.verifyAssets(dir, record.optJSONObject("assetSha256") ?: JSONObject())
             val current = Session(id, manifest, dir)
             session = current
             sessions[id] = current
