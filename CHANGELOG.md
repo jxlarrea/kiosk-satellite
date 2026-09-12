@@ -13,12 +13,12 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Search finds Plugin Manager and Shizuku controls.** Both interfaces index custom rows and installed plugins' settings and action configuration rows. Results match row titles and descriptions and open the matching control without running it. Disabled Plugin Manager controls lead to Enable Plugins. Missing descriptions no longer crash Remote Admin search.
 - **Radio playback shows the current song.** Music Assistant radio queues use live song titles, artists, albums and artwork in the floating player and Now Playing. Station details remain the fallback when song metadata is unavailable. Fixes [#507](https://github.com/jxlarrea/kiosk-satellite/issues/507).
 - **Screensavers work during internal Sendspin playback.** Turning off Now Playing instead of the screensaver now allows the configured screensaver to start manually or after the idle timeout and keeps it visible when music starts. Voice interactions, dashboard media and explicit pauses still hold the screensaver. Fixes [#506](https://github.com/jxlarrea/kiosk-satellite/issues/506).
-- **Release APK validation supports Android Build Tools 37.** Signing checks accept numbered signers and labels based on signature schemes or SDK ranges while still rejecting mismatched certificates. Release retries can use corrected workflow scripts while building the original tag without moving it.
 
 ## v2026.9.40 - 2026-09-11
 
 ### Changed
 - **Updates download an APK for the device's architecture.** Releases include smaller ARM 32-bit, ARM 64-bit and x86_64 downloads alongside the universal APK. The updater chooses a compatible build and falls back to universal when needed. The universal filename stays unchanged and remains first for older updaters. All variants share the same version code and signing key. Addresses APK download size in [#502](https://github.com/jxlarrea/kiosk-satellite/issues/502).
+- **Release APK validation supports Android Build Tools 37.** Signing checks accept numbered signers and labels based on signature schemes or SDK ranges while still rejecting mismatched certificates. Release retries can use corrected workflow scripts while building the original tag without moving it.
 
 ## v2026.9.39 - 2026-09-11
 
