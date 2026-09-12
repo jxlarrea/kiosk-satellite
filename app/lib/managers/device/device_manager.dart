@@ -34,6 +34,12 @@ class DeviceManager extends Manager {
   /// reads it as the Device name field's starting value and a widget test
   /// pumps that page without booting the device manager.
   String model = '';
+
+  /// Raw Android build identifiers. Null or empty before init and off Android.
+  String? device;
+  String? board;
+  String? manufacturer;
+  List<String> abis = const [];
   late final String osVersion;
   late final String appVersion;
   late final String packageName;
@@ -157,6 +163,10 @@ class DeviceManager extends Manager {
     if (Platform.isAndroid) {
       final android = await deviceInfo.androidInfo;
       model = '${android.manufacturer} ${android.model}';
+      device = android.device;
+      board = android.board;
+      manufacturer = android.manufacturer;
+      abis = List<String>.unmodifiable(android.supportedAbis);
       osVersion = 'Android ${android.version.release}';
       sdkInt = android.version.sdkInt;
     } else if (Platform.isIOS) {
@@ -709,6 +719,10 @@ class DeviceManager extends Manager {
       'ip': await ipAddress(),
       'ipv6': await ipv6Addresses(),
       'model': model,
+      'device': device,
+      'board': board,
+      'manufacturer': manufacturer,
+      'abis': abis,
       'os': os,
       'osVersion': osVersion,
       'sdkInt': sdkInt,

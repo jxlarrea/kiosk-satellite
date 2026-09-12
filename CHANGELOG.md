@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Plugins can identify Android hardware without root.** `getDeviceInfo` now includes the raw device codename, board, manufacturer and supported ABIs in Android preference order. The existing model display string stays unchanged and the fields use the existing SDK 1 host read. Adds [#509](https://github.com/jxlarrea/kiosk-satellite/issues/509).
+
 ## v2026.9.41 - 2026-09-11
 
 ### Added

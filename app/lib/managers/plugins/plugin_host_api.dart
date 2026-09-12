@@ -155,6 +155,10 @@ class PluginHostApi {
     'getDeviceInfo': [
       'name',
       'model',
+      'device',
+      'board',
+      'manufacturer',
+      'abis',
       'os',
       'osVersion',
       'sdkInt',
@@ -314,7 +318,14 @@ class PluginHostApi {
           ).toJson();
         }
         data = {for (final key in fields) key: data[key]};
-        if (data.values.any((value) => !_scalar(value))) {
+        if (data.entries.any((entry) {
+          final value = entry.value;
+          if (name == 'getDeviceInfo' && entry.key == 'abis') {
+            return value != null &&
+                !(value is List && value.every((abi) => abi is String));
+          }
+          return !_scalar(value);
+        })) {
           return const CommandResult.fail(
             'KS returned an unexpected read response',
           ).toJson();

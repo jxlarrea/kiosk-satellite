@@ -205,7 +205,12 @@ void main() {
         'getDeviceInfo',
         (_) async => const CommandResult.ok({
           'name': 'Panel',
-          'model': 'Test',
+          'model': 'Panel Maker Test',
+          'device': 'rk3576_u',
+          'board': 'rk3576',
+          'manufacturer': 'Panel Maker',
+          'abis': ['arm64-v8a', 'armeabi-v7a', 'armeabi'],
+          'sdkInt': 34,
           'ip': 'private',
           'token': 'secret',
         }),
@@ -220,6 +225,12 @@ void main() {
       );
       final data = (await read('getDeviceInfo'))['data'] as Map;
       expect(data['name'], 'Panel');
+      expect(data['model'], 'Panel Maker Test');
+      expect(data['device'], 'rk3576_u');
+      expect(data['board'], 'rk3576');
+      expect(data['manufacturer'], 'Panel Maker');
+      expect(data['abis'], ['arm64-v8a', 'armeabi-v7a', 'armeabi']);
+      expect(data['sdkInt'], 34);
       expect(data.containsKey('ip'), false);
       expect(data.containsKey('token'), false);
       expect(
@@ -350,6 +361,42 @@ void main() {
     final result = await read('haStatus');
     expect(result['ok'], false);
     expect(result.toString(), isNot(contains('secret')));
+  });
+
+  test('device reads allow only string lists for ABIs', () async {
+    Object? abis;
+    Object? board;
+    register(
+      'getDeviceInfo',
+      (_) async => CommandResult.ok({'abis': abis, 'board': board}),
+    );
+    for (final valid in [
+      null,
+      <String>[],
+      ['armeabi-v7a'],
+    ]) {
+      abis = valid;
+      final result = await read('getDeviceInfo');
+      expect(result['ok'], true);
+      expect((result['data'] as Map)['abis'], valid);
+    }
+    for (final invalid in [
+      'arm64-v8a',
+      ['arm64-v8a', 32],
+      [
+        ['arm64-v8a'],
+      ],
+      {'abi': 'arm64-v8a'},
+    ]) {
+      abis = invalid;
+      expect((await read('getDeviceInfo'))['ok'], false);
+    }
+    abis = ['arm64-v8a'];
+    board = ['rk3576'];
+    expect((await read('getDeviceInfo'))['ok'], false);
+    board = null;
+    abis = ['x' * 40000];
+    expect((await read('getDeviceInfo'))['ok'], false);
   });
 
   test('unexpected objects and oversized results are refused', () async {
