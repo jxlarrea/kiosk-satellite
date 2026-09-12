@@ -1214,6 +1214,65 @@ void main() {
     },
   );
 
+  testWidgets(
+    'entity settings use the shared picker and save selection or clear',
+    (tester) async {
+      installed[0]['settings'] = [
+        {
+          'key': 'entity',
+          'title': 'Home Assistant entity',
+          'type': 'entity',
+          'default': '',
+        },
+      ];
+      installed[0]['values'] = {'entity': ''};
+      commands.register(
+        Command(
+          name: 'haSearchEntities',
+          description: 'test',
+          handler: (params) async {
+            expect(params['query'], 'room');
+            return const CommandResult.ok([
+              {
+                'entity_id': 'sensor.room',
+                'name': 'Room temperature',
+                'state': '21',
+              },
+            ]);
+          },
+        ),
+      );
+      await plugins.refresh();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PluginDetailPanel(plugins: plugins, id: 'hello-world'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+      await tester.tap(find.text('Home Assistant entity'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'room');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Room temperature'));
+      await tester.pumpAndSettle();
+      expect(find.text('sensor.room'), findsOneWidget);
+      expect((installed[0]['values'] as Map)['entity'], 'sensor.room');
+      await tester.tap(find.text('Home Assistant entity'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear'));
+      await tester.pumpAndSettle();
+      expect((installed[0]['values'] as Map)['entity'], '');
+      expect(find.text('Save settings'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('SDK 1 controls retain edits during runtime status updates', (
     tester,
   ) async {

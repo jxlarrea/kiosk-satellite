@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
+import '../core/command_registry.dart';
 import 'kit.dart';
 import 'toast.dart';
 
@@ -19,9 +20,24 @@ Future<(String, String)?> pickHomeAssistantEntity(
   BuildContext context,
   AppContainer container, {
   String title = 'Entity',
+}) => pickHomeAssistantEntityFromCommands(
+  context,
+  container.commands,
+  title: title,
+);
+
+Future<(String, String)?> pickHomeAssistantEntityFromCommands(
+  BuildContext context,
+  CommandRegistry commands, {
+  String title = 'Entity',
+  bool allowClear = false,
 }) => showDialog<(String, String)>(
   context: context,
-  builder: (context) => _EntityPickerDialog(container: container, title: title),
+  builder: (context) => _EntityPickerDialog(
+    commands: commands,
+    title: title,
+    allowClear: allowClear,
+  ),
 );
 
 /// Attributes that are presentation metadata rather than values anyone
@@ -80,9 +96,14 @@ Future<String?> pickEntityAttribute(
 }
 
 class _EntityPickerDialog extends StatefulWidget {
-  const _EntityPickerDialog({required this.container, required this.title});
+  const _EntityPickerDialog({
+    required this.commands,
+    required this.title,
+    this.allowClear = false,
+  });
 
-  final AppContainer container;
+  final CommandRegistry commands;
+  final bool allowClear;
   final String title;
 
   @override
@@ -125,7 +146,7 @@ class _EntityPickerDialogState extends State<_EntityPickerDialog> {
       _searching = true;
       _error = null;
     });
-    final result = await widget.container.commands.execute('haSearchEntities', {
+    final result = await widget.commands.execute('haSearchEntities', {
       'query': query,
     });
     if (!mounted) return;
@@ -221,6 +242,11 @@ class _EntityPickerDialogState extends State<_EntityPickerDialog> {
         ),
       ),
       actions: [
+        if (widget.allowClear)
+          TextButton(
+            onPressed: () => Navigator.pop(context, ('', '')),
+            child: const Text('Clear'),
+          ),
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),

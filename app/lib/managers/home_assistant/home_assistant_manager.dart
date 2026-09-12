@@ -18,6 +18,7 @@ import '../browser/rotation_fade_script.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'dashboard_list.dart';
+import 'plugin_entities.dart';
 
 /// Home Assistant connection: long-lived-token auth, connection validation,
 /// and the dashboard list used by the dashboard picker.
@@ -31,6 +32,12 @@ class HomeAssistantManager extends Manager {
   });
 
   final SettingsManager _settings;
+  late final _pluginEntities = HaPluginEntities(
+    baseUrl: () => baseUrl,
+    token: () => _settings.get(defs.haToken),
+    emit: (owner, id, state) =>
+        bus.publish(PluginHaStateChanged(owner, id, state)),
+  );
 
   /// One "minute" of the hold auto-release clock; injectable so tests can
   /// shrink it (the screensaver's screenOffUnit pattern).
@@ -90,6 +97,52 @@ class HomeAssistantManager extends Manager {
 
   @override
   Future<void> init() async {
+    commands.register(
+      Command(
+        name: 'haPluginReadEntity',
+        description: 'Read a selected HA entity for the plugin SDK.',
+        quiet: true,
+        handler: (p) async {
+          if (!HaPluginEntities.validId(p['entityId'])) {
+            return const CommandResult.fail('Invalid entity ID');
+          }
+          return CommandResult.ok(
+            await _pluginEntities.read(p['entityId'] as String),
+          );
+        },
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'haPluginWatchEntity',
+        description: 'Observe a selected HA entity for a plugin session.',
+        quiet: true,
+        handler: (p) async {
+          if (p['owner'] is! String || !HaPluginEntities.validId(p['entityId'])) {
+            return const CommandResult.fail('Invalid entity subscription');
+          }
+          _pluginEntities.watch(p['owner'] as String, p['entityId'] as String);
+          return const CommandResult.ok();
+        },
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'haPluginUnwatchEntity',
+        description: 'Release HA entity subscriptions for a plugin session.',
+        quiet: true,
+        handler: (p) async {
+          if (p['owner'] is! String) {
+            return const CommandResult.fail('Invalid entity subscription');
+          }
+          _pluginEntities.unwatch(
+            p['owner'] as String,
+            p['entityId'] as String?,
+          );
+          return const CommandResult.ok();
+        },
+      ),
+    );
     // Startup validation: the kiosk boots either way (an offline HA must
     // not brick the tablet), but the settings gate stays shut until HA
     // actually answered once this run.
@@ -108,6 +161,7 @@ class HomeAssistantManager extends Manager {
     });
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.haUrl.key || e.key == defs.haToken.key) {
+        _pluginEntities.restart();
         connectionOk.value = false;
         // Another server may speak another language.
         _language = null;
@@ -2246,6 +2300,7 @@ class HomeAssistantManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    _pluginEntities.dispose();
     _themeTimer?.cancel();
     _revalidateTimer?.cancel();
     _rotationTimer?.cancel();

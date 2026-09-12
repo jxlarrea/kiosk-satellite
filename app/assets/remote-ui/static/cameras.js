@@ -504,7 +504,7 @@ export async function glanceEntityPicker(initial) {
    search without the chosen list, for the places that want a single entity
    (the entity widget). Mirrors the device's dialog. Resolves to
    {entity_id, name} when a result is clicked, null when dismissed. */
-export function entitySearchPicker(title = 'Entity') {
+export function entitySearchPicker(title = 'Entity', { allowClear = false } = {}) {
   return new Promise((resolve) => {
     let done = false;
     const finish = (value) => {
@@ -592,6 +592,14 @@ export function entitySearchPicker(title = 'Entity') {
       finish(null);
     });
     cancel.className = 'btn-text';
+    if (allowClear) {
+      const clear = cameraAction('Clear', () => {
+        finish({ entity_id: '', name: '' });
+        shell.close();
+      });
+      clear.className = 'btn-text';
+      shell.foot.append(clear);
+    }
     shell.foot.append(cancel);
     setTimeout(() => search.focus(), 0);
   });

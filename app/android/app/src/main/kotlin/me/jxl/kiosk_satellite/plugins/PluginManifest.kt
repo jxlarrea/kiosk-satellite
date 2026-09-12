@@ -68,6 +68,7 @@ class PluginManifest(val json: JSONObject) {
     private fun validateValue(setting: JSONObject, value: Any) {
         when (setting.getString("type")) {
             "string" -> require(value is String && value.length <= 512) { "Text settings must be at most 512 characters" }
+            "entity" -> require(value is String && (value.isEmpty() || (value.length <= 255 && value.matches(Regex("[a-z0-9_]+\\.[a-z0-9_]+"))))) { "Expected a Home Assistant entity ID" }
             "boolean" -> require(value is Boolean) { "Expected a boolean setting" }
             "color" -> require(value is String && value.matches(Regex("#[a-fA-F0-9]{6}"))) { "Expected an RGB hex color" }
             "number" -> {

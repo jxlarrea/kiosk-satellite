@@ -166,12 +166,15 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             }
             override fun subscribe(event: String) {
                 check(alive.get() && "host.read" in manifest.capabilities) { "SDK 1 host.read access is required" }
-                require(event in PluginHostPolicy.events) { "Unknown KS event" }
+                require(PluginHostPolicy.validEvent(event)) { "Unknown KS event" }
+                if (PluginHostPolicy.entityEvent(event) && event !in subscriptions) {
+                    require(subscriptions.count { PluginHostPolicy.entityEvent(it) } < 16) { "At most 16 entity subscriptions per plugin" }
+                }
                 if (subscriptions.add(event)) emit("hostSubscription", mapOf("id" to id, "session" to token, "event" to event, "subscribed" to true), alive)
             }
             override fun unsubscribe(event: String) {
                 check(alive.get() && "host.read" in manifest.capabilities) { "SDK 1 host.read access is required" }
-                require(event in PluginHostPolicy.events) { "Unknown KS event" }
+                require(PluginHostPolicy.validEvent(event)) { "Unknown KS event" }
                 if (subscriptions.remove(event)) emit("hostSubscription", mapOf("id" to id, "session" to token, "event" to event, "subscribed" to false), alive)
             }
             override fun publishScreensaver(key: String, title: String, html: String) {

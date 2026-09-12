@@ -5,6 +5,7 @@ import '../../core/command_registry.dart';
 import '../../core/event_bus.dart';
 import '../../core/events.dart';
 import '../browser/dashboard_state.dart';
+import '../home_assistant/plugin_entities.dart';
 import '../settings/definitions.dart' as defs;
 
 /// Explicit SDK 1 host surface. Registry additions do not expand plugin access.
@@ -38,6 +39,7 @@ class PluginHostApi {
     'getCameraViewState',
     'getWakeWordState',
     'haStatus',
+    'getHaEntityState',
     'getDashboardState',
   ];
   static const controlNames = [
@@ -88,6 +90,9 @@ class PluginHostApi {
           r'^/?[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*$',
         ).hasMatch(params[key] as String);
     switch (name) {
+      case 'getHaEntityState':
+        return keys({'entityId'}) &&
+            HaPluginEntities.validId(params['entityId']);
       case 'getBrightness':
         return keys({'panel', 'ceiling'}) &&
             params.values.every((v) => v is bool) &&
@@ -210,7 +215,8 @@ class PluginHostApi {
         !capabilities.any((c) => c == 'host.read' || c == 'host.control')) {
       return;
     }
-    _sessions.remove(id)?.close();
+    final previous = _sessions.remove(id);
+    if (previous != null) _closeSession(previous);
     _sessions[id] = _HostSession(
       id,
       token,
@@ -223,7 +229,20 @@ class PluginHostApi {
     final session = _session(args);
     if (session == null) return;
     _sessions.remove(session.id);
+    _closeSession(session);
+  }
+
+  void _closeSession(_HostSession session) {
     session.close();
+    unawaited(
+      commands.execute('haPluginUnwatchEntity', {'owner': session.owner}),
+    );
+  }
+
+  static String? entityEventId(String event) {
+    if (!event.startsWith('ha.entity.')) return null;
+    final id = event.substring('ha.entity.'.length);
+    return HaPluginEntities.validId(id) ? id : null;
   }
 
   _HostSession? _session(Map args) {
@@ -239,14 +258,37 @@ class PluginHostApi {
     if (session == null ||
         !session.canRead ||
         name is! String ||
-        !eventNames.contains(name)) {
+        (!eventNames.contains(name) && entityEventId(name) == null)) {
       return;
     }
+    final entityId = entityEventId(name);
     if (args['subscribed'] == true) {
+      if (session.subscriptions.contains(name)) return;
+      if (entityId != null &&
+          session.subscriptions.where((e) => entityEventId(e) != null).length >=
+              16) {
+        return;
+      }
       session.subscriptions.add(name);
+      if (entityId != null) {
+        unawaited(
+          commands.execute('haPluginWatchEntity', {
+            'owner': session.owner,
+            'entityId': entityId,
+          }),
+        );
+      }
     } else {
       session.subscriptions.remove(name);
       session.pending.remove(name);
+      if (entityId != null) {
+        unawaited(
+          commands.execute('haPluginUnwatchEntity', {
+            'owner': session.owner,
+            'entityId': entityId,
+          }),
+        );
+      }
     }
   }
 
@@ -276,6 +318,9 @@ class PluginHostApi {
     if (name == 'getHostApi') {
       return CommandResult.ok({
         'apiVersion': 1,
+        'entitySubscriptions': session.canRead
+            ? {'eventPrefix': 'ha.entity.', 'maxEntities': 16}
+            : null,
         'capabilities': [
           if (session.canRead) 'host.read',
           if (session.canControl) 'host.control',
@@ -292,7 +337,7 @@ class PluginHostApi {
       final result = await commands
           .as('plugin:${session.id}')
           .execute(
-            name,
+            name == 'getHaEntityState' ? 'haPluginReadEntity' : name,
             name == 'screenOff'
                 ? {'prompt': false}
                 : Map<String, Object?>.from(params),
@@ -322,6 +367,30 @@ class PluginHostApi {
         ).toJson();
       }
       Object? data = result.data;
+      if (name == 'getHaEntityState') {
+        if (data is! Map || data['entityId'] != params['entityId']) {
+          return const CommandResult.fail(
+            'KS returned an unexpected entity response',
+          ).toJson();
+        }
+        final projected = <String, Object?>{
+          for (final key in [
+            'entityId',
+            'status',
+            'state',
+            'attributes',
+            'lastChanged',
+            'lastUpdated',
+          ])
+            key: data[key],
+        };
+        if (utf8.encode(jsonEncode(projected)).length > 32768) {
+          return const CommandResult.fail(
+            'Read response is too large',
+          ).toJson();
+        }
+        return CommandResult.ok(projected).toJson();
+      }
       final fields = _fields[name];
       if (fields != null) {
         if (data is! Map) {
@@ -427,6 +496,22 @@ class PluginHostApi {
   };
 
   void _onEvent(AppEvent event) {
+    if (event is PluginHaStateChanged) {
+      final name = 'ha.entity.${event.entityId}';
+      for (final session in _sessions.values) {
+        if (session.owner != event.owner ||
+            !session.subscriptions.contains(name)) {
+          continue;
+        }
+        if (utf8.encode(jsonEncode(event.data)).length > 30000) continue;
+        session.pending[name] = {
+          ...event.data,
+          'time': DateTime.now().toUtc().toIso8601String(),
+        };
+        _schedule(session);
+      }
+      return;
+    }
     final projected = project(event);
     if (projected == null) return;
     if (projected.$2.values.any((value) => !_scalar(value)) ||
@@ -478,7 +563,7 @@ class PluginHostApi {
   Future<void> dispose() async {
     _disposed = true;
     for (final session in _sessions.values) {
-      session.close();
+      _closeSession(session);
     }
     _sessions.clear();
     await _events.cancel();
@@ -497,6 +582,7 @@ class _HostSession {
   final bool canControl;
   final String id;
   final String token;
+  String get owner => '$id:$token';
   final subscriptions = <String>{};
   final pending = <String, Map<String, Object?>>{};
   Timer? timer;

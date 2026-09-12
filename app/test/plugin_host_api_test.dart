@@ -459,6 +459,100 @@ void main() {
     expect(sent, isEmpty);
   });
 
+  test(
+    'HA reads validate IDs and project only the SDK entity fields',
+    () async {
+      register('haPluginReadEntity', (params) async {
+        expect(params, {'entityId': 'sensor.room'});
+        return const CommandResult.ok({
+          'entityId': 'sensor.room',
+          'status': 'available',
+          'state': '20',
+          'attributes': {'unit': 'C'},
+          'secret': 'hidden',
+        });
+      });
+      for (final id in ['sensor.*', '../config', 'sensor.room?x=y']) {
+        expect(
+          (await read('getHaEntityState', params: {'entityId': id}))['ok'],
+          false,
+        );
+      }
+      final result = await read(
+        'getHaEntityState',
+        params: {'entityId': 'sensor.room'},
+      );
+      expect(result['ok'], true);
+      expect((result['data'] as Map)['attributes'], {'unit': 'C'});
+      expect((result['data'] as Map).containsKey('secret'), false);
+    },
+  );
+
+  test(
+    'entity subscriptions route by session, coalesce per entity and revoke',
+    () async {
+      final watches = <Map<String, Object?>>[];
+      final releases = <Map<String, Object?>>[];
+      register('haPluginWatchEntity', (p) async {
+        watches.add(p);
+        return const CommandResult.ok();
+      });
+      register('haPluginUnwatchEntity', (p) async {
+        releases.add(p);
+        return const CommandResult.ok();
+      });
+      subscribe('ha.entity.sensor.room');
+      subscribe('ha.entity.sensor.other');
+      expect(watches, hasLength(2));
+      expect(watches.first['owner'], 'example:one');
+      bus.publish(
+        const PluginHaStateChanged('wrong:one', 'sensor.room', {
+          'state': 'private',
+        }),
+      );
+      bus.publish(
+        const PluginHaStateChanged('example:one', 'sensor.room', {
+          'state': '20',
+          'attributes': {'unit': 'C'},
+        }),
+      );
+      bus.publish(
+        const PluginHaStateChanged('example:one', 'sensor.other', {
+          'state': 'on',
+        }),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      expect(sent, hasLength(2));
+      expect(sent.any((event) => event.toString().contains('private')), false);
+      sent.clear();
+      subscribe('ha.entity.sensor.room', subscribed: false);
+      bus.publish(
+        const PluginHaStateChanged('example:one', 'sensor.room', {
+          'state': '21',
+        }),
+      );
+      api.close(session);
+      api.open({
+        ...session,
+        'session': 'two',
+        'capabilities': ['host.read'],
+      });
+      bus.publish(
+        const PluginHaStateChanged('example:one', 'sensor.other', {
+          'state': 'stale',
+        }),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      expect(sent, isEmpty);
+      expect(
+        releases.any(
+          (p) => p['owner'] == 'example:one' && !p.containsKey('entityId'),
+        ),
+        true,
+      );
+    },
+  );
+
   test('native and Flutter event contracts match', () {
     final source = File(
       'android/app/src/main/kotlin/me/jxl/kiosk_satellite/plugins/PluginHostPolicy.kt',

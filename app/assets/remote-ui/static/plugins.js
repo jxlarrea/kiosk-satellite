@@ -1,3 +1,4 @@
+import { entitySearchPicker } from './cameras.js';
 import { cmd } from './core.js';
 import { updatePluginCharts } from './plugin-charts.js';
 import { updatePluginReadings } from './plugin-readings.js';
@@ -378,6 +379,15 @@ function render(root, state) {
         input.oninput = () => { values[setting.key] = Number(input.value); output.textContent = `${input.value} ${setting.unit || ''}`.trim(); };
         input.onchange = () => saveSetting(setting.key, Number(input.value), input);
         control.append(input, output); settingRow.append(control);
+      } else if (setting.type === 'entity') {
+        const selected = values[setting.key] ?? setting.default;
+        settingRow.replaceChildren(info(setting.title, selected || setting.description || 'Select an entity'));
+        const choose = iconButton(`Choose ${setting.title}`, 'm9 5 7 7-7 7');
+        choose.onclick = async () => {
+          const entity = await entitySearchPicker(setting.title, { allowClear: true });
+          if (entity) await saveSetting(setting.key, entity.entity_id, choose);
+        };
+        settingRow.append(choose);
       } else if (setting.type === 'select') {
         const select = element('select'); select.setAttribute('aria-label', setting.title);
         for (const choice of setting.options) { const option = element('option', choice); option.value = choice; select.append(option); }

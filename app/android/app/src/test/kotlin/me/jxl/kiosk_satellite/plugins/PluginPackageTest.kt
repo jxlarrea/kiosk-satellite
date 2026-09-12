@@ -10,6 +10,19 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PluginPackageTest {
+    @Test fun entitySettingsAndEventsAcceptOnlyExactEntityIds() {
+        val setting = JSONObject().put("key", "entity").put("title", "Entity").put("type", "entity").put("default", "")
+        val value = PluginManifest(manifest().put("settings", org.json.JSONArray().put(setting)))
+        assertEquals("sensor.room", value.config(JSONObject().put("entity", "sensor.room"))["entity"])
+        for (id in listOf("sensor.*", "../config", "sensor.room?token=x", "sensor.room/more")) {
+            rejects { value.config(JSONObject().put("entity", id)) }
+            assertFalse(PluginHostPolicy.validEvent("ha.entity.$id"))
+        }
+        assertTrue(PluginHostPolicy.validEvent("ha.entity.sensor.room"))
+        assertTrue(PluginHostPolicy.validEvent("device.light"))
+        assertFalse(PluginHostPolicy.validEvent("ha.entity."))
+    }
+
     @Test fun firstPublicSdkSupportsAllExplicitCapabilities() {
         for (capability in listOf("overlay", "native", "entities", "host.read", "host.control", "shizuku")) {
             assertTrue(capability in PluginManifest(manifest().put("capabilities", org.json.JSONArray(listOf(capability)))).capabilities)

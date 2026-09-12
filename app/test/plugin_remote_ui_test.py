@@ -27,7 +27,7 @@ plugin = {
     'id': 'hello-world', 'name': 'Hello World', 'version': '1.0.0',
     'description': 'A floating greeting', 'author': 'Example', 'license': 'Apache-2.0',
     'capabilities': ['overlay'], 'enabled': True, 'running': True,
-    'settings': [{'key': 'message', 'title': 'Greeting', 'type': 'string', 'default': 'Hello'}],
+    'settings': [{'key': 'message', 'title': 'Greeting', 'type': 'string', 'default': 'Hello'}, {'key': 'entity', 'title': 'Home Assistant entity', 'type': 'entity', 'default': ''}],
     'commands': [{'id': 'show', 'title': 'Show window'}], 'values': {'message': 'Hello'},
 }
 installed = [copy.deepcopy(plugin)]
@@ -73,6 +73,8 @@ def api(route):
         if delay_zip:
             held.append((route, result))
             return
+    elif name == 'haSearchEntities':
+        result = [{'entity_id': 'sensor.room', 'name': 'Room temperature', 'state': '21'}]
     elif name == 'checkPluginUpdate':
         assert params == {'id': 'hello-world'}
         result = {**preview, 'installedVersion': installed[0]['version'], 'updateAvailable': update_available, 'compatible': compatible, 'compatibilityError': 'Unsupported SDK' if not compatible else ''}
@@ -146,6 +148,16 @@ try:
         expect(root.get_by_role('button', name='Configure Show window', exact=True)).to_be_enabled()
         expect(root.get_by_role('button', name='Uninstall Hello World')).not_to_be_visible()
         expect(page.locator('#pageTitle')).to_contain_text('Hello World')
+        root.get_by_role('button', name='Choose Home Assistant entity').click()
+        modal = page.locator('.modal-card')
+        modal.get_by_placeholder('Search by name or entity id').fill('room')
+        modal.get_by_text('Room temperature', exact=True).click()
+        expect(root.get_by_text('sensor.room', exact=True)).to_be_visible()
+        assert installed[0]['values']['entity'] == 'sensor.room'
+        root.get_by_role('button', name='Choose Home Assistant entity').click()
+        page.locator('.modal-card').get_by_role('button', name='Clear', exact=True).click()
+        expect(root.get_by_text('sensor.room', exact=True)).to_have_count(0)
+        assert installed[0]['values']['entity'] == ''
         root.get_by_role('textbox', name='Greeting').fill('Changed on the subpage')
         root.get_by_role('textbox', name='Greeting').press('Tab')
         expect(root.get_by_role('button', name='Save settings')).to_have_count(0)

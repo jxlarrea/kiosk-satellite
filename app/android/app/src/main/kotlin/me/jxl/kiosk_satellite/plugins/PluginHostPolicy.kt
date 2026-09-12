@@ -2,6 +2,9 @@ package me.jxl.kiosk_satellite.plugins
 
 /** SDK event contract and per-session bounds for asynchronous commands. */
 internal object PluginHostPolicy {
+    fun entityEvent(event: String) = event.startsWith("ha.entity.") &&
+        event.removePrefix("ha.entity.").let { it.length <= 255 && it.matches(Regex("[a-z0-9_]+\\.[a-z0-9_]+")) }
+    fun validEvent(event: String) = event in events || entityEvent(event)
     val events = setOf(
         "screensaver.state", "screensaver.countdown", "screensaver.view",
         "screen.state", "screen.brightness", "screen.ambient",

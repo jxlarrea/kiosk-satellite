@@ -8,6 +8,8 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../managers/plugins/plugin_manager.dart';
+import '../core/command_registry.dart';
+import 'entity_picker.dart';
 import 'kit.dart';
 import 'plugin_chart.dart';
 import 'plugin_readings.dart';
@@ -677,6 +679,7 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
           _PluginSettings(
             key: ValueKey(widget.id),
             plugin: plugin,
+            commands: widget.plugins.commands,
             busy: _busy,
             run: _run,
           ),
@@ -690,10 +693,12 @@ class _PluginSettings extends StatefulWidget {
   const _PluginSettings({
     super.key,
     required this.plugin,
+    required this.commands,
     required this.busy,
     required this.run,
   });
   final Map<String, Object?> plugin;
+  final CommandRegistry commands;
   final bool busy;
   final Future<void> Function(String, Map<String, Object?>) run;
   @override
@@ -792,6 +797,30 @@ class _PluginSettingsState extends State<_PluginSettings> {
   }
 
   Widget _settingRow(Map raw) {
+    if (raw['type'] == 'entity') {
+      final value = '${_values[raw['key']] ?? raw['default']}';
+      return SettingsRow(
+        title: Text('${raw['title']}'),
+        subtitle: Text(
+          value.isEmpty ? '${raw['description'] ?? 'Select an entity'}' : value,
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        enabled: !_busy,
+        onTap: _busy
+            ? null
+            : () async {
+                final selected = await pickHomeAssistantEntityFromCommands(
+                  context,
+                  widget.commands,
+                  title: '${raw['title']}',
+                  allowClear: true,
+                );
+                if (selected != null && mounted && !_busy) {
+                  await _saveValue('${raw['key']}', selected.$1);
+                }
+              },
+      );
+    }
     if (raw['type'] == 'string') {
       final value = '${_values[raw['key']] ?? raw['default']}';
       return SettingsRow(

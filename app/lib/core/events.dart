@@ -817,3 +817,11 @@ class PluginEntityStateChanged extends AppEvent {
   final String objectId;
   final Object? value;
 }
+
+/// A selected HA entity snapshot addressed to one active plugin session.
+class PluginHaStateChanged extends AppEvent {
+  const PluginHaStateChanged(this.owner, this.entityId, this.data);
+  final String owner;
+  final String entityId;
+  final Map<String, Object?> data;
+}
