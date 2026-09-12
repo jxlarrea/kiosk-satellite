@@ -655,31 +655,11 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
               id: 'plugin:${widget.id}:shizuku',
               child: PluginShizukuPanel(plugins: widget.plugins, id: widget.id),
             ),
-          ValueListenableBuilder<Map<String, List<Map<String, Object?>>>>(
-            valueListenable: widget.plugins.readings,
-            builder: (_, readings, _) =>
-                PluginReadings(readings: readings[widget.id] ?? const []),
-          ),
-          ValueListenableBuilder<Map<String, List<Map<String, Object?>>>>(
-            valueListenable: widget.plugins.charts,
-            builder: (context, charts, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if ((charts[widget.id] ?? const []).isNotEmpty)
-                  const SectionHeading('Charts'),
-                for (final chart
-                    in charts[widget.id] ?? const <Map<String, Object?>>[])
-                  PluginChart(
-                    key: ValueKey('${widget.id}:${chart['key']}'),
-                    chart: chart,
-                  ),
-              ],
-            ),
-          ),
           _PluginSettings(
             key: ValueKey(widget.id),
             plugin: plugin,
             commands: widget.plugins.commands,
+            plugins: widget.plugins,
             busy: _busy,
             run: _run,
           ),
@@ -694,11 +674,13 @@ class _PluginSettings extends StatefulWidget {
     super.key,
     required this.plugin,
     required this.commands,
+    required this.plugins,
     required this.busy,
     required this.run,
   });
   final Map<String, Object?> plugin;
   final CommandRegistry commands;
+  final PluginManager plugins;
   final bool busy;
   final Future<void> Function(String, Map<String, Object?>) run;
   @override
@@ -804,7 +786,7 @@ class _PluginSettingsState extends State<_PluginSettings> {
         subtitle: Text(
           value.isEmpty ? '${raw['description'] ?? 'Select an entity'}' : value,
         ),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: const Icon(Icons.edit_outlined),
         enabled: !_busy,
         onTap: _busy
             ? null
@@ -1017,10 +999,7 @@ class _PluginSettingsState extends State<_PluginSettings> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (settings.isNotEmpty) ...[
-          for (final group
-              in settings
-                  .map((raw) => '${(raw as Map)['group'] ?? 'Settings'}')
-                  .toSet()) ...[
+          for (final group in pluginSettingsGroups(plugin)) ...[
             SectionHeading(group),
             SettingsCard(
               children: [
@@ -1033,8 +1012,14 @@ class _PluginSettingsState extends State<_PluginSettings> {
                   ),
               ],
             ),
+            _PluginGroupOutput(
+              plugins: widget.plugins,
+              plugin: plugin,
+              group: group,
+            ),
           ],
         ],
+        _PluginGroupOutput(plugins: widget.plugins, plugin: plugin),
         if (commands.isNotEmpty) ...[
           const SectionHeading('Actions'),
           SettingsCard(
@@ -1056,4 +1041,65 @@ class _PluginSettingsState extends State<_PluginSettings> {
       ],
     );
   }
+}
+
+List<String> pluginSettingsGroups(Map plugin) => {
+  for (final group in (plugin['groups'] as List? ?? const []).whereType<Map>())
+    '${group['title']}',
+  for (final setting
+      in (plugin['settings'] as List? ?? const []).whereType<Map>())
+    '${setting['group'] ?? 'Settings'}',
+}.toList();
+
+/// Runtime updates stay below their settings without rebuilding editing controls.
+class _PluginGroupOutput extends StatelessWidget {
+  const _PluginGroupOutput({
+    required this.plugins,
+    required this.plugin,
+    this.group,
+  });
+  final PluginManager plugins;
+  final Map plugin;
+  final String? group;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([plugins.readings, plugins.charts]),
+    builder: (context, _) {
+      final groups = (plugin['groups'] as List? ?? const []).whereType<Map>();
+      final layout = groups.where((g) => g['title'] == group).firstOrNull;
+      bool belongs(String kind, String key) {
+        if (group != null) {
+          return (layout?[kind] as List? ?? const []).contains(key);
+        }
+        return !groups.any((g) => (g[kind] as List? ?? const []).contains(key));
+      }
+
+      final charts = (plugins.charts.value[plugin['id']] ?? const [])
+          .where((chart) => belongs('charts', '${chart['key']}'))
+          .toList();
+      final readings = (plugins.readings.value[plugin['id']] ?? const [])
+          .where(
+            (reading) =>
+                belongs('readings', '${reading['type']}.${reading['key']}'),
+          )
+          .toList();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (charts.isNotEmpty && group == null)
+            const SectionHeading('Charts'),
+          for (final chart in charts)
+            PluginChart(
+              key: ValueKey('${plugin['id']}:${chart['key']}'),
+              chart: chart,
+            ),
+          PluginReadings(
+            readings: readings,
+            title: '${layout?['readingsTitle'] ?? 'Readings'}',
+          ),
+        ],
+      );
+    },
+  );
 }

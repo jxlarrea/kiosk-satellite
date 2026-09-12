@@ -5,9 +5,14 @@ import 'theme.dart';
 
 /// A plugin's confirmed entity states, displayed without editing controls.
 class PluginReadings extends StatelessWidget {
-  const PluginReadings({super.key, required this.readings});
+  const PluginReadings({
+    super.key,
+    required this.readings,
+    this.title = 'Readings',
+  });
 
   final List<Map<String, Object?>> readings;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +20,7 @@ class PluginReadings extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionHeading('Readings'),
+        SectionHeading(title),
         SettingsCard(
           children: [
             for (final reading in readings)

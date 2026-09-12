@@ -10,6 +10,19 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PluginPackageTest {
+    @Test fun displayGroupsValidateReferencesAndSettingGroups() {
+        fun grouped(group: JSONObject): JSONObject = manifest().put("groups", org.json.JSONArray().put(group))
+        val group = JSONObject().put("title", "Settings").put("readingsTitle", "Device readings")
+            .put("readings", org.json.JSONArray().put("sensor.wave")).put("charts", org.json.JSONArray().put("demo"))
+        PluginManifest(grouped(group))
+        rejects { PluginManifest(manifest().put("groups", "invalid")) }
+        rejects { PluginManifest(grouped(JSONObject(group.toString()).put("title", "Missing group"))) }
+        rejects { PluginManifest(grouped(JSONObject(group.toString()).put("readings", org.json.JSONArray().put("invalid.wave")))) }
+        rejects { PluginManifest(grouped(JSONObject(group.toString()).put("readings", org.json.JSONArray().put("sensor.wave").put("sensor.wave")))) }
+        rejects { PluginManifest(grouped(JSONObject(group.toString()).put("charts", org.json.JSONArray().put("Bad key")))) }
+        rejects { PluginManifest(manifest().put("groups", org.json.JSONArray().put(group).put(group))) }
+    }
+
     @Test fun entitySettingsAndEventsAcceptOnlyExactEntityIds() {
         val setting = JSONObject().put("key", "entity").put("title", "Entity").put("type", "entity").put("default", "")
         val value = PluginManifest(manifest().put("settings", org.json.JSONArray().put(setting)))

@@ -345,9 +345,21 @@ function render(root, state) {
       row.append(button); access.append(row, hintRow('Shizuku grants Kiosk Satellite shell or root access. Installed plugins run inside KS, so only grant access if you trust them.'));
       page.append(access);
     }
-    const readings = element('div', undefined, 'plugin-readings'); readings.hidden = true; page.append(readings);
-    const charts = element('div', undefined, 'plugin-charts'); charts.hidden = true; page.append(charts);
+    page.pluginGroups = plugin.groups || [];
     const groups = new Map();
+    const appendOutput = (group = '') => {
+      const charts = element('div', undefined, 'plugin-charts'); charts.hidden = true; charts.dataset.pluginGroup = group;
+      const readings = element('div', undefined, 'plugin-readings'); readings.hidden = true; readings.dataset.pluginGroup = group;
+      page.append(charts, readings);
+    };
+    const ensureGroup = (group) => {
+      if (groups.has(group)) return groups.get(group);
+      const panel = element('div', undefined, 'card'); groups.set(group, panel);
+      page.append(heading(group), panel);
+      if (page.pluginGroups.some((entry) => entry.title === group && (entry.charts?.length || entry.readings?.length))) appendOutput(group);
+      return panel;
+    };
+    for (const group of plugin.groups || []) ensureGroup(group.title);
     const values = { ...plugin.values };
     const saveSetting = (key, value, trigger) => run(async () => {
       try {
@@ -358,11 +370,7 @@ function render(root, state) {
     }, trigger);
     for (const setting of plugin.settings || []) {
       const group = setting.group || 'Settings';
-      if (!groups.has(group)) {
-        const panel = element('div', undefined, 'card'); groups.set(group, panel);
-        page.append(heading(group), panel);
-      }
-      const panel = groups.get(group);
+      const panel = ensureGroup(group);
       const settingRow = element('div', undefined, 'row');
       settingRow.dataset.searchId = `plugin:${plugin.id}:setting:${setting.key}`;
       settingRow.append(info(setting.title, setting.description));
@@ -382,7 +390,7 @@ function render(root, state) {
       } else if (setting.type === 'entity') {
         const selected = values[setting.key] ?? setting.default;
         settingRow.replaceChildren(info(setting.title, selected || setting.description || 'Select an entity'));
-        const choose = iconButton(`Choose ${setting.title}`, 'm9 5 7 7-7 7');
+        const choose = iconButton(`Choose ${setting.title}`, 'm16 3 5 5-12 12-6 1 1-6 12-12M14 5l5 5');
         choose.onclick = async () => {
           const entity = await entitySearchPicker(setting.title, { allowClear: true });
           if (entity) await saveSetting(setting.key, entity.entity_id, choose);
@@ -406,6 +414,7 @@ function render(root, state) {
       }
       panel.append(settingRow);
     }
+    appendOutput();
     if (plugin.commands?.length) {
       const actions = element('div', undefined, 'card');
       for (const action of plugin.commands) {
@@ -447,6 +456,21 @@ function updatePluginShizuku(container, state) {
   button.textContent = status === 'permission_required' ? 'Grant access' : 'Set up';
 }
 
+function updateGroupedPluginOutput(page, kind, items) {
+  const layouts = page.pluginGroups || [];
+  items = Array.isArray(items) ? items : [];
+  const key = (item) => kind === 'readings' ? `${item.type}.${item.key}` : item.key;
+  for (const target of page.querySelectorAll(`.plugin-${kind}`)) {
+    const group = target.dataset.pluginGroup;
+    const layout = layouts.find((entry) => entry.title === group);
+    const selected = items.filter((item) => group
+      ? (layout?.[kind] || []).includes(key(item))
+      : !layouts.some((entry) => (entry[kind] || []).includes(key(item))));
+    if (kind === 'charts') updatePluginCharts(target, selected, group ? '' : 'Charts');
+    else updatePluginReadings(target, selected, layout?.readingsTitle || 'Readings');
+  }
+}
+
 let runtimeLoading = false;
 setInterval(async () => {
   const [tab, id] = currentPath.split('/');
@@ -457,8 +481,8 @@ setInterval(async () => {
   runtimeLoading = true;
   try {
     await Promise.allSettled([
-      ['getPluginCharts', container, updatePluginCharts],
-      ['getPluginReadings', page.querySelector('.plugin-readings'), updatePluginReadings],
+      ['getPluginCharts', page, (target, items) => updateGroupedPluginOutput(target, 'charts', items)],
+      ['getPluginReadings', page, (target, items) => updateGroupedPluginOutput(target, 'readings', items)],
       ...(page.querySelector('.plugin-shizuku') ? [['getPluginShizukuState', page.querySelector('.plugin-shizuku'), updatePluginShizuku]] : []),
     ].map(async ([command, target, update]) => {
       const result = await cmd(command, { id }, { timeoutMs: 5000 });

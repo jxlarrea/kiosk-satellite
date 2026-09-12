@@ -1273,6 +1273,141 @@ void main() {
     },
   );
 
+  testWidgets('demo output follows its settings with charts before readings', (
+    tester,
+  ) async {
+    installed[0]['settings'] = [
+      {
+        'key': 'chart',
+        'title': 'Chart option',
+        'type': 'boolean',
+        'default': true,
+        'group': 'Chart demo',
+      },
+      {
+        'key': 'ha',
+        'title': 'Home Assistant entity',
+        'type': 'entity',
+        'default': '',
+        'group': 'Home Assistant demo',
+      },
+      {
+        'key': 'shizuku',
+        'title': 'Shizuku option',
+        'type': 'boolean',
+        'default': false,
+        'group': 'Shizuku demo',
+      },
+    ];
+    installed[0]['groups'] = [
+      {
+        'title': 'Chart demo',
+        'charts': ['demo'],
+        'readingsTitle': 'Chart readings',
+        'readings': ['sensor.wave'],
+      },
+      {
+        'title': 'Home Assistant demo',
+        'readingsTitle': 'Home Assistant readings',
+        'readings': ['text_sensor.ha_state'],
+      },
+      {
+        'title': 'Shizuku demo',
+        'readingsTitle': 'Shizuku readings',
+        'readings': ['text_sensor.shizuku_status'],
+      },
+    ];
+    await plugins.refresh();
+    plugins.charts.value = {
+      'hello-world': [
+        {
+          'key': 'demo',
+          'title': 'Activity chart',
+          'type': 'line',
+          'timestamps': [1000, 2000],
+          'series': [
+            {
+              'name': 'Wave',
+              'values': [1, 2],
+            },
+          ],
+        },
+      ],
+    };
+    plugins.readings.value = {
+      'hello-world': [
+        {'type': 'sensor', 'key': 'wave', 'name': 'Wave reading', 'state': 2},
+        {
+          'type': 'text_sensor',
+          'key': 'ha_state',
+          'name': 'HA reading',
+          'state': 'on',
+        },
+        {
+          'type': 'text_sensor',
+          'key': 'shizuku_status',
+          'name': 'Shizuku reading',
+          'state': 'Ready',
+        },
+      ],
+    };
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PluginDetailPanel(plugins: plugins, id: 'hello-world'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final labels = [
+      'Chart demo',
+      'Chart option',
+      'Activity chart',
+      'Chart readings',
+      'Wave reading',
+      'Home Assistant demo',
+      'Home Assistant entity',
+      'Home Assistant readings',
+      'HA reading',
+      'Shizuku demo',
+      'Shizuku option',
+      'Shizuku readings',
+      'Shizuku reading',
+    ];
+    double previous = -1;
+    for (final label in labels) {
+      expect(find.text(label), findsOneWidget);
+      final y = tester.getTopLeft(find.text(label)).dy;
+      expect(y, greaterThan(previous), reason: label);
+      previous = y;
+    }
+    final row = find.ancestor(
+      of: find.text('Home Assistant entity'),
+      matching: find.byType(SettingsRow),
+    );
+    expect(
+      find.descendant(of: row, matching: find.byIcon(Icons.edit_outlined)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: row, matching: find.byIcon(Icons.chevron_right)),
+      findsNothing,
+    );
+    expect(find.text('Readings'), findsNothing);
+    plugins.readings.value = {
+      'hello-world': [
+        {'type': 'sensor', 'key': 'wave', 'name': 'Wave reading', 'state': 3},
+      ],
+    };
+    await tester.pump();
+    expect(find.text('Home Assistant readings'), findsNothing);
+    expect(find.text('Shizuku readings'), findsNothing);
+    expect(find.text('Chart readings'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('SDK 1 controls retain edits during runtime status updates', (
     tester,
   ) async {

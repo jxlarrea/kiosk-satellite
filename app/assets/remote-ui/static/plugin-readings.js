@@ -20,14 +20,14 @@ export function formatPluginReading(reading) {
   return state === '' ? 'Empty' : String(state);
 }
 
-export function updatePluginReadings(container, readings) {
+export function updatePluginReadings(container, readings, title = 'Readings') {
   readings = Array.isArray(readings) ? readings : [];
   container.hidden = !readings.length;
   if (!readings.length) { container.replaceChildren(); return; }
   let list = container.querySelector('dl');
   if (!list) {
     list = element('dl', 'card plugin-readings-list');
-    container.append(element('div', 'card-title', 'Readings'), list);
+    container.append(element('div', 'card-title', title), list);
   }
   const existing = new Map([...list.children].map(row => [row.dataset.key, row]));
   for (const reading of readings) {

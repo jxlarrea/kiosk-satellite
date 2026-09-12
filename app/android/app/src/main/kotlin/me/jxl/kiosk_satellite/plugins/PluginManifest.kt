@@ -42,6 +42,31 @@ class PluginManifest(val json: JSONObject) {
             if (setting.has("group")) text(setting, "group", 80)
             validateValue(setting, setting.get("default"))
         }
+        require(!json.has("groups") || json.opt("groups") is JSONArray) { "Display groups must be an array" }
+        val groups = json.optJSONArray("groups") ?: JSONArray()
+        require(groups.length() <= 20) { "Too many display groups" }
+        val groupNames = mutableSetOf<String>()
+        val readingKeys = mutableSetOf<String>()
+        val chartKeys = mutableSetOf<String>()
+        val settingGroups = (0 until settings.length()).map { settings.getJSONObject(it).optString("group", "Settings") }.toSet()
+        for (i in 0 until groups.length()) {
+            val group = groups.getJSONObject(i)
+            val title = text(group, "title", 80)
+            require(title in settingGroups && groupNames.add(title)) { "Display groups must name unique settings groups" }
+            if (group.has("readingsTitle")) text(group, "readingsTitle", 80)
+            for ((kind, used, pattern, maximum) in listOf(
+                GroupReferences("readings", readingKeys, "(sensor|text_sensor|binary_sensor|select|switch)\\.[a-z][a-z0-9_]{0,39}", 32),
+                GroupReferences("charts", chartKeys, "[a-z][a-z0-9_]{0,39}", 4)
+            )) {
+                if (!group.has(kind)) continue
+                val references = group.getJSONArray(kind)
+                require(references.length() <= maximum) { "Too many group references" }
+                for (j in 0 until references.length()) {
+                    val reference = references.getString(j)
+                    require(reference.matches(Regex(pattern)) && used.add(reference)) { "Invalid or duplicate group reference" }
+                }
+            }
+        }
         val ids = mutableSetOf<String>()
         for (i in 0 until commands.length()) {
             val command = commands.getJSONObject(i)
@@ -90,6 +115,8 @@ class PluginManifest(val json: JSONObject) {
             else -> throw IllegalArgumentException("Unsupported setting type")
         }
     }
+
+    private data class GroupReferences(val kind: String, val used: MutableSet<String>, val pattern: String, val maximum: Int)
 
     companion object {
         fun text(json: JSONObject, key: String, limit: Int): String {

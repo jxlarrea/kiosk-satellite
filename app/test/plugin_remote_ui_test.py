@@ -30,6 +30,20 @@ plugin = {
     'settings': [{'key': 'message', 'title': 'Greeting', 'type': 'string', 'default': 'Hello'}, {'key': 'entity', 'title': 'Home Assistant entity', 'type': 'entity', 'default': ''}],
     'commands': [{'id': 'show', 'title': 'Show window'}], 'values': {'message': 'Hello'},
 }
+plugin['settings'][0]['group'] = 'Chart demo'
+plugin['settings'][1]['group'] = 'Home Assistant demo'
+plugin['settings'].append({'key': 'diagnostic', 'title': 'Enable diagnostic', 'type': 'boolean', 'default': False, 'group': 'Shizuku demo'})
+plugin['groups'] = [
+    {'title': 'Chart demo', 'charts': ['demo'], 'readingsTitle': 'Chart readings', 'readings': ['sensor.wave']},
+    {'title': 'Home Assistant demo', 'readingsTitle': 'Home Assistant readings', 'readings': ['text_sensor.ha_state']},
+    {'title': 'Shizuku demo', 'readingsTitle': 'Shizuku readings', 'readings': ['text_sensor.shizuku_status']},
+]
+charts = [{'key': 'demo', 'title': 'Activity chart', 'type': 'line', 'timestamps': [1000, 2000], 'series': [{'name': 'Wave', 'values': [1, 2]}]}]
+readings = [
+    {'type': 'sensor', 'key': 'wave', 'name': 'Wave reading', 'state': 2},
+    {'type': 'text_sensor', 'key': 'ha_state', 'name': 'HA reading', 'state': 'on'},
+    {'type': 'text_sensor', 'key': 'shizuku_status', 'name': 'Shizuku reading', 'state': 'Ready'},
+]
 installed = [copy.deepcopy(plugin)]
 requests = []
 compatible = True
@@ -73,6 +87,10 @@ def api(route):
         if delay_zip:
             held.append((route, result))
             return
+    elif name == 'getPluginCharts':
+        result = charts
+    elif name == 'getPluginReadings':
+        result = readings
     elif name == 'haSearchEntities':
         result = [{'entity_id': 'sensor.room', 'name': 'Room temperature', 'state': '21'}]
     elif name == 'checkPluginUpdate':
@@ -148,6 +166,13 @@ try:
         expect(root.get_by_role('button', name='Configure Show window', exact=True)).to_be_enabled()
         expect(root.get_by_role('button', name='Uninstall Hello World')).not_to_be_visible()
         expect(page.locator('#pageTitle')).to_contain_text('Hello World')
+        expect(root.get_by_text('Shizuku reading', exact=True)).to_be_visible(timeout=10000)
+        ordered = ['Chart demo', 'Greeting', 'Activity chart', 'Chart readings', 'Wave reading', 'Home Assistant demo', 'Home Assistant entity', 'Home Assistant readings', 'HA reading', 'Shizuku demo', 'Enable diagnostic', 'Shizuku readings', 'Shizuku reading']
+        positions = [root.get_by_text(label, exact=True).bounding_box()['y'] for label in ordered]
+        assert positions == sorted(positions), 'Demo settings and output are out of order'
+        page.screenshot(path='/tmp/kiosk-plugin-grouped-demo.png', full_page=True)
+        expect(root.locator('.plugin-readings[data-plugin-group="Home Assistant demo"]')).not_to_contain_text('Wave reading')
+        expect(root.locator('.plugin-charts[data-plugin-group="Chart demo"] .card-title')).to_have_count(0)
         root.get_by_role('button', name='Choose Home Assistant entity').click()
         modal = page.locator('.modal-card')
         modal.get_by_placeholder('Search by name or entity id').fill('room')

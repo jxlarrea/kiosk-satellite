@@ -112,11 +112,11 @@ function paint(state) {
   }
 }
 
-export function updatePluginCharts(container, charts) {
+export function updatePluginCharts(container, charts, title = 'Charts') {
   container.hidden = !charts.length;
   const keys = new Set(charts.map(chart => chart.key));
   for (const card of container.querySelectorAll('.plugin-chart')) if (!keys.has(card.dataset.key)) card.remove();
-  if (!container.firstElementChild) container.append(node('div', 'card-title', 'Charts'));
+  if (title && !container.firstElementChild) container.append(node('div', 'card-title', title));
   for (const chart of charts) {
     let card = [...container.querySelectorAll('.plugin-chart')].find(el => el.dataset.key === chart.key);
     if (!card) { card = createChart(); card.dataset.key = chart.key; container.append(card); }
