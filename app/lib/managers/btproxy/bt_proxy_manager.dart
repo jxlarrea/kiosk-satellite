@@ -102,7 +102,11 @@ class BtProxyManager extends Manager {
   // The OUI vendor cache: prefix "AA:BB:CC" to vendor name, '' for a
   // registry miss. Persisted so each prefix is looked up once per install,
   // ever; a home's radio horizon holds a few dozen prefixes at most.
-  Map<String, String> _ouiCache = {};
+  Map<String, String>? _ouiCacheOrNull;
+
+  /// Nearby-device commands also work while the proxy is off. Load their
+  /// saved vendor cache on first use, independently of server startup.
+  Map<String, String> get _ouiCache => _ouiCacheOrNull ??= _loadOuiCache();
   final List<String> _ouiQueue = [];
   Timer? _ouiTimer;
 
@@ -309,12 +313,6 @@ class BtProxyManager extends Manager {
         handler: (_) async => CommandResult.ok((await bleSupport()).toJson()),
       ),
     );
-    // Before the first start, so a build that cannot scan tells Home
-    // Assistant of no proxy from the first connection on.
-    await _guardBleSupport();
-    _ouiCache = _loadOuiCache();
-    final version = await commands.execute('getDeviceInfo', const {});
-    _appVersion = ((version.data as Map?)?['appVersion'] as String?) ?? '0';
     if (_settings.get(defs.esphomeEnabled)) {
       _transition = _transition.then((_) => _start());
     }
@@ -487,7 +485,18 @@ class BtProxyManager extends Manager {
     return _settings.get(defs.remotePort).toInt();
   }
 
+  /// Check BLE support before the server first advertises its capabilities.
+  /// The app version is also needed only when the server starts.
+  Future<void> _ensureStartPrereqs() async {
+    await _guardBleSupport();
+    if (_appVersion == '0') {
+      final version = await commands.execute('getDeviceInfo', const {});
+      _appVersion = ((version.data as Map?)?['appVersion'] as String?) ?? '0';
+    }
+  }
+
   Future<void> _start() async {
+    await _ensureStartPrereqs();
     var key = _settings.get(defs.btproxyKey).trim();
     // Read before the key is generated below: an empty key is what says
     // this install has never announced itself, which is what decides

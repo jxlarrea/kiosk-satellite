@@ -198,9 +198,19 @@ class DlnaManager extends Manager {
   };
   Future<void> _transition = Future.value();
 
+  /// Load the stable renderer identity before its first start. Disabled
+  /// renderers do not need the saved UUID or the full device-info query.
+  Future<void> _ensureIdentity() async {
+    if (_uuid.isEmpty) _uuid = await _settings.secret('dlna_uuid', _newUuid);
+    if (_appVersion.isEmpty) {
+      final version = await commands.execute('getDeviceInfo', const {});
+      _appVersion =
+          ((version.data as Map?)?['appVersion'] as String?) ?? '0.0.0';
+    }
+  }
+
   @override
   Future<void> init() async {
-    _uuid = await _settings.secret('dlna_uuid', _newUuid);
     _settingsSub = bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('dlna.') && e.key != defs.deviceName.key) return;
       // The port row is written by [_start] itself, to report where the
@@ -235,9 +245,6 @@ class DlnaManager extends Manager {
         }),
       ),
     );
-    final version = await commands.execute('getDeviceInfo', const {});
-    _appVersion =
-        ((version.data as Map?)?['appVersion'] as String?) ?? '0.0.0';
     if (_settings.get(defs.dlnaEnabled)) {
       _transition = _transition.then((_) => _start());
     }
@@ -257,6 +264,7 @@ class DlnaManager extends Manager {
   }
 
   Future<void> _start() async {
+    await _ensureIdentity();
     final configured = _settings.get(defs.dlnaPort).trim();
     final port = int.tryParse(configured) ?? defaultDlnaPort;
     try {

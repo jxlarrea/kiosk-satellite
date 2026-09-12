@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **Disabled DLNA and ESPHome defer startup preparation.** Renderer identity and ESPHome device information load when each service starts. Nearby Bluetooth device lookups remain available while ESPHome is disabled. Addresses the DLNA and Bluetooth proxy startup overhead in [#510](https://github.com/jxlarrea/kiosk-satellite/issues/510).
+
 ## v2026.9.42 - 2026-09-12
 
 ### Added
