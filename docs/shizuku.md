@@ -1,6 +1,6 @@
 # Shizuku
 
-**Settings > Device > Shizuku** lets Kiosk Satellite request Android permissions through a running Shizuku service. The same page is available in Remote Admin. It works even when Plugin Manager is disabled.
+**Settings > Device > Shizuku** lets Kiosk Satellite request Android permissions and self update through a running Shizuku service.
 
 ## Connect
 

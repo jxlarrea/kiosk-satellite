@@ -59,7 +59,7 @@
 
 &bull; **Kiosk conveniences:** Use [hand gestures](docs/gestures.md#show-fingers) to run Home Assistant actions or open a camera view by holding up fingers to the device camera. Set Kiosk Satellite as the [home launcher](docs/home-launcher.md) on supported devices so the Home button returns to your dashboard. Arrange up to twelve live feeds in [camera views](docs/cameras.md), with camera imports from Home Assistant or Go2RTC.
 
-Also built in: [PIN-protected kiosk mode](docs/kiosk.md), [touch and clap gestures](docs/gestures.md), [DLNA media playback](docs/dlna.md), [RTSP streaming](docs/camera.md#rtsp-streaming) and more!
+Also built in: [PIN-protected kiosk mode](docs/kiosk.md), [touch and clap gestures](docs/gestures.md), [DLNA media playback](docs/dlna.md), [RTSP streaming](docs/camera.md#rtsp-streaming), [Shizuku support](docs/shizuku.md) and more!
 
 <p align="center">
   <a href="assets/screenshots/now-playing.png"><img src="assets/screenshots/now-playing.png" alt="Now Playing with album artwork and music controls" width="320" /></a>
