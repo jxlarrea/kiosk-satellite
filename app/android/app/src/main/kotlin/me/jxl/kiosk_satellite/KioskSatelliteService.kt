@@ -414,7 +414,7 @@ class KioskSatelliteService : Service() {
         if (!exiting && guarded &&
             android.provider.Settings.canDrawOverlays(this)
         ) {
-            packageManager.getLaunchIntentForPackage(packageName)?.let {
+            HomeRole.launchIntent(this)?.let {
                 it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 try {
                     startActivity(it)
@@ -493,9 +493,10 @@ class KioskSatelliteService : Service() {
         val open = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            },
+            HomeRole.launchIntent(this)
+                ?: Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                },
             PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)

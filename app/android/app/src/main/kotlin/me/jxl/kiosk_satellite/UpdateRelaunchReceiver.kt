@@ -1,8 +1,11 @@
 package me.jxl.kiosk_satellite
 
+import android.app.ActivityManager
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 
 /**
  * Relaunches the kiosk after its own package was replaced.
@@ -18,8 +21,24 @@ import android.content.Intent
 class UpdateRelaunchReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
-        val launch = context.packageManager
-            .getLaunchIntentForPackage(context.packageName) ?: return
+        val launch = HomeRole.launchIntent(context) ?: return
+        if (launch.hasCategory(Intent.CATEGORY_HOME)) {
+            // Package replacement can leave an empty regular task in
+            // recents. Opening it would recreate the competing Activity
+            // even though this update now launches through HOME.
+            val main = ComponentName(context, MainActivity::class.java)
+            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            for (task in manager.appTasks) {
+                try {
+                    val base = task.taskInfo.baseIntent
+                    if (base.component == main && !base.hasCategory(Intent.CATEGORY_HOME)) {
+                        task.finishAndRemoveTask()
+                    }
+                } catch (e: Exception) {
+                    Log.w("UpdateRelaunch", "could not remove an old app task", e)
+                }
+            }
+        }
         context.startActivity(launch)
     }
 }

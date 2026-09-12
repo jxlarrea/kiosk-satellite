@@ -49,12 +49,8 @@ class BackgroundBridge(
         private const val CHANNEL = "kiosk_satellite/background"
         private const val RESTART_REQUEST = 7391
 
-        /** The deliberate restart's relaunch (restartProcess below): the
-         *  launcher intent as a clear-task launch, keyed so the schedule
-         *  and the cancel resolve the same PendingIntent. */
-        private fun restartIntent(context: Context, flags: Int): PendingIntent? {
-            val launch = context.packageManager
-                .getLaunchIntentForPackage(context.packageName) ?: return null
+        /** The deliberate restart's relaunch (restartProcess below). */
+        private fun restartIntent(context: Context, launch: Intent, flags: Int): PendingIntent? {
             launch.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK,
             )
@@ -64,7 +60,8 @@ class BackgroundBridge(
         }
 
         fun scheduleRestartAlarm(context: Context) {
-            val restart = restartIntent(context, PendingIntent.FLAG_CANCEL_CURRENT)
+            val launch = HomeRole.launchIntent(context) ?: return
+            val restart = restartIntent(context, launch, PendingIntent.FLAG_CANCEL_CURRENT)
                 ?: return
             val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             alarm.set(AlarmManager.RTC, System.currentTimeMillis() + 800, restart)
@@ -74,12 +71,20 @@ class BackgroundBridge(
          *  to do. A no-op when none is pending. */
         fun cancelRestartAlarm(context: Context) {
             try {
-                val restart = restartIntent(context, PendingIntent.FLAG_NO_CREATE)
-                    ?: return
                 val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                alarm.cancel(restart)
-                restart.cancel()
-                Log.i("BackgroundBridge", "restart alarm cancelled: the kiosk is up")
+                // Role changes alter PendingIntent identity. Cancel both
+                // routes, including alarms scheduled before this update.
+                val launches = listOfNotNull(
+                    HomeRole.homeLaunchIntent(context),
+                    context.packageManager.getLaunchIntentForPackage(context.packageName),
+                )
+                for (launch in launches) {
+                    val restart = restartIntent(context, launch, PendingIntent.FLAG_NO_CREATE)
+                        ?: continue
+                    alarm.cancel(restart)
+                    restart.cancel()
+                    Log.i("BackgroundBridge", "restart alarm cancelled: the kiosk is up")
+                }
             } catch (e: Exception) {
                 Log.w("BackgroundBridge", "restart alarm cancel failed: $e")
             }
@@ -1179,18 +1184,9 @@ class BackgroundBridge(
         wakeScreen()
         if (!canDrawOverlays()) return false
         return try {
-            // Resume the existing task exactly the way tapping the launcher icon
-            // does. The running Activity (singleTop) and its live WebView are
-            // reused — the card session survives.
-            //
-            // The previous explicit-component intent with NEW_TASK + the empty
-            // taskAffinity could instead spawn a *second* MainActivity instance
-            // in a separate task; its fresh WebView reloaded the page and the
-            // original session was lost. The launcher intent targets the app's
-            // one task deterministically and never does that.
-            val launch = context.packageManager
-                .getLaunchIntentForPackage(context.packageName)
-                ?: return false
+            // Match the current task type so the Activity and its live
+            // WebView stay together when KS is the device's home app.
+            val launch = HomeRole.launchIntent(context) ?: return false
             launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(launch)
             true

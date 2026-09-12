@@ -23,10 +23,9 @@ import android.util.Log
  * The registration rides a manifest activity-alias (HomeAlias, disabled by
  * default) that targets MainActivity. Disabled, the app has zero HOME
  * footprint: it appears in no chooser and no default-apps list. The alias
- * carries no LAUNCHER category, so getLaunchIntentForPackage keeps
- * resolving MainActivity and every recovery path (crash self-heal, boot
- * receiver, update relaunch, task-removed relaunch, bringToFront) is
- * untouched by the role.
+ * carries no LAUNCHER category, so getLaunchIntentForPackage resolves the
+ * regular app entry. Internal launches use [launchIntent] to return to
+ * the HOME task while the kiosk holds the role.
  *
  * Undo is structural, never dependent on stored state: disabling the alias
  * removes the app from HOME resolution entirely and Android re-resolves to
@@ -38,6 +37,7 @@ import android.util.Log
  */
 object HomeRole {
     private const val TAG = "HomeRole"
+    private const val EXTRA_INTERNAL_LAUNCH = "ks.internal_launch"
 
     /** How long the "Set as default" dialog is deferred after enabling the
      *  alias: some OEM role controllers snapshot the candidate list lazily,
@@ -68,6 +68,29 @@ object HomeRole {
 
     private fun homeIntent(): Intent =
         Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+
+    /** Reuse the HOME task when we own it. A LAUNCHER start creates a
+     *  separate standard task even with singleTask. Both activities then
+     *  compete for the process's one Flutter engine. */
+    fun launchIntent(context: Context): Intent? =
+        if (aliasEnabled(context) && isHeld(context)) homeLaunchIntent(context)
+        else context.packageManager.getLaunchIntentForPackage(context.packageName)
+
+    // Keep the component implicit and HOME as the only category.
+    // Older Android versions classify an explicit app-started HOME
+    // component as a standard activity. The package limits resolution
+    // to KS without changing that classification.
+    internal fun homeLaunchIntent(context: Context): Intent =
+        homeIntent().setPackage(context.packageName)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .putExtra(EXTRA_INTERNAL_LAUNCH, true)
+
+    /** Recovery and detection resume the current screen. Only a Home
+     *  button press should close overlays and return to the dashboard. */
+    fun isHomePress(intent: Intent): Boolean =
+        intent.action == Intent.ACTION_MAIN &&
+            intent.hasCategory(Intent.CATEGORY_HOME) &&
+            !intent.getBooleanExtra(EXTRA_INTERNAL_LAUNCH, false)
 
     /** Whether this device lets an app take the HOME role at all, and if
      *  not, why. Fire OS is unsupported outright: its role service claims

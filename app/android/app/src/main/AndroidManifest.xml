@@ -130,10 +130,11 @@
             android:exported="true"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
-        <!-- singleTask with a real affinity: exactly one instance, ever.
+        <!-- singleTask with a real affinity reuses the matching task.
              The scaffold's singleTop + empty affinity meant no launch could
              find the existing task, so the boot receiver (or a redeploy
-             relaunch) rooted a second one beside it. -->
+             relaunch) rooted a second one beside it. HOME is a separate
+             task type, so internal launches also use HomeRole.launchIntent. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -173,8 +174,9 @@
              eligible HOME app. An alias rather than a filter on MainActivity
              so the app has zero HOME footprint while the feature is off, and
              deliberately without a LAUNCHER category so
-             getLaunchIntentForPackage keeps resolving MainActivity and every
-             recovery path stays as it is. Toggled by HomeRole; the crash
+             getLaunchIntentForPackage keeps resolving MainActivity.
+             HomeRole.launchIntent selects HOME for recovery while held.
+             Toggled by HomeRole; the crash
              fuse (HomeFuse) disables it when the kiosk cannot boot. -->
         <activity-alias
             android:name=".HomeAlias"

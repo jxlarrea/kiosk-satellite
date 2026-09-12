@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- **Home launcher updates return to the Home task.** Update relaunches, restarts and recovery use the Home route while KS is the default launcher. Updates also remove regular app tasks left by older versions. This prevents a separate recent-apps instance from taking the shared display engine and leaving Home with a black screen.
+
 ### Changed
 - **Disabled DLNA and ESPHome defer startup preparation.** Renderer identity and ESPHome device information load when each service starts. Nearby Bluetooth device lookups remain available while ESPHome is disabled. Addresses the DLNA and Bluetooth proxy startup overhead in [#510](https://github.com/jxlarrea/kiosk-satellite/issues/510).
 

@@ -424,8 +424,7 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        // Activity already running (launchMode singleTask finds the one
-        // instance): push instead of pull.
+        // Activity already running: push instead of pull.
         intent.getStringExtra("ks.provision")?.let {
             provisionChannel?.invokeMethod("provision", it)
         }
@@ -433,9 +432,7 @@ class MainActivity : FlutterActivity() {
         // front lands here. Everywhere else HOME means "back to the start
         // screen", so the kiosk honors that: Dart closes whatever is open
         // and returns to the dashboard (issue #219).
-        if (intent.action == Intent.ACTION_MAIN &&
-            intent.hasCategory(Intent.CATEGORY_HOME)
-        ) {
+        if (HomeRole.isHomePress(intent)) {
             kioskLock?.notifyHomePressed()
         }
     }

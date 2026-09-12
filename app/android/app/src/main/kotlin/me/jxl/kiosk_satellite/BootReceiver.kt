@@ -33,8 +33,7 @@ class BootReceiver : BroadcastReceiver() {
         // The launcher's own intent, not a bare component one: it carries
         // the flags that surface an existing task instead of rooting a
         // duplicate beside it.
-        val launch = context.packageManager
-            .getLaunchIntentForPackage(context.packageName) ?: return
+        val launch = HomeRole.launchIntent(context) ?: return
         context.startActivity(launch)
     }
 }
