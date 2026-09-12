@@ -197,6 +197,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
+    title: 'Disable muted microphone warning',
+    description:
+        'Hide the muted microphone warning at startup and whenever '
+        'the satellite microphone is muted.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
     title: 'Debug logging',
     description: 'Show Voice Satellite debug info in the browser console.',
     anchorId: 'x:assigned_satellite',

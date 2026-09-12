@@ -9995,6 +9995,18 @@ class _VsControlsSectionState extends State<VsControlsSection> {
       ),
       // Only offered once the settings hook reports the key: an older
       // Voice Satellite silently drops writes it does not know.
+      if (browser != null &&
+          browser.containsKey('disable_muted_microphone_warning'))
+        SwitchListTile(
+          title: const Text('Disable muted microphone warning'),
+          subtitle: const Text(
+            'Hide the muted microphone warning at startup and whenever '
+            'the satellite microphone is muted.',
+          ),
+          value: browser['disable_muted_microphone_warning'] == true,
+          onChanged: (v) =>
+              _applyBrowser({'disable_muted_microphone_warning': v}),
+        ),
       if (browser != null && browser.containsKey('debug'))
         SwitchListTile(
           title: const Text('Debug logging'),

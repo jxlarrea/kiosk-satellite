@@ -98,6 +98,8 @@ export const SEARCH_EXTRAS = [
     desc: 'Stop listening for wake words.' },
   { tab: 'voicesatellite', title: 'Finished speaking detection',
     desc: 'How long a pause ends a voice command.' },
+  { tab: 'voicesatellite', title: 'Disable muted microphone warning',
+    desc: 'Hide the muted microphone warning at startup and whenever the satellite microphone is muted.' },
   { tab: 'voicesatellite', title: 'Debug logging',
     desc: 'Show Voice Satellite debug info in the browser console.' },
   { tab: 'voicesatellite', title: 'Voice Satellite version',

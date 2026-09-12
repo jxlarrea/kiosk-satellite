@@ -230,6 +230,12 @@ export async function renderVsControls(root, { auto = false } = {}) {
   ]) if (row) generalCard.appendChild(row);
   // Only offered once the settings hook reports the key: an older Voice
   // Satellite silently drops writes it does not know.
+  if (browser && 'disable_muted_microphone_warning' in browser) {
+    generalCard.appendChild(toggleRow('Disable muted microphone warning',
+      'Hide the muted microphone warning at startup and whenever the satellite microphone is muted.',
+      browser.disable_muted_microphone_warning === true,
+      (v) => applyBrowser({ disable_muted_microphone_warning: v })));
+  }
   if (browser && 'debug' in browser) {
     generalCard.appendChild(toggleRow('Debug logging',
       'Show Voice Satellite debug info in the browser console.',

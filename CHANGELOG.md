@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Disable muted microphone warnings from Voice Satellite settings.** The new toggle appears above Debug logging on-device and in Remote Admin when the installed integration supports it. Both settings searches include the toggle.
+
 ### Fixed
 - **Home launcher updates return to the Home task.** Update relaunches, restarts and recovery use the Home route while KS is the default launcher. Updates also remove regular app tasks left by older versions. This prevents a separate recent-apps instance from taking the shared display engine and leaving Home with a black screen.
 

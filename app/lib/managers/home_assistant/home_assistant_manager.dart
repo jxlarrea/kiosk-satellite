@@ -500,8 +500,8 @@ class HomeAssistantManager extends Manager {
           name: 'vsSetBrowserSettings',
           description:
               'Change the browser-local Voice Satellite settings (auto '
-              'start, debug logging, skin, theme mode, reactive bar, text '
-              'scale) through '
+              'start, muted microphone warning, debug logging, skin, theme '
+              'mode, reactive bar, text scale) through '
               'the page hook, which persists them to the Home Assistant '
               'panel profile and applies them live.',
           params: const {'settings': 'partial config object'},
