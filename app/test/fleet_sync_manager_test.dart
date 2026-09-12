@@ -156,6 +156,50 @@ void main() {
 
   group('plugins stay local', () {
     test(
+      'plugin screensaver choices and schedules never travel or get overwritten',
+      () async {
+        await build(
+          prefs: {
+            'ks.fleet.leader_info': jsonEncode({
+              'id': 'lead',
+              'name': 'Leader',
+            }),
+          },
+        );
+        const mode = 'plugin:hello-world:dvd';
+        final schedule = jsonEncode([
+          {'at': '00:00', 'mode': mode},
+        ]);
+        await settings.set(defs.screensaverMode, mode);
+        await settings.set(defs.screensaverSchedule, schedule);
+        final profile = SyncProfile(
+          categories: {'Screensaver'},
+          excluded: const {},
+        );
+        final payload = fleet.profileSettings(profile);
+        expect(payload.containsKey(defs.screensaverMode.key), false);
+        expect(payload.containsKey(defs.screensaverSchedule.key), false);
+        expect(
+          FleetSyncManager.acceptable({
+            defs.screensaverMode.key: mode,
+            defs.screensaverSchedule.key: schedule,
+          }),
+          isEmpty,
+        );
+        final (error, _) = await fleet.apply({
+          'version': '2026.9.19',
+          'settings': {
+            defs.screensaverMode.key: 'clock',
+            defs.screensaverSchedule.key: '[]',
+          },
+        });
+        expect(error, isNull);
+        expect(settings.get(defs.screensaverMode), mode);
+        expect(settings.get(defs.screensaverSchedule), schedule);
+      },
+    );
+
+    test(
       'plugin entity exclusions stay local while core exclusions follow the leader',
       () async {
         await build(

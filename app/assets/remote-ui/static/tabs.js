@@ -1,3 +1,4 @@
+import { loadSettings } from './settings.js';
 import { loadCameras } from './cameras.js';
 import { $, state } from './core.js';
 import { loadAboutInfo, loadDeviceInfo } from './device.js';
@@ -181,6 +182,7 @@ export function showTab(name, { push = true, refresh = true } = {}) {
   // while the page stays open.
   if (tab === 'fleet') fleetShown();
   if (tab === 'plugins' && refresh && !sameTab) loadPlugins();
+  if (tab === 'screensaver' && refresh && !sameTab) loadSettings();
   if (tab === 'about') loadAboutInfo();
   // Both notices track something changed on the tablet in Android's own
   // settings, so opening the tab is the moment to re-ask rather than

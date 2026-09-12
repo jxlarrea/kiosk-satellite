@@ -510,6 +510,10 @@ class FleetSyncManager extends Manager {
     if (e.key.startsWith('fleet.')) return;
     final def = _settings.defByKey(e.key);
     if (def == null || def.perDevice) return;
+    if (_pluginScreensaverSetting(e.key, e.previous) ||
+        _pluginScreensaverSetting(e.key, e.value)) {
+      return;
+    }
     if (_containsPluginReferences(e.key) &&
         _sameValue(
           _fleetValue(e.key, e.previous),
@@ -784,7 +788,10 @@ class FleetSyncManager extends Manager {
   Map<String, Object?> profileSettings(SyncProfile profile) {
     final out = <String, Object?>{};
     for (final def in defs.allSettings) {
-      if (!syncs(def, profile)) continue;
+      if (!syncs(def, profile) ||
+          _pluginScreensaverSetting(def.key, _settings.get(def))) {
+        continue;
+      }
       out[def.key] = _fleetValue(def.key, _settings.get(def));
     }
     return out;
@@ -810,11 +817,27 @@ class FleetSyncManager extends Manager {
       for (final e in incoming.entries)
         if (byKey[e.key] case final def?
             when !def.perDevice &&
+                !_pluginScreensaverSetting(e.key, e.value) &&
                 (!_containsPluginReferences(e.key) || e.value is String) &&
                 (e.key != defs.esphomeExcludedEntities.key ||
                     defs.esphomeExcludedEntities.validator!(e.value) == null))
           e.key: _fleetValue(e.key, e.value),
     };
+  }
+
+  /// Renderer choices and schedules containing them are local to the kiosk.
+  static bool _pluginScreensaverSetting(String key, Object? value) {
+    if (key == defs.screensaverMode.key) return defs.isPluginScreensaver(value);
+    if (key != defs.screensaverSchedule.key || value is! String) return false;
+    try {
+      final entries = jsonDecode(value);
+      return entries is List &&
+          entries.whereType<Map>().any(
+            (e) => defs.isPluginScreensaver(e['mode']),
+          );
+    } catch (_) {
+      return false;
+    }
   }
 
   static bool _containsPluginReferences(String key) =>
@@ -1602,7 +1625,9 @@ class FleetSyncManager extends Manager {
     final changes = <String, Object?>{};
     for (final e in wanted.entries) {
       final def = _settings.defByKey(e.key);
-      if (def == null) continue;
+      if (def == null || _pluginScreensaverSetting(e.key, _settings.get(def))) {
+        continue;
+      }
       final value = switch (e.key) {
         'gestures.mappings' => _preservePluginGestures(e.value),
         'esphome.excluded_entities' => _preservePluginEntityExclusions(e.value),

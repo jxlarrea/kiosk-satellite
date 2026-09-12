@@ -425,7 +425,7 @@ export function settingRow(s) {
     const modeDef = (state.settings || []).find((x) => x.key === 'screensaver.mode');
     const modes = (modeDef && modeDef.options) || [];
     const labels = (modeDef && modeDef.optionLabels) || {};
-    const label = (m) => labels[m] || (m ? m[0].toUpperCase() + m.slice(1) : m);
+    const label = (m) => labels[m] || (m?.startsWith('plugin:') ? 'Unavailable plugin screensaver' : (m ? m[0].toUpperCase() + m.slice(1) : m));
 
     // Real siblings, not a wrapper: the card's dividers are drawn between
     // adjacent .row elements (see the glance editor above).
@@ -473,9 +473,10 @@ export function settingRow(s) {
         full: true, onPick: () => {} });
       timeWrap.append(timeTitle, time.el);
 
+      const choices = [...new Set([...modes, ...(start.mode?.startsWith('plugin:') ? [start.mode] : [])])];
       const modeSel = cameraSelectField('Screensaver',
-        modes.map((m) => ({ value: m, label: label(m) })),
-        modes.includes(start.mode) ? start.mode : ((modeDef && modeDef.value) || 'clock'));
+        choices.map((m) => ({ value: m, label: label(m) })),
+        choices.includes(start.mode) ? start.mode : ((modeDef && modeDef.value) || 'clock'));
 
       // The same switch as the main screensaver page: off, the entry
       // follows the Screensaver brightness setting outside the schedule

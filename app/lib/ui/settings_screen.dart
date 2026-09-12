@@ -1344,9 +1344,16 @@ class _CategoryContentState extends State<_CategoryContent> {
 
   StreamSubscription<FleetSyncChanged>? _fleetEcho;
 
+  void _pluginScreensaversChanged() {
+    if (mounted && widget.category == 'Screensaver') setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
+    widget.container.plugins.screensavers.addListener(
+      _pluginScreensaversChanged,
+    );
     // The Managed banner comes and goes with the leader's pushes.
     _fleetEcho = widget.container.bus.on<FleetSyncChanged>().listen((_) {
       if (mounted) setState(() {});
@@ -1431,6 +1438,9 @@ class _CategoryContentState extends State<_CategoryContent> {
 
   @override
   void dispose() {
+    widget.container.plugins.screensavers.removeListener(
+      _pluginScreensaversChanged,
+    );
     _btAdapterTimer?.cancel();
     _fleetEcho?.cancel();
     _keyEcho?.cancel();
@@ -3858,7 +3868,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
       showKsTimePicker(context, title: 'Time', initial: current);
 
   String _modeLabel(String mode) =>
-      screensaverMode.optionLabels?[mode] ??
+      widget.container.settings.optionLabel(screensaverMode, mode) ??
       (mode.isEmpty ? mode : mode[0].toUpperCase() + mode.substring(1));
 
   /// The row's second line: the mode, then only the overrides actually set,
@@ -4014,12 +4024,21 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                       label: 'Screensaver',
                       child: DropdownButtonFormField<String>(
                         initialValue:
-                            screensaverMode.options!.contains(entry['mode'])
+                            (widget.container.settings
+                                    .optionsFor(screensaverMode)
+                                    .contains(entry['mode']) ||
+                                isPluginScreensaver(entry['mode']))
                             ? entry['mode'] as String
                             : screensaverMode.defaultValue,
                         decoration: const InputDecoration(),
                         items: [
-                          for (final mode in screensaverMode.options!)
+                          for (final mode in {
+                            ...widget.container.settings.optionsFor(
+                              screensaverMode,
+                            ),
+                            if (isPluginScreensaver(entry['mode']))
+                              entry['mode'] as String,
+                          })
                             DropdownMenuItem(
                               value: mode,
                               child: Text(_modeLabel(mode)),
@@ -8756,7 +8775,7 @@ class SettingTile extends StatelessWidget {
   /// screensaver only makes sense with Home Assistant connected, so its option
   /// is hidden until a URL and token are set.
   List<String> _optionsFor(SettingDef<Object> def) {
-    final options = List<String>.from(def.options ?? const <String>[]);
+    final options = List<String>.from(c.settings.optionsFor(def));
     if (def.key == screensaverMode.key && !c.homeAssistant.configured) {
       options.remove('media');
     }
@@ -8880,7 +8899,7 @@ class SettingTile extends StatelessWidget {
         // label ('media' → "Home Assistant Media"), or Capitalised as a
         // fallback.
         String label(String option) =>
-            def.optionLabels?[option] ??
+            c.settings.optionLabel(def, option) ??
             (option.isEmpty
                 ? option
                 : option[0].toUpperCase() + option.substring(1));

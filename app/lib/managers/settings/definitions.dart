@@ -1557,6 +1557,13 @@ const screensaverMiniClockDate = SettingDef<bool>(
   hidden: true,
 );
 
+/// Stable renderer identity, retained across plugin updates and unavailable sessions.
+bool isPluginScreensaver(Object? value) =>
+    value is String &&
+    RegExp(
+      r'^plugin:[a-z][a-z0-9_-]{0,63}:[a-z][a-z0-9_]{0,39}$',
+    ).hasMatch(value);
+
 const screensaverMode = SettingDef<String>(
   key: 'screensaver.mode',
   type: SettingType.select,

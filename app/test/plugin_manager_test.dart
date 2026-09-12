@@ -74,6 +74,40 @@ void main() {
     'buttonLabel': 'Say hello',
   });
 
+  test('screensavers reject stale sessions and clear on disable', () async {
+    final renderer = {'key': 'dvd', 'title': 'DVD Logo', 'html': '<p>DVD</p>'};
+    Future<void> open(String token) => native('hostSession', {
+      'id': 'hello-world',
+      'session': token,
+      'capabilities': ['screensaver'],
+    });
+    Future<void> publish(String token) => native('screensavers', {
+      'id': 'hello-world',
+      'session': token,
+      'screensavers': [renderer],
+    });
+    await open('first');
+    await publish('first');
+    expect(
+      plugins.screensaverOptions['plugin:hello-world:dvd'],
+      'DVD Logo (Hello World)',
+    );
+    await open('second');
+    expect(plugins.screensavers.value, isEmpty);
+    await publish('first');
+    expect(plugins.screensavers.value, isEmpty);
+    await publish('second');
+    await native('hostSessionClosed', {
+      'id': 'hello-world',
+      'session': 'first',
+    });
+    expect(plugins.screensavers.value, hasLength(1));
+    await plugins.setEnabled(false);
+    expect(plugins.screensavers.value, isEmpty);
+    await publish('second');
+    expect(plugins.screensavers.value, isEmpty);
+  });
+
   testWidgets('Shizuku is opt-in and permission requests require a user tap', (
     tester,
   ) async {

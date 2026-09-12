@@ -18,6 +18,24 @@ class SettingsManager extends Manager {
 
   late SharedPreferences _prefs;
 
+  /// Live renderer names, supplied by the plugin runtime without persisting HTML.
+  Map<String, String> Function() pluginScreensavers = () => const {};
+  List<String> optionsFor(SettingDef<Object> def) => [
+    ...?def.options,
+    if (def.key == screensaverMode.key) ...{
+      ...pluginScreensavers().keys,
+      if (isPluginScreensaver(get(def))) get(def) as String,
+    },
+  ];
+  String? optionLabel(SettingDef<Object> def, String value) =>
+      def.optionLabels?[value] ??
+      (def.key == screensaverMode.key
+          ? pluginScreensavers()[value] ??
+                (isPluginScreensaver(value)
+                    ? 'Unavailable plugin screensaver'
+                    : null)
+          : null);
+
   static const _prefix = 'ks.';
 
   /// True while an onboarding import's detached tail (permission prompts on
@@ -451,7 +469,10 @@ class SettingsManager extends Manager {
       case SettingType.string || SettingType.password when value is String:
         await set(def, value, source: source);
       case SettingType.select
-          when value is String && (def.options?.contains(value) ?? false):
+          when value is String &&
+              (optionsFor(def).contains(value) ||
+                  (def.key == screensaverMode.key &&
+                      isPluginScreensaver(value))):
         await set(def, value, source: source);
       default:
         return false;
@@ -505,8 +526,16 @@ class SettingsManager extends Manager {
         if (def.hidden || deviceHiddenKeys.contains(def.key)) 'hidden': true,
         if (def.multiline) 'multiline': true,
         if (def.placeholder != null) 'placeholder': def.placeholder,
-        if (def.options != null) 'options': def.options,
-        if (def.optionLabels != null) 'optionLabels': def.optionLabels,
+        if (def.options != null) 'options': optionsFor(def),
+        if (def.optionLabels != null)
+          'optionLabels': {
+            ...?def.optionLabels,
+            if (def.key == screensaverMode.key) ...pluginScreensavers(),
+            if (def.key == screensaverMode.key &&
+                isPluginScreensaver(get(def)) &&
+                !pluginScreensavers().containsKey(get(def)))
+              get(def) as String: 'Unavailable plugin screensaver',
+          },
         // Number ranges: with min+max present the remote renders a
         // slider, exactly as the device does.
         if (def.min != null) 'min': def.min,

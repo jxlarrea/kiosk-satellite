@@ -113,6 +113,7 @@ class AppContainer {
     glance = GlanceManager(bus, commands, log, settings, homeAssistant);
     shizuku = ShizukuManager(bus, commands, log);
     plugins = PluginManager(bus, commands, log);
+    settings.pluginScreensavers = () => plugins.screensaverOptions;
     remote = RemoteManager(bus, commands, log, settings);
     fleet = FleetManager(bus, commands, log, settings);
     fleetSync = FleetSyncManager(bus, commands, log, settings);

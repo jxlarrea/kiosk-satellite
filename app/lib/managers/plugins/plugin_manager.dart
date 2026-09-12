@@ -43,6 +43,12 @@ class PluginManager extends Manager {
   final readings = ValueNotifier<Map<String, List<Map<String, Object?>>>>({});
   final charts = ValueNotifier<Map<String, List<Map<String, Object?>>>>({});
   final _runtimeSessions = <String, String>{};
+  final screensavers = ValueNotifier<Map<String, Map<String, Object?>>>({});
+  Map<String, String> get screensaverOptions => {
+    for (final entry in screensavers.value.entries)
+      entry.key:
+          '${entry.value['title']} (${installed.value.where((p) => p['id'] == entry.value['pluginId']).firstOrNull?['name'] ?? entry.value['pluginId']})',
+  };
   final windows = ValueNotifier<List<PluginWindow>>(const []);
   final shizuku = ValueNotifier<Map<String, Object?>>(const {
     'status': 'checking',
@@ -95,6 +101,7 @@ class PluginManager extends Manager {
         case 'hostSession':
           final data = call.arguments as Map;
           _runtimeSessions[data['id'] as String] = data['session'] as String;
+          _setScreensavers(data['id'] as String, const []);
           _setCharts(data['id'] as String, const []);
           _setEntities(data['id'] as String, const []);
           _hostReads.open(call.arguments as Map);
@@ -102,6 +109,7 @@ class PluginManager extends Manager {
           final data = call.arguments as Map;
           if (_runtimeSessions[data['id']] == data['session']) {
             _runtimeSessions.remove(data['id']);
+            _setScreensavers(data['id'] as String, const []);
             _setCharts(data['id'] as String, const []);
             _setEntities(data['id'] as String, const []);
           }
@@ -121,6 +129,15 @@ class PluginManager extends Manager {
           if (_runtimeSessions[data['id']] == data['session'] &&
               data['session'] != null) {
             _setCharts(data['id'] as String, data['charts'] as List);
+          }
+        case 'screensavers':
+          final data = call.arguments as Map;
+          if (_runtimeSessions[data['id']] == data['session'] &&
+              data['session'] != null) {
+            _setScreensavers(
+              data['id'] as String,
+              data['screensavers'] as List,
+            );
           }
         case 'shizukuState':
           shizuku.value = Map<String, Object?>.from(call.arguments as Map);
@@ -476,6 +493,20 @@ class PluginManager extends Manager {
     }
   }
 
+  void _setScreensavers(String id, List value) {
+    final next = {...screensavers.value}
+      ..removeWhere((_, item) => item['pluginId'] == id);
+    for (final raw in value.whereType<Map>()) {
+      next['plugin:$id:${raw['key']}'] = {
+        ...Map<String, Object?>.from(raw),
+        'pluginId': id,
+      };
+    }
+    if (jsonEncode(next) != jsonEncode(screensavers.value)) {
+      screensavers.value = next;
+    }
+  }
+
   void _setCharts(String id, List value) {
     final next = value.map((v) => Map<String, Object?>.from(v as Map)).toList();
     if (jsonEncode(charts.value[id] ?? const []) == jsonEncode(next)) return;
@@ -507,6 +538,13 @@ class PluginManager extends Manager {
       for (final item in value) Map<String, Object?>.from(item as Map),
     ];
     for (final item in items) {
+      _setScreensavers(
+        item['id'] as String,
+        enabled.value && item['running'] == true
+            ? item.remove('screensavers') as List? ?? const []
+            : const [],
+      );
+      item.remove('screensavers');
       final data = item.remove('charts');
       final entities = item.remove('entities') as List? ?? const [];
       _runtimeEntities[item['id']
@@ -522,6 +560,12 @@ class PluginManager extends Manager {
             ? data as List? ?? const []
             : const [],
       );
+    }
+    for (final id
+        in screensavers.value.values
+            .map((s) => s['pluginId'] as String)
+            .toSet()) {
+      if (!items.any((p) => p['id'] == id)) _setScreensavers(id, const []);
     }
     for (final id in charts.value.keys.toList()) {
       if (!items.any((p) => p['id'] == id)) {
@@ -676,6 +720,7 @@ class PluginManager extends Manager {
     } catch (_) {}
     readings.dispose();
     charts.dispose();
+    screensavers.dispose();
     installed.dispose();
     windows.dispose();
     shizuku.dispose();

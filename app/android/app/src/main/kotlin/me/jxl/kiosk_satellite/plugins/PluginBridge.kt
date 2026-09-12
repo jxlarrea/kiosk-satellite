@@ -61,6 +61,16 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             if (entityPending.compareAndSet(false, true)) main.postDelayed(entityUpdate, 250)
         }
         fun closeEntities() { entities.close(); main.removeCallbacks(entityUpdate) }
+        val screensavers = PluginScreensavers()
+        private val screensaverPending = AtomicBoolean(false)
+        private val screensaverUpdate = Runnable {
+            screensaverPending.set(false)
+            if (alive.get()) emit("screensavers", mapOf("id" to id, "session" to token, "screensavers" to screensavers.snapshot()), alive)
+        }
+        fun notifyScreensavers() {
+            if (screensaverPending.compareAndSet(false, true)) main.postDelayed(screensaverUpdate, 250)
+        }
+        fun closeScreensavers() { screensavers.close(); main.removeCallbacks(screensaverUpdate) }
         val charts = PluginCharts()
         private val chartPending = AtomicBoolean(false)
         private val chartUpdate = Runnable {
@@ -157,6 +167,16 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 check(alive.get() && "host.read" in manifest.capabilities) { "SDK 1 host.read access is required" }
                 require(event in PluginHostPolicy.events) { "Unknown KS event" }
                 if (subscriptions.remove(event)) emit("hostSubscription", mapOf("id" to id, "session" to token, "event" to event, "subscribed" to false), alive)
+            }
+            override fun publishScreensaver(key: String, title: String, html: String) {
+                check(alive.get() && "screensaver" in manifest.capabilities) { "Screensaver capability is required" }
+                screensavers.publish(key, title, html)
+                notifyScreensavers()
+            }
+            override fun removeScreensaver(key: String) {
+                check(alive.get() && "screensaver" in manifest.capabilities) { "Screensaver capability is required" }
+                screensavers.remove(key)
+                notifyScreensavers()
             }
             override fun publishSeries(key: String, chart: Map<String, Any>) {
                 charts.publish(key, chart)
@@ -361,6 +381,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 .put("status", sessions[id]?.status ?: "")
                 .put("statusError", sessions[id]?.statusError ?: false)
                 .put("entities", org.json.JSONArray(sessions[id]?.entities?.snapshot() ?: emptyList<Any>()))
+                .put("screensavers", org.json.JSONArray(sessions[id]?.screensavers?.snapshot() ?: emptyList<Any>()))
                 .put("charts", org.json.JSONArray(sessions[id]?.charts?.snapshot() ?: emptyList<Any>()))
                 .put("lights", org.json.JSONArray(sessions[id]?.lights?.values?.toList() ?: emptyList<Any>()))
                 .put("values", record.optJSONObject("config") ?: JSONObject())
@@ -427,7 +448,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             // Revoke every host before waiting for stop callbacks from individual plugins.
             sessions.forEach { (id, session) ->
                 session.alive.set(false)
-                session.closeShizuku(); session.closeCharts(); session.closeEntities()
+                session.closeShizuku(); session.closeCharts(); session.closeEntities(); session.closeScreensavers()
                 emit("hideWindow", mapOf("id" to id))
             }
             for (id in sessions.keys.toList()) {
@@ -588,7 +609,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private fun stopSession(id: String) {
         val session = sessions.remove(id) ?: return
         session.alive.set(false)
-        session.closeShizuku(); session.closeCharts(); session.closeEntities()
+        session.closeShizuku(); session.closeCharts(); session.closeEntities(); session.closeScreensavers()
         session.subscriptions.clear()
         emit("hostSessionClosed", mapOf("id" to id, "session" to session.token))
         emit("hideWindow", mapOf("id" to id))

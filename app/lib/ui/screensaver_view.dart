@@ -45,6 +45,7 @@ import '../managers/settings/settings_manager.dart';
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
 import 'clock_faces.dart';
 import 'photo_frames.dart';
+import 'plugin_screensaver.dart';
 
 import 'glance_row.dart';
 import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
@@ -243,6 +244,16 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
               fit: StackFit.expand,
               children: [
                 switch (view) {
+                  final mode when defs.isPluginScreensaver(mode) =>
+                    _Dismissable(
+                      container: container,
+                      child: UiScaleExempt(
+                        child: PluginScreensaver(
+                          container: container,
+                          mode: mode,
+                        ),
+                      ),
+                    ),
                   'clock' => _Dismissable(
                     container: container,
                     child: ClockScreensaver(
