@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.42 - 2026-09-12
 
 ### Added
 - **Plugin demos can group settings and output together.** Manifest display groups place charts and dedicated reading groups below their related settings in both interfaces. Entity pickers use an edit icon instead of a subpage chevron.
