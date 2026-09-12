@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.41 - 2026-09-11
 
 ### Added
 - **Plugin screensavers can bundle assets.** SDK 1 renderers can register an HTML asset and rendering options. Android loads bundled resources directly from verified local files as needed, without embedding them in the inline HTML argument or copying their contents through Flutter. The existing inline API remains supported with a 512 KiB UTF-8 limit.
