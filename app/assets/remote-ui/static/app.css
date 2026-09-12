@@ -771,6 +771,7 @@
   .row:has(.row-error) { flex-wrap: wrap; }
   .row .row-error { flex-basis: 100%; color: var(--error); font-size: 12.5px;
     margin-top: -4px; }
+  .row-error .btn-ghost { margin-left: 8px; }
   /* The switch at Material 3 metrics, the device's Switch: a 52 by 32
      track. Off is surface 2 in a 2px outline ring with a 16 muted thumb,
      on is primary fill with a 24 white thumb. */

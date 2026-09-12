@@ -112,7 +112,7 @@ export function syncGatedRows(key, anchorRow) {
 // The validator's message under a row, in place of nothing: rows.js is
 // where every generic control saves, so the one spot to say a value was
 // refused.
-function showRowError(row, message) {
+function showRowError(row, message, onRetry) {
   let el = row.querySelector('.row-error');
   if (!el) {
     el = document.createElement('div');
@@ -120,6 +120,17 @@ function showRowError(row, message) {
     row.appendChild(el);
   }
   el.textContent = message;
+  if (onRetry) {
+    const retry = document.createElement('button');
+    retry.className = 'btn-ghost';
+    retry.textContent = 'Retry';
+    retry.addEventListener('click', async () => {
+      retry.disabled = true;
+      try { await onRetry(); }
+      finally { retry.disabled = false; }
+    });
+    el.appendChild(retry);
+  }
 }
 function clearRowError(row) { row.querySelector('.row-error')?.remove(); }
 
@@ -191,17 +202,24 @@ export function settingRow(s) {
   info.querySelector('.desc').textContent = s.description;
   row.appendChild(info);
   const save = async (value) => {
-    const res = await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
-    const out = await res.json().catch(() => ({}));
     const cached = (state.settings || []).find((o) => o.key === s.key);
-    // A value the definition's validator turned down: say why, under the
-    // row, and put the control back on the value the device kept. Before
-    // this the page just looked saved while the device held the old value.
-    if (out.rejected?.includes(s.key)) {
-      showRowError(row, out.errors?.[s.key] || 'Not saved.');
+    try {
+      const res = await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
+      const out = await res.json().catch(() => null);
+      if (!res.ok || out?.ok !== true || out.rejected?.includes(s.key)) {
+        throw new Error(out?.errors?.[s.key] || out?.error
+          || 'Could not save this setting. Try again.');
+      }
+    } catch (error) {
       const control = row.querySelector('input, select, textarea');
+      // Keep typed text for correction or retry. Switches, selections and
+      // sliders return to the last confirmed value.
+      const editable = control && (control.tagName === 'TEXTAREA'
+        || (control.tagName === 'INPUT' && !['checkbox', 'range'].includes(control.type)));
+      showRowError(row, error?.message || 'Could not save this setting. Try again.',
+        editable ? () => save(s.type === 'number' ? Number(control.value) : control.value) : null);
       if (control?.type === 'checkbox') control.checked = !!cached?.value;
-      else if (control) {
+      else if (control && !editable) {
         control.value = cached?.value ?? '';
         // A slider paints its fill and label off its input events, so
         // the snap-back has to look like one.
