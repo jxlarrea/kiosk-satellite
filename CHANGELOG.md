@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.43 - 2026-09-12
 
 ### Added
 - **Disable muted microphone warnings from Voice Satellite settings.** The new toggle appears above Debug logging on-device and in Remote Admin when the installed integration supports it. Both settings searches include the toggle.
