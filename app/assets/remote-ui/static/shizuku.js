@@ -19,6 +19,7 @@ function node(tag, className, text) {
 }
 function row(title, hint, action, buttonLabel = 'Grant') {
   const el = node('div', 'row shizuku-action');
+  el.dataset.searchId = `x:shizuku:${action}`;
   const info = node('div', 'info'); info.append(node('div', 'name', title), node('div', 'desc', hint)); el.append(info);
   const button = node('button', action === 'grantAll' ? 'btn-primary' : 'btn-ghost', buttonLabel); button.type = 'button'; button.dataset.shizukuAction = action;
   button.onclick = () => run(action, button); el.append(button); return el;
@@ -82,7 +83,7 @@ export function renderShizukuPage(container) {
   container.append(node('div', 'card-title', 'Permissions'), permissions,
     node('div', 'card-title', 'Help'));
   const help = node('div', 'card');
-  const link = node('a', 'row plugin-guide-row'); link.href = 'https://shizuku.rikka.app/guide/setup/'; link.target = '_blank'; link.rel = 'noopener noreferrer';
+  const link = node('a', 'row plugin-guide-row'); link.dataset.searchId = 'x:shizuku:setup'; link.href = 'https://shizuku.rikka.app/guide/setup/'; link.target = '_blank'; link.rel = 'noopener noreferrer';
   const info = node('div', 'info'); info.append(node('div', 'name', 'Set up Shizuku'), node('div', 'desc', 'Read installation and startup instructions.')); link.append(info);
   help.append(link, hintRow('Shizuku started through ADB must be started again after a device reboot. Shell access does not provide root permissions.'));
   container.append(help); paint();

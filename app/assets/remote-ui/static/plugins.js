@@ -42,14 +42,25 @@ export function pluginReadme(source) {
   return node;
 }
 
+export let pluginSearchState = null;
+let searchStateRequest = null;
+export function refreshPluginSearchState() {
+  if (!searchStateRequest) {
+    searchStateRequest = cmd('getPluginState', {}, {timeoutMs:5000}).then(result => {
+      if (!result.ok) throw new Error(result.error);
+      pluginSearchState = result.data;
+      return result.data;
+    }).finally(() => { searchStateRequest = null; });
+  }
+  return searchStateRequest;
+}
+
 export async function loadPlugins() {
   const root = document.getElementById('tab-plugins');
   if (!root || busy) return;
   busy = true;
   try {
-    const result = await cmd('getPluginState');
-    if (!result.ok) throw new Error(result.error);
-    render(root, result.data);
+    render(root, await refreshPluginSearchState());
   } catch (error) {
     showToast({ title: 'Plugin Manager', message: error.message, kind: 'error' });
   } finally { busy = false; }
@@ -152,12 +163,14 @@ function actionOptionsDialog(action, options) {
 }
 
 function render(root, state) {
+  pluginSearchState = state;
   const plugins = state.plugins || [];
   const pluginsEnabled = state.enabled === true;
   const scroll = document.scrollingElement?.scrollTop || 0;
   root.replaceChildren();
   const introduction = element('div', undefined, 'card');
   const masterRow = element('div', undefined, 'row');
+  masterRow.dataset.searchId = 'x:plugins:master';
   masterRow.append(info('Enable Plugins', introText));
   const masterToggle = element('label', undefined, 'switch plugin-master-switch');
   const master = element('input'); master.type = 'checkbox'; master.checked = pluginsEnabled;
@@ -166,6 +179,7 @@ function render(root, state) {
   introduction.append(masterRow);
   const installCard = element('div', undefined, 'card');
   const addRow = element('div', undefined, 'row plugin-add-row');
+  addRow.dataset.searchId = 'x:plugins:add';
   addRow.append(info('Add plugin', 'Install from a GitHub repository'));
   const add = iconButton('Add plugin', 'M12 5v14M5 12h14'); addRow.append(add);
   const warning = hintRow(trustNotice, { warn: true }); warning.classList.add('plugin-install-warning');
@@ -173,12 +187,14 @@ function render(root, state) {
   const list = element('div', undefined, 'card');
   const developerTools = element('div', undefined, 'card');
   const zipRow = element('div', undefined, 'row plugin-add-row');
+  zipRow.dataset.searchId = 'x:plugins:zip';
   zipRow.append(info('Install from ZIP', 'For developers only: test a local build'));
   const upload = iconButton('Install from ZIP', 'M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4');
   const fileInput = element('input'); fileInput.type = 'file'; fileInput.accept = '.zip,application/zip'; fileInput.hidden = true;
   fileInput.setAttribute('aria-label', 'Plugin ZIP');
   zipRow.append(upload, fileInput); developerTools.append(zipRow);
   const guideRow = element('a', undefined, 'row plugin-guide-row');
+  guideRow.dataset.searchId = 'x:plugins:create';
   guideRow.href = 'https://github.com/jxlarrea/kiosk-satellite-plugin-hello-world';
   guideRow.target = '_blank'; guideRow.rel = 'noopener noreferrer';
   guideRow.append(info('Create a plugin', 'Learn how to create plugins with the Hello World template and documentation.'));
@@ -299,6 +315,7 @@ function render(root, state) {
     const page = element('div', undefined, 'subpage'); page.dataset.subpage = plugin.id; page.dataset.title = plugin.name;
     const description = element('div', undefined, 'card');
     const introRow = element('div', undefined, 'row');
+    introRow.dataset.searchId = `plugin:${plugin.id}:intro`;
     introRow.append(info(plugin.description || ''));
     description.append(introRow);
     if (plugin.status) {
@@ -312,6 +329,7 @@ function render(root, state) {
     if (plugin.capabilities?.includes('shizuku')) {
       const access = element('div', undefined, 'card plugin-shizuku');
       const row = element('div', undefined, 'row');
+      row.dataset.searchId = `plugin:${plugin.id}:shizuku`;
       row.append(info('Shizuku access', 'Checking availability'));
       const button = element('button', 'Set up', 'btn-ghost'); button.type = 'button'; button.disabled = true;
       button.onclick = () => {
@@ -345,6 +363,7 @@ function render(root, state) {
       }
       const panel = groups.get(group);
       const settingRow = element('div', undefined, 'row');
+      settingRow.dataset.searchId = `plugin:${plugin.id}:setting:${setting.key}`;
       settingRow.append(info(setting.title, setting.description));
       const input = element('input'); input.setAttribute('aria-label', setting.title);
       if (setting.type === 'boolean') {
@@ -381,6 +400,7 @@ function render(root, state) {
       const actions = element('div', undefined, 'card');
       for (const action of plugin.commands) {
         const row = element('div', undefined, 'row'); row.append(info(action.title));
+        row.dataset.searchId = `plugin:${plugin.id}:action:${action.id}`;
         const options = plugin.actionOptions?.[action.id] || {};
         row.replaceChildren(info(action.title, ['Gestures', options.drawer && 'Kiosk drawer', options.homeAssistant && 'Home Assistant'].filter(Boolean).join(' · ')));
         const button = iconButton(`Configure ${action.title}`, 'm9 5 7 7-7 7');

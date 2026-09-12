@@ -1,4 +1,6 @@
 import { $, depSatisfied, state } from './core.js';
+import { permissionSpecs } from './permissions.js';
+import { loadPlugins, pluginSearchState, refreshPluginSearchState } from './plugins.js';
 import { TABS, TAB_TITLES, currentPath, setNav, showTab } from './tabs.js';
 
 /* ---- Settings search ---- */
@@ -14,7 +16,7 @@ export const SEARCH_CATEGORY_TABS = {
   'Sendspin': 'sendspin', 'DLNA': 'dlna',
   'ESPHome': 'esphome',
   'Device': 'device', 'Cameras': 'cameras', 'Gestures': 'gestures',
-  'Fleet': 'fleet',
+  'Fleet': 'fleet', 'Plugins': 'plugins',
 };
 // Second-level pages no setting declares: their rows come from the Voice
 // Satellite integration, not from the definitions, so the page that draws
@@ -23,6 +25,24 @@ export const SEARCH_CATEGORY_TABS = {
 export const DEFLESS_SUBPAGES = [['voicesatellite', 'Appearance'],
   ['device', 'Hardware'], ['device', 'Home Assistant'], ['device', 'WebView']];
 export const SEARCH_EXTRAS = [
+  { tab: 'plugins', title: 'Enable Plugins',
+    desc: 'Plugins add additional community developed features to Kiosk Satellite.', anchor: 'x:plugins:master' },
+  { tab: 'plugins', title: 'Add plugin',
+    desc: 'Install from a GitHub repository', anchor: 'x:plugins:add' },
+  { tab: 'plugins', title: 'Install from ZIP',
+    desc: 'For developers only: test a local build', anchor: 'x:plugins:zip' },
+  { tab: 'plugins', title: 'Create a plugin',
+    desc: 'Learn how to create plugins with the Hello World template and documentation.', anchor: 'x:plugins:create' },
+  { tab: 'device', title: 'Shizuku access',
+    desc: 'Checking availability', sub: 'Shizuku', anchor: 'x:shizuku:permission' },
+  { tab: 'device', title: 'Test connection',
+    desc: 'Read the process identity without changing the device.', sub: 'Shizuku', anchor: 'x:shizuku:identity' },
+  { tab: 'device', title: 'Grant all permissions',
+    desc: 'Grant all permissions used by KS, including features that are currently off.', sub: 'Shizuku', anchor: 'x:shizuku:grantAll' },
+  { tab: 'device', title: 'Set up Shizuku',
+    desc: 'Read installation and startup instructions.', sub: 'Shizuku', anchor: 'x:shizuku:setup' },
+  ...permissionSpecs(() => false).map(spec => ({tab:'device', sub:'Shizuku',
+    title:spec.name, desc:spec.held, anchor:`x:shizuku:${spec.key}`})),
   // Fleet Management: the hand-built cards on the leader's page.
   { tab: 'fleet', title: 'Followers',
     desc: 'The kiosks this one leads, their state and a way to add one.',
@@ -142,6 +162,19 @@ export const SEARCH_PAGES = [...document.querySelectorAll('#tabs button')].map((
   isPage: true,
 }));
 
+function pluginSearchEntries() {
+  return (pluginSearchState?.plugins || []).flatMap(plugin => [
+    {tab:'plugins', sub:plugin.id, title:plugin.name, desc:plugin.description || '', anchor:`plugin:${plugin.id}:intro`},
+    ...(plugin.capabilities?.includes('shizuku') ? [{tab:'plugins', sub:plugin.id, title:'Shizuku access', desc:'', anchor:`plugin:${plugin.id}:shizuku`}] : []),
+    ...(plugin.settings || []).map(setting => ({tab:'plugins', sub:plugin.id,
+      title:setting.title, desc:setting.description || '', anchor:`plugin:${plugin.id}:setting:${setting.key}`})),
+    ...(plugin.commands || []).map(action => ({tab:'plugins', sub:plugin.id,
+      title:action.title, desc:['Gestures', plugin.actionOptions?.[action.id]?.drawer && 'Kiosk drawer',
+        plugin.actionOptions?.[action.id]?.homeAssistant && 'Home Assistant'].filter(Boolean).join(' · '),
+      anchor:`plugin:${plugin.id}:action:${action.id}`})),
+  ]);
+}
+
 export function searchSettingsIndex(query) {
   const q = query.trim().toLowerCase();
   if (!q) return [];
@@ -166,7 +199,9 @@ export function searchSettingsIndex(query) {
   DEFLESS_SUBPAGES.forEach(([tab, name]) => addSub(tab, name));
   const hits = [];
   const shown = (key) => (state.settings || []).some((s) => s.key === key && !s.hidden);
-  [...SEARCH_PAGES, ...subs, ...defs, ...SEARCH_EXTRAS].forEach((e, order) => {
+  [...SEARCH_PAGES, ...subs, ...defs, ...SEARCH_EXTRAS, ...pluginSearchEntries()].forEach((raw, order) => {
+    if (typeof raw.title !== 'string' || !raw.title.trim()) return;
+    const e = {...raw, desc: typeof raw.desc === 'string' ? raw.desc : ''};
     if (e.onlyWith && !shown(e.onlyWith)) return;
     const title = e.title.toLowerCase();
     const hay = `${title} ${e.desc.toLowerCase()}`;
@@ -201,6 +236,10 @@ export function renderSearch() {
     return;
   }
   if (!searchReturnTab) {
+    // Read plugin manifests for search without opening pages or invoking controls.
+    refreshPluginSearchState().then(() => {
+      if (searchReturnTab && $('#settingsSearch').value.trim()) renderSearch();
+    }).catch(() => {});
     // The whole path, so leaving the search puts an open second-level page
     // back the way it was.
     searchReturnTab = currentPath || 'dashboard';
@@ -268,6 +307,9 @@ export function renderSearch() {
 // on; climb to the nearest parent that is rendered — the setting that turns
 // the found one on. Mirrors resolveSearchAnchor on the device.
 export function resolveSearchAnchor(e) {
+  if (e.tab === 'plugins' && pluginSearchState?.enabled === false) {
+    return {anchor:'x:plugins:master', sub:''};
+  }
   // A second-level page as a result lands on the entry row that opens it,
   // the way a tab result lands on the top of its tab.
   if (!e.key) return e.entry ? e : e.isPage ? null : e;
@@ -283,6 +325,7 @@ export function resolveSearchAnchor(e) {
 export function findSearchAnchor(tab, a) {
   const root = document.getElementById(`tab-${tab}`);
   if (!root || !a) return null;
+  if (a.anchor) return [...root.querySelectorAll('[data-search-id]')].find(el => el.dataset.searchId === a.anchor) || null;
   if (a.key) return root.querySelector(`[data-key="${a.key}"]`);
   if (a.entry) return root.querySelector(`[data-subpage-entry="${a.entry}"]`);
   for (const n of root.querySelectorAll('.row .info .name')) {
@@ -296,15 +339,17 @@ export function findSearchAnchor(tab, a) {
   return null;
 }
 
-export function jumpToResult(e) {
+export async function jumpToResult(e) {
+  // Build the plugin page before resolving its target, including a disabled master switch.
+  if (e.tab === 'plugins') await loadPlugins();
   const anchor = resolveSearchAnchor(e);
   searchReturnTab = null;
   $('#sidebar').classList.remove('searching');
   setNav(false);
   // A row that moved onto a second-level page is only in the DOM once that
   // page is open, so the jump opens it rather than landing on a hidden row.
-  const sub = anchor?.sub || e.sub;
-  showTab(sub ? `${e.tab}/${sub}` : e.tab);
+  const sub = anchor?.sub ?? e.sub;
+  showTab(sub ? `${e.tab}/${sub}` : e.tab, {refresh:e.tab !== 'plugins'});
   if (!anchor) return;
   // Tabs that render async may not have the row yet; look for a moment.
   let tries = 14;

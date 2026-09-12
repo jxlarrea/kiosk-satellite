@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../managers/settings/definitions.dart';
+import '../managers/wake_word/permission_descriptions.dart';
 
 /// Settings search, One UI style: one index over everything the Settings
 /// panes can show, built from the declarative definitions plus a short list
@@ -54,6 +55,61 @@ class SettingsSearchEntry {
 /// "permissions" or "export" still lands somewhere. Mirrored in the remote
 /// admin's SEARCH_EXTRAS; keep the two lists in step.
 const List<SettingsSearchEntry> handBuiltSearchEntries = [
+  SettingsSearchEntry(
+    category: "Plugins",
+    title: "Enable Plugins",
+    description:
+        "Plugins add additional community developed features to Kiosk Satellite.",
+    anchorId: "x:plugins:master",
+  ),
+  SettingsSearchEntry(
+    category: "Plugins",
+    title: "Add plugin",
+    description: "Install from a GitHub repository",
+    anchorId: "x:plugins:add",
+  ),
+  SettingsSearchEntry(
+    category: "Plugins",
+    title: "Install from ZIP",
+    description: "For developers only: test a local build",
+    anchorId: "x:plugins:zip",
+  ),
+  SettingsSearchEntry(
+    category: "Plugins",
+    title: "Create a plugin",
+    description:
+        "Learn how to create plugins with the Hello World template and documentation.",
+    anchorId: "x:plugins:create",
+  ),
+  SettingsSearchEntry(
+    category: "Device",
+    title: "Shizuku access",
+    description: "Checking availability",
+    subpage: "Shizuku",
+    anchorId: "x:shizuku:permission",
+  ),
+  SettingsSearchEntry(
+    category: "Device",
+    title: "Test connection",
+    description: "Read the process identity without changing the device.",
+    subpage: "Shizuku",
+    anchorId: "x:shizuku:identity",
+  ),
+  SettingsSearchEntry(
+    category: "Device",
+    title: "Grant all permissions",
+    description:
+        "Grant all permissions used by KS, including features that are currently off.",
+    subpage: "Shizuku",
+    anchorId: "x:shizuku:grantAll",
+  ),
+  SettingsSearchEntry(
+    category: "Device",
+    title: "Set up Shizuku",
+    description: "Read installation and startup instructions.",
+    subpage: "Shizuku",
+    anchorId: "x:shizuku:setup",
+  ),
   // Fleet Management: the hand-built cards on the leader's page.
   SettingsSearchEntry(
     category: 'Fleet',
@@ -435,6 +491,15 @@ List<SettingsSearchEntry> buildSettingsSearchIndex(
           description: def.description,
           defKey: def.key,
         ),
+    if (categories.contains('Device'))
+      for (final permission in devicePermissionDescriptions.entries)
+        SettingsSearchEntry(
+          category: 'Device',
+          subpage: 'Shizuku',
+          title: permission.value.title,
+          description: permission.value.description,
+          anchorId: 'x:shizuku:${permission.key}',
+        ),
     for (final entry in handBuiltSearchEntries)
       if (categories.contains(entry.category) &&
           // The grant goes with its page (deviceHiddenKeys).
@@ -443,6 +508,57 @@ List<SettingsSearchEntry> buildSettingsSearchIndex(
         entry,
   ];
 }
+
+/// Installed plugin controls use their current manifest instead of global definitions.
+List<SettingsSearchEntry> pluginSettingsSearchEntries(
+  List<Map<String, Object?>> plugins,
+) => [
+  for (final plugin in plugins) ...[
+    SettingsSearchEntry(
+      category: 'Plugins',
+      title: '${plugin['name']}',
+      description: '${plugin['description'] ?? ''}',
+      subpage: '${plugin['id']}',
+      anchorId: 'plugin:${plugin['id']}:intro',
+    ),
+    if ((plugin['capabilities'] as List? ?? const []).contains('shizuku'))
+      SettingsSearchEntry(
+        category: 'Plugins',
+        title: 'Shizuku access',
+        description: '',
+        subpage: '${plugin['id']}',
+        anchorId: 'plugin:${plugin['id']}:shizuku',
+      ),
+    for (final raw
+        in (plugin['settings'] as List? ?? const []).whereType<Map>())
+      SettingsSearchEntry(
+        category: 'Plugins',
+        title: '${raw['title']}',
+        description: '${raw['description'] ?? ''}',
+        subpage: '${plugin['id']}',
+        anchorId: 'plugin:${plugin['id']}:setting:${raw['key']}',
+      ),
+    for (final raw
+        in (plugin['commands'] as List? ?? const []).whereType<Map>())
+      SettingsSearchEntry(
+        category: 'Plugins',
+        title: '${raw['title']}',
+        description: [
+          'Gestures',
+          if (((plugin['actionOptions'] as Map?)?[raw['id']]
+                  as Map?)?['drawer'] ==
+              true)
+            'Kiosk drawer',
+          if (((plugin['actionOptions'] as Map?)?[raw['id']]
+                  as Map?)?['homeAssistant'] ==
+              true)
+            'Home Assistant',
+        ].join(' · '),
+        subpage: '${plugin['id']}',
+        anchorId: 'plugin:${plugin['id']}:action:${raw['id']}',
+      ),
+  ],
+];
 
 /// Match [query] against the index. Every whitespace-separated term must
 /// appear in the entry's title or description; results come back grouped in
@@ -492,8 +608,10 @@ List<SettingsSearchEntry> searchSettings(
 /// Returns null to land on the top of the category pane.
 String? resolveSearchAnchor(
   SettingsSearchEntry entry,
-  bool Function(SettingDef<Object> def) isVisible,
-) {
+  bool Function(SettingDef<Object> def) isVisible, {
+  bool pluginsEnabled = true,
+}) {
+  if (entry.category == 'Plugins' && !pluginsEnabled) return 'x:plugins:master';
   if (entry.defKey == null) return entry.anchorId;
   final byKey = {for (final d in allSettings) d.key: d};
   var def = byKey[entry.defKey];

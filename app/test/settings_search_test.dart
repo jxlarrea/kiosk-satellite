@@ -15,6 +15,7 @@ const _pages = <(String, String, String)>[
   ('Sendspin', 'Media Player', 'Music Assistant, Sendspin, Sonos'),
   ('Kiosk', 'Kiosk Mode', 'Exit gesture'),
   ('Device', 'Device', 'Name, app theme'),
+  ('Plugins', 'Plugin Manager', 'Install and manage plugins'),
 ];
 
 List<String> get _order => [for (final p in _pages) p.$1];
@@ -119,6 +120,114 @@ void main() {
       expect(ranks, orderedEquals([...ranks]..sort()));
     });
   });
+
+  test(
+    'custom Plugin Manager and Shizuku rows are indexed by their own text',
+    () {
+      List<SettingsSearchEntry> hits(String text) =>
+          searchSettings(text, index, _order);
+      expect(
+        hits('plugin').map((e) => e.title),
+        containsAll(['Enable Plugins', 'Add plugin', 'Create a plugin']),
+      );
+      expect(hits('ZIP').single.title, 'Install from ZIP');
+      expect(
+        hits('Shizuku').map((e) => e.title),
+        containsAll([
+          'Shizuku access',
+          'Set up Shizuku',
+          'Install updates through Shizuku',
+        ]),
+      );
+      expect(
+        hits('Shizuku').map((e) => e.title),
+        isNot(contains('Test connection')),
+      );
+      final connection = hits('Test connection').single;
+      expect(connection.subpage, 'Shizuku');
+      expect(connection.anchorId, 'x:shizuku:identity');
+      expect(
+        hits('Grant all permissions').first.anchorId,
+        'x:shizuku:grantAll',
+      );
+      expect(
+        hits('Nearby devices').any((e) => e.anchorId == 'x:shizuku:bluetooth'),
+        true,
+      );
+      expect(hits('For developers only').single.anchorId, 'x:plugins:zip');
+    },
+  );
+
+  test(
+    'installed plugin settings refresh from manifests without matching the parent name',
+    () {
+      List<SettingsSearchEntry> dynamicIndex(
+        List<Map<String, Object?>> plugins,
+      ) => [...index, ...pluginSettingsSearchEntries(plugins)];
+      final plugins = <Map<String, Object?>>[
+        {
+          'id': 'hello',
+          'name': 'Hello World',
+          'capabilities': ['shizuku'],
+          'description': 'A sample plugin',
+          'settings': [
+            {
+              'key': 'greeting',
+              'title': 'Greeting',
+              'description': 'Text shown in the floating window.',
+            },
+          ],
+          'commands': [
+            {'id': 'show', 'title': 'Show greeting'},
+          ],
+        },
+      ];
+      final withPlugin = dynamicIndex(plugins);
+      expect(
+        searchSettings(
+          'Shizuku access',
+          withPlugin,
+          _order,
+        ).any((e) => e.anchorId == 'plugin:hello:shizuku'),
+        true,
+      );
+      final greeting = searchSettings(
+        'floating window',
+        withPlugin,
+        _order,
+      ).singleWhere((e) => e.anchorId == 'plugin:hello:setting:greeting');
+      expect(greeting.subpage, 'hello');
+      expect(greeting.anchorId, 'plugin:hello:setting:greeting');
+      expect(
+        searchSettings(
+          'Hello World',
+          withPlugin,
+          _order,
+        ).where((e) => e.subpage == 'hello').map((e) => e.title),
+        ['Hello World'],
+      );
+      expect(
+        searchSettings(
+          'Show greeting',
+          withPlugin,
+          _order,
+        ).singleWhere((e) => e.title == 'Show greeting').anchorId,
+        'plugin:hello:action:show',
+      );
+      expect(
+        resolveSearchAnchor(greeting, (_) => true, pluginsEnabled: false),
+        'x:plugins:master',
+      );
+      expect(
+        searchSettings(
+          'floating window',
+          dynamicIndex([]),
+          _order,
+        ).where((e) => e.subpage == 'hello'),
+        isEmpty,
+      );
+    },
+  );
 
   group('resolveSearchAnchor', () {
     SettingsSearchEntry entryFor(String key) =>

@@ -344,10 +344,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// back arrow of its own — One UI's tablet behavior.
   String? _subpage;
 
-  late final List<SettingsSearchEntry> _searchIndex = buildSettingsSearchIndex([
-    for (final (category, title, _, subtitle) in _categories)
-      (category, title, subtitle),
-  ]);
+  late final List<SettingsSearchEntry> _staticSearchIndex =
+      buildSettingsSearchIndex([
+        for (final (category, title, _, subtitle) in _categories)
+          (category, title, subtitle),
+      ]);
+
+  List<SettingsSearchEntry> get _searchIndex => [
+    ..._staticSearchIndex,
+    ...pluginSettingsSearchEntries(widget.container.plugins.installed.value),
+  ];
 
   String get _query => _searchCtl.text.trim();
 
@@ -365,12 +371,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final anchor = resolveSearchAnchor(
       entry,
       widget.container.settings.visible,
+      pluginsEnabled: widget.container.plugins.enabled.value,
     );
     // A row that moved onto a second-level page has no target on the
     // category pane; open its subpage on top and land there instead. A
     // hand-built row carries its own page, since no definition speaks for it.
     final subpage =
-        entry.subpage ??
+        (anchor == 'x:plugins:master' ? null : entry.subpage) ??
         (anchor == null
             ? null
             : allSettings.where((d) => d.key == anchor).firstOrNull?.subpage);

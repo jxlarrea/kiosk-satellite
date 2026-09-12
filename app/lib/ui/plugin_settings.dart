@@ -14,6 +14,7 @@ import 'plugin_readings.dart';
 import 'plugin_shizuku.dart';
 import 'color_picker.dart';
 import 'toast.dart';
+import 'settings_search.dart';
 
 const pluginIntro =
     'Plugins add additional community developed features to Kiosk Satellite.';
@@ -360,26 +361,29 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
       children: [
         SettingsCard(
           children: [
-            SettingsRow(
-              title: const Text('Enable Plugins'),
-              subtitle: const Text(pluginIntro),
-              trailing: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Opacity(
-                    opacity: _busy && _busyId == '_master' ? 0 : 1,
-                    child: Switch(
-                      value: enabled,
-                      onChanged: _busy
-                          ? null
-                          : (value) => _run(
-                              () => widget.plugins.setEnabled(value),
-                              id: '_master',
-                            ),
+            SearchLandingTarget(
+              id: 'x:plugins:master',
+              child: SettingsRow(
+                title: const Text('Enable Plugins'),
+                subtitle: const Text(pluginIntro),
+                trailing: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Opacity(
+                      opacity: _busy && _busyId == '_master' ? 0 : 1,
+                      child: Switch(
+                        value: enabled,
+                        onChanged: _busy
+                            ? null
+                            : (value) => _run(
+                                () => widget.plugins.setEnabled(value),
+                                id: '_master',
+                              ),
+                      ),
                     ),
-                  ),
-                  if (_busy && _busyId == '_master') const _PluginProgress(),
-                ],
+                    if (_busy && _busyId == '_master') const _PluginProgress(),
+                  ],
+                ),
               ),
             ),
           ],
@@ -387,14 +391,17 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
         if (enabled) ...[
           SettingsCard(
             children: [
-              SettingsRow(
-                title: const Text('Add plugin'),
-                subtitle: const Text('Install from a GitHub repository'),
-                trailing: _busy && _busyId == null
-                    ? const _PluginProgress()
-                    : const Icon(Icons.add_rounded),
-                enabled: !_busy,
-                onTap: () => _run(_preview),
+              SearchLandingTarget(
+                id: 'x:plugins:add',
+                child: SettingsRow(
+                  title: const Text('Add plugin'),
+                  subtitle: const Text('Install from a GitHub repository'),
+                  trailing: _busy && _busyId == null
+                      ? const _PluginProgress()
+                      : const Icon(Icons.add_rounded),
+                  enabled: !_busy,
+                  onTap: () => _run(_preview),
+                ),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 4),
@@ -490,32 +497,40 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
           const SectionHeading('Developer Tools'),
           SettingsCard(
             children: [
-              SettingsRow(
-                title: const Text('Install from ZIP'),
-                subtitle: const Text('For developers only: test a local build'),
-                trailing: _busy && _busyId == '_zip'
-                    ? const _PluginProgress()
-                    : const Icon(Icons.upload_file_rounded),
-                enabled: !_busy,
-                onTap: () => _run(_installZip, id: '_zip'),
-              ),
-              SettingsRow(
-                title: const Text('Create a plugin'),
-                subtitle: const Text(
-                  'Learn how to create plugins with the Hello World template and documentation.',
+              SearchLandingTarget(
+                id: 'x:plugins:zip',
+                child: SettingsRow(
+                  title: const Text('Install from ZIP'),
+                  subtitle: const Text(
+                    'For developers only: test a local build',
+                  ),
+                  trailing: _busy && _busyId == '_zip'
+                      ? const _PluginProgress()
+                      : const Icon(Icons.upload_file_rounded),
+                  enabled: !_busy,
+                  onTap: () => _run(_installZip, id: '_zip'),
                 ),
-                trailing: const Icon(Icons.open_in_new),
-                enabled: !_busy,
-                onTap: () => _run(() async {
-                  final opened = await launchUrl(
-                    Uri.parse(
-                      'https://github.com/jxlarrea/kiosk-satellite-plugin-hello-world',
-                    ),
-                    mode: LaunchMode.externalApplication,
-                  );
-                  if (!opened) throw StateError('Could not open this link.');
-                  return opened;
-                }),
+              ),
+              SearchLandingTarget(
+                id: 'x:plugins:create',
+                child: SettingsRow(
+                  title: const Text('Create a plugin'),
+                  subtitle: const Text(
+                    'Learn how to create plugins with the Hello World template and documentation.',
+                  ),
+                  trailing: const Icon(Icons.open_in_new),
+                  enabled: !_busy,
+                  onTap: () => _run(() async {
+                    final opened = await launchUrl(
+                      Uri.parse(
+                        'https://github.com/jxlarrea/kiosk-satellite-plugin-hello-world',
+                      ),
+                      mode: LaunchMode.externalApplication,
+                    );
+                    if (!opened) throw StateError('Could not open this link.');
+                    return opened;
+                  }),
+                ),
               ),
             ],
           ),
@@ -613,7 +628,12 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
         children: [
           SettingsCard(
             children: [
-              SettingsRow(title: Text('${plugin['description'] ?? ''}')),
+              SearchLandingTarget(
+                id: 'plugin:${widget.id}:intro',
+                child: SettingsRow(
+                  title: Text('${plugin['description'] ?? ''}'),
+                ),
+              ),
               if ('${plugin['status'] ?? ''}'.isNotEmpty)
                 plugin['statusError'] == true
                     ? WarnRow('${plugin['status']}')
@@ -629,7 +649,10 @@ class _PluginDetailPanelState extends State<PluginDetailPanel> {
             ],
           ),
           if ((plugin['capabilities'] as List? ?? const []).contains('shizuku'))
-            PluginShizukuPanel(plugins: widget.plugins, id: widget.id),
+            SearchLandingTarget(
+              id: 'plugin:${widget.id}:shizuku',
+              child: PluginShizukuPanel(plugins: widget.plugins, id: widget.id),
+            ),
           ValueListenableBuilder<Map<String, List<Map<String, Object?>>>>(
             valueListenable: widget.plugins.readings,
             builder: (_, readings, _) =>
@@ -975,7 +998,10 @@ class _PluginSettingsState extends State<_PluginSettings> {
                 for (final raw in settings.where(
                   (raw) => '${(raw as Map)['group'] ?? 'Settings'}' == group,
                 ))
-                  _settingRow(raw as Map),
+                  SearchLandingTarget(
+                    id: 'plugin:${plugin['id']}:setting:${(raw as Map)['key']}',
+                    child: _settingRow(raw),
+                  ),
               ],
             ),
           ],
@@ -985,12 +1011,15 @@ class _PluginSettingsState extends State<_PluginSettings> {
           SettingsCard(
             children: [
               for (final raw in commands)
-                SettingsRow(
-                  title: Text('${(raw as Map)['title']}'),
-                  subtitle: Text(_actionSummary(raw['id'].toString())),
-                  enabled: !_busy,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _configureAction(raw),
+                SearchLandingTarget(
+                  id: 'plugin:${plugin['id']}:action:${(raw as Map)['id']}',
+                  child: SettingsRow(
+                    title: Text('${raw['title']}'),
+                    subtitle: Text(_actionSummary(raw['id'].toString())),
+                    enabled: !_busy,
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _configureAction(raw),
+                  ),
                 ),
             ],
           ),

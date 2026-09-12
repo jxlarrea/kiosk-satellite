@@ -6,6 +6,7 @@ import '../managers/wake_word/permission_descriptions.dart';
 import 'kit.dart';
 import 'plugin_shizuku.dart';
 import 'toast.dart';
+import 'settings_search.dart';
 
 class ShizukuSettingsPanel extends StatefulWidget {
   const ShizukuSettingsPanel({
@@ -153,27 +154,33 @@ class _ShizukuSettingsPanelState extends State<ShizukuSettingsPanel>
           const SectionHeading('Connection'),
           SettingsCard(
             children: [
-              SettingsRow(
-                title: const Text('Shizuku access'),
-                subtitle: Text(
-                  pluginShizukuHint(
-                    state,
-                  ).replaceAll(' Tap for setup instructions.', ''),
+              SearchLandingTarget(
+                id: 'x:shizuku:permission',
+                child: SettingsRow(
+                  title: const Text('Shizuku access'),
+                  subtitle: Text(
+                    pluginShizukuHint(
+                      state,
+                    ).replaceAll(' Tap for setup instructions.', ''),
+                  ),
+                  trailing: ready
+                      ? const Icon(Icons.check_circle_outline)
+                      : _button(
+                          'permission',
+                          'Grant',
+                          state['status'] == 'permission_required',
+                        ),
                 ),
-                trailing: ready
-                    ? const Icon(Icons.check_circle_outline)
-                    : _button(
-                        'permission',
-                        'Grant',
-                        state['status'] == 'permission_required',
-                      ),
               ),
-              SettingsRow(
-                title: const Text('Test connection'),
-                subtitle: const Text(
-                  'Read the process identity without changing the device.',
+              SearchLandingTarget(
+                id: 'x:shizuku:identity',
+                child: SettingsRow(
+                  title: const Text('Test connection'),
+                  subtitle: const Text(
+                    'Read the process identity without changing the device.',
+                  ),
+                  trailing: _button('identity', 'Test', ready),
                 ),
-                trailing: _button('identity', 'Test', ready),
               ),
             ],
           ),
@@ -181,33 +188,42 @@ class _ShizukuSettingsPanelState extends State<ShizukuSettingsPanel>
           const SectionHeading('Permissions'),
           SettingsCard(
             children: [
-              SettingsRow(
-                title: const Text('Grant all permissions'),
-                subtitle: const Text(
-                  'Grant all permissions used by KS, including features that are currently off.',
+              SearchLandingTarget(
+                id: 'x:shizuku:grantAll',
+                child: SettingsRow(
+                  title: const Text('Grant all permissions'),
+                  subtitle: const Text(
+                    'Grant all permissions used by KS, including features that are currently off.',
+                  ),
+                  trailing: _button('grantAll', 'Grant', ready, primary: true),
                 ),
-                trailing: _button('grantAll', 'Grant', ready, primary: true),
               ),
               for (final entry in devicePermissionDescriptions.entries)
-                SettingsRow(
-                  title: Text(entry.value.title),
-                  subtitle: Text(entry.value.description),
-                  trailing: _button(entry.key, 'Grant', ready),
+                SearchLandingTarget(
+                  id: 'x:shizuku:${entry.key}',
+                  child: SettingsRow(
+                    title: Text(entry.value.title),
+                    subtitle: Text(entry.value.description),
+                    trailing: _button(entry.key, 'Grant', ready),
+                  ),
                 ),
             ],
           ),
           const SectionHeading('Help'),
           SettingsCard(
             children: [
-              SettingsRow(
-                title: const Text('Set up Shizuku'),
-                subtitle: const Text(
-                  'Read installation and startup instructions.',
-                ),
-                trailing: const Icon(Icons.open_in_new),
-                onTap: () => launchUrl(
-                  Uri.parse('https://shizuku.rikka.app/guide/setup/'),
-                  mode: LaunchMode.externalApplication,
+              SearchLandingTarget(
+                id: 'x:shizuku:setup',
+                child: SettingsRow(
+                  title: const Text('Set up Shizuku'),
+                  subtitle: const Text(
+                    'Read installation and startup instructions.',
+                  ),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () => launchUrl(
+                    Uri.parse('https://shizuku.rikka.app/guide/setup/'),
+                    mode: LaunchMode.externalApplication,
+                  ),
                 ),
               ),
               const HintRow(
