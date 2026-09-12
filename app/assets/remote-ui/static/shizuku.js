@@ -1,4 +1,5 @@
-import { cmd } from './core.js';
+import { settingRow } from './rows.js';
+import { cmd, state as appState } from './core.js';
 import { permissionSpecs } from './permissions.js';
 import { currentPath } from './tabs.js';
 import { hintRow, messageBox, showToast } from './widgets.js';
@@ -73,7 +74,12 @@ export function renderShizukuPage(container) {
   connection.append(access, row('Test connection', 'Read the process identity without changing the device.', 'identity', 'Test'));
   const permissions = node('div', 'card');
   for (const [action, title, hint] of actions) permissions.append(row(title, hint, action));
-  container.append(connection, node('div', 'card-title', 'Permissions'), permissions,
+  container.append(connection);
+  const updateSetting = appState.settings?.find(s => s.key === 'shizuku.install_updates');
+  if (updateSetting) {
+    const updates = node('div', 'card'); updates.append(settingRow(updateSetting)); container.append(updates);
+  }
+  container.append(node('div', 'card-title', 'Permissions'), permissions,
     node('div', 'card-title', 'Help'));
   const help = node('div', 'card');
   const link = node('a', 'row plugin-guide-row'); link.href = 'https://shizuku.rikka.app/guide/setup/'; link.target = '_blank'; link.rel = 'noopener noreferrer';

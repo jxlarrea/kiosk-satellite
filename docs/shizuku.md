@@ -11,6 +11,12 @@
 
 KS supports Shizuku server API 13 and later. A service started through ADB normally runs as Android's shell user and must be started again after a reboot. Root access requires a rooted device and Shizuku running as root. KS does not root the device or start Shizuku automatically.
 
+## Updates
+
+The **Install updates through Shizuku** toggle sits below Connection. Enable it to install KS updates without tapping Allow or Install on the kiosk. It is off by default and saves immediately on both the device and Remote Admin. Fleet management does not sync this preference.
+
+Shizuku must be running and authorized when you start an update. If the connection is unavailable or the installation fails, KS reports the error without opening a confirmation prompt. Turn the toggle off to restore regular installation and optional update helper behavior. It does not change when KS checks for releases or automatically start installing them. See [Shizuku updates](updates.md#shizuku-updates) for installation and relaunch details.
+
 ## Permission actions
 
 Each action runs only when tapped and targets Kiosk Satellite's own package. Opening the page does not grant permissions or execute commands.

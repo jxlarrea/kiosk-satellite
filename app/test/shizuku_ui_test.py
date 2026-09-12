@@ -14,6 +14,7 @@ base = f'http://127.0.0.1:{server.server_port}'
 state = dict(status='unavailable', available=False, granted=False)
 requests = []
 polls = 0
+saves = []
 
 def api(route):
     global polls
@@ -40,9 +41,16 @@ try:
         html = (ROOT / 'index.html').read_text().replace('<script type="module" src="static/main.js?v=__KSV__"></script>', '')
         page.route(base+'/', lambda route: route.fulfill(body=html, content_type='text/html'))
         page.route('**/api/commands/*', api)
+        def save(route):
+            if route.request.method == 'PATCH':
+                saves.append(route.request.post_data_json)
+            route.fulfill(json=dict(ok=True))
+        page.route('**/api/settings', save)
         page.goto(base+'/')
         page.evaluate("""async () => {
-          (await import('/static/core.js')).showView('app');
+          const core = await import('/static/core.js');
+          core.showView('app');
+          core.state.settings = [{key:'shizuku.install_updates', type:'boolean', value:false, category:'Device', subpage:'Shizuku', section:'Updates', title:'Install updates through Shizuku', description:'Install Kiosk Satellite updates without on-device confirmation. Shizuku must be running and authorized.'}];
           const panel = document.createElement('div');
           panel.className = 'subpage'; panel.dataset.subpage = 'Shizuku';
           document.querySelector('#tab-device').append(panel);
@@ -53,6 +61,15 @@ try:
         expect(root.locator('[data-connection] .desc')).to_have_text('Start Shizuku on this device.')
         expect(root.get_by_role('button', name='Test', exact=True)).to_be_disabled()
         assert requests == []
+        toggle = root.locator('[data-key="shizuku.install_updates"] input')
+        expect(toggle).not_to_be_checked()
+        assert root.locator('[data-key="shizuku.install_updates"]').evaluate("el => el.closest('.card').previousElementSibling.querySelector('[data-connection]') !== null")
+        root.locator('[data-key="shizuku.install_updates"] label.switch').click()
+        expect(toggle).to_be_checked()
+        page.wait_for_function("async () => (await import('/static/core.js')).state.settings[0].value === true")
+        assert saves == [{'shizuku.install_updates': True}], saves
+        page.evaluate("async () => (await import('/static/shizuku.js')).renderShizukuPage(document.querySelector('#tab-device [data-subpage=Shizuku]'))")
+        expect(root.locator('[data-key="shizuku.install_updates"] input')).to_be_checked()
         expect(root.locator('[data-shizuku-action]')).to_have_count(15)
         expect(root.get_by_text('Grant all permissions', exact=True)).to_be_visible()
         for name in ['Microphone', 'Camera', 'Nearby devices', 'Notifications', 'System UI guard', 'Device admin', 'Location']:

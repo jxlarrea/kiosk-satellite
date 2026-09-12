@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Install updates through Shizuku.** An opt-in toggle below Connection in Device > Shizuku enables updates without on-device confirmation. It saves locally and does not sync through fleet management. A separate installer survives app replacement. Unavailable Shizuku connections and installation failures report errors without opening a confirmation prompt. Regular updates and the optional update helper keep their existing behavior. All paths use the same architecture-specific APK selection.
 - **Manage Shizuku from Device settings.** The new subpage shows connection status, requests access and tests the connection. Buttons grant individual permissions or all 12 permissions from Permissions Manager, including optional features, System UI guard and Device admin. Both interfaces use matching permission titles and descriptions. Results are verified with Android. The page also works in Remote Admin with Plugin Manager disabled and does not sync through fleet management.
 - **Plugins can use Shizuku through SDK 1.** Plugins can declare optional Shizuku access, inspect availability and run bounded asynchronous commands after the user grants KS permission. A dedicated permission row appears only for plugins that request this capability. Existing plugins retain their current behavior.
 

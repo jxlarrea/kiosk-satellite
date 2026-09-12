@@ -71,8 +71,6 @@ List<Widget> _sectionedCards(
   // under that setting's row (a permission notice living with the switch
   // that needs it).
   Map<String, Widget> after = const {},
-  // Hand-built destinations placed directly after a declared subpage.
-  Map<String, Widget> afterSubpage = const {},
   // Full replacements keyed by setting key: the widget renders instead of
   // the generic tile (the motion switch shown disabled while the Camera
   // section's master switch is off).
@@ -116,10 +114,6 @@ List<Widget> _sectionedCards(
             subpage: def.subpage!,
           ),
         );
-        if (subpage == null && afterSubpage[def.subpage] != null) {
-          flush();
-          out.add(afterSubpage[def.subpage]!);
-        }
       }
       continue;
     }
@@ -2073,14 +2067,6 @@ class _CategoryContentState extends State<_CategoryContent> {
               () => setState(() {}),
               replace: _rowReplacements(container),
               after: _rowExtras(container),
-              afterSubpage: {
-                if (widget.category == 'Device')
-                  'Remote Administration': _subpageEntryCard(
-                    container,
-                    'Device',
-                    'Shizuku',
-                  ),
-              },
             ),
           ),
         ],
@@ -2924,7 +2910,16 @@ class _CategoryContentState extends State<_CategoryContent> {
     }
 
     if (widget.category == 'Device' && subpage == 'Shizuku') {
-      return [ShizukuSettingsPanel(manager: container.shizuku)];
+      return [
+        ShizukuSettingsPanel(
+          manager: container.shizuku,
+          updateSettings: SettingTile(
+            container: container,
+            def: shizukuInstallUpdates,
+            onChanged: () => setState(() {}),
+          ),
+        ),
+      ];
     }
 
     if (widget.category == 'Device' && subpage == 'Optional update helper') {

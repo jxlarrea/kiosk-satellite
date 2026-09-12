@@ -46,6 +46,7 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
 
     private val channel = MethodChannel(messenger, "kiosk_satellite/installer")
     private val helper = UpdateHelperClient(context)
+    private val shizuku = ShizukuUpdateClient(context)
     private val worker = Executors.newFixedThreadPool(2)
     private val main = Handler(Looper.getMainLooper())
     private val installing = AtomicBoolean(false)
@@ -127,7 +128,8 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                         work(result) {
                             try {
                                 install(File(requireNotNull(call.argument<String>("path"))),
-                                    call.argument<Boolean>("useSystemInstaller") == true)
+                                    call.argument<Boolean>("useSystemInstaller") == true,
+                                    call.argument<Boolean>("useShizuku") == true)
                             } finally {
                                 installing.set(false)
                             }
@@ -140,11 +142,13 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                 // the time the session reports PENDING_USER_ACTION the
                 // launch has already been refused once.
                 "needsConfirmation" -> work(result) {
-                    !canInstallNativelySilently() && helper.status() != "ready"
+                    if (call.argument<Boolean>("useShizuku") == true) { shizuku.requireReady(); false }
+                    else !canInstallNativelySilently() && helper.status() != "ready"
                 }
                 "getInstallerStatus" -> work(result) {
                     mapOf(
                         "nativeSilent" to canInstallNativelySilently(),
+                        "shizukuReady" to shizuku.ready(),
                         "helper" to helper.status(),
                         "startCommand" to UpdateHelperClient.START_COMMAND,
                     )
@@ -184,7 +188,11 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
     }
 
     /** A fallback asks Dart to release kiosk protections before creating a session. */
-    private fun install(apk: File, useSystemInstaller: Boolean): String {
+    private fun install(apk: File, useSystemInstaller: Boolean, useShizuku: Boolean): String {
+        if (useShizuku) {
+            Log.i(TAG, "installing through Shizuku")
+            return shizuku.install(apk)
+        }
         val nativeSilent = canInstallNativelySilently()
         if (!nativeSilent && !useSystemInstaller) {
             Log.i(TAG, "trying the update helper")

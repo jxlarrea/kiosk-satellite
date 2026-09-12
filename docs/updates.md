@@ -24,6 +24,8 @@ Releases include a universal APK and smaller APKs for `armeabi-v7a`, `arm64-v8a`
 
 The updater selects an APK using Android's supported architectures in preference order. If a compatible architecture APK is missing or the architecture cannot be detected, it uses the universal APK. A 64-bit processor running a 32-bit Android installation receives the 32-bit APK.
 
+APK selection happens before choosing an installer. Regular updates, the optional update helper and Shizuku all receive the same architecture-specific download. The helper does not select or download a separate APK.
+
 The universal filename remains `kiosk-satellite-<tag>.apk`. Architecture downloads use `kiosk-satellite-<tag>.<abi>.apk`. Older app versions continue to download universal because it remains the first APK asset. The release workflow preserves this order during reruns and checks it after uploading. Every APK in a release uses the same signing key and version code so an installed app can move between universal and architecture downloads.
 
 ## System Permission Requirements
@@ -35,6 +37,7 @@ Here is how Android handles installation prompts based on your system version:
 | Android 12 and newer | The initial in-app update displays Android's system installation confirmation on the screen. Subsequent updates install silently in the background. |
 | Android 11 and older | Every update requires manual confirmation unless the optional update helper is running. |
 | Device Owner Provisioned | Every update installs silently across all Android versions. |
+| Shizuku updates enabled and authorized | Updates install through Shizuku without on-device confirmation. |
 | Update helper running | Updates install silently through the helper when Android's native silent path is unavailable. |
 
 On Android 12 and newer, silent updating relies on installer package tracking. Completing the initial in-app update registers Kiosk Satellite as its own installer, enabling silent background updates for future releases. Performing an `adb install` in between resets the installer role back to `adb`, requiring you to confirm one in-app update again.
@@ -88,6 +91,18 @@ To update a Fire tablet: start the update from the device, Home Assistant, or th
 The **Install unknown apps** grant works identically to standard Android devices, available via `adb` or under **Settings > Security & Privacy > Apps from Unknown Sources**.
 
 Full setup details for Fire OS devices are available in the [Amazon Fire tablets](fire.md) guide.
+
+## Shizuku updates
+
+Enable **Install updates through Shizuku** below the Connection group in **Settings > Device > Shizuku**. The same toggle is available in Remote Admin. It is off by default, saves immediately and stays local to this device during fleet sync.
+
+[Set up and authorize Shizuku](shizuku.md#connect) first. When enabled, every KS self-update uses Shizuku, including updates started from the kiosk, Remote Admin, Home Assistant or fleet management. You still choose when to install an update. The toggle does not enable automatic installation.
+
+KS checks the connection before downloading and again before installing. If Shizuku is unavailable, unauthorized or fails to install, KS reports the error without opening Android's confirmation installer. Start Shizuku and retry or turn off the toggle to return to the existing update paths. A Shizuku service started through ADB must be restarted after a device reboot.
+
+A separate Shizuku process stages the downloaded APK and asks Android to replace KS. It survives KS being stopped during replacement and exits after the attempt. Android checks the signing certificate. The installer accepts only KS APKs and rejects version code downgrades. It does not grant additional permissions or disable Android's package verifier. Device restrictions can still reject an installation.
+
+The existing [relaunch requirements](#relaunching-after-installation) apply. If contact is lost after installation starts, check the installed version before retrying because Android may have completed the update.
 
 ## Optional Update Helper
 

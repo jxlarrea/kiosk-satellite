@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:kiosk_satellite/ui/shizuku_settings.dart';
 import 'package:kiosk_satellite/ui/kit.dart';
+import 'package:kiosk_satellite/app_container.dart';
+import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:kiosk_satellite/managers/wake_word/permission_descriptions.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -92,6 +94,59 @@ void main() {
       }
     },
   );
+  testWidgets(
+    'update opt-in saves immediately below Connection and remains local',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final container = AppContainer();
+      await container.settings.init();
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        ShizukuManager.channel,
+        (_) async => {'status': 'unavailable'},
+      );
+      addTearDown(() async {
+        messenger.setMockMethodCallHandler(ShizukuManager.channel, null);
+        await container.shizuku.dispose();
+        await container.settings.dispose();
+        await container.bus.dispose();
+      });
+      expect(container.settings.get(shizukuInstallUpdates), false);
+      expect(shizukuInstallUpdates.perDevice, true);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SubpageSettingsScreen(
+            container: container,
+            category: 'Device',
+            subpage: 'Shizuku',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final toggle = find.widgetWithText(
+        SwitchListTile,
+        shizukuInstallUpdates.title,
+      );
+      expect(toggle, findsOneWidget);
+      expect(
+        tester.getTopLeft(toggle).dy,
+        greaterThan(tester.getBottomLeft(find.text('Test connection')).dy),
+      );
+      expect(
+        tester.getBottomLeft(toggle).dy,
+        lessThan(tester.getTopLeft(find.text('Permissions')).dy),
+      );
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(container.settings.get(shizukuInstallUpdates), true);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('ks.shizuku.install_updates'), true);
+      expect(find.text('Save settings'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
   testWidgets('permission buttons work on wide and narrow screens', (
     tester,
   ) async {
@@ -121,7 +176,10 @@ void main() {
           ),
           home: Scaffold(
             body: SingleChildScrollView(
-              child: ShizukuSettingsPanel(manager: manager),
+              child: ShizukuSettingsPanel(
+                manager: manager,
+                updateSettings: const SizedBox.shrink(),
+              ),
             ),
           ),
         ),

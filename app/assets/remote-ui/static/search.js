@@ -126,7 +126,6 @@ export const SEARCH_EXTRAS = [
   { tab: 'screensaver', title: 'Battery',
     desc: "A battery widget in a corner of the screensaver: this device's own charge.",
     key: 'screensaver.widgets' },
-  { tab: 'device', title: 'Shizuku', description: 'Connection, shell access, Android permissions and setup.', subpage: 'Shizuku', heading: 'Connection' },
   { tab: 'device', title: 'Permissions Manager',
     desc: 'Every Android grant the app can use, with its status: microphone, camera, notifications, unrestricted battery, display over other apps, modify system settings, system UI guard, device admin, all files access, usage access and location.',
     heading: 'Permissions Manager' },

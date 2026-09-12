@@ -25,3 +25,6 @@
 
 # Shizuku instantiates the helper by class name in its own process.
 -keep class me.jxl.kiosk_satellite.plugins.PluginShizukuService { *; }
+
+# Shizuku loads the self-update service in a process that survives replacement.
+-keep class me.jxl.kiosk_satellite.ShizukuUpdateService { *; }

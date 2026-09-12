@@ -52,7 +52,15 @@ class UpdateInfo {
 /// drawer's notice and the Home Assistant update entity (over ESPHome); nothing
 /// downloads or installs until a tap in either place asks for it.
 class UpdateManager extends Manager {
-  UpdateManager(super.bus, super.commands, super.log);
+  UpdateManager(
+    super.bus,
+    super.commands,
+    super.log, {
+    this.useShizuku = _shizukuDisabled,
+  });
+
+  final bool Function() useShizuku;
+  static bool _shizukuDisabled() => false;
 
   /// The releases list rather than `/releases/latest`: one request either
   /// way, but the list also carries the bodies of releases the device
@@ -64,8 +72,8 @@ class UpdateManager extends Manager {
       'https://api.github.com/repos/jxlarrea/kiosk-satellite/'
       'releases?per_page=30';
 
-  /// App-scoped (see ApkInstaller). Native silent installation takes priority,
-  /// followed by the optional shell helper and Android's confirmation screen.
+  /// App-scoped (see ApkInstaller). The Shizuku opt-in overrides installation.
+  /// Otherwise native silent installation, the ADB helper and confirmation keep their order.
   static const _installer = MethodChannel('kiosk_satellite/installer');
 
   /// Same channel the kiosk manager's restart preflight uses: whether the
@@ -264,7 +272,7 @@ class UpdateManager extends Manager {
           name: 'installUpdate',
           description:
               'Download the newer release APK and install it. Silent when '
-              'Android permits it or the update helper is running. Otherwise '
+              'Android permits it, the update helper is running or Shizuku updates are enabled and authorized. Otherwise '
               'Android asks for confirmation on the device screen',
           handler: (_) async {
             if (available.value == null) {
@@ -445,6 +453,7 @@ class UpdateManager extends Manager {
   Future<String?> downloadAndInstall() async {
     var info = available.value;
     if (info == null || progress.value != null) return null;
+    final useShizukuUpdates = useShizuku();
     progress.value = 0;
     _lastOutcome = null;
     _lastError = null;
@@ -452,6 +461,7 @@ class UpdateManager extends Manager {
     final client = clientFactory();
     _downloadClient = client;
     try {
+      if (useShizukuUpdates) await _needsConfirmation(shizuku: true);
       // The notice can be half a day old (the periodic check runs twice a
       // day) and stays up until it is acted on, so a release cut in the
       // meantime would install the version that was current when the notice
@@ -613,7 +623,7 @@ class UpdateManager extends Manager {
       // the session is committed — by PENDING_USER_ACTION it is too late.
       // The kiosk re-arms when the install is declined or fails (below);
       // a successful install kills the process and the relaunch re-arms.
-      if (await _needsConfirmation()) {
+      if (await _needsConfirmation(shizuku: useShizukuUpdates)) {
         _kioskPaused = (await commands.execute(
           'pauseKioskForInstall',
           const {},
@@ -621,8 +631,14 @@ class UpdateManager extends Manager {
       }
       var mode = await _installer.invokeMethod<String>('installApk', {
         'path': file.path,
+        if (useShizukuUpdates) 'useShizuku': true,
       });
       if (mode == 'fallback') {
+        if (useShizukuUpdates) {
+          throw StateError(
+            'Shizuku could not install the update. No confirmation installer was opened.',
+          );
+        }
         // The helper can disappear between preflight and upload. Native
         // code only returns this before a commit could reach the helper.
         if (!_kioskPaused) {
@@ -687,10 +703,15 @@ class UpdateManager extends Manager {
   /// Whether the coming install will put Android's confirmation screen up
   /// (true) or go through silently (false). Off Android there is nothing
   /// to confirm and nothing to pause.
-  Future<bool> _needsConfirmation() async {
+  Future<bool> _needsConfirmation({bool shizuku = false}) async {
     try {
-      return await _installer.invokeMethod<bool>('needsConfirmation') ?? true;
+      return await _installer.invokeMethod<bool>(
+            'needsConfirmation',
+            shizuku ? {'useShizuku': true} : null,
+          ) ??
+          true;
     } catch (_) {
+      if (shizuku) rethrow;
       return false;
     }
   }
@@ -699,7 +720,7 @@ class UpdateManager extends Manager {
     final status = await _installer.invokeMapMethod<String, dynamic>(
       'getInstallerStatus',
     );
-    return status ?? const {};
+    return {...?status, 'shizukuEnabled': useShizuku()};
   }
 
   /// Whether the kiosk stood down for this install and still owes a

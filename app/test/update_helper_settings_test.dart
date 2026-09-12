@@ -17,10 +17,12 @@ void main() {
   var helper = 'unavailable';
   late AppContainer container;
 
-  setUp(() {
+  setUp(() async {
     nativeSilent = false;
     helper = 'unavailable';
+    SharedPreferences.setMockInitialValues({});
     container = AppContainer();
+    await container.settings.init();
     messenger.setMockMethodCallHandler(
       installer,
       (_) async => {
@@ -64,8 +66,6 @@ void main() {
   testWidgets('the Device entry opens the helper subpage and Back returns', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
-    await container.settings.init();
     await tester.pumpWidget(
       MaterialApp(
         home: CategorySettingsScreen(

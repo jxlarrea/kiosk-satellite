@@ -31,6 +31,9 @@ void main() {
   late List<String> installed;
   late List<String> kioskCalls;
   var needsConfirm = false;
+  var shizukuEnabled = false;
+  var shizukuReady = true;
+  final installArguments = <Map>[];
   var helperFallback = false;
   var helperCommitFailure = false;
 
@@ -70,12 +73,27 @@ void main() {
           call.method == 'getTemporaryDirectory' ? cache.path : null,
     );
     needsConfirm = false;
+    shizukuEnabled = false;
+    shizukuReady = true;
+    installArguments.clear();
     helperFallback = false;
     helperCommitFailure = false;
     kioskCalls = [];
     messenger.setMockMethodCallHandler(installer, (call) async {
-      if (call.method == 'needsConfirmation') return needsConfirm;
+      if (call.method == 'needsConfirmation') {
+        if ((call.arguments as Map?)?['useShizuku'] == true) {
+          if (!shizukuReady) {
+            throw PlatformException(
+              code: 'install',
+              message: 'Shizuku is unavailable',
+            );
+          }
+          return false;
+        }
+        return needsConfirm;
+      }
       if (call.method != 'installApk') return null;
+      installArguments.add(Map.from(call.arguments as Map));
       if (helperCommitFailure) {
         throw PlatformException(
           code: 'install',
@@ -118,7 +136,9 @@ void main() {
         return const CommandResult.ok();
       },
     ));
-    update = UpdateManager(EventBus(), registry, log);
+    update = UpdateManager(
+      EventBus(), registry, log, useShizuku: () => shizukuEnabled,
+    );
   });
 
   tearDown(() async {
@@ -383,6 +403,73 @@ void main() {
     // The callback can only owe one re-arm; a stray repeat changes nothing.
     await installerEvent('installFailed');
     expect(kioskCalls, ['pause', 'resume']);
+  });
+
+  for (final mode in ['helper', 'shizuku']) {
+    test('$mode receives the matching architecture APK', () async {
+      shizukuEnabled = mode == 'shizuku';
+      await update.init();
+      update.supportedAbis = ['arm64-v8a', 'armeabi-v7a'];
+      final downloads = <String>[];
+      update.clientFactory = () => MockClient((request) async {
+        if (isReleaseQuery(request)) {
+          final latest = entry('1.1.0', size: 64);
+          (latest['assets'] as List).add({
+            'name': 'kiosk-satellite-v1.1.0.arm64-v8a.apk',
+            'browser_download_url': 'https://example.invalid/arm64.apk',
+            'size': 64,
+          });
+          return http.Response(releases([latest]), 200);
+        }
+        downloads.add(request.url.toString());
+        return http.Response.bytes(List.filled(64, 2), 200);
+      });
+      expect(await update.check(), true);
+      expect(await update.downloadAndInstall(), isNull);
+      expect(downloads, ['https://example.invalid/arm64.apk']);
+      expect(installArguments.single['useShizuku'] == true, shizukuEnabled);
+      expect(kioskCalls, isEmpty);
+      expect(await File(installed.single).readAsBytes(), List.filled(64, 2));
+    });
+  }
+
+  test(
+    'enabled Shizuku blocks unavailable service before downloading or pausing the kiosk',
+    () async {
+      shizukuEnabled = true;
+      shizukuReady = false;
+      await notice('1.1.0');
+      var requests = 0;
+      update.clientFactory = () => MockClient((request) async {
+        requests++;
+        return http.Response('', 500);
+      });
+      expect(
+        await update.downloadAndInstall(),
+        contains('Shizuku is unavailable'),
+      );
+      expect(requests, 0);
+      expect(installArguments, isEmpty);
+      expect(kioskCalls, isEmpty);
+    },
+  );
+
+  test('Shizuku failure never opens the confirmation installer', () async {
+    shizukuEnabled = true;
+    helperCommitFailure = true;
+    await notice('1.1.0');
+    update.clientFactory = () => MockClient(
+      (request) async => isReleaseQuery(request)
+          ? http.Response(release('1.1.0'), 200)
+          : http.Response.bytes(List.filled(64, 7), 200),
+    );
+    expect(
+      await update.downloadAndInstall(),
+      contains('Lost contact after committing'),
+    );
+    expect(installArguments, hasLength(1));
+    expect(installArguments.single['useShizuku'], true);
+    expect(kioskCalls, isEmpty);
   });
 
   test(

@@ -6291,6 +6291,19 @@ const remoteFleetDiscovery = SettingDef<bool>(
   perDevice: true,
 );
 
+const shizukuInstallUpdates = SettingDef<bool>(
+  key: 'shizuku.install_updates',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Install updates through Shizuku',
+  description:
+      'Install Kiosk Satellite updates without on-device confirmation. Shizuku must be running and authorized.',
+  category: 'Device',
+  section: 'Updates',
+  subpage: 'Shizuku',
+  perDevice: true,
+);
+
 // ── Fleet Management ───────────────────────────────────────────────────
 
 /// The categories a fleet leader can push, in the sidebar's order: the
@@ -7067,6 +7080,7 @@ const List<SettingDef<Object>> allSettings = [
   remotePort,
   remotePassword,
   remoteFleetDiscovery,
+  shizukuInstallUpdates,
   fleetLeader,
   fleetAutoUpdate,
   fleetProfiles,

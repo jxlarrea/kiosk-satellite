@@ -8,8 +8,13 @@ import 'plugin_shizuku.dart';
 import 'toast.dart';
 
 class ShizukuSettingsPanel extends StatefulWidget {
-  const ShizukuSettingsPanel({super.key, required this.manager});
+  const ShizukuSettingsPanel({
+    super.key,
+    required this.manager,
+    required this.updateSettings,
+  });
   final ShizukuManager manager;
+  final Widget updateSettings;
   @override
   State<ShizukuSettingsPanel> createState() => _ShizukuSettingsPanelState();
 }
@@ -172,6 +177,7 @@ class _ShizukuSettingsPanelState extends State<ShizukuSettingsPanel>
               ),
             ],
           ),
+          SettingsCard(children: [widget.updateSettings]),
           const SectionHeading('Permissions'),
           SettingsCard(
             children: [

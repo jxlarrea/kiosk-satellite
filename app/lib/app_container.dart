@@ -103,7 +103,12 @@ class AppContainer {
     files = FilesManager(bus, commands, log);
     sound = SoundManager(bus, commands, log);
     notifications = NotificationManager(bus, commands, log, settings);
-    update = UpdateManager(bus, commands, log);
+    update = UpdateManager(
+      bus,
+      commands,
+      log,
+      useShizuku: () => settings.get(shizukuInstallUpdates),
+    );
     // After homeAssistant: it reads states through it for the fallback.
     glance = GlanceManager(bus, commands, log, settings, homeAssistant);
     shizuku = ShizukuManager(bus, commands, log);
