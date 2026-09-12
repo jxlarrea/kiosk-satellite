@@ -211,7 +211,19 @@ void main() {
           'manufacturer': 'Panel Maker',
           'abis': ['arm64-v8a', 'armeabi-v7a', 'armeabi'],
           'sdkInt': 34,
-          'ip': 'private',
+          'ramFree': 2147483648,
+          'ramTotal': 4294967296,
+          'storageFree': 17179869184,
+          'storageTotal': 34359738368,
+          'ip': '192.0.2.5',
+          'ipv6': ['2001:db8::5', 'fe80::5'],
+          'battery': 82,
+          'brightness': 0.35,
+          'screenOn': false,
+          'screenWidth': 1920,
+          'screenHeight': 1080,
+          'screenDensity': 1.5,
+          'fingerprint': 'private',
           'token': 'secret',
         }),
       );
@@ -231,7 +243,19 @@ void main() {
       expect(data['manufacturer'], 'Panel Maker');
       expect(data['abis'], ['arm64-v8a', 'armeabi-v7a', 'armeabi']);
       expect(data['sdkInt'], 34);
-      expect(data.containsKey('ip'), false);
+      expect(data['ramFree'], 2147483648);
+      expect(data['ramTotal'], 4294967296);
+      expect(data['storageFree'], 17179869184);
+      expect(data['storageTotal'], 34359738368);
+      expect(data['ip'], '192.0.2.5');
+      expect(data['ipv6'], ['2001:db8::5', 'fe80::5']);
+      expect(data['battery'], 82);
+      expect(data['brightness'], 0.35);
+      expect(data['screenOn'], false);
+      expect(data['screenWidth'], 1920);
+      expect(data['screenHeight'], 1080);
+      expect(data['screenDensity'], 1.5);
+      expect(data.containsKey('fingerprint'), false);
       expect(data.containsKey('token'), false);
       expect(
         (await read('getBrightness', params: {'panel': true}))['data'],
@@ -363,39 +387,35 @@ void main() {
     expect(result.toString(), isNot(contains('secret')));
   });
 
-  test('device reads allow only string lists for ABIs', () async {
-    Object? abis;
-    Object? board;
-    register(
-      'getDeviceInfo',
-      (_) async => CommandResult.ok({'abis': abis, 'board': board}),
-    );
-    for (final valid in [
-      null,
-      <String>[],
-      ['armeabi-v7a'],
-    ]) {
-      abis = valid;
-      final result = await read('getDeviceInfo');
-      expect(result['ok'], true);
-      expect((result['data'] as Map)['abis'], valid);
+  test('device reads allow only string lists for ABIs and IPv6', () async {
+    final values = <String, Object?>{};
+    register('getDeviceInfo', (_) async => CommandResult.ok(values));
+    for (final field in ['abis', 'ipv6']) {
+      for (final valid in [
+        null,
+        <String>[],
+        ['value'],
+      ]) {
+        values[field] = valid;
+        final result = await read('getDeviceInfo');
+        expect(result['ok'], true);
+        expect((result['data'] as Map)[field], valid);
+      }
+      for (final invalid in [
+        'value',
+        ['value', 32],
+        [
+          ['value'],
+        ],
+        {'key': 'value'},
+        ['x' * 40000],
+      ]) {
+        values[field] = invalid;
+        expect((await read('getDeviceInfo'))['ok'], false, reason: field);
+      }
+      values[field] = <String>[];
     }
-    for (final invalid in [
-      'arm64-v8a',
-      ['arm64-v8a', 32],
-      [
-        ['arm64-v8a'],
-      ],
-      {'abi': 'arm64-v8a'},
-    ]) {
-      abis = invalid;
-      expect((await read('getDeviceInfo'))['ok'], false);
-    }
-    abis = ['arm64-v8a'];
-    board = ['rk3576'];
-    expect((await read('getDeviceInfo'))['ok'], false);
-    board = null;
-    abis = ['x' * 40000];
+    values['board'] = ['rk3576'];
     expect((await read('getDeviceInfo'))['ok'], false);
   });
 

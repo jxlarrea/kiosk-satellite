@@ -712,6 +712,10 @@ class DeviceManager extends Manager {
   }
 
   Future<Map<String, Object?>> info() async {
+    final details = await DeviceDetails.read();
+    final brightness = await commands.execute('getBrightness', {'panel': true});
+    final screenOn = await commands.execute('isScreenOn', const {});
+    final panelLevel = brightness.data;
     return {
       ...await stats(),
       'uptime': await DeviceDetails.uptime(),
@@ -723,6 +727,17 @@ class DeviceManager extends Manager {
       'board': board,
       'manufacturer': manufacturer,
       'abis': abis,
+      'ramFree': details.ramFree,
+      'ramTotal': details.ramTotal,
+      'storageFree': details.storageFree,
+      'storageTotal': details.storageTotal,
+      'brightness': brightness.ok && panelLevel is num && panelLevel.isFinite
+          ? panelLevel
+          : null,
+      'screenOn': screenOn.ok && screenOn.data is bool ? screenOn.data : null,
+      'screenWidth': details.screenWidth,
+      'screenHeight': details.screenHeight,
+      'screenDensity': details.screenDensity,
       'os': os,
       'osVersion': osVersion,
       'sdkInt': sdkInt,

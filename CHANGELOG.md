@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Plugin device snapshots include live resource and display readings.** SDK 1 `getDeviceInfo` exposes available and total RAM, internal storage, IPv4 and IPv6 addresses, battery level, current panel brightness, logical screen status and display dimensions. Existing device identity fields and smaller read commands remain available.
 - **Plugins can identify Android hardware without root.** `getDeviceInfo` now includes the raw device codename, board, manufacturer and supported ABIs in Android preference order. The existing model display string stays unchanged and the fields use the existing SDK 1 host read. Adds [#509](https://github.com/jxlarrea/kiosk-satellite/issues/509).
 
 ## v2026.9.41 - 2026-09-11

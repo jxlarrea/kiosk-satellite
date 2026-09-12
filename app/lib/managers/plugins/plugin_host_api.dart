@@ -159,6 +159,18 @@ class PluginHostApi {
       'board',
       'manufacturer',
       'abis',
+      'ramFree',
+      'ramTotal',
+      'storageFree',
+      'storageTotal',
+      'ip',
+      'ipv6',
+      'battery',
+      'brightness',
+      'screenOn',
+      'screenWidth',
+      'screenHeight',
+      'screenDensity',
       'os',
       'osVersion',
       'sdkInt',
@@ -320,9 +332,10 @@ class PluginHostApi {
         data = {for (final key in fields) key: data[key]};
         if (data.entries.any((entry) {
           final value = entry.value;
-          if (name == 'getDeviceInfo' && entry.key == 'abis') {
+          if (name == 'getDeviceInfo' &&
+              (entry.key == 'abis' || entry.key == 'ipv6')) {
             return value != null &&
-                !(value is List && value.every((abi) => abi is String));
+                !(value is List && value.every((item) => item is String));
           }
           return !_scalar(value);
         })) {
