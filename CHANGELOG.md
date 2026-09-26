@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- **The service notification can no longer get the app killed.** Android answers a notification whose icon it cannot load with "Bad notification" and kills the app, and for a moment around an update it could not load this app's icon resource: a Galaxy Tab A lost two processes in three seconds that way and a fresh Xperia install died on its first update. The Kiosk Satellite Service now sends its status bar icon as pixels rather than a resource id, drawn once when the service starts, so the system has nothing to look up.
 - **Weather Mood and screensaver widgets recover after a Wi-Fi drop.** When the connection dropped and the first reconnect ran into Wi-Fi that was still down, the failed attempt was never reported, so nothing tried again and Weather Mood kept the weather from before the drop for hours. A failed or stalled connection attempt now counts as a closed one and is retried like any other.
 
 ## v2026.9.84 - 2026-09-26

@@ -21,6 +21,9 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.IconCompat
+import android.graphics.Canvas
+import android.graphics.Bitmap
 
 /**
  * The one foreground service that keeps the app alive, whatever it is
@@ -528,15 +531,44 @@ class KioskSatelliteService : Service() {
                 },
             PendingIntent.FLAG_IMMUTABLE,
         )
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(localized.getString(R.string.ks_service_title))
             .setContentText(summary(reasons, localized))
-            .setSmallIcon(R.drawable.ic_stat_service)
             .setContentIntent(open)
+        // The icon travels as pixels, not as a resource id: for a moment
+        // around an update the system could not load this app's icon
+        // resource and answered the notification with "Bad notification",
+        // which kills the app (two processes in three seconds on a Galaxy
+        // Tab A, a fresh Xperia install on its first update). A bitmap
+        // needs nothing looked up on the system's side. Drawn once; if the
+        // drawable cannot be rendered here the resource id is the fallback.
+        val icon = smallIcon()
+        if (icon != null) builder.setSmallIcon(icon) else builder.setSmallIcon(R.drawable.ic_stat_service)
+        return builder
             .setOngoing(true)
             .setShowWhen(false)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
+    }
+
+    private var smallIconBitmap: IconCompat? = null
+
+    /** The status bar icon rendered to a 24 dp bitmap, cached for the
+     *  service's life; null when the drawable cannot be drawn. */
+    private fun smallIcon(): IconCompat? {
+        smallIconBitmap?.let { return it }
+        return try {
+            val drawable = ContextCompat.getDrawable(this, R.drawable.ic_stat_service) ?: return null
+            val px = (24 * resources.displayMetrics.density).toInt().coerceAtLeast(24)
+            val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, px, px)
+            drawable.draw(canvas)
+            IconCompat.createWithBitmap(bitmap).also { smallIconBitmap = it }
+        } catch (e: Exception) {
+            Log.w(TAG, "status bar icon not drawable, using the resource: $e")
+            null
+        }
     }
 }
