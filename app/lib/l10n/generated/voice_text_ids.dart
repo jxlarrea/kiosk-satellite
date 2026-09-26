@@ -161,5 +161,7 @@ const voiceTextMessageIds = <String, String>{
   "Play": "mediaPlay",
   "Play last 10 seconds": "voiceTesterPlayRecent",
   "Activations": "voiceDiagnosticsActivations",
-  "No near misses recorded yet.": "voiceDiagnosticsNoNearMisses"
+  "No near misses recorded yet.": "voiceDiagnosticsNoNearMisses",
+  "Download": "deviceDownload",
+  "Download failed": "filesDownloadFailed"
 };

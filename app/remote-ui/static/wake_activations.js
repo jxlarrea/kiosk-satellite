@@ -1,5 +1,5 @@
 import { cameraAction, cameraListRow } from './cameras.js';
-import { cmd } from './core.js';
+import { cmd, state } from './core.js';
 import { watchUpdates } from './live.js';
 import { messageLanguage, voiceText } from './localization.js';
 import { hintRow } from './widgets.js';
@@ -39,16 +39,48 @@ function when(a) {
   });
 }
 
+async function clipUrl(a) {
+  const r = await cmd('getWakeWordActivationAudio', { id: a.id });
+  if (!r.ok) throw new Error(r.error || 'no clip');
+  const bytes = Uint8Array.from(atob(r.data.base64), (c) => c.charCodeAt(0));
+  return URL.createObjectURL(new Blob([bytes], { type: r.data.mimeType }));
+}
+
+// "office-tablet-hey-luna-20260926-124512.wav", "...-near-miss.wav" for a
+// near miss: sorts by device, then word, then time in a downloads folder.
+function clipName(a) {
+  const slug = (s) => String(s || '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const at = new Date(a.at);
+  const pad = (n) => String(n).padStart(2, '0');
+  const stamp = `${at.getFullYear()}${pad(at.getMonth() + 1)}${pad(at.getDate())}-`
+    + `${pad(at.getHours())}${pad(at.getMinutes())}${pad(at.getSeconds())}`;
+  return [slug(state.device?.name) || 'kiosk', slug(a.wakeWord || a.engine), stamp,
+    a.nearMiss ? 'near-miss' : ''].filter(Boolean).join('-') + '.wav';
+}
+
+async function download(a) {
+  try {
+    const url = await clipUrl(a);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = clipName(a);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (_) {
+    alert(voiceText('Download failed'));
+  }
+}
+
 async function play(a, repaint) {
   const same = player && player.id === a.id;
   stopPlayback();
   repaint();
   if (same) return;
   try {
-    const r = await cmd('getWakeWordActivationAudio', { id: a.id });
-    if (!r.ok) throw new Error(r.error || 'no clip');
-    const bytes = Uint8Array.from(atob(r.data.base64), (c) => c.charCodeAt(0));
-    const url = URL.createObjectURL(new Blob([bytes], { type: r.data.mimeType }));
+    const url = await clipUrl(a);
     const audio = new Audio(url);
     player = { id: a.id, audio, url };
     audio.addEventListener('ended', () => {
@@ -67,7 +99,8 @@ function row(a, repaint) {
   const playing = player && player.id === a.id;
   const action = cameraAction(voiceText(playing ? 'Stop' : 'Play'),
     () => play(a, repaint), false, playing ? 'stop' : 'play');
-  const r = cameraListRow(a.wakeWord || a.engine, '', [action],
+  const save = cameraAction(voiceText('Download'), () => download(a), false, 'download');
+  const r = cameraListRow(a.wakeWord || a.engine, '', [action, save],
     { onClick: () => play(a, repaint) });
   // Date, then the numbers, then what vsWakeWord heard: one fact a line,
   // the same three lines the device shows.

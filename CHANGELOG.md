@@ -6,6 +6,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Added
 - **Sendspin playback in the system media controls.** The Sendspin player is now an Android media session with a media notification, so the notification shade, the lock screen and anything else that reads the device's media sessions show the track, artist, cover and progress, with play, pause, next, previous and seek. Hardware media keys and Bluetooth remotes steer it too. The controls go through the same controller path as the Now Playing view and only offer what the Sendspin server accepts. A track shows up once it has played, stays as paused until the player disconnects and does not flash to paused between songs.
+- **Download wake word diagnostics clips.** Each activation and near miss on the Wake word diagnostics page in the remote admin has a Download button next to Play, which saves its 3 second clip as a WAV named after the device, the wake word and the time.
 
 ### Fixed
 - **Analytics no longer resends an old crash journal every day.** The sender remembered the last fifty crash entries it had reported, but the journal can hold more short entries than that, so a kiosk whose journal held 53 watchdog notes from one bad morning sent them, forgot the oldest as the list rolled, and sent them all again the next day, seventy reports a day for a week. Only the newest forty entries are candidates now and two hundred are remembered, so a report goes out once.
