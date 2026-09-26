@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.84 - 2026-09-26
 
 ### Added
 - **Wake word diagnostics.** A new Wake word diagnostics page keeps the last 10 wake word activations and the last 10 near misses, moments when the score reached 75% of the threshold and fell back without triggering. Each shows its score and threshold, the peak and average level of the audio, a Clipped flag when the microphone hit full scale and, for vsWakeWord, the phonemes it heard, with a 3 second clip that plays on the device or in the browser. The page opens from the Wake Word Tester group on the device and from the Voice Satellite page in the remote admin. It is off by default. Turning it off deletes the recordings.
