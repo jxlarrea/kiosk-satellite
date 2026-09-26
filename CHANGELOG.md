@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## v2026.9.85 - 2026-09-26
 
+### Added
+- **Sendspin playback in the system media controls.** The Sendspin player is now an Android media session with a media notification, so the notification shade, the lock screen and anything else that reads the device's media sessions show the track, artist, cover and progress, with play, pause, next, previous and seek. Hardware media keys and Bluetooth remotes steer it too. The controls go through the same controller path as the Now Playing view and only offer what the Sendspin server accepts. A track shows up once it has played, stays as paused until the player disconnects and does not flash to paused between songs.
+
 ### Fixed
 - **Analytics no longer resends an old crash journal every day.** The sender remembered the last fifty crash entries it had reported, but the journal can hold more short entries than that, so a kiosk whose journal held 53 watchdog notes from one bad morning sent them, forgot the oldest as the list rolled, and sent them all again the next day, seventy reports a day for a week. Only the newest forty entries are candidates now and two hundred are remembered, so a report goes out once.
 - **The service notification can no longer get the app killed.** Android answers a notification whose icon it cannot load with "Bad notification" and kills the app, and for a moment around an update it could not load this app's icon resource: a Galaxy Tab A lost two processes in three seconds that way and a fresh Xperia install died on its first update. The Kiosk Satellite Service now sends its status bar icon as pixels rather than a resource id, drawn once when the service starts, so the system has nothing to look up.

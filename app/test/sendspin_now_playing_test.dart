@@ -626,6 +626,66 @@ void main() {
       },
     );
 
+    test(
+      'the local stream\'s cover goes to the native media session once',
+      () async {
+        await build(
+          extra: {
+            'ks.sendspin.player': '',
+            'ks.sendspin.player_source': '',
+            'ks.sendspin.enabled': true,
+          },
+        );
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        final native = <MethodCall>[];
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          native.add(call);
+          return true;
+        });
+        final asked = <String>[];
+        sendspin.artworkFetcher = (url) async {
+          asked.add(url);
+          return Uint8List.fromList([1, 2, 3]);
+        };
+        const codec = StandardMethodCodec();
+        Future<void> fromNative(String method, Map<String, Object?> args) =>
+            messenger.handlePlatformMessage(
+              channel.name,
+              codec.encodeMethodCall(MethodCall(method, args)),
+              (_) {},
+            );
+        Iterable<MethodCall> pushes() =>
+            native.where((c) => c.method == 'setArtwork');
+        await fromNative('metadataChanged', {
+          'title': 'Song',
+          'artworkUrl': 'https://ma.local/a',
+        });
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(pushes(), hasLength(1));
+        final args = pushes().single.arguments as Map;
+        expect(args['url'], 'https://ma.local/a');
+        expect(args['bytes'], [1, 2, 3]);
+        // Progress updates and the same cover again push nothing.
+        await fromNative('metadataChanged', {'positionMs': 5000});
+        await fromNative('metadataChanged', {
+          'title': 'Song',
+          'artworkUrl': 'https://ma.local/a',
+        });
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(pushes(), hasLength(1));
+        expect(asked, ['https://ma.local/a']);
+        // A new track's cover is pushed in turn.
+        await fromNative('metadataChanged', {
+          'title': 'Next',
+          'artworkUrl': 'https://ma.local/b',
+        });
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(pushes(), hasLength(2));
+        expect((pushes().last.arguments as Map)['url'], 'https://ma.local/b');
+      },
+    );
+
     test('the watcher re-bases a position the engine ran away with', () async {
       await build(
         extra: {

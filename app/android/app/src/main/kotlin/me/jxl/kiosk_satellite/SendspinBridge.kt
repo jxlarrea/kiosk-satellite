@@ -9,6 +9,7 @@ import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import me.jxl.kiosk_satellite.sendspin.NativeSendspinSession
+import me.jxl.kiosk_satellite.sendspin.SendspinMediaSession
 import me.jxl.kiosk_satellite.sendspin.discovery.NsdDiscoveryManager
 import me.jxl.kiosk_satellite.sendspin.network.WebSocketUrlBuilder
 
@@ -34,6 +35,10 @@ import me.jxl.kiosk_satellite.sendspin.network.WebSocketUrlBuilder
  * - getStatus
  * - duck {factor}
  * - control {command}
+ * - setArtwork {url, bytes}
+ *
+ * The player is also an Android media session ([SendspinMediaSession]), so
+ * the system media controls and media keys see and steer what plays here.
  *
  * Events pushed to Dart: stateChanged, metadataChanged, volumeChanged,
  * playingChanged, controllerChanged.
@@ -84,6 +89,8 @@ class SendspinBridge(
 
     @Volatile private var lastReportedVolume = -1
     @Volatile private var lastReportedMuted = false
+
+    private val media = SendspinMediaSession(context) { command, value -> sendControl(command, value) }
 
     // Connectivity kick: when a network (re)appears, retry the connection
     // immediately instead of waiting out the reconnect ladder's current
@@ -206,15 +213,14 @@ class SendspinBridge(
                     val command = call.argument<String>("command") ?: ""
                     // Seek carries its position (ms); the rest take no value.
                     val value = call.argument<Number>("value")?.toLong() ?: 0L
-                    val allowed = supportedCommands
-                    if (command.isNotEmpty() &&
-                        (allowed.isEmpty() || command in allowed)
-                    ) {
-                        session?.sendCommand(command, value)
-                        result.success(true)
-                    } else {
-                        result.success(false)
-                    }
+                    result.success(sendControl(command, value))
+                }
+                // Cover bytes for the media session, fetched on the Dart
+                // side, which knows which self-signed hosts to trust.
+                "setArtwork" -> {
+                    val url = call.argument<String>("url") ?: ""
+                    media.setArtwork(url, call.argument<ByteArray>("bytes"))
+                    result.success(true)
                 }
                 else -> result.notImplemented()
             }
@@ -226,6 +232,14 @@ class SendspinBridge(
             session?.setMediaGain(VolumeController.mediaGain)
             if (started) publishVolumeIfChanged()
         }
+    }
+
+    /** Group transport control; false when the server does not take [command]. */
+    private fun sendControl(command: String, value: Long): Boolean {
+        val allowed = supportedCommands
+        if (command.isEmpty() || (allowed.isNotEmpty() && command !in allowed)) return false
+        session?.sendCommand(command, value)
+        return true
     }
 
     // ==================================================================
@@ -298,6 +312,7 @@ class SendspinBridge(
             lastPlaying = false
             emit("playingChanged", mapOf("playing" to false))
         }
+        media.release()
         emitState()
     }
 
@@ -476,6 +491,7 @@ class SendspinBridge(
         if (playing != lastPlaying) {
             lastPlaying = playing
             emit("playingChanged", mapOf("playing" to playing))
+            media.onPlayingChanged(playing)
         }
     }
 
@@ -514,6 +530,7 @@ class SendspinBridge(
             } else if (started && discoveryMode) {
                 scheduleDiscoveryRestart()
             }
+            media.onConnectionChanged(connected)
             emitState()
         }
 
@@ -536,6 +553,7 @@ class SendspinBridge(
             this@SendspinBridge.album = album
             if (positionMs >= 0) lastPositionMs = positionMs
             if (durationMs >= 0) lastDurationMs = durationMs
+            media.onMetadata(title, artist, album, artworkUrl, positionMs, durationMs)
             emit(
                 "metadataChanged",
                 buildMap {
@@ -551,6 +569,7 @@ class SendspinBridge(
 
         override fun onPositionUpdate(positionMs: Long) {
             lastPositionMs = positionMs
+            media.onPosition(positionMs)
             emit("metadataChanged", mapOf("positionMs" to positionMs))
         }
 
@@ -566,6 +585,7 @@ class SendspinBridge(
 
         override fun onControllerState(commands: List<String>, shuffle: Boolean, repeat: String) {
             supportedCommands = commands
+            media.onCommands(commands)
             emit(
                 "controllerChanged",
                 mapOf("supportedCommands" to commands, "shuffle" to shuffle, "repeat" to repeat),

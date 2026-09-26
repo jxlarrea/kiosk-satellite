@@ -10,5 +10,10 @@
   "ks_service_location": "androidServiceLocation",
   "ks_service_remote": "androidServiceRemote",
   "ks_service_kiosk": "androidServiceKiosk",
-  "ks_service_sessions": "androidServiceSessions"
+  "ks_service_sessions": "androidServiceSessions",
+  "ks_media_channel": "drawerNowPlaying",
+  "ks_media_play": "mediaPlay",
+  "ks_media_pause": "mediaPause",
+  "ks_media_previous": "mediaPreviousTrack",
+  "ks_media_next": "mediaNextTrack"
 }

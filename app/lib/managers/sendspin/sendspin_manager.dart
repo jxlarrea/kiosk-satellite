@@ -220,6 +220,22 @@ class SendspinManager extends Manager {
   Future<Uint8List?> loadArtwork(String url) =>
       _covers.load(url, artworkFetcher);
 
+  /// The local stream's cover URL last handed to the native media session.
+  String _sessionArtUrl = '';
+
+  /// Hand the local stream's cover to the native media session, which
+  /// cannot fetch it itself: the Music Assistant image proxy is often
+  /// self-signed, and [fetchArtwork] knows which hosts to trust.
+  Future<void> _pushSessionArtwork(String url) async {
+    final bytes = await loadArtwork(url);
+    if (url != _sessionArtUrl) return;
+    try {
+      await _channel.invokeMethod('setArtwork', {'url': url, 'bytes': bytes});
+    } catch (e) {
+      log.warn(name, 'media session artwork failed: $e');
+    }
+  }
+
   Future<Uint8List?> fetchArtwork(
     String url, {
     Duration timeout = const Duration(seconds: 12),
@@ -792,6 +808,14 @@ class SendspinManager extends Manager {
             'server=${map['serverName']} synced=${map['synced']}',
           );
         case 'metadataChanged':
+          final art = map['artworkUrl'];
+          if (art is String &&
+              art.isNotEmpty &&
+              art != 'null' &&
+              art != _sessionArtUrl) {
+            _sessionArtUrl = art;
+            unawaited(_pushSessionArtwork(art));
+          }
           // Metadata arrives as deltas: a progress-only update carries no
           // title, and the server may send literal "null" strings. Absent
           // fields must not clobber what an earlier message established.

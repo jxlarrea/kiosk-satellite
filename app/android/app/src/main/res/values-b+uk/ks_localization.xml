@@ -13,4 +13,9 @@
     <string name="ks_service_remote" formatted="false">"робота віддаленого адміністрування"</string>
     <string name="ks_service_kiosk" formatted="false">"захист режиму кіоска"</string>
     <string name="ks_service_sessions" formatted="false">"підтримка з\'єднання з Home Assistant"</string>
+    <string name="ks_media_channel" formatted="false">"Зараз грає"</string>
+    <string name="ks_media_play" formatted="false">"Відтворити"</string>
+    <string name="ks_media_pause" formatted="false">"Пауза"</string>
+    <string name="ks_media_previous" formatted="false">"Попередній трек"</string>
+    <string name="ks_media_next" formatted="false">"Наступний трек"</string>
 </resources>

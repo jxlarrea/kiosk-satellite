@@ -13,4 +13,9 @@
     <string name="ks_service_remote" formatted="false">"atendiendo la administración remota"</string>
     <string name="ks_service_kiosk" formatted="false">"protegiendo el modo kiosko"</string>
     <string name="ks_service_sessions" formatted="false">"manteniendo la conexión con Home Assistant"</string>
+    <string name="ks_media_channel" formatted="false">"Reproduciendo Ahora"</string>
+    <string name="ks_media_play" formatted="false">"Reproducir"</string>
+    <string name="ks_media_pause" formatted="false">"Pausar"</string>
+    <string name="ks_media_previous" formatted="false">"Pista anterior"</string>
+    <string name="ks_media_next" formatted="false">"Pista siguiente"</string>
 </resources>

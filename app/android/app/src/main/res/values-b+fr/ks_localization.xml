@@ -13,4 +13,9 @@
     <string name="ks_service_remote" formatted="false">"service d\'administration à distance actif"</string>
     <string name="ks_service_kiosk" formatted="false">"protection du mode kiosque"</string>
     <string name="ks_service_sessions" formatted="false">"maintien de la connexion à Home Assistant"</string>
+    <string name="ks_media_channel" formatted="false">"Lecture en cours"</string>
+    <string name="ks_media_play" formatted="false">"Lecture"</string>
+    <string name="ks_media_pause" formatted="false">"Pause"</string>
+    <string name="ks_media_previous" formatted="false">"Morceau précédent"</string>
+    <string name="ks_media_next" formatted="false">"Morceau suivant"</string>
 </resources>

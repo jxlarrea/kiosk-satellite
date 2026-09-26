@@ -13,4 +13,9 @@
     <string name="ks_service_remote" formatted="false">"wartet auf Fernverwaltung"</string>
     <string name="ks_service_kiosk" formatted="false">"schützt den Kioskmodus"</string>
     <string name="ks_service_sessions" formatted="false">"hält die Verbindung zu Home Assistant aufrecht"</string>
+    <string name="ks_media_channel" formatted="false">"Jetzt läuft"</string>
+    <string name="ks_media_play" formatted="false">"Wiedergabe"</string>
+    <string name="ks_media_pause" formatted="false">"Pause"</string>
+    <string name="ks_media_previous" formatted="false">"Vorheriger Titel"</string>
+    <string name="ks_media_next" formatted="false">"Nächster Titel"</string>
 </resources>

@@ -20,4 +20,9 @@
     <string name="ks_service_remote" formatted="false">"serving the remote admin"</string>
     <string name="ks_service_kiosk" formatted="false">"guarding kiosk mode"</string>
     <string name="ks_service_sessions" formatted="false">"keeping Home Assistant connected"</string>
+    <string name="ks_media_channel" formatted="false">"Now Playing"</string>
+    <string name="ks_media_play" formatted="false">"Play"</string>
+    <string name="ks_media_pause" formatted="false">"Pause"</string>
+    <string name="ks_media_previous" formatted="false">"Previous track"</string>
+    <string name="ks_media_next" formatted="false">"Next track"</string>
 </resources>
