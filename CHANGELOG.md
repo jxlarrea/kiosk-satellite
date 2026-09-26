@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.85 - 2026-09-26
 
 ### Fixed
 - **Analytics no longer resends an old crash journal every day.** The sender remembered the last fifty crash entries it had reported, but the journal can hold more short entries than that, so a kiosk whose journal held 53 watchdog notes from one bad morning sent them, forgot the oldest as the list rolled, and sent them all again the next day, seventy reports a day for a week. Only the newest forty entries are candidates now and two hundred are remembered, so a report goes out once.
