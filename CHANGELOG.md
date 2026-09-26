@@ -2,6 +2,18 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Wake word diagnostics.** A new Wake word diagnostics page keeps the last 10 wake word activations and the last 10 near misses, moments when the score reached 75% of the threshold and fell back without triggering. Each shows its score and threshold, the peak and average level of the audio, a Clipped flag when the microphone hit full scale and, for vsWakeWord, the phonemes it heard, with a 3 second clip that plays on the device or in the browser. The page opens from the Wake Word Tester group on the device and from the Voice Satellite page in the remote admin. It is off by default. Turning it off deletes the recordings.
+- **Play back the last 10 seconds in the wake word tester.** The tester's new Play last 10 seconds button plays what the wake word engine heard through the kiosk's speaker, so you can hear whether the microphone is clipping or too quiet. Detection is held off while it plays, so the recording cannot trigger the wake word.
+
+### Changed
+- **A faster, smoother wake word tester.** The chart scrolls smoothly over a 10 second window, settles its scale on round numbers instead of jumping with every peak and shows the microphone level under the score, with each detection marked through both. The dialog no longer rebuilds its whole layout several times a second and the log only draws the lines on screen.
+
+### Fixed
+- **Remote admin settings pages no longer re-render when the screensaver wakes.** Waking from the screensaver saves the screen brightness in a hidden setting. The remote admin rebuilt every settings page for that change, including whichever page was open, so every wake word that woke the screen reset the page in front of you.
+
 ## v2026.9.83 - 2026-09-25
 
 ### Added

@@ -14,6 +14,7 @@ import 'ort_tensor_io.dart';
 import 'ort_float_runner.dart';
 import 'stream_matcher.dart';
 import '../wake_msg.dart';
+import '../near_miss.dart';
 import '../pcm16.dart';
 import '../chunk_telemetry.dart';
 
@@ -62,6 +63,7 @@ class _Kw {
   });
   final String id;
   final String wakeWord;
+  final nearMiss = NearMissTracker();
 
   /// Stop classifier rather than a wake word: armed only during interruptible
   /// states, and firing interrupts playback instead of starting a turn.
@@ -378,6 +380,29 @@ class _IsolateWorker {
         targetIndex: combined.targetIndex,
         nowMs: nowMs,
       );
+      if (!k.isStop) {
+        final miss = k.nearMiss.update(
+          score: combined.matchedConfidence,
+          threshold: combined.gateThreshold.isFinite
+              ? combined.gateThreshold
+              : k.manifest.ctc.minMatchedConfidence,
+          fired: fired,
+          detail: () => {
+            'decoded': k.manifest.ctc.phonemesFor(decode.ids),
+            'editDistance': combined.editDistance < (1 << 20)
+                ? combined.editDistance
+                : -1,
+          },
+        );
+        if (miss != null) {
+          _main.send({
+            'type': WakeMsg.nearMiss,
+            'id': k.id,
+            'wakeWord': k.wakeWord,
+            ...miss,
+          });
+        }
+      }
       if (_telemetry) {
         // A CTC model has no continuous probability; the meaningful signal
         // is the matched confidence when the decoder aligns a target (a hit
@@ -431,11 +456,22 @@ class _IsolateWorker {
         _log('info',
             'detected "${k.id}" (conf ${combined.matchedConfidence.toStringAsFixed(2)}, ed ${combined.editDistance}, wake ended ${_absSamples - wakeEnd} samples back)');
         _detected = true;
+        final conf = combined.matchedConfidence;
         _main.send({
           'type': WakeMsg.detection,
           'id': k.id,
           'wakeWord': k.wakeWord,
           'wakeEndSample': wakeEnd,
+          // For the diagnostics log: what the match scored against what it
+          // had to clear, and what the model actually heard.
+          'score': conf.isFinite ? conf : 0.0,
+          'threshold': combined.gateThreshold.isFinite
+              ? combined.gateThreshold
+              : 0.0,
+          'editDistance': combined.editDistance < (1 << 20)
+              ? combined.editDistance
+              : -1,
+          'decoded': k.manifest.ctc.phonemesFor(decode.ids),
         });
         return;
       }
@@ -497,6 +533,9 @@ class _IsolateWorker {
   void resumeDetection([int? absSample]) {
     if (_stopped) return;
     _detected = false;
+    for (final k in _kws) {
+      k.nearMiss.reset();
+    }
     _samplesSinceInfer = 0;
     // Main kept counting through the turn while we were not being fed; adopt
     // its count or every later detection names a sample it has long evicted.

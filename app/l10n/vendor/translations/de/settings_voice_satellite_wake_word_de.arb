@@ -30,5 +30,16 @@
   "voiceSlightlySensitive": "Wenig empfindlich",
   "voiceModeratelySensitive": "Mäßig empfindlich",
   "voiceOnDevice": "Auf dem Gerät",
-  "voiceOnDeviceEngine": "Auf dem Gerät ({engine})"
+  "voiceOnDeviceEngine": "Auf dem Gerät ({engine})",
+  "voiceDiagnosticsPage": "Aktivierungswort-Diagnose",
+  "voiceDiagnosticsHint": "Letzte Aktivierungen und Beinahe-Erkennungen mit Audioclips",
+  "voiceDiagnosticsTitle": "Aktivierungswort-Diagnose aktivieren",
+  "voiceDiagnosticsDescription": "Zeichnet die letzten 10 Aktivierungen und Beinahe-Erkennungen des Aktivierungsworts mit ihren Bewertungen und je einem 3 Sekunden langen Audioclip auf. Beim Ausschalten werden sie gelöscht.",
+  "voiceDiagnosticsEmpty": "Noch keine Aktivierungen des Aktivierungsworts aufgezeichnet.",
+  "voiceDiagnosticsActivations": "Aktivierungen",
+  "voiceDiagnosticsNoNearMisses": "Noch keine Beinahe-Erkennungen aufgezeichnet.",
+  "voiceDiagnosticsPeakLevel": "Spitzenpegel",
+  "voiceDiagnosticsAverageLevel": "Durchschnittspegel",
+  "voiceDiagnosticsClipped": "Übersteuert",
+  "voiceDiagnosticsHeard": "Gehört"
 }

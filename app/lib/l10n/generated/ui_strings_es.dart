@@ -11102,6 +11102,9 @@ class UiStringsEs extends UiStrings {
   String get voiceLogConfidence => 'conf.';
 
   @override
+  String get voiceTesterPlayRecent => 'Reproducir los últimos 10 segundos';
+
+  @override
   String get voiceWakePage => 'Palabra de activación';
 
   @override
@@ -11211,6 +11214,44 @@ class UiStringsEs extends UiStrings {
   String voiceOnDeviceEngine(String engine) {
     return 'En el dispositivo ($engine)';
   }
+
+  @override
+  String get voiceDiagnosticsPage => 'Diagnóstico de la palabra de activación';
+
+  @override
+  String get voiceDiagnosticsHint =>
+      'Activaciones y casi detecciones recientes con clips de audio';
+
+  @override
+  String get voiceDiagnosticsTitle =>
+      'Activar el diagnóstico de la palabra de activación';
+
+  @override
+  String get voiceDiagnosticsDescription =>
+      'Graba las últimas 10 activaciones y casi detecciones de la palabra de activación con sus puntuaciones y un clip de audio de 3 segundos de cada una. Al desactivarlo se eliminan.';
+
+  @override
+  String get voiceDiagnosticsEmpty =>
+      'Aún no se han grabado activaciones de la palabra de activación.';
+
+  @override
+  String get voiceDiagnosticsActivations => 'Activaciones';
+
+  @override
+  String get voiceDiagnosticsNoNearMisses =>
+      'Aún no se han grabado casi detecciones.';
+
+  @override
+  String get voiceDiagnosticsPeakLevel => 'Nivel máximo';
+
+  @override
+  String get voiceDiagnosticsAverageLevel => 'Nivel medio';
+
+  @override
+  String get voiceDiagnosticsClipped => 'Saturado';
+
+  @override
+  String get voiceDiagnosticsHeard => 'Escuchado';
 
   @override
   String get settingDisableCacheTitle => 'Desactivar caché';

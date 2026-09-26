@@ -216,6 +216,9 @@ const Map<String, String> subpageHints = {
   'Chimes': 'Wake, done, error, timer and announcement sounds',
   'Wake Word': 'Engine, wake words, sensitivity, cached models',
   'Appearance': 'Overlay skin, theme, activity bar, text size',
+  // Its entry row sits under the tester, not with the three pages above.
+  'Wake word diagnostics':
+      'Recent activations and near misses with audio clips',
   // Screen & Audio.
   'Microphone settings': 'Capture mode, channel, gain, live level',
   'Adaptive brightness': 'Follow the room light with the ambient light sensor',
@@ -4991,6 +4994,24 @@ const wakeWordResumeTimeoutSeconds = SettingDef<num>(
   dependsOn: 'wake_word.enabled',
 );
 
+/// Keeps the last 10 wake word activations with a short clip of each, for
+/// telling a false trigger from a real one and hearing what the microphone
+/// picked up. Audio stays on the device and goes away with the switch.
+const wakeWordDiagnostics = SettingDef<bool>(
+  key: 'wake_word.diagnostics',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable wake word diagnostics',
+  description:
+      'Records the last 10 wake word activations and near misses with their '
+      'scores and a 3 second audio clip of each. Turning this off deletes '
+      'them.',
+  category: 'Voice Satellite',
+  subpage: 'Wake word diagnostics',
+  dependsOn: 'wake_word.enabled',
+  perDevice: true,
+);
+
 // Sounds stored on this kiosk, shared by the device and Remote Admin.
 const voiceChimeWake = SettingDef<String>(
   key: 'voice_chimes.wake',
@@ -8446,6 +8467,7 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordBackground,
   wakeWordReturnToBackground,
   wakeWordResumeTimeoutSeconds,
+  wakeWordDiagnostics,
   vsNativePipeline,
   haUrl,
   haToken,

@@ -24,6 +24,11 @@ class WakeMsg {
   /// hence gated.
   static const telemetry = 'telemetry';
 
+  /// A wake word that scored within reach of its threshold and fell back
+  /// without firing, one per episode (see NearMissTracker): {id, wakeWord,
+  /// score, threshold, ...}. Always on; rare, so ungated.
+  static const nearMiss = 'nearMiss';
+
   // main -> isolate (control; audio arrives as a bare Uint8List)
   static const init = 'init';
   static const stop = 'stop';

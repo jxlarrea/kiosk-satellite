@@ -154,6 +154,9 @@ void main() {
       defs.wakeWordPreferFp32.key,
       defs.wakeWordResumeTimeoutSeconds.key,
     ]);
+    // Diagnostics is a page of its own, opened from the tester's group.
+    expect(defs.wakeWordDiagnostics.subpage, 'Wake word diagnostics');
+    expect(defs.subpageHints, contains('Wake word diagnostics'));
     // Keep listening in the background stays in General on the page above.
     expect(defs.wakeWordBackground.subpage, isNull);
   });

@@ -224,5 +224,16 @@
       ],
       "remoteAdmin": []
     }
+  },
+  "voiceTesterPlayRecent": "Play last 10 seconds",
+  "@voiceTesterPlayRecent": {
+    "context": "Settings > Voice Satellite > Wake Word Tester",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake Word Tester"
+      ],
+      "remoteAdmin": []
+    }
   }
 }

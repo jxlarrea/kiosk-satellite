@@ -36,6 +36,11 @@ String shortDate(DateTime date) =>
 String longDate(DateTime date) =>
     _safe((locale) => DateFormat.yMMMMd(locale), date);
 
+/// "Sun, Aug 2 2:32:05 PM" / "zo 2 aug 14:32:05" (wake word activations,
+/// where the seconds tell two close triggers apart).
+String shortDateTime(DateTime date) =>
+    _safe((locale) => DateFormat.MMMEd(locale).add_jms(), date);
+
 String _safe(DateFormat Function(String?) make, DateTime date) {
   try {
     return make(null).format(date); // null reads Intl.defaultLocale

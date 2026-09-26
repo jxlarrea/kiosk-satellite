@@ -312,6 +312,31 @@ abstract class WakeWordEngine {
   set onTelemetry(void Function(Map<String, Object?>)? sink) {}
   void setTelemetry(bool enabled, {bool tester = false}) {}
 
+  /// Keep the last [recentAudioLimit] of heard audio for [recentAudio]. Off
+  /// unless the tester is open or wake word diagnostics is on, so a normal
+  /// satellite holds no audio at all.
+  set recordAudio(bool enabled) {}
+
+  /// How much audio [recordAudio] keeps.
+  static const recentAudioLimit = Duration(seconds: 10);
+
+  /// Up to [length] of the newest audio the engine heard, as 16 kHz mono
+  /// PCM16, or null when nothing is being recorded.
+  Uint8List? recentAudio(Duration length) => null;
+
+  /// Near misses as the detector spots them: a wake word that scored within
+  /// reach of its threshold and fell back without firing, with its peak
+  /// score and threshold in [detail]. Always reported by engines that can;
+  /// the manager keeps them only while diagnostics is on.
+  set onNearMiss(
+    void Function(WakeWordModelRef model, Map<String, Object?> detail)? sink,
+  ) {}
+
+  /// What the detector reported with its latest wake word detection (score,
+  /// threshold and whatever else the engine knows), or null. Read by the
+  /// detection callback, which runs before the next detection can land.
+  Map<String, Object?>? get lastDetection => null;
+
   /// Pause/resume *detection* without tearing the engine down. The mic stays
   /// open and the models stay loaded, so resuming is instant — as opposed to
   /// stop()+start(), which re-downloads/recompiles every model.

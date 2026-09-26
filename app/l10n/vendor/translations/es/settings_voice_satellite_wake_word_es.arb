@@ -30,5 +30,16 @@
   "voiceSlightlySensitive": "Poco sensible",
   "voiceModeratelySensitive": "Moderadamente sensible",
   "voiceOnDevice": "En el dispositivo",
-  "voiceOnDeviceEngine": "En el dispositivo ({engine})"
+  "voiceOnDeviceEngine": "En el dispositivo ({engine})",
+  "voiceDiagnosticsPage": "Diagnóstico de la palabra de activación",
+  "voiceDiagnosticsHint": "Activaciones y casi detecciones recientes con clips de audio",
+  "voiceDiagnosticsTitle": "Activar el diagnóstico de la palabra de activación",
+  "voiceDiagnosticsDescription": "Graba las últimas 10 activaciones y casi detecciones de la palabra de activación con sus puntuaciones y un clip de audio de 3 segundos de cada una. Al desactivarlo se eliminan.",
+  "voiceDiagnosticsEmpty": "Aún no se han grabado activaciones de la palabra de activación.",
+  "voiceDiagnosticsActivations": "Activaciones",
+  "voiceDiagnosticsNoNearMisses": "Aún no se han grabado casi detecciones.",
+  "voiceDiagnosticsPeakLevel": "Nivel máximo",
+  "voiceDiagnosticsAverageLevel": "Nivel medio",
+  "voiceDiagnosticsClipped": "Saturado",
+  "voiceDiagnosticsHeard": "Escuchado"
 }

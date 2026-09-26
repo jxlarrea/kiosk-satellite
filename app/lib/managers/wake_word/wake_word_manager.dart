@@ -16,6 +16,7 @@ import 'background_listening.dart';
 import 'engine.dart';
 import 'model_cache.dart';
 import 'system_permissions.dart';
+import 'wake_diagnostics.dart';
 import 'mww/mww_engine.dart';
 import 'mww/mww_probe.dart';
 import 'oww/oww_engine.dart';
@@ -56,7 +57,13 @@ class WakeWordManager extends Manager
     super.log,
     this._settings, {
     @visibleForTesting Map<WakeWordEngineType, WakeWordEngine>? engines,
-  }) : _engines = {...?engines};
+    WakeWordDiagnostics? diagnostics,
+  }) : _engines = {...?engines},
+       diagnostics = diagnostics ?? WakeWordDiagnostics();
+
+  /// The last few activations with a clip of each, while the user has wake
+  /// word diagnostics on. Both settings UIs list them.
+  final WakeWordDiagnostics diagnostics;
 
   final SettingsManager _settings;
 
@@ -287,6 +294,52 @@ class WakeWordManager extends Manager
     MicLevelMonitor.instance.stop();
   }
 
+  bool get _diagnosticsOn => enabled && _settings.get(defs.wakeWordDiagnostics);
+
+  /// Keep recent audio in the engine while something can use it: the tester
+  /// plays back the last 10 seconds, and diagnostics saves a clip of each
+  /// activation. Nobody else pays for the buffer.
+  void _applyRecording() {
+    _engine
+      ..recordAudio = _testers > 0 || _diagnosticsOn
+      ..onNearMiss = _diagnosticsOn ? _onNearMiss : null;
+  }
+
+  /// At most one near miss per this, so one noisy conversation cannot fill
+  /// all ten slots in a few seconds.
+  static const _nearMissGap = Duration(seconds: 3);
+  DateTime? _lastNearMiss;
+
+  void _onNearMiss(WakeWordModelRef model, Map<String, Object?> detail) {
+    // A tester (or a clip playing back through the speaker, which holds
+    // one) is not the room: its near misses are not worth keeping.
+    if (!_diagnosticsOn || _testers > 0) return;
+    final now = DateTime.now();
+    final last = _lastNearMiss;
+    if (last != null && now.difference(last) < _nearMissGap) return;
+    final pcm = _engine.recentAudio(WakeWordDiagnostics.clipLength);
+    if (pcm == null || pcm.isEmpty) return;
+    _lastNearMiss = now;
+    diagnostics
+        .record(
+          wakeWord: model.wakeWord,
+          engine: _config?.engine.label ?? '',
+          pcm: pcm,
+          detection: detail,
+          nearMiss: true,
+          at: now,
+        )
+        .then(
+          (_) {},
+          onError: (Object e) =>
+              log.warn(name, 'could not save the near miss: $e'),
+        );
+  }
+
+  /// Up to [length] of what the engine heard last, as 16 kHz mono PCM16, or
+  /// null when it is not recording (no tester open, diagnostics off).
+  Uint8List? recentAudio(Duration length) => _engine.recentAudio(length);
+
   /// Point the active engine's telemetry at our stream (or unhook it).
   /// Re-run whenever the running engine changes, so requesting a test
   /// before the engine is up — or across an engine switch — still lands on
@@ -299,6 +352,7 @@ class WakeWordManager extends Manager
           })
         : null;
     _engine.setTelemetry(want, tester: want);
+    _applyRecording();
   }
 
   bool get enabled => _settings.get(defs.wakeWordEnabled);
@@ -649,6 +703,12 @@ class WakeWordManager extends Manager
   @override
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
+    // Saved activations belong to a switch that is on; anything left over
+    // from one turned off mid-write goes now.
+    unawaited(_diagnosticsOn ? diagnostics.load() : diagnostics.clear());
+    diagnostics.addListener(
+      () => bus.publish(const RemoteStatusChanged('wakeword-activations')),
+    );
     _backgroundInteractionSub = bus.on<VoiceInteractionChanged>().listen(
       _onBackgroundInteraction,
     );
@@ -700,6 +760,12 @@ class WakeWordManager extends Manager
         // capture session opens, so they land the same way the device
         // selection does.
         _restartForMicChange('microphone settings changed');
+      } else if (e.key == defs.wakeWordDiagnostics.key) {
+        _applyRecording();
+        if (!_diagnosticsOn) unawaited(diagnostics.clear());
+        // The remote list shows or hides with the switch, even when there
+        // is nothing to clear.
+        bus.publish(const RemoteStatusChanged('wakeword-activations'));
       } else if (e.key == defs.wakeWordPreferFp32.key) {
         // Models are fetched at engine start; a precision flip needs the
         // same stop/start to re-download as a mic change does.
@@ -1012,6 +1078,42 @@ class WakeWordManager extends Manager
       )
       ..register(
         Command(
+          name: 'getWakeWordActivations',
+          description:
+              'The last wake word activations and near misses saved by '
+              'wake word diagnostics, newest first, with their scores and '
+              'clip levels',
+          quiet: true,
+          handler: (_) async => CommandResult.ok({
+            'enabled': _diagnosticsOn,
+            'activations': [
+              for (final a in diagnostics.activations) a.toJson(),
+            ],
+            'nearMisses': [for (final a in diagnostics.nearMisses) a.toJson()],
+          }),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'getWakeWordActivationAudio',
+          description:
+              'The clip of one saved wake word activation or near miss, as '
+              'a base64 WAV '
+              '(16 kHz mono PCM16)',
+          params: const {'id': 'the activation id'},
+          quiet: true,
+          handler: (p) async {
+            final file = await diagnostics.clip('${p['id']}');
+            if (file == null) return const CommandResult.fail('no such clip');
+            return CommandResult.ok({
+              'mimeType': 'audio/wav',
+              'base64': base64Encode(await file.readAsBytes()),
+            });
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'benchmarkVsww',
           description:
               'Benchmark vsWakeWord ONNX inference across CPU/XNNPACK/NNAPI '
@@ -1240,7 +1342,7 @@ class WakeWordManager extends Manager
                   wakeWord: 'Test',
                   manifestUrl: '',
                 );
-            await _onDetection(model);
+            await _onDetection(model, simulated: true);
             return const CommandResult.ok();
           },
         ),
@@ -1347,6 +1449,7 @@ class WakeWordManager extends Manager
     if (previous != null && !identical(previous, desired) && previous.running) {
       log.info(name, 'engine changed; stopping the previous runner');
       await previous.stop();
+      previous.recordAudio = false;
       _runningEngine = null;
     }
     if (shouldRun && !_engine.running) {
@@ -1369,6 +1472,7 @@ class WakeWordManager extends Manager
         // A tester opened before this engine came up (or across an engine
         // switch) still gets its telemetry.
         if (_testers > 0) _applyTelemetry();
+        _applyRecording();
       } else if (!_failed) {
         // The engine reports its own failures (a refused mic, models that would
         // not download) through onFailure, which has already run and said
@@ -1447,11 +1551,17 @@ class WakeWordManager extends Manager
     }
   }
 
-  Future<void> _onDetection(WakeWordModelRef model) async {
+  Future<void> _onDetection(
+    WakeWordModelRef model, {
+    bool simulated = false,
+  }) async {
     // The engine has already paused detection and kept the mic — it is the
     // audio source for the turn the page is about to run.
     _active = false;
     log.info(name, 'detected "${model.id}"');
+    // Before any await: the clip must end at the detection, not wherever
+    // the mic has got to once the screen is on.
+    _recordActivation(model, simulated: simulated);
     // A dark panel wakes first, before anything else about the turn:
     // someone spoke to the device, and the UI the turn is about to show
     // must land on a lit screen. Covers the screensaver's screen-off timer
@@ -1474,6 +1584,25 @@ class WakeWordManager extends Manager
 
     // Self-heal: if the page never resumes us (crash, navigation), re-arm.
     _armResumeTimer();
+  }
+
+  void _recordActivation(WakeWordModelRef model, {required bool simulated}) {
+    if (!_diagnosticsOn) return;
+    final pcm = _engine.recentAudio(WakeWordDiagnostics.clipLength);
+    if (pcm == null || pcm.isEmpty) return;
+    diagnostics
+        .record(
+          wakeWord: model.wakeWord,
+          engine: _config?.engine.label ?? '',
+          pcm: pcm,
+          // A simulated wake has no score; the engine's is an older one.
+          detection: simulated ? null : _engine.lastDetection,
+        )
+        .then(
+          (_) {},
+          onError: (Object e) =>
+              log.warn(name, 'could not save the activation: $e'),
+        );
   }
 
   /// Whether a voice turn is running on the mic right now: the page (or the
@@ -1541,6 +1670,7 @@ class WakeWordManager extends Manager
     _stopMicLevelWatch();
     _resumeTimer?.cancel();
     await _engine.stop();
+    diagnostics.dispose();
   }
 }
 

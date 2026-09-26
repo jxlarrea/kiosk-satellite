@@ -18901,6 +18901,12 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///
   /// In en, this message translates to:
+  /// **'Play last 10 seconds'**
+  String get voiceTesterPlayRecent;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
   /// **'Wake Word'**
   String get voiceWakePage;
 
@@ -19083,6 +19089,72 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'On device ({engine})'**
   String voiceOnDeviceEngine(String engine);
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Wake word diagnostics'**
+  String get voiceDiagnosticsPage;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activations and near misses with audio clips'**
+  String get voiceDiagnosticsHint;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable wake word diagnostics'**
+  String get voiceDiagnosticsTitle;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Records the last 10 wake word activations and near misses with their scores and a 3 second audio clip of each. Turning this off deletes them.'**
+  String get voiceDiagnosticsDescription;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'No wake word activations recorded yet.'**
+  String get voiceDiagnosticsEmpty;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Activations'**
+  String get voiceDiagnosticsActivations;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'No near misses recorded yet.'**
+  String get voiceDiagnosticsNoNearMisses;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak level'**
+  String get voiceDiagnosticsPeakLevel;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Average level'**
+  String get voiceDiagnosticsAverageLevel;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Clipped'**
+  String get voiceDiagnosticsClipped;
+
+  /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Heard'**
+  String get voiceDiagnosticsHeard;
 
   /// Setting label.
   ///

@@ -19,6 +19,10 @@ Before adjusting anything, measure your actual input level. Go to **Settings > V
 
 Speak at a normal volume from the distance where you typically use the device. If a standard voice recorder app sounds fine but the tester displays a very low value, the issue lies within Android's capture path rather than the physical microphone.
 
+The tester's **Play last 10 seconds** button plays back exactly what the wake word engine heard, on the kiosk's speaker. Say the wake word from your usual spot, then listen. Harsh distortion on loud syllables means the signal is clipping. A faint or muffled recording means it is too quiet or the capture mode is wrong.
+
+To review activations after they happen, turn on **Enable wake word diagnostics** on **Settings > Voice Satellite > Wake word diagnostics**. The kiosk then keeps its last 10 wake word activations and, separately, its last 10 near misses: moments when the score reached 75% of the threshold and fell back without triggering. Each entry shows its score, the threshold it had to clear, the peak and average level of the audio and a 3 second clip you can play on the device or in the remote admin. An activation clip tells you whether a trigger came from you or from the TV. A near miss clip lets you hear why a wake word you said did not register. A clip marked **Clipped** reached full scale, so lower the gain. Turning diagnostics off deletes the recordings.
+
 The **Microphone level** row at the bottom of Microphone settings shows the same level without the tester. It opens the microphone itself when no wake word engine is running, so it also works before Voice Satellite has started. A bar that never moves means no audio reaches the app and the app log says why.
 
 ## Capture Mode

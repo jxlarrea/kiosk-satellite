@@ -40905,6 +40905,17 @@
       "remoteAdmin": []
     }
   },
+  "voiceTesterPlayRecent": "Reproducir los últimos 10 segundos",
+  "@voiceTesterPlayRecent": {
+    "context": "Settings > Voice Satellite > Wake Word Tester",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake Word Tester"
+      ],
+      "remoteAdmin": []
+    }
+  },
   "voiceWakePage": "Palabra de activación",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",
@@ -41321,6 +41332,149 @@
       "engine": {
         "type": "String"
       }
+    }
+  },
+  "voiceDiagnosticsPage": "Diagnóstico de la palabra de activación",
+  "@voiceDiagnosticsPage": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsHint": "Activaciones y casi detecciones recientes con clips de audio",
+  "@voiceDiagnosticsHint": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsTitle": "Activar el diagnóstico de la palabra de activación",
+  "@voiceDiagnosticsTitle": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsDescription": "Graba las últimas 10 activaciones y casi detecciones de la palabra de activación con sus puntuaciones y un clip de audio de 3 segundos de cada una. Al desactivarlo se eliminan.",
+  "@voiceDiagnosticsDescription": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsEmpty": "Aún no se han grabado activaciones de la palabra de activación.",
+  "@voiceDiagnosticsEmpty": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsActivations": "Activaciones",
+  "@voiceDiagnosticsActivations": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsNoNearMisses": "Aún no se han grabado casi detecciones.",
+  "@voiceDiagnosticsNoNearMisses": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsPeakLevel": "Nivel máximo",
+  "@voiceDiagnosticsPeakLevel": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsAverageLevel": "Nivel medio",
+  "@voiceDiagnosticsAverageLevel": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsClipped": "Saturado",
+  "@voiceDiagnosticsClipped": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
+    }
+  },
+  "voiceDiagnosticsHeard": "Escuchado",
+  "@voiceDiagnosticsHeard": {
+    "context": "Settings > Voice Satellite > Wake word diagnostics",
+    "description": "Translate the visible label or help. Keep model names and technical identifiers unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Wake word diagnostics"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Wake word diagnostics"
+      ]
     }
   },
   "settingDisableCacheTitle": "Desactivar caché",

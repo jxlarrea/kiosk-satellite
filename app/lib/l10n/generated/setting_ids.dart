@@ -1560,4 +1560,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingIntercomTlsTitle",
     "description": "settingIntercomTlsDescription",
   },
+  "wake_word.diagnostics": {
+    "title": "voiceDiagnosticsTitle",
+    "description": "voiceDiagnosticsDescription",
+  },
 };

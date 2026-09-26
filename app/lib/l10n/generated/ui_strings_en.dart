@@ -10873,6 +10873,9 @@ class UiStringsEn extends UiStrings {
   String get voiceLogConfidence => 'conf';
 
   @override
+  String get voiceTesterPlayRecent => 'Play last 10 seconds';
+
+  @override
   String get voiceWakePage => 'Wake Word';
 
   @override
@@ -10979,6 +10982,41 @@ class UiStringsEn extends UiStrings {
   String voiceOnDeviceEngine(String engine) {
     return 'On device ($engine)';
   }
+
+  @override
+  String get voiceDiagnosticsPage => 'Wake word diagnostics';
+
+  @override
+  String get voiceDiagnosticsHint =>
+      'Recent activations and near misses with audio clips';
+
+  @override
+  String get voiceDiagnosticsTitle => 'Enable wake word diagnostics';
+
+  @override
+  String get voiceDiagnosticsDescription =>
+      'Records the last 10 wake word activations and near misses with their scores and a 3 second audio clip of each. Turning this off deletes them.';
+
+  @override
+  String get voiceDiagnosticsEmpty => 'No wake word activations recorded yet.';
+
+  @override
+  String get voiceDiagnosticsActivations => 'Activations';
+
+  @override
+  String get voiceDiagnosticsNoNearMisses => 'No near misses recorded yet.';
+
+  @override
+  String get voiceDiagnosticsPeakLevel => 'Peak level';
+
+  @override
+  String get voiceDiagnosticsAverageLevel => 'Average level';
+
+  @override
+  String get voiceDiagnosticsClipped => 'Clipped';
+
+  @override
+  String get voiceDiagnosticsHeard => 'Heard';
 
   @override
   String get settingDisableCacheTitle => 'Disable cache';

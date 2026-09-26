@@ -109,6 +109,23 @@ class SoundManager extends Manager {
 
   static const _channel = MethodChannel('kiosk_satellite/sound');
 
+  /// Play an audio file the app wrote itself (the wake word tester's
+  /// playback, a diagnostics clip) at the speaker's own volume, outside the
+  /// assistant fader. [SoundEnded] with [id] fires when it is over. False
+  /// when the native player refused it.
+  Future<bool> playFile(String id, String path) async =>
+      await _channel.invokeMethod<bool>('play', {
+        'id': id,
+        'source': path,
+        'volume': 1.0,
+        'absolute': true,
+      }) ==
+      true;
+
+  /// Stop a sound started by [playFile].
+  Future<void> stopFile(String id) =>
+      _channel.invokeMethod<void>('stop', {'id': id});
+
   /// The chime that announces a notification pushed from Home Assistant
   /// (see NotificationManager).
   static const _notificationChime = 'assets/sounds/notification.ogg';

@@ -30,5 +30,16 @@
   "voiceSlightlySensitive": "Низька чутливість",
   "voiceModeratelySensitive": "Помірна чутливість",
   "voiceOnDevice": "На пристрої",
-  "voiceOnDeviceEngine": "На пристрої ({engine})"
+  "voiceOnDeviceEngine": "На пристрої ({engine})",
+  "voiceDiagnosticsPage": "Діагностика слова активації",
+  "voiceDiagnosticsHint": "Останні активації та близькі збіги з аудіокліпами",
+  "voiceDiagnosticsTitle": "Увімкнути діагностику слова активації",
+  "voiceDiagnosticsDescription": "Записує останні 10 активацій і близьких збігів слова активації з їхніми оцінками та 3-секундним аудіокліпом кожного. Вимкнення видаляє їх.",
+  "voiceDiagnosticsEmpty": "Активацій слова активації ще не записано.",
+  "voiceDiagnosticsActivations": "Активації",
+  "voiceDiagnosticsNoNearMisses": "Близьких збігів ще не записано.",
+  "voiceDiagnosticsPeakLevel": "Піковий рівень",
+  "voiceDiagnosticsAverageLevel": "Середній рівень",
+  "voiceDiagnosticsClipped": "Перевантаження",
+  "voiceDiagnosticsHeard": "Почуто"
 }

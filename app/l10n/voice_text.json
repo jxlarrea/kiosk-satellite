@@ -147,5 +147,18 @@
   "Timer sound": "voiceChimeTimerTitle",
   "Repeats when a timer finishes until you dismiss it.": "voiceChimeTimerDescription",
   "Announcement sound": "voiceChimeAnnounceTitle",
-  "Plays before a Voice Satellite announcement unless it supplies its own sound.": "voiceChimeAnnounceDescription"
+  "Plays before a Voice Satellite announcement unless it supplies its own sound.": "voiceChimeAnnounceDescription",
+  "Wake word diagnostics": "voiceDiagnosticsPage",
+  "Recent activations and near misses with audio clips": "voiceDiagnosticsHint",
+  "Enable wake word diagnostics": "voiceDiagnosticsTitle",
+  "Records the last 10 wake word activations and near misses with their scores and a 3 second audio clip of each. Turning this off deletes them.": "voiceDiagnosticsDescription",
+  "No wake word activations recorded yet.": "voiceDiagnosticsEmpty",
+  "Peak level": "voiceDiagnosticsPeakLevel",
+  "Average level": "voiceDiagnosticsAverageLevel",
+  "Clipped": "voiceDiagnosticsClipped",
+  "Heard": "voiceDiagnosticsHeard",
+  "Play": "mediaPlay",
+  "Play last 10 seconds": "voiceTesterPlayRecent",
+  "Activations": "voiceDiagnosticsActivations",
+  "No near misses recorded yet.": "voiceDiagnosticsNoNearMisses"
 }

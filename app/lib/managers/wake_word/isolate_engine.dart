@@ -8,6 +8,7 @@ import '../../core/logging.dart';
 import '../../core/permissions.dart';
 import '../audio/mic_hub.dart';
 import 'engine.dart';
+import 'pcm_ring.dart';
 import 'wake_msg.dart';
 
 export 'wake_msg.dart' show WakeMsg;
@@ -224,6 +225,36 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       'tester': _testerOn,
     });
   }
+
+  /// Recent audio for the tester's playback and the diagnostics clips.
+  /// Allocated only while someone wants it: 10 seconds is 320 KB.
+  PcmRing? _recent;
+
+  @override
+  set recordAudio(bool enabled) {
+    if (!enabled) {
+      _recent = null;
+    } else {
+      _recent ??= PcmRing(WakeWordEngine.recentAudioLimit.inMilliseconds * 16);
+    }
+  }
+
+  @override
+  Uint8List? recentAudio(Duration length) =>
+      _recent?.last(length.inMilliseconds * 16);
+
+  Map<String, Object?>? _lastDetection;
+
+  void Function(WakeWordModelRef, Map<String, Object?>)? _onNearMiss;
+
+  @override
+  set onNearMiss(
+    void Function(WakeWordModelRef model, Map<String, Object?> detail)? sink,
+  ) => _onNearMiss = sink;
+
+  @override
+  Map<String, Object?>? get lastDetection => _lastDetection;
+
   Completer<bool>? _ready;
   Completer<void>? _stopped;
   Map<String, Object>? _pendingInit;
@@ -379,6 +410,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     // classifier keeps the audio flowing even with wake detection paused.
     if (!_detectionPaused || _stopArmed) _isolatePort?.send(bytes);
     _preRoll.add(bytes);
+    _recent?.add(bytes);
     // Live stream to the page.
     _onAudioChunk?.call(bytes, false);
   }
@@ -491,6 +523,18 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
         _onDetectionMessage(msg);
       case WakeMsg.telemetry:
         _onTelemetry?.call(msg.cast<String, Object?>());
+      case WakeMsg.nearMiss:
+        _onNearMiss?.call(
+          WakeWordModelRef(
+            id: msg['id'] as String? ?? '',
+            wakeWord: msg['wakeWord'] as String? ?? '',
+            manifestUrl: '',
+          ),
+          {
+            for (final e in msg.entries)
+              if (e.key != 'type') '${e.key}': e.value,
+          },
+        );
       case WakeMsg.error:
         log.error(tag, 'isolate: ${msg['message']}');
         _completeReady(false);
@@ -521,6 +565,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       wakeWord: msg['wakeWord'] as String? ?? '',
       manifestUrl: '',
     );
+    _lastDetection = {
+      for (final e in msg.entries)
+        if (e.key != 'type') '${e.key}': e.value,
+    };
     // Fall back to "now": an engine that cannot align its match still must not
     // replay the wake word, and detection never precedes the wake word ending.
     _wakeEndSample = msg['wakeEndSample'] as int? ?? _preRoll.absSamples;
@@ -566,7 +614,9 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     _stopArmed = false;
     _detectionPaused = false;
     _wakeEndSample = null;
+    _lastDetection = null;
     _preRoll.reset();
+    _recent?.clear();
     // The page's audio stream too: left set, the next run would base64 every
     // mic chunk into the bridge for a listener that died with the old page.
     _onAudioChunk = null;

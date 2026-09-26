@@ -54,6 +54,7 @@ import {
   viewPath,
 } from './views.js';
 import { loadVsPermissions, renderVsControls } from './vs.js';
+import { mountWakeActivations } from './wake_activations.js';
 import { banner, copyBox, messageBox, showToast } from './widgets.js';
 
 // A sound setting's row as a dropdown over the device's sounds folder,
@@ -200,6 +201,13 @@ const layoutSettings = new Set([
   'esphome.mac_override', 'ha.rotation_enabled', 'esphome.node_name',
   'btproxy.connections', 'home.keep_pinning', 'browser.start_url',
 ]);
+// Runtime state the device keeps in settings and no page draws. A wake word
+// that wakes the screensaver writes the saved brightness; rebuilding the
+// settings pages for that re-rendered whatever page was open, on every
+// trigger.
+const runtimeStateSettings = new Set([
+  'screensaver.saved_brightness', 'voice.timer_position', 'sendspin.player_pos',
+]);
 let liveSettingsTimer = null;
 let liveSettingsRendering = false;
 let settingsRenders = 0;
@@ -237,6 +245,7 @@ async function flushSettingsUpdates() {
     const rows = [...document.querySelectorAll(`[data-key="${setting.key}"]`)];
     const previous = JSON.parse(renderedSettings.get(setting.key) || '{}');
     renderedSettings.set(setting.key, JSON.stringify(setting));
+    if (runtimeStateSettings.has(setting.key)) continue;
     const shapeChanged = JSON.stringify({ ...previous, value: null })
       !== JSON.stringify({ ...setting, value: null });
     const hasDependants = state.settings.some(s => s.dependsOn === setting.key || s.alsoDependsOn === setting.key);
@@ -1622,6 +1631,9 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
       const appearanceEntry = root.querySelector('[data-subpage-entry="Appearance"]')?.closest('.card');
       const chimesEntry = root.querySelector('[data-subpage-entry="Chimes"]')?.closest('.card');
       if (appearanceEntry && chimesEntry) appearanceEntry.after(chimesEntry);
+      // Wake word diagnostics stays where render() puts it, right under Wake
+      // Word: its setting follows the Wake Word ones in the schema. (The
+      // kiosk opens it from the tester's group, which is kiosk-only.)
       // Page-local controls can be unavailable while the dashboard recovers.
       // Keep the rest of Remote Admin accessible during that wait.
       const soundSelectors = [];
@@ -1665,6 +1677,7 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
           refresh: () => Promise.all(soundSelectors.map((selector) => selector.refresh())),
         }, {inline: true});
       }
+      mountWakeActivations(root);
       renderVsControls(root).catch((error) => console.warn('Voice Satellite controls failed', error));
     }
   }

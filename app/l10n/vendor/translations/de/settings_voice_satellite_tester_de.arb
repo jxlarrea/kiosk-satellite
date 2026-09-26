@@ -19,5 +19,6 @@
   "voiceLogScore": "Bewertung",
   "voiceLogDecoded": "dekodiert",
   "voiceLogDistance": "dist.",
-  "voiceLogConfidence": "conf."
+  "voiceLogConfidence": "conf.",
+  "voiceTesterPlayRecent": "Letzte 10 Sekunden abspielen"
 }

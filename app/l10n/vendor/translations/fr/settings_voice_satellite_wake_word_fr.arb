@@ -30,5 +30,16 @@
   "voiceSlightlySensitive": "Légèrement sensible",
   "voiceModeratelySensitive": "Modérément sensible",
   "voiceOnDevice": "Sur l'appareil",
-  "voiceOnDeviceEngine": "Sur l'appareil ({engine})"
+  "voiceOnDeviceEngine": "Sur l'appareil ({engine})",
+  "voiceDiagnosticsPage": "Diagnostic du mot de réveil",
+  "voiceDiagnosticsHint": "Déclenchements récents et presque déclenchés avec extraits audio",
+  "voiceDiagnosticsTitle": "Activer le diagnostic du mot de réveil",
+  "voiceDiagnosticsDescription": "Enregistre les 10 derniers déclenchements et presque déclenchés du mot de réveil avec leurs scores et un extrait audio de 3 secondes pour chacun. Désactiver cette option les supprime.",
+  "voiceDiagnosticsEmpty": "Aucun déclenchement du mot de réveil enregistré pour l'instant.",
+  "voiceDiagnosticsActivations": "Déclenchements",
+  "voiceDiagnosticsNoNearMisses": "Aucun presque déclenché enregistré pour l'instant.",
+  "voiceDiagnosticsPeakLevel": "Niveau de crête",
+  "voiceDiagnosticsAverageLevel": "Niveau moyen",
+  "voiceDiagnosticsClipped": "Saturé",
+  "voiceDiagnosticsHeard": "Entendu"
 }

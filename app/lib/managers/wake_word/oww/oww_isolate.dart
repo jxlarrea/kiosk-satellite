@@ -11,6 +11,7 @@ import 'oww_gate.dart';
 import 'oww_pipeline.dart';
 import 'oww_session_loader.dart';
 import '../wake_msg.dart';
+import '../near_miss.dart';
 import '../pcm16.dart';
 import '../chunk_telemetry.dart';
 
@@ -48,6 +49,7 @@ class _Kw {
       {this.isStop = false});
   final String id;
   final String wakeWord;
+  final nearMiss = NearMissTracker();
   final OrtSession session;
   final String inputName;
   final OwwGate gate;
@@ -223,6 +225,21 @@ class _OwwWorker {
       sw?.stop();
       if (probability == null) continue;
       final trigger = k.gate.update(probability, _absSamples ~/ 16);
+      if (!k.isStop) {
+        final miss = k.nearMiss.update(
+          score: probability,
+          threshold: k.gate.cutoff,
+          fired: trigger != null,
+        );
+        if (miss != null) {
+          _main.send({
+            'type': WakeMsg.nearMiss,
+            'id': k.id,
+            'wakeWord': k.wakeWord,
+            ...miss,
+          });
+        }
+      }
       if (_telemetry) {
         _chunkTelemetry.add({
           'type': WakeMsg.telemetry,
@@ -259,6 +276,10 @@ class _OwwWorker {
         // A window classifier: it knows the wake word happened recently, not
         // where it ended, so the stream starts at the detection instant.
         'wakeEndSample': _absSamples,
+        // For the diagnostics log.
+        'score': probability,
+        'threshold': k.gate.cutoff,
+        'trigger': trigger.name,
       });
       return;
     }
@@ -318,6 +339,7 @@ class _OwwWorker {
     for (final k in _kws) {
       if (k.isStop) continue;
       k.gate.reset();
+      k.nearMiss.reset();
     }
     _log('info', 're-armed');
   }

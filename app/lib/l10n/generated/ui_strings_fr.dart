@@ -11096,6 +11096,9 @@ class UiStringsFr extends UiStrings {
   String get voiceLogConfidence => 'conf';
 
   @override
+  String get voiceTesterPlayRecent => 'Écouter les 10 dernières secondes';
+
+  @override
   String get voiceWakePage => 'Mot de réveil';
 
   @override
@@ -11205,6 +11208,43 @@ class UiStringsFr extends UiStrings {
   String voiceOnDeviceEngine(String engine) {
     return 'Sur l\'appareil ($engine)';
   }
+
+  @override
+  String get voiceDiagnosticsPage => 'Diagnostic du mot de réveil';
+
+  @override
+  String get voiceDiagnosticsHint =>
+      'Déclenchements récents et presque déclenchés avec extraits audio';
+
+  @override
+  String get voiceDiagnosticsTitle => 'Activer le diagnostic du mot de réveil';
+
+  @override
+  String get voiceDiagnosticsDescription =>
+      'Enregistre les 10 derniers déclenchements et presque déclenchés du mot de réveil avec leurs scores et un extrait audio de 3 secondes pour chacun. Désactiver cette option les supprime.';
+
+  @override
+  String get voiceDiagnosticsEmpty =>
+      'Aucun déclenchement du mot de réveil enregistré pour l\'instant.';
+
+  @override
+  String get voiceDiagnosticsActivations => 'Déclenchements';
+
+  @override
+  String get voiceDiagnosticsNoNearMisses =>
+      'Aucun presque déclenché enregistré pour l\'instant.';
+
+  @override
+  String get voiceDiagnosticsPeakLevel => 'Niveau de crête';
+
+  @override
+  String get voiceDiagnosticsAverageLevel => 'Niveau moyen';
+
+  @override
+  String get voiceDiagnosticsClipped => 'Saturé';
+
+  @override
+  String get voiceDiagnosticsHeard => 'Entendu';
 
   @override
   String get settingDisableCacheTitle => 'Désactiver le cache';

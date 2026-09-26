@@ -10994,6 +10994,9 @@ class UiStringsUk extends UiStrings {
   String get voiceLogConfidence => 'впевненість';
 
   @override
+  String get voiceTesterPlayRecent => 'Відтворити останні 10 секунд';
+
+  @override
   String get voiceWakePage => 'Слово активації';
 
   @override
@@ -11103,6 +11106,42 @@ class UiStringsUk extends UiStrings {
   String voiceOnDeviceEngine(String engine) {
     return 'На пристрої ($engine)';
   }
+
+  @override
+  String get voiceDiagnosticsPage => 'Діагностика слова активації';
+
+  @override
+  String get voiceDiagnosticsHint =>
+      'Останні активації та близькі збіги з аудіокліпами';
+
+  @override
+  String get voiceDiagnosticsTitle => 'Увімкнути діагностику слова активації';
+
+  @override
+  String get voiceDiagnosticsDescription =>
+      'Записує останні 10 активацій і близьких збігів слова активації з їхніми оцінками та 3-секундним аудіокліпом кожного. Вимкнення видаляє їх.';
+
+  @override
+  String get voiceDiagnosticsEmpty =>
+      'Активацій слова активації ще не записано.';
+
+  @override
+  String get voiceDiagnosticsActivations => 'Активації';
+
+  @override
+  String get voiceDiagnosticsNoNearMisses => 'Близьких збігів ще не записано.';
+
+  @override
+  String get voiceDiagnosticsPeakLevel => 'Піковий рівень';
+
+  @override
+  String get voiceDiagnosticsAverageLevel => 'Середній рівень';
+
+  @override
+  String get voiceDiagnosticsClipped => 'Перевантаження';
+
+  @override
+  String get voiceDiagnosticsHeard => 'Почуто';
 
   @override
   String get settingDisableCacheTitle => 'Вимкнути кеш';

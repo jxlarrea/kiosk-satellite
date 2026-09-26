@@ -19,5 +19,6 @@
   "voiceLogScore": "puntuación",
   "voiceLogDecoded": "decodificado",
   "voiceLogDistance": "dist.",
-  "voiceLogConfidence": "conf."
+  "voiceLogConfidence": "conf.",
+  "voiceTesterPlayRecent": "Reproducir los últimos 10 segundos"
 }

@@ -19,5 +19,6 @@
   "voiceLogScore": "оцінка",
   "voiceLogDecoded": "розпізнано",
   "voiceLogConfidence": "впевненість",
-  "voiceLogDistance": "відстань"
+  "voiceLogDistance": "відстань",
+  "voiceTesterPlayRecent": "Відтворити останні 10 секунд"
 }

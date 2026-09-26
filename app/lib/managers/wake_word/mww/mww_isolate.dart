@@ -8,6 +8,7 @@ import 'micro_frontend.dart';
 import 'mww_gate.dart';
 import 'xnnpack_variable_ops.dart';
 import '../wake_msg.dart';
+import '../near_miss.dart';
 import '../pcm16.dart';
 import '../chunk_telemetry.dart';
 
@@ -53,6 +54,7 @@ class _Kw {
 
   final String id;
   final String wakeWord;
+  final nearMiss = NearMissTracker();
 
   /// Stop classifier rather than a wake word: armed only while the card says
   /// something interruptible is playing, and firing interrupts it rather than
@@ -269,6 +271,21 @@ class _MwwWorker {
         if (probability == null) continue;
 
         final trigger = k.gate.update(probability, _absSamples ~/ 16);
+        if (!k.isStop) {
+          final miss = k.nearMiss.update(
+            score: k.gate.windowMean,
+            threshold: k.gate.cutoff,
+            fired: trigger != null,
+          );
+          if (miss != null) {
+            _main.send({
+              'type': WakeMsg.nearMiss,
+              'id': k.id,
+              'wakeWord': k.wakeWord,
+              ...miss,
+            });
+          }
+        }
         if (_telemetry) {
           // The windowed mean is what the gate compares to the cutoff; the
           // raw per-inference probability is the spikier underlying signal.
@@ -318,6 +335,10 @@ class _MwwWorker {
           // instant. Never replays the wake word: detection cannot precede it.
           // See WakeWordEngine.startAudioStream.
           'wakeEndSample': _absSamples,
+          // For the diagnostics log.
+          'score': k.gate.windowMean,
+          'threshold': k.gate.cutoff,
+          'trigger': trigger.name,
         });
         return;
       }
@@ -419,6 +440,7 @@ class _MwwWorker {
       if (k.isStop) continue; // armed independently; not ours to reset
       k.accumLen = 0;
       k.gate.reset();
+      k.nearMiss.reset();
     }
     _log('info', 're-armed');
   }

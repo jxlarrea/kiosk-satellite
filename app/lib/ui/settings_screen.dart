@@ -64,6 +64,7 @@ import 'subpage_icons.dart';
 import 'shizuku_settings.dart';
 import '../managers/wake_word/permission_descriptions.dart';
 import 'wake_word_tester.dart';
+import 'wake_activations.dart';
 import 'update_helper_settings.dart';
 import 'plugin_settings.dart';
 import 'package:kiosk_satellite/core/lifecycle.dart';
@@ -3505,6 +3506,24 @@ class _CategoryContentState extends State<_CategoryContent> {
       ];
     }
 
+    // The switch, then what it recorded while on: activations, near misses.
+    if (widget.category == 'Voice Satellite' &&
+        subpage == 'Wake word diagnostics') {
+      return [
+        SettingsCard(
+          children: [
+            SettingTile(
+              container: container,
+              def: wakeWordDiagnostics,
+              onChanged: changed,
+            ),
+          ],
+        ),
+        if (container.settings.get(wakeWordDiagnostics))
+          WakeDiagnosticsLists(container: container),
+      ];
+    }
+
     if (widget.category == 'Voice Satellite' && subpage == 'Chimes') {
       return [...sectioned(voiceChimeSettings.values.toList())];
     }
@@ -3797,7 +3816,17 @@ class _CategoryContentState extends State<_CategoryContent> {
                 SearchLandingTarget(
                   id: 'x:wake_word_tester',
                   child: SettingsCard(
-                    children: [WakeWordTesterTile(container: container)],
+                    children: [
+                      WakeWordTesterTile(container: container),
+                      // Diagnostics answers the same question after the
+                      // fact, so its page opens from the tester's group.
+                      if (container.settings.visible(wakeWordDiagnostics))
+                        _SubpageEntryTile(
+                          container: container,
+                          category: 'Voice Satellite',
+                          subpage: 'Wake word diagnostics',
+                        ),
+                    ],
                   ),
                 ),
               ],
