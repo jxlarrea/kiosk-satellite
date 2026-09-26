@@ -289,10 +289,17 @@ class ApiServerTest {
         s.reportScannerState(ScannerState.RUNNING, ScannerMode.PASSIVE)
         val state = c.readUntil(Msg.BT_SCANNER_STATE_RESPONSE)
         var wireState = 0
+        var configuredMode = -1
         ProtoReader(state.payload).let { r ->
-            while (r.next()) if (r.field == 1) wireState = r.asInt()
+            while (r.next()) when (r.field) {
+                1 -> wireState = r.asInt()
+                3 -> configuredMode = r.asInt()
+            }
         }
         assertEquals(ScannerState.RUNNING.wire, wireState)
+        // Missing or PASSIVE makes Home Assistant pin the entry to passive
+        // scanning for good, so it must be ACTIVE even while mode is PASSIVE.
+        assertEquals(ScannerMode.ACTIVE.wire, configuredMode)
     }
 
     @Test

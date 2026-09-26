@@ -263,11 +263,21 @@ internal object ApiCodec {
         return ScannerMode.PASSIVE
     }
 
-    /** BluetoothScannerStateResponse: 1=state, 2=mode. */
+    /**
+     * BluetoothScannerStateResponse: 1=state, 2=mode, 3=configured_mode.
+     *
+     * configured_mode is what an ESPHome device's YAML says (`active:`).
+     * Home Assistant 2026.6+ reads it once to seed the entry's scanning
+     * mode option and saves PASSIVE for good when it is 0 or missing, which
+     * then warns whenever an integration wants active scans. The Android
+     * scanner always sends scan requests, so ACTIVE is the honest answer and
+     * lets HA keep its Auto default.
+     */
     fun scannerStateResponse(state: ScannerState, mode: ScannerMode): ByteArray =
         ProtoWriter().run {
             varint(1, state.wire)
             varint(2, mode.wire)
+            varint(3, ScannerMode.ACTIVE.wire)
             toByteArray()
         }
 
