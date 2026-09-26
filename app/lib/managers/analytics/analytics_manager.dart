@@ -62,8 +62,20 @@ class AnalyticsManager extends Manager {
   /// history of them trickles out rather than bursting.
   static const crashesPerTick = 3;
 
-  /// How many fingerprints to remember; the journal itself is capped.
-  static const _rememberedCrashes = 50;
+  /// How many of the journal's newest reportable entries are ever
+  /// candidates. The journal is capped in bytes and can hold more short
+  /// entries than the fingerprints remembered below: a kiosk whose journal
+  /// held 53 watchdog notes from one bad morning sent them, forgot the
+  /// oldest fingerprints as the list rolled, and sent them all again the
+  /// next day, seventy reports a day for a week. Anything older than the
+  /// newest [crashCandidates] entries is history the journal keeps for the
+  /// Logs screen, not a report.
+  static const crashCandidates = 40;
+
+  /// How many fingerprints to remember: comfortably more than the
+  /// candidates, so a remembered entry stays remembered until it has left
+  /// the candidate window.
+  static const _rememberedCrashes = 200;
   static const _background = MethodChannel('kiosk_satellite/background');
 
   final SettingsManager _settings;
@@ -225,8 +237,10 @@ class AnalyticsManager extends Manager {
     if (entries.isEmpty) return false;
     final sent = _sentCrashes();
     final pending = <(String, CrashEntry)>[];
+    var considered = 0;
     for (final e in entries.reversed) {
       if (!e.reportable) continue;
+      if (++considered > crashCandidates) break;
       final fp = sha256.convert(utf8.encode(e.text)).toString();
       if (sent.contains(fp)) continue;
       pending.add((fp, e));

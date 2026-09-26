@@ -526,6 +526,39 @@ java.lang.IllegalStateException: WebView gone
     expect(sent, hasLength(3));
   });
 
+  test('a journal holding more entries than the memory of sent ones does '
+      'not lap: the newest window goes once and nothing repeats', () async {
+    // 60 distinct crashes, more than the old fifty-fingerprint memory.
+    final buf = StringBuffer();
+    for (var i = 0; i < 60; i++) {
+      final minute = i.toString().padLeft(2, '0');
+      buf.write(
+        '=== crash at 2026-09-02 08:$minute:00 (app 2026.9.2, thread main) ===\n'
+        'java.lang.RuntimeException: process restarted deliberately: the frame '
+        'watchdog found the UI wedged (no frames for 30s) run $i\n'
+        '\tat a7.jc.a(r8-map-id:23)\n\n',
+      );
+    }
+    crash = buf.toString();
+    await build({'ks.analytics.basic': false, 'ks.analytics.usage': false});
+    // Tick until the sender says there is nothing left, well past the
+    // point where a lap would have started.
+    var ticks = 0;
+    while (await analytics.sendCrashIfAny() && ticks < 100) {
+      ticks++;
+    }
+    final crashes = sent.map((r) => bodyOf(r)['crash'] as String).toList();
+    expect(crashes, hasLength(AnalyticsManager.crashCandidates));
+    expect(crashes.toSet(), hasLength(AnalyticsManager.crashCandidates));
+    // The newest entries went, the oldest stayed home.
+    expect(crashes.first, contains('run 59'));
+    expect(crashes.any((c) => c.contains('run 0\n')), isFalse);
+    for (var i = 0; i < 5; i++) {
+      expect(await analytics.sendCrashIfAny(), isFalse);
+    }
+    expect(sent, hasLength(AnalyticsManager.crashCandidates));
+  });
+
   test('Diagnostics off keeps a recorded crash on the device', () async {
     crash = 'FATAL EXCEPTION: main\njava.lang.RuntimeException: boom';
     await build({'ks.analytics.diagnostics': false});
