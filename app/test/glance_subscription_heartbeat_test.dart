@@ -19,11 +19,61 @@ void main() {
   setUp(() {
     GlanceSubscription.heartbeat = const Duration(milliseconds: 50);
     GlanceSubscription.pongTimeout = const Duration(milliseconds: 50);
+    GlanceSubscription.subscribeTimeout = const Duration(milliseconds: 300);
   });
   tearDown(() {
     GlanceSubscription.heartbeat = const Duration(seconds: 30);
     GlanceSubscription.pongTimeout = const Duration(seconds: 10);
+    GlanceSubscription.subscribeTimeout = const Duration(seconds: 20);
   });
+
+  Future<HomeAssistantManager> manager(int port) async {
+    SharedPreferences.setMockInitialValues({
+      'ks.ha.url': 'http://127.0.0.1:$port',
+      'ks.ha.token': 'token',
+    });
+    final bus = EventBus();
+    final log = Logger();
+    final settings = SettingsManager(bus, CommandRegistry(log), log);
+    await settings.init();
+    return HomeAssistantManager(bus, CommandRegistry(log), log, settings);
+  }
+
+  test('a connection that fails counts as closed', () async {
+    // A port nothing listens on: the connect fails with an error, which
+    // must reach the owner as a close so it tries again.
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final port = server.port;
+    await server.close(force: true);
+    final ha = await manager(port);
+    final live = await ha.subscribeEntities(['sun.sun'], (_, _) {});
+    final closed = Completer<void>();
+    if (live!.isClosed) {
+      closed.complete();
+    } else {
+      live.onClosed = closed.complete;
+    }
+    await closed.future.timeout(const Duration(seconds: 2));
+    expect(live.isClosed, true);
+  });
+
+  test(
+    'a subscription that never finishes signing in counts as lost',
+    () async {
+      // The server accepts the socket but never asks for the token.
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) async {
+        await WebSocketTransformer.upgrade(request);
+      });
+      final ha = await manager(server.port);
+      final live = await ha.subscribeEntities(['sun.sun'], (_, _) {});
+      final closed = Completer<void>();
+      live!.onClosed = closed.complete;
+      await closed.future.timeout(const Duration(seconds: 2));
+      expect(live.isClosed, true);
+    },
+  );
 
   /// A Home Assistant stand-in that accepts the subscription and answers
   /// pings while [answering] says so.

@@ -1372,7 +1372,10 @@ class HomeAssistantManager extends Manager {
       final channel = WebSocketChannel.connect(
         Uri.parse('$wsBase/api/websocket'),
       );
-      final subscription = GlanceSubscription._(channel);
+      // A failed connect also fails `ready`. The stream below reports it,
+      // so the future must not surface it again as an uncaught error.
+      unawaited(channel.ready.catchError((_) {}));
+      final subscription = GlanceSubscription._(channel).._expectSubscribed();
       channel.stream.listen(
         (raw) {
           try {
@@ -1425,7 +1428,12 @@ class HomeAssistantManager extends Manager {
             log.warn(name, 'glance frame ignored: $e');
           }
         },
-        onError: (Object e) => log.warn(name, 'glance socket error: $e'),
+        // cancelOnError skips onDone after an error, so the error itself
+        // has to count as the close, or the owner never reopens.
+        onError: (Object e) {
+          log.warn(name, 'glance socket error: $e');
+          subscription._lost();
+        },
         onDone: subscription._markClosed,
         cancelOnError: true,
       );
@@ -2417,9 +2425,14 @@ class GlanceSubscription {
   @visibleForTesting
   static Duration pongTimeout = const Duration(seconds: 10);
 
+  /// How long a new subscription may take to connect, sign in and
+  /// subscribe before it counts as lost.
+  @visibleForTesting
+  static Duration subscribeTimeout = const Duration(seconds: 20);
+
   final WebSocketChannel _channel;
   bool _closed = false;
-  Timer? _heartbeat, _deadline;
+  Timer? _heartbeat, _deadline, _connecting;
   // Ids 1 and 2 are the subscribe and registry commands.
   int _pingId = 3;
 
@@ -2436,7 +2449,17 @@ class GlanceSubscription {
   /// Assistant answers every ping, so a missed pong counts as a close and
   /// the owner reopens. Without it Weather Mood kept last night's sun and
   /// weather at noon.
+  /// A connection attempt that neither fails nor finishes, or fails before
+  /// the heartbeat starts, would otherwise leave the owner waiting on a
+  /// subscription that never delivers. Weather Mood kept 02:20's weather
+  /// all morning after a reconnect ran into a Wi-Fi drop.
+  void _expectSubscribed() {
+    _connecting = Timer(subscribeTimeout, _lost);
+  }
+
   void _startHeartbeat() {
+    _connecting?.cancel();
+    _connecting = null;
     _heartbeat?.cancel();
     _heartbeat = Timer.periodic(heartbeat, (_) {
       if (_closed) return;
@@ -2461,7 +2484,8 @@ class GlanceSubscription {
   void _stopHeartbeat() {
     _heartbeat?.cancel();
     _deadline?.cancel();
-    _heartbeat = _deadline = null;
+    _connecting?.cancel();
+    _heartbeat = _deadline = _connecting = null;
   }
 
   void _markClosed() {

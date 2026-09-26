@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Weather Mood and screensaver widgets recover after a Wi-Fi drop.** When the connection dropped and the first reconnect ran into Wi-Fi that was still down, the failed attempt was never reported, so nothing tried again and Weather Mood kept the weather from before the drop for hours. A failed or stalled connection attempt now counts as a closed one and is retried like any other.
+
 ## v2026.9.84 - 2026-09-26
 
 ### Added
