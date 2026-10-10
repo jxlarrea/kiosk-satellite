@@ -430,7 +430,7 @@ class _AssistOverlayState extends State<AssistOverlay>
                 reactive: reactive,
                 level: _glide,
                 clock: _clock,
-                inset: _beside(context, view),
+                box: _jarvisBox(context, skin, scale, view, reactive),
               ),
             ),
           ),
@@ -444,13 +444,53 @@ class _AssistOverlayState extends State<AssistOverlay>
         if (view.phase == AssistPhase.announcement)
           _announcement(context, skin, palette, scale, view)
         else ...[
-          _chat(context, skin, palette, scale, view, reactive),
+          // With the whole conversation hidden, Jarvis shows only its
+          // reactor: no thinking dots either.
+          if (skin.art != SkinArt.jarvis || !_conversationHidden)
+            _chat(context, skin, palette, scale, view, reactive),
           if (primaryResult(view.results) case final result?)
             _panel(context, skin, dark, scale, result),
         ],
         if (_lightbox case (final kind, final value))
           Positioned.fill(child: _lightboxView(context, kind, value)),
       ],
+    );
+  }
+
+  /// Every Conversation toggle is off.
+  bool get _conversationHidden =>
+      !c.settings.get(defs.voiceShowCommand) &&
+      !c.settings.get(defs.voiceShowAnswer) &&
+      !c.settings.get(defs.voiceShowTools);
+
+  /// Jarvis's full screen reactor: room kept under it for the command and
+  /// three lines of answer at the chosen text size, so a small screen still
+  /// reads a whole answer, or the whole screen with the conversation hidden.
+  Rect _jarvisBox(
+    BuildContext context,
+    AssistSkin skin,
+    double scale,
+    AssistView view,
+    bool reactive,
+  ) {
+    final settings = c.settings;
+    final scaler = MediaQuery.textScalerOf(context);
+    double line(double size) => scaler.scale(size * scale) * skin.lineHeight;
+    final command = settings.get(defs.voiceShowCommand);
+    final answer = settings.get(defs.voiceShowAnswer);
+    var chat = 0.0;
+    if (command) chat += line(skin.userSize) + 8 + skin.gap;
+    if (answer) chat += 3 * line(skin.answerSize) + 8;
+    if (!command && !answer && settings.get(defs.voiceShowTools)) {
+      chat += line(skin.toolSize) + 8;
+    }
+    if (chat > 0) {
+      chat += reactive ? skin.chatBottomReactive : skin.chatBottom;
+    }
+    return jarvisReactor(
+      MediaQuery.sizeOf(context),
+      _beside(context, view),
+      chat: chat,
     );
   }
 
@@ -610,10 +650,14 @@ class _AssistOverlayState extends State<AssistOverlay>
     final room = size.height - padding.vertical - 40 - reactorSide - reactorGap;
     final bubbleMax = math.min((size.height * 0.4).clamp(140.0, 360.0), room);
     final jarvis = skin.art == SkinArt.jarvis;
+    // With the whole conversation hidden it floats alone, no bubble.
+    final alone = jarvis && _conversationHidden;
     final card = jarvis
         ? SizedBox(
             width: width,
-            height: reactorSide + reactorGap + math.max(0.0, bubbleMax),
+            height: alone
+                ? reactorSide
+                : reactorSide + reactorGap + math.max(0.0, bubbleMax),
             child: Column(
               spacing: reactorGap,
               children: [
@@ -628,7 +672,7 @@ class _AssistOverlayState extends State<AssistOverlay>
                     countdown: c.voice.dockCountdown,
                   ),
                 ),
-                if (lines.isNotEmpty && bubbleMax > 0)
+                if (!alone && lines.isNotEmpty && bubbleMax > 0)
                   AnimatedSize(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.ease,
@@ -1066,7 +1110,7 @@ class _AssistOverlayState extends State<AssistOverlay>
             size.height * (panelTop + panelMaxPortrait) + 16,
           )
         : underArt
-        ? jarvisReactor(size, _beside(context, view)).bottom + 16
+        ? _jarvisBox(context, skin, scale, view, reactive).bottom + 16
         : skin.chatTop;
 
     /// How tall the lines above a turn's answer stand: its command and

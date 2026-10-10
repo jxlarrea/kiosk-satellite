@@ -22,7 +22,7 @@ class JarvisArt extends StatefulWidget {
     required this.clock,
     this.compact = false,
     this.countdown,
-    this.inset = EdgeInsets.zero,
+    this.box,
   });
 
   final ArtMode mode;
@@ -41,9 +41,9 @@ class JarvisArt extends StatefulWidget {
   /// with it.
   final ValueListenable<double>? countdown;
 
-  /// Full screen, the room a result panel takes beside the chat: the
-  /// reactor centers over the chat's column instead ([jarvisReactor]).
-  final EdgeInsets inset;
+  /// Full screen, where the reactor goes, out to the blocks' full stretch
+  /// ([jarvisReactor]). Null fills the widget.
+  final Rect? box;
 
   @override
   State<JarvisArt> createState() => _JarvisArtState();
@@ -93,13 +93,27 @@ class _JarvisArtState extends State<JarvisArt> {
 /// How far the blocks reach at full stretch, past the outer ring.
 const jarvisReach = 1.1;
 
-/// The full screen reactor's square, out to the blocks' full stretch: at
-/// the top of the screen, centered over the chat's column (the screen less
-/// [inset]). The chat starts under it, so the text never crosses the
-/// reactor, even with the blocks pushed all the way out.
-Rect jarvisReactor(Size size, EdgeInsets inset) {
+/// The full screen reactor's square, out to the blocks' full stretch,
+/// centered over the chat's column (the screen less [inset]). It sits at
+/// the top and leaves [chat] under it, so the text never crosses the
+/// reactor, even with the blocks pushed all the way out. With no chat it
+/// takes the whole screen, centered.
+Rect jarvisReactor(Size size, EdgeInsets inset, {double chat = 0}) {
   final area = inset.deflateRect(Offset.zero & size);
-  final side = math.max(0.0, math.min(area.width * 0.9, size.height * 0.56));
+  if (chat <= 0) {
+    final side = math.max(0.0, math.min(area.width, size.height) * 0.92);
+    return Rect.fromCenter(
+      center: Offset(area.center.dx, size.height / 2),
+      width: side,
+      height: side,
+    );
+  }
+  final wanted = math.min(area.width * 0.9, size.height * 0.56);
+  final fits = size.height - 24 - 16 - chat;
+  final side = math.max(
+    0.0,
+    math.max(math.min(area.width, size.height) * 0.3, math.min(wanted, fits)),
+  );
   return Rect.fromCenter(
     center: Offset(area.center.dx, 24 + side / 2),
     width: side,
@@ -336,7 +350,8 @@ class _JarvisPainter extends CustomPainter {
 
   /// The blocks' fill as an image of [px] square out to [_textureReach]:
   /// dark at the ring's inner edge, lit toward the reach of a loud voice,
-  /// with the circuit over it. A block drawn with it shows the texture
+  /// with the circuit over it. Past a block's rest length it fades, so a
+  /// stretched block's tip goes soft and a block at rest stays solid. A block drawn with it shows the texture
   /// under its own shape, so the blocks need no clipping.
   static ui.Image bake(int px) {
     final recorder = ui.PictureRecorder();
@@ -344,6 +359,7 @@ class _JarvisPainter extends CustomPainter {
       ..scale(px / (2 * _textureReach))
       ..translate(_textureReach, _textureReach);
     const tip = 1000 * jarvisReach;
+    canvas.saveLayer(null, Paint());
     canvas.drawCircle(
       Offset.zero,
       _textureReach,
@@ -360,6 +376,7 @@ class _JarvisPainter extends CustomPainter {
           [0, _blockInner / tip, (_blockInner + _blockRest) / tip, 1],
         ),
     );
+    final rest = _blockInner + _blockRest + 10;
     final (traces, pads, chips, specks) = _circuit;
     canvas
       ..drawPath(specks, Paint()..color = const Color(0x4D7FE9F2))
@@ -367,6 +384,19 @@ class _JarvisPainter extends CustomPainter {
       ..drawPath(chips, Paint()..color = const Color(0xFF06262C))
       ..drawPath(chips, _stroke(const Color(0x993FC4D0), 3))
       ..drawPath(pads, Paint()..color = const Color(0xB35BD8E2));
+    canvas.drawCircle(
+      Offset.zero,
+      _textureReach,
+      Paint()
+        ..blendMode = BlendMode.dstIn
+        ..shader = ui.Gradient.radial(
+          Offset.zero,
+          tip,
+          const [Color(0xFF000000), Color(0xFF000000), Color(0x1F000000)],
+          [0, rest / tip, 1],
+        ),
+    );
+    canvas.restore();
     final picture = recorder.endRecording();
     final image = picture.toImageSync(px, px);
     picture.dispose();
@@ -481,7 +511,7 @@ class _JarvisPainter extends CustomPainter {
     final compact = w.compact;
     // The box holds the blocks at full stretch: the outer ring sits well
     // inside it.
-    final box = compact ? Offset.zero & size : jarvisReactor(size, w.inset);
+    final box = w.box ?? Offset.zero & size;
     final radius = math.min(box.width, box.height) / 2 / jarvisReach;
     if (radius <= 0) return;
     final scale = radius / 1000;
@@ -559,7 +589,8 @@ class _JarvisPainter extends CustomPainter {
           sweep,
           false,
           _stroke(
-            _cyan.withValues(alpha: (0.6 + 0.4 * state._reach[i]) * a),
+            // The rim softens as the block stretches.
+            _cyan.withValues(alpha: (1 - 0.8 * state._reach[i]) * a),
             8 * k,
           ),
         );

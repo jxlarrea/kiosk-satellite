@@ -5,7 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
-- **A Jarvis skin for Voice Satellite.** The new **Jarvis** skin draws a holographic HUD reactor in the style of Iron Man's assistant (#937). Its rings turn around an octagonal core while listening, a scanner sweeps it while thinking, and a ring of circuit-textured blocks pushes out with your voice and the answer when the reactive bar is on. Full screen, the reactor sits at the top and the conversation runs under it. Docked, the reactor floats above the bubble with the command, tool lines and answer, stays put as the bubble grows, and its outer ring unwinds as the conversation ends.
+- **A Jarvis skin for Voice Satellite.** The new **Jarvis** skin draws a holographic HUD reactor in the style of Iron Man's assistant (#937). Its rings turn around an octagonal core while listening, a scanner sweeps it while thinking, and a ring of circuit-textured blocks pushes out with your voice and the answer when the reactive bar is on. Full screen, the reactor sits at the top and the conversation runs under it, sized to leave room for a few lines of answer at your text size. With every **Conversation** toggle off, the reactor fills the screen on its own. Docked, the reactor floats above the bubble with the command, tool lines and answer, stays put as the bubble grows, and its outer ring unwinds as the conversation ends.
 - **Scheduled screensavers have an ESPHome switch.** A new **Screensaver schedule** switch turns scheduled screensavers on or off from Home Assistant, so an automation can pause the schedule for a party or a vacation and bring it back after.
 
 ### Changed

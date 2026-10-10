@@ -665,6 +665,9 @@ final assistSkins = <AssistSkin>[
     art: SkinArt.jarvis,
     font: 'Inter',
     blur: 0,
+    // No bar under the chat.
+    chatBottom: 40,
+    chatBottomReactive: 40,
     centered: true,
     userWeight: FontWeight.w300,
     toolWeight: FontWeight.w300,
