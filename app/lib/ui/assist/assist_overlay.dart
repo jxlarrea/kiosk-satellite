@@ -419,14 +419,19 @@ class _AssistOverlayState extends State<AssistOverlay>
           ),
         if (skin.art == SkinArt.lensFlares)
           LensFlaresArt(mode: mode, reactive: reactive, level: c.voice.level),
+        // Jarvis gives way to a result panel standing over it in portrait.
         if (skin.art == SkinArt.jarvis)
           IgnorePointer(
-            child: JarvisArt(
-              mode: mode,
-              reactive: reactive,
-              level: _glide,
-              clock: _clock,
-              inset: _beside(context, view),
+            child: AnimatedOpacity(
+              opacity: _panelAbove(context, view) ? 0 : 1,
+              duration: const Duration(milliseconds: 300),
+              child: JarvisArt(
+                mode: mode,
+                reactive: reactive,
+                level: _glide,
+                clock: _clock,
+                inset: _beside(context, view),
+              ),
             ),
           ),
         SkinBarLayer(
@@ -447,6 +452,12 @@ class _AssistOverlayState extends State<AssistOverlay>
           Positioned.fill(child: _lightboxView(context, kind, value)),
       ],
     );
+  }
+
+  /// A result panel stands at the top, over the chat: portrait.
+  bool _panelAbove(BuildContext context, AssistView view) {
+    final size = MediaQuery.sizeOf(context);
+    return size.height > size.width && primaryResult(view.results) != null;
   }
 
   /// The chat's side insets while a result panel stands beside it, for
@@ -569,7 +580,7 @@ class _AssistOverlayState extends State<AssistOverlay>
     // bottom. Up for the whole conversation, a slim pill with just the bar
     // while nothing has been said. Voice Only shows the mark alone, no
     // bubble around it, fading as the conversation ends. Jarvis puts its
-    // reactor beside the exchange instead of a bar, its outer ring
+    // reactor above the exchange instead of a bar, its outer ring
     // unwinding as the conversation ends.
     final logoSide = (math.min(size.width, size.height) * 0.24).clamp(
       72.0,
@@ -587,37 +598,51 @@ class _AssistOverlayState extends State<AssistOverlay>
         ),
       ],
     );
-    const reactorSide = 64.0;
-    final card = skin.art == SkinArt.jarvis
-        ? AnimatedSize(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.ease,
-            alignment: Alignment.bottomLeft,
-            child: Container(
-              width: lines.isEmpty ? null : width,
-              padding: const EdgeInsets.all(12),
-              decoration: decoration,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: 14,
-                children: [
-                  SizedBox.square(
-                    dimension: reactorSide,
-                    child: IgnorePointer(
-                      child: JarvisArt(
-                        mode: mode,
-                        reactive: reactive,
-                        level: _glide,
-                        clock: _clock,
-                        compact: true,
-                        countdown: c.voice.dockCountdown,
-                      ),
-                    ),
+    // Jarvis's slot: the reactor on top, the bubble hanging under it with
+    // room kept for its tallest, so the reactor stays put while the bubble
+    // grows with the answer. Touches on the empty room reach the screen.
+    // The box holds the blocks at full stretch, past the outer ring.
+    final reactorSide = (math.min(size.width, size.height) * 0.5).clamp(
+      150.0,
+      350.0,
+    );
+    const reactorGap = 28.0;
+    final room = size.height - padding.vertical - 40 - reactorSide - reactorGap;
+    final bubbleMax = math.min((size.height * 0.4).clamp(140.0, 360.0), room);
+    final jarvis = skin.art == SkinArt.jarvis;
+    final card = jarvis
+        ? SizedBox(
+            width: width,
+            height: reactorSide + reactorGap + math.max(0.0, bubbleMax),
+            child: Column(
+              spacing: reactorGap,
+              children: [
+                SizedBox.square(
+                  dimension: reactorSide,
+                  child: JarvisArt(
+                    mode: mode,
+                    reactive: reactive,
+                    level: _glide,
+                    clock: _clock,
+                    compact: true,
+                    countdown: c.voice.dockCountdown,
                   ),
-                  if (lines.isNotEmpty)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                ),
+                if (lines.isNotEmpty && bubbleMax > 0)
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.ease,
+                    alignment: Alignment.topCenter,
+                    child: Container(
+                      width: width,
+                      constraints: BoxConstraints(maxHeight: bubbleMax),
+                      clipBehavior: Clip.antiAlias,
+                      decoration: decoration,
+                      // Past its tallest, the newest lines stay in view.
+                      child: SingleChildScrollView(
+                        reverse: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,8 +651,8 @@ class _AssistOverlayState extends State<AssistOverlay>
                         ),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           )
         : skin.voiceOnly
@@ -696,7 +721,9 @@ class _AssistOverlayState extends State<AssistOverlay>
               alignment: Alignment(_dockX * 2 - 1, _dockY * 2 - 1),
               child: GestureDetector(
                 key: _dockKey,
-                behavior: HitTestBehavior.opaque,
+                behavior: jarvis
+                    ? HitTestBehavior.deferToChild
+                    : HitTestBehavior.opaque,
                 // Ends it, as a double tap on the full screen overlay does.
                 onDoubleTap: c.voice.dismiss,
                 onPanUpdate: (d) {
@@ -1031,11 +1058,15 @@ class _AssistOverlayState extends State<AssistOverlay>
     // In portrait a result panel stands at the top, down to half the
     // screen at most: the chat stays under it rather than running across.
     final underPanel = portrait && result != null;
+    // Jarvis's chat starts under its reactor, so no line crosses it.
+    final underArt = skin.art == SkinArt.jarvis && !underPanel;
     final top = underPanel
         ? math.max(
             skin.chatTop,
             size.height * (panelTop + panelMaxPortrait) + 16,
           )
+        : underArt
+        ? jarvisReactor(size, _beside(context, view)).bottom + 16
         : skin.chatTop;
 
     /// How tall the lines above a turn's answer stand: its command and
@@ -1172,9 +1203,9 @@ class _AssistOverlayState extends State<AssistOverlay>
         children: lines,
       ),
     );
-    if (underPanel) {
-      // Under a portrait panel they leave at its edge instead, fading out
-      // over the first lines' worth below it.
+    if (underPanel || underArt) {
+      // Under a portrait panel or the reactor they leave at its edge
+      // instead, fading out over the first lines' worth below it.
       chat = ClipRect(
         child: ShaderMask(
           blendMode: BlendMode.dstIn,
@@ -1191,7 +1222,7 @@ class _AssistOverlayState extends State<AssistOverlay>
     return Positioned(
       left: left,
       right: right,
-      top: underPanel ? top : 0,
+      top: underPanel || underArt ? top : 0,
       bottom: bottom,
       child: chat,
     );

@@ -10,8 +10,9 @@ import 'assist_art.dart';
 /// segmented arcs, dashes and dial ticks turn at their own speeds around a
 /// glowing core, a ring of blocks pushes out with the voice, and a scanner
 /// sweeps it while the assistant thinks. Every ring is a path built once
-/// in a 1000 unit artboard and drawn rotated, so a frame costs a couple of
-/// dozen draws and no blur.
+/// in a 1000 unit artboard and drawn rotated, and the blocks' circuit
+/// texture is an image drawn once, so a frame costs a couple of dozen draws
+/// and no blur.
 class JarvisArt extends StatefulWidget {
   const JarvisArt({
     super.key,
@@ -32,8 +33,8 @@ class JarvisArt extends StatefulWidget {
   final ValueListenable<double> level;
   final ArtClock clock;
 
-  /// Docked beside the conversation's text: only the rings that still
-  /// read at that size, drawn thicker.
+  /// Docked over the conversation's bubble: the reactor fills its box,
+  /// without the spokes and the lens flare that reach past it.
   final bool compact;
 
   /// 1 down to 0 as a docked conversation ends: the outer ring unwinds
@@ -41,7 +42,7 @@ class JarvisArt extends StatefulWidget {
   final ValueListenable<double>? countdown;
 
   /// Full screen, the room a result panel takes beside the chat: the
-  /// reactor centers over the chat's column instead.
+  /// reactor centers over the chat's column instead ([jarvisReactor]).
   final EdgeInsets inset;
 
   @override
@@ -67,9 +68,42 @@ class _JarvisArtState extends State<JarvisArt> {
   double _micPeak = 0;
   double _playPeak = 0;
 
+  /// The blocks' circuit texture, drawn at [px] square.
+  ui.Image? _texture;
+  ui.Image texture(int px) {
+    if (_texture?.width != px) {
+      _texture?.dispose();
+      _texture = _JarvisPainter.bake(px);
+    }
+    return _texture!;
+  }
+
+  @override
+  void dispose() {
+    _texture?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => RepaintBoundary(
     child: CustomPaint(size: Size.infinite, painter: _JarvisPainter(this)),
+  );
+}
+
+/// How far the blocks reach at full stretch, past the outer ring.
+const jarvisReach = 1.1;
+
+/// The full screen reactor's square, out to the blocks' full stretch: at
+/// the top of the screen, centered over the chat's column (the screen less
+/// [inset]). The chat starts under it, so the text never crosses the
+/// reactor, even with the blocks pushed all the way out.
+Rect jarvisReactor(Size size, EdgeInsets inset) {
+  final area = inset.deflateRect(Offset.zero & size);
+  final side = math.max(0.0, math.min(area.width * 0.9, size.height * 0.56));
+  return Rect.fromCenter(
+    center: Offset(area.center.dx, 24 + side / 2),
+    width: side,
+    height: side,
   );
 }
 
@@ -96,10 +130,12 @@ class _JarvisPainter extends CustomPainter {
   /// The blocks' ring: from its inner edge out by its rest depth, and how
   /// much further a loud voice pushes it.
   static const _blockInner = 600.0;
-  static const _blockRest = 90.0;
-  static const _blockSpan = 280.0;
+  static const _blockRest = 140.0;
+  static const _blockSpan = 1000 * jarvisReach - _blockInner - _blockRest;
+
+  /// The texture's reach, past the blocks' tips and their rims.
+  static const _textureReach = 1300.0;
   static const _blockSweep = 20.0;
-  static const _blockOuter = _blockInner + _blockRest + _blockSpan;
 
   /// Each block's own wobble (Hz and phase), so a voice moves them as an
   /// equalizer rather than in step.
@@ -191,6 +227,32 @@ class _JarvisPainter extends CustomPainter {
   static final _dashRing = _dashes(800, 72, 0.5);
   static final _dotRing = _dashes(985, 180, 0.25);
   static final _outerArcs = _arcs(940, const [(200, 64), (20, 38), (95, 12)]);
+
+  /// The thin rings over the blocks, the GIFs' many concentric lines.
+  static final _circles = () {
+    final path = Path();
+    for (final r in const <double>[625, 660, 705, 750, 860, 900, 1020, 1065]) {
+      path.addOval(_circle(r));
+    }
+    return path;
+  }();
+
+  /// Lit arcs on some of those rings, turning against the blocks.
+  static final _ringArcs = () {
+    final random = math.Random(1937);
+    final path = Path();
+    for (final r in const <double>[660, 750, 900, 1065]) {
+      for (var i = 0; i < 3; i++) {
+        path.addArc(
+          _circle(r),
+          _rad(random.nextDouble() * 360),
+          _rad(15 + random.nextDouble() * 50),
+        );
+      }
+    }
+    return path;
+  }();
+
   static final _spokes = () {
     final path = Path();
     for (final degrees in const <double>[-28, 64, 152, 197, 242, 331]) {
@@ -201,6 +263,115 @@ class _JarvisPainter extends CustomPainter {
     }
     return path;
   }();
+
+  /// A regular octagon, flat sides up and down, as the GIFs' core.
+  static Path _octagon(double r) => Path()
+    ..addPolygon([
+      for (var i = 0; i < 8; i++)
+        Offset(
+          r * math.cos(_rad(22.5 + 45 * i)),
+          r * math.sin(_rad(22.5 + 45 * i)),
+        ),
+    ], true);
+
+  static final _coreRings = [_octagon(150), _octagon(178), _octagon(210)];
+
+  static Offset _polar(double r, double degrees) =>
+      Offset(r * math.cos(_rad(degrees)), r * math.sin(_rad(degrees)));
+
+  /// The blocks' motherboard: traces running out with jogs, pads at their
+  /// ends, chips and specks, scattered over the blocks' ring from a fixed
+  /// seed.
+  static final _circuit = () {
+    final random = math.Random(9370);
+    final traces = Path();
+    final pads = Path();
+    final chips = Path();
+    final specks = Path();
+    for (var i = 0; i < 420; i++) {
+      var degrees = random.nextDouble() * 360;
+      final r0 = 610 + random.nextDouble() * 590;
+      var r = math.min(1240.0, r0 + 25 + random.nextDouble() * 90);
+      traces
+        ..moveTo(_polar(r0, degrees).dx, _polar(r0, degrees).dy)
+        ..lineTo(_polar(r, degrees).dx, _polar(r, degrees).dy);
+      if (random.nextDouble() < 0.6) {
+        final jog = (random.nextDouble() - 0.5) * 8;
+        traces.arcTo(_circle(r), _rad(degrees), _rad(jog), false);
+        degrees += jog;
+        r = math.min(1245.0, r + 20 + random.nextDouble() * 50);
+        final end = _polar(r, degrees);
+        traces.lineTo(end.dx, end.dy);
+      }
+      pads.addOval(Rect.fromCircle(center: _polar(r, degrees), radius: 7));
+      if (random.nextDouble() < 0.4) {
+        pads.addOval(Rect.fromCircle(center: _polar(r0, degrees), radius: 5));
+      }
+    }
+    for (var i = 0; i < 110; i++) {
+      final degrees = random.nextDouble() * 360;
+      final c = _polar(640 + random.nextDouble() * 560, degrees);
+      final out = Offset(math.cos(_rad(degrees)), math.sin(_rad(degrees)));
+      final along = Offset(-out.dy, out.dx);
+      chips.addPolygon([
+        c + out * 10 + along * 17,
+        c + out * 10 - along * 17,
+        c - out * 10 - along * 17,
+        c - out * 10 + along * 17,
+      ], true);
+    }
+    for (var i = 0; i < 800; i++) {
+      specks.addOval(
+        Rect.fromCircle(
+          center: _polar(
+            600 + random.nextDouble() * 645,
+            random.nextDouble() * 360,
+          ),
+          radius: 2.5,
+        ),
+      );
+    }
+    return (traces, pads, chips, specks);
+  }();
+
+  /// The blocks' fill as an image of [px] square out to [_textureReach]:
+  /// dark at the ring's inner edge, lit toward the reach of a loud voice,
+  /// with the circuit over it. A block drawn with it shows the texture
+  /// under its own shape, so the blocks need no clipping.
+  static ui.Image bake(int px) {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder)
+      ..scale(px / (2 * _textureReach))
+      ..translate(_textureReach, _textureReach);
+    const tip = 1000 * jarvisReach;
+    canvas.drawCircle(
+      Offset.zero,
+      _textureReach,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          Offset.zero,
+          tip,
+          [
+            _tealDeep.withValues(alpha: 0.7),
+            _tealDeep.withValues(alpha: 0.7),
+            _teal.withValues(alpha: 0.9),
+            const Color(0xFF1C8C99),
+          ],
+          [0, _blockInner / tip, (_blockInner + _blockRest) / tip, 1],
+        ),
+    );
+    final (traces, pads, chips, specks) = _circuit;
+    canvas
+      ..drawPath(specks, Paint()..color = const Color(0x4D7FE9F2))
+      ..drawPath(traces, _stroke(const Color(0x8C3FC4D0), 5))
+      ..drawPath(chips, Paint()..color = const Color(0xFF06262C))
+      ..drawPath(chips, _stroke(const Color(0x993FC4D0), 3))
+      ..drawPath(pads, Paint()..color = const Color(0xB35BD8E2));
+    final picture = recorder.endRecording();
+    final image = picture.toImageSync(px, px);
+    picture.dispose();
+    return image;
+  }
 
   /// The level against its source's recent peak: a peak decays to half in
   /// about two seconds, and the gain stops at 4x so room noise stays low.
@@ -308,22 +479,29 @@ class _JarvisPainter extends CustomPainter {
     final l = w.reactive ? _scaled(dt) : 0.0;
     _step(t, dt, l);
     final compact = w.compact;
-    // Full screen, it sits high, clear of the chat under it.
-    final reach = compact ? 1000.0 : 1080.0;
-    final area = w.inset.deflateRect(Offset.zero & size);
-    final radius = math.min(area.width, size.height) / 2;
-    final scale = (compact ? radius : radius * 0.66) / reach;
-    if (scale <= 0) return;
-    final center = compact
-        ? size.center(Offset.zero)
-        : Offset(area.center.dx, size.height * 0.38);
+    // The box holds the blocks at full stretch: the outer ring sits well
+    // inside it.
+    final box = compact ? Offset.zero & size : jarvisReactor(size, w.inset);
+    final radius = math.min(box.width, box.height) / 2 / jarvisReach;
+    if (radius <= 0) return;
+    final scale = radius / 1000;
+    final center = box.center;
     final a = state._bright;
-    // Thicker in the bubble, where a hairline would vanish.
-    final k = compact ? 2.6 : 1.0;
+    // Thicker on a small reactor, where a hairline would vanish.
+    final k = (150 / radius).clamp(1.0, 3.0);
     final angles = state._angles;
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.scale(scale);
+
+    // Docked over the dashboard, it sits on a disc of the bubble's dark.
+    if (compact) {
+      canvas.drawCircle(
+        Offset.zero,
+        1000 * jarvisReach + 20,
+        Paint()..color = const Color(0xF002090E),
+      );
+    }
 
     // The halo: the dark blue light the core throws over the rings.
     canvas.drawCircle(
@@ -342,57 +520,25 @@ class _JarvisPainter extends CustomPainter {
         ),
     );
 
-    if (!compact) {
-      canvas.drawPath(_spokes, _stroke(_cyan.withValues(alpha: 0.35 * a), 2));
-      final (thin, thick, lit) = _band;
-      _rotated(canvas, angles[3], () {
-        canvas.drawPath(thin, _stroke(_cyan.withValues(alpha: 0.35 * a), 4));
-        canvas.drawPath(thick, _stroke(_teal.withValues(alpha: a), 14));
-        canvas.drawPath(lit, _stroke(_cyan.withValues(alpha: 0.9 * a), 6));
-      });
-      _rotated(canvas, angles[2], () {
-        canvas.drawPath(_ticks, _stroke(_cyan.withValues(alpha: 0.55 * a), 3));
-      });
-      _rotated(canvas, angles[1], () {
-        canvas.drawPath(
-          _dashRing,
-          _stroke(_cyan.withValues(alpha: 0.5 * a), 5),
-        );
-      });
-      _rotated(canvas, angles[4], () {
-        canvas.drawPath(
-          _dotRing,
-          _stroke(_cyan.withValues(alpha: 0.45 * a), 4),
-        );
-        _lit(canvas, _outerArcs, 18, 0.85 * a);
-      });
-      canvas.drawCircle(
-        Offset.zero,
-        940,
-        _stroke(_cyan.withValues(alpha: 0.25 * a), 3),
-      );
-    }
-
-    // The blocks, each a thick arc from the ring's inner edge out, with a
-    // lit rim that rides its outer edge.
-    // Dark at the ring's inner edge, lit toward the reach of a loud voice.
+    // The blocks, each a thick arc from the ring's inner edge out filled
+    // with the circuit, with a lit rim that rides its outer edge. The
+    // texture turns with them, and the rings cross over them.
+    final px = radius * 2 * jarvisReach >= 400 ? 1024 : 512;
+    final s = 2 * _textureReach / px;
     final fill = Paint()
       ..style = PaintingStyle.stroke
-      ..shader = ui.Gradient.radial(
-        Offset.zero,
-        _blockOuter,
-        [
-          _tealDeep.withValues(alpha: 0.7 * a),
-          _tealDeep.withValues(alpha: 0.7 * a),
-          _teal.withValues(alpha: 0.9 * a),
-          const Color(0xFF1C8C99).withValues(alpha: a),
-        ],
-        [
-          0,
-          _blockInner / _blockOuter,
-          (_blockInner + _blockRest) / _blockOuter,
-          1,
-        ],
+      ..color = Color.fromRGBO(0, 0, 0, a)
+      ..shader = ImageShader(
+        state.texture(px),
+        TileMode.clamp,
+        TileMode.clamp,
+        Float64List.fromList([
+          s, 0, 0, 0, //
+          0, s, 0, 0,
+          0, 0, 1, 0,
+          -_textureReach, -_textureReach, 0, 1,
+        ]),
+        filterQuality: FilterQuality.low,
       );
     _rotated(canvas, angles[4] * 2, () {
       final sweep = _rad(_blockSweep);
@@ -420,6 +566,50 @@ class _JarvisPainter extends CustomPainter {
       }
     });
 
+    if (!compact) {
+      canvas.drawPath(
+        _spokes,
+        _stroke(_cyan.withValues(alpha: 0.35 * a), 2 * k),
+      );
+    }
+    final (thin, thick, lit) = _band;
+    _rotated(canvas, angles[3], () {
+      canvas.drawPath(thin, _stroke(_cyan.withValues(alpha: 0.35 * a), 4 * k));
+      canvas.drawPath(thick, _stroke(_teal.withValues(alpha: a), 14 * k));
+      canvas.drawPath(lit, _stroke(_cyan.withValues(alpha: 0.9 * a), 6 * k));
+    });
+    _rotated(canvas, angles[2], () {
+      canvas.drawPath(
+        _ticks,
+        _stroke(_cyan.withValues(alpha: 0.55 * a), 3 * k),
+      );
+    });
+    _rotated(canvas, angles[1], () {
+      canvas.drawPath(
+        _dashRing,
+        _stroke(_cyan.withValues(alpha: 0.5 * a), 5 * k),
+      );
+    });
+    _rotated(canvas, angles[4], () {
+      canvas.drawPath(
+        _dotRing,
+        _stroke(_cyan.withValues(alpha: 0.45 * a), 4 * k),
+      );
+      _lit(canvas, _outerArcs, 18 * k, 0.85 * a);
+    });
+    canvas.drawCircle(
+      Offset.zero,
+      940,
+      _stroke(_cyan.withValues(alpha: 0.25 * a), 3 * k),
+    );
+    canvas.drawPath(
+      _circles,
+      _stroke(_cyan.withValues(alpha: 0.3 * a), 2.5 * k),
+    );
+    _rotated(canvas, -angles[0] * 0.6, () {
+      _lit(canvas, _ringArcs, 5 * k, 0.75 * a);
+    });
+
     _rotated(canvas, angles[0], () => _lit(canvas, _midArcs, 9 * k, 0.9 * a));
     _rotated(canvas, angles[5], () {
       _lit(canvas, _innerSegments, 26 * k, 0.95 * a);
@@ -445,9 +635,13 @@ class _JarvisPainter extends CustomPainter {
       canvas.restore();
     }
 
-    // The core's rings, and its light.
-    for (final (r, width) in const [(150.0, 7.0), (178.0, 3.0), (210.0, 9.0)]) {
-      _lit(canvas, Path()..addOval(_circle(r)), width * k, 0.9 * a);
+    // The core: octagons, the middle one turning, and its light.
+    for (final (i, width) in const [7.0, 3.0, 9.0].indexed) {
+      _rotated(
+        canvas,
+        i == 1 ? angles[2] * 3 : 0,
+        () => _lit(canvas, _coreRings[i], width * k, 0.9 * a),
+      );
     }
     final glow = state._glow.clamp(0.0, 1.4);
     canvas.drawCircle(
@@ -465,9 +659,8 @@ class _JarvisPainter extends CustomPainter {
         ),
     );
     final core = 230 * (0.85 + 0.3 * glow);
-    canvas.drawCircle(
-      Offset.zero,
-      core,
+    canvas.drawPath(
+      _octagon(core),
       Paint()
         ..shader = ui.Gradient.radial(
           Offset.zero,
@@ -510,7 +703,7 @@ class _JarvisPainter extends CustomPainter {
       canvas.drawCircle(
         Offset.zero,
         1000,
-        _stroke(_cyan.withValues(alpha: 0.2 * a), 30),
+        _stroke(_cyan.withValues(alpha: 0.2 * a), 10 * k),
       );
       if (left > 0) {
         canvas.drawArc(
@@ -518,7 +711,8 @@ class _JarvisPainter extends CustomPainter {
           -math.pi / 2,
           2 * math.pi * left,
           false,
-          _stroke(_cyan.withValues(alpha: a), 30)..strokeCap = StrokeCap.round,
+          _stroke(_cyan.withValues(alpha: a), 10 * k)
+            ..strokeCap = StrokeCap.round,
         );
       }
     }
