@@ -104,6 +104,8 @@ void main() {
       'ks.intercom.key': key,
       'ks.remote.enabled': true,
       'ks.remote.password': 'secret',
+      // Onboarding done: the fleet directory waits for it.
+      'ks.browser.start_url': 'http://ha.local:8123/lovelace',
       ...prefs,
     });
     bus = EventBus();
