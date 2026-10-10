@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 /// overlay, the chat, the bar and the art read these and nothing else, so
 /// a skin changes by changing its entry.
 
-/// The canvas-drawn backgrounds three skins add over the backdrop.
-enum SkinArt { none, waveform, lensFlares, inkBlobs }
+/// The canvas-drawn backgrounds four skins add over the backdrop.
+enum SkinArt { none, waveform, lensFlares, inkBlobs, jarvis }
 
 /// The thinking indicator: three bouncing bullets, the terminal's blinking
 /// bullets, or the Kiosk Satellite mark's four bars.
@@ -332,6 +332,15 @@ const _flareUserShadow = [
   CssShadow(Color(0xBF000000), 14),
   CssShadow(Color(0xCC000000), 4, dy: 2),
 ];
+const _jarvisShadow = [
+  CssShadow(Color(0xE6000000), 4),
+  CssShadow(Color(0x9900C8E0), 12),
+];
+const _jarvisAnswerShadow = [
+  CssShadow(Color(0xF2000000), 4),
+  CssShadow(Color(0xCC000000), 14),
+  CssShadow(Color(0x8000C8E0), 16),
+];
 const _flareAnswerShadow = [
   CssShadow(Color(0xF2000000), 4),
   CssShadow(Color(0xD9000000), 14),
@@ -634,6 +643,31 @@ final assistSkins = <AssistSkin>[
     blur: 0,
     chatBottomReactive: 72,
     announcementTop: 0.72,
+    idleDotSize: 22,
+    toolSize: 22,
+  ),
+  const AssistSkin(
+    id: 'jarvis',
+    name: 'Jarvis',
+    light: SkinPalette(
+      backdrop: Color(0xFF02090E),
+      opacity: 0.92,
+      user: Color(0xD98FE3EC),
+      answer: Color(0xFFE6FCFF),
+      tool: Color(0xFF7CCAD4),
+      pill: Color(0xFF06222A),
+      dots: [Color(0xFF4EE6F0), Color(0xFFA6F8FF), Color(0xFF1FB5C9)],
+      userShadows: _jarvisShadow,
+      answerShadows: _jarvisAnswerShadow,
+      toolShadows: _jarvisShadow,
+    ),
+    bar: NoBar(),
+    art: SkinArt.jarvis,
+    font: 'Inter',
+    centered: true,
+    userWeight: FontWeight.w300,
+    toolWeight: FontWeight.w300,
+    announcementTop: 0.82,
     idleDotSize: 22,
     toolSize: 22,
   ),

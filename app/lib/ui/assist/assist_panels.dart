@@ -265,6 +265,22 @@ const _panels = <String, (PanelShape, PanelStyle, PanelStyle?)>{
     ),
     null,
   ),
+  'jarvis': (
+    PanelShape(radius: 4, imageRadius: 2, blur: 12, glass: true),
+    PanelStyle(
+      surface: Color(0x99041A22),
+      text: Color(0xFFE6FCFF),
+      secondary: Color(0xFF7CCAD4),
+      muted: Color(0xFF7CCAD4),
+      divider: Color(0x334EE6F0),
+      badge: Color(0x1A4EE6F0),
+      badgeText: Color(0xFF8FE3EC),
+      up: Color(0xFF4DDC94),
+      down: Color(0xFFFF6480),
+      border: Color(0x804EE6F0),
+    ),
+    null,
+  ),
   'ink-blobs': (
     PanelShape(radius: 14, blur: 12, glass: true),
     PanelStyle(

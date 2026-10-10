@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kiosk_satellite/ui/assist/art_jarvis.dart';
 import 'package:kiosk_satellite/ui/assist/art_lens_flares.dart';
 import 'package:kiosk_satellite/ui/assist/art_logo.dart';
 import 'package:kiosk_satellite/ui/assist/art_waveform.dart';
@@ -114,6 +115,18 @@ void main() {
                               level: level,
                             ),
                           ),
+                        if (skin.art == SkinArt.jarvis)
+                          for (final compact in [false, true])
+                            Positioned.fill(
+                              child: JarvisArt(
+                                mode: mode,
+                                reactive: true,
+                                level: level,
+                                clock: clock,
+                                compact: compact,
+                                countdown: compact ? level : null,
+                              ),
+                            ),
                         if (skin.voiceOnly)
                           for (final reactive in [false, true])
                             Positioned.fill(

@@ -6200,6 +6200,7 @@ const voiceSkin = SettingDef<String>(
     'waveform',
     'lens-flares',
     'ink-blobs',
+    'jarvis',
     'voice-only',
   ],
   optionLabels: {
@@ -6213,6 +6214,7 @@ const voiceSkin = SettingDef<String>(
     'waveform': 'Waveform',
     'lens-flares': 'Lens Flares',
     'ink-blobs': 'Ink Blobs',
+    'jarvis': 'Jarvis',
     'voice-only': 'Voice Only',
   },
   dependsOn: 'voice.enabled',

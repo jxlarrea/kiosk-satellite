@@ -18,6 +18,7 @@ import '../../managers/voice/voice_notice.dart';
 import '../theme.dart';
 import '../toast.dart';
 import 'art_ink_blobs.dart';
+import 'art_jarvis.dart';
 import 'art_lens_flares.dart';
 import 'art_logo.dart';
 import 'art_waveform.dart';
@@ -418,6 +419,16 @@ class _AssistOverlayState extends State<AssistOverlay>
           ),
         if (skin.art == SkinArt.lensFlares)
           LensFlaresArt(mode: mode, reactive: reactive, level: c.voice.level),
+        if (skin.art == SkinArt.jarvis)
+          IgnorePointer(
+            child: JarvisArt(
+              mode: mode,
+              reactive: reactive,
+              level: _glide,
+              clock: _clock,
+              inset: _beside(context, view),
+            ),
+          ),
         SkinBarLayer(
           skin: skin,
           mode: mode,
@@ -435,6 +446,19 @@ class _AssistOverlayState extends State<AssistOverlay>
         if (_lightbox case (final kind, final value))
           Positioned.fill(child: _lightboxView(context, kind, value)),
       ],
+    );
+  }
+
+  /// The chat's side insets while a result panel stands beside it, for
+  /// art that keeps to the chat's column. None in portrait, where the
+  /// panel sits above the chat.
+  EdgeInsets _beside(BuildContext context, AssistView view) {
+    final size = MediaQuery.sizeOf(context);
+    final result = primaryResult(view.results);
+    if (result == null || size.height > size.width) return EdgeInsets.zero;
+    return EdgeInsets.only(
+      left: size.width * 0.075,
+      right: chatRightInset(size, result),
     );
   }
 
@@ -544,12 +568,69 @@ class _AssistOverlayState extends State<AssistOverlay>
     // The bubble: the exchange, and the skin's bar docked along its
     // bottom. Up for the whole conversation, a slim pill with just the bar
     // while nothing has been said. Voice Only shows the mark alone, no
-    // bubble around it, fading as the conversation ends.
+    // bubble around it, fading as the conversation ends. Jarvis puts its
+    // reactor beside the exchange instead of a bar, its outer ring
+    // unwinding as the conversation ends.
     final logoSide = (math.min(size.width, size.height) * 0.24).clamp(
       72.0,
       140.0,
     );
-    final card = skin.voiceOnly
+    final decoration = BoxDecoration(
+      color: bubble,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: palette.answer.withValues(alpha: 0.16)),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x33000000),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+    );
+    const reactorSide = 64.0;
+    final card = skin.art == SkinArt.jarvis
+        ? AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.ease,
+            alignment: Alignment.bottomLeft,
+            child: Container(
+              width: lines.isEmpty ? null : width,
+              padding: const EdgeInsets.all(12),
+              decoration: decoration,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 14,
+                children: [
+                  SizedBox.square(
+                    dimension: reactorSide,
+                    child: IgnorePointer(
+                      child: JarvisArt(
+                        mode: mode,
+                        reactive: reactive,
+                        level: _glide,
+                        clock: _clock,
+                        compact: true,
+                        countdown: c.voice.dockCountdown,
+                      ),
+                    ),
+                  ),
+                  if (lines.isNotEmpty)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 6,
+                          children: lines,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          )
+        : skin.voiceOnly
         ? SizedBox.square(
             dimension: logoSide,
             child: IgnorePointer(
@@ -569,20 +650,7 @@ class _AssistOverlayState extends State<AssistOverlay>
             child: Container(
               width: width,
               clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: bubble,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: palette.answer.withValues(alpha: 0.16),
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x33000000),
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
+              decoration: decoration,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
