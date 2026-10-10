@@ -971,8 +971,9 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   /// is fetched by the app itself, through the same certificate policy as
   /// every other client in the process; a failed fetch keeps whatever
   /// photo is up and tries again in a minute rather than blanking the
-  /// clock over a transient outage.
-  void _ensureBackground(String value, Size size, double dpr) {
+  /// clock over a transient outage. [fill] is in the key so the decode
+  /// width follows a Fill the screen change.
+  void _ensureBackground(String value, Size size, double dpr, String fill) {
     final url = defs.isClockBackgroundUrl(value);
     FileStat? stat;
     if (!url && value.isNotEmpty) {
@@ -984,7 +985,7 @@ class _ClockScreensaverState extends State<ClockScreensaver>
         return;
       }
     }
-    final key = (value, size, dpr, stat?.modified, stat?.size);
+    final key = (value, size, dpr, fill, stat?.modified, stat?.size);
     if (key == _bgKey) return;
     _bgKey = key;
     _bgRetry?.cancel();
@@ -1007,7 +1008,7 @@ class _ClockScreensaverState extends State<ClockScreensaver>
           bytes,
           context: context,
           frame: size * dpr,
-          fill: 'smart',
+          fill: fill,
           zoom: false,
           valid: () => mounted && _bgKey == key,
           beforeDecode: _waitForPhotoScreen,
@@ -1057,7 +1058,8 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   /// to edge (crop capped at a 1.45x ratio mismatch), one that keeps its
   /// full frame gets itself, blurred and dimmed, as the backdrop instead
   /// of black bars. The scrim on top keeps the clock and the row readable
-  /// over either.
+  /// over either. Beside Now Playing (issue #938) the panel's Fill the
+  /// screen override applies here too, like every photo screensaver.
   List<Widget> _background(Size size, double dpr) {
     if (widget.night &&
         widget.container.settings.get(
@@ -1065,18 +1067,22 @@ class _ClockScreensaverState extends State<ClockScreensaver>
         )) {
       return const [];
     }
+    final fill = PhotoFillOverride.resolve(context, 'smart');
     _ensureBackground(
       widget.container.settings.get(defs.screensaverClockBackground),
       size,
       dpr,
+      fill,
     );
     final image = _bgImage;
     if (image == null) return const [];
     final screen = size.width / size.height;
     final photo = _bgAspect;
     // An unreadable aspect (odd format) falls back to the cover fit the
-    // clock always used.
-    final covers = photo == null || max(photo / screen, screen / photo) <= 1.45;
+    // clock always used, unless Off says never crop.
+    final covers = photo == null
+        ? fill != 'off'
+        : photoCovers(fill, photo, screen);
     final picture = Image(
       image: image,
       fit: covers ? BoxFit.cover : BoxFit.contain,
@@ -1084,7 +1090,7 @@ class _ClockScreensaverState extends State<ClockScreensaver>
       errorBuilder: (_, _, _) => const SizedBox.shrink(),
     );
     return [
-      if (covers)
+      if (covers || fill == 'off')
         picture
       else
         Stack(

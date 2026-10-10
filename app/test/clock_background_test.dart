@@ -10,6 +10,7 @@ import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/btproxy/esp_entities.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
+import 'package:kiosk_satellite/ui/photo_frames.dart';
 import 'package:kiosk_satellite/ui/screensaver_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -266,5 +267,34 @@ void main() {
       await reloaded(tester, first);
       await tester.pumpWidget(const SizedBox());
     });
+
+    // The 30x40 photo in the 800x600 test frame is past Smart's crop cap,
+    // so only the Now Playing override (issue #938) changes how it fills.
+    for (final (fill, fit, blurred) in [
+      (null, BoxFit.contain, true),
+      ('always', BoxFit.cover, false),
+      ('off', BoxFit.contain, false),
+    ]) {
+      testWidgets('Fill the screen ${fill ?? 'unset'} frames the photo', (
+        tester,
+      ) async {
+        final container = await pumpClock(tester, {
+          'ks.screensaver.clock_background': url(),
+        });
+        await tester.pumpWidget(
+          MaterialApp(
+            home: PhotoFillOverride(
+              fill: fill,
+              child: ClockScreensaver(container: container),
+            ),
+          ),
+        );
+        await loadPhoto(tester);
+        final picture = tester.widgetList<Image>(find.byType(Image)).last;
+        expect(picture.fit, fit);
+        expect(find.byType(ImageFiltered), blurred ? findsOne : findsNothing);
+        await tester.pumpWidget(const SizedBox());
+      });
+    }
   });
 }
