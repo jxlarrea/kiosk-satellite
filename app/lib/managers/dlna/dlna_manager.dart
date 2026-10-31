@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' show Random;
+import 'dart:math' show Random, min;
 
 import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:http/http.dart' as http;
@@ -191,6 +191,13 @@ class DlnaManager extends Manager {
   Timer? _aliveTimer;
   Timer? _restartDebounce;
   Timer? _failureStop;
+
+  /// Retries the SSDP bind while another app holds port 1900 without
+  /// sharing it. On some Samsung tablets something does for a while after
+  /// boot, and the renderer used to give up and stay down until toggled
+  /// (issue #1236).
+  Timer? _ssdpRetry;
+  int _ssdpTries = 0;
   String _uuid = '';
   String _ip = '';
   String _appVersion = '';
@@ -252,6 +259,7 @@ class DlnaManager extends Manager {
         description: 'DLNA renderer state: running, current media, transport',
         handler: (_) async => CommandResult.ok({
           'running': _server != null,
+          'discoverable': _ssdp != null,
           'transportState': transportState.value,
           'uri': media.value?.uri,
           'kind': media.value?.kind,
@@ -307,9 +315,19 @@ class DlnaManager extends Manager {
       _ip = await _localIp();
       _bootId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       _notifyClient = http.Client();
-      _server = await serveWithFallback(_route, port);
+      try {
+        _server = await serveWithFallback(_route, port);
+      } on SocketException catch (e) {
+        log.error(
+          name,
+          'no free port from $port upwards, so the renderer could not start. '
+          'Set a different one under Settings → DLNA Renderer. ($e)',
+        );
+        await _stop();
+        return;
+      }
       _livePort = _server!.port;
-      await _startSsdp();
+      await _bindSsdp();
       if (_livePort != port) {
         // Controllers find the renderer by SSDP, which advertises the live
         // port, so this needs no action — but a manual integration entry
@@ -328,13 +346,6 @@ class DlnaManager extends Manager {
         await _settings.set(defs.dlnaPort, '$_livePort');
       }
       log.info(name, 'renderer up at http://$_ip:$_livePort (uuid $_uuid)');
-    } on SocketException catch (e) {
-      log.error(
-        name,
-        'no free port from $port upwards, so the renderer could not start. '
-        'Set a different one under Settings → DLNA Renderer. ($e)',
-      );
-      await _stop();
     } catch (e) {
       log.error(name, 'failed to start: $e');
       await _stop();
@@ -346,6 +357,9 @@ class DlnaManager extends Manager {
     _aliveTimer = null;
     _failureStop?.cancel();
     _failureStop = null;
+    _ssdpRetry?.cancel();
+    _ssdpRetry = null;
+    _ssdpTries = 0;
     if (_ssdp != null) {
       _sendByeBye();
       _ssdp!.close();
@@ -399,6 +413,38 @@ class DlnaManager extends Manager {
 
   String get _serverHeader =>
       'Android/1.0 UPnP/1.0 KioskSatellite/$_appVersion';
+
+  /// Bind discovery, or keep the HTTP server up and try again later when
+  /// another app holds port 1900. Home Assistant only reconnects on an
+  /// alive, so a renderer it cannot hear is as good as down.
+  Future<void> _bindSsdp() async {
+    try {
+      await _startSsdp();
+    } on SocketException catch (e) {
+      _ssdpTries++;
+      if (_ssdpTries == 1) {
+        log.warn(
+          name,
+          'SSDP port $_ssdpPort is held by another app, so Home Assistant '
+          'cannot find the renderer yet. Trying again until it is free. ($e)',
+        );
+      }
+      // 2, 4, 8 and 16 s, then every 30 s for as long as it takes.
+      final delay = Duration(seconds: min(30, 1 << min(_ssdpTries, 5)));
+      _ssdpRetry = Timer(delay, () {
+        _ssdpRetry = null;
+        _transition = _transition.then((_) async {
+          if (_server == null || _ssdp != null) return;
+          await _bindSsdp();
+        });
+      });
+      return;
+    }
+    if (_ssdpTries > 0) {
+      log.info(name, 'SSDP port $_ssdpPort is free now, renderer announced');
+      _ssdpTries = 0;
+    }
+  }
 
   Future<void> _startSsdp() async {
     final sock = await RawDatagramSocket.bind(
