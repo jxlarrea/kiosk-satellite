@@ -4,8 +4,8 @@
   "recommended_threshold": 0.5,
   "attribution": {
     "author": "Xavier Larrea",
-    "url": "https://github.com/jxlarrea/voice-satellite-card-integration",
-    "license": "AGPL-3.0 (GNU Affero General Public License v3.0): https://www.gnu.org/licenses/agpl-3.0.html"
+    "url": "https://github.com/jxlarrea/kiosk-satellite",
+    "license": "CC BY-NC-ND 4.0 (Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International): https://github.com/jxlarrea/kiosk-satellite/blob/main/LICENSE"
   },
   "input": {
     "name": "input",
@@ -173,7 +173,7 @@
     ],
     "target_min_matched_confidence": [
       9.0,
-      9.5
+      10.0
     ],
     "wake_word_target_anchors": [
       [
