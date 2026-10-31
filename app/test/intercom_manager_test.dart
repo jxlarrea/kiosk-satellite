@@ -1987,6 +1987,104 @@ void main() {
       expect(states.any((s) => s['state'] == 'ended'), isTrue);
     });
 
+    test('a new announcement replaces the one playing', () async {
+      await build(
+        prefs: {
+          'ks.ha.url': 'http://ha.local:8123',
+          'ks.ha.token': 'tkn',
+          'ks.announcements.chime': false,
+        },
+      );
+      answers['GET /'] = (_) => http.Response.bytes([9], 200);
+      final first = await commands.execute('announce', {
+        'url': 'http://sounds.local/alarm.mp3',
+        'repeat': 3,
+      });
+      expect(first.ok, isTrue, reason: first.error);
+      final alarm = intercom.call;
+      await settle(300);
+      final second = await commands.execute('announce', {
+        'url': 'http://sounds.local/done.mp3',
+      });
+      expect(second.ok, isTrue, reason: second.error);
+      expect(intercom.state, 'listening');
+      expect(intercom.call, isNot(same(alarm)));
+      expect(alarm?.reason, 'broadcast_over');
+      // The second clip is a second long: the alarm's three would still
+      // be playing at 1.5 s.
+      await settle(1500);
+      expect(states.last['state'], isNot('listening'));
+    });
+
+    test('announce_stop ends the announcement playing', () async {
+      await build(
+        prefs: {
+          'ks.ha.url': 'http://ha.local:8123',
+          'ks.ha.token': 'tkn',
+          'ks.announcements.chime': false,
+        },
+      );
+      answers['GET /'] = (_) => http.Response.bytes([9], 200);
+      final surface = EspEntitySurface(bus, commands, log, settings);
+      expect(
+        surface.buildServices().singleWhere(
+          (s) => s['name'] == 'announce_stop',
+        )['args'],
+        isEmpty,
+      );
+      expect(await surface.handleService('announce_stop', const {}), {
+        'stopped': false,
+      });
+      await surface.handleService('announce', {
+        'url': 'http://sounds.local/alarm.mp3',
+        'repeat': 5,
+      });
+      expect(intercom.state, 'listening');
+      await settle(200);
+      expect(await surface.handleService('announce_stop', const {}), {
+        'stopped': true,
+      });
+      expect(intercom.state, 'ended');
+      expect(intercom.call?.reason, 'broadcast_over');
+      expect(audioCalls, contains('stop'));
+      final written = audioWritten.length;
+      await settle(300);
+      expect(audioWritten.length, written);
+    });
+
+    test('announce_stop cancels an announcement still fetching', () async {
+      await build(
+        prefs: {
+          'ks.ha.url': 'http://ha.local:8123',
+          'ks.ha.token': 'tkn',
+          'ks.announcements.chime': false,
+        },
+      );
+      answers['GET /'] = (_) => http.Response.bytes([9], 200);
+      // The decode waits until the stop has gone through.
+      final decoding = Completer<void>();
+      final release = Completer<void>();
+      final invoke = intercom.audio.invoker;
+      intercom.audio.invoker = (method, [args]) async {
+        if (method == 'decode') {
+          decoding.complete();
+          await release.future;
+        }
+        return invoke(method, args);
+      };
+      final pending = commands.execute('announce', {
+        'url': 'http://sounds.local/alarm.mp3',
+      });
+      await decoding.future;
+      final stop = await commands.execute('announceStop', const {});
+      expect((stop.data as Map)['stopped'], isFalse);
+      release.complete();
+      final r = await pending;
+      expect(r.ok, isFalse);
+      expect(intercom.state, 'idle');
+      expect(audioCalls, isNot(contains('start')));
+    });
+
     test(
       'ESPHome forwards announcement overrides without changing settings',
       () async {

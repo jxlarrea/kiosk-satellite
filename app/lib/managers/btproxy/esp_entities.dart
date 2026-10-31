@@ -1638,6 +1638,9 @@ class EspEntitySurface {
         {'name': 'audio_only', 'type': 'bool'},
       ],
     },
+    // Stops the announcement playing on this kiosk, if any, and one
+    // still fetching its audio. Answers whether one was playing.
+    {'name': 'announce_stop', 'supportsResponse': true, 'args': []},
     // Rings another kiosk from this one, the way the kiosk menu's Call a
     // kiosk sheet does, so a dashboard button or an automation can put a
     // call through (issue #549). The kiosk goes by its name or address:
@@ -1869,6 +1872,11 @@ class EspEntitySurface {
           'tts_voice': '${args['tts_voice'] ?? ''}',
           'audio_only': args['audio_only'] ?? false,
         });
+        if (!result.ok) throw StateError(result.error ?? 'refused');
+        final data = result.data;
+        return data is Map ? data.cast<String, Object?>() : const {};
+      case 'announce_stop':
+        final result = await commands.execute('announceStop', const {});
         if (!result.ok) throw StateError(result.error ?? 'refused');
         final data = result.data;
         return data is Map ? data.cast<String, Object?>() : const {};

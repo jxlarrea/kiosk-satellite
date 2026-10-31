@@ -414,6 +414,14 @@ The **Announcements** page under Settings, ESPHome holds:
 
 Leave `url` empty to speak the message, or leave `message` empty and give a `url` to play a file. `volume` is a share of the master volume from 0 to 1 for this one announcement; 0 keeps the media volume. `repeat` plays it that many times, up to ten; 0 is once. `repeat_pause` is the silence between plays in seconds, up to 30; 0 is 0.6. The chime plays once, before the first. The action answers with the clip's length in milliseconds through `response_variable`, and reports an error when announcements are off, the kiosk is in an intercom call, or Home Assistant could not speak the message. A message needs the kiosk's Home Assistant connection. On the [remote API](remote-api.md), the equivalent command is `announce` with the same arguments.
 
+A new announcement replaces the one playing, so an automation can cut an alarm loop short with its own message. If two arrive close together, the newer one plays and the older one reports an error.
+
+`esphome.<node name>_announce_stop` takes no arguments and stops the announcement playing on this kiosk, along with one still fetching its audio. It answers with `stopped` through `response_variable`, `true` when an announcement was playing, and never reports an error when nothing was. Intercom calls and Announce to all are not affected. On the remote API the command is `announceStop`.
+
+```yaml
+- action: esphome.kitchen_tablet_announce_stop
+```
+
 Each announcement can override these options without changing the kiosk's settings:
 
 | Parameter | What it does |

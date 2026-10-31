@@ -1292,6 +1292,15 @@ class IntercomManager extends Manager {
           handler: (p) async => _announce(p),
         ),
       )
+      ..register(
+        Command(
+          name: 'announceStop',
+          description:
+              'Stop the announcement from Home Assistant playing on this '
+              'kiosk, if any.',
+          handler: (_) async => _announceStop(),
+        ),
+      )
       // A test hook, like injectWakeAudio: a 16 kHz mono PCM16 WAV sent
       // over the live call's socket in 80 ms chunks as if this kiosk's
       // microphone had heard it, whatever the talk mode says. How a
@@ -1593,6 +1602,32 @@ class IntercomManager extends Manager {
 
   // ── Announcements from Home Assistant ──────────────────────────────
 
+  /// Counts announce actions and stops, so one still fetching its audio
+  /// knows a newer action has taken its place by the time it is ready.
+  int _announceSeq = 0;
+
+  /// A Home Assistant announcement playing here alone: a new one takes
+  /// its place and announce_stop ends it. An intercom call or Announce to
+  /// all is never cut short by either.
+  bool get _announcing {
+    final c = _call;
+    return _busy &&
+        c != null &&
+        c.automated &&
+        !c.outgoing &&
+        c.peer['id'] == 'home-assistant';
+  }
+
+  /// The `announce_stop` action: ends the announcement playing here, and
+  /// one still fetching its audio never starts. Nothing playing is fine.
+  Future<CommandResult> _announceStop() async {
+    _announceSeq++;
+    if (!_announcing) return const CommandResult.ok({'stopped': false});
+    log.info(name, 'announcement stopped by Home Assistant');
+    await _finish('broadcast_over');
+    return const CommandResult.ok({'stopped': true});
+  }
+
   /// The `announce` action: a message for Home Assistant's text to speech
   /// or an audio URL, played on this kiosk alone with a chime first. Its
   /// own feature under ESPHome, Announcements; the intercom only lends
@@ -1601,7 +1636,8 @@ class IntercomManager extends Manager {
     if (!_settings.get(defs.announcementsEnabled)) {
       return const CommandResult.fail('announcements are off');
     }
-    if (_busy) return const CommandResult.fail('in a call');
+    if (_busy && !_announcing) return const CommandResult.fail('in a call');
+    final seq = ++_announceSeq;
     final message = '${p['message'] ?? ''}'.trim();
     final url = '${p['url'] ?? ''}'.trim();
     if (message.isEmpty && url.isEmpty) {
@@ -1658,6 +1694,17 @@ class IntercomManager extends Manager {
         ? await _announcementChime('${p['chime_file'] ?? ''}'.trim(), rate)
         : null;
     final clip = chimePcm == null ? pcm : _joined(chimePcm, pcm, 200, rate);
+    const superseded = CommandResult.fail(
+      'replaced by a newer announcement or stopped',
+    );
+    if (seq != _announceSeq) return superseded;
+    // The one playing gives way: the newest action is the one wanted,
+    // like an alarm loop a dismiss automation replaces with its own words.
+    if (_announcing) {
+      log.info(name, 'a new announcement replaces the one playing');
+      await _finish('broadcast_over', notify: false);
+      if (seq != _announceSeq) return superseded;
+    }
     if (_busy) return const CommandResult.fail('in a call');
     _holdTimer?.cancel();
     _missedTimer?.cancel();
