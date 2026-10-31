@@ -6,6 +6,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
+import '../settings/echo_image_settings.dart';
 import '../settings/settings_manager.dart';
 import '../wake_word/vsww/native_mic.dart';
 import 'mic_hub.dart';
@@ -207,7 +208,9 @@ class AudioRoutingManager extends Manager {
       defs.micSoftwareEchoCancellation,
     );
     NativeMic.noiseSuppression = _settings.get(defs.micNoiseSuppression);
-    NativeMic.gainDb = _settings.get(defs.micGainDb);
+    // On top of the Echo images' base gain for the raw microphone.
+    NativeMic.gainDb =
+        _settings.get(defs.micGainDb) + EchoImageSettings.micGainBaseDb;
     NativeMic.channel = _settings.get(defs.micChannel);
     NativeMic.captureFormat = _settings.get(defs.micCaptureFormat);
   }

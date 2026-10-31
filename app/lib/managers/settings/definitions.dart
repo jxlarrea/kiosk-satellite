@@ -6567,7 +6567,8 @@ const micCaptureMode = SettingDef<String>(
 /// own canceller is gone: it needed the call capture path, which came in
 /// 20 dB quieter on some ROMs, and on most devices it let the assistant
 /// hear itself anyway. Off is the escape hatch for a microphone that does
-/// its own cancellation and sounds worse with a second one over it.
+/// its own cancellation and sounds worse with a second one over it. The
+/// Echo images hide it and keep it on (echo_image_settings.dart).
 const micSoftwareEchoCancellation = SettingDef<bool>(
   key: 'audio.software_echo_cancellation',
   type: SettingType.boolean,
@@ -6587,7 +6588,8 @@ const micSoftwareEchoCancellation = SettingDef<bool>(
 /// source: the raw microphone's hiss carried straight into intercom calls
 /// on an Echo Show 8. Off by default, since it changes what the wake word
 /// hears. The key is the old platform suppressor's, so a kiosk that had it
-/// on keeps it on.
+/// on keeps it on. The Echo images hide it and keep it off
+/// (echo_image_settings.dart).
 const micNoiseSuppression = SettingDef<bool>(
   key: 'audio.mic_noise_suppression',
   type: SettingType.boolean,
@@ -6626,6 +6628,8 @@ const micChannel = SettingDef<num>(
   perDevice: true,
 );
 
+/// A fixed gain after the echo canceller (MicRecorder.kt). On the Echo
+/// images it moves from each device's base gain (echo_image_settings.dart).
 const micGainDb = SettingDef<num>(
   key: 'audio.mic_gain_db',
   type: SettingType.number,
