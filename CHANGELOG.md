@@ -7,7 +7,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - **Fine-tune the wake word and stop word from Home Assistant.** With **Expose kiosk entities** on, the kiosk adds **VS Wake word fine-tune** and **VS Stop word fine-tune** sliders from -10 to +10, next to **VS Wake word sensitivity**. They change **Fine-tune sensitivity** and **Fine-tune stop word sensitivity** on that kiosk, so an automation can lower them while the TV plays and raise them again when it stops (#1224).
 
-### Improved
+### Changed
 - **Echo cancellation holds up better on the Portal Mini and the Tab S8+.** The echo mask the canceller runs is retrained with twelve new recordings from a Portal Mini, so what it leaves of the assistant's own voice on those devices drops by two thirds, barge-ins on the Portal come up and the other devices stay where they were.
 
 ### Fixed
