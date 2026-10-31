@@ -267,6 +267,14 @@ void main() {
       ),
     ];
     expect(upNext(events, at(11)).map((e) => e.summary), ['Going', 'Later']);
+    expect(
+      upNext(
+        [...events]..sort(compareEvents),
+        at(11),
+        allDay: true,
+      ).map((e) => e.summary),
+      ['All day', 'Going', 'Later'],
+    );
   });
 
   test('the forecast is keyed by local date', () {

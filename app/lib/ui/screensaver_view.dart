@@ -2088,8 +2088,9 @@ class _AlarmWidgetOverlayState extends State<AlarmWidgetOverlay> {
 }
 
 /// The family calendar's next events today in a corner: a dot in each
-/// event's calendar color (split for a shared one), the start time and the
-/// title. Empty once nothing more is on today, so the corner stays clear.
+/// event's calendar color (split for a shared one), the start time (or All
+/// day, those listed first) and the title. Empty once nothing more is on
+/// today, so the corner stays clear.
 /// A tap opens the calendar, the alarm widget's twin.
 class CalendarWidgetOverlay extends StatefulWidget {
   const CalendarWidgetOverlay({
@@ -2171,6 +2172,7 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
               _cal.hidden.value,
             ),
             now,
+            allDay: true,
           )
           .take(count)
           .toList();
@@ -2205,7 +2207,9 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
           weight: FontWeight.w600,
         ).copyWith(letterSpacing: 1.2),
       );
-      String when(cal_model.CalendarEvent e) => e.start.isAfter(now)
+      String when(cal_model.CalendarEvent e) => e.allDay
+          ? l10n(context).calendarAllDay
+          : e.start.isAfter(now)
           ? calendarTime(context, e.start)
           : l10n(context).calendarHappeningNow;
       // The times share the widest one's width, so the titles line up.
