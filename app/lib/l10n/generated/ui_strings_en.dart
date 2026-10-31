@@ -517,6 +517,15 @@ class UiStringsEn extends UiStrings {
   String get calendarWidgetEvents => 'Events shown';
 
   @override
+  String get calendarWidgetDays => 'Days shown';
+
+  @override
+  String get calendarWidgetTomorrow => 'Today and tomorrow';
+
+  @override
+  String get calendarWidgetWeek => 'Next 7 days';
+
+  @override
   String get calendarVoiceSection => 'Voice Calendar';
 
   @override

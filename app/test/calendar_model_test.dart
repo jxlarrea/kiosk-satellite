@@ -277,6 +277,34 @@ void main() {
     );
   });
 
+  test('up next looks ahead over the days asked for', () {
+    DateTime on(int day, int h) => DateTime(2026, 10, day, h);
+    final events = [
+      _event('calendar.a', 'Today', on(19, 15), on(19, 16)),
+      // Started yesterday and runs into tomorrow: listed once, today.
+      _event('calendar.a', 'Trip', on(18, 9), on(20, 18)),
+      _event(
+        'calendar.a',
+        'Holiday',
+        DateTime(2026, 10, 20),
+        DateTime(2026, 10, 21),
+        allDay: true,
+      ),
+      _event('calendar.a', 'Tomorrow', on(20, 9), on(20, 10)),
+      _event('calendar.a', 'Saturday', on(24, 9), on(24, 10)),
+      _event('calendar.a', 'Next week', on(26, 9), on(26, 10)),
+    ]..sort(compareEvents);
+    List<String> titles(int days) => upNext(
+      events,
+      on(19, 11),
+      allDay: true,
+      days: days,
+    ).map((e) => e.summary).toList();
+    expect(titles(1), ['Trip', 'Today']);
+    expect(titles(2), ['Trip', 'Today', 'Holiday', 'Tomorrow']);
+    expect(titles(7), ['Trip', 'Today', 'Holiday', 'Tomorrow', 'Saturday']);
+  });
+
   test('the forecast is keyed by local date', () {
     final forecast = parseForecast([
       {

@@ -28290,5 +28290,23 @@
     "translation": "c46f5f53d9034e8145d2d2e1ae41c105d99e4dd4836f443e82eaa4c76359da70",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "calendarWidgetTomorrow": {
+    "source": "0a3c590aa76aab47b6e0cc842c5fd389b6bfcec3a2397cbed66b1e9cddd6c823",
+    "translation": "ad3af1645d72380efe949409af9a719f3b4b85336da95c203407138db385b512",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "calendarWidgetDays": {
+    "source": "b6d587632fba0be525c75b0363fdea4d65d24fcdd782dea102cd292e252e8c48",
+    "translation": "261eefae7947ce07a5287f50ea7977490a334f8ed13eefcfec8fc5631580577f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "calendarWidgetWeek": {
+    "source": "d57149f25596e9338acba4575692fd91b8a4b70b35b28bb7b8ee436ebf6c7772",
+    "translation": "f865d8685ef627822dd9c7b86b0911dd09de393101c6b93484680c9928832c00",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

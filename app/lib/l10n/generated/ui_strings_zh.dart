@@ -510,6 +510,15 @@ class UiStringsZh extends UiStrings {
   String get calendarWidgetEvents => '显示的日程数';
 
   @override
+  String get calendarWidgetDays => '显示的天数';
+
+  @override
+  String get calendarWidgetTomorrow => '今天和明天';
+
+  @override
+  String get calendarWidgetWeek => '未来 7 天';
+
+  @override
   String get calendarVoiceSection => '语音日历';
 
   @override
@@ -15346,6 +15355,15 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get calendarWidgetEvents => '显示的日程数';
+
+  @override
+  String get calendarWidgetDays => '显示的天数';
+
+  @override
+  String get calendarWidgetTomorrow => '今天和明天';
+
+  @override
+  String get calendarWidgetWeek => '未来 7 天';
 
   @override
   String get calendarVoiceSection => '语音日历';

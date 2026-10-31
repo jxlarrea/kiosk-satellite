@@ -2138,7 +2138,19 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
 
   void _watchToday() {
     final today = cal_model.dateOnly(DateTime.now());
-    _cal.watch(this, today, cal_model.addDays(today, 1));
+    _cal.watch(this, today, cal_model.addDays(today, _days));
+  }
+
+  @override
+  void didUpdateWidget(CalendarWidgetOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _watchToday();
+  }
+
+  /// How many days the widget looks ahead, today counting as one.
+  int get _days {
+    final days = (widget.spec.config['days'] as num?)?.toInt() ?? 1;
+    return upNextDayOptions.contains(days) ? days : 1;
   }
 
   @override
@@ -2173,6 +2185,7 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
             ),
             now,
             allDay: true,
+            days: _days,
           )
           .take(count)
           .toList();
@@ -2199,14 +2212,26 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
             shadows: shadows,
           );
       final right = corner.x > 0;
+      final headingStyle = style(
+        textSize * .62,
+        alpha: .62,
+        weight: FontWeight.w600,
+      ).copyWith(letterSpacing: 1.2);
       final heading = Text(
         l10n(context).calendarUpNext.toUpperCase(),
-        style: style(
-          textSize * .62,
-          alpha: .62,
-          weight: FontWeight.w600,
-        ).copyWith(letterSpacing: 1.2),
+        style: headingStyle,
       );
+      // Each later day's events go under its name. Today's sit right
+      // under the heading.
+      final today = cal_model.dateOnly(now);
+      DateTime? dayOf(cal_model.CalendarEvent e) {
+        final day = cal_model.dateOnly(e.start);
+        return day.isAfter(today) ? day : null;
+      }
+
+      String dayName(DateTime day) => day == cal_model.addDays(today, 1)
+          ? l10n(context).calendarTomorrow
+          : weekdayName(day);
       String when(cal_model.CalendarEvent e) => e.allDay
           ? l10n(context).calendarAllDay
           : e.start.isAfter(now)
@@ -2229,7 +2254,13 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
           )
           .reduce(max);
       final rows = [
-        for (final e in coming)
+        for (final (i, e) in coming.indexed) ...[
+          if (dayOf(e) case final day?
+              when i == 0 || dayOf(coming[i - 1]) != day)
+            Padding(
+              padding: EdgeInsets.only(top: textSize * .8),
+              child: Text(dayName(day).toUpperCase(), style: headingStyle),
+            ),
           Padding(
             padding: EdgeInsets.only(top: textSize * .4),
             child: Row(
@@ -2267,6 +2298,7 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
               ],
             ),
           ),
+        ],
       ];
       return Stack(
         fit: StackFit.expand,

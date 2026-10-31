@@ -51,6 +51,9 @@
   "calendarColorSlate": "Schiefer",
   "calendarColorCustom": "Eigene",
   "calendarWidgetEvents": "Angezeigte Termine",
+  "calendarWidgetDays": "Angezeigte Tage",
+  "calendarWidgetTomorrow": "Heute und morgen",
+  "calendarWidgetWeek": "Nächste 7 Tage",
   "calendarVoiceSection": "Kalender per Sprache",
   "calendarVoiceManage": "Kalender mit Voice Satellite verwalten",
   "calendarVoiceHint": "Benötigt den Kiosk Satellite Kalender-Blueprint und einen LLM-Konversationsagenten in Home Assistant."

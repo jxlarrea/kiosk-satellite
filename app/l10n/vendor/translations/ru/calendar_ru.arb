@@ -51,6 +51,9 @@
   "calendarColorSlate": "Сланцевый",
   "calendarColorCustom": "Свой",
   "calendarWidgetEvents": "Показано событий",
+  "calendarWidgetDays": "Показано дней",
+  "calendarWidgetTomorrow": "Сегодня и завтра",
+  "calendarWidgetWeek": "Следующие 7 дней",
   "calendarVoiceSection": "Голосовой календарь",
   "calendarVoiceManage": "Управление календарём через Voice Satellite",
   "calendarVoiceHint": "Требуются Blueprint календаря Kiosk Satellite и диалоговый LLM-агент в Home Assistant."

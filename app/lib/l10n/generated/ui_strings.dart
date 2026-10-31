@@ -1016,6 +1016,24 @@ abstract class UiStrings {
   /// **'Events shown'**
   String get calendarWidgetEvents;
 
+  /// How many days ahead the Up next widget lists events from. The options are Today, Today and tomorrow and Next 7 days.
+  ///
+  /// In en, this message translates to:
+  /// **'Days shown'**
+  String get calendarWidgetDays;
+
+  /// Days shown option: the Up next widget lists events from today and tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Today and tomorrow'**
+  String get calendarWidgetTomorrow;
+
+  /// Days shown option: the Up next widget lists events from today and the 6 days after it.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 7 days'**
+  String get calendarWidgetWeek;
+
   /// Heading of the group about managing the calendar by voice.
   ///
   /// In en, this message translates to:

@@ -518,6 +518,15 @@ class UiStringsNl extends UiStrings {
   String get calendarWidgetEvents => 'Getoonde afspraken';
 
   @override
+  String get calendarWidgetDays => 'Getoonde dagen';
+
+  @override
+  String get calendarWidgetTomorrow => 'Vandaag en morgen';
+
+  @override
+  String get calendarWidgetWeek => 'Komende 7 dagen';
+
+  @override
   String get calendarVoiceSection => 'Agenda via spraak';
 
   @override

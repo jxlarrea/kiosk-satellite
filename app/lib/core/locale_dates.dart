@@ -32,6 +32,10 @@ String fullDate(DateTime date) =>
 String shortDate(DateTime date) =>
     _safe((locale) => DateFormat.MMMEd(locale), date);
 
+/// "Sunday" / "zondag" (the Up next widget's later days).
+String weekdayName(DateTime date) =>
+    _safe((locale) => DateFormat.EEEE(locale), date);
+
 /// "August 2, 2026" / "2 augustus 2026" (Immich photo metadata).
 String longDate(DateTime date) =>
     _safe((locale) => DateFormat.yMMMMd(locale), date);

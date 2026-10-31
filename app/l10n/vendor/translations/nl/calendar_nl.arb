@@ -51,6 +51,9 @@
   "calendarColorSlate": "Leisteen",
   "calendarColorCustom": "Aangepast",
   "calendarWidgetEvents": "Getoonde afspraken",
+  "calendarWidgetDays": "Getoonde dagen",
+  "calendarWidgetTomorrow": "Vandaag en morgen",
+  "calendarWidgetWeek": "Komende 7 dagen",
   "calendarVoiceSection": "Agenda via spraak",
   "calendarVoiceManage": "Agenda beheren met Voice Satellite",
   "calendarVoiceHint": "Vereist de agendablauwdruk van Kiosk Satellite en een LLM-gespreksagent in Home Assistant."

@@ -6351,6 +6351,29 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                               setDialogState(() => config['count'] = n ?? 3),
                         ),
                       ),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(l10n(context).calendarWidgetDays),
+                        trailing: DropdownButton<int>(
+                          value: switch ((config['days'] as num?)?.toInt()) {
+                            final d? when upNextDayOptions.contains(d) => d,
+                            _ => 1,
+                          },
+                          items: [
+                            for (final d in upNextDayOptions)
+                              DropdownMenuItem(
+                                value: d,
+                                child: Text(switch (d) {
+                                  1 => l10n(context).calendarToday,
+                                  2 => l10n(context).calendarWidgetTomorrow,
+                                  _ => l10n(context).calendarWidgetWeek,
+                                }),
+                              ),
+                          ],
+                          onChanged: (d) =>
+                              setDialogState(() => config['days'] = d ?? 1),
+                        ),
+                      ),
                     ],
                     if (type == 'battery') ...[
                       colorRow(),

@@ -1196,7 +1196,7 @@ export function settingRow(s) {
       alarm: { color: '250,250,250', scale: 0, font: 'default',
         font_weight: 'default' },
       calendar: { color: '250,250,250', scale: 0, font: 'default',
-        font_weight: 'default', count: 3 },
+        font_weight: 'default', count: 3, days: 1 },
     };
     // The typeface and weight pickers, the clock screensaver's vocabulary
     // (kept with definitions.dart) behind a Default that follows the
@@ -1357,7 +1357,7 @@ export function settingRow(s) {
             refs.weight.wrap, refs.percent.wrap, refs.low.wrap);
           return;
         }
-        // Up next: how many of today's coming events it lists.
+        // Up next: how many coming events it lists and how many days ahead.
         if (type === 'calendar') {
           const count = document.createElement('select');
           count.className = 'field';
@@ -1375,8 +1375,27 @@ export function settingRow(s) {
           countLabel.className = 'desc';
           countLabel.textContent = t('calendarWidgetEvents');
           countField.append(countLabel, count);
+          // How far ahead it looks, the device's upNextDayOptions.
+          const days = document.createElement('select');
+          days.className = 'field';
+          const picked = [1, 2, 7].includes(Number(config.days)) ? Number(config.days) : 1;
+          for (const [n, label] of [[1, t('calendarToday')],
+            [2, t('calendarWidgetTomorrow')], [7, t('calendarWidgetWeek')]]) {
+            const opt = document.createElement('option');
+            opt.value = String(n);
+            opt.textContent = label;
+            opt.selected = n === picked;
+            days.appendChild(opt);
+          }
+          refs.days = days;
+          const daysField = document.createElement('label');
+          daysField.className = 'form-field';
+          const daysLabel = document.createElement('span');
+          daysLabel.className = 'desc';
+          daysLabel.textContent = t('calendarWidgetDays');
+          daysField.append(daysLabel, days);
           typeBlock.append(refs.color.wrap, refs.scale.wrap, refs.font.wrap,
-            refs.weight.wrap, countField);
+            refs.weight.wrap, countField, daysField);
           return;
         }
         // The next alarm: nothing of its own, the look every widget has.
@@ -1560,7 +1579,8 @@ export function settingRow(s) {
             entryConfig = { color, scale, font, font_weight };
           } else if (type === 'calendar') {
             entryConfig = { color, scale, font, font_weight,
-              count: Number(refs.count?.value) || 3 };
+              count: Number(refs.count?.value) || 3,
+              days: Number(refs.days?.value) || 1 };
           } else if (type === 'entity') {
             if (!config.entity) return { ok: false, error: screensaverText('Pick an entity.') };
             entryConfig = { entity: config.entity,

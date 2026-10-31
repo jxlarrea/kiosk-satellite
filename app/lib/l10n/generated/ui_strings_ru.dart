@@ -521,6 +521,15 @@ class UiStringsRu extends UiStrings {
   String get calendarWidgetEvents => 'Показано событий';
 
   @override
+  String get calendarWidgetDays => 'Показано дней';
+
+  @override
+  String get calendarWidgetTomorrow => 'Сегодня и завтра';
+
+  @override
+  String get calendarWidgetWeek => 'Следующие 7 дней';
+
+  @override
   String get calendarVoiceSection => 'Голосовой календарь';
 
   @override

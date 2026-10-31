@@ -636,6 +636,45 @@
       ]
     }
   },
+  "calendarWidgetDays": "Days shown",
+  "@calendarWidgetDays": {
+    "context": "Screensaver > Widgets > Up next",
+    "description": "How many days ahead the Up next widget lists events from. The options are Today, Today and tomorrow and Next 7 days.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Up next"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Up next"
+      ]
+    }
+  },
+  "calendarWidgetTomorrow": "Today and tomorrow",
+  "@calendarWidgetTomorrow": {
+    "context": "Screensaver > Widgets > Up next",
+    "description": "Days shown option: the Up next widget lists events from today and tomorrow.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Up next"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Up next"
+      ]
+    }
+  },
+  "calendarWidgetWeek": "Next 7 days",
+  "@calendarWidgetWeek": {
+    "context": "Screensaver > Widgets > Up next",
+    "description": "Days shown option: the Up next widget lists events from today and the 6 days after it.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Up next"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Up next"
+      ]
+    }
+  },
   "calendarVoiceSection": "Voice Calendar",
   "@calendarVoiceSection": {
     "context": "Settings > Calendar",

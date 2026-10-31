@@ -404,14 +404,21 @@ List<({CalendarEvent event, int column, int columns})> layoutColumns(
 /// The events still to come today after [now]: timed ones that have not
 /// ended, in start order. [allDay] adds today's all-day events, first the
 /// way the calendar draws them, for the Up next widget. The Schedule view
-/// shows those under the date instead.
+/// shows those under the date instead. [days] past 1 adds the events that
+/// start on the days after today, each day's all-day ones first, for the
+/// widget too.
 List<CalendarEvent> upNext(
   List<CalendarEvent> events,
   DateTime now, {
   bool allDay = false,
+  int days = 1,
 }) => [
   for (final e in eventsOn(events, now))
     if (e.allDay ? allDay : e.end.isAfter(now)) e,
+  for (var i = 1; i < days; i++)
+    for (final e in eventsOn(events, addDays(now, i)))
+      // An event that started earlier is already listed on its first day.
+      if ((allDay || !e.allDay) && !e.start.isBefore(addDays(now, i))) e,
 ];
 
 /// The recurrence frequency an rrule names (DAILY, WEEKLY, MONTHLY or

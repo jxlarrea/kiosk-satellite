@@ -145,13 +145,15 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'font': screensaverWidgetFontDefault,
     'font_weight': screensaverWidgetFontDefault,
   },
-  // The family calendar's next events today, up to [count].
+  // The family calendar's next events, up to [count], over [days] days
+  // starting today.
   'calendar' => {
     'color': '250,250,250',
     'scale': screensaverWidgetScaleDefault,
     'font': screensaverWidgetFontDefault,
     'font_weight': screensaverWidgetFontDefault,
     'count': 3,
+    'days': 1,
   },
   'entity' => {
     'entity': '',
@@ -168,6 +170,10 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
   },
   _ => const {},
 };
+
+/// How many days the Up next widget looks ahead: today, today and tomorrow
+/// or the next 7 days.
+const upNextDayOptions = [1, 2, 7];
 
 /// A widget's own font family or weight left at Default: the widget
 /// follows the Global font family or Global font weight setting.

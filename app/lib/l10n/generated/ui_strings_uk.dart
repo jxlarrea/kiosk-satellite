@@ -519,6 +519,15 @@ class UiStringsUk extends UiStrings {
   String get calendarWidgetEvents => 'Показано подій';
 
   @override
+  String get calendarWidgetDays => 'Показано днів';
+
+  @override
+  String get calendarWidgetTomorrow => 'Сьогодні й завтра';
+
+  @override
+  String get calendarWidgetWeek => 'Наступні 7 днів';
+
+  @override
   String get calendarVoiceSection => 'Голосовий календар';
 
   @override
