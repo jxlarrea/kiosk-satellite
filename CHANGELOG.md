@@ -7,6 +7,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - **Fine-tune the wake word and stop word from Home Assistant.** With **Expose kiosk entities** on, the kiosk adds **VS Wake word fine-tune** and **VS Stop word fine-tune** sliders from -10 to +10, next to **VS Wake word sensitivity**. They change **Fine-tune sensitivity** and **Fine-tune stop word sensitivity** on that kiosk, so an automation can lower them while the TV plays and raise them again when it stops (#1224).
 
+### Improved
+- **Echo cancellation holds up better on the Portal Mini and the Tab S8+.** The echo mask the canceller runs is retrained with twelve new recordings from a Portal Mini, so what it leaves of the assistant's own voice on those devices drops by two thirds, barge-ins on the Portal come up and the other devices stay where they were.
+
 ### Fixed
 - **Notifications show over plugin overlays.** A plugin overlay drawn on top covered notifications, intercom call cards and announcements. It now sits under them, as the plugin docs describe.
 - **The fleet docs list the Gemini API key credential.** The Credentials table in [Fleet Management](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/fleet.md) now has the **Gemini API key** switch next to the OpenAI and xAI ones. It is off by default and a follower validates the key on its own once it arrives (#1221).
