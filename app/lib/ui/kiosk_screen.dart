@@ -1822,21 +1822,6 @@ class _KioskScreenState extends State<KioskScreen>
                   // (discussion #371): over the screensaver, whose fade
                   // out it appears through, and answering no touch.
                   FacePreviewOverlay(motion: c.motion, settings: c.settings),
-                  // Above every overlay a notification could arrive
-                  // behind — the screensaver, a camera wall — because a
-                  // message from the house is worth covering them for,
-                  // and below the lockdown shield, which is the one
-                  // thing whose whole job is that nothing here answers
-                  // a touch.
-                  NotificationOverlay(notifications: c.notifications),
-                  // The intercom's call card: over the screensaver and a
-                  // camera wall like a notification, since a call coming
-                  // in wakes the screen for exactly this, and under the
-                  // lockdown shield, whose kiosk answers as Do not disturb.
-                  IntercomCallOverlay(container: c),
-                  // An announcement from Home Assistant: its own card, with
-                  // the spoken text, in the same slot.
-                  AnnouncementOverlay(container: c),
                   // The black timeout cover while a voice turn shows: the
                   // turn draws over it (issue #746). Outside a turn it
                   // sits above everything below.
@@ -1851,6 +1836,21 @@ class _KioskScreenState extends State<KioskScreen>
                   // skin draws the turn there. The rest live in the kiosk
                   // plane.
                   PluginNativeOverlays(plugins: c.plugins, onTop: true),
+                  // Above every overlay a notification could arrive
+                  // behind (the screensaver, a camera wall, a plugin drawn
+                  // on top) because a message from the house is worth
+                  // covering them for, and below the lockdown shield,
+                  // which is the one thing whose whole job is that nothing
+                  // here answers a touch.
+                  NotificationOverlay(notifications: c.notifications),
+                  // The intercom's call card: over the screensaver and a
+                  // camera wall like a notification, since a call coming
+                  // in wakes the screen for exactly this, and under the
+                  // lockdown shield, whose kiosk answers as Do not disturb.
+                  IntercomCallOverlay(container: c),
+                  // An announcement from Home Assistant: its own card, with
+                  // the spoken text, in the same slot.
+                  AnnouncementOverlay(container: c),
                   // Native Voice Satellite: the assist overlay, in the same
                   // slot, over the screensaver and the camera views.
                   AssistOverlay(container: c),
