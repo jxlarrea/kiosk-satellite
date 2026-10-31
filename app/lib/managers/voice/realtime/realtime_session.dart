@@ -388,12 +388,17 @@ class RealtimeSession {
     }
     final playing = _playing;
     final level = meanAbs(pcm);
-    if (playing) _echo.add(level);
+    if (playing) {
+      _echo.add(level);
+      _underVoice.add(level);
+      if (_underVoice.length > _underVoiceChunks) _underVoice.removeAt(0);
+    }
     // The bar follows the voice playing, else the microphone.
     if (!playing) _micLevel(_levels.mic(pcm));
     final echo = playing || _inEchoTail;
     if (!opts.talkOver && echo) return;
-    if (!echo) _room.hear(pcm, level);
+    final stillMuted = !echo && _justAfterAnswer && _room.muted(level);
+    if (!echo && !stillMuted) _room.hear(pcm, level);
     if (playing) _watchSettling(level);
     _recent.add(echo && _settling ? 0 : level);
     if (_recent.length > _recentChunks) _recent.removeAt(0);
@@ -415,7 +420,9 @@ class RealtimeSession {
     // starting to talk and answers nothing, so the muted stretch goes as
     // the room's noise. Someone talking over the answer is louder than the
     // room and goes as it is.
-    if (echo && _room.muted(level)) pcm = _room.comfort(pcm.length);
+    if ((echo || stillMuted) && _room.muted(level)) {
+      pcm = _room.comfort(pcm.length);
+    }
     if (_ready && echo && !_clientTurns && !_talkingOver) {
       _holdBack(gen, pcm);
       return;
@@ -546,10 +553,36 @@ class RealtimeSession {
   }
 
   /// The level and the room's floor scale together, so a noisy room does
-  /// not undo a lower level.
-  int get _bargeInThreshold {
+  /// not undo a lower level. Speech over an answer must also stand well
+  /// above what the canceller leaves of the answer's own echo on this
+  /// device: on an Echo Show 8 whose capture ran through Amazon's own echo
+  /// canceller that echo sat at a median of 650 to 980 and peaked past
+  /// 1600, over the bare level, and
+  /// the conversation kept interrupting itself, while a user talking over
+  /// an answer reads 7000 and more.
+  int get _bargeInThreshold =>
+      math.max(_levelThreshold, _echoUnderVoice * echoMargin);
+
+  /// The talk over level with the room's floor, before the echo margin. The
+  /// settling rule keeps to this one: the margin would let a loud leftover
+  /// echo count as settled.
+  int get _levelThreshold {
     final level = options().talkOverLevel;
     return math.max(level, _room.level * 10 * level ~/ bargeInLevel);
+  }
+
+  /// The cleaned microphone while the voice plays, the last
+  /// [_underVoiceChunks] chunks of this conversation across its answers,
+  /// and its median: how loud the leftover echo is here. A median holds
+  /// while the user talks over part of it. Zero until there are enough.
+  final _underVoice = <int>[];
+  static const _underVoiceChunks = 100;
+  static const echoMargin = 3;
+
+  int get _echoUnderVoice {
+    if (_underVoice.length < 10) return 0;
+    final sorted = List.of(_underVoice)..sort();
+    return sorted[sorted.length ~/ 2];
   }
 
   bool _loud(int level) => level >= _bargeInThreshold;
@@ -657,10 +690,12 @@ class RealtimeSession {
   /// and ends the settling once there are enough in a row.
   void _watchSettling(int level) {
     if (_settled || _playingRaw < voiced) return;
-    final quiet = level <= math.max(
-      math.max(quietLevel, _room.level * 3),
-      _bargeInThreshold ~/ quietUnderBargeIn,
-    );
+    final quiet =
+        level <=
+        math.max(
+          math.max(quietLevel, _room.level * 3),
+          _levelThreshold ~/ quietUnderBargeIn,
+        );
     _quietVoiced = quiet ? _quietVoiced + 1 : 0;
     final from = _answerFrom;
     if (_quietVoiced >= settledAfter &&
@@ -671,6 +706,19 @@ class RealtimeSession {
         'echo settled after ${_now().difference(from).inMilliseconds}ms',
       );
     }
+  }
+
+  /// A device's own processing can hold the microphone muted after an
+  /// answer longer than [echoTail]: a Meta Portal Go let its room back up
+  /// to a second after the voice stopped, and the provider took that step
+  /// for someone talking and answered nothing ("Hi! What can I do for you
+  /// today?"). While the microphone stays under the room this long after an
+  /// answer, it goes as the room's noise too.
+  static const mutedTail = Duration(seconds: 2);
+
+  bool get _justAfterAnswer {
+    final ended = _playEnded;
+    return ended != null && _now().difference(ended) < mutedTail;
   }
 
   bool get _inEchoTail {
@@ -1171,6 +1219,7 @@ class RealtimeSession {
     _suspectPeak = 0;
     _suspectSettling = false;
     _echoUnder.clear();
+    _underVoice.clear();
     _ready = false;
     _held.clear();
     _heldBytes = 0;

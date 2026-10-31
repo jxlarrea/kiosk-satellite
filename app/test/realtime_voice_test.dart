@@ -2149,6 +2149,41 @@ void main() {
       });
     });
 
+    test(
+      'the room stands in while the microphone stays muted after an answer',
+      () {
+        fakeAsync((time) {
+          // A Meta Portal Go lets its room back up to a second after the voice
+          // stops, past the echo tail.
+          final h = _Harness(time);
+          h.backend.clientTurns = true;
+          h.wakeAndConnect();
+          for (var i = 0; i < 20; i++) {
+            h.mic.speak(value: 140);
+          }
+          int level(Uint8List pcm) => RealtimeSession.meanAbs(pcm);
+          h.answer('a1', seconds: 1);
+          h.player.frames = 24000;
+          time.elapse(const Duration(milliseconds: 100));
+          time.elapse(
+            RealtimeSession.echoTail + const Duration(milliseconds: 300),
+          );
+          h.backend.audio.clear();
+          h.mic.speak(value: 5);
+          expect(level(h.backend.audio.single), closeTo(140, 3));
+          h.backend.audio.clear();
+          h.mic.speak(value: 3000);
+          expect(level(h.backend.audio.single), closeTo(3000, 2));
+          time.elapse(RealtimeSession.mutedTail);
+          h.backend.audio.clear();
+          h.mic.speak(value: 5);
+          expect(level(h.backend.audio.single), closeTo(5, 2));
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      },
+    );
+
     test('a quiet room goes as it is', () {
       fakeAsync((time) {
         final h = _Harness(time);
@@ -2367,6 +2402,59 @@ void main() {
               ),
             ),
           );
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      });
+
+      /// Measured on an Echo Show 8 with no hardware canceller: the echo
+      /// left under the voice sits around 650 to 980 and bursts to 1600.
+      _Harness loudEchoUnderAnswer(FakeAsync time) {
+        final h = _Harness(time);
+        h.backend.clientTurns = true;
+        h.wakeAndConnect();
+        h.answer('a1', seconds: 10);
+        time.elapse(RealtimeSession.echoSettle);
+        underVoice(time, h, [
+          for (var i = 0; i < 6; i++) ...[700, 820, 980, 650, 900, 760],
+        ]);
+        return h;
+      }
+
+      test('a loud leftover echo raises the bar for talking over it', () {
+        fakeAsync((time) {
+          final h = loudEchoUnderAnswer(time);
+          underVoice(time, h, [1500, 1650, 1400]);
+          h.backend.emit(const RealtimeSpeechStarted());
+          time.flushMicrotasks();
+          underVoice(time, h, [1550, 1300]);
+          h.backend.emit(const RealtimeSpeechStopped());
+          time.flushMicrotasks();
+          expect(h.player.flushes, 0);
+          expect(h.backend.interruptions, isEmpty);
+          expect(h.backend.turns, [false]);
+          expect(
+            h.traces,
+            contains(
+              allOf(
+                startsWith('ignored speech too quiet to be the user: '),
+                contains('peak 1650, 0 of 3 chunks at 2'),
+              ),
+            ),
+          );
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      });
+
+      test('the user still talks over a loud leftover echo', () {
+        fakeAsync((time) {
+          final h = loudEchoUnderAnswer(time);
+          underVoice(time, h, [7000, 7600, 8100]);
+          h.backend.emit(const RealtimeSpeechStarted());
+          time.flushMicrotasks();
+          expect(h.player.flushes, 1);
+          expect(h.backend.interruptions.single.$1, 'a1');
           h.session.cancel();
           time.flushMicrotasks();
         });

@@ -101,10 +101,127 @@ object SoftwareEcho {
         }
     }
 
+    /**
+     * Whether GTCRN keeps up with this device's echo. A microphone with no
+     * hardware canceller can carry an echo too loud and distorted for it:
+     * on an Echo Show 8 with its own canceller off, GTCRN took 14 dB off an
+     * answer and left it 14 times the room's own level, where every other
+     * device on the bench ended up 19 dB or more under the microphone or
+     * within 4 times the room. A realtime conversation there kept hearing
+     * its own answer. AEC3 takes 26 dB off that echo (and nothing detects a
+     * wake word over it either way), so a device that shows this for two 3 s
+     * stretches of playback in a row runs AEC3 from then on, until the app is
+     * installed again. Live on that Echo Show 8 the second stretch ended 17 s
+     * into the first conversation with 5 s stretches, after it had already
+     * interrupted itself once.
+     */
+    private object EchoCheck {
+        const val WINDOW = 300                 // frames of playback, 3 s
+        const val MIN_REMOVED_DB = 18.0
+        const val MAX_ROOM_RATIO = 6.0
+        private const val ROOM_FRAMES = 1000   // the last 10 s of idle microphone
+        private val room = IntArray(ROOM_FRAMES)
+        private var roomCount = 0
+        private var roomAt = 0
+        private val heard = IntArray(WINDOW)
+        private val left = IntArray(WINDOW)
+        private var count = 0
+        private var strikes = 0
+
+        /** The last measured stretch, for the log: echo left, dB under the microphone, times the room. */
+        var lastLeft = -1
+        var lastRemovedDb = 0.0
+        var lastRoomRatio = 0.0
+
+        /** A frame with nothing playing: the room's own level. */
+        fun idle(level: Int) {
+            room[roomAt] = level
+            roomAt = (roomAt + 1) % ROOM_FRAMES
+            if (roomCount < ROOM_FRAMES) roomCount++
+        }
+
+        private fun roomLevel(): Int? {
+            if (roomCount < 200) return null
+            val sorted = room.copyOf(roomCount).also { it.sort() }
+            return sorted[roomCount / 5]
+        }
+
+        /**
+         * A frame the speaker played: true once two stretches in a row say
+         * GTCRN cannot cope. The stretches run on across playback periods:
+         * realtime answers are often shorter than one.
+         */
+        fun playing(heardLevel: Int, leftLevel: Int): Boolean {
+            heard[count] = heardLevel
+            left[count] = leftLevel
+            if (++count < WINDOW) return false
+            count = 0
+            val medHeard = heard.copyOf().also { it.sort() }[WINDOW / 2]
+            val medLeft = left.copyOf().also { it.sort() }[WINDOW / 2]
+            val roomNow = roomLevel() ?: return false
+            if (medHeard < 50) return false    // too quiet to judge
+            lastLeft = medLeft
+            lastRemovedDb = 20 * kotlin.math.log10(medHeard / maxOf(medLeft, 1).toDouble())
+            lastRoomRatio = medLeft / maxOf(roomNow, 10).toDouble()
+            val bad = lastRemovedDb < MIN_REMOVED_DB && lastRoomRatio > MAX_ROOM_RATIO
+            strikes = if (bad) strikes + 1 else 0
+            return strikes >= 2
+        }
+    }
+
+    /** Set once GTCRN has shown it cannot keep up here: holds the install it was seen on. */
+    private fun aec3MarkerFile(): File? = appContext?.let { File(it.filesDir, "localvqe/aec3-here") }
+
+    /**
+     * This app's install and the system build it runs on. A new install or a
+     * system update checks GTCRN again: an update can change the microphone
+     * path, as the Echo images did when they stopped running Amazon's own
+     * echo canceller ahead of this one.
+     */
+    private fun appInstall(): String {
+        val context = appContext ?: return ""
+        val installed = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime
+        } catch (e: Exception) {
+            -1L
+        }
+        return "$installed ${android.os.Build.FINGERPRINT}"
+    }
+
+    /** GTCRN has shown it cannot keep up: AEC3 takes over once this sound ends. */
+    private var aec3Pending = false
+
+    /** Swap GTCRN for AEC3 for good on this device (under [lock]). */
+    private fun switchToAec3() {
+        aec3Pending = false
+        val created = nativeCreate(RATE, RATE, false, residualGate.intercomOnly, residualGate.realtime)
+        if (created == 0L) return
+        nativeVqeDestroy(vqe)
+        vqe = 0L
+        vqeDelay = 0
+        handle = created
+        usesPrototype = false
+        try {
+            aec3MarkerFile()?.let { it.parentFile?.mkdirs(); it.writeText(appInstall()) }
+        } catch (e: Exception) {
+            Log.w(TAG, "could not record the AEC3 switch: ${e.message}")
+        }
+        report(
+            "echo cancellation: AEC3 (GTCRN left too much echo: %d, %.0f dB under the microphone, %.0fx the room)".format(
+                EchoCheck.lastLeft, EchoCheck.lastRemovedDb, EchoCheck.lastRoomRatio,
+            ),
+        )
+    }
+
     /** A LocalVQE canceller, or 0 when this device or build cannot run it. */
     private fun createVqe(): Long {
         vqeUnavailable?.let { vqeWhyNot = it; return 0L }
         if (customDuplex || customRealtime) { vqeWhyNot = "the echo prototype build uses AEC3"; return 0L }
+        val marker = aec3MarkerFile()
+        if (marker != null && marker.isFile && marker.readText().trim() == appInstall()) {
+            vqeWhyNot = "it left too much echo on this device earlier"
+            return 0L
+        }
         val file = vqeModelFile() ?: run { vqeWhyNot = "the model could not be copied out of the APK"; return 0L }
         var created = nativeVqeCreate(file.path)
         if (created == 0L) {
@@ -301,6 +418,11 @@ object SoftwareEcho {
             streams.keys.retainAll(sources.toSet())
             if (!EchoReference.playedWithin(TAIL_MS) && !fresh) {
                 stopWorking()
+                // AEC3 takes over between sounds, so it starts at the beginning
+                // of the next one: created in the middle of an answer on an
+                // Echo Show 8 it found a delay of 0 to 16 ms against the real 96
+                // and let the answer through.
+                if (aec3Pending && vqe != 0L) switchToAec3()
                 if (vqe != 0L) idleThroughVqe(chunk)
                 return false
             }
@@ -321,6 +443,7 @@ object SoftwareEcho {
                 }
             }
             var at = 0
+            var switchTo = false
             for (f in 0 until frames) {
                 mixFrame(f)
                 for (i in 0 until FRAME) {
@@ -337,6 +460,7 @@ object SoftwareEcho {
                     val back = remember(heard, played)
                     heard = heardRing[back]
                     played = playedRing[back]
+                    if (played >= 100 && EchoCheck.playing(heard, meanAbs(chunk, at))) switchTo = true
                 } else {
                     nativeRender(h, mixBytes, 0)
                     nativeCapture(h, chunk, at)
@@ -348,6 +472,7 @@ object SoftwareEcho {
                 at += FRAME_BYTES
             }
             for (stream in streams.values) stream.cursor += need
+            if (switchTo) aec3Pending = true
         }
         return true
     }
@@ -367,7 +492,9 @@ object SoftwareEcho {
     private fun idleThroughVqe(chunk: ByteArray) {
         var at = 0
         while (at + FRAME_BYTES <= chunk.size) {
-            remember(meanAbs(chunk, at), 0)
+            val level = meanAbs(chunk, at)
+            remember(level, 0)
+            EchoCheck.idle(level)
             nativeVqeCapture(vqe, chunk, at, false)
             at += FRAME_BYTES
         }
@@ -429,9 +556,14 @@ object SoftwareEcho {
             else -> return
         }
         val seconds = (System.nanoTime() - workingSinceNs) / 1_000_000_000.0
-        report("%s cancelled for %.1f s, echo delay %s".format(
+        val measured = if (vqe != 0L && EchoCheck.lastLeft >= 0) {
+            ", echo left %d (%.0f dB under the microphone, %.1fx the room)".format(
+                EchoCheck.lastLeft, EchoCheck.lastRemovedDb, EchoCheck.lastRoomRatio,
+            )
+        } else ""
+        report("%s cancelled for %.1f s, echo delay %s%s".format(
             if (vqe != 0L) "GTCRN" else "AEC3",
-            seconds, if (delayMs.isNaN()) "not found" else "${delayMs.toInt()} ms",
+            seconds, if (delayMs.isNaN()) "not found" else "${delayMs.toInt()} ms", measured,
         ))
     }
 
