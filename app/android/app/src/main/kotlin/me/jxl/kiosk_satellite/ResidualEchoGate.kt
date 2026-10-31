@@ -2,10 +2,9 @@ package me.jxl.kiosk_satellite
 
 /**
  * Playback processing requests, with realtime taking priority over a call.
- * The realtime path uses an extra residual gate, so what little of its own
- * voice the canceller leaves cannot read as a barge-in. Calls keep the
- * cleaned capture without that gate so quiet nearby speech stays audible
- * during double talk.
+ * The WebRTC realtime path uses an extra residual gate. Calls and the
+ * custom filter keep cleaned capture without that gate so quiet nearby
+ * speech stays audible during double talk.
  * Calls run under SoftwareEcho's lock.
  */
 internal class ResidualEchoGate {
@@ -34,7 +33,10 @@ internal class ResidualEchoGate {
     }
 
     /** One 10 ms frame, measured before cancellation, in the reference and after cancellation. */
-    fun suppress(heard: Int, played: Int, left: Int): Boolean {
+    fun suppress(heard: Int, played: Int, left: Int, subtractionOnly: Boolean = false): Boolean {
+        // The custom filter preserves overlapping speech by subtraction.
+        // An energy gate here would undo that after the native processing.
+        if (subtractionOnly) return false
         if (hangover > 0) hangover--
         if (mode != Mode.REALTIME) return false
         if (played < 100 || heard < 300) return false

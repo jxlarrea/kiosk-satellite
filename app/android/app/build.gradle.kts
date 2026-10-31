@@ -73,6 +73,11 @@ android {
         externalNativeBuild {
             cmake {
                 arguments("-DANDROID_STL=c++_static")
+                // Explicit local opt-in for acoustic tests on the two test kiosks.
+                val prototype = providers.gradleProperty("kioskEchoPrototype").orNull == "true"
+                arguments("-DKIOSK_ECHO_PROTOTYPE=${if (prototype) "ON" else "OFF"}")
+                val realtimePrototype = providers.gradleProperty("kioskEchoPrototypeRealtime").orNull == "true"
+                arguments("-DKIOSK_ECHO_PROTOTYPE_REALTIME=${if (realtimePrototype) "ON" else "OFF"}")
             }
         }
     }

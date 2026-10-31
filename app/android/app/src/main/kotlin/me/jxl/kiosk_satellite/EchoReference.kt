@@ -11,9 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * What the kiosk is playing, for [SoftwareEcho]: every player that writes
  * its own PCM taps it here, and the canceller takes the mix of what each
  * one's speaker has presented since it last asked. Everything is kept as
- * 16 kHz stereo: the microphone's rate, and both channels because a
- * stereo speaker pair reaches the microphone by two paths the canceller
- * can only tell apart with both signals. A mono player fills both.
+ * 16 kHz mono, the rate the microphone runs at.
  *
  * Players Android decodes on its own (the dashboard's web pages, the DLNA
  * video player) cannot be tapped, so their sound is not cancelled.
@@ -21,14 +19,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 object EchoReference {
     const val RATE = 16000
 
-    const val CHANNELS = 2
-
     /** A player's contribution: its presented voice since the last call. */
     interface Source {
-        /**
-         * 16 kHz stereo frames (interleaved, left then right) presented
-         * since the last call, volume applied.
-         */
+        /** 16 kHz mono samples presented since the last call, volume applied. */
         fun take(): ShortArray?
     }
 
@@ -57,9 +50,9 @@ object EchoReference {
 }
 
 /**
- * The part of a tap both kinds share: 16 kHz stereo frames queued as the
+ * The part of a tap both kinds share: 16 kHz mono samples queued as the
  * player writes them, handed to the canceller once the speaker has
- * presented them. Positions count 16 kHz frames from the start of the
+ * presented them. Positions count 16 kHz samples from the start of the
  * stream, derived from absolute frame counts so rounding never adds up.
  */
 abstract class PresentedQueue(rate: Int) : EchoReference.Source {
@@ -68,7 +61,7 @@ abstract class PresentedQueue(rate: Int) : EchoReference.Source {
     /** The source's sample rate. Under [lock] once it plays. */
     protected var rate = rate
         private set
-    private var resamplers = Array(EchoReference.CHANNELS) { ReferenceResampler(rate, EchoReference.RATE) }
+    private var resampler = ReferenceResampler(rate, EchoReference.RATE)
 
     /**
      * The volume the player applies after the tap. It is applied here as the
@@ -80,11 +73,10 @@ abstract class PresentedQueue(rate: Int) : EchoReference.Source {
      */
     @Volatile var gain = 1f
 
-    /** Interleaved stereo; [queuedLength] counts frames. */
-    private var queued = ShortArray(EchoReference.RATE * EchoReference.CHANNELS)
+    private var queued = ShortArray(EchoReference.RATE)
     private var queuedLength = 0
 
-    /** The 16 kHz position of the first queued frame. */
+    /** The 16 kHz position of queued[0]. */
     private var queuedFrom = 0L
 
     /** Source frames written since the stream (re)started. */
@@ -106,44 +98,34 @@ abstract class PresentedQueue(rate: Int) : EchoReference.Source {
                 written += frames
                 queuedLength = 0
                 queuedFrom = written * EchoReference.RATE / rate
-                for (resampler in resamplers) resampler.reset()
+                resampler.reset()
             }
             return
         }
-        // The first two channels are the speaker pair; a mono player is
-        // both. Any further channels of a surround stream are left out.
-        val left = FloatArray(frames)
-        val right = FloatArray(frames)
+        val mono = FloatArray(frames)
         var at = view.position()
         for (i in 0 until frames) {
+            var sum = 0f
             for (c in 0 until channels) {
-                val sample = if (bytesPerSample == 4) {
+                sum += if (bytesPerSample == 4) {
                     view.getInt(at) / 2147483648f
                 } else {
                     view.getShort(at) / 32768f
                 }
                 at += bytesPerSample
-                if (c == 0) {
-                    left[i] = sample
-                    if (channels == 1) right[i] = sample
-                } else if (c == 1) {
-                    right[i] = sample
-                }
             }
+            mono[i] = sum / channels
         }
-        val outLeft = resamplers[0].process(left)
-        val outRight = resamplers[1].process(right)
-        val out = minOf(outLeft.size, outRight.size)
+        val out = resampler.process(mono)
         synchronized(lock) {
             if (queuedLength == 0) queuedFrom = written * EchoReference.RATE / rate
-            val need = (queuedLength + out) * EchoReference.CHANNELS
-            if (need > queued.size) queued = queued.copyOf(maxOf(queued.size * 2, need))
-            var to = queuedLength * EchoReference.CHANNELS
-            for (i in 0 until out) {
-                queued[to++] = (outLeft[i].coerceIn(-1f, 1f) * 32767f).toInt().toShort()
-                queued[to++] = (outRight[i].coerceIn(-1f, 1f) * 32767f).toInt().toShort()
+            if (queuedLength + out.size > queued.size) {
+                queued = queued.copyOf(maxOf(queued.size * 2, queuedLength + out.size))
             }
-            queuedLength += out
+            for (i in out.indices) {
+                queued[queuedLength + i] = (out[i].coerceIn(-1f, 1f) * 32767f).toInt().toShort()
+            }
+            queuedLength += out.size
             written += frames
         }
         if (gain > 0f) EchoReference.audible()
@@ -157,9 +139,9 @@ abstract class PresentedQueue(rate: Int) : EchoReference.Source {
             written = 0
             if (newRate != rate) {
                 rate = newRate
-                resamplers = Array(EchoReference.CHANNELS) { ReferenceResampler(newRate, EchoReference.RATE) }
+                resampler = ReferenceResampler(newRate, EchoReference.RATE)
             } else {
-                for (resampler in resamplers) resampler.reset()
+                resampler.reset()
             }
         }
     }
@@ -174,11 +156,10 @@ abstract class PresentedQueue(rate: Int) : EchoReference.Source {
         val presented16 = presented * EchoReference.RATE / rate
         val upto = (presented16 - queuedFrom).coerceIn(0L, queuedLength.toLong()).toInt()
         if (upto == 0) return null
-        val samples = upto * EchoReference.CHANNELS
-        val out = queued.copyOf(samples)
+        val out = queued.copyOf(upto)
         val g = gain
         if (g != 1f) for (i in out.indices) out[i] = (out[i] * g).toInt().toShort()
-        System.arraycopy(queued, samples, queued, 0, (queuedLength - upto) * EchoReference.CHANNELS)
+        System.arraycopy(queued, upto, queued, 0, queuedLength - upto)
         queuedLength -= upto
         queuedFrom += upto
         return out

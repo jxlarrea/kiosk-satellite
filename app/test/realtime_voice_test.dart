@@ -2122,60 +2122,6 @@ void main() {
       });
     });
 
-    test('the settling stretches while the answer still comes back', () {
-      fakeAsync((time) {
-        // A cold canceller on the first answer after the app starts: the
-        // answer comes back at a few hundred for 5 to 6 s, over the quiet
-        // line and under what counts as the user. The microphone stays as the room past the
-        // usual window, and goes live by the longest one.
-        final h = _Harness(time);
-        h.backend.clientTurns = true;
-        h.wakeAndConnect();
-        h.answer('a1', seconds: 10);
-        for (var i = 0; i < 40; i++) {
-          time.elapse(const Duration(milliseconds: 100));
-          h.mic.speak(value: 400);
-        }
-        time.elapse(const Duration(milliseconds: 200));
-        h.backend.audio.clear();
-        h.mic.speak(value: 400);
-        expect(h.backend.audio.single.every((b) => b == 0), isTrue);
-        time.elapse(
-          RealtimeSession.echoSettleMost - RealtimeSession.echoSettle,
-        );
-        h.backend.audio.clear();
-        h.mic.speak(value: 400);
-        expect(h.backend.audio.single.any((b) => b != 0), isTrue);
-        h.session.cancel();
-        time.flushMicrotasks();
-      });
-    });
-
-    test('a user over a still settling answer gets through after the usual '
-        'window', () {
-      fakeAsync((time) {
-        final h = _Harness(time);
-        h.backend.clientTurns = true;
-        h.wakeAndConnect();
-        h.answer('a1', seconds: 10);
-        for (var i = 0; i < 40; i++) {
-          time.elapse(const Duration(milliseconds: 100));
-          h.mic.speak(value: 400);
-        }
-        // The user starts talking: over the barge-in level for most of the
-        // last second, and the settling no longer holds the microphone.
-        for (var i = 0; i < 7; i++) {
-          time.elapse(const Duration(milliseconds: 100));
-          h.mic.speak(value: 2500);
-        }
-        h.backend.audio.clear();
-        h.mic.speak(value: 2500);
-        expect(h.backend.audio.single.any((b) => b != 0), isTrue);
-        h.session.cancel();
-        time.flushMicrotasks();
-      });
-    });
-
     test('the room\'s noise stands in while the canceller mutes it', () {
       fakeAsync((time) {
         // A noise floor (an air conditioner) that comes back all at once

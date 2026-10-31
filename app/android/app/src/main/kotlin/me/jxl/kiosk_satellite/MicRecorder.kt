@@ -169,10 +169,6 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
     }
 
     private val appContext = context.applicationContext
-
-    init {
-        SoftwareEcho.assets = appContext.assets
-    }
     private val eventChannel = EventChannel(messenger, CHANNEL)
     private val levelsChannel = MethodChannel(messenger, LEVELS_CHANNEL)
     private val mainHandler = Handler(Looper.getMainLooper())

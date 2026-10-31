@@ -35,17 +35,17 @@ The kiosk also falls back on its own: when every format on the picked mode reads
 
 ## Echo Cancellation
 
-On by default. It removes the kiosk's own sounds from the microphone so the wake word hears you over music and a realtime assistant does not hear its own answers and interrupt itself. The canceller is the kiosk's own. A linear filter takes out the part of the echo it can predict from what the kiosk plays, and a small neural network trained on recordings of tablets, Echo and Portal devices playing through their own speakers removes the rest while keeping your voice. A tablet's speaker sits in the same case as its microphone, so most of what comes back is distortion a plain filter cannot predict, which is why the generic cancellers video calling apps use fall short on them.
+On by default. It removes the kiosk's own sounds from the microphone with WebRTC's echo canceller, the one video calling apps use, so the wake word hears you over music and a realtime assistant does not hear its own answers and interrupt itself.
 
 It covers everything the kiosk plays itself: chimes, timers, text to speech, the realtime assistant's voice, intercom calls, alarms, the Sendspin player and audio sent over DLNA. Every feature that listens gets the cleaned microphone, so the wake word, Assist, realtime conversations, the intercom and the RTSP stream all benefit. Sound from web pages and the sound of DLNA videos are not covered. The canceller only runs while something plays and for a moment after, so an idle microphone passes through untouched.
 
-The kiosk does not use Android's own echo canceller, noise suppressor or gain control. Android's canceller only worked on the phone call capture path, which some custom ROMs deliver 20 dB quieter than the microphone source, and on most devices it let the assistant hear itself anyway. Devices that process the microphone in their own firmware, such as the Echo Show and the Meta Portal, keep doing so. When the kiosk finds nothing left to remove on such a device, its canceller steps aside and passes the microphone through, so a second canceller never costs you speech.
+The kiosk does not use Android's own echo canceller, noise suppressor or gain control. Android's canceller only worked on the phone call capture path, which some custom ROMs deliver 20 dB quieter than the microphone source, and on most devices it let the assistant hear itself anyway. Devices that process the microphone in their own firmware, such as the Echo Show and the Meta Portal, keep doing so, and the kiosk's canceller takes care of what their hardware canceller leaves.
 
 Turn it off only if a microphone with its own canceller sounds worse with a second one over it. The wake word then hears the kiosk's own sounds.
 
 ## Noise Suppression
 
-Off by default. It runs a noise suppressor over the microphone, on any capture source, and takes out the steady hiss of a cheap microphone or a high gain setting. Turn it on when the other kiosk hears hiss from this one on intercom calls, or when the wake word tester shows a level that never rests. It changes what the wake word hears, so test the wake word after turning it on.
+Off by default. It runs WebRTC's noise suppressor over the microphone, on any capture source, and takes out the steady hiss of a cheap microphone or a high gain setting. Turn it on when the other kiosk hears hiss from this one on intercom calls, or when the wake word tester shows a level that never rests. It changes what the wake word hears, so test the wake word after turning it on.
 
 ## Microphone Gain
 

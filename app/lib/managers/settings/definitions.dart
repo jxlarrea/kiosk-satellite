@@ -6562,13 +6562,12 @@ const micCaptureMode = SettingDef<String>(
   perDevice: true,
 );
 
-/// The kiosk's own echo canceller over the microphone, fed everything the
-/// kiosk plays itself (SoftwareEcho.kt, EchoReference.kt, the native
-/// echo_canceller.cpp). The platform's own canceller is gone: it needed
-/// the call capture path, which came in 20 dB quieter on some ROMs, and on
-/// most devices it let the assistant hear itself anyway. Off is the escape
-/// hatch for a microphone that does its own cancellation and sounds worse
-/// with a second one over it.
+/// WebRTC's echo canceller (AEC3) over the microphone, fed everything the
+/// kiosk plays itself (SoftwareEcho.kt, EchoReference.kt). The platform's
+/// own canceller is gone: it needed the call capture path, which came in
+/// 20 dB quieter on some ROMs, and on most devices it let the assistant
+/// hear itself anyway. Off is the escape hatch for a microphone that does
+/// its own cancellation and sounds worse with a second one over it.
 const micSoftwareEchoCancellation = SettingDef<bool>(
   key: 'audio.software_echo_cancellation',
   type: SettingType.boolean,
@@ -6584,7 +6583,7 @@ const micSoftwareEchoCancellation = SettingDef<bool>(
   perDevice: true,
 );
 
-/// Speex's noise suppressor over the capture (SoftwareEcho.kt), on any
+/// WebRTC's noise suppressor over the capture (SoftwareEcho.kt), on any
 /// source: the raw microphone's hiss carried straight into intercom calls
 /// on an Echo Show 8. Off by default, since it changes what the wake word
 /// hears. The key is the old platform suppressor's, so a kiosk that had it

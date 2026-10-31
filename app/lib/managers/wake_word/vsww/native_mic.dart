@@ -23,10 +23,10 @@ class NativeMic {
   /// 'voice_communication' (the call path).
   static String captureMode = 'mic';
 
-  /// The kiosk's echo canceller over the capture, fed what the kiosk plays.
+  /// WebRTC's echo canceller over the capture, fed what the kiosk plays.
   static bool softwareEchoCancellation = true;
 
-  /// The noise suppressor over the capture.
+  /// WebRTC's noise suppressor over the capture.
   static bool noiseSuppression = false;
 
   /// 1-based channel of a multichannel microphone to capture; 0 lets the
