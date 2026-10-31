@@ -1,0 +1,956 @@
+--- a/src/ggml-cpu/ggml-cpu.c
++++ b/src/ggml-cpu/ggml-cpu.c
+@@ -1232,6 +1232,351 @@
+     }
+ }
+ 
++// ── int8 mat-mul for weight x activation products (opt-in: LOCALVQE_INT8=1) ──
++// Weights are quantized once per output row (symmetric, round half away from
++// zero) and cached by tensor; each activation column is quantized per call the
++// same way. Products accumulate exactly in int32 and are scaled back with
++// scalar float math, so the NEON and scalar versions give the same bits on
++// every platform (a host run computes what a device runs). K is padded to a
++// multiple of 16 with zeros, rows to a multiple of 4.
++typedef struct {
++    const void * data; int64_t ne0, ne1, nb1;
++    int K16, M4;
++    int8_t * q;      // M4 x K16
++    float * s;       // M4 row scales
++    atomic_int ready;
++} ks_q8_weight;
++#define KS_Q8_MAX 512
++static ks_q8_weight ks_q8_cache[KS_Q8_MAX];
++static atomic_int ks_q8_count;
++
++static int ks_int8_enabled(void) {
++    static int v = -1;
++    if (v < 0) { const char * e = getenv("LOCALVQE_INT8"); v = (e && e[0] == '1') ? 1 : 0; }
++    return v;
++}
++
++static inline int8_t ks_q8_round(float t) {
++    t += (t >= 0.0f) ? 0.5f : -0.5f;
++    int q = (int) t;
++    return (int8_t) (q > 127 ? 127 : (q < -127 ? -127 : q));
++}
++
++// quantize n floats (zero-padded to n16) with a symmetric scale; returns the scale
++static float ks_q8_vec(const float * x, int n, int n16, int8_t * q) {
++    float m = 0.0f;
++    int j = 0;
++#if defined(__ARM_NEON)
++    // the maximum is exact in any order, so the vector scan gives the scalar result
++    if (n >= 8) {
++        float32x4_t m0 = vdupq_n_f32(0.0f), m1 = m0;
++        for (; j + 8 <= n; j += 8) {
++            m0 = vmaxq_f32(m0, vabsq_f32(vld1q_f32(x + j)));
++            m1 = vmaxq_f32(m1, vabsq_f32(vld1q_f32(x + j + 4)));
++        }
++        m0 = vmaxq_f32(m0, m1);
++        m = fmaxf(fmaxf(vgetq_lane_f32(m0, 0), vgetq_lane_f32(m0, 1)), fmaxf(vgetq_lane_f32(m0, 2), vgetq_lane_f32(m0, 3)));
++    }
++#endif
++    for (; j < n; j++) { const float a = fabsf(x[j]); if (a > m) m = a; }
++    if (m == 0.0f) { memset(q, 0, (size_t)n16); return 0.0f; }
++    const float inv = 127.0f / m;
++    int i = 0;
++#if defined(__ARM_NEON)
++    const float32x4_t vinv = vdupq_n_f32(inv), half = vdupq_n_f32(0.5f);
++    const uint32x4_t sign = vdupq_n_u32(0x80000000u);
++    for (; i + 8 <= n; i += 8) {
++        float32x4_t t0 = vmulq_f32(vld1q_f32(x + i), vinv), t1 = vmulq_f32(vld1q_f32(x + i + 4), vinv);
++        // t + copysign(0.5, t), then truncate; same as ks_q8_round (|t| <= 127.5)
++        t0 = vaddq_f32(t0, vreinterpretq_f32_u32(vorrq_u32(vreinterpretq_u32_f32(half), vandq_u32(vreinterpretq_u32_f32(t0), sign))));
++        t1 = vaddq_f32(t1, vreinterpretq_f32_u32(vorrq_u32(vreinterpretq_u32_f32(half), vandq_u32(vreinterpretq_u32_f32(t1), sign))));
++        int32x4_t q0 = vcvtq_s32_f32(t0), q1 = vcvtq_s32_f32(t1);
++        q0 = vmaxq_s32(vminq_s32(q0, vdupq_n_s32(127)), vdupq_n_s32(-127));
++        q1 = vmaxq_s32(vminq_s32(q1, vdupq_n_s32(127)), vdupq_n_s32(-127));
++        vst1_s8(q + i, vmovn_s16(vcombine_s16(vmovn_s32(q0), vmovn_s32(q1))));
++    }
++#endif
++    for (; i < n; i++) q[i] = ks_q8_round(x[i] * inv);
++    for (; i < n16; i++) q[i] = 0;
++    return m / 127.0f;
++}
++
++static ks_q8_weight * ks_q8_get(const struct ggml_tensor * w) {
++    // find or create (first creator quantizes, others wait for ready)
++    const int n = atomic_load(&ks_q8_count);
++    for (int i = 0; i < n && i < KS_Q8_MAX; i++) {
++        ks_q8_weight * e = &ks_q8_cache[i];
++        if (e->data == w->data && e->ne0 == w->ne[0] && e->ne1 == w->ne[1] && e->nb1 == (int64_t)w->nb[1]) {
++            while (!atomic_load(&e->ready)) { }
++            return e;
++        }
++    }
++    return NULL;
++}
++
++static ks_q8_weight * ks_q8_make(const struct ggml_tensor * w) {
++    const int i = atomic_fetch_add(&ks_q8_count, 1);
++    if (i >= KS_Q8_MAX) return NULL;
++    ks_q8_weight * e = &ks_q8_cache[i];
++    const int K = (int)w->ne[0], M = (int)w->ne[1];
++    e->K16 = (K + 15) & ~15; e->M4 = (M + 3) & ~3;
++    e->q = (int8_t *) calloc((size_t)e->M4 * e->K16, 1);
++    e->s = (float *) calloc((size_t)e->M4, sizeof(float));
++    for (int r = 0; r < M; r++)
++        e->s[r] = ks_q8_vec((const float *)((const char *)w->data + (size_t)r*w->nb[1]), K, e->K16, e->q + (size_t)r*e->K16);
++    e->ne0 = w->ne[0]; e->ne1 = w->ne[1]; e->nb1 = (int64_t)w->nb[1];
++    e->data = w->data;
++    atomic_store(&e->ready, 1);
++    return e;
++}
++
++#if defined(__ARM_NEON)
++static inline int32_t ks_hsum_s32(int32x4_t v) {
++    return vgetq_lane_s32(v, 0) + vgetq_lane_s32(v, 1) + vgetq_lane_s32(v, 2) + vgetq_lane_s32(v, 3);
++}
++#define KS_Q8_ACC(acc, a, b) acc = vpadalq_s16(acc, vmlal_s8(vmull_s8(vget_low_s8(a), vget_low_s8(b)), vget_high_s8(a), vget_high_s8(b)))
++#endif
++
++// four weight rows x two activation columns, exact int32 dot products
++static void ks_q8_4x2(int K16, const int8_t * x, const int8_t * y0, const int8_t * y1, int32_t * o /*[2][4]*/) {
++#if defined(__ARM_NEON)
++    int32x4_t a00 = vdupq_n_s32(0), a01 = a00, a10 = a00, a11 = a00, a20 = a00, a21 = a00, a30 = a00, a31 = a00;
++    const int8_t * x0 = x, * x1 = x + K16, * x2 = x + 2*K16, * x3 = x + 3*K16;
++    for (int k = 0; k < K16; k += 16) {
++        const int8x16_t b0 = vld1q_s8(y0 + k), b1 = vld1q_s8(y1 + k);
++        int8x16_t v = vld1q_s8(x0 + k); KS_Q8_ACC(a00, v, b0); KS_Q8_ACC(a01, v, b1);
++        v = vld1q_s8(x1 + k);           KS_Q8_ACC(a10, v, b0); KS_Q8_ACC(a11, v, b1);
++        v = vld1q_s8(x2 + k);           KS_Q8_ACC(a20, v, b0); KS_Q8_ACC(a21, v, b1);
++        v = vld1q_s8(x3 + k);           KS_Q8_ACC(a30, v, b0); KS_Q8_ACC(a31, v, b1);
++    }
++    o[0] = ks_hsum_s32(a00); o[1] = ks_hsum_s32(a10); o[2] = ks_hsum_s32(a20); o[3] = ks_hsum_s32(a30);
++    o[4] = ks_hsum_s32(a01); o[5] = ks_hsum_s32(a11); o[6] = ks_hsum_s32(a21); o[7] = ks_hsum_s32(a31);
++#else
++    for (int r = 0; r < 4; r++) {
++        const int8_t * xr = x + (size_t)r*K16;
++        int32_t s0 = 0, s1 = 0;
++        for (int k = 0; k < K16; k++) { s0 += (int32_t)xr[k] * y0[k]; s1 += (int32_t)xr[k] * y1[k]; }
++        o[r] = s0; o[4 + r] = s1;
++    }
++#endif
++}
++
++static bool ks_mul_mat_q8(const struct ggml_compute_params * params, struct ggml_tensor * dst) {
++    const struct ggml_tensor * src0 = dst->src[0];
++    const struct ggml_tensor * src1 = dst->src[1];
++    if (!ks_int8_enabled()) return false;
++    if (src0->type != GGML_TYPE_F32 || src1->type != GGML_TYPE_F32 || dst->type != GGML_TYPE_F32) return false;
++    const struct ggml_tensor * root = src0; while (root->view_src) root = root->view_src;
++    if (!root->buffer || ggml_backend_buffer_get_usage(root->buffer) != GGML_BACKEND_BUFFER_USAGE_WEIGHTS) return false;
++    GGML_TENSOR_BINARY_OP_LOCALS
++    if (ne02 != 1 || ne03 != 1 || ne12 != 1 || ne13 != 1) return false;
++    if (ne00 < 16 || ne01 < 4 || nb00 != sizeof(float) || nb10 != sizeof(float)) return false;
++    ks_q8_weight * w = ks_q8_get(src0);
++    if (!w) {
++        // the first thread to arrive quantizes; any other waits in ks_q8_get
++        if (params->ith == 0) w = ks_q8_make(src0);
++        else { while (!(w = ks_q8_get(src0))) { if (atomic_load(&ks_q8_count) >= KS_Q8_MAX) return false; } }
++        if (!w) return false;
++    }
++    const int K = (int)ne00, M = (int)ne01, C = (int)ne11, K16 = w->K16;
++    // columns are split across threads; each thread quantizes only its own
++    const int pairs = (C + 1) / 2, per = (pairs + params->nth - 1) / params->nth;
++    const int p0 = params->ith * per, p1 = p0 + per < pairs ? p0 + per : pairs;
++    if (p0 >= p1) return true;
++    int8_t * yq = (int8_t *) alloca((size_t)2 * K16);
++    int32_t o[8];
++    for (int pr = p0; pr < p1; pr++) {
++        const int c0 = 2*pr, c1 = c0 + 1;
++        const float s0 = ks_q8_vec((const float *)((const char *)src1->data + (size_t)c0*nb11), K, K16, yq);
++        float s1 = 0.0f;
++        if (c1 < C) s1 = ks_q8_vec((const float *)((const char *)src1->data + (size_t)c1*nb11), K, K16, yq + K16);
++        else memset(yq + K16, 0, (size_t)K16);
++        float * d0 = (float *)((char *)dst->data + (size_t)c0*nb1);
++        float * d1 = c1 < C ? (float *)((char *)dst->data + (size_t)c1*nb1) : NULL;
++        for (int r = 0; r < M; r += 4) {
++            ks_q8_4x2(K16, w->q + (size_t)r*K16, yq, yq + K16, o);
++            const int nr = M - r < 4 ? M - r : 4;
++            for (int j = 0; j < nr; j++) {
++                const float sc0 = w->s[r + j] * s0;
++                d0[r + j] = (float)o[j] * sc0;
++                if (d1) { const float sc1 = w->s[r + j] * s1; d1[r + j] = (float)o[4 + j] * sc1; }
++            }
++        }
++    }
++    return true;
++}
++
++#if defined(__ARM_NEON) && !defined(__ARM_FEATURE_SVE) && defined(GGML_SIMD)
++// F32 x F32 mat-mul for small contiguous operands. Each output is computed
++// exactly as ggml_vec_dot_f32 computes it (GGML_F32_STEP chunks in
++// GGML_F32_ARR fused accumulators, the same reduction, float leftovers with
++// the fused multiply-add the contracted scalar loop compiles to), so
++// the results are the same bits; what goes away is the per-output call and
++// the per-column 64-bit index division, which dominate when the inner
++// dimension is a few dozen elements (as in the streaming GTCRN graph).
++static inline float ks_dot_vec_part(int np, const float * x, const float * y) {
++    GGML_F32_VEC sum[GGML_F32_ARR] = { GGML_F32_VEC_ZERO };
++    GGML_F32_VEC ax[GGML_F32_ARR];
++    GGML_F32_VEC ay[GGML_F32_ARR];
++    for (int i = 0; i < np; i += GGML_F32_STEP) {
++        for (int j = 0; j < GGML_F32_ARR; j++) {
++            ax[j] = GGML_F32_VEC_LOAD(x + i + j*GGML_F32_EPR);
++            ay[j] = GGML_F32_VEC_LOAD(y + i + j*GGML_F32_EPR);
++            sum[j] = GGML_F32_VEC_FMA(sum[j], ax[j], ay[j]);
++        }
++    }
++    float sumf = 0.0f;
++    GGML_F32_VEC_REDUCE(sumf, sum);
++    return sumf;
++}
++
++// Register-blocked F32 kernel for 32-bit ARM: four src0 rows by two src1
++// columns share their loads, eight vector accumulators. Each output sums its
++// four lanes and then the K % 4 tail, an order that differs from
++// ggml_vec_dot_f32 the way any blocked BLAS does (rounding-level only).
++#if defined(__ARM_NEON) && !defined(__aarch64__) && defined(__ARM_FEATURE_FMA)
++static inline float ks_hsum(float32x4_t v) {
++    return vgetq_lane_f32(v, 0) + vgetq_lane_f32(v, 1) + vgetq_lane_f32(v, 2) + vgetq_lane_f32(v, 3);
++}
++static void ks_gemm_f32_4x2(int K, const float * const * x, const float * y0, const float * y1, float * d0, float * d1) {
++    float32x4_t a00 = vdupq_n_f32(0.0f), a01 = a00, a10 = a00, a11 = a00, a20 = a00, a21 = a00, a30 = a00, a31 = a00;
++    const float * x0 = x[0], * x1 = x[1], * x2 = x[2], * x3 = x[3];
++    int k = 0;
++    // two K steps per iteration so the next step's loads can issue ahead of
++    // this step's multiply-adds (the core is in order); same per-lane order
++    for (; k + 8 <= K; k += 8) {
++        const float32x4_t b0 = vld1q_f32(y0 + k), b1 = vld1q_f32(y1 + k);
++        const float32x4_t v0 = vld1q_f32(x0 + k), v1 = vld1q_f32(x1 + k);
++        const float32x4_t v2 = vld1q_f32(x2 + k), v3 = vld1q_f32(x3 + k);
++        const float32x4_t c0 = vld1q_f32(y0 + k + 4), c1 = vld1q_f32(y1 + k + 4);
++        a00 = vfmaq_f32(a00, v0, b0); a01 = vfmaq_f32(a01, v0, b1);
++        a10 = vfmaq_f32(a10, v1, b0); a11 = vfmaq_f32(a11, v1, b1);
++        const float32x4_t w0 = vld1q_f32(x0 + k + 4), w1 = vld1q_f32(x1 + k + 4);
++        a20 = vfmaq_f32(a20, v2, b0); a21 = vfmaq_f32(a21, v2, b1);
++        a30 = vfmaq_f32(a30, v3, b0); a31 = vfmaq_f32(a31, v3, b1);
++        const float32x4_t w2 = vld1q_f32(x2 + k + 4), w3 = vld1q_f32(x3 + k + 4);
++        a00 = vfmaq_f32(a00, w0, c0); a01 = vfmaq_f32(a01, w0, c1);
++        a10 = vfmaq_f32(a10, w1, c0); a11 = vfmaq_f32(a11, w1, c1);
++        a20 = vfmaq_f32(a20, w2, c0); a21 = vfmaq_f32(a21, w2, c1);
++        a30 = vfmaq_f32(a30, w3, c0); a31 = vfmaq_f32(a31, w3, c1);
++    }
++    for (; k + 4 <= K; k += 4) {
++        const float32x4_t b0 = vld1q_f32(y0 + k), b1 = vld1q_f32(y1 + k);
++        float32x4_t v = vld1q_f32(x0 + k); a00 = vfmaq_f32(a00, v, b0); a01 = vfmaq_f32(a01, v, b1);
++        v = vld1q_f32(x1 + k);             a10 = vfmaq_f32(a10, v, b0); a11 = vfmaq_f32(a11, v, b1);
++        v = vld1q_f32(x2 + k);             a20 = vfmaq_f32(a20, v, b0); a21 = vfmaq_f32(a21, v, b1);
++        v = vld1q_f32(x3 + k);             a30 = vfmaq_f32(a30, v, b0); a31 = vfmaq_f32(a31, v, b1);
++    }
++    float s00 = ks_hsum(a00), s01 = ks_hsum(a01), s10 = ks_hsum(a10), s11 = ks_hsum(a11);
++    float s20 = ks_hsum(a20), s21 = ks_hsum(a21), s30 = ks_hsum(a30), s31 = ks_hsum(a31);
++    for (; k < K; ++k) {
++        s00 = __builtin_fmaf(x0[k], y0[k], s00); s01 = __builtin_fmaf(x0[k], y1[k], s01);
++        s10 = __builtin_fmaf(x1[k], y0[k], s10); s11 = __builtin_fmaf(x1[k], y1[k], s11);
++        s20 = __builtin_fmaf(x2[k], y0[k], s20); s21 = __builtin_fmaf(x2[k], y1[k], s21);
++        s30 = __builtin_fmaf(x3[k], y0[k], s30); s31 = __builtin_fmaf(x3[k], y1[k], s31);
++    }
++    d0[0] = s00; d0[1] = s10; d0[2] = s20; d0[3] = s30;
++    d1[0] = s01; d1[1] = s11; d1[2] = s21; d1[3] = s31;
++}
++static inline float ks_dot1(int K, const float * x, const float * y) {
++    float32x4_t a = vdupq_n_f32(0.0f), b = a;
++    int k = 0;
++    for (; k + 8 <= K; k += 8) {
++        a = vfmaq_f32(a, vld1q_f32(x + k), vld1q_f32(y + k));
++        b = vfmaq_f32(b, vld1q_f32(x + k + 4), vld1q_f32(y + k + 4));
++    }
++    for (; k + 4 <= K; k += 4) a = vfmaq_f32(a, vld1q_f32(x + k), vld1q_f32(y + k));
++    float s = ks_hsum(vaddq_f32(a, b));
++    for (; k < K; ++k) s = __builtin_fmaf(x[k], y[k], s);
++    return s;
++}
++static bool ks_mul_mat_f32_blocked(const struct ggml_compute_params * params, struct ggml_tensor * dst) {
++    const struct ggml_tensor * src0 = dst->src[0];
++    const struct ggml_tensor * src1 = dst->src[1];
++    if (src0->type != GGML_TYPE_F32 || src1->type != GGML_TYPE_F32 || dst->type != GGML_TYPE_F32) return false;
++    GGML_TENSOR_BINARY_OP_LOCALS
++    if (ne02 != ne12 || ne03 != ne13) return false;
++    if (ne00 < 16 || ne01 < 4) return false;                       // too small to block: exact path
++    if (ne00 > 65536 || ne01 > 65536 || ne11 * ne12 * ne13 > 1048576) return false;
++    const int K = (int)ne00, M = (int)ne01, C = (int)ne11, nmat = (int)(ne12 * ne13);
++    // A block of src0 rows (up to 16 KB) stays in L1 while every src1 column
++    // pair streams past it; walking all rows per column pair instead reloads
++    // src0 from L2 for each pair.
++    int RB = (16384 / (K * 4)) & ~3;
++    if (RB < 4) RB = 4;
++    if (RB > M) RB = (M + 3) & ~3;
++    const int nrb = (M + RB - 1) / RB, items = nmat * nrb;
++    for (int it = params->ith; it < items; it += params->nth) {
++        const int mi = it / nrb, rb0 = (it % nrb) * RB, rb1 = rb0 + RB < M ? rb0 + RB : M;
++        const int i12 = mi % (int)ne12, i13 = mi / (int)ne12;
++        const char * a = (const char *)src0->data + (size_t)i12*nb02 + (size_t)i13*nb03;
++        const char * b = (const char *)src1->data + (size_t)i12*nb12 + (size_t)i13*nb13;
++        char * dd = (char *)dst->data + (size_t)i12*nb2 + (size_t)i13*nb3;
++        for (int c0 = 0; c0 < C; c0 += 2) {
++            const float * y0 = (const float *)(b + (size_t)c0*nb11);
++            float * d0 = (float *)(dd + (size_t)c0*nb1);
++            if (c0 + 1 < C) {
++                const float * y1 = (const float *)(b + (size_t)(c0 + 1)*nb11);
++                float * d1 = (float *)(dd + (size_t)(c0 + 1)*nb1);
++                int r = rb0;
++                for (; r + 4 <= rb1; r += 4) {
++                    const float * x[4];
++                    for (int j = 0; j < 4; ++j) x[j] = (const float *)(a + (size_t)(r + j)*nb01);
++                    ks_gemm_f32_4x2(K, x, y0, y1, d0 + r, d1 + r);
++                }
++                for (; r < rb1; ++r) {
++                    const float * x0 = (const float *)(a + (size_t)r*nb01);
++                    d0[r] = ks_dot1(K, x0, y0); d1[r] = ks_dot1(K, x0, y1);
++                }
++            } else {
++                for (int r = rb0; r < rb1; ++r) d0[r] = ks_dot1(K, (const float *)(a + (size_t)r*nb01), y0);
++            }
++        }
++    }
++    return true;
++}
++#endif
++
++static bool ks_mul_mat_f32_small(const struct ggml_compute_params * params, struct ggml_tensor * dst) {
++    const struct ggml_tensor * src0 = dst->src[0];
++    const struct ggml_tensor * src1 = dst->src[1];
++    if (src0->type != GGML_TYPE_F32 || src1->type != GGML_TYPE_F32 || dst->type != GGML_TYPE_F32) return false;
++    GGML_TENSOR_BINARY_OP_LOCALS
++    if (ne02 != ne12 || ne03 != ne13) return false;                 // no broadcast
++    if (ne00 > 4096 || ne01 > 65536 || ne11 * ne12 * ne13 > 65536) return false;
++    const int n = (int)ne00, M = (int)ne01, np = n & ~(GGML_F32_STEP - 1);
++    const int ncols = (int)(ne11 * ne12 * ne13);
++    for (int c = params->ith; c < ncols; c += params->nth) {
++        const int i11 = c % (int)ne11, i12 = (c / (int)ne11) % (int)ne12, i13 = c / (int)(ne11 * ne12);
++        const float * y = (const float *)((const char *)src1->data + (size_t)i11*nb11 + (size_t)i12*nb12 + (size_t)i13*nb13);
++        const char * a = (const char *)src0->data + (size_t)i12*nb02 + (size_t)i13*nb03;
++        float * d = (float *)((char *)dst->data + (size_t)i11*nb1 + (size_t)i12*nb2 + (size_t)i13*nb3);
++        int r = 0;
++        for (; r + 4 <= M; r += 4) {
++            const float * x0 = (const float *)(a + (size_t)(r + 0)*nb01);
++            const float * x1 = (const float *)(a + (size_t)(r + 1)*nb01);
++            const float * x2 = (const float *)(a + (size_t)(r + 2)*nb01);
++            const float * x3 = (const float *)(a + (size_t)(r + 3)*nb01);
++            float s0 = ks_dot_vec_part(np, x0, y), s1 = ks_dot_vec_part(np, x1, y);
++            float s2 = ks_dot_vec_part(np, x2, y), s3 = ks_dot_vec_part(np, x3, y);
++            for (int i = np; i < n; ++i) {
++                const float yi = y[i];
++                s0 = __builtin_fmaf(x0[i], yi, s0); s1 = __builtin_fmaf(x1[i], yi, s1);
++                s2 = __builtin_fmaf(x2[i], yi, s2); s3 = __builtin_fmaf(x3[i], yi, s3);
++            }
++            d[r] = s0; d[r + 1] = s1; d[r + 2] = s2; d[r + 3] = s3;
++        }
++        for (; r < M; ++r) {
++            const float * x0 = (const float *)(a + (size_t)r*nb01);
++            float s0 = ks_dot_vec_part(np, x0, y);
++            for (int i = np; i < n; ++i) s0 = __builtin_fmaf(x0[i], y[i], s0);
++            d[r] = s0;
++        }
++    }
++    return true;
++}
++#endif
++
+ void ggml_compute_forward_mul_mat(
+         const struct ggml_compute_params * params,
+               struct ggml_tensor * dst) {
+@@ -1266,6 +1611,14 @@
+     // nb01 >= nb00 - src0 is not transposed
+     //   compute by src0 rows
+ 
++    if (ks_mul_mat_q8(params, dst)) return;
++#if defined(__ARM_NEON) && !defined(__aarch64__) && defined(__ARM_FEATURE_FMA)
++    if (ks_mul_mat_f32_blocked(params, dst)) return;
++#endif
++#if defined(__ARM_NEON) && !defined(__ARM_FEATURE_SVE) && defined(GGML_SIMD)
++    if (ks_mul_mat_f32_small(params, dst)) return;
++#endif
++
+     // TODO: extract to "extra_op"
+ #if GGML_USE_LLAMAFILE
+     // broadcast factors
+@@ -2950,6 +3303,7 @@
+     return cplan;
+ }
+ 
++
+ static thread_ret_t ggml_graph_compute_thread(void * data) {
+     struct ggml_compute_state * state = (struct ggml_compute_state *) data;
+     struct ggml_threadpool    * tp    = state->threadpool;
+--- a/src/ggml-cpu/ops.cpp
++++ b/src/ggml-cpu/ops.cpp
+@@ -128,6 +128,26 @@
+         } else {
+             //printf("%s: this is not optimal - fix me\n", __func__);
+ 
++            if constexpr (std::is_same_v<dst_t, src_t>) {
++                // Same elements, stepping a source pointer by nb00 instead of
++                // recomputing a 64-bit address for every element.
++                size_t id = 0;
++                dst_t * dst_ptr = (dst_t *) dst->data;
++                for (int i03 = 0; i03 < ne03; i03++) {
++                    for (int i02 = 0; i02 < ne02; i02++) {
++                        id += ne00 * ir0;
++                        for (int i01 = ir0; i01 < ir1; i01++) {
++                            const char * sp = (const char *) src0->data + (size_t)i01*nb01 + (size_t)i02*nb02 + (size_t)i03*nb03;
++                            for (int i00 = 0; i00 < ne00; i00++, sp += nb00) {
++                                memcpy(&dst_ptr[id++], sp, sizeof(dst_t));
++                            }
++                        }
++                        id += ne00 * (ne01 - ir1);
++                    }
++                }
++                return;
++            }
++
+             size_t id = 0;
+             dst_t * dst_ptr = (dst_t *) dst->data;
+ 
+@@ -388,24 +408,26 @@
+                 }
+             }
+         } else {
+-            //printf("%s: this is not optimal - fix me\n", __func__);
+-
++            // Strided source rows: step a pointer by nb00 instead of a 64-bit
++            // address per element (same bytes copied).
+             for (int64_t i03 = 0; i03 < ne03; i03++) {
+                 for (int64_t i02 = 0; i02 < ne02; i02++) {
+                     id += rs * ir0;
+                     for (int64_t i01 = ir0; i01 < ir1; i01++) {
+-                        for (int64_t i00 = 0; i00 < ne00; i00++) {
+-                            const char * src0_ptr = (char *) src0->data + i00*nb00 + i01*nb01 + i02*nb02 + i03*nb03;
+-                            memcpy(dst_ptr + id, src0_ptr, type_size);
+-
+-                            id += type_size;
++                        const char * sp = (const char *) src0->data + (size_t)i01*nb01 + (size_t)i02*nb02 + (size_t)i03*nb03;
++                        char * dp = dst_ptr + id;
++                        const int n00 = (int) ne00;
++                        if (type_size == 4) {
++                            for (int i00 = 0; i00 < n00; i00++, sp += nb00, dp += 4) memcpy(dp, sp, 4);
++                        } else {
++                            for (int i00 = 0; i00 < n00; i00++, sp += nb00, dp += type_size) memcpy(dp, sp, type_size);
+                         }
++                        id += rs;
+                     }
+                     id += rs * (ne01 - ir1);
+                 }
+             }
+         }
+-
+         return;
+     }
+ 
+@@ -2041,6 +2063,29 @@
+     int64_t o[4] = {0, 0, 0, 0};
+     o[dim] = src0->ne[dim];
+ 
++    // Rows contiguous in all three tensors: copy whole row segments. Same
++    // elements as the loop below, without per-element 64-bit address math.
++    if (nb0 == sizeof(float) && nb00 == sizeof(float) && nb10 == sizeof(float)) {
++        for (int i3 = 0; i3 < ne3; i3++) {
++            for (int i2 = ith; i2 < ne2; i2 += nth) {
++                for (int i1 = 0; i1 < ne1; i1++) {
++                    char * y = (char *) dst->data + (size_t)i1*nb1 + (size_t)i2*nb2 + (size_t)i3*nb3;
++                    if (dim == 0) {
++                        memcpy(y, (const char *) src0->data + (size_t)i1*nb01 + (size_t)i2*nb02 + (size_t)i3*nb03, (size_t)ne00*sizeof(float));
++                        memcpy(y + (size_t)ne00*sizeof(float), (const char *) src1->data + (size_t)i1*nb11 + (size_t)i2*nb12 + (size_t)i3*nb13,
++                               (size_t)(ne0 - ne00)*sizeof(float));
++                    } else if (i1 < ne01 && i2 < ne02 && i3 < ne03) {
++                        memcpy(y, (const char *) src0->data + (size_t)i1*nb01 + (size_t)i2*nb02 + (size_t)i3*nb03, (size_t)ne0*sizeof(float));
++                    } else {
++                        memcpy(y, (const char *) src1->data + (size_t)(i1 - o[1])*nb11 + (size_t)(i2 - o[2])*nb12 + (size_t)(i3 - o[3])*nb13,
++                               (size_t)ne0*sizeof(float));
++                    }
++                }
++            }
++        }
++        return;
++    }
++
+     const float * x;
+ 
+     // TODO: smarter multi-theading
+@@ -6160,6 +6205,47 @@
+ 
+     GGML_ASSERT(nb10 == sizeof(float));
+ 
++    // Same copy with 32-bit indices and the row checks hoisted, when every
++    // index fits: on 32-bit ARM each 64-bit multiply is several instructions.
++    if ((double)N*OH*OW*IC*KH*KW < 2147483647.0 && (double)IH*IW < 2147483647.0) {
++        float * const wdata = (float *) dst->data;
++        const int iN = (int)N, iOH = (int)OH, iOW = (int)OW, iIC = (int)IC, iIH = (int)IH, iIW = (int)IW;
++        const int iKH = (int)KH, iKW = (int)KW, KK = iKH*iKW, CKK = iIC*KK;
++        for (int in = 0; in < iN; in++) {
++            for (int ioh = 0; ioh < iOH; ioh++) {
++                for (int iow = 0; iow < iOW; iow++) {
++                    float * const pix = wdata + (size_t)((in*iOH + ioh)*iOW + iow)*CKK;
++                    for (int iic = ith; iic < iIC; iic += nth) {
++                        float * const dst_data = pix + iic*KK;
++                        const float * const src_data = (const float *)((const char *) src1->data + (size_t)in*ofs0 + (size_t)iic*ofs1);
++                        for (int ikh = 0; ikh < iKH; ikh++) {
++                            float * const drow = dst_data + ikh*iKW;
++                            const int iih = ioh*s1 + ikh*d1 - p1;
++                            if (iih < 0 || iih >= iIH) {
++                                for (int ikw = 0; ikw < iKW; ikw++) drow[ikw] = 0;
++                                continue;
++                            }
++                            const float * const srow = src_data + (size_t)iih*iIW;
++                            int iiw = iow*s0 - p0;
++                            if (d0 == 1 && iiw >= 0 && iiw + iKW <= iIW) {    // whole span inside the row
++                                const float * const sp = srow + iiw;
++#if defined(__ARM_NEON)
++                                if (iKW == 4) { vst1q_f32(drow, vld1q_f32(sp)); continue; }
++#endif
++                                for (int ikw = 0; ikw < iKW; ikw++) drow[ikw] = sp[ikw];
++                                continue;
++                            }
++                            for (int ikw = 0; ikw < iKW; ikw++, iiw += d0) {
++                                drow[ikw] = (iiw >= 0 && iiw < iIW) ? srow[iiw] : 0.0f;
++                            }
++                        }
++                    }
++                }
++            }
++        }
++        return;
++    }
++
+     // im2col: [N, IC, IH, IW] => [N, OH, OW, IC*KH*KW]
+     {
+         float * const wdata = (float *) dst->data;
+@@ -7130,6 +7216,60 @@
+     const int64_t start = params->ith * per_thread;
+     const int64_t end = MIN(start + per_thread, n);
+ 
++#if defined(__ARM_NEON) && defined(__ARM_FEATURE_FMA)
++    // 32-bit indices, the valid kernel rows found once per output row, and
++    // four outputs per vector where every tap is inside the image. Each
++    // output still sums its taps in the scalar order with fused
++    // multiply-adds, which is what the scalar loop below compiles to on ARM.
++    {
++        const int sw = (int)p.src_w, sh = (int)p.src_h, dw = (int)p.dst_w, dh = (int)p.dst_h;
++        const int kw = (int)p.knl_w, kh = (int)p.knl_h, sx = (int)p.stride_x, sy = (int)p.stride_y;
++        const int px = (int)p.pad_x, py = (int)p.pad_y, dlx = (int)p.dilation_x, dly = (int)p.dilation_y;
++        const int x_lo = sx == 1 ? px : dw, x_hi = sx == 1 ? std::min(dw, sw - (kw - 1)*dlx + px) : dw;
++        for (int64_t i = start; i < end; ++i) {
++            const float * knl = (const float *)kernel->data + (size_t)(i % p.channels) * kw * kh;
++            const float * src_data = (const float *)src->data + (size_t)i * sw * sh;
++            float * dst_data = (float *)dst->data + (size_t)i * dw * dh;
++            for (int y = 0; y < dh; ++y) {
++                int ky_valid[64]; int nky = 0;
++                for (int ky = 0; ky < kh && nky < 64; ++ky) {
++                    const int sy_ = y*sy + ky*dly - py;
++                    if (sy_ >= 0 && sy_ < sh) ky_valid[nky++] = ky;
++                }
++                float * drow = dst_data + (size_t)y * dw;
++                for (int x = 0; x < dw; ) {
++                    if (x >= x_lo && x + 4 <= x_hi) {
++                        float32x4_t v = vdupq_n_f32(0.0f);
++                        for (int a = 0; a < nky; ++a) {
++                            const int ky = ky_valid[a];
++                            const float * srow = src_data + (size_t)(y*sy + ky*dly - py) * sw + x - px;
++                            const float * krow = knl + ky * kw;
++                            for (int kx = 0; kx < kw; ++kx)
++                                v = vfmaq_f32(v, vdupq_n_f32(krow[kx]), vld1q_f32(srow + kx*dlx));
++                        }
++                        vst1q_f32(drow + x, v);
++                        x += 4;
++                        continue;
++                    }
++                    float sum = 0.0f;
++                    for (int a = 0; a < nky; ++a) {
++                        const int ky = ky_valid[a];
++                        const float * srow = src_data + (size_t)(y*sy + ky*dly - py) * sw;
++                        for (int kx = 0; kx < kw; ++kx) {
++                            const int sx_ = x*sx + kx*dlx - px;
++                            if (sx_ < 0 || sx_ >= sw) continue;
++                            sum = __builtin_fmaf(knl[ky * kw + kx], srow[sx_], sum);
++                        }
++                    }
++                    drow[x] = sum;
++                    ++x;
++                }
++            }
++        }
++        return;
++    }
++#endif
++
+     for (int64_t i = start; i < end; ++i) {
+         const float * knl_data = (const float *)kernel->data + (i % p.channels) * p.knl_w * p.knl_h;
+         const float * src_data = (const float *)src->data + i * p.src_w * p.src_h;
+@@ -7732,7 +7872,27 @@
+     const int32_t lp3 = ggml_get_op_params_i32(dst, 6);
+     const int32_t rp3 = ggml_get_op_params_i32(dst, 7);
+ 
+-    // TODO: optimize
++    // Zero padding with contiguous source rows: whole rows at a time (zeros,
++    // a copied span, zeros). Same values as the element loop below.
++    if constexpr (!circular_t) {
++        if (nb00 == sizeof(float)) {
++            const int64_t w = ne0 - lp0 - rp0;   // == ne00
++            for (int64_t i2 = 0; i2 < ne2; ++i2) {
++                for (int64_t i1 = ith; i1 < ne1; i1 += nth) {
++                    for (int64_t i3 = 0; i3 < ne3; ++i3) {
++                        float * d = dst_ptr + (size_t)(i3*(ne0*ne1*ne2) + i2*(ne0*ne1) + i1*ne0);
++                        const bool in = (i1 >= lp1 && i1 < ne1 - rp1) && (i2 >= lp2 && i2 < ne2 - rp2) && (i3 >= lp3 && i3 < ne3 - rp3);
++                        if (!in || w <= 0) { memset(d, 0, (size_t)ne0*sizeof(float)); continue; }
++                        memset(d, 0, (size_t)lp0*sizeof(float));
++                        memcpy(d + lp0, (const char *) src0->data + (size_t)(i3 - lp3)*nb03 + (size_t)(i2 - lp2)*nb02 + (size_t)(i1 - lp1)*nb01,
++                               (size_t)w*sizeof(float));
++                        memset(d + lp0 + w, 0, (size_t)rp0*sizeof(float));
++                    }
++                }
++            }
++            return;
++        }
++    }
+ 
+     for (int64_t i2 = 0; i2 < ne2; ++i2) {
+         for (int64_t i1 = ith; i1 < ne1; i1 += nth) {
+@@ -9520,6 +9680,62 @@
+ 
+ #define GGML_GRU_MAX_H 256
+ 
++// exp, sigmoid and tanh for the GRU op: Cephes-style expf (about 2 ulp)
++// written entirely in fused multiply-adds, so the scalar and NEON versions
++// compute the same bits (only the ARMv7 NEON reciprocal is an estimate refined
++// twice instead of a division). Used on every platform, so a host run of the
++// model computes what a device runs.
++static inline float ks_gru_expf(float x) {
++    x = std::min(std::max(x, -87.3f), 88.3f);
++    const float n = std::fma(x, 1.44269504088896341f, 12582912.0f) - 12582912.0f;
++    float r = std::fma(n, -0.693359375f, x);
++    r = std::fma(n, 2.12194440e-4f, r);
++    float p = 1.9875691500e-4f;
++    p = std::fma(p, r, 1.3981999507e-3f); p = std::fma(p, r, 8.3334519073e-3f);
++    p = std::fma(p, r, 4.1665795894e-2f); p = std::fma(p, r, 1.6666665459e-1f);
++    p = std::fma(p, r, 5.0000001201e-1f);
++    const float y = std::fma(p, r * r, r) + 1.0f;
++    const int32_t e = ((int32_t)n + 127) << 23;
++    float sc; memcpy(&sc, &e, sizeof sc);
++    return y * sc;
++}
++static inline float ks_gru_sigmoid(float x) { return 1.0f / (1.0f + ks_gru_expf(-x)); }
++static inline float ks_gru_tanh(float x)    { return 2.0f / (1.0f + ks_gru_expf(-2.0f * x)) - 1.0f; }
++
++#if defined(__ARM_NEON) && defined(__ARM_FEATURE_FMA)
++static inline float32x4_t ks_gru_exp4(float32x4_t x) {
++    x = vminq_f32(vmaxq_f32(x, vdupq_n_f32(-87.3f)), vdupq_n_f32(88.3f));
++    const float32x4_t rnd = vdupq_n_f32(12582912.0f);
++    const float32x4_t n = vsubq_f32(vfmaq_f32(rnd, x, vdupq_n_f32(1.44269504088896341f)), rnd);
++    float32x4_t r = vfmaq_f32(x, n, vdupq_n_f32(-0.693359375f));
++    r = vfmaq_f32(r, n, vdupq_n_f32(2.12194440e-4f));
++    float32x4_t p = vdupq_n_f32(1.9875691500e-4f);
++    p = vfmaq_f32(vdupq_n_f32(1.3981999507e-3f), p, r); p = vfmaq_f32(vdupq_n_f32(8.3334519073e-3f), p, r);
++    p = vfmaq_f32(vdupq_n_f32(4.1665795894e-2f), p, r); p = vfmaq_f32(vdupq_n_f32(1.6666665459e-1f), p, r);
++    p = vfmaq_f32(vdupq_n_f32(5.0000001201e-1f), p, r);
++    const float32x4_t y = vaddq_f32(vfmaq_f32(r, p, vmulq_f32(r, r)), vdupq_n_f32(1.0f));
++    const int32x4_t e = vshlq_n_s32(vaddq_s32(vcvtq_s32_f32(n), vdupq_n_s32(127)), 23);
++    return vmulq_f32(y, vreinterpretq_f32_s32(e));
++}
++static inline float32x4_t ks_gru_rcp4(float32x4_t d) {
++#if defined(__aarch64__)
++    return vdivq_f32(vdupq_n_f32(1.0f), d);
++#else
++    float32x4_t e = vrecpeq_f32(d);
++    e = vmulq_f32(e, vrecpsq_f32(d, e));
++    e = vmulq_f32(e, vrecpsq_f32(d, e));
++    return e;
++#endif
++}
++static inline float32x4_t ks_gru_sigmoid4(float32x4_t x) {
++    return ks_gru_rcp4(vaddq_f32(vdupq_n_f32(1.0f), ks_gru_exp4(vnegq_f32(x))));
++}
++static inline float32x4_t ks_gru_tanh4(float32x4_t x) {
++    const float32x4_t s = ks_gru_rcp4(vaddq_f32(vdupq_n_f32(1.0f), ks_gru_exp4(vmulq_f32(vdupq_n_f32(-2.0f), x))));
++    return vsubq_f32(vaddq_f32(s, s), vdupq_n_f32(1.0f));
++}
++#endif
++
+ static void ggml_compute_forward_gru_f32(
+         const ggml_compute_params * params,
+         ggml_tensor * dst) {
+@@ -9528,10 +9744,10 @@
+     const ggml_tensor * bhh = dst->src[2];
+     const ggml_tensor * h0  = dst->src[3];
+ 
+-    const int64_t H  = whh->ne[0];
+-    const int64_t TH = 3 * H;
+-    const int64_t N  = gi->ne[1];
+-    const int64_t L  = gi->ne[2];
++    const int H  = (int) whh->ne[0];
++    const int TH = 3 * H;
++    const int N  = (int) gi->ne[1];
++    const int L  = (int) gi->ne[2];
+     const int     reverse = ((const int32_t *) dst->op_params)[0];
+     GGML_ASSERT(H <= GGML_GRU_MAX_H);
+ 
+@@ -9542,29 +9758,63 @@
+     float       * dst_d = (float *) dst->data;
+ 
+     // split the N independent sequences across threads
+-    const int64_t dn = (N + params->nth - 1) / params->nth;
+-    const int64_t n0 = params->ith * dn;
+-    const int64_t n1 = (n0 + dn < N) ? (n0 + dn) : N;
+-
++    const int dn = (N + params->nth - 1) / params->nth;
++    const int n0 = params->ith * dn;
++    const int n1 = (n0 + dn < N) ? (n0 + dn) : N;
++
++    int n = n0;
++#if defined(__ARM_NEON) && defined(__ARM_FEATURE_FMA)
++    // four sequences at a time, one per lane
++    for (; n + 4 <= n1; n += 4) {
++        float32x4_t hv[GGML_GRU_MAX_H];
++        float32x4_t ghv[3 * GGML_GRU_MAX_H];
++        float t[4];
++        for (int k = 0; k < H; ++k) {
++            for (int j = 0; j < 4; ++j) t[j] = h0_d[k + (size_t)(n + j) * H];
++            hv[k] = vld1q_f32(t);
++        }
++        for (int s = 0; s < L; ++s) {
++            const int l = reverse ? (L - 1 - s) : s;
++            const float * gl[4];
++            for (int j = 0; j < 4; ++j) gl[j] = gi_d + ((size_t)l * N + n + j) * TH;
++            for (int g = 0; g < TH; ++g) {
++                const float * wr = whh_d + (size_t)g * H;
++                float32x4_t acc = vdupq_n_f32(bhh_d[g]);
++                for (int j = 0; j < H; ++j) acc = vfmaq_f32(acc, vdupq_n_f32(wr[j]), hv[j]);
++                ghv[g] = acc;
++            }
++            for (int k = 0; k < H; ++k) {
++                float a[4], b[4], c[4];
++                for (int j = 0; j < 4; ++j) { a[j] = gl[j][k]; b[j] = gl[j][H + k]; c[j] = gl[j][2 * H + k]; }
++                const float32x4_t r  = ks_gru_sigmoid4(vaddq_f32(vld1q_f32(a), ghv[k]));
++                const float32x4_t z  = ks_gru_sigmoid4(vaddq_f32(vld1q_f32(b), ghv[H + k]));
++                const float32x4_t nc = ks_gru_tanh4(vfmaq_f32(vld1q_f32(c), r, ghv[2 * H + k]));
++                hv[k] = vfmaq_f32(nc, z, vsubq_f32(hv[k], nc));   // (1-z)*nc + z*h
++                vst1q_f32(t, hv[k]);
++                for (int j = 0; j < 4; ++j) dst_d[((size_t)l * N + n + j) * H + k] = t[j];
++            }
++        }
++    }
++#endif
+     float h[GGML_GRU_MAX_H];
+     float gh[3 * GGML_GRU_MAX_H];
+-    for (int64_t n = n0; n < n1; ++n) {
+-        for (int64_t k = 0; k < H; ++k) h[k] = h0_d[k + n * H];
+-        for (int64_t s = 0; s < L; ++s) {
+-            const int64_t l = reverse ? (L - 1 - s) : s;
+-            const float * gil = gi_d + (l * N + n) * TH;
+-            for (int64_t g = 0; g < TH; ++g) {
+-                const float * wr = whh_d + g * H;
++    for (; n < n1; ++n) {
++        for (int k = 0; k < H; ++k) h[k] = h0_d[k + (size_t)n * H];
++        for (int s = 0; s < L; ++s) {
++            const int l = reverse ? (L - 1 - s) : s;
++            const float * gil = gi_d + ((size_t)l * N + n) * TH;
++            for (int g = 0; g < TH; ++g) {
++                const float * wr = whh_d + (size_t)g * H;
+                 float acc = bhh_d[g];
+-                for (int64_t j = 0; j < H; ++j) acc += wr[j] * h[j];
++                for (int j = 0; j < H; ++j) acc = std::fma(wr[j], h[j], acc);
+                 gh[g] = acc;
+             }
+-            float * out = dst_d + (l * N + n) * H;
+-            for (int64_t k = 0; k < H; ++k) {
+-                const float r = 1.0f / (1.0f + expf(-(gil[k]          + gh[k])));
+-                const float z = 1.0f / (1.0f + expf(-(gil[H + k]      + gh[H + k])));
+-                const float nc = tanhf(gil[2 * H + k] + r * gh[2 * H + k]);
+-                const float hk = nc + z * (h[k] - nc);  // (1-z)*nc + z*h
++            float * out = dst_d + ((size_t)l * N + n) * H;
++            for (int k = 0; k < H; ++k) {
++                const float r  = ks_gru_sigmoid(gil[k] + gh[k]);
++                const float z  = ks_gru_sigmoid(gil[H + k] + gh[H + k]);
++                const float nc = ks_gru_tanh(std::fma(r, gh[2 * H + k], gil[2 * H + k]));
++                const float hk = std::fma(z, h[k] - nc, nc);  // (1-z)*nc + z*h
+                 h[k] = hk;
+                 out[k] = hk;
+             }
+--- a/src/ggml-cpu/binary-ops.cpp
++++ b/src/ggml-cpu/binary-ops.cpp
+@@ -28,6 +28,11 @@
+     constexpr auto src1_to_f32 = type_conversion_table<src1_t>::to_f32;
+     constexpr auto f32_to_dst  = type_conversion_table<dst_t >::from_f32;
+ 
++    // Elementwise, so vectorizing changes no result; clang will not vectorize
++    // float loops for 32-bit NEON on its own (NEON flushes denormals).
++#if defined(__clang__)
++#pragma clang loop vectorize(enable)
++#endif
+     for (int i = 0; i < n; i++) {
+         z[i] = f32_to_dst(op(src0_to_f32(x[i]), src1_to_f32(y[i])));
+     }
+@@ -77,14 +82,28 @@
+     }
+ #endif
+ 
++    // Row indices advance with a carry instead of being divided out of ir on
++    // every row: 64-bit division is a library call on 32-bit ARM, and these
++    // tensors are often only a few dozen elements wide. The source rows are
++    // the same as before.
++    int64_t i03 = ir0/(ne02*ne01);
++    int64_t i02 = (ir0 - i03*ne02*ne01)/ne01;
++    int64_t i01 = (ir0 - i03*ne02*ne01 - i02*ne01);
++    int64_t i13 = i03 % ne13, i12 = i02 % ne12, i11 = i01 % ne11;
+     for (int64_t ir = ir0; ir < ir1; ++ir) {
+-        const int64_t i03 = ir/(ne02*ne01);
+-        const int64_t i02 = (ir - i03*ne02*ne01)/ne01;
+-        const int64_t i01 = (ir - i03*ne02*ne01 - i02*ne01);
+-
+-        const int64_t i13 = i03 % ne13;
+-        const int64_t i12 = i02 % ne12;
+-        const int64_t i11 = i01 % ne11;
++        if (ir > ir0) {
++            if (++i01 == ne01) {
++                i01 = 0; i11 = 0;
++                if (++i02 == ne02) {
++                    i02 = 0; i12 = 0;
++                    ++i03; if (++i13 == ne13) i13 = 0;
++                } else if (++i12 == ne12) {
++                    i12 = 0;
++                }
++            } else if (++i11 == ne11) {
++                i11 = 0;
++            }
++        }
+ 
+         dst_t        * dst_ptr  = (dst_t  *)       ((char *)       dst->data  + i03*nb3  + i02*nb2  + i01*nb1 );
+         const src0_t * src0_ptr = (const src0_t *) ((const char *) src0->data + i03*nb03 + i02*nb02 + i01*nb01);
+@@ -94,6 +113,23 @@
+             // src1 is broadcastable across src0 and dst in i1, i2, i3
+             const int64_t nr0 = ne00 / ne10;
+ 
++            if (ne10 == 1) {
++                // one src1 value for the whole row: a single loop instead of
++                // one call per element (same operation on every element)
++                constexpr auto src0_to_f32 = type_conversion_table<src0_t>::to_f32;
++                constexpr auto src1_to_f32 = type_conversion_table<src1_t>::to_f32;
++                constexpr auto f32_to_dst  = type_conversion_table<dst_t >::from_f32;
++                const float yv = src1_to_f32(src1_ptr[0]);
++                const int n0 = (int) ne00;
++#if defined(__clang__)
++#pragma clang loop vectorize(enable)
++#endif
++                for (int i = 0; i < n0; i++) {
++                    dst_ptr[i] = f32_to_dst(op(src0_to_f32(src0_ptr[i]), yv));
++                }
++                continue;
++            }
++
+             for (int64_t r = 0; r < nr0; ++r) {
+ #ifdef GGML_USE_ACCELERATE
+                 if constexpr (std::is_same_v<src0_t, float> && std::is_same_v<src1_t, float> && std::is_same_v<dst_t, float>) {
+--- a/src/ggml-cpu/unary-ops.cpp
++++ b/src/ggml-cpu/unary-ops.cpp
+@@ -102,6 +102,10 @@
+     constexpr auto src0_to_f32 = type_conversion_table<src0_t>::to_f32;
+     constexpr auto f32_to_dst  = type_conversion_table<dst_t >::from_f32;
+ 
++    // Elementwise; see binary-ops.cpp for why the loop is forced to vectorize.
++#if defined(__clang__)
++#pragma clang loop vectorize(enable)
++#endif
+     for (int i = 0; i < n; i++) {
+         y[i] = f32_to_dst(op(src0_to_f32(x[i])));
+     }
+@@ -120,10 +124,16 @@
+ 
+     const auto [ir0, ir1] = get_thread_range(params, src0);
+ 
++    // Row indices advance with a carry instead of a 64-bit division per row
++    // (a library call on 32-bit ARM); same rows as before.
++    int64_t i03 = ir0/(ne02*ne01);
++    int64_t i02 = (ir0 - i03*ne02*ne01)/ne01;
++    int64_t i01 = (ir0 - i03*ne02*ne01 - i02*ne01);
+     for (int64_t ir = ir0; ir < ir1; ++ir) {
+-        const int64_t i03 = ir/(ne02*ne01);
+-        const int64_t i02 = (ir - i03*ne02*ne01)/ne01;
+-        const int64_t i01 = (ir - i03*ne02*ne01 - i02*ne01);
++        if (ir > ir0 && ++i01 == ne01) {
++            i01 = 0;
++            if (++i02 == ne02) { i02 = 0; ++i03; }
++        }
+ 
+         dst_t        * dst_ptr  = (dst_t  *)       ((char *)       dst->data  + i03*nb3  + i02*nb2  + i01*nb1 );
+         const src0_t * src0_ptr = (const src0_t *) ((const char *) src0->data + i03*nb03 + i02*nb02 + i01*nb01);
+@@ -200,10 +210,16 @@
+ 
+     const auto [ir0, ir1] = get_thread_range(params, src0);
+ 
++    // Row indices advance with a carry instead of a 64-bit division per row
++    // (a library call on 32-bit ARM); same rows as before.
++    int64_t i03 = ir0/(ne02*ne01);
++    int64_t i02 = (ir0 - i03*ne02*ne01)/ne01;
++    int64_t i01 = (ir0 - i03*ne02*ne01 - i02*ne01);
+     for (int64_t ir = ir0; ir < ir1; ++ir) {
+-        const int64_t i03 = ir/(ne02*ne01);
+-        const int64_t i02 = (ir - i03*ne02*ne01)/ne01;
+-        const int64_t i01 = (ir - i03*ne02*ne01 - i02*ne01);
++        if (ir > ir0 && ++i01 == ne01) {
++            i01 = 0;
++            if (++i02 == ne02) { i02 = 0; ++i03; }
++        }
+ 
+         dst_t        * dst_ptr  = (dst_t  *)       ((char *)       dst->data  + i03*nb3  + i02*nb2  + i01*nb1 );
+         const src0_t * src0_ptr = (const src0_t *) ((const char *) src0->data + i03*nb03 + i02*nb02 + i01*nb01);
+--- a/src/ggml-cpu/vec.h
++++ b/src/ggml-cpu/vec.h
+@@ -1139,7 +1139,18 @@
+     return svdiv_f32_x(pg, x, one_plus_exp_neg_x);
+ }
+ 
+-#elif defined(__ARM_NEON) && defined(__aarch64__)
++#elif defined(__ARM_NEON) && (defined(__aarch64__) || defined(__ARM_FEATURE_FMA))
++
++// 32-bit ARM with VFPv4 runs the same routine: the three AArch64-only
++// intrinsics it uses get exact stand-ins below, and the final divide in
++// ggml_v_silu becomes a reciprocal estimate refined twice.
++#if !defined(__aarch64__)
++#define GGML_V_ANY_U32(c) (vgetq_lane_u32((c), 0) | vgetq_lane_u32((c), 1) | vgetq_lane_u32((c), 2) | vgetq_lane_u32((c), 3))
++#define GGML_V_CLEZ(n) vcleq_f32((n), vdupq_n_f32(0.0f))
++#else
++#define GGML_V_ANY_U32(c) vpaddd_u64(vreinterpretq_u64_u32(c))
++#define GGML_V_CLEZ(n) vclezq_f32(n)
++#endif
+ 
+ // adapted from arm limited optimized routine
+ // the maximum error is 1.45358 plus 0.5 ulps
+@@ -1159,9 +1170,9 @@
+         vmulq_f32(vdupq_n_f32(0x1.ffffecp-1f), b),
+         vfmaq_f32(vfmaq_f32(vdupq_n_f32(0x1.fffdb6p-2f), vdupq_n_f32(0x1.555e66p-3f), b),
+                   vfmaq_f32(vdupq_n_f32(0x1.573e2ep-5f), vdupq_n_f32(0x1.0e4020p-7f), b), u), u);
+-    if (!vpaddd_u64(vreinterpretq_u64_u32(c)))
++    if (!GGML_V_ANY_U32(c))
+         return vfmaq_f32(k, j, k);
+-    const uint32x4_t d = vandq_u32(vclezq_f32(n), vdupq_n_u32(0x82000000));
++    const uint32x4_t d = vandq_u32(GGML_V_CLEZ(n), vdupq_n_u32(0x82000000));
+     const float32x4_t s1 = vreinterpretq_f32_u32(vaddq_u32(d, vdupq_n_u32(0x7f000000)));
+     const float32x4_t s2 = vreinterpretq_f32_u32(vsubq_u32(e, d));
+     return vbslq_f32(vcagtq_f32(n, vdupq_n_f32(192)), vmulq_f32(s1, s1),
+@@ -1175,7 +1186,14 @@
+     const float32x4_t neg_x = vsubq_f32(zero, x);
+     const float32x4_t exp_neg_x = ggml_v_expf(neg_x);
+     const float32x4_t one_plus_exp_neg_x = vaddq_f32(one, exp_neg_x);
++#if defined(__aarch64__)
+     return vdivq_f32(x, one_plus_exp_neg_x);
++#else
++    float32x4_t e = vrecpeq_f32(one_plus_exp_neg_x);
++    e = vmulq_f32(e, vrecpsq_f32(one_plus_exp_neg_x, e));
++    e = vmulq_f32(e, vrecpsq_f32(one_plus_exp_neg_x, e));
++    return vmulq_f32(x, e);
++#endif
+ }
+ 
+ #elif defined(__AVX512F__) && defined(__AVX512DQ__)
+--- a/src/ggml-cpu/vec.cpp
++++ b/src/ggml-cpu/vec.cpp
+@@ -413,7 +413,7 @@
+         const svbool_t pg = svwhilelt_b32_s32(i, n);
+         svst1_f32(pg, y + i, ggml_v_silu(pg, svld1_f32(pg, x + i)));
+     }
+-#elif defined(__ARM_NEON) && defined(__aarch64__)
++#elif defined(__ARM_NEON) && (defined(__aarch64__) || defined(__ARM_FEATURE_FMA))
+     for (; i + 3 < n; i += 4) {
+         vst1q_f32(y + i, ggml_v_silu(vld1q_f32(x + i)));
+     }

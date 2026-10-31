@@ -9,7 +9,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Stop an announcement from Home Assistant.** A new `announce_stop` ESPHome action stops the announcement playing on the kiosk, and one still fetching its audio never starts. It answers whether one was playing and never fails when nothing was, so a dismiss automation can always call it (#1239).
 
 ### Changed
-- **Echo cancellation is back on WebRTC's AEC3.** The trained echo canceller that replaced it is removed: on devices it had not been trained on it could cut the first command after the wake word and the wake word itself, and in a noisy room it hurt speech even on devices it knew. AEC3 returns with the same settings it had before, one configuration for calls and realtime conversations alike.
+- **Echo cancellation runs on a neural network.** The kiosk's echo canceller is now GTCRN, a small echo cancelling network from [LocalVQE](https://github.com/localai-org/LocalVQE), in place of WebRTC's AEC3. In tests on 13 devices twice as many wake words and stop words were detected while the kiosk played music or an answer. Speech with nothing playing is detected as before. It runs on the Echo Dot and Echo Show images too. The trained echo canceller from the previous release is gone, because on devices it was not trained on it could cut the first command after the wake word. AEC3 stays as the fallback on older 32-bit devices that cannot run GTCRN. The app log names the one in use.
 
 ### Fixed
 - **A new announcement replaces the one playing.** A second `announce` while one was still playing failed with "in a call", so a long or repeated clip like an alarm loop could not be cut short. The new announcement now takes over right away. Intercom calls still refuse it (#1239).

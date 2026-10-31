@@ -1,0 +1,1237 @@
+diff --git a/ggml/CMakeLists.txt b/ggml/CMakeLists.txt
+index be703e7..678c1f2 100644
+--- a/ggml/CMakeLists.txt
++++ b/ggml/CMakeLists.txt
+@@ -50,7 +50,9 @@ if(EMSCRIPTEN)
+ elseif(LOCALVQE_CUDA)
+     set(GGML_CUDA ON CACHE BOOL "" FORCE)
+     set(GGML_STATIC OFF CACHE BOOL "" FORCE)
+-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
++elseif(NOT ANDROID AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
++    # (Android, an x86_64 emulator included, takes the static branch below: an
++    # app ships one library and no runtime-loaded CPU variants.)
+     # x86: build all CPU backend variants (SSE4.2 through AVX-512/Zen4) as shared
+     # libraries, selected at runtime based on CPU capabilities.
+     # This avoids needing -march=native (which Nix strips).
+diff --git a/ggml/daf_fft.h b/ggml/daf_fft.h
+new file mode 100644
+index 0000000..28a13c0
+--- /dev/null
++++ b/ggml/daf_fft.h
+@@ -0,0 +1,107 @@
++#pragma once
++// Real FFT shared by the DAF front-end and the GTCRN STFT (header-only, each
++// translation unit gets its own copies and plan cache).
++#include <cmath>
++#include <map>
++#include <vector>
++#include <algorithm>
++
++// ── real FFT ───────────────────────────────────────────────────────────────
++// An n-point real transform runs as an n/2-point complex FFT of the packed
++// signal (even samples real, odd samples imaginary) plus one split pass.
++// Twiddles come from per-size tables (computed in double, stored as float).
++struct daf_fft_plan {
++    int n = 0;                     // complex size (half the real size)
++    std::vector<int> rev;          // bit reversal
++    std::vector<float> wr, wi;     // exp(-2 pi i k / n), k < n/2
++    std::vector<float> sr, si;     // exp(-2 pi i k / 2n), k <= n (real split)
++};
++
++static const daf_fft_plan& daf_fft_plan_for(int n) {
++    static thread_local std::map<int, daf_fft_plan> plans;
++    daf_fft_plan& p = plans[n];
++    if (p.n == n) return p;
++    p.n = n;
++    int bits = 0; while ((1 << bits) < n) bits++;
++    p.rev.resize(n);
++    for (int i = 0; i < n; i++) {
++        int r = 0; for (int b = 0; b < bits; b++) if (i & (1 << b)) r |= 1 << (bits - 1 - b);
++        p.rev[i] = r;
++    }
++    p.wr.resize(n / 2); p.wi.resize(n / 2);
++    for (int k = 0; k < n / 2; k++) {
++        const double a = -2.0 * M_PI * (double)k / (double)n;
++        p.wr[k] = (float)cos(a); p.wi[k] = (float)sin(a);
++    }
++    p.sr.resize(n + 1); p.si.resize(n + 1);
++    for (int k = 0; k <= n; k++) {
++        const double a = -M_PI * (double)k / (double)n;
++        p.sr[k] = (float)cos(a); p.si[k] = (float)sin(a);
++    }
++    p.sr[0] = 1.0f; p.si[0] = 0.0f; p.sr[n] = -1.0f; p.si[n] = 0.0f;
++    if (n % 2 == 0) { p.sr[n / 2] = 0.0f; p.si[n / 2] = -1.0f; }
++    return p;
++}
++
++// in-place complex FFT (inverse: conjugate twiddles, no scaling)
++static void daf_cfft(const daf_fft_plan& p, float* re, float* im, bool inv) {
++    const int n = p.n;
++    for (int i = 0; i < n; i++) {
++        const int j = p.rev[i];
++        if (i < j) { std::swap(re[i], re[j]); std::swap(im[i], im[j]); }
++    }
++    const float sg = inv ? -1.0f : 1.0f;
++    for (int len = 2, step = n / 2; len <= n; len <<= 1, step >>= 1) {
++        const int h = len / 2;
++        for (int k = 0; k < h; k++) {
++            const float wr = p.wr[(size_t)k * step], wi = sg * p.wi[(size_t)k * step];
++            for (int i = k; i < n; i += len) {
++                const int b = i + h;
++                const float vr = re[b]*wr - im[b]*wi, vi = re[b]*wi + im[b]*wr;
++                re[b] = re[i] - vr; im[b] = im[i] - vi;
++                re[i] += vr;        im[i] += vi;
++            }
++        }
++    }
++}
++
++// rfft of x (n real) -> nb = n/2+1 bins
++static void rfft(const float* x, int n, float* outr, float* outi) {
++    const int h = n / 2;
++    const daf_fft_plan& p = daf_fft_plan_for(h);
++    static thread_local std::vector<float> zr, zi;
++    zr.resize(h); zi.resize(h);
++    for (int m = 0; m < h; m++) { zr[m] = x[2*m]; zi[m] = x[2*m + 1]; }
++    daf_cfft(p, zr.data(), zi.data(), false);
++    for (int k = 0; k <= h; k++) {
++        const int a = k % h, b = (h - k) % h;
++        const float Zr = zr[a], Zi = zi[a], Cr = zr[b], Ci = -zi[b];
++        const float Er = 0.5f * (Zr + Cr), Ei = 0.5f * (Zi + Ci);
++        const float Or = 0.5f * (Zi - Ci), Oi = -0.5f * (Zr - Cr);
++        const float wr = p.sr[k], wi = p.si[k];
++        outr[k] = Er + (Or*wr - Oi*wi);
++        outi[k] = Ei + (Or*wi + Oi*wr);
++    }
++}
++
++// irfft: nb = n/2+1 bins (hermitian) -> n real samples. Like a full complex
++// inverse that keeps only the real part, it ignores Im of bins 0 and n/2.
++static void irfft(const float* br, const float* bi, int n, float* out) {
++    const int h = n / 2;
++    const daf_fft_plan& p = daf_fft_plan_for(h);
++    static thread_local std::vector<float> zr, zi;
++    zr.resize(h); zi.resize(h);
++    for (int k = 0; k < h; k++) {
++        const int c = h - k;
++        const float Xr = br[k], Xi = k == 0 ? 0.0f : bi[k];
++        const float Cr = br[c], Ci = c == h ? 0.0f : -bi[c];
++        const float Er = 0.5f * (Xr + Cr), Ei = 0.5f * (Xi + Ci);
++        const float Dr = 0.5f * (Xr - Cr), Di = 0.5f * (Xi - Ci);
++        const float ur = p.sr[k], ui = -p.si[k];          // exp(+2 pi i k / n)
++        const float Or = Dr*ur - Di*ui, Oi = Dr*ui + Di*ur;
++        zr[k] = Er - Oi; zi[k] = Ei + Or;
++    }
++    daf_cfft(p, zr.data(), zi.data(), true);
++    const float s = 1.0f / (float)h;
++    for (int m = 0; m < h; m++) { out[2*m] = zr[m] * s; out[2*m + 1] = zi[m] * s; }
++}
+diff --git a/ggml/daf_frontend.cpp b/ggml/daf_frontend.cpp
+index 23ad059..d227a69 100644
+--- a/ggml/daf_frontend.cpp
++++ b/ggml/daf_frontend.cpp
+@@ -3,55 +3,186 @@
+ #include <cstring>
+ #include <cstdio>
+ #include <algorithm>
++#include <map>
++#if defined(__ARM_NEON)
++#include <arm_neon.h>
++#define DAF_NEON 1
++#endif
+ 
+-// ── tiny iterative radix-2 complex FFT ─────────────────────────────────────
+-static void fft_inplace(std::vector<float>& re, std::vector<float>& im, bool inv) {
+-    const size_t n = re.size();
+-    for (size_t i = 1, j = 0; i < n; i++) {            // bit reversal
+-        size_t bit = n >> 1;
+-        for (; j & bit; bit >>= 1) j ^= bit;
+-        j ^= bit;
+-        if (i < j) { std::swap(re[i], re[j]); std::swap(im[i], im[j]); }
++// ── NEON helpers ───────────────────────────────────────────────────────────
++// Every vector loop below keeps the scalar code's per-element operation
++// order (products rounded before the add: vmla/vmls are unfused, and this
++// file builds with -ffp-contract=off), so on a given CPU the vector and
++// scalar paths produce the same bits, except where ARMv7 NEON refines a
++// reciprocal estimate instead of dividing. Vectors run across bins or
++// across partitions, never across a reduction.
++#if DAF_NEON
++// a / b. ARMv7 NEON has no divide: a times the reciprocal estimate refined by
++// two Newton steps (within about 2 ulp of the quotient), which costs far less
++// than four scalar divides.
++static inline float32x4_t daf_div(float32x4_t a, float32x4_t b) {
++#if defined(__aarch64__)
++    return vdivq_f32(a, b);
++#else
++    float32x4_t e = vrecpeq_f32(b);
++    e = vmulq_f32(e, vrecpsq_f32(b, e));
++    e = vmulq_f32(e, vrecpsq_f32(b, e));
++    return vmulq_f32(a, e);
++#endif
++}
++#endif
++
++// ── exp, sigmoid and tanh for the controller ──────────────────────────────
++// Cephes-style expf: n = round(x / ln 2) (the 1.5 * 2^23 rounding trick),
++// r = x - n ln 2 in two parts, a degree-5 polynomial, then 2^n through the
++// exponent bits. About 2 ulp against libm. The scalar and NEON versions do
++// the same operations in the same order (this file builds with
++// -ffp-contract=off and the NEON multiply-adds are unfused), so they agree
++// bit for bit; only the reciprocal differs, where ARMv7 NEON refines an
++// estimate instead of dividing.
++static constexpr float DAF_EXP_LO = -87.3f, DAF_EXP_HI = 88.3f;
++static constexpr float DAF_LOG2E = 1.44269504088896341f, DAF_RND = 12582912.0f;
++static constexpr float DAF_LN2_HI = 0.693359375f, DAF_LN2_LO = -2.12194440e-4f;
++static constexpr float DAF_P0 = 1.9875691500e-4f, DAF_P1 = 1.3981999507e-3f, DAF_P2 = 8.3334519073e-3f,
++                       DAF_P3 = 4.1665795894e-2f, DAF_P4 = 1.6666665459e-1f, DAF_P5 = 5.0000001201e-1f;
++
++static inline float daf_expf(float x) {
++    x = std::min(std::max(x, DAF_EXP_LO), DAF_EXP_HI);
++    const float t = x * DAF_LOG2E + DAF_RND;
++    const float n = t - DAF_RND;
++    float r = x - n * DAF_LN2_HI;
++    r = r - n * DAF_LN2_LO;
++    float p = DAF_P0;
++    p = p * r + DAF_P1; p = p * r + DAF_P2; p = p * r + DAF_P3; p = p * r + DAF_P4; p = p * r + DAF_P5;
++    const float y = p * (r * r) + r + 1.0f;
++    const int32_t e = ((int32_t)n + 127) << 23;
++    float s; std::memcpy(&s, &e, sizeof s);
++    return y * s;
++}
++static inline float daf_sigmoid(float x) { return 1.0f / (1.0f + daf_expf(-x)); }
++static inline float daf_tanh(float x)    { return 2.0f / (1.0f + daf_expf(-2.0f * x)) - 1.0f; }
++
++#if DAF_NEON
++static inline float32x4_t daf_exp4(float32x4_t x) {
++    x = vminq_f32(vmaxq_f32(x, vdupq_n_f32(DAF_EXP_LO)), vdupq_n_f32(DAF_EXP_HI));
++    const float32x4_t t = vaddq_f32(vmulq_f32(x, vdupq_n_f32(DAF_LOG2E)), vdupq_n_f32(DAF_RND));
++    const float32x4_t n = vsubq_f32(t, vdupq_n_f32(DAF_RND));
++    float32x4_t r = vsubq_f32(x, vmulq_f32(n, vdupq_n_f32(DAF_LN2_HI)));
++    r = vsubq_f32(r, vmulq_f32(n, vdupq_n_f32(DAF_LN2_LO)));
++    float32x4_t p = vdupq_n_f32(DAF_P0);
++    p = vaddq_f32(vmulq_f32(p, r), vdupq_n_f32(DAF_P1));
++    p = vaddq_f32(vmulq_f32(p, r), vdupq_n_f32(DAF_P2));
++    p = vaddq_f32(vmulq_f32(p, r), vdupq_n_f32(DAF_P3));
++    p = vaddq_f32(vmulq_f32(p, r), vdupq_n_f32(DAF_P4));
++    p = vaddq_f32(vmulq_f32(p, r), vdupq_n_f32(DAF_P5));
++    const float32x4_t y = vaddq_f32(vaddq_f32(vmulq_f32(p, vmulq_f32(r, r)), r), vdupq_n_f32(1.0f));
++    const int32x4_t e = vshlq_n_s32(vaddq_s32(vcvtq_s32_f32(n), vdupq_n_s32(127)), 23);
++    return vmulq_f32(y, vreinterpretq_f32_s32(e));
++}
++static inline float32x4_t daf_rcp4(float32x4_t d) {
++#if defined(__aarch64__)
++    return vdivq_f32(vdupq_n_f32(1.0f), d);
++#else
++    float32x4_t e = vrecpeq_f32(d);
++    e = vmulq_f32(e, vrecpsq_f32(d, e));
++    e = vmulq_f32(e, vrecpsq_f32(d, e));
++    return e;
++#endif
++}
++static inline float32x4_t daf_sigmoid4(float32x4_t x) {
++    return daf_rcp4(vaddq_f32(vdupq_n_f32(1.0f), daf_exp4(vnegq_f32(x))));
++}
++static inline float32x4_t daf_tanh4(float32x4_t x) {
++    const float32x4_t s = daf_rcp4(vaddq_f32(vdupq_n_f32(1.0f), daf_exp4(vmulq_f32(vdupq_n_f32(-2.0f), x))));
++    return vsubq_f32(vaddq_f32(s, s), vdupq_n_f32(1.0f));
++}
++#endif
++
++// out[k] = 2 sigmoid(z[k]) for k < cnt (out and z sized to a multiple of 4)
++static void daf_sigmoid2_lanes(const float* z, int cnt, float* out) {
++    int k = 0;
++#if DAF_NEON
++    for (; k + 4 <= cnt; k += 4) {
++        const float32x4_t s = daf_sigmoid4(vld1q_f32(z + k));
++        vst1q_f32(out + k, vaddq_f32(s, s));
+     }
+-    for (size_t len = 2; len <= n; len <<= 1) {
+-        const double ang = (inv ? 2.0 : -2.0) * M_PI / (double)len;
+-        const double wr = cos(ang), wi = sin(ang);
+-        for (size_t i = 0; i < n; i += len) {
+-            double cr = 1.0, ci = 0.0;
+-            for (size_t k = 0; k < len / 2; k++) {
+-                const float ur = re[i+k], ui = im[i+k];
+-                const float vr = (float)(re[i+k+len/2]*cr - im[i+k+len/2]*ci);
+-                const float vi = (float)(re[i+k+len/2]*ci + im[i+k+len/2]*cr);
+-                re[i+k] = ur + vr;       im[i+k] = ui + vi;
+-                re[i+k+len/2] = ur - vr; im[i+k+len/2] = ui - vi;
+-                const double ncr = cr*wr - ci*wi;
+-                ci = cr*wi + ci*wr; cr = ncr;
+-            }
++#endif
++    for (; k < cnt; k++) out[k] = 2.0f * daf_sigmoid(z[k]);
++}
++
++// out[k] = b + sum_i w[i] * x[i][k] for k < cnt, x being [n][S] (S a multiple
++// of 4 and >= cnt; lanes up to the next multiple of 4 are computed too). The
++// sum over i runs in ascending order for every k, as in the scalar code. Four
++// vectors of k go through the i loop together: on an in-order core such as
++// the Cortex-A53 a single multiply-accumulate chain stalls on every step.
++static void lane_dot(const float* x, int n, int S, int cnt, const float* w, float b, float* out) {
++#if DAF_NEON
++    const int c4 = (cnt + 3) & ~3;
++    int k = 0;
++    for (; k + 16 <= c4; k += 16) {
++        float32x4_t s0 = vdupq_n_f32(b), s1 = s0, s2 = s0, s3 = s0;
++        for (int i = 0; i < n; i++) {
++            const float* xi = x + (size_t)i * S + k;
++            const float wi = w[i];
++            s0 = vmlaq_n_f32(s0, vld1q_f32(xi),      wi);
++            s1 = vmlaq_n_f32(s1, vld1q_f32(xi + 4),  wi);
++            s2 = vmlaq_n_f32(s2, vld1q_f32(xi + 8),  wi);
++            s3 = vmlaq_n_f32(s3, vld1q_f32(xi + 12), wi);
+         }
++        vst1q_f32(out + k, s0); vst1q_f32(out + k + 4, s1);
++        vst1q_f32(out + k + 8, s2); vst1q_f32(out + k + 12, s3);
++    }
++    for (; k < c4; k += 4) {
++        float32x4_t s = vdupq_n_f32(b);
++        for (int i = 0; i < n; i++) s = vmlaq_n_f32(s, vld1q_f32(x + (size_t)i * S + k), w[i]);
++        vst1q_f32(out + k, s);
+     }
+-    if (inv) {
+-        const float s = 1.0f / (float)n;
+-        for (size_t i = 0; i < n; i++) { re[i] *= s; im[i] *= s; }
++#else
++    for (int k = 0; k < cnt; k++) {
++        float s = b;
++        for (int i = 0; i < n; i++) s += w[i] * x[(size_t)i * S + k];
++        out[k] = s;
+     }
++#endif
+ }
+ 
+-// rfft of x (n real) -> nb = n/2+1 bins
+-static void rfft(const float* x, int n, float* outr, float* outi) {
+-    static thread_local std::vector<float> re, im;
+-    re.assign(x, x + n); im.assign(n, 0.0f);
+-    fft_inplace(re, im, false);
+-    for (int k = 0; k <= n / 2; k++) { outr[k] = re[k]; outi[k] = im[k]; }
++// GRU cells over `cnt` independent rows that share weights (torch GRUCell,
++// gates [r,z,n]). Structure of arrays: x is [nin][S], h is [nh][S], with S a
++// multiple of 4 and >= cnt. Each row's gate sums run in the same order as a
++// single-row gru_cell, so a row gets the same result either way.
++static void gru_batch(const float* x, int nin, float* h, int nh, int S, int cnt,
++                      const float* wih, const float* whh,
++                      const float* bih, const float* bhh,
++                      float* gi /*3nh*S*/, float* gh /*3nh*S*/) {
++    for (int g = 0; g < 3 * nh; g++) {
++        lane_dot(x, nin, S, cnt, wih + (size_t)g * nin, bih[g], gi + (size_t)g * S);
++        lane_dot(h, nh,  S, cnt, whh + (size_t)g * nh,  bhh[g], gh + (size_t)g * S);
++    }
++    for (int i = 0; i < nh; i++) {
++        const float* gir = gi + (size_t)i * S;            const float* ghr = gh + (size_t)i * S;
++        const float* giz = gi + (size_t)(nh + i) * S;     const float* ghz = gh + (size_t)(nh + i) * S;
++        const float* gin = gi + (size_t)(2 * nh + i) * S; const float* ghn = gh + (size_t)(2 * nh + i) * S;
++        float* hr = h + (size_t)i * S;
++        int k = 0;
++#if DAF_NEON
++        const float32x4_t one = vdupq_n_f32(1.0f);
++        for (; k + 4 <= cnt; k += 4) {
++            const float32x4_t r = daf_sigmoid4(vaddq_f32(vld1q_f32(gir + k), vld1q_f32(ghr + k)));
++            const float32x4_t z = daf_sigmoid4(vaddq_f32(vld1q_f32(giz + k), vld1q_f32(ghz + k)));
++            const float32x4_t n = daf_tanh4(vaddq_f32(vld1q_f32(gin + k), vmulq_f32(r, vld1q_f32(ghn + k))));
++            vst1q_f32(hr + k, vaddq_f32(vmulq_f32(vsubq_f32(one, z), n), vmulq_f32(z, vld1q_f32(hr + k))));
++        }
++#endif
++        for (; k < cnt; k++) {
++            const float r = daf_sigmoid(gir[k] + ghr[k]);
++            const float z = daf_sigmoid(giz[k] + ghz[k]);
++            const float n = daf_tanh(gin[k] + r * ghn[k]);
++            hr[k] = (1.0f - z) * n + z * hr[k];
++        }
++    }
+ }
+ 
+-// irfft: nb = n/2+1 bins (hermitian) -> n real samples
+-static void irfft(const float* br, const float* bi, int n, float* out) {
+-    static thread_local std::vector<float> re, im;
+-    re.assign(n, 0.0f); im.assign(n, 0.0f);
+-    for (int k = 0; k <= n / 2; k++) { re[k] = br[k]; im[k] = bi[k]; }
+-    for (int k = 1; k < n / 2; k++) { re[n-k] = br[k]; im[n-k] = -bi[k]; }
+-    fft_inplace(re, im, true);
+-    for (int i = 0; i < n; i++) out[i] = re[i];
+-}
++#include "daf_fft.h"
+ 
+ // ── weight loading ─────────────────────────────────────────────────────────
+ static bool fetchw(const dvqe_graph_model& m, const char* name, std::vector<float>& v) {
+@@ -145,6 +276,7 @@ void daf_reset(daf_frontend& fe) {
+     fe.P.assign((size_t)N*NB + 16, daf_frontend::P_INIT);
+     fe.x_old.assign(M, 0);
+     fe.p_idx = 0;
++    fe.x_head = 0;
+     fe.hg.assign(8, 0);
+     fe.hb.assign((size_t)NB*16, 0);
+     fe.hp.assign((size_t)N*8, 0);
+@@ -152,6 +284,7 @@ void daf_reset(daf_frontend& fe) {
+     fe.gcc_Si.assign(daf_frontend::G_NFFT/2 + 1, 0);
+     fe.mic_ring.assign(daf_frontend::G_WIN, 0);
+     fe.ref_ring.assign(daf_frontend::G_WIN, 0);
++    fe.ring_pos = 0;
+     fe.n_seen = 0;
+     fe.gcc_maxrms = 1e-12f;
+     fe.gcc_conf = 0.0f;
+@@ -161,6 +294,15 @@ void daf_reset(daf_frontend& fe) {
+     fe.ref_dpos = 0;
+ }
+ 
++void daf_resume(daf_frontend& fe) {
++    std::fill(fe.Xr_r.begin(), fe.Xr_r.end(), 0.0f);
++    std::fill(fe.Xr_i.begin(), fe.Xr_i.end(), 0.0f);
++    std::fill(fe.x_old.begin(), fe.x_old.end(), 0.0f);
++    std::fill(fe.ref_dline.begin(), fe.ref_dline.end(), 0.0f);
++    std::fill(fe.mic_ring.begin(), fe.mic_ring.end(), 0.0f);
++    std::fill(fe.ref_ring.begin(), fe.ref_ring.end(), 0.0f);
++}
++
+ // torch GRUCell: gates [r,z,n]; h' = (1-z)*n + z*h
+ static void gru_cell(const float* x, int nin, float* h, int nh,
+                      const float* wih, const float* whh,
+@@ -177,9 +319,9 @@ static void gru_cell(const float* x, int nin, float* h, int nh,
+         gh[g] = t;
+     }
+     for (int i = 0; i < nh; i++) {
+-        const float r = 1.0f / (1.0f + expf(-(gi[i] + gh[i])));
+-        const float z = 1.0f / (1.0f + expf(-(gi[nh+i] + gh[nh+i])));
+-        const float n = tanhf(gi[2*nh+i] + r * gh[2*nh+i]);
++        const float r = daf_sigmoid(gi[i] + gh[i]);
++        const float z = daf_sigmoid(gi[nh+i] + gh[nh+i]);
++        const float n = daf_tanh(gi[2*nh+i] + r * gh[2*nh+i]);
+         h[i] = (1.0f - z) * n + z * h[i];
+     }
+ }
+@@ -206,15 +348,20 @@ static void gcc_update(daf_frontend& fe) {
+     static thread_local std::vector<float> Xr(NF/2+1), Xi(NF/2+1), Dr(NF/2+1), Di(NF/2+1);
+     static thread_local std::vector<float> pad(NF), c(NF);
+     float rms = 0;
+-    for (int i = 0; i < W; i++) rms += fe.ref_ring[i] * fe.ref_ring[i];
++    // the rings are circular from ring_pos: read them oldest first
++    const int r0 = fe.ring_pos, n1 = W - r0;
++    for (int i = 0; i < n1; i++) rms += fe.ref_ring[r0 + i] * fe.ref_ring[r0 + i];
++    for (int i = 0; i < r0; i++) rms += fe.ref_ring[i] * fe.ref_ring[i];
+     rms = sqrtf(rms / W);
+     fe.gcc_maxrms = std::max(fe.gcc_maxrms, rms);
+     const bool keep = rms > fe.gcc_maxrms * powf(10.0f, -daf_frontend::G_GATE_DB / 20.0f);
+     if (keep) {
+-        std::memcpy(pad.data(), fe.ref_ring.data(), W * sizeof(float));
++        std::memcpy(pad.data(), fe.ref_ring.data() + r0, n1 * sizeof(float));
++        std::memcpy(pad.data() + n1, fe.ref_ring.data(), r0 * sizeof(float));
+         std::memset(pad.data() + W, 0, (NF - W) * sizeof(float));
+         rfft(pad.data(), NF, Xr.data(), Xi.data());
+-        std::memcpy(pad.data(), fe.mic_ring.data(), W * sizeof(float));
++        std::memcpy(pad.data(), fe.mic_ring.data() + r0, n1 * sizeof(float));
++        std::memcpy(pad.data() + n1, fe.mic_ring.data(), r0 * sizeof(float));
+         std::memset(pad.data() + W, 0, (NF - W) * sizeof(float));
+         rfft(pad.data(), NF, Dr.data(), Di.data());
+         for (int k = 0; k <= NF/2; k++) {
+@@ -240,15 +387,261 @@ static void gcc_update(daf_frontend& fe) {
+         fe.gcc_locked = true;
+ }
+ 
++// The reference spectra live in a circular buffer: partition p (0 = newest)
++// is physical row (x_head + p) mod N, so pushing a block moves an index
++// instead of shifting the whole ring. H, P and mu stay indexed by partition.
++static_assert((daf_frontend::N & (daf_frontend::N - 1)) == 0, "ring size must be a power of two");
++static inline size_t xrow(const daf_frontend& fe, int p) {
++    return (size_t)((fe.x_head + p) & (daf_frontend::N - 1)) * daf_frontend::NB;
++}
++
++// ── echo prediction Y = sum_p H[p] X[p] ───────────────────────────────────
++// k-tiled: accumulators stay in registers across the 128-partition
++// reduction. Each bin sums over p in ascending order (the last tile reads
++// past bin 128 into the next row or the +16 padding; those lanes are dropped).
++static void predict_echo(const daf_frontend& fe, float* yr, float* yi) {
++    const int N = daf_frontend::N, NB = daf_frontend::NB;
++    for (int k0 = 0; k0 < NB; k0 += 16) {
++        const int kn = std::min(16, NB - k0);
++        float ar[16] = {0}, ai[16] = {0};
++        for (int p = 0; p < N; p++) {
++            const float* __restrict hr = &fe.Hr[(size_t)p*NB] + k0;
++            const float* __restrict hi = &fe.Hi[(size_t)p*NB] + k0;
++            const float* __restrict xr = &fe.Xr_r[xrow(fe, p)] + k0;
++            const float* __restrict xi = &fe.Xr_i[xrow(fe, p)] + k0;
++            for (int k = 0; k < 16; k++) {
++                ar[k] += hr[k]*xr[k] - hi[k]*xi[k];
++                ai[k] += hr[k]*xi[k] + hi[k]*xr[k];
++            }
++        }
++        for (int k = 0; k < kn; k++) { yr[k0+k] = ar[k]; yi[k0+k] = ai[k]; }
++    }
++}
++
++#if DAF_NEON
++static inline void daf_transpose4(float32x4_t v[4]) {
++    const float32x4x2_t a = vtrnq_f32(v[0], v[1]), b = vtrnq_f32(v[2], v[3]);
++    v[0] = vcombine_f32(vget_low_f32(a.val[0]),  vget_low_f32(b.val[0]));
++    v[1] = vcombine_f32(vget_low_f32(a.val[1]),  vget_low_f32(b.val[1]));
++    v[2] = vcombine_f32(vget_high_f32(a.val[0]), vget_high_f32(b.val[0]));
++    v[3] = vcombine_f32(vget_high_f32(a.val[1]), vget_high_f32(b.val[1]));
++}
++#endif
++
++// ── first pass over the filter state ───────────────────────────────────────
++// The echo prediction y = sum_p H[p] X[p], x2[k] = sum_p |X[p][k]|^2 and
++// psum[k] = sum_p P[p][k] (each bin over p ascending), and h2[p] =
++// sum_k |H[p][k]|^2 and pm[p] = sum_k P[p][k] (k ascending), all from one
++// read of H, X and P. The partition sums run four partitions at a time, one
++// per vector lane (a 4x4 transpose turns rows into lanes), so no sum is
++// reordered.
++static void block_stats(const daf_frontend& fe, float* yr, float* yi, float* x2, float* psum,
++                        float* h2, float* pm) {
++    const int N = daf_frontend::N, NB = daf_frontend::NB;
++#if DAF_NEON
++    std::fill(yr, yr + NB, 0.0f); std::fill(yi, yi + NB, 0.0f);
++    std::fill(x2, x2 + NB, 0.0f); std::fill(psum, psum + NB, 0.0f);
++    for (int p = 0; p < N; p += 4) {
++        const float *xr[4], *xi[4], *pp[4], *hr[4], *hi[4];
++        for (int j = 0; j < 4; j++) {
++            const size_t o = (size_t)(p + j) * NB, ox = xrow(fe, p + j);
++            xr[j] = &fe.Xr_r[ox]; xi[j] = &fe.Xr_i[ox]; pp[j] = &fe.P[o]; hr[j] = &fe.Hr[o]; hi[j] = &fe.Hi[o];
++        }
++        float32x4_t h2v = vdupq_n_f32(0.0f), pmv = vdupq_n_f32(0.0f);
++        int k = 0;
++        for (; k + 4 <= NB; k += 4) {
++            float32x4_t a2 = vld1q_f32(x2 + k), am = vld1q_f32(psum + k);
++            float32x4_t Y_r = vld1q_f32(yr + k), Y_i = vld1q_f32(yi + k);
++            float32x4_t Pv[4], Hr[4], Hi[4];
++            for (int j = 0; j < 4; j++) {
++                const float32x4_t Xr = vld1q_f32(xr[j] + k), Xi = vld1q_f32(xi[j] + k);
++                Hr[j] = vld1q_f32(hr[j] + k); Hi[j] = vld1q_f32(hi[j] + k);
++                Y_r = vaddq_f32(Y_r, vmlsq_f32(vmulq_f32(Hr[j], Xr), Hi[j], Xi));
++                Y_i = vaddq_f32(Y_i, vmlaq_f32(vmulq_f32(Hr[j], Xi), Hi[j], Xr));
++                a2 = vaddq_f32(a2, vmlaq_f32(vmulq_f32(Xr, Xr), Xi, Xi));
++                Pv[j] = vld1q_f32(pp[j] + k);
++                am = vaddq_f32(am, Pv[j]);
++            }
++            vst1q_f32(yr + k, Y_r); vst1q_f32(yi + k, Y_i);
++            vst1q_f32(x2 + k, a2); vst1q_f32(psum + k, am);
++            daf_transpose4(Pv); daf_transpose4(Hr); daf_transpose4(Hi);
++            for (int c = 0; c < 4; c++) {
++                h2v = vaddq_f32(h2v, vmlaq_f32(vmulq_f32(Hr[c], Hr[c]), Hi[c], Hi[c]));
++                pmv = vaddq_f32(pmv, Pv[c]);
++            }
++        }
++        float th[4], tp[4];
++        vst1q_f32(th, h2v); vst1q_f32(tp, pmv);
++        for (; k < NB; k++)
++            for (int j = 0; j < 4; j++) {
++                yr[k] += hr[j][k]*xr[j][k] - hi[j][k]*xi[j][k];
++                yi[k] += hr[j][k]*xi[j][k] + hi[j][k]*xr[j][k];
++                x2[k] += xr[j][k]*xr[j][k] + xi[j][k]*xi[j][k];
++                psum[k] += pp[j][k];
++                th[j] += hr[j][k]*hr[j][k] + hi[j][k]*hi[j][k];
++                tp[j] += pp[j][k];
++            }
++        for (int j = 0; j < 4; j++) { h2[p + j] = th[j]; pm[p + j] = tp[j]; }
++    }
++#else
++    predict_echo(fe, yr, yi);
++    for (int k0 = 0; k0 < NB; k0 += 16) {
++        const int kn = std::min(16, NB - k0);
++        float a2[16] = {0}, am[16] = {0};
++        for (int p = 0; p < N; p++) {
++            const float* __restrict xr = &fe.Xr_r[xrow(fe, p)] + k0;
++            const float* __restrict xi = &fe.Xr_i[xrow(fe, p)] + k0;
++            const float* __restrict pp = &fe.P[(size_t)p*NB] + k0;
++            for (int k = 0; k < 16; k++) {
++                a2[k] += xr[k]*xr[k] + xi[k]*xi[k];
++                am[k] += pp[k];
++            }
++        }
++        for (int k = 0; k < kn; k++) { x2[k0+k] = a2[k]; psum[k0+k] = am[k]; }
++    }
++    for (int p = 0; p < N; p++) {
++        float s2 = 0, sm = 0;
++        const float* hr = &fe.Hr[(size_t)p*NB]; const float* hi = &fe.Hi[(size_t)p*NB];
++        const float* pp = &fe.P[(size_t)p*NB];
++        for (int k = 0; k < NB; k++) { s2 += hr[k]*hr[k] + hi[k]*hi[k]; sm += pp[k]; }
++        h2[p] = s2; pm[p] = sm;
++    }
++#endif
++}
++
++// One Kalman element: mu and the new P from the old P and H.
++static inline float kalman_elem(float& P, float hr, float hi, float x2, float Rt, float gb, float sp) {
++    const float A2 = daf_frontend::A_DECAY * daf_frontend::A_DECAY;
++    const float Pe = 0.5f * P * x2 + Rt;
++    float m_ = P / (Pe + 1e-10f);
++    m_ *= gb * sp;
++    const float s = m_ * x2;
++    if (s > 2.0f) m_ *= 2.0f / s;
++    const float fac = std::max(1.0f - 0.5f * m_ * x2, 0.0f);
++    P = std::max(A2 * fac * P + (1.0f - A2) * (hr*hr + hi*hi), 1e-12f);
++    return m_;
++}
++
++// ── Kalman step and the first filter update in one pass ────────────────────
++// Per partition and bin: mu and the new P from the old P and H, then
++// H += mu E conj(X), then (yr set) the next data-reuse repeat's echo
++// prediction from the new H. Same per-element order as running the Kalman
++// loop, the update loop and predict_echo one after another.
++static void kalman_update(daf_frontend& fe, const float* er, const float* ei, const float* x2_,
++                          const float* Rt, const float* gb_, const float* spart, float* mu,
++                          float* yr, float* yi) {
++    const int N = daf_frontend::N, NB = daf_frontend::NB;
++#if DAF_NEON
++    const float A2 = daf_frontend::A_DECAY * daf_frontend::A_DECAY;
++    const float32x4_t half = vdupq_n_f32(0.5f), one = vdupq_n_f32(1.0f), two = vdupq_n_f32(2.0f),
++        zero = vdupq_n_f32(0.0f), eps = vdupq_n_f32(1e-10f), pmin = vdupq_n_f32(1e-12f),
++        a2 = vdupq_n_f32(A2), a2c = vdupq_n_f32(1.0f - A2);
++    // Partition-major: every array streams through memory in order (a
++    // bin-tiled walk down the partitions fetched each cache line twice). The
++    // prediction sums live in yr/yi in L1, each bin still summing p in order.
++    static thread_local std::vector<float> zr, zi;
++    if (!yr) { zr.resize(NB); zi.resize(NB); yr = zr.data(); yi = zi.data(); }
++    std::fill(yr, yr + NB, 0.0f); std::fill(yi, yi + NB, 0.0f);
++    for (int p = 0; p < N; p++) {
++        const size_t o = (size_t)p*NB, ox = xrow(fe, p);
++        float* pp = &fe.P[o]; float* hr = &fe.Hr[o]; float* hi = &fe.Hi[o]; float* mp = mu + o;
++        const float* xr = &fe.Xr_r[ox]; const float* xi = &fe.Xr_i[ox];
++        const float32x4_t sp = vdupq_n_f32(spart[p]);
++        int k = 0;
++        for (; k + 4 <= NB; k += 4) {
++            const float32x4_t P = vld1q_f32(pp + k), x2 = vld1q_f32(x2_ + k);
++            const float32x4_t Pe = vaddq_f32(vmulq_f32(vmulq_f32(half, P), x2), vld1q_f32(Rt + k));
++            float32x4_t m = daf_div(P, vaddq_f32(Pe, eps));
++            m = vmulq_f32(m, vmulq_f32(vld1q_f32(gb_ + k), sp));
++            const float32x4_t s = vmulq_f32(m, x2);
++            const uint32x4_t big = vcgtq_f32(s, two);
++            if (vgetq_lane_u32(big, 0) | vgetq_lane_u32(big, 1) |
++                vgetq_lane_u32(big, 2) | vgetq_lane_u32(big, 3))
++                m = vbslq_f32(big, vmulq_f32(m, daf_div(two, s)), m);
++            const float32x4_t fac = vmaxq_f32(vsubq_f32(one, vmulq_f32(vmulq_f32(half, m), x2)), zero);
++            const float32x4_t Hr0 = vld1q_f32(hr + k), Hi0 = vld1q_f32(hi + k);
++            const float32x4_t h2 = vmlaq_f32(vmulq_f32(Hr0, Hr0), Hi0, Hi0);
++            const float32x4_t np = vaddq_f32(vmulq_f32(vmulq_f32(a2, fac), P), vmulq_f32(a2c, h2));
++            vst1q_f32(pp + k, vmaxq_f32(np, pmin));
++            vst1q_f32(mp + k, m);
++            const float32x4_t Er4 = vld1q_f32(er + k), Ei4 = vld1q_f32(ei + k);
++            const float32x4_t Xr = vld1q_f32(xr + k), Xi = vld1q_f32(xi + k);
++            const float32x4_t Hr = vmlaq_f32(Hr0, m, vmlaq_f32(vmulq_f32(Er4, Xr), Ei4, Xi));
++            const float32x4_t Hi = vmlaq_f32(Hi0, m, vmlsq_f32(vmulq_f32(Ei4, Xr), Er4, Xi));
++            vst1q_f32(hr + k, Hr); vst1q_f32(hi + k, Hi);
++            vst1q_f32(yr + k, vaddq_f32(vld1q_f32(yr + k), vmlsq_f32(vmulq_f32(Hr, Xr), Hi, Xi)));
++            vst1q_f32(yi + k, vaddq_f32(vld1q_f32(yi + k), vmlaq_f32(vmulq_f32(Hr, Xi), Hi, Xr)));
++        }
++        for (; k < NB; k++) {
++            const float m_ = kalman_elem(pp[k], hr[k], hi[k], x2_[k], Rt[k], gb_[k], spart[p]);
++            mp[k] = m_;
++            hr[k] += m_ * (er[k]*xr[k] + ei[k]*xi[k]);
++            hi[k] += m_ * (ei[k]*xr[k] - er[k]*xi[k]);
++            yr[k] += hr[k]*xr[k] - hi[k]*xi[k];
++            yi[k] += hr[k]*xi[k] + hi[k]*xr[k];
++        }
++    }
++#else
++    for (int p = 0; p < N; p++)
++        for (int k = 0; k < NB; k++) {
++            const size_t o = (size_t)p*NB + k;
++            mu[o] = kalman_elem(fe.P[o], fe.Hr[o], fe.Hi[o], x2_[k], Rt[k], gb_[k], spart[p]);
++        }
++    for (int p = 0; p < N; p++) {
++        float* __restrict hr = &fe.Hr[(size_t)p*NB];
++        float* __restrict hi = &fe.Hi[(size_t)p*NB];
++        const float* __restrict xr = &fe.Xr_r[xrow(fe, p)];
++        const float* __restrict xi = &fe.Xr_i[xrow(fe, p)];
++        const float* __restrict mp = &mu[(size_t)p*NB];
++        for (int k = 0; k < NB; k++) {
++            hr[k] += mp[k] * (er[k]*xr[k] + ei[k]*xi[k]);
++            hi[k] += mp[k] * (ei[k]*xr[k] - er[k]*xi[k]);
++        }
++    }
++    if (yr) predict_echo(fe, yr, yi);
++#endif
++}
++
++// ── H += mu E conj(X) over all partitions and bins ─────────────────────────
++static void update_filter(daf_frontend& fe, const float* er, const float* ei, const float* mu) {
++    const int N = daf_frontend::N, NB = daf_frontend::NB;
++    for (int p = 0; p < N; p++) {
++        float* __restrict hr = &fe.Hr[(size_t)p*NB];
++        float* __restrict hi = &fe.Hi[(size_t)p*NB];
++        const float* __restrict xr = &fe.Xr_r[xrow(fe, p)];
++        const float* __restrict xi = &fe.Xr_i[xrow(fe, p)];
++        const float* __restrict mp = &mu[(size_t)p*NB];
++        int k = 0;
++#if DAF_NEON
++        for (; k + 4 <= NB; k += 4) {
++            const float32x4_t Er4 = vld1q_f32(er + k), Ei4 = vld1q_f32(ei + k);
++            const float32x4_t Xr = vld1q_f32(xr + k), Xi = vld1q_f32(xi + k), Mu = vld1q_f32(mp + k);
++            vst1q_f32(hr + k, vmlaq_f32(vld1q_f32(hr + k), Mu, vmlaq_f32(vmulq_f32(Er4, Xr), Ei4, Xi)));
++            vst1q_f32(hi + k, vmlaq_f32(vld1q_f32(hi + k), Mu, vmlsq_f32(vmulq_f32(Ei4, Xr), Er4, Xi)));
++        }
++#endif
++        for (; k < NB; k++) {
++            // E * mu * conj(X)
++            hr[k] += mp[k] * (er[k]*xr[k] + ei[k]*xi[k]);
++            hi[k] += mp[k] * (ei[k]*xr[k] - er[k]*xi[k]);
++        }
++    }
++}
++
+ // ── one M-sample filter block ──────────────────────────────────────────────
+ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
+                       float* e_out) {
+     const int M = daf_frontend::M, N = daf_frontend::N, NB = daf_frontend::NB,
+               NF = daf_frontend::NFFT;
++    constexpr int SB = (daf_frontend::NB + 3) & ~3;   // bin stride for the batched GRU
++    constexpr int SP = daf_frontend::N;                // partition stride (multiple of 4)
+     static thread_local std::vector<float> xn(NF), Xr_(NB), Xi_(NB),
+         Yr(NB), Yi(NB), buf(NF), Er(NB), Ei(NB), Dr(NB), Di(NB), X2(NB),
+-        fb(10), fbn(18), fg(10), gi(48), gh(48), gbin(NB), spart(N),
+-        mu((size_t)N*NB), meanP(NB), fbins((size_t)NB*10);
++        fb(10), fbn(18), fg(10), gi(48), gh(48), gbin(SB), spart(N),
++        mu((size_t)N*NB), meanP(NB), fbins((size_t)NB*10), Rt(NB),
++        xb((size_t)18*SB), hbS((size_t)16*SB), gib((size_t)48*SB), ghb((size_t)48*SB),
++        xp((size_t)10*SP), hpS((size_t)8*SP), gip((size_t)24*SP), ghp((size_t)24*SP),
++        zb(SB), zp(SP), ph2(N), ppm(N), E2r(NB), E2i(NB);
+ 
+     // analysis
+     std::memcpy(xn.data(), fe.x_old.data(), M * sizeof(float));
+@@ -256,32 +649,13 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
+     std::memcpy(fe.x_old.data(), x_cur, M * sizeof(float));
+     rfft(xn.data(), NF, Xr_.data(), Xi_.data());
+ 
+-    // push into ring: newest at partition 0 (shift down)
+-    std::memmove(fe.Xr_r.data() + NB, fe.Xr_r.data(), (size_t)(N-1)*NB*sizeof(float));
+-    std::memmove(fe.Xr_i.data() + NB, fe.Xr_i.data(), (size_t)(N-1)*NB*sizeof(float));
+-    std::memcpy(fe.Xr_r.data(), Xr_.data(), NB * sizeof(float));
+-    std::memcpy(fe.Xr_i.data(), Xi_.data(), NB * sizeof(float));
++    // push into the ring: the new block becomes partition 0
++    fe.x_head = (fe.x_head + N - 1) & (N - 1);
++    std::memcpy(&fe.Xr_r[xrow(fe, 0)], Xr_.data(), NB * sizeof(float));
++    std::memcpy(&fe.Xr_i[xrow(fe, 0)], Xi_.data(), NB * sizeof(float));
+ 
+-    // predict echo — k-tiled: accumulators stay in registers across the
+-    // 128-partition reduction (was: Yr/Yi round-tripped L1 every p).
+-    {
+-        float* __restrict yr = Yr.data(); float* __restrict yi = Yi.data();
+-        for (int k0 = 0; k0 < NB; k0 += 16) {
+-            const int kn = std::min(16, NB - k0);
+-            float ar[16] = {0}, ai[16] = {0};
+-            for (int p = 0; p < N; p++) {
+-                const float* __restrict hr = &fe.Hr[(size_t)p*NB] + k0;
+-                const float* __restrict hi = &fe.Hi[(size_t)p*NB] + k0;
+-                const float* __restrict xr = &fe.Xr_r[(size_t)p*NB] + k0;
+-                const float* __restrict xi = &fe.Xr_i[(size_t)p*NB] + k0;
+-                for (int k = 0; k < 16; k++) {
+-                    ar[k] += hr[k]*xr[k] - hi[k]*xi[k];
+-                    ai[k] += hr[k]*xi[k] + hi[k]*xr[k];
+-                }
+-            }
+-            for (int k = 0; k < kn; k++) { yr[k0+k] = ar[k]; yi[k0+k] = ai[k]; }
+-        }
+-    }
++    // echo prediction, X2 + meanP and the partition branch's |H|^2 and P sums
++    block_stats(fe, Yr.data(), Yi.data(), X2.data(), meanP.data(), ph2.data(), ppm.data());
+     irfft(Yr.data(), Yi.data(), NF, buf.data());
+     for (int i = 0; i < M; i++) e_out[i] = d_cur[i] - buf[M + i];
+ 
+@@ -291,25 +665,6 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
+     rfft(xn.data(), NF, Er.data(), Ei.data());
+     std::memcpy(xn.data() + M, d_cur, M * sizeof(float));
+     rfft(xn.data(), NF, Dr.data(), Di.data());
+-
+-    // X2 + meanP — k-tiled like the echo prediction.
+-    {
+-        float* __restrict x2 = X2.data(); float* __restrict mp_ = meanP.data();
+-        for (int k0 = 0; k0 < NB; k0 += 16) {
+-            const int kn = std::min(16, NB - k0);
+-            float a2[16] = {0}, am[16] = {0};
+-            for (int p = 0; p < N; p++) {
+-                const float* __restrict xr = &fe.Xr_r[(size_t)p*NB] + k0;
+-                const float* __restrict xi = &fe.Xr_i[(size_t)p*NB] + k0;
+-                const float* __restrict pp = &fe.P[(size_t)p*NB] + k0;
+-                for (int k = 0; k < 16; k++) {
+-                    a2[k] += xr[k]*xr[k] + xi[k]*xi[k];
+-                    am[k] += pp[k];
+-                }
+-            }
+-            for (int k = 0; k < kn; k++) { x2[k0+k] = a2[k]; mp_[k0+k] = am[k]; }
+-        }
+-    }
+     for (int k = 0; k < NB; k++) meanP[k] /= (float)N;
+ 
+     // ── controller features ──
+@@ -336,95 +691,58 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
+     gru_cell(fb.data(), 10, fe.hg.data(), 8,
+              fe.g_wih.data(), fe.g_whh.data(), fe.g_bih.data(), fe.g_bhh.data(),
+              gi.data(), gh.data());
+-    // per-bin backbone: [LN6(f)|cos|ctx8] -> GRU(18->16) -> g = 2σ(head)
++    // per-bin backbone: [LN6(f)|cos|ctx8] -> GRU(18->16) -> g = 2σ(head),
++    // all bins at once (structure of arrays, bins along the vector lanes)
+     for (int k = 0; k < NB; k++) {
+         cos_ln(&fbins[(size_t)k*10], fbn.data(), fe.b_ln_w.data(), fe.b_ln_b.data(), 10);
+-        std::memcpy(fbn.data() + 10, fe.hg.data(), 8 * sizeof(float));
+-        gru_cell(fbn.data(), 18, &fe.hb[(size_t)k*16], 16,
+-                 fe.b_wih.data(), fe.b_whh.data(), fe.b_bih.data(), fe.b_bhh.data(),
+-                 gi.data(), gh.data());
+-        float z = fe.head_b[0];
+-        for (int i = 0; i < 16; i++) z += fe.head_w[i] * fe.hb[(size_t)k*16 + i];
+-        gbin[k] = 2.0f / (1.0f + expf(-z));
++        for (int i = 0; i < 10; i++) xb[(size_t)i*SB + k] = fbn[i];
++        for (int i = 0; i < 8; i++) xb[(size_t)(10+i)*SB + k] = fe.hg[i];
++        for (int i = 0; i < 16; i++) hbS[(size_t)i*SB + k] = fe.hb[(size_t)k*16 + i];
+     }
+-    // per-partition branch: [LN2(logH2,logP)|ctx8] -> GRU(10->8) -> s = 2σ
++    gru_batch(xb.data(), 18, hbS.data(), 16, SB, NB,
++              fe.b_wih.data(), fe.b_whh.data(), fe.b_bih.data(), fe.b_bhh.data(),
++              gib.data(), ghb.data());
++    lane_dot(hbS.data(), 16, SB, NB, fe.head_w.data(), fe.head_b[0], zb.data());
++    for (int k = 0; k < NB; k++) {
++        for (int i = 0; i < 16; i++) fe.hb[(size_t)k*16 + i] = hbS[(size_t)i*SB + k];
++    }
++    daf_sigmoid2_lanes(zb.data(), NB, gbin.data());
++    // per-partition branch: [LN2(logH2,logP)|ctx8] -> GRU(10->8) -> s = 2σ,
++    // all partitions at once like the bins
+     for (int p = 0; p < N; p++) {
+-        float h2 = 0, pm = 0;
+-        const float* hr = &fe.Hr[(size_t)p*NB]; const float* hi = &fe.Hi[(size_t)p*NB];
+-        const float* pp = &fe.P[(size_t)p*NB];
+-        for (int k = 0; k < NB; k++) { h2 += hr[k]*hr[k] + hi[k]*hi[k]; pm += pp[k]; }
++        const float h2 = ph2[p], pm = ppm[p];
+         float f2[2] = { log10e(h2 / NB), log10e(pm / NB) };
+         float mean = 0.5f*(f2[0]+f2[1]);
+         float var = 0.5f*((f2[0]-mean)*(f2[0]-mean) + (f2[1]-mean)*(f2[1]-mean));
+         const float inv = 1.0f / sqrtf(var + 1e-5f);
+-        float in10[10];
+-        in10[0] = (f2[0]-mean)*inv*fe.p_ln_w[0] + fe.p_ln_b[0];
+-        in10[1] = (f2[1]-mean)*inv*fe.p_ln_w[1] + fe.p_ln_b[1];
+-        std::memcpy(in10 + 2, fe.hg.data(), 8 * sizeof(float));
+-        gru_cell(in10, 10, &fe.hp[(size_t)p*8], 8,
+-                 fe.p_wih.data(), fe.p_whh.data(), fe.p_bih.data(), fe.p_bhh.data(),
+-                 gi.data(), gh.data());
+-        float z = fe.p_head_b[0];
+-        for (int i = 0; i < 8; i++) z += fe.p_head_w[i] * fe.hp[(size_t)p*8 + i];
+-        spart[p] = 2.0f / (1.0f + expf(-z));
++        xp[p] = (f2[0]-mean)*inv*fe.p_ln_w[0] + fe.p_ln_b[0];
++        xp[(size_t)SP + p] = (f2[1]-mean)*inv*fe.p_ln_w[1] + fe.p_ln_b[1];
++        for (int i = 0; i < 8; i++) xp[(size_t)(2+i)*SP + p] = fe.hg[i];
++        for (int i = 0; i < 8; i++) hpS[(size_t)i*SP + p] = fe.hp[(size_t)p*8 + i];
+     }
+-
+-    // ── Kalman update ──
+-    const float A2 = daf_frontend::A_DECAY * daf_frontend::A_DECAY;
++    gru_batch(xp.data(), 10, hpS.data(), 8, SP, N,
++              fe.p_wih.data(), fe.p_whh.data(), fe.p_bih.data(), fe.p_bhh.data(),
++              gip.data(), ghp.data());
++    lane_dot(hpS.data(), 8, SP, N, fe.p_head_w.data(), fe.p_head_b[0], zp.data());
+     for (int p = 0; p < N; p++) {
+-        float* __restrict pp = &fe.P[(size_t)p*NB];
+-        const float* __restrict hr = &fe.Hr[(size_t)p*NB];
+-        const float* __restrict hi = &fe.Hi[(size_t)p*NB];
+-        float* __restrict mp = &mu[(size_t)p*NB];
+-        const float* __restrict er_ = Er.data(); const float* __restrict ei_ = Ei.data();
+-        const float* __restrict x2_ = X2.data(); const float* __restrict gb_ = gbin.data();
+-        for (int k = 0; k < NB; k++) {
+-            const float Rt = (er_[k]*er_[k] + ei_[k]*ei_[k]) / (float)N;
+-            const float Pe = 0.5f * pp[k] * x2_[k] + Rt;
+-            float m_ = pp[k] / (Pe + 1e-10f);
+-            m_ *= gb_[k] * spart[p];
+-            const float s = m_ * x2_[k];
+-            if (s > 2.0f) m_ *= 2.0f / s;
+-            const float fac = std::max(1.0f - 0.5f * m_ * x2_[k], 0.0f);
+-            pp[k] = std::max(A2 * fac * pp[k] + (1.0f - A2) * (hr[k]*hr[k] + hi[k]*hi[k]),
+-                             1e-12f);
+-            mp[k] = m_;
+-        }
++        for (int i = 0; i < 8; i++) fe.hp[(size_t)p*8 + i] = hpS[(size_t)i*SP + p];
+     }
+-    // H += E * mu * conj(Xr)   (+ K_ITER-1 data-reuse repeats with refreshed E)
+-    for (int it = 0; it < daf_frontend::K_ITER; it++) {
+-        const float* er = Er.data(); const float* ei = Ei.data();
+-        static thread_local std::vector<float> E2r(NB), E2i(NB);
+-        if (it > 0) {
+-            std::fill(Yr.begin(), Yr.end(), 0.0f); std::fill(Yi.begin(), Yi.end(), 0.0f);
+-            for (int p = 0; p < N; p++) {
+-                const float* hr = &fe.Hr[(size_t)p*NB]; const float* hi = &fe.Hi[(size_t)p*NB];
+-                const float* xr = &fe.Xr_r[(size_t)p*NB]; const float* xi = &fe.Xr_i[(size_t)p*NB];
+-                float* __restrict yr = Yr.data(); float* __restrict yi = Yi.data();
+-                for (int k = 0; k < NB; k++) {
+-                    yr[k] += hr[k]*xr[k] - hi[k]*xi[k];
+-                    yi[k] += hr[k]*xi[k] + hi[k]*xr[k];
+-                }
+-            }
+-            irfft(Yr.data(), Yi.data(), NF, buf.data());
+-            std::memset(xn.data(), 0, M * sizeof(float));
+-            for (int i = 0; i < M; i++) xn[M + i] = d_cur[i] - buf[M + i];
+-            rfft(xn.data(), NF, E2r.data(), E2i.data());
+-            er = E2r.data(); ei = E2i.data();
+-        }
+-        for (int p = 0; p < N; p++) {
+-            float* __restrict hr = &fe.Hr[(size_t)p*NB];
+-            float* __restrict hi = &fe.Hi[(size_t)p*NB];
+-            const float* __restrict xr = &fe.Xr_r[(size_t)p*NB];
+-            const float* __restrict xi = &fe.Xr_i[(size_t)p*NB];
+-            const float* __restrict mp = &mu[(size_t)p*NB];
+-            const float* __restrict err = er; const float* __restrict eii = ei;
+-            for (int k = 0; k < NB; k++) {
+-                // E * mu * conj(X)
+-                hr[k] += mp[k] * (err[k]*xr[k] + eii[k]*xi[k]);
+-                hi[k] += mp[k] * (eii[k]*xr[k] - err[k]*xi[k]);
+-            }
+-        }
++    daf_sigmoid2_lanes(zp.data(), N, spart.data());
++
++    // ── Kalman update, then H += E * mu * conj(Xr) (+ K_ITER-1 data-reuse
++    // repeats with refreshed E). Each update but the last also forms the next
++    // repeat's echo prediction.
++    for (int k = 0; k < NB; k++) Rt[k] = (Er[k]*Er[k] + Ei[k]*Ei[k]) / (float)N;
++    const bool more0 = daf_frontend::K_ITER > 1;
++    kalman_update(fe, Er.data(), Ei.data(), X2.data(), Rt.data(), gbin.data(), spart.data(),
++                  mu.data(), more0 ? Yr.data() : nullptr, more0 ? Yi.data() : nullptr);
++    for (int it = 1; it < daf_frontend::K_ITER; it++) {
++        irfft(Yr.data(), Yi.data(), NF, buf.data());
++        std::memset(xn.data(), 0, M * sizeof(float));
++        for (int i = 0; i < M; i++) xn[M + i] = d_cur[i] - buf[M + i];
++        rfft(xn.data(), NF, E2r.data(), E2i.data());
++        update_filter(fe, E2r.data(), E2i.data(), mu.data());
++        if (it + 1 < daf_frontend::K_ITER) predict_echo(fe, Yr.data(), Yi.data());
+     }
+     // round-robin overlap-save constraint
+     {
+@@ -442,10 +760,10 @@ void daf_process(daf_frontend& fe, const float* mic, const float* ref,
+     const int DL = (int)fe.ref_dline.size();
+     for (int o = 0; o < hop; o += M) {
+         // GCC rings + hop cadence
+-        std::memmove(fe.mic_ring.data(), fe.mic_ring.data() + M, (W - M) * sizeof(float));
+-        std::memcpy(fe.mic_ring.data() + W - M, mic + o, M * sizeof(float));
+-        std::memmove(fe.ref_ring.data(), fe.ref_ring.data() + M, (W - M) * sizeof(float));
+-        std::memcpy(fe.ref_ring.data() + W - M, ref + o, M * sizeof(float));
++        // overwrite the oldest block (G_WIN is a multiple of M)
++        std::memcpy(fe.mic_ring.data() + fe.ring_pos, mic + o, M * sizeof(float));
++        std::memcpy(fe.ref_ring.data() + fe.ring_pos, ref + o, M * sizeof(float));
++        fe.ring_pos = (fe.ring_pos + M) % W;
+         // ref delay line (linear ring)
+         for (int i = 0; i < M; i++)
+             fe.ref_dline[(fe.ref_dpos + i) % DL] = ref[o + i];
+@@ -479,10 +797,10 @@ void daf_prime_delay(daf_frontend& fe, const float* mic, const float* ref, int n
+     int best_shift = 0;
+     float best_conf = 0.0f;
+     for (int o = 0; o + M <= n; o += M) {
+-        std::memmove(fe.mic_ring.data(), fe.mic_ring.data() + M, (W - M) * sizeof(float));
+-        std::memcpy(fe.mic_ring.data() + W - M, mic + o, M * sizeof(float));
+-        std::memmove(fe.ref_ring.data(), fe.ref_ring.data() + M, (W - M) * sizeof(float));
+-        std::memcpy(fe.ref_ring.data() + W - M, ref + o, M * sizeof(float));
++        // overwrite the oldest block (G_WIN is a multiple of M)
++        std::memcpy(fe.mic_ring.data() + fe.ring_pos, mic + o, M * sizeof(float));
++        std::memcpy(fe.ref_ring.data() + fe.ring_pos, ref + o, M * sizeof(float));
++        fe.ring_pos = (fe.ring_pos + M) % W;
+         fe.n_seen += M;
+         if (fe.n_seen >= W && ((fe.n_seen - W) % daf_frontend::G_HOP) < M) {
+             gcc_update(fe);
+diff --git a/ggml/daf_frontend.h b/ggml/daf_frontend.h
+index f86c597..e7a2e16 100644
+--- a/ggml/daf_frontend.h
++++ b/ggml/daf_frontend.h
+@@ -48,6 +48,7 @@ struct daf_frontend {
+     std::vector<float> P;                  // (N, NB)
+     std::vector<float> x_old;              // (M)
+     int p_idx = 0;
++    int x_head = 0;                        // ring row of the newest partition (Xr_r/Xr_i)
+ 
+     // controller state
+     std::vector<float> hg;                 // (8)
+@@ -56,7 +57,8 @@ struct daf_frontend {
+ 
+     // GCC state
+     std::vector<float> gcc_Sr, gcc_Si;     // (G_NFFT/2+1)
+-    std::vector<float> mic_ring, ref_ring; // G_WIN history for windows
++    std::vector<float> mic_ring, ref_ring; // G_WIN history for windows (circular)
++    int ring_pos = 0;                      // index of the oldest sample in both rings
+     long long n_seen = 0;
+     float gcc_maxrms = 1e-12f;
+     float gcc_conf = 0.0f;                 // confidence of the last gcc_update
+@@ -91,6 +93,11 @@ bool daf_init_tensors(daf_frontend& fe, const std::map<std::string, NpyArray>& t
+ /// Reset all online state (new utterance).
+ void daf_reset(daf_frontend& fe);
+ 
++/// Clear the signal histories after a gap in the stream (reference spectra
++/// ring, the last reference block, the delay line and the GCC windows) while
++/// keeping the filter taps, P, the controller state and the delay estimate.
++void daf_resume(daf_frontend& fe);
++
+ /// One-shot global bulk-delay estimate over the whole (already-available)
+ /// mic/ref signal, for non-real-time callers (file/demo). Seeds cur_shift and
+ /// freezes it (gcc_locked) so the standalone filter is aligned from frame 0 —
+diff --git a/ggml/gtcrn/gtcrn.cpp b/ggml/gtcrn/gtcrn.cpp
+index 316790c..8a5b47b 100644
+--- a/ggml/gtcrn/gtcrn.cpp
++++ b/ggml/gtcrn/gtcrn.cpp
+@@ -9,6 +9,7 @@
+  */
+ 
+ #include "gtcrn.h"
++#include "daf_fft.h"
+ 
+ #include "ggml.h"
+ #include "gguf.h"
+@@ -16,6 +17,10 @@
+ #include <cmath>
+ #include <cstdio>
+ #include <cstring>
++#if defined(__ARM_NEON) && defined(__ARM_FEATURE_FMA)
++#include <arm_neon.h>
++#define GTCRN_NEON 1
++#endif
+ 
+ // ── small ops ───────────────────────────────────────────────────────────────
+ 
+@@ -410,6 +415,47 @@ bool GtcrnModel::load(const char* path, bool verbose) {
+     gguf_free(g);
+     if (ctx) ggml_free(ctx);
+     if (verbose) printf("gtcrn: loaded %d tensors\n", n);
++    if (W.count("stft.wcos") && W.count("stft.wsin") && W.count("stft.icos") && W.count("stft.isin")) {
++        const int N = 512, Fb = 257, FG = (Fb + 7) / 8, NG = N / 8;
++        {
++            // Read the windows out of the tables and check that every entry is
++            // window x cos/sin (analysis: wsin = -w sin; synthesis: icos =
++            // g c_f cos, isin = -g c_f sin, c_f = 2 except at DC and Nyquist).
++            const std::vector<float>& wc = W.at("stft.wcos").data;
++            const std::vector<float>& ws = W.at("stft.wsin").data;
++            const std::vector<float>& ic = W.at("stft.icos").data;
++            const std::vector<float>& is = W.at("stft.isin").data;
++            stft_win.assign(N, 0.0f); istft_win.assign(N, 0.0f);
++            for (int n = 0; n < N; ++n) { stft_win[n] = wc[n]; istft_win[n] = ic[(size_t)n * Fb] * N; }
++            double ea = 0, es = 0;
++            for (int f = 0; f < Fb; ++f)
++                for (int n = 0; n < N; ++n) {
++                    const double a = 2.0 * M_PI * (double)((size_t)f * n % N) / N, cf = (f == 0 || f == N / 2) ? 1.0 : 2.0;
++                    ea = std::max(ea, std::fabs(wc[(size_t)f * N + n] - stft_win[n] * std::cos(a)));
++                    ea = std::max(ea, std::fabs(ws[(size_t)f * N + n] + stft_win[n] * std::sin(a)));
++                    es = std::max(es, std::fabs(ic[(size_t)n * Fb + f] - istft_win[n] / N * cf * std::cos(a)) * N);
++                    es = std::max(es, std::fabs(is[(size_t)n * Fb + f] + istft_win[n] / N * cf * std::sin(a)) * N);
++                }
++            stft_fft = ea < 1e-5 && es < 1e-5;
++            if (verbose) printf("gtcrn: STFT tables %s a windowed DFT (%.2g, %.2g)\n", stft_fft ? "are" : "are not", ea, es);
++        }
++        const std::vector<float>& wc = W.at("stft.wcos").data;   // (257,512)
++        const std::vector<float>& ws = W.at("stft.wsin").data;
++        const std::vector<float>& ic = W.at("stft.icos").data;   // (512,257)
++        const std::vector<float>& is = W.at("stft.isin").data;
++        stft_blk_c.assign((size_t)FG * N * 8, 0.0f); stft_blk_s.assign((size_t)FG * N * 8, 0.0f);
++        for (int f = 0; f < Fb; ++f)
++            for (int s = 0; s < N; ++s) {
++                const size_t o = ((size_t)(f / 8) * N + s) * 8 + f % 8;
++                stft_blk_c[o] = wc[(size_t)f * N + s]; stft_blk_s[o] = ws[(size_t)f * N + s];
++            }
++        istft_blk_c.assign((size_t)NG * Fb * 8, 0.0f); istft_blk_s.assign((size_t)NG * Fb * 8, 0.0f);
++        for (int s = 0; s < N; ++s)
++            for (int f = 0; f < Fb; ++f) {
++                const size_t o = ((size_t)(s / 8) * Fb + f) * 8 + s % 8;
++                istft_blk_c[o] = ic[(size_t)s * Fb + f]; istft_blk_s[o] = is[(size_t)s * Fb + f];
++            }
++    }
+     return !W.empty();
+ }
+ 
+@@ -531,8 +577,77 @@ void GtcrnModel::stft_frame(const float* fr, float* re, float* im) const {
+     }
+ }
+ 
++// The NEON frame transforms run 8 bins (or 8 output samples) across two
++// vectors and keep each output's sum in the scalar code's order and form:
++// the scalar loops compile to fused multiply-adds (fp contraction is on for
++// this file), r = fma(w, x, r) and v = v + fma(icos, re, isin * im), and the
++// vector code uses the same fused operations, so both give the same bits.
++void GtcrnModel::stft_frame2(const float* frA, const float* frB, float* reA, float* imA,
++                             float* reB, float* imB) const {
++    if (stft_fft) {
++        // the same windowed DFT as the tables, as a real FFT (rounding-level differences)
++        float t[512];
++        for (int n = 0; n < 512; ++n) t[n] = frA[n] * stft_win[n];
++        rfft(t, 512, reA, imA);
++        for (int n = 0; n < 512; ++n) t[n] = frB[n] * stft_win[n];
++        rfft(t, 512, reB, imB);
++        return;
++    }
++#if GTCRN_NEON
++    if (!stft_blk_c.empty()) {
++        const int N = 512, Fb = 257, FG = (Fb + 7) / 8;
++        for (int g = 0; g < FG; ++g) {
++            const float* c = &stft_blk_c[(size_t)g * N * 8];
++            const float* s = &stft_blk_s[(size_t)g * N * 8];
++            float32x4_t ra0 = vdupq_n_f32(0.0f), ra1 = ra0, ia0 = ra0, ia1 = ra0;
++            float32x4_t rb0 = ra0, rb1 = ra0, ib0 = ra0, ib1 = ra0;
++            for (int n = 0; n < N; ++n, c += 8, s += 8) {
++                const float32x4_t c0 = vld1q_f32(c), c1 = vld1q_f32(c + 4);
++                const float32x4_t s0 = vld1q_f32(s), s1 = vld1q_f32(s + 4);
++                const float32x4_t xa = vdupq_n_f32(frA[n]), xb = vdupq_n_f32(frB[n]);
++                ra0 = vfmaq_f32(ra0, c0, xa); ra1 = vfmaq_f32(ra1, c1, xa);
++                ia0 = vfmaq_f32(ia0, s0, xa); ia1 = vfmaq_f32(ia1, s1, xa);
++                rb0 = vfmaq_f32(rb0, c0, xb); rb1 = vfmaq_f32(rb1, c1, xb);
++                ib0 = vfmaq_f32(ib0, s0, xb); ib1 = vfmaq_f32(ib1, s1, xb);
++            }
++            float t[8][4];
++            vst1q_f32(t[0], ra0); vst1q_f32(t[1], ra1); vst1q_f32(t[2], ia0); vst1q_f32(t[3], ia1);
++            vst1q_f32(t[4], rb0); vst1q_f32(t[5], rb1); vst1q_f32(t[6], ib0); vst1q_f32(t[7], ib1);
++            for (int j = 0; j < 8 && g * 8 + j < Fb; ++j) {
++                const int f = g * 8 + j, q = j / 4, l = j % 4;
++                reA[f] = t[0 + q][l]; imA[f] = t[2 + q][l]; reB[f] = t[4 + q][l]; imB[f] = t[6 + q][l];
++            }
++        }
++        return;
++    }
++#endif
++    stft_frame(frA, reA, imA);
++    stft_frame(frB, reB, imB);
++}
++
+ void GtcrnModel::istft_frame(const float* re, const float* im, float* ft) const {
+     const int N = 512, Fb = 257;
++    if (stft_fft) {
++        irfft(re, im, N, ft);
++        for (int n = 0; n < N; ++n) ft[n] *= istft_win[n];
++        return;
++    }
++#if GTCRN_NEON
++    if (!istft_blk_c.empty()) {
++        for (int g = 0; g < N / 8; ++g) {
++            const float* c = &istft_blk_c[(size_t)g * Fb * 8];
++            const float* s = &istft_blk_s[(size_t)g * Fb * 8];
++            float32x4_t v0 = vdupq_n_f32(0.0f), v1 = v0;
++            for (int f = 0; f < Fb; ++f, c += 8, s += 8) {
++                const float32x4_t r = vdupq_n_f32(re[f]), i = vdupq_n_f32(im[f]);
++                v0 = vaddq_f32(v0, vfmaq_f32(vmulq_f32(vld1q_f32(s), i), vld1q_f32(c), r));
++                v1 = vaddq_f32(v1, vfmaq_f32(vmulq_f32(vld1q_f32(s + 4), i), vld1q_f32(c + 4), r));
++            }
++            vst1q_f32(ft + g * 8, v0); vst1q_f32(ft + g * 8 + 4, v1);
++        }
++        return;
++    }
++#endif
+     const NpyArray& icos = W.at("stft.icos");  // (512,257), synthesis window baked in
+     const NpyArray& isin = W.at("stft.isin");
+     for (int n = 0; n < N; ++n) {
+diff --git a/ggml/gtcrn/gtcrn.h b/ggml/gtcrn/gtcrn.h
+index 0c6dac4..687d9aa 100644
+--- a/ggml/gtcrn/gtcrn.h
++++ b/ggml/gtcrn/gtcrn.h
+@@ -60,6 +60,21 @@ struct GtcrnModel {
+     /// synthesis window energy (512) for the OLA divisor.
+     void stft_frame(const float* fr512, float* re257, float* im257) const;
+     void istft_frame(const float* re257, const float* im257, float* ft512) const;
++    /// stft_frame on two frames in one pass over the tables (same results).
++    void stft_frame2(const float* frA, const float* frB, float* reA, float* imA,
++                     float* reB, float* imB) const;
++
++    /// The STFT tables regrouped so a vector loop reads them in order: the
++    /// analysis tables as [bin/8][512][8] and the synthesis tables as
++    /// [sample/8][257][8]. Built by load(); empty when the GGUF has no stft.*.
++    std::vector<float> stft_blk_c, stft_blk_s, istft_blk_c, istft_blk_s;
++
++    /// The tables are a windowed real DFT: stft_win is the analysis window
++    /// (wcos at bin 0) and istft_win the synthesis window (icos at bin 0
++    /// times 512). When load() finds the tables match that structure, the
++    /// frame transforms run as real FFTs (stft_fft).
++    std::vector<float> stft_win, istft_win;
++    bool stft_fft = false;
+     const std::vector<float>& win2() const { return W.at("stft.win2").data; }
+ };
+ 
+diff --git a/ggml/gtcrn/gtcrn_ggml.cpp b/ggml/gtcrn/gtcrn_ggml.cpp
+index dcb4aea..6ff7bda 100644
+--- a/ggml/gtcrn/gtcrn_ggml.cpp
++++ b/ggml/gtcrn/gtcrn_ggml.cpp
+@@ -621,7 +621,7 @@ std::vector<float> GtcrnGraph::forward_stream(const float* spec_e, const float*
+ // Keep the graph here in sync with forward_stream.
+ bool GtcrnStream::begin(const GtcrnGraph& g) {
+     backend = g.backend;
+-    const int n_op = 60000;
++    const int n_op = 8192;   // the streaming graph has under 1,000 nodes; the metadata buffer is sized by this
+     struct ggml_init_params cp;
+     cp.mem_size = (size_t)n_op * (ggml_tensor_overhead() + 32) + ggml_graph_overhead_custom(n_op, false);
+     cp.mem_buffer = nullptr;
+diff --git a/ggml/localvqe_api.cpp b/ggml/localvqe_api.cpp
+index 7feffba..8c853d2 100644
+--- a/ggml/localvqe_api.cpp
++++ b/ggml/localvqe_api.cpp
+@@ -593,8 +593,7 @@ static int process_gtcrn_frame(localvqe_ctx* ctx, const float* mic,
+     float winE[512], winY[512];
+     for (int n = 0; n < N; ++n) { winE[n] = bE[n] * gain; winY[n] = bY[n] * gain; }
+     float re_e[257], im_e[257], re_y[257], im_y[257], spe[514], spy[514], osp[514];
+-    ctx->gt_host->stft_frame(winE, re_e, im_e);
+-    ctx->gt_host->stft_frame(winY, re_y, im_y);
++    ctx->gt_host->stft_frame2(winE, winY, re_e, im_e, re_y, im_y);
+     for (int f = 0; f < 257; ++f) {
+         spe[f * 2] = re_e[f]; spe[f * 2 + 1] = im_e[f];
+         spy[f * 2] = re_y[f]; spy[f * 2 + 1] = im_y[f];
+@@ -790,6 +789,35 @@ LOCALVQE_API void localvqe_reset(localvqe_ctx_t handle) {
+     // policy, not stream state.
+ }
+ 
++LOCALVQE_API void localvqe_resume(localvqe_ctx_t handle) {
++    if (!handle) return;
++    auto* ctx = reinterpret_cast<localvqe_ctx*>(handle);
++    if (ctx->daf.loaded) daf_resume(ctx->daf);
++#ifdef LOCALVQE_HAS_GTCRN
++    if (ctx->is_gtcrn) {
++        if (ctx->gt_stream) ctx->gt_stream->reset();
++        std::fill(ctx->gt_bufE.begin(), ctx->gt_bufE.end(), 0.0f);
++        std::fill(ctx->gt_bufY.begin(), ctx->gt_bufY.end(), 0.0f);
++        std::fill(ctx->gt_acc.begin(), ctx->gt_acc.end(), 0.0f);
++        std::fill(ctx->gt_wenv.begin(), ctx->gt_wenv.end(), 0.0f);
++        ctx->gt_pow = 0.0f; ctx->gt_pow_init = false;
++        return;
++    }
++#endif
++    if (!ctx->daf_standalone)
++        reset_stream_graph(ctx->stream_graph, ctx->graph_model);
++    std::fill(ctx->pcm_hist_mic.begin(), ctx->pcm_hist_mic.end(), 0.0f);
++    std::fill(ctx->pcm_hist_ref.begin(), ctx->pcm_hist_ref.end(), 0.0f);
++    std::fill(ctx->ola.begin(), ctx->ola.end(), 0.0f);
++}
++
++LOCALVQE_API int localvqe_echo_delay(localvqe_ctx_t handle) {
++    if (!handle) return -1;
++    auto* ctx = reinterpret_cast<localvqe_ctx*>(handle);
++    if (!ctx->daf.loaded || ctx->daf.gcc_conf <= daf_frontend::G_CONF_THR) return -1;
++    return ctx->daf.cur_shift;
++}
++
+ LOCALVQE_API int localvqe_set_noise_gate(localvqe_ctx_t handle,
+                                         int enabled,
+                                         float threshold_dbfs) {
+diff --git a/ggml/localvqe_api.h b/ggml/localvqe_api.h
+index 841f050..d9e5548 100644
+--- a/ggml/localvqe_api.h
++++ b/ggml/localvqe_api.h
+@@ -240,6 +240,22 @@ LOCALVQE_API int localvqe_process_frame_s16(localvqe_ctx_t ctx,
+  */
+ LOCALVQE_API void localvqe_reset(localvqe_ctx_t ctx);
+ 
++/**
++ * Resume after a gap in the stream (the caller stopped feeding hops for a
++ * while, e.g. because nothing played). Clears the audio histories, the
++ * overlap-add and analysis buffers and the mask network's recurrent state,
++ * but keeps what the echo filter learned about the room: its taps, their
++ * uncertainty, the controller state and the bulk delay estimate. The next
++ * hop then starts clean without relearning the echo path from zero.
++ */
++LOCALVQE_API void localvqe_resume(localvqe_ctx_t ctx);
++
++/**
++ * The bulk echo delay the front-end applies to the reference, in samples
++ * (16 kHz), or -1 while it has none or the model has no front-end.
++ */
++LOCALVQE_API int localvqe_echo_delay(localvqe_ctx_t ctx);
++
+ /**
+  * Configure the residual-echo noise gate.
+  *
+diff --git a/ggml/localvqe_graph.cpp b/ggml/localvqe_graph.cpp
+index e9188e9..b6f5d75 100644
+--- a/ggml/localvqe_graph.cpp
++++ b/ggml/localvqe_graph.cpp
+@@ -816,6 +816,9 @@ bool load_graph_model_ex(const char* path, dvqe_graph_model& model,
+         fprintf(stderr, "Failed to allocate weight buffer\n");
+         return fail();
+     }
++    // Mark it as weights: the CPU backend's int8 mat-mul path quantizes a
++    // tensor once and reuses it only when the tensor lives in a weight buffer.
++    ggml_backend_buffer_set_usage(model.weight_buf, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+ 
+     FILE* f = fopen(path, "rb");
+     if (!f) {

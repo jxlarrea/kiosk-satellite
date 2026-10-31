@@ -51,6 +51,7 @@ class AudioRoutingManager extends Manager {
   @override
   Future<void> init() async {
     NativeMic.onWarning = (warning) => log.warn('mic', warning);
+    NativeMic.onInfo = (message) => log.info('mic', message);
     NativeMic.deviceSelector = _settings.get(defs.audioMicDevice);
     _pushCaptureTuning();
     await _pushOutput(_settings.get(defs.audioSpeakerDevice));

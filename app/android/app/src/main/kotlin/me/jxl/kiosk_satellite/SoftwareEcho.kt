@@ -1,9 +1,12 @@
 package me.jxl.kiosk_satellite
 
+import android.content.Context
 import android.util.Log
+import java.io.File
 
 /**
- * Echo cancellation in software: WebRTC's AEC3 by default and the opt-in
+ * Echo cancellation in software: LocalVQE's neural canceller (GTCRN-AEC) when
+ * the CPU and the model allow it, WebRTC's AEC3 otherwise, and the opt-in
  * custom filter for duplex voice, with everything the kiosk plays
  * ([EchoReference]) as the
  * reference. MicRecorder turns it on with the capture when the setting
@@ -36,6 +39,82 @@ object SoftwareEcho {
     } catch (e: Throwable) {
         Log.w(TAG, "native library unavailable: ${e.message}")
         false
+    }
+
+    /** LocalVQE's model, an asset copied to app storage on first use (the library loads from a path). */
+    private const val VQE_MODEL = "localvqe-pi-aec-v1-49k-f32.gguf"
+
+    private var appContext: Context? = null
+
+    /** Also receives the canceller's log lines, for the app log (MicRecorder sets it with a capture). */
+    @Volatile var onLog: ((String) -> Unit)? = null
+
+    private fun report(message: String) {
+        Log.i(TAG, message)
+        onLog?.invoke(message)
+    }
+
+    /** Why LocalVQE is not the canceller, when it is not. */
+    private var vqeWhyNot = ""
+
+    /** The application context, for copying the model out of the APK. */
+    fun attach(context: Context) {
+        appContext = context.applicationContext
+    }
+
+    /** Null when LocalVQE can run here, else why not. */
+    private val vqeUnavailable: String? = when {
+        !loaded -> "native library missing"
+        else -> try {
+            if (nativeVqeSupported()) null else "this CPU has no VFPv4"
+        } catch (e: UnsatisfiedLinkError) {
+            "this build has no LocalVQE"
+        }
+    }
+
+    /** The LocalVQE canceller, 0 while AEC3 runs instead. */
+    private var vqe = 0L
+
+    /**
+     * How many 10 ms frames LocalVQE's output trails its input: every capture
+     * frame comes back this much later, cleaned or not, while it is on.
+     */
+    private var vqeDelay = 0
+
+    /** The last frames' levels before the canceller and in the reference, for the gate after the delay. */
+    private var heardRing = IntArray(1)
+    private var playedRing = IntArray(1)
+    private var ringAt = 0
+
+    private fun vqeModelFile(): File? {
+        val context = appContext ?: return null
+        val file = File(context.filesDir, "localvqe/$VQE_MODEL")
+        if (file.isFile && file.length() > 0) return file
+        return try {
+            file.parentFile?.mkdirs()
+            val tmp = File(file.path + ".tmp")
+            context.assets.open("localvqe/$VQE_MODEL").use { input -> tmp.outputStream().use { input.copyTo(it) } }
+            if (!tmp.renameTo(file)) null else file
+        } catch (e: Exception) {
+            Log.w(TAG, "LocalVQE model unavailable: ${e.message}")
+            null
+        }
+    }
+
+    /** A LocalVQE canceller, or 0 when this device or build cannot run it. */
+    private fun createVqe(): Long {
+        vqeUnavailable?.let { vqeWhyNot = it; return 0L }
+        if (customDuplex || customRealtime) { vqeWhyNot = "the echo prototype build uses AEC3"; return 0L }
+        val file = vqeModelFile() ?: run { vqeWhyNot = "the model could not be copied out of the APK"; return 0L }
+        var created = nativeVqeCreate(file.path)
+        if (created == 0L) {
+            // a damaged copy fails the library's checksum: copy it again once
+            file.delete()
+            val again = vqeModelFile() ?: run { vqeWhyNot = "the model could not be copied out of the APK"; return 0L }
+            created = nativeVqeCreate(again.path)
+        }
+        if (created == 0L) vqeWhyNot = "LocalVQE did not load the model"
+        return created
     }
 
     private val customDuplex = loaded && nativePrototypeAvailable(false)
@@ -120,7 +199,7 @@ object SoftwareEcho {
             residualGate.set(owner, mode)
             val prototype = (customDuplex && residualGate.intercomOnly) ||
                 (customRealtime && residualGate.realtime)
-            if (enabled && prototype != usesPrototype) {
+            if (enabled && vqe == 0L && prototype != usesPrototype) {
                 val next = nativeCreate(RATE, RATE, false, residualGate.intercomOnly, residualGate.realtime)
                 if (next != 0L) {
                     stopWorking()
@@ -145,21 +224,34 @@ object SoftwareEcho {
             if (on == enabled) return
             if (on) {
                 if (!loaded) return
+                vqe = createVqe()
+                if (vqe != 0L) {
+                    vqeDelay = nativeVqeLatencyFrames()
+                    heardRing = IntArray(vqeDelay + 1)
+                    playedRing = IntArray(vqeDelay + 1)
+                    ringAt = 0
+                    enabled = true
+                    report("echo cancellation: GTCRN (LocalVQE), capture ${vqeDelay * 10} ms late")
+                    return
+                }
                 val created = nativeCreate(RATE, RATE, false, residualGate.intercomOnly, residualGate.realtime)
                 if (created == 0L) return
                 handle = created
                 usesPrototype = (customDuplex && residualGate.intercomOnly) || (customRealtime && residualGate.realtime)
                 enabled = true
-                Log.i(TAG, "on")
+                report("echo cancellation: AEC3 (GTCRN unavailable: $vqeWhyNot)")
             } else {
                 enabled = false
                 stopWorking()
+                if (vqe != 0L) nativeVqeDestroy(vqe)
+                vqe = 0L
+                vqeDelay = 0
                 nativeDestroy(handle)
                 handle = 0L
                 usesPrototype = false
                 streams.clear()
                 residualGate.reset()
-                Log.i(TAG, "off")
+                Log.i(TAG, "echo cancellation off")
             }
         }
     }
@@ -193,7 +285,7 @@ object SoftwareEcho {
     private fun cancel(chunk: ByteArray, heardNs: Long): Boolean {
         if (!enabled) return false
         run {
-            val h = handle
+            val h = if (vqe != 0L) vqe else handle
             if (h == 0L) return false
             val sources = EchoReference.sources()
             var fresh = false
@@ -209,6 +301,7 @@ object SoftwareEcho {
             streams.keys.retainAll(sources.toSet())
             if (!EchoReference.playedWithin(TAIL_MS) && !fresh) {
                 stopWorking()
+                if (vqe != 0L) idleThroughVqe(chunk)
                 return false
             }
             if (!working) {
@@ -235,10 +328,19 @@ object SoftwareEcho {
                     mixBytes[i * 2] = v.toByte()
                     mixBytes[i * 2 + 1] = (v shr 8).toByte()
                 }
-                val heard = meanAbs(chunk, at)
-                val played = meanAbs(mixBytes, 0)
-                nativeRender(h, mixBytes, 0)
-                nativeCapture(h, chunk, at)
+                var heard = meanAbs(chunk, at)
+                var played = meanAbs(mixBytes, 0)
+                if (vqe != 0L) {
+                    nativeVqeRender(h, mixBytes, 0)
+                    nativeVqeCapture(h, chunk, at, true)
+                    // the frame that came back is vqeDelay frames old: gate it on its own levels
+                    val back = remember(heard, played)
+                    heard = heardRing[back]
+                    played = playedRing[back]
+                } else {
+                    nativeRender(h, mixBytes, 0)
+                    nativeCapture(h, chunk, at)
+                }
                 levels[f] = MicLevels.meanSquare(chunk, at)
                 if (residualGate.suppress(heard, played, meanAbs(chunk, at), subtractionOnly = usesPrototype)) {
                     java.util.Arrays.fill(chunk, at, at + FRAME_BYTES, 0)
@@ -248,6 +350,27 @@ object SoftwareEcho {
             for (stream in streams.values) stream.cursor += need
         }
         return true
+    }
+
+    /**
+     * Records this frame's levels and returns the ring slot of the frame
+     * [vqeDelay] frames back, the one LocalVQE hands out now.
+     */
+    private fun remember(heard: Int, played: Int): Int {
+        heardRing[ringAt] = heard
+        playedRing[ringAt] = played
+        ringAt = (ringAt + 1) % heardRing.size
+        return ringAt   // the oldest slot: vqeDelay frames before the one just written
+    }
+
+    /** Nothing plays: the frames still pass LocalVQE's delay, as they are. */
+    private fun idleThroughVqe(chunk: ByteArray) {
+        var at = 0
+        while (at + FRAME_BYTES <= chunk.size) {
+            remember(meanAbs(chunk, at), 0)
+            nativeVqeCapture(vqe, chunk, at, false)
+            at += FRAME_BYTES
+        }
     }
 
     /** Mean |sample| of the frame at [at]. */
@@ -300,11 +423,14 @@ object SoftwareEcho {
         if (!working) return
         working = false
         residualGate.reset()
-        val h = handle
-        if (h == 0L) return
-        val delayMs = nativeStats(h)[1]
+        val delayMs = when {
+            vqe != 0L -> nativeVqeDelayMs(vqe)
+            handle != 0L -> nativeStats(handle)[1]
+            else -> return
+        }
         val seconds = (System.nanoTime() - workingSinceNs) / 1_000_000_000.0
-        Log.i(TAG, "cancelled for %.1f s, echo delay %s".format(
+        report("%s cancelled for %.1f s, echo delay %s".format(
+            if (vqe != 0L) "GTCRN" else "AEC3",
             seconds, if (delayMs.isNaN()) "not found" else "${delayMs.toInt()} ms",
         ))
     }
@@ -317,4 +443,11 @@ object SoftwareEcho {
     @JvmStatic private external fun nativeDestroy(handle: Long)
     @JvmStatic private external fun nativeNsCreate(rate: Int): Long
     @JvmStatic private external fun nativeNsProcess(handle: Long, pcm: ByteArray, offset: Int)
+    @JvmStatic private external fun nativeVqeSupported(): Boolean
+    @JvmStatic private external fun nativeVqeCreate(modelPath: String): Long
+    @JvmStatic private external fun nativeVqeLatencyFrames(): Int
+    @JvmStatic private external fun nativeVqeRender(handle: Long, pcm: ByteArray, offset: Int)
+    @JvmStatic private external fun nativeVqeCapture(handle: Long, pcm: ByteArray, offset: Int, work: Boolean)
+    @JvmStatic private external fun nativeVqeDelayMs(handle: Long): Double
+    @JvmStatic private external fun nativeVqeDestroy(handle: Long)
 }

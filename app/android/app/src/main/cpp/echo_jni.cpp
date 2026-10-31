@@ -193,6 +193,183 @@ Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeDestroy(JNIEnv*, jclass, jlong h
     delete from(handle);
 }
 
+#ifdef KIOSK_LOCALVQE
+// ── LocalVQE (GTCRN-AEC) ────────────────────────────────────────────────────
+// The neural canceller works on 256-sample hops (16 ms) and its output trails
+// its input by one hop; SoftwareEcho hands over 160-sample frames. Every
+// frame therefore comes back kLatency samples late, the smallest fixed delay
+// at which a processed sample is always ready: with 160-sample frames a hop
+// completes up to 224 samples after the frame that needs it, plus the hop of
+// algorithmic delay. Idle frames, while nothing plays, run through the same
+// delay as they are, so switching between the two never repeats or drops
+// audio.
+#include "localvqe_api.h"
+#include <sys/auxv.h>
+#include <vector>
+
+namespace {
+
+constexpr int kFrame = 160;
+constexpr int kHop = 256;
+constexpr int kLatency = 480;          // 3 frames, 30 ms
+constexpr int kRing = 4096;            // power of two, well over kLatency + kHop
+
+struct Vqe {
+    localvqe_ctx_t ctx = 0;
+    std::mutex lock;
+    int16_t raw[kRing]{};              // the microphone by absolute sample index
+    int16_t clean[kRing]{};            // the canceller's output, same index
+    int64_t received = 0;              // microphone samples in
+    int64_t cleanFrom = 0, cleanTo = 0;  // [from, to): processed samples available
+    bool working = false;
+    bool resumed = false;              // a session started since the last gap
+    int64_t hopStart = 0;              // index of the first sample of the pending hop
+    int pending = 0;                   // samples gathered for it
+    int64_t hops = 0;                  // hops run in this session
+    int16_t micHop[kHop]{}, refHop[kHop]{}, outHop[kHop]{};
+    int16_t ref[kFrame]{};             // the reference frame of the next capture
+    bool haveRef = false;
+};
+
+Vqe* vqe(jlong handle) { return reinterpret_cast<Vqe*>(handle); }
+
+// Push one microphone frame, run a hop when one is complete (while working),
+// and write the frame kLatency samples back into block.
+void vqeFrame(Vqe* v, int16_t* block, bool work) {
+    const int64_t at = v->received;
+    for (int i = 0; i < kFrame; ++i) v->raw[(at + i) & (kRing - 1)] = block[i];
+    v->received += kFrame;
+    if (work && !v->working) {
+        // A session starts here: the hop starts with this frame, and the
+        // canceller drops the audio of the last session but keeps the room.
+        if (v->resumed) localvqe_resume(v->ctx);
+        v->resumed = true;
+        v->working = true;
+        v->hopStart = at;
+        v->pending = 0;
+        v->hops = 0;
+    } else if (!work) {
+        v->working = false;
+        v->pending = 0;
+    }
+    if (v->working) {
+        for (int i = 0; i < kFrame; ++i) {
+            v->micHop[v->pending] = block[i];
+            v->refHop[v->pending] = v->haveRef ? v->ref[i] : 0;
+            if (++v->pending == kHop) {
+                localvqe_process_frame_s16(v->ctx, v->micHop, v->refHop, kHop, v->outHop);
+                // A hop's output is the hop before it. The session's first
+                // hop would give the 256 samples before the session, which
+                // the canceller never saw: the clean range starts after it.
+                if (v->hops++ == 0) {
+                    v->cleanFrom = v->cleanTo = v->hopStart;
+                } else {
+                    const int64_t first = v->hopStart - kHop;
+                    for (int j = 0; j < kHop; ++j) v->clean[(first + j) & (kRing - 1)] = v->outHop[j];
+                    v->cleanTo = v->hopStart;
+                }
+                v->hopStart += kHop;
+                v->pending = 0;
+            }
+        }
+    }
+    v->haveRef = false;
+    const int64_t out = at - kLatency;
+    for (int i = 0; i < kFrame; ++i) {
+        const int64_t n = out + i;
+        if (n < 0) { block[i] = 0; continue; }
+        block[i] = (n >= v->cleanFrom && n < v->cleanTo) ? v->clean[n & (kRing - 1)] : v->raw[n & (kRing - 1)];
+    }
+}
+
+}  // namespace
+
+// Whether this CPU can run the canceller: 32-bit ARM needs VFPv4 (the build
+// uses its fused multiply-add for ggml's NEON path).
+extern "C" JNIEXPORT jboolean JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeSupported(JNIEnv*, jclass) {
+#if defined(__arm__)
+    const unsigned long hw = getauxval(AT_HWCAP);
+    constexpr unsigned long kNeon = 1UL << 12, kVfpv4 = 1UL << 16;
+    return ((hw & kNeon) && (hw & kVfpv4)) ? JNI_TRUE : JNI_FALSE;
+#else
+    return JNI_TRUE;
+#endif
+}
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeCreate(JNIEnv* env, jclass, jstring modelPath) {
+    const char* path = env->GetStringUTFChars(modelPath, nullptr);
+    localvqe_options_t o = localvqe_options_new();
+    localvqe_options_set_model_path(o, path);
+    localvqe_options_set_threads(o, 1);
+    localvqe_ctx_t ctx = localvqe_new_with_options(o);
+    localvqe_options_free(o);
+    env->ReleaseStringUTFChars(modelPath, path);
+    if (!ctx) {
+        __android_log_print(ANDROID_LOG_WARN, kTag, "LocalVQE did not load");
+        return 0;
+    }
+    if (localvqe_sample_rate(ctx) != 16000 || localvqe_hop_length(ctx) != kHop) {
+        __android_log_print(ANDROID_LOG_WARN, kTag, "LocalVQE model has an unexpected rate or hop");
+        localvqe_free(ctx);
+        return 0;
+    }
+    auto* v = new Vqe();
+    v->ctx = ctx;
+    __android_log_print(ANDROID_LOG_INFO, kTag, "started LocalVQE (16000 Hz, hop %d, latency %d ms)",
+                        kHop, kLatency / 16);
+    return reinterpret_cast<jlong>(v);
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeLatencyFrames(JNIEnv*, jclass) {
+    return kLatency / kFrame;
+}
+
+// One 10 ms reference frame for the next capture frame.
+extern "C" JNIEXPORT void JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeRender(
+    JNIEnv* env, jclass, jlong handle, jbyteArray pcm, jint offset) {
+    auto* v = vqe(handle);
+    std::lock_guard<std::mutex> guard(v->lock);
+    env->GetByteArrayRegion(pcm, offset, kFrame * 2, reinterpret_cast<jbyte*>(v->ref));
+    v->haveRef = true;
+}
+
+// One 10 ms microphone frame, replaced by the frame kLatency earlier:
+// cleaned when [work] (something plays), as it was otherwise.
+extern "C" JNIEXPORT void JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeCapture(
+    JNIEnv* env, jclass, jlong handle, jbyteArray pcm, jint offset, jboolean work) {
+    auto* v = vqe(handle);
+    int16_t block[kFrame];
+    env->GetByteArrayRegion(pcm, offset, kFrame * 2, reinterpret_cast<jbyte*>(block));
+    {
+        std::lock_guard<std::mutex> guard(v->lock);
+        vqeFrame(v, block, work == JNI_TRUE);
+    }
+    env->SetByteArrayRegion(pcm, offset, kFrame * 2, reinterpret_cast<const jbyte*>(block));
+}
+
+// The echo delay the canceller found in ms, NaN while it has none.
+extern "C" JNIEXPORT jdouble JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeDelayMs(JNIEnv*, jclass, jlong handle) {
+    auto* v = vqe(handle);
+    std::lock_guard<std::mutex> guard(v->lock);
+    const int d = localvqe_echo_delay(v->ctx);
+    return d < 0 ? __builtin_nan("") : d / 16.0;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeDestroy(JNIEnv*, jclass, jlong handle) {
+    auto* v = vqe(handle);
+    if (!v) return;
+    localvqe_free(v->ctx);
+    delete v;
+}
+#endif  // KIOSK_LOCALVQE
+
 // A second module with only the noise suppressor on, over every capture
 // frame whether or not anything plays: a microphone's hiss is there all
 // the time, and the canceller's module only runs while there is an echo.

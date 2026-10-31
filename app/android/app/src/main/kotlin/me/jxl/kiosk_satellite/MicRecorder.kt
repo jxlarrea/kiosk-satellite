@@ -274,6 +274,10 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         )
         applyPreferredDevice(opened, selector)
         silencePlatformEffects(opened, ladder[step].source)
+        SoftwareEcho.attach(appContext)
+        // Which canceller runs, and each stretch it worked, also go to the
+        // app log, the one people read and send.
+        SoftwareEcho.onLog = { message -> mainHandler.post { sink.success(mapOf("info" to message)) } }
         SoftwareEcho.setEnabled(wantSoftwareAec)
         SoftwareEcho.setNoiseSuppression(wantNs)
         MicLevels.clear()
@@ -868,6 +872,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             it.release()
         }
         record = null
+        SoftwareEcho.onLog = null
         SoftwareEcho.setEnabled(false)
         SoftwareEcho.setNoiseSuppression(false)
         // Only tear down Bluetooth routing this recorder brought up; a stop

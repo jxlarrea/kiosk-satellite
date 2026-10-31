@@ -71,3 +71,11 @@ add_executable(kiosk_echo_prototype_test EXCLUDE_FROM_ALL
     kiosk_echo_prototype.cpp ../../test/cpp/echo_prototype_test.cpp)
 target_compile_features(kiosk_echo_prototype_test PRIVATE cxx_std_17)
 target_compile_options(kiosk_echo_prototype_test PRIVATE -Wall -Wextra)
+
+# LocalVQE's GTCRN-AEC as the echo canceller (SoftwareEcho.kt), with AEC3 as
+# the fallback. Last in this file: its 32-bit ARM compile flag applies to the
+# targets created after it.
+include(localvqe.cmake)
+target_sources(kiosk_echo PRIVATE ${LOCALVQE_API_SOURCE})
+target_compile_definitions(kiosk_echo PRIVATE KIOSK_LOCALVQE=1 LOCALVQE_BUILD)
+target_link_libraries(kiosk_echo PRIVATE dvqe_graph)
