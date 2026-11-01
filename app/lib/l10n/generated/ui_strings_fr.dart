@@ -3028,6 +3028,10 @@ class UiStringsFr extends UiStrings {
       'Affiche le choix de la source dans la bibliothèque. Désactivez-le pour garder la bibliothèque sur la source choisie plus haut.';
 
   @override
+  String get settingLibrarySpeakerPillDescription =>
+      'Affiche le choix de l’enceinte en haut de la bibliothèque.';
+
+  @override
   String get libraryDensityComfortable => 'Confortable';
 
   @override

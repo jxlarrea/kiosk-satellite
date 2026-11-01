@@ -37,6 +37,7 @@
   "settingLibraryGridDensityDescription": "Tamaño de los mosaicos de la biblioteca. Compacta muestra más por fila.",
   "settingLibrarySourcePickerTitle": "Mostrar selector de fuente",
   "settingLibrarySourcePickerDescription": "Muestra el selector de fuente en la biblioteca. Desactívalo para que la biblioteca se quede en la fuente elegida arriba.",
+  "settingLibrarySpeakerPillDescription": "Muestra el selector de altavoces en la parte superior de la biblioteca.",
   "libraryDensityComfortable": "Amplia",
   "libraryDensityStandard": "Estándar",
   "libraryDensityCompact": "Compacta",

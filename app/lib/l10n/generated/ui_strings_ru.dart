@@ -3012,6 +3012,10 @@ class UiStringsRu extends UiStrings {
       'Показывает выбор источника в библиотеке. Отключите, чтобы библиотека оставалась на источнике, выбранном выше.';
 
   @override
+  String get settingLibrarySpeakerPillDescription =>
+      'Показывает выбор динамика вверху библиотеки.';
+
+  @override
   String get libraryDensityComfortable => 'Просторная';
 
   @override

@@ -3028,6 +3028,10 @@ class UiStringsEs extends UiStrings {
       'Muestra el selector de fuente en la biblioteca. Desactívalo para que la biblioteca se quede en la fuente elegida arriba.';
 
   @override
+  String get settingLibrarySpeakerPillDescription =>
+      'Muestra el selector de altavoces en la parte superior de la biblioteca.';
+
+  @override
   String get libraryDensityComfortable => 'Amplia';
 
   @override

@@ -10296,6 +10296,21 @@ const librarySourcePicker = SettingDef<bool>(
   section: 'User Interface',
 );
 
+/// The speaker pill at the top of the library, the way into the Speakers
+/// sheet. Off, the library names no speaker there. A play with no
+/// speaker picked and the player bar's volume button on a narrow screen
+/// still open the sheet.
+const librarySpeakerPill = SettingDef<bool>(
+  key: 'library.speaker_pill',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show speaker selection pill',
+  description: 'Show the speaker picker at the top of the library.',
+  category: 'Sendspin',
+  subpage: 'Music Library',
+  section: 'User Interface',
+);
+
 /// The order each library list was left in, as JSON: the list's key to
 /// a LibrarySort name, for example {"playlists": "recentlyPlayed"}.
 /// Hidden: set from the sort menu in the library, not a settings row.
@@ -13703,6 +13718,7 @@ const List<SettingDef<Object>> allSettings = [
   librarySquareArtwork,
   libraryGridDensity,
   librarySourcePicker,
+  librarySpeakerPill,
   librarySort,
   libraryAlbumArtists,
   sendspinSonosHosts,

@@ -2930,6 +2930,9 @@ class UiStringsZh extends UiStrings {
       '在音乐库中显示来源选择器。关闭后，音乐库将保持在上方设置的来源。';
 
   @override
+  String get settingLibrarySpeakerPillDescription => '在音乐库顶部显示扬声器选择器。';
+
+  @override
   String get libraryDensityComfortable => '宽松';
 
   @override
@@ -17775,6 +17778,9 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingLibrarySourcePickerDescription =>
       '在音乐库中显示来源选择器。关闭后，音乐库将保持在上方设置的来源。';
+
+  @override
+  String get settingLibrarySpeakerPillDescription => '在音乐库顶部显示扬声器选择器。';
 
   @override
   String get libraryDensityComfortable => '宽松';

@@ -803,6 +803,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingLibrarySourcePickerTitle,
       'settingLibrarySourcePickerDescription' =>
         strings.settingLibrarySourcePickerDescription,
+      'settingLibrarySpeakerPillDescription' =>
+        strings.settingLibrarySpeakerPillDescription,
       'libraryDensityComfortable' => strings.libraryDensityComfortable,
       'libraryDensityStandard' => strings.libraryDensityStandard,
       'libraryDensityCompact' => strings.libraryDensityCompact,

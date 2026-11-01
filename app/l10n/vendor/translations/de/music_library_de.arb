@@ -37,6 +37,7 @@
   "settingLibraryGridDensityDescription": "Größe der Kacheln in der Bibliothek. Kompakt zeigt mehr pro Reihe.",
   "settingLibrarySourcePickerTitle": "Quellenauswahl anzeigen",
   "settingLibrarySourcePickerDescription": "Zeigt die Quellenauswahl in der Bibliothek. Schalte sie aus, damit die Bibliothek bei der oben gewählten Quelle bleibt.",
+  "settingLibrarySpeakerPillDescription": "Zeigt die Lautsprecherauswahl oben in der Bibliothek.",
   "libraryDensityComfortable": "Großzügig",
   "libraryDensityStandard": "Standard",
   "libraryDensityCompact": "Kompakt",

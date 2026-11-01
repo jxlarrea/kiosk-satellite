@@ -2528,6 +2528,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingLibrarySourcePickerTitle",
     "description": "settingLibrarySourcePickerDescription",
   },
+  "library.speaker_pill": {
+    "title": "settingSendspinSpeakerPillTitle",
+    "description": "settingLibrarySpeakerPillDescription",
+  },
   "library.text_scale": {
     "title": "settingSendspinFullscreenTextScaleTitle",
     "description": "settingLibraryTextScaleDescription",

@@ -392,6 +392,19 @@
       ]
     }
   },
+  "settingLibrarySpeakerPillDescription": "Show the speaker picker at the top of the library.",
+  "@settingLibrarySpeakerPillDescription": {
+    "context": "Music Library",
+    "description": "Setting description for Show speaker selection pill on the Music Library page: the pill that opens the Speakers sheet, where music plays.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Music Library"
+      ],
+      "remoteAdmin": [
+        "Media Player > Music Library"
+      ]
+    }
+  },
   "libraryDensityComfortable": "Comfortable",
   "@libraryDensityComfortable": {
     "context": "Music Library",

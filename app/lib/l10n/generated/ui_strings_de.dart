@@ -3042,6 +3042,10 @@ class UiStringsDe extends UiStrings {
       'Zeigt die Quellenauswahl in der Bibliothek. Schalte sie aus, damit die Bibliothek bei der oben gewählten Quelle bleibt.';
 
   @override
+  String get settingLibrarySpeakerPillDescription =>
+      'Zeigt die Lautsprecherauswahl oben in der Bibliothek.';
+
+  @override
   String get libraryDensityComfortable => 'Großzügig';
 
   @override

@@ -5367,6 +5367,12 @@ abstract class UiStrings {
   /// **'Show the source picker in the library. Turn off to keep the library on the source set above.'**
   String get settingLibrarySourcePickerDescription;
 
+  /// Setting description for Show speaker selection pill on the Music Library page: the pill that opens the Speakers sheet, where music plays.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the speaker picker at the top of the library.'**
+  String get settingLibrarySpeakerPillDescription;
+
   /// Grid density option: larger tiles, fewer in a row.
   ///
   /// In en, this message translates to:

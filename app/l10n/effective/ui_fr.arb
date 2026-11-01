@@ -11594,6 +11594,19 @@
       ]
     }
   },
+  "settingLibrarySpeakerPillDescription": "Affiche le choix de l’enceinte en haut de la bibliothèque.",
+  "@settingLibrarySpeakerPillDescription": {
+    "context": "Music Library",
+    "description": "Setting description for Show speaker selection pill on the Music Library page: the pill that opens the Speakers sheet, where music plays.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Music Library"
+      ],
+      "remoteAdmin": [
+        "Media Player > Music Library"
+      ]
+    }
+  },
   "libraryDensityComfortable": "Confortable",
   "@libraryDensityComfortable": {
     "context": "Music Library",

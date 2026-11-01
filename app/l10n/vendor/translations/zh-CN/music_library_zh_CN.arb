@@ -37,6 +37,7 @@
   "settingLibraryGridDensityDescription": "音乐库中卡片的大小。紧凑可在每行显示更多。",
   "settingLibrarySourcePickerTitle": "显示来源选择",
   "settingLibrarySourcePickerDescription": "在音乐库中显示来源选择器。关闭后，音乐库将保持在上方设置的来源。",
+  "settingLibrarySpeakerPillDescription": "在音乐库顶部显示扬声器选择器。",
   "libraryDensityComfortable": "宽松",
   "libraryDensityStandard": "标准",
   "libraryDensityCompact": "紧凑",

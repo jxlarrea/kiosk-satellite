@@ -162,7 +162,8 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
           (e.key == defs.librarySquareArtwork.key ||
               e.key == defs.libraryGridDensity.key ||
               e.key == defs.libraryTextScale.key ||
-              e.key == defs.librarySourcePicker.key)) {
+              e.key == defs.librarySourcePicker.key ||
+              e.key == defs.librarySpeakerPill.key)) {
         setState(() {});
       }
     });
@@ -630,6 +631,10 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
   bool get _switchesSource =>
       _showsSource && c.musicLibrary.available.length > 1;
 
+  /// Whether the header carries the speaker pill, which Show speaker
+  /// selection pill can turn off.
+  bool get _showsSpeakerPill => c.settings.get(defs.librarySpeakerPill);
+
   Future<void> _pickSource() async {
     final s = l10n(context);
     final keys = c.musicLibrary.available;
@@ -860,8 +865,10 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
                               else
                                 const Spacer(),
                               const SizedBox(width: 12),
-                              _speakerPill(height: 44),
-                              const SizedBox(width: 4),
+                              if (_showsSpeakerPill) ...[
+                                _speakerPill(height: 44),
+                                const SizedBox(width: 4),
+                              ],
                               _closeButton(size: 28),
                             ],
                           ),
@@ -1118,7 +1125,7 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
                 else
                   const Spacer(),
                 const SizedBox(width: 8),
-                _speakerPill(height: 40, maxWidth: 260),
+                if (_showsSpeakerPill) _speakerPill(height: 40, maxWidth: 260),
                 _closeButton(),
               ],
             ),
@@ -1261,41 +1268,51 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
         ),
         if (_queueOpen) Expanded(child: _queuePanel()),
         if (!_queueOpen) ...[
-          SizedBox(
-            height: 56,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(_stack.isEmpty ? 16 : 6, 0, 16, 0),
-              child: Row(
-                children: [
-                  if (_stack.isNotEmpty) ...[
-                    _backButton(),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: _speakerPill(height: 40),
-                      ),
-                    ),
-                  ] else if (searching) ...[
-                    Expanded(child: _searchField(48)),
-                    const SizedBox(width: 8),
-                    _speakerPill(height: 40, iconOnly: true),
-                  ] else ...[
-                    if (_switchesSource) ...[
-                      Flexible(child: _sourcePill()),
-                      const SizedBox(width: 8),
+          // Nothing left for the row on the top level with neither pill.
+          if (_stack.isNotEmpty ||
+              searching ||
+              _switchesSource ||
+              _showsSpeakerPill)
+            SizedBox(
+              height: 56,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(_stack.isEmpty ? 16 : 6, 0, 16, 0),
+                child: Row(
+                  children: [
+                    if (_stack.isNotEmpty) ...[
+                      _backButton(),
+                      if (_showsSpeakerPill) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: _speakerPill(height: 40),
+                          ),
+                        ),
+                      ],
+                    ] else if (searching) ...[
+                      Expanded(child: _searchField(48)),
+                      if (_showsSpeakerPill) ...[
+                        const SizedBox(width: 8),
+                        _speakerPill(height: 40, iconOnly: true),
+                      ],
+                    ] else ...[
+                      if (_switchesSource) ...[
+                        Flexible(child: _sourcePill()),
+                        const SizedBox(width: 8),
+                      ],
+                      if (_showsSpeakerPill)
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: _speakerPill(height: 40),
+                          ),
+                        ),
                     ],
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: _speakerPill(height: 40),
-                      ),
-                    ),
                   ],
-                ],
+                ),
               ),
             ),
-          ),
           if (searching) _searchChips(const EdgeInsets.fromLTRB(16, 2, 16, 12)),
           if (_place.nav == 'library' && _stack.isEmpty)
             _categoryBar(const EdgeInsets.fromLTRB(16, 2, 16, 12)),

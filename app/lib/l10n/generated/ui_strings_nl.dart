@@ -3018,6 +3018,10 @@ class UiStringsNl extends UiStrings {
       'Toont de bronkeuze in de bibliotheek. Zet uit om de bibliotheek op de hierboven gekozen bron te houden.';
 
   @override
+  String get settingLibrarySpeakerPillDescription =>
+      'Toont de luidsprekerkeuze bovenaan de bibliotheek.';
+
+  @override
   String get libraryDensityComfortable => 'Ruim';
 
   @override

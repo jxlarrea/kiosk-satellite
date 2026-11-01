@@ -11594,6 +11594,19 @@
       ]
     }
   },
+  "settingLibrarySpeakerPillDescription": "Toont de luidsprekerkeuze bovenaan de bibliotheek.",
+  "@settingLibrarySpeakerPillDescription": {
+    "context": "Music Library",
+    "description": "Setting description for Show speaker selection pill on the Music Library page: the pill that opens the Speakers sheet, where music plays.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Music Library"
+      ],
+      "remoteAdmin": [
+        "Media Player > Music Library"
+      ]
+    }
+  },
   "libraryDensityComfortable": "Ruim",
   "@libraryDensityComfortable": {
     "context": "Music Library",

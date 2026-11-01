@@ -1055,6 +1055,44 @@ void main() {
       });
     }
 
+    // The speaker pill sits in the header on a tablet and an Echo Show 5
+    // and in the row under it on a phone.
+    for (final (name, size) in [
+      ('a tablet', const Size(1280, 800)),
+      ('an Echo Show 5', const Size(960, 480)),
+      ('a phone', const Size(390, 844)),
+    ]) {
+      testWidgets('Show speaker selection pill hides the pill on $name', (
+        tester,
+      ) async {
+        final c = await container(ha: true);
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        c.musicLibrary.visible.value = true;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Stack(children: [MusicLibraryOverlay(container: c)]),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byIcon(Icons.speaker_outlined), findsOneWidget);
+        // Turned off while the library is open, as from the remote admin.
+        await c.settings.set(defs.librarySpeakerPill, false);
+        await tester.pumpAndSettle();
+        expect(find.byIcon(Icons.speaker_outlined), findsNothing);
+        // With the source picker off too the phone drops the empty row.
+        await c.settings.set(defs.librarySourcePicker, false);
+        await tester.pumpAndSettle();
+        expect(find.byIcon(Icons.speaker_outlined), findsNothing);
+        expect(tester.takeException(), isNull);
+        c.musicLibrary.visible.value = false;
+        await tester.pump();
+      });
+    }
+
     testWidgets('each grid density step changes the tile size', (tester) async {
       final source = _FakeSource(album);
       final c = await container(source: source);

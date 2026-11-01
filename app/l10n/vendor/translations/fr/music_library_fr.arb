@@ -37,6 +37,7 @@
   "settingLibraryGridDensityDescription": "Taille des vignettes de la bibliothèque. Compacte en affiche plus par ligne.",
   "settingLibrarySourcePickerTitle": "Afficher le choix de la source",
   "settingLibrarySourcePickerDescription": "Affiche le choix de la source dans la bibliothèque. Désactivez-le pour garder la bibliothèque sur la source choisie plus haut.",
+  "settingLibrarySpeakerPillDescription": "Affiche le choix de l’enceinte en haut de la bibliothèque.",
   "libraryDensityComfortable": "Confortable",
   "libraryDensityStandard": "Standard",
   "libraryDensityCompact": "Compacte",

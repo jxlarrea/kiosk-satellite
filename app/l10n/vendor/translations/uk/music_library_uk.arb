@@ -37,6 +37,7 @@
   "settingLibraryGridDensityDescription": "Розмір плиток у бібліотеці. Компактна вміщує більше в ряд.",
   "settingLibrarySourcePickerTitle": "Показувати вибір джерела",
   "settingLibrarySourcePickerDescription": "Показує вибір джерела в бібліотеці. Вимкніть, щоб бібліотека лишалася на джерелі, вибраному вище.",
+  "settingLibrarySpeakerPillDescription": "Показує вибір динаміка вгорі бібліотеки.",
   "libraryDensityComfortable": "Простора",
   "libraryDensityStandard": "Стандартна",
   "libraryDensityCompact": "Компактна",

@@ -2999,6 +2999,10 @@ class UiStringsEn extends UiStrings {
       'Show the source picker in the library. Turn off to keep the library on the source set above.';
 
   @override
+  String get settingLibrarySpeakerPillDescription =>
+      'Show the speaker picker at the top of the library.';
+
+  @override
   String get libraryDensityComfortable => 'Comfortable';
 
   @override

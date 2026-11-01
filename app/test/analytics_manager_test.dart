@@ -768,6 +768,7 @@ void main() {
       'ks.library.menu': false,
       'ks.library.grid_density': 'compact',
       'ks.library.source_picker': false,
+      'ks.library.speaker_pill': false,
     }, firstDelay: const Duration(days: 1));
     await UsageCounters.bump(settings, 'library_opens');
     for (var i = 0; i < 6; i++) {
@@ -783,6 +784,7 @@ void main() {
     expect(u['library_idle_close_minutes'], '2');
     expect(u['library_grid_density'], 'compact');
     expect(u['library_source_picker'], isFalse);
+    expect(u['library_speaker_pill'], isFalse);
     expect(u['library_text_scale'], 100);
     expect(u['library_opens'], '1-5');
     expect(u['library_plays_sonos'], '6-20');

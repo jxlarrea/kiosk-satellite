@@ -3013,6 +3013,10 @@ class UiStringsUk extends UiStrings {
       'Показує вибір джерела в бібліотеці. Вимкніть, щоб бібліотека лишалася на джерелі, вибраному вище.';
 
   @override
+  String get settingLibrarySpeakerPillDescription =>
+      'Показує вибір динаміка вгорі бібліотеки.';
+
+  @override
   String get libraryDensityComfortable => 'Простора';
 
   @override

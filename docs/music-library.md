@@ -133,5 +133,6 @@ The **User Interface** group below them sets how the library looks:
 | Square artwork | Shows artists in square tiles, like albums and playlists, instead of circles. Off by default. |
 | Grid density | The size of the tiles in the library's grids and rows. **Comfortable** makes them larger and **Compact** fits more in a row. **Standard** by default. |
 | Show source selection | Shows the source picker in the library. Turn it off to keep the library on the **Source** set above, so nobody at the kiosk can switch it. The source can still be changed in Settings and in the remote admin. On by default. |
+| Show speaker selection pill | Shows the speaker pill at the top of the library, which opens the speaker picker. A play with no speaker picked still asks for one, and on a screen without room for the volume slider the player bar's volume button still opens the picker. On by default. |
 
 The **Voice Control** group opens the guide to [playing music by voice](#playing-music-by-voice).
