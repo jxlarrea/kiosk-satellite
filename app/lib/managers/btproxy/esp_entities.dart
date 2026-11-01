@@ -245,6 +245,13 @@ class EspEntitySurface {
           defs.screensaverScheduleEnabled,
         ),
         'hold_mode': ('Hold mode', 'mdi:pause-circle-outline', defs.haHoldMode),
+        // Rotation alone, unlike Hold mode: the screensaver and screen off
+        // still run while it is off (issue #1247).
+        'dashboard_rotation': (
+          'Dashboard rotation',
+          'mdi:view-carousel-outline',
+          defs.haRotationEnabled,
+        ),
         'camera_enabled': (
           'Camera enabled',
           'mdi:camera-outline',

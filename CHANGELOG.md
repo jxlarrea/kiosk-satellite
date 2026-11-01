@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Turn dashboard rotation on and off from Home Assistant.** With **Expose kiosk entities** on, the kiosk adds a **Dashboard rotation** switch, the same as **Enable dashboard view rotation** on the device. Unlike **Hold mode**, the screensaver and screen off still run while it is off. An automation can turn it off to keep the view the Dashboard view select picks, such as a Now Playing view while the TV plays, and turn it back on when playback stops (#1247).
 - **Fine-tune the wake word and stop word from Home Assistant.** With **Expose kiosk entities** on, the kiosk adds **VS Wake word fine-tune** and **VS Stop word fine-tune** sliders from -10 to +10, next to **VS Wake word sensitivity**. They change **Fine-tune sensitivity** and **Fine-tune stop word sensitivity** on that kiosk, so an automation can lower them while the TV plays and raise them again when it stops (#1224).
 - **Stop an announcement from Home Assistant.** A new `announce_stop` ESPHome action stops the announcement playing on the kiosk, and one still fetching its audio never starts. It answers whether one was playing and never fails when nothing was, so a dismiss automation can always call it (#1239).
 - **The Up next screensaver widget shows all-day events.** Today's all-day events now come first in the widget, marked **All day**, before the timed events still to come. They count toward **Events shown** (#1241).

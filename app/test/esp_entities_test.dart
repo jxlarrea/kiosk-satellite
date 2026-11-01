@@ -1042,6 +1042,7 @@ void main() {
         'screensaver',
         'screensaver_schedule',
         'hold_mode',
+        'dashboard_rotation',
         'camera_enabled',
         'rtsp_streaming',
         'screensaver_motion',
@@ -1308,6 +1309,18 @@ void main() {
     await surface.handleCommand('screensaver_schedule', false);
     expect(settings.get(defs.screensaverScheduleEnabled), isFalse);
   });
+
+  test(
+    'the rotation switch turns dashboard view rotation on and off',
+    () async {
+      await surface.handleCommand('dashboard_rotation', true);
+      expect(settings.get(defs.haRotationEnabled), isTrue);
+      // Rotation alone: hold mode stays off, so the screensaver still runs.
+      expect(settings.get(defs.haHoldMode), isFalse);
+      await surface.handleCommand('dashboard_rotation', false);
+      expect(settings.get(defs.haRotationEnabled), isFalse);
+    },
+  );
 
   test('the slide buttons step the showing slideshow', () async {
     executed.clear();
