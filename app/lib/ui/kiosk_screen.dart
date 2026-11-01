@@ -955,25 +955,55 @@ class _KioskScreenState extends State<KioskScreen>
   /// The scroll lock, as page CSS rather than the plugin's native
   /// disable-scroll flags: those swallow every touch-move at the view layer,
   /// which also starves the pull-to-refresh probe and any in-page drag (an
-  /// HA slider). `touch-action` only withdraws the browser's own panning —
+  /// HA slider). `touch-action` only withdraws the browser's own panning,
   /// touch events still dispatch to the page and the native gesture
-  /// detectors, so pulls, taps and drags keep working. The wildcard matters:
-  /// HA scrolls inner shadow-root containers, and a rule on `html` alone
-  /// would not reach them. `pinch-zoom` (not `none`) so the pinch setting
-  /// still composes.
+  /// detectors, so pulls, taps and drags keep working. `pinch-zoom` (not
+  /// `none`) so the pinch setting still composes.
+  ///
+  /// A document rule does not reach into shadow roots, and a scroller turns
+  /// panning back on for everything inside it, so a card, pop-up or dialog
+  /// that scrolls in its own shadow root kept scrolling (#32 on the Echo
+  /// image repo). One constructed sheet is adopted by the document and by
+  /// every shadow root: the ones already there through a walk, later ones
+  /// through an `attachShadow` wrapper. Turning the lock off empties the
+  /// sheet, so no root has to be remembered. Iframes are not covered.
   String get _scrollLockJs {
     final on = c.settings.get(defs.disableScrolling);
     return '''
       (function () {
-        var st = document.getElementById('__ksScrollLock');
-        if ($on && !st) {
-          st = document.createElement('style');
-          st.id = '__ksScrollLock';
-          st.textContent = '* { touch-action: pinch-zoom !important; }';
-          (document.head || document.documentElement).appendChild(st);
-        } else if (!$on && st) {
-          st.remove();
+        var L = window.__ksScrollLockState;
+        if (!L) {
+          var sheet;
+          try { sheet = new CSSStyleSheet(); } catch (e) { return; }
+          L = window.__ksScrollLockState = { on: false, sheet: sheet };
+          L.adopt = function (root) {
+            try {
+              var sheets = root.adoptedStyleSheets;
+              if (sheets.indexOf(sheet) < 0) {
+                root.adoptedStyleSheets = sheets.concat([sheet]);
+              }
+            } catch (e) {}
+          };
+          L.sweep = function (root) {
+            L.adopt(root);
+            var nodes = root.querySelectorAll('*');
+            for (var i = 0; i < nodes.length; i++) {
+              if (nodes[i].shadowRoot) L.sweep(nodes[i].shadowRoot);
+            }
+          };
+          // Lit sets a new root's adoptedStyleSheets right after attaching
+          // it, which would drop ours, so join on the next microtask.
+          var attach = Element.prototype.attachShadow;
+          Element.prototype.attachShadow = function (init) {
+            var root = attach.call(this, init);
+            if (L.on) Promise.resolve().then(function () { L.adopt(root); });
+            return root;
+          };
         }
+        L.on = $on;
+        L.sheet.replaceSync(
+          L.on ? '* { touch-action: pinch-zoom !important; }' : '');
+        if (L.on) L.sweep(document);
       })();
     ''';
   }
