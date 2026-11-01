@@ -2831,5 +2831,18 @@ void main() {
       expect(find.byType(Slider), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('a portrait screen with no panel gives the cover the width', (
+      tester,
+    ) async {
+      for (final size in const [Size(480, 960), Size(800, 1280)]) {
+        await pump(tester, size: size);
+        final cover = tester.getSize(find.byIcon(Icons.music_note));
+        // Wider than the 52% of the short side a landscape screen gets.
+        expect(cover.width, greaterThan(size.width * 0.52 * 0.45));
+        expect(find.byType(Slider), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    });
   });
 }

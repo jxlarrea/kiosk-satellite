@@ -745,22 +745,29 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
           ),
         );
       } else {
+        // A portrait screen with no lyrics or queue under the cover gives
+        // it the full width, the height left after the track details
+        // capping it on a short screen.
+        final portraitCover = !landscape && !widget.alongsideScreensaver;
+        final coverWidth = screen.width - edge * 2;
         return Center(
           child: _fitTrack(
             _trackPanel(
               art: art,
               title: title,
               artist: artist,
-              artSize: artSize,
+              artSize: portraitCover ? coverWidth : artSize,
               titleSize: titleSize,
               artistSize: artistSize,
               gap: gap,
               horizontalPadding: 0,
             ),
-            width: min(
-              screen.width - (widget.alongsideScreensaver ? 32 : 96),
-              artSize * 2.2 * max(1.0, textScale),
-            ),
+            width: portraitCover
+                ? coverWidth
+                : min(
+                    screen.width - (widget.alongsideScreensaver ? 32 : 96),
+                    artSize * 2.2 * max(1.0, textScale),
+                  ),
           ),
         );
       }
