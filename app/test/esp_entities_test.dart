@@ -35,6 +35,7 @@ void main() {
   var bluetooth = <String, Object?>{};
   var vsState = <String, Object?>{};
   var ips = <String, Object?>{};
+  var deviceIp = '192.168.1.5';
   var dashboardsUnreachable = false;
   var catalogChanges = 0;
   var updateStatus = <String, Object?>{};
@@ -46,6 +47,7 @@ void main() {
   setUp(() async {
     cameraPresent = true;
     rebootSupport = null;
+    deviceIp = '192.168.1.5';
     updateStatus = {
       'currentVersion': '2026.8.52',
       'availableVersion': '2026.8.53',
@@ -242,12 +244,18 @@ void main() {
       ),
     );
     stub('getNextAlarm', {'at': '2026-08-19T07:00:00+00:00'});
-    stub('getDeviceInfo', {
-      'model': 'samsung SM-X700',
-      'osVersion': 'Android 13',
-      'ip': '192.168.1.5',
-      'appVersion': '2026.8.104',
-    });
+    commands.register(
+      Command(
+        name: 'getDeviceInfo',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok({
+          'model': 'samsung SM-X700',
+          'osVersion': 'Android 13',
+          'ip': deviceIp,
+          'appVersion': '2026.8.104',
+        }),
+      ),
+    );
     stub('evalJs', '"https://ha.local/lovelace/home"');
     stub('screenshot', base64Encode([1, 2, 3]));
     for (final name in [
@@ -1640,6 +1648,39 @@ void main() {
         {'free': 8192 * 1024 * 1024, 'total': 32768 * 1024 * 1024},
         8192,
         32768,
+      );
+      surface.detach();
+    });
+  });
+
+  test('the admin URL follows an address that turns up after the start '
+      '(issue #1251)', () {
+    fakeAsync((async) {
+      settings.set(defs.remoteEnabled, true);
+      deviceIp = '';
+      surface.build();
+      async.flushMicrotasks();
+      surface.attach(
+        (objectId, value) async => pushed.add((objectId, value)),
+        (objectId, jpeg) async => images.add((objectId, jpeg)),
+      );
+      async.flushMicrotasks();
+      expect(pushed.where((p) => p.$1 == 'admin_url'), isEmpty);
+
+      deviceIp = '10.0.0.124';
+      bus.publish(const NetworkStateChanged(up: true));
+      async.elapse(const Duration(seconds: 3));
+      expect(
+        pushed.lastWhere((p) => p.$1 == 'admin_url').$2,
+        'http://10.0.0.124:2324',
+      );
+
+      // A new lease with no outage in between: the poll picks it up.
+      deviceIp = '10.0.0.125';
+      async.elapse(const Duration(seconds: 60));
+      expect(
+        pushed.lastWhere((p) => p.$1 == 'admin_url').$2,
+        'http://10.0.0.125:2324',
       );
       surface.detach();
     });
