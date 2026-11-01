@@ -11,6 +11,7 @@ import '../audio/mic_hub.dart';
 import '../kiosk/kiosk_link.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import '../voice/realtime/mcp_client.dart';
 import 'clap_detector.dart';
 import 'gesture_mappings.dart';
 import 'hand_gesture_hold.dart';
@@ -66,6 +67,29 @@ class GesturesManager extends Manager {
   final Stream<Uint8List> Function() _micStream;
   final Future<PermissionOutcome> Function() _micPermission;
   final Duration Function()? handClock;
+
+  /// The kiosk's own device in Home Assistant, which the Home Assistant
+  /// actions pass on as [deviceVariable] (issue #1259), with the name as
+  /// [nameVariable]. Wired by the
+  /// composition root. Null, or answering null, leaves it out.
+  Future<String?> Function()? kioskDeviceId;
+
+  /// The same name the scripts the realtime voice runs get it under, so
+  /// one script serves both.
+  static const deviceVariable = McpClient.scriptDeviceArgument;
+
+  /// The kiosk's Device name, which the actions pass on next to
+  /// [deviceVariable]. Known without Home Assistant.
+  static const nameVariable = McpClient.scriptNameArgument;
+
+  /// What stands for each variable in the data of a Call a service
+  /// action, with why it can be unknown. They cannot ride along on their
+  /// own there, since many services refuse keys they do not know.
+  static const placeholders = {
+    '{$deviceVariable}': 'turn on ESPHome and add the kiosk to Home Assistant',
+    '{$nameVariable}': 'set the Device name',
+  };
+
   final _handStopwatch = Stopwatch()..start();
   final _handHold = HandGestureHold();
 
@@ -530,28 +554,54 @@ class GesturesManager extends Manager {
         // fails with nothing to browse: no source is set up.
         return _run('openMusicLibrary', const {});
       case 'ha_script':
-        return _runHa(a, 'haCallService', {
-          'domain': 'script',
-          'service': 'turn_on',
-          'entity_id': a['entityId'],
-        });
       case 'ha_automation':
-        return _runHa(a, 'haCallService', {
-          'domain': 'automation',
-          'service': 'trigger',
+        // Both take variables: script.turn_on as the script's, and
+        // automation.trigger as the run's, next to trigger.
+        final script = a['type'] == 'ha_script';
+        final plain = {
+          'domain': script ? 'script' : 'automation',
+          'service': script ? 'turn_on' : 'trigger',
           'entity_id': a['entityId'],
-        });
+        };
+        final identity = await _identity();
+        if (identity.isEmpty) return _runHa(a, 'haCallService', plain);
+        return _runHa(a, 'haCallService', {
+          ...plain,
+          'data': {'variables': identity},
+        }, plain: plain);
       case 'ha_service':
+        final data = a['data'];
+        Map<String, String>? identity;
+        if (data is Map) {
+          final used = [
+            for (final p in placeholders.keys)
+              if (_mentions(data, p)) p,
+          ];
+          if (used.isNotEmpty) identity = await _identity();
+          for (final p in used) {
+            if (!identity!.containsKey(p.substring(1, p.length - 1))) {
+              return _reportHa(
+                a,
+                CommandResult.fail('$p is unknown: ${placeholders[p]}'),
+              );
+            }
+          }
+        }
         return _runHa(a, 'haCallService', {
           'domain': a['domain'],
           'service': a['service'],
           if ('${a['entityId'] ?? ''}'.isNotEmpty) 'entity_id': a['entityId'],
-          if (a['data'] is Map) 'data': a['data'],
+          if (data is Map)
+            'data': identity == null ? data : _fill(data, identity),
         });
       case 'ha_event':
+        final data = {
+          if (a['data'] case final Map configured) ...configured,
+          ...await _identity(),
+        };
         return _runHa(a, 'haFireEvent', {
           'event': a['event'],
-          if (a['data'] is Map) 'data': a['data'],
+          if (data.isNotEmpty) 'data': data,
         });
       default:
         log.warn(name, 'unknown gesture action: ${a['type']}');
@@ -570,14 +620,26 @@ class GesturesManager extends Manager {
 
   /// [_run] for the Home Assistant actions, which show nothing on screen
   /// by themselves: the outcome goes out on the bus for the kiosk screen
-  /// to confirm with a toast, or to say why the call failed.
+  /// to confirm with a toast, or to say why the call failed. A Home
+  /// Assistant that refuses the variables gets the call again as [plain].
   Future<CommandResult> _runHa(
     Map<String, Object?> action,
     String command,
-    Map<String, Object?> params,
-  ) async {
-    final result = await commands.execute(command, params);
+    Map<String, Object?> params, {
+    Map<String, Object?>? plain,
+  }) async {
+    var result = await commands.execute(command, params);
+    if (!result.ok &&
+        plain != null &&
+        '${result.error}'.contains('extra keys not allowed')) {
+      // Refused before it ran, so it never runs twice.
+      result = await commands.execute(command, plain);
+    }
     if (!result.ok) log.warn(name, '$command failed: ${result.error}');
+    return _reportHa(action, result);
+  }
+
+  CommandResult _reportHa(Map<String, Object?> action, CommandResult result) {
     bus.publish(
       GestureActionCompleted(
         action: action,
@@ -587,4 +649,47 @@ class GesturesManager extends Manager {
     );
     return result;
   }
+
+  Future<String?> _device() async {
+    try {
+      final device = await kioskDeviceId?.call();
+      return device == null || device.isEmpty ? null : device;
+    } catch (e) {
+      // The action still runs, only without the kiosk's device.
+      log.debug(name, 'kiosk device unknown: $e');
+      return null;
+    }
+  }
+
+  /// What the Home Assistant actions tell it about the kiosk, each
+  /// variable left out while unknown.
+  Future<Map<String, String>> _identity() async {
+    final kioskName = _settings.get(defs.deviceName).trim();
+    return {
+      deviceVariable: ?await _device(),
+      if (kioskName.isNotEmpty) nameVariable: kioskName,
+    };
+  }
+
+  /// Whether [value] holds [placeholder] in any of its strings.
+  static bool _mentions(Object? value, String placeholder) => switch (value) {
+    final String s => s.contains(placeholder),
+    final Map m => m.values.any((v) => _mentions(v, placeholder)),
+    final List l => l.any((v) => _mentions(v, placeholder)),
+    _ => false,
+  };
+
+  /// [value] with each placeholder replaced by its variable in [identity].
+  static Object? _fill(Object? value, Map<String, String> identity) =>
+      switch (value) {
+        final String s => identity.entries.fold<String>(
+          s,
+          (text, e) => text.replaceAll('{${e.key}}', e.value),
+        ),
+        final Map m => {
+          for (final e in m.entries) e.key: _fill(e.value, identity),
+        },
+        final List l => [for (final v in l) _fill(v, identity)],
+        _ => value,
+      };
 }

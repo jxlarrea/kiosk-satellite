@@ -2322,6 +2322,7 @@ class VoiceManager extends Manager {
                 url: Uri.parse('$base/api/mcp'),
                 token: token,
                 deviceId: _deviceId,
+                deviceName: () => _settings.get(defs.deviceName),
               ),
               notFound: mcpMissing,
             ),

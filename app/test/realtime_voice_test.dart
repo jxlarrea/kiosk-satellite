@@ -623,6 +623,75 @@ void main() {
           expect(calls, hasLength(1));
         },
       );
+
+      test('with the kiosk name next to the device', () async {
+        final mcp = McpClient(
+          url: Uri.parse('http://ha/api/mcp'),
+          client: server(),
+          deviceId: () async => 'dev1',
+          deviceName: () => ' Kitchen ',
+        );
+        await mcp.listTools();
+        await mcp.callTool('script__probe', {
+          'room': 'Kitchen',
+          McpClient.scriptNameArgument: 'made_up',
+        });
+        await mcp.callTool('HassTurnOn', {'name': 'Kitchen'});
+        expect(calls[0]['arguments'], {
+          'room': 'Kitchen',
+          McpClient.scriptNameArgument: 'Kitchen',
+          McpClient.scriptDeviceArgument: 'dev1',
+        });
+        expect(calls[1]['arguments'], {'name': 'Kitchen'});
+
+        // The name goes without a device, and an empty one stays out.
+        calls.clear();
+        await McpClient(
+          url: Uri.parse('http://ha/api/mcp'),
+          client: server(),
+          deviceName: () => 'Kitchen',
+        ).callTool('script__probe', {'room': 'Hall'});
+        await McpClient(
+          url: Uri.parse('http://ha/api/mcp'),
+          client: server(),
+          deviceId: () async => 'dev1',
+          deviceName: () => '',
+        ).callTool('script__probe', {'room': 'Hall'});
+        expect(calls[0]['arguments'], {
+          'room': 'Hall',
+          McpClient.scriptNameArgument: 'Kitchen',
+        });
+        expect(calls[1]['arguments'], {
+          'room': 'Hall',
+          McpClient.scriptDeviceArgument: 'dev1',
+        });
+      });
+
+      test('a refused name keeps the declared device', () async {
+        // The script declares ks_device_id only, so a strict Home
+        // Assistant refuses the name.
+        answer = (args) => args.containsKey(McpClient.scriptNameArgument)
+            ? text(
+                'Error calling tool: extra keys not allowed @ '
+                "data['${McpClient.scriptNameArgument}']. Got "
+                '${jsonEncode(args)}',
+                error: true,
+              )
+            : text('done');
+        final mcp = McpClient(
+          url: Uri.parse('http://ha/api/mcp'),
+          client: server(),
+          deviceId: () async => 'dev1',
+          deviceName: () => 'Kitchen',
+        );
+        final result = await mcp.callTool('script__probe', {'room': 'Hall'});
+        expect(result.error, isFalse);
+        expect(calls, hasLength(2));
+        expect(calls.last['arguments'], {
+          'room': 'Hall',
+          McpClient.scriptDeviceArgument: 'dev1',
+        });
+      });
     });
 
     test('an HTTP error says so', () async {

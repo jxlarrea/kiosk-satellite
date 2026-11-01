@@ -12,6 +12,7 @@ import 'package:kiosk_satellite/managers/gestures/gesture_mappings.dart';
 import 'package:kiosk_satellite/managers/gestures/gestures_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
+import 'package:kiosk_satellite/managers/voice/realtime/mcp_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'clap_synth.dart';
@@ -244,10 +245,15 @@ void main() {
     late List<(String, Map<String, Object?>)> executed;
     late List<GestureActionCompleted> outcomes;
 
-    /// [haFailure] makes the Home Assistant stubs fail with that error.
+    /// [haFailure] makes the Home Assistant stubs fail with that error,
+    /// or only the calls [haRefuses] picks. [deviceId] is the kiosk's
+    /// device in Home Assistant.
     Future<void> build(
       String mappingsJson, {
       String? haFailure,
+      bool Function(Map<String, Object?> params)? haRefuses,
+      String? deviceId,
+      String? deviceName,
       Duration Function()? handClock,
     }) async {
       SharedPreferences.setMockInitialValues({
@@ -294,7 +300,11 @@ void main() {
             handler: (p) async {
               executed.add((name, p));
               final ha = name == 'haCallService' || name == 'haFireEvent';
-              if (ha && haFailure != null) return CommandResult.fail(haFailure);
+              if (ha &&
+                  haFailure != null &&
+                  (haRefuses == null || haRefuses(p))) {
+                return CommandResult.fail(haFailure);
+              }
               return const CommandResult.ok();
             },
           ),
@@ -309,6 +319,8 @@ void main() {
         settings,
         handClock: handClock,
       );
+      if (deviceId != null) gestures.kioskDeviceId = () async => deviceId;
+      if (deviceName != null) await settings.set(defs.deviceName, deviceName);
       await gestures.init();
     }
 
@@ -395,6 +407,137 @@ void main() {
         'data': {'brightness_pct': 60},
       });
       expect(executed[1].$2, {'domain': 'scene', 'service': 'turn_on'});
+    });
+
+    test('the Home Assistant actions say which kiosk ran them (issue '
+        '#1259)', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'
+        '"taps":2},"action":{"type":"ha_script","entityId":"script.room"}},'
+        '{"id":"g2","trigger":{"type":"corner_taps","corner":"tr",'
+        '"taps":2},"action":{"type":"ha_automation",'
+        '"entityId":"automation.room"}},'
+        '{"id":"g3","trigger":{"type":"corner_taps","corner":"bl",'
+        '"taps":2},"action":{"type":"ha_event","event":"ks_clap",'
+        '"data":{"probe":"shared","ks_device_id":"made_up"}}},'
+        '{"id":"g4","trigger":{"type":"corner_taps","corner":"br",'
+        '"taps":2},"action":{"type":"ha_service","domain":"script",'
+        '"service":"room","data":{"kiosk":"{ks_device_id}",'
+        '"list":["{ks_device_name} at {ks_device_id}",3],'
+        '"brightness_pct":60}}}]',
+        deviceId: 'dev1',
+        deviceName: ' Kitchen ',
+      );
+      expect(GesturesManager.deviceVariable, McpClient.scriptDeviceArgument);
+      for (final id in ['g1', 'g2', 'g3', 'g4']) {
+        await fire(id);
+      }
+      expect(executed[0].$2, {
+        'domain': 'script',
+        'service': 'turn_on',
+        'entity_id': 'script.room',
+        'data': {
+          'variables': {'ks_device_id': 'dev1', 'ks_device_name': 'Kitchen'},
+        },
+      });
+      expect(executed[1].$2, {
+        'domain': 'automation',
+        'service': 'trigger',
+        'entity_id': 'automation.room',
+        'data': {
+          'variables': {'ks_device_id': 'dev1', 'ks_device_name': 'Kitchen'},
+        },
+      });
+      expect(executed[2].$1, 'haFireEvent');
+      expect(executed[2].$2, {
+        'event': 'ks_clap',
+        'data': {
+          'probe': 'shared',
+          'ks_device_id': 'dev1',
+          'ks_device_name': 'Kitchen',
+        },
+      });
+      expect(executed[3].$2, {
+        'domain': 'script',
+        'service': 'room',
+        'data': {
+          'kiosk': 'dev1',
+          'list': ['Kitchen at dev1', 3],
+          'brightness_pct': 60,
+        },
+      });
+      expect(outcomes.every((o) => o.ok), isTrue);
+    });
+
+    test('without a device the name still goes, and an unknown '
+        'placeholder fails', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'
+        '"taps":2},"action":{"type":"ha_script","entityId":"script.room"}},'
+        '{"id":"g2","trigger":{"type":"corner_taps","corner":"tr",'
+        '"taps":2},"action":{"type":"ha_service","domain":"script",'
+        '"service":"room","data":{"name":"{ks_device_name}",'
+        '"kiosk":"{ks_device_id}"}}}]',
+        deviceName: 'Kitchen',
+      );
+      await fire('g1');
+      await fire('g2');
+      expect(executed, hasLength(1));
+      expect(executed.single.$2, {
+        'domain': 'script',
+        'service': 'turn_on',
+        'entity_id': 'script.room',
+        'data': {
+          'variables': {'ks_device_name': 'Kitchen'},
+        },
+      });
+      expect(outcomes[1].ok, isFalse);
+      expect(outcomes[1].error, contains('{ks_device_id} is unknown'));
+    });
+
+    test('without a device the actions run as before, and a placeholder '
+        'fails', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'
+        '"taps":2},"action":{"type":"ha_event","event":"ks_clap",'
+        '"data":{"probe":"shared"}}},'
+        '{"id":"g2","trigger":{"type":"corner_taps","corner":"tr",'
+        '"taps":2},"action":{"type":"ha_service","domain":"script",'
+        '"service":"room","data":{"kiosk":"{ks_device_id}"}}}]',
+      );
+      await fire('g1');
+      await fire('g2');
+      expect(executed, hasLength(1));
+      expect(executed.single.$1, 'haFireEvent');
+      expect(executed.single.$2, {
+        'event': 'ks_clap',
+        'data': {'probe': 'shared'},
+      });
+      expect(outcomes, hasLength(2));
+      expect(outcomes[1].ok, isFalse);
+      expect(outcomes[1].error, contains('{ks_device_id} is unknown'));
+    });
+
+    test('a Home Assistant that refuses the variables runs the call '
+        'without them', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'
+        '"taps":2},"action":{"type":"ha_automation",'
+        '"entityId":"automation.room"}}]',
+        deviceId: 'dev1',
+        haFailure:
+            "automation.trigger failed: {code: invalid_format, message: "
+            "extra keys not allowed @ data['variables']}",
+        haRefuses: (p) => p.containsKey('data'),
+      );
+      await fire('g1');
+      expect(executed, hasLength(2));
+      expect(executed[1].$2, {
+        'domain': 'automation',
+        'service': 'trigger',
+        'entity_id': 'automation.room',
+      });
+      expect(outcomes.single.ok, isTrue);
     });
 
     test('a Home Assistant action reports its outcome for a toast', () async {

@@ -3430,6 +3430,44 @@ class HomeAssistantManager extends Manager {
     }
   }
 
+  final _esphomeDevices = <String, String>{};
+  final _esphomeMisses = <String, DateTime>{};
+
+  /// Home Assistant's device for the ESPHome server reporting [mac], the
+  /// kiosk's own device, found by its entities' unique IDs. Null while
+  /// Home Assistant has not adopted it. A miss is not asked again for a
+  /// minute, so actions on a kiosk without one do not fetch the registry
+  /// every time.
+  Future<String?> esphomeDeviceId(String mac) async {
+    final lower = mac.toLowerCase();
+    if (lower.isEmpty || !configured) return null;
+    final key = '$baseUrl $lower';
+    if (_esphomeDevices[key] case final cached?) return cached;
+    final missed = _esphomeMisses[key];
+    if (missed != null &&
+        DateTime.now().difference(missed) < const Duration(minutes: 1)) {
+      return null;
+    }
+    try {
+      final list = await _wsCommand({'type': 'config/entity_registry/list'});
+      if (list is List) {
+        for (final raw in list) {
+          if (raw is! Map || raw['platform'] != 'esphome') continue;
+          final unique = '${raw['unique_id'] ?? ''}'.toLowerCase();
+          final device = raw['device_id'];
+          if (unique.startsWith('$lower-') && device is String) {
+            _esphomeMisses.remove(key);
+            return _esphomeDevices[key] = device;
+          }
+        }
+      }
+    } catch (e) {
+      log.debug(name, 'kiosk device lookup failed: $e');
+    }
+    _esphomeMisses[key] = DateTime.now();
+    return null;
+  }
+
   @override
   Future<void> dispose() async {
     await _remoteObservers?.cancel();

@@ -49,6 +49,7 @@ class McpClient {
     this.timeout = const Duration(seconds: 15),
     this.clientVersion = '',
     this.deviceId,
+    this.deviceName,
   }) : _client = client ?? http.Client();
 
   final Uri url;
@@ -62,6 +63,10 @@ class McpClient {
   /// timers on it. Scripts get it as [scriptDeviceArgument]. Null for any
   /// other server.
   final Future<String?> Function()? deviceId;
+
+  /// The kiosk's name, which scripts get as [scriptNameArgument]. Null or
+  /// empty leaves it out.
+  final String Function()? deviceName;
 
   static const protocolVersion = '2025-06-18';
 
@@ -101,6 +106,9 @@ class McpClient {
   /// declared as fields or not.
   static const scriptDeviceArgument = 'ks_device_id';
 
+  /// The script variable that carries [deviceName] the same way.
+  static const scriptNameArgument = 'ks_device_name';
+
   /// Home Assistant's MCP Server names the tool of each exposed script
   /// this way. With more than one LLM API ticked on the server, every tool
   /// name starts with its API's id, and scripts come from Assist's.
@@ -118,24 +126,40 @@ class McpClient {
     }
   }
 
+  /// What every script gets about the kiosk, each argument left out while
+  /// unknown.
+  Map<String, String> _scriptArguments(String? device) {
+    var name = '';
+    try {
+      name = deviceName?.call().trim() ?? '';
+    } catch (_) {}
+    return {
+      scriptDeviceArgument: ?device,
+      if (name.isNotEmpty) scriptNameArgument: name,
+    };
+  }
+
   static Map<String, Object?>? _metaFor(String? device) =>
       device == null ? null : {deviceMetaKey: device};
 
-  /// [schema] without the device field, for a script that declares it: the
-  /// kiosk fills it in, so the model must not.
-  static Map<String, Object?> _withoutDeviceField(Map<String, Object?> schema) {
+  /// [schema] without the [fields] a script declares: the kiosk fills
+  /// them in, so the model must not.
+  static Map<String, Object?> _withoutFields(
+    Map<String, Object?> schema,
+    Iterable<String> fields,
+  ) {
     final properties = schema['properties'];
-    if (properties is! Map || !properties.containsKey(scriptDeviceArgument)) {
+    if (properties is! Map || !fields.any(properties.containsKey)) {
       return schema;
     }
     final required = schema['required'];
     return {
       ...schema,
-      'properties': {...properties}..remove(scriptDeviceArgument),
+      'properties': {...properties}..removeWhere((k, _) => fields.contains(k)),
       if (required is List)
         'required': [
           for (final field in required)
-            if (field != scriptDeviceArgument) field,
+            if (!fields.contains(field)) field,
         ],
     };
   }
@@ -145,6 +169,7 @@ class McpClient {
     await _initialize();
     final device = await _device();
     final meta = _metaFor(device);
+    final filled = _scriptArguments(device).keys;
     final tools = <McpTool>[];
     String? cursor;
     for (var page = 0; page < 20; page++) {
@@ -166,8 +191,8 @@ class McpClient {
             McpTool(
               name: name,
               description: '${raw['description'] ?? ''}',
-              inputSchema: device != null && isScriptTool(name)
-                  ? _withoutDeviceField(schema)
+              inputSchema: isScriptTool(name)
+                  ? _withoutFields(schema, filled)
                   : schema,
             ),
           );
@@ -192,12 +217,19 @@ class McpClient {
       {'name': name, 'arguments': args, '_meta': ?meta},
     );
     Map<String, Object?> result;
-    if (device != null && isScriptTool(name)) {
-      result = await call({...arguments, scriptDeviceArgument: device});
-      if (result['isError'] == true && _refusedExtraKey(result)) {
-        // A Home Assistant that checks script arguments against the fields
-        // refuses the undeclared one: run the script without it.
-        result = await call(arguments);
+    if (isScriptTool(name)) {
+      final added = _scriptArguments(device);
+      result = await call({...arguments, ...added});
+      // A Home Assistant that checks script arguments against the fields
+      // refuses an undeclared one: run the script without it, keeping the
+      // ones it declares.
+      for (
+        var refused = _refusedKey(result, added.keys);
+        refused != null;
+        refused = _refusedKey(result, added.keys)
+      ) {
+        added.remove(refused);
+        result = await call({...arguments, ...added});
       }
     } else {
       result = await call(arguments);
@@ -214,12 +246,25 @@ class McpClient {
     return McpResult(parts.join('\n'), error: result['isError'] == true);
   }
 
-  /// Whether the call was refused for the device argument before the
-  /// script ran. Any other error stands, so a script never runs twice.
-  static bool _refusedExtraKey(Map<String, Object?> result) {
+  /// Which of the kiosk's [added] arguments the call was refused for
+  /// before the script ran, or null. Any other error stands, so a script
+  /// never runs twice.
+  static String? _refusedKey(
+    Map<String, Object?> result,
+    Iterable<String> added,
+  ) {
+    if (result['isError'] != true) return null;
     final text = jsonEncode(result['content']);
-    return text.contains('extra keys not allowed') &&
-        text.contains(scriptDeviceArgument);
+    if (!text.contains('extra keys not allowed')) return null;
+    // Home Assistant names the key as data['key'], ahead of any copy of
+    // the arguments it quotes.
+    for (final key in added) {
+      if (text.contains("['$key']")) return key;
+    }
+    for (final key in added) {
+      if (text.contains(key)) return key;
+    }
+    return null;
   }
 
   Future<void> _notify(String method) async {

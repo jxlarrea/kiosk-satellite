@@ -165,6 +165,11 @@ class AppContainer {
     dlna = DlnaManager(bus, commands, log, settings);
     airplay = AirPlayManager(bus, commands, log, settings);
     btProxy = BtProxyManager(bus, commands, log, settings);
+    // Composition-root wiring: the gesture actions tell Home Assistant
+    // which kiosk ran them (issue #1259) by the device its ESPHome server
+    // is adopted as.
+    gestures.kioskDeviceId = () async =>
+        homeAssistant.esphomeDeviceId(await btProxy.identityMac());
     // Composition-root wiring: the opaque full-screen overlays report their
     // visibility so the dashboard WebView stops compositing underneath
     // them. The settings route reports from the UI, where its transition

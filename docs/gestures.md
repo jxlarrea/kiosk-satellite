@@ -75,6 +75,36 @@ The action chooser groups options into three categories: Kiosk Satellite, Androi
 
 The four Home Assistant actions do not inherently change anything on the screen. Therefore, when they complete, Kiosk Satellite displays a toast notification titled by the action type (Home Assistant Service, Script, Automation, or Event). It will detail exactly what ran (e.g., "Called light.turn_on", "Ran script.morning"). If it fails, the toast will appear in red and explain why (e.g., Home Assistant not configured, connection down, call rejected). All other actions provide their own visual confirmation simply by executing.
 
+### Which kiosk ran it
+
+The Home Assistant actions tell Home Assistant which kiosk ran them with two variables:
+
+- `ks_device_id` is the kiosk's Home Assistant device ID, the same variable the scripts run by [realtime conversations](voice-satellite.md) get.
+- `ks_device_name` is the kiosk's **Device name**, which realtime conversations pass to scripts too.
+
+One gesture, synced to every kiosk through Fleet, can then act on the room of whichever kiosk ran it. Set each kiosk's area on its device in Home Assistant.
+
+| Action | Where the variables go |
+| --- | --- |
+| Run a script | Script variables. The script does not need fields for them. |
+| Trigger an automation | Automation variables, next to `trigger`. |
+| Fire an event | The event data, next to the data you set. Read them as `trigger.event.data.ks_device_id` and `trigger.event.data.ks_device_name`. |
+| Call a service | Only where the data says `{ks_device_id}` or `{ks_device_name}`, since many services refuse keys they do not know. |
+
+To toggle the lights in the kiosk's room with two claps, map the claps to **Fire an event** with the event `ks_clap` and use this automation:
+
+```yaml
+triggers:
+  - trigger: event
+    event_type: ks_clap
+actions:
+  - action: light.toggle
+    target:
+      area_id: "{{ area_id(trigger.event.data.ks_device_id) }}"
+```
+
+The kiosk finds its device ID through its ESPHome server, so turn on [ESPHome](esphome.md) and add the kiosk to Home Assistant first. Without it the actions leave out `ks_device_id`, and a **Call a service** action with `{ks_device_id}` in its data fails with a red toast. The same goes for `ks_device_name` while the **Device name** is empty.
+
 ## Claps
 
 The app detects claps purely acoustically: it listens for a sharp, broadband burst of sound that significantly exceeds the room's ambient noise level and decays within a fraction of a second. This detection relies on simple arithmetic applied to the audio stream; it uses absolutely no machine learning models and relies on no cloud services. It is so lightweight that it runs comfortably on the weakest supported devices without ever competing with wake word detection resources.

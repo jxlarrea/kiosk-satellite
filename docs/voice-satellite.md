@@ -119,7 +119,7 @@ A wake word answered by a realtime provider starts a conversation with a speech 
 
 **Which room.** Each conversation starts with the kiosk's name and its area in Home Assistant, so "turn on the lights" means the lights in the kiosk's area unless you name another one. Set the area on the kiosk's device in Home Assistant. The Assist satellite entity stays idle during a conversation, so automations that need to know which kiosk is talking should check the kiosk's [Voice Satellite](#home-assistant-entities-and-actions) sensor.
 
-**Which kiosk ran a script.** Every script the model runs gets the kiosk's Home Assistant device ID in a `ks_device_id` variable. The script does not need a field for it, so one script can act on whichever kiosk asked:
+**Which kiosk ran a script.** Every script the model runs gets the kiosk's Home Assistant device ID in a `ks_device_id` variable and its **Device name** in `ks_device_name`. The script does not need fields for them, so one script can act on whichever kiosk asked:
 
 ```yaml
 sequence:
@@ -128,7 +128,7 @@ sequence:
       message: "Asked from {{ device_attr(ks_device_id, 'name') }} in {{ area_name(ks_device_id) }}"
 ```
 
-If a script declares a `ks_device_id` field, the kiosk hides it from the model and fills it in. This works only with **Tools** on **Home Assistant**.
+If a script declares a `ks_device_id` or `ks_device_name` field, the kiosk hides it from the model and fills it in. [Gestures](gestures.md#which-kiosk-ran-it) pass the same two variables. This works only with **Tools** on **Home Assistant**.
 
 **Picking up where you left off.** **Session duration** keeps what was said for 30 minutes up to 12 hours and gives it to the next conversation, so you can refer back to something after a conversation ended. Older exchanges are dropped, and nothing is kept across an app restart.
 
