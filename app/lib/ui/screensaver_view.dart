@@ -2191,12 +2191,8 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
         alpha: .62,
         weight: FontWeight.w600,
       ).copyWith(letterSpacing: 1.2);
-      final heading = Text(
-        l10n(context).calendarUpNext.toUpperCase(),
-        style: headingStyle,
-      );
-      // Each later day's events go under its name. Today's sit right
-      // under the heading.
+      // Each later day's events go under its name. Today's come first,
+      // with no heading.
       final today = cal_model.dateOnly(now);
       DateTime? dayOf(cal_model.CalendarEvent e) {
         final day = cal_model.dateOnly(e.start);
@@ -2232,11 +2228,13 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
           if (dayOf(e) case final day?
               when i == 0 || dayOf(coming[i - 1]) != day)
             Padding(
-              padding: EdgeInsets.only(top: textSize * .8),
+              padding: EdgeInsets.only(top: i == 0 ? 0 : textSize * .8),
               child: Text(dayName(day).toUpperCase(), style: headingStyle),
             ),
           Padding(
-            padding: EdgeInsets.only(top: textSize * .4),
+            padding: EdgeInsets.only(
+              top: i == 0 && dayOf(e) == null ? 0 : textSize * .4,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -2297,7 +2295,7 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
                     crossAxisAlignment: right
                         ? CrossAxisAlignment.end
                         : CrossAxisAlignment.start,
-                    children: [heading, ...rows],
+                    children: rows,
                   ),
                 ),
               ),
