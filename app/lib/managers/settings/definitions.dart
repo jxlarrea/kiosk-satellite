@@ -9698,7 +9698,7 @@ const sendspinFullscreen = SettingDef<bool>(
 const sendspinFullscreenSplit = SettingDef<bool>(
   key: 'sendspin.fullscreen_split',
   type: SettingType.boolean,
-  defaultValue: true,
+  defaultValue: false,
   title: 'Show alongside screensaver',
   description:
       'Keep the screensaver visible beside Now Playing. Portrait screens '

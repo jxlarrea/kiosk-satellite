@@ -126,7 +126,7 @@ Configures direct integration with local Sonos hardware.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | "Now Playing" instead of the screensaver | off | Enables the full screen media view as an idle screensaver replacement during active playback. |
-| Show alongside screensaver | on | Keeps the screensaver on the left and Now Playing on the right. Portrait screens stack the two views. Small screens keep the full screen player. |
+| Show alongside screensaver | off | Keeps the screensaver on the left and Now Playing on the right. Portrait screens stack the two views. Small screens keep the full screen player. |
 | Fill the screen | Always | Overrides photo filling while sharing the display with Now Playing. Default follows each screensaver's setting. Off, Smart and Always use the same rules as the photo screensavers. |
 | Override screensaver brightness | off | Uses normal brightness while Now Playing is shown alongside a screensaver, overriding its brightness and any scheduled brightness. |
 
@@ -233,7 +233,7 @@ In Kiosk Mode, visibility controls for the card follow the **Floating Player** s
 
 When enabled, the full screen "Now Playing" view activates during active playback as an idle screensaver replacement. It features blurred, full screen album artwork in the background, sharp centered artwork, and prominent title and artist typography. Track changes cross-fade smoothly.
 
-**Show alongside screensaver**, enabled by default under **Settings > Media Player > Now Playing > Screensaver**, lets you keep photos, clocks or other screensaver content visible while music plays. In landscape, the screensaver takes about two thirds of the display and Now Playing fills the right panel. In portrait, the screensaver fills the top half and the player fills the bottom half. Screens smaller than 700 logical pixels along the split direction keep the full screen player. The Dim screensaver uses a black panel beside Now Playing and keeps its configured dim level.
+**Show alongside screensaver**, under **Settings > Media Player > Now Playing > Screensaver**, lets you keep photos, clocks or other screensaver content visible while music plays. In landscape, the screensaver takes about two thirds of the display and Now Playing fills the right panel. In portrait, the screensaver fills the top half and the player fills the bottom half. Screens smaller than 700 logical pixels along the split direction keep the full screen player. The Dim screensaver uses a black panel beside Now Playing and keeps its configured dim level.
 
 **Layout mode** under **Now Playing > User Interface** picks how the standalone view is arranged. It defaults to **Vertical** and is ignored while Now Playing is shown alongside a screensaver.
 

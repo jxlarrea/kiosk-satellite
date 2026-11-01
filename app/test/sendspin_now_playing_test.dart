@@ -212,7 +212,7 @@ void main() {
         defs.sendspinFullscreenPhotoFill,
         defs.sendspinFullscreenOverrideBrightness,
       ]);
-      expect(defs.sendspinFullscreenSplit.defaultValue, isTrue);
+      expect(defs.sendspinFullscreenSplit.defaultValue, isFalse);
       expect(defs.sendspinFullscreenLayout.defaultValue, 'vertical');
       expect(
         defs.sendspinFullscreenSplit.dependsOn,
