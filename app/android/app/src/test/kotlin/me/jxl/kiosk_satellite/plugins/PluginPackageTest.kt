@@ -269,6 +269,7 @@ class PluginPackageTest {
         assertEquals(setOf("screensaver.mode"), PluginManifest(caps("screensaver.mode")).capabilities)
         assertEquals(setOf("screensaver", "screensaver.mode"), PluginManifest(caps("screensaver", "screensaver.mode")).capabilities)
         rejects { PluginManifest(caps("screensaver.modes")) }
+        assertTrue(PluginHostPolicy.validEvent("screensaver.appearance"))
     }
     @Test fun cameraAndBarcodeStandOnTheirOwn() {
         fun caps(vararg names: String) = manifest().put("capabilities", org.json.JSONArray(names.toList()))

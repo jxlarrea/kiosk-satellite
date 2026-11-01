@@ -314,6 +314,10 @@ class PluginManager extends Manager implements FleetPluginHost {
   /// read and hold. Set by the app container before [init].
   PluginScreensaverModes? screensaverModes;
 
+  /// The screensaver's look plugins follow. Set by the app container
+  /// before [init].
+  PluginScreensaverFeed? screensaverFeed;
+
   /// The device camera for the camera and barcode capabilities. Set by the
   /// app container before [init].
   PluginCamera? camera;
@@ -441,6 +445,7 @@ class PluginManager extends Manager implements FleetPluginHost {
       ma: maSocket,
       voice: voice,
       screensaverModes: screensaverModes,
+      screensaver: screensaverFeed,
     );
     channel.setMethodCallHandler((call) async {
       if (_disposed) return null;

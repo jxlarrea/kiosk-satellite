@@ -144,10 +144,10 @@ Map<String, Object?>? activeScheduleEntry(
 /// reading hovering on the line from flickering the color back and forth:
 /// the sensor's native damper spaces events out, it does not steady them.
 /// A null [lux] is a sensor that has not spoken and has no persisted last
-/// reading, which cannot claim the room is dark. The clock face and Turn
-/// screen off at night (issue #1060) both decide with it, from the same
-/// reading, so the screen only goes off under a face already wearing its
-/// night colors.
+/// reading, which cannot claim the room is dark. The screensaver manager
+/// decides once for the clock face, Turn screen off at night (issue #1060)
+/// and plugins, so the screen only goes off under a face already wearing
+/// its night colors.
 bool clockNightActive({
   required bool previous,
   required bool enabled,
@@ -223,9 +223,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   final Duration _nightTurnOffUnit;
   Timer? _nightTimer;
 
-  /// Night mode's decision as the face makes it, kept between sessions so
-  /// the band above the threshold holds the same way for both.
-  bool _night = false;
+  /// Night mode's decision, kept between sessions so the band above the
+  /// threshold holds. The clock face, its corner widgets and plugins
+  /// (screensaver.appearance) all follow this one decision.
+  final clockNight = ValueNotifier<bool>(false);
 
   /// The dark panel or black screen in this session is Night mode's, so
   /// the room brightening may undo it. A panel turned off by hand or by
@@ -253,15 +254,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// a dark screen while the room is dark under the Clock screensaver, and
   /// light the clock again once it is not.
   void _reviewNight() {
-    _night = clockNightActive(
-      previous: _night,
+    clockNight.value = clockNightActive(
+      previous: clockNight.value,
       enabled: _settings.get(defs.screensaverClockNight),
       lux: _lightReading(),
       threshold: _settings.get(defs.screensaverClockNightLux).toDouble(),
     );
     final minutes = _settings.get(defs.screensaverClockNightTurnOffMinutes);
     final wanted =
-        _active && _night && _effectiveMode == 'clock' && minutes > 0;
+        _active && clockNight.value && _effectiveMode == 'clock' && minutes > 0;
     if (!wanted) {
       _nightTimer?.cancel();
       _nightTimer = null;
@@ -654,6 +655,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // answers to, session or not: between sessions it only keeps the
     // decision in step with the face's.
     bus.on<LightLevelChanged>().listen((_) => _reviewNight());
+    // The last known reading stands until the sensor speaks, so the face
+    // starts in the colors it left off in.
+    _reviewNight();
     bus.on<NotificationsChanged>().listen((e) {
       unawaited(_onNotificationsChanged(e.showing));
     });
@@ -1942,6 +1946,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// Whether the Now Playing view is on screen, as the screensaver overlay
   /// draws it: a session with a visible view that the takeover fills.
   bool _nowPlayingShown = false;
+  bool get nowPlayingShown => _nowPlayingShown;
 
   void _syncNowPlayingShown() {
     final view = activeView.value;
@@ -2251,6 +2256,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _screenOffTimer?.cancel();
     _nightTimer?.cancel();
     activeView.dispose();
+    clockNight.dispose();
     dashboardShowing.dispose();
     scheduleNowPlaying.dispose();
     modeOverride.dispose();

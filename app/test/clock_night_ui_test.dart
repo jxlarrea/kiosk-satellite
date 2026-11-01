@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart' as flutter_test;
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/managers/glance/glance_manager.dart';
@@ -25,6 +26,19 @@ void main() {
   const noSensor = 'No ambient light sensor on this device.';
   const nightRed = Color(0xFF822222);
 
+  // Started screensaver managers, stopped before each test ends: their
+  // schedule timer would outlive the test.
+  final started = <AppContainer>[];
+  void testWidgets(String description, WidgetTesterCallback body) =>
+      flutter_test.testWidgets(description, (tester) async {
+        await body(tester);
+        await tester.pumpWidget(const SizedBox());
+        for (final container in started) {
+          await container.screensaver.dispose();
+        }
+        started.clear();
+      });
+
   Future<AppContainer> makeContainer(
     Map<String, Object> prefs, {
     bool sensor = true,
@@ -40,6 +54,9 @@ void main() {
     await container.settings.init();
     container.device.hasLightSensor = sensor;
     container.device.lightLux = lux;
+    // The manager makes the Night mode decision the face follows.
+    await container.screensaver.init();
+    started.add(container);
     return container;
   }
 

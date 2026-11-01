@@ -46,7 +46,6 @@ import '../managers/camera/models.dart'
     show CameraViewConfig, decodeCameraViewIds;
 import '../managers/device/haptics.dart';
 import '../managers/screensaver/photo_metadata.dart';
-import '../managers/screensaver/screensaver_manager.dart' show clockNightActive;
 import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/settings/settings_manager.dart';
@@ -87,13 +86,11 @@ class ScreensaverOverlay extends StatefulWidget {
 class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
   StreamSubscription<SettingChanged>? _widgetsSub;
 
-  /// Whether the Clock screensaver's Night mode holds (issue #391). Decided
-  /// here rather than in the clock face because the corner widgets, which
-  /// ride over the face from this overlay, take the night color too. Kept
-  /// as state, not derived per build: leaving night above the threshold
-  /// rather than at it needs the last decision (see [clockNightActive]).
-  bool _night = false;
-  StreamSubscription<LightLevelChanged>? _luxSub;
+  /// Whether the Clock screensaver's Night mode holds (issue #391), as the
+  /// screensaver manager decides it. Read here rather than in the clock
+  /// face because the corner widgets, which ride over the face from this
+  /// overlay, take the night color too.
+  bool get _night => container.screensaver.clockNight.value;
 
   AppContainer get container => widget.container;
 
@@ -101,6 +98,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
   void initState() {
     super.initState();
     container.screensaver.scheduleNowPlaying.addListener(_scheduleChanged);
+    container.screensaver.clockNight.addListener(_scheduleChanged);
     // Editing the Widgets group while the screensaver shows (the remote
     // admin can) applies immediately: the widget list is read at build,
     // so a changed list needs this rebuild to mount or unmount overlays.
@@ -140,29 +138,16 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       for (final metadata in photoMetadataDefs.values)
         for (final def in metadata.all) def.key,
     };
-    // The Night mode keys ride along so they can be tuned from the remote
-    // admin against the live face: the decision is remade, since the
-    // switch and the threshold are its inputs.
-    final night = {
-      defs.screensaverClockNight.key,
-      defs.screensaverClockNightLux.key,
+    // The Night mode colors ride along so they can be tuned from the
+    // remote admin against the live face. The manager remakes the decision
+    // itself when its switch or threshold moves.
+    live.addAll({
       defs.screensaverClockNightColor.key,
       defs.screensaverClockNightBgColor.key,
       defs.screensaverClockNightCardColor.key,
-    };
-    _widgetsSub = container.bus.on<SettingChanged>().listen((e) {
-      if (!mounted) return;
-      if (night.contains(e.key)) {
-        _night = _computeNight();
-        setState(() {});
-      } else if (live.contains(e.key)) {
-        setState(() {});
-      }
     });
-    _night = _computeNight();
-    _luxSub = container.bus.on<LightLevelChanged>().listen((_) {
-      final next = _computeNight();
-      if (next != _night && mounted) setState(() => _night = next);
+    _widgetsSub = container.bus.on<SettingChanged>().listen((e) {
+      if (mounted && live.contains(e.key)) setState(() {});
     });
   }
 
@@ -173,20 +158,9 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
   @override
   void dispose() {
     container.screensaver.scheduleNowPlaying.removeListener(_scheduleChanged);
+    container.screensaver.clockNight.removeListener(_scheduleChanged);
     _widgetsSub?.cancel();
-    _luxSub?.cancel();
     super.dispose();
-  }
-
-  bool _computeNight() {
-    final s = container.settings;
-    final d = container.device;
-    return clockNightActive(
-      previous: _night,
-      enabled: s.get(defs.screensaverClockNight) && d.hasLightSensor,
-      lux: d.lightLux,
-      threshold: s.get(defs.screensaverClockNightLux).toDouble(),
-    );
   }
 
   /// Whether Night mode clears the corner widgets off the Clock

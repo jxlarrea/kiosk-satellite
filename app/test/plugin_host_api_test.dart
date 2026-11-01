@@ -1176,6 +1176,135 @@ void main() {
     },
   );
 
+  group('Screensaver appearance (issue #1250)', () {
+    late SettingsManager settings;
+    late ValueNotifier<String?> view;
+    late ValueNotifier<bool> night;
+    late bool nowPlaying;
+
+    setUp(() async {
+      await api.dispose();
+      SharedPreferences.setMockInitialValues({});
+      settings = SettingsManager(bus, commands, log);
+      await settings.init();
+      view = ValueNotifier(null);
+      night = ValueNotifier(false);
+      nowPlaying = false;
+      api = PluginHostApi(
+        commands,
+        bus,
+        (event) async => sent.add(event),
+        screensaver: PluginScreensaverFeed(
+          view: view,
+          night: night,
+          nowPlaying: () => nowPlaying,
+          settings: settings,
+        ),
+      );
+      api.open({
+        ...session,
+        'capabilities': ['host.read'],
+      });
+    });
+
+    Future<void> settle() =>
+        Future<void>.delayed(const Duration(milliseconds: 150));
+
+    const day = {
+      'view': 'clock',
+      'night': false,
+      'textColor': null,
+      'backgroundColor': null,
+      'cardColor': null,
+      'widgetsHidden': false,
+    };
+
+    test('reads the Night mode the clock wears', () async {
+      final catalog = (await read('getHostApi'))['data'] as Map;
+      expect(catalog['commands'], contains('getScreensaverAppearance'));
+      expect(catalog['events'], contains('screensaver.appearance'));
+      expect((await read('getScreensaverAppearance'))['data'], {
+        ...day,
+        'view': null,
+      });
+
+      // Night mode is the clock's: another view never wears it.
+      night.value = true;
+      view.value = 'photos';
+      expect(
+        ((await read('getScreensaverAppearance'))['data'] as Map)['night'],
+        false,
+      );
+
+      view.value = 'clock';
+      await settings.set(defs.screensaverClockNightColor, '10,20,30');
+      await settings.set(defs.screensaverClockNightHideWidgets, true);
+      expect((await read('getScreensaverAppearance'))['data'], {
+        'view': 'clock',
+        'night': true,
+        'textColor': 0xFF0A141E,
+        'backgroundColor': 0xFF000000,
+        'cardColor': null,
+        'widgetsHidden': true,
+      });
+
+      await settings.set(defs.screensaverClockStyle, 'flip');
+      expect(
+        ((await read('getScreensaverAppearance'))['data'] as Map)['cardColor'],
+        0xFF141414,
+      );
+
+      // Now Playing hides the face.
+      nowPlaying = true;
+      expect(
+        ((await read('getScreensaverAppearance'))['data'] as Map)['night'],
+        false,
+      );
+    });
+
+    test('tells subscribers when the look changes, once', () async {
+      subscribe('screensaver.appearance');
+      view.value = 'clock';
+      await settle();
+      expect(sent.single['event'], 'screensaver.appearance');
+      expect(sent.single['payload'], containsPair('night', false));
+      sent.clear();
+
+      night.value = true;
+      await settle();
+      expect(sent.single['payload'], containsPair('night', true));
+      expect(sent.single['payload'], containsPair('textColor', 0xFF822222));
+      sent.clear();
+
+      await settings.set(defs.screensaverClockNightBgColor, '1,2,3');
+      await settle();
+      expect(
+        sent.single['payload'],
+        containsPair('backgroundColor', 0xFF010203),
+      );
+      sent.clear();
+
+      // A change that leaves the look as it was is not news.
+      await settings.set(defs.screensaverClockNightCardColor, '9,9,9');
+      await settle();
+      expect(sent, isEmpty);
+
+      nowPlaying = true;
+      bus.publish(const FullscreenViewChanged(view: 'nowPlaying', shown: true));
+      await settle();
+      expect(sent.single['payload'], {
+        ...day,
+        'time': (sent.single['payload'] as Map)['time'],
+      });
+      sent.clear();
+
+      nowPlaying = false;
+      view.value = null;
+      await settle();
+      expect(sent.single['payload'], containsPair('view', null));
+    });
+  });
+
   group('Home Assistant access', () {
     late _FakeHa ha;
     late PluginHostApi haApi;

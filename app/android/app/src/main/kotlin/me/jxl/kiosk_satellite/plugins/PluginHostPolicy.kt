@@ -9,7 +9,7 @@ internal object PluginHostPolicy {
         event.removePrefix("ha.entity.").let { it.length <= 255 && it.matches(Regex("[a-z0-9_]+\\.[a-z0-9_]+")) }
     fun validEvent(event: String) = event in events || entityEvent(event)
     val events = setOf(
-        "screensaver.state", "screensaver.countdown", "screensaver.view",
+        "screensaver.state", "screensaver.countdown", "screensaver.view", "screensaver.appearance",
         "screen.state", "screen.brightness", "screen.ambient",
         "device.power", "device.network", "device.volume", "device.light", "device.key",
         "detection.motion", "detection.face", "detection.proximity",

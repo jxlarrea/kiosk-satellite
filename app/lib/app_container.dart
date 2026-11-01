@@ -210,6 +210,12 @@ class AppContainer {
         hold: screensaver.setModeOverride,
         release: screensaver.clearModeOverride,
       )
+      ..screensaverFeed = PluginScreensaverFeed(
+        view: screensaver.activeView,
+        night: screensaver.clockNight,
+        nowPlaying: () => screensaver.nowPlayingShown,
+        settings: settings,
+      )
       ..camera = PluginCamera(
         motion: motion,
         commands: commands,
