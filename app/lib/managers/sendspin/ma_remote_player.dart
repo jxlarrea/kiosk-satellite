@@ -785,12 +785,22 @@ class MaRemotePlayer implements RemotePlayer {
         source != _player?['active_group'];
   }
 
-  num? get _playerPosition {
-    final media = _player?['current_media'];
-    final elapsed =
-        _player?['elapsed_time'] ??
-        (media is Map ? media['elapsed_time'] : null);
-    return elapsed is num ? elapsed : null;
+  /// The position and the time it was measured at, both from one place.
+  /// The media's own pair comes first: MA puts the song's position there,
+  /// while a synced group member's player-level time is the leader's
+  /// stream clock, which runs from when the stream started.
+  (num, Object?)? get _playerPosition {
+    final player = _player;
+    final media = player?['current_media'];
+    for (final holder in [media, player]) {
+      if (holder is Map && holder['elapsed_time'] is num) {
+        return (
+          holder['elapsed_time'] as num,
+          holder['elapsed_time_last_updated'],
+        );
+      }
+    }
+    return null;
   }
 
   void _publishPlayerMedia() {
@@ -832,10 +842,7 @@ class MaRemotePlayer implements RemotePlayer {
     queueEmpty = false;
     final playing = state == 'playing';
     final now = DateTime.now().millisecondsSinceEpoch;
-    final elapsed = _playerPosition;
-    final measuredAt = player['elapsed_time'] is num
-        ? player['elapsed_time_last_updated']
-        : media['elapsed_time_last_updated'];
+    final (elapsed, measuredAt) = _playerPosition ?? (null, null);
     var position = ((elapsed ?? 0) * 1000).round();
     if (playing && elapsed != null && measuredAt is num) {
       position += max(0, now - (measuredAt * 1000).round());

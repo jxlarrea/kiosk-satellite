@@ -236,6 +236,23 @@ void main() {
     },
   );
 
+  test('a synced member shows the song position, not the stream clock', () {
+    final now = DateTime.now().millisecondsSinceEpoch / 1000;
+    final player = {
+      ..._player(),
+      'elapsed_time': 6041.889728,
+      'elapsed_time_last_updated': now - 10,
+    };
+    (player['current_media'] as Map)
+      ..['duration'] = 214
+      ..['elapsed_time'] = 0
+      ..['elapsed_time_last_updated'] = now - 10;
+    update(player);
+    expect(emitted.last!['durationMs'], 214000);
+    expect(emitted.last!['positionMs'], closeTo(10000, 1000));
+    expect(remote.lyricsSynced, isTrue);
+  });
+
   test('media position and legacy player state are supported', () {
     final player = _player()
       ..remove('elapsed_time')
