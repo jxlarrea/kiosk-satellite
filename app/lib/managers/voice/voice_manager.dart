@@ -2750,7 +2750,9 @@ class VoiceManager extends Manager {
         : next;
     if (next.visible) shown = shown.copyWith(assistant: _assistant);
     if (_settings.get(defs.voiceHideSentimentTags) && next.answer.isNotEmpty) {
-      shown = shown.copyWith(answer: stripSentimentTags(next.answer));
+      shown = shown.copyWith(
+        answer: stripSentimentTags(next.answer, streaming: next.streaming),
+      );
     }
     // Visible either way: the screensaver holds its screen off timer
     // under both, and what is under it pauses (see [underlayPaused]).

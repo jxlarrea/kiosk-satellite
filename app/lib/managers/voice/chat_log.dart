@@ -128,9 +128,29 @@ ChatDigest digestLatestTurn(List<Object?> content) {
   return ChatDigest(tools: tools, results: results, answer: answer);
 }
 
-/// Sentiment tags some assistants put in their answers ("[happy]"), left
-/// out of what the overlay shows when the setting says so.
-String stripSentimentTags(String text) => text
-    .replaceAll(RegExp(r'\[[^\[\]\n]{1,40}\]'), '')
-    .replaceAll(RegExp(r'[ \t]{2,}'), ' ')
-    .trim();
+/// Sentiment tags some assistants put in their answers (`[happy]`) and the
+/// audio tags Gemini's speech reads (`<laugh>`, `<short pause>`), left out
+/// of what the overlay shows when the setting says so. Angle tags are only
+/// short lowercase words, so `a < b` stays, and never a common HTML tag
+/// (`<b>`, `<br>`), so an answer's markup stays as it came. While the
+/// answer is still [streaming], a tag cut off at its end (`<chuck`) goes
+/// too.
+String stripSentimentTags(String text, {bool streaming = false}) {
+  var out = text
+      .replaceAll(RegExp(r'\[[^\[\]\n]{1,40}\]'), '')
+      .replaceAll(_audioTag, '');
+  if (streaming) {
+    out = out.replaceFirst(
+      RegExp(r'(\[[^\[\]\n]{0,40}|<[a-z][a-z _-]{0,30})$'),
+      '',
+    );
+  }
+  return out.replaceAll(RegExp(r'[ \t]{2,}'), ' ').trim();
+}
+
+const _htmlNames =
+    'a|abbr|b|big|blockquote|br|center|cite|code|dd|del|div|dl|dt|em|font|'
+    'h[1-6]|hr|i|img|ins|kbd|li|mark|ol|p|pre|q|s|samp|small|span|strike|'
+    'strong|sub|sup|table|tbody|td|th|thead|time|tr|tt|u|ul|var';
+
+final _audioTag = RegExp('<(?!(?:$_htmlNames)\\b)[a-z][a-z _-]{0,30}>');
