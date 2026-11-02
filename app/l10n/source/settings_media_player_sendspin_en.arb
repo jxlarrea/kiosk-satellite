@@ -117,6 +117,32 @@
       ]
     }
   },
+  "settingSendspinMasterVolumeTitle": "Control the device volume",
+  "@settingSendspinMasterVolumeTitle": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
+  "settingSendspinMasterVolumeDescription": "Music Assistant sets the volume the volume buttons change, instead of the media volume. Assistant sounds follow it too.",
+  "@settingSendspinMasterVolumeDescription": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
   "mediaSendspinPage": "Sendspin Player",
   "@mediaSendspinPage": {
     "context": "Settings > Media Player > Sendspin Player",

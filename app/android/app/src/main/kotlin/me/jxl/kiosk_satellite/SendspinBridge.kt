@@ -25,11 +25,15 @@ import me.jxl.kiosk_satellite.sendspin.network.WebSocketUrlBuilder
  * Server volume commands move [VolumeController]'s MEDIA fader (AudioTrack
  * gain under the master ceiling, issue #79) - the Music Assistant slider is
  * the music's, never the device's - and media fader moves from any surface
- * are reported back to the server.
+ * are reported back to the server. With masterVolume on (issue #1267) they
+ * move the master instead and master moves are reported, so the server and
+ * the hardware buttons share one level. Mute stays on the media fader.
  *
  * Methods:
- * - start {serverUrl?, playerName, clientId, preferredCodec, syncOffsetMs}
+ * - start {serverUrl?, playerName, clientId, preferredCodec, syncOffsetMs,
+ *   masterVolume}
  * - setSyncOffset {ms}
+ * - setMasterVolume {enabled}
  * - stop
  * - discover {timeoutMs}
  * - getStatus
@@ -93,6 +97,7 @@ class SendspinBridge(
     @Volatile private var streamActive = false
     @Volatile private var lastPlaying = false
     @Volatile private var syncOffsetMs = 0L
+    @Volatile private var masterVolume = false
 
     @Volatile private var lastReportedVolume = -1
     @Volatile private var lastReportedMuted = false
@@ -185,6 +190,7 @@ class SendspinBridge(
                     val preferredCodec =
                         (call.argument<String>("preferredCodec") ?: "flac").lowercase()
                     syncOffsetMs = (call.argument<Number>("syncOffsetMs") ?: 0).toLong()
+                    masterVolume = call.argument<Boolean>("masterVolume") ?: false
                     startSession(serverUrl, playerName, clientId, preferredCodec)
                     result.success(true)
                 }
@@ -193,6 +199,20 @@ class SendspinBridge(
                 "setSyncOffset" -> {
                     syncOffsetMs = (call.argument<Number>("ms") ?: 0).toLong()
                     session?.setSyncOffset(syncOffsetMs)
+                    result.success(true)
+                }
+                // Applied live too: the server hears the newly reported level
+                // right away, and Dart gets it even when the number is the
+                // same as before, so its slider knows which fader it shows.
+                "setMasterVolume" -> {
+                    val enabled = call.argument<Boolean>("enabled") ?: false
+                    if (enabled != masterVolume) {
+                        masterVolume = enabled
+                        if (started) {
+                            lastReportedVolume = -1
+                            publishVolumeIfChanged()
+                        }
+                    }
                     result.success(true)
                 }
                 "stop" -> {
@@ -289,6 +309,9 @@ class SendspinBridge(
         lastReportedVolume = deviceVolumePct()
         lastReportedMuted = deviceMuted()
         session = newSession
+        // Dart shows the master from these reports, so it needs the first
+        // one before anything moves.
+        if (masterVolume) emitVolume()
 
         if (serverUrl.isNullOrBlank()) {
             discoveryMode = true
@@ -466,8 +489,10 @@ class SendspinBridge(
 
     // The server's volume is the MEDIA fader, not the device volume: the
     // Music Assistant slider is the music's. Master stays with the ESPHome
-    // Volume entity and the hardware buttons.
-    private fun deviceVolumePct(): Int = VolumeController.mediaPercent()
+    // Volume entity and the hardware buttons. With masterVolume on the
+    // server's volume is the master itself.
+    private fun deviceVolumePct(): Int =
+        if (masterVolume) VolumeController.percent() else VolumeController.mediaPercent()
 
     private fun deviceMuted(): Boolean = VolumeController.mediaMuted()
 
@@ -482,7 +507,18 @@ class SendspinBridge(
         lastReportedVolume = vol
         lastReportedMuted = muted
         session?.publishVolume(vol, muted)
-        emit("volumeChanged", mapOf("volume" to vol, "muted" to muted))
+        emitVolume()
+    }
+
+    // Marked when it is the master, so Dart never persists it into the
+    // media fader setting, even if the mode flips while it is on its way.
+    private fun emitVolume() {
+        val payload = mutableMapOf<String, Any>(
+            "volume" to lastReportedVolume,
+            "muted" to lastReportedMuted,
+        )
+        if (masterVolume) payload["master"] = true
+        emit("volumeChanged", payload)
     }
 
     // ==================================================================
@@ -608,7 +644,11 @@ class SendspinBridge(
         }
 
         override fun onServerVolume(volume: Int) {
-            VolumeController.setMediaPercent(volume)
+            if (masterVolume) {
+                VolumeController.setPercent(volume)
+            } else {
+                VolumeController.setMediaPercent(volume)
+            }
             publishVolumeIfChanged()
         }
 

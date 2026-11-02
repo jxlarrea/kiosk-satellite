@@ -9982,6 +9982,13 @@ class UiStringsUk extends UiStrings {
       'Поки цей пристрій грає у групі, повзунок гучності встановлює гучність усієї групи. Якщо вимкнено - лише цього пристрою. Потрібне підключення до Music Assistant.';
 
   @override
+  String get settingSendspinMasterVolumeTitle => 'Керувати гучністю пристрою';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant встановлює гучність, яку змінюють кнопки гучності, замість гучності медіа. Звуки асистента також її дотримуються.';
+
+  @override
   String get mediaSendspinPage => 'Плеєр Sendspin';
 
   @override

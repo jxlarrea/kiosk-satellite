@@ -1084,6 +1084,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingSendspinSonosGroupVolumeTitle",
     "description": "settingSendspinGroupVolumeDescription",
   },
+  "sendspin.master_volume": {
+    "title": "settingSendspinMasterVolumeTitle",
+    "description": "settingSendspinMasterVolumeDescription",
+  },
   "airplay.enabled": {
     "title": "settingAirplayEnabledTitle",
     "description": "settingAirplayEnabledDescription",

@@ -9,6 +9,8 @@
   "settingSendspinSyncOffsetTitle": "Décalage de synchronisation audio (ms)",
   "settingSendspinSyncOffsetDescription": "Une valeur négative fait jouer cet appareil plus tôt, pour les enceintes en retard sur le groupe (Bluetooth). Réglez à l'oreille ; s'applique en direct.",
   "settingSendspinGroupVolumeDescription": "Tant que cet appareil joue au sein d'un groupe, le curseur de volume règle le volume de tout le groupe. Si l'option est désactivée, seul le volume de cet appareil est modifié. Nécessite la connexion à Music Assistant.",
+  "settingSendspinMasterVolumeTitle": "Contrôler le volume de l'appareil",
+  "settingSendspinMasterVolumeDescription": "Music Assistant règle le volume que modifient les boutons de volume, au lieu du volume multimédia. Les sons de l'assistant le suivent aussi.",
   "mediaSendspinPage": "Lecteur Sendspin",
   "mediaSendspinHint": "Faire de cet appareil un lecteur Music Assistant synchronisé",
   "mediaFlac": "FLAC (sans perte)",

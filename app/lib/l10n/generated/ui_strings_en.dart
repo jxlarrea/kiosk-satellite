@@ -9885,6 +9885,13 @@ class UiStringsEn extends UiStrings {
       'While this device plays in a group, the volume slider sets the whole group\'s volume. Off, only this device\'s. Needs the Music Assistant connection.';
 
   @override
+  String get settingSendspinMasterVolumeTitle => 'Control the device volume';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant sets the volume the volume buttons change, instead of the media volume. Assistant sounds follow it too.';
+
+  @override
   String get mediaSendspinPage => 'Sendspin Player';
 
   @override

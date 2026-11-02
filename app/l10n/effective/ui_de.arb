@@ -37385,6 +37385,32 @@
       ]
     }
   },
+  "settingSendspinMasterVolumeTitle": "Gerätelautstärke steuern",
+  "@settingSendspinMasterVolumeTitle": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
+  "settingSendspinMasterVolumeDescription": "Music Assistant stellt die Lautstärke ein, die auch die Lautstärketasten ändern, statt der Medienlautstärke. Die Töne des Assistenten folgen ihr ebenfalls.",
+  "@settingSendspinMasterVolumeDescription": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
   "mediaSendspinPage": "Sendspin-Player",
   "@mediaSendspinPage": {
     "context": "Settings > Media Player > Sendspin Player",

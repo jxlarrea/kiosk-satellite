@@ -9,6 +9,8 @@
   "settingSendspinSyncOffsetTitle": "Ajuste de sincronización de audio (ms)",
   "settingSendspinSyncOffsetDescription": "Un valor negativo hace que este dispositivo reproduzca antes, para compensar altavoces que se retrasan respecto al grupo, como los Bluetooth. Ajusta de oído. Se aplica de inmediato.",
   "settingSendspinGroupVolumeDescription": "Cuando este dispositivo reproduce en un grupo, el control de volumen ajusta todo el grupo. Si está desactivado, solo ajusta este dispositivo. Necesita la conexión con Music Assistant.",
+  "settingSendspinMasterVolumeTitle": "Controlar el volumen del dispositivo",
+  "settingSendspinMasterVolumeDescription": "Music Assistant ajusta el volumen que cambian los botones de volumen, en lugar del volumen multimedia. Los sonidos del asistente también lo siguen.",
   "mediaSendspinPage": "Reproductor Sendspin",
   "mediaSendspinHint": "Convierte este dispositivo en un reproductor sincronizado de Music Assistant",
   "mediaFlac": "FLAC (sin pérdida)",

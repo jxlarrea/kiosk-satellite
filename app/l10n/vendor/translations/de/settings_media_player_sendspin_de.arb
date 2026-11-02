@@ -9,6 +9,8 @@
   "settingSendspinSyncOffsetTitle": "Audio-Synchronisationskorrektur (ms)",
   "settingSendspinSyncOffsetDescription": "Ein negativer Wert lässt dieses Gerät früher wiedergeben, um Lautsprecher auszugleichen, die gegenüber der Gruppe verzögert sind, beispielsweise Bluetooth-Lautsprecher. Nach Gehör anpassen. Wird sofort angewendet.",
   "settingSendspinGroupVolumeDescription": "Wenn dieses Gerät in einer Gruppe wiedergibt, steuert die Lautstärkeregelung die gesamte Gruppe. Ist diese Option deaktiviert, wird nur die Lautstärke dieses Geräts angepasst. Erfordert die Verbindung zu Music Assistant.",
+  "settingSendspinMasterVolumeTitle": "Gerätelautstärke steuern",
+  "settingSendspinMasterVolumeDescription": "Music Assistant stellt die Lautstärke ein, die auch die Lautstärketasten ändern, statt der Medienlautstärke. Die Töne des Assistenten folgen ihr ebenfalls.",
   "mediaSendspinPage": "Sendspin-Player",
   "mediaSendspinHint": "Verwandelt dieses Gerät in einen synchronisierten Music-Assistant-Player",
   "mediaFlac": "FLAC (verlustfrei)",

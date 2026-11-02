@@ -9959,6 +9959,14 @@ class UiStringsRu extends UiStrings {
       'Пока это устройство играет в группе, ползунок громкости задаёт громкость всей группы. Выключено: только этого устройства. Нужно соединение с Music Assistant.';
 
   @override
+  String get settingSendspinMasterVolumeTitle =>
+      'Управлять громкостью устройства';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant задаёт громкость, которую меняют кнопки громкости, вместо громкости медиа. Звуки ассистента тоже следуют за ней.';
+
+  @override
   String get mediaSendspinPage => 'Плеер Sendspin';
 
   @override

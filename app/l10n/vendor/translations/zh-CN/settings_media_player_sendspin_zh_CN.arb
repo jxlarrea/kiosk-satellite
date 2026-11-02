@@ -9,6 +9,8 @@
   "settingSendspinSyncOffsetTitle": "音频同步偏移（毫秒）",
   "settingSendspinSyncOffsetDescription": "设置为负值可让此设备提前播放，适用于蓝牙扬声器等播放滞后于组内其他设备的情况。请根据实际听到的效果调整，修改立即生效。",
   "settingSendspinGroupVolumeDescription": "此设备加入播放组时，音量控制会调整整个组的音量。关闭此项后，只调整此设备的音量。需要连接 Music Assistant。",
+  "settingSendspinMasterVolumeTitle": "控制设备音量",
+  "settingSendspinMasterVolumeDescription": "Music Assistant 调整音量键所控制的音量，而不是媒体音量。助手的声音也会随之变化。",
   "mediaSendspinPage": "Sendspin 播放器",
   "mediaSendspinHint": "将此设备设为同步的 Music Assistant 播放器",
   "mediaFlac": "FLAC（无损）",

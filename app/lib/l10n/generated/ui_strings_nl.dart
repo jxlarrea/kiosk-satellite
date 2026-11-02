@@ -9998,6 +9998,13 @@ class UiStringsNl extends UiStrings {
       'Wanneer dit apparaat in een groep afspeelt, regelt de volumeschuif het volume van de hele groep. Als dit uitstaat, wordt alleen het volume van dit apparaat aangepast. Vereist de verbinding met Music Assistant.';
 
   @override
+  String get settingSendspinMasterVolumeTitle => 'Apparaatvolume regelen';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant stelt het volume in dat de volumeknoppen wijzigen, in plaats van het mediavolume. Geluiden van de assistent volgen het ook.';
+
+  @override
   String get mediaSendspinPage => 'Sendspin-speler';
 
   @override

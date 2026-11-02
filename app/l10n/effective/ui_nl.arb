@@ -37385,6 +37385,32 @@
       ]
     }
   },
+  "settingSendspinMasterVolumeTitle": "Apparaatvolume regelen",
+  "@settingSendspinMasterVolumeTitle": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
+  "settingSendspinMasterVolumeDescription": "Music Assistant stelt het volume in dat de volumeknoppen wijzigen, in plaats van het mediavolume. Geluiden van de assistent volgen het ook.",
+  "@settingSendspinMasterVolumeDescription": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
   "mediaSendspinPage": "Sendspin-speler",
   "@mediaSendspinPage": {
     "context": "Settings > Media Player > Sendspin Player",

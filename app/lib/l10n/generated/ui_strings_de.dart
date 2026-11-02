@@ -10110,6 +10110,13 @@ class UiStringsDe extends UiStrings {
       'Wenn dieses Gerät in einer Gruppe wiedergibt, steuert die Lautstärkeregelung die gesamte Gruppe. Ist diese Option deaktiviert, wird nur die Lautstärke dieses Geräts angepasst. Erfordert die Verbindung zu Music Assistant.';
 
   @override
+  String get settingSendspinMasterVolumeTitle => 'Gerätelautstärke steuern';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant stellt die Lautstärke ein, die auch die Lautstärketasten ändern, statt der Medienlautstärke. Die Töne des Assistenten folgen ihr ebenfalls.';
+
+  @override
   String get mediaSendspinPage => 'Sendspin-Player';
 
   @override

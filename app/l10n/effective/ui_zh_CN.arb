@@ -37385,6 +37385,32 @@
       ]
     }
   },
+  "settingSendspinMasterVolumeTitle": "控制设备音量",
+  "@settingSendspinMasterVolumeTitle": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
+  "settingSendspinMasterVolumeDescription": "Music Assistant 调整音量键所控制的音量，而不是媒体音量。助手的声音也会随之变化。",
+  "@settingSendspinMasterVolumeDescription": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
   "mediaSendspinPage": "Sendspin 播放器",
   "@mediaSendspinPage": {
     "context": "Settings > Media Player > Sendspin Player",

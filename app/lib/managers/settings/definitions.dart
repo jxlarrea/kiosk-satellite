@@ -9419,6 +9419,25 @@ const sendspinGroupVolume = SettingDef<bool>(
   dependsOn: 'sendspin.enabled',
 );
 
+/// Whether the Sendspin server's volume is this device's master volume
+/// rather than the media fader under it (issue #1267). The hardware
+/// buttons move the master, so with this on they and Music Assistant
+/// share one level instead of drifting apart. Off by default because the
+/// master also scales assistant sounds, alarms and the intercom.
+const sendspinMasterVolume = SettingDef<bool>(
+  key: 'sendspin.master_volume',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Control the device volume',
+  description:
+      'Music Assistant sets the volume the volume buttons change, instead '
+      'of the media volume. Assistant sounds follow it too.',
+  category: 'Sendspin',
+  subpage: 'Sendspin Player',
+  section: 'Sendspin Player',
+  dependsOn: 'sendspin.enabled',
+);
+
 // ── Music Assistant (Sendspin section) ─────────────────────────────────
 // The Sendspin player speaks Music Assistant's player protocol, which
 // carries the track but nothing about it beyond title, artist and album.
@@ -13694,6 +13713,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinCodec,
   sendspinSyncOffset,
   sendspinGroupVolume,
+  sendspinMasterVolume,
   // The AirPlay page takes the Sendspin Player page's place when picked.
   airplayEnabled,
   airplayName,

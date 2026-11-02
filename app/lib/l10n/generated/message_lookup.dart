@@ -3068,6 +3068,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingSendspinSyncOffsetDescription,
       'settingSendspinGroupVolumeDescription' =>
         strings.settingSendspinGroupVolumeDescription,
+      'settingSendspinMasterVolumeTitle' =>
+        strings.settingSendspinMasterVolumeTitle,
+      'settingSendspinMasterVolumeDescription' =>
+        strings.settingSendspinMasterVolumeDescription,
       'mediaSendspinPage' => strings.mediaSendspinPage,
       'mediaSendspinHint' => strings.mediaSendspinHint,
       'mediaFlac' => strings.mediaFlac,

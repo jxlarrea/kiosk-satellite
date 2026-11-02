@@ -37385,6 +37385,32 @@
       ]
     }
   },
+  "settingSendspinMasterVolumeTitle": "Contrôler le volume de l'appareil",
+  "@settingSendspinMasterVolumeTitle": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
+  "settingSendspinMasterVolumeDescription": "Music Assistant règle le volume que modifient les boutons de volume, au lieu du volume multimédia. Les sons de l'assistant le suivent aussi.",
+  "@settingSendspinMasterVolumeDescription": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
   "mediaSendspinPage": "Lecteur Sendspin",
   "@mediaSendspinPage": {
     "context": "Settings > Media Player > Sendspin Player",

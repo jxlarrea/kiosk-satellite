@@ -23413,5 +23413,15 @@
     "source": "3c660b50e0496edf71b55006aaba57e9cf5ad80f9f1966f1365bd3efea3fa31f",
     "translation": "0e86592080945f38ec3be9d28976cf06761b4edd59f0a96288b5924e87d4cc2c",
     "author": "Xavier Larrea"
+  },
+  "settingSendspinMasterVolumeTitle": {
+    "source": "e88541f4db6dcd19954bc53c143bbd3f44832361a1542504114ac92737d92899",
+    "translation": "cee6e507b966e286f388da08c1e1f67097b06dc6d759186c0e030e992e23419d",
+    "author": "Xavier Larrea"
+  },
+  "settingSendspinMasterVolumeDescription": {
+    "source": "353bbf5d4ada00a02d18086614e7c2e241467e47bd05b5207d0feafd64cf66e7",
+    "translation": "7391081711078b8406c495a6590fa43a22debe0b020726782624be4ac8e12bce",
+    "author": "Xavier Larrea"
   }
 }

@@ -37385,6 +37385,32 @@
       ]
     }
   },
+  "settingSendspinMasterVolumeTitle": "Керувати гучністю пристрою",
+  "@settingSendspinMasterVolumeTitle": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
+  "settingSendspinMasterVolumeDescription": "Music Assistant встановлює гучність, яку змінюють кнопки гучності, замість гучності медіа. Звуки асистента також її дотримуються.",
+  "@settingSendspinMasterVolumeDescription": {
+    "context": "Settings > Media Player > Sendspin Player",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Media Player > Sendspin Player"
+      ],
+      "remoteAdmin": [
+        "Media Player > Sendspin Player"
+      ]
+    }
+  },
   "mediaSendspinPage": "Плеєр Sendspin",
   "@mediaSendspinPage": {
     "context": "Settings > Media Player > Sendspin Player",

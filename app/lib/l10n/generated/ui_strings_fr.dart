@@ -10060,6 +10060,14 @@ class UiStringsFr extends UiStrings {
       'Tant que cet appareil joue au sein d\'un groupe, le curseur de volume règle le volume de tout le groupe. Si l\'option est désactivée, seul le volume de cet appareil est modifié. Nécessite la connexion à Music Assistant.';
 
   @override
+  String get settingSendspinMasterVolumeTitle =>
+      'Contrôler le volume de l\'appareil';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant règle le volume que modifient les boutons de volume, au lieu du volume multimédia. Les sons de l\'assistant le suivent aussi.';
+
+  @override
   String get mediaSendspinPage => 'Lecteur Sendspin';
 
   @override

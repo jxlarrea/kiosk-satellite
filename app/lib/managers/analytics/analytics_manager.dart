@@ -769,6 +769,7 @@ class AnalyticsManager extends Manager {
           ? 'device'
           : s.get(defs.sendspinPlayerSource),
       'lyrics': s.get(defs.sendspinLyricsEnabled),
+      'sendspin_master_volume': s.get(defs.sendspinMasterVolume),
       'dlna': s.get(defs.dlnaEnabled),
       // The receiver serves only while it is the Media Player pick.
       'airplay':

@@ -28142,5 +28142,17 @@
     "translation": "9fe1e248a2ed8b28124be33cffab75e353d850cd6628d475024e2c2e409eabb0",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingSendspinMasterVolumeDescription": {
+    "source": "353bbf5d4ada00a02d18086614e7c2e241467e47bd05b5207d0feafd64cf66e7",
+    "translation": "dafb6568fa28b52ac1111cfe08759ec56ceffb3d95134814b06b7503fbb1a20f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingSendspinMasterVolumeTitle": {
+    "source": "e88541f4db6dcd19954bc53c143bbd3f44832361a1542504114ac92737d92899",
+    "translation": "d1bc0b12ff6db1e2daa3e7ccb1389251f449b8cfa9e0f188eb3db1754f758543",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

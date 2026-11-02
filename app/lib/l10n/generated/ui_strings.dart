@@ -17243,6 +17243,18 @@ abstract class UiStrings {
   /// **'While this device plays in a group, the volume slider sets the whole group\'s volume. Off, only this device\'s. Needs the Music Assistant connection.'**
   String get settingSendspinGroupVolumeDescription;
 
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Control the device volume'**
+  String get settingSendspinMasterVolumeTitle;
+
+  /// Help below this setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Music Assistant sets the volume the volume buttons change, instead of the media volume. Assistant sounds follow it too.'**
+  String get settingSendspinMasterVolumeDescription;
+
   /// Label or guidance in this section.
   ///
   /// In en, this message translates to:

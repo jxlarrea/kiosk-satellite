@@ -9,6 +9,8 @@
   "settingSendspinSyncOffsetTitle": "Смещение синхронизации звука (мс)",
   "settingSendspinSyncOffsetDescription": "При отрицательном значении это устройство играет раньше, для колонок, отстающих от группы (Bluetooth). Настраивайте на слух; применяется на лету.",
   "settingSendspinGroupVolumeDescription": "Пока это устройство играет в группе, ползунок громкости задаёт громкость всей группы. Выключено: только этого устройства. Нужно соединение с Music Assistant.",
+  "settingSendspinMasterVolumeTitle": "Управлять громкостью устройства",
+  "settingSendspinMasterVolumeDescription": "Music Assistant задаёт громкость, которую меняют кнопки громкости, вместо громкости медиа. Звуки ассистента тоже следуют за ней.",
   "mediaSendspinPage": "Плеер Sendspin",
   "mediaSendspinHint": "Сделать это устройство синхронизированным плеером Music Assistant",
   "mediaFlac": "FLAC (без потерь)",

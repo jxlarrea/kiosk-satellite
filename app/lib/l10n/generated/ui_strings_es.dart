@@ -10064,6 +10064,14 @@ class UiStringsEs extends UiStrings {
       'Cuando este dispositivo reproduce en un grupo, el control de volumen ajusta todo el grupo. Si está desactivado, solo ajusta este dispositivo. Necesita la conexión con Music Assistant.';
 
   @override
+  String get settingSendspinMasterVolumeTitle =>
+      'Controlar el volumen del dispositivo';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant ajusta el volumen que cambian los botones de volumen, en lugar del volumen multimedia. Los sonidos del asistente también lo siguen.';
+
+  @override
   String get mediaSendspinPage => 'Reproductor Sendspin';
 
   @override

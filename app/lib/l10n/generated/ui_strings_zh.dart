@@ -9433,6 +9433,13 @@ class UiStringsZh extends UiStrings {
       '此设备加入播放组时，音量控制会调整整个组的音量。关闭此项后，只调整此设备的音量。需要连接 Music Assistant。';
 
   @override
+  String get settingSendspinMasterVolumeTitle => '控制设备音量';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant 调整音量键所控制的音量，而不是媒体音量。助手的声音也会随之变化。';
+
+  @override
   String get mediaSendspinPage => 'Sendspin 播放器';
 
   @override
@@ -24287,6 +24294,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingSendspinGroupVolumeDescription =>
       '此设备加入播放组时，音量控制会调整整个组的音量。关闭此项后，只调整此设备的音量。需要连接 Music Assistant。';
+
+  @override
+  String get settingSendspinMasterVolumeTitle => '控制设备音量';
+
+  @override
+  String get settingSendspinMasterVolumeDescription =>
+      'Music Assistant 调整音量键所控制的音量，而不是媒体音量。助手的声音也会随之变化。';
 
   @override
   String get mediaSendspinPage => 'Sendspin 播放器';
