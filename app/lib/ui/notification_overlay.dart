@@ -111,7 +111,7 @@ class _NotificationOverlayState extends State<NotificationOverlay> {
       _gone(id);
       return;
     }
-    widget.notifications.dismiss(id: id);
+    widget.notifications.dismiss(id: id, reason: 'tapped');
   }
 
   @override

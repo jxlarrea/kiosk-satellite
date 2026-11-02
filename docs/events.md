@@ -1,6 +1,6 @@
 # Home Assistant Events
 
-Kiosk Satellite fires an event on the Home Assistant bus whenever a voice turn, a timer, an intercom call, an alarm, the screensaver or the screen changes. Automations can trigger on them with an event trigger. They go out over the ESPHome connection, so turn on **Settings > ESPHome** and add the kiosk to Home Assistant first. **Expose kiosk entities** is not needed.
+Kiosk Satellite fires an event on the Home Assistant bus whenever a voice turn, a timer, an intercom call, an alarm, a notification card, the screensaver or the screen changes. Automations can trigger on them with an event trigger. They go out over the ESPHome connection, so turn on **Settings > ESPHome** and add the kiosk to Home Assistant first. **Expose kiosk entities** is not needed.
 
 Home Assistant only fires device events under `esphome.`, hence the prefix. Every event carries `event_type` with what happened. Home Assistant adds `device_id`, the kiosk's ESPHome device. Use `device_id` to react to one kiosk only. You can find it in the URL of the kiosk's device page.
 
@@ -10,6 +10,7 @@ Home Assistant only fires device events under `esphome.`, hence the prefix. Ever
 | [`esphome.kiosk_satellite_timer`](#timers) | Voice Satellite timers |
 | [`esphome.kiosk_satellite_intercom`](#intercom) | Intercom calls and announcements |
 | [`esphome.kiosk_satellite_alarm`](#alarms) | Alarms |
+| [`esphome.kiosk_satellite_notification`](#notifications) | Notification cards leaving the screen |
 | [`esphome.kiosk_satellite_screensaver`](#screensaver) | The screensaver |
 | [`esphome.kiosk_satellite_screen`](#screen) | The screen turning on and off |
 
@@ -85,6 +86,56 @@ data:
 ## Alarms
 
 `esphome.kiosk_satellite_alarm` fires once per alarm whenever it is created, changed, deleted, starts its sunrise, rings, is snoozed, stopped or silenced. It carries `alarm_id`, `label`, `time`, `days` and `enabled`. See [Alarm events](alarms.md#alarm-events) for the fields and an example.
+
+## Notifications
+
+```yaml
+event_type: esphome.kiosk_satellite_notification
+data:
+  device_id: 5f1c...
+  event_type: tapped
+  notification_id: 7
+  title: Mailbox
+  message: Mail is here
+  type: info
+```
+
+| `event_type` | When |
+| --- | --- |
+| `tapped` | Someone tapped the card on the kiosk. |
+| `expired` | The card's `duration` ran out. |
+| `dismissed` | The `notification_dismiss` action, the **Notifications dismiss all** button or the remote API took it down. |
+| `replaced` | A fifth card pushed it off the screen. |
+
+`notification_id` is the `id` the [`notification` action](esphome.md#notifications) returned. `title`, `message` and `type` are the card's own. `title` is empty when the card had none. Clearing the screen sends one event per card.
+
+```yaml
+# Show the mail card again if someone taps it away while the mail is still there.
+triggers:
+  - trigger: event
+    event_type: esphome.kiosk_satellite_notification
+    event_data:
+      device_id: 5f1c...
+      event_type: tapped
+      message: Mail is here
+conditions:
+  - condition: state
+    entity_id: binary_sensor.mailbox
+    state: "on"
+actions:
+  - action: esphome.kitchen_tablet_notification
+    data:
+      message: Mail is here
+      title: Mailbox
+      duration: 0
+      type: info
+      chime: false
+      scale: 1
+      icon: mdi:mailbox
+      chime_file: ""
+      volume: 0
+      image: ""
+```
 
 ## Screensaver
 

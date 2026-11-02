@@ -17,7 +17,7 @@ typedef EventBroadcastSender =
 /// Assistant or dumpsys. The native side only sends what this decides
 /// (EventBroadcastBridge.kt).
 ///
-/// Each one but the timer and alarm mirrors also goes to Home Assistant's
+/// Each one but the timer, alarm and notification mirrors also goes to Home Assistant's
 /// bus as `esphome.kiosk_satellite_<group>` with the lowercase rest of
 /// its name as `event_type`, so VS_ENDED is `ended` on
 /// `kiosk_satellite_voice` (issue #1007).
@@ -31,8 +31,9 @@ typedef EventBroadcastSender =
 ///   left on screen is not covered by the app coming back.
 /// * VS_LISTENING, VS_THINKING, VS_SPEAKING and VS_ANNOUNCEMENT follow the
 ///   satellite state in between.
-/// * VS_TIMER_*, ALARM_* mirror the timer and alarm events Home Assistant
-///   gets, with the same fields as extras.
+/// * VS_TIMER_*, ALARM_* and NOTIFICATION_* mirror the timer, alarm and
+///   notification events Home Assistant gets, with the same fields as
+///   extras.
 /// * INTERCOM_* follow the call state. INTERCOM_ENDED fires once when a
 ///   call, broadcast or ring stops holding the kiosk.
 /// * SCREENSAVER_STARTED and SCREENSAVER_STOPPED follow the screensaver.
@@ -82,6 +83,8 @@ class EventBroadcastManager extends Manager {
         _mirror('VS_TIMER_', data);
       case HaEventRequested(name: 'kiosk_satellite_alarm', :final data):
         _mirror('ALARM_', data);
+      case HaEventRequested(name: 'kiosk_satellite_notification', :final data):
+        _mirror('NOTIFICATION_', data);
       case IntercomStateChanged(:final status):
         _onIntercom(status);
       case ScreensaverStateChanged(:final active):

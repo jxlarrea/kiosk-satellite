@@ -125,7 +125,8 @@ void main() {
     },
   );
 
-  test('timer and alarm events go out with their fields as extras', () async {
+  test('timer, alarm and notification events go out with their fields as '
+      'extras', () async {
     final names = await publish([
       const HaEventRequested('kiosk_satellite_timer', {
         'event_type': 'finished',
@@ -143,9 +144,21 @@ void main() {
         'days': ['mon', 'tue'],
         'enabled': true,
       }),
+      const HaEventRequested('kiosk_satellite_notification', {
+        'event_type': 'tapped',
+        'notification_id': 3,
+        'title': 'Mailbox',
+        'message': 'Mail is here',
+        'type': 'info',
+      }),
       const HaEventRequested('something_else', {'event_type': 'x'}),
     ]);
-    expect(names, ['VS_TIMER_FINISHED', 'ALARM_RINGING']);
+    expect(names, [
+      'VS_TIMER_FINISHED',
+      'ALARM_RINGING',
+      'NOTIFICATION_TAPPED',
+    ]);
+    expect(sent[2].$2['notification_id'], 3);
     expect(sent[0].$2, {
       'timer_id': 't1',
       'name': 'pasta',

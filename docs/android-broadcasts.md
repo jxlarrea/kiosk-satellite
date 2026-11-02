@@ -1,6 +1,6 @@
 # Android Broadcasts
 
-Kiosk Satellite sends an Android broadcast whenever a voice turn, a timer, an intercom call, an alarm, the screensaver or the screen changes. Apps on the same device, such as Tasker, MacroDroid, Automate or tvQuickActions, can react right away without a round trip through Home Assistant. A common use is bringing your own app back to the front the moment a voice turn ends.
+Kiosk Satellite sends an Android broadcast whenever a voice turn, a timer, an intercom call, an alarm, a notification card, the screensaver or the screen changes. Apps on the same device, such as Tasker, MacroDroid, Automate or tvQuickActions, can react right away without a round trip through Home Assistant. A common use is bringing your own app back to the front the moment a voice turn ends.
 
 Every action starts with `me.jxl.kiosk_satellite.event.`, so the full name of `VS_ENDED` is `me.jxl.kiosk_satellite.event.VS_ENDED`. Details ride along as intent extras. Strings stay strings, numbers stay numbers and lists arrive as string lists.
 
@@ -63,6 +63,17 @@ Every intercom broadcast carries `kiosk`, the other kiosk's name when there is o
 | `ALARM_SILENCED` | Nobody stopped it before **Silence after** ran out. |
 
 The extras are the fields of the [`esphome.kiosk_satellite_alarm`](alarms.md#alarm-events) event: `alarm_id`, `label`, `time`, `days` and `enabled`, plus `snoozed_until` on `ALARM_SNOOZED`. Each alarm sends its own broadcast when several change at once.
+
+## Notifications
+
+| Action | When |
+| --- | --- |
+| `NOTIFICATION_TAPPED` | Someone tapped a notification card. |
+| `NOTIFICATION_EXPIRED` | A card's `duration` ran out. |
+| `NOTIFICATION_DISMISSED` | `notification_dismiss`, the **Notifications dismiss all** button or the remote API took a card down. |
+| `NOTIFICATION_REPLACED` | A fifth card pushed it off the screen. |
+
+The extras are the fields of the [`esphome.kiosk_satellite_notification`](events.md#notifications) event: `notification_id`, `title`, `message` and `type`.
 
 ## Screensaver
 

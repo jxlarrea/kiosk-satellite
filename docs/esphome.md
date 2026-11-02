@@ -238,6 +238,8 @@ The action returns the card's specific ID (e.g., `{"id": 7}`). Using `response_v
     id: "{{ card.id }}"
 ```
 
+Every card that leaves the screen fires an `esphome.kiosk_satellite_notification` [event](events.md#notifications) with its `id` and whether it was tapped, expired, dismissed or pushed off by a newer card. An automation can use it to show a card again that someone tapped away too soon.
+
 When using the [remote API](remote-api.md), these two commands correspond to `showNotification` (which returns the same `id`) and `dismissNotification` (which takes the ID, or clears the screen if given `0` or nothing).
 
 ### Formatting

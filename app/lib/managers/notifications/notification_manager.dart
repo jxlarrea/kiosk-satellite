@@ -238,11 +238,15 @@ class NotificationManager extends Manager {
             // the one someone is most likely still in the room for.
             for (final dropped in stack.skip(maxVisible)) {
               _timers.remove(dropped.id)?.cancel();
+              _gone(dropped, 'replaced');
             }
             current.value = stack.take(maxVisible).toList(growable: false);
             final duration = _duration(p['duration']);
             if (duration > Duration.zero) {
-              _timers[id] = Timer(duration, () => dismiss(id: id));
+              _timers[id] = Timer(
+                duration,
+                () => dismiss(id: id, reason: 'expired'),
+              );
             }
             if (_flag(p['chime'], orElse: true)) {
               // Not awaited: a missing or busy audio path must never hold
@@ -301,23 +305,47 @@ class NotificationManager extends Manager {
   /// Takes one notification down, or the whole stack when [id] is null.
   /// An id that is no longer showing is a no-op: an expiring countdown
   /// must never take something else with it.
-  void dismiss({int? id}) {
+  ///
+  /// [reason] is what Home Assistant hears about it: `tapped`, `expired`
+  /// or `dismissed` (the dismissNotification command, from whichever
+  /// caller).
+  void dismiss({int? id, String reason = 'dismissed'}) {
     if (id == null) {
       for (final timer in _timers.values) {
         timer.cancel();
       }
       _timers.clear();
+      final gone = current.value;
       current.value = const [];
+      for (final note in gone) {
+        _gone(note, reason);
+      }
       return;
     }
     _timers.remove(id)?.cancel();
-    final left = [
+    final gone = current.value.where((shown) => shown.id == id).firstOrNull;
+    if (gone == null) return;
+    current.value = List.unmodifiable([
       for (final shown in current.value)
         if (shown.id != id) shown,
-    ];
-    if (left.length != current.value.length) {
-      current.value = List.unmodifiable(left);
-    }
+    ]);
+    _gone(gone, reason);
+  }
+
+  /// Tells Home Assistant a card left the screen, as
+  /// `esphome.kiosk_satellite_notification` (issue #1273). A tap leaves no
+  /// other trace, so an automation that needs the card to stay up can
+  /// send it again.
+  void _gone(KioskNotification note, String reason) {
+    bus.publish(
+      HaEventRequested('kiosk_satellite_notification', {
+        'event_type': reason,
+        'notification_id': note.id,
+        'title': note.title ?? '',
+        'message': note.message,
+        'type': note.level.name,
+      }),
+    );
   }
 
   @override

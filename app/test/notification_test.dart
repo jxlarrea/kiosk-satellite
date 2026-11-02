@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/btproxy/esp_entities.dart';
 import 'package:kiosk_satellite/managers/notifications/notification_manager.dart';
@@ -31,6 +32,7 @@ void main() {
   late NotificationManager notifications;
   late List<(String, Map<String, Object?>)> executed;
   late List<(Uri, Map<String, String>)> fetched;
+  late List<HaEventRequested> fired;
   // What the network "has": a URL to its bytes; anything else fails.
   late Map<String, List<int>> pictures;
   // Set to hold every fetch until the test completes it.
@@ -42,6 +44,8 @@ void main() {
     pictures = {};
     pendingFetch = null;
     bus = EventBus();
+    fired = [];
+    bus.on<HaEventRequested>().listen(fired.add);
     final log = Logger();
     commands = CommandRegistry(log);
     settings = SettingsManager(bus, commands, log);
@@ -152,6 +156,75 @@ void main() {
     expect(onScreen(), ['Second']);
     await commands.execute('dismissNotification', const {});
     expect(notifications.current.value, isEmpty);
+  });
+
+  group('Home Assistant hears when a card goes (issue #1273)', () {
+    // The bus delivers each event on a microtask of its own.
+    Future<List<Map<String, Object?>>> events() async {
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.value();
+      }
+      return [
+        for (final e in fired)
+          if (e.name == 'kiosk_satellite_notification') e.data,
+      ];
+    }
+
+    test('a dismissal carries the card it took down', () async {
+      final id = await show({
+        'message': 'Mail is here',
+        'title': 'Mailbox',
+        'type': 'warning',
+        'duration': 0,
+      });
+      expect(await events(), isEmpty);
+      await commands.execute('dismissNotification', {'id': id});
+      expect(await events(), [
+        {
+          'event_type': 'dismissed',
+          'notification_id': id,
+          'title': 'Mailbox',
+          'message': 'Mail is here',
+          'type': 'warning',
+        },
+      ]);
+    });
+
+    test('clearing the screen sends one event per card', () async {
+      final first = await show({'message': 'First', 'duration': 0});
+      final second = await show({'message': 'Second', 'duration': 0});
+      await commands.execute('dismissNotification', {'id': 0});
+      final sent = await events();
+      expect(sent.map((e) => e['notification_id']), [second, first]);
+      expect(sent.map((e) => e['event_type']), ['dismissed', 'dismissed']);
+      expect(sent.first['title'], '');
+    });
+
+    test('a countdown ending is expired', () async {
+      final id = await show({'message': 'Goes on its own', 'duration': 1});
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
+      final sent = await events();
+      expect(sent.single['event_type'], 'expired');
+      expect(sent.single['notification_id'], id);
+    });
+
+    test('a card pushed out by a full stack is replaced', () async {
+      final oldest = await show({'message': 'Message 1', 'duration': 0});
+      for (var i = 2; i <= NotificationManager.maxVisible + 1; i++) {
+        await show({'message': 'Message $i', 'duration': 0});
+      }
+      final sent = await events();
+      expect(sent.single['event_type'], 'replaced');
+      expect(sent.single['notification_id'], oldest);
+    });
+
+    test('an id that is not showing sends nothing', () async {
+      final id = await show({'message': 'Once', 'duration': 0});
+      await commands.execute('dismissNotification', {'id': id});
+      await commands.execute('dismissNotification', {'id': id});
+      await commands.execute('dismissNotification', {'id': 999});
+      expect(await events(), hasLength(1));
+    });
   });
 
   test('duration 0 stays up until something dismisses it', () async {
@@ -617,6 +690,14 @@ void main() {
     expect(find.text('Front door opened'), findsNothing);
     expect(find.text('Washing machine finished'), findsOneWidget);
     expect(onScreen(), ['Washing machine finished']);
+    // A tap is what Home Assistant could not see before (issue #1273).
+    expect(
+      [
+        for (final e in fired)
+          if (e.name == 'kiosk_satellite_notification') e.data['event_type'],
+      ],
+      ['tapped', 'tapped'],
+    );
   });
 
   testWidgets('the card reads Markdown in the message and the title', (
