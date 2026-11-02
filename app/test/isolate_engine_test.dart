@@ -476,6 +476,35 @@ void main() {
           hasLength(1), reason: 're-arming an armed classifier is a no-op');
     });
 
+    test('playback reaches the isolate once and ends with the engine',
+        () async {
+      await engine.setPlaybackActive(true);
+      await start();
+      await settle();
+      final init =
+          engine.control.firstWhere((m) => m['type'] == WakeMsg.init);
+      expect(init['playback'], isTrue,
+          reason: 'playback seen before the isolate came up');
+
+      await engine.setPlaybackActive(false);
+      await engine.setPlaybackActive(false);
+      await settle();
+      expect(
+          engine.control.where((m) => m['type'] == WakeMsg.setPlayback),
+          hasLength(1));
+
+      await engine.setPlaybackActive(true);
+      await engine.stop();
+      engine.control.clear();
+      await start();
+      await settle();
+      expect(
+          engine.control
+              .firstWhere((m) => m['type'] == WakeMsg.init)['playback'],
+          isFalse,
+          reason: 'a restarted engine waits to see playback again');
+    });
+
     test('a dead mic is fatal, not a warning', () async {
       // The real incident: revoking the microphone permission left
       // "AudioRecord init failed" on this stream. Nothing threw again, the

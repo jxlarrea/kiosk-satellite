@@ -14,7 +14,7 @@ class DetectionGate {
   /// bypass for the same reason the CTC gates get it: the bypass is a
   /// confidence threshold, so leaving it fixed would neutralize the setting at
   /// the top end (see CtcDecoder.confidenceScale).
-  final double confidenceScale;
+  double confidenceScale;
 
   final VswwRuntimeConfig runtime;
 

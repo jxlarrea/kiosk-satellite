@@ -92,8 +92,9 @@ class CtcDecoder {
   /// multiplier on our confidence gates (see [WakeWordModelRef.confidenceScale]).
   /// Scales the gate rather than the measured confidence, matching the card's
   /// browser decoder, so a match is judged against a moved bar and the logged
-  /// confidence still means the same thing.
-  final double confidenceScale;
+  /// confidence still means the same thing. Moves while the kiosk plays
+  /// audio.
+  double confidenceScale;
 
   /// Greedy decode of raw logits, shape [tOut, vocab] row-major.
   CtcDecode decode(Float32List logits, int tOut, int vocab) {

@@ -31,7 +31,8 @@ class OwwGate {
   });
 
   /// Absolute cutoff, resolved by the card from its Sensitivity setting.
-  final double cutoff;
+  /// Lowered while the kiosk plays audio.
+  double cutoff;
   final int cooldownMs;
   final double borderlineConfirmMargin;
 

@@ -199,6 +199,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   /// Stop classifier currently listening (an interruptible state is running).
   bool _stopArmed = false;
 
+  /// The kiosk is playing audio: the wake words run at their playback
+  /// thresholds.
+  bool _playbackActive = false;
+
   /// Streaming captured audio to the page (the card uses us instead of
   /// getUserMedia during a turn).
   void Function(Uint8List pcm, bool preRoll)? _onAudioChunk;
@@ -355,6 +359,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       'models': payload.models,
       'energyGate': config.energyGate.toJson(),
       'nearMisses': _onNearMiss != null,
+      'playback': _playbackActive,
       ...payload.extraInit,
     };
 
@@ -607,6 +612,14 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   }
 
   @override
+  Future<void> setPlaybackActive(bool active) async {
+    if (_playbackActive == active) return;
+    _playbackActive = active;
+    _pendingInit?['playback'] = active;
+    _isolatePort?.send({'type': WakeMsg.setPlayback, 'active': active});
+  }
+
+  @override
   Future<void> stop() async {
     if (!_running && _isolate == null) return;
     _running = false;
@@ -632,6 +645,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     // the clock must restart with the next isolate's.
     _hasStopModel = false;
     _stopArmed = false;
+    _playbackActive = false;
     _detectionPaused = false;
     _wakeEndSample = null;
     _lastDetection = null;

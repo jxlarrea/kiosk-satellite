@@ -16,6 +16,7 @@ import '../settings/settings_manager.dart';
 import 'background_listening.dart';
 import 'engine.dart';
 import 'model_cache.dart';
+import 'playback_watch.dart';
 import 'system_permissions.dart';
 import 'wake_arbitration.dart';
 import 'wake_diagnostics.dart';
@@ -62,8 +63,19 @@ class WakeWordManager extends Manager
     this._settings, {
     @visibleForTesting Map<WakeWordEngineType, WakeWordEngine>? engines,
     WakeWordDiagnostics? diagnostics,
+    @visibleForTesting Future<bool> Function()? playbackPlayed,
   }) : _engines = {...?engines},
-       diagnostics = diagnostics ?? WakeWordDiagnostics();
+       diagnostics = diagnostics ?? WakeWordDiagnostics() {
+    _playback = PlaybackWatch(
+      onChanged: (playing) => _engine.setPlaybackActive(playing),
+      wanted: () => _engine.running,
+      played: playbackPlayed,
+    );
+  }
+
+  /// Moves the wake words to their playback thresholds while the kiosk
+  /// plays audio. Runs only while an engine runs a config that has them.
+  late final PlaybackWatch _playback;
 
   /// The last few activations with a clip of each, while the user has wake
   /// word diagnostics on. Both settings UIs list them.
@@ -1725,6 +1737,7 @@ class WakeWordManager extends Manager
           '${_engine.supportsStopWord ? ' + stop word' : ''}',
         );
         _runningEngine = _engine;
+        _watchPlayback();
         // A tester opened before this engine came up (or across an engine
         // switch) still gets its telemetry.
         if (_testers > 0) _applyTelemetry();
@@ -1932,9 +1945,25 @@ class WakeWordManager extends Manager
     });
   }
 
+  /// Start the playback watch for a freshly started engine, or stop it when
+  /// the config has no playback thresholds (Amazon's engine, or a config
+  /// Voice Satellite's page pushed).
+  void _watchPlayback() {
+    final config = _config;
+    final boosts = config != null &&
+        config.models.any(
+          (m) => m.playbackConfidenceScale != null || m.playbackCutoff != null,
+        );
+    // A new engine starts at its normal thresholds: playback has to be
+    // seen again before they move.
+    _playback.stop();
+    if (boosts) _playback.start();
+  }
+
   @override
   Future<void> dispose() async {
     WidgetsBinding.instance.removeObserver(this);
+    _playback.stop();
     await _backgroundInteractionSub?.cancel();
     _cancelBackgroundReturn();
     await _remoteObservers?.cancel();

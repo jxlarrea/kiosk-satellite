@@ -33,6 +33,8 @@ void owwIsolateEntry(SendPort mainPort) {
           worker.resumeDetection(msg['absSample'] as int?);
         case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
+        case WakeMsg.setPlayback:
+          worker.setPlayback(msg['active'] == true);
         case WakeMsg.setTelemetry:
           worker.setTelemetry(
             msg['enabled'] == true,
@@ -56,7 +58,8 @@ class _Kw {
     this.session,
     this.interpreter,
     this.isStop = false,
-  });
+    this.playbackCutoff,
+  }) : cutoff = gate.cutoff;
   final String id;
   final String wakeWord;
   final nearMiss = NearMissTracker();
@@ -67,6 +70,11 @@ class _Kw {
   final Interpreter? interpreter;
   final OwwGate gate;
   final bool isStop;
+
+  /// The gate's cutoff, and the one it takes while the kiosk plays audio
+  /// (null keeps it).
+  final double cutoff;
+  final double? playbackCutoff;
 
   OrtFloatRunner? runner;
   late final Tensor? tfInput = interpreter?.getInputTensor(0);
@@ -93,6 +101,7 @@ class _OwwWorker {
   bool _stopped = false;
   bool _detected = false;
   bool _stopArmed = false;
+  bool _playback = false;
 
   // The card's energy gate, resolved to numbers. Worth far more here than for
   // the other engines: openWakeWord's chain is the most expensive of the three.
@@ -152,6 +161,7 @@ class _OwwWorker {
               session: tflite ? null : load(bytes),
               interpreter: tflite ? loadOwwTflite(bytes) : null,
               isStop: isStop,
+              playbackCutoff: (md['playbackCutoff'] as num?)?.toDouble(),
             ),
           );
         } catch (e) {
@@ -178,6 +188,7 @@ class _OwwWorker {
       sw.stop();
       _log('info', 'warmed up in ${sw.elapsedMilliseconds}ms');
 
+      setPlayback(msg['playback'] == true);
       _main.send({'type': WakeMsg.ready});
     } catch (e) {
       _main.send({'type': WakeMsg.error, 'message': '$e'});
@@ -378,6 +389,31 @@ class _OwwWorker {
       if (k.isStop) k.gate.reset();
     }
     _log('info', active ? 'stop word armed' : 'stop word disarmed');
+  }
+
+  /// Move the wake words to their playback cutoffs, or back. The gates keep
+  /// their state: a wake word spoken as the music starts still counts.
+  void setPlayback(bool active) {
+    if (_stopped || _playback == active) return;
+    _playback = active;
+    final moves = <String>[];
+    for (final k in _kws) {
+      final playback = k.playbackCutoff;
+      if (playback == null) continue;
+      final from = k.gate.cutoff;
+      k.gate.cutoff = active ? playback : k.cutoff;
+      moves.add('"${k.id}" cutoff ${from.toStringAsFixed(3)} -> '
+          '${k.gate.cutoff.toStringAsFixed(3)}');
+    }
+    if (moves.isEmpty) return;
+    _log(
+      'info',
+      active
+          ? 'kiosk playing audio, wake word sensitivity raised '
+              '(${moves.join(', ')})'
+          : 'kiosk playback ended, wake word sensitivity restored '
+              '(${moves.join(', ')})',
+    );
   }
 
   /// Re-arm after a turn. Wipes the stream so the wake word we just handled

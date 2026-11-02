@@ -36,6 +36,8 @@ void vswwIsolateEntry(SendPort mainPort) {
           worker.resumeDetection(msg['absSample'] as int?);
         case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
+        case WakeMsg.setPlayback:
+          worker.setPlayback(msg['active'] == true);
         case WakeMsg.setTelemetry:
           worker.setTelemetry(
             msg['enabled'] == true,
@@ -62,7 +64,8 @@ class _Kw {
     this.stream,
     this.gate, {
     this.isStop = false,
-  });
+    this.playbackScale,
+  }) : scale = gate.confidenceScale;
   final String id;
   final String wakeWord;
   final nearMiss = NearMissTracker();
@@ -76,6 +79,11 @@ class _Kw {
   final CtcDecoder decoder;
   final StreamMatcher stream;
   final DetectionGate gate;
+
+  /// The confidence gate scale, and the one the decoder and the gate take
+  /// while the kiosk plays audio (null keeps it).
+  final double scale;
+  final double? playbackScale;
 
   OrtFloatRunner? runner;
 
@@ -123,6 +131,7 @@ class _IsolateWorker {
   /// when the user might say "stop".
   bool _detected = false;
   bool _stopArmed = false;
+  bool _playback = false;
 
   // Energy gate: the card's "skip inference while the room is quiet" policy,
   // handed to us as plain numbers. Inference is the entire cost here (log-mel
@@ -190,6 +199,7 @@ class _IsolateWorker {
           StreamMatcher(manifest, decoder),
           DetectionGate(manifest.runtime, confidenceScale: scale),
           isStop: isStop,
+          playbackScale: (md['playbackConfidenceScale'] as num?)?.toDouble(),
         ));
         _feature ??= manifest.feature;
         _log(
@@ -211,6 +221,7 @@ class _IsolateWorker {
           _energyEnabled
               ? 'energy gate on (wake rms $_wakeRms, sleep after $_sleepAfterChunks quiet chunks)'
               : 'energy gate off');
+      setPlayback(msg['playback'] == true);
       _main.send({'type': WakeMsg.ready});
     } catch (e) {
       _main.send({'type': WakeMsg.error, 'message': '$e'});
@@ -584,6 +595,33 @@ class _IsolateWorker {
       k.gate.reset();
     }
     _log('info', active ? 'stop word armed' : 'stop word disarmed');
+  }
+
+  /// Move the wake words to their playback confidence gates, or back. The
+  /// stream and the hit counter keep their state: a wake word spoken as the
+  /// music starts still counts.
+  void setPlayback(bool active) {
+    if (_stopped || _playback == active) return;
+    _playback = active;
+    final moves = <String>[];
+    for (final k in _kws) {
+      final playback = k.playbackScale;
+      if (playback == null) continue;
+      final from = k.gate.confidenceScale;
+      final to = active ? playback : k.scale;
+      k.decoder.confidenceScale = to;
+      k.gate.confidenceScale = to;
+      moves.add('"${k.id}" conf gate scale x${from.toStringAsFixed(2)} -> '
+          'x${to.toStringAsFixed(2)}');
+    }
+    if (moves.isEmpty) return;
+    _log(
+        'info',
+        active
+            ? 'kiosk playing audio, wake word sensitivity raised '
+                '(${moves.join(', ')})'
+            : 'kiosk playback ended, wake word sensitivity restored '
+                '(${moves.join(', ')})');
   }
 
   void stop() {

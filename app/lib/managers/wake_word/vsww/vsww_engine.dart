@@ -70,6 +70,7 @@ class VswwEngine extends IsolateWakeEngine {
           // The card resolved its Sensitivity setting into this multiplier; we
           // only apply it.
           'confidenceScale': ref.confidenceScale,
+          'playbackConfidenceScale': ?ref.playbackConfidenceScale,
         });
         log.info(tag,
             'downloaded "${ref.id}" (${model.precision}, ${model.onnxBytes.length} bytes)');

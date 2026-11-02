@@ -80,6 +80,8 @@ class WakeWordModelRef {
     this.confidenceScale = 1.0,
     this.cutoff,
     this.thresholdOffset = 0.0,
+    this.playbackConfidenceScale,
+    this.playbackCutoff,
   });
 
   final String id;
@@ -115,6 +117,13 @@ class WakeWordModelRef {
   /// a multiplier on a number we never see does not fit. 0 elsewhere.
   final double thresholdOffset;
 
+  /// [confidenceScale] and [cutoff] while the kiosk plays audio, or null to
+  /// keep them. Music the echo canceller takes out still leaves enough behind
+  /// to cost a wake word some score, so the wake words take a little less
+  /// while it plays. Amazon's engine does this on its own and gets neither.
+  final double? playbackConfidenceScale;
+  final double? playbackCutoff;
+
   Map<String, Object?> toJson() => {
         'id': id,
         'wakeWord': wakeWord,
@@ -122,6 +131,8 @@ class WakeWordModelRef {
         'confidenceScale': confidenceScale,
         if (cutoff != null) 'cutoff': cutoff,
         if (thresholdOffset != 0) 'thresholdOffset': thresholdOffset,
+        'playbackConfidenceScale': ?playbackConfidenceScale,
+        'playbackCutoff': ?playbackCutoff,
       };
 
   @override
@@ -132,12 +143,13 @@ class WakeWordModelRef {
       other.manifestUrl == manifestUrl &&
       other.confidenceScale == confidenceScale &&
       other.cutoff == cutoff &&
-      other.thresholdOffset == thresholdOffset;
+      other.thresholdOffset == thresholdOffset &&
+      other.playbackConfidenceScale == playbackConfidenceScale &&
+      other.playbackCutoff == playbackCutoff;
 
   @override
-  int get hashCode =>
-      Object.hash(
-          id, wakeWord, manifestUrl, confidenceScale, cutoff, thresholdOffset);
+  int get hashCode => Object.hash(id, wakeWord, manifestUrl, confidenceScale,
+      cutoff, thresholdOffset, playbackConfidenceScale, playbackCutoff);
 }
 
 /// Voice Satellite's energy gate, already resolved to numbers.
@@ -310,6 +322,12 @@ abstract class WakeWordEngine {
   /// *during* a voice turn (that is the whole point: interrupting playback),
   /// so it is independent of [pauseDetection].
   Future<void> setStopWordActive(bool active) async {}
+
+  /// Whether the kiosk is playing audio, which moves the wake words to their
+  /// playback thresholds (see [WakeWordModelRef.playbackConfidenceScale]).
+  /// The detectors keep their state, so a wake word spoken as the music
+  /// starts still counts. Forgotten when the engine stops.
+  Future<void> setPlaybackActive(bool active) async {}
 
   /// Per-inference telemetry for the wake-word tester and the mic level
   /// meter. Set a sink and turn it on to receive one map per model per

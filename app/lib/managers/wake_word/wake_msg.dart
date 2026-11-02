@@ -40,4 +40,8 @@ class WakeMsg {
 
   /// Turn near-miss tracking on or off: {enabled}.
   static const setNearMisses = 'setNearMisses';
+
+  /// Move the wake words to their playback thresholds while the kiosk plays
+  /// audio, or back: {active}.
+  static const setPlayback = 'setPlayback';
 }

@@ -47,6 +47,7 @@ class OwwEngine extends IsolateWakeEngine {
           // The card resolved its Sensitivity setting into this absolute
           // cutoff; 0.5 only covers a card too old to send one.
           'cutoff': ref.cutoff ?? 0.5,
+          'playbackCutoff': ?ref.playbackCutoff,
         });
         log.info(tag, 'downloaded "${ref.id}" (${bytes.length} bytes)');
       } catch (e) {

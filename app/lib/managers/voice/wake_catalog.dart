@@ -263,6 +263,16 @@ double owwCutoffFor(String sensitivity, {bool stop = false, double tune = 0}) {
   return (base + offset - 0.1 * tune).clamp(0.1, 0.99).toDouble();
 }
 
+/// How much less the wake words take while the kiosk plays audio: half the
+/// step between two presets, on top of the sensitivity and the fine-tune.
+/// Only for the kiosk's own players, which the echo canceller takes out, so
+/// what is left is a residue that costs the wake word some score rather than
+/// a song the model has to tell apart from it. Amazon's engine lowers its
+/// own threshold while music plays and gets none. The stop word keeps its
+/// own, since one that fires too easily pauses the music.
+const playbackConfidenceStep = 0.05;
+const playbackOwwCutoffStep = 0.05;
+
 /// The Sensitivity fine-tune slider (-10 to 10) as -1 to 1, positive
 /// meaning more sensitive. It moves the wake words between and past the
 /// presets: at the ends, the confidence gates by 0.2, openWakeWord's
@@ -322,15 +332,24 @@ WakeWordConfig buildWakeConfig({
   final stopTune = wakeTuneFor(stopFineTune);
   WakeWordModelRef ref(OfferedWakeWord w, {bool stop = false}) {
     final t = stop ? stopTune : tune;
+    final scale = confidenceScaleFor(sensitivity, stop: stop, tune: t);
+    final cutoff = oww ? owwCutoffFor(sensitivity, stop: stop, tune: t) : null;
+    final boost = !stop && !pryon;
     return WakeWordModelRef(
       id: w.id,
       wakeWord: w.phrase,
       manifestUrl: w.manifestUrl,
-      confidenceScale: confidenceScaleFor(sensitivity, stop: stop, tune: t),
-      cutoff: oww ? owwCutoffFor(sensitivity, stop: stop, tune: t) : null,
+      confidenceScale: scale,
+      cutoff: cutoff,
       thresholdOffset: pryon
           ? pryonThresholdOffsetFor(sensitivity, stop: stop, tune: t)
           : 0.0,
+      playbackConfidenceScale: boost && !oww
+          ? scale - playbackConfidenceStep
+          : null,
+      playbackCutoff: boost && cutoff != null
+          ? (cutoff - playbackOwwCutoffStep).clamp(0.1, 0.99).toDouble()
+          : null,
     );
   }
 

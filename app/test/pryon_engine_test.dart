@@ -177,6 +177,9 @@ void main() {
       // An id the locale does not offer is dropped.
       expect(config.models.single.manifestUrl, 'pryon:echo-en-US/ECHO');
       expect(config.models.single.thresholdOffset, -0.06);
+      // The engine lowers its own threshold while music plays.
+      expect(config.models.single.playbackConfidenceScale, isNull);
+      expect(config.models.single.playbackCutoff, isNull);
       // The stop word of Echo's own model: no second model just for it.
       expect(config.stopModel?.manifestUrl, 'pryon:echo-en-US/STOP');
       expect(config.stopModel?.thresholdOffset, -0.03);

@@ -107,6 +107,39 @@ void main() {
     );
   });
 
+  test('the wake words take half a preset less while the kiosk plays', () {
+    WakeWordConfig config(WakeWordEngineType engine, {num fineTune = 0}) =>
+        buildWakeConfig(
+          engine: engine,
+          activeIds: const [],
+          sensitivity: 'moderately',
+          fineTune: fineTune,
+          noiseGate: false,
+          stopWord: true,
+        );
+    final vsww = config(WakeWordEngineType.vsWakeWord);
+    expect(vsww.models.single.playbackConfidenceScale, closeTo(0.95, 1e-9));
+    expect(vsww.models.single.playbackCutoff, isNull);
+    final mww = config(WakeWordEngineType.microWakeWord);
+    expect(mww.models.single.playbackConfidenceScale, closeTo(0.95, 1e-9));
+    final oww = config(WakeWordEngineType.openWakeWord);
+    expect(oww.models.single.playbackCutoff, closeTo(0.45, 1e-9));
+    expect(oww.models.single.playbackConfidenceScale, isNull);
+    // On top of the fine-tune, not instead of it.
+    expect(
+      config(WakeWordEngineType.vsWakeWord, fineTune: 5)
+          .models
+          .single
+          .playbackConfidenceScale,
+      closeTo(0.85, 1e-9),
+    );
+    // The stop word keeps its thresholds.
+    for (final c in [vsww, mww, oww]) {
+      expect(c.stopModel?.playbackConfidenceScale, isNull);
+      expect(c.stopModel?.playbackCutoff, isNull);
+    }
+  });
+
   test('the config keeps two known wake words, slot 1 first', () {
     final config = buildWakeConfig(
       engine: WakeWordEngineType.openWakeWord,

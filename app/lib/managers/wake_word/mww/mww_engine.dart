@@ -77,6 +77,11 @@ class MwwEngine extends IsolateWakeEngine {
           model.manifest.probabilityCutoff,
           ref.confidenceScale,
         ),
+        if (ref.playbackConfidenceScale case final scale?)
+          'playbackCutoff': mwwCutoffFor(
+            model.manifest.probabilityCutoff,
+            scale,
+          ),
         'slidingWindowSize': model.manifest.slidingWindowSize,
       };
 }

@@ -55,7 +55,8 @@ class MwwGate {
   }) : _probBuffer = List<double>.filled(slidingWindowSize, 0);
 
   /// Model's `probability_cutoff`, already scaled by the card's sensitivity.
-  final double cutoff;
+  /// Lowered while the kiosk plays audio.
+  double cutoff;
   final int slidingWindowSize;
 
   /// Feature frames the model consumes per [update], so the warmup can be
