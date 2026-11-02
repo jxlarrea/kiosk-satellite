@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/sendspin/music_assistant_api.dart';
 import 'package:kiosk_satellite/managers/sendspin/plugin_ma_socket.dart';
 
 /// The Music Assistant connection plugins share: the app signs in, keeps
@@ -11,6 +12,7 @@ void main() {
   late HttpServer server;
   late List<WebSocket> served;
   late List<Map> received;
+  late List<Map> auths;
   late MaPluginSocket socket;
   late List<(String, String, Map<String, Object?>)> emitted;
   late String token;
@@ -18,6 +20,7 @@ void main() {
   setUp(() async {
     served = [];
     received = [];
+    auths = [];
     emitted = [];
     token = 'good';
     // A Music Assistant that introduces itself, signs in and runs a few
@@ -47,6 +50,7 @@ void main() {
           }),
         );
         if (msg['command'] == 'auth') {
+          auths.add(msg['args'] as Map);
           if ((msg['args'] as Map)['token'] == 'good') {
             result({
               'authenticated': true,
@@ -110,6 +114,37 @@ void main() {
   void push(String event, String objectId, Object? data) => served.last.add(
     jsonEncode({'event': event, 'object_id': objectId, 'data': data}),
   );
+
+  test('signs in with the locale it is given and none by default', () async {
+    await socket.call('a', 'players/all', const {});
+    expect(auths.single.containsKey('locale'), isFalse);
+
+    var language = 'de';
+    final localized = MaPluginSocket(
+      baseUrl: () => 'http://127.0.0.1:${server.port}',
+      token: () => token,
+      log: Logger(),
+      callTimeout: const Duration(seconds: 2),
+      locale: () => language,
+    );
+    addTearDown(localized.dispose);
+    await localized.call('a', 'players/all', const {});
+    expect(auths.last, {'token': 'good', 'locale': 'de'});
+
+    // A language change reaches the server on the next sign-in.
+    language = 'uk_UA';
+    localized.restart();
+    await localized.call('a', 'players/all', const {});
+    expect(auths.last['locale'], 'uk_UA');
+  });
+
+  test('app languages map to the locales Music Assistant ships', () {
+    expect(musicAssistantLocale('en'), 'en');
+    expect(musicAssistantLocale('de'), 'de');
+    expect(musicAssistantLocale('ru'), 'ru_RU');
+    expect(musicAssistantLocale('uk'), 'uk_UA');
+    expect(musicAssistantLocale('zh-CN'), 'zh_CN');
+  });
 
   test(
     'a call returns the result, joins a sliced one and keeps errors',

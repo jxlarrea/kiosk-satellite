@@ -721,6 +721,24 @@ void main() {
     expect(genreIcon('Unknown'), Icons.music_note_rounded);
   });
 
+  test('a translated genre gets its icon from the English sort name', () {
+    LibraryItem genre(String title, [Object? raw]) => LibraryItem(
+      id: 'library://genre/1',
+      kind: LibraryKind.genre,
+      title: title,
+      raw: raw,
+    );
+    expect(
+      genreIconFor(genre('Elektronisch', const {'sort_name': 'electronic'})),
+      Icons.graphic_eq_rounded,
+    );
+    expect(genreIconFor(genre('Electronic')), Icons.graphic_eq_rounded);
+    expect(
+      genreIconFor(genre('Hip-Hop', const {'sort_name': ''})),
+      Icons.mic_rounded,
+    );
+  });
+
   group('the overlay', () {
     final album = LibraryItem(
       id: 'library://album/1',
@@ -797,6 +815,10 @@ void main() {
         // Below the fold on a short screen, so not built there.
         if (size.height >= 600) {
           expect(find.text('Browse by genre'), findsOneWidget);
+          // A long word shrinks to fit its tile instead of breaking.
+          double fontSize(String text) =>
+              tester.widget<Text>(find.text(text).first).style!.fontSize!;
+          expect(fontSize('Elektronisch'), lessThan(fontSize('Folk')));
         }
         await tester.tap(find.text('Glass Harbor').first);
         await tester.pump(const Duration(milliseconds: 100));
@@ -1371,6 +1393,15 @@ class _FakeSource extends LibrarySource {
             title: name,
             expandable: true,
           ),
+
+        // A translated name with one long word.
+        const LibraryItem(
+          id: 'library://genre/electronic_de',
+          kind: LibraryKind.genre,
+          title: 'Elektronisch',
+          expandable: true,
+          raw: {'sort_name': 'electronic'},
+        ),
       ],
     ),
   ];

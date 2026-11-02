@@ -2998,7 +2998,7 @@ class _GenreTile extends StatelessWidget {
                 right: -height * 0.12,
                 bottom: -height * 0.18,
                 child: Icon(
-                  genreIcon(item.title),
+                  genreIconFor(item),
                   size: height * 1.05,
                   color: scheme.onSecondaryContainer.withValues(alpha: .22),
                 ),
@@ -3007,15 +3007,22 @@ class _GenreTile extends StatelessWidget {
                 left: 16,
                 right: height,
                 bottom: compact ? 10 : 14,
-                child: Text(
-                  item.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: compact ? 15 : 18,
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSecondaryContainer,
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, box) {
+                    final style = TextStyle(
+                      fontSize: compact ? 15 : 18,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSecondaryContainer,
+                    );
+                    return Text(
+                      item.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: style.copyWith(
+                        fontSize: _wordFit(context, style, box.maxWidth),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -3023,6 +3030,33 @@ class _GenreTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// The font size at which the name's widest word fits on one line of
+  /// [width], so a long translated name such as Elektronisch shrinks
+  /// instead of breaking in the middle of the word. Never below two thirds
+  /// of the tile's size.
+  double _wordFit(BuildContext context, TextStyle style, double width) {
+    final size = style.fontSize!;
+    final painter = TextPainter(
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    );
+    var widest = 0.0;
+    for (final word in item.title.split(RegExp(r'\s+'))) {
+      painter
+        ..text = TextSpan(
+          text: word,
+          style: DefaultTextStyle.of(context).style.merge(style),
+        )
+        ..layout();
+      widest = math.max(widest, painter.width);
+    }
+    painter.dispose();
+    if (widest <= width) return size;
+    // A little under the exact ratio: widths do not scale quite linearly.
+    return math.max(size * 2 / 3, size * width / widest * 0.97);
   }
 }
 
@@ -3204,6 +3238,16 @@ IconData genreIcon(String name) {
   };
 }
 
+/// A genre's icon from its English name. Music Assistant translates a
+/// genre's name into the app's language but keeps its sort name in English,
+/// and [genreIcon] matches English words.
+IconData genreIconFor(LibraryItem item) => switch (item.raw) {
+  {'sort_name': final String english} when english.isNotEmpty => genreIcon(
+    english,
+  ),
+  _ => genreIcon(item.title),
+};
+
 /// Music Assistant's provider logos are SVG.
 bool _isSvg(Uint8List bytes) {
   final head = String.fromCharCodes(
@@ -3307,7 +3351,7 @@ class _LibraryArtState extends State<LibraryArt> {
             ? ColoredBox(
                 color: scheme.secondaryContainer,
                 child: Icon(
-                  genreIcon(widget.item.title),
+                  genreIconFor(widget.item),
                   size: widget.size * 0.46,
                   color: scheme.onSecondaryContainer,
                 ),

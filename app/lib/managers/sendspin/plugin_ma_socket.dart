@@ -30,6 +30,7 @@ class MaPluginSocket {
     this.idleClose = const Duration(seconds: 60),
     this.callTimeout = const Duration(seconds: 25),
     this.maxResult = maxResultBytes,
+    this.locale,
   });
 
   /// The Music Assistant address and token from the Sendspin settings,
@@ -45,6 +46,11 @@ class MaPluginSocket {
   /// connection, whose album and playlist listings run large and would
   /// otherwise be encoded once more on the UI thread just to be counted.
   final int maxResult;
+
+  /// The Music Assistant locale declared when signing in, so the server
+  /// answers with names in that language. Read on every connect. Null or
+  /// empty leaves the server's English.
+  final String Function()? locale;
 
   /// Delivers a subscription's events and status changes to its plugin
   /// session: `{type: event, event, objectId, data}`, `{type: too_large,
@@ -302,8 +308,10 @@ class MaPluginSocket {
       _socket = socket;
       _client = client;
       try {
+        final lang = locale?.call() ?? '';
         final auth = await session.send('auth', {
           'token': key,
+          if (lang.isNotEmpty) 'locale': lang,
         }, timeout: callTimeout);
         final user = auth is Map ? auth['user'] : null;
         final preferences = user is Map ? user['preferences'] : null;

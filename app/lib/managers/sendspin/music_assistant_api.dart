@@ -55,6 +55,17 @@ String? musicAssistantWebUrl(
       '${fullscreen ? '&showFullscreenPlayer=true' : ''}';
 }
 
+/// The Music Assistant locale for an app [language], declared when signing
+/// in so the server names its Discover rows, built-in playlists and genres
+/// in that language (Music Assistant 2.10 and later). The server falls back
+/// from a regional locale to its base language but not the other way, and
+/// it ships Russian and Ukrainian only as ru_RU and uk_UA.
+String musicAssistantLocale(String language) => switch (language) {
+  'ru' => 'ru_RU',
+  'uk' => 'uk_UA',
+  final other => other.replaceAll('-', '_'),
+};
+
 /// The player the Music Assistant web interface should land on: the
 /// followed remote player when one is picked, otherwise this device's own
 /// player — provided it is enabled, since selecting a player that is not

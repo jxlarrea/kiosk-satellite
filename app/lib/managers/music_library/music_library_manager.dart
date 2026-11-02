@@ -11,7 +11,8 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../analytics/usage_counters.dart';
 import '../sendspin/artwork_cache.dart';
-import '../sendspin/music_assistant_api.dart' show musicAssistantWebUrl;
+import '../sendspin/music_assistant_api.dart'
+    show musicAssistantLocale, musicAssistantWebUrl;
 import '../sendspin/plugin_ma_socket.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
@@ -64,6 +65,7 @@ class MusicLibraryManager extends Manager {
              token: () => _settings.get(defs.sendspinMaToken),
              log: log,
              maxResult: 0,
+             locale: () => musicAssistantLocale(_settings.get(defs.uiLanguage)),
            ),
        _ha =
            ha ??
@@ -150,7 +152,8 @@ class MusicLibraryManager extends Manager {
               key == defs.sendspinPlayerName.key) {
             _readPick();
           } else if (key == defs.sendspinMaUrl.key ||
-              key == defs.sendspinMaToken.key) {
+              key == defs.sendspinMaToken.key ||
+              key == defs.uiLanguage.key) {
             _ma.restart();
             _drop('ma');
           } else if (key == defs.haUrl.key || key == defs.haToken.key) {
