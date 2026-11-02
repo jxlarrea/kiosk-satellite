@@ -383,9 +383,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   final renderPaused = ValueNotifier<bool>(false);
 
   /// Views that cost next to nothing to draw, left live around the docked
-  /// overlay. The Home Assistant Dashboard view is a clear layer over the
-  /// dashboard, which pauses on its own.
-  static const _cheapUnderDock = {null, 'black', 'clock', 'dashboard'};
+  /// overlay. The Home Assistant Dashboard and Dim views are clear layers
+  /// over the dashboard, which pauses on its own.
+  static const _cheapUnderDock = {null, 'black', 'clock', 'dashboard', 'dim'};
 
   bool get _nativeVoice =>
       _settings.get(defs.voiceRuntime) == 'native' &&
@@ -400,9 +400,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// The visual overlay the UI should render, or null for none.
   ///
   /// One of 'blank' | 'black' | 'clock' | 'media' | 'website' | ... Dim
-  /// only lowers the backlight, so this stays null there. 'dashboard' is
-  /// a clear layer over the dashboard itself, there to take the tap that
-  /// dismisses it and to carry the widgets.
+  /// only lowers the backlight, so this stays null there, unless a shared
+  /// Now Playing panel needs a slot: then it is 'dim', a bare clear layer.
+  /// 'dashboard' is a clear layer over the dashboard itself, there to take
+  /// the tap that dismisses it and to carry the widgets.
   final ValueNotifier<String?> activeView = ValueNotifier(null);
 
   /// The view the Home Assistant Dashboard mode put on the page this
@@ -447,13 +448,41 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   bool _nowPlayingShared = false;
   bool get nowPlayingShared => _nowPlayingShared && _nowPlayingTakeover;
 
+  /// The edges the shared Now Playing panel covers, as the layout last
+  /// reported them.
+  EdgeInsets _nowPlayingPanel = EdgeInsets.zero;
+
+  /// The room the shared Now Playing panel takes from the page beside it
+  /// under the Home Assistant Dashboard and Dim modes, for the kiosk
+  /// screen to keep the dashboard clear of (issue #1268): the page lays
+  /// itself out in what is left instead of under the panel. Zero
+  /// otherwise.
+  final pageReserve = ValueNotifier<EdgeInsets>(EdgeInsets.zero);
+
+  void _syncPageReserve() {
+    final view = activeView.value;
+    pageReserve.value =
+        _active && nowPlayingShared && (view == 'dashboard' || view == 'dim')
+        ? _nowPlayingPanel
+        : EdgeInsets.zero;
+  }
+
   bool get _nowPlayingNormalBrightness =>
       _nowPlayingTakeover &&
       (!nowPlayingShared ||
           _settings.get(defs.sendspinFullscreenOverrideBrightness));
 
-  void setNowPlayingShared(bool shared) {
-    if (!_active || _nowPlayingShared == shared) return;
+  void setNowPlayingShared(bool shared, {EdgeInsets panel = EdgeInsets.zero}) {
+    if (!_active) return;
+    if (_nowPlayingShared == shared) {
+      // A rotation moves the panel without changing the layout.
+      if (panel != _nowPlayingPanel) {
+        _nowPlayingPanel = panel;
+        unawaited(Future<void>.microtask(_syncPageReserve));
+      }
+      return;
+    }
+    _nowPlayingPanel = panel;
     _nowPlayingShared = shared;
     _tapChainStart = null;
     // Layout reports during build. Apply brightness after that frame's
@@ -1941,6 +1970,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     activeView.value = view;
     bus.publish(ScreensaverViewChanged(view: view));
     _syncNowPlayingShown();
+    _syncPageReserve();
   }
 
   /// Whether the Now Playing view is on screen, as the screensaver overlay
@@ -2014,9 +2044,13 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (!_active) return;
     }
     if (_nowPlayingNormalBrightness) {
-      // A non-null view gives the override a slot to render into ('dim'
-      // and 'dashboard' show the page itself), at full brightness.
-      _setView((mode == 'dim' || mode == 'dashboard') ? 'black' : mode);
+      // A non-null view gives the override a slot to render into, at full
+      // brightness. 'dim' and 'dashboard' show the page itself beside a
+      // shared panel and give way to black under a full-screen one.
+      _setView(switch (mode) {
+        'dim' || 'dashboard' when !nowPlayingShared => 'black',
+        _ => mode,
+      });
       if (_savedBrightness != null) {
         await commands.execute('setBrightness', {
           'level': _savedBrightness,
@@ -2037,7 +2071,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       case 'dim':
         // Backlight only — no overlay. stop() restores the saved level.
         // A scheduled brightness wins over the configured dim level.
-        _setView(nowPlayingShared ? 'black' : null);
+        // Beside a shared player the 'dim' view is a clear layer that
+        // gives the player its slot and leaves the page showing.
+        _setView(nowPlayingShared ? 'dim' : null);
         final dim =
             _scheduleBrightness ??
             _settings.get(defs.screensaverDimLevel).toDouble();
@@ -2063,10 +2099,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         // clock / media / website: a lit overlay showing content, at normal
         // brightness unless the separate screensaver brightness — or the
         // active schedule entry — asks for its own level (a clock that must
-        // not glow all night). The dashboard gives way to black beside a
-        // shared player, as Dim does: its view is laid out for the whole
-        // screen.
-        _setView(mode == 'dashboard' && nowPlayingShared ? 'black' : mode);
+        // not glow all night). Beside a shared player the dashboard keeps
+        // showing, laid out in the room the panel leaves (pageReserve).
+        _setView(mode);
         if (_contentDimEnabled(mode)) {
           final level =
               _scheduleBrightness ??
@@ -2137,6 +2172,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     alarmTakeover.value = null;
     renderPaused.value = false;
     _nowPlayingShared = false;
+    // The page takes its full width back while the overlay still covers
+    // it, not after the dismissal has shown it squeezed.
+    _syncPageReserve();
     _tapChainStart = null;
     _screenOffTimer?.cancel();
     _screenOffTimer = null;
@@ -2256,6 +2294,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _screenOffTimer?.cancel();
     _nightTimer?.cancel();
     activeView.dispose();
+    pageReserve.dispose();
     clockNight.dispose();
     dashboardShowing.dispose();
     scheduleNowPlaying.dispose();

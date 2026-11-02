@@ -331,6 +331,12 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                     container: container,
                     child: const SizedBox.expand(),
                   ),
+                  // Dim beside a shared player: the page shows through,
+                  // with nothing over it.
+                  'dim' => _Dismissable(
+                    container: container,
+                    child: const SizedBox.expand(),
+                  ),
                   // 'black' and anything unexpected: the safe, opaque cover,
                   // carrying the At a Glance row when there is one — unless
                   // the active schedule entry withholds it for its hours,
@@ -366,6 +372,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                 // for the native modes, the page for the web ones.
                 if (!blackBare &&
                     !weatherUnset &&
+                    view != 'dim' &&
                     view != 'black' &&
                     view != 'clock' &&
                     view != 'weather_mood' &&
@@ -431,7 +438,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                 // which is why they hang off their own listenable: a
                 // boundary between two entries of the same mode changes
                 // nothing else this widget rebuilds on.
-                if (!blackBare && !weatherUnset)
+                if (!blackBare && !weatherUnset && view != 'dim')
                   _StepAside(
                     container: container,
                     child: ValueListenableBuilder<bool?>(
@@ -589,7 +596,6 @@ class _ScreensaverPlayerLayout extends StatelessWidget {
           split &&
           player != null &&
           (landscape ? size.width >= 700 : size.height >= 700);
-      container.screensaver.setNowPlayingShared(shared);
       final full = Offset.zero & size;
       final Rect saverRect;
       final Rect playerRect;
@@ -614,6 +620,14 @@ class _ScreensaverPlayerLayout extends StatelessWidget {
         saverRect = full;
         playerRect = full;
       }
+      container.screensaver.setNowPlayingShared(
+        shared,
+        panel: !shared
+            ? EdgeInsets.zero
+            : landscape
+            ? EdgeInsets.only(right: playerRect.width)
+            : EdgeInsets.only(bottom: playerRect.height),
+      );
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -624,7 +638,13 @@ class _ScreensaverPlayerLayout extends StatelessWidget {
               'screensaver-pane',
               PhotoFillOverride(
                 fill: shared && photoFill != 'default' ? photoFill : null,
+                // Opaque when shared: a clear pane (the dashboard with
+                // Double tap to dismiss) still takes the touch that
+                // dismisses, as every shared pane does.
                 child: Listener(
+                  behavior: shared
+                      ? HitTestBehavior.opaque
+                      : HitTestBehavior.deferToChild,
                   onPointerDown: shared
                       ? (_) => container.screensaver.notifyActivity(
                           'screensaver_touch',

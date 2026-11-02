@@ -291,8 +291,8 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     bus.on<ScreensaverViewChanged>().listen((e) {
       // The Home Assistant Dashboard screensaver's layer is clear: like
       // Dim, the page IS the display, so it is neither frozen nor stripped
-      // of its camera streams.
-      final covers = e.view != null && e.view != 'dashboard';
+      // of its camera streams. So is Dim's own beside a shared player.
+      final covers = e.view != null && e.view != 'dashboard' && e.view != 'dim';
       _screensaverHasOverlay = covers;
       _dashboardCovered = covers && !_screensaverIsOwnOrigin(e.view);
       _scheduleFreezeSync();

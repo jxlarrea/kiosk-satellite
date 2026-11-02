@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -167,5 +168,84 @@ void main() {
     await pumpEventQueue();
     expect(saver.isActive, isFalse);
     expect(pathname, '/lovelace/lights');
+  });
+
+  // Beside a shared Now Playing panel the page keeps showing and gives
+  // the panel its side (issue #1268), where it used to go black.
+  group('beside a shared Now Playing panel', () {
+    const panel = EdgeInsets.only(right: 400);
+
+    Future<void> share(Map<String, Object> extra) async {
+      await build({
+        'ks.sendspin.fullscreen': true,
+        'ks.sendspin.fullscreen_on_play': false,
+        'ks.sendspin.fullscreen_split': true,
+        ...extra,
+      });
+      bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+      await pumpEventQueue();
+      await saver.start();
+      await pumpEventQueue();
+      // The overlay reports the shared layout as it lays out.
+      saver.setNowPlayingShared(true, panel: panel);
+      await pumpEventQueue();
+    }
+
+    test('the dashboard shows and the page gives up the panel', () async {
+      await share(const {});
+      expect(saver.nowPlayingShared, isTrue);
+      expect(saver.activeView.value, 'dashboard');
+      expect(saver.pageReserve.value, panel);
+    });
+
+    test('with normal brightness for Now Playing too', () async {
+      await share({'ks.sendspin.fullscreen_override_brightness': true});
+      expect(saver.activeView.value, 'dashboard');
+      expect(saver.pageReserve.value, panel);
+    });
+
+    test('Dim shows the page through a clear layer', () async {
+      await share({'ks.screensaver.mode': 'dim'});
+      expect(saver.activeView.value, 'dim');
+      expect(saver.pageReserve.value, panel);
+    });
+
+    test('a rotation moves the reserve with the panel', () async {
+      await share(const {});
+      const portrait = EdgeInsets.only(bottom: 600);
+      saver.setNowPlayingShared(true, panel: portrait);
+      await pumpEventQueue();
+      expect(saver.pageReserve.value, portrait);
+    });
+
+    test('other modes keep the page full size', () async {
+      await share({'ks.screensaver.mode': 'clock'});
+      expect(saver.activeView.value, 'clock');
+      expect(saver.pageReserve.value, EdgeInsets.zero);
+    });
+
+    test('the page gets its room back when the music stops', () async {
+      await share(const {});
+      bus.publish(
+        const SendspinNowPlayingChanged(active: false, playing: false),
+      );
+      await pumpEventQueue();
+      expect(saver.activeView.value, 'dashboard');
+      expect(saver.pageReserve.value, EdgeInsets.zero);
+    });
+
+    test('and when the screensaver ends', () async {
+      await share(const {});
+      await saver.stop();
+      expect(saver.pageReserve.value, EdgeInsets.zero);
+    });
+
+    test('a full-screen player still covers the page', () async {
+      await share({'ks.sendspin.fullscreen_split': false});
+      saver.setNowPlayingShared(false);
+      await pumpEventQueue();
+      expect(saver.activeView.value, 'black');
+      expect(saver.pageReserve.value, EdgeInsets.zero);
+    });
   });
 }

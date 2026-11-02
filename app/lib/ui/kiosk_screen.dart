@@ -1633,8 +1633,18 @@ class _KioskScreenState extends State<KioskScreen>
         // exactly what the splash was showing); see _waitForActivityAttach.
         // Exempt from the Scale UI factor: the dashboard has its own zoom
         // setting, and scaling the platform view would reflow and blur it.
+        // Beside a shared Now Playing panel the Home Assistant Dashboard
+        // and Dim screensavers keep the page showing, so it gives up the
+        // panel's side: the dashboard lays itself out in the room left
+        // instead of under the panel. The plane's overdraw keeps its new
+        // edge a pixel under the panel.
         if (_activityAttached && !c.browser.webViewMissing)
-          UiScaleExempt(child: _webView()),
+          ValueListenableBuilder<EdgeInsets>(
+            valueListenable: c.screensaver.pageReserve,
+            child: UiScaleExempt(child: _webView()),
+            builder: (context, reserve, child) =>
+                Padding(padding: reserve, child: child),
+          ),
         // Directly over the dashboard: it hides Chromium's error page, and
         // everything below in this list (an overlay page, the player) is
         // content that belongs on top of the dashboard, error or not.
