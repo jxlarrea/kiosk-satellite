@@ -144,6 +144,70 @@ void main() {
     expect(browser.duraSpeedBlocking.value, isFalse);
   });
 
+  test('a health probe that answers clears the DuraSpeed notice', () async {
+    await build();
+    browser.duraSpeedInstalled = () async => true;
+    await browser.rebuildFailedRenderer('renderer never answered');
+    expect(browser.duraSpeedBlocking.value, isTrue);
+    // The rebuilt renderer works, so Android never reports it responsive.
+    browser.attach(
+      InAppWebViewController.fromPlatform(platform: _PlatformController()),
+    );
+    browser.evalOverride = (_) async => 'connected';
+    await browser.checkDashboardHealth();
+    expect(browser.duraSpeedBlocking.value, isFalse);
+  });
+
+  test('renderer timeouts on a dark panel never rebuild', () async {
+    await build();
+    final rebuilds = <WebViewRebuildRequested>[];
+    bus.on<WebViewRebuildRequested>().listen(rebuilds.add);
+    browser.evalOverride = (_) => Completer<Object?>().future;
+    bus.publish(const ScreenStateChanged(on: false));
+    await Future<void>.delayed(Duration.zero);
+    for (var i = 0; i < 3; i++) {
+      await browser.checkDashboardHealth();
+    }
+    await Future<void>.delayed(Duration.zero);
+    expect(rebuilds, isEmpty);
+    // A timeout before the panel went dark does not carry over either.
+    bus.publish(const ScreenStateChanged(on: true));
+    await Future<void>.delayed(Duration.zero);
+    await browser.checkDashboardHealth();
+    await Future<void>.delayed(Duration.zero);
+    expect(rebuilds, isEmpty);
+    await browser.checkDashboardHealth();
+    await Future<void>.delayed(Duration.zero);
+    expect(rebuilds, hasLength(1));
+  });
+
+  test('an unresponsive renderer on a dark panel is left alone', () async {
+    await build();
+    bus.publish(const ScreenStateChanged(on: false));
+    await Future<void>.delayed(Duration.zero);
+    expect(browser.onRendererUnresponsive(), isFalse);
+    expect(browser.onRendererUnresponsive(), isFalse);
+    expect(browser.onRendererUnresponsive(), isFalse);
+    bus.publish(const ScreenStateChanged(on: true));
+    await Future<void>.delayed(Duration.zero);
+    expect(browser.onRendererUnresponsive(), isFalse);
+    expect(browser.onRendererUnresponsive(), isTrue);
+  });
+
+  test('a screen edge starts the renderer timeout count over', () async {
+    await build();
+    final rebuilds = <WebViewRebuildRequested>[];
+    bus.on<WebViewRebuildRequested>().listen(rebuilds.add);
+    browser.evalOverride = (_) => Completer<Object?>().future;
+    await browser.checkDashboardHealth();
+    bus.publish(const ScreenStateChanged(on: false));
+    bus.publish(const ScreenStateChanged(on: true));
+    await Future<void>.delayed(Duration.zero);
+    await browser.checkDashboardHealth();
+    await Future<void>.delayed(Duration.zero);
+    expect(rebuilds, isEmpty);
+  });
+
   test('an unanswered rebuild elsewhere stays quiet', () async {
     await build();
     browser.duraSpeedInstalled = () async => false;

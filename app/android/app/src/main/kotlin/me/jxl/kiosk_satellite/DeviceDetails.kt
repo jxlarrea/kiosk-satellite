@@ -1073,6 +1073,12 @@ class DeviceDetails(
      * vendor: a background app control that can refuse to start the
      * WebView's renderer service, which leaves the dashboard black with no
      * settings page to explain it (a Lenovo Tab M8 on Android 13).
+     *
+     * The vendor property decides where it exists. The global setting does
+     * not: the Android 13 Tab M8 refused renderers with it at 0 until it
+     * was set to 1 and back. A tablet with the package but no property (a
+     * Lenovo Tab M8 on Android 10) has only the setting to go by, and
+     * counts as on only when it says 1.
      */
     private fun duraSpeed(): Boolean {
         val installed = try {
@@ -1082,11 +1088,15 @@ class DeviceDetails(
             false
         }
         if (!installed) return false
-        return runCatching {
+        val property = runCatching {
             Class.forName("android.os.SystemProperties")
                 .getMethod("get", String::class.java, String::class.java)
-                .invoke(null, "persist.vendor.duraspeed.app.on", "1") as String
-        }.getOrDefault("1") != "0"
+                .invoke(null, "persist.vendor.duraspeed.app.on", "") as String
+        }.getOrDefault("")
+        if (property.isNotEmpty()) return property != "0"
+        return runCatching {
+            Settings.Global.getString(context.contentResolver, "setting.duraspeed.enabled")
+        }.getOrNull() == "1"
     }
 
     /**

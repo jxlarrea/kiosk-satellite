@@ -303,6 +303,10 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     bus.on<ScreenStateChanged>().listen((e) {
       if (e.on) _screenOnAt = DateTime.now();
       _screenIsOn = e.on;
+      // Renderer timeouts only count two in a row on a lit panel (see
+      // _checkDashboardHealth), so either edge starts the count over.
+      _rendererDeadChecks = 0;
+      _unresponsiveStrikes = 0;
       // The freeze follows the panel: thaw when it powers off (see
       // _wantFrozen for why a frozen page cannot survive a dark panel),
       // freeze again when it lights back up under a screensaver.
@@ -935,8 +939,13 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
 
   /// Termination can fail without delivering onRenderProcessGone. Give it
   /// a short grace period then replace the WebView even without a callback.
+  ///
+  /// Not on a dark panel: Android can stop a backgrounded renderer while
+  /// the screen is off (a Lenovo Tab M8 on Android 13 does), and that
+  /// renderer answers again once the screen is back.
   bool onRendererUnresponsive() {
     if (_rendererRebuildPending || _rendererRecovery != null) return false;
+    if (!_screenIsOn) return false;
     _unresponsiveStrikes++;
     log.warn(
       name,
@@ -958,10 +967,17 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     _rendererRecovery = null;
     _unresponsiveStrikes = 0;
     _rendererDeadChecks = 0;
-    if (duraSpeedBlocking.value) {
-      duraSpeedBlocking.value = false;
-      log.info(name, 'the dashboard renderer answers again');
-    }
+    _clearDuraSpeedNotice();
+  }
+
+  /// Android only reports a renderer responsive again after it reported it
+  /// unresponsive, so a rebuilt renderer that simply works never calls
+  /// [onRendererResponsive]. Any answer to the health probe clears the
+  /// notice too.
+  void _clearDuraSpeedNotice() {
+    if (!duraSpeedBlocking.value) return;
+    duraSpeedBlocking.value = false;
+    log.info(name, 'the dashboard renderer answers again');
   }
 
   /// MediaTek's DuraSpeed is refusing the dashboard's renderer, as far as
@@ -1968,10 +1984,14 @@ return n;
     // flight is already doing this.
     if (loadFailed.value || _networkRepairBusy) return;
     final generation = _webViewGeneration;
+    final lit = _screenIsOn;
     final state = await _probePageState();
     if (generation != _webViewGeneration) return;
     if (state == 'unresponsive') {
       _deadChecks = 0;
+      // A dark, locked panel can leave the page too backgrounded to answer
+      // in time, and a renderer rebuilt for that is not a failed one.
+      if (!lit || !_screenIsOn) return;
       _rendererDeadChecks++;
       if (_rendererDeadChecks >= 2 && _settings.get(defs.autoReloadOnError)) {
         await rebuildFailedRenderer('dashboard JavaScript timed out twice');
@@ -1979,6 +1999,7 @@ return n;
       return;
     }
     _rendererDeadChecks = 0;
+    if (state != 'none') _clearDuraSpeedNotice();
     // Only a Home Assistant page that is not talking to Home Assistant is
     // this watchdog's business: the loaded frontend with a dead connection,
     // and the launch screen that never got one. Anything else is somebody
