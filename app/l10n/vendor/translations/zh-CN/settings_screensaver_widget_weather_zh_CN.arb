@@ -12,6 +12,8 @@
   "screensaverOverlayFeelsLikeOnlyHelp": "使用带“体感温度”标签的体感温度替代实际温度。",
   "screensaverOverlayForecast": "天气预报",
   "screensaverOverlayForecastHelp": "天气状况及对应图标。",
+  "screensaverOverlayHighLow": "最高和最低气温",
+  "screensaverOverlayHighLowHelp": "今天的最高和最低气温。",
   "screensaverOverlayHumidity": "湿度",
   "screensaverOverlayWind": "风速",
   "screensaverOverlayVisibility": "能见度",

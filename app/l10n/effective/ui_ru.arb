@@ -50000,6 +50000,32 @@
       ]
     }
   },
+  "screensaverOverlayHighLow": "Максимум и минимум",
+  "@screensaverOverlayHighLow": {
+    "context": "Settings > Screensaver > Widgets > Weather widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather widget"
+      ]
+    }
+  },
+  "screensaverOverlayHighLowHelp": "Максимальная и минимальная температура сегодня.",
+  "@screensaverOverlayHighLowHelp": {
+    "context": "Settings > Screensaver > Widgets > Weather widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather widget"
+      ]
+    }
+  },
   "screensaverOverlayHumidity": "Влажность",
   "@screensaverOverlayHumidity": {
     "context": "Settings > Screensaver > Widgets > Weather widget",

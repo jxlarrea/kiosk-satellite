@@ -13251,6 +13251,13 @@ class UiStringsEn extends UiStrings {
       'The conditions, with a matching icon.';
 
   @override
+  String get screensaverOverlayHighLow => 'High and low';
+
+  @override
+  String get screensaverOverlayHighLowHelp =>
+      'Today\'s high and low temperatures.';
+
+  @override
   String get screensaverOverlayHumidity => 'Humidity';
 
   @override

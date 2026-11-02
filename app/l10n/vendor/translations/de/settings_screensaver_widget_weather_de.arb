@@ -12,6 +12,8 @@
   "screensaverOverlayFeelsLikeOnlyHelp": "Zeigt die gefühlte Temperatur mit der Beschriftung „Gefühlte Temperatur“ anstelle der tatsächlichen Temperatur.",
   "screensaverOverlayForecast": "Wetterlage",
   "screensaverOverlayForecastHelp": "Zeigt die Wetterbedingungen mit dem entsprechenden Symbol an.",
+  "screensaverOverlayHighLow": "Höchst- und Tiefstwert",
+  "screensaverOverlayHighLowHelp": "Die heutige Höchst- und Tiefsttemperatur.",
   "screensaverOverlayHumidity": "Luftfeuchtigkeit",
   "screensaverOverlayWind": "Windgeschwindigkeit",
   "screensaverOverlayVisibility": "Sichtweite",

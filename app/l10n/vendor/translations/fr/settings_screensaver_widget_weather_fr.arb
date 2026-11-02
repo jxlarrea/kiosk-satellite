@@ -12,6 +12,8 @@
   "screensaverOverlayFeelsLikeOnlyHelp": "Affiche la température ressentie avec le libellé « Ressenti » à la place de la température réelle.",
   "screensaverOverlayForecast": "Prévisions",
   "screensaverOverlayForecastHelp": "Les conditions météo, avec l'icône correspondante.",
+  "screensaverOverlayHighLow": "Max. et min.",
+  "screensaverOverlayHighLowHelp": "Les températures maximale et minimale du jour.",
   "screensaverOverlayHumidity": "Humidité",
   "screensaverOverlayWind": "Vitesse du vent",
   "screensaverOverlayVisibility": "Visibilité",

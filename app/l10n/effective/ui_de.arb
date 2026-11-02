@@ -50000,6 +50000,32 @@
       ]
     }
   },
+  "screensaverOverlayHighLow": "Höchst- und Tiefstwert",
+  "@screensaverOverlayHighLow": {
+    "context": "Settings > Screensaver > Widgets > Weather widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather widget"
+      ]
+    }
+  },
+  "screensaverOverlayHighLowHelp": "Die heutige Höchst- und Tiefsttemperatur.",
+  "@screensaverOverlayHighLowHelp": {
+    "context": "Settings > Screensaver > Widgets > Weather widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather widget"
+      ]
+    }
+  },
   "screensaverOverlayHumidity": "Luftfeuchtigkeit",
   "@screensaverOverlayHumidity": {
     "context": "Settings > Screensaver > Widgets > Weather widget",

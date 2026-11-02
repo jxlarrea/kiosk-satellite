@@ -116,6 +116,7 @@ void main() {
       for (final key in [
         'location',
         'forecast',
+        'high_low',
         'humidity',
         'wind',
         'visibility',

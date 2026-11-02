@@ -12,6 +12,8 @@
   "screensaverOverlayFeelsLikeOnlyHelp": "Показывать ощущаемую температуру с меткой «Ощущается как» вместо фактической.",
   "screensaverOverlayForecast": "Прогноз",
   "screensaverOverlayForecastHelp": "Условия с подходящим значком.",
+  "screensaverOverlayHighLow": "Максимум и минимум",
+  "screensaverOverlayHighLowHelp": "Максимальная и минимальная температура сегодня.",
   "screensaverOverlayHumidity": "Влажность",
   "screensaverOverlayWind": "Скорость ветра",
   "screensaverOverlayVisibility": "Видимость",

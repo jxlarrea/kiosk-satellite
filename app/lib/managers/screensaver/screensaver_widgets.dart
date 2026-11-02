@@ -27,7 +27,8 @@
 ///      round the same; off by default), feels_like_only (the apparent
 ///      temperature in the real one's place; off by default, wins over
 ///      feels_like), and the line
-///      toggles location, forecast, humidity, wind, visibility. The
+///      toggles location, forecast, high_low (today's high and low from
+///      the daily forecast, issue #1262), humidity, wind, visibility. The
 ///      temperature always shows; every line needs its toggle on AND the
 ///      entity to actually carry the reading.
 ///    - battery: the device's own battery, as an icon with an optional
@@ -127,6 +128,7 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'feels_like_only': false,
     'location': true,
     'forecast': true,
+    'high_low': true,
     'humidity': true,
     'wind': true,
     'visibility': true,

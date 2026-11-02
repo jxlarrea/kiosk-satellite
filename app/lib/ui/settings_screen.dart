@@ -6325,6 +6325,10 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                         'feels_like_only',
                       ),
                       toggle(screensaverText(context, 'Forecast'), 'forecast'),
+                      toggle(
+                        screensaverText(context, 'High and low'),
+                        'high_low',
+                      ),
                       toggle(screensaverText(context, 'Humidity'), 'humidity'),
                       toggle(screensaverText(context, 'Wind speed'), 'wind'),
                       toggle(

@@ -1187,7 +1187,8 @@ export function settingRow(s) {
       weather: { entity: '', name: '', label: '', color: '250,250,250',
         scale: 0, font: 'default', font_weight: 'default',
         feels_like: false, feels_like_only: false, location: true,
-        forecast: true, humidity: true, wind: true, visibility: true },
+        forecast: true, high_low: true, humidity: true, wind: true,
+        visibility: true },
       battery: { color: '250,250,250', scale: 0, font: 'default',
         font_weight: 'default', percent: true, low: false },
       entity: { entity: '', name: '', label: '', attribute: '', show_states: '',
@@ -1534,14 +1535,16 @@ export function settingRow(s) {
           screensaverText("Show the apparent temperature with a Feels like label instead of the actual temperature."));
         refs.forecast = cameraToggle(screensaverText('Forecast'),
           config.forecast === true, screensaverText('The conditions, with a matching icon.'));
+        refs.highLow = cameraToggle(screensaverText('High and low'),
+          config.high_low === true, screensaverText("Today's high and low temperatures."));
         refs.humidity = cameraToggle(screensaverText('Humidity'), config.humidity === true);
         refs.wind = cameraToggle(screensaverText('Wind speed'), config.wind === true);
         refs.visibility = cameraToggle(screensaverText('Visibility'), config.visibility === true);
         typeBlock.append(refs.entity.wrap, refs.label.wrap, refs.color.wrap,
           refs.scale.wrap, refs.font.wrap, refs.weight.wrap,
           refs.location.wrap, refs.feelsLike.wrap, refs.feelsLikeOnly.wrap,
-          refs.forecast.wrap, refs.humidity.wrap, refs.wind.wrap,
-          refs.visibility.wrap);
+          refs.forecast.wrap, refs.highLow.wrap, refs.humidity.wrap,
+          refs.wind.wrap, refs.visibility.wrap);
       };
       renderTypeBlock();
       typeSel.select.addEventListener('change', () => {
@@ -1603,6 +1606,7 @@ export function settingRow(s) {
               feels_like_only: refs.feelsLikeOnly.input.checked,
               location: refs.location.input.checked,
               forecast: refs.forecast.input.checked,
+              high_low: refs.highLow.input.checked,
               humidity: refs.humidity.input.checked,
               wind: refs.wind.input.checked,
               visibility: refs.visibility.input.checked };

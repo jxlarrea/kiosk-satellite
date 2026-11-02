@@ -13541,6 +13541,13 @@ class UiStringsDe extends UiStrings {
       'Zeigt die Wetterbedingungen mit dem entsprechenden Symbol an.';
 
   @override
+  String get screensaverOverlayHighLow => 'Höchst- und Tiefstwert';
+
+  @override
+  String get screensaverOverlayHighLowHelp =>
+      'Die heutige Höchst- und Tiefsttemperatur.';
+
+  @override
   String get screensaverOverlayHumidity => 'Luftfeuchtigkeit';
 
   @override

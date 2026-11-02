@@ -13403,6 +13403,13 @@ class UiStringsNl extends UiStrings {
       'De weersomstandigheden met een bijpassend pictogram.';
 
   @override
+  String get screensaverOverlayHighLow => 'Hoogste en laagste';
+
+  @override
+  String get screensaverOverlayHighLowHelp =>
+      'De hoogste en laagste temperatuur van vandaag.';
+
+  @override
   String get screensaverOverlayHumidity => 'Vochtigheid';
 
   @override

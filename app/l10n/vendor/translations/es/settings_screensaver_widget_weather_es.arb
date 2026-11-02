@@ -12,6 +12,8 @@
   "screensaverOverlayFeelsLikeOnlyHelp": "Muestra la sensación térmica con su etiqueta en lugar de la temperatura real.",
   "screensaverOverlayForecast": "Pronóstico",
   "screensaverOverlayForecastHelp": "Muestra las condiciones con su icono correspondiente.",
+  "screensaverOverlayHighLow": "Máxima y mínima",
+  "screensaverOverlayHighLowHelp": "Las temperaturas máxima y mínima de hoy.",
   "screensaverOverlayHumidity": "Humedad",
   "screensaverOverlayWind": "Velocidad del viento",
   "screensaverOverlayVisibility": "Visibilidad",

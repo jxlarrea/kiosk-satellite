@@ -13391,6 +13391,13 @@ class UiStringsUk extends UiStrings {
       'Погодні умови з відповідною піктограмою.';
 
   @override
+  String get screensaverOverlayHighLow => 'Максимум і мінімум';
+
+  @override
+  String get screensaverOverlayHighLowHelp =>
+      'Максимальна та мінімальна температура сьогодні.';
+
+  @override
   String get screensaverOverlayHumidity => 'Вологість';
 
   @override

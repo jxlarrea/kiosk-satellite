@@ -12,6 +12,8 @@
   "screensaverOverlayFeelsLikeOnlyHelp": "Toon de gevoelstemperatuur met het label 'Gevoelstemperatuur' in plaats van de actuele temperatuur.",
   "screensaverOverlayForecast": "Voorspelling",
   "screensaverOverlayForecastHelp": "De weersomstandigheden met een bijpassend pictogram.",
+  "screensaverOverlayHighLow": "Hoogste en laagste",
+  "screensaverOverlayHighLowHelp": "De hoogste en laagste temperatuur van vandaag.",
   "screensaverOverlayHumidity": "Vochtigheid",
   "screensaverOverlayWind": "Windsnelheid",
   "screensaverOverlayVisibility": "Zicht",

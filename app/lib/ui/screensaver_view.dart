@@ -2708,7 +2708,8 @@ bool entityWidgetStateVisible(
 }
 
 /// A Home Assistant weather entity with a prominent temperature, a labeled
-/// apparent temperature and optional condition, humidity, wind and visibility.
+/// apparent temperature and optional condition, today's high and low,
+/// humidity, wind and visibility.
 class WeatherWidgetOverlay extends StatefulWidget {
   const WeatherWidgetOverlay({
     super.key,
@@ -2745,6 +2746,10 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
   /// the forecast line when it reports, while the icon always follows
   /// the condition.
   String _forecastText = '';
+
+  /// The entity's daily forecast by local date, for today's high and low
+  /// (issue #1262). Empty when the integration has no daily forecast.
+  Map<DateTime, DayForecast> _daily = const {};
 
   /// Home Assistant's own translation of the weather conditions, keyed by
   /// condition, in the language the server is set to (issue #268). Empty on
@@ -2787,6 +2792,10 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       translationDomain: 'weather',
       onTranslations: (translated) {
         if (mounted) setState(() => _translated = translated);
+      },
+      forecastEntity: entity,
+      onForecast: (forecast) {
+        if (mounted) setState(() => _daily = parseForecast(forecast));
       },
     );
     if (!mounted) {
@@ -2847,6 +2856,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       _attributes.clear();
       _condition = '';
       _forecastText = '';
+      _daily = const {};
       _haveData = false;
       unawaited(_open());
     }
@@ -2935,6 +2945,11 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       feelsLike: _on('feels_like'),
       feelsLikeOnly: _on('feels_like_only'),
     );
+    // The unit is already on the temperature right above, so the pair
+    // reads "31° / 24°", the way Home Assistant's forecast card writes it.
+    final today = _daily[cal_model.dateOnly(DateTime.now())];
+    final high = today?.high;
+    final low = today?.low;
     final humidity = _num('humidity');
     final wind = _num('wind_speed');
     final visibility = _num('visibility');
@@ -2961,6 +2976,8 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
           weatherConditionIcon(_condition),
           condition: _condition,
         ),
+      if (_on('high_low') && high != null && low != null)
+        detail('${high.round()}° / ${low.round()}°', Icons.thermostat),
       if (_on('humidity') && humidity != null)
         detail('${humidity.round()}%', Icons.water_drop_outlined),
       if (_on('wind') && wind != null)

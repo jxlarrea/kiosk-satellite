@@ -404,6 +404,8 @@ export const screensaverTextMessageIds = {
   "Show the apparent temperature with a Feels like label instead of the actual temperature.": "screensaverOverlayFeelsLikeOnlyHelp",
   "Forecast": "screensaverOverlayForecast",
   "The conditions, with a matching icon.": "screensaverOverlayForecastHelp",
+  "High and low": "screensaverOverlayHighLow",
+  "Today's high and low temperatures.": "screensaverOverlayHighLowHelp",
   "Humidity": "screensaverOverlayHumidity",
   "Wind speed": "screensaverOverlayWind",
   "Visibility": "screensaverOverlayVisibility",

@@ -12,6 +12,8 @@
   "screensaverOverlayFeelsLikeOnlyHelp": "Показувати відчутну температуру з підписом «Відчувається як» замість фактичної температури.",
   "screensaverOverlayForecast": "Прогноз",
   "screensaverOverlayForecastHelp": "Погодні умови з відповідною піктограмою.",
+  "screensaverOverlayHighLow": "Максимум і мінімум",
+  "screensaverOverlayHighLowHelp": "Максимальна та мінімальна температура сьогодні.",
   "screensaverOverlayHumidity": "Вологість",
   "screensaverOverlayWind": "Швидкість вітру",
   "screensaverOverlayVisibility": "Видимість",

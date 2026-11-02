@@ -12584,6 +12584,12 @@ class UiStringsZh extends UiStrings {
   String get screensaverOverlayForecastHelp => '天气状况及对应图标。';
 
   @override
+  String get screensaverOverlayHighLow => '最高和最低气温';
+
+  @override
+  String get screensaverOverlayHighLowHelp => '今天的最高和最低气温。';
+
+  @override
   String get screensaverOverlayHumidity => '湿度';
 
   @override
@@ -27432,6 +27438,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get screensaverOverlayForecastHelp => '天气状况及对应图标。';
+
+  @override
+  String get screensaverOverlayHighLow => '最高和最低气温';
+
+  @override
+  String get screensaverOverlayHighLowHelp => '今天的最高和最低气温。';
 
   @override
   String get screensaverOverlayHumidity => '湿度';

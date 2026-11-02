@@ -32,6 +32,8 @@ class _RecordingHa extends HomeAssistantManager {
     String? translationDomain,
     void Function(Map<String, String> translations)? onTranslations,
     void Function(EntityStateLabels labels)? onStateLabels,
+    String? forecastEntity,
+    void Function(Object? forecast)? onForecast,
   }) async {
     attempts.add(List.of(entityIds));
     return null;

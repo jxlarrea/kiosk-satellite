@@ -13508,6 +13508,13 @@ class UiStringsEs extends UiStrings {
       'Muestra las condiciones con su icono correspondiente.';
 
   @override
+  String get screensaverOverlayHighLow => 'Máxima y mínima';
+
+  @override
+  String get screensaverOverlayHighLowHelp =>
+      'Las temperaturas máxima y mínima de hoy.';
+
+  @override
   String get screensaverOverlayHumidity => 'Humedad';
 
   @override

@@ -13340,6 +13340,13 @@ class UiStringsRu extends UiStrings {
   String get screensaverOverlayForecastHelp => 'Условия с подходящим значком.';
 
   @override
+  String get screensaverOverlayHighLow => 'Максимум и минимум';
+
+  @override
+  String get screensaverOverlayHighLowHelp =>
+      'Максимальная и минимальная температура сегодня.';
+
+  @override
   String get screensaverOverlayHumidity => 'Влажность';
 
   @override

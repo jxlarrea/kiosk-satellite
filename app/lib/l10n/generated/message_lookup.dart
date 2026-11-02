@@ -4546,6 +4546,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'screensaverOverlayForecast' => strings.screensaverOverlayForecast,
       'screensaverOverlayForecastHelp' =>
         strings.screensaverOverlayForecastHelp,
+      'screensaverOverlayHighLow' => strings.screensaverOverlayHighLow,
+      'screensaverOverlayHighLowHelp' => strings.screensaverOverlayHighLowHelp,
       'screensaverOverlayHumidity' => strings.screensaverOverlayHumidity,
       'screensaverOverlayWind' => strings.screensaverOverlayWind,
       'screensaverOverlayVisibility' => strings.screensaverOverlayVisibility,

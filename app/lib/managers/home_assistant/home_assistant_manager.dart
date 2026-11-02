@@ -1891,6 +1891,10 @@ class HomeAssistantManager extends Manager {
   /// states, in the user's language, so a window sensor reads "Closed"
   /// rather than "Off" (issue #919). English is fetched too: device class
   /// wording is a translation even there.
+  ///
+  /// [onForecast] receives [forecastEntity]'s daily forecast, as the raw
+  /// list `weather/subscribe_forecast` sends, each time it changes. An
+  /// integration without a daily forecast never calls it.
   Future<GlanceSubscription?> subscribeEntities(
     List<String> entityIds,
     void Function(String entityId, Map<String, Object?> state) onState, {
@@ -1898,6 +1902,8 @@ class HomeAssistantManager extends Manager {
     String? translationDomain,
     void Function(Map<String, String> translations)? onTranslations,
     void Function(EntityStateLabels labels)? onStateLabels,
+    String? forecastEntity,
+    void Function(Object? forecast)? onForecast,
   }) async {
     if (!configured || entityIds.isEmpty) return null;
     final wsBase = baseUrl
@@ -1920,7 +1926,7 @@ class HomeAssistantManager extends Manager {
         }
         channel.sink.add(
           jsonEncode({
-            'id': 5,
+            'id': 6,
             'type': 'frontend/get_translations',
             'language': language,
             'category': 'entity_component',
@@ -1965,8 +1971,8 @@ class HomeAssistantManager extends Manager {
             .where((p) => !_stateLabels.containsKey('$language/entity/$p'))
             .toList();
         for (final (id, category, integrations) in [
-          (6, 'entity_component', domains),
-          (7, 'entity', platforms),
+          (7, 'entity_component', domains),
+          (8, 'entity', platforms),
         ]) {
           if (integrations.isEmpty) continue;
           labelsAsked[id] = integrations;
@@ -1984,7 +1990,7 @@ class HomeAssistantManager extends Manager {
       }
 
       void labelsArrived(int id, Object? result) {
-        final category = id == 6 ? 'entity_component' : 'entity';
+        final category = id == 7 ? 'entity_component' : 'entity';
         final language = labelLanguage;
         final integrations = labelsAsked.remove(id) ?? const [];
         if (result != null && language != null) {
@@ -2025,10 +2031,20 @@ class HomeAssistantManager extends Manager {
                     'entity_ids': entityIds,
                   }),
                 );
-                if (onPrecision != null || onStateLabels != null) {
+                if (forecastEntity != null && onForecast != null) {
                   channel.sink.add(
                     jsonEncode({
                       'id': 2,
+                      'type': 'weather/subscribe_forecast',
+                      'entity_id': forecastEntity,
+                      'forecast_type': 'daily',
+                    }),
+                  );
+                }
+                if (onPrecision != null || onStateLabels != null) {
+                  channel.sink.add(
+                    jsonEncode({
+                      'id': 3,
                       'type': 'config/entity_registry/get_entries',
                       'entity_ids': entityIds,
                     }),
@@ -2049,7 +2065,7 @@ class HomeAssistantManager extends Manager {
                     // when the user never picked one.
                     channel.sink.add(
                       jsonEncode({
-                        'id': 3,
+                        'id': 4,
                         'type': 'frontend/get_user_data',
                         'key': 'language',
                       }),
@@ -2070,14 +2086,14 @@ class HomeAssistantManager extends Manager {
                   // Without the registry the labels still come, by device
                   // class and domain. A failed label lookup delivers what
                   // the other one brought.
-                  if (msg['id'] == 2 && onStateLabels != null) {
+                  if (msg['id'] == 3 && onStateLabels != null) {
                     labelEntries = const {};
                     askLabels();
-                  } else if (msg['id'] == 6 || msg['id'] == 7) {
+                  } else if (msg['id'] == 7 || msg['id'] == 8) {
                     labelsArrived(msg['id'] as int, null);
-                  } else if (msg['id'] == 3) {
+                  } else if (msg['id'] == 4) {
                     channel.sink.add(
-                      jsonEncode({'id': 4, 'type': 'get_config'}),
+                      jsonEncode({'id': 5, 'type': 'get_config'}),
                     );
                   }
                   break;
@@ -2085,13 +2101,13 @@ class HomeAssistantManager extends Manager {
                 switch (msg['id']) {
                   case 1:
                     subscription._startHeartbeat();
-                  case 2:
+                  case 3:
                     onPrecision?.call(_displayPrecisions(msg['result']));
                     if (onStateLabels != null) {
                       labelEntries = _translationKeys(msg['result']);
                       askLabels();
                     }
-                  case 4:
+                  case 5:
                     final config = msg['result'];
                     final language = config is Map
                         ? '${config['language'] ?? ''}'.trim()
@@ -2099,27 +2115,30 @@ class HomeAssistantManager extends Manager {
                     languageKnown(
                       _language = language.isEmpty ? 'en' : language,
                     );
-                  case 5:
+                  case 6:
                     onTranslations!(
                       _stateTranslations[domain!] = parseStateTranslations(
                         msg['result'],
                         domain,
                       ),
                     );
-                  case 3:
+                  case 4:
                     final language = userLanguage(msg['result']);
                     if (language != null) {
                       languageKnown(_language = language);
                     } else {
                       channel.sink.add(
-                        jsonEncode({'id': 4, 'type': 'get_config'}),
+                        jsonEncode({'id': 5, 'type': 'get_config'}),
                       );
                     }
-                  case 6 || 7:
+                  case 7 || 8:
                     labelsArrived(msg['id'] as int, msg['result']);
                 }
               case 'pong':
                 subscription._pong();
+              case 'event' when msg['id'] == 2:
+                final event = msg['event'];
+                onForecast!(event is Map ? event['forecast'] : null);
               case 'event':
                 _handleEntityEvent(msg['event'], onState);
             }
@@ -3621,11 +3640,11 @@ class GlanceSubscription {
   final WebSocketChannel _channel;
   bool _closed = false;
   Timer? _heartbeat, _deadline, _connecting;
-  // Ids 1 to 7 are the subscribe, registry, language and translation
-  // commands, numbered in the order they go out. Home Assistant rejects an
-  // id lower than one it already saw, so a ping that reused 7 got no pong
-  // and the row reconnected every 40 seconds (issue #1131).
-  int _pingId = 8;
+  // Ids 1 to 8 are the subscribe, forecast, registry, language and
+  // translation commands, numbered in the order they go out. Home Assistant
+  // rejects an id lower than one it already saw, so a ping that reused 7
+  // got no pong and the row reconnected every 40 seconds (issue #1131).
+  int _pingId = 9;
 
   bool get isClosed => _closed;
 

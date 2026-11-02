@@ -23126,6 +23126,18 @@ abstract class UiStrings {
   /// Label or guidance in this editor.
   ///
   /// In en, this message translates to:
+  /// **'High and low'**
+  String get screensaverOverlayHighLow;
+
+  /// Label or guidance in this editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s high and low temperatures.'**
+  String get screensaverOverlayHighLowHelp;
+
+  /// Label or guidance in this editor.
+  ///
+  /// In en, this message translates to:
   /// **'Humidity'**
   String get screensaverOverlayHumidity;
 
