@@ -2779,6 +2779,10 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
   /// (issue #1262). Empty when the integration has no daily forecast.
   Map<DateTime, DayForecast> _daily = const {};
 
+  /// sun.sun's state, so no icon shows a sun after dark; null until it
+  /// reports, and then the local time decides.
+  String? _sun;
+
   /// Home Assistant's own translation of the weather conditions, keyed by
   /// condition, in the language the server is set to (issue #268). Empty on
   /// an English server and whenever the lookup fails, and then the built-in
@@ -2815,7 +2819,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     // Cached in the manager once a socket brings them, so later
     // screensavers get them without another lookup.
     final live = await widget.container.homeAssistant.subscribeEntities(
-      [entity, ?_companion(entity)],
+      [entity, ?_companion(entity), 'sun.sun'],
       _onState,
       translationDomain: 'weather',
       onTranslations: (translated) {
@@ -2855,6 +2859,10 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     if (!mounted) return;
     setState(() {
       final s = state['state'];
+      if (entityId == 'sun.sun') {
+        if (s is String) _sun = s;
+        return;
+      }
       if (entityId.startsWith('sensor.')) {
         if (s is String) {
           _forecastText = (s == 'unavailable' || s == 'unknown') ? '' : s;
@@ -2900,7 +2908,9 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     super.dispose();
   }
 
-  bool _on(String key) => widget.spec.config[key] == true;
+  bool _on(String key, {bool orElse = false}) => widget.spec.config[key] is bool
+      ? widget.spec.config[key] == true
+      : orElse;
 
   num? _num(String key) {
     final value = _attributes[key];
@@ -2941,13 +2951,19 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     // right corners trail so the icon column stays flush however long
     // the readings run.
     final right = corner.x > 0;
-    Widget detail(String value, IconData icon, {String? condition}) {
+    Widget detail(
+      String value,
+      IconData icon, {
+      String? condition,
+      bool night = false,
+    }) {
       final glyph = condition != null
           ? WeatherConditionIcon(
               condition,
               size: tempSize * .43,
               color: color.withValues(alpha: 0.85),
               shadows: shadows,
+              night: night,
             )
           : Icon(
               icon,
@@ -2981,6 +2997,11 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     final humidity = _num('humidity');
     final wind = _num('wind_speed');
     final visibility = _num('visibility');
+    // On unless switched off, so entries saved before the switch existed
+    // get the colors too.
+    final colored =
+        _on('colored_icons', orElse: true) && widget.nightColor == null;
+    final night = weatherMoodNight(_sun, DateTime.now());
     // The place is named by hand (weather entities carry no city
     // attribute, and their names are integration names); left empty, the
     // line simply stays off.
@@ -3003,6 +3024,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
                   : _conditionLabel(_condition)),
           weatherConditionIcon(_condition),
           condition: _condition,
+          night: night,
         ),
       if (_on('high_low') && high != null && low != null)
         detail('${high.round()}° / ${low.round()}°', Icons.thermostat),
@@ -3023,22 +3045,61 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
           style: line(size: tempSize * .50, weight: FontWeight.w600, alpha: 1),
         ),
       if (temperature != null)
-        WeatherTemperature(
-          reading: temperature,
-          alignment: align,
-          secondaryStyle: line(size: tempSize * .40),
-          primaryStyle: TextStyle(
-            fontFamily: font.family,
-            color: color,
-            fontSize: tempSize,
-            fontWeight: font.weight ?? FontWeight.w400,
-            fontVariations: clockFontVariations(
-              font.opticalSize,
-              font.weight ?? FontWeight.w400,
-            ),
-            height: 1.0,
-            shadows: shadows,
-          ),
+        Builder(
+          builder: (context) {
+            // The current conditions beside the temperature, on the
+            // corner's outer edge like the detail lines' icons, centered on
+            // the temperature line. The Clock's Night mode keeps every
+            // widget in its one dim color, so the colors stand down there.
+            final icon = _condition.isEmpty
+                ? null
+                : SizedBox(
+                    height: tempSize,
+                    child: Center(
+                      child: colored
+                          ? ColoredWeatherConditionIcon(
+                              _condition,
+                              size: tempSize * 1.1,
+                              fallbackColor: color,
+                              night: night,
+                            )
+                          : WeatherConditionIcon(
+                              _condition,
+                              size: tempSize * .9,
+                              color: color,
+                              shadows: shadows,
+                              night: night,
+                            ),
+                    ),
+                  );
+            final reading = WeatherTemperature(
+              reading: temperature,
+              alignment: align,
+              secondaryStyle: line(size: tempSize * .40),
+              primaryStyle: TextStyle(
+                fontFamily: font.family,
+                color: color,
+                fontSize: tempSize,
+                fontWeight: font.weight ?? FontWeight.w400,
+                fontVariations: clockFontVariations(
+                  font.opticalSize,
+                  font.weight ?? FontWeight.w400,
+                ),
+                height: 1.0,
+                shadows: shadows,
+              ),
+            );
+            final gap = SizedBox(width: tempSize * .25);
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (icon != null && !right) ...[icon, gap],
+                reading,
+                if (icon != null && right) ...[gap, icon],
+              ],
+            );
+          },
         ),
       if (details.isNotEmpty)
         Column(
@@ -3132,6 +3193,10 @@ class _ForecastWidgetOverlayState extends State<ForecastWidgetOverlay> {
   String _condition = '';
   Map<DateTime, DayForecast> _daily = const {};
 
+  /// sun.sun's state, so today's row shows no sun after dark; null until
+  /// it reports, and then the local time decides.
+  String? _sun;
+
   @override
   void initState() {
     super.initState();
@@ -3158,7 +3223,7 @@ class _ForecastWidgetOverlayState extends State<ForecastWidgetOverlay> {
     final entity = '${widget.spec.config['entity'] ?? ''}';
     if (entity.isEmpty) return;
     final live = await widget.container.homeAssistant.subscribeEntities(
-      [entity],
+      [entity, 'sun.sun'],
       _onState,
       forecastEntity: entity,
       onForecast: (forecast) {
@@ -3191,7 +3256,14 @@ class _ForecastWidgetOverlayState extends State<ForecastWidgetOverlay> {
   void _onState(String entityId, Map<String, Object?> state) {
     if (!mounted) return;
     final s = state['state'];
-    if (s is String) setState(() => _condition = s);
+    if (s is! String) return;
+    setState(() {
+      if (entityId == 'sun.sun') {
+        _sun = s;
+      } else {
+        _condition = s;
+      }
+    });
   }
 
   // A live edit can repoint the widget at another entity; the element is
@@ -3260,6 +3332,10 @@ class _ForecastWidgetOverlayState extends State<ForecastWidgetOverlay> {
     // Every row, today's included, reads as its short weekday, the way a
     // forecast card lists them.
     String dayName(DateTime day) => shortWeekdayName(day);
+    // Today's row after dark shows no sun. Later days are daytime
+    // forecasts, so they keep their day icons.
+    final today = cal_model.dateOnly(now);
+    final night = weatherMoodNight(_sun, now);
     String degrees(double? t) => t == null ? '' : '${t.round()}°';
     // Each column takes its widest entry's width, so the list reads as a
     // table whatever the day names and temperatures run to.
@@ -3331,6 +3407,7 @@ class _ForecastWidgetOverlayState extends State<ForecastWidgetOverlay> {
                                 f.condition,
                                 size: textSize * 1.3,
                                 fallbackColor: color.withValues(alpha: .85),
+                                night: night && day == today,
                               )
                             else
                               WeatherConditionIcon(
@@ -3338,6 +3415,7 @@ class _ForecastWidgetOverlayState extends State<ForecastWidgetOverlay> {
                                 size: textSize * 1.15,
                                 color: color.withValues(alpha: .85),
                                 shadows: shadows,
+                                night: night && day == today,
                               ),
                             gap,
                             cell(

@@ -29,8 +29,10 @@
 ///      feels_like), and the line
 ///      toggles location, forecast, high_low (today's high and low from
 ///      the daily forecast, issue #1262), humidity, wind, visibility. The
-///      temperature always shows; every line needs its toggle on AND the
-///      entity to actually carry the reading.
+///      temperature always shows, with the condition icon to its left;
+///      every line needs its toggle on AND the entity to actually carry
+///      the reading. colored_icons draws that icon in its own colors
+///      instead of the widget color (on by default).
 ///    - forecast: the coming days of a weather entity's daily forecast,
 ///      one row each with the day, the condition icon, the high and the
 ///      low (issue #1277). Config keys: entity (a weather.* entity id),
@@ -143,6 +145,7 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'humidity': true,
     'wind': true,
     'visibility': true,
+    'colored_icons': true,
   },
   'forecast' => {
     'entity': '',

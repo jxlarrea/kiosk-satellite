@@ -1189,7 +1189,7 @@ export function settingRow(s) {
         scale: 0, font: 'default', font_weight: 'default',
         feels_like: false, feels_like_only: false, location: true,
         forecast: true, high_low: true, humidity: true, wind: true,
-        visibility: true },
+        visibility: true, colored_icons: true },
       forecast: { entity: '', name: '', color: '250,250,250', scale: 0,
         font: 'default', font_weight: 'default', days: 5, today: true,
         colored_icons: true },
@@ -1587,11 +1587,13 @@ export function settingRow(s) {
         refs.humidity = cameraToggle(screensaverText('Humidity'), config.humidity === true);
         refs.wind = cameraToggle(screensaverText('Wind speed'), config.wind === true);
         refs.visibility = cameraToggle(screensaverText('Visibility'), config.visibility === true);
+        refs.colored = cameraToggle(screensaverText('Colored icons'),
+          config.colored_icons !== false, screensaverText('Show the weather icons in their own colors.'));
         typeBlock.append(refs.entity.wrap, refs.label.wrap, refs.color.wrap,
           refs.scale.wrap, refs.font.wrap, refs.weight.wrap,
           refs.location.wrap, refs.feelsLike.wrap, refs.feelsLikeOnly.wrap,
           refs.forecast.wrap, refs.highLow.wrap, refs.humidity.wrap,
-          refs.wind.wrap, refs.visibility.wrap);
+          refs.wind.wrap, refs.visibility.wrap, refs.colored.wrap);
       };
       renderTypeBlock();
       typeSel.select.addEventListener('change', () => {
@@ -1663,7 +1665,8 @@ export function settingRow(s) {
               high_low: refs.highLow.input.checked,
               humidity: refs.humidity.input.checked,
               wind: refs.wind.input.checked,
-              visibility: refs.visibility.input.checked };
+              visibility: refs.visibility.input.checked,
+              colored_icons: refs.colored.input.checked };
           }
           const entry = { position, type, config: entryConfig };
           // The corner list only offers free corners, but drop any claimant

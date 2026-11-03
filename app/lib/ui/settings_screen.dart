@@ -6336,6 +6336,14 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                         screensaverText(context, 'Visibility'),
                         'visibility',
                       ),
+                      // On unless switched off, like the forecast widget's.
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(screensaverText(context, 'Colored icons')),
+                        value: config['colored_icons'] != false,
+                        onChanged: (v) =>
+                            setDialogState(() => config['colored_icons'] = v),
+                      ),
                     ],
                     if (type == 'forecast') ...[
                       // The Weather widget's entity keys and picker.

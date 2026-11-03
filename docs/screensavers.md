@@ -261,7 +261,7 @@ Renders over a soft vignette for legibility and supports pixel shift adjustments
 
 ### Weather
 
-Displays real-time weather data pulled from a Home Assistant `weather` entity over any mode except Calendar and Camera Streams. The widget layout displays top-to-bottom: location name, current temperature with units (e.g., "28°C"), condition text with a matching icon, humidity, wind speed, and visibility. Units are provided directly by the Home Assistant entity, and icons render in a monochrome style matching the widget color.
+Displays real-time weather data pulled from a Home Assistant `weather` entity over any mode except Calendar and Camera Streams. The widget layout displays top-to-bottom: location name, current temperature with units (e.g., "28°C") with an icon for the current conditions beside it, condition text with a matching icon, humidity, wind speed, and visibility. Units are provided directly by the Home Assistant entity, and the icons on the detail lines render in a monochrome style matching the widget color.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
@@ -272,6 +272,9 @@ Displays real-time weather data pulled from a Home Assistant `weather` entity ov
 | Feels like | Off | Displays apparent temperature alongside actual temperature (e.g., "30°C / 33°C"). Requires entity support. If rounded values match, only a single temperature displays. |
 | Feels like only | Off | Replaces the actual temperature reading with the apparent temperature. Takes priority over Feels like, and falls back to actual temperature if apparent data is missing. |
 | Location, Forecast, Humidity, Wind speed, Visibility | On | Individual toggles for each data line. Lines automatically hide if the source entity lacks that specific data point. |
+| Colored icons | On | Shows the conditions icon next to the temperature in its own colors. Turn it off to draw it in the widget color. While the Clock screensaver's Night mode is on, the icon always takes the night color. |
+
+The conditions icon sits on the corner's outer edge like the detail line icons: left of the temperature in a left corner and right of it in a right corner. Once the sun sets, sunny and partly cloudy show the moon instead of the sun. The kiosk reads that from Home Assistant's `sun.sun` entity, or from the local time (6 PM to 6 AM) when that entity is missing.
 
 Data updates automatically via a live Home Assistant subscription while the screensaver is active. The last received values persist through brief network drops. Forecast condition text utilizes Home Assistant's localized translations (e.g., a server set to Italian displays "Nebbia" instead of "Fog"). Translations are fetched once upon app launch.
 
@@ -288,7 +291,7 @@ Lists the coming days of a Home Assistant `weather` entity's daily forecast over
 | Include today | On | Starts the list with today. Turn it off to start with tomorrow, such as next to a **Weather** widget that already shows today. |
 | Colored icons | On | Shows the weather icons in their own colors. Turn it off to draw them in the widget color. While the Clock screensaver's Night mode is on, the icons always take the night color. |
 
-The forecast updates live while the screensaver runs. An entity whose integration has no daily forecast shows nothing, and the low column is left out when the integration only reports highs.
+Once the sun sets, today's row shows the moon instead of the sun for sunny and partly cloudy, the same as the **Weather** widget. Later days keep their daytime icons. The forecast updates live while the screensaver runs. An entity whose integration has no daily forecast shows nothing, and the low column is left out when the integration only reports highs.
 
 ### Battery
 

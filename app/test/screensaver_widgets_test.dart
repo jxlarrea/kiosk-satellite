@@ -122,6 +122,7 @@ void main() {
         'humidity',
         'wind',
         'visibility',
+        'colored_icons',
       ]) {
         expect(defaults[key], isTrue, reason: key);
       }
