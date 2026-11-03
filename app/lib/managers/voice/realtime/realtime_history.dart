@@ -37,5 +37,16 @@ class RealtimeHistory {
     return out.reversed.toList();
   }
 
+  /// Drops the user's last words when nothing answered them, once a
+  /// conversation is over: a goodbye the assistant ended on without a word,
+  /// or a turn the provider never replied to. Replayed, the next
+  /// conversation answers them before anything said in it, and a goodbye
+  /// ends it at once.
+  void dropUnanswered() {
+    while (_turns.isNotEmpty && _turns.last.$2.user) {
+      _turns.removeLast();
+    }
+  }
+
   void clear() => _turns.clear();
 }

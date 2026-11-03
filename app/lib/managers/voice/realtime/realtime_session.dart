@@ -1174,6 +1174,7 @@ class RealtimeSession {
     _busy = false;
     _opened();
     _logEcho();
+    history.dropUnanswered();
     _ticker?.cancel();
     _ticker = null;
     // Not awaited: nothing is delivered after a cancel, and the future it

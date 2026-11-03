@@ -1301,13 +1301,72 @@ void main() {
       backend.interrupted('a1', 800);
       expect(socket.types, contains('response.cancel'));
       backend.userTurn(keep: true);
-      // Any answer still open on the server goes first.
-      expect(socket.types.skip(socket.types.length - 2), [
-        'response.cancel',
-        'response.create',
-      ]);
+      // OpenAI refuses a reply while the cancelled answer is still open.
+      expect(socket.types.where((t) => t == 'response.cancel'), hasLength(1));
+      expect(socket.types, isNot(contains('response.create')));
+      socket.server({
+        'type': 'response.done',
+        'response': {'status': 'cancelled'},
+      });
+      await pumpEventQueue();
+      expect(socket.sent.last, {
+        'type': 'response.create',
+        'event_id': 'turn_1',
+      });
       await backend.close();
     });
+
+    test('OpenAI: a turn with no answer open gets its reply at once', () async {
+      final backend = make(
+        const RealtimeConfig(provider: RealtimeProvider.openai),
+      );
+      await backend.start(const RealtimeStart());
+      socket.server({'type': 'session.updated'});
+      await pumpEventQueue();
+      backend.userTurn(keep: true);
+      expect(socket.types, isNot(contains('response.cancel')));
+      expect(socket.types.last, 'response.create');
+      await backend.close();
+    });
+
+    test(
+      'OpenAI: a refused reply is asked again once the answer is done',
+      () async {
+        final backend = make(
+          const RealtimeConfig(provider: RealtimeProvider.openai),
+        );
+        await backend.start(const RealtimeStart());
+        socket.server({'type': 'session.updated'});
+        await pumpEventQueue();
+        // An answer the kiosk has not heard of yet is open on the server.
+        backend.userTurn(keep: true);
+        socket.server({
+          'type': 'error',
+          'error': {
+            'code': 'conversation_already_has_active_response',
+            'message':
+                'Conversation already has an active response in progress',
+            'event_id': 'turn_1',
+          },
+        });
+        await pumpEventQueue();
+        expect(events.whereType<RealtimeWarning>(), isEmpty);
+        final asked = socket.types.where((t) => t == 'response.create').length;
+        socket
+          ..server({'type': 'response.created'})
+          ..server({
+            'type': 'response.done',
+            'response': {'status': 'completed'},
+          });
+        await pumpEventQueue();
+        expect(
+          socket.types.where((t) => t == 'response.create'),
+          hasLength(asked + 1),
+        );
+        expect(socket.sent.last['event_id'], 'turn_2');
+        await backend.close();
+      },
+    );
 
     test('an error before the session is up closes it', () async {
       final backend = make(
@@ -1873,6 +1932,18 @@ void main() {
         ..add(user: true, text: 'y' * 5000);
       expect(history.recent(const Duration(hours: 1)).map((t) => t.text[0]), [
         'y',
+      ]);
+    });
+
+    test('a conversation\'s last words nothing answered are dropped', () {
+      final history = RealtimeHistory()
+        ..add(user: true, text: 'What time is it?')
+        ..add(user: false, text: 'It is 11:28.')
+        ..add(user: true, text: 'Okay, bye.')
+        ..dropUnanswered();
+      expect(history.recent(const Duration(hours: 1)).map((t) => t.text), [
+        'What time is it?',
+        'It is 11:28.',
       ]);
     });
   });
@@ -2732,6 +2803,24 @@ void main() {
         h.player.frames = 24000;
         time.elapse(const Duration(seconds: 1));
         expect(h.session.busy, isFalse);
+      });
+    });
+
+    test('a goodbye ended on without a word is not replayed', () {
+      fakeAsync((time) {
+        final h = _Harness(time);
+        h.wakeAndConnect();
+        h.backend
+          ..emit(const RealtimeUserText('What time is it?'))
+          ..emit(const RealtimeAnswerText('It is 11:28.', complete: true))
+          ..emit(const RealtimeUserText('Okay, bye.'))
+          ..emit(const RealtimeEndRequested());
+        time.elapse(const Duration(seconds: 1));
+        expect(h.session.busy, isFalse);
+        expect(
+          h.session.history.recent(const Duration(hours: 1)).map((t) => t.text),
+          ['What time is it?', 'It is 11:28.'],
+        );
       });
     });
 

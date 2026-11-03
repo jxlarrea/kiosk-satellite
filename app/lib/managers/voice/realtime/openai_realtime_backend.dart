@@ -216,6 +216,21 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
   /// VAD it cancels the answer itself, so the kiosk does not.
   bool _serverInterrupted = false;
 
+  /// The kiosk cancelled the open answer.
+  bool _cancelled = false;
+
+  /// The user's turn came while an answer was still open, and its reply
+  /// waits for that answer to be done. OpenAI refuses a new answer until
+  /// then, cancelled or not, and a refused turn stays in the conversation
+  /// unanswered: the next answer replies to it instead of to what the user
+  /// said after it.
+  bool _turnWaiting = false;
+
+  /// The event id of the last reply asked for a user's turn, which an error
+  /// about it carries.
+  String _turnEvent = '';
+  int _turnCount = 0;
+
   /// The names of the tools the session was given. Any other call is one
   /// the provider ran itself.
   final _toolNames = <String>{};
@@ -438,15 +453,25 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
     if (keep) {
       // The user's turn wins over an answer still open on the server: one
       // the kiosk stopped whose cancel has not landed, or one that started
-      // as the user spoke. Without it the reply is refused outright.
-      _send({'type': 'response.cancel'});
-      _send({'type': 'response.create'});
+      // as the user spoke.
+      if (_responding) {
+        if (!_cancelled) _send({'type': 'response.cancel'});
+        _cancelled = true;
+        _turnWaiting = true;
+      } else {
+        _replyToTurn();
+      }
       return;
     }
     final item = _lastSpeechItem;
     if (item.isEmpty) return;
     _dropped.add(item);
     _send({'type': 'conversation.item.delete', 'item_id': item});
+  }
+
+  void _replyToTurn() {
+    _turnEvent = 'turn_${++_turnCount}';
+    _send({'type': 'response.create', 'event_id': _turnEvent});
   }
 
   /// Instructions on the response replace the session's for that answer
@@ -459,7 +484,10 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
 
   @override
   void interrupted(String itemId, int playedMs) {
-    if (_responding && !_serverInterrupted) _send({'type': 'response.cancel'});
+    if (_responding && !_serverInterrupted && !_cancelled) {
+      _send({'type': 'response.cancel'});
+      _cancelled = true;
+    }
     if (itemId.isEmpty) return;
     _send({
       'type': 'conversation.item.truncate',
@@ -528,6 +556,7 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
       case 'response.created':
         _responding = true;
         _serverInterrupted = false;
+        _cancelled = false;
         _responseDone = false;
         _answer.clear();
         _emit(const RealtimeResponseStarted());
@@ -593,6 +622,13 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
           );
         }
         _emit(const RealtimeResponseDone());
+        if (_turnWaiting) {
+          _turnWaiting = false;
+          // The reply answers any tool outputs already in the conversation
+          // too.
+          if (_calls == 0) _outputsPending = false;
+          _replyToTurn();
+        }
         _answerTools();
       case _ when _failure(type):
         // A failure the kiosk has no handling for, named by the provider.
@@ -626,6 +662,16 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
     final message = '${map['message'] ?? 'error'}';
     log?.call('error $code: $message');
     if (_ready && _benign(code, message)) return;
+    if (_ready &&
+        code == 'conversation_already_has_active_response' &&
+        _turnEvent.isNotEmpty &&
+        map['event_id'] == _turnEvent) {
+      // An answer the kiosk had not heard of yet was open, such as one
+      // asked for tool outputs a moment before. The turn's reply goes once
+      // that answer is done.
+      _turnWaiting = true;
+      return;
+    }
     if (!_ready) {
       _finish(error: message);
       return;

@@ -7,6 +7,10 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - **Plugin screensavers can take taps.** A native plugin screensaver published with touch gets single taps, so it can have its own buttons, and a double tap closes it like **Double tap to dismiss** on the Home Assistant Dashboard screensaver. Motion, the wake word and the back button still close it (#1282).
 
+### Fixed
+- **OpenAI realtime conversations no longer fall a turn behind.** If you spoke right after talking over an answer, OpenAI could refuse the reply ("Conversation already has an active response in progress") because the answer was still closing. What you said stayed unanswered, so the next reply answered it instead and the conversation stayed one turn behind. The kiosk now waits for the open answer to finish before it asks for the reply.
+- **A goodbye no longer ends the next realtime conversation.** When the assistant ended a conversation without a word, your last line stayed in the history with no answer. The next conversation answered that goodbye first and ended right away, whatever you asked. Unanswered last lines now leave the history when the conversation ends.
+
 ## v2026.11.3 - 2026-11-03
 
 ### Changed
