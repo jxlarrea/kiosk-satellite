@@ -325,6 +325,27 @@ class ApiServerTest {
     }
 
     @Test
+    fun noiseServerHelloSendsMacWithoutColons() {
+        val backend = RecordingBackend()
+        val s = startServer(backend, psk = ByteArray(32) { it.toByte() })
+        val socket = Socket("127.0.0.1", s.boundPort).apply { soTimeout = 5_000 }
+        // The empty Noise client hello.
+        socket.getOutputStream().apply { write(byteArrayOf(0x01, 0x00, 0x00)); flush() }
+        val input = DataInputStream(socket.getInputStream())
+        assertEquals(0x01, input.read())
+        val length = (input.read() shl 8) or input.read()
+        val hello = ByteArray(length)
+        input.readFully(hello)
+        socket.close()
+        assertEquals(0x01, hello[0].toInt())
+        val fields = String(hello, 1, hello.size - 1, Charsets.UTF_8).split('\u0000')
+        assertEquals("kiosk-satellite-test", fields[0])
+        // Same form as ESPHome firmware: aioesphomeapi keeps 16 characters
+        // and Home Assistant's format_mac only restores 12 hex digits.
+        assertEquals("021122334455", fields[1])
+    }
+
+    @Test
     fun disconnectRequestIsAcknowledged() {
         val backend = RecordingBackend()
         val c = connect(startServer(backend))
