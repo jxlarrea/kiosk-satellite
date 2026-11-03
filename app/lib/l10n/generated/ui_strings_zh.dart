@@ -529,6 +529,135 @@ class UiStringsZh extends UiStrings {
       '需要在 Home Assistant 中配置 Kiosk Satellite 日历蓝图（脚本模板）和大语言模型（LLM）对话代理。';
 
   @override
+  String get calendarNewEvent => '新建日程';
+
+  @override
+  String get calendarEditEvent => '编辑日程';
+
+  @override
+  String get calendarFieldTitle => '标题';
+
+  @override
+  String get calendarFieldTitleHint => '添加标题';
+
+  @override
+  String get calendarFieldCalendars => '日历';
+
+  @override
+  String get calendarFieldSharedHint => '只显示一次，按各日历的颜色分割。';
+
+  @override
+  String get calendarFieldStarts => '开始';
+
+  @override
+  String get calendarFieldEnds => '结束';
+
+  @override
+  String get calendarFieldStartTime => '开始时间';
+
+  @override
+  String get calendarFieldEndTime => '结束时间';
+
+  @override
+  String get calendarFieldEndsBeforeStart => '结束时间早于开始时间。';
+
+  @override
+  String get calendarFieldRepeat => '重复';
+
+  @override
+  String get calendarRepeatNever => '不重复';
+
+  @override
+  String get calendarRepeatWeekdays => '每个工作日';
+
+  @override
+  String calendarRepeatWeeklyOn(String weekday) {
+    return '每周的$weekday';
+  }
+
+  @override
+  String calendarRepeatMonthlyOn(String day) {
+    return '每月 $day 日';
+  }
+
+  @override
+  String calendarRepeatYearlyOn(String date) {
+    return '每年 $date';
+  }
+
+  @override
+  String get calendarFieldLocation => '地点';
+
+  @override
+  String get calendarFieldLocationHint => '添加地点';
+
+  @override
+  String get calendarFieldNotes => '备注';
+
+  @override
+  String get calendarFieldNotesHint => '添加备注';
+
+  @override
+  String get calendarEventAdded => '已添加日程';
+
+  @override
+  String get calendarEventSaved => '已保存更改';
+
+  @override
+  String get calendarEventDeleted => '已删除日程';
+
+  @override
+  String get calendarSaveFailed => '无法保存日程';
+
+  @override
+  String get calendarDeleteFailed => '无法删除日程';
+
+  @override
+  String calendarEditReadOnly(String calendar) {
+    return '$calendar 是只读的。';
+  }
+
+  @override
+  String calendarEditGone(String calendar) {
+    return '$calendar 中已没有这个日程。';
+  }
+
+  @override
+  String calendarEditNotAllowed(String calendar) {
+    return '此 Kiosk 的 Home Assistant 用户无权更改 $calendar。';
+  }
+
+  @override
+  String calendarDeleteTitle(String title) {
+    return '删除$title？';
+  }
+
+  @override
+  String calendarDeleteShared(String names) {
+    return '将从它所在的所有日历中删除：$names。';
+  }
+
+  @override
+  String calendarSaveRepeatTitle(String title) {
+    return '保存对$title的更改？';
+  }
+
+  @override
+  String get calendarSaveRepeatFollowing => '新的重复从这一天开始。';
+
+  @override
+  String get calendarScopeThis => '此日程';
+
+  @override
+  String get calendarScopeFollowing => '此日程及之后的日程';
+
+  @override
+  String get calendarScopeAll => '所有日程';
+
+  @override
+  String get calendarEditingSection => '编辑';
+
+  @override
   String get cameraViewerTitle => '摄像头画面';
 
   @override
@@ -4771,6 +4900,18 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingCalendarWeatherEntityDescription => '为每天添加天气预报。';
+
+  @override
+  String get settingCalendarAllowEditTitle => '允许添加和编辑日程';
+
+  @override
+  String get settingCalendarAllowEditDescription => '在日历中添加“新建日程”和“编辑”按钮。';
+
+  @override
+  String get settingCalendarAllowDeleteTitle => '允许删除日程';
+
+  @override
+  String get settingCalendarAllowDeleteDescription => '在每个日程中添加“删除”按钮。';
 
   @override
   String get settingCalendarIdleCloseMinutesTitle => '闲置时关闭';
@@ -15426,6 +15567,135 @@ class UiStringsZhCn extends UiStringsZh {
       '需要在 Home Assistant 中配置 Kiosk Satellite 日历蓝图（脚本模板）和大语言模型（LLM）对话代理。';
 
   @override
+  String get calendarNewEvent => '新建日程';
+
+  @override
+  String get calendarEditEvent => '编辑日程';
+
+  @override
+  String get calendarFieldTitle => '标题';
+
+  @override
+  String get calendarFieldTitleHint => '添加标题';
+
+  @override
+  String get calendarFieldCalendars => '日历';
+
+  @override
+  String get calendarFieldSharedHint => '只显示一次，按各日历的颜色分割。';
+
+  @override
+  String get calendarFieldStarts => '开始';
+
+  @override
+  String get calendarFieldEnds => '结束';
+
+  @override
+  String get calendarFieldStartTime => '开始时间';
+
+  @override
+  String get calendarFieldEndTime => '结束时间';
+
+  @override
+  String get calendarFieldEndsBeforeStart => '结束时间早于开始时间。';
+
+  @override
+  String get calendarFieldRepeat => '重复';
+
+  @override
+  String get calendarRepeatNever => '不重复';
+
+  @override
+  String get calendarRepeatWeekdays => '每个工作日';
+
+  @override
+  String calendarRepeatWeeklyOn(String weekday) {
+    return '每周的$weekday';
+  }
+
+  @override
+  String calendarRepeatMonthlyOn(String day) {
+    return '每月 $day 日';
+  }
+
+  @override
+  String calendarRepeatYearlyOn(String date) {
+    return '每年 $date';
+  }
+
+  @override
+  String get calendarFieldLocation => '地点';
+
+  @override
+  String get calendarFieldLocationHint => '添加地点';
+
+  @override
+  String get calendarFieldNotes => '备注';
+
+  @override
+  String get calendarFieldNotesHint => '添加备注';
+
+  @override
+  String get calendarEventAdded => '已添加日程';
+
+  @override
+  String get calendarEventSaved => '已保存更改';
+
+  @override
+  String get calendarEventDeleted => '已删除日程';
+
+  @override
+  String get calendarSaveFailed => '无法保存日程';
+
+  @override
+  String get calendarDeleteFailed => '无法删除日程';
+
+  @override
+  String calendarEditReadOnly(String calendar) {
+    return '$calendar 是只读的。';
+  }
+
+  @override
+  String calendarEditGone(String calendar) {
+    return '$calendar 中已没有这个日程。';
+  }
+
+  @override
+  String calendarEditNotAllowed(String calendar) {
+    return '此 Kiosk 的 Home Assistant 用户无权更改 $calendar。';
+  }
+
+  @override
+  String calendarDeleteTitle(String title) {
+    return '删除$title？';
+  }
+
+  @override
+  String calendarDeleteShared(String names) {
+    return '将从它所在的所有日历中删除：$names。';
+  }
+
+  @override
+  String calendarSaveRepeatTitle(String title) {
+    return '保存对$title的更改？';
+  }
+
+  @override
+  String get calendarSaveRepeatFollowing => '新的重复从这一天开始。';
+
+  @override
+  String get calendarScopeThis => '此日程';
+
+  @override
+  String get calendarScopeFollowing => '此日程及之后的日程';
+
+  @override
+  String get calendarScopeAll => '所有日程';
+
+  @override
+  String get calendarEditingSection => '编辑';
+
+  @override
   String get cameraViewerTitle => '摄像头画面';
 
   @override
@@ -19668,6 +19938,18 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingCalendarWeatherEntityDescription => '为每天添加天气预报。';
+
+  @override
+  String get settingCalendarAllowEditTitle => '允许添加和编辑日程';
+
+  @override
+  String get settingCalendarAllowEditDescription => '在日历中添加“新建日程”和“编辑”按钮。';
+
+  @override
+  String get settingCalendarAllowDeleteTitle => '允许删除日程';
+
+  @override
+  String get settingCalendarAllowDeleteDescription => '在每个日程中添加“删除”按钮。';
 
   @override
   String get settingCalendarIdleCloseMinutesTitle => '闲置时关闭';

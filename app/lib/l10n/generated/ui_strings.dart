@@ -1052,6 +1052,228 @@ abstract class UiStrings {
   /// **'Needs the Kiosk Satellite calendar blueprint and an LLM conversation agent in Home Assistant.'**
   String get calendarVoiceHint;
 
+  /// Button that opens the form for a new calendar event, and the form's heading.
+  ///
+  /// In en, this message translates to:
+  /// **'New event'**
+  String get calendarNewEvent;
+
+  /// Heading of the form that changes a calendar event.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit event'**
+  String get calendarEditEvent;
+
+  /// Label of the event's title field.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get calendarFieldTitle;
+
+  /// Placeholder in the empty title field.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a title'**
+  String get calendarFieldTitleHint;
+
+  /// Label of the row of calendars (one per person) the event goes on. Several can be picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendars'**
+  String get calendarFieldCalendars;
+
+  /// Note under the calendars when two or more are picked: the event is drawn once with its background split between the calendars' colors.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows once, split between their colors.'**
+  String get calendarFieldSharedHint;
+
+  /// Label of the event's start date and time.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get calendarFieldStarts;
+
+  /// Label of the event's end date and time.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get calendarFieldEnds;
+
+  /// Title of the dialog that picks the start time.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time'**
+  String get calendarFieldStartTime;
+
+  /// Title of the dialog that picks the end time.
+  ///
+  /// In en, this message translates to:
+  /// **'End time'**
+  String get calendarFieldEndTime;
+
+  /// Error under the dates when the end is before the start.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends before it starts.'**
+  String get calendarFieldEndsBeforeStart;
+
+  /// Label of the choice of how the event repeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get calendarFieldRepeat;
+
+  /// A Repeat choice: the event happens once.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not repeat'**
+  String get calendarRepeatNever;
+
+  /// A Repeat choice: Monday to Friday.
+  ///
+  /// In en, this message translates to:
+  /// **'Every weekday'**
+  String get calendarRepeatWeekdays;
+
+  /// A Repeat choice: once a week on the start's weekday.
+  ///
+  /// In en, this message translates to:
+  /// **'Every week on {weekday}'**
+  String calendarRepeatWeeklyOn(String weekday);
+
+  /// A Repeat choice: once a month on the start's day of the month.
+  ///
+  /// In en, this message translates to:
+  /// **'Every month on day {day}'**
+  String calendarRepeatMonthlyOn(String day);
+
+  /// A Repeat choice: once a year on the start's date.
+  ///
+  /// In en, this message translates to:
+  /// **'Every year on {date}'**
+  String calendarRepeatYearlyOn(String date);
+
+  /// Label of the event's place field.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get calendarFieldLocation;
+
+  /// Placeholder in the empty location field.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a place'**
+  String get calendarFieldLocationHint;
+
+  /// Label of the event's notes field.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get calendarFieldNotes;
+
+  /// Placeholder in the empty notes field.
+  ///
+  /// In en, this message translates to:
+  /// **'Add notes'**
+  String get calendarFieldNotesHint;
+
+  /// Message after a new event is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Event added'**
+  String get calendarEventAdded;
+
+  /// Message after changes to an event are saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes saved'**
+  String get calendarEventSaved;
+
+  /// Message after an event is deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Event deleted'**
+  String get calendarEventDeleted;
+
+  /// Title of the error message when saving an event fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the event'**
+  String get calendarSaveFailed;
+
+  /// Title of the error message when deleting an event fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete the event'**
+  String get calendarDeleteFailed;
+
+  /// Why an event could not be saved or deleted: the calendar takes no changes, like a holiday calendar.
+  ///
+  /// In en, this message translates to:
+  /// **'{calendar} is read only.'**
+  String calendarEditReadOnly(String calendar);
+
+  /// Why an event could not be saved or deleted: it was changed or deleted somewhere else meanwhile.
+  ///
+  /// In en, this message translates to:
+  /// **'The event is no longer on {calendar}.'**
+  String calendarEditGone(String calendar);
+
+  /// Why an event could not be saved or deleted: the Home Assistant user the kiosk signs in as has no permission. Keep Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The kiosk\'s Home Assistant user may not change {calendar}.'**
+  String calendarEditNotAllowed(String calendar);
+
+  /// Title of the dialog that confirms deleting an event.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {title}?'**
+  String calendarDeleteTitle(String title);
+
+  /// Line in the delete dialog of an event on several calendars.
+  ///
+  /// In en, this message translates to:
+  /// **'It comes off every calendar it is on: {names}.'**
+  String calendarDeleteShared(String names);
+
+  /// Title of the dialog that asks which days of a repeating event a change covers.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes to {title}?'**
+  String calendarSaveRepeatTitle(String title);
+
+  /// Line in that dialog when the Repeat choice changed: it can only apply from this day on.
+  ///
+  /// In en, this message translates to:
+  /// **'The new repeat starts on this day.'**
+  String get calendarSaveRepeatFollowing;
+
+  /// Choice in the save and delete dialogs of a repeating event: only this day.
+  ///
+  /// In en, this message translates to:
+  /// **'This event'**
+  String get calendarScopeThis;
+
+  /// Choice in the save and delete dialogs of a repeating event: this day and every one after it.
+  ///
+  /// In en, this message translates to:
+  /// **'This and following events'**
+  String get calendarScopeFollowing;
+
+  /// Choice in the delete dialog of a repeating event: the whole series.
+  ///
+  /// In en, this message translates to:
+  /// **'All events'**
+  String get calendarScopeAll;
+
+  /// Heading of the settings that let people add, change and delete events on the kiosk's screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing'**
+  String get calendarEditingSection;
+
   /// Page title.
   ///
   /// In en, this message translates to:
@@ -8709,6 +8931,30 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Adds the forecast to each day.'**
   String get settingCalendarWeatherEntityDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow adding and editing events'**
+  String get settingCalendarAllowEditTitle;
+
+  /// Setting description. New event and Edit are the names of the buttons it adds.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds New event and Edit to the calendar.'**
+  String get settingCalendarAllowEditDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow deleting events'**
+  String get settingCalendarAllowDeleteTitle;
+
+  /// Setting description. Delete is the name of the button it adds.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds Delete to each event.'**
+  String get settingCalendarAllowDeleteDescription;
 
   /// Setting label.
   ///

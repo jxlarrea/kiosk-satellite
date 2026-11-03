@@ -447,6 +447,7 @@ String settingsPageText(
   // Its groups reuse the settings rail's group names.
   'Calendar' => switch (english) {
     'Display' || 'Kiosk' => navigationText(context, english),
+    'Editing' => l10n(context).calendarEditingSection,
     // The hand-built rows search finds.
     'Open calendar' => l10n(context).calendarOpen,
     'Show the calendar on this kiosk.' => l10n(context).calendarOpenHint,

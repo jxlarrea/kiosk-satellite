@@ -78,6 +78,58 @@
       ]
     }
   },
+  "settingCalendarAllowEditTitle": "Allow adding and editing events",
+  "@settingCalendarAllowEditTitle": {
+    "context": "Settings > Calendar > Editing",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar > Allow adding and editing events"
+      ],
+      "remoteAdmin": [
+        "Calendar > Allow adding and editing events"
+      ]
+    }
+  },
+  "settingCalendarAllowEditDescription": "Adds New event and Edit to the calendar.",
+  "@settingCalendarAllowEditDescription": {
+    "context": "Settings > Calendar > Editing",
+    "description": "Setting description. New event and Edit are the names of the buttons it adds.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar > Allow adding and editing events"
+      ],
+      "remoteAdmin": [
+        "Calendar > Allow adding and editing events"
+      ]
+    }
+  },
+  "settingCalendarAllowDeleteTitle": "Allow deleting events",
+  "@settingCalendarAllowDeleteTitle": {
+    "context": "Settings > Calendar > Editing",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar > Allow deleting events"
+      ],
+      "remoteAdmin": [
+        "Calendar > Allow deleting events"
+      ]
+    }
+  },
+  "settingCalendarAllowDeleteDescription": "Adds Delete to each event.",
+  "@settingCalendarAllowDeleteDescription": {
+    "context": "Settings > Calendar > Editing",
+    "description": "Setting description. Delete is the name of the button it adds.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar > Allow deleting events"
+      ],
+      "remoteAdmin": [
+        "Calendar > Allow deleting events"
+      ]
+    }
+  },
   "settingCalendarIdleCloseMinutesTitle": "Close when idle",
   "@settingCalendarIdleCloseMinutesTitle": {
     "context": "Settings > Calendar > Kiosk",

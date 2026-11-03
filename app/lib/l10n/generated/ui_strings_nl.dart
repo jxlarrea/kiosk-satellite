@@ -537,6 +537,137 @@ class UiStringsNl extends UiStrings {
       'Vereist de agendablauwdruk van Kiosk Satellite en een LLM-gespreksagent in Home Assistant.';
 
   @override
+  String get calendarNewEvent => 'Nieuwe afspraak';
+
+  @override
+  String get calendarEditEvent => 'Afspraak bewerken';
+
+  @override
+  String get calendarFieldTitle => 'Titel';
+
+  @override
+  String get calendarFieldTitleHint => 'Titel toevoegen';
+
+  @override
+  String get calendarFieldCalendars => 'Agenda\'s';
+
+  @override
+  String get calendarFieldSharedHint =>
+      'Wordt één keer getoond, verdeeld over hun kleuren.';
+
+  @override
+  String get calendarFieldStarts => 'Begint';
+
+  @override
+  String get calendarFieldEnds => 'Eindigt';
+
+  @override
+  String get calendarFieldStartTime => 'Begintijd';
+
+  @override
+  String get calendarFieldEndTime => 'Eindtijd';
+
+  @override
+  String get calendarFieldEndsBeforeStart => 'Eindigt voordat het begint.';
+
+  @override
+  String get calendarFieldRepeat => 'Herhalen';
+
+  @override
+  String get calendarRepeatNever => 'Herhaalt niet';
+
+  @override
+  String get calendarRepeatWeekdays => 'Elke werkdag';
+
+  @override
+  String calendarRepeatWeeklyOn(String weekday) {
+    return 'Elke week op $weekday';
+  }
+
+  @override
+  String calendarRepeatMonthlyOn(String day) {
+    return 'Elke maand op dag $day';
+  }
+
+  @override
+  String calendarRepeatYearlyOn(String date) {
+    return 'Elk jaar op $date';
+  }
+
+  @override
+  String get calendarFieldLocation => 'Locatie';
+
+  @override
+  String get calendarFieldLocationHint => 'Plaats toevoegen';
+
+  @override
+  String get calendarFieldNotes => 'Notities';
+
+  @override
+  String get calendarFieldNotesHint => 'Notities toevoegen';
+
+  @override
+  String get calendarEventAdded => 'Afspraak toegevoegd';
+
+  @override
+  String get calendarEventSaved => 'Wijzigingen opgeslagen';
+
+  @override
+  String get calendarEventDeleted => 'Afspraak verwijderd';
+
+  @override
+  String get calendarSaveFailed => 'Kan de afspraak niet opslaan';
+
+  @override
+  String get calendarDeleteFailed => 'Kan de afspraak niet verwijderen';
+
+  @override
+  String calendarEditReadOnly(String calendar) {
+    return '$calendar is alleen-lezen.';
+  }
+
+  @override
+  String calendarEditGone(String calendar) {
+    return 'De afspraak staat niet meer in $calendar.';
+  }
+
+  @override
+  String calendarEditNotAllowed(String calendar) {
+    return 'De Home Assistant-gebruiker van de kiosk mag $calendar niet wijzigen.';
+  }
+
+  @override
+  String calendarDeleteTitle(String title) {
+    return '$title verwijderen?';
+  }
+
+  @override
+  String calendarDeleteShared(String names) {
+    return 'Hij verdwijnt uit elke agenda waarin hij staat: $names.';
+  }
+
+  @override
+  String calendarSaveRepeatTitle(String title) {
+    return 'Wijzigingen in $title opslaan?';
+  }
+
+  @override
+  String get calendarSaveRepeatFollowing =>
+      'De nieuwe herhaling begint op deze dag.';
+
+  @override
+  String get calendarScopeThis => 'Deze afspraak';
+
+  @override
+  String get calendarScopeFollowing => 'Deze en volgende afspraken';
+
+  @override
+  String get calendarScopeAll => 'Alle afspraken';
+
+  @override
+  String get calendarEditingSection => 'Bewerken';
+
+  @override
   String get cameraViewerTitle => 'Cameraweergave';
 
   @override
@@ -4993,6 +5124,22 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingCalendarWeatherEntityDescription =>
       'Voegt de weersverwachting aan elke dag toe.';
+
+  @override
+  String get settingCalendarAllowEditTitle =>
+      'Afspraken toevoegen en bewerken toestaan';
+
+  @override
+  String get settingCalendarAllowEditDescription =>
+      'Voegt Nieuwe afspraak en Bewerken toe aan de agenda.';
+
+  @override
+  String get settingCalendarAllowDeleteTitle =>
+      'Afspraken verwijderen toestaan';
+
+  @override
+  String get settingCalendarAllowDeleteDescription =>
+      'Voegt Verwijderen toe aan elke afspraak.';
 
   @override
   String get settingCalendarIdleCloseMinutesTitle => 'Sluiten bij inactiviteit';

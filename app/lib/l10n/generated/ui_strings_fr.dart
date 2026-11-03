@@ -541,6 +541,137 @@ class UiStringsFr extends UiStrings {
       'Nécessite le blueprint de calendrier de Kiosk Satellite et un agent de conversation LLM dans Home Assistant.';
 
   @override
+  String get calendarNewEvent => 'Nouvel événement';
+
+  @override
+  String get calendarEditEvent => 'Modifier l’événement';
+
+  @override
+  String get calendarFieldTitle => 'Titre';
+
+  @override
+  String get calendarFieldTitleHint => 'Ajouter un titre';
+
+  @override
+  String get calendarFieldCalendars => 'Calendriers';
+
+  @override
+  String get calendarFieldSharedHint =>
+      'S’affiche une fois, partagé entre leurs couleurs.';
+
+  @override
+  String get calendarFieldStarts => 'Début';
+
+  @override
+  String get calendarFieldEnds => 'Fin';
+
+  @override
+  String get calendarFieldStartTime => 'Heure de début';
+
+  @override
+  String get calendarFieldEndTime => 'Heure de fin';
+
+  @override
+  String get calendarFieldEndsBeforeStart => 'La fin est avant le début.';
+
+  @override
+  String get calendarFieldRepeat => 'Répéter';
+
+  @override
+  String get calendarRepeatNever => 'Ne se répète pas';
+
+  @override
+  String get calendarRepeatWeekdays => 'Tous les jours de la semaine';
+
+  @override
+  String calendarRepeatWeeklyOn(String weekday) {
+    return 'Chaque semaine le $weekday';
+  }
+
+  @override
+  String calendarRepeatMonthlyOn(String day) {
+    return 'Chaque mois le $day';
+  }
+
+  @override
+  String calendarRepeatYearlyOn(String date) {
+    return 'Chaque année le $date';
+  }
+
+  @override
+  String get calendarFieldLocation => 'Lieu';
+
+  @override
+  String get calendarFieldLocationHint => 'Ajouter un lieu';
+
+  @override
+  String get calendarFieldNotes => 'Notes';
+
+  @override
+  String get calendarFieldNotesHint => 'Ajouter des notes';
+
+  @override
+  String get calendarEventAdded => 'Événement ajouté';
+
+  @override
+  String get calendarEventSaved => 'Modifications enregistrées';
+
+  @override
+  String get calendarEventDeleted => 'Événement supprimé';
+
+  @override
+  String get calendarSaveFailed => 'Impossible d’enregistrer l’événement';
+
+  @override
+  String get calendarDeleteFailed => 'Impossible de supprimer l’événement';
+
+  @override
+  String calendarEditReadOnly(String calendar) {
+    return '$calendar est en lecture seule.';
+  }
+
+  @override
+  String calendarEditGone(String calendar) {
+    return 'L’événement n’est plus dans $calendar.';
+  }
+
+  @override
+  String calendarEditNotAllowed(String calendar) {
+    return 'L’utilisateur Home Assistant du kiosque ne peut pas modifier $calendar.';
+  }
+
+  @override
+  String calendarDeleteTitle(String title) {
+    return 'Supprimer $title ?';
+  }
+
+  @override
+  String calendarDeleteShared(String names) {
+    return 'Il est retiré de tous les calendriers où il figure : $names.';
+  }
+
+  @override
+  String calendarSaveRepeatTitle(String title) {
+    return 'Enregistrer les modifications de $title ?';
+  }
+
+  @override
+  String get calendarSaveRepeatFollowing =>
+      'La nouvelle répétition commence ce jour-là.';
+
+  @override
+  String get calendarScopeThis => 'Cet événement';
+
+  @override
+  String get calendarScopeFollowing => 'Cet événement et les suivants';
+
+  @override
+  String get calendarScopeAll => 'Tous les événements';
+
+  @override
+  String get calendarEditingSection => 'Modification';
+
+  @override
   String get cameraViewerTitle => 'Vue caméra';
 
   @override
@@ -5008,6 +5139,22 @@ class UiStringsFr extends UiStrings {
   @override
   String get settingCalendarWeatherEntityDescription =>
       'Ajoute la prévision à chaque jour.';
+
+  @override
+  String get settingCalendarAllowEditTitle =>
+      'Autoriser l’ajout et la modification d’événements';
+
+  @override
+  String get settingCalendarAllowEditDescription =>
+      'Ajoute Nouvel événement et Modifier au calendrier.';
+
+  @override
+  String get settingCalendarAllowDeleteTitle =>
+      'Autoriser la suppression d’événements';
+
+  @override
+  String get settingCalendarAllowDeleteDescription =>
+      'Ajoute Supprimer à chaque événement.';
 
   @override
   String get settingCalendarIdleCloseMinutesTitle =>

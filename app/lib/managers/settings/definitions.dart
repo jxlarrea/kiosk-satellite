@@ -11865,6 +11865,30 @@ const calendarWeatherEntity = SettingDef<String>(
   section: 'Display',
 );
 
+/// New event, the empty-hour slot in Day and Edit on an event. Off keeps
+/// the calendar read only on the touch screen.
+const calendarAllowEdit = SettingDef<bool>(
+  key: 'calendar.allow_edit',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Allow adding and editing events',
+  description: 'Adds New event and Edit to the calendar.',
+  category: 'Calendar',
+  section: 'Editing',
+);
+
+/// Delete on an event, apart from [calendarAllowEdit] so a shared kiosk
+/// can take new events without losing any.
+const calendarAllowDelete = SettingDef<bool>(
+  key: 'calendar.allow_delete',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Allow deleting events',
+  description: 'Adds Delete to each event.',
+  category: 'Calendar',
+  section: 'Editing',
+);
+
 /// Where the kiosk menu's Calendar row had its own switch. A link to
 /// Drawer menu items now (issue #1194), which decides every row.
 const calendarMenu = SettingDef<bool>(
@@ -13928,6 +13952,8 @@ const List<SettingDef<Object>> allSettings = [
   calendarDefaultView,
   calendarWeekStart,
   calendarWeatherEntity,
+  calendarAllowEdit,
+  calendarAllowDelete,
   calendarIdleCloseMinutes,
   calendarMenu,
 ];

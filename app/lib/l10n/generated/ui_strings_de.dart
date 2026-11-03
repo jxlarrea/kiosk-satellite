@@ -541,6 +541,137 @@ class UiStringsDe extends UiStrings {
       'Benötigt den Kiosk Satellite Kalender-Blueprint und einen LLM-Konversationsagenten in Home Assistant.';
 
   @override
+  String get calendarNewEvent => 'Neuer Termin';
+
+  @override
+  String get calendarEditEvent => 'Termin bearbeiten';
+
+  @override
+  String get calendarFieldTitle => 'Titel';
+
+  @override
+  String get calendarFieldTitleHint => 'Titel hinzufügen';
+
+  @override
+  String get calendarFieldCalendars => 'Kalender';
+
+  @override
+  String get calendarFieldSharedHint =>
+      'Wird einmal angezeigt, geteilt zwischen ihren Farben.';
+
+  @override
+  String get calendarFieldStarts => 'Beginn';
+
+  @override
+  String get calendarFieldEnds => 'Ende';
+
+  @override
+  String get calendarFieldStartTime => 'Startzeit';
+
+  @override
+  String get calendarFieldEndTime => 'Endzeit';
+
+  @override
+  String get calendarFieldEndsBeforeStart => 'Das Ende liegt vor dem Beginn.';
+
+  @override
+  String get calendarFieldRepeat => 'Wiederholen';
+
+  @override
+  String get calendarRepeatNever => 'Keine Wiederholung';
+
+  @override
+  String get calendarRepeatWeekdays => 'Jeden Werktag';
+
+  @override
+  String calendarRepeatWeeklyOn(String weekday) {
+    return 'Jede Woche am $weekday';
+  }
+
+  @override
+  String calendarRepeatMonthlyOn(String day) {
+    return 'Jeden Monat am $day.';
+  }
+
+  @override
+  String calendarRepeatYearlyOn(String date) {
+    return 'Jedes Jahr am $date';
+  }
+
+  @override
+  String get calendarFieldLocation => 'Ort';
+
+  @override
+  String get calendarFieldLocationHint => 'Ort hinzufügen';
+
+  @override
+  String get calendarFieldNotes => 'Notizen';
+
+  @override
+  String get calendarFieldNotesHint => 'Notizen hinzufügen';
+
+  @override
+  String get calendarEventAdded => 'Termin hinzugefügt';
+
+  @override
+  String get calendarEventSaved => 'Änderungen gespeichert';
+
+  @override
+  String get calendarEventDeleted => 'Termin gelöscht';
+
+  @override
+  String get calendarSaveFailed => 'Der Termin konnte nicht gespeichert werden';
+
+  @override
+  String get calendarDeleteFailed => 'Der Termin konnte nicht gelöscht werden';
+
+  @override
+  String calendarEditReadOnly(String calendar) {
+    return '$calendar ist schreibgeschützt.';
+  }
+
+  @override
+  String calendarEditGone(String calendar) {
+    return 'Der Termin ist nicht mehr in $calendar.';
+  }
+
+  @override
+  String calendarEditNotAllowed(String calendar) {
+    return 'Der Home Assistant Benutzer des Kiosks darf $calendar nicht ändern.';
+  }
+
+  @override
+  String calendarDeleteTitle(String title) {
+    return '$title löschen?';
+  }
+
+  @override
+  String calendarDeleteShared(String names) {
+    return 'Er wird aus jedem Kalender entfernt, in dem er steht: $names.';
+  }
+
+  @override
+  String calendarSaveRepeatTitle(String title) {
+    return 'Änderungen an $title speichern?';
+  }
+
+  @override
+  String get calendarSaveRepeatFollowing =>
+      'Die neue Wiederholung beginnt an diesem Tag.';
+
+  @override
+  String get calendarScopeThis => 'Dieser Termin';
+
+  @override
+  String get calendarScopeFollowing => 'Dieser und alle folgenden Termine';
+
+  @override
+  String get calendarScopeAll => 'Alle Termine';
+
+  @override
+  String get calendarEditingSection => 'Bearbeiten';
+
+  @override
   String get cameraViewerTitle => 'Kameraansicht';
 
   @override
@@ -5042,6 +5173,21 @@ class UiStringsDe extends UiStrings {
   @override
   String get settingCalendarWeatherEntityDescription =>
       'Zeigt die Vorhersage für jeden Tag.';
+
+  @override
+  String get settingCalendarAllowEditTitle =>
+      'Termine hinzufügen und bearbeiten erlauben';
+
+  @override
+  String get settingCalendarAllowEditDescription =>
+      'Fügt dem Kalender Neuer Termin und Editieren hinzu.';
+
+  @override
+  String get settingCalendarAllowDeleteTitle => 'Termine löschen erlauben';
+
+  @override
+  String get settingCalendarAllowDeleteDescription =>
+      'Fügt jedem Termin Löschen hinzu.';
 
   @override
   String get settingCalendarIdleCloseMinutesTitle =>

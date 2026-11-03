@@ -7,6 +7,7 @@ import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/managers/calendar/calendar_manager.dart';
 import 'package:kiosk_satellite/managers/calendar/calendar_model.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
+import 'package:kiosk_satellite/ui/calendar_editor.dart';
 import 'package:kiosk_satellite/ui/calendar_overlay.dart';
 import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -148,11 +149,185 @@ void main() {
       expect(find.text('Leo and Sam'), findsOneWidget);
       expect(find.text('Riverside Park, Field 2'), findsWidgets);
       expect(tester.takeException(), isNull);
+      // Read only until Settings > Calendar > Editing says otherwise.
+      expect(find.text('Edit'), findsNothing);
+      expect(find.text('Delete'), findsNothing);
       await tester.tap(find.text('Done'));
       await tester.pump(const Duration(milliseconds: 300));
       await letGo(tester, c);
     });
   }
+
+  for (final (name, size) in [
+    ('a tablet', const Size(1280, 800)),
+    ('an Echo Show 5', const Size(960, 480)),
+    ('an Echo Show 5 at 1.22x', const Size(788, 394)),
+    ('a phone', const Size(390, 844)),
+  ]) {
+    testWidgets('adding, editing and deleting draw on $name', (tester) async {
+      final c = await container();
+      await c.settings.set(defs.calendarAllowEdit, true);
+      await c.settings.set(defs.calendarAllowDelete, true);
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      c.calendar.opening = (view: 'week', date: null);
+      c.calendar.visible.value = true;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(children: [CalendarOverlay(container: c)]),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      Future<void> feed() async {
+        c.calendar.snapshot.value = CalendarSnapshot(
+          events: _week(),
+          link: CalendarLink.live,
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      Future<void> settle() async {
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      await feed();
+      expect(tester.takeException(), isNull, reason: 'week on $name');
+
+      // New event: a pill on a tablet, a disc on a short panel, a button
+      // at the bottom right on a phone.
+      final add = size.width >= 640 && size.height < 600
+          ? find.byTooltip('New event')
+          : find.text('New event');
+      expect(add, findsOneWidget);
+      // The form is a route above the kiosk's own touch Listener: its
+      // touches are reported for the screensaver's idle clock.
+      final touches = <ActivityDetected>[];
+      final heard = c.bus.on<ActivityDetected>().listen(touches.add);
+      addTearDown(heard.cancel);
+      await tester.tap(add);
+      await settle();
+      expect(find.text('Add a title'), findsOneWidget);
+      touches.clear();
+      await tester.tap(find.text('All day').last);
+      await tester.pump();
+      expect(touches.map((t) => t.source), ['touch']);
+      expect(find.text('Leo'), findsWidgets);
+      expect(tester.takeException(), isNull, reason: 'form on $name');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Add a title'),
+        'Haircut',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Cancel'));
+      await settle();
+      expect(find.text('Add a title'), findsNothing);
+
+      // An event opens with Delete and Edit, Edit opens the form filled
+      // in, and a cancelled form comes back to the event.
+      c.calendar.opening = (view: 'day', date: null);
+      c.calendar.reopened.value++;
+      await tester.pump(const Duration(milliseconds: 100));
+      await feed();
+      final soccer = find.text('Soccer practice with a long name').first;
+      await tester.ensureVisible(soccer);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(soccer);
+      await settle();
+      expect(find.text('Delete'), findsOneWidget);
+      await tester.tap(find.text('Edit'));
+      await settle();
+      expect(find.text('Edit event'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, 'Soccer practice with a long name'),
+        findsOneWidget,
+      );
+      expect(find.text('Shows once, split between their colors.'), findsOne);
+      expect(tester.takeException(), isNull, reason: 'edit on $name');
+      await tester.tap(find.text('Cancel'));
+      await settle();
+      expect(find.text('Edit event'), findsNothing);
+      await tester.tap(find.text('Delete'));
+      await settle();
+      expect(find.text('Delete Soccer practice with a long name?'), findsOne);
+      expect(
+        find.text(
+          'It comes off every calendar it is on: Leo and Sam.',
+          findRichText: true,
+        ),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull, reason: 'delete on $name');
+      await tester.tap(find.text('Cancel'));
+      await settle();
+      await tester.tap(find.text('Done'));
+      await settle();
+
+      // A tap on an empty hour of an empty day drops the slot, and the
+      // slot opens New event.
+      c.calendar.opening = (
+        view: 'day',
+        date: addDays(dateOnly(DateTime.now()), 5),
+      );
+      c.calendar.reopened.value++;
+      await tester.pump(const Duration(milliseconds: 100));
+      await feed();
+      // The hours: the one vertical scrollable of the Day view.
+      final hours = find.byWidgetPredicate(
+        (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+      );
+      final box = tester.getRect(hours.last);
+      await tester.tapAt(Offset(box.right - 30, box.center.dy));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byType(CalendarSlot), findsOneWidget);
+      await tester.tap(find.byType(CalendarSlot));
+      await settle();
+      expect(find.text('Add a title'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await settle();
+      await letGo(tester, c);
+    });
+  }
+
+  testWidgets('the screensaver calendar stays read only', (tester) async {
+    final c = await container();
+    await c.settings.set(defs.calendarAllowEdit, true);
+    await c.settings.set(defs.calendarAllowDelete, true);
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: CalendarScreen(container: c, screensaver: true)),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    c.calendar.snapshot.value = CalendarSnapshot(
+      events: _week(),
+      link: CalendarLink.live,
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('New event'), findsNothing);
+    final touches = <ActivityDetected>[];
+    final heard = c.bus.on<ActivityDetected>().listen(touches.add);
+    addTearDown(heard.cancel);
+    await tester.tap(find.text('Taco night').first);
+    await tester.pump(const Duration(milliseconds: 300));
+    // A touch report would end the screensaver.
+    await tester.tap(find.text('Taco night').last);
+    await tester.pump();
+    expect(touches, isEmpty);
+    expect(find.text('Edit'), findsNothing);
+    expect(find.text('Delete'), findsNothing);
+    await tester.tap(find.text('Done'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 61));
+  });
 
   testWidgets('a hidden chip takes its calendar off the screen', (
     tester,
@@ -341,6 +516,9 @@ void main() {
       'Default view',
       'Week starts on',
       'Weather',
+      'Editing',
+      'Allow adding and editing events',
+      'Allow deleting events',
       'Show in the kiosk menu',
       'Close when idle',
     ]) {

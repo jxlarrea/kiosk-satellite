@@ -11,6 +11,7 @@ import '../analytics/usage_counters.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../voice/ha_socket.dart';
+import 'calendar_edits.dart';
 import 'calendar_model.dart';
 import 'calendar_requests.dart';
 
@@ -138,6 +139,9 @@ class CalendarManager extends Manager implements CalendarStore {
   /// Requests from the Kiosk Satellite calendar script.
   late final requests = CalendarRequests(_settings, this, clock: _clock);
 
+  /// Adding, changing and deleting events from the calendar's own screen.
+  late final edits = CalendarEdits(this, log);
+
   /// Set by [open] just before [visible] goes true: the view and day the
   /// overlay starts on.
   CalendarOpening opening = (view: null, date: null);
@@ -159,6 +163,11 @@ class CalendarManager extends Manager implements CalendarStore {
 
   /// Each person's picture, as a full URL on Home Assistant.
   final pictures = ValueNotifier<Map<String, String>>(const {});
+
+  /// Each calendar's supported_features, read with the people's pictures:
+  /// what its integration lets the kiosk do ([calendarCreates] and
+  /// friends). A calendar missing here has not been read yet.
+  final features = ValueNotifier<Map<String, int>>(const {});
 
   final _subs = <StreamSubscription<Object?>>[];
   final _windows = <Object, (DateTime, DateTime)>{};
@@ -259,6 +268,7 @@ class CalendarManager extends Manager implements CalendarStore {
     snapshot.dispose();
     forecast.dispose();
     pictures.dispose();
+    features.dispose();
   }
 
   void _readCalendars() {
@@ -399,18 +409,22 @@ class CalendarManager extends Manager implements CalendarStore {
     'event': draft.toHa(),
   });
 
-  /// One event or one occurrence of a repeating one. A repeating event's
-  /// other days stay as they are.
+  /// One event, or one day of a repeating one (the other days stay as they
+  /// are) or that day and the ones after it.
   @override
   Future<void> updateEvent(
     String entity,
     CalendarEvent event,
-    CalendarDraft draft,
-  ) => _write({
+    CalendarDraft draft, {
+    String scope = 'this',
+  }) => _write({
     'type': 'calendar/event/update',
     'entity_id': entity,
     'uid': event.uid,
-    'recurrence_id': ?event.recurrenceId,
+    if (event.recurrenceId != null) ...{
+      'recurrence_id': event.recurrenceId,
+      if (scope == 'following') 'recurrence_range': 'THISANDFUTURE',
+    },
     'event': draft.toHa(),
   });
 
@@ -724,47 +738,64 @@ class CalendarManager extends Manager implements CalendarStore {
     }
   }
 
-  /// The people's pictures, read once each time the screens start
-  /// watching: they change about never.
+  /// The people's pictures and what each calendar's integration allows,
+  /// read once each time the screens start watching: they change about
+  /// never.
   Future<void> _loadPictures(int generation) async {
     final people = {
       for (final c in calendars.value)
         if (c.person.startsWith('person.')) c.person,
     };
-    if (people.isEmpty) {
+    final entities = [...people, for (final c in calendars.value) c.entity];
+    if (entities.isEmpty) {
       pictures.value = const {};
+      features.value = const {};
       return;
     }
-    final got = Completer<Map<String, String>>();
+    final got = Completer<Map<Object?, Object?>>();
     Future<void> Function()? end;
     try {
       end = await _socket.subscribe(
-        {'type': 'subscribe_entities', 'entity_ids': people.toList()},
+        {'type': 'subscribe_entities', 'entity_ids': entities},
         (event) {
           if (got.isCompleted) return;
           final added = event['a'];
-          final out = <String, String>{};
-          if (added is Map) {
-            for (final entry in added.entries) {
-              final attrs = entry.value is Map
-                  ? (entry.value as Map)['a']
-                  : null;
-              final picture = attrs is Map ? attrs['entity_picture'] : null;
-              if (picture is String && picture.isNotEmpty) {
-                out['${entry.key}'] = _absolute(picture);
-              }
-            }
-          }
-          got.complete(out);
+          got.complete(added is Map ? added : const {});
         },
       );
-      final found = await got.future.timeout(const Duration(seconds: 10));
-      if (generation == _generation) pictures.value = found;
+      final added = await got.future.timeout(const Duration(seconds: 10));
+      final found = <String, String>{};
+      final allowed = <String, int>{};
+      for (final entry in added.entries) {
+        final id = '${entry.key}';
+        final attrs = entry.value is Map ? (entry.value as Map)['a'] : null;
+        if (attrs is! Map) continue;
+        final picture = attrs['entity_picture'];
+        if (people.contains(id) && picture is String && picture.isNotEmpty) {
+          found[id] = _absolute(picture);
+        }
+        final supported = attrs['supported_features'];
+        if (id.startsWith('calendar.')) {
+          allowed[id] = supported is num ? supported.toInt() : 0;
+        }
+      }
+      if (generation == _generation) {
+        pictures.value = found;
+        features.value = allowed;
+      }
     } catch (e) {
       log.warn('calendar', 'reading the people failed: $e');
     } finally {
       await end?.call();
     }
+  }
+
+  /// Whether [entity]'s integration takes new events, changes or deletes,
+  /// Home Assistant's CalendarEntityFeature bits. One not read yet is
+  /// given the benefit of the doubt: Home Assistant refuses it if not.
+  bool calendarAllows(String entity, int feature) {
+    final bits = features.value[entity];
+    return bits == null || bits & feature != 0;
   }
 
   String _absolute(String path) {

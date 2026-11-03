@@ -46,8 +46,9 @@ class _Store implements CalendarStore {
   Future<void> updateEvent(
     String entity,
     CalendarEvent event,
-    CalendarDraft draft,
-  ) async => updated.add((entity, event, draft));
+    CalendarDraft draft, {
+    String scope = 'this',
+  }) async => updated.add((entity, event, draft));
 
   @override
   Future<void> deleteEvent(

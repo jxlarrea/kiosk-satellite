@@ -17,11 +17,14 @@ abstract interface class CalendarStore {
 
   Future<void> createEvent(String entity, CalendarDraft draft);
 
+  /// [scope] is `this` (the one day) or `following` (that day and the
+  /// ones after it) for a repeating event.
   Future<void> updateEvent(
     String entity,
     CalendarEvent event,
-    CalendarDraft draft,
-  );
+    CalendarDraft draft, {
+    String scope = 'this',
+  });
 
   Future<void> deleteEvent(String entity, CalendarEvent event, String scope);
 
@@ -41,6 +44,7 @@ class CalendarDraft {
     required this.allDay,
     this.description = '',
     this.location = '',
+    this.rrule,
   });
 
   final String summary;
@@ -53,6 +57,10 @@ class CalendarDraft {
   final String description;
   final String location;
 
+  /// How it repeats, as an iCalendar RRULE without the `RRULE:` prefix
+  /// (`FREQ=WEEKLY`). Null for one that does not.
+  final String? rrule;
+
   /// The `event` of `calendar/event/create` and `calendar/event/update`.
   Map<String, Object?> toHa() => {
     'summary': summary,
@@ -60,6 +68,7 @@ class CalendarDraft {
     'dtend': allDay ? haDate(end) : haDateTime(end),
     if (description.isNotEmpty) 'description': description,
     if (location.isNotEmpty) 'location': location,
+    if (rrule case final r? when r.isNotEmpty) 'rrule': r,
   };
 }
 
@@ -524,7 +533,7 @@ class CalendarRequests {
     final event = found.first;
     final copies = <String, CalendarEvent>{};
     for (final calendar in event.calendars) {
-      final copy = _copyOn(raw[calendar] ?? const [], event);
+      final copy = calendarCopyOn(raw[calendar] ?? const [], event);
       if (copy == null) continue;
       if (copy.uid == null) {
         return (
@@ -539,23 +548,6 @@ class CalendarRequests {
       copies[calendar] = copy;
     }
     return (event: event, copies: copies, failure: null);
-  }
-
-  /// [event]'s own copy in one calendar's list, matched the way
-  /// [mergeEvents] matched it.
-  static CalendarEvent? _copyOn(List<CalendarEvent> list, CalendarEvent event) {
-    for (final e in list) {
-      if (e.uid != null && e.key == event.key) return e;
-    }
-    for (final e in list) {
-      if (e.summary.toLowerCase() == event.summary.toLowerCase() &&
-          e.start == event.start &&
-          e.end == event.end &&
-          e.allDay == event.allDay) {
-        return e;
-      }
-    }
-    return null;
   }
 
   Future<Map<String, Object?>> _change(Map<String, Object?> data) async {
@@ -806,4 +798,21 @@ class CalendarRequests {
     }
     return text;
   }
+}
+
+/// [event]'s own copy in one calendar's list, matched the way
+/// [mergeEvents] matched it.
+CalendarEvent? calendarCopyOn(List<CalendarEvent> list, CalendarEvent event) {
+  for (final e in list) {
+    if (e.uid != null && e.key == event.key) return e;
+  }
+  for (final e in list) {
+    if (e.summary.toLowerCase() == event.summary.toLowerCase() &&
+        e.start == event.start &&
+        e.end == event.end &&
+        e.allDay == event.allDay) {
+      return e;
+    }
+  }
+  return null;
 }

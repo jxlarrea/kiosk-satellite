@@ -713,5 +713,432 @@
         "Calendar"
       ]
     }
+  },
+  "calendarNewEvent": "New event",
+  "@calendarNewEvent": {
+    "context": "Calendar",
+    "description": "Button that opens the form for a new calendar event, and the form's heading.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarEditEvent": "Edit event",
+  "@calendarEditEvent": {
+    "context": "Calendar event form",
+    "description": "Heading of the form that changes a calendar event.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldTitle": "Title",
+  "@calendarFieldTitle": {
+    "context": "Calendar event form",
+    "description": "Label of the event's title field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldTitleHint": "Add a title",
+  "@calendarFieldTitleHint": {
+    "context": "Calendar event form",
+    "description": "Placeholder in the empty title field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldCalendars": "Calendars",
+  "@calendarFieldCalendars": {
+    "context": "Calendar event form",
+    "description": "Label of the row of calendars (one per person) the event goes on. Several can be picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldSharedHint": "Shows once, split between their colors.",
+  "@calendarFieldSharedHint": {
+    "context": "Calendar event form",
+    "description": "Note under the calendars when two or more are picked: the event is drawn once with its background split between the calendars' colors.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldStarts": "Starts",
+  "@calendarFieldStarts": {
+    "context": "Calendar event form",
+    "description": "Label of the event's start date and time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldEnds": "Ends",
+  "@calendarFieldEnds": {
+    "context": "Calendar event form",
+    "description": "Label of the event's end date and time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldStartTime": "Start time",
+  "@calendarFieldStartTime": {
+    "context": "Calendar event form",
+    "description": "Title of the dialog that picks the start time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldEndTime": "End time",
+  "@calendarFieldEndTime": {
+    "context": "Calendar event form",
+    "description": "Title of the dialog that picks the end time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldEndsBeforeStart": "Ends before it starts.",
+  "@calendarFieldEndsBeforeStart": {
+    "context": "Calendar event form",
+    "description": "Error under the dates when the end is before the start.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldRepeat": "Repeat",
+  "@calendarFieldRepeat": {
+    "context": "Calendar event form",
+    "description": "Label of the choice of how the event repeats.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarRepeatNever": "Does not repeat",
+  "@calendarRepeatNever": {
+    "context": "Calendar event form",
+    "description": "A Repeat choice: the event happens once.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarRepeatWeekdays": "Every weekday",
+  "@calendarRepeatWeekdays": {
+    "context": "Calendar event form",
+    "description": "A Repeat choice: Monday to Friday.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarRepeatWeeklyOn": "Every week on {weekday}",
+  "@calendarRepeatWeeklyOn": {
+    "context": "Calendar event form",
+    "description": "A Repeat choice: once a week on the start's weekday.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "weekday": {
+        "type": "String",
+        "description": "A weekday name like Monday."
+      }
+    }
+  },
+  "calendarRepeatMonthlyOn": "Every month on day {day}",
+  "@calendarRepeatMonthlyOn": {
+    "context": "Calendar event form",
+    "description": "A Repeat choice: once a month on the start's day of the month.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "description": "A day of the month like 19."
+      }
+    }
+  },
+  "calendarRepeatYearlyOn": "Every year on {date}",
+  "@calendarRepeatYearlyOn": {
+    "context": "Calendar event form",
+    "description": "A Repeat choice: once a year on the start's date.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "description": "A month and day like October 19."
+      }
+    }
+  },
+  "calendarFieldLocation": "Location",
+  "@calendarFieldLocation": {
+    "context": "Calendar event form",
+    "description": "Label of the event's place field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldLocationHint": "Add a place",
+  "@calendarFieldLocationHint": {
+    "context": "Calendar event form",
+    "description": "Placeholder in the empty location field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldNotes": "Notes",
+  "@calendarFieldNotes": {
+    "context": "Calendar event form",
+    "description": "Label of the event's notes field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarFieldNotesHint": "Add notes",
+  "@calendarFieldNotesHint": {
+    "context": "Calendar event form",
+    "description": "Placeholder in the empty notes field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarEventAdded": "Event added",
+  "@calendarEventAdded": {
+    "context": "Calendar event form",
+    "description": "Message after a new event is saved.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarEventSaved": "Changes saved",
+  "@calendarEventSaved": {
+    "context": "Calendar event form",
+    "description": "Message after changes to an event are saved.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarEventDeleted": "Event deleted",
+  "@calendarEventDeleted": {
+    "context": "Calendar event",
+    "description": "Message after an event is deleted.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarSaveFailed": "Could not save the event",
+  "@calendarSaveFailed": {
+    "context": "Calendar event form",
+    "description": "Title of the error message when saving an event fails.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarDeleteFailed": "Could not delete the event",
+  "@calendarDeleteFailed": {
+    "context": "Calendar event",
+    "description": "Title of the error message when deleting an event fails.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarEditReadOnly": "{calendar} is read only.",
+  "@calendarEditReadOnly": {
+    "context": "Calendar event",
+    "description": "Why an event could not be saved or deleted: the calendar takes no changes, like a holiday calendar.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "calendar": {
+        "type": "String",
+        "description": "A calendar's name like Sam."
+      }
+    }
+  },
+  "calendarEditGone": "The event is no longer on {calendar}.",
+  "@calendarEditGone": {
+    "context": "Calendar event",
+    "description": "Why an event could not be saved or deleted: it was changed or deleted somewhere else meanwhile.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "calendar": {
+        "type": "String",
+        "description": "A calendar's name like Sam."
+      }
+    }
+  },
+  "calendarEditNotAllowed": "The kiosk's Home Assistant user may not change {calendar}.",
+  "@calendarEditNotAllowed": {
+    "context": "Calendar event",
+    "description": "Why an event could not be saved or deleted: the Home Assistant user the kiosk signs in as has no permission. Keep Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "calendar": {
+        "type": "String",
+        "description": "A calendar's name like Sam."
+      }
+    }
+  },
+  "calendarDeleteTitle": "Delete {title}?",
+  "@calendarDeleteTitle": {
+    "context": "Calendar event",
+    "description": "Title of the dialog that confirms deleting an event.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "description": "The event's title like Soccer practice."
+      }
+    }
+  },
+  "calendarDeleteShared": "It comes off every calendar it is on: {names}.",
+  "@calendarDeleteShared": {
+    "context": "Calendar event",
+    "description": "Line in the delete dialog of an event on several calendars.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "names": {
+        "type": "String",
+        "description": "The calendars' names like Leo and Sam."
+      }
+    }
+  },
+  "calendarSaveRepeatTitle": "Save changes to {title}?",
+  "@calendarSaveRepeatTitle": {
+    "context": "Calendar event form",
+    "description": "Title of the dialog that asks which days of a repeating event a change covers.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "description": "The event's title like Soccer practice."
+      }
+    }
+  },
+  "calendarSaveRepeatFollowing": "The new repeat starts on this day.",
+  "@calendarSaveRepeatFollowing": {
+    "context": "Calendar event form",
+    "description": "Line in that dialog when the Repeat choice changed: it can only apply from this day on.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarScopeThis": "This event",
+  "@calendarScopeThis": {
+    "context": "Calendar event",
+    "description": "Choice in the save and delete dialogs of a repeating event: only this day.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarScopeFollowing": "This and following events",
+  "@calendarScopeFollowing": {
+    "context": "Calendar event",
+    "description": "Choice in the save and delete dialogs of a repeating event: this day and every one after it.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarScopeAll": "All events",
+  "@calendarScopeAll": {
+    "context": "Calendar event",
+    "description": "Choice in the delete dialog of a repeating event: the whole series.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    }
+  },
+  "calendarEditingSection": "Editing",
+  "@calendarEditingSection": {
+    "context": "Settings > Calendar",
+    "description": "Heading of the settings that let people add, change and delete events on the kiosk's screen.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar"
+      ],
+      "remoteAdmin": [
+        "Calendar"
+      ]
+    }
   }
 }

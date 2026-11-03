@@ -141,6 +141,7 @@ function browserPageText(english) {
 // row search finds, Settings > Calendar on the device (settingsPageText in
 // messages.dart).
 const CALENDAR_PAGE_TEXT = {
+  'Editing': 'calendarEditingSection',
   'Add a calendar': 'calendarAdd',
   'Add the Home Assistant calendars to show in Settings > Calendar.': 'calendarEmptyHint',
   'Voice Calendar': 'calendarVoiceSection',

@@ -2,15 +2,19 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../app_container.dart';
 import '../l10n/generated/ui_strings.dart';
 import '../l10n/messages.dart';
+import '../managers/calendar/calendar_edits.dart';
 import '../managers/calendar/calendar_manager.dart';
 import '../managers/calendar/calendar_model.dart';
+import '../core/events.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'calendar_editor.dart';
 import 'kit.dart';
 import 'theme.dart';
 import 'weather_readings.dart' show weatherConditionIcon;
@@ -18,7 +22,8 @@ import 'weather_readings.dart' show weatherConditionIcon;
 /// The family calendar as a full screen overlay, the Skylight's look over
 /// Home Assistant's calendars: Day, Week, Month and Schedule, one color per
 /// person, an event on several calendars split on a diagonal between their
-/// colors. Read only. Shown through [CalendarManager.visible], so the kiosk
+/// colors. Read only unless Settings > Calendar > Editing allows adding,
+/// changing or deleting events. Shown through [CalendarManager.visible], so the kiosk
 /// menu, the Up next widget, the remote admin and Settings open the same
 /// one.
 class CalendarOverlay extends StatelessWidget {
@@ -369,6 +374,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
   late DateTime _anchor;
   Timer? _idle;
   Timer? _midnight;
+  StreamSubscription<SettingChanged>? _settingsSub;
+  NavigatorState? _navigator;
+
+  /// The event dialogs and forms open over the calendar.
+  int _dialogs = 0;
+
+  /// Their touches are being reported ([_hearDialogs]).
+  bool _hearing = false;
 
   @override
   void initState() {
@@ -377,6 +390,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _armIdle();
     _armMidnight();
     cal.calendars.addListener(_watch);
+    _settingsSub = c.bus.on<SettingChanged>().listen((e) {
+      if ((e.key == defs.calendarAllowEdit.key ||
+              e.key == defs.calendarAllowDelete.key) &&
+          mounted) {
+        setState(() {});
+      }
+    });
     if (widget.screensaver) {
       cal.screensaverShown.value = true;
     } else {
@@ -410,6 +430,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _navigator = Navigator.of(context);
     _watch();
   }
 
@@ -417,6 +438,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void dispose() {
     _idle?.cancel();
     _midnight?.cancel();
+    _settingsSub?.cancel();
+    // Idle or the screensaver closed the calendar under an open event or
+    // form: take those down with it.
+    final navigator = _navigator;
+    _hearDialogs(false);
+    if (_dialogs > 0 && navigator != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigator.mounted) navigator.popUntil((route) => route.isFirst);
+      });
+    }
     cal.calendars.removeListener(_watch);
     if (widget.screensaver) {
       cal.screensaverShown.value = false;
@@ -521,7 +552,76 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  void _show(CalendarEvent event) => showCalendarEvent(context, c, event);
+  /// While an event or a form is open the calendar does not close for idle:
+  /// typing happens there, out of this screen's reach.
+  Future<void> _hold(Future<void> Function() open) async {
+    if (_dialogs++ == 0) _hearDialogs(true);
+    _idle?.cancel();
+    try {
+      await open();
+    } finally {
+      if (--_dialogs == 0) {
+        _hearDialogs(false);
+        if (mounted) _armIdle();
+      }
+    }
+  }
+
+  /// The dialogs, and the date, time and Repeat pickers they open, are
+  /// routes above the kiosk screen, out of reach of the Listener that
+  /// reports its touches. Report theirs the same way while one is up, so
+  /// the screensaver's idle clock (and the dashboard's return home) hear
+  /// someone at work. Not as the screensaver: a touch report would end it.
+  void _hearDialogs(bool on) {
+    if (widget.screensaver || on == _hearing) return;
+    _hearing = on;
+    final router = GestureBinding.instance.pointerRouter;
+    if (on) {
+      router.addGlobalRoute(_reportTouch);
+    } else {
+      router.removeGlobalRoute(_reportTouch);
+    }
+  }
+
+  void _reportTouch(PointerEvent event) {
+    if (event is PointerDownEvent) {
+      c.bus.publish(const ActivityDetected(source: 'touch'));
+    }
+  }
+
+  void _show(CalendarEvent event) => unawaited(
+    _hold(
+      () => showCalendarEvent(context, c, event, changes: !widget.screensaver),
+    ),
+  );
+
+  /// New event is on: Settings allows it, this is not the screensaver and a
+  /// calendar takes new events.
+  bool get _canAdd =>
+      !widget.screensaver &&
+      calendarCanEdit(c) &&
+      calendarWritable(cal).isNotEmpty;
+
+  /// New event at [start], or at the next hour on today and 9 on another
+  /// day, on [calendar] or the first one that takes events.
+  void _newEvent({DateTime? start, String? calendar}) {
+    final now = DateTime.now();
+    final at =
+        start ??
+        (_anchor == dateOnly(now)
+            ? DateTime(now.year, now.month, now.day, now.hour + 1)
+            : DateTime(_anchor.year, _anchor.month, _anchor.day, 9));
+    unawaited(
+      _hold(
+        () => showCalendarEditor(
+          context,
+          c,
+          start: at,
+          calendar: calendar,
+        ).then((_) {}),
+      ),
+    );
+  }
 
   /// The month, or the day in the Day view, long and short. A phone's
   /// header shares its row with the arrows and Today, so it takes the
@@ -574,6 +674,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 cal.snapshot,
                 cal.forecast,
                 cal.pictures,
+                cal.features,
                 cal.highlight,
               ]),
               builder: (context, _) {
@@ -605,6 +706,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         child: _TopChips(
                           container: c,
                           named: layout == CalendarLayout.roomy,
+                        ),
+                      ),
+                    // A phone's header has no room left: New event waits at
+                    // the bottom right, under the thumb.
+                    if (narrow && _canAdd)
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: FloatingActionButton.extended(
+                          onPressed: _newEvent,
+                          icon: const Icon(Icons.add),
+                          label: Text(s.calendarNewEvent),
                         ),
                       ),
                     Positioned(
@@ -665,6 +778,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             onPrevious: () => _go(-1),
             onNext: () => _go(1),
             onToday: _today,
+            onNew: _canAdd && !narrow ? _newEvent : null,
           ),
           if (narrow) ...[
             SizedBox(height: gap),
@@ -696,6 +810,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       onEvent: _show,
       onDay: _openDay,
       onSelect: _select,
+      onNew: _canAdd
+          ? (start, calendar) => _newEvent(start: start, calendar: calendar)
+          : null,
       highlight: c.calendar.highlight.value,
     );
     if (narrow) {
@@ -727,6 +844,7 @@ class _ViewArgs {
     required this.onEvent,
     required this.onDay,
     required this.onSelect,
+    this.onNew,
     this.highlight,
   });
 
@@ -762,6 +880,10 @@ class _ViewArgs {
   /// Pick that day on a phone's strip or month.
   final ValueChanged<DateTime> onSelect;
 
+  /// New event at that time on that calendar, or null when this kiosk
+  /// takes no new events.
+  final void Function(DateTime start, String? calendar)? onNew;
+
   CalendarManager get cal => container.calendar;
   DateTime get today => dateOnly(DateTime.now());
   DayForecast? forecast(DateTime day) => cal.forecast.value[dateOnly(day)];
@@ -778,6 +900,7 @@ class _Header extends StatelessWidget {
     required this.onPrevious,
     required this.onNext,
     required this.onToday,
+    this.onNew,
   });
 
   final ({String long, String short}) title;
@@ -787,6 +910,10 @@ class _Header extends StatelessWidget {
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onToday;
+
+  /// New event after the switcher: a filled pill on a tablet, a filled
+  /// disc on a short panel. Null when this kiosk takes no new events.
+  final VoidCallback? onNew;
 
   @override
   Widget build(BuildContext context) {
@@ -868,11 +995,27 @@ class _Header extends StatelessWidget {
                 (style?.padding?.resolve(const {})?.horizontal ?? 48) +
                 2,
           );
+          final filled = theme.filledButtonTheme.style;
+          // The pill: its padding, the icon and the gap after it, the label.
+          final add = onNew == null
+              ? 0.0
+              : 12 +
+                    (roomy
+                        ? (filled?.padding?.resolve(const {})?.horizontal ??
+                                  48) +
+                              26 +
+                              measure(
+                                s.calendarNewEvent,
+                                filled?.textStyle?.resolve(const {}) ??
+                                    theme.textTheme.labelLarge,
+                              )
+                        : 48);
+          final width = box.maxWidth - add;
           final leftMin =
               measure(title.short, titleStyle) + gap + arrows + 48 + 12;
           final switcherMax = math.max(
             160.0,
-            math.min(box.maxWidth * .5, box.maxWidth - leftMin),
+            math.min(width * .5, width - leftMin),
           );
           final left = Expanded(
             child: LayoutBuilder(
@@ -917,6 +1060,21 @@ class _Header extends StatelessWidget {
                     scroll: true,
                   ),
                 ),
+              ],
+              if (onNew != null) ...[
+                const SizedBox(width: 12),
+                if (roomy)
+                  FilledButton.icon(
+                    onPressed: onNew,
+                    icon: const Icon(Icons.add, size: 20),
+                    label: Text(s.calendarNewEvent, maxLines: 1),
+                  )
+                else
+                  IconButton.filled(
+                    onPressed: onNew,
+                    tooltip: s.calendarNewEvent,
+                    icon: const Icon(Icons.add),
+                  ),
               ],
             ],
           );
@@ -1068,7 +1226,7 @@ class _TopChips extends StatelessWidget {
         if (named)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _Chip(
+            child: CalendarChip(
               label: source.name,
               on: !hidden.contains(source.entity),
               tint: paint.soft(source.entity),
@@ -1117,8 +1275,11 @@ class _TopChips extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({
+/// One calendar's chip: its avatar and name, in its tint while on and
+/// outlined while off. The top bar's and the event form's.
+class CalendarChip extends StatelessWidget {
+  const CalendarChip({
+    super.key,
     required this.label,
     required this.on,
     required this.tint,
@@ -1948,6 +2109,9 @@ class _DayLanes extends StatelessWidget {
             gap: gap,
             build: (e, height) =>
                 _TimelineTile(args: args, event: e, day: day, height: height),
+            onSlot: args.onNew == null
+                ? null
+                : (lane, start) => args.onNew!(start, lanes[lane].entity),
           ),
         ),
       ],
@@ -1969,6 +2133,7 @@ class _Timeline extends StatefulWidget {
     required this.lanes,
     required this.gap,
     required this.build,
+    this.onSlot,
   });
 
   final DateTime day;
@@ -1983,6 +2148,10 @@ class _Timeline extends StatefulWidget {
   final double gap;
   final Widget Function(CalendarEvent event, double height) build;
 
+  /// A tap on an empty hour drops a slot there, and a tap on the slot calls
+  /// this with its lane and hour. Null when this kiosk takes no new events.
+  final void Function(int lane, DateTime start)? onSlot;
+
   @override
   State<_Timeline> createState() => _TimelineState();
 }
@@ -1990,6 +2159,9 @@ class _Timeline extends StatefulWidget {
 class _TimelineState extends State<_Timeline> {
   late final ScrollController _scroll;
   Timer? _tick;
+
+  /// The slot a tap on an empty hour dropped.
+  ({int lane, int hour})? _slot;
 
   @override
   void initState() {
@@ -2070,7 +2242,7 @@ class _TimelineState extends State<_Timeline> {
                   children: [
                     for (var i = 0; i < widget.lanes.length; i++) ...[
                       if (i > 0) SizedBox(width: widget.gap),
-                      Expanded(child: _lane(widget.lanes[i])),
+                      Expanded(child: _lane(i)),
                     ],
                   ],
                 ),
@@ -2105,12 +2277,27 @@ class _TimelineState extends State<_Timeline> {
     );
   }
 
-  Widget _lane(List<CalendarEvent> events) => LayoutBuilder(
+  Widget _lane(int lane) => LayoutBuilder(
     builder: (context, box) {
       final hh = widget.hourHeight;
+      final onSlot = widget.onSlot;
+      final slot = _slot;
       return Stack(
         children: [
-          for (final placed in layoutColumns(events))
+          // Under the events, so a tap on one still opens it.
+          if (onSlot != null)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: (d) => setState(
+                  () => _slot = (
+                    lane: lane,
+                    hour: (d.localPosition.dy / hh).floor().clamp(0, 23),
+                  ),
+                ),
+              ),
+            ),
+          for (final placed in layoutColumns(widget.lanes[lane]))
             () {
               final top = _hourOf(placed.event.start) * hh + 1;
               final bottom = _hourOf(placed.event.end) * hh - 2;
@@ -2124,6 +2311,21 @@ class _TimelineState extends State<_Timeline> {
                 child: widget.build(placed.event, height),
               );
             }(),
+          if (onSlot != null && slot != null && slot.lane == lane)
+            Positioned(
+              top: slot.hour * hh + 1,
+              left: 0,
+              right: 0,
+              height: hh - 3,
+              child: CalendarSlot(
+                radius: hh < 40 ? 9 : 12,
+                onTap: () {
+                  setState(() => _slot = null);
+                  final d = widget.day;
+                  onSlot(lane, DateTime(d.year, d.month, d.day, slot.hour));
+                },
+              ),
+            ),
         ],
       );
     },
@@ -2762,7 +2964,10 @@ class _ScheduleList extends StatelessWidget {
     final short = args.short;
     return EdgeFade(
       child: ListView.separated(
-        padding: const EdgeInsets.only(top: 4, bottom: 24),
+        padding: EdgeInsets.only(
+          top: 4,
+          bottom: phone && args.onNew != null ? 88 : 24,
+        ),
         itemCount: groups.length,
         separatorBuilder: (_, _) => SizedBox(height: short ? 14 : 22),
         itemBuilder: (context, i) {
@@ -3008,7 +3213,8 @@ class _PhoneDayList extends StatelessWidget {
     }
     return EdgeFade(
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 24),
+        // Room to scroll the last row out from under New event.
+        padding: EdgeInsets.only(bottom: args.onNew == null ? 24 : 88),
         children: [
           for (final e in events) ...[
             _AgendaRow(args: args, event: e, day: args.anchor, phone: true),
@@ -3185,6 +3391,9 @@ class _PhoneDay extends StatelessWidget {
             gap: 0,
             build: (e, height) =>
                 _TimelineTile(args: args, event: e, day: day, height: height),
+            onSlot: args.onNew == null
+                ? null
+                : (_, start) => args.onNew!(start, null),
           ),
         ),
       ],
@@ -3308,31 +3517,76 @@ class _PhoneMonthDay extends StatelessWidget {
 
 // ── Event details ─────────────────────────────────────────────────────────
 
-/// The event's details, read only: who it is for, the title, when, how it
-/// repeats, where and the notes. One Done button.
+/// How an event repeats, in words, from its RRULE. [instance] is a day of
+/// a series whose rule did not come along.
+String? calendarRepeatText(
+  UiStrings s,
+  String? rrule, {
+  bool instance = false,
+}) => switch (rruleFrequency(rrule)) {
+  null => instance ? s.calendarRepeats : null,
+  'DAILY' => s.calendarRepeatsDaily,
+  'WEEKLY' => s.calendarRepeatsWeekly,
+  'MONTHLY' => s.calendarRepeatsMonthly,
+  'YEARLY' => s.calendarRepeatsYearly,
+  _ => s.calendarRepeats,
+};
+
+/// The event's details: who it is for, the title, when, how it repeats,
+/// where and the notes, then Done. With [changes] (not on the screensaver)
+/// and Settings > Calendar > Editing allowing it, Delete and Edit too. Edit
+/// opens the event form, and a cancelled form comes back here.
 Future<void> showCalendarEvent(
   BuildContext context,
   AppContainer container,
-  CalendarEvent event,
-) => showDialog<void>(
-  context: context,
-  builder: (context) => _EventDialog(container: container, event: event),
-);
+  CalendarEvent event, {
+  bool changes = false,
+}) async {
+  final cal = container.calendar;
+  // The whole event, hidden calendars and all: a change goes to each copy.
+  final full = cal.snapshot.value.events.firstWhere(
+    (e) => e.key == event.key,
+    orElse: () => event,
+  );
+  bool allows(int feature) =>
+      full.calendars.any((id) => cal.calendarAllows(id, feature));
+  final action = await showDialog<String>(
+    context: context,
+    builder: (context) => _EventDialog(
+      container: container,
+      event: event,
+      full: full,
+      canEdit: changes && calendarCanEdit(container) && allows(calendarUpdates),
+      canDelete:
+          changes && calendarCanDelete(container) && allows(calendarDeletes),
+    ),
+  );
+  if (action != 'edit' || !context.mounted) return;
+  final saved = await showCalendarEditor(context, container, event: full);
+  if (!saved && context.mounted) {
+    await showCalendarEvent(context, container, event, changes: changes);
+  }
+}
 
 class _EventDialog extends StatelessWidget {
-  const _EventDialog({required this.container, required this.event});
+  const _EventDialog({
+    required this.container,
+    required this.event,
+    required this.full,
+    this.canEdit = false,
+    this.canDelete = false,
+  });
 
   final AppContainer container;
-  final CalendarEvent event;
 
-  String? _repeat(UiStrings s) => switch (rruleFrequency(event.rrule)) {
-    null => event.recurrenceId == null ? null : s.calendarRepeats,
-    'DAILY' => s.calendarRepeatsDaily,
-    'WEEKLY' => s.calendarRepeatsWeekly,
-    'MONTHLY' => s.calendarRepeatsMonthly,
-    'YEARLY' => s.calendarRepeatsYearly,
-    _ => s.calendarRepeats,
-  };
+  /// The event as drawn, and [full] with every calendar it is on.
+  final CalendarEvent event;
+  final CalendarEvent full;
+  final bool canEdit;
+  final bool canDelete;
+
+  String? _repeat(UiStrings s) =>
+      calendarRepeatText(s, event.rrule, instance: event.recurrenceId != null);
 
   @override
   Widget build(BuildContext context) {
@@ -3466,12 +3720,49 @@ class _EventDialog extends StatelessWidget {
               const SizedBox(height: 8),
               Flexible(child: SingleChildScrollView(child: body)),
               const SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(s.calendarDone),
-                ),
+              // Delete on the left, Edit and Done on the right, and Delete
+              // on a line of its own when a narrow dialog or long labels
+              // leave no room for all three.
+              Wrap(
+                alignment: canDelete
+                    ? WrapAlignment.spaceBetween
+                    : WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                runSpacing: 8,
+                children: [
+                  if (canDelete)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: scheme.error,
+                      ),
+                      onPressed: () async {
+                        final gone = await confirmCalendarDelete(
+                          context,
+                          container,
+                          full,
+                        );
+                        if (gone && context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: Text(s.commonDelete),
+                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 8,
+                    children: [
+                      if (canEdit)
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop('edit'),
+                          child: Text(s.commonEdit),
+                        ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(s.calendarDone),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

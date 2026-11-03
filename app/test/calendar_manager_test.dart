@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/calendar/calendar_edits.dart';
 import 'package:kiosk_satellite/managers/calendar/calendar_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
@@ -21,6 +22,9 @@ class _FakeSocket extends HaSocket {
   final listeners = <String, void Function(Map<String, Object?>)>{};
   final events = <String, List<Map<String, Object?>>>{};
   final requests = <Map<String, Object?>>[];
+
+  /// Each calendar's supported_features, as its state carries them.
+  final features = <String, int>{};
   int ended = 0;
 
   @override
@@ -37,6 +41,22 @@ class _FakeSocket extends HaSocket {
   }) async {
     if (command['type'] == 'calendar/event/subscribe' && !live) {
       throw StateError('Unknown command.');
+    }
+    // The people's pictures and the calendars' features: the states
+    // right after the result, as Home Assistant sends them.
+    if (command['type'] == 'subscribe_entities') {
+      final ids = (command['entity_ids'] as List).cast<String>();
+      Future.microtask(
+        () => onEvent({
+          'a': {
+            for (final id in ids)
+              id: {
+                'a': {'supported_features': ?features[id]},
+              },
+          },
+        }),
+      );
+      return () async {};
     }
     subscriptions.add(command);
     final entity = '${command['entity_id']}';
@@ -127,6 +147,21 @@ void main() {
     await settle();
     expect(socket.subscriptions, isEmpty);
     expect(calendar.snapshot.value.link, CalendarLink.idle);
+  });
+
+  test('each calendar\'s features come with the people\'s pictures', () async {
+    await build();
+    socket.features['calendar.leo'] = calendarCreates | calendarUpdates;
+    socket.features['calendar.sam'] = 0;
+    final holder = Object();
+    calendar.watch(holder, DateTime(2026, 10, 18), DateTime(2026, 10, 25));
+    await settle();
+    expect(calendar.calendarAllows('calendar.leo', calendarCreates), isTrue);
+    expect(calendar.calendarAllows('calendar.leo', calendarDeletes), isFalse);
+    expect(calendar.calendarAllows('calendar.sam', calendarCreates), isFalse);
+    // One not read yet is left to Home Assistant to refuse.
+    expect(calendar.calendarAllows('calendar.maya', calendarCreates), isTrue);
+    calendar.unwatch(holder);
   });
 
   test('each calendar that is on gets a subscription for the span', () async {

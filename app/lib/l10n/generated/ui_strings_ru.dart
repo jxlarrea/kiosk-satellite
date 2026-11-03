@@ -541,6 +541,137 @@ class UiStringsRu extends UiStrings {
       'Требуются Blueprint календаря Kiosk Satellite и диалоговый LLM-агент в Home Assistant.';
 
   @override
+  String get calendarNewEvent => 'Новое событие';
+
+  @override
+  String get calendarEditEvent => 'Изменить событие';
+
+  @override
+  String get calendarFieldTitle => 'Название';
+
+  @override
+  String get calendarFieldTitleHint => 'Добавьте название';
+
+  @override
+  String get calendarFieldCalendars => 'Календари';
+
+  @override
+  String get calendarFieldSharedHint =>
+      'Показывается один раз, разделено между их цветами.';
+
+  @override
+  String get calendarFieldStarts => 'Начало';
+
+  @override
+  String get calendarFieldEnds => 'Конец';
+
+  @override
+  String get calendarFieldStartTime => 'Время начала';
+
+  @override
+  String get calendarFieldEndTime => 'Время окончания';
+
+  @override
+  String get calendarFieldEndsBeforeStart => 'Конец раньше начала.';
+
+  @override
+  String get calendarFieldRepeat => 'Повтор';
+
+  @override
+  String get calendarRepeatNever => 'Не повторяется';
+
+  @override
+  String get calendarRepeatWeekdays => 'По будням';
+
+  @override
+  String calendarRepeatWeeklyOn(String weekday) {
+    return 'Каждую неделю ($weekday)';
+  }
+
+  @override
+  String calendarRepeatMonthlyOn(String day) {
+    return 'Каждый месяц $day числа';
+  }
+
+  @override
+  String calendarRepeatYearlyOn(String date) {
+    return 'Каждый год $date';
+  }
+
+  @override
+  String get calendarFieldLocation => 'Место';
+
+  @override
+  String get calendarFieldLocationHint => 'Добавьте место';
+
+  @override
+  String get calendarFieldNotes => 'Заметки';
+
+  @override
+  String get calendarFieldNotesHint => 'Добавьте заметки';
+
+  @override
+  String get calendarEventAdded => 'Событие добавлено';
+
+  @override
+  String get calendarEventSaved => 'Изменения сохранены';
+
+  @override
+  String get calendarEventDeleted => 'Событие удалено';
+
+  @override
+  String get calendarSaveFailed => 'Не удалось сохранить событие';
+
+  @override
+  String get calendarDeleteFailed => 'Не удалось удалить событие';
+
+  @override
+  String calendarEditReadOnly(String calendar) {
+    return '$calendar только для чтения.';
+  }
+
+  @override
+  String calendarEditGone(String calendar) {
+    return 'События больше нет в $calendar.';
+  }
+
+  @override
+  String calendarEditNotAllowed(String calendar) {
+    return 'Пользователю Home Assistant этого киоска нельзя изменять $calendar.';
+  }
+
+  @override
+  String calendarDeleteTitle(String title) {
+    return 'Удалить $title?';
+  }
+
+  @override
+  String calendarDeleteShared(String names) {
+    return 'Событие будет удалено из всех календарей, где оно есть: $names.';
+  }
+
+  @override
+  String calendarSaveRepeatTitle(String title) {
+    return 'Сохранить изменения в $title?';
+  }
+
+  @override
+  String get calendarSaveRepeatFollowing =>
+      'Новый повтор начинается с этого дня.';
+
+  @override
+  String get calendarScopeThis => 'Это событие';
+
+  @override
+  String get calendarScopeFollowing => 'Это и следующие события';
+
+  @override
+  String get calendarScopeAll => 'Все события';
+
+  @override
+  String get calendarEditingSection => 'Редактирование';
+
+  @override
   String get cameraViewerTitle => 'Вид камер';
 
   @override
@@ -4971,6 +5102,21 @@ class UiStringsRu extends UiStrings {
   @override
   String get settingCalendarWeatherEntityDescription =>
       'Добавляет прогноз к каждому дню.';
+
+  @override
+  String get settingCalendarAllowEditTitle =>
+      'Разрешить добавлять и изменять события';
+
+  @override
+  String get settingCalendarAllowEditDescription =>
+      'Добавляет в календарь кнопки Новое событие и Изменить.';
+
+  @override
+  String get settingCalendarAllowDeleteTitle => 'Разрешить удалять события';
+
+  @override
+  String get settingCalendarAllowDeleteDescription =>
+      'Добавляет к каждому событию кнопку Удалить.';
 
   @override
   String get settingCalendarIdleCloseMinutesTitle =>
