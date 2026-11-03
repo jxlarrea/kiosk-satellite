@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Plugin screensavers can take taps.** A native plugin screensaver published with touch gets single taps, so it can have its own buttons, and a double tap closes it like **Double tap to dismiss** on the Home Assistant Dashboard screensaver. Motion, the wake word and the back button still close it (#1282).
+
 ## v2026.11.3 - 2026-11-03
 
 ### Changed

@@ -230,9 +230,17 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
               fit: StackFit.expand,
               children: [
                 switch (view) {
+                  // A touch renderer keeps its taps (issue #1282) and the
+                  // kiosk screen's raw pointer reports run the manager's
+                  // double-tap chain, as on the dashboard.
                   final mode when defs.isPluginScreensaver(mode) =>
-                    _Dismissable(
-                      container: container,
+                    ValueListenableBuilder(
+                      valueListenable: container.plugins.screensavers,
+                      builder: (context, _, child) => _Dismissable(
+                        container: container,
+                        enabled: !container.plugins.screensaverTouch(mode),
+                        child: child!,
+                      ),
                       child: UiScaleExempt(
                         child: PluginScreensaver(
                           container: container,
@@ -755,10 +763,18 @@ class _SlideEdges extends StatelessWidget {
 /// Tap anywhere to wake. Used by the native views; the WebView reports its own
 /// taps over the JS bridge, since it swallows Flutter gestures.
 class _Dismissable extends StatelessWidget {
-  const _Dismissable({required this.container, required this.child});
+  const _Dismissable({
+    required this.container,
+    required this.child,
+    this.enabled = true,
+  });
 
   final AppContainer container;
   final Widget child;
+
+  /// Off while the child keeps its own taps. It stays in the tree so the
+  /// child is not rebuilt when that changes.
+  final bool enabled;
 
   /// 'tap', not 'touch': the kiosk screen's raw pointer Listener has
   /// already reported this finger on its way down, and this fires as it
@@ -767,7 +783,7 @@ class _Dismissable extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GestureDetector(
     behavior: HitTestBehavior.opaque,
-    onTap: () => container.screensaver.notifyActivity('tap'),
+    onTap: enabled ? () => container.screensaver.notifyActivity('tap') : null,
     child: child,
   );
 }

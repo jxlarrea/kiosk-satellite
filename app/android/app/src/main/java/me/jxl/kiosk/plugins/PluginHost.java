@@ -90,6 +90,11 @@ public interface PluginHost {
      * Touches stay with KS. onDestroy means the screensaver is gone, so stop updating the view.
      */
     default void publishScreensaverView(String key, String title, OverlayFactory factory) { throw new UnsupportedOperationException("Native screensavers are unavailable"); }
+    /**
+     * SDK 1, screensaver. As above, but with touch true single taps reach the view and a double tap closes the
+     * screensaver. Draw your own hint, such as "Double tap to close". Older KS releases throw.
+     */
+    default void publishScreensaverView(String key, String title, OverlayFactory factory, boolean touch) { throw new UnsupportedOperationException("Touch screensavers are unavailable"); }
     /** SDK 1, screensaver. Remove a renderer. KS retains the session with a black background. */
     default void removeScreensaver(String key) { throw new UnsupportedOperationException("Screensavers are unavailable"); }
     /** Publish a bounded chart snapshot. SDK 1. */

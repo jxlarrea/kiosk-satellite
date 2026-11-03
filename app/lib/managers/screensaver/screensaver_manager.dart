@@ -192,6 +192,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   static double? _noLightReading() => null;
 
+  /// Whether the plugin renderer behind a mode takes taps (issue #1282).
+  /// Wired at the composition root, like the settings' plugin lookups.
+  bool Function(String mode) pluginTouch = (_) => false;
+
   final SettingsManager _settings;
 
   @override
@@ -496,14 +500,18 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   /// Whether dismissal currently takes two taps: the website and Home
   /// Assistant Dashboard screensavers offer the option (their pages are
-  /// the only things a single tap could talk to, discussion #1069), and
-  /// never while the Sendspin now-playing view has taken the slot over.
-  /// That view is ours, not a page.
+  /// the only things a single tap could talk to, discussion #1069), a
+  /// plugin renderer published with touch always takes it (issue #1282),
+  /// and never while the Sendspin now-playing view has taken the slot
+  /// over. That view is ours, not a page.
   bool get _doubleTapToDismiss =>
       (!_nowPlayingTakeover &&
           switch (activeView.value) {
             'website' => _settings.get(defs.screensaverWebsiteDoubleTap),
             'dashboard' => _settings.get(defs.screensaverDashboardDoubleTap),
+            final mode? when defs.isPluginScreensaver(mode) => pluginTouch(
+              mode,
+            ),
             _ => false,
           }) ||
       (_nowPlayingHoldsTouch &&

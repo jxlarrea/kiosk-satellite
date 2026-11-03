@@ -207,6 +207,24 @@ void main() {
     expect(calls.where((c) => c.method == 'create').length, created + 1);
     expect(calls.where((c) => c.method == 'dispose'), isNotEmpty);
 
+    // Published with touch (issue #1282), taps reach the view.
+    expect(c.plugins.screensaverTouch(mode), isFalse);
+    c.plugins.screensavers.value = {
+      mode: {...view(5), 'touch': true},
+    };
+    await tester.pump();
+    await tester.pump();
+    expect(c.plugins.screensaverTouch(mode), isTrue);
+    expect(
+      find.ancestor(
+        of: find.byType(AndroidView),
+        matching: find.byWidgetPredicate(
+          (w) => w is IgnorePointer && w.ignoring,
+        ),
+      ),
+      findsNothing,
+    );
+
     // Removed, the screensaver goes black and the view is disposed, which
     // tells the plugin to stop drawing.
     final disposed = calls.where((c) => c.method == 'dispose').length;

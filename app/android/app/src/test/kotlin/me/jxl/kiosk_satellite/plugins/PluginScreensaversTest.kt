@@ -47,12 +47,14 @@ class PluginScreensaversTest {
         renderers.publishView("monitor", "Monitor", "first")
         val first = renderers.snapshot().single()
         assertEquals(true, first["view"])
+        assertEquals(false, first["touch"])
         assertEquals("Monitor", first["title"])
         assertFalse(first.containsKey("html"))
         val generation = first["generation"] as Int
         assertEquals("first", renderers.view("monitor", generation))
         // A republication is a new generation, and the old one is gone.
-        renderers.publishView("monitor", "Monitor", "second")
+        renderers.publishView("monitor", "Monitor", "second", touch = true)
+        assertEquals(true, renderers.snapshot().single()["touch"])
         val next = renderers.snapshot().single()["generation"] as Int
         assertNotEquals(generation, next)
         assertNull(renderers.view("monitor", generation))

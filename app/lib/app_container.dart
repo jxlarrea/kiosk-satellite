@@ -232,6 +232,7 @@ class AppContainer {
     // A snapshot binding the camera mid-scan would take it from the scanner.
     deviceCamera.scannerActive = () => motion.scannerHeld;
     settings.pluginScreensavers = () => plugins.screensaverOptions;
+    screensaver.pluginTouch = plugins.screensaverTouch;
     settings.pluginVoiceSkins = () => plugins.voiceSkinOptions;
     remote = RemoteManager(bus, commands, log, settings);
     fleet = FleetManager(bus, commands, log, settings);

@@ -467,9 +467,11 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 screensavers.remove(key)
                 notifyScreensavers()
             }
-            override fun publishScreensaverView(key: String, title: String, factory: OverlayFactory) {
+            override fun publishScreensaverView(key: String, title: String, factory: OverlayFactory) =
+                publishScreensaverView(key, title, factory, false)
+            override fun publishScreensaverView(key: String, title: String, factory: OverlayFactory, touch: Boolean) {
                 check(alive.get() && "screensaver" in manifest.capabilities) { "Screensaver capability is required" }
-                screensavers.publishView(key, title, factory)
+                screensavers.publishView(key, title, factory, touch)
                 notifyScreensavers()
             }
             override fun publishSeries(key: String, chart: Map<String, Any>) {

@@ -49,13 +49,14 @@ internal class PluginScreensavers<F : Any>(private val directory: File? = null, 
         items[key] = mapOf("key" to key, "title" to title, "entry" to entry, "dataJson" to json)
     }
 
-    @Synchronized fun publishView(key: String, title: String, factory: F) {
+    /** With [touch], single taps reach the view and the kiosk closes the screensaver on a double tap. */
+    @Synchronized fun publishView(key: String, title: String, factory: F, touch: Boolean = false) {
         require(key.matches(Regex("[a-z][a-z0-9_]{0,39}"))) { "Invalid screensaver key" }
         require(title.isNotBlank() && title.length <= 80) { "Invalid screensaver title" }
         require(items.containsKey(key) || items.size < 4) { "At most four screensavers are supported" }
         budget()
         factories[key] = factory
-        items[key] = mapOf("key" to key, "title" to title, "view" to true, "generation" to ++generation)
+        items[key] = mapOf("key" to key, "title" to title, "view" to true, "touch" to touch, "generation" to ++generation)
     }
 
     /** The factory of a native renderer, only while it is still the generation Flutter asked for. */

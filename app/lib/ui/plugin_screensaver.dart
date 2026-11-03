@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -439,9 +441,11 @@ class _DocumentState extends State<_Document> with WidgetsBindingObserver {
 
 /// A native renderer: the plugin's Android view, built through the plugin
 /// overlay platform view, filling the screensaver at the kiosk's theme and
-/// UI scale. Touches stay with KS and it moves with Pixel shift like the
-/// documents. Leaving disposes the platform view, which tells the plugin to
-/// stop drawing.
+/// UI scale. Touches stay with KS unless the plugin published it with
+/// touch (issue #1282): then single taps reach the view and the manager
+/// closes the screensaver on a double tap. It moves with Pixel shift like
+/// the documents. Leaving disposes the platform view, which tells the
+/// plugin to stop drawing.
 class _NativeScreensaver extends StatefulWidget {
   const _NativeScreensaver({
     super.key,
@@ -524,6 +528,7 @@ class _NativeScreensaverState extends State<_NativeScreensaver> {
         child: Transform.translate(
           offset: _offset,
           child: IgnorePointer(
+            ignoring: renderer['touch'] != true,
             child: AndroidView(
               // The density is fixed when the view is built, so a new Scale
               // UI factor builds it again.
@@ -542,6 +547,13 @@ class _NativeScreensaverState extends State<_NativeScreensaver> {
                 'theme': theme,
               },
               creationParamsCodec: const StandardMessageCodec(),
+              // Every touch on a touch renderer is the plugin's, as on
+              // an overlay.
+              gestureRecognizers: {
+                Factory<OneSequenceGestureRecognizer>(
+                  EagerGestureRecognizer.new,
+                ),
+              },
             ),
           ),
         ),

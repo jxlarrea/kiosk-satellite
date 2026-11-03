@@ -296,6 +296,47 @@ void main() {
       expect(saver.activeView.value, isNull);
     });
 
+    // A plugin renderer published with touch (issue #1282): single taps
+    // reach its view and a double tap closes it. Without touch it keeps
+    // the single-tap dismissal every other mode has.
+    const pluginMode = 'plugin:night_light:light';
+    Future<void> buildPlugin({required bool touch}) async {
+      await build(pluginMode);
+      saver.pluginTouch = (mode) => touch && mode == pluginMode;
+      now = DateTime(2026, 11, 3, 21);
+      saver.clock = () => now;
+      await saver.start();
+      await pumpEventQueue();
+      expect(saver.activeView.value, pluginMode);
+    }
+
+    test('a touch plugin renderer takes two taps', () async {
+      await buildPlugin(touch: true);
+      saver.notifyActivity('touch');
+      // The tap's echo from the gesture layer is not a second tap.
+      saver.notifyActivity('tap');
+      await pumpEventQueue();
+      expect(saver.activeView.value, pluginMode);
+      now = now.add(const Duration(milliseconds: 300));
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.activeView.value, isNull);
+    });
+
+    test('a touch plugin renderer still closes on motion', () async {
+      await buildPlugin(touch: true);
+      saver.notifyActivity('motion');
+      await pumpEventQueue();
+      expect(saver.activeView.value, isNull);
+    });
+
+    test('a plugin renderer without touch closes on one tap', () async {
+      await buildPlugin(touch: false);
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.activeView.value, isNull);
+    });
+
     test('the dashboard toggle does not reach the website', () async {
       await build(
         'website',
