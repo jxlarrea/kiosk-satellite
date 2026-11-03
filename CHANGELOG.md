@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Turn off a realtime provider.** Once a provider was set up, nothing could take it back out: Save & Validate refused an empty API key because the provider rejected the connection, so the row kept reading as set up. The provider's dialog now has **Clear**, on the kiosk and in the remote admin. It removes the key and the rest of the provider's settings, the row goes back to **Not configured** and a wake word that used it goes back to its Home Assistant pipeline.
+
 ## v2026.11.4 - 2026-11-03
 
 ### Added

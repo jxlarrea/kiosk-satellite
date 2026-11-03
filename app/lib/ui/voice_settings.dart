@@ -484,7 +484,8 @@ class RealtimeProviderRow extends StatelessWidget {
 /// A provider's settings in a dialog. Save & Validate connects with them
 /// first: a connection the provider takes saves them and closes, a refused
 /// one shows why and keeps the dialog and the stored settings as they
-/// were. Answers true when it saved.
+/// were. Clear puts the provider back to Not configured. Answers true when
+/// it saved or cleared.
 Future<bool> showRealtimeProviderDialog(
   BuildContext context,
   AppContainer container,
@@ -508,6 +509,10 @@ Future<bool> showRealtimeProviderDialog(
   var reasoning = reasoningDef == null ? '' : settings.get(reasoningDef);
   var saving = false;
   String? error;
+  // Clear shows once there is something to clear.
+  final configured =
+      container.voice.realtimeStatus(provider).status !=
+      RealtimeStatus.unconfigured;
 
   Widget picker(
     BuildContext ctx,
@@ -575,6 +580,14 @@ Future<bool> showRealtimeProviderDialog(
               '${data['error'] ?? result.error ?? ''}',
             );
           });
+        }
+
+        Future<void> clear() async {
+          setDialogState(() => saving = true);
+          await container.commands.execute('voiceRealtimeClear', {
+            'provider': provider.id,
+          });
+          if (ctx.mounted) Navigator.pop(ctx, true);
         }
 
         return AlertDialog(
@@ -655,6 +668,14 @@ Future<bool> showRealtimeProviderDialog(
             ),
           ),
           actions: [
+            if (configured) ...[
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: scheme.error),
+                onPressed: saving ? null : clear,
+                child: Text(voiceText(ctx, 'Clear')),
+              ),
+              const SizedBox(width: 24),
+            ],
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(ctx, false),
               child: Text(voiceText(ctx, 'Cancel')),

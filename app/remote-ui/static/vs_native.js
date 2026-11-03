@@ -394,7 +394,8 @@ function dialogField(setting, control) {
    Save & Validate connects with them first: a connection the provider
    takes saves them and closes, a refused one shows why and leaves the
    dialog and the stored settings as they were. The key is write-only, so
-   an empty field keeps the saved one. */
+   an empty field keeps the saved one. Clear puts the provider back to Not
+   configured. */
 function openRealtimeProvider(provider, onSaved) {
   const setting = (name) => (state.settings || [])
     .find((s) => s.key === `voice.realtime_${provider}_${name}`);
@@ -451,8 +452,28 @@ function openRealtimeProvider(provider, onSaved) {
   save.className = 'btn-primary';
   save.textContent = voiceText('Save & Validate');
   save.addEventListener('click', () => form.requestSubmit());
-  shell.foot.append(cancel, save);
-  const controls = [cancel, save, key, model, voice, endpoint, ...(reasoning ? [reasoning] : []),
+  // Clear shows once there is something to clear.
+  const configured = keyDef?.value === '__set__' || `${endpointDef?.value || ''}`.trim() !== '';
+  const clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'btn-text danger';
+  clear.textContent = voiceText('Clear');
+  clear.addEventListener('click', async () => {
+    if (saving) return;
+    saving = true;
+    controls.forEach((c) => { c.disabled = true; });
+    const r = await cmd('voiceRealtimeClear', { provider }).catch((e) => ({ ok: false, error: e?.message }));
+    saving = false;
+    controls.forEach((c) => { c.disabled = false; });
+    if (r?.ok) {
+      shell.close();
+      onSaved();
+      return;
+    }
+    issue.replaceChildren(banner(`${r?.error || ''}`, { error: true }));
+  });
+  shell.foot.append(...(configured ? [clear] : []), cancel, save);
+  const controls = [clear, cancel, save, key, model, voice, endpoint, ...(reasoning ? [reasoning] : []),
     ...switches.map((s) => s.input)];
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
