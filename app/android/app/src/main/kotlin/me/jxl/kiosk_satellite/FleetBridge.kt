@@ -13,8 +13,9 @@ import me.jxl.kiosk_satellite.fleet.FleetDiscovery
  * for the remote admin's kiosk switcher).
  *
  * Methods:
- *  - start {name, port, hostname, fleet}: announces this kiosk and, with
- *    `fleet` on, listens for the others. `hostname` is the label this
+ *  - start {id, name, port, hostname, fleet}: announces this kiosk under
+ *    `id` (the Android ID when empty) and, with `fleet` on, listens for
+ *    the others. `hostname` is the label this
  *    kiosk answers to as `<hostname>.local`, empty for none. Idempotent;
  *    a changed name, port or hostname goes out at once. Whether the mDNS
  *    port could be had comes with the snapshots, once known.
@@ -42,6 +43,7 @@ class FleetBridge(context: Context, messenger: BinaryMessenger) {
             when (call.method) {
                 "start" -> {
                     discovery.start(
+                        id = call.argument<String>("id") ?: "",
                         name = call.argument<String>("name") ?: "",
                         port = call.argument<Int>("port") ?: 2324,
                         hostname = call.argument<String>("hostname") ?: "",

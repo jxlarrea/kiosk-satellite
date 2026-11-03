@@ -12435,6 +12435,22 @@ const fleetDefaultCategories = {
 // its own screen. Everything under `fleet.` describes this device's place
 // in a fleet and never travels itself.
 
+/// The id the other kiosks know this one by: in its announcement, on the
+/// tokens its followers minted and on the leader a follower trusts.
+/// Written once from the Android ID, which a factory reset or a new ROM
+/// changes, so a backup restored with Replace brings the old id back and
+/// the followers keep trusting the restored leader.
+const fleetId = SettingDef<String>(
+  key: 'fleet.id',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Fleet id',
+  description: 'Internal: the id the other kiosks know this one by.',
+  category: 'Fleet',
+  hidden: true,
+  perDevice: true,
+);
+
 const fleetLeader = SettingDef<bool>(
   key: 'fleet.leader',
   type: SettingType.boolean,
@@ -13909,6 +13925,7 @@ const List<SettingDef<Object>> allSettings = [
   analyticsBasic,
   analyticsUsage,
   analyticsDiagnostics,
+  fleetId,
   fleetLeader,
   fleetAutoUpdate,
   fleetProfiles,

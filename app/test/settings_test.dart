@@ -328,6 +328,60 @@ void main() {
       // Assistant should see the same player it always had.
       expect(settings.get(defs.sendspinClientId), 'backup-id');
     });
+
+    Map<String, Object> leaderBackup() => {
+      'config': {
+        'kind': 'kiosk-satellite-config',
+        'version': 1,
+        'settings': {
+          'fleet.id': 'old-leader',
+          'fleet.leader': true,
+          'fleet.followers': '[{"id":"bed"}]',
+        },
+      },
+    };
+
+    test('a replacement restore takes over the leader and its id', () async {
+      await buildWithCommands({
+        'ks.browser.start_url': 'http://ha.local:8123',
+        'ks.fleet.id': 'new-device',
+      });
+      final result = await commands.execute('importConfig', leaderBackup());
+      expect(result.ok, isTrue);
+      // The followers' tokens name the old leader's id (issue #1208).
+      expect(settings.get(defs.fleetId), 'old-leader');
+      expect(settings.get(defs.fleetLeader), isTrue);
+      expect(settings.get(defs.fleetFollowers), '[{"id":"bed"}]');
+    });
+
+    test('a clone of the leader keeps its own fleet id', () async {
+      await buildWithCommands({
+        'ks.browser.start_url': 'http://ha.local:8123',
+        'ks.fleet.id': 'new-device',
+      });
+      final result = await commands.execute('importConfig', {
+        ...leaderBackup(),
+        'adoptIdentity': false,
+      });
+      expect(result.ok, isTrue);
+      expect(settings.get(defs.fleetId), 'new-device');
+      expect(settings.get(defs.fleetLeader), isFalse);
+      expect(settings.get(defs.fleetFollowers), isEmpty);
+    });
+
+    test('a clone that shared the leader id gives it up', () async {
+      await buildWithCommands({
+        'ks.browser.start_url': 'http://ha.local:8123',
+        'ks.fleet.id': 'old-leader',
+      });
+      final result = await commands.execute('importConfig', {
+        ...leaderBackup(),
+        'adoptIdentity': false,
+      });
+      expect(result.ok, isTrue);
+      // Empty: the fleet manager writes the Android ID back.
+      expect(settings.get(defs.fleetId), isEmpty);
+    });
   });
 
   // The raw settings dump path (/api/settings/import) used to apply the

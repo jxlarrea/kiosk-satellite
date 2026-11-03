@@ -990,7 +990,14 @@ class SettingsManager extends Manager {
     // A kiosk's place in a fleet is its own too: a clone must not lead the
     // original's followers (their tokens name the original) or believe it
     // follows the original's leader.
+    final importedFleetId = map[fleetId.key];
     map.removeWhere((k, _) => k.startsWith('fleet.'));
+    if (importedFleetId is String &&
+        importedFleetId.isNotEmpty &&
+        get(fleetId) == importedFleetId) {
+      // The fleet manager writes this device's Android ID back.
+      await set(fleetId, '');
+    }
     final importedName = map.remove(deviceName.key);
     final importedPlayer = map.remove(sendspinClientId.key);
     final importedNode = map.remove(esphomeNodeName.key);

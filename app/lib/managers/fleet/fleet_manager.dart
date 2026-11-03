@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../device/device_details.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -257,6 +258,12 @@ class FleetManager extends Manager {
 
     _subs.add(
       bus.on<SettingChanged>().listen((e) {
+        // An import brought another id, or a clone's import cleared the
+        // one it shared: announce under the new one.
+        if (e.key == defs.fleetId.key) {
+          _seedId().then((_) => _sync());
+          return;
+        }
         if (e.key == defs.fleetLeader.key ||
             e.key == defs.fleetFollowers.key ||
             e.key == defs.fleetLeaderInfo.key ||
@@ -294,9 +301,21 @@ class FleetManager extends Manager {
         }
       }),
     );
+    await _seedId();
     await _seed();
     await _sync();
     _mergeDirectory();
+  }
+
+  /// Writes the Android ID into an empty fleet id, the id this kiosk has
+  /// always announced, so a fleet formed before the setting keeps its
+  /// trust. Left empty when the platform declines, and the announcer
+  /// falls back to the Android ID itself.
+  Future<void> _seedId() async {
+    if (_settings.get(defs.fleetId).isNotEmpty) return;
+    final id = await DeviceDetails.androidId();
+    if (id == null || id.isEmpty) return;
+    await _settings.set(defs.fleetId, id);
   }
 
   /// Fills an empty mDNS name from the device name. Nothing to write
@@ -341,7 +360,9 @@ class FleetManager extends Manager {
     final tls = _settings.get(defs.remoteTls);
     final dnsName = _certificateName;
     final adminUrl = _settings.get(defs.remoteAdminUrl);
+    final id = _settings.get(defs.fleetId);
     final args = {
+      if (id.isNotEmpty) 'id': id,
       'name': _settings.get(defs.deviceName),
       'port': _settings.get(defs.remotePort).toInt(),
       if (tls) 'tls': true,

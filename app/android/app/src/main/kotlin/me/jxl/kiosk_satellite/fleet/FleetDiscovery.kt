@@ -163,6 +163,7 @@ class FleetDiscovery(
         const val TYPE_AAAA = 28
         const val TYPE_SRV = 33
         const val TYPE_ANY = 255
+        private val ID_PATTERN = Regex("[A-Za-z0-9-]{1,48}")
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -176,9 +177,13 @@ class FleetDiscovery(
     var listening = false
         private set
 
-    private val id: String = runCatching {
+    /** The Android ID, for a start that brings no fleet id of its own. */
+    private val androidId: String = runCatching {
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }.getOrNull()?.takeIf { it.isNotBlank() } ?: "unknown"
+
+    /** The id this kiosk announces: the fleet id setting, else the Android ID. */
+    @Volatile private var id: String = androidId
 
     private val version: String = runCatching {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -235,7 +240,14 @@ class FleetDiscovery(
         tls: Boolean = false,
         dnsName: String = "",
         adminUrl: String = "",
+        id: String = "",
     ) {
+        // It goes into a DNS label: anything that cannot be one is ignored.
+        val newId = id.takeIf { ID_PATTERN.matches(it) } ?: androidId
+        // A restored backup brought the id of the kiosk it replaces: the
+        // others drop the old one before they hear the new.
+        if (running && newId != this.id && this.fleet) sendFleetGoodbye()
+        this.id = newId
         this.name = name.ifBlank { Build.MODEL ?: "Kiosk Satellite" }
         this.port = port
         this.tls = tls

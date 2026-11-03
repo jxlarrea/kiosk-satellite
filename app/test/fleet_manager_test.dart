@@ -119,6 +119,43 @@ void main() {
     expect(fleet.hostUrl, 'http://ks-living-room.local:2324');
   });
 
+  test('the fleet id is seeded from the Android ID and announced', () async {
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    const details = MethodChannel('kiosk_satellite/device_details');
+    messenger.setMockMethodCallHandler(
+      details,
+      (call) async => call.method == 'androidId' ? 'a1b2c3' : null,
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(details, null));
+    await build(serving);
+    expect(settings.get(defs.fleetId), 'a1b2c3');
+    expect(
+      calls.lastWhere((c) => c.method == 'start').arguments['id'],
+      'a1b2c3',
+    );
+    // A backup restored with Replace brings the id of the kiosk it
+    // replaces, and the announcement goes out under it.
+    await settings.set(defs.fleetId, 'feed42');
+    await pump();
+    expect(calls.last.method, 'start');
+    expect(calls.last.arguments['id'], 'feed42');
+    // A clone's import cleared it: the Android ID comes back.
+    await settings.set(defs.fleetId, '');
+    await pump();
+    expect(settings.get(defs.fleetId), 'a1b2c3');
+    expect(calls.last.arguments['id'], 'a1b2c3');
+  });
+
+  test('a seeded fleet id is kept', () async {
+    await build({...serving, 'ks.fleet.id': 'feed42'});
+    expect(settings.get(defs.fleetId), 'feed42');
+    expect(
+      calls.singleWhere((c) => c.method == 'start').arguments['id'],
+      'feed42',
+    );
+  });
+
   test('the mDNS name is seeded from the device name and then kept', () async {
     await build(serving);
     // Written into the setting, so the row holds the name to copy.

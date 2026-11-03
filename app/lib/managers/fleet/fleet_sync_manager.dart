@@ -362,6 +362,16 @@ class FleetSyncManager extends Manager {
   int _ticks = 0;
   bool _ticking = false;
   bool _remoteObserved = false;
+
+  /// What this manager last read or wrote for the followers and the
+  /// profiles. Anything else in the setting came from outside, a restored
+  /// backup, and is read back in.
+  String _followersRaw = '';
+  String _profilesRaw = '';
+
+  /// Set when the followers changed outside while a tick was walking
+  /// them: the tick does not save its copy and reads them back at its end.
+  bool _followersStale = false;
   DateTime _watchedUntil = DateTime.fromMillisecondsSinceEpoch(0);
   final _subs = <StreamSubscription<Object?>>[];
 
@@ -551,6 +561,7 @@ class FleetSyncManager extends Manager {
   void _loadFollowers() {
     _followers.clear();
     final raw = _settings.get(defs.fleetFollowers);
+    _followersRaw = raw;
     if (raw.isEmpty) return;
     try {
       final list = jsonDecode(raw);
@@ -575,6 +586,7 @@ class FleetSyncManager extends Manager {
     _profiles.clear();
     var changed = false;
     final raw = _settings.get(defs.fleetProfiles);
+    _profilesRaw = raw;
     if (raw.isNotEmpty) {
       try {
         final list = jsonDecode(raw);
@@ -654,20 +666,40 @@ class FleetSyncManager extends Manager {
     if (changed) await _saveProfiles();
   }
 
-  Future<void> _saveProfiles() => _settings.set(
-    defs.fleetProfiles,
-    jsonEncode([
+  Future<void> _saveProfiles() {
+    _profilesRaw = jsonEncode([
       for (final p in _profiles)
         if (!p.isUpdatesOnly) p.toJson(),
-    ]),
-  );
+    ]);
+    return _settings.set(defs.fleetProfiles, _profilesRaw);
+  }
 
-  Future<void> _saveFollowers() => _settings.set(
-    defs.fleetFollowers,
-    _followers.isEmpty
+  Future<void> _saveFollowers() {
+    _followersRaw = _followers.isEmpty
         ? ''
-        : jsonEncode([for (final f in _followers) f.toJson()]),
-  );
+        : jsonEncode([for (final f in _followers) f.toJson()]);
+    return _settings.set(defs.fleetFollowers, _followersRaw);
+  }
+
+  /// A restored backup wrote the followers or the profiles: they are read
+  /// back in, or the next save would put the copy from before the import
+  /// over them (issue #1208).
+  Future<void> _reloadImported(String key) async {
+    if (key == defs.fleetFollowers.key) {
+      if (_settings.get(defs.fleetFollowers) == _followersRaw) return;
+      if (_ticking) {
+        _followersStale = true;
+        return;
+      }
+      _loadFollowers();
+    } else {
+      if (_settings.get(defs.fleetProfiles) == _profilesRaw) return;
+      await _loadProfiles();
+    }
+    log.info(name, 'read the imported fleet settings');
+    _publish();
+    if (leading) _scheduleTick();
+  }
 
   void _publish() => bus.publish(const FleetSyncChanged());
 
@@ -711,6 +743,10 @@ class FleetSyncManager extends Manager {
         unawaited(_disband());
       }
       _publish();
+      return;
+    }
+    if (e.key == defs.fleetFollowers.key || e.key == defs.fleetProfiles.key) {
+      unawaited(_reloadImported(e.key));
       return;
     }
     if (e.key.startsWith('fleet.')) return;
@@ -869,13 +905,20 @@ class FleetSyncManager extends Manager {
           }
         }
       }
-      if (changed ||
-          before != jsonEncode([for (final f in _followers) f.toJson()])) {
+      if (!_followersStale &&
+          (changed ||
+              before != jsonEncode([for (final f in _followers) f.toJson()]))) {
         await _saveFollowers();
       }
       await _shareRoster();
     } finally {
       _ticking = false;
+      if (_followersStale) {
+        _followersStale = false;
+        _loadFollowers();
+        log.info(name, 'read the imported fleet settings');
+        if (leading) _scheduleTick();
+      }
       _publish();
     }
   }

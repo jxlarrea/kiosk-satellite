@@ -127,6 +127,12 @@ A plugin that uses Shizuku asks for its permission on each kiosk. Runtime chart 
 
 Using **Update the fleet** prioritizes installations on followers first, updating the leader last so it stays online to manage the process. If a kiosk has a pinned screen, it will prompt for the update directly on its display. **Keep followers on this version** automatically handles updates if a follower falls behind the leader's current release.
 
+## Restoring the Leader
+
+A configuration export from the leader carries the fleet: **Lead this fleet**, the profiles, the followers and the id the followers know the leader by. To move the leader to a new device or bring it back after a factory reset, import the export and pick **Replace "device name"**. The restored leader takes over the old one's id and its followers keep syncing without new invitations. Turn off or reset the old leader first, since two kiosks with the same id confuse the followers. **Set up as new device** leaves the fleet out, so a kiosk cloned from the leader's export does not take over its followers.
+
+Exports from older versions do not carry the leader's id. If the followers stop syncing after restoring one on a new or reset device, invite them again.
+
 ## Never Synced
 
 Certain settings remain unique to each kiosk regardless of the profile configuration. Followers will automatically drop these settings even if a leader attempts to send them.

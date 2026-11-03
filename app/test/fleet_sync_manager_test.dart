@@ -125,7 +125,9 @@ void main() {
         final key = '${req.method} ${req.url.path}';
         final answer = answers[key];
         if (answer == null) return http.Response('not found', 404);
-        final out = answer(req);
+        var out = answer(req);
+        // A held answer, for a tick caught halfway.
+        if (out is Future) out = await out;
         if (out is http.Response) return out;
         return http.Response(jsonEncode(out), 200);
       });
@@ -1340,6 +1342,114 @@ void main() {
       await commands.execute('fleetSyncNow', const {});
       final row = (fleet.status()['followers'] as List).single as Map;
       expect(row['phase'], 'left');
+    });
+
+    test(
+      'a restored backup brings its followers and profiles in (#1208)',
+      () async {
+        await build();
+        final followers = jsonEncode([
+          {
+            'id': 'bed',
+            'name': 'Bedroom',
+            'address': '192.168.1.71',
+            'port': 2324,
+            'token': 't',
+            'profile': 'own',
+          },
+        ]);
+        final profiles = jsonEncode([
+          {
+            'id': 'default',
+            'name': 'Default',
+            'categories': ['Gestures'],
+            'credentials': [],
+            'dashboard': false,
+            'excluded': [],
+          },
+          {
+            'id': 'own',
+            'name': 'Own list',
+            'categories': ['Gestures'],
+            'credentials': [],
+            'dashboard': false,
+            'excluded': [],
+          },
+        ]);
+        await settings.import({
+          defs.fleetLeader.key: true,
+          defs.fleetProfiles.key: profiles,
+          defs.fleetFollowers.key: followers,
+        });
+        await settle();
+        final status = fleet.status();
+        final row = (status['followers'] as List).single as Map;
+        expect(row['name'], 'Bedroom');
+        expect(row['profile'], 'own');
+        expect([
+          for (final p in status['profiles'] as List) (p as Map)['id'],
+        ], containsAll(['default', 'own']));
+        // A change on the Fleet page saves what was imported, not the
+        // empty lists from before.
+        final r = await commands.execute('fleetSetProfile', {
+          'profile': {
+            'name': 'Another',
+            'categories': ['Kiosk'],
+            'credentials': [],
+            'dashboard': false,
+            'excluded': [],
+          },
+        });
+        expect(r.ok, isTrue, reason: r.error);
+        final stored = jsonDecode(settings.get(defs.fleetFollowers)) as List;
+        expect((stored.single as Map)['id'], 'bed');
+        final storedProfiles = [
+          for (final p in jsonDecode(settings.get(defs.fleetProfiles)) as List)
+            (p as Map)['id'],
+        ];
+        expect(storedProfiles, containsAll(['default', 'own']));
+      },
+    );
+
+    test('followers imported during a tick are not written over', () async {
+      await build(
+        prefs: {
+          'ks.fleet.leader': true,
+          'ks.fleet.followers': jsonEncode([
+            {
+              'id': 'old',
+              'name': 'Old',
+              'address': '192.168.1.80',
+              'port': 2324,
+              'token': 't',
+            },
+          ]),
+        },
+      );
+      await settle();
+      final held = Completer<Object?>();
+      answers['GET /api/fleet/status'] = (_) => held.future;
+      final tick = commands.execute('fleetSyncNow', const {});
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await settings.import({
+        defs.fleetFollowers.key: jsonEncode([
+          {
+            'id': 'bed',
+            'name': 'Bedroom',
+            'address': '192.168.1.71',
+            'port': 2324,
+            'token': 't',
+          },
+        ]),
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      held.complete(http.Response('{"error":"no"}', 403));
+      await tick;
+      await settle();
+      final stored = jsonDecode(settings.get(defs.fleetFollowers)) as List;
+      expect([for (final f in stored) (f as Map)['id']], ['bed']);
+      final rows = fleet.status()['followers'] as List;
+      expect([for (final r in rows) (r as Map)['name']], ['Bedroom']);
     });
 
     test('a change to a synced setting pushes again after a pause', () async {
