@@ -26,6 +26,7 @@ class PhotoMetadataDefs {
     required this.textShadow,
     required this.scale,
     required this.vignette,
+    this.caption,
   });
 
   final defs.SettingDef<bool> enabled;
@@ -39,6 +40,12 @@ class PhotoMetadataDefs {
   final defs.SettingDef<num> scale;
   final defs.SettingDef<num> vignette;
 
+  /// The switch behind the caption, the photo's description centered at
+  /// the bottom of the screen (issue #1290). Kept out of [fields] since it
+  /// is not a line of the corner panel: a caption alone must not claim a
+  /// corner. Null for the modes whose photos carry none.
+  final defs.SettingDef<bool>? caption;
+
   Iterable<defs.SettingDef<Object>> get all => [
     enabled,
     ...fields.values,
@@ -46,6 +53,7 @@ class PhotoMetadataDefs {
     textShadow,
     scale,
     vignette,
+    ?caption,
   ];
 }
 
@@ -64,6 +72,7 @@ const photoMetadataDefs = <String, PhotoMetadataDefs>{
     textShadow: defs.screensaverImmichMetadataTextShadow,
     scale: defs.screensaverImmichMetadataScale,
     vignette: defs.screensaverImmichVignetteStrength,
+    caption: defs.screensaverImmichMetadataDescription,
   ),
   'media': PhotoMetadataDefs(
     enabled: defs.screensaverMediaMetadata,
@@ -123,6 +132,23 @@ bool photoMetadataVisible(SettingsManager settings, String mode) {
       settings.get(metadata.enabled) &&
       metadata.fields.values.any((def) => settings.get(def));
 }
+
+/// Whether [mode] shows its caption: the master switch and the caption's
+/// own both on.
+bool photoCaptionOn(SettingsManager settings, String mode) {
+  final metadata = photoMetadataDefs[mode];
+  final caption = metadata?.caption;
+  return metadata != null &&
+      caption != null &&
+      settings.get(metadata.enabled) &&
+      settings.get(caption);
+}
+
+/// Whether [mode] draws anything over the photo: the corner panel, the
+/// caption or both. The panel's own corner claims still follow
+/// [photoMetadataVisible] alone.
+bool photoMetadataShown(SettingsManager settings, String mode) =>
+    photoMetadataVisible(settings, mode) || photoCaptionOn(settings, mode);
 
 /// The corner [mode]'s single-photo panel settles in: its configured
 /// corner, or the first free one when a corner widget owns that (the panel

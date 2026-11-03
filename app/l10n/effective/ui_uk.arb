@@ -45557,6 +45557,32 @@
       ]
     }
   },
+  "settingScreensaverImmichMetadataDescriptionTitle": "Опис",
+  "@settingScreensaverImmichMetadataDescriptionTitle": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Metadata",
+    "description": "Setting label. The description written for the photo in Immich.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Metadata"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Metadata"
+      ]
+    }
+  },
+  "settingScreensaverImmichMetadataDescriptionDescription": "Показувати опис фото внизу екрана.",
+  "@settingScreensaverImmichMetadataDescriptionDescription": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Metadata",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Metadata"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Metadata"
+      ]
+    }
+  },
   "settingScreensaverImmichMetadataPositionTitle": "Розташування метаданих",
   "@settingScreensaverImmichMetadataPositionTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Metadata",

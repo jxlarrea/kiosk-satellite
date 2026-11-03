@@ -12246,6 +12246,13 @@ class UiStringsUk extends UiStrings {
       'Показувати місце, де було зроблено фото.';
 
   @override
+  String get settingScreensaverImmichMetadataDescriptionTitle => 'Опис';
+
+  @override
+  String get settingScreensaverImmichMetadataDescriptionDescription =>
+      'Показувати опис фото внизу екрана.';
+
+  @override
   String get settingScreensaverImmichMetadataPositionTitle =>
       'Розташування метаданих';
 

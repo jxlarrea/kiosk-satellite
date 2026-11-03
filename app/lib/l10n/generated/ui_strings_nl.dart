@@ -12261,6 +12261,13 @@ class UiStringsNl extends UiStrings {
       'Laat zien waar de foto is genomen.';
 
   @override
+  String get settingScreensaverImmichMetadataDescriptionTitle => 'Beschrijving';
+
+  @override
+  String get settingScreensaverImmichMetadataDescriptionDescription =>
+      'Laat de beschrijving van de foto onderaan het scherm zien.';
+
+  @override
   String get settingScreensaverImmichMetadataPositionTitle =>
       'Positie van metagegevens';
 

@@ -10,6 +10,8 @@
   "settingScreensaverImmichMetadataCameraDescription": "Показывать фокусное расстояние, диафрагму и ISO.",
   "settingScreensaverImmichMetadataLocationTitle": "Место",
   "settingScreensaverImmichMetadataLocationDescription": "Показывать, где снято фото.",
+  "settingScreensaverImmichMetadataDescriptionTitle": "Описание",
+  "settingScreensaverImmichMetadataDescriptionDescription": "Показывать описание фото внизу экрана.",
   "settingScreensaverImmichMetadataPositionTitle": "Позиция метаданных",
   "settingScreensaverImmichMetadataPositionDescription": "В каком углу находятся детали.",
   "settingScreensaverImmichMetadataTextShadowTitle": "Тень текста",

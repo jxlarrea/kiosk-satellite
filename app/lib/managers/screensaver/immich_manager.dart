@@ -136,6 +136,11 @@ bool immichMetadataFieldOn(SettingsManager settings, String field) =>
 bool immichMetadataVisible(SettingsManager settings) =>
     photoMetadataVisible(settings, 'immich');
 
+/// Whether the overlay draws anything at all: the panel, the caption or
+/// both, which is when the slide's details are worth fetching.
+bool immichMetadataShown(SettingsManager settings) =>
+    photoMetadataShown(settings, 'immich');
+
 /// The corner the single-photo metadata panel settles in. See
 /// [photoMetadataCorner].
 String? immichMetadataCorner(SettingsManager settings) =>
@@ -1403,6 +1408,11 @@ class ImmichManager extends Manager {
           if ('${exif[key] ?? ''}'.trim().isNotEmpty) '${exif[key]}'.trim(),
       ];
       if (location.isNotEmpty) out['location'] = location.join(', ');
+
+      // The caption (issue #1290) rides in the same response, so turning
+      // it on costs no request of its own.
+      final description = '${exif['description'] ?? ''}'.trim();
+      if (description.isNotEmpty) out['description'] = description;
 
       // The album line: the one configured album when exactly one is
       // picked, else the album the asset belongs to, its own request, with

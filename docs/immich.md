@@ -27,6 +27,7 @@ The settings page is organized into five main sections: Server Connection, Media
 | Slideshow | Tap edges to change slides | on | A tap on the left or right fifth of the screen shows the previous or next photo instead of dismissing the screensaver. |
 | Metadata | Show metadata | off | Displays photo details in a designated corner of the screen. |
 | Metadata | Album name, Date taken, Camera details, Location | on | Toggles individual metadata lines. |
+| Metadata | Description | off | Shows the description written for the photo in Immich at the bottom of the screen. |
 | Metadata | Metadata position | Bottom left | Specifies which corner holds the photo details. |
 | Metadata | Text scaling | 100% | Scales the details text, icons and spacing from 50% to 200% for the screen. |
 | Filters | People | Anyone | Filter by specific recognized individuals. |
@@ -99,6 +100,10 @@ Enabling **Show metadata** places photo details in a designated corner of the sc
 Each metadata line has its own toggle switch. If you point your screensaver at a single album, you may want to turn off the album line so it doesn't repeat on every photo. Turning off a specific toggle also prevents the app from querying that data. If you turn off all metadata lines, the overlay and its background vignette turn off completely, behaving just as if **Show metadata** were disabled.
 
 When placed in a right hand corner, text and icons align to the right, mirroring the layout of right aligned widgets.
+
+### Description
+
+Turn on **Description** to show the description you wrote for the photo in Immich as a caption. A caption is too long for the corner, so it sits centered at the bottom of the screen and runs up to two lines. Anything longer ends with an ellipsis. It wraps in the space between the metadata corner and the opposite side when two lines fit there. On a narrower screen it moves above the corner details. The [At a Glance](screensavers.md#at-a-glance) row sits above the caption. Photos without a description show no caption. The caption follows **Text drop shadow**, **Text scaling** and **Vignette strength**. It works without any other metadata line, and the corner then stays free for widgets. It needs no extra request to Immich. In a portrait pair each photo's caption sits under that photo. In a stacked pair the top photo's caption sits halfway down the screen.
 
 The **Text scaling** slider (50% to 200%) sizes the details text, icons and spacing for the screen and previews live while the screensaver is running. It stays out of [fleet](fleet.md) sync by default like the other scale settings, since it corrects for one panel. **Text drop shadow** is enabled by default and adds a defined shadow beneath metadata text. It is independent of the widget text shadow toggle and updates live. The overlay rests on a subtle dark vignette to keep text readable against bright photos. You can adjust the **Vignette strength** slider from 0 to 100 percent (40 percent by default). Setting it to 0 removes the vignette entirely, leaving clean text over the photo.
 

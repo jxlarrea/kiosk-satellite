@@ -10,6 +10,8 @@
   "settingScreensaverImmichMetadataCameraDescription": "显示焦距、光圈和 ISO。",
   "settingScreensaverImmichMetadataLocationTitle": "位置",
   "settingScreensaverImmichMetadataLocationDescription": "显示照片的拍摄地点。",
+  "settingScreensaverImmichMetadataDescriptionTitle": "描述",
+  "settingScreensaverImmichMetadataDescriptionDescription": "在屏幕底部显示照片的描述。",
   "settingScreensaverImmichMetadataPositionTitle": "元数据位置",
   "settingScreensaverImmichMetadataPositionDescription": "详情显示的屏幕角落。",
   "settingScreensaverImmichMetadataTextShadowTitle": "文字投影",

@@ -10,6 +10,8 @@
   "settingScreensaverImmichMetadataCameraDescription": "Muestra la distancia focal, la apertura y el ISO.",
   "settingScreensaverImmichMetadataLocationTitle": "Ubicación",
   "settingScreensaverImmichMetadataLocationDescription": "Muestra dónde se tomó la foto.",
+  "settingScreensaverImmichMetadataDescriptionTitle": "Descripción",
+  "settingScreensaverImmichMetadataDescriptionDescription": "Muestra la descripción de la foto en la parte inferior de la pantalla.",
   "settingScreensaverImmichMetadataPositionTitle": "Posición de los metadatos",
   "settingScreensaverImmichMetadataPositionDescription": "Esquina en la que se muestran los detalles.",
   "settingScreensaverImmichMetadataTextShadowTitle": "Sombra del texto",

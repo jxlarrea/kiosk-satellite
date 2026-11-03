@@ -45557,6 +45557,32 @@
       ]
     }
   },
+  "settingScreensaverImmichMetadataDescriptionTitle": "Description",
+  "@settingScreensaverImmichMetadataDescriptionTitle": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Metadata",
+    "description": "Setting label. The description written for the photo in Immich.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Metadata"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Metadata"
+      ]
+    }
+  },
+  "settingScreensaverImmichMetadataDescriptionDescription": "Afficher la description de la photo en bas de l'écran.",
+  "@settingScreensaverImmichMetadataDescriptionDescription": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Metadata",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Metadata"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Metadata"
+      ]
+    }
+  },
   "settingScreensaverImmichMetadataPositionTitle": "Position des métadonnées",
   "@settingScreensaverImmichMetadataPositionTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Metadata",

@@ -12113,6 +12113,13 @@ class UiStringsEn extends UiStrings {
       'Show the place the photo was taken.';
 
   @override
+  String get settingScreensaverImmichMetadataDescriptionTitle => 'Description';
+
+  @override
+  String get settingScreensaverImmichMetadataDescriptionDescription =>
+      'Show the photo\'s description at the bottom of the screen.';
+
+  @override
   String get settingScreensaverImmichMetadataPositionTitle =>
       'Metadata position';
 

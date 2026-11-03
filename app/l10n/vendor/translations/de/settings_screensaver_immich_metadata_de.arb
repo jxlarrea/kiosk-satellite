@@ -10,6 +10,8 @@
   "settingScreensaverImmichMetadataCameraDescription": "Zeigt Brennweite, Blende und ISO-Wert an.",
   "settingScreensaverImmichMetadataLocationTitle": "Standort",
   "settingScreensaverImmichMetadataLocationDescription": "Zeigt an, wo das Foto aufgenommen wurde.",
+  "settingScreensaverImmichMetadataDescriptionTitle": "Beschreibung",
+  "settingScreensaverImmichMetadataDescriptionDescription": "Zeigt die Beschreibung des Fotos am unteren Bildschirmrand an.",
   "settingScreensaverImmichMetadataPositionTitle": "Position der Metadaten",
   "settingScreensaverImmichMetadataPositionDescription": "Die Ecke, in der die Details angezeigt werden.",
   "settingScreensaverImmichMetadataTextShadowTitle": "Textschatten",

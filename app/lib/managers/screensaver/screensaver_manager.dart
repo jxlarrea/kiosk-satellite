@@ -1654,6 +1654,17 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     const {},
   );
 
+  /// How far above the bottom edge the photo caption reaches, measured
+  /// after layout, so the At a Glance row rises above it (issue #1290).
+  /// Zero without a caption. Like [metadataFootprint] it only grows while
+  /// the screensaver runs, so the row does not hop with every slide.
+  final ValueNotifier<double> captionFootprint = ValueNotifier(0);
+
+  /// Records how far the caption reaches, keeping the highest seen.
+  void reportCaptionFootprint(double top) {
+    if (top > captionFootprint.value) captionFootprint.value = top;
+  }
+
   /// The photo the Home Assistant Media page shows, as its media id and the
   /// URL it was loaded from, so the metadata panel drawn over the page can
   /// read its EXIF (issue #953). Null for a video, a camera or nothing yet.
@@ -2225,6 +2236,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     weatherChipsHeight.value = 0;
     modeControlsShown.value = false;
     metadataFootprint.value = const {};
+    captionFootprint.value = 0;
     mediaSlide.value = null;
     _slides = null;
     bus.publish(const ScreensaverStateChanged(active: false));

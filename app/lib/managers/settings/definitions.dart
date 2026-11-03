@@ -4888,6 +4888,22 @@ const screensaverImmichMetadataLocation = SettingDef<bool>(
   dependsOn: 'screensaver.immich_metadata',
 );
 
+// The description written for the photo in Immich (issue #1290). It reads
+// as a caption, a sentence or two the corner panel has no width for, so it
+// sits centered at the bottom of the screen and the At a Glance row rises
+// above it. Off by default, so nothing moves until someone asks for it.
+const screensaverImmichMetadataDescription = SettingDef<bool>(
+  key: 'screensaver.immich_metadata_description',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Description',
+  description: "Show the photo's description at the bottom of the screen.",
+  category: 'Screensaver',
+  section: 'Metadata',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_metadata',
+);
+
 const screensaverImmichMetadataPosition = SettingDef<String>(
   key: 'screensaver.immich_metadata_position',
   type: SettingType.select,
@@ -13543,6 +13559,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichMetadataDate,
   screensaverImmichMetadataCamera,
   screensaverImmichMetadataLocation,
+  screensaverImmichMetadataDescription,
   screensaverImmichMetadataPosition,
   screensaverImmichMetadataTextShadow,
   screensaverImmichMetadataScale,

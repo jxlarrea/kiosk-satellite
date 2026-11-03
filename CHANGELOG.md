@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Show Immich photo descriptions.** Turn on **Description** in the Immich Media screensaver's Metadata settings, off by default, to show the description written for each photo in Immich as a caption centered at the bottom of the screen, up to two lines. It wraps between the corner details when it fits there and moves above them when it does not. The At a Glance row sits above the caption. In a pair each photo's caption sits under that photo (#1290).
+
 ### Fixed
 - **Turn off a realtime provider.** Once a provider was set up, nothing could take it back out: Save & Validate refused an empty API key because the provider rejected the connection, so the row kept reading as set up. The provider's dialog now has **Clear**, on the kiosk and in the remote admin. It removes the key and the rest of the provider's settings, the row goes back to **Not configured** and a wake word that used it goes back to its Home Assistant pipeline.
 

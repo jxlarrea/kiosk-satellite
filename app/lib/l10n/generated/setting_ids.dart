@@ -672,6 +672,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingScreensaverImmichMetadataLocationTitle",
     "description": "settingScreensaverImmichMetadataLocationDescription",
   },
+  "screensaver.immich_metadata_description": {
+    "title": "settingScreensaverImmichMetadataDescriptionTitle",
+    "description": "settingScreensaverImmichMetadataDescriptionDescription",
+  },
   "screensaver.immich_metadata_position": {
     "title": "settingScreensaverImmichMetadataPositionTitle",
     "description": "settingScreensaverImmichMetadataPositionDescription",

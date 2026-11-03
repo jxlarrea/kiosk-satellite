@@ -21167,6 +21167,18 @@ abstract class UiStrings {
   /// **'Show the place the photo was taken.'**
   String get settingScreensaverImmichMetadataLocationDescription;
 
+  /// Setting label. The description written for the photo in Immich.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get settingScreensaverImmichMetadataDescriptionTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the photo\'s description at the bottom of the screen.'**
+  String get settingScreensaverImmichMetadataDescriptionDescription;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

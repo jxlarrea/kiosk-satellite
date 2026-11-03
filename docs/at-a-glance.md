@@ -35,7 +35,7 @@ The At a Glance row is available on every screensaver mode *except* Calendar, wh
 * **Clock:** The row sits just under the date; the clock itself shrinks slightly to accommodate it.
 * **Photo and Web Modes** (Home Assistant Media, Local Media, Photo Gallery, Image URL, Immich, Website): The row is pinned near the bottom of the screen, layered over whatever the mode is displaying.
 
-On the Immich screensaver, if the [metadata overlay](screensavers.md#immich-media) occupies a bottom corner, the status row intelligently narrows into two columns and wraps, staying clear of the corners rather than overlapping them.
+On the Immich screensaver, if the [metadata overlay](screensavers.md#immich-media) occupies a bottom corner, the status row intelligently narrows into two columns and wraps, staying clear of the corners rather than overlapping them. With the photo's [description](immich.md#description) on, the row sits above the caption.
 
 On a landscape screen, entities display in a single row. In portrait orientation, it displays two entities side-by-side and wraps the rest onto a second row (to prevent names from being cut off in narrow spaces). The columns maintain equal width in both layouts, and the text shrinks slightly before any names are truncated.
 

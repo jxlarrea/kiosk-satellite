@@ -11537,6 +11537,13 @@ class UiStringsZh extends UiStrings {
       '显示照片的拍摄地点。';
 
   @override
+  String get settingScreensaverImmichMetadataDescriptionTitle => '描述';
+
+  @override
+  String get settingScreensaverImmichMetadataDescriptionDescription =>
+      '在屏幕底部显示照片的描述。';
+
+  @override
   String get settingScreensaverImmichMetadataPositionTitle => '元数据位置';
 
   @override
@@ -26579,6 +26586,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingScreensaverImmichMetadataLocationDescription =>
       '显示照片的拍摄地点。';
+
+  @override
+  String get settingScreensaverImmichMetadataDescriptionTitle => '描述';
+
+  @override
+  String get settingScreensaverImmichMetadataDescriptionDescription =>
+      '在屏幕底部显示照片的描述。';
 
   @override
   String get settingScreensaverImmichMetadataPositionTitle => '元数据位置';

@@ -10,6 +10,8 @@
   "settingScreensaverImmichMetadataCameraDescription": "Toont brandpuntsafstand, diafragma en ISO.",
   "settingScreensaverImmichMetadataLocationTitle": "Locatie",
   "settingScreensaverImmichMetadataLocationDescription": "Laat zien waar de foto is genomen.",
+  "settingScreensaverImmichMetadataDescriptionTitle": "Beschrijving",
+  "settingScreensaverImmichMetadataDescriptionDescription": "Laat de beschrijving van de foto onderaan het scherm zien.",
   "settingScreensaverImmichMetadataPositionTitle": "Positie van metagegevens",
   "settingScreensaverImmichMetadataPositionDescription": "In welke hoek de details worden weergegeven.",
   "settingScreensaverImmichMetadataTextShadowTitle": "Tekstschaduw",

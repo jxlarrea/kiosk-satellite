@@ -45,6 +45,7 @@ import '../managers/screensaver/immich_manager.dart'
         ImmichPairing,
         arrangeImmichPairs,
         immichFiltersActive,
+        immichMetadataShown,
         immichMetadataVisible,
         immichPairPhoto,
         immichPairingFor;
@@ -1516,6 +1517,33 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   return (bottom: max(inset, rise), maxWidth: width, narrow: false);
 }
 
+/// Which half of a side-by-side pair a caption belongs to.
+enum _CaptionHalf { left, right }
+
+/// Where a photo caption goes in an area [width] wide: its distance from
+/// the bottom edge and the widest it may run (issue #1290). [panel] is the
+/// measured size of the metadata panel in a bottom corner of the area,
+/// margins included, or null when no panel sits there.
+///
+/// The caption is centered, so the panel takes its width from both sides.
+/// When the room left still holds a readable line the caption keeps the
+/// bottom inset and wraps in that room. Otherwise it rises above the
+/// panel and takes the full width. Either way it never runs wider than a
+/// comfortable reading line, [scale] being the panel's Text scaling.
+@visibleForTesting
+({double bottom, double maxWidth}) captionPlacement({
+  required double width,
+  required double inset,
+  required double scale,
+  Size? panel,
+}) {
+  final line = min(width - 56, min(max(width * 0.6, 360 * scale), 640 * scale));
+  if (panel == null) return (bottom: inset, maxWidth: max(0.0, line));
+  final room = width - 2 * panel.width;
+  if (room >= 260 * scale) return (bottom: inset, maxWidth: min(line, room));
+  return (bottom: max(inset, panel.height), maxWidth: max(0.0, line));
+}
+
 /// The At a Glance row over the photo and web modes: bottom-pinned at the
 /// Clock screensaver's inset, sized by its rule, and never in the way of a
 /// touch. Its own widget so the overlay's build stays a list of layers.
@@ -1555,8 +1583,18 @@ class _GlanceOverlay extends StatelessWidget {
           );
           return Align(
             alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.only(bottom: bottom),
+            child: ValueListenableBuilder<double>(
+              // A photo caption owns the bottom center (issue #1290): the
+              // row stacks on top of it rather than over it.
+              valueListenable: container.screensaver.captionFootprint,
+              builder: (context, caption, child) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: caption > 0
+                      ? max(bottom, caption + 14 * scale)
+                      : bottom,
+                ),
+                child: child,
+              ),
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: GlanceRow(
@@ -5546,7 +5584,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     final candidate = (index + 1) % _assets.length;
     final asset = _assets[candidate];
     if (asset.isVideo) return null;
-    if (immichMetadataVisible(c.settings)) {
+    if (immichMetadataShown(c.settings)) {
       unawaited(c.immich.assetDetails(asset));
     }
     try {
@@ -5667,7 +5705,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     if (!_awake || _assets.length <= _span) return;
     final next = index % _assets.length;
     final asset = _assets[next];
-    if (immichMetadataVisible(c.settings)) {
+    if (immichMetadataShown(c.settings)) {
       unawaited(c.immich.assetDetails(asset));
     }
     if (asset.isVideo) return;
@@ -5832,12 +5870,19 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
   }
 
   /// The metadata panel for [asset], whose details the Immich server holds.
-  Widget _immichMetadata(ImmichAsset asset, {String? corner}) => _PhotoMetadata(
+  Widget _immichMetadata(
+    ImmichAsset asset, {
+    String? corner,
+    _CaptionHalf? captionHalf,
+    bool reportCaption = true,
+  }) => _PhotoMetadata(
     container: c,
     mode: 'immich',
     slide: asset.id,
     details: () => c.immich.assetDetails(asset),
     corner: corner,
+    captionHalf: captionHalf,
+    reportCaption: reportCaption,
   );
 
   @override
@@ -5941,7 +5986,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
         _problem == null &&
         _assets.isNotEmpty &&
         (_image != null || video != null) &&
-        immichMetadataVisible(c.settings);
+        immichMetadataShown(c.settings);
     final pairIndex = _pairIndex;
     return ColoredBox(
       color: Colors.black,
@@ -5962,6 +6007,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
                     // bottom corner is the middle of the screen: the photo
                     // keeps its details under it, and the screen's top
                     // corners stay the widgets'.
+                    // Its caption likewise sits over the seam, under its
+                    // own photo, and stays out of the At a Glance row's
+                    // reckoning since it is nowhere near the bottom.
                     Positioned(
                       left: 0,
                       top: 0,
@@ -5970,11 +6018,22 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
                       child: _immichMetadata(
                         _assets[_index],
                         corner: _pairCorners[0],
+                        reportCaption: false,
                       ),
                     )
                   else
-                    _immichMetadata(_assets[_index], corner: _pairCorners[0]),
-                  _immichMetadata(_assets[pairIndex], corner: _pairCorners[1]),
+                    _immichMetadata(
+                      _assets[_index],
+                      corner: _pairCorners[0],
+                      captionHalf: _CaptionHalf.left,
+                    ),
+                  _immichMetadata(
+                    _assets[pairIndex],
+                    corner: _pairCorners[1],
+                    captionHalf: _pairing == ImmichPairing.stacked
+                        ? null
+                        : _CaptionHalf.right,
+                  ),
                 ],
               ],
             )
@@ -5997,6 +6056,8 @@ class _PhotoMetadata extends StatefulWidget {
     required this.slide,
     required this.details,
     this.corner,
+    this.captionHalf,
+    this.reportCaption = true,
   });
 
   final AppContainer container;
@@ -6015,6 +6076,16 @@ class _PhotoMetadata extends StatefulWidget {
   /// step-past-a-widget search: a pair's two panels belong under their own
   /// photos, and the widgets give those corners up instead.
   final String? corner;
+
+  /// The half of the screen the caption centers in, for a pair side by
+  /// side, so each description sits under its own photo. Null centers it
+  /// across the whole area the panel is given.
+  final _CaptionHalf? captionHalf;
+
+  /// Whether the caption tells the At a Glance row how high it reaches.
+  /// Only a caption at the bottom of the screen is in the row's way: the
+  /// top photo of a stacked pair keeps its caption over the seam.
+  final bool reportCaption;
 
   @override
   State<_PhotoMetadata> createState() => _PhotoMetadataState();
@@ -6060,17 +6131,134 @@ class _PhotoMetadataState extends State<_PhotoMetadata> {
 
   @override
   Widget build(BuildContext context) {
-    final container = widget.container;
-    final forced = widget.corner;
-    if (forced != null) return _panel(_cornerAlignment(forced));
+    final settings = widget.container.settings;
     // Widgets own their corners: rather than stacking two panels into
     // one corner, the metadata steps to the first free one, and stands
     // down entirely on the (unlikely) fully claimed screen. The helper
     // is shared with the At a Glance row, which narrows when this
-    // settles in a bottom corner.
-    final spot = photoMetadataCorner(container.settings, widget.mode);
-    if (spot == null) return const SizedBox.shrink();
-    return _panel(_cornerAlignment(spot));
+    // settles in a bottom corner. A pair's corners are fixed instead.
+    final spot = !photoMetadataVisible(settings, widget.mode)
+        ? null
+        : widget.corner ?? photoMetadataCorner(settings, widget.mode);
+    final caption = photoCaptionOn(settings, widget.mode);
+    if (!caption) {
+      return spot == null
+          ? const SizedBox.shrink()
+          : _panel(_cornerAlignment(spot));
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (spot != null) _panel(_cornerAlignment(spot)),
+        _caption(spot),
+      ],
+    );
+  }
+
+  /// The caption: the photo's description centered at the bottom (issue
+  /// #1290), wrapped between the bottom corner panel and its mirror image
+  /// when two lines fit there, raised above the panel when they do not.
+  /// [panelCorner] is the corner this slide's panel sits in, null without
+  /// one.
+  Widget _caption(String? panelCorner) {
+    final container = widget.container;
+    final metadata = photoMetadataDefs[widget.mode]!;
+    final shadows = _overlayTextShadows(
+      container,
+      setting: metadata.textShadow,
+    );
+    final scale = container.settings.get(metadata.scale).toDouble() / 100;
+    final text = _details['description'];
+    final bottomPanel = panelCorner != null && panelCorner.startsWith('bottom_')
+        ? panelCorner
+        : null;
+    final half = widget.captionHalf;
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AnimatedOpacity(
+            opacity: text == null ? 0 : 1,
+            duration: _fade,
+            child: _cornerVignette(
+              switch (half) {
+                null => Alignment.bottomCenter,
+                _CaptionHalf.left => const Alignment(-0.5, 1),
+                _CaptionHalf.right => const Alignment(0.5, 1),
+              },
+              container,
+              radius: 0.6,
+              def: metadata.vignette,
+            ),
+          ),
+          ValueListenableBuilder<Map<String, Size>>(
+            valueListenable: container.screensaver.metadataFootprint,
+            builder: (context, footprint, _) => LayoutBuilder(
+              builder: (context, constraints) {
+                final width = half == null
+                    ? constraints.maxWidth
+                    : constraints.maxWidth / 2;
+                final (:bottom, :maxWidth) = captionPlacement(
+                  width: width,
+                  // The panel's own margin, so a caption beside it
+                  // ends on the same line as the panel's last row.
+                  inset: 28,
+                  scale: scale,
+                  panel: bottomPanel == null ? null : footprint[bottomPanel],
+                );
+                final placed = Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: bottom),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: _ReportSize(
+                        onSize: widget.reportCaption && text != null
+                            ? (size) => container.screensaver
+                                  .reportCaptionFootprint(bottom + size.height)
+                            : null,
+                        child: AnimatedOpacity(
+                          opacity: _textVisible && text != null ? 1 : 0,
+                          duration: _fade,
+                          child: Text(
+                            text ?? '',
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Rubik',
+                              color: Colors.white.withValues(alpha: 0.95),
+                              fontSize: 17 * scale,
+                              shadows: shadows,
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+                if (half == null) return placed;
+                // Laid out inside its own half rather than aligned across
+                // the screen: an alignment matches the same fraction of
+                // the caption and the screen, so a wide caption would
+                // drift toward the middle and into its neighbor.
+                return Align(
+                  alignment: half == _CaptionHalf.left
+                      ? Alignment.centerLeft
+                      : Alignment.centerRight,
+                  child: SizedBox(
+                    width: width,
+                    height: constraints.maxHeight,
+                    child: placed,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// The panel itself, anchored to [corner].

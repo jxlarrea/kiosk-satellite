@@ -12206,6 +12206,13 @@ class UiStringsRu extends UiStrings {
       'Показывать, где снято фото.';
 
   @override
+  String get settingScreensaverImmichMetadataDescriptionTitle => 'Описание';
+
+  @override
+  String get settingScreensaverImmichMetadataDescriptionDescription =>
+      'Показывать описание фото внизу экрана.';
+
+  @override
   String get settingScreensaverImmichMetadataPositionTitle =>
       'Позиция метаданных';
 

@@ -10,6 +10,8 @@
   "settingScreensaverImmichMetadataCameraDescription": "Показувати фокусну відстань, діафрагму та ISO.",
   "settingScreensaverImmichMetadataLocationTitle": "Місцезнаходження",
   "settingScreensaverImmichMetadataLocationDescription": "Показувати місце, де було зроблено фото.",
+  "settingScreensaverImmichMetadataDescriptionTitle": "Опис",
+  "settingScreensaverImmichMetadataDescriptionDescription": "Показувати опис фото внизу екрана.",
   "settingScreensaverImmichMetadataPositionTitle": "Розташування метаданих",
   "settingScreensaverImmichMetadataPositionDescription": "У якому кутку показувати відомості.",
   "settingScreensaverImmichMetadataTextShadowTitle": "Тінь тексту",

@@ -4008,6 +4008,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverImmichMetadataLocationTitle,
       'settingScreensaverImmichMetadataLocationDescription' =>
         strings.settingScreensaverImmichMetadataLocationDescription,
+      'settingScreensaverImmichMetadataDescriptionTitle' =>
+        strings.settingScreensaverImmichMetadataDescriptionTitle,
+      'settingScreensaverImmichMetadataDescriptionDescription' =>
+        strings.settingScreensaverImmichMetadataDescriptionDescription,
       'settingScreensaverImmichMetadataPositionTitle' =>
         strings.settingScreensaverImmichMetadataPositionTitle,
       'settingScreensaverImmichMetadataPositionDescription' =>

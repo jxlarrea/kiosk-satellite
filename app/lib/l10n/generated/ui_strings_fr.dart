@@ -12343,6 +12343,13 @@ class UiStringsFr extends UiStrings {
       'Afficher l\'endroit où la photo a été prise.';
 
   @override
+  String get settingScreensaverImmichMetadataDescriptionTitle => 'Description';
+
+  @override
+  String get settingScreensaverImmichMetadataDescriptionDescription =>
+      'Afficher la description de la photo en bas de l\'écran.';
+
+  @override
   String get settingScreensaverImmichMetadataPositionTitle =>
       'Position des métadonnées';
 

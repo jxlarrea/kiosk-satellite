@@ -23693,5 +23693,15 @@
     "source": "b82eb9a8e2173ea57d7eccf41ad6e975133260f94e960789daded060fc627236",
     "translation": "81eee799b47d1019ccdad7e844dde366f1f49b7f310f2b746730ca5a83f59bdb",
     "author": "Xavier Larrea"
+  },
+  "settingScreensaverImmichMetadataDescriptionTitle": {
+    "source": "0d21ea48b3c3fe1a74bda04642907537582b4939b48c9249b97ec8664e35ece3",
+    "translation": "ee00b96fff266fe2567d47cd27bc5d8ffcbf15c1615c6e4c98ee2cfe991d515a",
+    "author": "Xavier Larrea"
+  },
+  "settingScreensaverImmichMetadataDescriptionDescription": {
+    "source": "6852fd7dccb27e5e0e1c3e3baeda616f4a5063d5f666afa601754f7bb4424674",
+    "translation": "318f6ef160dc56954eadaebf6513222a4f1fef8b4b5bac1d28d187f50ca728a2",
+    "author": "Xavier Larrea"
   }
 }
