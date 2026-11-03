@@ -1034,6 +1034,18 @@ abstract class UiStrings {
   /// **'Next 7 days'**
   String get calendarWidgetWeek;
 
+  /// Switch. On, the Up next widget marks each event with a small dot in its calendar's color instead of the picture of the person the calendar belongs to.
+  ///
+  /// In en, this message translates to:
+  /// **'Colored dots'**
+  String get calendarWidgetDots;
+
+  /// Help text under the Colored dots switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark events with their calendar\'s color instead of the person\'s picture.'**
+  String get calendarWidgetDotsHint;
+
   /// Heading of the group about managing the calendar by voice.
   ///
   /// In en, this message translates to:

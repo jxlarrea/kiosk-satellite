@@ -6451,6 +6451,13 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                               setDialogState(() => config['days'] = d ?? 1),
                         ),
                       ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(l10n(context).calendarWidgetDots),
+                        value: config['dots'] == true,
+                        onChanged: (v) =>
+                            setDialogState(() => config['dots'] = v),
+                      ),
                     ],
                     if (type == 'battery') ...[
                       colorRow(),

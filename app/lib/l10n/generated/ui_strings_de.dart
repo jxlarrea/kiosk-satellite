@@ -531,6 +531,13 @@ class UiStringsDe extends UiStrings {
   String get calendarWidgetWeek => 'Nächste 7 Tage';
 
   @override
+  String get calendarWidgetDots => 'Farbige Punkte';
+
+  @override
+  String get calendarWidgetDotsHint =>
+      'Markiert Termine mit der Farbe ihres Kalenders statt mit dem Bild der Person.';
+
+  @override
   String get calendarVoiceSection => 'Kalender per Sprache';
 
   @override

@@ -18,7 +18,13 @@ import 'package:video_player/video_player.dart';
 import 'alarms_overlay.dart' show alarmTimeText;
 import '../managers/alarms/alarm_manager.dart';
 import 'alarm_ring_overlay.dart';
-import 'calendar_overlay.dart' show CalendarBands, CalendarScreen, calendarTime;
+import 'calendar_overlay.dart'
+    show
+        CalendarAvatarStack,
+        CalendarBands,
+        CalendarPaint,
+        CalendarScreen,
+        calendarTime;
 import '../managers/calendar/calendar_manager.dart';
 import '../managers/calendar/calendar_model.dart' as cal_model;
 import '../app_container.dart';
@@ -2267,6 +2273,44 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
             )..layout()).width,
           )
           .reduce(max);
+      // Each event's calendars as their people's pictures (the initial on
+      // the calendar's color without one), or the colored dot when the
+      // widget asks for it. Night mode keeps to the dots, so a bright
+      // picture does not glare out of the dimmed screen.
+      final dots =
+          widget.spec.config['dots'] == true || widget.nightColor != null;
+      final avatarSize = textSize * 1.1;
+      final avatarPaint = CalendarPaint(context, _cal, dark: true);
+      // The pictures' slot takes the widest stack, so the times line up.
+      final leadWidth = dots
+          ? textSize * .42
+          : avatarSize +
+                4 +
+                (avatarSize - 7) *
+                    (coming.map((e) => e.calendars.length).reduce(max) - 1);
+      Widget lead(cal_model.CalendarEvent e) => dots
+          ? SizedBox(
+              width: textSize * .42,
+              height: textSize * .42,
+              child: CustomPaint(
+                painter: CalendarBands([
+                  for (final id in e.calendars) _dotColor(id),
+                ], circle: true),
+              ),
+            )
+          : SizedBox(
+              width: leadWidth,
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: CalendarAvatarStack(
+                  container: widget.container,
+                  entities: e.calendars,
+                  paint: avatarPaint,
+                  ring: const Color(0xFF1A1B1E),
+                  size: avatarSize,
+                ),
+              ),
+            );
       final rows = [
         for (final (i, e) in coming.indexed) ...[
           if (dayOf(e) case final day?
@@ -2282,15 +2326,7 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: textSize * .42,
-                  height: textSize * .42,
-                  child: CustomPaint(
-                    painter: CalendarBands([
-                      for (final id in e.calendars) _dotColor(id),
-                    ], circle: true),
-                  ),
-                ),
+                lead(e),
                 SizedBox(width: textSize * .55),
                 SizedBox(
                   width: timeWidth + 1,

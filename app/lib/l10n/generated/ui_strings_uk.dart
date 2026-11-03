@@ -528,6 +528,13 @@ class UiStringsUk extends UiStrings {
   String get calendarWidgetWeek => 'Наступні 7 днів';
 
   @override
+  String get calendarWidgetDots => 'Кольорові крапки';
+
+  @override
+  String get calendarWidgetDotsHint =>
+      'Позначати події кольором їхнього календаря замість фото людини.';
+
+  @override
   String get calendarVoiceSection => 'Голосовий календар';
 
   @override

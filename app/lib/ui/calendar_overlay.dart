@@ -134,10 +134,12 @@ Color calendarGround(ThemeData theme) {
 
 /// The colors a calendar is drawn in, worked out once per frame from its
 /// "r,g,b" and the theme: the tint for timed events, a stronger one for
-/// all-day events, the avatar's disc and its ink.
+/// all-day events, the avatar's disc and its ink. [dark] overrides the
+/// theme's brightness, for the screensaver's widgets, which always stand
+/// on a dark ground.
 class CalendarPaint {
-  CalendarPaint(this.context, this.manager)
-    : _dark = Theme.of(context).brightness == Brightness.dark,
+  CalendarPaint(this.context, this.manager, {bool? dark})
+    : _dark = dark ?? Theme.of(context).brightness == Brightness.dark,
       raised = Theme.of(context).brightness == Brightness.dark
           ? Theme.of(context).colorScheme.surfaceContainer
           : Theme.of(context).colorScheme.surfaceContainerLowest;

@@ -6,9 +6,12 @@ import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/managers/calendar/calendar_manager.dart';
 import 'package:kiosk_satellite/managers/calendar/calendar_model.dart';
+import 'package:kiosk_satellite/managers/screensaver/screensaver_widgets.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/ui/calendar_editor.dart';
 import 'package:kiosk_satellite/ui/calendar_overlay.dart';
+import 'package:kiosk_satellite/ui/screensaver_view.dart'
+    show CalendarWidgetOverlay;
 import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -409,6 +412,86 @@ void main() {
     await tester.tap(find.text('Done'));
     await tester.pump(const Duration(milliseconds: 300));
     await letGo(tester, c);
+  });
+
+  testWidgets('Up next marks events with pictures, or dots when asked', (
+    tester,
+  ) async {
+    final c = await container();
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    Future<void> show(Map<String, Object?> config, {Color? night}) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CalendarWidgetOverlay(
+              // A new key each time, so the widget starts over.
+              key: UniqueKey(),
+              container: c,
+              spec: ScreensaverWidget(
+                position: 'top_left',
+                type: 'calendar',
+                config: {...screensaverWidgetDefaults('calendar'), ...config},
+              ),
+              nightColor: night,
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      // Spread over what is left of today, whatever the time.
+      final now = DateTime.now();
+      final left = addDays(dateOnly(now), 1).difference(now);
+      c.calendar.snapshot.value = CalendarSnapshot(
+        events: [
+          for (final (i, (title, calendars)) in [
+            ('Choir', ['calendar.maya']),
+            ('Soccer', ['calendar.leo', 'calendar.sam']),
+            ('Taco night', ['calendar.leo']),
+          ].indexed)
+            CalendarEvent(
+              summary: title,
+              start: now.add(left * (i + 1) ~/ 5),
+              end: now.add(left * (i + 1) ~/ 5 + left ~/ 10),
+              allDay: false,
+              calendars: calendars,
+            ),
+        ],
+        link: CalendarLink.live,
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(tester.takeException(), isNull);
+    }
+
+    final dots = find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.painter is CalendarBands,
+    );
+    // The pictures by default: without one, the name's initial on the
+    // calendar's color, and both people on the shared event.
+    await show(const {});
+    expect(find.byType(CalendarAvatarStack), findsNWidgets(3));
+    expect(find.text('L'), findsNWidgets(2));
+    expect(find.text('S'), findsOneWidget);
+    expect(find.text('M'), findsOneWidget);
+    expect(dots, findsNothing);
+    // The shared event's wider stack does not push its title out of line.
+    final x = tester.getTopLeft(find.text('Choir')).dx;
+    expect(tester.getTopLeft(find.text('Soccer')).dx, x);
+    expect(tester.getTopLeft(find.text('Taco night')).dx, x);
+
+    // Colored dots: one per event, no pictures.
+    await show(const {'dots': true});
+    expect(find.byType(CalendarAvatarStack), findsNothing);
+    expect(dots, findsNWidgets(3));
+
+    // Night mode keeps to the dots.
+    await show(const {}, night: const Color(0xFF822222));
+    expect(find.byType(CalendarAvatarStack), findsNothing);
+    expect(dots, findsNWidgets(3));
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 61));
   });
 
   testWidgets('an empty week says so once, and the open view is reported', (

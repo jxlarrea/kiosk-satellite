@@ -519,6 +519,12 @@ class UiStringsZh extends UiStrings {
   String get calendarWidgetWeek => '未来 7 天';
 
   @override
+  String get calendarWidgetDots => '彩色圆点';
+
+  @override
+  String get calendarWidgetDotsHint => '用日历的颜色标记日程，而不是显示人物照片。';
+
+  @override
   String get calendarVoiceSection => '语音日历';
 
   @override
@@ -15555,6 +15561,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get calendarWidgetWeek => '未来 7 天';
+
+  @override
+  String get calendarWidgetDots => '彩色圆点';
+
+  @override
+  String get calendarWidgetDotsHint => '用日历的颜色标记日程，而不是显示人物照片。';
 
   @override
   String get calendarVoiceSection => '语音日历';

@@ -530,6 +530,13 @@ class UiStringsRu extends UiStrings {
   String get calendarWidgetWeek => 'Следующие 7 дней';
 
   @override
+  String get calendarWidgetDots => 'Цветные точки';
+
+  @override
+  String get calendarWidgetDotsHint =>
+      'Отмечать события цветом их календаря вместо фото человека.';
+
+  @override
   String get calendarVoiceSection => 'Голосовой календарь';
 
   @override

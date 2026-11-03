@@ -54,6 +54,8 @@
   "calendarWidgetDays": "显示的天数",
   "calendarWidgetTomorrow": "今天和明天",
   "calendarWidgetWeek": "未来 7 天",
+  "calendarWidgetDots": "彩色圆点",
+  "calendarWidgetDotsHint": "用日历的颜色标记日程，而不是显示人物照片。",
   "calendarVoiceSection": "语音日历",
   "calendarVoiceManage": "通过 Voice Satellite 管理日历",
   "calendarVoiceHint": "需要在 Home Assistant 中配置 Kiosk Satellite 日历蓝图（脚本模板）和大语言模型（LLM）对话代理。",

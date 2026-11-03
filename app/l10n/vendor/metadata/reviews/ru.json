@@ -28881,5 +28881,17 @@
     "translation": "dea2b453f6b2593c732493c59f2b07474a5a27737b1300f62a0ab715feabd8a0",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "calendarWidgetDots": {
+    "source": "b82eb9a8e2173ea57d7eccf41ad6e975133260f94e960789daded060fc627236",
+    "translation": "84f36dafed742202c1b33532bbd5bb7aa6a43dd0b99dac08c327127b5628f40a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "calendarWidgetDotsHint": {
+    "source": "ef7668fef97da21bb4b7df88a03f83d06368f856ad56a411ffdf423d65730bb1",
+    "translation": "05b3c0ec8299247e97fec97c91bd2cc158723fa10108edeabbc8e439f325171e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

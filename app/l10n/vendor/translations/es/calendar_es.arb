@@ -54,6 +54,8 @@
   "calendarWidgetDays": "Días mostrados",
   "calendarWidgetTomorrow": "Hoy y mañana",
   "calendarWidgetWeek": "Próximos 7 días",
+  "calendarWidgetDots": "Puntos de color",
+  "calendarWidgetDotsHint": "Marca los eventos con el color de su calendario en lugar de la foto de la persona.",
   "calendarVoiceSection": "Calendario por voz",
   "calendarVoiceManage": "Gestionar el calendario con Voice Satellite",
   "calendarVoiceHint": "Requiere el blueprint de calendario de Kiosk Satellite y un agente de conversación LLM en Home Assistant.",

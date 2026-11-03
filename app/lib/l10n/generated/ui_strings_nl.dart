@@ -527,6 +527,13 @@ class UiStringsNl extends UiStrings {
   String get calendarWidgetWeek => 'Komende 7 dagen';
 
   @override
+  String get calendarWidgetDots => 'Gekleurde stippen';
+
+  @override
+  String get calendarWidgetDotsHint =>
+      'Markeer afspraken met de kleur van hun agenda in plaats van de foto van de persoon.';
+
+  @override
   String get calendarVoiceSection => 'Agenda via spraak';
 
   @override

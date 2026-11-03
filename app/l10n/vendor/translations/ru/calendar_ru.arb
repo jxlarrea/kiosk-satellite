@@ -54,6 +54,8 @@
   "calendarWidgetDays": "Показано дней",
   "calendarWidgetTomorrow": "Сегодня и завтра",
   "calendarWidgetWeek": "Следующие 7 дней",
+  "calendarWidgetDots": "Цветные точки",
+  "calendarWidgetDotsHint": "Отмечать события цветом их календаря вместо фото человека.",
   "calendarVoiceSection": "Голосовой календарь",
   "calendarVoiceManage": "Управление календарём через Voice Satellite",
   "calendarVoiceHint": "Требуются Blueprint календаря Kiosk Satellite и диалоговый LLM-агент в Home Assistant.",

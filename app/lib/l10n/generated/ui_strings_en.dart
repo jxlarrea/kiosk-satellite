@@ -526,6 +526,13 @@ class UiStringsEn extends UiStrings {
   String get calendarWidgetWeek => 'Next 7 days';
 
   @override
+  String get calendarWidgetDots => 'Colored dots';
+
+  @override
+  String get calendarWidgetDotsHint =>
+      'Mark events with their calendar\'s color instead of the person\'s picture.';
+
+  @override
   String get calendarVoiceSection => 'Voice Calendar';
 
   @override

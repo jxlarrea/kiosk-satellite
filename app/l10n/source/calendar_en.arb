@@ -675,6 +675,29 @@
       ]
     }
   },
+  "calendarWidgetDots": "Colored dots",
+  "@calendarWidgetDots": {
+    "context": "Screensaver > Widgets > Up next",
+    "description": "Switch. On, the Up next widget marks each event with a small dot in its calendar's color instead of the picture of the person the calendar belongs to.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Up next"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Up next"
+      ]
+    }
+  },
+  "calendarWidgetDotsHint": "Mark events with their calendar's color instead of the person's picture.",
+  "@calendarWidgetDotsHint": {
+    "context": "Screensaver > Widgets > Up next",
+    "description": "Help text under the Colored dots switch.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Screensaver > Widgets > Up next"
+      ]
+    }
+  },
   "calendarVoiceSection": "Voice Calendar",
   "@calendarVoiceSection": {
     "context": "Settings > Calendar",

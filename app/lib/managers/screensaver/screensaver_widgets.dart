@@ -173,7 +173,8 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'font_weight': screensaverWidgetFontDefault,
   },
   // The family calendar's next events, up to [count], over [days] days
-  // starting today.
+  // starting today, each marked with its calendars' pictures, or with a
+  // dot in their colors when [dots] is on (issue #1285).
   'calendar' => {
     'color': '250,250,250',
     'scale': screensaverWidgetScaleDefault,
@@ -181,6 +182,7 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'font_weight': screensaverWidgetFontDefault,
     'count': 3,
     'days': 1,
+    'dots': false,
   },
   'entity' => {
     'entity': '',
