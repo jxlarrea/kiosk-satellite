@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.4 - 2026-11-03
 
 ### Added
 - **Add, change and delete calendar events on the screen.** Two new settings under **Settings, Calendar, Editing**, both off by default, turn the calendar from read only into one you can change. **Allow adding and editing events** adds **New event** (in the top bar on a tablet, a + button on a short screen such as the Echo Show 5 and at the bottom right on a phone), a tap on an empty hour of the Day view to start an event there and **Edit** on each event. **Allow deleting events** adds **Delete**. The form has the title, the calendars the event goes on, all day, the start and the end, how it repeats, the location and notes. An event on several calendars changes or goes on all of them, and a repeating one asks which days the change covers. Calendars that take no changes, such as a holiday calendar, stay read only (#1283).
