@@ -259,6 +259,7 @@ object SoftwareEcho {
                 EchoCheck.lastLeft, EchoCheck.lastRemovedDb, EchoCheck.lastRoomRatio,
             ),
         )
+        ran(AEC3, "detected")
         detected(AEC3)
     }
 
@@ -380,6 +381,27 @@ object SoftwareEcho {
         private set
 
     /**
+     * The canceller this process last ran, "gtcrn" or "aec3", empty until
+     * one has, and why: "picked" in Microphone settings, "detected" by
+     * Automatic, "testing" while Automatic still judges GTCRN, or
+     * "unavailable" when GTCRN cannot run here. Kept after the capture
+     * stops, for usage analytics: it is what this kiosk cancels with when
+     * it listens, whatever the setting says.
+     */
+    @Volatile var lastEngine = ""
+        private set
+    @Volatile var lastWhy = ""
+        private set
+
+    private fun ran(engine: String, why: String) {
+        lastEngine = engine
+        lastWhy = why
+    }
+
+    /** [lastEngine], [lastWhy] and whether a capture runs through it now. */
+    fun state(): Map<String, Any> = mapOf("engine" to lastEngine, "why" to lastWhy, "running" to enabled)
+
+    /**
      * On or off with the capture's settings, with the Echo cancellation
      * method: [AUTO], [GTCRN], [AEC3], or Automatic's verdict ("auto:gtcrn",
      * "auto:aec3").
@@ -410,6 +432,7 @@ object SoftwareEcho {
                     ringAt = 0
                     enabled = true
                     checking = method == AUTO
+                    ran(GTCRN, if (checking) "testing" else if (method.startsWith(DETECTED)) "detected" else "picked")
                     EchoCheck.started()
                     val testing = if (checking) ", ${EchoCheck.progress()}" else ""
                     report("echo cancellation: GTCRN (LocalVQE, $why$testing), capture ${vqeDelay * 10} ms late")
@@ -421,6 +444,7 @@ object SoftwareEcho {
                 usesPrototype = (customDuplex && residualGate.intercomOnly) || (customRealtime && residualGate.realtime)
                 enabled = true
                 checking = false
+                ran(AEC3, if (pick != AEC3) "unavailable" else if (method.startsWith(DETECTED)) "detected" else "picked")
                 if (pick == AEC3) {
                     report("echo cancellation: AEC3 ($why)")
                 } else {
@@ -537,6 +561,7 @@ object SoftwareEcho {
                             AEC3 -> switchTo = true
                             GTCRN -> {
                                 report("echo cancellation: GTCRN (detected: %.0f dB under the microphone)".format(EchoCheck.lastRemovedDb))
+                                ran(GTCRN, "detected")
                                 detected(GTCRN)
                             }
                         }

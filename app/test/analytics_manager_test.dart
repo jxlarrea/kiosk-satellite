@@ -66,6 +66,9 @@ void main() {
   late Map<String, Object?> shizukuState;
   late List<String> answers;
   late Map<String, Object?> pluginState;
+  // What the echo canceller says it last ran; null fails the call, like a
+  // platform without the native side.
+  Map<String, Object?>? echoState;
   // Community Plugins as getPluginDirectory answers; null fails the call.
   Map<String, Object?>? pluginDirectory;
   var directoryReads = 0;
@@ -97,6 +100,16 @@ void main() {
     };
     pluginDirectory = null;
     directoryReads = 0;
+    echoState = null;
+    commands.register(
+      Command(
+        name: 'getEchoCancellerState',
+        description: 'stub',
+        handler: (_) async => echoState == null
+            ? const CommandResult.fail('no echo canceller here')
+            : CommandResult.ok(echoState),
+      ),
+    );
     commands.register(
       Command(
         name: 'getPluginState',
@@ -798,6 +811,35 @@ void main() {
     u = bodyOf(sent.single)['usage'] as Map;
     expect(u['library_plays_sonos'], '0');
     expect(u['library_source'], 'auto');
+  });
+
+  test('the echo canceller reads as what it ran, not the setting', () async {
+    await build({
+      'ks.audio.echo_cancellation_method': 'gtcrn',
+    }, firstDelay: const Duration(days: 1));
+    Future<Map> usage() async {
+      sent.clear();
+      expect(await analytics.sendSnapshot(force: true), isTrue);
+      return bodyOf(sent.single)['usage'] as Map;
+    }
+
+    // No native side: nothing said either way.
+    var u = await usage();
+    expect(u.containsKey('echo_canceller'), isFalse);
+    // GTCRN picked, but this CPU cannot run it: AEC3 is what cancels.
+    echoState = {'engine': 'aec3', 'why': 'unavailable', 'running': true};
+    u = await usage();
+    expect(u['echo_canceller'], 'aec3');
+    expect(u['echo_canceller_why'], 'unavailable');
+    echoState = {'engine': 'gtcrn', 'why': 'testing', 'running': false};
+    u = await usage();
+    expect(u['echo_canceller'], 'gtcrn');
+    expect(u['echo_canceller_why'], 'testing');
+    // No capture has run the canceller since the app started.
+    echoState = {'engine': '', 'why': '', 'running': false};
+    u = await usage();
+    expect(u['echo_canceller'], 'none');
+    expect(u.containsKey('echo_canceller_why'), isFalse);
   });
 
   test('alarms read as counts and picks, never as times or labels', () async {

@@ -184,6 +184,8 @@ class AudioRoutingBridge(context: Context, messenger: BinaryMessenger) {
                     AudioFocus.hold(context, call.argument<Boolean>("active") == true)
                     result.success(true)
                 }
+                // Which echo canceller actually ran, for usage analytics.
+                "echoState" -> result.success(SoftwareEcho.state())
                 else -> result.notImplemented()
             }
         }

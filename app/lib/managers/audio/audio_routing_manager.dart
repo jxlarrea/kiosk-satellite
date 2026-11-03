@@ -171,6 +171,28 @@ class AudioRoutingManager extends Manager {
         },
       ),
     );
+    commands.register(
+      Command(
+        name: 'getEchoCancellerState',
+        description:
+            'The echo canceller this kiosk last ran, whatever the setting '
+            'says: {engine: gtcrn | aec3 | "" (none yet), why: picked | '
+            'detected | testing | unavailable, running}.',
+        quiet: true,
+        handler: (_) async {
+          try {
+            final state = await _channel.invokeMapMethod<String, Object?>(
+              'echoState',
+            );
+            return CommandResult.ok(state ?? const {});
+          } on PlatformException catch (e) {
+            return CommandResult.fail('echo canceller state failed: $e');
+          } on MissingPluginException {
+            return const CommandResult.fail('no echo canceller here');
+          }
+        },
+      ),
+    );
   }
 
   /// Classic Bluetooth cannot run its hi-fi profile while the same

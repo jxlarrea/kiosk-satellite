@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **Usage analytics report the echo canceller in use.** The snapshot names the canceller the microphone last ran, GTCRN or AEC3, and why: picked in Microphone settings, detected by Automatic, still under Automatic's test or AEC3 because GTCRN cannot run on the device. It comes from the canceller itself, not the Echo cancellation method setting, so a kiosk set to GTCRN that falls back to AEC3 reads as AEC3.
+
 ### Fixed
 - **Home Assistant asks for the new ESPHome key again.** After the encryption key changed on the kiosk, Home Assistant logged "Unexpected device found" and kept failing to connect instead of asking for the new key. The kiosk sent its MAC address in a form that newer versions of Home Assistant cut short, so it no longer matched the device. It now sends the MAC the way ESPHome devices do (#1279).
 

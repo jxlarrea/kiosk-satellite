@@ -447,6 +447,7 @@ class AnalyticsManager extends Manager {
     } catch (_) {}
 
     final plugins = await _plugins();
+    final echo = await _echoCanceller();
 
     // What Voice Satellite is listening for and with: the wake word
     // manager's state. Names only; a model name is a catalog label, not
@@ -690,8 +691,12 @@ class AnalyticsManager extends Manager {
       'wake_word_2': wakeWord2,
       'vs_skin': vs.skin,
       ...nativeVoice,
-      // The kiosk's own echo canceller, for everything that listens.
+      // The kiosk's own echo canceller, for everything that listens: the
+      // switch, and the engine it actually ran with and why, which can
+      // differ from the method picked (Automatic's verdict, or GTCRN
+      // unavailable on this CPU).
       'software_echo_cancellation': s.get(defs.micSoftwareEchoCancellation),
+      ...echo,
       // MediaTek's DuraSpeed refused the dashboard's renderer since the
       // last report.
       'duraspeed_blocked': (_reportedCounts['duraspeed_blocked'] ?? 0) > 0,
@@ -928,6 +933,24 @@ class AnalyticsManager extends Manager {
     'queue_edits',
     'library_voice_requests',
   ];
+
+  /// The echo canceller the capture last ran ('gtcrn' or 'aec3', 'none'
+  /// before any capture ran it since the app started) and why, read from
+  /// the canceller itself rather than the setting.
+  Future<Map<String, Object?>> _echoCanceller() async {
+    try {
+      final r = await commands.execute('getEchoCancellerState', const {});
+      final data = r.data;
+      if (r.ok && data is Map) {
+        final engine = '${data['engine'] ?? ''}';
+        return {
+          'echo_canceller': engine.isEmpty ? 'none' : engine,
+          if (engine.isNotEmpty) 'echo_canceller_why': '${data['why'] ?? ''}',
+        };
+      }
+    } catch (_) {}
+    return const {};
+  }
 
   /// The plugin installs, updates, removals and failed installs people
   /// asked for, counted since the last snapshot (PluginManager.onActivity).
