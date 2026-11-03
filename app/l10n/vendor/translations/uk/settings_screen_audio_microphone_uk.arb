@@ -23,5 +23,9 @@
   "settingMicCaptureModeTitle": "Режим захоплення",
   "settingMicCaptureModeDescription": "Виберіть Голосовий зв'язок, якщо мікрофон тут мовчить або перестає працювати після того, як кіоск відтворить звук. Деякі пристрої правильно записують лише через аудіотракт дзвінків.",
   "screenAudioCaptureRawMicrophone": "Необроблений сигнал мікрофона (за замовчуванням)",
-  "screenAudioCaptureVoiceCommunication": "Голосовий зв'язок"
+  "screenAudioCaptureVoiceCommunication": "Голосовий зв'язок",
+  "settingMicEchoCancellationMethodTitle": "Метод ехопоглинання",
+  "settingMicEchoCancellationMethodDescription": "Автоматично перевіряє GTCRN, поки кіоск відтворює звуки, і перемикається на AEC3, якщо лишається забагато відлуння. Виберіть Автоматично, щоб повторити перевірку.",
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN (виявлено)",
+  "screenAudioEchoMethodAec3Detected": "AEC3 (виявлено)"
 }

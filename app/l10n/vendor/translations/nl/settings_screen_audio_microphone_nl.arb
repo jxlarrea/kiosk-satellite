@@ -23,5 +23,9 @@
   "settingMicCaptureModeTitle": "Opnamemodus",
   "settingMicCaptureModeDescription": "Kies Spraakcommunicatie als de microfoon hier stil blijft of stopt nadat de kiosk een geluid heeft afgespeeld. Sommige apparaten nemen alleen goed op via hun audiopad voor gesprekken.",
   "screenAudioCaptureRawMicrophone": "Onbewerkte microfoon (standaard)",
-  "screenAudioCaptureVoiceCommunication": "Spraakcommunicatie"
+  "screenAudioCaptureVoiceCommunication": "Spraakcommunicatie",
+  "settingMicEchoCancellationMethodTitle": "Methode voor echo-onderdrukking",
+  "settingMicEchoCancellationMethodDescription": "Automatisch test GTCRN terwijl de kiosk geluid afspeelt en schakelt over naar AEC3 als er te veel echo overblijft. Kies Automatisch om opnieuw te testen.",
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN (gedetecteerd)",
+  "screenAudioEchoMethodAec3Detected": "AEC3 (gedetecteerd)"
 }

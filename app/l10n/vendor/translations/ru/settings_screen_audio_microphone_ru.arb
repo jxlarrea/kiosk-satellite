@@ -23,5 +23,9 @@
   "screenAudioChannel": "Канал {channel}",
   "screenAudioChannelMissing": "Канал {channel} (нет на этом микрофоне)",
   "screenAudioMicrophoneLevel": "Уровень микрофона",
-  "screenAudioMicrophoneLevelHelp": "Говорите оттуда, где пользуетесь устройством; подстройте усиление так, чтобы обычная речь доходила примерно до конца зелёной зоны."
+  "screenAudioMicrophoneLevelHelp": "Говорите оттуда, где пользуетесь устройством; подстройте усиление так, чтобы обычная речь доходила примерно до конца зелёной зоны.",
+  "settingMicEchoCancellationMethodTitle": "Метод подавления эха",
+  "settingMicEchoCancellationMethodDescription": "Автоматически проверяет GTCRN, пока киоск воспроизводит звуки, и переключается на AEC3, если остаётся слишком много эха. Выберите «Автоматически», чтобы повторить проверку.",
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN (определено)",
+  "screenAudioEchoMethodAec3Detected": "AEC3 (определено)"
 }

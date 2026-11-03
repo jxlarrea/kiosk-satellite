@@ -186,6 +186,7 @@ void main() {
     expect(moved, [
       defs.micCaptureMode.key,
       defs.micSoftwareEchoCancellation.key,
+      defs.micEchoCancellationMethod.key,
       defs.micNoiseSuppression.key,
       defs.micGainDb.key,
       defs.micCaptureFormat.key,

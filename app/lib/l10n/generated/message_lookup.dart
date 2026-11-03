@@ -3240,6 +3240,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingMicSoftwareEchoCancellationTitle,
       'settingMicSoftwareEchoCancellationDescription' =>
         strings.settingMicSoftwareEchoCancellationDescription,
+      'settingMicEchoCancellationMethodTitle' =>
+        strings.settingMicEchoCancellationMethodTitle,
+      'settingMicEchoCancellationMethodDescription' =>
+        strings.settingMicEchoCancellationMethodDescription,
       'settingMicNoiseSuppressionTitle' =>
         strings.settingMicNoiseSuppressionTitle,
       'settingMicNoiseSuppressionDescription' =>
@@ -3260,6 +3264,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.screenAudioCaptureRawMicrophone,
       'screenAudioCaptureVoiceCommunication' =>
         strings.screenAudioCaptureVoiceCommunication,
+      'screenAudioEchoMethodGtcrnDetected' =>
+        strings.screenAudioEchoMethodGtcrnDetected,
+      'screenAudioEchoMethodAec3Detected' =>
+        strings.screenAudioEchoMethodAec3Detected,
       'screenAudioDownmix' => strings.screenAudioDownmix,
       'screenAudioMicrophoneLevel' => strings.screenAudioMicrophoneLevel,
       'screenAudioMicrophoneLevelHelp' =>

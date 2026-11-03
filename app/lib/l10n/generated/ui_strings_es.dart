@@ -10561,6 +10561,14 @@ class UiStringsEs extends UiStrings {
       'Elimina del micrófono los sonidos del propio kiosko para que ni la palabra de activación ni el asistente los oigan. Déjala activada salvo que un micrófono que cancela su propio eco suene peor con ella.';
 
   @override
+  String get settingMicEchoCancellationMethodTitle =>
+      'Método de cancelación de eco';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      'Automático prueba GTCRN mientras el kiosko reproduce sonidos y cambia a AEC3 si deja demasiado eco. Elige Automático para repetir la prueba.';
+
+  @override
   String get settingMicNoiseSuppressionTitle => 'Supresión de ruido';
 
   @override
@@ -10611,6 +10619,12 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get screenAudioCaptureVoiceCommunication => 'Comunicación de voz';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN (detectado)';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3 (detectado)';
 
   @override
   String get screenAudioDownmix => 'Mezclar canales (predeterminado)';

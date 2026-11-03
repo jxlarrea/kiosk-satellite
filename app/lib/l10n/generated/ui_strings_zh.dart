@@ -9895,6 +9895,13 @@ class UiStringsZh extends UiStrings {
       '从麦克风中消除 Kiosk 自身的声音，避免唤醒词引擎和助手听到这些声音。除非麦克风自带回声消除且开启此项后效果变差，否则请保持开启。';
 
   @override
+  String get settingMicEchoCancellationMethodTitle => '回声消除方式';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      '“自动”会在 Kiosk 播放声音时测试 GTCRN，如果残留回声过多则切换到 AEC3。选择“自动”可重新测试。';
+
+  @override
   String get settingMicNoiseSuppressionTitle => '降噪';
 
   @override
@@ -9941,6 +9948,12 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get screenAudioCaptureVoiceCommunication => '语音通信';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN（已检测）';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3（已检测）';
 
   @override
   String get screenAudioDownmix => '混合声道（默认）';
@@ -24779,6 +24792,13 @@ class UiStringsZhCn extends UiStringsZh {
       '从麦克风中消除 Kiosk 自身的声音，避免唤醒词引擎和助手听到这些声音。除非麦克风自带回声消除且开启此项后效果变差，否则请保持开启。';
 
   @override
+  String get settingMicEchoCancellationMethodTitle => '回声消除方式';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      '“自动”会在 Kiosk 播放声音时测试 GTCRN，如果残留回声过多则切换到 AEC3。选择“自动”可重新测试。';
+
+  @override
   String get settingMicNoiseSuppressionTitle => '降噪';
 
   @override
@@ -24825,6 +24845,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get screenAudioCaptureVoiceCommunication => '语音通信';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN（已检测）';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3（已检测）';
 
   @override
   String get screenAudioDownmix => '混合声道（默认）';

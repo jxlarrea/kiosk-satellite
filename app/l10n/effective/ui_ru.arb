@@ -39275,6 +39275,32 @@
       ]
     }
   },
+  "settingMicEchoCancellationMethodTitle": "Метод подавления эха",
+  "@settingMicEchoCancellationMethodTitle": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "settingMicEchoCancellationMethodDescription": "Автоматически проверяет GTCRN, пока киоск воспроизводит звуки, и переключается на AEC3, если остаётся слишком много эха. Выберите «Автоматически», чтобы повторить проверку.",
+  "@settingMicEchoCancellationMethodDescription": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
   "settingMicNoiseSuppressionTitle": "Подавление шума",
   "@settingMicNoiseSuppressionTitle": {
     "context": "Settings:Screen & Audio:Microphone settings",
@@ -39459,6 +39485,32 @@
   },
   "screenAudioCaptureVoiceCommunication": "Голосовая связь",
   "@screenAudioCaptureVoiceCommunication": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN (определено)",
+  "@screenAudioEchoMethodGtcrnDetected": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "screenAudioEchoMethodAec3Detected": "AEC3 (определено)",
+  "@screenAudioEchoMethodAec3Detected": {
     "context": "Settings:Screen & Audio:Microphone settings",
     "description": "Heading, choice, status or guidance shown in this group.",
     "x-locations": {

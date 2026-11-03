@@ -933,8 +933,12 @@ class WakeWordManager extends Manager
         // updated the selector by the time this listener runs (it inits,
         // and so subscribes, before this manager).
         _restartForMicChange('microphone selection changed');
+      } else if (e.key == defs.micEchoCancellationMethod.key &&
+          defs.isEchoMethodVerdict(e.previous, e.value)) {
+        // Automatic's verdict: the canceller already runs it.
       } else if (e.key == defs.micCaptureMode.key ||
           e.key == defs.micSoftwareEchoCancellation.key ||
+          e.key == defs.micEchoCancellationMethod.key ||
           e.key == defs.micNoiseSuppression.key ||
           e.key == defs.micGainDb.key ||
           e.key == defs.micChannel.key ||
@@ -1950,7 +1954,8 @@ class WakeWordManager extends Manager
   /// Voice Satellite's page pushed).
   void _watchPlayback() {
     final config = _config;
-    final boosts = config != null &&
+    final boosts =
+        config != null &&
         config.models.any(
           (m) => m.playbackConfidenceScale != null || m.playbackCutoff != null,
         );

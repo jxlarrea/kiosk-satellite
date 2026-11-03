@@ -23,5 +23,9 @@
   "screenAudioChannel": "声道 {channel}",
   "screenAudioChannelMissing": "声道 {channel}（此麦克风不具备）",
   "screenAudioMicrophoneLevel": "麦克风电平",
-  "screenAudioMicrophoneLevelHelp": "在平时使用设备的位置说话，调整增益，使正常讲话的峰值接近绿色区域末端。"
+  "screenAudioMicrophoneLevelHelp": "在平时使用设备的位置说话，调整增益，使正常讲话的峰值接近绿色区域末端。",
+  "settingMicEchoCancellationMethodTitle": "回声消除方式",
+  "settingMicEchoCancellationMethodDescription": "“自动”会在 Kiosk 播放声音时测试 GTCRN，如果残留回声过多则切换到 AEC3。选择“自动”可重新测试。",
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN（已检测）",
+  "screenAudioEchoMethodAec3Detected": "AEC3（已检测）"
 }

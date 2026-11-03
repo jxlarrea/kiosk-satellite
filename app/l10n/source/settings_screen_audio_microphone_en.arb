@@ -52,6 +52,32 @@
       ]
     }
   },
+  "settingMicEchoCancellationMethodTitle": "Echo cancellation method",
+  "@settingMicEchoCancellationMethodTitle": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "settingMicEchoCancellationMethodDescription": "Automatic tests GTCRN while the kiosk plays sounds and switches to AEC3 if it leaves too much echo. Pick Automatic to test again.",
+  "@settingMicEchoCancellationMethodDescription": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
   "settingMicNoiseSuppressionTitle": "Noise suppression",
   "@settingMicNoiseSuppressionTitle": {
     "context": "Settings:Screen & Audio:Microphone settings",
@@ -236,6 +262,32 @@
   },
   "screenAudioCaptureVoiceCommunication": "Voice communication",
   "@screenAudioCaptureVoiceCommunication": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN (detected)",
+  "@screenAudioEchoMethodGtcrnDetected": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "screenAudioEchoMethodAec3Detected": "AEC3 (detected)",
+  "@screenAudioEchoMethodAec3Detected": {
     "context": "Settings:Screen & Audio:Microphone settings",
     "description": "Heading, choice, status or guidance shown in this group.",
     "x-locations": {

@@ -39275,6 +39275,32 @@
       ]
     }
   },
+  "settingMicEchoCancellationMethodTitle": "回声消除方式",
+  "@settingMicEchoCancellationMethodTitle": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "settingMicEchoCancellationMethodDescription": "“自动”会在 Kiosk 播放声音时测试 GTCRN，如果残留回声过多则切换到 AEC3。选择“自动”可重新测试。",
+  "@settingMicEchoCancellationMethodDescription": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
   "settingMicNoiseSuppressionTitle": "降噪",
   "@settingMicNoiseSuppressionTitle": {
     "context": "Settings:Screen & Audio:Microphone settings",
@@ -39459,6 +39485,32 @@
   },
   "screenAudioCaptureVoiceCommunication": "语音通信",
   "@screenAudioCaptureVoiceCommunication": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN（已检测）",
+  "@screenAudioEchoMethodGtcrnDetected": {
+    "context": "Settings:Screen & Audio:Microphone settings",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Microphone settings"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Microphone settings"
+      ]
+    }
+  },
+  "screenAudioEchoMethodAec3Detected": "AEC3（已检测）",
+  "@screenAudioEchoMethodAec3Detected": {
     "context": "Settings:Screen & Audio:Microphone settings",
     "description": "Heading, choice, status or guidance shown in this group.",
     "x-locations": {

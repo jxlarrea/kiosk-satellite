@@ -39,9 +39,15 @@ On by default. It removes the kiosk's own sounds from the microphone with GTCRN,
 
 It covers everything the kiosk plays itself: chimes, timers, text to speech, the realtime assistant's voice, intercom calls, alarms, the Sendspin player and audio sent over DLNA. Every feature that listens gets the cleaned microphone, so the wake word, Assist, realtime conversations, the intercom and the RTSP stream all benefit. Sound from web pages and the sound of DLNA videos are not covered. The canceller only runs while something plays and for a moment after, so an idle microphone passes through untouched. With GTCRN on, every feature that listens gets the microphone 30 ms later, whether or not something plays.
 
-The kiosk does not use Android's own echo canceller, noise suppressor or gain control. Android's canceller only worked on the phone call capture path, which some custom ROMs deliver 20 dB quieter than the microphone source, and on most devices it let the assistant hear itself anyway. Devices that process the microphone in their own firmware, such as the Echo Show and the Meta Portal, keep doing so, and the kiosk's canceller takes care of what their hardware canceller leaves.
+The kiosk does not use Android's own echo canceller, noise suppressor or gain control. Android's canceller only worked on the phone call capture path, which some custom ROMs deliver 20 dB quieter than the microphone source, and on most devices it let the assistant hear itself anyway. Devices that process the microphone in their own firmware, such as the Meta Portal, keep doing so, and the kiosk's canceller takes care of what their hardware canceller leaves.
 
 Turn it off only if a microphone with its own canceller sounds worse with a second one over it. The wake word then hears the kiosk's own sounds.
+
+### Echo Cancellation Method
+
+Picks the canceller: **Automatic (default)**, **GTCRN** or **AEC3**, WebRTC's echo canceller. Automatic runs GTCRN and measures how much of the kiosk's own sound it leaves while the kiosk plays. GTCRN cannot follow an echo that a device's own adaptive canceller has already processed, so if too much is left, the kiosk switches to AEC3 between two sounds. Once the test settles, the setting shows the result as **GTCRN (detected)** or **AEC3 (detected)** and keeps it. The test takes about 30 seconds of sound the kiosk plays, over one or more answers, chimes or songs. Talking over an answer does not count against GTCRN.
+
+Pick **Automatic** to run the test again. A system update runs it again on its own, since it can change how the device delivers the microphone. Pick **GTCRN** or **AEC3** to skip the test.
 
 ## Noise Suppression
 

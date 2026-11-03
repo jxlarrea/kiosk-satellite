@@ -121,11 +121,25 @@ class SettingsManager extends Manager {
     ];
   }
 
+  /// Automatic and the two cancellers, the one Automatic settled on in
+  /// place of its own entry (shown as "GTCRN (detected)"). Picking
+  /// Automatic again drops the verdict.
+  List<String> _echoMethodOptions() {
+    final current = get(micEchoCancellationMethod);
+    return [
+      'auto',
+      for (final method in ['gtcrn', 'aec3'])
+        current == 'auto:$method' ? current : method,
+    ];
+  }
+
   List<String> optionsFor(SettingDef<Object> def) =>
       def.key == cameraRtspResolution.key
       ? _cameraStreamResolutions ?? const []
       : def.key == voiceAmazonLocale.key
       ? ['', ...PryonCatalog.locales]
+      : def.key == micEchoCancellationMethod.key
+      ? _echoMethodOptions()
       : _realtimeOptions(def) ??
             [
               for (final option in def.options ?? const <String>[])
@@ -505,8 +519,7 @@ class SettingsManager extends Manager {
     // old values go: the switches are links now and hold nothing.
     if (_prefs.get(_prefix + uiDrawerItems.key) == null) {
       final hidden = <String>{
-        for (final MapEntry(key: key, value: id)
-            in drawerItemLinks.entries)
+        for (final MapEntry(key: key, value: id) in drawerItemLinks.entries)
           if (!(_prefs.get(_prefix + key) as bool? ??
               !drawerItemsOffByDefault.contains(id)))
             id,

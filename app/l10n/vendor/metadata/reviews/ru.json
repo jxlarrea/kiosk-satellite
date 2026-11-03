@@ -28611,5 +28611,29 @@
     "translation": "13943821d5d3e2625e057316337b9b900b231285e481b9e0b8474880b2345e88",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingMicEchoCancellationMethodDescription": {
+    "source": "b71bc17a4d31022edcc4b112df93700fba06f5904c041e44cdae1a6c530c6528",
+    "translation": "8859a6f5dfc048d234fc5b44097fbc3df7db8b69897395408c0a95db19766def",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingMicEchoCancellationMethodTitle": {
+    "source": "55b3be2817ec6a7729b28ec9fcf7693ae82f6132cf29bbbc40a5002d2d83dd90",
+    "translation": "2ca930a489695cb30fc7c52644e3aef1eced7d0766215c5510c39a90e208d81d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "screenAudioEchoMethodAec3Detected": {
+    "source": "b9f2978d1ab5f8bac19daa3131236e30bc11c1c4da8b145a1ce138bcda660afb",
+    "translation": "e7f6ff23201306dd6a29adb50e1624eaaba6ee29ad8f0156d9e5789852e0f693",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "screenAudioEchoMethodGtcrnDetected": {
+    "source": "3df089835481a83dd4a54b4c750cccb36e9d33bfa5f8e1e722f940aab7718c05",
+    "translation": "57a4f8257615eab31f4811ff8d73e48198a1a7db07c3164931b61ab1a46a5b26",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

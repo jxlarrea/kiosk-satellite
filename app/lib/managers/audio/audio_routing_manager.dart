@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/command_registry.dart';
@@ -31,9 +32,25 @@ import 'mic_hub.dart';
 /// ducks under a turn, an alarm or an intercom call the way Android apps
 /// expect. Media playback, ours included, is not an interaction.
 class AudioRoutingManager extends Manager {
-  AudioRoutingManager(super.bus, super.commands, super.log, this._settings);
+  AudioRoutingManager(
+    super.bus,
+    super.commands,
+    super.log,
+    this._settings, {
+    this.systemBuild = _fingerprint,
+  });
 
   final SettingsManager _settings;
+
+  /// The system build (Build.FINGERPRINT), which Automatic's echo
+  /// cancellation verdict holds for. Tests swap it.
+  final Future<String?> Function() systemBuild;
+
+  static Future<String?> _fingerprint() async =>
+      (await DeviceInfoPlugin().androidInfo).fingerprint;
+
+  /// Internal key holding the system build Automatic's verdict was made on.
+  static const echoVerdictBuild = 'audio.echo_method_build';
 
   static const _channel = MethodChannel('kiosk_satellite/audio_routing');
 
@@ -52,13 +69,21 @@ class AudioRoutingManager extends Manager {
   @override
   Future<void> init() async {
     NativeMic.onWarning = (warning) => log.warn('mic', warning);
-    NativeMic.onInfo = (message) => log.info('mic', message);
+    await _retestEchoAfterSystemUpdate();
     NativeMic.deviceSelector = _settings.get(defs.audioMicDevice);
     _pushCaptureTuning();
     await _pushOutput(_settings.get(defs.audioSpeakerDevice));
     _micDeviceId = await _resolveMicId();
 
     _channel.setMethodCallHandler((call) async {
+      // The echo canceller (SoftwareEcho.kt): which engine runs, each sound
+      // it cancelled, Automatic's test and its verdict.
+      if (call.method == 'echoLog' && call.arguments is String) {
+        log.info('mic', call.arguments as String);
+      } else if (call.method == 'echoMethodDetected' &&
+          call.arguments is String) {
+        await _echoMethodDetected(call.arguments as String);
+      }
       if (call.method == 'devicesChanged') {
         // Connect/disconnect fires several callbacks in a burst (each
         // profile of a Bluetooth device registers separately); settle
@@ -82,8 +107,14 @@ class AudioRoutingManager extends Manager {
         // engine), the engine's own restart no longer guarantees a fresh
         // session; the hub reopens it with the values just pushed.
         await MicHub.instance.bounce();
+      } else if (e.key == defs.micEchoCancellationMethod.key &&
+          defs.isEchoMethodVerdict(e.previous, e.value)) {
+        // The canceller already runs what it settled on: the next capture
+        // opens with it.
+        _pushCaptureTuning();
       } else if (e.key == defs.micCaptureMode.key ||
           e.key == defs.micSoftwareEchoCancellation.key ||
+          e.key == defs.micEchoCancellationMethod.key ||
           e.key == defs.micNoiseSuppression.key ||
           e.key == defs.micGainDb.key ||
           e.key == defs.micChannel.key ||
@@ -207,12 +238,50 @@ class AudioRoutingManager extends Manager {
     NativeMic.softwareEchoCancellation = _settings.get(
       defs.micSoftwareEchoCancellation,
     );
+    NativeMic.echoMethod = _settings.get(defs.micEchoCancellationMethod);
     NativeMic.noiseSuppression = _settings.get(defs.micNoiseSuppression);
     // On top of the Echo images' base gain for the raw microphone.
     NativeMic.gainDb =
         _settings.get(defs.micGainDb) + EchoImageSettings.micGainBaseDb;
     NativeMic.channel = _settings.get(defs.micChannel);
     NativeMic.captureFormat = _settings.get(defs.micCaptureFormat);
+  }
+
+  /// Automatic settled on [method] ('gtcrn' or 'aec3') for this device.
+  /// A pick made meanwhile wins.
+  Future<void> _echoMethodDetected(String method) async {
+    if (_settings.get(defs.micEchoCancellationMethod) != 'auto') return;
+    String? build;
+    try {
+      build = await systemBuild();
+    } catch (_) {}
+    await _settings.setInternal(echoVerdictBuild, build ?? '');
+    await _settings.set(
+      defs.micEchoCancellationMethod,
+      'auto:$method',
+      source: 'echo cancellation test',
+    );
+  }
+
+  /// A system update can change the microphone path, as the Echo images
+  /// did when they stopped running Amazon's own echo canceller ahead of
+  /// this one, so Automatic's verdict from another build is tested again.
+  Future<void> _retestEchoAfterSystemUpdate() async {
+    final method = _settings.get(defs.micEchoCancellationMethod);
+    if (!method.startsWith('auto:')) return;
+    String? build;
+    try {
+      build = await systemBuild();
+    } catch (_) {
+      return;
+    }
+    if (build == null || build == _settings.internal(echoVerdictBuild)) return;
+    log.info('mic', 'system updated: testing the echo canceller again');
+    await _settings.set(
+      defs.micEchoCancellationMethod,
+      'auto',
+      source: 'system update',
+    );
   }
 
   Future<void> _pushOutput(String selector) async {

@@ -40,6 +40,11 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "auto": "screenAudioAutomaticDefault",
     "hardware": "screenAudioStereo"
   },
+  "audio.echo_cancellation_method": {
+    "auto": "screenAudioAutomaticDefault",
+    "auto:gtcrn": "screenAudioEchoMethodGtcrnDetected",
+    "auto:aec3": "screenAudioEchoMethodAec3Detected"
+  },
   "screensaver.mode": {
     "dim": "screensaverModeDim",
     "black": "screensaverModeBlack",

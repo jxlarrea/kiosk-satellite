@@ -23,8 +23,13 @@ class NativeMic {
   /// 'voice_communication' (the call path).
   static String captureMode = 'mic';
 
-  /// WebRTC's echo canceller over the capture, fed what the kiosk plays.
+  /// The kiosk's echo canceller over the capture, fed what the kiosk plays.
   static bool softwareEchoCancellation = true;
+
+  /// Which canceller runs: the Echo cancellation method setting's value
+  /// ('auto', 'gtcrn', 'aec3' or Automatic's verdict, 'auto:gtcrn' or
+  /// 'auto:aec3').
+  static String echoMethod = 'auto';
 
   /// WebRTC's noise suppressor over the capture.
   static bool noiseSuppression = false;
@@ -42,11 +47,6 @@ class NativeMic {
   /// stalled), so they reach the app log and not only logcat. Set by
   /// AudioRoutingManager with the other capture settings.
   static void Function(String warning)? onWarning;
-
-  /// Where the capture's informational lines go (which echo canceller runs
-  /// and each stretch it worked), for the app log. Set by
-  /// AudioRoutingManager next to [onWarning].
-  static void Function(String message)? onInfo;
 
   static const _levels = MethodChannel('kiosk_satellite/mic_levels');
 
@@ -73,19 +73,18 @@ class NativeMic {
         'source': captureMode,
         'gainDb': gainDb,
         'softwareAec': softwareEchoCancellation,
+        'echoMethod': echoMethod,
         'noiseSuppression': noiseSuppression,
         'channel': channel,
         'format': captureFormat,
       })
       // Besides PCM the platform sends the capture's warnings (a format
-      // that failed, a read that stalled) and its informational lines
-      // (which echo canceller runs), so they reach the app log.
+      // that failed, a read that stalled), so they reach the app log. The
+      // echo canceller logs through AudioRoutingManager's channel.
       .where((e) {
         if (e is! Map) return true;
         final warning = e['warning'];
         if (warning is String) onWarning?.call(warning);
-        final info = e['info'];
-        if (info is String) onInfo?.call(info);
         return false;
       })
       .map((e) => e as Uint8List);

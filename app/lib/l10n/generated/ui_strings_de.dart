@@ -10606,6 +10606,14 @@ class UiStringsDe extends UiStrings {
       'Entfernt die eigenen Töne des Kiosks aus dem Mikrofon, damit weder das Aktivierungswort noch der Assistent sie hören. Lass sie eingeschaltet, es sei denn, ein Mikrofon mit eigener Echounterdrückung klingt damit schlechter.';
 
   @override
+  String get settingMicEchoCancellationMethodTitle =>
+      'Methode der Echounterdrückung';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      'Automatisch testet GTCRN, während der Kiosk Töne abspielt, und wechselt zu AEC3, wenn zu viel Echo übrig bleibt. Wähle Automatisch, um erneut zu testen.';
+
+  @override
   String get settingMicNoiseSuppressionTitle => 'Rauschunterdrückung';
 
   @override
@@ -10655,6 +10663,12 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get screenAudioCaptureVoiceCommunication => 'Sprachkommunikation';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN (erkannt)';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3 (erkannt)';
 
   @override
   String get screenAudioDownmix => 'Kanäle mischen (Standard)';

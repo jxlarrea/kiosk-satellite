@@ -23,5 +23,9 @@
   "settingMicCaptureModeTitle": "Aufnahmemodus",
   "settingMicCaptureModeDescription": "Wähle Sprachkommunikation, wenn das Mikrofon hier stumm bleibt oder verstummt, nachdem der Kiosk einen Ton abgespielt hat. Manche Geräte nehmen nur über ihren Anruf-Audiopfad richtig auf.",
   "screenAudioCaptureRawMicrophone": "Rohes Mikrofon (Standard)",
-  "screenAudioCaptureVoiceCommunication": "Sprachkommunikation"
+  "screenAudioCaptureVoiceCommunication": "Sprachkommunikation",
+  "settingMicEchoCancellationMethodTitle": "Methode der Echounterdrückung",
+  "settingMicEchoCancellationMethodDescription": "Automatisch testet GTCRN, während der Kiosk Töne abspielt, und wechselt zu AEC3, wenn zu viel Echo übrig bleibt. Wähle Automatisch, um erneut zu testen.",
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN (erkannt)",
+  "screenAudioEchoMethodAec3Detected": "AEC3 (erkannt)"
 }

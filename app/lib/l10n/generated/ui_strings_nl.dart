@@ -10491,6 +10491,14 @@ class UiStringsNl extends UiStrings {
       'Filtert de eigen geluiden van de kiosk uit het microfoonsignaal, zodat de wekwoorddetectie en assistent ze niet horen. Laat dit ingeschakeld, tenzij een microfoon met eigen echo-onderdrukking hierdoor slechter klinkt.';
 
   @override
+  String get settingMicEchoCancellationMethodTitle =>
+      'Methode voor echo-onderdrukking';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      'Automatisch test GTCRN terwijl de kiosk geluid afspeelt en schakelt over naar AEC3 als er te veel echo overblijft. Kies Automatisch om opnieuw te testen.';
+
+  @override
   String get settingMicNoiseSuppressionTitle => 'Geluidsonderdrukking';
 
   @override
@@ -10541,6 +10549,12 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get screenAudioCaptureVoiceCommunication => 'Spraakcommunicatie';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN (gedetecteerd)';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3 (gedetecteerd)';
 
   @override
   String get screenAudioDownmix => 'Downmix (standaard)';

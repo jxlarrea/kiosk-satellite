@@ -18116,6 +18116,18 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Echo cancellation method'**
+  String get settingMicEchoCancellationMethodTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic tests GTCRN while the kiosk plays sounds and switches to AEC3 if it leaves too much echo. Pick Automatic to test again.'**
+  String get settingMicEchoCancellationMethodDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Noise suppression'**
   String get settingMicNoiseSuppressionTitle;
 
@@ -18202,6 +18214,18 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Voice communication'**
   String get screenAudioCaptureVoiceCommunication;
+
+  /// Heading, choice, status or guidance shown in this group.
+  ///
+  /// In en, this message translates to:
+  /// **'GTCRN (detected)'**
+  String get screenAudioEchoMethodGtcrnDetected;
+
+  /// Heading, choice, status or guidance shown in this group.
+  ///
+  /// In en, this message translates to:
+  /// **'AEC3 (detected)'**
+  String get screenAudioEchoMethodAec3Detected;
 
   /// Heading, choice, status or guidance shown in this group.
   ///

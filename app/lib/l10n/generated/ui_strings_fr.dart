@@ -10558,6 +10558,14 @@ class UiStringsFr extends UiStrings {
       'Retire du microphone les sons émis par le kiosque pour que ni le mot de réveil ni l\'assistant ne les entendent. Laissez-la activée, sauf si un microphone qui annule lui-même son écho sonne moins bien avec elle.';
 
   @override
+  String get settingMicEchoCancellationMethodTitle =>
+      'Méthode d\'annulation d\'écho';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      'Automatique teste GTCRN pendant que le kiosque joue des sons et passe à AEC3 s\'il laisse trop d\'écho. Choisissez Automatique pour refaire le test.';
+
+  @override
   String get settingMicNoiseSuppressionTitle => 'Réduction du bruit';
 
   @override
@@ -10607,6 +10615,12 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get screenAudioCaptureVoiceCommunication => 'Communication vocale';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN (détecté)';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3 (détecté)';
 
   @override
   String get screenAudioDownmix => 'Sous-mixage (par défaut)';

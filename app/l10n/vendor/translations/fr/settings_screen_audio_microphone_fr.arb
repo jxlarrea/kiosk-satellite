@@ -23,5 +23,9 @@
   "settingMicCaptureModeTitle": "Mode de capture",
   "settingMicCaptureModeDescription": "Choisissez Communication vocale si le microphone reste muet ici ou s'arrête après que le kiosque a joué un son. Certains appareils n'enregistrent correctement que par leur chemin audio d'appel.",
   "screenAudioCaptureRawMicrophone": "Microphone brut (par défaut)",
-  "screenAudioCaptureVoiceCommunication": "Communication vocale"
+  "screenAudioCaptureVoiceCommunication": "Communication vocale",
+  "settingMicEchoCancellationMethodTitle": "Méthode d'annulation d'écho",
+  "settingMicEchoCancellationMethodDescription": "Automatique teste GTCRN pendant que le kiosque joue des sons et passe à AEC3 s'il laisse trop d'écho. Choisissez Automatique pour refaire le test.",
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN (détecté)",
+  "screenAudioEchoMethodAec3Detected": "AEC3 (détecté)"
 }

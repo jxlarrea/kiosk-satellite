@@ -23,5 +23,9 @@
   "settingMicCaptureModeTitle": "Modo de captura",
   "settingMicCaptureModeDescription": "Elige Comunicación de voz si el micrófono se queda en silencio aquí o deja de funcionar después de que el kiosco reproduce un sonido. Algunos dispositivos solo graban bien por su ruta de audio de llamadas.",
   "screenAudioCaptureRawMicrophone": "Micrófono sin procesar (predeterminado)",
-  "screenAudioCaptureVoiceCommunication": "Comunicación de voz"
+  "screenAudioCaptureVoiceCommunication": "Comunicación de voz",
+  "settingMicEchoCancellationMethodTitle": "Método de cancelación de eco",
+  "settingMicEchoCancellationMethodDescription": "Automático prueba GTCRN mientras el kiosko reproduce sonidos y cambia a AEC3 si deja demasiado eco. Elige Automático para repetir la prueba.",
+  "screenAudioEchoMethodGtcrnDetected": "GTCRN (detectado)",
+  "screenAudioEchoMethodAec3Detected": "AEC3 (detectado)"
 }

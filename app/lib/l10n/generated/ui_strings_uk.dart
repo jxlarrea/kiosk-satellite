@@ -10479,6 +10479,13 @@ class UiStringsUk extends UiStrings {
       'Прибирає з мікрофона власні звуки кіоска, щоб їх не чули ні слово активації, ні асистент. Залишайте увімкненим, якщо тільки мікрофон із власним ехопоглинанням не звучить гірше з ним.';
 
   @override
+  String get settingMicEchoCancellationMethodTitle => 'Метод ехопоглинання';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      'Автоматично перевіряє GTCRN, поки кіоск відтворює звуки, і перемикається на AEC3, якщо лишається забагато відлуння. Виберіть Автоматично, щоб повторити перевірку.';
+
+  @override
   String get settingMicNoiseSuppressionTitle => 'Шумозаглушення';
 
   @override
@@ -10529,6 +10536,12 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get screenAudioCaptureVoiceCommunication => 'Голосовий зв\'язок';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN (виявлено)';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3 (виявлено)';
 
   @override
   String get screenAudioDownmix => 'Зведення доріжок (за замовчуванням)';

@@ -211,6 +211,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             MediaRecorder.AudioSource.MIC
         }
         val wantSoftwareAec = args?.get("softwareAec") != false
+        val echoMethod = args?.get("echoMethod") as? String ?: "auto"
         val wantNs = args?.get("noiseSuppression") == true
         // A gain of 0 dB is the overwhelmingly common case, and a factor of
         // exactly 1 lets the read loop skip the sample walk entirely.
@@ -267,18 +268,16 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         Log.i(
             TAG,
             "capture opening (source=${sourceName(ladder[step].source)} unprocessed-supported=$unprocessedSupported device=${selector ?: "automatic"} " +
-                "gain=${"%.1f".format(gainDbOf(gain))}dB echo-cancellation=$wantSoftwareAec ns=$wantNs" +
+                "gain=${"%.1f".format(gainDbOf(gain))}dB echo-cancellation=$wantSoftwareAec ($echoMethod) ns=$wantNs" +
                 (if (wantChannel >= 1) " channel=$wantChannel/${ladder[step].channels}" else "") +
                 " format=${ladder[step]}" +
                 (if (hardwareFormat) " hardware-format" else "") + ")",
         )
         applyPreferredDevice(opened, selector)
         silencePlatformEffects(opened, ladder[step].source)
-        SoftwareEcho.attach(appContext)
-        // Which canceller runs, and each stretch it worked, also go to the
-        // app log, the one people read and send.
-        SoftwareEcho.onLog = { message -> mainHandler.post { sink.success(mapOf("info" to message)) } }
-        SoftwareEcho.setEnabled(wantSoftwareAec)
+        // The canceller logs which engine runs, each stretch it worked and
+        // Automatic's test to the app log through AudioRoutingBridge.
+        SoftwareEcho.setEnabled(wantSoftwareAec, echoMethod)
         SoftwareEcho.setNoiseSuppression(wantNs)
         MicLevels.clear()
         MicLevels.gainDb = gainDbOf(gain)
@@ -872,7 +871,6 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             it.release()
         }
         record = null
-        SoftwareEcho.onLog = null
         SoftwareEcho.setEnabled(false)
         SoftwareEcho.setNoiseSuppression(false)
         // Only tear down Bluetooth routing this recorder brought up; a stop

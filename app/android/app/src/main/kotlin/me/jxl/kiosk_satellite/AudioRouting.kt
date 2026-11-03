@@ -201,5 +201,12 @@ class AudioRoutingBridge(context: Context, messenger: BinaryMessenger) {
             },
             android.os.Handler(android.os.Looper.getMainLooper()),
         )
+        // The echo canceller's lines and Automatic's verdict reach the app
+        // on this channel, which lives as long as the app: the capture's own
+        // stream is already closed when its canceller stops.
+        val main = android.os.Handler(android.os.Looper.getMainLooper())
+        SoftwareEcho.attach(context)
+        SoftwareEcho.onLog = { message -> main.post { channel.invokeMethod("echoLog", message) } }
+        SoftwareEcho.onDetected = { verdict -> main.post { channel.invokeMethod("echoMethodDetected", verdict) } }
     }
 }

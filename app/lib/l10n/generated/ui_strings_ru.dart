@@ -10454,6 +10454,13 @@ class UiStringsRu extends UiStrings {
       'Убирает собственные звуки киоска из микрофона, чтобы слово пробуждения и ассистент их не слышали. Оставьте включённым, если микрофон с собственным подавлением эха не звучит с ним хуже.';
 
   @override
+  String get settingMicEchoCancellationMethodTitle => 'Метод подавления эха';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      'Автоматически проверяет GTCRN, пока киоск воспроизводит звуки, и переключается на AEC3, если остаётся слишком много эха. Выберите «Автоматически», чтобы повторить проверку.';
+
+  @override
   String get settingMicNoiseSuppressionTitle => 'Подавление шума';
 
   @override
@@ -10504,6 +10511,12 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get screenAudioCaptureVoiceCommunication => 'Голосовая связь';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN (определено)';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3 (определено)';
 
   @override
   String get screenAudioDownmix => 'Сведение (по умолчанию)';

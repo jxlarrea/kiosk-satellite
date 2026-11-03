@@ -10368,6 +10368,14 @@ class UiStringsEn extends UiStrings {
       'Removes the kiosk\'s own sounds from the microphone so the wake word and the assistant do not hear them. Leave it on unless a microphone that cancels its own echo sounds worse with it.';
 
   @override
+  String get settingMicEchoCancellationMethodTitle =>
+      'Echo cancellation method';
+
+  @override
+  String get settingMicEchoCancellationMethodDescription =>
+      'Automatic tests GTCRN while the kiosk plays sounds and switches to AEC3 if it leaves too much echo. Pick Automatic to test again.';
+
+  @override
   String get settingMicNoiseSuppressionTitle => 'Noise suppression';
 
   @override
@@ -10417,6 +10425,12 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get screenAudioCaptureVoiceCommunication => 'Voice communication';
+
+  @override
+  String get screenAudioEchoMethodGtcrnDetected => 'GTCRN (detected)';
+
+  @override
+  String get screenAudioEchoMethodAec3Detected => 'AEC3 (detected)';
 
   @override
   String get screenAudioDownmix => 'Downmix (default)';

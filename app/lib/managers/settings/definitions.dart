@@ -6562,8 +6562,9 @@ const micCaptureMode = SettingDef<String>(
   perDevice: true,
 );
 
-/// WebRTC's echo canceller (AEC3) over the microphone, fed everything the
-/// kiosk plays itself (SoftwareEcho.kt, EchoReference.kt). The platform's
+/// The kiosk's echo canceller over the microphone, fed everything the
+/// kiosk plays itself (SoftwareEcho.kt, EchoReference.kt), with the one it
+/// runs picked by [micEchoCancellationMethod]. The platform's
 /// own canceller is gone: it needed the call capture path, which came in
 /// 20 dB quieter on some ROMs, and on most devices it let the assistant
 /// hear itself anyway. Off is the escape hatch for a microphone that does
@@ -6583,6 +6584,42 @@ const micSoftwareEchoCancellation = SettingDef<bool>(
   subpage: 'Microphone settings',
   perDevice: true,
 );
+
+/// Which echo canceller runs (SoftwareEcho.kt): LocalVQE's GTCRN or
+/// WebRTC's AEC3. Automatic runs GTCRN and judges it while the kiosk plays:
+/// a microphone that comes through a vendor's own adaptive canceller
+/// leaves an echo GTCRN cannot follow. Its verdict is stored as
+/// `auto:gtcrn` or `auto:aec3` and shown as "(detected)"
+/// (SettingsManager.optionsFor), and picking Automatic again starts the
+/// test over. A system update starts it over too, since it can change the
+/// microphone path (AudioRoutingManager).
+const micEchoCancellationMethod = SettingDef<String>(
+  key: 'audio.echo_cancellation_method',
+  type: SettingType.select,
+  defaultValue: 'auto',
+  options: ['auto', 'gtcrn', 'aec3'],
+  optionLabels: {
+    'auto': 'Automatic (default)',
+    'gtcrn': 'GTCRN',
+    'aec3': 'AEC3',
+    'auto:gtcrn': 'GTCRN (detected)',
+    'auto:aec3': 'AEC3 (detected)',
+  },
+  title: 'Echo cancellation method',
+  description:
+      'Automatic tests GTCRN while the kiosk plays sounds and switches to '
+      'AEC3 if it leaves too much echo. Pick Automatic to test again.',
+  category: 'Screen & Audio',
+  section: 'Microphone settings',
+  subpage: 'Microphone settings',
+  dependsOn: 'audio.software_echo_cancellation',
+  perDevice: true,
+);
+
+/// Automatic's verdict landing in [micEchoCancellationMethod]: the
+/// canceller already runs it, so the capture does not reopen for it.
+bool isEchoMethodVerdict(Object? previous, Object? value) =>
+    previous == 'auto' && value is String && value.startsWith('auto:');
 
 /// WebRTC's noise suppressor over the capture (SoftwareEcho.kt), on any
 /// source: the raw microphone's hiss carried straight into intercom calls
@@ -13274,6 +13311,7 @@ const List<SettingDef<Object>> allSettings = [
   audioSpeakerDevice,
   micCaptureMode,
   micSoftwareEchoCancellation,
+  micEchoCancellationMethod,
   micNoiseSuppression,
   micGainDb,
   micCaptureFormat,
