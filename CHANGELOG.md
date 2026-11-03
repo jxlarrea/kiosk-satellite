@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.3 - 2026-11-03
 
 ### Changed
 - **Usage analytics report the echo canceller in use.** The snapshot names the canceller the microphone last ran, GTCRN or AEC3, and why: picked in Microphone settings, detected by Automatic, still under Automatic's test or AEC3 because GTCRN cannot run on the device. It comes from the canceller itself, not the Echo cancellation method setting, so a kiosk set to GTCRN that falls back to AEC3 reads as AEC3.
