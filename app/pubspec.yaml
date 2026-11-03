@@ -135,6 +135,9 @@ flutter:
     - assets/branding/icon.png
     - assets/branding/mark.png
     - assets/svg/
+    # Colored weather condition icons, the set Voice Satellite LLM Tools
+    # serves for its weather results (MIT, same author).
+    - assets/weather_icons/
     - assets/voice_skins/
     - assets/branding/mark_light.png
     - assets/branding/hacs.svg

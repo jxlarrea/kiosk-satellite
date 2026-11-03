@@ -4552,6 +4552,18 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.screensaverOverlayForecastHelp,
       'screensaverOverlayHighLow' => strings.screensaverOverlayHighLow,
       'screensaverOverlayHighLowHelp' => strings.screensaverOverlayHighLowHelp,
+      'screensaverOverlayForecastWidget' =>
+        strings.screensaverOverlayForecastWidget,
+      'screensaverOverlayForecastDays' =>
+        strings.screensaverOverlayForecastDays,
+      'screensaverOverlayForecastToday' =>
+        strings.screensaverOverlayForecastToday,
+      'screensaverOverlayForecastTodayHelp' =>
+        strings.screensaverOverlayForecastTodayHelp,
+      'screensaverOverlayForecastColored' =>
+        strings.screensaverOverlayForecastColored,
+      'screensaverOverlayForecastColoredHelp' =>
+        strings.screensaverOverlayForecastColoredHelp,
       'screensaverOverlayHumidity' => strings.screensaverOverlayHumidity,
       'screensaverOverlayWind' => strings.screensaverOverlayWind,
       'screensaverOverlayVisibility' => strings.screensaverOverlayVisibility,
@@ -4603,6 +4615,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'searchMasterVolume' => strings.searchMasterVolume,
       'searchSmallClock' => strings.searchSmallClock,
       'searchBattery' => strings.searchBattery,
+      'searchWeatherForecast' => strings.searchWeatherForecast,
       'searchPersonPermission' => strings.searchPersonPermission,
       'searchSonosSpeakers' => strings.searchSonosSpeakers,
       'voiceAppearanceHint' => strings.voiceAppearanceHint,

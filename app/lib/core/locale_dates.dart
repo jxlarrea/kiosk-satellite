@@ -36,6 +36,10 @@ String shortDate(DateTime date) =>
 String weekdayName(DateTime date) =>
     _safe((locale) => DateFormat.EEEE(locale), date);
 
+/// "Sun" / "zo" (the Weather forecast widget's rows).
+String shortWeekdayName(DateTime date) =>
+    _safe((locale) => DateFormat.E(locale), date);
+
 /// "August 2, 2026" / "2 augustus 2026" (Immich photo metadata).
 String longDate(DateTime date) =>
     _safe((locale) => DateFormat.yMMMMd(locale), date);

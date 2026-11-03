@@ -13355,6 +13355,26 @@ class UiStringsRu extends UiStrings {
       'Максимальная и минимальная температура сегодня.';
 
   @override
+  String get screensaverOverlayForecastWidget => 'Прогноз погоды';
+
+  @override
+  String get screensaverOverlayForecastDays => 'Показано дней';
+
+  @override
+  String get screensaverOverlayForecastToday => 'Включать сегодня';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp =>
+      'Начинать список с прогноза на сегодня.';
+
+  @override
+  String get screensaverOverlayForecastColored => 'Цветные значки';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp =>
+      'Показывать значки погоды в их собственных цветах.';
+
+  @override
   String get screensaverOverlayHumidity => 'Влажность';
 
   @override
@@ -13496,6 +13516,10 @@ class UiStringsRu extends UiStrings {
   @override
   String get searchBattery =>
       'Виджет батареи в углу заставки: заряд самого устройства.';
+
+  @override
+  String get searchWeatherForecast =>
+      'Виджет прогноза в углу заставки: ближайшие дни с максимальной и минимальной температурой.';
 
   @override
   String get searchPersonPermission =>

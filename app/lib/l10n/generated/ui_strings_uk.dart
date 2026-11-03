@@ -13405,6 +13405,26 @@ class UiStringsUk extends UiStrings {
       'Максимальна та мінімальна температура сьогодні.';
 
   @override
+  String get screensaverOverlayForecastWidget => 'Прогноз погоди';
+
+  @override
+  String get screensaverOverlayForecastDays => 'Показано днів';
+
+  @override
+  String get screensaverOverlayForecastToday => 'Включати сьогодні';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp =>
+      'Почати список із прогнозу на сьогодні.';
+
+  @override
+  String get screensaverOverlayForecastColored => 'Кольорові піктограми';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp =>
+      'Показувати піктограми погоди у власних кольорах.';
+
+  @override
   String get screensaverOverlayHumidity => 'Вологість';
 
   @override
@@ -13550,6 +13570,10 @@ class UiStringsUk extends UiStrings {
   @override
   String get searchBattery =>
       'Віджет акумулятора в кутку заставки: рівень заряду цього пристрою.';
+
+  @override
+  String get searchWeatherForecast =>
+      'Віджет прогнозу в кутку заставки: найближчі дні з максимальною та мінімальною температурою.';
 
   @override
   String get searchPersonPermission =>

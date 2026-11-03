@@ -50052,6 +50052,84 @@
       ]
     }
   },
+  "screensaverOverlayForecastWidget": "Прогноз погоди",
+  "@screensaverOverlayForecastWidget": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastDays": "Показано днів",
+  "@screensaverOverlayForecastDays": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastToday": "Включати сьогодні",
+  "@screensaverOverlayForecastToday": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastTodayHelp": "Почати список із прогнозу на сьогодні.",
+  "@screensaverOverlayForecastTodayHelp": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastColored": "Кольорові піктограми",
+  "@screensaverOverlayForecastColored": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastColoredHelp": "Показувати піктограми погоди у власних кольорах.",
+  "@screensaverOverlayForecastColoredHelp": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
   "screensaverOverlayHumidity": "Вологість",
   "@screensaverOverlayHumidity": {
     "context": "Settings > Screensaver > Widgets > Weather widget",
@@ -50565,6 +50643,19 @@
   },
   "searchBattery": "Віджет акумулятора в кутку заставки: рівень заряду цього пристрою.",
   "@searchBattery": {
+    "context": "Settings search > Screensaver",
+    "description": "Search result title or summary for this section.",
+    "x-locations": {
+      "device": [
+        "Settings search > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Settings search > Screensaver"
+      ]
+    }
+  },
+  "searchWeatherForecast": "Віджет прогнозу в кутку заставки: найближчі дні з максимальною та мінімальною температурою.",
+  "@searchWeatherForecast": {
     "context": "Settings search > Screensaver",
     "description": "Search result title or summary for this section.",
     "x-locations": {

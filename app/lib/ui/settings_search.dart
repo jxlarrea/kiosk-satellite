@@ -613,6 +613,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     defKey: 'screensaver.widgets',
   ),
   SettingsSearchEntry(
+    category: 'Screensaver',
+    title: 'Weather forecast',
+    description:
+        'A forecast widget in a corner of the screensaver: the coming days, '
+        'with their highs and lows.',
+    defKey: 'screensaver.widgets',
+  ),
+  SettingsSearchEntry(
     category: 'Device',
     title: 'Permissions Manager',
     description:

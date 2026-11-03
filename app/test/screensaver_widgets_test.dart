@@ -2,6 +2,8 @@ import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/managers/calendar/calendar_manager.dart'
+    show DayForecast;
 import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
 import 'package:kiosk_satellite/managers/screensaver/screensaver_widgets.dart';
 import 'package:kiosk_satellite/core/logging.dart';
@@ -139,6 +141,87 @@ void main() {
       expect(widgets.last.type, 'weather');
       expect(widgets.last.config['entity'], 'weather.home');
       expect(widgets.last.config['humidity'], isFalse);
+    });
+  });
+
+  group('weather forecast widget type', () {
+    test('is offered, labeled, and defaulted', () {
+      expect(screensaverWidgetTypes, contains('forecast'));
+      expect(describeScreensaverWidgetType('forecast'), 'Weather forecast');
+      final defaults = screensaverWidgetDefaults('forecast');
+      expect(defaults['entity'], '');
+      expect(defaults['color'], '250,250,250');
+      expect(defaults['days'], 5);
+      expect(forecastDayOptions, contains(defaults['days']));
+      expect(defaults['today'], isTrue);
+      expect(defaults['colored_icons'], isTrue);
+    });
+
+    test('rides every mode but the calendar and the camera grid', () {
+      expect(screensaverWidgetAllowedOnMode('forecast', 'clock'), isTrue);
+      expect(screensaverWidgetAllowedOnMode('forecast', 'immich'), isTrue);
+      expect(screensaverWidgetAllowedOnMode('forecast', 'camera'), isFalse);
+      expect(screensaverWidgetAllowedOnMode('forecast', 'calendar'), isFalse);
+    });
+
+    group('rows', () {
+      const sunny = DayForecast(condition: 'sunny', high: 30, low: 20);
+      final now = DateTime(2026, 11, 2, 22, 30);
+      final daily = {
+        for (var i = -1; i < 7; i++) DateTime(2026, 11, 2 + i): sunny,
+      };
+
+      test('start today and stop at the day count', () {
+        final rows = forecastWidgetRows(
+          daily,
+          now,
+          days: 3,
+          includeToday: true,
+        );
+        expect(rows.map((r) => r.$1), [
+          DateTime(2026, 11, 2),
+          DateTime(2026, 11, 3),
+          DateTime(2026, 11, 4),
+        ]);
+      });
+
+      test('start tomorrow without today', () {
+        final rows = forecastWidgetRows(
+          daily,
+          now,
+          days: 3,
+          includeToday: false,
+        );
+        expect(rows.first.$1, DateTime(2026, 11, 3));
+        expect(rows, hasLength(3));
+      });
+
+      test('a short forecast lists only the days it has', () {
+        final rows = forecastWidgetRows(
+          {DateTime(2026, 11, 2): sunny, DateTime(2026, 11, 3): sunny},
+          now,
+          days: 7,
+          includeToday: true,
+        );
+        expect(rows, hasLength(2));
+      });
+
+      test('come out in date order, past days dropped', () {
+        final rows = forecastWidgetRows(
+          {
+            DateTime(2026, 11, 4): sunny,
+            DateTime(2026, 11, 1): sunny,
+            DateTime(2026, 11, 3): sunny,
+          },
+          now,
+          days: 5,
+          includeToday: true,
+        );
+        expect(rows.map((r) => r.$1), [
+          DateTime(2026, 11, 3),
+          DateTime(2026, 11, 4),
+        ]);
+      });
     });
   });
 

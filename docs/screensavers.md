@@ -275,6 +275,21 @@ Displays real-time weather data pulled from a Home Assistant `weather` entity ov
 
 Data updates automatically via a live Home Assistant subscription while the screensaver is active. The last received values persist through brief network drops. Forecast condition text utilizes Home Assistant's localized translations (e.g., a server set to Italian displays "Nebbia" instead of "Fog"). Translations are fetched once upon app launch.
 
+### Weather forecast
+
+Lists the coming days of a Home Assistant `weather` entity's daily forecast over any mode except Calendar and Camera Streams. Each row shows the day, an icon for the expected conditions, the high and the low, such as **Mon**, a sun icon, **68°** and **49°**. The columns line up down the list.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Weather entity | None | Selected from Home Assistant. The widget remains hidden until an entity is assigned. |
+| Corner | First free corner | Displays in the first available corner. |
+| Color | White | Applies to the days and temperatures, and to the icons when **Colored icons** is off. |
+| Days shown | 5 | How many days it lists: 3, 5 or 7. If the integration forecasts fewer days, the widget lists the days it has. |
+| Include today | On | Starts the list with today. Turn it off to start with tomorrow, such as next to a **Weather** widget that already shows today. |
+| Colored icons | On | Shows the weather icons in their own colors. Turn it off to draw them in the widget color. While the Clock screensaver's Night mode is on, the icons always take the night color. |
+
+The forecast updates live while the screensaver runs. An entity whose integration has no daily forecast shows nothing, and the low column is left out when the integration only reports highs.
+
 ### Battery
 
 Displays the device's physical battery status in a display corner over any mode except Calendar and Camera Streams. Renders an adaptive battery icon, a lightning bolt indicator during external charging, and the current charge percentage.

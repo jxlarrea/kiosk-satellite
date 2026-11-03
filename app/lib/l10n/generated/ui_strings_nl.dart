@@ -13417,6 +13417,26 @@ class UiStringsNl extends UiStrings {
       'De hoogste en laagste temperatuur van vandaag.';
 
   @override
+  String get screensaverOverlayForecastWidget => 'Weersvoorspelling';
+
+  @override
+  String get screensaverOverlayForecastDays => 'Getoonde dagen';
+
+  @override
+  String get screensaverOverlayForecastToday => 'Vandaag meenemen';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp =>
+      'Begin de lijst met de voorspelling van vandaag.';
+
+  @override
+  String get screensaverOverlayForecastColored => 'Gekleurde pictogrammen';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp =>
+      'Toon de weerpictogrammen in hun eigen kleuren.';
+
+  @override
   String get screensaverOverlayHumidity => 'Vochtigheid';
 
   @override
@@ -13560,6 +13580,10 @@ class UiStringsNl extends UiStrings {
   @override
   String get searchBattery =>
       'Een batterijwidget in een hoek van de schermbeveiliging: de eigen lading van dit apparaat.';
+
+  @override
+  String get searchWeatherForecast =>
+      'Een voorspellingswidget in een hoek van de schermbeveiliging: de komende dagen met hun hoogste en laagste temperatuur.';
 
   @override
   String get searchPersonPermission =>

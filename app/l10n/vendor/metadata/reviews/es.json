@@ -23423,5 +23423,40 @@
     "source": "353bbf5d4ada00a02d18086614e7c2e241467e47bd05b5207d0feafd64cf66e7",
     "translation": "7391081711078b8406c495a6590fa43a22debe0b020726782624be4ac8e12bce",
     "author": "Xavier Larrea"
+  },
+  "screensaverOverlayForecastToday": {
+    "source": "2f43c2f527b88e63c3a002d89e78f250f60acfd2435d1cd583f48d504e2a8b9b",
+    "translation": "b59eeabd843319bf67cc4e86caec1e3b9299baf875a202d6bf7f8b4195679f01",
+    "author": "Xavier Larrea"
+  },
+  "screensaverOverlayForecastDays": {
+    "source": "395cfeb913a5ce70958c77e7dbbee3e76252b370db20903b1364b8d8f2573332",
+    "translation": "99fff8a16b4c879b5ec4e0b2ae705b16f7ac7143ce37d39b8d56d010bdcc21cb",
+    "author": "Xavier Larrea"
+  },
+  "searchWeatherForecast": {
+    "source": "6eefcb677ede43bb1e5257d562f12b9f2cf08602c7ab35564d7fb112a87ad141",
+    "translation": "6033f08f9497b865276a4a71f1f45e8ec0d2a710fd6c035836ac5257b481a7ef",
+    "author": "Xavier Larrea"
+  },
+  "screensaverOverlayForecastWidget": {
+    "source": "96836218e05f6b452fafa5662417aaaa797a40ae80fb9ff0cd91ed32b714fa76",
+    "translation": "d6309efd649d196ae883001e925b4b66e4b771dbe0f6706ac3b495ea9a41e5c6",
+    "author": "Xavier Larrea"
+  },
+  "screensaverOverlayForecastTodayHelp": {
+    "source": "f8e872aff06f3ed5881fbcccdd904a7c5d5ee8c3fa634f972271f893d3303909",
+    "translation": "64efc4eb35ea264ffe73e43aa30bd786b9d0511cb4b786a49b2445fc99fc2f54",
+    "author": "Xavier Larrea"
+  },
+  "screensaverOverlayForecastColored": {
+    "source": "90c608f1d428e52f29d8589db40462f1af69537151731f029d2a5556d3793903",
+    "translation": "79e278bd583f220461dc624760c0fc1b1c9ac1a413df6418262686551fd3a55d",
+    "author": "Xavier Larrea"
+  },
+  "screensaverOverlayForecastColoredHelp": {
+    "source": "96d4ec4e8eeef14efbc849aa1c1800e03eeb8ce9b5698532dd3febb0de338d84",
+    "translation": "31b26121220c56b332da1e5de7fbf758459aa8db724311450bc7d0677b5c73c4",
+    "author": "Xavier Larrea"
   }
 }

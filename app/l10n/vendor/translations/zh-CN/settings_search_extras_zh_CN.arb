@@ -15,6 +15,7 @@
   "searchMasterVolume": "设备的整体音量，媒体和助手音量在此基础上按比例调整。",
   "searchSmallClock": "屏保角落中的时钟小组件。",
   "searchBattery": "屏保角落中的电池小组件，显示此设备自身电量。",
+  "searchWeatherForecast": "屏保角落中的天气预报小组件，显示未来几天的最高和最低气温。",
   "searchPersonPermission": "设备人体传感器所需的日志访问权限。",
   "searchSonosSpeakers": "此设备已知的 Sonos 扬声器、网络搜索及地址输入框。"
 }

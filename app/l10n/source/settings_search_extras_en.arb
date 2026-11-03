@@ -195,6 +195,19 @@
       ]
     }
   },
+  "searchWeatherForecast": "A forecast widget in a corner of the screensaver: the coming days, with their highs and lows.",
+  "@searchWeatherForecast": {
+    "context": "Settings search > Screensaver",
+    "description": "Search result title or summary for this section.",
+    "x-locations": {
+      "device": [
+        "Settings search > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Settings search > Screensaver"
+      ]
+    }
+  },
   "searchPersonPermission": "The Log access grant the device's person sensor needs.",
   "@searchPersonPermission": {
     "context": "Settings search > Screensaver",

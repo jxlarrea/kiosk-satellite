@@ -15,6 +15,7 @@
   "searchMasterVolume": "El volumen del dispositivo que sirve de base para los controles de volumen multimedia y del asistente.",
   "searchSmallClock": "Un reloj en una esquina del protector de pantalla.",
   "searchBattery": "Un indicador de batería en una esquina del protector de pantalla con la carga de este dispositivo.",
+  "searchWeatherForecast": "Un indicador de pronóstico en una esquina del protector de pantalla con los próximos días y sus máximas y mínimas.",
   "searchPersonPermission": "El permiso de acceso a registros que necesita el sensor de presencia del dispositivo.",
   "searchSonosSpeakers": "Los altavoces Sonos que conoce este dispositivo, una búsqueda en la red y un campo de dirección."
 }

@@ -13520,6 +13520,26 @@ class UiStringsFr extends UiStrings {
       'Les températures maximale et minimale du jour.';
 
   @override
+  String get screensaverOverlayForecastWidget => 'Prévisions météo';
+
+  @override
+  String get screensaverOverlayForecastDays => 'Jours affichés';
+
+  @override
+  String get screensaverOverlayForecastToday => 'Inclure aujourd\'hui';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp =>
+      'Commence la liste par les prévisions du jour.';
+
+  @override
+  String get screensaverOverlayForecastColored => 'Icônes en couleur';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp =>
+      'Affiche les icônes météo dans leurs propres couleurs.';
+
+  @override
   String get screensaverOverlayHumidity => 'Humidité';
 
   @override
@@ -13666,6 +13686,10 @@ class UiStringsFr extends UiStrings {
   @override
   String get searchBattery =>
       'Un widget batterie dans un coin de l\'économiseur d\'écran : la charge de cet appareil.';
+
+  @override
+  String get searchWeatherForecast =>
+      'Un widget de prévisions dans un coin de l\'économiseur d\'écran : les prochains jours, avec leurs maximales et minimales.';
 
   @override
   String get searchPersonPermission =>

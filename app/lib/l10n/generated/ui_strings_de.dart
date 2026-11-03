@@ -13555,6 +13555,26 @@ class UiStringsDe extends UiStrings {
       'Die heutige Höchst- und Tiefsttemperatur.';
 
   @override
+  String get screensaverOverlayForecastWidget => 'Wettervorhersage';
+
+  @override
+  String get screensaverOverlayForecastDays => 'Angezeigte Tage';
+
+  @override
+  String get screensaverOverlayForecastToday => 'Heute einbeziehen';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp =>
+      'Beginnt die Liste mit der heutigen Vorhersage.';
+
+  @override
+  String get screensaverOverlayForecastColored => 'Farbige Symbole';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp =>
+      'Zeigt die Wettersymbole in ihren eigenen Farben.';
+
+  @override
   String get screensaverOverlayHumidity => 'Luftfeuchtigkeit';
 
   @override
@@ -13699,6 +13719,10 @@ class UiStringsDe extends UiStrings {
   @override
   String get searchBattery =>
       'Eine Akkuanzeige in einer Ecke des Bildschirmschoners mit dem Ladezustand dieses Geräts.';
+
+  @override
+  String get searchWeatherForecast =>
+      'Eine Wettervorhersage in einer Ecke des Bildschirmschoners mit den kommenden Tagen und ihren Höchst- und Tiefstwerten.';
 
   @override
   String get searchPersonPermission =>

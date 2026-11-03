@@ -5974,6 +5974,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
   IconData _icon(String type) => switch (type) {
     'clock' => Icons.access_time,
     'weather' => Icons.cloud_outlined,
+    'forecast' => Icons.wb_sunny_outlined,
     'battery' => Icons.battery_full,
     'entity' => Icons.sensors,
     'alarm' => Icons.alarm,
@@ -5996,7 +5997,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
       context,
       'Hidden in the Camera Streams screensaver mode.',
     ),
-    'entity' || 'alarm' || 'calendar' => screensaverText(
+    'forecast' || 'entity' || 'alarm' || 'calendar' => screensaverText(
       context,
       'Hidden in the Camera Streams screensaver mode.',
     ),
@@ -6336,6 +6337,70 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                         'visibility',
                       ),
                     ],
+                    if (type == 'forecast') ...[
+                      // The Weather widget's entity keys and picker.
+                      LabeledField(
+                        label: screensaverText(context, 'Weather entity'),
+                        child: PickFieldBox(
+                          spec: entitySpec(
+                            context,
+                            widget.container.commands,
+                            domains: const ['weather'],
+                          ),
+                          value: weatherEntity,
+                          onTap: () async {
+                            final picked = await showEntityPicker(
+                              context,
+                              widget.container,
+                              title: screensaverText(context, 'Weather entity'),
+                              selected: weatherEntity,
+                              domains: const ['weather'],
+                            );
+                            final id = picked?.id;
+                            if (id == null) return;
+                            setDialogState(() {
+                              config['entity'] = id;
+                              config['name'] = _entityName(id);
+                            });
+                          },
+                        ),
+                      ),
+                      colorRow(),
+                      scaleRow(),
+                      fontRow(),
+                      fontWeightRow(),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(screensaverText(context, 'Days shown')),
+                        trailing: DropdownButton<int>(
+                          value: switch ((config['days'] as num?)?.toInt()) {
+                            final d? when forecastDayOptions.contains(d) => d,
+                            _ => 5,
+                          },
+                          items: [
+                            for (final d in forecastDayOptions)
+                              DropdownMenuItem(value: d, child: Text('$d')),
+                          ],
+                          onChanged: (d) =>
+                              setDialogState(() => config['days'] = d ?? 5),
+                        ),
+                      ),
+                      // On unless switched off, like Show AM/PM.
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(screensaverText(context, 'Include today')),
+                        value: config['today'] != false,
+                        onChanged: (v) =>
+                            setDialogState(() => config['today'] = v),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(screensaverText(context, 'Colored icons')),
+                        value: config['colored_icons'] != false,
+                        onChanged: (v) =>
+                            setDialogState(() => config['colored_icons'] = v),
+                      ),
+                    ],
                     if (type == 'calendar') ...[
                       colorRow(),
                       scaleRow(),
@@ -6499,10 +6564,12 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                 child: Text(screensaverText(context, 'Cancel')),
               ),
               FilledButton(
-                // A weather or entity widget without its entity has
-                // nothing to show.
+                // A weather, forecast or entity widget without its
+                // entity has nothing to show.
                 onPressed:
-                    (type == 'weather' || type == 'entity') &&
+                    (type == 'weather' ||
+                            type == 'forecast' ||
+                            type == 'entity') &&
                         weatherEntity.isEmpty
                     ? null
                     : () => Navigator.pop(context, true),

@@ -1179,6 +1179,7 @@ export function settingRow(s) {
     const CORNERS = [['top_left', screensaverText('Top left')], ['top_right', screensaverText('Top right')],
       ['bottom_left', screensaverText('Bottom left')], ['bottom_right', screensaverText('Bottom right')]];
     const TYPES = [['clock', screensaverText('Small clock')], ['weather', screensaverText('Weather')],
+      ['forecast', screensaverText('Weather forecast')],
       ['battery', screensaverText('Battery')], ['entity', screensaverText('Entity')],
       ['alarm', t('alarmsNextWidget')], ['calendar', t('calendarUpNext')]];
     const DEFAULTS = {
@@ -1189,6 +1190,9 @@ export function settingRow(s) {
         feels_like: false, feels_like_only: false, location: true,
         forecast: true, high_low: true, humidity: true, wind: true,
         visibility: true },
+      forecast: { entity: '', name: '', color: '250,250,250', scale: 0,
+        font: 'default', font_weight: 'default', days: 5, today: true,
+        colored_icons: true },
       battery: { color: '250,250,250', scale: 0, font: 'default',
         font_weight: 'default', percent: true, low: false },
       entity: { entity: '', name: '', label: '', attribute: '', show_states: '',
@@ -1399,6 +1403,49 @@ export function settingRow(s) {
             refs.weight.wrap, countField, daysField);
           return;
         }
+        // Weather forecast: the Weather widget's entity picker, then how
+        // many days it lists (the device's forecastDayOptions) and whether
+        // the list starts with today.
+        if (type === 'forecast') {
+          const spec = entitySpec({ domains: ['weather'] });
+          const field = pickField({
+            spec, value: config.entity || '',
+            onClick: async () => {
+              const out = await pickItem({ title: screensaverText('Weather entity'), spec,
+                selected: config.entity || null });
+              if (!out?.id) return;
+              config.entity = out.id;
+              config.name = cachedList(spec.key)?.items.find((i) => i.id === out.id)?.name || out.id;
+              field.setValue(out.id);
+            },
+          });
+          refs.entity = { wrap: formField(screensaverText('Weather entity'), field.el) };
+          const days = document.createElement('select');
+          days.className = 'field';
+          const picked = [3, 5, 7].includes(Number(config.days)) ? Number(config.days) : 5;
+          for (const n of [3, 5, 7]) {
+            const opt = document.createElement('option');
+            opt.value = String(n);
+            opt.textContent = String(n);
+            opt.selected = n === picked;
+            days.appendChild(opt);
+          }
+          refs.days = days;
+          const daysField = document.createElement('label');
+          daysField.className = 'form-field';
+          const daysLabel = document.createElement('span');
+          daysLabel.className = 'desc';
+          daysLabel.textContent = screensaverText('Days shown');
+          daysField.append(daysLabel, days);
+          refs.today = cameraToggle(screensaverText('Include today'),
+            config.today !== false, screensaverText("Start the list with today's forecast."));
+          refs.colored = cameraToggle(screensaverText('Colored icons'),
+            config.colored_icons !== false, screensaverText('Show the weather icons in their own colors.'));
+          typeBlock.append(refs.entity.wrap, refs.color.wrap, refs.scale.wrap,
+            refs.font.wrap, refs.weight.wrap, daysField, refs.today.wrap,
+            refs.colored.wrap);
+          return;
+        }
         // The next alarm: nothing of its own, the look every widget has.
         if (type === 'alarm') {
           typeBlock.append(refs.color.wrap, refs.scale.wrap, refs.font.wrap,
@@ -1578,6 +1625,13 @@ export function settingRow(s) {
             entryConfig = { color, scale, font, font_weight,
               percent: refs.percent.input.checked,
               low: refs.low.input.checked };
+          } else if (type === 'forecast') {
+            if (!config.entity) return { ok: false, error: screensaverText('Pick a weather entity.') };
+            entryConfig = { entity: config.entity,
+              name: config.name || config.entity, color, scale, font,
+              font_weight, days: Number(refs.days.value) || 5,
+              today: refs.today.input.checked,
+              colored_icons: refs.colored.input.checked };
           } else if (type === 'alarm') {
             entryConfig = { color, scale, font, font_weight };
           } else if (type === 'calendar') {
@@ -1630,7 +1684,7 @@ export function settingRow(s) {
         }, false, 'delete'),
       ],
       {
-        icon: ['weather', 'battery', 'entity', 'alarm', 'calendar'].includes(e.type)
+        icon: ['weather', 'forecast', 'battery', 'entity', 'alarm', 'calendar'].includes(e.type)
           ? e.type : 'clock',
         onClick: () => editWidget(e),
       },

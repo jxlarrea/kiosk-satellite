@@ -13265,6 +13265,26 @@ class UiStringsEn extends UiStrings {
       'Today\'s high and low temperatures.';
 
   @override
+  String get screensaverOverlayForecastWidget => 'Weather forecast';
+
+  @override
+  String get screensaverOverlayForecastDays => 'Days shown';
+
+  @override
+  String get screensaverOverlayForecastToday => 'Include today';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp =>
+      'Start the list with today\'s forecast.';
+
+  @override
+  String get screensaverOverlayForecastColored => 'Colored icons';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp =>
+      'Show the weather icons in their own colors.';
+
+  @override
   String get screensaverOverlayHumidity => 'Humidity';
 
   @override
@@ -13407,6 +13427,10 @@ class UiStringsEn extends UiStrings {
   @override
   String get searchBattery =>
       'A battery widget in a corner of the screensaver: this device\'s own charge.';
+
+  @override
+  String get searchWeatherForecast =>
+      'A forecast widget in a corner of the screensaver: the coming days, with their highs and lows.';
 
   @override
   String get searchPersonPermission =>

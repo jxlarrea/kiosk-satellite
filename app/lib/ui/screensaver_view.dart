@@ -487,6 +487,14 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                                                   view,
                                                 ),
                                               ),
+                                              'forecast' =>
+                                                ForecastWidgetOverlay(
+                                                  container: container,
+                                                  spec: spec,
+                                                  nightColor: _widgetNightColor(
+                                                    view,
+                                                  ),
+                                                ),
                                               'battery' => BatteryWidgetOverlay(
                                                 container: container,
                                                 spec: spec,
@@ -3061,6 +3069,295 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
                     spacing: 6,
                     crossAxisAlignment: align,
                     children: lines,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The Weather forecast widget's rows: up to [days] days of [daily] in
+/// date order, from today when [includeToday] is set and from tomorrow
+/// otherwise. Days the integration does not forecast are simply missing,
+/// so a short forecast lists fewer rows.
+List<(DateTime, DayForecast)> forecastWidgetRows(
+  Map<DateTime, DayForecast> daily,
+  DateTime now, {
+  required int days,
+  required bool includeToday,
+}) {
+  final today = cal_model.dateOnly(now);
+  final first = includeToday ? today : cal_model.addDays(today, 1);
+  final dates = daily.keys.where((d) => !d.isBefore(first)).toList()..sort();
+  return [for (final d in dates.take(days)) (d, daily[d]!)];
+}
+
+/// The Weather forecast widget (issue #1277): the coming days of a weather
+/// entity's daily forecast, one row each with the day, the condition icon,
+/// the high and the low. The columns share the widest entry's width, so
+/// the icons and temperatures line up down the list. Fed over its own
+/// subscribe_entities socket, the Weather widget's pattern, which also
+/// brings the daily forecast.
+class ForecastWidgetOverlay extends StatefulWidget {
+  const ForecastWidgetOverlay({
+    super.key,
+    required this.container,
+    required this.spec,
+    this.nightColor,
+  });
+
+  final AppContainer container;
+  final ScreensaverWidget spec;
+
+  /// The Clock screensaver's night color while its Night mode holds
+  /// (issue #391), in place of the widget's own; null otherwise.
+  final Color? nightColor;
+
+  @override
+  State<ForecastWidgetOverlay> createState() => _ForecastWidgetOverlayState();
+}
+
+class _ForecastWidgetOverlayState extends State<ForecastWidgetOverlay> {
+  GlanceSubscription? _live;
+  Timer? _retry;
+  Timer? _shift;
+  Offset _offset = Offset.zero;
+
+  /// The entity's own state: an unavailable entity hides the widget
+  /// rather than leave a stale forecast up.
+  String _condition = '';
+  Map<DateTime, DayForecast> _daily = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_open());
+    // The same slow OLED-protecting nudge the other widgets do. The tick
+    // also moves the list on to the next day after midnight.
+    _shift = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!widget.container.settings.get(defs.screensaverPixelShift)) {
+        setState(() {});
+        return;
+      }
+      final r = Random();
+      const max = 10.0;
+      setState(() {
+        _offset = Offset(
+          (r.nextDouble() * 2 - 1) * max,
+          (r.nextDouble() * 2 - 1) * max,
+        );
+      });
+    });
+  }
+
+  Future<void> _open() async {
+    final entity = '${widget.spec.config['entity'] ?? ''}';
+    if (entity.isEmpty) return;
+    final live = await widget.container.homeAssistant.subscribeEntities(
+      [entity],
+      _onState,
+      forecastEntity: entity,
+      onForecast: (forecast) {
+        if (mounted) setState(() => _daily = parseForecast(forecast));
+      },
+    );
+    if (!mounted) {
+      unawaited(live?.close());
+      return;
+    }
+    if (live == null) {
+      // Home Assistant unreachable: keep what we last knew and try again
+      // shortly, the Weather widget's cadence.
+      _retry?.cancel();
+      _retry = Timer(const Duration(seconds: 20), () {
+        if (mounted) unawaited(_open());
+      });
+      return;
+    }
+    live.onClosed = () {
+      if (!mounted || _live != live) return;
+      _retry?.cancel();
+      _retry = Timer(const Duration(seconds: 5), () {
+        if (mounted) unawaited(_open());
+      });
+    };
+    _live = live;
+  }
+
+  void _onState(String entityId, Map<String, Object?> state) {
+    if (!mounted) return;
+    final s = state['state'];
+    if (s is String) setState(() => _condition = s);
+  }
+
+  // A live edit can repoint the widget at another entity; the element is
+  // reused in place, so the subscription has to follow by hand.
+  @override
+  void didUpdateWidget(ForecastWidgetOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ('${oldWidget.spec.config['entity']}' !=
+        '${widget.spec.config['entity']}') {
+      _retry?.cancel();
+      final live = _live;
+      _live = null;
+      if (live != null) unawaited(live.close());
+      _condition = '';
+      _daily = const {};
+      unawaited(_open());
+    }
+  }
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    _shift?.cancel();
+    final live = _live;
+    _live = null;
+    if (live != null) unawaited(live.close());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_condition == 'unavailable' || _condition == 'unknown') {
+      return const SizedBox.shrink();
+    }
+    final config = widget.spec.config;
+    final days = switch ((config['days'] as num?)?.toInt()) {
+      final d? when forecastDayOptions.contains(d) => d,
+      _ => 5,
+    };
+    final now = DateTime.now();
+    final rows = forecastWidgetRows(
+      _daily,
+      now,
+      days: days,
+      includeToday: config['today'] != false,
+    );
+    if (rows.isEmpty) return const SizedBox.shrink();
+    final corner = _cornerAlignment(widget.spec.position);
+    final color = widget.nightColor ?? _widgetRgb(config['color']);
+    final size = MediaQuery.of(context).size;
+    final scale = _widgetScale(widget.container, widget.spec);
+    final textSize = max(min(size.width, size.height) * 0.036, 24.0) * scale;
+    final font = _widgetFont(widget.container, widget.spec);
+    final shadows = _overlayTextShadows(widget.container);
+    TextStyle style({double alpha = 1, FontWeight? weight}) => TextStyle(
+      fontFamily: font.family,
+      color: color.withValues(alpha: alpha),
+      fontSize: textSize,
+      fontWeight: font.weight ?? weight ?? FontWeight.w400,
+      shadows: shadows,
+      height: 1.35,
+    );
+    final dayStyle = style(weight: FontWeight.w500);
+    final highStyle = style();
+    final lowStyle = style(alpha: .62);
+    // Every row, today's included, reads as its short weekday, the way a
+    // forecast card lists them.
+    String dayName(DateTime day) => shortWeekdayName(day);
+    String degrees(double? t) => t == null ? '' : '${t.round()}°';
+    // Each column takes its widest entry's width, so the list reads as a
+    // table whatever the day names and temperatures run to.
+    double widest(Iterable<String> texts, TextStyle style) => texts
+        .map(
+          (text) => (TextPainter(
+            text: TextSpan(
+              text: text,
+              style: DefaultTextStyle.of(context).style.merge(style),
+            ),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout()).width,
+        )
+        .reduce(max);
+    final dayWidth = widest(rows.map((r) => dayName(r.$1)), dayStyle) + 1;
+    final highWidth = widest(rows.map((r) => degrees(r.$2.high)), highStyle);
+    final lowWidth = widest(rows.map((r) => degrees(r.$2.low)), lowStyle);
+    // On unless switched off, so entries saved before the switch existed
+    // keep the colors.
+    final colored =
+        config['colored_icons'] != false && widget.nightColor == null;
+    final gap = SizedBox(width: textSize * .6);
+    Widget cell(String text, double width, TextStyle style, TextAlign align) =>
+        SizedBox(
+          width: width + 1,
+          child: Text(
+            text,
+            style: style,
+            textAlign: align,
+            maxLines: 1,
+            softWrap: false,
+          ),
+        );
+
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _cornerVignette(corner, widget.container),
+          Align(
+            alignment: corner,
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Transform.translate(
+                offset: _offset,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: corner,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: textSize * .2,
+                    children: [
+                      for (final (day, f) in rows)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            cell(
+                              dayName(day),
+                              dayWidth,
+                              dayStyle,
+                              TextAlign.start,
+                            ),
+                            gap,
+                            // The Clock's Night mode keeps every widget in
+                            // its one dim color, so the colors stand down.
+                            if (colored)
+                              ColoredWeatherConditionIcon(
+                                f.condition,
+                                size: textSize * 1.3,
+                                fallbackColor: color.withValues(alpha: .85),
+                              )
+                            else
+                              WeatherConditionIcon(
+                                f.condition,
+                                size: textSize * 1.15,
+                                color: color.withValues(alpha: .85),
+                                shadows: shadows,
+                              ),
+                            gap,
+                            cell(
+                              degrees(f.high),
+                              highWidth,
+                              highStyle,
+                              TextAlign.end,
+                            ),
+                            if (lowWidth > 0) ...[
+                              SizedBox(width: textSize * .45),
+                              cell(
+                                degrees(f.low),
+                                lowWidth,
+                                lowStyle,
+                                TextAlign.end,
+                              ),
+                            ],
+                          ],
+                        ),
+                    ],
                   ),
                 ),
               ),

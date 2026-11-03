@@ -15,6 +15,7 @@
   "searchMasterVolume": "Het apparaatvolume waaronder de volumeregelaars voor media en assistent schalen.",
   "searchSmallClock": "Een klokwidget in een hoek van de schermbeveiliging.",
   "searchBattery": "Een batterijwidget in een hoek van de schermbeveiliging: de eigen lading van dit apparaat.",
+  "searchWeatherForecast": "Een voorspellingswidget in een hoek van de schermbeveiliging: de komende dagen met hun hoogste en laagste temperatuur.",
   "searchPersonPermission": "De toestemming voor logtoegang die de persoonssensor van het apparaat nodig heeft.",
   "searchSonosSpeakers": "De Sonos-luidsprekers die dit apparaat kent, een zoekopdracht op het netwerk en een adresveld."
 }

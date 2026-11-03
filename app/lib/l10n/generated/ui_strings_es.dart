@@ -13523,6 +13523,26 @@ class UiStringsEs extends UiStrings {
       'Las temperaturas máxima y mínima de hoy.';
 
   @override
+  String get screensaverOverlayForecastWidget => 'Pronóstico del clima';
+
+  @override
+  String get screensaverOverlayForecastDays => 'Días mostrados';
+
+  @override
+  String get screensaverOverlayForecastToday => 'Incluir hoy';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp =>
+      'Empieza la lista con el pronóstico de hoy.';
+
+  @override
+  String get screensaverOverlayForecastColored => 'Iconos a color';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp =>
+      'Muestra los iconos del clima en sus propios colores.';
+
+  @override
   String get screensaverOverlayHumidity => 'Humedad';
 
   @override
@@ -13669,6 +13689,10 @@ class UiStringsEs extends UiStrings {
   @override
   String get searchBattery =>
       'Un indicador de batería en una esquina del protector de pantalla con la carga de este dispositivo.';
+
+  @override
+  String get searchWeatherForecast =>
+      'Un indicador de pronóstico en una esquina del protector de pantalla con los próximos días y sus máximas y mínimas.';
 
   @override
   String get searchPersonPermission =>

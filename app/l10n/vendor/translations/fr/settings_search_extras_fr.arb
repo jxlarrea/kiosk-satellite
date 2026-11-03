@@ -15,6 +15,7 @@
   "searchMasterVolume": "Le volume de l'appareil, dont dépendent les curseurs multimédia et assistant.",
   "searchSmallClock": "Un widget horloge dans un coin de l'économiseur d'écran.",
   "searchBattery": "Un widget batterie dans un coin de l'économiseur d'écran : la charge de cet appareil.",
+  "searchWeatherForecast": "Un widget de prévisions dans un coin de l'économiseur d'écran : les prochains jours, avec leurs maximales et minimales.",
   "searchPersonPermission": "L'autorisation d'accès aux journaux dont le capteur de présence de l'appareil a besoin.",
   "searchSonosSpeakers": "Les enceintes Sonos connues de cet appareil, une recherche sur le réseau et un champ d'adresse."
 }

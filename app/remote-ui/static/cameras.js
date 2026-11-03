@@ -28,6 +28,8 @@ export const CAMERA_ICONS = {
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
   weather: '<path d="M17.5 19H7a4 4 0 01-.7-7.94 5.5 5.5 0 0110.61-1.53'
     + 'A4.25 4.25 0 0117.5 19z"/>',
+  forecast: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41'
+    + 'M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
   battery: '<rect x="2" y="7" width="17" height="10" rx="2.5"/>'
     + '<path d="M21.5 10.5v3"/><path d="M5 10v4"/><path d="M8.5 10v4"/>',
   entity: '<path d="M3 12h4l3-7 4 14 3-7h4"/>',

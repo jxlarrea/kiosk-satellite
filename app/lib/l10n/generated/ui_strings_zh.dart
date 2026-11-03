@@ -12597,6 +12597,24 @@ class UiStringsZh extends UiStrings {
   String get screensaverOverlayHighLowHelp => '今天的最高和最低气温。';
 
   @override
+  String get screensaverOverlayForecastWidget => '天气预报';
+
+  @override
+  String get screensaverOverlayForecastDays => '显示的天数';
+
+  @override
+  String get screensaverOverlayForecastToday => '包含今天';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp => '列表从今天的预报开始。';
+
+  @override
+  String get screensaverOverlayForecastColored => '彩色图标';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp => '以天气图标本身的颜色显示。';
+
+  @override
   String get screensaverOverlayHumidity => '湿度';
 
   @override
@@ -12724,6 +12742,9 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get searchBattery => '屏保角落中的电池小组件，显示此设备自身电量。';
+
+  @override
+  String get searchWeatherForecast => '屏保角落中的天气预报小组件，显示未来几天的最高和最低气温。';
 
   @override
   String get searchPersonPermission => '设备人体传感器所需的日志访问权限。';
@@ -27460,6 +27481,24 @@ class UiStringsZhCn extends UiStringsZh {
   String get screensaverOverlayHighLowHelp => '今天的最高和最低气温。';
 
   @override
+  String get screensaverOverlayForecastWidget => '天气预报';
+
+  @override
+  String get screensaverOverlayForecastDays => '显示的天数';
+
+  @override
+  String get screensaverOverlayForecastToday => '包含今天';
+
+  @override
+  String get screensaverOverlayForecastTodayHelp => '列表从今天的预报开始。';
+
+  @override
+  String get screensaverOverlayForecastColored => '彩色图标';
+
+  @override
+  String get screensaverOverlayForecastColoredHelp => '以天气图标本身的颜色显示。';
+
+  @override
   String get screensaverOverlayHumidity => '湿度';
 
   @override
@@ -27587,6 +27626,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get searchBattery => '屏保角落中的电池小组件，显示此设备自身电量。';
+
+  @override
+  String get searchWeatherForecast => '屏保角落中的天气预报小组件，显示未来几天的最高和最低气温。';
 
   @override
   String get searchPersonPermission => '设备人体传感器所需的日志访问权限。';

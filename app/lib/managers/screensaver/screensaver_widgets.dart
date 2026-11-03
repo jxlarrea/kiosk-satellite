@@ -31,6 +31,15 @@
 ///      the daily forecast, issue #1262), humidity, wind, visibility. The
 ///      temperature always shows; every line needs its toggle on AND the
 ///      entity to actually carry the reading.
+///    - forecast: the coming days of a weather entity's daily forecast,
+///      one row each with the day, the condition icon, the high and the
+///      low (issue #1277). Config keys: entity (a weather.* entity id),
+///      name (its friendly name, cached for the editors), color ("r,g,b"
+///      text and icon color), days (how many rows, one of
+///      [forecastDayOptions]) and today (whether the list starts with
+///      today; tomorrow otherwise, for a corner beside a Weather widget
+///      that already shows today) and colored_icons (the condition icons
+///      in their own colors instead of the widget color).
 ///    - battery: the device's own battery, as an icon with an optional
 ///      percentage. Config keys: color ("r,g,b" icon and text color),
 ///      percent (the number beside the icon), low (only show once the
@@ -89,6 +98,7 @@ class ScreensaverWidget {
 const screensaverWidgetTypes = [
   'clock',
   'weather',
+  'forecast',
   'battery',
   'entity',
   'alarm',
@@ -98,6 +108,7 @@ const screensaverWidgetTypes = [
 String describeScreensaverWidgetType(String type) => switch (type) {
   'clock' => 'Small clock',
   'weather' => 'Weather',
+  'forecast' => 'Weather forecast',
   'battery' => 'Battery',
   'entity' => 'Entity',
   'alarm' => 'Next alarm',
@@ -132,6 +143,17 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'humidity': true,
     'wind': true,
     'visibility': true,
+  },
+  'forecast' => {
+    'entity': '',
+    'name': '',
+    'color': '250,250,250',
+    'scale': screensaverWidgetScaleDefault,
+    'font': screensaverWidgetFontDefault,
+    'font_weight': screensaverWidgetFontDefault,
+    'days': 5,
+    'today': true,
+    'colored_icons': true,
   },
   'battery' => {
     'color': '250,250,250',
@@ -176,6 +198,9 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
 /// How many days the Up next widget looks ahead: today, today and tomorrow
 /// or the next 7 days.
 const upNextDayOptions = [1, 2, 7];
+
+/// How many days the Weather forecast widget lists.
+const forecastDayOptions = [3, 5, 7];
 
 /// A widget's own font family or weight left at Default: the widget
 /// follows the Global font family or Global font weight setting.

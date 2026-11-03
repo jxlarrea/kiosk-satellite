@@ -50052,6 +50052,84 @@
       ]
     }
   },
+  "screensaverOverlayForecastWidget": "Pronóstico del clima",
+  "@screensaverOverlayForecastWidget": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastDays": "Días mostrados",
+  "@screensaverOverlayForecastDays": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastToday": "Incluir hoy",
+  "@screensaverOverlayForecastToday": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastTodayHelp": "Empieza la lista con el pronóstico de hoy.",
+  "@screensaverOverlayForecastTodayHelp": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastColored": "Iconos a color",
+  "@screensaverOverlayForecastColored": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastColoredHelp": "Muestra los iconos del clima en sus propios colores.",
+  "@screensaverOverlayForecastColoredHelp": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
   "screensaverOverlayHumidity": "Humedad",
   "@screensaverOverlayHumidity": {
     "context": "Settings > Screensaver > Widgets > Weather widget",
@@ -50565,6 +50643,19 @@
   },
   "searchBattery": "Un indicador de batería en una esquina del protector de pantalla con la carga de este dispositivo.",
   "@searchBattery": {
+    "context": "Settings search > Screensaver",
+    "description": "Search result title or summary for this section.",
+    "x-locations": {
+      "device": [
+        "Settings search > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Settings search > Screensaver"
+      ]
+    }
+  },
+  "searchWeatherForecast": "Un indicador de pronóstico en una esquina del protector de pantalla con los próximos días y sus máximas y mínimas.",
+  "@searchWeatherForecast": {
     "context": "Settings search > Screensaver",
     "description": "Search result title or summary for this section.",
     "x-locations": {

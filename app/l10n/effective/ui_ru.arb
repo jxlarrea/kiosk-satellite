@@ -50052,6 +50052,84 @@
       ]
     }
   },
+  "screensaverOverlayForecastWidget": "Прогноз погоды",
+  "@screensaverOverlayForecastWidget": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastDays": "Показано дней",
+  "@screensaverOverlayForecastDays": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastToday": "Включать сегодня",
+  "@screensaverOverlayForecastToday": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastTodayHelp": "Начинать список с прогноза на сегодня.",
+  "@screensaverOverlayForecastTodayHelp": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastColored": "Цветные значки",
+  "@screensaverOverlayForecastColored": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
+  "screensaverOverlayForecastColoredHelp": "Показывать значки погоды в их собственных цветах.",
+  "@screensaverOverlayForecastColoredHelp": {
+    "context": "Settings > Screensaver > Widgets > Weather forecast widget",
+    "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Weather forecast widget"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Weather forecast widget"
+      ]
+    }
+  },
   "screensaverOverlayHumidity": "Влажность",
   "@screensaverOverlayHumidity": {
     "context": "Settings > Screensaver > Widgets > Weather widget",
@@ -50565,6 +50643,19 @@
   },
   "searchBattery": "Виджет батареи в углу заставки: заряд самого устройства.",
   "@searchBattery": {
+    "context": "Settings search > Screensaver",
+    "description": "Search result title or summary for this section.",
+    "x-locations": {
+      "device": [
+        "Settings search > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Settings search > Screensaver"
+      ]
+    }
+  },
+  "searchWeatherForecast": "Виджет прогноза в углу заставки: ближайшие дни с максимальной и минимальной температурой.",
+  "@searchWeatherForecast": {
     "context": "Settings search > Screensaver",
     "description": "Search result title or summary for this section.",
     "x-locations": {

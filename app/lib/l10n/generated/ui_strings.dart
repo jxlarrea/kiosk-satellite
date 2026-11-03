@@ -23150,6 +23150,42 @@ abstract class UiStrings {
   /// Label or guidance in this editor.
   ///
   /// In en, this message translates to:
+  /// **'Weather forecast'**
+  String get screensaverOverlayForecastWidget;
+
+  /// Label or guidance in this editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Days shown'**
+  String get screensaverOverlayForecastDays;
+
+  /// Label or guidance in this editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Include today'**
+  String get screensaverOverlayForecastToday;
+
+  /// Label or guidance in this editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the list with today\'s forecast.'**
+  String get screensaverOverlayForecastTodayHelp;
+
+  /// Label or guidance in this editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Colored icons'**
+  String get screensaverOverlayForecastColored;
+
+  /// Label or guidance in this editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the weather icons in their own colors.'**
+  String get screensaverOverlayForecastColoredHelp;
+
+  /// Label or guidance in this editor.
+  ///
+  /// In en, this message translates to:
   /// **'Humidity'**
   String get screensaverOverlayHumidity;
 
@@ -23386,6 +23422,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'A battery widget in a corner of the screensaver: this device\'s own charge.'**
   String get searchBattery;
+
+  /// Search result title or summary for this section.
+  ///
+  /// In en, this message translates to:
+  /// **'A forecast widget in a corner of the screensaver: the coming days, with their highs and lows.'**
+  String get searchWeatherForecast;
 
   /// Search result title or summary for this section.
   ///

@@ -15,6 +15,7 @@
   "searchMasterVolume": "Die Gerätelautstärke, die als Grundlage für die Lautstärkeregelung von Medien und Assistent dient.",
   "searchSmallClock": "Eine kleine Uhr in einer Ecke des Bildschirmschoners.",
   "searchBattery": "Eine Akkuanzeige in einer Ecke des Bildschirmschoners mit dem Ladezustand dieses Geräts.",
+  "searchWeatherForecast": "Eine Wettervorhersage in einer Ecke des Bildschirmschoners mit den kommenden Tagen und ihren Höchst- und Tiefstwerten.",
   "searchPersonPermission": "Die Berechtigung für den Protokollzugriff, die vom Anwesenheitssensor des Geräts benötigt wird.",
   "searchSonosSpeakers": "Die Sonos-Lautsprecher, die diesem Gerät bekannt sind, einschließlich Netzwerksuche und Eingabefeld für Adressen."
 }
