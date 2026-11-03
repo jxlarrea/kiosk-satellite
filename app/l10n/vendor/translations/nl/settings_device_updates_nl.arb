@@ -52,5 +52,16 @@
   "updateDownloadStalled": "De download is vastgelopen: er zijn {seconds} seconden lang geen gegevens ontvangen.",
   "deviceUpdateFailedDetail": "Update mislukt: {error}",
   "deviceInstallFailedDetail": "Installatie mislukt: {error}",
-  "updateAnotherPackage": "een ander pakket"
+  "updateAnotherPackage": "een ander pakket",
+  "deviceKioskSatelliteUpdates": "Kiosk Satellite-updates",
+  "deviceAndroidSystemUpdates": "Android-systeemupdates",
+  "settingAndroidUpdatePolicyTitle": "Android-updates installeren",
+  "settingAndroidUpdatePolicyDescription": "Updates van Android zelf van de fabrikant van het apparaat, zoals Google of Samsung. De kioskmodus verbergt de melding om te herstarten en ze te installeren.",
+  "deviceAndroidUpdateAsk": "Vragen op het apparaat",
+  "deviceAndroidUpdateAutomatic": "Meteen",
+  "deviceAndroidUpdateWindowed": "Binnen een tijdvenster",
+  "settingAndroidUpdateWindowStartTitle": "Installeren vanaf",
+  "settingAndroidUpdateWindowStartDescription": "Lokale tijd waarop het dagelijkse venster voor installeren en herstarten begint.",
+  "settingAndroidUpdateWindowEndTitle": "Installeren tot",
+  "settingAndroidUpdateWindowEndDescription": "Lokale tijd waarop het venster sluit. Een venster over middernacht eindigt de volgende dag."
 }

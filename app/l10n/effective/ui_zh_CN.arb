@@ -28094,6 +28094,149 @@
       ]
     }
   },
+  "deviceKioskSatelliteUpdates": "Kiosk Satellite 更新",
+  "@deviceKioskSatelliteUpdates": {
+    "context": "Settings:Device:Updates",
+    "description": "Section heading on the Updates page, above the settings for Kiosk Satellite's own app updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidSystemUpdates": "Android 系统更新",
+  "@deviceAndroidSystemUpdates": {
+    "context": "Settings:Device:Updates",
+    "description": "Section heading on the Updates page, above the settings for Android's own system updates from the device maker.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdatePolicyTitle": "安装 Android 更新",
+  "@settingAndroidUpdatePolicyTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. Picks when Android installs its own system updates and restarts.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdatePolicyDescription": "来自设备制造商（如 Google 或 Samsung）的 Android 系统本身的更新。Kiosk 模式会隐藏重启并安装更新的提示。",
+  "@settingAndroidUpdatePolicyDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateAsk": "在设备上询问",
+  "@deviceAndroidUpdateAsk": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: Android shows its own restart prompt, as it does without a policy.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateAutomatic": "立即",
+  "@deviceAndroidUpdateAutomatic": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: install and restart as soon as an update is ready.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateWindowed": "在时间段内",
+  "@deviceAndroidUpdateWindowed": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: install and restart only during a daily time window.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowStartTitle": "安装开始时间",
+  "@settingAndroidUpdateWindowStartTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. Start time of the daily window for installing Android updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowStartDescription": "每天允许安装并重启的时间段开始的本地时间。",
+  "@settingAndroidUpdateWindowStartDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowEndTitle": "安装结束时间",
+  "@settingAndroidUpdateWindowEndTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. End time of the daily window for installing Android updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowEndDescription": "时间段结束的本地时间。跨过午夜的时间段在次日结束。",
+  "@settingAndroidUpdateWindowEndDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
   "settingUiLanguageTitle": "语言",
   "@settingUiLanguageTitle": {
     "context": "Settings:Device:User Interface",

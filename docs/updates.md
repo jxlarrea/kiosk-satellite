@@ -193,6 +193,22 @@ adb shell dpm list-owners
 
 The second command verifies that ownership was assigned successfully. Once enabled, future updates install silently without prompting for confirmation.
 
+## Android System Updates
+
+This page is about updating Kiosk Satellite itself. Android has its own updates from the device maker, such as Google or Samsung. They work differently.
+
+Android downloads its updates on its own and then asks you to restart in the notification shade. With Kiosk Satellite as the device owner and kiosk mode on, the notification shade is gone, so the prompt never shows and a downloaded update waits until the device restarts.
+
+On a device owner, **Settings > Device > Updates** has an **Android System Updates** group with **Install Android updates**:
+
+* **Ask on the device** is Android's default. The update waits for someone to restart from the prompt.
+* **Right away** installs and restarts as soon as an update is ready.
+* **In a time window** installs and restarts only between **Install from** and **Install until**, every day. A window past midnight, such as 23:00 to 02:00, ends the next day.
+
+A restart interrupts whatever is on screen, so a window at night works best for most wall panels. Kiosk Satellite comes back after the restart if **Start on boot** is on or it is the home screen. The group is also in the remote admin. Fleet Management pushes it to followers like any other Device setting.
+
+The group only shows on a device owner, since Android lets only the device owner set this. It never shows on the Kiosk Satellite Edition images for the Echo devices, which update through their own updater. Pixel devices follow the setting. So do most devices certified for Android Enterprise. A device maker with its own updater app may ignore it. The setting also cannot make an update appear when the device maker's server reports none.
+
 ## Sideloading via ADB
 
 You can continue updating the app manually at any time using standard `adb` commands:

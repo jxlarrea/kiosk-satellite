@@ -95,6 +95,8 @@ adb shell dpm set-device-owner me.jxl.kiosk_satellite/.KioskAdminReceiver
 
 Ownership also unlocks **Restart Device** in the kiosk drawer, the matching remote admin tile and the ESPHome button of the same name: Android only lets a device owner reboot without root. A [Shizuku](shizuku.md) connection is the alternative on a device that cannot be provisioned.
 
+Lock task also hides Android's prompt to restart for a system update. Set **Install Android updates** in **Settings > Device > Updates** so Android installs them by itself, right away or in a nightly window. See [Android System Updates](updates.md#android-system-updates).
+
 The absolute only way to undo this command is a complete factory reset of the device (which is exactly the security point of this tier). Treat device ownership as a commitment reserved for permanently installed wall panels, never a daily driver tablet. Securing ownership also grants the app the ability to install its own updates completely silently across every Android version, as detailed in the [Updates](updates.md) documentation.
 
 ## Notes

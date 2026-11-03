@@ -68,6 +68,7 @@ import 'managers/settings/echo_image_settings.dart';
 import 'managers/settings/headless_settings.dart';
 import 'managers/settings/provisioning.dart';
 import 'managers/settings/settings_manager.dart';
+import 'managers/update/android_update_policy_manager.dart';
 import 'managers/update/system_update_manager.dart';
 import 'managers/update/update_manager.dart';
 import 'managers/voice/voice_manager.dart';
@@ -200,6 +201,7 @@ class AppContainer {
           : null,
     );
     systemUpdate = SystemUpdateManager(bus, commands, log);
+    androidUpdates = AndroidUpdatePolicyManager(bus, commands, log, settings);
     // After homeAssistant: it reads states through it for the fallback.
     glance = GlanceManager(bus, commands, log, settings, homeAssistant);
     shizuku = ShizukuManager(bus, commands, log);
@@ -345,6 +347,7 @@ class AppContainer {
   late final NotificationManager notifications;
   late final UpdateManager update;
   late final SystemUpdateManager systemUpdate;
+  late final AndroidUpdatePolicyManager androidUpdates;
   late final ShizukuManager shizuku;
   late final PluginManager plugins;
   late final RemoteManager remote;
@@ -422,6 +425,9 @@ class AppContainer {
     // Before btProxy too: its first catalog lists the Firmware entity only
     // once getSystemUpdateStatus says the image updates itself.
     systemUpdate,
+    // Before remote, whose first request reads the rows it hides on a
+    // device that is not the device owner.
+    androidUpdates,
     btProxy,
     files,
     glance,

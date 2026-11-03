@@ -28094,6 +28094,149 @@
       ]
     }
   },
+  "deviceKioskSatelliteUpdates": "Оновлення Kiosk Satellite",
+  "@deviceKioskSatelliteUpdates": {
+    "context": "Settings:Device:Updates",
+    "description": "Section heading on the Updates page, above the settings for Kiosk Satellite's own app updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidSystemUpdates": "Системні оновлення Android",
+  "@deviceAndroidSystemUpdates": {
+    "context": "Settings:Device:Updates",
+    "description": "Section heading on the Updates page, above the settings for Android's own system updates from the device maker.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdatePolicyTitle": "Встановлювати оновлення Android",
+  "@settingAndroidUpdatePolicyTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. Picks when Android installs its own system updates and restarts.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdatePolicyDescription": "Оновлення самого Android від виробника пристрою, наприклад Google або Samsung. Режим кіоска приховує запит на перезапуск для їх встановлення.",
+  "@settingAndroidUpdatePolicyDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateAsk": "Питати на пристрої",
+  "@deviceAndroidUpdateAsk": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: Android shows its own restart prompt, as it does without a policy.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateAutomatic": "Одразу",
+  "@deviceAndroidUpdateAutomatic": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: install and restart as soon as an update is ready.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateWindowed": "У часовому вікні",
+  "@deviceAndroidUpdateWindowed": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: install and restart only during a daily time window.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowStartTitle": "Встановлювати з",
+  "@settingAndroidUpdateWindowStartTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. Start time of the daily window for installing Android updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowStartDescription": "Локальний час початку щоденного вікна для встановлення й перезапуску.",
+  "@settingAndroidUpdateWindowStartDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowEndTitle": "Встановлювати до",
+  "@settingAndroidUpdateWindowEndTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. End time of the daily window for installing Android updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowEndDescription": "Локальний час завершення вікна. Вікно, що переходить через північ, закінчується наступного дня.",
+  "@settingAndroidUpdateWindowEndDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
   "settingUiLanguageTitle": "Мова",
   "@settingUiLanguageTitle": {
     "context": "Settings:Device:User Interface",

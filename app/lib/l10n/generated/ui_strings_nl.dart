@@ -7546,6 +7546,42 @@ class UiStringsNl extends UiStrings {
   String get updateAnotherPackage => 'een ander pakket';
 
   @override
+  String get deviceKioskSatelliteUpdates => 'Kiosk Satellite-updates';
+
+  @override
+  String get deviceAndroidSystemUpdates => 'Android-systeemupdates';
+
+  @override
+  String get settingAndroidUpdatePolicyTitle => 'Android-updates installeren';
+
+  @override
+  String get settingAndroidUpdatePolicyDescription =>
+      'Updates van Android zelf van de fabrikant van het apparaat, zoals Google of Samsung. De kioskmodus verbergt de melding om te herstarten en ze te installeren.';
+
+  @override
+  String get deviceAndroidUpdateAsk => 'Vragen op het apparaat';
+
+  @override
+  String get deviceAndroidUpdateAutomatic => 'Meteen';
+
+  @override
+  String get deviceAndroidUpdateWindowed => 'Binnen een tijdvenster';
+
+  @override
+  String get settingAndroidUpdateWindowStartTitle => 'Installeren vanaf';
+
+  @override
+  String get settingAndroidUpdateWindowStartDescription =>
+      'Lokale tijd waarop het dagelijkse venster voor installeren en herstarten begint.';
+
+  @override
+  String get settingAndroidUpdateWindowEndTitle => 'Installeren tot';
+
+  @override
+  String get settingAndroidUpdateWindowEndDescription =>
+      'Lokale tijd waarop het venster sluit. Een venster over middernacht eindigt de volgende dag.';
+
+  @override
   String get settingUiLanguageTitle => 'Taal';
 
   @override

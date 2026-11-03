@@ -28094,6 +28094,149 @@
       ]
     }
   },
+  "deviceKioskSatelliteUpdates": "Kiosk Satellite-updates",
+  "@deviceKioskSatelliteUpdates": {
+    "context": "Settings:Device:Updates",
+    "description": "Section heading on the Updates page, above the settings for Kiosk Satellite's own app updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidSystemUpdates": "Android-systeemupdates",
+  "@deviceAndroidSystemUpdates": {
+    "context": "Settings:Device:Updates",
+    "description": "Section heading on the Updates page, above the settings for Android's own system updates from the device maker.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdatePolicyTitle": "Android-updates installeren",
+  "@settingAndroidUpdatePolicyTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. Picks when Android installs its own system updates and restarts.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdatePolicyDescription": "Updates van Android zelf van de fabrikant van het apparaat, zoals Google of Samsung. De kioskmodus verbergt de melding om te herstarten en ze te installeren.",
+  "@settingAndroidUpdatePolicyDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateAsk": "Vragen op het apparaat",
+  "@deviceAndroidUpdateAsk": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: Android shows its own restart prompt, as it does without a policy.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateAutomatic": "Meteen",
+  "@deviceAndroidUpdateAutomatic": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: install and restart as soon as an update is ready.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateWindowed": "Binnen een tijdvenster",
+  "@deviceAndroidUpdateWindowed": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: install and restart only during a daily time window.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowStartTitle": "Installeren vanaf",
+  "@settingAndroidUpdateWindowStartTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. Start time of the daily window for installing Android updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowStartDescription": "Lokale tijd waarop het dagelijkse venster voor installeren en herstarten begint.",
+  "@settingAndroidUpdateWindowStartDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowEndTitle": "Installeren tot",
+  "@settingAndroidUpdateWindowEndTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. End time of the daily window for installing Android updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowEndDescription": "Lokale tijd waarop het venster sluit. Een venster over middernacht eindigt de volgende dag.",
+  "@settingAndroidUpdateWindowEndDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
   "settingUiLanguageTitle": "Taal",
   "@settingUiLanguageTitle": {
     "context": "Settings:Device:User Interface",

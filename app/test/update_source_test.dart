@@ -56,7 +56,7 @@ void main() {
     for (final def in [defs.updateSource, defs.updateSourceUrl]) {
       expect(def.category, 'Device');
       expect(def.subpage, 'Updates');
-      expect(def.section, 'Updates');
+      expect(def.section, 'Kiosk Satellite Updates');
       expect(def.perDevice, isFalse);
       expect(defs.allSettings, contains(def));
     }

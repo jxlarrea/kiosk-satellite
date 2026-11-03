@@ -28094,6 +28094,149 @@
       ]
     }
   },
+  "deviceKioskSatelliteUpdates": "Mises à jour de Kiosk Satellite",
+  "@deviceKioskSatelliteUpdates": {
+    "context": "Settings:Device:Updates",
+    "description": "Section heading on the Updates page, above the settings for Kiosk Satellite's own app updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidSystemUpdates": "Mises à jour système Android",
+  "@deviceAndroidSystemUpdates": {
+    "context": "Settings:Device:Updates",
+    "description": "Section heading on the Updates page, above the settings for Android's own system updates from the device maker.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdatePolicyTitle": "Installer les mises à jour Android",
+  "@settingAndroidUpdatePolicyTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. Picks when Android installs its own system updates and restarts.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdatePolicyDescription": "Mises à jour d'Android fournies par le fabricant de l'appareil, comme Google ou Samsung. Le mode kiosque masque l'invite de redémarrage qui les installe.",
+  "@settingAndroidUpdatePolicyDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateAsk": "Demander sur l'appareil",
+  "@deviceAndroidUpdateAsk": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: Android shows its own restart prompt, as it does without a policy.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateAutomatic": "Immédiatement",
+  "@deviceAndroidUpdateAutomatic": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: install and restart as soon as an update is ready.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "deviceAndroidUpdateWindowed": "Dans une plage horaire",
+  "@deviceAndroidUpdateWindowed": {
+    "context": "Settings:Device:Updates",
+    "description": "Option of Install Android updates: install and restart only during a daily time window.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowStartTitle": "Installer à partir de",
+  "@settingAndroidUpdateWindowStartTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. Start time of the daily window for installing Android updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowStartDescription": "Heure locale de début de la plage quotidienne d'installation et de redémarrage.",
+  "@settingAndroidUpdateWindowStartDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowEndTitle": "Installer jusqu'à",
+  "@settingAndroidUpdateWindowEndTitle": {
+    "context": "Settings:Device:Updates",
+    "description": "Setting label. End time of the daily window for installing Android updates.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
+  "settingAndroidUpdateWindowEndDescription": "Heure locale de fin de la plage. Une plage qui passe minuit se termine le lendemain.",
+  "@settingAndroidUpdateWindowEndDescription": {
+    "context": "Settings:Device:Updates",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Device > Updates"
+      ],
+      "remoteAdmin": [
+        "Device > Updates"
+      ]
+    }
+  },
   "settingUiLanguageTitle": "Langue",
   "@settingUiLanguageTitle": {
     "context": "Settings:Device:User Interface",

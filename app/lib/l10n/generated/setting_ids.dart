@@ -76,6 +76,18 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingUpdateSourceUrlTitle",
     "description": "settingUpdateSourceUrlDescription",
   },
+  "android_update.policy": {
+    "title": "settingAndroidUpdatePolicyTitle",
+    "description": "settingAndroidUpdatePolicyDescription",
+  },
+  "android_update.window_start": {
+    "title": "settingAndroidUpdateWindowStartTitle",
+    "description": "settingAndroidUpdateWindowStartDescription",
+  },
+  "android_update.window_end": {
+    "title": "settingAndroidUpdateWindowEndTitle",
+    "description": "settingAndroidUpdateWindowEndDescription",
+  },
   "shizuku.install_updates": {
     "title": "settingShizukuInstallUpdatesTitle",
     "description": "settingShizukuInstallUpdatesDescription",

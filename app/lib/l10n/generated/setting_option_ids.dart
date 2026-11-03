@@ -9,6 +9,11 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "github": "deviceUpdateGithub",
     "custom": "deviceUpdateCustom"
   },
+  "android_update.policy": {
+    "ask": "deviceAndroidUpdateAsk",
+    "automatic": "deviceAndroidUpdateAutomatic",
+    "windowed": "deviceAndroidUpdateWindowed"
+  },
   "ha.haptics_strength": {
     "light": "haVibrationLight",
     "medium": "haVibrationMedium",

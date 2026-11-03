@@ -52,5 +52,16 @@
   "updateDownloadStalled": "Загрузка застыла: данных не было {seconds} с.",
   "deviceUpdateFailedDetail": "Обновление не удалось: {error}",
   "deviceInstallFailedDetail": "Установка не удалась: {error}",
-  "updateAnotherPackage": "другой пакет"
+  "updateAnotherPackage": "другой пакет",
+  "deviceKioskSatelliteUpdates": "Обновления Kiosk Satellite",
+  "deviceAndroidSystemUpdates": "Системные обновления Android",
+  "settingAndroidUpdatePolicyTitle": "Устанавливать обновления Android",
+  "settingAndroidUpdatePolicyDescription": "Обновления самого Android от производителя устройства, например Google или Samsung. Режим киоска скрывает запрос на перезапуск для их установки.",
+  "deviceAndroidUpdateAsk": "Спрашивать на устройстве",
+  "deviceAndroidUpdateAutomatic": "Сразу",
+  "deviceAndroidUpdateWindowed": "В окне времени",
+  "settingAndroidUpdateWindowStartTitle": "Устанавливать с",
+  "settingAndroidUpdateWindowStartDescription": "Местное время начала ежедневного окна для установки и перезапуска.",
+  "settingAndroidUpdateWindowEndTitle": "Устанавливать до",
+  "settingAndroidUpdateWindowEndDescription": "Местное время окончания окна. Окно, переходящее через полночь, заканчивается на следующий день."
 }

@@ -52,5 +52,16 @@
   "updateDownloadStalled": "La descarga se detuvo: no se recibieron datos durante {seconds} segundos.",
   "deviceUpdateFailedDetail": "La actualización falló: {error}",
   "deviceInstallFailedDetail": "La instalación falló: {error}",
-  "updateAnotherPackage": "otro paquete"
+  "updateAnotherPackage": "otro paquete",
+  "deviceKioskSatelliteUpdates": "Actualizaciones de Kiosk Satellite",
+  "deviceAndroidSystemUpdates": "Actualizaciones del sistema Android",
+  "settingAndroidUpdatePolicyTitle": "Instalar actualizaciones de Android",
+  "settingAndroidUpdatePolicyDescription": "Actualizaciones de Android del fabricante del dispositivo, como Google o Samsung. El modo kiosko oculta el aviso para reiniciar e instalarlas.",
+  "deviceAndroidUpdateAsk": "Preguntar en el dispositivo",
+  "deviceAndroidUpdateAutomatic": "De inmediato",
+  "deviceAndroidUpdateWindowed": "En un horario",
+  "settingAndroidUpdateWindowStartTitle": "Instalar desde",
+  "settingAndroidUpdateWindowStartDescription": "Hora local en que empieza el horario diario para instalar y reiniciar.",
+  "settingAndroidUpdateWindowEndTitle": "Instalar hasta",
+  "settingAndroidUpdateWindowEndDescription": "Hora local en que termina el horario. Si pasa de la medianoche, termina al día siguiente."
 }

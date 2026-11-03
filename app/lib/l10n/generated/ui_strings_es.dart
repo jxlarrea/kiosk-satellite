@@ -7585,6 +7585,45 @@ class UiStringsEs extends UiStrings {
   String get updateAnotherPackage => 'otro paquete';
 
   @override
+  String get deviceKioskSatelliteUpdates =>
+      'Actualizaciones de Kiosk Satellite';
+
+  @override
+  String get deviceAndroidSystemUpdates =>
+      'Actualizaciones del sistema Android';
+
+  @override
+  String get settingAndroidUpdatePolicyTitle =>
+      'Instalar actualizaciones de Android';
+
+  @override
+  String get settingAndroidUpdatePolicyDescription =>
+      'Actualizaciones de Android del fabricante del dispositivo, como Google o Samsung. El modo kiosko oculta el aviso para reiniciar e instalarlas.';
+
+  @override
+  String get deviceAndroidUpdateAsk => 'Preguntar en el dispositivo';
+
+  @override
+  String get deviceAndroidUpdateAutomatic => 'De inmediato';
+
+  @override
+  String get deviceAndroidUpdateWindowed => 'En un horario';
+
+  @override
+  String get settingAndroidUpdateWindowStartTitle => 'Instalar desde';
+
+  @override
+  String get settingAndroidUpdateWindowStartDescription =>
+      'Hora local en que empieza el horario diario para instalar y reiniciar.';
+
+  @override
+  String get settingAndroidUpdateWindowEndTitle => 'Instalar hasta';
+
+  @override
+  String get settingAndroidUpdateWindowEndDescription =>
+      'Hora local en que termina el horario. Si pasa de la medianoche, termina al día siguiente.';
+
+  @override
   String get settingUiLanguageTitle => 'Idioma';
 
   @override

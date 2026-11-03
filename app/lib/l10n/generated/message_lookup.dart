@@ -2123,6 +2123,23 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'updateUploadedGone' => strings.updateUploadedGone,
       'updateShizukuInstallerFailed' => strings.updateShizukuInstallerFailed,
       'updateAnotherPackage' => strings.updateAnotherPackage,
+      'deviceKioskSatelliteUpdates' => strings.deviceKioskSatelliteUpdates,
+      'deviceAndroidSystemUpdates' => strings.deviceAndroidSystemUpdates,
+      'settingAndroidUpdatePolicyTitle' =>
+        strings.settingAndroidUpdatePolicyTitle,
+      'settingAndroidUpdatePolicyDescription' =>
+        strings.settingAndroidUpdatePolicyDescription,
+      'deviceAndroidUpdateAsk' => strings.deviceAndroidUpdateAsk,
+      'deviceAndroidUpdateAutomatic' => strings.deviceAndroidUpdateAutomatic,
+      'deviceAndroidUpdateWindowed' => strings.deviceAndroidUpdateWindowed,
+      'settingAndroidUpdateWindowStartTitle' =>
+        strings.settingAndroidUpdateWindowStartTitle,
+      'settingAndroidUpdateWindowStartDescription' =>
+        strings.settingAndroidUpdateWindowStartDescription,
+      'settingAndroidUpdateWindowEndTitle' =>
+        strings.settingAndroidUpdateWindowEndTitle,
+      'settingAndroidUpdateWindowEndDescription' =>
+        strings.settingAndroidUpdateWindowEndDescription,
       'settingUiLanguageTitle' => strings.settingUiLanguageTitle,
       'settingUiLanguageDescription' => strings.settingUiLanguageDescription,
       'settingUiThemeTitle' => strings.settingUiThemeTitle,

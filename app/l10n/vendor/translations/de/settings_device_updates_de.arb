@@ -52,5 +52,16 @@
   "updateDownloadStalled": "Der Download ist stehen geblieben: Es wurden {seconds} Sekunden lang keine Daten empfangen.",
   "deviceUpdateFailedDetail": "Update fehlgeschlagen: {error}",
   "deviceInstallFailedDetail": "Installation fehlgeschlagen: {error}",
-  "updateAnotherPackage": "anderes Paket"
+  "updateAnotherPackage": "anderes Paket",
+  "deviceKioskSatelliteUpdates": "Kiosk Satellite-Updates",
+  "deviceAndroidSystemUpdates": "Android-Systemupdates",
+  "settingAndroidUpdatePolicyTitle": "Android-Updates installieren",
+  "settingAndroidUpdatePolicyDescription": "Updates für Android selbst vom Gerätehersteller, etwa Google oder Samsung. Der Kioskmodus blendet die Aufforderung aus, zum Installieren neu zu starten.",
+  "deviceAndroidUpdateAsk": "Auf dem Gerät fragen",
+  "deviceAndroidUpdateAutomatic": "Sofort",
+  "deviceAndroidUpdateWindowed": "In einem Zeitfenster",
+  "settingAndroidUpdateWindowStartTitle": "Installieren ab",
+  "settingAndroidUpdateWindowStartDescription": "Ortszeit, zu der das tägliche Zeitfenster für Installation und Neustart beginnt.",
+  "settingAndroidUpdateWindowEndTitle": "Installieren bis",
+  "settingAndroidUpdateWindowEndDescription": "Ortszeit, zu der das Zeitfenster endet. Ein Fenster über Mitternacht endet am nächsten Tag."
 }

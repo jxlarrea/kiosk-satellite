@@ -7461,6 +7461,42 @@ class UiStringsEn extends UiStrings {
   String get updateAnotherPackage => 'another package';
 
   @override
+  String get deviceKioskSatelliteUpdates => 'Kiosk Satellite Updates';
+
+  @override
+  String get deviceAndroidSystemUpdates => 'Android System Updates';
+
+  @override
+  String get settingAndroidUpdatePolicyTitle => 'Install Android updates';
+
+  @override
+  String get settingAndroidUpdatePolicyDescription =>
+      'Updates to Android itself from the device maker, such as Google or Samsung. Kiosk mode hides the prompt to restart and install them.';
+
+  @override
+  String get deviceAndroidUpdateAsk => 'Ask on the device';
+
+  @override
+  String get deviceAndroidUpdateAutomatic => 'Right away';
+
+  @override
+  String get deviceAndroidUpdateWindowed => 'In a time window';
+
+  @override
+  String get settingAndroidUpdateWindowStartTitle => 'Install from';
+
+  @override
+  String get settingAndroidUpdateWindowStartDescription =>
+      'Local time the daily window for installing and restarting opens.';
+
+  @override
+  String get settingAndroidUpdateWindowEndTitle => 'Install until';
+
+  @override
+  String get settingAndroidUpdateWindowEndDescription =>
+      'Local time the window closes. A window past midnight ends the next day.';
+
+  @override
   String get settingUiLanguageTitle => 'Language';
 
   @override

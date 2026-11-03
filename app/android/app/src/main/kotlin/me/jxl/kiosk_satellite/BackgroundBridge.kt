@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.app.DownloadManager
 import android.app.KeyguardManager
 import android.app.admin.DevicePolicyManager
+import android.app.admin.SystemUpdatePolicy
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -407,6 +408,13 @@ class BackgroundBridge(
                 // the answer is no.
                 "isDeviceOwner" -> result.success(HomeRole.isDeviceOwner(context))
                 "rebootDevice" -> result.success(rebootDevice())
+                // Android's own system updates (issue #1292): with lock
+                // task hiding the shade, the restart prompt never shows, so
+                // the device owner hands the restart to a policy instead.
+                "setSystemUpdatePolicy" -> result.success(setSystemUpdatePolicy(
+                    call.argument<String>("policy") ?: "ask",
+                    call.argument<Number>("start")?.toInt() ?: 0,
+                    call.argument<Number>("end")?.toInt() ?: 0))
                 // Whether the on-device vision runtimes (face detection,
                 // hand gestures) can load here at all (issue #331).
                 "visionSupport" -> result.success(VisionRuntime.describe())
@@ -1129,6 +1137,44 @@ class BackgroundBridge(
             mapOf("ok" to false, "error" to "Android refused the restart while a call is in progress")
         } catch (e: Exception) {
             mapOf("ok" to false, "error" to (e.message ?: "Android refused the restart"))
+        }
+    }
+
+    /**
+     * The system update policy as the device owner sets it: `ask` clears
+     * it (Android's own prompt), `automatic` installs as soon as an update
+     * is ready, `windowed` only between [start] and [end], minutes after
+     * local midnight. Android keeps it across reboots and drops it with the
+     * device owner. Answers what Android holds afterwards, read back.
+     */
+    private fun setSystemUpdatePolicy(policy: String, start: Int, end: Int): Map<String, Any?> {
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        if (!dpm.isDeviceOwnerApp(context.packageName)) {
+            return mapOf("ok" to false, "error" to "Kiosk Satellite is not the device owner")
+        }
+        val admin = ComponentName(context, KioskAdminReceiver::class.java)
+        return try {
+            val wanted = when (policy) {
+                "automatic" -> SystemUpdatePolicy.createAutomaticInstallPolicy()
+                "windowed" -> SystemUpdatePolicy.createWindowedInstallPolicy(
+                    start.coerceIn(0, 1439), end.coerceIn(0, 1439))
+                else -> null
+            }
+            dpm.setSystemUpdatePolicy(admin, wanted)
+            val held = dpm.systemUpdatePolicy
+            mapOf(
+                "ok" to true,
+                "applied" to when (held?.policyType) {
+                    SystemUpdatePolicy.TYPE_INSTALL_AUTOMATIC -> "automatic"
+                    SystemUpdatePolicy.TYPE_INSTALL_WINDOWED -> "windowed"
+                    SystemUpdatePolicy.TYPE_POSTPONE -> "postpone"
+                    else -> "ask"
+                },
+                "start" to held?.installWindowStart,
+                "end" to held?.installWindowEnd,
+            )
+        } catch (e: Exception) {
+            mapOf("ok" to false, "error" to (e.message ?: "Android refused the policy"))
         }
     }
 

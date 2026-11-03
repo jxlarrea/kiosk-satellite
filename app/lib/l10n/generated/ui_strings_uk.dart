@@ -7520,6 +7520,43 @@ class UiStringsUk extends UiStrings {
   String get updateAnotherPackage => 'інший пакет';
 
   @override
+  String get deviceKioskSatelliteUpdates => 'Оновлення Kiosk Satellite';
+
+  @override
+  String get deviceAndroidSystemUpdates => 'Системні оновлення Android';
+
+  @override
+  String get settingAndroidUpdatePolicyTitle =>
+      'Встановлювати оновлення Android';
+
+  @override
+  String get settingAndroidUpdatePolicyDescription =>
+      'Оновлення самого Android від виробника пристрою, наприклад Google або Samsung. Режим кіоска приховує запит на перезапуск для їх встановлення.';
+
+  @override
+  String get deviceAndroidUpdateAsk => 'Питати на пристрої';
+
+  @override
+  String get deviceAndroidUpdateAutomatic => 'Одразу';
+
+  @override
+  String get deviceAndroidUpdateWindowed => 'У часовому вікні';
+
+  @override
+  String get settingAndroidUpdateWindowStartTitle => 'Встановлювати з';
+
+  @override
+  String get settingAndroidUpdateWindowStartDescription =>
+      'Локальний час початку щоденного вікна для встановлення й перезапуску.';
+
+  @override
+  String get settingAndroidUpdateWindowEndTitle => 'Встановлювати до';
+
+  @override
+  String get settingAndroidUpdateWindowEndDescription =>
+      'Локальний час завершення вікна. Вікно, що переходить через північ, закінчується наступного дня.';
+
+  @override
   String get settingUiLanguageTitle => 'Мова';
 
   @override

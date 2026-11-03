@@ -3900,10 +3900,14 @@ class _CategoryContentState extends State<_CategoryContent> {
     }
 
     if (widget.category == 'Device' && subpage == 'Updates') {
+      // Kiosk Satellite's own update rows and cards first, then Android's
+      // system updates (issue #1292), which only a device owner sees.
+      bool android(SettingDef<Object> def) =>
+          def.section == androidUpdatePolicy.section;
       return [
         ...sectioned([
           for (final def in _defsFor(widget.category))
-            if (def.subpage == subpage) def,
+            if (def.subpage == subpage && !android(def)) def,
         ]),
         // An APK uploaded through the remote admin (issue #566): the
         // upload itself happens in a browser, the install can be started
@@ -3942,6 +3946,10 @@ class _CategoryContentState extends State<_CategoryContent> {
             ),
           ],
         ),
+        ...sectioned([
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage && android(def)) def,
+        ]),
       ];
     }
 
@@ -11752,7 +11760,10 @@ class SettingTile extends StatelessWidget {
         }
         // A time of day is picked, not typed: the control box shows the
         // value and opens the time picker, on both surfaces.
-        if (def.key == themeDarkAt.key || def.key == themeLightAt.key) {
+        if (def.key == themeDarkAt.key ||
+            def.key == themeLightAt.key ||
+            def.key == androidUpdateWindowStart.key ||
+            def.key == androidUpdateWindowEnd.key) {
           final current = value as String;
           return ListTile(
             title: Text(def.localizedTitle(context)),

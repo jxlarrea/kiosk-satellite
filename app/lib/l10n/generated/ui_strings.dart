@@ -13049,6 +13049,72 @@ abstract class UiStrings {
   /// **'another package'**
   String get updateAnotherPackage;
 
+  /// Section heading on the Updates page, above the settings for Kiosk Satellite's own app updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk Satellite Updates'**
+  String get deviceKioskSatelliteUpdates;
+
+  /// Section heading on the Updates page, above the settings for Android's own system updates from the device maker.
+  ///
+  /// In en, this message translates to:
+  /// **'Android System Updates'**
+  String get deviceAndroidSystemUpdates;
+
+  /// Setting label. Picks when Android installs its own system updates and restarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Install Android updates'**
+  String get settingAndroidUpdatePolicyTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates to Android itself from the device maker, such as Google or Samsung. Kiosk mode hides the prompt to restart and install them.'**
+  String get settingAndroidUpdatePolicyDescription;
+
+  /// Option of Install Android updates: Android shows its own restart prompt, as it does without a policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask on the device'**
+  String get deviceAndroidUpdateAsk;
+
+  /// Option of Install Android updates: install and restart as soon as an update is ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Right away'**
+  String get deviceAndroidUpdateAutomatic;
+
+  /// Option of Install Android updates: install and restart only during a daily time window.
+  ///
+  /// In en, this message translates to:
+  /// **'In a time window'**
+  String get deviceAndroidUpdateWindowed;
+
+  /// Setting label. Start time of the daily window for installing Android updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Install from'**
+  String get settingAndroidUpdateWindowStartTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Local time the daily window for installing and restarting opens.'**
+  String get settingAndroidUpdateWindowStartDescription;
+
+  /// Setting label. End time of the daily window for installing Android updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Install until'**
+  String get settingAndroidUpdateWindowEndTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Local time the window closes. A window past midnight ends the next day.'**
+  String get settingAndroidUpdateWindowEndDescription;
+
   /// Language selector label.
   ///
   /// In en, this message translates to:

@@ -144,6 +144,14 @@ export function renderUpdateSourceDocs(panel) {
   docs.appendChild(link);
   card.appendChild(docs);
   panel.appendChild(card);
+  // Android's own system updates (#1292) close the page, after the cards
+  // above that belong to Kiosk Satellite's updates, as on the device.
+  const android = panel.querySelector('[data-key="android_update.policy"]')?.closest('.card');
+  if (android) {
+    const heading = android.previousElementSibling;
+    if (heading?.matches('h2.card-title')) panel.appendChild(heading);
+    panel.appendChild(android);
+  }
 }
 
 /* An APK from this computer, whatever GitHub says (#566): its own card on

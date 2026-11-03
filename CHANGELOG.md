@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Install Android system updates in kiosk mode.** Kiosk mode on a device owner hides the notification shade, so Android's prompt to restart for a system update never showed and a downloaded update waited until someone restarted the device. A new **Android System Updates** group in **Settings > Device > Updates** sets **Install Android updates** to **Ask on the device** (the default, as before), **Right away** or **In a time window**, such as 03:00 to 05:00. Android then installs and restarts by itself. The group shows only on a device owner and never on the Echo images. The page's own settings now sit under a **Kiosk Satellite Updates** heading (#1292).
 - **Show Immich photo descriptions.** Turn on **Description** in the Immich Media screensaver's Metadata settings, off by default, to show the description written for each photo in Immich as a caption centered at the bottom of the screen, up to two lines. It wraps between the corner details when it fits there and moves above them when it does not. The At a Glance row sits above the caption. In a pair each photo's caption sits under that photo (#1290).
 
 ### Fixed

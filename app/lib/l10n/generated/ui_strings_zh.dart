@@ -7153,6 +7153,42 @@ class UiStringsZh extends UiStrings {
   String get updateAnotherPackage => '其他应用包';
 
   @override
+  String get deviceKioskSatelliteUpdates => 'Kiosk Satellite 更新';
+
+  @override
+  String get deviceAndroidSystemUpdates => 'Android 系统更新';
+
+  @override
+  String get settingAndroidUpdatePolicyTitle => '安装 Android 更新';
+
+  @override
+  String get settingAndroidUpdatePolicyDescription =>
+      '来自设备制造商（如 Google 或 Samsung）的 Android 系统本身的更新。Kiosk 模式会隐藏重启并安装更新的提示。';
+
+  @override
+  String get deviceAndroidUpdateAsk => '在设备上询问';
+
+  @override
+  String get deviceAndroidUpdateAutomatic => '立即';
+
+  @override
+  String get deviceAndroidUpdateWindowed => '在时间段内';
+
+  @override
+  String get settingAndroidUpdateWindowStartTitle => '安装开始时间';
+
+  @override
+  String get settingAndroidUpdateWindowStartDescription =>
+      '每天允许安装并重启的时间段开始的本地时间。';
+
+  @override
+  String get settingAndroidUpdateWindowEndTitle => '安装结束时间';
+
+  @override
+  String get settingAndroidUpdateWindowEndDescription =>
+      '时间段结束的本地时间。跨过午夜的时间段在次日结束。';
+
+  @override
   String get settingUiLanguageTitle => '语言';
 
   @override
@@ -22202,6 +22238,42 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get updateAnotherPackage => '其他应用包';
+
+  @override
+  String get deviceKioskSatelliteUpdates => 'Kiosk Satellite 更新';
+
+  @override
+  String get deviceAndroidSystemUpdates => 'Android 系统更新';
+
+  @override
+  String get settingAndroidUpdatePolicyTitle => '安装 Android 更新';
+
+  @override
+  String get settingAndroidUpdatePolicyDescription =>
+      '来自设备制造商（如 Google 或 Samsung）的 Android 系统本身的更新。Kiosk 模式会隐藏重启并安装更新的提示。';
+
+  @override
+  String get deviceAndroidUpdateAsk => '在设备上询问';
+
+  @override
+  String get deviceAndroidUpdateAutomatic => '立即';
+
+  @override
+  String get deviceAndroidUpdateWindowed => '在时间段内';
+
+  @override
+  String get settingAndroidUpdateWindowStartTitle => '安装开始时间';
+
+  @override
+  String get settingAndroidUpdateWindowStartDescription =>
+      '每天允许安装并重启的时间段开始的本地时间。';
+
+  @override
+  String get settingAndroidUpdateWindowEndTitle => '安装结束时间';
+
+  @override
+  String get settingAndroidUpdateWindowEndDescription =>
+      '时间段结束的本地时间。跨过午夜的时间段在次日结束。';
 
   @override
   String get settingUiLanguageTitle => '语言';

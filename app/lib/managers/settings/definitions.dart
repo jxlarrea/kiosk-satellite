@@ -11257,7 +11257,7 @@ const updateSource = SettingDef<String>(
   title: 'Update source',
   description: 'Where the app looks for new releases.',
   category: 'Device',
-  section: 'Updates',
+  section: 'Kiosk Satellite Updates',
   subpage: 'Updates',
 );
 
@@ -11271,12 +11271,70 @@ const updateSourceUrl = SettingDef<String>(
       'and the release APKs.',
   placeholder: 'http://nas.local/kiosk-satellite',
   category: 'Device',
-  section: 'Updates',
+  section: 'Kiosk Satellite Updates',
   subpage: 'Updates',
   dependsOn: 'update.source',
   dependsOnValue: 'custom',
   validator: validateUpdateSourceUrl,
   normalizer: normalizeUpdateSourceUrlSetting,
+);
+
+// ── Android System Updates (issue #1292) ───────────────────────────────
+// Android's own updates, the ones the device maker ships, not Kiosk
+// Satellite's or the Echo image's. Android asks to restart for them in the
+// notification shade. The lock task kiosk mode starts as device owner
+// (KioskLock.setPinned, LOCK_TASK_FEATURE_NONE) hides the shade, so a
+// downloaded update could wait forever. The policy hands the restart back
+// to Android: DevicePolicyManager.setSystemUpdatePolicy, which only the
+// device owner may call. AndroidUpdatePolicyManager applies it and hides
+// these rows anywhere else, the Echo images included. Not perDevice: a
+// fleet installs in one window.
+
+const androidUpdatePolicy = SettingDef<String>(
+  key: 'android_update.policy',
+  type: SettingType.select,
+  defaultValue: 'ask',
+  options: ['ask', 'automatic', 'windowed'],
+  optionLabels: {
+    'ask': 'Ask on the device',
+    'automatic': 'Right away',
+    'windowed': 'In a time window',
+  },
+  title: 'Install Android updates',
+  description:
+      'Updates to Android itself from the device maker, such as Google or '
+      'Samsung. Kiosk mode hides the prompt to restart and install them.',
+  category: 'Device',
+  section: 'Android System Updates',
+  subpage: 'Updates',
+);
+
+const androidUpdateWindowStart = SettingDef<String>(
+  key: 'android_update.window_start',
+  type: SettingType.string,
+  defaultValue: '03:00',
+  title: 'Install from',
+  description:
+      'Local time the daily window for installing and restarting opens.',
+  category: 'Device',
+  section: 'Android System Updates',
+  subpage: 'Updates',
+  dependsOn: 'android_update.policy',
+  dependsOnValue: 'windowed',
+);
+
+const androidUpdateWindowEnd = SettingDef<String>(
+  key: 'android_update.window_end',
+  type: SettingType.string,
+  defaultValue: '05:00',
+  title: 'Install until',
+  description:
+      'Local time the window closes. A window past midnight ends the next day.',
+  category: 'Device',
+  section: 'Android System Updates',
+  subpage: 'Updates',
+  dependsOn: 'android_update.policy',
+  dependsOnValue: 'windowed',
 );
 
 const shizukuInstallUpdates = SettingDef<bool>(
@@ -13936,6 +13994,9 @@ const List<SettingDef<Object>> allSettings = [
   remoteAdminUrl,
   updateSource,
   updateSourceUrl,
+  androidUpdatePolicy,
+  androidUpdateWindowStart,
+  androidUpdateWindowEnd,
   shizukuInstallUpdates,
   // The Kiosk Satellite Analytics page is the last group on the Device
   // page, after Permissions Manager (settings_screen places its entry).

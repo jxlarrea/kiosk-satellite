@@ -28425,5 +28425,71 @@
     "translation": "305e4f7c8a1a1a167b92354a7e2e8ebe20d69c49c660d2e5b5f89078c68017e2",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "deviceAndroidUpdateAsk": {
+    "source": "ff5c57f2f7957e61c8ebc36cd0a63532343557e949fcbe36dfa5738119cd1478",
+    "translation": "aa01bc0183833252ffe16c7efb197ead394d038bc96b54591eeae1fddd2446b3",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingAndroidUpdateWindowStartDescription": {
+    "source": "56c7c218d3606991f1aa241c94383215ab10f0080bf83cbab26b75fcece802fe",
+    "translation": "624c5345cbfb325c7b505832108a63218e591d506449e0e155895ee9c080b570",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "deviceAndroidSystemUpdates": {
+    "source": "100a1ce828e9ca6729b3889f784c964e9e023b6ede8e4d4bc7240391163fbd7d",
+    "translation": "dbe4cbce7cd2d2668ba3fc49f652e774ba72ee970bcd93e7c6ac81d7757c4333",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "deviceAndroidUpdateWindowed": {
+    "source": "5df33ef4310a4dcbc7432a5bb125d26fcb29fb84666984066443c18c26f400fa",
+    "translation": "e96d28acf675a86700c8e6ce98e936381a28222b1c4e024adf7f6c5ce7bbd114",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingAndroidUpdateWindowEndTitle": {
+    "source": "a309c471fcac8188062ad6d256eb0b0ae48895686f061045992ef0003948b539",
+    "translation": "5f78ba0fe9f623ee0d46f274b54c764fb0b890483b4737d44e8de4caec97ddd5",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "deviceAndroidUpdateAutomatic": {
+    "source": "f4b2c8c967ec6fde9f01a9d0d40e1bcd6b43d9fbfa917cbf26c34bf858129b50",
+    "translation": "6912269df2eded7adfc5c02663d07d500f3ba8812c10cc0a7912124439f00715",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingAndroidUpdatePolicyDescription": {
+    "source": "9d1c8aeadc388ab2f80324d67e407edd2220907d93275c5275a28a0f58dd04f9",
+    "translation": "67e0360268b066d378d8b7e876af2fabaf0f337e5f860fc74d45665999991e5c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "deviceKioskSatelliteUpdates": {
+    "source": "a8bce7f78d167a7ba7667ccea7d5186d31e551004ee4ce998b6ca710bdb2dc83",
+    "translation": "d99bdfa09d48f09b263fd47083b87613e76c3e427934e98a69389596024ae933",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingAndroidUpdateWindowStartTitle": {
+    "source": "70c894e04a0b20a81b251b60b921f3a67509b70ce682566ccd34e746840ef33a",
+    "translation": "9d576a21399dffe41e7a8448c3ecc2422dd28ed569fdcc936ae90bdd18727dc0",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingAndroidUpdateWindowEndDescription": {
+    "source": "21edcd2c985dce3fdc1715239214fd9028e31cff9d0426ed35488725e6309da7",
+    "translation": "538851dd4b75b76f2034e21bc19f1619c70666ad37dc58006799f18ed50e0518",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingAndroidUpdatePolicyTitle": {
+    "source": "603a96ee466bc99df1af7ea5a447562a3bcf0bb5809557935daf06bba4ca0b88",
+    "translation": "94e666a3412accdecd07f7931b61e993355139a663849d26842d66db14b70cd4",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

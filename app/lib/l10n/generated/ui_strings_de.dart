@@ -7629,6 +7629,42 @@ class UiStringsDe extends UiStrings {
   String get updateAnotherPackage => 'anderes Paket';
 
   @override
+  String get deviceKioskSatelliteUpdates => 'Kiosk Satellite-Updates';
+
+  @override
+  String get deviceAndroidSystemUpdates => 'Android-Systemupdates';
+
+  @override
+  String get settingAndroidUpdatePolicyTitle => 'Android-Updates installieren';
+
+  @override
+  String get settingAndroidUpdatePolicyDescription =>
+      'Updates für Android selbst vom Gerätehersteller, etwa Google oder Samsung. Der Kioskmodus blendet die Aufforderung aus, zum Installieren neu zu starten.';
+
+  @override
+  String get deviceAndroidUpdateAsk => 'Auf dem Gerät fragen';
+
+  @override
+  String get deviceAndroidUpdateAutomatic => 'Sofort';
+
+  @override
+  String get deviceAndroidUpdateWindowed => 'In einem Zeitfenster';
+
+  @override
+  String get settingAndroidUpdateWindowStartTitle => 'Installieren ab';
+
+  @override
+  String get settingAndroidUpdateWindowStartDescription =>
+      'Ortszeit, zu der das tägliche Zeitfenster für Installation und Neustart beginnt.';
+
+  @override
+  String get settingAndroidUpdateWindowEndTitle => 'Installieren bis';
+
+  @override
+  String get settingAndroidUpdateWindowEndDescription =>
+      'Ortszeit, zu der das Zeitfenster endet. Ein Fenster über Mitternacht endet am nächsten Tag.';
+
+  @override
   String get settingUiLanguageTitle => 'Sprache';
 
   @override

@@ -1911,7 +1911,9 @@ export function settingRow(s) {
 
   // A time of day is picked, not typed: the control box shows the value
   // and opens the time picker dialog, the same one the device draws.
-  if (s.key === 'ha.theme_dark_at' || s.key === 'ha.theme_light_at') {
+  if (s.key === 'ha.theme_dark_at' || s.key === 'ha.theme_light_at'
+    || s.key === 'android_update.window_start'
+    || s.key === 'android_update.window_end') {
     const box = timeBox({ title: s.title, value: s.value || '', onPick: v => save(v) });
     row.appendChild(box.el);
     bindUpdate(box.el, () => box.set(s.value));

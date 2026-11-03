@@ -52,5 +52,16 @@
   "updateDownloadStalled": "下载无响应：连续 {seconds} 秒未收到数据。",
   "deviceUpdateFailedDetail": "更新失败：{error}",
   "deviceInstallFailedDetail": "安装失败：{error}",
-  "updateAnotherPackage": "其他应用包"
+  "updateAnotherPackage": "其他应用包",
+  "deviceKioskSatelliteUpdates": "Kiosk Satellite 更新",
+  "deviceAndroidSystemUpdates": "Android 系统更新",
+  "settingAndroidUpdatePolicyTitle": "安装 Android 更新",
+  "settingAndroidUpdatePolicyDescription": "来自设备制造商（如 Google 或 Samsung）的 Android 系统本身的更新。Kiosk 模式会隐藏重启并安装更新的提示。",
+  "deviceAndroidUpdateAsk": "在设备上询问",
+  "deviceAndroidUpdateAutomatic": "立即",
+  "deviceAndroidUpdateWindowed": "在时间段内",
+  "settingAndroidUpdateWindowStartTitle": "安装开始时间",
+  "settingAndroidUpdateWindowStartDescription": "每天允许安装并重启的时间段开始的本地时间。",
+  "settingAndroidUpdateWindowEndTitle": "安装结束时间",
+  "settingAndroidUpdateWindowEndDescription": "时间段结束的本地时间。跨过午夜的时间段在次日结束。"
 }

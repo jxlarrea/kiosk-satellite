@@ -52,5 +52,16 @@
   "updateDownloadStalled": "Le téléchargement s'est bloqué : aucune donnée reçue depuis {seconds} secondes.",
   "deviceUpdateFailedDetail": "Échec de la mise à jour : {error}",
   "deviceInstallFailedDetail": "Échec de l'installation : {error}",
-  "updateAnotherPackage": "un autre package"
+  "updateAnotherPackage": "un autre package",
+  "deviceKioskSatelliteUpdates": "Mises à jour de Kiosk Satellite",
+  "deviceAndroidSystemUpdates": "Mises à jour système Android",
+  "settingAndroidUpdatePolicyTitle": "Installer les mises à jour Android",
+  "settingAndroidUpdatePolicyDescription": "Mises à jour d'Android fournies par le fabricant de l'appareil, comme Google ou Samsung. Le mode kiosque masque l'invite de redémarrage qui les installe.",
+  "deviceAndroidUpdateAsk": "Demander sur l'appareil",
+  "deviceAndroidUpdateAutomatic": "Immédiatement",
+  "deviceAndroidUpdateWindowed": "Dans une plage horaire",
+  "settingAndroidUpdateWindowStartTitle": "Installer à partir de",
+  "settingAndroidUpdateWindowStartDescription": "Heure locale de début de la plage quotidienne d'installation et de redémarrage.",
+  "settingAndroidUpdateWindowEndTitle": "Installer jusqu'à",
+  "settingAndroidUpdateWindowEndDescription": "Heure locale de fin de la plage. Une plage qui passe minuit se termine le lendemain."
 }

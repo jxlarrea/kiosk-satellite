@@ -52,5 +52,16 @@
   "updateDownloadStalled": "Завантаження зупинилося: дані не надходили протягом {seconds} с.",
   "deviceUpdateFailedDetail": "Оновлення не вдалося: {error}",
   "deviceInstallFailedDetail": "Встановлення не вдалося: {error}",
-  "updateAnotherPackage": "інший пакет"
+  "updateAnotherPackage": "інший пакет",
+  "deviceKioskSatelliteUpdates": "Оновлення Kiosk Satellite",
+  "deviceAndroidSystemUpdates": "Системні оновлення Android",
+  "settingAndroidUpdatePolicyTitle": "Встановлювати оновлення Android",
+  "settingAndroidUpdatePolicyDescription": "Оновлення самого Android від виробника пристрою, наприклад Google або Samsung. Режим кіоска приховує запит на перезапуск для їх встановлення.",
+  "deviceAndroidUpdateAsk": "Питати на пристрої",
+  "deviceAndroidUpdateAutomatic": "Одразу",
+  "deviceAndroidUpdateWindowed": "У часовому вікні",
+  "settingAndroidUpdateWindowStartTitle": "Встановлювати з",
+  "settingAndroidUpdateWindowStartDescription": "Локальний час початку щоденного вікна для встановлення й перезапуску.",
+  "settingAndroidUpdateWindowEndTitle": "Встановлювати до",
+  "settingAndroidUpdateWindowEndDescription": "Локальний час завершення вікна. Вікно, що переходить через північ, закінчується наступного дня."
 }

@@ -7581,6 +7581,43 @@ class UiStringsFr extends UiStrings {
   String get updateAnotherPackage => 'un autre package';
 
   @override
+  String get deviceKioskSatelliteUpdates => 'Mises à jour de Kiosk Satellite';
+
+  @override
+  String get deviceAndroidSystemUpdates => 'Mises à jour système Android';
+
+  @override
+  String get settingAndroidUpdatePolicyTitle =>
+      'Installer les mises à jour Android';
+
+  @override
+  String get settingAndroidUpdatePolicyDescription =>
+      'Mises à jour d\'Android fournies par le fabricant de l\'appareil, comme Google ou Samsung. Le mode kiosque masque l\'invite de redémarrage qui les installe.';
+
+  @override
+  String get deviceAndroidUpdateAsk => 'Demander sur l\'appareil';
+
+  @override
+  String get deviceAndroidUpdateAutomatic => 'Immédiatement';
+
+  @override
+  String get deviceAndroidUpdateWindowed => 'Dans une plage horaire';
+
+  @override
+  String get settingAndroidUpdateWindowStartTitle => 'Installer à partir de';
+
+  @override
+  String get settingAndroidUpdateWindowStartDescription =>
+      'Heure locale de début de la plage quotidienne d\'installation et de redémarrage.';
+
+  @override
+  String get settingAndroidUpdateWindowEndTitle => 'Installer jusqu\'à';
+
+  @override
+  String get settingAndroidUpdateWindowEndDescription =>
+      'Heure locale de fin de la plage. Une plage qui passe minuit se termine le lendemain.';
+
+  @override
   String get settingUiLanguageTitle => 'Langue';
 
   @override
