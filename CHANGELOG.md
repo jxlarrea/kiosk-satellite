@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.1 - 2026-11-02
 
 ### Added
 - **The Weather screensaver widget shows the conditions icon.** An icon for the current conditions now sits beside the temperature, on the corner's outer edge like the other icons, in its own colors. Turn off the new **Colored icons** switch to draw it in the widget color. After sunset, sunny and partly cloudy show the moon instead of the sun, in this widget and on today's row of the **Weather forecast** widget.
@@ -17,8 +17,8 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Plugins can follow the clock's Night mode.** A new `getScreensaverAppearance` read and `screensaver.appearance` event tell a plugin whether the Clock screensaver shows its Night mode colors, along with the night text, background and flip card colors. A plugin overlay can switch to the same colors at night and back in daylight (#1250).
 - **Gesture actions tell Home Assistant which kiosk ran them.** **Run a script**, **Trigger an automation** and **Fire an event** now pass the kiosk's Home Assistant device ID as `ks_device_id`, the same variable realtime conversations give scripts, and its **Device name** as `ks_device_name`. **Call a service** puts them where its data says `{ks_device_id}` or `{ks_device_name}`. One gesture synced through Fleet can now act on the room of whichever kiosk ran it, for example with `area_id(trigger.event.data.ks_device_id)`. The device ID needs ESPHome on and the kiosk added to Home Assistant. Scripts run by realtime conversations now get `ks_device_name` too (#1259).
 - **Home Assistant hears when a notification card goes.** Every card that leaves the screen now fires an `esphome.kiosk_satellite_notification` event with the `id` the `notification` action returned and its title, message and type. `event_type` says why: `tapped`, `expired`, `dismissed` or `replaced`. An automation can show a card again if someone taps it away while the reason for it is still there. Apps on the kiosk get the same as `NOTIFICATION_*` Android broadcasts (#1273).
-
 - **The Music Library can hide its speaker pill.** A new **Show speaker selection pill** switch in the library's **User Interface** group, on by default, takes the speaker pill off the top of the library, the same as the Now Playing switch of that name. A play with no speaker picked still asks for one.
+
 ### Changed
 - **Larger album art in portrait Now Playing.** On a portrait screen with the **Vertical** layout, the cover now spans the screen's width when lyrics and the queue are off. On a short screen it stops where the track details need the room.
 - **Now Playing takes the full screen by default.** **Show alongside screensaver** is now off by default, so Now Playing replaces the screensaver instead of sharing the screen with it. Turn it on under **Settings > Media Player > Now Playing > Screensaver** to keep the screensaver beside the player. A kiosk where it was never changed switches to the full screen player after the update.
