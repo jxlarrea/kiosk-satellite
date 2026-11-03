@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.2 - 2026-11-03
 
 ### Added
 - **Pick the echo canceller.** A new **Echo cancellation method** setting in **Microphone settings** picks **Automatic**, **GTCRN** or **AEC3**. Automatic tests GTCRN while the kiosk plays sounds and switches to AEC3 if too much echo is left, then shows the result as **GTCRN (detected)** or **AEC3 (detected)** and keeps it. Pick **Automatic** to run the test again. A system update runs it again on its own.
