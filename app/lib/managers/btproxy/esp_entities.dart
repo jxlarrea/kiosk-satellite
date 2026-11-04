@@ -110,6 +110,16 @@ class EspEntitySurface {
   static const _cameraOffAsset = 'assets/camera/camera_off.jpg';
   Uint8List? _cameraOffFrame;
 
+  /// A 64x48 black JPEG. Home Assistant marks a camera available once any
+  /// frame arrives after it connects, and connecting is not a request to
+  /// look through the camera.
+  static final _blackFrame = base64Decode(
+    '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABsSFBcUERsXFhceHBsgKEIrKCUl'
+    'KFE6PTBCYFVlZF9VXVtqeJmBanGQc1tdhbWGkJ6jq62rZ4C8ybqmx5moq6T/'
+    'wAALCAAwAEABAREA/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAA'
+    'AAAAAAAAAAAAAAAA/9oACAEBAAA/AJkAAAAAAAAAAAAAAAH/2Q==',
+  );
+
   final List<StreamSubscription<Object?>> _subs = [];
   Timer? _poll;
   Timer? _motionOff;
@@ -2438,18 +2448,22 @@ class EspEntitySurface {
         );
       case 'device_camera':
         // A frame request from Home Assistant; the capture event pushes
-        // the image. Off, the "Camera off" frame answers instead.
-        if (_settings.get(defs.cameraEnabled)) {
-          await commands.execute('takeCameraSnapshot', const {});
-        } else {
+        // the image. Off, the "Camera off" frame answers instead, and the
+        // frame owed when Home Assistant connects is black.
+        if (!_settings.get(defs.cameraEnabled)) {
           await _sendCameraOff();
+        } else if (value == 'subscribed') {
+          await _sendImage('device_camera', _blackFrame);
+        } else {
+          await commands.execute('takeCameraSnapshot', const {});
         }
       case 'take_snapshot':
         await commands.execute('takeCameraSnapshot', const {});
       case 'screenshot':
         // A frame request from Home Assistant, which the keyless camera
-        // request also raises on every Camera fetch: the display is
-        // captured for the entity, and nothing else moves.
+        // request also raises on every Camera fetch and every new
+        // connection: the display is captured for the entity, and nothing
+        // else moves.
         await _takeScreenshot(stamp: false);
       case 'take_screenshot':
         await _takeScreenshot(stamp: true);

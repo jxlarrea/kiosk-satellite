@@ -328,6 +328,8 @@ class AioesphomeapiE2eTest {
             override fun onScanRelease() {}
         }
         val commands = java.util.concurrent.CopyOnWriteArrayList<Pair<String, Any?>>()
+        // Subscribing and a fetch both owe a frame.
+        val frameRequests = setOf("capture", "subscribed")
         val actions =
             java.util.concurrent.CopyOnWriteArrayList<Pair<String, Map<String, Any?>>>()
         // A large capture must stream through Noise without overflowing
@@ -345,10 +347,10 @@ class AioesphomeapiE2eTest {
             EspEntity.Camera("shot", "Screenshot"),
         ), onCommand = { objectId, value ->
             commands.add(objectId to value)
-            if (objectId == "snap" && value == "capture") {
+            if (objectId == "snap" && value in frameRequests) {
                 server.publishCameraImage("snap", jpeg)
             }
-            if (objectId == "shot" && value == "capture") {
+            if (objectId == "shot" && value in frameRequests) {
                 // Match the Portal Go capture buffer, including the padding
                 // that exceeds Home Assistant's image assembly limit.
                 val padded = java.nio.ByteBuffer.wrap(shot.copyOf(12_174_771))

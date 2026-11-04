@@ -1242,6 +1242,29 @@ void main() {
     expect(images, isEmpty);
   });
 
+  test('connecting gets a black frame without opening the camera', () async {
+    await settings.set(defs.cameraEnabled, true);
+    await surface.build();
+    await attach();
+    images.clear();
+    executed.clear();
+
+    await surface.handleCommand('device_camera', 'subscribed');
+    expect(images, hasLength(1));
+    expect(images.single.$1, 'device_camera');
+    final frame = images.single.$2;
+    expect(frame.sublist(0, 2), [0xFF, 0xD8]); // a JPEG
+    expect(frame.length, lessThan(1000)); // not the "Camera off" frame
+    expect(executed.any((e) => e.$1 == 'takeCameraSnapshot'), isFalse);
+    expect(pushed.any((p) => p.$1 == 'last_snapshot'), isFalse);
+
+    // Off, the frame still says so.
+    images.clear();
+    await settings.set(defs.cameraEnabled, false);
+    await surface.handleCommand('device_camera', 'subscribed');
+    expect(images.single.$2.length, greaterThan(1000));
+  });
+
   test('the camera facing select needs both facings', () async {
     var ids = [for (final d in await surface.build()) '${d['objectId']}'];
     expect(ids, contains('camera_device'));

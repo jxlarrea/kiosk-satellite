@@ -373,7 +373,7 @@ class ApiServerEntitiesTest {
         val requests = java.util.concurrent.LinkedBlockingQueue<String>()
         lateinit var s: ApiServer
         val hub = EntityHub(catalog + listOf(camera, screenshot), onCommand = { id, value ->
-            if (value == "capture") {
+            if (value == "subscribed") {
                 requests.add(id)
                 s.publishCameraImage(id, byteArrayOf(id.length.toByte()))
             }

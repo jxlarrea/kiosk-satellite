@@ -932,7 +932,7 @@ internal class ApiServer(
                             // camera brings it back with the rest.
                             if (hub.cameras.isNotEmpty()) {
                                 requestCameraFrames(hub.cameras.map { it.key })
-                                hub.requestCameraImage()
+                                hub.announceCameras()
                             }
                         }
                     }

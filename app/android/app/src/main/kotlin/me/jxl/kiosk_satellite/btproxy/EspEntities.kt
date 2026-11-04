@@ -538,6 +538,15 @@ internal class EntityHub(
         for (camera in cameras) onCommand(camera.objectId, "capture")
     }
 
+    /**
+     * A client subscribed and needs one frame per camera to mark them
+     * available. Nobody asked to see a picture, so the Dart side need not
+     * open the camera for this.
+     */
+    fun announceCameras() {
+        for (camera in cameras) onCommand(camera.objectId, "subscribed")
+    }
+
     val all: List<EspEntity>
         get() = synchronized(lock) { byKey.values.toList() }
 
