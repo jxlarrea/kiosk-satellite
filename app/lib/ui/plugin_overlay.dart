@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart' show PlatformViewHitTestBehavior;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -14,14 +15,17 @@ import 'ui_scale.dart' show UiScaleExempt, UiScaleScope;
 /// Plugin overlays and floating windows stay below the kiosk drawer and
 /// ambient overlays. Windows sit over the native overlays.
 class PluginOverlay extends StatelessWidget {
-  const PluginOverlay({super.key, required this.plugins});
+  const PluginOverlay({super.key, required this.plugins, this.hybrid = false});
   final PluginManager plugins;
+
+  /// Hosts the native overlays with hybrid composition (issue #1294).
+  final bool hybrid;
 
   @override
   Widget build(BuildContext context) => Stack(
     fit: StackFit.expand,
     children: [
-      PluginNativeOverlays(plugins: plugins),
+      PluginNativeOverlays(plugins: plugins, hybrid: hybrid),
       ValueListenableBuilder<List<PluginWindow>>(
         valueListenable: plugins.windows,
         builder: (context, windows, _) => LayoutBuilder(
@@ -99,9 +103,17 @@ class PluginNativeOverlays extends StatefulWidget {
     super.key,
     required this.plugins,
     this.onTop = false,
+    this.hybrid = false,
   });
   final PluginManager plugins;
   final bool onTop;
+
+  /// Places each overlay's view in the Android view tree (hybrid
+  /// composition) instead of drawing it into a texture. On Android 10 and
+  /// up that texture is an ImageReader drained on the main thread, which
+  /// a slow GPU can fill while the plugin animates, freezing the app
+  /// (issue #1294). Off by default, set by render.hybrid_plugin_overlays.
+  final bool hybrid;
 
   static const viewType = 'kiosk_satellite/plugin_overlay';
 
@@ -194,6 +206,7 @@ class _PluginNativeOverlaysState extends State<PluginNativeOverlays> {
               overlay: overlay,
               theme: theme,
               leaving: _leaving.contains(overlay.id),
+              hybrid: widget.hybrid,
               onLeft: () => _left(overlay.id),
             ),
           ],
@@ -231,10 +244,12 @@ class _NativeOverlay extends StatefulWidget {
     required this.overlay,
     required this.theme,
     required this.leaving,
+    required this.hybrid,
     required this.onLeft,
   });
   final PluginNativeOverlay overlay;
   final Map<String, Object?> theme;
+  final bool hybrid;
 
   /// Playing its exit transition. It no longer takes touches.
   final bool leaving;
@@ -316,11 +331,18 @@ class _NativeOverlayState extends State<_NativeOverlay>
     super.dispose();
   }
 
+  /// The lowest opacity the overlay is painted at. Hybrid composition
+  /// only puts a view in the Android view tree once Flutter paints it, and
+  /// a view that is not there is never measured, so a wrapped overlay
+  /// would wait for its size forever. One step of alpha paints it and
+  /// still shows nothing.
+  double get _hidden => widget.hybrid ? 1 / 255 : 0;
+
   Widget _transition(Widget child) => AnimatedBuilder(
     animation: _eased,
     child: child,
     builder: (context, child) {
-      final t = _eased.value;
+      final t = math.max(_eased.value, _hidden);
       final kind = widget.leaving ? overlay.exit : overlay.enter;
       return switch (kind) {
         'fade' => Opacity(opacity: t, child: child),
@@ -336,6 +358,45 @@ class _NativeOverlayState extends State<_NativeOverlay>
       };
     },
   );
+
+  // Every touch inside the overlay is the plugin's, even a drag the
+  // kiosk's own detectors would otherwise win.
+  static final _recognizers = <Factory<OneSequenceGestureRecognizer>>{
+    Factory<OneSequenceGestureRecognizer>(EagerGestureRecognizer.new),
+  };
+
+  Widget _view({required Key key, required Map<String, Object?> params}) {
+    if (!widget.hybrid) {
+      return AndroidView(
+        key: key,
+        viewType: PluginNativeOverlays.viewType,
+        creationParams: params,
+        creationParamsCodec: const StandardMessageCodec(),
+        gestureRecognizers: _recognizers,
+      );
+    }
+    return PlatformViewLink(
+      key: key,
+      viewType: PluginNativeOverlays.viewType,
+      surfaceFactory: (context, controller) => AndroidViewSurface(
+        controller: controller as AndroidViewController,
+        gestureRecognizers: _recognizers,
+        hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+      ),
+      onCreatePlatformView: (link) =>
+          PlatformViewsService.initExpensiveAndroidView(
+              id: link.id,
+              viewType: link.viewType,
+              layoutDirection:
+                  Directionality.maybeOf(context) ?? TextDirection.ltr,
+              creationParams: params,
+              creationParamsCodec: const StandardMessageCodec(),
+              onFocus: () => link.onFocusChanged(true),
+            )
+            ..addOnPlatformViewCreatedListener(link.onPlatformViewCreated)
+            ..create(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -374,17 +435,16 @@ class _NativeOverlayState extends State<_NativeOverlay>
               ),
               child: _transition(
                 Opacity(
-                  opacity: _ready ? 1 : 0,
+                  opacity: _ready ? 1 : _hidden,
                   // A visual-only overlay lets every touch through, and a
                   // leaving one takes none.
                   child: IgnorePointer(
                     ignoring: !_ready || !overlay.touchable || widget.leaving,
-                    child: AndroidView(
+                    child: _view(
                       // The density is fixed when the view is built, so a
                       // new Scale UI factor builds it again.
                       key: ValueKey(scale),
-                      viewType: PluginNativeOverlays.viewType,
-                      creationParams: {
+                      params: {
                         'id': overlay.pluginId,
                         'session': overlay.session,
                         'key': overlay.key,
@@ -399,14 +459,6 @@ class _NativeOverlayState extends State<_NativeOverlay>
                         ],
                         'scale': scale,
                         'theme': widget.theme,
-                      },
-                      creationParamsCodec: const StandardMessageCodec(),
-                      // Every touch inside the overlay is the plugin's, even
-                      // a drag the kiosk's own detectors would otherwise win.
-                      gestureRecognizers: {
-                        Factory<OneSequenceGestureRecognizer>(
-                          EagerGestureRecognizer.new,
-                        ),
                       },
                     ),
                   ),

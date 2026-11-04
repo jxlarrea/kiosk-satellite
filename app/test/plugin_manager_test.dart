@@ -1950,6 +1950,73 @@ void main() {
     },
   );
 
+  testWidgets(
+    'hybrid overlays sit in the view tree and are painted while measured',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final views = <MethodCall>[];
+      messenger.setMockMethodCallHandler(SystemChannels.platform_views, (
+        call,
+      ) async {
+        views.add(call);
+        final args = call.arguments;
+        return switch (call.method) {
+          'create' => 0,
+          'resize' => {
+            'width': (args as Map)['width'],
+            'height': args['height'],
+          },
+          _ => null,
+        };
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(
+          SystemChannels.platform_views,
+          null,
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Stack(
+            fit: StackFit.expand,
+            children: [PluginOverlay(plugins: plugins, hybrid: true)],
+          ),
+        ),
+      );
+      await overlaySession('first');
+      await overlays('first', [
+        overlay('bar', 1),
+        overlay(
+          'full',
+          2,
+          width: PluginNativeOverlay.fill,
+          height: PluginNativeOverlay.fill,
+          enter: 'slide',
+        ),
+      ]);
+      await tester.pump();
+      expect(find.byType(AndroidView), findsNothing);
+      expect(find.byType(PlatformViewLink), findsNWidgets(2));
+      // Flutter only attaches a hybrid view it paints, and a wrapped one
+      // has to be attached to be measured, so nothing on the way is at 0.
+      final opacities = tester
+          .widgetList<Opacity>(
+            find.ancestor(
+              of: find.byType(PlatformViewLink),
+              matching: find.byType(Opacity),
+            ),
+          )
+          .map((o) => o.opacity);
+      expect(opacities, everyElement(greaterThan(0)));
+      await tester.pump(const Duration(seconds: 1));
+      final creates = views.where((c) => c.method == 'create');
+      expect(creates, hasLength(2));
+      expect(creates.map((c) => (c.arguments as Map)['hybrid']), [true, true]);
+    },
+  );
+
   testWidgets('native overlays wait for their size and follow their anchor', (
     tester,
   ) async {

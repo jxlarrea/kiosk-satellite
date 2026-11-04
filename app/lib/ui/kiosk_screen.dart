@@ -465,6 +465,11 @@ class _KioskScreenState extends State<KioskScreen>
     // Lockdown flipping is the one key-capture state with no listener of
     // its own here; the sync is diffed, so the rest cost nothing.
     _syncNavCapture();
+    // Open plugin overlays move to the other composition at once.
+    if (e.key == defs.hybridPluginOverlays.key) {
+      if (mounted) setState(() {});
+      return;
+    }
     // The theme script names the servers of the custom pages elsewhere.
     if (e.key == defs.haCustomPages.key) {
       _pageDarkChanged();
@@ -1665,7 +1670,10 @@ class _KioskScreenState extends State<KioskScreen>
         // unloads. A wake detection hides this instantly, revealing the
         // live dashboard underneath (see initState).
         _OverlayHost(container: c),
-        PluginOverlay(plugins: c.plugins),
+        PluginOverlay(
+          plugins: c.plugins,
+          hybrid: c.settings.get(defs.hybridPluginOverlays),
+        ),
         SendspinPlayerOverlay(container: c),
         if (_consoleOpen)
           WebConsolePanel(
@@ -1875,7 +1883,11 @@ class _KioskScreenState extends State<KioskScreen>
                   // turn they are over the black cover too, so a plugin
                   // skin draws the turn there. The rest live in the kiosk
                   // plane.
-                  PluginNativeOverlays(plugins: c.plugins, onTop: true),
+                  PluginNativeOverlays(
+                    plugins: c.plugins,
+                    onTop: true,
+                    hybrid: c.settings.get(defs.hybridPluginOverlays),
+                  ),
                   // Above every overlay a notification could arrive
                   // behind (the screensaver, a camera wall, a plugin drawn
                   // on top) because a message from the house is worth

@@ -22,7 +22,9 @@ import me.jxl.kiosk.plugins.OverlayFactory
  * Hosts plugin overlay views as Flutter platform views. Dart shows them as
  * texture-composited AndroidViews inside the kiosk's own stack, so the
  * menu, the screensaver and the lockdown shield cover them the way they
- * cover the dashboard, and they leave with the Activity. Native plugin
+ * cover the dashboard, and they leave with the Activity. With
+ * render.hybrid_plugin_overlays on, overlays use hybrid composition
+ * instead (issue #1294). The views built here are the same either way. Native plugin
  * screensavers show through here too, with kind "screensaver". Everything
  * here runs on the main thread.
  */

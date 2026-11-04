@@ -12818,6 +12818,31 @@ const legacyWebView = SettingDef<bool>(
   perDevice: true,
 );
 
+// Issue #1294. A native plugin overlay is normally drawn into a texture,
+// and on Android 10 and up Flutter fills that texture from an ImageReader
+// it drains on the main thread. The main thread is also the one that draws
+// the plugin's view, so on a slow GPU (the PowerVR GE8300 in the Lenovo
+// Smart Clock 2) an animation can queue frames faster than they drain. The
+// view then waits for a free buffer that only the waiting thread can free,
+// and the app freezes into an ANR. On means overlays are placed in the
+// Android view tree with hybrid composition instead, the way the dashboard
+// already is, so no ImageReader stands between the plugin and the screen.
+// Off everywhere by default and hidden while it is being tried on the
+// affected devices.
+const hybridPluginOverlays = SettingDef<bool>(
+  key: 'render.hybrid_plugin_overlays',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Draw plugin overlays natively',
+  description:
+      'Places native plugin overlays in the Android view tree instead of '
+      'drawing them into a texture, for GPUs that freeze while an overlay '
+      'animates.',
+  category: 'Device',
+  perDevice: true,
+  hidden: true,
+);
+
 // Applied by UiScaler above the Navigator, so every route and overlay
 // scales; the WebViews opt back out (UiScaleExempt), since web pages have
 // their own zoom settings and are the reason a high density device needs
@@ -13978,6 +14003,7 @@ const List<SettingDef<Object>> allSettings = [
   deviceHostname,
   disableImpeller,
   legacyWebView,
+  hybridPluginOverlays,
   // The User Interface group: consecutive, or the heading would repeat.
   uiLanguage,
   uiTheme,
