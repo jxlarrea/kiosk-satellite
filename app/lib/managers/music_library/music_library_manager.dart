@@ -68,9 +68,12 @@ class MusicLibraryManager extends Manager {
     MaPluginSocket? ma,
     HaSocket? ha,
     ValueListenable<Map<String, Object?>?>? nowPlaying,
+    Future<Uint8List?> Function(String url)? playerArtwork,
   }) : // A named parameter cannot be private.
        // ignore: prefer_initializing_formals
        _nowPlaying = nowPlaying,
+       // ignore: prefer_initializing_formals
+       _playerArtwork = playerArtwork,
        _ma =
            ma ??
            MaPluginSocket(
@@ -93,6 +96,12 @@ class MusicLibraryManager extends Manager {
 
   /// What the followed player plays, to tell when a play has started.
   final ValueListenable<Map<String, Object?>?>? _nowPlaying;
+
+  /// Loads a cover the player holds rather than a server serves: the
+  /// Sendspin artwork frame, another app's media session or an AirPlay
+  /// sender's. The floating player shows the playing track's cover by one
+  /// of those addresses.
+  final Future<Uint8List?> Function(String url)? _playerArtwork;
 
   /// What a play from the library is starting, from the tap until the
   /// player reports something new, so the screen answers the tap at once
@@ -836,7 +845,11 @@ class MusicLibraryManager extends Manager {
       }
     }
     final uri = Uri.tryParse(url);
-    if (uri == null || !uri.hasAuthority) return null;
+    if (uri == null || !uri.hasAuthority) {
+      // No host to fetch from: a cover the player itself holds.
+      final player = _playerArtwork;
+      return player == null ? null : await player(url);
+    }
     final haBase = Uri.tryParse(
       defs.normalizeBaseUrl(_settings.get(defs.haUrl)),
     );

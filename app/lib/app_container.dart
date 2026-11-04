@@ -265,6 +265,7 @@ class AppContainer {
       log,
       settings,
       nowPlaying: sendspin.nowPlaying,
+      playerArtwork: sendspin.loadArtwork,
     );
     // The library is opaque and full screen too, and so are the calendar
     // and Now Playing when it does not share the screen.
