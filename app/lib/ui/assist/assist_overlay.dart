@@ -656,14 +656,15 @@ class _AssistOverlayState extends State<AssistOverlay>
   ) {
     final settings = c.settings;
     final scaler = MediaQuery.textScalerOf(context);
-    double line(double size) => scaler.scale(size * scale) * skin.lineHeight;
+    double line(double size) => scaler.scale(size) * skin.lineHeight;
+    final lineScale = secondaryTextScale(scale);
     final command = settings.get(defs.voiceShowCommand);
     final answer = settings.get(defs.voiceShowAnswer);
     var chat = 0.0;
-    if (command) chat += line(skin.userSize) + 8 + skin.gap;
-    if (answer) chat += 3 * line(skin.answerSize) + 8;
+    if (command) chat += line(skin.userSize * lineScale) + 8 + skin.gap;
+    if (answer) chat += 3 * line(skin.answerSize * scale) + 8;
     if (!command && !answer && settings.get(defs.voiceShowTools)) {
-      chat += line(skin.toolSize) + 8;
+      chat += line(skin.toolSize * lineScale) + 8;
     }
     if (chat > 0) {
       chat += reactive ? skin.chatBottomReactive : skin.chatBottom;
@@ -710,8 +711,9 @@ class _AssistOverlayState extends State<AssistOverlay>
           _ => Theme.of(context).brightness == Brightness.dark,
         };
     final palette = skin.palette(dark);
-    final scale =
-        settings.get(defs.voiceTextScale).toDouble() / 100 * dockedTextScale;
+    final textScale = settings.get(defs.voiceTextScale).toDouble() / 100;
+    final scale = textScale * dockedTextScale;
+    final lineScale = secondaryTextScale(textScale) * dockedTextScale;
     final mode = switch (view.phase) {
       AssistPhase.thinking => ArtMode.thinking,
       AssistPhase.speaking || AssistPhase.announcement => ArtMode.speaking,
@@ -747,32 +749,34 @@ class _AssistOverlayState extends State<AssistOverlay>
             style: _text(
               skin,
               palette.user,
-              skin.userSize * scale,
+              skin.userSize * lineScale,
               skin.userWeight,
               palette.userShadows,
             ),
           ),
         ),
+      // A realtime transcript arrives as it is spoken, so it wraps: one line
+      // would hide the words coming in.
       if (showCommand && view.command.isNotEmpty)
         _shadowSnapshot(
           Text(
-            '${skin.prefix}${view.command}',
+            _commandText(skin, view.command),
             style: _text(
               skin,
               palette.user,
-              skin.userSize * scale,
+              skin.userSize * lineScale,
               skin.userWeight,
               palette.userShadows,
             ),
           ),
         ),
-      for (final tool in tools) _toolLine(skin, palette, scale, tool),
+      for (final tool in tools) _toolLine(skin, palette, lineScale, tool),
       if (thinking && tools.isEmpty)
         ThinkingDots(
           skin: skin,
           colors: palette.dots,
           shadows: palette.toolShadows,
-          scale: scale,
+          scale: lineScale,
           clock: _clock,
         ),
       if (showAnswer && view.answer.isNotEmpty)
@@ -1127,6 +1131,11 @@ class _AssistOverlayState extends State<AssistOverlay>
     );
   }
 
+  /// The command as the chat shows it. A line break in a speech to text
+  /// result would take a whole line of the height the answer needs.
+  String _commandText(AssistSkin skin, String command) =>
+      '${skin.prefix}${command.trim().replaceAll(RegExp(r'\s+'), ' ')}';
+
   /// A line of chat text, as the skin's .vs-chat-msg rule draws it:
   /// line-height normal, the skin's font, weight and shadows.
   TextStyle _text(
@@ -1148,19 +1157,23 @@ class _AssistOverlayState extends State<AssistOverlay>
     shadows: shadows.isEmpty ? null : [for (final s in shadows) s.shadow],
   );
 
-  /// A message box: padding 4px 0, max-width of the chat's width.
+  /// A message box: padding 4px 0, max-width of the chat's width. A
+  /// [fullWidth] line has no second line to wrap to, so it takes all of it.
   Widget _msg(
     AssistSkin skin,
     double chatWidth,
     Widget child, {
     double padding = 4,
+    bool fullWidth = false,
     Key? key,
   }) => _FadeIn(
     key: key,
     dy: skin.fadeDy,
     ms: skin.fadeMs,
     child: ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: chatWidth * skin.msgMaxWidth),
+      constraints: BoxConstraints(
+        maxWidth: fullWidth ? chatWidth : chatWidth * skin.msgMaxWidth,
+      ),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: padding),
         child: child,
@@ -1273,10 +1286,11 @@ class _AssistOverlayState extends State<AssistOverlay>
       skin.answerWeight,
       palette.answerShadows,
     );
+    final lineScale = secondaryTextScale(scale);
     final userStyle = _text(
       skin,
       palette.user,
-      skin.userSize * scale,
+      skin.userSize * lineScale,
       skin.userWeight,
       palette.userShadows,
     );
@@ -1302,20 +1316,11 @@ class _AssistOverlayState extends State<AssistOverlay>
     double aboveAnswer(AssistTurn turn) {
       var height = 0.0;
       if (showCommand && turn.command.isNotEmpty) {
-        final painter = TextPainter(
-          text: TextSpan(
-            text: '${skin.prefix}${turn.command}',
-            style: userStyle,
-          ),
-          textAlign: textAlign,
-          textDirection: TextDirection.ltr,
-          textScaler: textScaler,
-        )..layout(maxWidth: chatWidth * skin.msgMaxWidth);
-        height += painter.height + 8 + skin.gap;
-        painter.dispose();
+        final line = textScaler.scale(skin.userSize * lineScale);
+        height += line * skin.lineHeight + 8 + skin.gap;
       }
       if (showTools) {
-        final line = textScaler.scale(skin.toolSize * scale) * 1.3;
+        final line = textScaler.scale(skin.toolSize * lineScale) * 1.3;
         height += turn.tools.length * (line + 8 + skin.gap);
       }
       return height;
@@ -1338,9 +1343,12 @@ class _AssistOverlayState extends State<AssistOverlay>
             skin,
             chatWidth,
             key: ValueKey('$n.user'),
+            fullWidth: true,
             Text(
-              '${skin.prefix}${turn.command}',
+              _commandText(skin, turn.command),
               textAlign: textAlign,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: userStyle,
             ),
           ),
@@ -1355,7 +1363,7 @@ class _AssistOverlayState extends State<AssistOverlay>
               opacity: dimmed ? 0.4 : 1,
               duration: const Duration(milliseconds: 400),
               curve: Curves.ease,
-              child: _toolLine(skin, palette, scale, tool),
+              child: _toolLine(skin, palette, lineScale, tool),
             ),
           ),
         if (current && view.phase == AssistPhase.thinking && tools.isEmpty)
@@ -1368,7 +1376,7 @@ class _AssistOverlayState extends State<AssistOverlay>
               skin: skin,
               colors: palette.dots,
               shadows: palette.toolShadows,
-              scale: scale,
+              scale: lineScale,
               clock: _clock,
             ),
           ),
@@ -1459,6 +1467,12 @@ class _AssistOverlayState extends State<AssistOverlay>
 
 /// The docked caption's text against the skin's full-screen sizes.
 const dockedTextScale = 0.55;
+
+/// The command and tool lines' size for a Text size of [scale]. Above 100%
+/// they grow at half the answer's rate, so a short screen keeps its height
+/// for the answer.
+double secondaryTextScale(double scale) =>
+    scale > 1 ? 1 + (scale - 1) / 2 : scale;
 
 /// A line's entry, as the skins animate new messages: opacity 0 to 1 while
 /// it rises [dy] px, over [ms] with CSS's ease.

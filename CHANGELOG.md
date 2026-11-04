@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **The voice overlay leaves more room for the answer on short screens (#1306).** The command now stays on one line with its line breaks removed and ends with an ellipsis if it does not fit. Above 100%, **Text size** grows the command and tool lines at half the rate of the answer. On an Echo Show 5 this shows about one more line of the answer.
+
 ### Fixed
 - **Updates no longer use up storage until the next reboot.** On Android 11 and older, with Kiosk Satellite set as the home app, the old APK could stay on disk after an update until the device restarted, so devices with little storage eventually ran out of space and updates failed. Android kept trying to restart the home app during its own update and each try drew a starting window. Kiosk Satellite no longer asks those Android versions for one. Space already lost comes back with one reboot.
 
