@@ -3,6 +3,7 @@ package me.jxl.kiosk_satellite
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.os.Handler
@@ -11,8 +12,13 @@ import android.util.Log
 import android.util.Size
 import android.view.Surface
 import android.view.WindowManager
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -27,6 +33,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -52,6 +59,10 @@ import java.util.concurrent.atomic.AtomicReference
  *  - With no motion session up, a snapshot opens the camera, takes one
  *    frame, and releases everything. Nothing stays open between snapshots,
  *    so interval snapshots cost only the captures themselves.
+ *
+ *  - A camera whose HAL once left a JPEG capture unanswered ([jpegHung]) is
+ *    never sent another one. Both paths above take its stills from analysis
+ *    frames.
  */
 class DeviceCamera(
     private val context: Context,
@@ -72,6 +83,19 @@ class DeviceCamera(
          *  the caller gets an error instead of silence. Generous: a cold
          *  camera open plus capture is a few seconds at worst. */
         private const val PROVIDER_TIMEOUT_MS = 20_000L
+        private const val TIMEOUT_MESSAGE = "the camera did not answer in time"
+
+        /** How long an abort may take before the camera closes anyway. A
+         *  HAL has to answer a flush within a second. */
+        private const val ABORT_WAIT_MS = 2_000L
+
+        /** How long before a JPEG request the frames may have stopped and
+         *  still count as stopped by it. Frames can be 200 ms apart. */
+        private const val JPEG_STALL_SLACK_MS = 1_000L
+
+        /** Auto exposure needs a moment after a cold open. A capture request
+         *  waits for it, an analysis frame does not. */
+        private const val ANALYSIS_SETTLE_MS = 1_500L
     }
 
     private val channel = MethodChannel(messenger, CHANNEL)
@@ -80,6 +104,9 @@ class DeviceCamera(
     /** The motion session's pre-bound capture use case. Main thread only;
      *  set by [CameraMotion] while its session is up. */
     var sharedCapture: ImageCapture? = null
+
+    /** The camera behind [sharedCapture]. Main thread only. */
+    var sharedCaptureCamera: CameraInfo? = null
     var sharedVideoSnapshot: (((ByteArray?, String?) -> Unit) -> Unit)? = null
     var sharedDiagnosticSession: String? = null
     private var snapshotDiagnostic = "snapshot"
@@ -129,6 +156,43 @@ class DeviceCamera(
      *  native-side backstop. Main thread only. */
     private var busy = false
 
+    private val jpegHangs by lazy { CameraJpegHangs.of(context) }
+
+    /** The camera a JPEG request went to, until that request ends. Main
+     *  thread only. */
+    private var jpegCamera: CameraInfo? = null
+    private var jpegIssuedAt = 0L
+
+    /** The running session, the only handle that can abort a capture. */
+    @Volatile private var captureSession: CameraCaptureSession? = null
+    private val sessionWatcher = object : CameraCaptureSession.StateCallback() {
+        override fun onConfigured(session: CameraCaptureSession) {
+            captureSession = session
+        }
+
+        override fun onConfigureFailed(session: CameraCaptureSession) = Unit
+
+        override fun onClosed(session: CameraCaptureSession) {
+            if (captureSession === session) captureSession = null
+        }
+    }
+
+    /** Whether this camera must take its stills from analysis frames. */
+    fun jpegHung(cameraId: String): Boolean = jpegHangs.hung(cameraId)
+
+    /** The motion session stopped receiving frames. A JPEG request that went
+     *  out around the last frame and is still unanswered is the cause, and
+     *  this runs ahead of the snapshot's own timeout: reopening the camera
+     *  would fail the request as closed and hide the hang. Returns whether
+     *  it took over, and [reopen] then runs after the abort. */
+    fun abortStalledJpeg(lastFrameAtMs: Long, reopen: () -> Unit): Boolean {
+        val camera = jpegCamera ?: return false
+        val afterFrames = jpegIssuedAt > lastFrameAtMs + JPEG_STALL_SLACK_MS
+        if (afterFrames || camera.cameraState.value?.type != CameraState.Type.OPEN) return false
+        abortHungJpeg(camera, snapshotDiagnostic, reopen)
+        return true
+    }
+
     init {
         channel.setMethodCallHandler(this)
     }
@@ -145,21 +209,25 @@ class DeviceCamera(
      *  answered by silently dropping the in-flight capture. */
     private val streamCapabilities by lazy { CameraStreamCapabilities(context, ::buildCapture) }
 
-    fun buildCapture(target: Size = DEFAULT_TARGET): ImageCapture =
-        ImageCapture.Builder()
+    @OptIn(ExperimentalCamera2Interop::class)
+    fun buildCapture(target: Size = DEFAULT_TARGET): ImageCapture {
+        val builder = ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-            .setResolutionSelector(
-                ResolutionSelector.Builder()
-                    .setResolutionStrategy(
-                        ResolutionStrategy(
-                            target,
-                            ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
-                        ),
-                    )
-                    .build(),
-            )
+            .setResolutionSelector(stillResolution(target))
             .setJpegQuality(JPEG_QUALITY)
             .setTargetRotation(displayRotation())
+        Camera2Interop.Extender(builder).setSessionStateCallback(sessionWatcher)
+        return builder.build()
+    }
+
+    private fun stillResolution(target: Size): ResolutionSelector =
+        ResolutionSelector.Builder()
+            .setResolutionStrategy(
+                ResolutionStrategy(
+                    target,
+                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
+                ),
+            )
             .build()
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -245,6 +313,7 @@ class DeviceCamera(
             if (completed) return@done
             completed = true
             busy = false
+            jpegCamera = null
             cleanup?.invoke()
             val elapsed = android.os.SystemClock.elapsedRealtime() - startedAt
             if (bytes != null) {
@@ -259,9 +328,17 @@ class DeviceCamera(
         // never resolves its provider, a HAL that never delivers) must not
         // wedge `busy` until app restart and leave the caller waiting on
         // silence. `done` is idempotent, so a late real completion is a
-        // no-op after this fires.
+        // no-op after this fires. An open camera sitting on a JPEG request
+        // is the HAL failing to answer, not a slow start.
         mainHandler.postDelayed(
-            { done(null, "the camera did not answer in time") },
+            {
+                val camera = jpegCamera
+                if (!completed && camera?.cameraState?.value?.type == CameraState.Type.OPEN) {
+                    abortHungJpeg(camera, diagnosticId) { done(null, TIMEOUT_MESSAGE) }
+                } else {
+                    done(null, TIMEOUT_MESSAGE)
+                }
+            },
             PROVIDER_TIMEOUT_MS,
         )
 
@@ -270,7 +347,7 @@ class DeviceCamera(
         // resolution setting (Camera settings), so the pre-bound capture
         // already matches the request.
         sharedCapture?.let {
-            take(it, done)
+            take(it, sharedCaptureCamera, done)
             return
         }
         sharedVideoSnapshot?.let {
@@ -318,13 +395,19 @@ class DeviceCamera(
             // resolved; opening now would evict it mid-bind.
             if (motionSessionActive) {
                 val shared = sharedCapture
-                if (shared != null) take(shared, done)
+                if (shared != null) take(shared, sharedCaptureCamera, done)
                 else done(null, "camera busy with motion detection")
                 return@addListener
             }
             val selector = resolveCameraSelector(provider, facing)
             if (selector == null) {
                 done(null, rejectedCamerasMessage(context, provider))
+                return@addListener
+            }
+            @OptIn(ExperimentalCamera2Interop::class)
+            val cameraId = Camera2CameraInfo.from(selector.filter(provider.availableCameraInfos).first()).cameraId
+            if (jpegHung(cameraId)) {
+                snapshotFromAnalysis(provider, selector, target, diagnosticId, done, parkCleanup)
                 return@addListener
             }
             val capture = buildCapture(target)
@@ -334,20 +417,95 @@ class DeviceCamera(
             // provider.unbind afterward scans CameraX 1.5's stale owner keys
             // and logs an invalid-camera warning for each one.
             parkCleanup { owner.destroy() }
-            try {
-                provider.bindToLifecycle(owner, selector, capture)
-                owner.resume()
+            val camera = try {
+                provider.bindToLifecycle(owner, selector, capture).also { owner.resume() }
             } catch (e: Exception) {
                 CameraDiagnostics.record(diagnosticId, "snapshot bind failure", "requested=$target", true, e)
                 done(null, "could not open camera: ${e.message}")
                 return@addListener
             }
-            take(capture, done)
+            take(capture, camera.cameraInfo, done)
         }, ContextCompat.getMainExecutor(context))
+    }
+
+    /** Idle on a camera that left a JPEG unanswered: open, let exposure
+     *  settle, keep one analysis frame, release. */
+    private fun snapshotFromAnalysis(
+        provider: ProcessCameraProvider,
+        selector: CameraSelector,
+        target: Size,
+        diagnosticId: String,
+        done: (ByteArray?, String?) -> Unit,
+        parkCleanup: (() -> Unit) -> Unit,
+    ) {
+        val analysis = ImageAnalysis.Builder()
+            .setResolutionSelector(stillResolution(target))
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .setTargetRotation(displayRotation())
+            .build()
+        val frames = Executors.newSingleThreadExecutor()
+        var firstFrameAt = 0L
+        analysis.setAnalyzer(frames) { image ->
+            try {
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (firstFrameAt == 0L) firstFrameAt = now
+                if (now - firstFrameAt >= ANALYSIS_SETTLE_MS) captureAnalysisFrame(image)
+            } finally {
+                image.close()
+            }
+        }
+        val owner = CameraLifecycle()
+        parkCleanup {
+            pendingAnalysis.compareAndSet(done, null)
+            analysis.clearAnalyzer()
+            owner.destroy()
+            frames.shutdown()
+        }
+        pendingAnalysis.set(done)
+        try {
+            provider.bindToLifecycle(owner, selector, analysis)
+            owner.resume()
+        } catch (e: Exception) {
+            CameraDiagnostics.record(diagnosticId, "snapshot bind failure", "requested=$target, analysis", true, e)
+            done(null, "could not open camera: ${e.message}")
+        }
+    }
+
+    /** The HAL never answered a JPEG request. Closing the camera now can
+     *  hang in the HAL until a reboot, so the rule against JPEG is saved
+     *  first. CameraX closes without flushing the request, so this aborts it
+     *  and closes only once it fails or the wait runs out. The abort is a
+     *  binder call into that same HAL, so it stays off the main thread. */
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun abortHungJpeg(camera: CameraInfo, diagnosticId: String, finish: () -> Unit) {
+        jpegCamera = null
+        val cameraId = Camera2CameraInfo.from(camera).cameraId
+        jpegHangs.remember(cameraId)
+        Log.w(TAG, "camera $cameraId left a JPEG capture unanswered, snapshots now use analysis frames")
+        CameraDiagnostics.record(diagnosticId, "JPEG hang", "camera=$cameraId, using analysis snapshots", true)
+        if (sharedCapture != null) {
+            sharedCapture = null
+            sharedAnalysis = true
+        }
+        val session = captureSession
+        if (session == null) {
+            finish()
+            return
+        }
+        kotlin.concurrent.thread(name = "camera-abort", isDaemon = true) {
+            try {
+                session.abortCaptures()
+                CameraDiagnostics.record(diagnosticId, "JPEG abort", "camera=$cameraId, returned")
+            } catch (e: Exception) {
+                CameraDiagnostics.record(diagnosticId, "JPEG abort failure", "camera=$cameraId", true, e)
+            }
+        }
+        mainHandler.postDelayed(finish, ABORT_WAIT_MS)
     }
 
     private fun take(
         capture: ImageCapture,
+        camera: CameraInfo?,
         done: (ByteArray?, String?) -> Unit,
         diagnosticId: String = snapshotDiagnostic,
     ) {
@@ -358,6 +516,8 @@ class DeviceCamera(
         if (capture.targetRotation != rotation) {
             capture.targetRotation = rotation
         }
+        jpegCamera = camera
+        jpegIssuedAt = android.os.SystemClock.elapsedRealtime()
         capture.takePicture(
             ContextCompat.getMainExecutor(context),
             object : ImageCapture.OnImageCapturedCallback() {

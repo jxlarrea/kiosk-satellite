@@ -183,6 +183,8 @@ Plugins with the `camera` capability receive frames from the same session. One p
 
 A few extremely low end devices cannot run motion analysis and JPEG capture in the same session. On those devices, motion wins, and snapshots will report the camera as busy while motion is running. If another app entirely is holding the camera open, captures will fail until that app lets go.
 
+Some camera drivers never answer a JPEG capture and can leave the camera unusable until the device restarts. If a capture goes unanswered, KS stops requesting JPEGs from that camera and takes snapshots from its analysis frames instead. Restart the device if the camera still does not work. The rule stays until the system is updated.
+
 ## Hardware Notes
 
 * **No usable camera:** Some custom ROMs (such as LineageOS ports on Echo Show hardware) have no camera support at all, even if the physical hardware is present. The Camera page will state this up front, and no camera entities will be published. If a device has a physical privacy shutter, closing it disconnects the camera completely and looks identical to the app.

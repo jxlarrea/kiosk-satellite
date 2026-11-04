@@ -1073,12 +1073,16 @@ class CameraMotion(
             // because people see those frames directly.
             // A plugin holding the camera gets the size it asked for, or
             // the larger one the other legs need.
+            // So does a camera that takes its stills from these frames.
+            val jpegHung = deviceCamera?.jpegHung(cameraId) == true
             val legSize =
                 if (captureLevel >= 2) Size(320, 240)
                 else if (palmsWanted || previewWanted || boundRtsp) Size(640, 480) else Size(320, 240)
-            val analysisSize =
-                if (pluginSize != null && captureLevel < 2 && pluginSize.width * pluginSize.height > legSize.width * legSize.height) pluginSize
-                else legSize
+            val analysisSize = listOfNotNull(
+                legSize,
+                pluginSize?.takeIf { captureLevel < 2 },
+                snapshotTarget?.takeIf { jpegHung && includeAnalysis && captureLevel < 2 },
+            ).maxBy { it.width * it.height }
             val resolution = streamAnalysisResolutionSelector(analysisSize)
 
             val analysisBuilder = ImageAnalysis.Builder()
@@ -1230,7 +1234,7 @@ class CameraMotion(
             val owner = CameraLifecycle().also { lifecycle = it }
             // Pre-bound so a snapshot never reconfigures this session (an
             // AE resettle would read as motion and wake the screensaver).
-            val imageCapture = deviceCamera?.takeIf { captureLevel == 0 && includeAnalysis }?.let {
+            val imageCapture = deviceCamera?.takeIf { captureLevel == 0 && includeAnalysis && !jpegHung }?.let {
                 val target = snapshotTarget
                 if (target != null) it.buildCapture(target) else it.buildCapture()
             }
@@ -1264,6 +1268,7 @@ class CameraMotion(
                     cameraProvider.bindToLifecycle(owner, selector, imageAnalysis)
                 }
                 boundCamera = camera
+                deviceCamera?.sharedCaptureCamera = camera.cameraInfo
                 deviceCamera?.sharedAnalysis = includeAnalysis && deviceCamera?.sharedCapture == null
                 deviceCamera?.sharedDiagnosticSession = diagnosticId
                 CameraDiagnostics.record(diagnosticId, "bound", "camera=$cameraId, fallback=$captureLevel, " +
@@ -1374,14 +1379,18 @@ class CameraMotion(
                 if (power.isInteractive) {
                     Log.w(TAG, "no frames for ${quiet / 1000}s with the screen on; reopening")
                     CameraDiagnostics.record(diagnosticSession, "frame timeout", "screenOn=true, noFramesMs=$quiet", true)
-                    val facing = activeFacing
-                    if (facing != null && retryRtsp(facing, sink, "no camera frames")) return@Runnable
-                    sink.error(
-                        "camera",
-                        "the camera opened but delivered no frames for " +
-                            "${quiet / 1000}s",
-                        null,
-                    )
+                    val reopen = reopen@{
+                        if (session != mySession) return@reopen
+                        val facing = activeFacing
+                        if (facing != null && retryRtsp(facing, sink, "no camera frames")) return@reopen
+                        sink.error(
+                            "camera",
+                            "the camera opened but delivered no frames for " +
+                                "${quiet / 1000}s",
+                            null,
+                        )
+                    }
+                    if (deviceCamera?.abortStalledJpeg(lastFrameAtMs, reopen) != true) reopen()
                 } else {
                     Log.w(
                         TAG,
