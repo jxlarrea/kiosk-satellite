@@ -1024,6 +1024,58 @@
       ]
     }
   },
+  "alarmsMusic": "Musique",
+  "@alarmsMusic": {
+    "context": "Alarms",
+    "description": "Alarm detail row: music from the library to ring with instead of the tone. The tone rings if the music cannot play.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicNone": "Aucune",
+  "@alarmsMusicNone": {
+    "context": "Alarms",
+    "description": "Value of the alarm Music row when no music is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicRemove": "Retirer la musique",
+  "@alarmsMusicRemove": {
+    "context": "Alarms",
+    "description": "Spoken label of the button that takes the music off an alarm.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicHint": "Se joue à la place de la sonnerie. Si la musique ne peut pas être lue, la sonnerie retentit.",
+  "@alarmsMusicHint": {
+    "context": "Alarms",
+    "description": "Note under the alarm Music field in the remote admin.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
   "androidAccessibilityHelp": "Ferme le panneau de notifications et l'écran des applications récentes chaque fois qu'ils s'ouvrent tant que le mode Kiosque ou le mode Verrouillage protège l'écran. Kiosk Satellite ne lit aucun contenu d'écran.",
   "@androidAccessibilityHelp": {
     "context": "Android Settings > Accessibility > Kiosk Satellite",
@@ -12859,6 +12911,420 @@
       ]
     }
   },
+  "musicPickerTitle": "Choisir la musique",
+  "@musicPickerTitle": {
+    "context": "Music picker",
+    "description": "Title of the music picker, where music from the library is chosen for a feature such as an alarm.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSearchHint": "Rechercher de la musique",
+  "@musicPickerSearchHint": {
+    "context": "Music picker",
+    "description": "Placeholder of the music picker search field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerMusicFrom": "Musique depuis",
+  "@musicPickerMusicFrom": {
+    "context": "Music picker",
+    "description": "Heading of the music picker source menu: Music Assistant, Home Assistant or Sonos.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPlaysOn": "Diffuser sur",
+  "@musicPickerPlaysOn": {
+    "context": "Music picker",
+    "description": "Heading of the music picker speaker menu: the speaker the music plays on.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSourceLabel": "Source : {name}",
+  "@musicPickerSourceLabel": {
+    "context": "Music picker",
+    "description": "Spoken label of the music picker source button.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The source name, such as Music Assistant."
+      }
+    }
+  },
+  "musicPickerSpeakerLabel": "Diffuser sur : {name}",
+  "@musicPickerSpeakerLabel": {
+    "context": "Music picker",
+    "description": "Spoken label of the music picker speaker button.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The speaker name."
+      }
+    }
+  },
+  "musicPickerRandom": "Aléatoire",
+  "@musicPickerRandom": {
+    "context": "Music picker",
+    "description": "Music picker category of random picks, drawn again every time the music plays.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerRandomHint": "Un nouveau choix à chaque lecture",
+  "@musicPickerRandomHint": {
+    "context": "Music picker",
+    "description": "Note under the Random heading of the music picker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyTrack": "N'importe quel titre",
+  "@musicPickerAnyTrack": {
+    "context": "Music picker",
+    "description": "Random pick: a different track from the library each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyFavorite": "N'importe quel favori",
+  "@musicPickerAnyFavorite": {
+    "context": "Music picker",
+    "description": "Random pick: a different favorite each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyPlaylist": "N'importe quelle playlist",
+  "@musicPickerAnyPlaylist": {
+    "context": "Music picker",
+    "description": "Random pick: a different playlist each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyAlbum": "N'importe quel album",
+  "@musicPickerAnyAlbum": {
+    "context": "Music picker",
+    "description": "Random pick: a different album each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyStation": "N'importe quelle station de radio",
+  "@musicPickerAnyStation": {
+    "context": "Music picker",
+    "description": "Random pick: a different radio station each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerRandomEach": "Différent à chaque fois",
+  "@musicPickerRandomEach": {
+    "context": "Music picker",
+    "description": "Under a random pick in the music picker footer.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholeAlbum": "Album entier",
+  "@musicPickerWholeAlbum": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened album: picks the album instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholePlaylist": "Playlist entière",
+  "@musicPickerWholePlaylist": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened playlist: picks the playlist instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholeArtist": "Tout de {name}",
+  "@musicPickerWholeArtist": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened artist: picks the artist instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The artist name."
+      }
+    }
+  },
+  "musicPickerWholeFolder": "Dossier entier",
+  "@musicPickerWholeFolder": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened folder: picks the folder instead of one file.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAllTracks": "Tous les titres",
+  "@musicPickerAllTracks": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened podcast or audiobook: picks all of it.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerShuffle": "Lecture aléatoire",
+  "@musicPickerShuffle": {
+    "context": "Music picker",
+    "description": "Switch in the music picker footer: plays the album, playlist or artist in random order.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPreview": "Écouter",
+  "@musicPickerPreview": {
+    "context": "Music picker",
+    "description": "Button in the music picker footer: plays the picked music on its speaker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerStopPreview": "Arrêter l'écoute",
+  "@musicPickerStopPreview": {
+    "context": "Music picker",
+    "description": "Button in the music picker footer while the preview plays.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPreviewFailed": "La musique n'a pas pu être lue",
+  "@musicPickerPreviewFailed": {
+    "context": "Music picker",
+    "description": "Toast when the music picker preview could not start.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNothing": "Rien de choisi",
+  "@musicPickerNothing": {
+    "context": "Music picker",
+    "description": "Music picker footer before anything is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNothingHint": "Choisissez un titre, un album, une playlist, un artiste ou une station",
+  "@musicPickerNothingHint": {
+    "context": "Music picker",
+    "description": "Music picker footer before anything is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerFollowsNote": "Lecture en cours passe sur cette enceinte pendant la musique.",
+  "@musicPickerFollowsNote": {
+    "context": "Music picker",
+    "description": "Note at the bottom of the music picker speaker menu.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSonosNote": "La musique Sonos se lit uniquement sur les enceintes Sonos.",
+  "@musicPickerSonosNote": {
+    "context": "Music picker",
+    "description": "Note at the bottom of the music picker speaker menu for the Sonos source.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNoSpeakers": "Aucune enceinte disponible",
+  "@musicPickerNoSpeakers": {
+    "context": "Music picker",
+    "description": "Music picker speaker button and menu when the source has no speaker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerOpen": "Ouvrir {title}",
+  "@musicPickerOpen": {
+    "context": "Music picker",
+    "description": "Spoken label of the button that opens an album, playlist, artist or folder in the music picker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "description": "What opens."
+      }
+    }
+  },
+  "musicPickerKindFolder": "Dossier",
+  "@musicPickerKindFolder": {
+    "context": "Music picker",
+    "description": "Kind of entry in the music picker: a folder of media.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
   "offlineDashboard": "Tableau de bord indisponible",
   "@offlineDashboard": {
     "context": "Kiosk dashboard > Connection notices",
@@ -18456,6 +18922,32 @@
       ],
       "remoteAdmin": [
         "Alarms > Alarm tone"
+      ]
+    }
+  },
+  "settingAlarmsMusicTitle": "Musique d'alarme",
+  "@settingAlarmsMusicTitle": {
+    "context": "Settings > Alarms",
+    "description": "Setting label: music from the library that alarms ring with instead of the tone, unless an alarm has its own or None.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Alarm music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Alarm music"
+      ]
+    }
+  },
+  "settingAlarmsMusicDescription": "Se joue à la place de la sonnerie. Si la musique ne peut pas être lue, la sonnerie retentit.",
+  "@settingAlarmsMusicDescription": {
+    "context": "Settings > Alarms",
+    "description": "Description of the Alarm music setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Alarm music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Alarm music"
       ]
     }
   },

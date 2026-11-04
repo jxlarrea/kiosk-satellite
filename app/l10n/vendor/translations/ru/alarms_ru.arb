@@ -49,5 +49,9 @@
   "alarmsPhraseHint": "{label}, {time} и {day} заменяются на название, время и день будильника.",
   "alarmsVoiceSection": "Голосовые будильники",
   "alarmsVoiceManage": "Управление будильниками через Voice Satellite",
-  "alarmsVoiceHint": "Требуются Blueprint будильников Kiosk Satellite и диалоговый LLM-агент в Home Assistant."
+  "alarmsVoiceHint": "Требуются Blueprint будильников Kiosk Satellite и диалоговый LLM-агент в Home Assistant.",
+  "alarmsMusic": "Музыка",
+  "alarmsMusicNone": "Нет",
+  "alarmsMusicRemove": "Убрать музыку",
+  "alarmsMusicHint": "Звучит вместо звука будильника. Если музыку не удастся воспроизвести, прозвучит звук будильника."
 }

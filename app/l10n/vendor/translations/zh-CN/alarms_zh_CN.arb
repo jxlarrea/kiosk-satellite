@@ -49,5 +49,9 @@
   "alarmsPhraseHint": "{label}、{time} 和 {day} 会替换为闹钟的标签、时间和日期。",
   "alarmsVoiceSection": "语音闹钟",
   "alarmsVoiceManage": "通过 Voice Satellite 管理闹钟",
-  "alarmsVoiceHint": "需要在 Home Assistant 中配置 Kiosk Satellite 闹钟蓝图（脚本模板）和大语言模型（LLM）对话代理。"
+  "alarmsVoiceHint": "需要在 Home Assistant 中配置 Kiosk Satellite 闹钟蓝图（脚本模板）和大语言模型（LLM）对话代理。",
+  "alarmsMusic": "音乐",
+  "alarmsMusicNone": "无",
+  "alarmsMusicRemove": "移除音乐",
+  "alarmsMusicHint": "代替铃声播放。音乐无法播放时，会响起铃声。"
 }

@@ -1024,6 +1024,58 @@
       ]
     }
   },
+  "alarmsMusic": "Музика",
+  "@alarmsMusic": {
+    "context": "Alarms",
+    "description": "Alarm detail row: music from the library to ring with instead of the tone. The tone rings if the music cannot play.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicNone": "Немає",
+  "@alarmsMusicNone": {
+    "context": "Alarms",
+    "description": "Value of the alarm Music row when no music is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicRemove": "Прибрати музику",
+  "@alarmsMusicRemove": {
+    "context": "Alarms",
+    "description": "Spoken label of the button that takes the music off an alarm.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicHint": "Грає замість мелодії. Якщо музику не вдасться відтворити, пролунає мелодія.",
+  "@alarmsMusicHint": {
+    "context": "Alarms",
+    "description": "Note under the alarm Music field in the remote admin.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
   "androidAccessibilityHelp": "Закриває панель сповіщень та екран нещодавніх програм щоразу, коли вони відкриваються, доки режим кіоска або захищений режим блокує екран. Kiosk Satellite не зчитує вміст екрана.",
   "@androidAccessibilityHelp": {
     "context": "Android Settings > Accessibility > Kiosk Satellite",
@@ -12859,6 +12911,420 @@
       ]
     }
   },
+  "musicPickerTitle": "Вибір музики",
+  "@musicPickerTitle": {
+    "context": "Music picker",
+    "description": "Title of the music picker, where music from the library is chosen for a feature such as an alarm.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSearchHint": "Пошук музики",
+  "@musicPickerSearchHint": {
+    "context": "Music picker",
+    "description": "Placeholder of the music picker search field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerMusicFrom": "Музика з",
+  "@musicPickerMusicFrom": {
+    "context": "Music picker",
+    "description": "Heading of the music picker source menu: Music Assistant, Home Assistant or Sonos.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPlaysOn": "Грає на",
+  "@musicPickerPlaysOn": {
+    "context": "Music picker",
+    "description": "Heading of the music picker speaker menu: the speaker the music plays on.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSourceLabel": "Джерело: {name}",
+  "@musicPickerSourceLabel": {
+    "context": "Music picker",
+    "description": "Spoken label of the music picker source button.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The source name, such as Music Assistant."
+      }
+    }
+  },
+  "musicPickerSpeakerLabel": "Грає на: {name}",
+  "@musicPickerSpeakerLabel": {
+    "context": "Music picker",
+    "description": "Spoken label of the music picker speaker button.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The speaker name."
+      }
+    }
+  },
+  "musicPickerRandom": "Випадково",
+  "@musicPickerRandom": {
+    "context": "Music picker",
+    "description": "Music picker category of random picks, drawn again every time the music plays.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerRandomHint": "Щоразу новий вибір",
+  "@musicPickerRandomHint": {
+    "context": "Music picker",
+    "description": "Note under the Random heading of the music picker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyTrack": "Будь-який трек",
+  "@musicPickerAnyTrack": {
+    "context": "Music picker",
+    "description": "Random pick: a different track from the library each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyFavorite": "Будь-яке з улюбленого",
+  "@musicPickerAnyFavorite": {
+    "context": "Music picker",
+    "description": "Random pick: a different favorite each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyPlaylist": "Будь-який плейлист",
+  "@musicPickerAnyPlaylist": {
+    "context": "Music picker",
+    "description": "Random pick: a different playlist each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyAlbum": "Будь-який альбом",
+  "@musicPickerAnyAlbum": {
+    "context": "Music picker",
+    "description": "Random pick: a different album each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyStation": "Будь-яка радіостанція",
+  "@musicPickerAnyStation": {
+    "context": "Music picker",
+    "description": "Random pick: a different radio station each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerRandomEach": "Щоразу інше",
+  "@musicPickerRandomEach": {
+    "context": "Music picker",
+    "description": "Under a random pick in the music picker footer.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholeAlbum": "Увесь альбом",
+  "@musicPickerWholeAlbum": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened album: picks the album instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholePlaylist": "Увесь плейлист",
+  "@musicPickerWholePlaylist": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened playlist: picks the playlist instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholeArtist": "Усе від {name}",
+  "@musicPickerWholeArtist": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened artist: picks the artist instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The artist name."
+      }
+    }
+  },
+  "musicPickerWholeFolder": "Уся папка",
+  "@musicPickerWholeFolder": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened folder: picks the folder instead of one file.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAllTracks": "Усі треки",
+  "@musicPickerAllTracks": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened podcast or audiobook: picks all of it.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerShuffle": "Перемішування",
+  "@musicPickerShuffle": {
+    "context": "Music picker",
+    "description": "Switch in the music picker footer: plays the album, playlist or artist in random order.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPreview": "Прослухати",
+  "@musicPickerPreview": {
+    "context": "Music picker",
+    "description": "Button in the music picker footer: plays the picked music on its speaker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerStopPreview": "Зупинити прослуховування",
+  "@musicPickerStopPreview": {
+    "context": "Music picker",
+    "description": "Button in the music picker footer while the preview plays.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPreviewFailed": "Не вдалося відтворити музику",
+  "@musicPickerPreviewFailed": {
+    "context": "Music picker",
+    "description": "Toast when the music picker preview could not start.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNothing": "Нічого не вибрано",
+  "@musicPickerNothing": {
+    "context": "Music picker",
+    "description": "Music picker footer before anything is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNothingHint": "Виберіть трек, альбом, плейлист, виконавця або станцію",
+  "@musicPickerNothingHint": {
+    "context": "Music picker",
+    "description": "Music picker footer before anything is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerFollowsNote": "«Зараз грає» перемикається на цей динамік, поки грає музика.",
+  "@musicPickerFollowsNote": {
+    "context": "Music picker",
+    "description": "Note at the bottom of the music picker speaker menu.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSonosNote": "Музика Sonos грає лише на динаміках Sonos.",
+  "@musicPickerSonosNote": {
+    "context": "Music picker",
+    "description": "Note at the bottom of the music picker speaker menu for the Sonos source.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNoSpeakers": "Немає динаміків для відтворення",
+  "@musicPickerNoSpeakers": {
+    "context": "Music picker",
+    "description": "Music picker speaker button and menu when the source has no speaker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerOpen": "Відкрити {title}",
+  "@musicPickerOpen": {
+    "context": "Music picker",
+    "description": "Spoken label of the button that opens an album, playlist, artist or folder in the music picker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "description": "What opens."
+      }
+    }
+  },
+  "musicPickerKindFolder": "Папка",
+  "@musicPickerKindFolder": {
+    "context": "Music picker",
+    "description": "Kind of entry in the music picker: a folder of media.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
   "offlineDashboard": "Панель керування недоступна",
   "@offlineDashboard": {
     "context": "Kiosk dashboard > Connection notices",
@@ -18456,6 +18922,32 @@
       ],
       "remoteAdmin": [
         "Alarms > Alarm tone"
+      ]
+    }
+  },
+  "settingAlarmsMusicTitle": "Музика будильника",
+  "@settingAlarmsMusicTitle": {
+    "context": "Settings > Alarms",
+    "description": "Setting label: music from the library that alarms ring with instead of the tone, unless an alarm has its own or None.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Alarm music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Alarm music"
+      ]
+    }
+  },
+  "settingAlarmsMusicDescription": "Грає замість мелодії. Якщо музику не вдасться відтворити, пролунає мелодія.",
+  "@settingAlarmsMusicDescription": {
+    "context": "Settings > Alarms",
+    "description": "Description of the Alarm music setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Alarm music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Alarm music"
       ]
     }
   },

@@ -33,5 +33,7 @@
   "settingAlarmsTtsLanguageTitle": "语言",
   "settingAlarmsTtsLanguageDescription": "闹钟播报使用的语言。",
   "settingAlarmsTtsVoiceTitle": "声音",
-  "settingAlarmsTtsVoiceDescription": "用于播报闹钟的声音。"
+  "settingAlarmsTtsVoiceDescription": "用于播报闹钟的声音。",
+  "settingAlarmsMusicTitle": "闹钟音乐",
+  "settingAlarmsMusicDescription": "代替铃声播放。音乐无法播放时，会响起铃声。"
 }

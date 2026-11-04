@@ -11,6 +11,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../home_assistant/ha_tts.dart';
+import '../music_library/music_pick.dart';
 import '../notifications/notification_sounds.dart';
 import '../screensaver/screensaver_manager.dart'
     show currentScreensaverScheduleEntry;
@@ -387,9 +388,16 @@ class AlarmManager extends Manager {
     } else {
       list.add(stored);
     }
-    // A changed alarm starts afresh: a stale handled mark would swallow
-    // its next ring if the new time lands on the old one.
-    _handled.remove(stored.id);
+    // A changed alarm starts afresh from now: a time already behind it is
+    // not rung late, so switching an alarm on two minutes after its time
+    // waits for the next one. A stale mark from before would swallow the
+    // next ring if the new time lands on the old one, so it goes too.
+    final behind = lastRing(stored, now);
+    if (behind != null) {
+      _handled[stored.id] = behind.millisecondsSinceEpoch;
+    } else {
+      _handled.remove(stored.id);
+    }
     await _write(list);
     log.info(name, 'saved ${stored.time} (${stored.id})');
     return stored;
@@ -692,8 +700,89 @@ class AlarmManager extends Manager {
       await _brightness(1);
     }
     final alarm = alarms.value.firstWhere((a) => a.id == known.first);
-    final path = await _tonePath(alarm.tone);
     final gen = ++_ringGen;
+    if (alarm.musicWith(defaultMusic) case final music?) {
+      // The music can take a few seconds to start on its speaker; the
+      // screen and the stop word work meanwhile, and the tone rings if it
+      // does not start.
+      _previewing = false;
+      await _armStopWord(true);
+      _persist();
+      _publish();
+      unawaited(_ringMusic(alarm, music, at, gen));
+      return;
+    }
+    await _ringTone(alarm, at, gen);
+    _previewing = false;
+    await _armStopWord(true);
+    _persist();
+    _publish();
+  }
+
+  /// The Alarm music default, null for none.
+  MusicPick? get defaultMusic {
+    final raw = _settings.get(defs.alarmsMusic).trim();
+    if (raw.isEmpty) return null;
+    try {
+      return MusicPick.fromJson(jsonDecode(raw));
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// Whether the alarm's music plays, or is starting: a quiet stops it.
+  bool _music = false;
+
+  /// The ring whose music started last. A start that finishes after a
+  /// newer ring began its own leaves that one alone.
+  int _musicGen = -1;
+
+  /// Play the alarm's music on its speaker at the alarm volume, repeating
+  /// until stopped. The alarm's tone rings when it cannot play.
+  Future<void> _ringMusic(
+    Alarm alarm,
+    MusicPick music,
+    DateTime at,
+    int gen,
+  ) async {
+    _music = true;
+    _musicGen = gen;
+    final result = await commands.execute('musicPickStart', {
+      'pick': music.toJson(),
+      'owner': 'alarm',
+      'volume': (_settings.get(defs.alarmsVolume) * 100).round(),
+      'repeat': true,
+      // The music eases in the way the tone does.
+      'easeMs': easesIn(alarm) ? _easeMs : 0,
+    });
+    if (gen != _ringGen || _s.phase != AlarmPhase.ringing) {
+      // Stopped or snoozed while the music started. A newer ring that
+      // started its own music keeps it.
+      if (result.ok && _musicGen == gen) {
+        await commands.execute('musicPickStop', const {'owner': 'alarm'});
+      }
+      return;
+    }
+    if (result.ok) {
+      log.info(
+        name,
+        'ringing with music: ${music.item?.title ?? music.random?.name}',
+      );
+      return;
+    }
+    _music = false;
+    log.warn(
+      name,
+      'the alarm music did not play (${result.error}), ringing the tone',
+    );
+    await _ringTone(alarm, at, gen);
+  }
+
+  /// Ring [alarm]'s tone on this device, with its phrase between the
+  /// rings.
+  Future<void> _ringTone(Alarm alarm, DateTime at, int gen) async {
+    final path = await _tonePath(alarm.tone);
+    if (gen != _ringGen) return;
     var rang = false;
     try {
       rang =
@@ -711,13 +800,9 @@ class AlarmManager extends Manager {
     }
     if (!rang) log.warn(name, 'the alarm tone did not play ($path)');
     final speaker = [
-      for (final id in known) ...alarms.value.where((a) => a.id == id),
+      for (final id in _s.ids) ...alarms.value.where((a) => a.id == id),
     ].where((a) => a.speak).firstOrNull;
     if (rang && speaker != null) unawaited(_speakRing(speaker, at, gen));
-    _previewing = false;
-    await _armStopWord(true);
-    _persist();
-    _publish();
   }
 
   // ── Speech and ease in ────────────────────────────────────────────────
@@ -892,6 +977,10 @@ class AlarmManager extends Manager {
     } on MissingPluginException {
       // Tests.
     } catch (_) {}
+    if (_music) {
+      _music = false;
+      await commands.execute('musicPickStop', const {'owner': 'alarm'});
+    }
     await _armStopWord(false);
     await _brightness(null);
     await _release();
@@ -1245,7 +1334,8 @@ class AlarmManager extends Manager {
                 'tone: "" (default) | "builtin" | a sounds folder file, '
                 'sunrise, ease?: true | false (absent follows '
                 'alarms.ease_in), speak, phrase: "" (alarms.phrase) | '
-                'text with {label}, {time} and {day}, on}',
+                'text with {label}, {time} and {day}, on, music?: the '
+                'music picker\'s pick, rung instead of the tone}',
           },
           handler: (p) async {
             final raw = p['alarm'];

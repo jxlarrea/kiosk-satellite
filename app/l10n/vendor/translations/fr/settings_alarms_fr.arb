@@ -33,5 +33,7 @@
   "settingAlarmsTtsLanguageTitle": "Langue",
   "settingAlarmsTtsLanguageDescription": "La langue dans laquelle les alarmes sont prononcées.",
   "settingAlarmsTtsVoiceTitle": "Voix",
-  "settingAlarmsTtsVoiceDescription": "La voix qui prononce les alarmes."
+  "settingAlarmsTtsVoiceDescription": "La voix qui prononce les alarmes.",
+  "settingAlarmsMusicTitle": "Musique d'alarme",
+  "settingAlarmsMusicDescription": "Se joue à la place de la sonnerie. Si la musique ne peut pas être lue, la sonnerie retentit."
 }

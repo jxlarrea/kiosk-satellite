@@ -278,6 +278,19 @@ class UiStringsEn extends UiStrings {
       'Needs the Kiosk Satellite alarms blueprint and an LLM conversation agent in Home Assistant.';
 
   @override
+  String get alarmsMusic => 'Music';
+
+  @override
+  String get alarmsMusicNone => 'None';
+
+  @override
+  String get alarmsMusicRemove => 'Remove music';
+
+  @override
+  String get alarmsMusicHint =>
+      'Rings instead of the tone. The tone rings if the music cannot play.';
+
+  @override
   String get androidAccessibilityHelp =>
       'Closes the notification shade and the recents screen whenever they open while Kiosk Mode or Lockdown Mode is protecting the screen. Kiosk Satellite does not read any screen content.';
 
@@ -3376,6 +3389,107 @@ class UiStringsEn extends UiStrings {
       'Needs the Kiosk Satellite music blueprint and an LLM conversation agent in Home Assistant.';
 
   @override
+  String get musicPickerTitle => 'Choose music';
+
+  @override
+  String get musicPickerSearchHint => 'Search music';
+
+  @override
+  String get musicPickerMusicFrom => 'Music from';
+
+  @override
+  String get musicPickerPlaysOn => 'Plays on';
+
+  @override
+  String musicPickerSourceLabel(String name) {
+    return 'Source: $name';
+  }
+
+  @override
+  String musicPickerSpeakerLabel(String name) {
+    return 'Plays on: $name';
+  }
+
+  @override
+  String get musicPickerRandom => 'Random';
+
+  @override
+  String get musicPickerRandomHint => 'A new pick every time it plays';
+
+  @override
+  String get musicPickerAnyTrack => 'Any track';
+
+  @override
+  String get musicPickerAnyFavorite => 'Any favorite';
+
+  @override
+  String get musicPickerAnyPlaylist => 'Any playlist';
+
+  @override
+  String get musicPickerAnyAlbum => 'Any album';
+
+  @override
+  String get musicPickerAnyStation => 'Any radio station';
+
+  @override
+  String get musicPickerRandomEach => 'A different one each time';
+
+  @override
+  String get musicPickerWholeAlbum => 'Whole album';
+
+  @override
+  String get musicPickerWholePlaylist => 'Whole playlist';
+
+  @override
+  String musicPickerWholeArtist(String name) {
+    return 'Everything by $name';
+  }
+
+  @override
+  String get musicPickerWholeFolder => 'Whole folder';
+
+  @override
+  String get musicPickerAllTracks => 'All tracks';
+
+  @override
+  String get musicPickerShuffle => 'Shuffle';
+
+  @override
+  String get musicPickerPreview => 'Preview';
+
+  @override
+  String get musicPickerStopPreview => 'Stop preview';
+
+  @override
+  String get musicPickerPreviewFailed => 'The music could not play';
+
+  @override
+  String get musicPickerNothing => 'Nothing picked';
+
+  @override
+  String get musicPickerNothingHint =>
+      'Pick a track, album, playlist, artist or station';
+
+  @override
+  String get musicPickerFollowsNote =>
+      'Now Playing switches to this speaker while the music plays.';
+
+  @override
+  String get musicPickerSonosNote =>
+      'Sonos music plays on Sonos speakers only.';
+
+  @override
+  String get musicPickerNoSpeakers => 'No speakers to play on';
+
+  @override
+  String musicPickerOpen(String title) {
+    return 'Open $title';
+  }
+
+  @override
+  String get musicPickerKindFolder => 'Folder';
+
+  @override
   String get offlineDashboard => 'Dashboard unavailable';
 
   @override
@@ -4910,6 +5024,13 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingAlarmsToneDescription => 'Plays at the alarm volume.';
+
+  @override
+  String get settingAlarmsMusicTitle => 'Alarm music';
+
+  @override
+  String get settingAlarmsMusicDescription =>
+      'Rings instead of the tone. The tone rings if the music cannot play.';
 
   @override
   String get settingAlarmsSnoozeMinutesTitle => 'Snooze length';

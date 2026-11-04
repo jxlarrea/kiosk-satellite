@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 
+import '../music_library/music_pick.dart';
+
 /// One alarm as `alarms.list` stores it. Times are local wall time; the
 /// ring moments are worked out against the device clock whenever they are
 /// needed, so a time zone or a DST change moves them with the wall.
@@ -18,6 +20,8 @@ class Alarm {
     this.ease,
     this.speak = false,
     this.phrase = '',
+    this.music,
+    this.noMusic = false,
   });
 
   final String id;
@@ -46,6 +50,18 @@ class Alarm {
   /// What to say; empty follows the Phrase default.
   final String phrase;
 
+  /// Music from the library to ring with instead of the tone, its own.
+  /// Null follows the Alarm music default unless [noMusic]. The tone
+  /// rings when the music cannot play.
+  final MusicPick? music;
+
+  /// Rings the tone, whatever the Alarm music default is.
+  final bool noMusic;
+
+  /// What it rings with: its own music, none, or the default [fallback].
+  MusicPick? musicWith(MusicPick? fallback) =>
+      noMusic ? null : music ?? fallback;
+
   bool get repeats => days.isNotEmpty;
 
   String get time =>
@@ -63,6 +79,8 @@ class Alarm {
     bool? Function()? ease,
     bool? speak,
     String? phrase,
+    MusicPick? Function()? music,
+    bool? noMusic,
   }) => Alarm(
     id: id,
     hour: hour ?? this.hour,
@@ -76,6 +94,8 @@ class Alarm {
     ease: ease != null ? ease() : this.ease,
     speak: speak ?? this.speak,
     phrase: phrase ?? this.phrase,
+    music: music != null ? music() : this.music,
+    noMusic: noMusic ?? this.noMusic,
   );
 
   Map<String, Object?> toJson() => {
@@ -90,6 +110,10 @@ class Alarm {
     if (ease != null) 'ease': ease,
     'speak': speak,
     'phrase': phrase,
+    if (noMusic)
+      'music': 'none'
+    else if (music != null)
+      'music': music!.toJson(),
   };
 
   /// Null for anything that is not an alarm, so one bad entry never takes
@@ -119,6 +143,8 @@ class Alarm {
       ease: raw['ease'] is bool ? raw['ease'] as bool : null,
       speak: raw['speak'] == true,
       phrase: '${raw['phrase'] ?? ''}'.trim(),
+      music: MusicPick.fromJson(raw['music']),
+      noMusic: raw['music'] == 'none',
     );
   }
 }

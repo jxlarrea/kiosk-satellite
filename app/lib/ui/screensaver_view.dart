@@ -202,14 +202,21 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
         final blackBare =
             view == 'black' &&
             container.settings.get(defs.screensaverBlackHideExtras);
-        return ValueListenableBuilder<bool>(
-          valueListenable: container.sendspin.fullscreenActive,
-          builder: (context, nowPlaying, child) {
+        return ListenableBuilder(
+          // An alarm on the screensaver keeps it: its music plays, but Now
+          // Playing stays behind until the alarm lets go.
+          listenable: Listenable.merge([
+            container.sendspin.fullscreenActive,
+            container.screensaver.alarmTakeover,
+          ]),
+          builder: (context, child) {
+            final nowPlaying = container.sendspin.fullscreenActive.value;
             final scheduled = container.screensaver.scheduleNowPlaying.value;
             final playing =
                 nowPlaying &&
                 container.settings.get(defs.sendspinFullscreen) &&
-                scheduled != false;
+                scheduled != false &&
+                container.screensaver.alarmTakeover.value == null;
             return Positioned.fill(
               child: _ScreensaverPlayerLayout(
                 container: container,

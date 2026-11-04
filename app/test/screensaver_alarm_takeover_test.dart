@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
@@ -16,6 +17,7 @@ void main() {
   late CommandRegistry commands;
   late ScreensaverManager saver;
   late List<double> levels;
+  late EventBus bus;
 
   Future<void> build() async {
     SharedPreferences.setMockInitialValues({
@@ -23,8 +25,9 @@ void main() {
       'ks.screensaver.mode': 'weather_mood',
       'ks.screensaver.brightness_enabled': true,
       'ks.screensaver.brightness_level': 0.0,
+      'ks.sendspin.fullscreen': true,
     });
-    final bus = EventBus();
+    bus = EventBus();
     final log = Logger();
     commands = CommandRegistry(log);
     levels = [];
@@ -79,5 +82,18 @@ void main() {
     await commands.execute('alarmTakeover', {'phase': null});
     expect(saver.isActive, isTrue);
     expect(levels.last, 0.0);
+  });
+
+  test('Now Playing stays behind a ringing alarm and its music', () async {
+    await build();
+    await commands.execute('alarmTakeover', {'phase': 'ringing'});
+    bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+    await pumpEventQueue();
+    expect(saver.nowPlayingShown, isFalse);
+    expect(saver.nowPlayingShowing, isFalse);
+    // Once the alarm lets go, music that plays on shows again.
+    await commands.execute('alarmTakeover', {'phase': null});
+    await pumpEventQueue();
+    expect(saver.nowPlayingShowing, isTrue);
   });
 }

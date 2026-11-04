@@ -33,5 +33,7 @@
   "settingAlarmsTtsLanguageTitle": "Idioma",
   "settingAlarmsTtsLanguageDescription": "El idioma en el que se leen las alarmas.",
   "settingAlarmsTtsVoiceTitle": "Voz",
-  "settingAlarmsTtsVoiceDescription": "La voz que lee las alarmas."
+  "settingAlarmsTtsVoiceDescription": "La voz que lee las alarmas.",
+  "settingAlarmsMusicTitle": "Música de alarma",
+  "settingAlarmsMusicDescription": "Suena en lugar del tono. Si la música no puede sonar, suena el tono."
 }

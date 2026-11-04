@@ -2004,6 +2004,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingAlarmsToneTitle",
     "description": "settingAlarmsToneDescription",
   },
+  "alarms.music": {
+    "title": "settingAlarmsMusicTitle",
+    "description": "settingAlarmsMusicDescription",
+  },
   "alarms.snooze_minutes": {
     "title": "settingAlarmsSnoozeMinutesTitle",
     "description": "settingAlarmsSnoozeMinutesDescription",

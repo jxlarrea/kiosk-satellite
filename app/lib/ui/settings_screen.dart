@@ -1,4 +1,4 @@
-import 'alarms_overlay.dart' show AlarmsManageCard;
+import 'alarms_overlay.dart' show AlarmMusicSettingTile, AlarmsManageCard;
 import 'calendar_settings.dart';
 import '../l10n/fleet_messages.dart';
 import 'dart:async';
@@ -11467,6 +11467,16 @@ class SettingTile extends StatelessWidget {
                 ),
               ],
             ),
+          );
+        }
+        // Alarm music: the music picker behind a box, like the alarm's own.
+        if (def.key == alarmsMusic.key) {
+          return AlarmMusicSettingTile(
+            key: const ValueKey('alarms-music'),
+            container: c,
+            title: def.localizedTitle(context),
+            description: def.localizedDescription(context),
+            onChanged: onChanged,
           );
         }
         // The notification sound (issue #320): a dropdown over the sounds

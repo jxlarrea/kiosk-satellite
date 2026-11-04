@@ -130,6 +130,32 @@
       ]
     }
   },
+  "settingAlarmsMusicTitle": "Alarm music",
+  "@settingAlarmsMusicTitle": {
+    "context": "Settings > Alarms",
+    "description": "Setting label: music from the library that alarms ring with instead of the tone, unless an alarm has its own or None.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Alarm music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Alarm music"
+      ]
+    }
+  },
+  "settingAlarmsMusicDescription": "Rings instead of the tone. The tone rings if the music cannot play.",
+  "@settingAlarmsMusicDescription": {
+    "context": "Settings > Alarms",
+    "description": "Description of the Alarm music setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Alarm music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Alarm music"
+      ]
+    }
+  },
   "settingAlarmsSnoozeMinutesTitle": "Snooze length",
   "@settingAlarmsSnoozeMinutesTitle": {
     "context": "Settings > Alarms",

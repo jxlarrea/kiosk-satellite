@@ -680,5 +680,57 @@
         "Alarms"
       ]
     }
+  },
+  "alarmsMusic": "Music",
+  "@alarmsMusic": {
+    "context": "Alarms",
+    "description": "Alarm detail row: music from the library to ring with instead of the tone. The tone rings if the music cannot play.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicNone": "None",
+  "@alarmsMusicNone": {
+    "context": "Alarms",
+    "description": "Value of the alarm Music row when no music is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicRemove": "Remove music",
+  "@alarmsMusicRemove": {
+    "context": "Alarms",
+    "description": "Spoken label of the button that takes the music off an alarm.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicHint": "Rings instead of the tone. The tone rings if the music cannot play.",
+  "@alarmsMusicHint": {
+    "context": "Alarms",
+    "description": "Note under the alarm Music field in the remote admin.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
   }
 }

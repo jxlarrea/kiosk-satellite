@@ -503,11 +503,7 @@ class MaLibrarySource extends LibrarySource {
     required String pick,
     LibraryItem? within,
   }) async {
-    final queue = pick.startsWith('ma:')
-        ? pick.substring(3)
-        : pick.isEmpty
-        ? await ownQueueId()
-        : '';
+    final queue = await _queueOf(pick);
     if (queue.isEmpty) return 'no_speaker';
     // A track tapped inside an album or playlist plays the rest of it
     // from there.
@@ -528,6 +524,122 @@ class MaLibrarySource extends LibrarySource {
       return null;
     } on LibraryError catch (e) {
       return e.message;
+    }
+  }
+
+  /// The queue a pick plays into: a Music Assistant player's own, or this
+  /// device's player's. Its id names the player too.
+  Future<String> _queueOf(String pick) async => pick.startsWith('ma:')
+      ? pick.substring(3)
+      : pick.isEmpty
+      ? await ownQueueId()
+      : '';
+
+  /// The whole list drawn from, by the server's own random order.
+  @override
+  Future<LibraryItem?> randomItem(
+    LibraryCategory category, {
+    bool favorites = false,
+  }) async {
+    final rows = await _list('music/${category.key}/library_items', {
+      'limit': 1,
+      'offset': 0,
+      'order_by': 'random',
+      if (favorites) 'favorite': true,
+    });
+    final items = _items(rows);
+    if (items.isNotEmpty) return items.first;
+    return super.randomItem(category, favorites: favorites);
+  }
+
+  @override
+  Future<SpeakerState?> speakerState(String pick) async {
+    final queue = await _queueOf(pick);
+    if (queue.isEmpty) return null;
+    try {
+      final results = await Future.wait([
+        _call('player_queues/get', {'queue_id': queue}),
+        _call('players/get', {'player_id': queue}),
+      ]);
+      final q = results[0], p = results[1];
+      final volume = p is Map ? p['volume_level'] : null;
+      return SpeakerState(
+        volume: volume is num ? volume.round() : null,
+        shuffle: q is Map && q['shuffle_enabled'] is bool
+            ? q['shuffle_enabled'] as bool
+            : null,
+        repeat: q is Map && q['repeat_mode'] is String
+            ? q['repeat_mode'] as String
+            : null,
+      );
+    } on LibraryError {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> setPlayModes(
+    String pick, {
+    bool? shuffle,
+    String? repeat,
+  }) async {
+    final queue = await _queueOf(pick);
+    if (queue.isEmpty) return false;
+    try {
+      if (shuffle != null) {
+        await _call('player_queues/shuffle', {
+          'queue_id': queue,
+          'shuffle_enabled': shuffle,
+        });
+      }
+      if (repeat != null) {
+        await _call('player_queues/repeat', {
+          'queue_id': queue,
+          'repeat_mode': repeat,
+        });
+      }
+      return true;
+    } on LibraryError {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> setSpeakerVolume(String pick, int percent) async {
+    final queue = await _queueOf(pick);
+    if (queue.isEmpty) return false;
+    try {
+      await _call('players/cmd/volume_set', {
+        'player_id': queue,
+        'volume_level': percent.clamp(0, 100),
+      });
+      return true;
+    } on LibraryError {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> stopSpeaker(String pick) async {
+    final queue = await _queueOf(pick);
+    if (queue.isEmpty) return false;
+    try {
+      await _call('player_queues/stop', {'queue_id': queue});
+      return true;
+    } on LibraryError {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> clearSpeaker(String pick) async {
+    final queue = await _queueOf(pick);
+    if (queue.isEmpty) return false;
+    try {
+      await _call('player_queues/clear', {'queue_id': queue});
+      return true;
+    } on LibraryError {
+      return stopSpeaker(pick);
     }
   }
 

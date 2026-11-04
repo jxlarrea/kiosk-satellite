@@ -20,8 +20,21 @@ import '../voice/ha_socket.dart';
 import 'ha_library_source.dart';
 import 'library_model.dart';
 import 'ma_library_source.dart';
+import 'music_pick.dart';
 import 'music_requests.dart';
 import 'sonos_library_source.dart';
+
+/// A saved pick playing for an owner.
+class _PickPlay {
+  _PickPlay(this.source, this.speaker);
+
+  final LibrarySource source;
+  final String speaker;
+  SpeakerState? before;
+
+  /// Raises the volume while the pick eases in.
+  Timer? ramp;
+}
 
 /// A speaker the library can play on: a row of the Speakers sheet.
 class LibrarySpeaker {
@@ -193,6 +206,7 @@ class MusicLibraryManager extends Manager {
       s.dispose();
     }
     _sources.clear();
+    _pickerHa?.dispose();
     _ma.dispose();
     _http.close(force: true);
     await _ha.close();
@@ -268,6 +282,10 @@ class MusicLibraryManager extends Manager {
 
   void _drop(String key) {
     _sources.remove(key)?.dispose();
+    if (key == 'ha') {
+      _pickerHa?.dispose();
+      _pickerHa = null;
+    }
     if (source.value?.key == key) _pickSource();
   }
 
@@ -459,6 +477,306 @@ class MusicLibraryManager extends Manager {
     return error;
   }
 
+  // ── Saved picks ───────────────────────────────────────────────────
+
+  /// Saved picks playing now, by owner: the source, the speaker and how
+  /// the speaker was set before, to put back.
+  final _picks = <String, _PickPlay>{};
+
+  /// Whether [owner] has a pick playing.
+  bool pickPlaying(String owner) => _picks.containsKey(owner);
+
+  /// The source a picker works with: the shared one, except Home
+  /// Assistant, whose media tree belongs to a speaker. The picker's own
+  /// copy follows the speaker picked there, so the library's stays on
+  /// the followed one.
+  LibrarySource? pickerSource(String key, String speaker) {
+    if (key != 'ha') return sourceFor(key);
+    if (!available.contains('ha')) return null;
+    final ha = _pickerHa ??= _build('ha');
+    if (ha is HaLibrarySource) unawaited(ha.follow(speaker));
+    return ha;
+  }
+
+  LibrarySource? _pickerHa;
+
+  /// The list a random pick draws from in [src], null where it has none.
+  static LibraryCategory? randomCategory(LibrarySource src, RandomPick r) {
+    final keys = switch (r) {
+      RandomPick.tracks => const ['tracks'],
+      RandomPick.favorites =>
+        src.key == 'sonos' ? const ['favorites'] : const ['tracks'],
+      RandomPick.playlists => const ['playlists', 'sonos_playlists'],
+      RandomPick.albums => const ['albums'],
+      RandomPick.radio => const ['radios', 'radio'],
+    };
+    return src.categories.where((c) => keys.contains(c.key)).firstOrNull;
+  }
+
+  /// The random picks [src] can draw, in the order the picker lists them.
+  static List<RandomPick> randomPicks(LibrarySource src) => [
+    for (final r in RandomPick.values)
+      if (randomCategory(src, r) != null &&
+          (r != RandomPick.favorites || src.hasFavorites || src.key == 'sonos'))
+        r,
+  ];
+
+  Future<LibraryItem?> _draw(LibrarySource src, RandomPick r) async {
+    final category = randomCategory(src, r);
+    if (category == null) return null;
+    return src.randomItem(
+      category,
+      favorites: r == RandomPick.favorites && src.key != 'sonos',
+    );
+  }
+
+  /// Play [pick] for [owner]: lend its speaker the followed player, set
+  /// its shuffle, repeat and [volume], play it and wait until the speaker
+  /// says it plays. Answers null, or what went wrong, with everything put
+  /// back already.
+  ///
+  /// This device's own player takes a few seconds to come up in Music
+  /// Assistant after the switch, so a play there is tried again until
+  /// [settle] runs out. Another speaker gets one try.
+  Future<String?> startPick(
+    MusicPick pick, {
+    required String owner,
+    int? volume,
+    bool repeat = false,
+    Duration ease = Duration.zero,
+    Duration settle = const Duration(seconds: 20),
+    Duration confirm = const Duration(seconds: 15),
+  }) async {
+    if (_picks.containsKey(owner)) await endPick(owner);
+    final src = pickerSource(pick.source, pick.speaker);
+    if (src == null) return 'no_source';
+    // Registered before the first wait, so a newer start or an end for
+    // the same owner can tell this one is no longer theirs.
+    final play = _PickPlay(src, pick.speaker);
+    _picks[owner] = play;
+    bool current() => identical(_picks[owner], play);
+    // Not current any more: started over, the newer start owns it, or
+    // ended while this one came up, whatever this one did is undone.
+    Future<String> gone() async {
+      if (_picks[owner] == null) await _release(owner, play);
+      return 'replaced';
+    }
+
+    final lent = await commands.execute('mediaBorrow', {
+      'owner': owner,
+      'player': pick.speaker,
+      'name': pick.speakerName,
+    });
+    if (!current()) return gone();
+    if (!lent.ok) {
+      _picks.remove(owner);
+      return lent.error ?? 'no_speaker';
+    }
+    final speaker = pick.speaker.isEmpty ? 'this device' : pick.speaker;
+    try {
+      final item = pick.item ?? await _draw(src, pick.random!);
+      if (item == null) throw const LibraryError('nothing to play');
+      final until = DateTime.now().add(settle);
+      final retry = pick.speaker.isEmpty;
+      String? error;
+      while (true) {
+        play.before ??= await _step<SpeakerState?>(
+          src.speakerState(pick.speaker),
+        );
+        await _step(
+          src.setPlayModes(
+            pick.speaker,
+            shuffle: pick.shuffle && pick.canShuffle,
+            repeat: repeat ? 'all' : null,
+          ),
+        );
+        if (volume != null) {
+          // Easing in starts quiet; the ramp takes it up once it plays.
+          await _step(
+            src.setSpeakerVolume(
+              pick.speaker,
+              ease > Duration.zero ? _easeFloor : volume,
+            ),
+          );
+        }
+        try {
+          error = await src
+              .play(item, PlayMode.replace, pick: pick.speaker)
+              .timeout(const Duration(seconds: 30));
+        } catch (e) {
+          error = '$e';
+        }
+        // Only this device's own player is worth the wait: another
+        // speaker that refuses now is off or out of reach.
+        if (!current()) return gone();
+        if (error == null || !retry || DateTime.now().isAfter(until)) break;
+        await Future<void>.delayed(const Duration(seconds: 2));
+        if (!current()) return gone();
+      }
+      if (error != null) throw LibraryError(error);
+      final started = await _started(confirm);
+      // Ended or started over while it came up: whoever did that owns the
+      // speaker now.
+      if (!current()) return gone();
+      if (!started) {
+        throw const LibraryError('the speaker did not start playing');
+      }
+      if (volume != null && ease > Duration.zero) {
+        _ramp(play, volume, ease);
+      }
+      log.info(
+        name,
+        '$owner plays ${item.kind.name} "${item.title}" on $speaker'
+        '${pick.shuffle && pick.canShuffle ? ', shuffled' : ''}',
+      );
+      return null;
+    } catch (e) {
+      if (!current()) return gone();
+      log.warn(name, '$owner could not play on $speaker: $e');
+      await endPick(owner);
+      return '$e';
+    }
+  }
+
+  /// [owner]'s pick is over: stop it, put the speaker's shuffle, repeat
+  /// and volume back and give the followed player back.
+  Future<void> endPick(String owner, {bool stop = true}) async {
+    await _release(owner, _picks.remove(owner), stop: stop);
+  }
+
+  Future<void> _release(
+    String owner,
+    _PickPlay? play, {
+    bool stop = true,
+  }) async {
+    if (play != null) {
+      play.ramp?.cancel();
+      final src = play.source;
+      if (stop) {
+        // Out of the queue too, and gone from the player before it goes
+        // back: a paused track left behind would bring Now Playing and the
+        // floating player up the moment the alarm lets go.
+        await _step(src.clearSpeaker(play.speaker));
+        await _cleared(const Duration(seconds: 3));
+      }
+      final before = play.before;
+      if (before != null) {
+        await _step(
+          src.setPlayModes(
+            play.speaker,
+            shuffle: before.shuffle,
+            repeat: before.repeat,
+          ),
+        );
+        if (before.volume != null) {
+          await _step(src.setSpeakerVolume(play.speaker, before.volume!));
+        }
+      }
+    }
+    await commands.execute('mediaReturn', {'owner': owner});
+  }
+
+  /// Where an eased in pick starts, out of 100.
+  static const _easeFloor = 2;
+
+  /// Take the speaker from [_easeFloor] to [target] over [over], a step a
+  /// second, the way the alarm tone eases in.
+  void _ramp(_PickPlay play, int target, Duration over) {
+    final started = DateTime.now();
+    var last = _easeFloor;
+    play.ramp = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final t =
+          DateTime.now().difference(started).inMilliseconds /
+          over.inMilliseconds;
+      final level = t >= 1
+          ? target
+          : (_easeFloor + (target - _easeFloor) * t).round();
+      if (t >= 1) timer.cancel();
+      if (level == last) return;
+      last = level;
+      unawaited(_step(play.source.setSpeakerVolume(play.speaker, level)));
+    });
+  }
+
+  /// One step of a pick's play, bounded, and quiet about a speaker that
+  /// does not answer: the steps after it still run.
+  Future<T?> _step<T>(Future<T> step) async {
+    try {
+      return await step.timeout(const Duration(seconds: 10));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Until the followed player, the lent speaker still, shows no track,
+  /// at most [within].
+  Future<void> _cleared(Duration within) async {
+    final now = _nowPlaying;
+    if (now == null) return;
+    bool empty() => '${now.value?['title'] ?? ''}'.isEmpty;
+    if (empty()) return;
+    final done = Completer<void>();
+    void check() {
+      if (empty() && !done.isCompleted) done.complete();
+    }
+
+    now.addListener(check);
+    try {
+      await done.future.timeout(within, onTimeout: () {});
+    } finally {
+      now.removeListener(check);
+    }
+  }
+
+  /// Whether the followed player, the lent speaker now, says it plays
+  /// within [within].
+  Future<bool> _started(Duration within) async {
+    final now = _nowPlaying;
+    if (now == null) return true;
+    bool playing() => now.value?['playing'] == true;
+    if (playing()) return true;
+    final done = Completer<bool>();
+    void check() {
+      if (playing() && !done.isCompleted) done.complete(true);
+    }
+
+    now.addListener(check);
+    try {
+      return await done.future.timeout(within, onTimeout: () => playing());
+    } finally {
+      now.removeListener(check);
+    }
+  }
+
+  /// Covers handed to the remote admin, the only ones it may fetch
+  /// through the device.
+  final _handedArt = <String>{};
+
+  Map<String, Object?> itemJson(LibraryItem item, String source) {
+    for (final url in [item.art, item.artDark]) {
+      if (url == null || url.isEmpty) continue;
+      _handedArt.add(url);
+      if (_handedArt.length > 3000) _handedArt.remove(_handedArt.first);
+    }
+    return libraryItemToJson(item, source);
+  }
+
+  Future<CommandResult> _pickerCall(
+    Map<String, Object?> p,
+    Future<Map<String, Object?>> Function(LibrarySource src, String key) run,
+  ) async {
+    final key = '${p['source'] ?? ''}';
+    final src = pickerSource(key, '${p['speaker'] ?? ''}');
+    if (src == null) return const CommandResult.fail('no_source');
+    try {
+      return CommandResult.ok(await run(src, key));
+    } on LibraryError catch (e) {
+      return CommandResult.fail(e.message);
+    } catch (e) {
+      return CommandResult.fail('$e');
+    }
+  }
+
   /// Counts a search someone typed, for usage analytics.
   void noteSearch() =>
       unawaited(UsageCounters.bump(_settings, 'library_searches'));
@@ -597,6 +915,204 @@ class MusicLibraryManager extends Manager {
           // The voice requests manager logs each one with its outcome.
           quiet: true,
           handler: (p) async => CommandResult.ok(await requests.handle(p)),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'musicPickStart',
+          description:
+              'Play a saved music pick (as the music picker makes it) for '
+              'an owner: its speaker is lent the followed player until '
+              'musicPickStop. Fails, with everything put back, when the '
+              'speaker does not start playing.',
+          params: const {
+            'pick': 'the pick: source, item or random, shuffle, speaker',
+            'owner': 'who plays it, preview for the picker',
+            'volume': 'the speaker volume while it plays, 0 to 100',
+            'repeat': 'true to repeat it until stopped',
+            'easeMs':
+                'start quiet and rise to the volume over this many '
+                'milliseconds',
+          },
+          handler: (p) async {
+            final pick = MusicPick.fromJson(p['pick']);
+            if (pick == null) return const CommandResult.fail('no pick');
+            final owner = '${p['owner'] ?? 'preview'}';
+            final volume = p['volume'];
+            final ease = p['easeMs'];
+            final error = await startPick(
+              pick,
+              owner: owner,
+              volume: volume is num ? volume.round() : null,
+              repeat: p['repeat'] == true,
+              ease: Duration(
+                milliseconds: ease is num ? ease.round().clamp(0, 600000) : 0,
+              ),
+            );
+            return error == null
+                ? const CommandResult.ok()
+                : CommandResult.fail(error);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'musicPickStop',
+          description:
+              'Stop what musicPickStart plays for an owner and give the '
+              'followed player back.',
+          params: const {'owner': 'who plays it'},
+          handler: (p) async {
+            await endPick('${p['owner'] ?? 'preview'}');
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'libraryPickerSource',
+          description:
+              'What the music picker shows for a source: the sources set '
+              'up, its lists, random picks, whether it searches and its '
+              'speakers.',
+          params: const {
+            'source': 'ma, ha or sonos; the first set up when left out',
+            'speaker': 'the speaker picked, for a Home Assistant tree',
+          },
+          handler: (p) async {
+            final have = available;
+            if (have.isEmpty) return const CommandResult.fail('no_source');
+            final want = '${p['source'] ?? ''}';
+            final key = have.contains(want) ? want : have.first;
+            final (speakers, note) = await this.speakers(key);
+            final src = pickerSource(key, '${p['speaker'] ?? ''}');
+            if (src == null) return const CommandResult.fail('no_source');
+            final cats = await src.availableCategories();
+            return CommandResult.ok({
+              'sources': have,
+              'source': key,
+              'followed': pick.value,
+              'categories': [
+                for (final c in cats) {'key': c.key, 'kind': c.kind.name},
+              ],
+              'random': [
+                for (final r in randomPicks(src))
+                  if (cats.any((c) => c.key == randomCategory(src, r)?.key))
+                    r.name,
+              ],
+              'search': src.hasSearch,
+              'browse': key == 'ha',
+              'speakers': [
+                for (final s in speakers)
+                  {
+                    'pick': s.pick,
+                    'name': s.name,
+                    'available': s.available,
+                    'self': s.self,
+                  },
+              ],
+              'note': ?note,
+            });
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'libraryPickerList',
+          description: 'A page of one of a source\'s lists, for the picker.',
+          params: const {
+            'source': 'ma, ha or sonos',
+            'category': 'the list key',
+            'offset': 'where the page starts',
+          },
+          handler: (p) => _pickerCall(p, (src, key) async {
+            final category = src.categories
+                .where((c) => c.key == '${p['category']}')
+                .firstOrNull;
+            if (category == null) return {'items': const [], 'more': false};
+            final offset = p['offset'];
+            final page = await src.list(
+              category,
+              offset: offset is num ? offset.toInt() : 0,
+              sort: sortFor(src, category),
+            );
+            return {
+              'items': [for (final i in page.items) itemJson(i, key)],
+              'more': page.more,
+            };
+          }),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'libraryPickerSearch',
+          description: 'Search a source, for the picker.',
+          params: const {'source': 'ma, ha or sonos', 'query': 'what to find'},
+          handler: (p) => _pickerCall(p, (src, key) async {
+            final shelves = await src.search('${p['query'] ?? ''}');
+            return {
+              'items': [
+                for (final shelf in shelves)
+                  for (final i in shelf.items) itemJson(i, key),
+              ],
+            };
+          }),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'libraryPickerOpen',
+          description:
+              'An album, playlist, artist or folder opened in the picker: '
+              'its tracks or children.',
+          params: const {'source': 'ma, ha or sonos', 'item': 'the entry'},
+          handler: (p) => _pickerCall(p, (src, key) async {
+            final item = libraryItemFromJson(p['item']);
+            if (item == null) throw const LibraryError('no item');
+            if (item.kind == LibraryKind.folder) {
+              final page = await src.browse(item);
+              return {
+                'items': [for (final i in page.items) itemJson(i, key)],
+              };
+            }
+            final detail = await src.open(item);
+            return {
+              'item': itemJson(detail.item, key),
+              'items': [for (final i in detail.tracks) itemJson(i, key)],
+            };
+          }),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'libraryPickerBrowse',
+          description: 'The root of a Home Assistant speaker\'s media tree.',
+          params: const {'source': 'ha', 'speaker': 'the speaker picked'},
+          handler: (p) => _pickerCall(p, (src, key) async {
+            final page = await src.browse(null);
+            return {
+              'items': [for (final i in page.items) itemJson(i, key)],
+            };
+          }),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'libraryArt',
+          description:
+              'A cover the picker listed, fetched by the device, as '
+              'base64.',
+          params: const {'url': 'the cover address'},
+          quiet: true,
+          handler: (p) async {
+            final url = '${p['url'] ?? ''}';
+            if (!_handedArt.contains(url)) {
+              return const CommandResult.fail('unknown cover');
+            }
+            final bytes = await loadArt(url);
+            if (bytes == null) return const CommandResult.fail('no cover');
+            return CommandResult.ok({'data': base64Encode(bytes)});
+          },
         ),
       )
       ..register(

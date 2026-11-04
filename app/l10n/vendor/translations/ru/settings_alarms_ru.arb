@@ -33,5 +33,7 @@
   "settingAlarmsTtsLanguageTitle": "Язык",
   "settingAlarmsTtsLanguageDescription": "Язык, на котором произносятся будильники.",
   "settingAlarmsTtsVoiceTitle": "Голос",
-  "settingAlarmsTtsVoiceDescription": "Голос, которым произносятся будильники."
+  "settingAlarmsTtsVoiceDescription": "Голос, которым произносятся будильники.",
+  "settingAlarmsMusicTitle": "Музыка будильника",
+  "settingAlarmsMusicDescription": "Звучит вместо звука будильника. Если музыку не удастся воспроизвести, прозвучит звук будильника."
 }

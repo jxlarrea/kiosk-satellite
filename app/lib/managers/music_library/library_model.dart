@@ -2,6 +2,8 @@
 /// Assistant, a Home Assistant speaker's media tree and a Sonos household.
 library;
 
+import 'dart:math';
+
 /// What a library entry is. It picks the icon, the shape of its cover
 /// (round for an artist) and what opening it does.
 enum LibraryKind {
@@ -215,8 +217,61 @@ abstract class LibrarySource {
 
   Future<bool> setFavorite(LibraryItem item, bool favorite) async => false;
 
+  /// A random playable entry of [category], for a random pick: one drawn
+  /// from its first page here, from the whole list where the source can.
+  Future<LibraryItem?> randomItem(
+    LibraryCategory category, {
+    bool favorites = false,
+  }) async {
+    final page = await list(category, favorites: favorites);
+    final items = [
+      for (final i in page.items)
+        if (i.playable) i,
+    ];
+    return items.isEmpty ? null : items[_random.nextInt(items.length)];
+  }
+
+  /// How the speaker [pick] names is set: its volume, shuffle and repeat.
+  /// Read before a saved pick plays, so they can be put back after. Null
+  /// where the source cannot tell.
+  Future<SpeakerState?> speakerState(String pick) async => null;
+
+  /// Turn shuffle and repeat on the speaker [pick] names on or off; a
+  /// null leaves that one alone. Answers whether the speaker took it.
+  Future<bool> setPlayModes(
+    String pick, {
+    bool? shuffle,
+    String? repeat,
+  }) async => false;
+
+  /// The speaker's own volume, 0 to 100.
+  Future<bool> setSpeakerVolume(String pick, int percent) async => false;
+
+  /// Stop what the speaker [pick] names plays.
+  Future<bool> stopSpeaker(String pick) async => false;
+
+  /// Stop it and take it out of the speaker's queue, so no paused track
+  /// is left for Now Playing and the floating player to show. Stops it
+  /// where the source cannot clear.
+  Future<bool> clearSpeaker(String pick) => stopSpeaker(pick);
+
   /// Close connections. The source is built again on the next open.
   void dispose() {}
+}
+
+final _random = Random();
+
+/// A speaker's volume, shuffle and repeat ('off', 'one' or 'all'), each
+/// null when unknown.
+class SpeakerState {
+  const SpeakerState({this.volume, this.shuffle, this.repeat});
+
+  final int? volume;
+  final bool? shuffle;
+  final String? repeat;
+
+  @override
+  String toString() => 'volume $volume, shuffle $shuffle, repeat $repeat';
 }
 
 /// "3:42" or "1:02:05".

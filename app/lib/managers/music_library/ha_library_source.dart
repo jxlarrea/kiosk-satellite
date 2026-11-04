@@ -219,6 +219,90 @@ class HaLibrarySource extends LibrarySource {
     }
   }
 
+  String _entityOf(String pick) =>
+      pick.startsWith('ha:') ? pick.substring(3) : '';
+
+  @override
+  Future<SpeakerState?> speakerState(String pick) async {
+    final entity = _entityOf(pick);
+    if (entity.isEmpty) return null;
+    try {
+      final states = await request({'type': 'get_states'});
+      if (states is! List) return null;
+      for (final s in states.whereType<Map>()) {
+        if (s['entity_id'] != entity) continue;
+        final a = s['attributes'] as Map? ?? const {};
+        final volume = a['volume_level'];
+        return SpeakerState(
+          volume: volume is num ? (volume * 100).round() : null,
+          shuffle: a['shuffle'] is bool ? a['shuffle'] as bool : null,
+          repeat: a['repeat'] is String ? a['repeat'] as String : null,
+        );
+      }
+    } catch (_) {
+      // Nothing to put back then.
+    }
+    return null;
+  }
+
+  Future<bool> _service(String entity, String service, [Map? data]) async {
+    try {
+      await request({
+        'type': 'call_service',
+        'domain': 'media_player',
+        'service': service,
+        'target': {'entity_id': entity},
+        'service_data': ?data,
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> setPlayModes(
+    String pick, {
+    bool? shuffle,
+    String? repeat,
+  }) async {
+    final entity = _entityOf(pick);
+    if (entity.isEmpty) return false;
+    var ok = true;
+    if (shuffle != null) {
+      ok = await _service(entity, 'shuffle_set', {'shuffle': shuffle}) && ok;
+    }
+    if (repeat != null) {
+      ok = await _service(entity, 'repeat_set', {'repeat': repeat}) && ok;
+    }
+    return ok;
+  }
+
+  @override
+  Future<bool> setSpeakerVolume(String pick, int percent) async {
+    final entity = _entityOf(pick);
+    if (entity.isEmpty) return false;
+    return _service(entity, 'volume_set', {
+      'volume_level': percent.clamp(0, 100) / 100,
+    });
+  }
+
+  @override
+  Future<bool> stopSpeaker(String pick) async {
+    final entity = _entityOf(pick);
+    if (entity.isEmpty) return false;
+    return await _service(entity, 'media_stop') ||
+        await _service(entity, 'media_pause');
+  }
+
+  @override
+  Future<bool> clearSpeaker(String pick) async {
+    final stopped = await stopSpeaker(pick);
+    final entity = _entityOf(pick);
+    if (entity.isNotEmpty) await _service(entity, 'clear_playlist');
+    return stopped;
+  }
+
   List<LibraryItem> _items(Object? rows) => [
     if (rows is Iterable)
       for (final row in rows.whereType<Map>()) ?_item(row),

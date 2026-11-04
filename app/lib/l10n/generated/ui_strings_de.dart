@@ -279,6 +279,19 @@ class UiStringsDe extends UiStrings {
       'Benötigt den Kiosk Satellite Wecker-Blueprint und einen LLM-Konversationsagenten in Home Assistant.';
 
   @override
+  String get alarmsMusic => 'Musik';
+
+  @override
+  String get alarmsMusicNone => 'Keine';
+
+  @override
+  String get alarmsMusicRemove => 'Musik entfernen';
+
+  @override
+  String get alarmsMusicHint =>
+      'Spielt statt des Wecktons. Kann die Musik nicht abgespielt werden, ertönt der Weckton.';
+
+  @override
   String get androidAccessibilityHelp =>
       'Schließt das Benachrichtigungsfeld und den Bildschirm der zuletzt verwendeten Apps, wenn diese geöffnet werden, während der Kioskmodus oder der Sperrmodus den Bildschirm schützt. Kiosk Satellite liest den Inhalt des Bildschirms nicht.';
 
@@ -3423,6 +3436,108 @@ class UiStringsDe extends UiStrings {
       'Benötigt den Kiosk Satellite Musik-Blueprint und einen LLM-Konversationsagenten in Home Assistant.';
 
   @override
+  String get musicPickerTitle => 'Musik auswählen';
+
+  @override
+  String get musicPickerSearchHint => 'Musik suchen';
+
+  @override
+  String get musicPickerMusicFrom => 'Musik von';
+
+  @override
+  String get musicPickerPlaysOn => 'Wird abgespielt auf';
+
+  @override
+  String musicPickerSourceLabel(String name) {
+    return 'Quelle: $name';
+  }
+
+  @override
+  String musicPickerSpeakerLabel(String name) {
+    return 'Wird abgespielt auf: $name';
+  }
+
+  @override
+  String get musicPickerRandom => 'Zufällig';
+
+  @override
+  String get musicPickerRandomHint => 'Bei jedem Abspielen eine neue Auswahl';
+
+  @override
+  String get musicPickerAnyTrack => 'Beliebiger Titel';
+
+  @override
+  String get musicPickerAnyFavorite => 'Beliebiger Favorit';
+
+  @override
+  String get musicPickerAnyPlaylist => 'Beliebige Playlist';
+
+  @override
+  String get musicPickerAnyAlbum => 'Beliebiges Album';
+
+  @override
+  String get musicPickerAnyStation => 'Beliebiger Radiosender';
+
+  @override
+  String get musicPickerRandomEach => 'Jedes Mal etwas anderes';
+
+  @override
+  String get musicPickerWholeAlbum => 'Ganzes Album';
+
+  @override
+  String get musicPickerWholePlaylist => 'Ganze Playlist';
+
+  @override
+  String musicPickerWholeArtist(String name) {
+    return 'Alles von $name';
+  }
+
+  @override
+  String get musicPickerWholeFolder => 'Ganzer Ordner';
+
+  @override
+  String get musicPickerAllTracks => 'Alle Titel';
+
+  @override
+  String get musicPickerShuffle => 'Zufallswiedergabe';
+
+  @override
+  String get musicPickerPreview => 'Vorhören';
+
+  @override
+  String get musicPickerStopPreview => 'Vorhören beenden';
+
+  @override
+  String get musicPickerPreviewFailed =>
+      'Die Musik konnte nicht abgespielt werden';
+
+  @override
+  String get musicPickerNothing => 'Nichts ausgewählt';
+
+  @override
+  String get musicPickerNothingHint =>
+      'Wähle einen Titel, ein Album, eine Playlist, einen Künstler oder einen Sender';
+
+  @override
+  String get musicPickerFollowsNote =>
+      'Jetzt läuft wechselt zu diesem Lautsprecher, solange die Musik spielt.';
+
+  @override
+  String get musicPickerSonosNote =>
+      'Sonos-Musik spielt nur auf Sonos-Lautsprechern.';
+
+  @override
+  String get musicPickerNoSpeakers => 'Keine Lautsprecher zum Abspielen';
+
+  @override
+  String musicPickerOpen(String title) {
+    return '$title öffnen';
+  }
+
+  @override
+  String get musicPickerKindFolder => 'Ordner';
+
+  @override
   String get offlineDashboard => 'Dashboard nicht verfügbar';
 
   @override
@@ -5008,6 +5123,13 @@ class UiStringsDe extends UiStrings {
   @override
   String get settingAlarmsToneDescription =>
       'Wird mit der Weckerlautstärke abgespielt.';
+
+  @override
+  String get settingAlarmsMusicTitle => 'Weckmusik';
+
+  @override
+  String get settingAlarmsMusicDescription =>
+      'Spielt statt des Wecktons. Kann die Musik nicht abgespielt werden, ertönt der Weckton.';
 
   @override
   String get settingAlarmsSnoozeMinutesTitle => 'Schlummerdauer';

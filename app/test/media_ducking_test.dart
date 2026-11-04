@@ -173,6 +173,34 @@ void main() {
     );
   }
 
+  test('the music an alarm rings with is not ducked under it', () async {
+    await boot('');
+    double factor() =>
+        (native.lastWhere((c) => c.method == 'duck').arguments as Map)['factor']
+            as double;
+    // The alarm holds the screen first and ducks, as it does for a tone.
+    await voice(true, 'alarm');
+    expect(factor(), .1);
+    // Its music then borrows the player: that music is the alarm.
+    await manager.commands.execute('mediaBorrow', {
+      'owner': 'alarm',
+      'player': '',
+      'name': 'Tablet',
+    });
+    await pumpEventQueue();
+    expect(factor(), 1.0);
+    // A voice turn over it still ducks it.
+    await voice(true);
+    expect(factor(), .1);
+    await voice(false);
+    expect(factor(), 1.0);
+    await manager.commands.execute('mediaReturn', {'owner': 'alarm'});
+    await pumpEventQueue();
+    expect(factor(), .1);
+    await voice(false, 'alarm');
+    expect(factor(), 1.0);
+  });
+
   test(
     'local audio uses native gain and leaves the normal volume unchanged',
     () async {

@@ -1,15 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../app_container.dart';
+import '../l10n/generated/ui_strings.dart';
 import '../l10n/messages.dart';
 import '../managers/alarms/alarm_manager.dart';
 import '../managers/alarms/alarm_model.dart';
+import '../managers/music_library/music_pick.dart';
 import '../managers/notifications/notification_sounds.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kit.dart';
+import 'music_picker.dart';
 import 'theme.dart';
 import 'toast.dart';
 
@@ -991,6 +995,11 @@ class _DetailsStep extends StatelessWidget {
     if (next != null) onChanged(alarm.copyWith(tone: next));
   }
 
+  Future<void> _music(BuildContext context) async {
+    final next = await _showMusicChoice(context, container, alarm);
+    if (next != null) onChanged(next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = l10n(context);
@@ -1055,6 +1064,7 @@ class _DetailsStep extends StatelessWidget {
         ? s.alarmsBuiltInTone
         : alarm.tone;
     final settings = container.settings;
+    final defaultMusic = container.alarms.defaultMusic;
     // An alarm that never chose follows the default switch.
     final bool ease = alarm.ease ?? settings.get(defs.alarmsEaseIn);
     final phrase = settings.get(defs.alarmsPhrase);
@@ -1082,6 +1092,17 @@ class _DetailsStep extends StatelessWidget {
           value: toneName,
           onTap: () => _tone(context),
         ),
+        // Music rings instead of the tone, and the tone rings when the
+        // music cannot play.
+        if (container.musicLibrary.available.isNotEmpty ||
+            alarm.music != null ||
+            defaultMusic != null)
+          _DetailRow(
+            icon: Icons.library_music_outlined,
+            name: s.alarmsMusic,
+            value: alarmMusicText(s, alarm, defaultMusic),
+            onTap: () => _music(context),
+          ),
         _DetailRow(
           icon: Icons.wb_twilight,
           name: s.alarmsSunrise,
@@ -1325,6 +1346,197 @@ Future<T?> _alarmDialog<T>({
     return await showDialog<T>(context: context, builder: builder);
   } finally {
     _openDialogs--;
+  }
+}
+
+/// What an alarm's Music row says: its own music, None, or Default and
+/// the default's name.
+String alarmMusicText(UiStrings s, Alarm alarm, MusicPick? fallback) =>
+    alarm.noMusic
+    ? s.alarmsMusicNone
+    : alarm.music != null
+    ? musicPickName(s, alarm.music!)
+    : fallback == null
+    ? '${s.alarmsDefaultTone} · ${s.alarmsMusicNone}'
+    : '${s.alarmsDefaultTone} · ${musicPickName(s, fallback)}';
+
+/// The alarm's music, the way its tone is picked: Default, None or its
+/// own, and Choose music for a new one. Answers the changed alarm.
+Future<Alarm?> _showMusicChoice(
+  BuildContext context,
+  AppContainer container,
+  Alarm alarm,
+) => _alarmDialog<Alarm>(
+  context: context,
+  builder: (context) => _MusicChoice(container: container, alarm: alarm),
+);
+
+class _MusicChoice extends StatefulWidget {
+  const _MusicChoice({required this.container, required this.alarm});
+
+  final AppContainer container;
+  final Alarm alarm;
+
+  @override
+  State<_MusicChoice> createState() => _MusicChoiceState();
+}
+
+class _MusicChoiceState extends State<_MusicChoice> {
+  late String _pick = widget.alarm.noMusic
+      ? 'none'
+      : widget.alarm.music != null
+      ? 'own'
+      : 'default';
+
+  Alarm _with(String pick) => switch (pick) {
+    'none' => widget.alarm.copyWith(music: () => null, noMusic: true),
+    'own' => widget.alarm.copyWith(noMusic: false),
+    _ => widget.alarm.copyWith(music: () => null, noMusic: false),
+  };
+
+  Future<void> _choose() async {
+    final fallback = widget.container.alarms.defaultMusic;
+    _openDialogs++;
+    final MusicPick? picked;
+    try {
+      picked = await showMusicPicker(
+        context,
+        widget.container,
+        current: widget.alarm.music ?? fallback,
+      );
+    } finally {
+      _openDialogs--;
+    }
+    if (picked == null || !mounted) return;
+    Navigator.of(
+      context,
+    ).pop(widget.alarm.copyWith(music: () => picked, noMusic: false));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = l10n(context);
+    final own = widget.alarm.music;
+    final fallback = widget.container.alarms.defaultMusic;
+    return AlertDialog(
+      title: Text(s.alarmsMusic),
+      contentPadding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
+      content: SizedBox(
+        width: 400,
+        child: EdgeFade(
+          child: SingleChildScrollView(
+            child: RadioGroup<String>(
+              groupValue: _pick,
+              onChanged: (v) => setState(() => _pick = v ?? _pick),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  RadioListTile<String>(
+                    value: 'default',
+                    title: Text(s.alarmsDefaultTone),
+                    subtitle: Text(
+                      fallback == null
+                          ? s.alarmsMusicNone
+                          : musicPickName(s, fallback),
+                    ),
+                  ),
+                  RadioListTile<String>(
+                    value: 'none',
+                    title: Text(s.alarmsMusicNone),
+                  ),
+                  if (own != null)
+                    RadioListTile<String>(
+                      value: 'own',
+                      title: Text(musicPickName(s, own)),
+                    ),
+                  const Divider(height: 16),
+                  ListTile(
+                    leading: const Icon(Icons.library_music_outlined),
+                    title: Text(s.musicPickerTitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _choose,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          style: alarmButtonStyle(context),
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(s.commonCancel),
+        ),
+        FilledButton(
+          style: alarmButtonStyle(context),
+          onPressed: () => Navigator.of(context).pop(_with(_pick)),
+          child: Text(s.commonOk),
+        ),
+      ],
+    );
+  }
+}
+
+/// Settings > Alarms > Alarm music: the default's box, the music picker
+/// behind it and a button that takes it out.
+class AlarmMusicSettingTile extends StatelessWidget {
+  const AlarmMusicSettingTile({
+    super.key,
+    required this.container,
+    required this.title,
+    required this.description,
+    required this.onChanged,
+  });
+
+  final AppContainer container;
+  final String title, description;
+  final VoidCallback onChanged;
+
+  Future<void> _pick(BuildContext context, MusicPick? current) async {
+    final next = await showMusicPicker(context, container, current: current);
+    if (next == null) return;
+    await container.settings.set(defs.alarmsMusic, jsonEncode(next.toJson()));
+    onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = l10n(context);
+    final current = container.alarms.defaultMusic;
+    return SettingsRow(
+      title: Text(title),
+      subtitle: Text(description),
+      stack: true,
+      trailing: SizedBox(
+        width: tightPane(context) ? double.infinity : 300,
+        child: Row(
+          children: [
+            Expanded(
+              child: MusicPickField(
+                label: current == null
+                    ? s.alarmsMusicNone
+                    : musicPickName(s, current),
+                picked: current != null,
+                onTap: () => _pick(context, current),
+              ),
+            ),
+            if (current != null) ...[
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: s.alarmsMusicRemove,
+                icon: const Icon(Icons.close),
+                onPressed: () async {
+                  await container.settings.set(defs.alarmsMusic, '');
+                  onChanged();
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

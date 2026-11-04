@@ -33,5 +33,7 @@
   "settingAlarmsTtsLanguageTitle": "Taal",
   "settingAlarmsTtsLanguageDescription": "De taal waarin alarmen worden uitgesproken.",
   "settingAlarmsTtsVoiceTitle": "Stem",
-  "settingAlarmsTtsVoiceDescription": "De stem waarmee alarmen worden uitgesproken."
+  "settingAlarmsTtsVoiceDescription": "De stem waarmee alarmen worden uitgesproken.",
+  "settingAlarmsMusicTitle": "Alarmmuziek",
+  "settingAlarmsMusicDescription": "Speelt in plaats van de toon. Als de muziek niet kan spelen, klinkt de toon."
 }

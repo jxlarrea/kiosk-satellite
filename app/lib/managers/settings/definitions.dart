@@ -12,6 +12,7 @@ import '../../l10n/generated/setting_ids.dart';
 import '../../l10n/generated/setting_option_ids.dart';
 
 import '../btproxy/node_name.dart';
+import '../music_library/music_pick.dart';
 
 enum SettingType { string, boolean, number, select, password }
 
@@ -9227,6 +9228,20 @@ const sendspinPlayerName = SettingDef<String>(
   perDevice: true,
 );
 
+/// The followed player lent to a feature: who has it, the player to give
+/// back and the one lent, so a restart in the middle can put the kiosk
+/// back on its own player.
+const sendspinHandoff = SettingDef<String>(
+  key: 'sendspin.handoff',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Lent player',
+  description: 'Internal: the followed player lent to an alarm.',
+  category: 'Sendspin',
+  hidden: true,
+  perDevice: true,
+);
+
 /// Whether the Now Playing volume slider sets the whole group's volume
 /// while the followed Sonos room plays in one, the way the Sonos app's
 /// group slider does or only the room's own.
@@ -11727,6 +11742,32 @@ const alarmsTone = SettingDef<String>(
   validator: validateNotificationSound,
 );
 
+/// The music an alarm rings with unless it has its own or None: a music
+/// picker pick as JSON, empty for none.
+const alarmsMusic = SettingDef<String>(
+  key: 'alarms.music',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Alarm music',
+  description:
+      'Rings instead of the tone. The tone rings if the music cannot play.',
+  category: 'Alarms',
+  section: 'Defaults',
+  validator: _validateMusicPick,
+);
+
+String? _validateMusicPick(Object? value) {
+  final raw = '${value ?? ''}'.trim();
+  if (raw.isEmpty) return null;
+  try {
+    return MusicPick.fromJson(jsonDecode(raw)) == null
+        ? 'not a music pick'
+        : null;
+  } on FormatException {
+    return 'not a music pick';
+  }
+}
+
 const alarmsSnoozeMinutes = SettingDef<String>(
   key: 'alarms.snooze_minutes',
   type: SettingType.select,
@@ -13886,6 +13927,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinVolumeKeys,
   sendspinVolumeKeyStep,
   sendspinPlayerName,
+  sendspinHandoff,
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
@@ -14061,6 +14103,7 @@ const List<SettingDef<Object>> allSettings = [
   alarmsEaseIn,
   alarmsEaseInSeconds,
   alarmsTone,
+  alarmsMusic,
   alarmsSnoozeMinutes,
   alarmsSilenceAfterMinutes,
   alarmsSunriseMinutes,

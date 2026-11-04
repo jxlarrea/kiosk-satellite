@@ -33,5 +33,7 @@
   "settingAlarmsTtsLanguageTitle": "Мова",
   "settingAlarmsTtsLanguageDescription": "Мова, якою озвучуються будильники.",
   "settingAlarmsTtsVoiceTitle": "Голос",
-  "settingAlarmsTtsVoiceDescription": "Голос, який озвучує будильники."
+  "settingAlarmsTtsVoiceDescription": "Голос, який озвучує будильники.",
+  "settingAlarmsMusicTitle": "Музика будильника",
+  "settingAlarmsMusicDescription": "Грає замість мелодії. Якщо музику не вдасться відтворити, пролунає мелодія."
 }

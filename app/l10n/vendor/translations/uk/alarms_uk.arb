@@ -49,5 +49,9 @@
   "alarmsVoiceSection": "Голосові будильники",
   "alarmsVoiceManage": "Керувати будильниками через Voice Satellite",
   "alarmsVoiceHint": "Потрібні blueprint будильників Kiosk Satellite і агент розмови LLM у Home Assistant.",
-  "alarmsTtsSection": "Синтез мовлення"
+  "alarmsTtsSection": "Синтез мовлення",
+  "alarmsMusic": "Музика",
+  "alarmsMusicNone": "Немає",
+  "alarmsMusicRemove": "Прибрати музику",
+  "alarmsMusicHint": "Грає замість мелодії. Якщо музику не вдасться відтворити, пролунає мелодія."
 }

@@ -278,6 +278,19 @@ class UiStringsEs extends UiStrings {
       'Requiere el blueprint de alarmas de Kiosk Satellite y un agente de conversación LLM en Home Assistant.';
 
   @override
+  String get alarmsMusic => 'Música';
+
+  @override
+  String get alarmsMusicNone => 'Ninguna';
+
+  @override
+  String get alarmsMusicRemove => 'Quitar la música';
+
+  @override
+  String get alarmsMusicHint =>
+      'Suena en lugar del tono. Si la música no puede sonar, suena el tono.';
+
+  @override
   String get androidAccessibilityHelp =>
       'Cierra el panel de notificaciones y la pantalla de aplicaciones recientes cuando se abren mientras el modo kiosko o el modo de bloqueo protege la pantalla. Kiosk Satellite no lee el contenido de la pantalla.';
 
@@ -3405,6 +3418,107 @@ class UiStringsEs extends UiStrings {
       'Requiere el blueprint de música de Kiosk Satellite y un agente de conversación LLM en Home Assistant.';
 
   @override
+  String get musicPickerTitle => 'Elegir música';
+
+  @override
+  String get musicPickerSearchHint => 'Buscar música';
+
+  @override
+  String get musicPickerMusicFrom => 'Música de';
+
+  @override
+  String get musicPickerPlaysOn => 'Suena en';
+
+  @override
+  String musicPickerSourceLabel(String name) {
+    return 'Fuente: $name';
+  }
+
+  @override
+  String musicPickerSpeakerLabel(String name) {
+    return 'Suena en: $name';
+  }
+
+  @override
+  String get musicPickerRandom => 'Aleatorio';
+
+  @override
+  String get musicPickerRandomHint => 'Una selección nueva cada vez que suena';
+
+  @override
+  String get musicPickerAnyTrack => 'Cualquier pista';
+
+  @override
+  String get musicPickerAnyFavorite => 'Cualquier favorito';
+
+  @override
+  String get musicPickerAnyPlaylist => 'Cualquier lista de reproducción';
+
+  @override
+  String get musicPickerAnyAlbum => 'Cualquier álbum';
+
+  @override
+  String get musicPickerAnyStation => 'Cualquier emisora de radio';
+
+  @override
+  String get musicPickerRandomEach => 'Una distinta cada vez';
+
+  @override
+  String get musicPickerWholeAlbum => 'Álbum completo';
+
+  @override
+  String get musicPickerWholePlaylist => 'Lista completa';
+
+  @override
+  String musicPickerWholeArtist(String name) {
+    return 'Todo de $name';
+  }
+
+  @override
+  String get musicPickerWholeFolder => 'Carpeta completa';
+
+  @override
+  String get musicPickerAllTracks => 'Todas las pistas';
+
+  @override
+  String get musicPickerShuffle => 'Aleatorio';
+
+  @override
+  String get musicPickerPreview => 'Escuchar';
+
+  @override
+  String get musicPickerStopPreview => 'Detener';
+
+  @override
+  String get musicPickerPreviewFailed => 'No se pudo reproducir la música';
+
+  @override
+  String get musicPickerNothing => 'Nada elegido';
+
+  @override
+  String get musicPickerNothingHint =>
+      'Elige una pista, un álbum, una lista, un artista o una emisora';
+
+  @override
+  String get musicPickerFollowsNote =>
+      'Reproduciendo Ahora cambia a este altavoz mientras suena la música.';
+
+  @override
+  String get musicPickerSonosNote =>
+      'La música de Sonos solo suena en altavoces Sonos.';
+
+  @override
+  String get musicPickerNoSpeakers => 'No hay altavoces para reproducir';
+
+  @override
+  String musicPickerOpen(String title) {
+    return 'Abrir $title';
+  }
+
+  @override
+  String get musicPickerKindFolder => 'Carpeta';
+
+  @override
   String get offlineDashboard => 'Panel de control no disponible';
 
   @override
@@ -4976,6 +5090,13 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingAlarmsToneDescription => 'Suena al volumen de alarma.';
+
+  @override
+  String get settingAlarmsMusicTitle => 'Música de alarma';
+
+  @override
+  String get settingAlarmsMusicDescription =>
+      'Suena en lugar del tono. Si la música no puede sonar, suena el tono.';
 
   @override
   String get settingAlarmsSnoozeMinutesTitle => 'Duración de posponer';

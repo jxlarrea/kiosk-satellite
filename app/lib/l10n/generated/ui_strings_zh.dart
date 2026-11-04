@@ -273,6 +273,18 @@ class UiStringsZh extends UiStrings {
       '需要在 Home Assistant 中配置 Kiosk Satellite 闹钟蓝图（脚本模板）和大语言模型（LLM）对话代理。';
 
   @override
+  String get alarmsMusic => '音乐';
+
+  @override
+  String get alarmsMusicNone => '无';
+
+  @override
+  String get alarmsMusicRemove => '移除音乐';
+
+  @override
+  String get alarmsMusicHint => '代替铃声播放。音乐无法播放时，会响起铃声。';
+
+  @override
   String get androidAccessibilityHelp =>
       'Kiosk 模式或锁定模式保护屏幕期间，打开的通知栏和最近任务界面会自动关闭。Kiosk Satellite 不会读取任何屏幕内容。';
 
@@ -3297,6 +3309,104 @@ class UiStringsZh extends UiStrings {
       '需要在 Home Assistant 中配置 Kiosk Satellite 音乐蓝图（脚本模板）和大语言模型（LLM）对话代理。';
 
   @override
+  String get musicPickerTitle => '选择音乐';
+
+  @override
+  String get musicPickerSearchHint => '搜索音乐';
+
+  @override
+  String get musicPickerMusicFrom => '音乐来源';
+
+  @override
+  String get musicPickerPlaysOn => '播放设备';
+
+  @override
+  String musicPickerSourceLabel(String name) {
+    return '来源：$name';
+  }
+
+  @override
+  String musicPickerSpeakerLabel(String name) {
+    return '播放设备：$name';
+  }
+
+  @override
+  String get musicPickerRandom => '随机';
+
+  @override
+  String get musicPickerRandomHint => '每次播放都会重新挑选';
+
+  @override
+  String get musicPickerAnyTrack => '任意曲目';
+
+  @override
+  String get musicPickerAnyFavorite => '任意收藏';
+
+  @override
+  String get musicPickerAnyPlaylist => '任意播放列表';
+
+  @override
+  String get musicPickerAnyAlbum => '任意专辑';
+
+  @override
+  String get musicPickerAnyStation => '任意电台';
+
+  @override
+  String get musicPickerRandomEach => '每次都不同';
+
+  @override
+  String get musicPickerWholeAlbum => '整张专辑';
+
+  @override
+  String get musicPickerWholePlaylist => '整个播放列表';
+
+  @override
+  String musicPickerWholeArtist(String name) {
+    return '$name 的全部作品';
+  }
+
+  @override
+  String get musicPickerWholeFolder => '整个文件夹';
+
+  @override
+  String get musicPickerAllTracks => '全部曲目';
+
+  @override
+  String get musicPickerShuffle => '随机播放';
+
+  @override
+  String get musicPickerPreview => '试听';
+
+  @override
+  String get musicPickerStopPreview => '停止试听';
+
+  @override
+  String get musicPickerPreviewFailed => '无法播放该音乐';
+
+  @override
+  String get musicPickerNothing => '未选择';
+
+  @override
+  String get musicPickerNothingHint => '选择一首曲目、专辑、播放列表、艺人或电台';
+
+  @override
+  String get musicPickerFollowsNote => '播放音乐时，“正在播放”会切换到此扬声器。';
+
+  @override
+  String get musicPickerSonosNote => 'Sonos 音乐只能在 Sonos 扬声器上播放。';
+
+  @override
+  String get musicPickerNoSpeakers => '没有可用的扬声器';
+
+  @override
+  String musicPickerOpen(String title) {
+    return '打开 $title';
+  }
+
+  @override
+  String get musicPickerKindFolder => '文件夹';
+
+  @override
   String get offlineDashboard => '仪表盘不可用';
 
   @override
@@ -4753,6 +4863,12 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingAlarmsToneDescription => '以闹钟音量播放。';
+
+  @override
+  String get settingAlarmsMusicTitle => '闹钟音乐';
+
+  @override
+  String get settingAlarmsMusicDescription => '代替铃声播放。音乐无法播放时，会响起铃声。';
 
   @override
   String get settingAlarmsSnoozeMinutesTitle => '稍后提醒间隔';
@@ -15360,6 +15476,18 @@ class UiStringsZhCn extends UiStringsZh {
       '需要在 Home Assistant 中配置 Kiosk Satellite 闹钟蓝图（脚本模板）和大语言模型（LLM）对话代理。';
 
   @override
+  String get alarmsMusic => '音乐';
+
+  @override
+  String get alarmsMusicNone => '无';
+
+  @override
+  String get alarmsMusicRemove => '移除音乐';
+
+  @override
+  String get alarmsMusicHint => '代替铃声播放。音乐无法播放时，会响起铃声。';
+
+  @override
   String get androidAccessibilityHelp =>
       'Kiosk 模式或锁定模式保护屏幕期间，打开的通知栏和最近任务界面会自动关闭。Kiosk Satellite 不会读取任何屏幕内容。';
 
@@ -18384,6 +18512,104 @@ class UiStringsZhCn extends UiStringsZh {
       '需要在 Home Assistant 中配置 Kiosk Satellite 音乐蓝图（脚本模板）和大语言模型（LLM）对话代理。';
 
   @override
+  String get musicPickerTitle => '选择音乐';
+
+  @override
+  String get musicPickerSearchHint => '搜索音乐';
+
+  @override
+  String get musicPickerMusicFrom => '音乐来源';
+
+  @override
+  String get musicPickerPlaysOn => '播放设备';
+
+  @override
+  String musicPickerSourceLabel(String name) {
+    return '来源：$name';
+  }
+
+  @override
+  String musicPickerSpeakerLabel(String name) {
+    return '播放设备：$name';
+  }
+
+  @override
+  String get musicPickerRandom => '随机';
+
+  @override
+  String get musicPickerRandomHint => '每次播放都会重新挑选';
+
+  @override
+  String get musicPickerAnyTrack => '任意曲目';
+
+  @override
+  String get musicPickerAnyFavorite => '任意收藏';
+
+  @override
+  String get musicPickerAnyPlaylist => '任意播放列表';
+
+  @override
+  String get musicPickerAnyAlbum => '任意专辑';
+
+  @override
+  String get musicPickerAnyStation => '任意电台';
+
+  @override
+  String get musicPickerRandomEach => '每次都不同';
+
+  @override
+  String get musicPickerWholeAlbum => '整张专辑';
+
+  @override
+  String get musicPickerWholePlaylist => '整个播放列表';
+
+  @override
+  String musicPickerWholeArtist(String name) {
+    return '$name 的全部作品';
+  }
+
+  @override
+  String get musicPickerWholeFolder => '整个文件夹';
+
+  @override
+  String get musicPickerAllTracks => '全部曲目';
+
+  @override
+  String get musicPickerShuffle => '随机播放';
+
+  @override
+  String get musicPickerPreview => '试听';
+
+  @override
+  String get musicPickerStopPreview => '停止试听';
+
+  @override
+  String get musicPickerPreviewFailed => '无法播放该音乐';
+
+  @override
+  String get musicPickerNothing => '未选择';
+
+  @override
+  String get musicPickerNothingHint => '选择一首曲目、专辑、播放列表、艺人或电台';
+
+  @override
+  String get musicPickerFollowsNote => '播放音乐时，“正在播放”会切换到此扬声器。';
+
+  @override
+  String get musicPickerSonosNote => 'Sonos 音乐只能在 Sonos 扬声器上播放。';
+
+  @override
+  String get musicPickerNoSpeakers => '没有可用的扬声器';
+
+  @override
+  String musicPickerOpen(String title) {
+    return '打开 $title';
+  }
+
+  @override
+  String get musicPickerKindFolder => '文件夹';
+
+  @override
   String get offlineDashboard => '仪表盘不可用';
 
   @override
@@ -19840,6 +20066,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingAlarmsToneDescription => '以闹钟音量播放。';
+
+  @override
+  String get settingAlarmsMusicTitle => '闹钟音乐';
+
+  @override
+  String get settingAlarmsMusicDescription => '代替铃声播放。音乐无法播放时，会响起铃声。';
 
   @override
   String get settingAlarmsSnoozeMinutesTitle => '稍后提醒间隔';

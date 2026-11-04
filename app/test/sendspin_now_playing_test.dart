@@ -413,6 +413,19 @@ void main() {
       expect(saver.activeView.value, 'clock');
     });
 
+    test('music an alarm plays never launches Now Playing', () async {
+      // The followed player is lent to the alarm: the music is the
+      // alarm's, and the alarm stays on screen.
+      await build({
+        'ks.sendspin.handoff':
+            '{"owners":["alarm"],"original":{"source":"","player":"",'
+            '"name":""},"player":"ma:kitchen"}',
+      });
+      bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
     test('switched off, playback waits for the idle timeout', () async {
       await build({'ks.sendspin.fullscreen_on_play': false});
       bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));

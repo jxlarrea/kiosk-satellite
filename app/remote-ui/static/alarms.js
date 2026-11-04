@@ -1,8 +1,9 @@
 import { deviceText, messageLanguage, overviewText, t } from './localization.js';
-import { cmd, state } from './core.js';
+import { api, cmd, state } from './core.js';
 import { cameraAction, cameraListRow, cameraToggle } from './cameras.js';
 import { attachTtsPickers } from './intercom.js';
 import { attachSoundSelect, attachSoundUpload } from './settings.js';
+import { musicPickName, pickMusic } from './music_picker.js';
 import { hintRow, modalShell, showToast, timeBox } from './widgets.js';
 
 /* ---- Alarms ----
@@ -170,7 +171,102 @@ async function deleteAlarm(alarm) {
   return true;
 }
 
-/* ---- the editor ----
+/* ---- music ----
+   The entity field's look for a pick: the music mark, the name and a
+   chevron. The mark takes the accent once there is music. */
+function musicField({ onClick }) {
+  const box = document.createElement('button');
+  box.type = 'button';
+  box.className = 'dp-field ep-field alarm-music-field';
+  const lead = document.createElement('span');
+  lead.className = 'dp-field-icon';
+  lead.innerHTML = `<svg ${STROKE} width="20" height="20"><path d="M9 17.5V5.5l10-2v12M9 17.5a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0zM19 15.5a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0z"/></svg>`;
+  const text = document.createElement('span');
+  text.className = 'dp-field-text';
+  const chev = document.createElement('span');
+  chev.className = 'dp-field-chev';
+  chev.innerHTML = `<svg ${STROKE} width="20" height="20"><path d="M6 9l6 6 6-6"/></svg>`;
+  box.append(lead, text, chev);
+  box.addEventListener('click', onClick);
+  return {
+    el: box,
+    paint: (label, picked) => {
+      text.textContent = label;
+      lead.classList.toggle('primary', !!picked);
+    },
+  };
+}
+
+// The Alarm music default, null for none.
+function defaultMusic() {
+  const raw = `${byKey('alarms.music')?.value || ''}`.trim();
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (_) { return null; }
+}
+
+function alarmMusicText(music, fallback) {
+  if (music.mode === 'none') return t('alarmsMusicNone');
+  if (music.mode === 'own' && music.own) return musicPickName(music.own);
+  return `${t('alarmsDefaultTone')} · ${fallback ? musicPickName(fallback) : t('alarmsMusicNone')}`;
+}
+
+// The alarm's music, the way its tone is picked: Default, None or its own,
+// and Choose music for a new one. Mirrors the device's dialog.
+function chooseMusic(music, done) {
+  const shell = modalShell({ title: t('alarmsMusic'), width: 420, onDismiss: () => shell.close() });
+  const fallback = defaultMusic();
+  let pick = music.mode;
+  const list = document.createElement('div');
+  list.className = 'alarm-music-choices';
+  const option = (value, title, sub) => {
+    const row = document.createElement('label');
+    row.className = 'alarm-music-choice';
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'alarm-music';
+    input.checked = pick === value;
+    input.addEventListener('change', () => { pick = value; });
+    const textBox = document.createElement('span');
+    textBox.className = 'alarm-music-choice-text';
+    const name = document.createElement('span');
+    name.textContent = title;
+    textBox.appendChild(name);
+    if (sub) {
+      const subEl = document.createElement('span');
+      subEl.className = 'desc';
+      subEl.textContent = sub;
+      textBox.appendChild(subEl);
+    }
+    row.append(input, textBox);
+    list.appendChild(row);
+  };
+  option('default', t('alarmsDefaultTone'), fallback ? musicPickName(fallback) : t('alarmsMusicNone'));
+  option('none', t('alarmsMusicNone'));
+  if (music.own) option('own', musicPickName(music.own));
+  const choose = document.createElement('button');
+  choose.type = 'button';
+  choose.className = 'alarm-music-choose';
+  choose.innerHTML = `<svg ${STROKE} width="22" height="22"><path d="M9 17.5V5.5l10-2v12M9 17.5a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0zM19 15.5a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0z"/></svg>`;
+  const chooseText = document.createElement('span');
+  chooseText.textContent = t('musicPickerTitle');
+  choose.appendChild(chooseText);
+  choose.insertAdjacentHTML('beforeend', `<svg ${STROKE} width="20" height="20" class="alarm-music-chev"><path d="M9 6l6 6-6 6"/></svg>`);
+  choose.addEventListener('click', async () => {
+    const next = await pickMusic({ current: music.own || fallback });
+    if (!next) return;
+    music.own = next;
+    music.mode = 'own';
+    shell.close();
+    done();
+  });
+  shell.body.append(list, choose);
+  shell.foot.append(
+    button(t('commonCancel'), 'btn-text', () => shell.close()),
+    button(t('commonOk'), 'btn-primary', () => { music.mode = pick; shell.close(); done(); }),
+  );
+}
+
+/* ---- the editor ----/* ---- the editor ----
    Set an alarm and Edit alarm, one dialog: the time, the repeat days, the
    label, the tone, the sunrise, the ease in and the phrase. Picking a tone plays it on the kiosk
    at the alarm volume, as the device's picker does, and closing stops it. */
@@ -253,6 +349,30 @@ function openEditor(existing) {
     cmd('previewAlarmTone', { tone: tone.value }).catch(() => {});
   });
 
+  // Music from the library rings instead of the tone, and the tone rings
+  // when the music cannot play: Default follows the Alarm music setting,
+  // None keeps to the tone. The field shows once a source is set up, or
+  // once there is music to show, as on the device.
+  const music = { own: existing?.music && existing.music !== 'none' ? existing.music : null,
+    mode: existing?.music === 'none' ? 'none' : existing?.music ? 'own' : 'default' };
+  const musicBox = musicField({ label: '', onClick: () => chooseMusic(music, () => paintMusic()) });
+  const paintMusic = () => {
+    const fallback = defaultMusic();
+    musicBox.paint(alarmMusicText(music, fallback), music.mode === 'own' || (music.mode === 'default' && !!fallback));
+  };
+  paintMusic();
+  const musicRow = field(t('alarmsMusic'), musicBox.el);
+  const musicHint = document.createElement('span');
+  musicHint.className = 'desc';
+  musicHint.textContent = t('alarmsMusicHint');
+  musicRow.appendChild(musicHint);
+  if (!music.own && !defaultMusic()) {
+    musicRow.style.display = 'none';
+    cmd('libraryPickerSource').then((r) => {
+      if (r && r.ok !== false) musicRow.style.display = '';
+    }).catch(() => {});
+  }
+
   const minutes = Number(byKey('alarms.sunrise_minutes')?.value) || 30;
   const sunrise = cameraToggle(t('alarmsSunrise'), existing?.sunrise === true,
     t('alarmsSunriseHint', { minutes }));
@@ -286,7 +406,7 @@ function openEditor(existing) {
   showPhrase();
 
   form.append(field(t('alarmsTime'), time.el), field(t('alarmsRepeat'), discs),
-    field(t('alarmsLabel'), label), field(t('alarmsTone'), tone), sunrise.wrap,
+    field(t('alarmsLabel'), label), field(t('alarmsTone'), tone), musicRow, sunrise.wrap,
     ease.wrap, speak.wrap, phraseField);
   shell.body.appendChild(form);
 
@@ -311,6 +431,8 @@ function openEditor(existing) {
       on: edit ? existing.on !== false : true,
     };
     if (easeTouched) alarm.ease = ease.input.checked;
+    if (music.mode === 'none') alarm.music = 'none';
+    else if (music.mode === 'own' && music.own) alarm.music = music.own;
     if (edit) alarm.id = existing.id;
     const out = await run('alarmSave', { alarm });
     if (!out.ok) {
@@ -378,11 +500,52 @@ function alarmRow(alarm) {
 // definition rows and left alone on a list redraw.
 function decorateRows(tab) {
   attachTtsPickers('alarms');
+  decorateMusicRow(tab);
   const toneRow = tab.querySelector('[data-key="alarms.tone"]');
   const toneDef = byKey('alarms.tone');
   if (toneRow && toneDef && !toneRow.querySelector('select')) {
     attachSoundUpload(toneRow, attachSoundSelect(toneRow, toneDef));
   }
+}
+
+// Alarm music under Defaults: the music field over the music picker and
+// a button that takes the music out, as on the device.
+function decorateMusicRow(tab) {
+  const row = tab.querySelector('[data-key="alarms.music"]');
+  if (!row || row.querySelector('.alarm-music-field')) return;
+  row.querySelector('input')?.remove();
+  const wrap = document.createElement('div');
+  wrap.className = 'alarm-music';
+  const write = async (value) => {
+    const res = await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ 'alarms.music': value }) });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || out.rejected?.includes('alarms.music')) {
+      showToast({ title: t('commonSaveFailed'), message: out.errors?.['alarms.music'] || '', kind: 'error' });
+      return;
+    }
+    const def = byKey('alarms.music');
+    if (def) def.value = value;
+    paint();
+  };
+  const box = musicField({ onClick: async () => {
+    const next = await pickMusic({ current: defaultMusic() });
+    if (next) await write(JSON.stringify(next));
+  } });
+  const clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'icon-btn';
+  clear.setAttribute('aria-label', t('alarmsMusicRemove'));
+  clear.title = t('alarmsMusicRemove');
+  clear.innerHTML = `<svg ${STROKE}><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+  clear.addEventListener('click', () => write(''));
+  const paint = () => {
+    const current = defaultMusic();
+    box.paint(current ? musicPickName(current) : t('alarmsMusicNone'), !!current);
+    clear.hidden = !current;
+  };
+  paint();
+  wrap.append(box.el, clear);
+  row.appendChild(wrap);
 }
 
 // The built cards go under the untitled Drawer menu items link card, the

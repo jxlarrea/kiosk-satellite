@@ -1024,6 +1024,58 @@
       ]
     }
   },
+  "alarmsMusic": "音乐",
+  "@alarmsMusic": {
+    "context": "Alarms",
+    "description": "Alarm detail row: music from the library to ring with instead of the tone. The tone rings if the music cannot play.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicNone": "无",
+  "@alarmsMusicNone": {
+    "context": "Alarms",
+    "description": "Value of the alarm Music row when no music is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicRemove": "移除音乐",
+  "@alarmsMusicRemove": {
+    "context": "Alarms",
+    "description": "Spoken label of the button that takes the music off an alarm.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
+  "alarmsMusicHint": "代替铃声播放。音乐无法播放时，会响起铃声。",
+  "@alarmsMusicHint": {
+    "context": "Alarms",
+    "description": "Note under the alarm Music field in the remote admin.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm"
+      ]
+    }
+  },
   "androidAccessibilityHelp": "Kiosk 模式或锁定模式保护屏幕期间，打开的通知栏和最近任务界面会自动关闭。Kiosk Satellite 不会读取任何屏幕内容。",
   "@androidAccessibilityHelp": {
     "context": "Android Settings > Accessibility > Kiosk Satellite",
@@ -12859,6 +12911,420 @@
       ]
     }
   },
+  "musicPickerTitle": "选择音乐",
+  "@musicPickerTitle": {
+    "context": "Music picker",
+    "description": "Title of the music picker, where music from the library is chosen for a feature such as an alarm.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSearchHint": "搜索音乐",
+  "@musicPickerSearchHint": {
+    "context": "Music picker",
+    "description": "Placeholder of the music picker search field.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerMusicFrom": "音乐来源",
+  "@musicPickerMusicFrom": {
+    "context": "Music picker",
+    "description": "Heading of the music picker source menu: Music Assistant, Home Assistant or Sonos.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPlaysOn": "播放设备",
+  "@musicPickerPlaysOn": {
+    "context": "Music picker",
+    "description": "Heading of the music picker speaker menu: the speaker the music plays on.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSourceLabel": "来源：{name}",
+  "@musicPickerSourceLabel": {
+    "context": "Music picker",
+    "description": "Spoken label of the music picker source button.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The source name, such as Music Assistant."
+      }
+    }
+  },
+  "musicPickerSpeakerLabel": "播放设备：{name}",
+  "@musicPickerSpeakerLabel": {
+    "context": "Music picker",
+    "description": "Spoken label of the music picker speaker button.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The speaker name."
+      }
+    }
+  },
+  "musicPickerRandom": "随机",
+  "@musicPickerRandom": {
+    "context": "Music picker",
+    "description": "Music picker category of random picks, drawn again every time the music plays.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerRandomHint": "每次播放都会重新挑选",
+  "@musicPickerRandomHint": {
+    "context": "Music picker",
+    "description": "Note under the Random heading of the music picker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyTrack": "任意曲目",
+  "@musicPickerAnyTrack": {
+    "context": "Music picker",
+    "description": "Random pick: a different track from the library each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyFavorite": "任意收藏",
+  "@musicPickerAnyFavorite": {
+    "context": "Music picker",
+    "description": "Random pick: a different favorite each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyPlaylist": "任意播放列表",
+  "@musicPickerAnyPlaylist": {
+    "context": "Music picker",
+    "description": "Random pick: a different playlist each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyAlbum": "任意专辑",
+  "@musicPickerAnyAlbum": {
+    "context": "Music picker",
+    "description": "Random pick: a different album each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAnyStation": "任意电台",
+  "@musicPickerAnyStation": {
+    "context": "Music picker",
+    "description": "Random pick: a different radio station each time.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerRandomEach": "每次都不同",
+  "@musicPickerRandomEach": {
+    "context": "Music picker",
+    "description": "Under a random pick in the music picker footer.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholeAlbum": "整张专辑",
+  "@musicPickerWholeAlbum": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened album: picks the album instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholePlaylist": "整个播放列表",
+  "@musicPickerWholePlaylist": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened playlist: picks the playlist instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerWholeArtist": "{name} 的全部作品",
+  "@musicPickerWholeArtist": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened artist: picks the artist instead of one track.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The artist name."
+      }
+    }
+  },
+  "musicPickerWholeFolder": "整个文件夹",
+  "@musicPickerWholeFolder": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened folder: picks the folder instead of one file.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerAllTracks": "全部曲目",
+  "@musicPickerAllTracks": {
+    "context": "Music picker",
+    "description": "Row at the top of an opened podcast or audiobook: picks all of it.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerShuffle": "随机播放",
+  "@musicPickerShuffle": {
+    "context": "Music picker",
+    "description": "Switch in the music picker footer: plays the album, playlist or artist in random order.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPreview": "试听",
+  "@musicPickerPreview": {
+    "context": "Music picker",
+    "description": "Button in the music picker footer: plays the picked music on its speaker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerStopPreview": "停止试听",
+  "@musicPickerStopPreview": {
+    "context": "Music picker",
+    "description": "Button in the music picker footer while the preview plays.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerPreviewFailed": "无法播放该音乐",
+  "@musicPickerPreviewFailed": {
+    "context": "Music picker",
+    "description": "Toast when the music picker preview could not start.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNothing": "未选择",
+  "@musicPickerNothing": {
+    "context": "Music picker",
+    "description": "Music picker footer before anything is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNothingHint": "选择一首曲目、专辑、播放列表、艺人或电台",
+  "@musicPickerNothingHint": {
+    "context": "Music picker",
+    "description": "Music picker footer before anything is picked.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerFollowsNote": "播放音乐时，“正在播放”会切换到此扬声器。",
+  "@musicPickerFollowsNote": {
+    "context": "Music picker",
+    "description": "Note at the bottom of the music picker speaker menu.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerSonosNote": "Sonos 音乐只能在 Sonos 扬声器上播放。",
+  "@musicPickerSonosNote": {
+    "context": "Music picker",
+    "description": "Note at the bottom of the music picker speaker menu for the Sonos source.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerNoSpeakers": "没有可用的扬声器",
+  "@musicPickerNoSpeakers": {
+    "context": "Music picker",
+    "description": "Music picker speaker button and menu when the source has no speaker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
+  "musicPickerOpen": "打开 {title}",
+  "@musicPickerOpen": {
+    "context": "Music picker",
+    "description": "Spoken label of the button that opens an album, playlist, artist or folder in the music picker.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    },
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "description": "What opens."
+      }
+    }
+  },
+  "musicPickerKindFolder": "文件夹",
+  "@musicPickerKindFolder": {
+    "context": "Music picker",
+    "description": "Kind of entry in the music picker: a folder of media.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Alarms > Alarm > Music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Set an alarm > Music"
+      ]
+    }
+  },
   "offlineDashboard": "仪表盘不可用",
   "@offlineDashboard": {
     "context": "Kiosk dashboard > Connection notices",
@@ -18456,6 +18922,32 @@
       ],
       "remoteAdmin": [
         "Alarms > Alarm tone"
+      ]
+    }
+  },
+  "settingAlarmsMusicTitle": "闹钟音乐",
+  "@settingAlarmsMusicTitle": {
+    "context": "Settings > Alarms",
+    "description": "Setting label: music from the library that alarms ring with instead of the tone, unless an alarm has its own or None.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Alarm music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Alarm music"
+      ]
+    }
+  },
+  "settingAlarmsMusicDescription": "代替铃声播放。音乐无法播放时，会响起铃声。",
+  "@settingAlarmsMusicDescription": {
+    "context": "Settings > Alarms",
+    "description": "Description of the Alarm music setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Alarm music"
+      ],
+      "remoteAdmin": [
+        "Alarms > Alarm music"
       ]
     }
   },

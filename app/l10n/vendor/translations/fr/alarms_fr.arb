@@ -49,5 +49,9 @@
   "alarmsVoiceSection": "Alarmes vocales",
   "alarmsVoiceManage": "Gérer les alarmes avec Voice Satellite",
   "alarmsVoiceHint": "Nécessite le blueprint d'alarmes de Kiosk Satellite et un agent de conversation LLM dans Home Assistant.",
-  "alarmsTtsSection": "Synthèse vocale"
+  "alarmsTtsSection": "Synthèse vocale",
+  "alarmsMusic": "Musique",
+  "alarmsMusicNone": "Aucune",
+  "alarmsMusicRemove": "Retirer la musique",
+  "alarmsMusicHint": "Se joue à la place de la sonnerie. Si la musique ne peut pas être lue, la sonnerie retentit."
 }

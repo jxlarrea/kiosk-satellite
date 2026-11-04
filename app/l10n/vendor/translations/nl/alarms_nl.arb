@@ -49,5 +49,9 @@
   "alarmsPhraseHint": "{label}, {time} en {day} staan voor het label, de tijd en de dag van het alarm.",
   "alarmsVoiceSection": "Spraakalarmen",
   "alarmsVoiceManage": "Alarmen beheren met Voice Satellite",
-  "alarmsVoiceHint": "Vereist de alarmblauwdruk van Kiosk Satellite en een LLM-gespreksagent in Home Assistant."
+  "alarmsVoiceHint": "Vereist de alarmblauwdruk van Kiosk Satellite en een LLM-gespreksagent in Home Assistant.",
+  "alarmsMusic": "Muziek",
+  "alarmsMusicNone": "Geen",
+  "alarmsMusicRemove": "Muziek verwijderen",
+  "alarmsMusicHint": "Speelt in plaats van de toon. Als de muziek niet kan spelen, klinkt de toon."
 }

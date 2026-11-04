@@ -49,5 +49,9 @@
   "alarmsVoiceSection": "Wecker per Sprache",
   "alarmsVoiceManage": "Wecker mit Voice Satellite verwalten",
   "alarmsVoiceHint": "Benötigt den Kiosk Satellite Wecker-Blueprint und einen LLM-Konversationsagenten in Home Assistant.",
-  "alarmsTtsSection": "Text-zu-Sprache"
+  "alarmsTtsSection": "Text-zu-Sprache",
+  "alarmsMusic": "Musik",
+  "alarmsMusicNone": "Keine",
+  "alarmsMusicRemove": "Musik entfernen",
+  "alarmsMusicHint": "Spielt statt des Wecktons. Kann die Musik nicht abgespielt werden, ertönt der Weckton."
 }

@@ -25,6 +25,7 @@ import 'lrclib.dart';
 import 'lyrics.dart';
 import 'ma_remote_player.dart';
 import 'music_assistant_api.dart';
+import 'player_handoff.dart';
 import 'remote_player.dart';
 import 'session_player.dart';
 import 'sonos_client.dart';
@@ -1132,6 +1133,9 @@ class SendspinManager extends Manager {
 
   @override
   Future<void> init() async {
+    // A restart in the middle of a lend: the feature holding the player
+    // starts over, so the kiosk goes back to its own player first.
+    await handoff.recover();
     nowPlaying.addListener(_remoteMediaChanged);
     nowPlaying.addListener(_onTrackChanged);
     nowPlaying.addListener(_publishMediaSummary);
@@ -1307,10 +1311,7 @@ class SendspinManager extends Manager {
       } else {
         _voiceReasons.remove(e.reason);
       }
-      final active = _voiceReasons.isNotEmpty;
-      if (active == voiceActive.value) return;
-      voiceActive.value = active;
-      _syncDucking();
+      _syncVoiceActive();
     });
 
     // The AirPlay receiver's sessions, for its follower while it is the
@@ -1504,6 +1505,56 @@ class SendspinManager extends Manager {
       });
     });
 
+    commands.register(
+      Command(
+        name: 'mediaBorrow',
+        description:
+            'Lend the followed player to a feature: Now Playing follows '
+            'the player given until mediaReturn with the same owner puts '
+            'the one before back.',
+        params: const {
+          'owner': 'who borrows it, alarm for one',
+          'player':
+              "the player pick: '' for this device, else ma:, ha: or "
+              'sonos: and its id',
+          'name': 'the player name',
+        },
+        handler: (p) async {
+          final owner = '${p['owner'] ?? ''}'.trim();
+          if (owner.isEmpty) return const CommandResult.fail('no owner');
+          final player = '${p['player'] ?? ''}'.trim();
+          if (player.isEmpty && !_settings.get(defs.sendspinEnabled)) {
+            return const CommandResult.fail(
+              'this device has no Sendspin player',
+            );
+          }
+          await handoff.borrow(owner, player, '${p['name'] ?? ''}');
+          _syncVoiceActive();
+          log.info(
+            name,
+            'player lent to $owner: ${player.isEmpty ? 'this device' : player}',
+          );
+          return const CommandResult.ok();
+        },
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'mediaReturn',
+        description:
+            'Give back a player lent by mediaBorrow: the last owner out '
+            'puts the player followed before back.',
+        params: const {'owner': 'who borrowed it'},
+        handler: (p) async {
+          final owner = '${p['owner'] ?? ''}'.trim();
+          if (!handoff.owners.contains(owner)) return const CommandResult.ok();
+          await handoff.giveBack(owner);
+          _syncVoiceActive();
+          log.info(name, 'player given back by $owner');
+          return const CommandResult.ok();
+        },
+      ),
+    );
     commands.register(
       Command(
         name: 'albumArtCacheStats',
@@ -2028,6 +2079,43 @@ class SendspinManager extends Manager {
       _transition = _transition.then((_) => _start());
     }
     _syncRemote();
+  }
+
+  /// Whether anything that ducks the music is going on: a voice turn,
+  /// an announcement, an alarm ringing its tone. A ringing alarm whose
+  /// music this is does not duck it: the player is lent to the alarm
+  /// then, and the music is what rings.
+  void _syncVoiceActive() {
+    final alarmMusic = handoff.owners.contains('alarm');
+    final active = _voiceReasons.any((r) => !(alarmMusic && r == 'alarm'));
+    if (active == voiceActive.value) return;
+    voiceActive.value = active;
+    _syncDucking();
+  }
+
+  /// Lends the followed player to an alarm and takes it back.
+  late final handoff = PlayerHandoff(
+    read: () => (
+      source: _settings.get(defs.sendspinPlayerSource),
+      player: _settings.get(defs.sendspinPlayer),
+      name: _settings.get(defs.sendspinPlayerName),
+    ),
+    follow: _follow,
+    load: () => _settings.get(defs.sendspinHandoff),
+    save: (json) => _settings.set(defs.sendspinHandoff, json),
+  );
+
+  /// Follow [p] the way the Media Player page picks one: the source first,
+  /// so the pick that follows is one of its own and the reconcile that
+  /// trails a source change has nothing to clear.
+  Future<void> _follow(FollowedPlayer p) async {
+    await _settings.set(defs.sendspinPlayerSource, p.source);
+    await Future<void>.delayed(Duration.zero);
+    await _settings.set(defs.sendspinPlayer, p.player);
+    await _settings.set(defs.sendspinPlayerName, p.name);
+    if (p.source.isNotEmpty) {
+      await _settings.set(defs.sendspinPlayerActive, true);
+    }
   }
 
   /// The player the surfaces are set to follow.

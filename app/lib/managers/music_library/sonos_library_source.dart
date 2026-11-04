@@ -189,6 +189,105 @@ class SonosLibrarySource extends LibrarySource {
     }
   }
 
+  /// The room's own client, where its volume is, and the coordinator's,
+  /// where the transport and its play mode are.
+  Future<(SonosClient, SonosClient)?> _speaker(String pick) async {
+    if (!pick.startsWith('sonos:')) return null;
+    final uuid = pick.substring(6);
+    final host = hosts()[uuid];
+    if (host == null || host.isEmpty) return null;
+    final target = await _coordinator(uuid);
+    if (target == null) return null;
+    return (_at(host), target.$1);
+  }
+
+  static const _modes = {
+    'NORMAL': (false, 'off'),
+    'REPEAT_ALL': (false, 'all'),
+    'REPEAT_ONE': (false, 'one'),
+    'SHUFFLE_NOREPEAT': (true, 'off'),
+    'SHUFFLE': (true, 'all'),
+    'SHUFFLE_REPEAT_ONE': (true, 'one'),
+  };
+
+  @override
+  Future<SpeakerState?> speakerState(String pick) async {
+    try {
+      final speaker = await _speaker(pick);
+      if (speaker == null) return null;
+      final (room, coordinator) = speaker;
+      final volume = await room.volume();
+      final mode = _modes[(await coordinator.transportSettings())['PlayMode']];
+      return SpeakerState(volume: volume, shuffle: mode?.$1, repeat: mode?.$2);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> setPlayModes(
+    String pick, {
+    bool? shuffle,
+    String? repeat,
+  }) async {
+    try {
+      final speaker = await _speaker(pick);
+      if (speaker == null) return false;
+      final coordinator = speaker.$2;
+      final now =
+          _modes[(await coordinator.transportSettings())['PlayMode']] ??
+          (false, 'off');
+      final want = (shuffle ?? now.$1, repeat ?? now.$2);
+      final mode = _modes.entries.firstWhere((e) => e.value == want).key;
+      await coordinator.setPlayMode(mode);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> setSpeakerVolume(String pick, int percent) async {
+    try {
+      final speaker = await _speaker(pick);
+      if (speaker == null) return false;
+      await speaker.$1.setVolume(percent);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> stopSpeaker(String pick) async {
+    try {
+      final speaker = await _speaker(pick);
+      if (speaker == null) return false;
+      await speaker.$2.stop();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> clearSpeaker(String pick) async {
+    try {
+      final speaker = await _speaker(pick);
+      if (speaker == null) return false;
+      final coordinator = speaker.$2;
+      await coordinator.stop();
+      await coordinator.call(
+        SonosClient.avTransport,
+        'RemoveAllTracksFromQueue',
+        {'InstanceID': '0'},
+      );
+      return true;
+    } catch (_) {
+      return stopSpeaker(pick);
+    }
+  }
+
   @override
   void dispose() {
     for (final c in _clients.values) {

@@ -698,6 +698,13 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     bus.on<NotificationsChanged>().listen((e) {
       unawaited(_onNotificationsChanged(e.showing));
     });
+    // The player handed back after an alarm's music: Now Playing may show
+    // again if the player it follows plays.
+    bus.on<SettingChanged>().listen((e) {
+      if (e.key != defs.sendspinHandoff.key || !_active) return;
+      _syncNowPlayingShown();
+      unawaited(_applyVisuals());
+    });
     bus.on<SendspinNowPlayingChanged>().listen((e) {
       final startedPlaying = e.playing && !_sendspinPlaying;
       _sendspinPlaying = e.playing;
@@ -724,6 +731,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // voice turn, another app in front, lockdown). A voice turn or page
       // interaction only defers it: the launch runs once they end.
       if (startedPlaying &&
+          !_alarmOnTop &&
           allowsNowPlaying &&
           _settings.get(defs.sendspinFullscreen) &&
           _settings.get(defs.sendspinFullscreenOnPlay)) {
@@ -1500,7 +1508,16 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       !_blanked &&
       _sendspinNowPlaying &&
       _settings.get(defs.sendspinFullscreen) &&
-      allowsNowPlaying;
+      allowsNowPlaying &&
+      !_alarmOnTop;
+
+  /// An alarm owns the screen: one shows on this screensaver, or the
+  /// followed player is lent to an alarm's music or the music picker's
+  /// preview. Now Playing stays behind it, since the music is the
+  /// alarm's, and comes back once the alarm lets go.
+  bool get _alarmOnTop =>
+      alarmTakeover.value != null ||
+      _settings.get(defs.sendspinHandoff).trim().isNotEmpty;
 
   /// An Off schedule suppresses both the shared and standalone player.
   bool get allowsNowPlaying => _scheduleEntry?['now_playing'] != false;

@@ -15,12 +15,13 @@ Open the list from **Alarms** in the kiosk menu, from **Manage alarms** under **
 | Repeat | The days the alarm rings on. With no day picked it rings once, at the next time the clock reads its time, then turns itself off and stays in the list. |
 | Label | A name shown in the list and on the ringing screen. |
 | Alarm tone | **Default** follows the Alarm tone setting. **Built-in alarm** is the sound bundled with the app. Any sound in the sounds folder works too. Picking a tone plays it once at the alarm volume. |
+| Music | Music from your library rings instead of the tone. **Default** follows the Alarm music setting, **None** keeps to the tone and **Choose music** picks the alarm's own. See [Waking up to music](#waking-up-to-music). The row shows once Music Assistant, Home Assistant or a Sonos speaker is set up. |
 | Sunrise | The screen brightens gradually before the alarm rings. See [Sunrise](#sunrise). |
-| Ease in the volume | The tone starts quiet and grows to the alarm volume over the **Ease in over** time. An alarm follows the default switch until you flip its own. |
+| Ease in the volume | The tone or the music starts quiet and grows to the alarm volume over the **Ease in over** time. An alarm follows the default switch until you flip its own. |
 | Speak when it rings | Home Assistant speaks a phrase between the rings. See [Spoken phrase](#spoken-phrase). |
 | Phrase | Shows while Speak when it rings is on. It starts as the default phrase, and an alarm left on it follows later changes to the default. |
 
-Tap the time on the details page to change it. The switch in the list turns an alarm on or off without opening it.
+Tap the time on the details page to change it. The switch in the list turns an alarm on or off without opening it. An alarm turned on or changed after its time has passed waits for its next ring instead of ringing late.
 
 There is one alarm per time and repeat. Setting a time that already has an alarm on the same days opens that alarm, turned on, instead of adding a second one. The remote admin refuses the duplicate the same way.
 
@@ -39,6 +40,23 @@ A tap anywhere else does nothing, so a brush of the hand never ends an alarm. Tw
 An alarm rings on its own full screen view, with one exception: when the screensaver is **Clock** or **Weather Mood** and its **Let alarms take over** switch is on (the default), the alarm rings on that screensaver instead. It keeps everything the screensaver is set to, including the font, colors, shadow, background, Night mode and corner widgets. The date line becomes the alarm's label and Snooze and Stop come in under the clock in the screensaver's own colors. A screensaver dimmed by its own brightness setting comes back to normal brightness while the alarm rings and dims again after Stop or Snooze. On Weather Mood the weather bar makes way for the two buttons. If something else is on screen, the alarm starts the screensaver first.
 
 A kiosk that was switched off or restarted through the whole Silence after window skips the alarm rather than ring it late.
+
+## Waking up to music
+
+An alarm can ring with music from your library instead of its tone. Set **Alarm music** under **Settings, Alarms** for every alarm that follows the default, or tap **Music** on an alarm's details page and pick **Choose music** to give it music of its own. Both open the music picker:
+
+- **Music from** picks the source: Music Assistant, Home Assistant or Sonos.
+- **Plays on** picks the speaker. It starts on this device where the source can play here: Music Assistant plays through the kiosk's own Sendspin player. Sonos music plays on Sonos speakers only.
+- Pick a track, an album, a playlist, an artist, a station or a Home Assistant media folder. The chevron on an album, a playlist, an artist or a folder opens it to pick one track or the whole of it.
+- **Random** picks a different track, favorite, playlist, album or station every time the alarm rings.
+- **Shuffle** plays an album, a playlist, an artist or a folder in random order.
+- **Preview** plays the pick on its speaker. It stops when you close the picker.
+
+**None** on an alarm's Music row keeps that alarm to its tone. The X beside Alarm music takes the default out.
+
+When the alarm rings, Now Playing switches to the alarm's speaker, so the floating player and the volume keys follow the music. The alarm stays on screen, and Now Playing does not take over while it rings. The speaker plays at the alarm volume, easing in when **Ease in the volume** is on, and repeats until you stop the alarm. The alarm does not duck its own music the way it ducks other music under its tone. A voice turn still does. Stop and Snooze stop the music and take it out of the speaker's queue, so no paused track is left for Now Playing and the floating player. They put the speaker's volume, shuffle and repeat back the way they were and switch Now Playing back to the player it followed before. If you pick another player while the alarm rings, that pick stays.
+
+The alarm rings its tone instead when the music cannot play: the source or the speaker is out of reach, or the speaker does not start playing within a few seconds. Speak when it rings only works with the tone.
 
 ## Sunrise
 
@@ -62,6 +80,7 @@ Home Assistant makes the speech with the **Text to speech engine**, **Language**
 | Ease in the volume | The default for new alarms and alarms that never chose: start quiet and grow to the alarm volume. Off by default. |
 | Ease in over | How long the volume takes to grow, 5 to 120 seconds. Shows while Ease in the volume is on and applies to every alarm that eases in. |
 | Alarm tone | The tone an alarm set to Default plays: the built-in alarm or a sound from the sounds folder. **Add a sound** copies a file into the folder, the same way the notification and announcement sounds work. |
+| Alarm music | The music an alarm set to Default rings with instead of the tone, picked in the music picker. None by default. The tone rings when the music cannot play. |
 | Snooze length | 5 to 30 minutes. |
 | Silence after | How long an alarm rings when nobody stops it, 5 to 30 minutes. |
 | Sunrise length | How long the screen takes to brighten before a sunrise alarm, 10 to 30 minutes. |
@@ -131,7 +150,7 @@ Stopping and snoozing a ringing alarm still works with the stop word, the screen
 
 ## Remote admin
 
-The **Alarms** page lists every alarm with a switch, an edit button and a delete button. **Set an alarm** and the edit button open one dialog with the time, repeat days, label, tone, sunrise, ease in, the speak switch and the phrase. The same defaults as the device follow the list, including an **Upload** button for sounds from your computer. While an alarm rings, sits in its sunrise or is snoozed, the Overview shows a banner with Snooze and Stop.
+The **Alarms** page lists every alarm with a switch, an edit button and a delete button. **Set an alarm** and the edit button open one dialog with the time, repeat days, label, tone, music, sunrise, ease in, the speak switch and the phrase. The Music field opens the same music picker as the device. The same defaults as the device follow the list, including an **Upload** button for sounds from your computer. While an alarm rings, sits in its sunrise or is snoozed, the Overview shows a banner with Snooze and Stop.
 
 ## Home Assistant
 

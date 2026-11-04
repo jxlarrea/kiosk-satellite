@@ -33,5 +33,7 @@
   "settingAlarmsTtsLanguageTitle": "Sprache",
   "settingAlarmsTtsLanguageDescription": "Die Sprache, in der die Wecker gesprochen werden.",
   "settingAlarmsTtsVoiceTitle": "Stimme",
-  "settingAlarmsTtsVoiceDescription": "Die Stimme, die die Wecker vorliest."
+  "settingAlarmsTtsVoiceDescription": "Die Stimme, die die Wecker vorliest.",
+  "settingAlarmsMusicTitle": "Weckmusik",
+  "settingAlarmsMusicDescription": "Spielt statt des Wecktons. Kann die Musik nicht abgespielt werden, ertönt der Weckton."
 }

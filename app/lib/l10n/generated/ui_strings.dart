@@ -578,6 +578,30 @@ abstract class UiStrings {
   /// **'Needs the Kiosk Satellite alarms blueprint and an LLM conversation agent in Home Assistant.'**
   String get alarmsVoiceHint;
 
+  /// Alarm detail row: music from the library to ring with instead of the tone. The tone rings if the music cannot play.
+  ///
+  /// In en, this message translates to:
+  /// **'Music'**
+  String get alarmsMusic;
+
+  /// Value of the alarm Music row when no music is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get alarmsMusicNone;
+
+  /// Spoken label of the button that takes the music off an alarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove music'**
+  String get alarmsMusicRemove;
+
+  /// Note under the alarm Music field in the remote admin.
+  ///
+  /// In en, this message translates to:
+  /// **'Rings instead of the tone. The tone rings if the music cannot play.'**
+  String get alarmsMusicHint;
+
   /// Service description displayed by Android in its own language.
   ///
   /// In en, this message translates to:
@@ -6039,6 +6063,186 @@ abstract class UiStrings {
   /// **'Needs the Kiosk Satellite music blueprint and an LLM conversation agent in Home Assistant.'**
   String get libraryVoiceHint;
 
+  /// Title of the music picker, where music from the library is chosen for a feature such as an alarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose music'**
+  String get musicPickerTitle;
+
+  /// Placeholder of the music picker search field.
+  ///
+  /// In en, this message translates to:
+  /// **'Search music'**
+  String get musicPickerSearchHint;
+
+  /// Heading of the music picker source menu: Music Assistant, Home Assistant or Sonos.
+  ///
+  /// In en, this message translates to:
+  /// **'Music from'**
+  String get musicPickerMusicFrom;
+
+  /// Heading of the music picker speaker menu: the speaker the music plays on.
+  ///
+  /// In en, this message translates to:
+  /// **'Plays on'**
+  String get musicPickerPlaysOn;
+
+  /// Spoken label of the music picker source button.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {name}'**
+  String musicPickerSourceLabel(String name);
+
+  /// Spoken label of the music picker speaker button.
+  ///
+  /// In en, this message translates to:
+  /// **'Plays on: {name}'**
+  String musicPickerSpeakerLabel(String name);
+
+  /// Music picker category of random picks, drawn again every time the music plays.
+  ///
+  /// In en, this message translates to:
+  /// **'Random'**
+  String get musicPickerRandom;
+
+  /// Note under the Random heading of the music picker.
+  ///
+  /// In en, this message translates to:
+  /// **'A new pick every time it plays'**
+  String get musicPickerRandomHint;
+
+  /// Random pick: a different track from the library each time.
+  ///
+  /// In en, this message translates to:
+  /// **'Any track'**
+  String get musicPickerAnyTrack;
+
+  /// Random pick: a different favorite each time.
+  ///
+  /// In en, this message translates to:
+  /// **'Any favorite'**
+  String get musicPickerAnyFavorite;
+
+  /// Random pick: a different playlist each time.
+  ///
+  /// In en, this message translates to:
+  /// **'Any playlist'**
+  String get musicPickerAnyPlaylist;
+
+  /// Random pick: a different album each time.
+  ///
+  /// In en, this message translates to:
+  /// **'Any album'**
+  String get musicPickerAnyAlbum;
+
+  /// Random pick: a different radio station each time.
+  ///
+  /// In en, this message translates to:
+  /// **'Any radio station'**
+  String get musicPickerAnyStation;
+
+  /// Under a random pick in the music picker footer.
+  ///
+  /// In en, this message translates to:
+  /// **'A different one each time'**
+  String get musicPickerRandomEach;
+
+  /// Row at the top of an opened album: picks the album instead of one track.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole album'**
+  String get musicPickerWholeAlbum;
+
+  /// Row at the top of an opened playlist: picks the playlist instead of one track.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole playlist'**
+  String get musicPickerWholePlaylist;
+
+  /// Row at the top of an opened artist: picks the artist instead of one track.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything by {name}'**
+  String musicPickerWholeArtist(String name);
+
+  /// Row at the top of an opened folder: picks the folder instead of one file.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole folder'**
+  String get musicPickerWholeFolder;
+
+  /// Row at the top of an opened podcast or audiobook: picks all of it.
+  ///
+  /// In en, this message translates to:
+  /// **'All tracks'**
+  String get musicPickerAllTracks;
+
+  /// Switch in the music picker footer: plays the album, playlist or artist in random order.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle'**
+  String get musicPickerShuffle;
+
+  /// Button in the music picker footer: plays the picked music on its speaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get musicPickerPreview;
+
+  /// Button in the music picker footer while the preview plays.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop preview'**
+  String get musicPickerStopPreview;
+
+  /// Toast when the music picker preview could not start.
+  ///
+  /// In en, this message translates to:
+  /// **'The music could not play'**
+  String get musicPickerPreviewFailed;
+
+  /// Music picker footer before anything is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing picked'**
+  String get musicPickerNothing;
+
+  /// Music picker footer before anything is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a track, album, playlist, artist or station'**
+  String get musicPickerNothingHint;
+
+  /// Note at the bottom of the music picker speaker menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Now Playing switches to this speaker while the music plays.'**
+  String get musicPickerFollowsNote;
+
+  /// Note at the bottom of the music picker speaker menu for the Sonos source.
+  ///
+  /// In en, this message translates to:
+  /// **'Sonos music plays on Sonos speakers only.'**
+  String get musicPickerSonosNote;
+
+  /// Music picker speaker button and menu when the source has no speaker.
+  ///
+  /// In en, this message translates to:
+  /// **'No speakers to play on'**
+  String get musicPickerNoSpeakers;
+
+  /// Spoken label of the button that opens an album, playlist, artist or folder in the music picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {title}'**
+  String musicPickerOpen(String title);
+
+  /// Kind of entry in the music picker: a folder of media.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get musicPickerKindFolder;
+
   /// Heading when the device has a network but the dashboard failed to load.
   ///
   /// In en, this message translates to:
@@ -8655,6 +8859,18 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Plays at the alarm volume.'**
   String get settingAlarmsToneDescription;
+
+  /// Setting label: music from the library that alarms ring with instead of the tone, unless an alarm has its own or None.
+  ///
+  /// In en, this message translates to:
+  /// **'Alarm music'**
+  String get settingAlarmsMusicTitle;
+
+  /// Description of the Alarm music setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Rings instead of the tone. The tone rings if the music cannot play.'**
+  String get settingAlarmsMusicDescription;
 
   /// Setting label.
   ///

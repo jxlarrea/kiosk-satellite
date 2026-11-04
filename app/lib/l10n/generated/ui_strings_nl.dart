@@ -278,6 +278,19 @@ class UiStringsNl extends UiStrings {
       'Vereist de alarmblauwdruk van Kiosk Satellite en een LLM-gespreksagent in Home Assistant.';
 
   @override
+  String get alarmsMusic => 'Muziek';
+
+  @override
+  String get alarmsMusicNone => 'Geen';
+
+  @override
+  String get alarmsMusicRemove => 'Muziek verwijderen';
+
+  @override
+  String get alarmsMusicHint =>
+      'Speelt in plaats van de toon. Als de muziek niet kan spelen, klinkt de toon.';
+
+  @override
   String get androidAccessibilityHelp =>
       'Sluit het meldingenpaneel en het scherm met recente apps zodra deze worden geopend terwijl de kioskmodus of vergrendelingsmodus het scherm beschermt. Kiosk Satellite leest geen inhoud van het scherm.';
 
@@ -3398,6 +3411,107 @@ class UiStringsNl extends UiStrings {
       'Vereist de muziekblauwdruk van Kiosk Satellite en een LLM-gespreksagent in Home Assistant.';
 
   @override
+  String get musicPickerTitle => 'Muziek kiezen';
+
+  @override
+  String get musicPickerSearchHint => 'Muziek zoeken';
+
+  @override
+  String get musicPickerMusicFrom => 'Muziek van';
+
+  @override
+  String get musicPickerPlaysOn => 'Speelt af op';
+
+  @override
+  String musicPickerSourceLabel(String name) {
+    return 'Bron: $name';
+  }
+
+  @override
+  String musicPickerSpeakerLabel(String name) {
+    return 'Speelt af op: $name';
+  }
+
+  @override
+  String get musicPickerRandom => 'Willekeurig';
+
+  @override
+  String get musicPickerRandomHint => 'Elke keer een nieuwe keuze';
+
+  @override
+  String get musicPickerAnyTrack => 'Elk nummer';
+
+  @override
+  String get musicPickerAnyFavorite => 'Elke favoriet';
+
+  @override
+  String get musicPickerAnyPlaylist => 'Elke afspeellijst';
+
+  @override
+  String get musicPickerAnyAlbum => 'Elk album';
+
+  @override
+  String get musicPickerAnyStation => 'Elk radiostation';
+
+  @override
+  String get musicPickerRandomEach => 'Elke keer een andere';
+
+  @override
+  String get musicPickerWholeAlbum => 'Heel album';
+
+  @override
+  String get musicPickerWholePlaylist => 'Hele afspeellijst';
+
+  @override
+  String musicPickerWholeArtist(String name) {
+    return 'Alles van $name';
+  }
+
+  @override
+  String get musicPickerWholeFolder => 'Hele map';
+
+  @override
+  String get musicPickerAllTracks => 'Alle nummers';
+
+  @override
+  String get musicPickerShuffle => 'Willekeurige volgorde';
+
+  @override
+  String get musicPickerPreview => 'Voorbeluisteren';
+
+  @override
+  String get musicPickerStopPreview => 'Voorbeluisteren stoppen';
+
+  @override
+  String get musicPickerPreviewFailed => 'De muziek kon niet worden afgespeeld';
+
+  @override
+  String get musicPickerNothing => 'Niets gekozen';
+
+  @override
+  String get musicPickerNothingHint =>
+      'Kies een nummer, album, afspeellijst, artiest of station';
+
+  @override
+  String get musicPickerFollowsNote =>
+      'Speelt nu schakelt naar deze speaker zolang de muziek speelt.';
+
+  @override
+  String get musicPickerSonosNote =>
+      'Sonos-muziek speelt alleen op Sonos-speakers.';
+
+  @override
+  String get musicPickerNoSpeakers => 'Geen speakers om op af te spelen';
+
+  @override
+  String musicPickerOpen(String title) {
+    return '$title openen';
+  }
+
+  @override
+  String get musicPickerKindFolder => 'Map';
+
+  @override
   String get offlineDashboard => 'Dashboard is niet beschikbaar';
 
   @override
@@ -4960,6 +5074,13 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingAlarmsToneDescription => 'Speelt af bij het alarmvolume.';
+
+  @override
+  String get settingAlarmsMusicTitle => 'Alarmmuziek';
+
+  @override
+  String get settingAlarmsMusicDescription =>
+      'Speelt in plaats van de toon. Als de muziek niet kan spelen, klinkt de toon.';
 
   @override
   String get settingAlarmsSnoozeMinutesTitle => 'Sluimerduur';

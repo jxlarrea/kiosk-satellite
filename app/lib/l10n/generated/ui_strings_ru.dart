@@ -278,6 +278,19 @@ class UiStringsRu extends UiStrings {
       'Требуются Blueprint будильников Kiosk Satellite и диалоговый LLM-агент в Home Assistant.';
 
   @override
+  String get alarmsMusic => 'Музыка';
+
+  @override
+  String get alarmsMusicNone => 'Нет';
+
+  @override
+  String get alarmsMusicRemove => 'Убрать музыку';
+
+  @override
+  String get alarmsMusicHint =>
+      'Звучит вместо звука будильника. Если музыку не удастся воспроизвести, прозвучит звук будильника.';
+
+  @override
   String get androidAccessibilityHelp =>
       'Закрывает шторку уведомлений и экран недавних приложений, когда они открываются, пока экран защищает режим киоска или режим блокировки. Kiosk Satellite не читает содержимое экрана.';
 
@@ -3390,6 +3403,107 @@ class UiStringsRu extends UiStrings {
       'Требуются Blueprint музыки Kiosk Satellite и диалоговый LLM-агент в Home Assistant.';
 
   @override
+  String get musicPickerTitle => 'Выбор музыки';
+
+  @override
+  String get musicPickerSearchHint => 'Поиск музыки';
+
+  @override
+  String get musicPickerMusicFrom => 'Музыка из';
+
+  @override
+  String get musicPickerPlaysOn => 'Играет на';
+
+  @override
+  String musicPickerSourceLabel(String name) {
+    return 'Источник: $name';
+  }
+
+  @override
+  String musicPickerSpeakerLabel(String name) {
+    return 'Играет на: $name';
+  }
+
+  @override
+  String get musicPickerRandom => 'Случайно';
+
+  @override
+  String get musicPickerRandomHint => 'Каждый раз новый выбор';
+
+  @override
+  String get musicPickerAnyTrack => 'Любой трек';
+
+  @override
+  String get musicPickerAnyFavorite => 'Любое из избранного';
+
+  @override
+  String get musicPickerAnyPlaylist => 'Любой плейлист';
+
+  @override
+  String get musicPickerAnyAlbum => 'Любой альбом';
+
+  @override
+  String get musicPickerAnyStation => 'Любая радиостанция';
+
+  @override
+  String get musicPickerRandomEach => 'Каждый раз другое';
+
+  @override
+  String get musicPickerWholeAlbum => 'Весь альбом';
+
+  @override
+  String get musicPickerWholePlaylist => 'Весь плейлист';
+
+  @override
+  String musicPickerWholeArtist(String name) {
+    return 'Всё от $name';
+  }
+
+  @override
+  String get musicPickerWholeFolder => 'Вся папка';
+
+  @override
+  String get musicPickerAllTracks => 'Все треки';
+
+  @override
+  String get musicPickerShuffle => 'Перемешивание';
+
+  @override
+  String get musicPickerPreview => 'Прослушать';
+
+  @override
+  String get musicPickerStopPreview => 'Остановить прослушивание';
+
+  @override
+  String get musicPickerPreviewFailed => 'Не удалось воспроизвести музыку';
+
+  @override
+  String get musicPickerNothing => 'Ничего не выбрано';
+
+  @override
+  String get musicPickerNothingHint =>
+      'Выберите трек, альбом, плейлист, исполнителя или станцию';
+
+  @override
+  String get musicPickerFollowsNote =>
+      '«Сейчас играет» переключается на этот динамик, пока играет музыка.';
+
+  @override
+  String get musicPickerSonosNote =>
+      'Музыка Sonos играет только на динамиках Sonos.';
+
+  @override
+  String get musicPickerNoSpeakers => 'Нет динамиков для воспроизведения';
+
+  @override
+  String musicPickerOpen(String title) {
+    return 'Открыть $title';
+  }
+
+  @override
+  String get musicPickerKindFolder => 'Папка';
+
+  @override
   String get offlineDashboard => 'Панель недоступна';
 
   @override
@@ -4938,6 +5052,13 @@ class UiStringsRu extends UiStrings {
   @override
   String get settingAlarmsToneDescription =>
       'Проигрывается на громкости будильника.';
+
+  @override
+  String get settingAlarmsMusicTitle => 'Музыка будильника';
+
+  @override
+  String get settingAlarmsMusicDescription =>
+      'Звучит вместо звука будильника. Если музыку не удастся воспроизвести, прозвучит звук будильника.';
 
   @override
   String get settingAlarmsSnoozeMinutesTitle => 'Длительность откладывания';

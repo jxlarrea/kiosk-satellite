@@ -49,5 +49,9 @@
   "alarmsVoiceSection": "Alarmas por voz",
   "alarmsVoiceManage": "Gestionar alarmas con Voice Satellite",
   "alarmsVoiceHint": "Requiere el blueprint de alarmas de Kiosk Satellite y un agente de conversación LLM en Home Assistant.",
-  "alarmsTtsSection": "Texto a voz"
+  "alarmsTtsSection": "Texto a voz",
+  "alarmsMusic": "Música",
+  "alarmsMusicNone": "Ninguna",
+  "alarmsMusicRemove": "Quitar la música",
+  "alarmsMusicHint": "Suena en lugar del tono. Si la música no puede sonar, suena el tono."
 }
