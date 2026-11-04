@@ -15,6 +15,7 @@ import '../managers/settings/definitions.dart' as defs;
 import 'kit.dart';
 import 'music_library_queue.dart';
 import 'music_library_speakers.dart';
+import 'resized_image.dart';
 import 'theme.dart';
 import 'thumb_cache.dart' show FetchLane, FetchTicket;
 import 'toast.dart';
@@ -3373,13 +3374,15 @@ class _LibraryArtState extends State<LibraryArt> {
                   child: SvgPicture.memory(bytes),
                 ),
               )
-            : Image.memory(
-                bytes,
+            : Image(
+                image: resizedMemoryImage(
+                  bytes,
+                  width: (widget.size * dpr).round().clamp(32, 1024),
+                ),
                 // A folder's picture is usually a logo, which a crop
                 // would cut.
                 fit: logo ? BoxFit.contain : BoxFit.cover,
                 gaplessPlayback: true,
-                cacheWidth: (widget.size * dpr).round().clamp(32, 1024),
                 errorBuilder: (_, _, _) =>
                     ColoredBox(color: scheme.surfaceContainerHighest),
               ),

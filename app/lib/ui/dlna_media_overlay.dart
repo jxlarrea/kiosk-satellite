@@ -10,6 +10,7 @@ import '../app_container.dart';
 import '../l10n/messages.dart';
 import '../managers/dlna/dlna_manager.dart';
 import '../managers/dlna/dlna_playback.dart';
+import 'resized_image.dart';
 import 'video_surface.dart';
 
 /// Full-screen display for media pushed over DLNA: an image, a video, or
@@ -422,7 +423,7 @@ class _DlnaImageState extends State<_DlnaImage> {
     final previous = _image;
     setState(() {
       _image = width > 0
-          ? ResizeImage(MemoryImage(bytes), width: width)
+          ? resizedMemoryImage(bytes, width: width)
           : MemoryImage(bytes);
     });
     // Without the evict every multipart frame stays in the global

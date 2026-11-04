@@ -242,6 +242,7 @@ class MainActivity : FlutterActivity() {
         // the early-crash net down (issue #127, RendererGuard) and the
         // home-launcher fuse with it (issue #219, HomeFuse).
         RendererGuard.noteFirstFrame(this)
+        ImpellerBackend.noteFirstFrame(this)
         HomeFuse.noteHealthy(this)
     }
 

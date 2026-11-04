@@ -10,6 +10,7 @@ import '../managers/notifications/notification_manager.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/settings/settings_manager.dart';
 import 'mdi_icon.dart';
+import 'resized_image.dart';
 import 'theme.dart';
 
 /// Draws the notifications pushed from Home Assistant (see
@@ -422,21 +423,23 @@ class _NotificationCardState extends State<_NotificationCard>
                                                   constraints: BoxConstraints(
                                                     maxHeight: px(360),
                                                   ),
-                                                  child: Image.memory(
-                                                    image,
-                                                    fit: BoxFit.contain,
-                                                    width: double.infinity,
+                                                  child: Image(
                                                     // Decoded no larger than
                                                     // it is drawn: a 4K
                                                     // snapshot must not cost a
                                                     // low-RAM tablet its
                                                     // dashboard.
-                                                    cacheWidth:
-                                                        (px(680) *
-                                                                MediaQuery.devicePixelRatioOf(
-                                                                  context,
-                                                                ))
-                                                            .round(),
+                                                    image: resizedMemoryImage(
+                                                      image,
+                                                      width:
+                                                          (px(680) *
+                                                                  MediaQuery.devicePixelRatioOf(
+                                                                    context,
+                                                                  ))
+                                                              .round(),
+                                                    ),
+                                                    fit: BoxFit.contain,
+                                                    width: double.infinity,
                                                     gaplessPlayback: true,
                                                     errorBuilder: (_, _, _) =>
                                                         const SizedBox.shrink(),

@@ -52,6 +52,11 @@ object RendererGuard {
     private const val PORTAL_RULE_APPLIED = "flutter.ks.render.portal_rule_applied"
     private const val PORTAL_RULE_REVERTED = "flutter.ks.render.portal_rule_reverted"
 
+    /** Whether this process's engine renders with Impeller. False until
+     *  [engineArgs] runs, and for a headless device's software engine. */
+    @Volatile var impellerOn = false
+        private set
+
     /** The engine's shell arguments, or null for the defaults. Also runs
      *  the crash accounting, so call it exactly once per process. */
     fun engineArgs(context: Context): Array<String>? {
@@ -94,6 +99,7 @@ object RendererGuard {
         // this marker is the only witness the next boot has.
         prefs.edit().putLong(PENDING_SINCE, System.currentTimeMillis()).commit()
         if (disabled) Log.i(TAG, "Impeller disabled; rendering with Skia")
+        impellerOn = !disabled
         return if (disabled) arrayOf("--enable-impeller=false") else null
     }
 

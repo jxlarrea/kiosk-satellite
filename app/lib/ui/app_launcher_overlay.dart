@@ -8,6 +8,7 @@ import '../app_container.dart';
 import '../l10n/messages.dart';
 import '../managers/launcher/app_launcher_manager.dart';
 import 'kit.dart';
+import 'resized_image.dart';
 import 'theme.dart';
 import 'toast.dart';
 
@@ -402,14 +403,21 @@ Future<Color?> _dominantColor(String package, Uint8List bytes) async {
   if (_dominantCache.containsKey(package)) return _dominantCache[package];
   Color? result;
   try {
-    final codec = await ui.instantiateImageCodec(
-      bytes,
-      targetWidth: 24,
-      targetHeight: 24,
-    );
-    final image = (await codec.getNextFrame()).image;
-    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    image.dispose();
+    final cpu = await cpuRgba(bytes, 24, 24);
+    final ByteData? data;
+    if (cpu != null) {
+      data = ByteData.sublistView(cpu);
+    } else {
+      final codec = await ui.instantiateImageCodec(
+        bytes,
+        targetWidth: 24,
+        targetHeight: 24,
+      );
+      final image = (await codec.getNextFrame()).image;
+      codec.dispose();
+      data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      image.dispose();
+    }
     if (data != null) {
       // Cluster the clearly colored pixels by hue (30-degree buckets) and
       // let the largest single hue win, averaged over its own pixels

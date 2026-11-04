@@ -145,6 +145,7 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         audioRouting = AudioRoutingBridge(applicationContext, messenger)
         micRecorder = MicRecorder(applicationContext, messenger)
         background = BackgroundBridge(applicationContext, messenger)
+        ImageScaler(applicationContext, messenger)
         alarms = AlarmBridge(applicationContext, messenger)
         dlnaAudio = DlnaAudio(applicationContext, messenger)
         deviceDetails = DeviceDetails(applicationContext, messenger)

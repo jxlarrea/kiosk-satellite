@@ -9,6 +9,7 @@ import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../ui/thumb_cache.dart';
+import '../../ui/resized_image.dart';
 
 /// Queue covers stored as small images in the app's disposable cache.
 /// Filenames contain only a hash of the URL. Disk work is serialized so
@@ -204,6 +205,8 @@ class QueueArtworkCache {
   /// Decode only a thumbnail-sized frame with the platform codec. The
   /// image keeps its aspect ratio and alpha without a full-size bitmap.
   static Future<Uint8List?> thumbnail(Uint8List bytes) async {
+    final cpu = await cpuPngThumbnail(bytes, 256);
+    if (cpu != null) return cpu;
     final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
     try {
       final descriptor = await ui.ImageDescriptor.encoded(buffer);

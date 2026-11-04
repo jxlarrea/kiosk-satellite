@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:intl/intl.dart' show NumberFormat;
 import 'glance_row.dart';
 import 'lyrics_view.dart';
+import 'resized_image.dart';
 import 'theme.dart';
 import 'thumb_cache.dart';
 
@@ -510,16 +511,18 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                                 : ClipRRect(
                                     key: ValueKey(_loadedArtUrl),
                                     borderRadius: BorderRadius.circular(24),
-                                    child: Image.memory(
-                                      art,
+                                    child: Image(
+                                      image: resizedMemoryImage(
+                                        art,
+                                        width:
+                                            (coverSize *
+                                                    MediaQuery.devicePixelRatioOf(
+                                                      context,
+                                                    ))
+                                                .ceil(),
+                                      ),
                                       width: double.infinity,
                                       height: double.infinity,
-                                      cacheWidth:
-                                          (coverSize *
-                                                  MediaQuery.devicePixelRatioOf(
-                                                    context,
-                                                  ))
-                                              .ceil(),
                                       fit: BoxFit.cover,
                                       gaplessPlayback: true,
                                     ),
@@ -637,14 +640,18 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                       : ClipRRect(
                           key: ValueKey(_loadedArtUrl),
                           borderRadius: BorderRadius.circular(24),
-                          child: Image.memory(
-                            art,
+                          child: Image(
+                            image: resizedMemoryImage(
+                              art,
+                              width:
+                                  (coverSize *
+                                          MediaQuery.devicePixelRatioOf(
+                                            context,
+                                          ))
+                                      .ceil(),
+                            ),
                             width: double.infinity,
                             height: double.infinity,
-                            cacheWidth:
-                                (coverSize *
-                                        MediaQuery.devicePixelRatioOf(context))
-                                    .ceil(),
                             fit: BoxFit.cover,
                             gaplessPlayback: true,
                           ),
@@ -1097,11 +1104,14 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                   if (art != null && coverSize > 0)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: Image.memory(
-                        art,
-                        cacheWidth:
-                            (coverSize * MediaQuery.devicePixelRatioOf(context))
-                                .ceil(),
+                      child: Image(
+                        image: resizedMemoryImage(
+                          art,
+                          width:
+                              (coverSize *
+                                      MediaQuery.devicePixelRatioOf(context))
+                                  .ceil(),
+                        ),
                         width: coverSize,
                         height: coverSize,
                         fit: BoxFit.cover,
@@ -1207,7 +1217,7 @@ class _BlurredArtState extends State<_BlurredArt> {
     if (size.isEmpty || !size.isFinite) return;
     final ui.Image source;
     try {
-      final codec = await ui.instantiateImageCodec(
+      final codec = await instantiateResizedCodec(
         widget.bytes,
         targetWidth: _BlurredArt.width,
       );
@@ -2089,12 +2099,10 @@ class _QueueThumbState extends State<_QueueThumb> {
         width: widget.size,
         height: widget.size,
         child: bytes != null
-            ? Image.memory(
-                bytes,
+            ? Image(
+                image: resizedMemoryImage(bytes, width: px, height: px),
                 fit: BoxFit.cover,
                 gaplessPlayback: true,
-                cacheWidth: px,
-                cacheHeight: px,
               )
             : ColoredBox(
                 color: Colors.white10,
@@ -3851,14 +3859,16 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                             color: scheme.onSurfaceVariant,
                                           ),
                                         )
-                                      : Image.memory(
-                                          _artBytes!,
-                                          cacheWidth:
-                                              (_artSize *
-                                                      MediaQuery.devicePixelRatioOf(
-                                                        context,
-                                                      ))
-                                                  .ceil(),
+                                      : Image(
+                                          image: resizedMemoryImage(
+                                            _artBytes!,
+                                            width:
+                                                (_artSize *
+                                                        MediaQuery.devicePixelRatioOf(
+                                                          context,
+                                                        ))
+                                                    .ceil(),
+                                          ),
                                           fit: BoxFit.cover,
                                           gaplessPlayback: true,
                                           errorBuilder: (_, _, _) => ColoredBox(

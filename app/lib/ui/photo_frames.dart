@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'resized_image.dart';
+
 /// Overrides photo filling in a shared screensaver panel without changing
 /// the saved preference of any slideshow. Null keeps the slideshow's choice.
 class PhotoFillOverride extends InheritedWidget {
@@ -105,15 +107,14 @@ class PreparedPhoto {
     if (!context.mounted || !valid()) throw PhotoPreparationCancelled();
     await beforeDecode?.call();
     if (!context.mounted || !valid()) throw PhotoPreparationCancelled();
-    final source = MemoryImage(bytes);
-    final image = ResizeImage(
-      source,
+    final image = resizedMemoryImage(
+      bytes,
       width: photoDecodeWidth(frame, aspect, fill, zoom),
     );
     final background =
         fill != 'off' && !photoCovers(fill, aspect, frame.width / frame.height)
-        ? ResizeImage(
-            source,
+        ? resizedMemoryImage(
+            bytes,
             width: 256,
             height: 256,
             policy: ResizeImagePolicy.fit,
