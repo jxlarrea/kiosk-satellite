@@ -3598,8 +3598,12 @@ class _MiniPlayerState extends State<_MiniPlayer> {
     }
   }
 
+  /// On a layer of its own: the elapsed time moves every second, and the
+  /// page around it has nothing to redraw for it.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => RepaintBoundary(child: _bar(context));
+
+  Widget _bar(BuildContext context) {
     final s = l10n(context);
     final scheme = Theme.of(context).colorScheme;
     final layout = widget.layout;

@@ -493,6 +493,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // synchronous work so view notifications cannot rebuild its ancestors.
     unawaited(
       Future<void>.microtask(() async {
+        _syncNowPlayingCovers();
         if (_active) await _applyVisuals();
       }),
     );
@@ -572,6 +573,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       _resetIdleTimer();
       if (!_paused) unawaited(_restoreAfterInteraction());
     });
+    // An alarm on the screensaver puts Now Playing behind it.
+    alarmTakeover.addListener(_syncNowPlayingCovers);
     bus.on<AssistOverlayVisibility>().listen((event) {
       // Paused under the full screen overlay, and docked when it is one
       // that costs: a still of Weather Mood or a slideshow shows around
@@ -2014,7 +2017,23 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   bool _nowPlayingShown = false;
   bool get nowPlayingShown => _nowPlayingShown;
 
+  /// Now Playing fills the whole screen: shown and not sharing it with the
+  /// screensaver. The dashboard and the pages over it are out of sight, so
+  /// the kiosk screen leaves them out of the frame.
+  final nowPlayingCovers = ValueNotifier<bool>(false);
+
+  void _syncNowPlayingCovers() {
+    final view = activeView.value;
+    nowPlayingCovers.value =
+        _active &&
+        view != null &&
+        view != 'blank' &&
+        _nowPlayingTakeover &&
+        !_nowPlayingShared;
+  }
+
   void _syncNowPlayingShown() {
+    _syncNowPlayingCovers();
     final view = activeView.value;
     final shown = view != null && view != 'blank' && _nowPlayingTakeover;
     if (shown == _nowPlayingShown) return;
@@ -2034,6 +2053,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // Playing, an alarm letting go, a wake) is a moment Night mode's
     // countdown may need to start or stop.
     _reviewNight();
+    _syncNowPlayingCovers();
     final mode = _effectiveMode;
     final entry = _scheduleEntry;
     _appliedScheduleAt = entry?['at'] as String?;
@@ -2208,6 +2228,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     alarmTakeover.value = null;
     renderPaused.value = false;
     _nowPlayingShared = false;
+    // Before the thaw below, which a covering Now Playing would hold off.
+    _syncNowPlayingCovers();
     // The page takes its full width back while the overlay still covers
     // it, not after the dismissal has shown it squeezed.
     _syncPageReserve();

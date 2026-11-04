@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:intl/intl.dart' show NumberFormat;
@@ -37,34 +38,99 @@ String _transportLabel(BuildContext context, String command) =>
 /// Single-line text that marquees leftward when it does not fit: hold,
 /// scroll the hidden part into view, hold, loop from the start. Static
 /// (no animation cost) when the text fits.
+///
+/// Timed, not animated: a ticker asks for every frame, the hold included,
+/// and over the dashboard each frame is costly (the platform view puts
+/// Flutter on its image view path). The text moves one physical pixel at
+/// a time, which at its speed is a few dozen frames a second, and nothing
+/// is drawn while it holds. It stops where tickers are muted.
 class _Marquee extends StatefulWidget {
   const _Marquee({required this.text, this.style});
 
   final String text;
   final TextStyle? style;
 
+  static const gap = 48.0;
+  static const pxPerSecond = 24.0;
+  static const hold = Duration(seconds: 2);
+
   @override
   State<_Marquee> createState() => _MarqueeState();
 }
 
-class _MarqueeState extends State<_Marquee>
-    with SingleTickerProviderStateMixin {
-  static const _gap = 48.0;
-  static const _pxPerSecond = 24.0;
-  static const _holdSeconds = 2.0;
+class _MarqueeState extends State<_Marquee> {
+  /// How far the text has moved, in logical pixels.
+  final _offset = ValueNotifier<double>(0);
 
-  late final AnimationController _ctrl = AnimationController(vsync: this);
+  /// One copy and the gap: past this the loop starts over. Zero while the
+  /// text fits.
+  double _distance = 0;
+
+  /// One physical pixel, in logical pixels.
+  double _pixel = 1;
+
+  Timer? _timer;
+  ValueListenable<TickerModeData>? _tickerMode;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pixel = 1 / MediaQuery.devicePixelRatioOf(context);
+    final mode = TickerMode.getValuesNotifier(context);
+    if (mode != _tickerMode) {
+      _tickerMode?.removeListener(_restart);
+      _tickerMode = mode..addListener(_restart);
+      _restart();
+    }
+  }
 
   @override
   void didUpdateWidget(_Marquee old) {
     super.didUpdateWidget(old);
-    if (old.text != widget.text) _ctrl.value = 0;
+    if (old.text != widget.text) _restart();
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _timer?.cancel();
+    _tickerMode?.removeListener(_restart);
+    _offset.dispose();
     super.dispose();
+  }
+
+  /// Back to the start and its hold, or still while muted or fitting.
+  void _restart() {
+    _timer?.cancel();
+    _timer = null;
+    _offset.value = 0;
+    if (_distance <= 0 || !(_tickerMode?.value.enabled ?? true)) return;
+    _timer = Timer(_Marquee.hold, _scroll);
+  }
+
+  /// A pixel a tick. The tick count includes the ticks a busy moment
+  /// missed, so the speed holds.
+  void _scroll() {
+    final step = Duration(
+      microseconds: (1e6 * _pixel / _Marquee.pxPerSecond).round(),
+    );
+    _timer = Timer.periodic(step, (timer) {
+      final moved = timer.tick * _pixel;
+      if (moved >= _distance) {
+        _restart();
+        return;
+      }
+      _offset.value = moved;
+    });
+  }
+
+  /// The text's width changed what the loop covers: start it over, after
+  /// the layout that measured it.
+  void _measure(double distance) {
+    if (distance == _distance) return;
+    _distance = distance;
+    scheduleMicrotask(() {
+      if (mounted) _restart();
+    });
   }
 
   @override
@@ -77,47 +143,38 @@ class _MarqueeState extends State<_Marquee>
           textDirection: TextDirection.ltr,
         )..layout();
         final textWidth = painter.width;
+        final height = painter.height;
+        painter.dispose();
         if (textWidth <= constraints.maxWidth) {
-          _ctrl.stop();
+          _measure(0);
           return Text(widget.text, maxLines: 1, style: widget.style);
         }
         // Scroll one full copy plus the gap, so the second copy lands where
         // the first began and the loop is seamless.
-        final distance = textWidth + _gap;
-        final scrollSeconds = distance / _pxPerSecond;
-        final total = _holdSeconds + scrollSeconds;
-        _ctrl.duration = Duration(milliseconds: (total * 1000).round());
-        if (!_ctrl.isAnimating) _ctrl.repeat();
+        _measure(textWidth + _Marquee.gap);
         // Fixed box of exactly one text line: OverflowBox has no size of its
         // own and would otherwise absorb all the height the column offers,
         // pushing the rest of the card out of view.
         return SizedBox(
-          height: painter.height,
+          height: height,
           width: constraints.maxWidth,
           child: ClipRect(
-            child: AnimatedBuilder(
-              animation: _ctrl,
-              builder: (context, _) {
-                final t = _ctrl.value * total;
-                final offset = t <= _holdSeconds
-                    ? 0.0
-                    : (t - _holdSeconds) * _pxPerSecond;
-                return Transform.translate(
-                  offset: Offset(-offset, 0),
-                  child: OverflowBox(
-                    maxWidth: double.infinity,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(widget.text, maxLines: 1, style: widget.style),
-                        const SizedBox(width: _gap),
-                        Text(widget.text, maxLines: 1, style: widget.style),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            child: ValueListenableBuilder<double>(
+              valueListenable: _offset,
+              builder: (context, offset, row) =>
+                  Transform.translate(offset: Offset(-offset, 0), child: row),
+              child: OverflowBox(
+                maxWidth: double.infinity,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(widget.text, maxLines: 1, style: widget.style),
+                    const SizedBox(width: _Marquee.gap),
+                    Text(widget.text, maxLines: 1, style: widget.style),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -833,27 +890,16 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         // overflow is cropped, which under this much blur is invisible.
         Positioned.fill(
           child: RepaintBoundary(
-            child: ClipRect(
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(
-                  sigmaX: 40,
-                  sigmaY: 40,
-                  tileMode: TileMode.clamp,
-                ),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 700),
-                  child: art == null
-                      ? const SizedBox.expand(key: ValueKey('no-art'))
-                      : Image.memory(
-                          art,
-                          key: ValueKey(_loadedArtUrl),
-                          cacheWidth: 256,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                          gaplessPlayback: true,
-                        ),
-                ),
+            child: LayoutBuilder(
+              builder: (context, box) => AnimatedSwitcher(
+                duration: const Duration(milliseconds: 700),
+                child: art == null
+                    ? const SizedBox.expand(key: ValueKey('no-art'))
+                    : _BlurredArt(
+                        key: ValueKey(_loadedArtUrl),
+                        bytes: art,
+                        size: box.biggest,
+                      ),
               ),
             ),
           ),
@@ -1104,6 +1150,114 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       },
     );
   }
+}
+
+/// The Now Playing backdrop: the cover blurred once into a small image and
+/// scaled up over the view. Impeller keeps no raster cache, so a live blur
+/// filter over the whole screen ran again on every frame anything moved
+/// (the seek bar, a lyric scrolling, a docked voice turn on top). Black
+/// until the image is ready.
+class _BlurredArt extends StatefulWidget {
+  const _BlurredArt({super.key, required this.bytes, required this.size});
+
+  final Uint8List bytes;
+
+  /// The box the backdrop covers, which sets how far the blur reaches.
+  final Size size;
+
+  /// The blur, in logical pixels of the view.
+  static const sigma = 40.0;
+
+  /// The width the cover is decoded and blurred at. A blur this wide
+  /// leaves nothing a larger image would show.
+  static const width = 160;
+
+  @override
+  State<_BlurredArt> createState() => _BlurredArtState();
+}
+
+class _BlurredArtState extends State<_BlurredArt> {
+  ui.Image? _image;
+  int _generation = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_render());
+  }
+
+  @override
+  void didUpdateWidget(_BlurredArt old) {
+    super.didUpdateWidget(old);
+    if (old.bytes != widget.bytes || old.size != widget.size) {
+      unawaited(_render());
+    }
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    _image?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _render() async {
+    final generation = ++_generation;
+    final size = widget.size;
+    if (size.isEmpty || !size.isFinite) return;
+    final ui.Image source;
+    try {
+      final codec = await ui.instantiateImageCodec(
+        widget.bytes,
+        targetWidth: _BlurredArt.width,
+      );
+      final frame = await codec.getNextFrame();
+      codec.dispose();
+      source = frame.image;
+    } catch (_) {
+      return;
+    }
+    if (generation != _generation || !mounted) {
+      source.dispose();
+      return;
+    }
+    // The blur in the image's own pixels: the view's sigma over the scale
+    // the cover is drawn at.
+    final scale = max(size.width / source.width, size.height / source.height);
+    final sigma = _BlurredArt.sigma / scale;
+    final recorder = ui.PictureRecorder();
+    Canvas(recorder).drawImage(
+      source,
+      Offset.zero,
+      Paint()
+        ..imageFilter = ui.ImageFilter.blur(
+          sigmaX: sigma,
+          sigmaY: sigma,
+          tileMode: TileMode.clamp,
+        ),
+    );
+    final picture = recorder.endRecording();
+    final blurred = picture.toImageSync(source.width, source.height);
+    picture.dispose();
+    source.dispose();
+    if (generation != _generation || !mounted) {
+      blurred.dispose();
+      return;
+    }
+    setState(() {
+      _image?.dispose();
+      _image = blurred;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox.expand(
+    child: RawImage(
+      image: _image,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.medium,
+    ),
+  );
 }
 
 /// The pills [_AudioQualityPills] shows for a track's audio quality (see

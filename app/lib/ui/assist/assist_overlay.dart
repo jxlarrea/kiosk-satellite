@@ -15,6 +15,7 @@ import '../../managers/settings/definitions.dart' as defs;
 import '../../managers/voice/assist_view.dart';
 import '../../managers/voice/voice_manager.dart';
 import '../../managers/voice/voice_notice.dart';
+import '../text_snapshot.dart';
 import '../theme.dart';
 import '../toast.dart';
 import 'art_hal.dart';
@@ -740,25 +741,29 @@ class _AssistOverlayState extends State<AssistOverlay>
     final lines = <Widget>[
       // The bubble says it hears before anything is said.
       if (!said && !thinking && view.phase == AssistPhase.listening)
-        Text(
-          voiceText(context, 'Listening…'),
-          style: _text(
-            skin,
-            palette.user,
-            skin.userSize * scale,
-            skin.userWeight,
-            palette.userShadows,
+        _shadowSnapshot(
+          Text(
+            voiceText(context, 'Listening…'),
+            style: _text(
+              skin,
+              palette.user,
+              skin.userSize * scale,
+              skin.userWeight,
+              palette.userShadows,
+            ),
           ),
         ),
       if (showCommand && view.command.isNotEmpty)
-        Text(
-          '${skin.prefix}${view.command}',
-          style: _text(
-            skin,
-            palette.user,
-            skin.userSize * scale,
-            skin.userWeight,
-            palette.userShadows,
+        _shadowSnapshot(
+          Text(
+            '${skin.prefix}${view.command}',
+            style: _text(
+              skin,
+              palette.user,
+              skin.userSize * scale,
+              skin.userWeight,
+              palette.userShadows,
+            ),
           ),
         ),
       for (final tool in tools) _toolLine(skin, palette, scale, tool),
@@ -785,6 +790,7 @@ class _AssistOverlayState extends State<AssistOverlay>
             streaming: view.streaming,
             current: true,
             playback: () => null,
+            snapshot: true,
             style: _text(
               skin,
               palette.answer,
@@ -1222,15 +1228,17 @@ class _AssistOverlayState extends State<AssistOverlay>
       Flexible(
         child: Padding(
           padding: const EdgeInsets.only(right: 2),
-          child: Text(
-            name,
-            style: _text(
-              skin,
-              palette.tool,
-              skin.toolSize * scale,
-              skin.toolWeight,
-              palette.toolShadows,
-              italic: skin.toolItalic,
+          child: _shadowSnapshot(
+            Text(
+              name,
+              style: _text(
+                skin,
+                palette.tool,
+                skin.toolSize * scale,
+                skin.toolWeight,
+                palette.toolShadows,
+                italic: skin.toolItalic,
+              ),
             ),
           ),
         ),
@@ -1487,6 +1495,7 @@ class _RevealText extends StatefulWidget {
     required this.playback,
     required this.style,
     required this.textAlign,
+    this.snapshot = false,
   });
 
   final String text;
@@ -1500,8 +1509,37 @@ class _RevealText extends StatefulWidget {
   final TextStyle style;
   final TextAlign textAlign;
 
+  /// A short answer, once all of it shows, is painted once with its
+  /// shadows ([_shadowSnapshot]). A long one would take an image taller
+  /// than some GPUs allow, so it stays live.
+  final bool snapshot;
+
+  /// The longest answer [snapshot] takes.
+  static const snapshotChars = 400;
+
   @override
   State<_RevealText> createState() => _RevealTextState();
+}
+
+/// [text] painted once into an image while its shadows blur. Impeller keeps
+/// no raster cache, so every blurred shadow on screen otherwise goes
+/// through offscreen passes again on every frame the bar or the art moves.
+/// Text without a blurred shadow stays as it is.
+Widget _shadowSnapshot(Text text) {
+  var bleed = 0.0;
+  for (final s in text.style?.shadows ?? const <Shadow>[]) {
+    if (s.blurRadius <= 0) continue;
+    // Three standard deviations hold all of a Gaussian that shows.
+    final sigma = 0.57735 * s.blurRadius + 0.5;
+    final offset = math.max(s.offset.dx.abs(), s.offset.dy.abs());
+    bleed = math.max(bleed, 3 * sigma + offset);
+  }
+  if (bleed == 0) return text;
+  return TextSnapshot(
+    content: (text.data, text.style, text.textAlign),
+    bleed: bleed.ceilToDouble(),
+    child: text,
+  );
 }
 
 /// Characters revealed a second.
@@ -1562,7 +1600,13 @@ class _RevealTextState extends State<_RevealText>
     final complete = count >= text.length && !widget.streaming;
     final shown = text.substring(0, count);
     final Widget child;
-    if (complete || shown.length <= _fadeLength) {
+    if (complete &&
+        widget.snapshot &&
+        text.length <= _RevealText.snapshotChars) {
+      child = _shadowSnapshot(
+        Text(shown, textAlign: widget.textAlign, style: widget.style),
+      );
+    } else if (complete || shown.length <= _fadeLength) {
       child = Text(shown, textAlign: widget.textAlign, style: widget.style);
     } else {
       final solid = shown.substring(0, shown.length - _fadeLength);

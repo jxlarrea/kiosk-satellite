@@ -121,6 +121,54 @@ class _KioskScreenState extends State<KioskScreen>
   @override
   void didPopNext() => _syncNavCapture();
 
+  /// Now Playing has the whole screen. Its view goes the moment the music
+  /// stops, so the manager's report holds only while it shows.
+  bool get _nowPlayingCovers =>
+      c.screensaver.nowPlayingCovers.value && c.sendspin.fullscreenActive.value;
+
+  /// What [_planeHidden] reads.
+  late final Listenable _planeCover = Listenable.merge([
+    c.screensaver.activeView,
+    c.browser.renderingFrozenState,
+    c.voice.covers,
+    c.musicLibrary.visible,
+    c.calendar.visible,
+    c.screensaver.nowPlayingCovers,
+    c.sendspin.fullscreenActive,
+  ]);
+
+  /// The kiosk plane leaves the frame under something that hides the whole
+  /// screen, once the browser has frozen the page: the screensavers that
+  /// draw every frame and the Calendar one, a voice turn whose backdrop
+  /// hides the screen, the music library, the calendar and Now Playing on
+  /// its own. A platform view anywhere in the frame keeps Flutter drawing
+  /// through an image view, which on an Echo Show costs a bitmap and a
+  /// garbage collection every few frames.
+  bool get _planeHidden {
+    if (!c.browser.renderingFrozenState.value) return false;
+    final view = c.screensaver.activeView.value;
+    return view == 'weather_mood' ||
+        view == 'celestial' ||
+        view == 'calendar' ||
+        c.voice.covers.value ||
+        c.musicLibrary.visible.value ||
+        c.calendar.visible.value ||
+        _nowPlayingCovers;
+  }
+
+  /// What [_pagesHidden] reads.
+  late final Listenable _pagesCover = Listenable.merge([
+    c.voice.covers,
+    c.screensaver.nowPlayingCovers,
+    c.sendspin.fullscreenActive,
+  ]);
+
+  /// The calendar and the music library are drawn under a voice turn whose
+  /// backdrop hides the screen, and the library under Now Playing, which
+  /// it stays open beneath. Impeller keeps no raster cache, so each frame
+  /// would draw them again for nothing.
+  bool _pagesHidden() => c.voice.covers.value || _nowPlayingCovers;
+
   bool _consoleOpen = false;
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<KioskExitGesture>? _gestureSub;
@@ -1748,32 +1796,19 @@ class _KioskScreenState extends State<KioskScreen>
                     top: 0,
                     width: size.width + overdraw,
                     height: size.height + overdraw,
-                    child: ValueListenableBuilder<String?>(
-                      valueListenable: c.screensaver.activeView,
+                    child: ListenableBuilder(
+                      listenable: _planeCover,
                       child: kioskPlane,
-                      builder: (context, view, child) =>
-                          ValueListenableBuilder<bool>(
-                            valueListenable: c.browser.renderingFrozenState,
-                            child: child,
-                            builder: (context, frozen, child) =>
-                                ValueListenableBuilder<bool>(
-                                  valueListenable: c.voice.covers,
-                                  child: child,
-                                  // Skip platform view compositing only after
-                                  // the browser confirms it is safe to hide
-                                  // the dashboard: under the two screensavers
-                                  // that draw every frame, and under a voice
-                                  // turn whose backdrop hides the screen.
-                                  builder: (context, covers, child) => Offstage(
-                                    offstage:
-                                        (view == 'weather_mood' ||
-                                            view == 'celestial' ||
-                                            covers) &&
-                                        frozen,
-                                    child: child,
-                                  ),
-                                ),
-                          ),
+                      // Its tickers stop with it: the floating player's
+                      // marquee asked for every frame under the page that
+                      // hid it.
+                      builder: (context, child) {
+                        final hidden = _planeHidden;
+                        return Offstage(
+                          offstage: hidden,
+                          child: TickerMode(enabled: !hidden, child: child!),
+                        );
+                      },
                     ),
                   ),
                   // The drawer plane, sliding in from the same seam. While
@@ -1852,11 +1887,19 @@ class _KioskScreenState extends State<KioskScreen>
                   AlarmsOverlay(container: c),
                   // The family calendar, the launcher's twin as well:
                   // full screen, below the screensaver.
-                  CalendarOverlay(container: c),
+                  _HiddenUnder(
+                    listenable: _pagesCover,
+                    hidden: _pagesHidden,
+                    child: CalendarOverlay(container: c),
+                  ),
                   // The music library, the same kind of page: full
                   // screen, below the screensaver, so Now Playing opened
                   // from its player bar comes up over it.
-                  MusicLibraryOverlay(container: c),
+                  _HiddenUnder(
+                    listenable: _pagesCover,
+                    hidden: _pagesHidden,
+                    child: MusicLibraryOverlay(container: c),
+                  ),
                   // The screensaver covers both planes — it owns the whole
                   // display, drawer open or not.
                   // Paused under the native voice overlay, which
@@ -3101,6 +3144,38 @@ class _WebViewMissingNotice extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A full screen page of the kiosk Stack, left out of the frame and its
+/// tickers stopped while [hidden] says something hides it. It keeps its
+/// state, so it shows again as it was.
+class _HiddenUnder extends StatelessWidget {
+  const _HiddenUnder({
+    required this.listenable,
+    required this.hidden,
+    required this.child,
+  });
+
+  final Listenable listenable;
+  final bool Function() hidden;
+
+  /// The page, whose root is Positioned: it gets a Stack of its own.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: listenable,
+    child: Stack(fit: StackFit.expand, children: [child]),
+    builder: (context, page) {
+      final off = hidden();
+      return Positioned.fill(
+        child: Offstage(
+          offstage: off,
+          child: TickerMode(enabled: !off, child: page!),
+        ),
+      );
+    },
+  );
 }
 
 /// Shows [child] live, or while [paused] as a still picture of its last

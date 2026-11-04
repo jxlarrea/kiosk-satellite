@@ -534,6 +534,8 @@ void main() {
     await tester.pump();
     expect(saver, findsNothing);
     expect(tester.getSize(player), const Size(1280, 800));
+    // The page freezes a beat after Now Playing covers it.
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpWidget(const SizedBox());
     await c.screensaver.dispose();
   });
@@ -576,6 +578,8 @@ void main() {
     await tester.pump();
     expect(fill('off'), 'off');
     expect(fill('smart'), 'smart');
+    // The page freezes a beat after Now Playing covers it.
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpWidget(const SizedBox());
     await c.screensaver.dispose();
   });
@@ -593,6 +597,35 @@ void main() {
     expect(player, findsNothing);
     expect(tester.getSize(saver), const Size(1280, 800));
     expect(tester.state(find.byType(ClockScreensaver)), same(state));
+    await tester.pumpWidget(const SizedBox());
+    await c.screensaver.dispose();
+  });
+
+  testWidgets('Now Playing covers the screen only while it has all of it', (
+    tester,
+  ) async {
+    await boot(tester, split: false);
+    expect(c.screensaver.nowPlayingCovers.value, isTrue);
+    await c.settings.set(defs.sendspinFullscreenSplit, true);
+    await tester.pump();
+    await tester.pump();
+    // Sharing the screen, the screensaver beside it shows.
+    expect(saver, findsOneWidget);
+    expect(c.screensaver.nowPlayingCovers.value, isFalse);
+    await c.settings.set(defs.sendspinFullscreenSplit, false);
+    await tester.pump();
+    await tester.pump();
+    expect(c.screensaver.nowPlayingCovers.value, isTrue);
+    // An alarm puts Now Playing behind it.
+    c.screensaver.alarmTakeover.value = 'ringing';
+    expect(c.screensaver.nowPlayingCovers.value, isFalse);
+    c.screensaver.alarmTakeover.value = null;
+    expect(c.screensaver.nowPlayingCovers.value, isTrue);
+    // Gone the moment the session starts to end, before the page thaws.
+    final stopping = c.screensaver.stop();
+    expect(c.screensaver.nowPlayingCovers.value, isFalse);
+    await stopping;
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpWidget(const SizedBox());
     await c.screensaver.dispose();
   });

@@ -264,11 +264,21 @@ class AppContainer {
       settings,
       nowPlaying: sendspin.nowPlaying,
     );
-    // The library is opaque and full screen too.
+    // The library is opaque and full screen too, and so are the calendar
+    // and Now Playing when it does not share the screen.
     musicLibrary.visible.addListener(
       () => browser.setCovered(
         'music library',
         covered: musicLibrary.visible.value,
+      ),
+    );
+    calendar.visible.addListener(
+      () => browser.setCovered('calendar', covered: calendar.visible.value),
+    );
+    screensaver.nowPlayingCovers.addListener(
+      () => browser.setCovered(
+        'now playing',
+        covered: screensaver.nowPlayingCovers.value,
       ),
     );
     voiceRequests = VoiceRequestsManager(bus, commands, log, settings);
