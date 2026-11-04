@@ -2,14 +2,6 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
-
-### Changed
-- **The voice overlay leaves more room for the answer on short screens (#1306).** The command now stays on one line with its line breaks removed and ends with an ellipsis if it does not fit. Above 100%, **Text size** grows the command and tool lines at half the rate of the answer. On an Echo Show 5 this shows about one more line of the answer.
-
-### Fixed
-- **Updates no longer use up storage until the next reboot.** On Android 11 and older, with Kiosk Satellite set as the home app, the old APK could stay on disk after an update until the device restarted, so devices with little storage eventually ran out of space and updates failed. Android kept trying to restart the home app during its own update and each try drew a starting window. Kiosk Satellite no longer asks those Android versions for one. Space already lost comes back with one reboot.
-
 ## v2026.11.6 - 2026-11-04
 
 ### Added
@@ -18,12 +10,14 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Changed
 - **Home Assistant connecting no longer takes a camera snapshot.** The Camera entity needs one frame to become available after Home Assistant connects. That frame used to be a real capture, so a picture landed in Home Assistant on every start and reconnect, even with **Disable snapshots on detection** on. It is now a black frame and the camera stays closed. Fetching the picture in Home Assistant, such as from a dashboard card, still captures a real frame.
+- **The voice overlay leaves more room for the answer on short screens (#1306).** The command now stays on one line with its line breaks removed and ends with an ellipsis if it does not fit. Above 100%, **Text size** grows the command and tool lines at half the rate of the answer. On an Echo Show 5 this shows about one more line of the answer.
 
 ### Fixed
 - **A camera that never answers a JPEG capture no longer stays broken (#1304).** On some camera drivers, such as the SHIELD Tablet's on LineageOS 15.1, a JPEG snapshot never finished and closing the camera then hung until the device restarted. The first snapshot after each start set it off, so motion detection, snapshots and RTSP stopped working on every boot. When a capture goes unanswered, Kiosk Satellite now aborts it, stops requesting JPEGs from that camera and takes snapshots from its analysis frames at the **Snapshot resolution**. If the abort does not free the camera, one restart of the device does.
 - **Echo Shows no longer crash showing album art or photos.** On devices where Impeller draws with OpenGL ES, such as the Echo Show 8 with its Mali-T720 and the Portal Go, Impeller shrank cover art and photos on the GPU. On the Echo Show 8 that step could fail, mostly in the seconds after the app starts with music playing, and Impeller then closed the whole app. These devices now decode a JPEG cover or photo straight at the reduced size its decoder supports, so Impeller has nothing to shrink, and shrink other images, queue thumbnails and app icons on the CPU first. Photos keep their EXIF orientation and transparent images keep their edges. On an Echo Show 5 this costs about the same CPU and memory as before. Devices that draw with Vulkan or the Legacy renderer are unchanged.
 - **The Music Library shows the playing track's cover.** The player at the bottom of the Music Library and the playing row of its Queue showed a music note instead of the cover Now Playing shows, whenever that cover came from the music stream itself, from another app or from AirPlay. They now load it the way Now Playing does.
 - **Videos follow Fill the screen.** Videos in the photo slideshows always kept their frame between black bars, whatever **Fill the screen** said. They now follow the same rule as photos: **Smart** crops a video shaped close to the screen to the edges and **Always** crops every video. A video that is not enlarged keeps its black bars instead of the blurred backdrop photos get, since blurring every frame would cost too much on a kiosk (#1298).
+- **Updates no longer use up storage until the next reboot.** On Android 11 and older, with Kiosk Satellite set as the home app, the old APK could stay on disk after an update until the device restarted, so devices with little storage eventually ran out of space and updates failed. Android kept trying to restart the home app during its own update and each try drew a starting window. Kiosk Satellite no longer asks those Android versions for one. Space already lost comes back with one reboot.
 
 ## v2026.11.5 - 2026-11-04
 
