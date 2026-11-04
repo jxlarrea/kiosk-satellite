@@ -8,5 +8,11 @@
   "screensaverMediaTransitionRandom": "Willekeurig",
   "screensaverMediaFillOff": "Uit",
   "screensaverMediaFillSmart": "Slim",
-  "screensaverMediaFillAlways": "Altijd vullen"
+  "screensaverMediaFillAlways": "Altijd vullen",
+  "settingScreensaverVideoLengthTitle": "Videoduur",
+  "settingScreensaverVideoLengthDescription": "Hoelang elke video speelt voordat de volgende verschijnt.",
+  "screensaverMediaVideoLengthFull": "Hele video",
+  "screensaverMediaVideoLengthInterval": "Zoals foto's",
+  "settingScreensaverImageIntervalDescription": "Hoelang elke afbeelding wordt getoond voordat de volgende verschijnt.",
+  "settingScreensaverPhotoIntervalDescription": "Hoelang elke foto wordt getoond voordat de volgende verschijnt."
 }

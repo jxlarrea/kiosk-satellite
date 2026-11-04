@@ -143,12 +143,15 @@ function showElement(el, opts) {
    'always' drops the cap and crops every photo to the edges; 'off' keeps
    every frame between black bars. */
 function fillFor(img) {
+  return fillForSize(img.naturalWidth, img.naturalHeight);
+}
+
+function fillForSize(w, h) {
   const mode = CFG.mediaFill;
   if (!mode || mode === 'off') return null;
   // Always answers before the shapes are read: nothing it shows is ever
   // framed, so an unreadable size has no decision to change.
   if (mode === 'always') return 'cover';
-  const w = img.naturalWidth, h = img.naturalHeight;
   const sw = window.innerWidth, sh = window.innerHeight;
   if (!w || !h || !sw || !sh) return null;
   const photo = w / h, screen = sw / sh;
@@ -209,14 +212,28 @@ function stillFor(img) {
   return wrap;
 }
 
+/* A video slide follows the same rule on its own shape (issue #1298). One
+   that keeps its frame sits between black bars: a blurred backdrop would
+   have to blur every frame. Camera streams are left as they are. */
+function applyVideoFill(v) {
+  v.classList.toggle('cover', fillForSize(v.videoWidth, v.videoHeight) === 'cover');
+}
+
 // Reframe visible photos without restarting the playlist or its hold timer.
 function refreshPhotoFill() {
   content.querySelectorAll('img.photo').forEach(applyPhotoFill);
+  content.querySelectorAll('video.slide-video').forEach(applyVideoFill);
 }
 window.__ksPhotoFill = (fill) => {
   if (!['off', 'smart', 'always'].includes(fill)) return;
   CFG.mediaFill = fill;
   refreshPhotoFill();
+};
+// Video length changed while the screensaver is up: the next video follows
+// it, the one playing keeps its own.
+window.__ksVideoLength = (length) => {
+  if (!['full', 'interval'].includes(length)) return;
+  CFG.mediaVideoLength = length;
 };
 window.addEventListener('resize', refreshPhotoFill);
 
@@ -442,10 +459,22 @@ async function playItem(hass, id, playlist, advance, intervalMs) {
   log('media: resolved ' + (resolved.mime_type || '?') + ' ' + (url || '').slice(0, 60));
   if (isVideo(resolved.mime_type, url)) {
     const v = document.createElement('video');
+    v.className = 'slide-video';
     v.src = url; v.autoplay = true; v.muted = true; v.playsInline = true;
     v.loop = playlist.length === 1;
-    if (playlist.length > 1) v.addEventListener('ended', advance);
-    v.addEventListener('error', advance);
+    // Only the slide on screen moves the deck: a video cut short by its
+    // hold keeps playing under the hand-off and may end in the meantime.
+    const current = () => { if (epoch === photoEpoch) advance(); };
+    if (playlist.length > 1) v.addEventListener('ended', current);
+    v.addEventListener('error', current);
+    v.addEventListener('loadedmetadata', () => applyVideoFill(v));
+    // Video length on Same as photos: the photo hold runs too, and the
+    // first of it or the video's end moves on.
+    if (playlist.length > 1 && CFG.mediaVideoLength === 'interval') {
+      v.addEventListener('playing', () => {
+        if (epoch === photoEpoch && holdCallback === null) startPhotoHold(advance, intervalMs);
+      }, { once: true });
+    }
     bridge('slide', null); // no photo details for a video
     showElement(v);
   } else {

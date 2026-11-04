@@ -8,5 +8,11 @@
   "screensaverMediaTransitionRandom": "Випадковий",
   "screensaverMediaFillOff": "Вимкнено",
   "screensaverMediaFillSmart": "Розумне",
-  "screensaverMediaFillAlways": "Завжди"
+  "screensaverMediaFillAlways": "Завжди",
+  "settingScreensaverVideoLengthTitle": "Тривалість відео",
+  "settingScreensaverVideoLengthDescription": "Скільки часу кожне відео відтворюється перед наступним.",
+  "screensaverMediaVideoLengthFull": "Усе відео",
+  "screensaverMediaVideoLengthInterval": "Як фото",
+  "settingScreensaverImageIntervalDescription": "Скільки часу кожне зображення показується перед наступним.",
+  "settingScreensaverPhotoIntervalDescription": "Скільки часу кожне фото показується перед наступним."
 }

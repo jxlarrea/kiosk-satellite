@@ -3,7 +3,6 @@
   "settingScreensaverGalleryItemsTitle": "Photos",
   "settingScreensaverGalleryItemsDescription": "Les photos et vidéos que cet économiseur d'écran fait défiler. Choisies depuis la galerie de l'appareil ; une nouvelle sélection remplace la précédente.",
   "settingScreensaverGalleryIntervalTitle": "Secondes par photo",
-  "settingScreensaverGalleryIntervalDescription": "Durée d'affichage de chaque photo avant la suivante. Les vidéos sont lues en entier.",
   "settingScreensaverGalleryShuffleTitle": "Aléatoire",
   "settingScreensaverGalleryShuffleDescription": "Parcourir la sélection dans un ordre aléatoire.",
   "settingScreensaverGalleryTransitionTitle": "Transition",

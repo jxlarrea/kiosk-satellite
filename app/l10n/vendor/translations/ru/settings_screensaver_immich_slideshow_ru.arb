@@ -1,7 +1,6 @@
 {
   "@@locale": "ru",
   "settingScreensaverImmichIntervalTitle": "Секунд на изображение",
-  "settingScreensaverImmichIntervalDescription": "Как долго показывается каждое изображение до следующего. Видео проигрываются целиком.",
   "settingScreensaverImmichShuffleTitle": "Перемешивание",
   "settingScreensaverImmichShuffleDescription": "Циклически показывать медиа в случайном порядке.",
   "settingScreensaverImmichTransitionTitle": "Переход",

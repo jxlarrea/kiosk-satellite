@@ -1,7 +1,6 @@
 {
   "@@locale": "nl",
   "settingScreensaverImmichIntervalTitle": "Seconden per afbeelding",
-  "settingScreensaverImmichIntervalDescription": "Hoelang elke afbeelding wordt getoond voordat de volgende verschijnt. Video's worden volledig afgespeeld.",
   "settingScreensaverImmichShuffleTitle": "Willekeurige volgorde",
   "settingScreensaverImmichShuffleDescription": "Speel de media in willekeurige volgorde af.",
   "settingScreensaverImmichTransitionTitle": "Overgang",

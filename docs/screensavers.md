@@ -164,19 +164,19 @@ Some light sensors stop reporting while the display is off. On those devices the
 
 ### Home Assistant Media
 
-Streams media served by Home Assistant's media browser, including single images, image folders, video files, or `camera.*` entities (which stream over WebRTC with an MJPEG fallback). **Media source** opens the picker. Selecting an image folder unlocks playlist controls (**Seconds per image**, **Shuffle**, **Include subfolders**, **Transition**, and **Tap edges to change slides**). Video assets play through to completion. Photos follow standard [Slideshow behavior](#slideshow-behavior) scaling rules, whereas videos and camera streams preserve their native aspect ratio.
+Streams media served by Home Assistant's media browser, including single images, image folders, video files, or `camera.*` entities (which stream over WebRTC with an MJPEG fallback). **Media source** opens the picker. Selecting an image folder unlocks playlist controls (**Seconds per image**, **Video length**, **Shuffle**, **Include subfolders**, **Transition** and **Tap edges to change slides**). Photos and videos follow the [Slideshow behavior](#slideshow-behavior) rules, while camera streams keep their native aspect ratio.
 
 **Show metadata** puts each photo's details in a corner, read from the photo's own EXIF. **Date taken** shows when it was taken and **Camera details** shows the camera model with the focal length, aperture and ISO. **Metadata position**, **Text drop shadow**, **Text scaling** and **Vignette strength** work as they do on Immich Media. Location is left out because turning GPS coordinates into a place name needs an online lookup service. The details come from JPEG photos. Videos and camera streams show none.
 
 ### Local Media
 
-Displays an image slideshow loaded from a local folder on the device. Configuration options include **Local folder** (selected on device or typed into the remote admin), **Seconds per photo**, **Shuffle**, **Include subfolders**, **Transition**, **Fill the screen**, and **Tap edges to change slides**.
+Displays an image slideshow loaded from a local folder on the device. Configuration options include **Local folder** (selected on device or typed into the remote admin), **Seconds per photo**, **Video length**, **Shuffle**, **Include subfolders**, **Transition**, **Fill the screen** and **Tap edges to change slides**.
 
 **Show metadata** puts each photo's details in a corner, read from the photo's own EXIF. **Date taken** shows when it was taken and **Camera details** shows the camera model with the focal length, aperture and ISO. **Metadata position**, **Text drop shadow**, **Text scaling** and **Vignette strength** work as they do on Immich Media. Location is left out because turning GPS coordinates into a place name needs an online lookup service. The details come from JPEG photos. Videos show none.
 
 ### Photo Gallery
 
-Operates similarly to Local Media, but selects files using the native system gallery picker. This avoids needing broad storage permissions. Selected images are stored locally to survive device reboots. Options include **Photos** selection, **Seconds per photo**, **Shuffle**, **Transition**, **Fill the screen**, and **Tap edges to change slides**.
+Operates similarly to Local Media, but selects files using the native system gallery picker. This avoids needing broad storage permissions. Selected images are stored locally to survive device reboots. Options include **Photos** selection, **Seconds per photo**, **Video length**, **Shuffle**, **Transition**, **Fill the screen** and **Tap edges to change slides**.
 
 ### Image URL
 
@@ -231,7 +231,7 @@ Photo slideshow modes (Home Assistant Media, Local Media, Photo Gallery, Image U
   | Smart | Crops up to roughly 25% along one axis to fill the display if the image aspect ratio is close to the panel's aspect ratio (covering standard 4:3 and 16:9 camera formats). Portrait and square photos retain their full frame over an enlarged, blurred, and dimmed copy of the image instead of black bars. |
   | Always | Scales the image to cover the display completely regardless of aspect ratio, cropping overflow. A 4:3 image on a 2:1 display loses approximately one-third of its vertical framing. |
 
-* **Videos** play muted to completion, overriding image interval timers. Unplayable video files are skipped automatically.
+* **Videos** play muted. **Video length** (Whole video by default) picks how long. Whole video plays each one to its end, and Same as photos stops it once the seconds per photo run out, or at its end if it is shorter. Videos follow **Fill the screen** too, but one that is not enlarged keeps black bars instead of the blurred backdrop. Unplayable video files are skipped automatically.
 * The slideshow playlist builds upon screensaver activation. Newly added files appear during the next screensaver launch rather than mid-session. Image URL has no playlist and fetches a new photo for every slide.
 * Images decode at the native panel resolution, and memory for previous slides is released immediately to prevent memory exhaustion on low-RAM devices.
 * **Tap edges to change slides** (on by default): A tap on the left or right fifth of the screen shows the previous or next slide and resets its full display interval. Taps on the middle three fifths dismiss the screensaver as usual. Each slideshow mode has its own switch on its settings page, and turning it off makes every tap dismiss again. Home Assistant Media offers it for image folders only, since a single image, video, or camera stream has nothing to step.

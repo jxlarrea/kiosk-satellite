@@ -4084,8 +4084,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'screensaverMediaBottomRight' => strings.screensaverMediaBottomRight,
       'settingScreensaverImmichIntervalTitle' =>
         strings.settingScreensaverImmichIntervalTitle,
-      'settingScreensaverImmichIntervalDescription' =>
-        strings.settingScreensaverImmichIntervalDescription,
       'settingScreensaverImmichShuffleTitle' =>
         strings.settingScreensaverImmichShuffleTitle,
       'settingScreensaverImmichShuffleDescription' =>
@@ -4168,14 +4166,24 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'screensaverMediaFillOff' => strings.screensaverMediaFillOff,
       'screensaverMediaFillSmart' => strings.screensaverMediaFillSmart,
       'screensaverMediaFillAlways' => strings.screensaverMediaFillAlways,
+      'settingScreensaverVideoLengthTitle' =>
+        strings.settingScreensaverVideoLengthTitle,
+      'settingScreensaverVideoLengthDescription' =>
+        strings.settingScreensaverVideoLengthDescription,
+      'screensaverMediaVideoLengthFull' =>
+        strings.screensaverMediaVideoLengthFull,
+      'screensaverMediaVideoLengthInterval' =>
+        strings.screensaverMediaVideoLengthInterval,
+      'settingScreensaverImageIntervalDescription' =>
+        strings.settingScreensaverImageIntervalDescription,
+      'settingScreensaverPhotoIntervalDescription' =>
+        strings.settingScreensaverPhotoIntervalDescription,
       'settingScreensaverGalleryItemsTitle' =>
         strings.settingScreensaverGalleryItemsTitle,
       'settingScreensaverGalleryItemsDescription' =>
         strings.settingScreensaverGalleryItemsDescription,
       'settingScreensaverGalleryIntervalTitle' =>
         strings.settingScreensaverGalleryIntervalTitle,
-      'settingScreensaverGalleryIntervalDescription' =>
-        strings.settingScreensaverGalleryIntervalDescription,
       'settingScreensaverGalleryShuffleTitle' =>
         strings.settingScreensaverGalleryShuffleTitle,
       'settingScreensaverGalleryShuffleDescription' =>
@@ -4206,8 +4214,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverMediaIdDescription,
       'settingScreensaverMediaIntervalTitle' =>
         strings.settingScreensaverMediaIntervalTitle,
-      'settingScreensaverMediaIntervalDescription' =>
-        strings.settingScreensaverMediaIntervalDescription,
       'settingScreensaverMediaShuffleTitle' =>
         strings.settingScreensaverMediaShuffleTitle,
       'settingScreensaverMediaShuffleDescription' =>
@@ -4275,8 +4281,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverLocalFolderDescription,
       'settingScreensaverLocalIntervalTitle' =>
         strings.settingScreensaverLocalIntervalTitle,
-      'settingScreensaverLocalIntervalDescription' =>
-        strings.settingScreensaverLocalIntervalDescription,
       'settingScreensaverLocalShuffleTitle' =>
         strings.settingScreensaverLocalShuffleTitle,
       'settingScreensaverLocalShuffleDescription' =>

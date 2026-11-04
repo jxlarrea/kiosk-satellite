@@ -1,6 +1,6 @@
 # Kiosk Satellite Immich Screensaver
 
-Kiosk Satellite can turn your device into a smart digital photo frame using an [Immich](https://immich.app/) server. Point it at your library or specific albums to enjoy full screen slideshows, customizable transition effects, an optional metadata overlay, and local image caching for instant loading. It even plays videos from your selection in full with audio muted.
+Kiosk Satellite can turn your device into a smart digital photo frame using an [Immich](https://immich.app/) server. Point it at your library or specific albums to enjoy full screen slideshows, customizable transition effects, an optional metadata overlay, and local image caching for instant loading. It even plays videos from your selection with audio muted.
 
 ## Setup
 
@@ -18,10 +18,11 @@ The settings page is organized into five main sections: Server Connection, Media
 | Media | Photos only | off | Skips video assets during the slideshow. With videos on, a video whose buffering would not fit the device's memory is skipped on its own (the log says which), so a long phone video cannot crash a small kiosk. |
 | Media | Cache media locally | on | Stores previews on the device for faster loading. |
 | Media | Cache size (items) | 500 | Automatically purges the oldest cached files when full. Current usage displays beneath this field. |
-| Slideshow | Seconds per image | 10 | Sets photo display duration. Videos ignore this setting and play through to completion. |
+| Slideshow | Seconds per image | 10 | Sets photo display duration. |
+| Slideshow | Video length | Whole video | Whole video plays each video to its end. Same as photos stops a video once Seconds per image runs out, or at its end if it is shorter. |
 | Slideshow | Shuffle | off | Displays media in random order instead of the server default (newest first). Each session picks up where the last one stopped, so every item shows once before any repeats. |
 | Slideshow | Transition | Crossfade | Options include none, crossfade, slide, zoom, Ken Burns, or random. |
-| Slideshow | Fill the screen | Smart | Controls how aggressively photos are cropped to fit the screen. |
+| Slideshow | Fill the screen | Smart | Controls how aggressively photos and videos are cropped to fit the screen. |
 | Slideshow | Pair portrait photos | on | Displays two portrait photos side by side in landscape mode. |
 | Slideshow | Pair landscape photos | on | Displays two landscape photos one above the other in portrait mode. |
 | Slideshow | Tap edges to change slides | on | A tap on the left or right fifth of the screen shows the previous or next photo instead of dismissing the screensaver. |
@@ -65,6 +66,8 @@ Most users prefer photos to fill the entire display. The **Fill the screen** set
 | Off | Displays the full uncropped photo, placing black bars where aspect ratios differ. |
 | Smart (default) | Enlarges photos to fill the display if the aspect ratio is close to the screen's dimensions (allowing up to roughly a 25 percent crop on one axis). This accommodates standard 4:3 and 16:9 camera shots on landscape displays. For portrait or square photos where cropping would ruin the composition, the photo remains uncropped in the center while an enlarged, blurred, and dimmed version of the image serves as the background instead of black bars. |
 | Always | Forces every photo to fill the panel regardless of aspect ratio. Nothing is ever letterboxed, but cropping can be severe. A 4:3 image on a 2:1 screen loses about a third of its height, and a portrait photo on a landscape screen is cropped down to a narrow horizontal strip. |
+
+Videos follow the same rule. A video that is not enlarged keeps black bars instead of the blurred background, since blurring every frame would cost too much on a kiosk.
 
 The **Always** mode has no awareness of a photo's subject, so anything outside the crop area is lost. If a photo features an off center subject like a person or a pet, this setting may crop them out.
 

@@ -1,7 +1,6 @@
 {
   "@@locale": "uk",
   "settingScreensaverImmichIntervalTitle": "Секунд на зображення",
-  "settingScreensaverImmichIntervalDescription": "Скільки часу кожне зображення показується перед наступним. Відео відтворюються повністю.",
   "settingScreensaverImmichShuffleTitle": "Випадковий порядок",
   "settingScreensaverImmichShuffleDescription": "Показувати медіа у випадковому порядку.",
   "settingScreensaverImmichTransitionTitle": "Перехід",

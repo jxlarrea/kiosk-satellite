@@ -3,7 +3,6 @@
   "settingScreensaverLocalFolderTitle": "本地文件夹",
   "settingScreensaverLocalFolderDescription": "此设备上的文件夹，屏保会轮播其中的照片和视频。在设备上选择，也可在此远程输入路径。",
   "settingScreensaverLocalIntervalTitle": "每张照片的显示时长（秒）",
-  "settingScreensaverLocalIntervalDescription": "每张照片切换前显示的时长。视频完整播放。",
   "settingScreensaverLocalShuffleTitle": "随机播放",
   "settingScreensaverLocalShuffleDescription": "以随机顺序轮播文件夹内容，而非按名称排序。",
   "settingScreensaverLocalRecursiveTitle": "包含子文件夹",

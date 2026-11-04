@@ -3,7 +3,6 @@
   "settingScreensaverMediaIdTitle": "媒体来源",
   "settingScreensaverMediaIdDescription": "Home Assistant 媒体项、文件夹或摄像头。使用“浏览”选择。",
   "settingScreensaverMediaIntervalTitle": "每张图片的显示时长（秒）",
-  "settingScreensaverMediaIntervalDescription": "每张图片切换前显示的时长。视频完整播放。",
   "settingScreensaverMediaShuffleTitle": "随机播放",
   "settingScreensaverMediaShuffleDescription": "以随机顺序播放文件夹内容。",
   "settingScreensaverMediaRecursiveTitle": "包含子文件夹",

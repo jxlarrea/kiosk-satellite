@@ -170,5 +170,111 @@
         "Screensaver > Immich Media screensaver > Slideshow"
       ]
     }
+  },
+  "settingScreensaverVideoLengthTitle": "Video length",
+  "@settingScreensaverVideoLengthTitle": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Setting label. Picks how long a video plays in a photo slideshow.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverVideoLengthDescription": "How long each video plays before the next.",
+  "@settingScreensaverVideoLengthDescription": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "screensaverMediaVideoLengthFull": "Whole video",
+  "@screensaverMediaVideoLengthFull": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Option of Video length: each video plays to its end.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "screensaverMediaVideoLengthInterval": "Same as photos",
+  "@screensaverMediaVideoLengthInterval": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Option of Video length: a video stops once the seconds per photo run out, like a photo.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverImageIntervalDescription": "How long each image shows before the next.",
+  "@settingScreensaverImageIntervalDescription": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Help below the Seconds per image setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverPhotoIntervalDescription": "How long each photo shows before the next.",
+  "@settingScreensaverPhotoIntervalDescription": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Help below the Seconds per photo setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver"
+      ]
+    }
   }
 }

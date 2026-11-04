@@ -538,7 +538,11 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "screensaver.media_interval_seconds": {
     "title": "settingScreensaverMediaIntervalTitle",
-    "description": "settingScreensaverMediaIntervalDescription",
+    "description": "settingScreensaverImageIntervalDescription",
+  },
+  "screensaver.media_video_length": {
+    "title": "settingScreensaverVideoLengthTitle",
+    "description": "settingScreensaverVideoLengthDescription",
   },
   "screensaver.media_shuffle": {
     "title": "settingScreensaverMediaShuffleTitle",
@@ -566,7 +570,11 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "screensaver.gallery_interval_seconds": {
     "title": "settingScreensaverGalleryIntervalTitle",
-    "description": "settingScreensaverGalleryIntervalDescription",
+    "description": "settingScreensaverPhotoIntervalDescription",
+  },
+  "screensaver.gallery_video_length": {
+    "title": "settingScreensaverVideoLengthTitle",
+    "description": "settingScreensaverVideoLengthDescription",
   },
   "screensaver.gallery_shuffle": {
     "title": "settingScreensaverGalleryShuffleTitle",
@@ -590,7 +598,11 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "screensaver.local_interval_seconds": {
     "title": "settingScreensaverLocalIntervalTitle",
-    "description": "settingScreensaverLocalIntervalDescription",
+    "description": "settingScreensaverPhotoIntervalDescription",
+  },
+  "screensaver.local_video_length": {
+    "title": "settingScreensaverVideoLengthTitle",
+    "description": "settingScreensaverVideoLengthDescription",
   },
   "screensaver.local_shuffle": {
     "title": "settingScreensaverLocalShuffleTitle",
@@ -630,7 +642,11 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "screensaver.immich_interval_seconds": {
     "title": "settingScreensaverImmichIntervalTitle",
-    "description": "settingScreensaverImmichIntervalDescription",
+    "description": "settingScreensaverImageIntervalDescription",
+  },
+  "screensaver.immich_video_length": {
+    "title": "settingScreensaverVideoLengthTitle",
+    "description": "settingScreensaverVideoLengthDescription",
   },
   "screensaver.immich_shuffle": {
     "title": "settingScreensaverImmichShuffleTitle",

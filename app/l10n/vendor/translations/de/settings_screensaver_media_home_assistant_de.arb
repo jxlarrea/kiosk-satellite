@@ -3,7 +3,6 @@
   "settingScreensaverMediaIdTitle": "Medienquelle",
   "settingScreensaverMediaIdDescription": "Medienobjekt, Ordner oder Kamera aus Home Assistant. Verwende „Durchsuchen“, um eine Auswahl zu treffen.",
   "settingScreensaverMediaIntervalTitle": "Sekunden pro Bild",
-  "settingScreensaverMediaIntervalDescription": "Wie lange jedes Bild angezeigt wird, bevor zum nächsten gewechselt wird. Videos werden vollständig abgespielt.",
   "settingScreensaverMediaShuffleTitle": "Zufällige Reihenfolge",
   "settingScreensaverMediaShuffleDescription": "Gibt die Inhalte eines Ordners in zufälliger Reihenfolge wieder.",
   "settingScreensaverMediaRecursiveTitle": "Unterordner einbeziehen",

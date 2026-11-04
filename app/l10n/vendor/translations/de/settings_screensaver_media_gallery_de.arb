@@ -3,7 +3,6 @@
   "settingScreensaverGalleryItemsTitle": "Fotos",
   "settingScreensaverGalleryItemsDescription": "Fotos und Videos, die dieser Bildschirmschoner anzeigt. Sie werden aus der Galerie des Geräts ausgewählt. Eine neue Auswahl ersetzt die bisherige.",
   "settingScreensaverGalleryIntervalTitle": "Sekunden pro Foto",
-  "settingScreensaverGalleryIntervalDescription": "Wie lange jedes Foto angezeigt wird, bevor zum nächsten gewechselt wird. Videos werden vollständig abgespielt.",
   "settingScreensaverGalleryShuffleTitle": "Zufällige Reihenfolge",
   "settingScreensaverGalleryShuffleDescription": "Durchläuft die Auswahl in zufälliger Reihenfolge.",
   "settingScreensaverGalleryTransitionTitle": "Übergang",

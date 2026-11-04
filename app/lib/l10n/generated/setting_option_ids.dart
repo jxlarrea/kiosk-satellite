@@ -90,6 +90,10 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "bold": "screensaverFontBold",
     "black": "screensaverFontBlack"
   },
+  "screensaver.media_video_length": {
+    "full": "screensaverMediaVideoLengthFull",
+    "interval": "screensaverMediaVideoLengthInterval"
+  },
   "screensaver.media_transition": {
     "none": "screensaverMediaTransitionNone",
     "fade": "screensaverMediaTransitionFade",
@@ -102,6 +106,10 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "off": "screensaverMediaFillOff",
     "smart": "screensaverMediaFillSmart",
     "always": "screensaverMediaFillAlways"
+  },
+  "screensaver.gallery_video_length": {
+    "full": "screensaverMediaVideoLengthFull",
+    "interval": "screensaverMediaVideoLengthInterval"
   },
   "screensaver.gallery_transition": {
     "none": "screensaverMediaTransitionNone",
@@ -116,6 +124,10 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "smart": "screensaverMediaFillSmart",
     "always": "screensaverMediaFillAlways"
   },
+  "screensaver.local_video_length": {
+    "full": "screensaverMediaVideoLengthFull",
+    "interval": "screensaverMediaVideoLengthInterval"
+  },
   "screensaver.local_transition": {
     "none": "screensaverMediaTransitionNone",
     "fade": "screensaverMediaTransitionFade",
@@ -128,6 +140,10 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "off": "screensaverMediaFillOff",
     "smart": "screensaverMediaFillSmart",
     "always": "screensaverMediaFillAlways"
+  },
+  "screensaver.immich_video_length": {
+    "full": "screensaverMediaVideoLengthFull",
+    "interval": "screensaverMediaVideoLengthInterval"
   },
   "screensaver.immich_transition": {
     "none": "screensaverMediaTransitionNone",

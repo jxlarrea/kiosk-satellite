@@ -3,7 +3,6 @@
   "settingScreensaverGalleryItemsTitle": "Fotos",
   "settingScreensaverGalleryItemsDescription": "Fotos y videos que recorre este protector de pantalla. Se eligen desde la galería del dispositivo. Volver a elegir reemplaza la selección.",
   "settingScreensaverGalleryIntervalTitle": "Segundos por foto",
-  "settingScreensaverGalleryIntervalDescription": "Tiempo que se muestra cada foto antes de pasar a la siguiente. Los videos se reproducen completos.",
   "settingScreensaverGalleryShuffleTitle": "Orden aleatorio",
   "settingScreensaverGalleryShuffleDescription": "Recorre la selección en orden aleatorio.",
   "settingScreensaverGalleryTransitionTitle": "Transición",

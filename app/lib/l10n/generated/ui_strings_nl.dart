@@ -12472,10 +12472,6 @@ class UiStringsNl extends UiStrings {
   String get settingScreensaverImmichIntervalTitle => 'Seconden per afbeelding';
 
   @override
-  String get settingScreensaverImmichIntervalDescription =>
-      'Hoelang elke afbeelding wordt getoond voordat de volgende verschijnt. Video\'s worden volledig afgespeeld.';
-
-  @override
   String get settingScreensaverImmichShuffleTitle => 'Willekeurige volgorde';
 
   @override
@@ -12679,6 +12675,27 @@ class UiStringsNl extends UiStrings {
   String get screensaverMediaFillAlways => 'Altijd vullen';
 
   @override
+  String get settingScreensaverVideoLengthTitle => 'Videoduur';
+
+  @override
+  String get settingScreensaverVideoLengthDescription =>
+      'Hoelang elke video speelt voordat de volgende verschijnt.';
+
+  @override
+  String get screensaverMediaVideoLengthFull => 'Hele video';
+
+  @override
+  String get screensaverMediaVideoLengthInterval => 'Zoals foto\'s';
+
+  @override
+  String get settingScreensaverImageIntervalDescription =>
+      'Hoelang elke afbeelding wordt getoond voordat de volgende verschijnt.';
+
+  @override
+  String get settingScreensaverPhotoIntervalDescription =>
+      'Hoelang elke foto wordt getoond voordat de volgende verschijnt.';
+
+  @override
   String get settingScreensaverGalleryItemsTitle => 'Foto\'s';
 
   @override
@@ -12687,10 +12704,6 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingScreensaverGalleryIntervalTitle => 'Seconden per foto';
-
-  @override
-  String get settingScreensaverGalleryIntervalDescription =>
-      'Hoelang elke foto wordt getoond voordat de volgende verschijnt. Video\'s worden volledig afgespeeld.';
 
   @override
   String get settingScreensaverGalleryShuffleTitle => 'Willekeurige volgorde';
@@ -12764,10 +12777,6 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingScreensaverMediaIntervalTitle => 'Seconden per afbeelding';
-
-  @override
-  String get settingScreensaverMediaIntervalDescription =>
-      'Hoelang elke afbeelding wordt getoond voordat de volgende verschijnt. Video\'s worden volledig afgespeeld.';
 
   @override
   String get settingScreensaverMediaShuffleTitle => 'Willekeurige volgorde';
@@ -12911,10 +12920,6 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingScreensaverLocalIntervalTitle => 'Seconden per foto';
-
-  @override
-  String get settingScreensaverLocalIntervalDescription =>
-      'Hoelang elke foto wordt getoond voordat de volgende verschijnt. Video\'s worden volledig afgespeeld.';
 
   @override
   String get settingScreensaverLocalShuffleTitle => 'Willekeurige volgorde';

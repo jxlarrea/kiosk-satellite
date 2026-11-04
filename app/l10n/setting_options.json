@@ -89,6 +89,10 @@
     "bold": "screensaverFontBold",
     "black": "screensaverFontBlack"
   },
+  "screensaver.media_video_length": {
+    "full": "screensaverMediaVideoLengthFull",
+    "interval": "screensaverMediaVideoLengthInterval"
+  },
   "screensaver.media_transition": {
     "none": "screensaverMediaTransitionNone",
     "fade": "screensaverMediaTransitionFade",
@@ -101,6 +105,10 @@
     "off": "screensaverMediaFillOff",
     "smart": "screensaverMediaFillSmart",
     "always": "screensaverMediaFillAlways"
+  },
+  "screensaver.gallery_video_length": {
+    "full": "screensaverMediaVideoLengthFull",
+    "interval": "screensaverMediaVideoLengthInterval"
   },
   "screensaver.gallery_transition": {
     "none": "screensaverMediaTransitionNone",
@@ -115,6 +123,10 @@
     "smart": "screensaverMediaFillSmart",
     "always": "screensaverMediaFillAlways"
   },
+  "screensaver.local_video_length": {
+    "full": "screensaverMediaVideoLengthFull",
+    "interval": "screensaverMediaVideoLengthInterval"
+  },
   "screensaver.local_transition": {
     "none": "screensaverMediaTransitionNone",
     "fade": "screensaverMediaTransitionFade",
@@ -127,6 +139,10 @@
     "off": "screensaverMediaFillOff",
     "smart": "screensaverMediaFillSmart",
     "always": "screensaverMediaFillAlways"
+  },
+  "screensaver.immich_video_length": {
+    "full": "screensaverMediaVideoLengthFull",
+    "interval": "screensaverMediaVideoLengthInterval"
   },
   "screensaver.immich_transition": {
     "none": "screensaverMediaTransitionNone",

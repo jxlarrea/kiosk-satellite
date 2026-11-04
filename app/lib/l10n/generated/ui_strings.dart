@@ -21545,12 +21545,6 @@ abstract class UiStrings {
   /// **'Seconds per image'**
   String get settingScreensaverImmichIntervalTitle;
 
-  /// Help below the setting.
-  ///
-  /// In en, this message translates to:
-  /// **'How long each image shows before the next. Videos play in full.'**
-  String get settingScreensaverImmichIntervalDescription;
-
   /// Setting label.
   ///
   /// In en, this message translates to:
@@ -21881,6 +21875,42 @@ abstract class UiStrings {
   /// **'Always'**
   String get screensaverMediaFillAlways;
 
+  /// Setting label. Picks how long a video plays in a photo slideshow.
+  ///
+  /// In en, this message translates to:
+  /// **'Video length'**
+  String get settingScreensaverVideoLengthTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'How long each video plays before the next.'**
+  String get settingScreensaverVideoLengthDescription;
+
+  /// Option of Video length: each video plays to its end.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole video'**
+  String get screensaverMediaVideoLengthFull;
+
+  /// Option of Video length: a video stops once the seconds per photo run out, like a photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as photos'**
+  String get screensaverMediaVideoLengthInterval;
+
+  /// Help below the Seconds per image setting.
+  ///
+  /// In en, this message translates to:
+  /// **'How long each image shows before the next.'**
+  String get settingScreensaverImageIntervalDescription;
+
+  /// Help below the Seconds per photo setting.
+  ///
+  /// In en, this message translates to:
+  /// **'How long each photo shows before the next.'**
+  String get settingScreensaverPhotoIntervalDescription;
+
   /// Setting label.
   ///
   /// In en, this message translates to:
@@ -21898,12 +21928,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Seconds per photo'**
   String get settingScreensaverGalleryIntervalTitle;
-
-  /// Help below the setting.
-  ///
-  /// In en, this message translates to:
-  /// **'How long each photo shows before the next. Videos play in full.'**
-  String get settingScreensaverGalleryIntervalDescription;
 
   /// Setting label.
   ///
@@ -22024,12 +22048,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Seconds per image'**
   String get settingScreensaverMediaIntervalTitle;
-
-  /// Help below the setting.
-  ///
-  /// In en, this message translates to:
-  /// **'How long each image shows before the next. Videos play in full.'**
-  String get settingScreensaverMediaIntervalDescription;
 
   /// Setting label.
   ///
@@ -22276,12 +22294,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Seconds per photo'**
   String get settingScreensaverLocalIntervalTitle;
-
-  /// Help below the setting.
-  ///
-  /// In en, this message translates to:
-  /// **'How long each photo shows before the next. Videos play in full.'**
-  String get settingScreensaverLocalIntervalDescription;
 
   /// Setting label.
   ///

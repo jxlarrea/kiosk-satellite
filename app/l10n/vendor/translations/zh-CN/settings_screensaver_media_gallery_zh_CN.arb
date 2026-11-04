@@ -3,7 +3,6 @@
   "settingScreensaverGalleryItemsTitle": "照片",
   "settingScreensaverGalleryItemsDescription": "此屏保轮播的照片和视频。在设备图库中选择，再次选择会替换当前选择。",
   "settingScreensaverGalleryIntervalTitle": "每张照片的显示时长（秒）",
-  "settingScreensaverGalleryIntervalDescription": "每张照片切换前显示的时长。视频完整播放。",
   "settingScreensaverGalleryShuffleTitle": "随机播放",
   "settingScreensaverGalleryShuffleDescription": "以随机顺序轮播所选内容。",
   "settingScreensaverGalleryTransitionTitle": "切换效果",

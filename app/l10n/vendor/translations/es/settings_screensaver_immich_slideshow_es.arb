@@ -1,7 +1,6 @@
 {
   "@@locale": "es",
   "settingScreensaverImmichIntervalTitle": "Segundos por imagen",
-  "settingScreensaverImmichIntervalDescription": "Tiempo que se muestra cada imagen antes de pasar a la siguiente. Los videos se reproducen completos.",
   "settingScreensaverImmichShuffleTitle": "Orden aleatorio",
   "settingScreensaverImmichShuffleDescription": "Recorre el contenido multimedia en orden aleatorio.",
   "settingScreensaverImmichTransitionTitle": "Transición",

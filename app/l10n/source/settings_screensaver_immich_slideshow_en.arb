@@ -13,19 +13,6 @@
       ]
     }
   },
-  "settingScreensaverImmichIntervalDescription": "How long each image shows before the next. Videos play in full.",
-  "@settingScreensaverImmichIntervalDescription": {
-    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
-    "description": "Help below the setting.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Immich Media screensaver > Slideshow"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Immich Media screensaver > Slideshow"
-      ]
-    }
-  },
   "settingScreensaverImmichShuffleTitle": "Shuffle",
   "@settingScreensaverImmichShuffleTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",

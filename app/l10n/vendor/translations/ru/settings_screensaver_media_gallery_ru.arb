@@ -3,7 +3,6 @@
   "settingScreensaverGalleryItemsTitle": "Фотографии",
   "settingScreensaverGalleryItemsDescription": "Фото и видео, по которым ходит заставка. Выбираются из галереи на устройстве; повторный выбор заменяет подборку.",
   "settingScreensaverGalleryIntervalTitle": "Секунд на фото",
-  "settingScreensaverGalleryIntervalDescription": "Как долго показывается каждое фото до следующего. Видео проигрываются целиком.",
   "settingScreensaverGalleryShuffleTitle": "Перемешивание",
   "settingScreensaverGalleryShuffleDescription": "Циклически показывать подборку в случайном порядке.",
   "settingScreensaverGalleryTransitionTitle": "Переход",

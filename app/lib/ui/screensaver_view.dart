@@ -3646,6 +3646,23 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
     }
   }
 
+  /// Video length applies to the Media deck's next video without a reload.
+  Future<void> _applyVideoLength() async {
+    if (widget.mode != 'media') return;
+    final length = widget.container.settings.get(
+      defs.screensaverMediaVideoLength,
+    );
+    try {
+      await _webView?.evaluateJavascript(
+        source:
+            'window.__ksVideoLength && '
+            'window.__ksVideoLength(${jsonEncode(length)})',
+      );
+    } catch (_) {
+      // A navigating renderer reads it from the config after its load.
+    }
+  }
+
   Future<void> _applyKiosk(InAppWebViewController controller) async {
     final settings = widget.container.settings;
     await controller.evaluateJavascript(
@@ -3715,6 +3732,9 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
           widget.container.settings.get(defs.screensaverMediaFill),
         );
         unawaited(_applyPhotoFill());
+      }
+      if (e.key == defs.screensaverMediaVideoLength.key) {
+        unawaited(_applyVideoLength());
       }
       final controller = _webView;
       if (controller == null) return;
@@ -3788,6 +3808,7 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
       'mediaIsFolder': s.get(defs.screensaverMediaIsFolder),
       'photoActive': _photoScreenOn,
       'mediaIntervalSeconds': s.get(defs.screensaverMediaInterval),
+      'mediaVideoLength': s.get(defs.screensaverMediaVideoLength),
       'mediaShuffle': s.get(defs.screensaverMediaShuffle),
       'mediaRecursive': s.get(defs.screensaverMediaRecursive),
       'mediaTransition': s.get(defs.screensaverMediaTransition),
@@ -4033,6 +4054,40 @@ Future<double?> _aspectOf(Uint8List bytes) => photoAspect(bytes);
 bool _videoShowing(VideoPlayerController? video) =>
     video != null && video.value.isInitialized;
 
+/// A video slide under Fill the screen (issue #1298), decided by the photo
+/// rule on the video's own shape. A video that covers is cropped to the
+/// edges; the rest keep their frame between black bars. A blurred backdrop
+/// like the photos get would blur every frame, so videos go without one.
+/// The crop only scales the frames the decoder already made, so it costs
+/// no extra memory.
+Widget _videoSlide(VideoPlayerController video, String fill, Size screen) {
+  final v = video.value;
+  final covers =
+      !v.size.isEmpty &&
+      screen.height > 0 &&
+      photoCovers(fill, v.aspectRatio, screen.width / screen.height);
+  if (!covers) {
+    return Center(
+      child: AspectRatio(aspectRatio: v.aspectRatio, child: VideoPlayer(video)),
+    );
+  }
+  return SizedBox.expand(
+    child: FittedBox(
+      fit: BoxFit.cover,
+      clipBehavior: Clip.hardEdge,
+      child: SizedBox(
+        width: v.size.width,
+        height: v.size.height,
+        child: VideoPlayer(video),
+      ),
+    ),
+  );
+}
+
+/// Whether a video slide stops once the seconds per photo run out instead
+/// of playing to its end (issue #1298).
+bool _videoFollowsInterval(String videoLength) => videoLength == 'interval';
+
 /// Screen-off preserves the slide and its remaining hold. In-flight reads
 /// finish, but decoding and committing a new slide wait for the panel. The
 /// native voice overlay holds it the same way: it shows a still of the
@@ -4151,7 +4206,8 @@ mixin _PhotoScreenState<T extends StatefulWidget> on State<T> {
 
 /// The Local Media screensaver: photos and videos from a folder on this
 /// device, no Home Assistant involved. Photos hold for the configured
-/// interval; videos play to their end (muted — a screensaver that suddenly
+/// interval; videos play to their end or for the same interval, as Video
+/// length says (muted — a screensaver that suddenly
 /// has a voice at 2am is a defect, not a feature). The listing is read once
 /// per activation: a screensaver session is short, and re-listing between
 /// slides would hitch exactly when nothing should.
@@ -4393,6 +4449,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver>
         });
         _retirePhoto(oldPhoto);
         await video.play();
+        _holdVideoForInterval(video);
       } catch (e) {
         // A codec the device lacks must not stall the slideshow. Skip past
         // `next` explicitly — _index never reached it, and retrying it
@@ -4440,30 +4497,50 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver>
         _image = photo.image;
       });
       _retirePhoto(oldPhoto);
-      final seconds = c.settings
-          .get(
-            _gallery
-                ? defs.screensaverGalleryInterval
-                : defs.screensaverLocalInterval,
-          )
-          .toInt()
-          .clamp(2, 3600);
       if (_files.length > 1) {
-        _timer = PausableTimer(
-          Duration(seconds: seconds),
-          _advance,
-          paused: !_awake,
-        );
+        _timer = PausableTimer(_interval, _advance, paused: !_awake);
         _prefetch(next + 1);
       }
     }
     _retire(old);
   }
 
+  Duration get _interval => Duration(
+    seconds: c.settings
+        .get(
+          _gallery
+              ? defs.screensaverGalleryInterval
+              : defs.screensaverLocalInterval,
+        )
+        .toInt()
+        .clamp(2, 3600),
+  );
+
+  /// With Video length on Same as photos, [video] gets the photo hold and
+  /// the slideshow moves on when it runs out or the video ends, whichever
+  /// comes first. The hold pauses with the screen like a photo's.
+  void _holdVideoForInterval(VideoPlayerController video) {
+    final length = c.settings.get(
+      _gallery
+          ? defs.screensaverGalleryVideoLength
+          : defs.screensaverLocalVideoLength,
+    );
+    if (!mounted || !identical(_video, video) || _files.length < 2) return;
+    if (!_videoFollowsInterval(length)) return;
+    _timer?.cancel();
+    _timer = PausableTimer(_interval, _advance, paused: !_awake);
+  }
+
   Future<void> _refreshPhoto() async {
     _prepared.clear();
     await _stepping;
-    if (mounted && _image != null) await _go(_index);
+    if (!mounted) return;
+    if (_image != null) {
+      await _go(_index);
+    } else if (_videoShowing(_video)) {
+      // A new fill reframes the playing video without restarting it.
+      setState(() {});
+    }
   }
 
   String get _fill => PhotoFillOverride.resolve(
@@ -4603,7 +4680,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver>
       // Fill the screen: photoCovers holds the rule, shared with the
       // Immich screensaver. A photo that keeps its frame gets the photo
       // itself, blurred and dimmed, as the backdrop instead of black bars.
-      // Videos always keep their frame, in every mode.
+      // Videos follow the same rule without the backdrop (_videoSlide).
       final fill = _fill;
       final fillWanted = !isVideoSlide && fill != 'off';
       final size = MediaQuery.of(context).size;
@@ -4612,12 +4689,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver>
           photoCovers(fill, _imageAspect, size.width / size.height);
       final Widget inner;
       if (isVideoSlide) {
-        inner = Center(
-          child: AspectRatio(
-            aspectRatio: video.value.aspectRatio,
-            child: VideoPlayer(video),
-          ),
-        );
+        inner = _videoSlide(video, fill, size);
       } else {
         Widget picture = Image(
           image: _image!,
@@ -5499,9 +5571,12 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
         _retirePhoto(oldPhoto);
         _retirePhoto(oldPairPhoto);
         // A warmed buffer for a slide we already passed would sit through
-        // the whole video for nothing.
+        // the whole video for nothing. Nothing is warmed for the next slide
+        // while a video plays either: its buffers and a decoded photo
+        // would share the heap (see ImmichManager.videoFits).
         _prepared.clear();
         await video.play();
+        _holdVideoForInterval(video);
       } catch (e) {
         c.log.warn('screensaver', 'immich video failed (${asset.id}): $e');
         await opened?.dispose();
@@ -5554,20 +5629,28 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
       _claimCorners();
       _retirePhoto(oldPhoto);
       _retirePhoto(oldPairPhoto);
-      final seconds = c.settings
-          .get(defs.screensaverImmichInterval)
-          .toInt()
-          .clamp(2, 3600);
       if (_assets.length > _span) {
-        _timer = PausableTimer(
-          Duration(seconds: seconds),
-          _advance,
-          paused: !_awake,
-        );
+        _timer = PausableTimer(_interval, _advance, paused: !_awake);
         _prefetch(next + _span);
       }
     }
     _retire(old);
+  }
+
+  Duration get _interval => Duration(
+    seconds: c.settings
+        .get(defs.screensaverImmichInterval)
+        .toInt()
+        .clamp(2, 3600),
+  );
+
+  /// See the Local Media state's [_holdVideoForInterval].
+  void _holdVideoForInterval(VideoPlayerController video) {
+    final length = c.settings.get(defs.screensaverImmichVideoLength);
+    if (!mounted || !identical(_video, video) || _assets.length < 2) return;
+    if (!_videoFollowsInterval(length)) return;
+    _timer?.cancel();
+    _timer = PausableTimer(_interval, _advance, paused: !_awake);
   }
 
   /// The photo that should share the screen with the one at [index], or
@@ -5616,7 +5699,13 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
   Future<void> _refreshPhoto() async {
     _prepared.clear();
     await _stepping;
-    if (mounted && _image != null) await _go(_index);
+    if (!mounted) return;
+    if (_image != null) {
+      await _go(_index);
+    } else if (_videoShowing(_video)) {
+      // A new fill reframes the playing video without restarting it.
+      setState(() {});
+    }
   }
 
   Object _prepareKey(int index) => (
@@ -5919,11 +6008,13 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
       final size = MediaQuery.of(context).size;
       final Widget inner;
       if (isVideoSlide) {
-        inner = Center(
-          child: AspectRatio(
-            aspectRatio: video.value.aspectRatio,
-            child: VideoPlayer(video),
+        inner = _videoSlide(
+          video,
+          PhotoFillOverride.resolve(
+            context,
+            c.settings.get(defs.screensaverImmichFill),
           ),
+          size,
         );
       } else if (pairIndex == null) {
         inner = _photoBlock(

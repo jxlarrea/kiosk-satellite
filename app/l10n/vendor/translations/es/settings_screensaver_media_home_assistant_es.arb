@@ -3,7 +3,6 @@
   "settingScreensaverMediaIdTitle": "Origen multimedia",
   "settingScreensaverMediaIdDescription": "Elemento multimedia, carpeta o cámara de Home Assistant. Usa Examinar para elegir uno.",
   "settingScreensaverMediaIntervalTitle": "Segundos por imagen",
-  "settingScreensaverMediaIntervalDescription": "Tiempo que se muestra cada imagen antes de pasar a la siguiente. Los videos se reproducen completos.",
   "settingScreensaverMediaShuffleTitle": "Orden aleatorio",
   "settingScreensaverMediaShuffleDescription": "Reproduce una carpeta en orden aleatorio.",
   "settingScreensaverMediaRecursiveTitle": "Incluir subcarpetas",

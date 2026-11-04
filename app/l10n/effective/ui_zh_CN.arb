@@ -46400,19 +46400,6 @@
       ]
     }
   },
-  "settingScreensaverImmichIntervalDescription": "每张图片切换前显示的时长。视频完整播放。",
-  "@settingScreensaverImmichIntervalDescription": {
-    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
-    "description": "Help below the setting.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Immich Media screensaver > Slideshow"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Immich Media screensaver > Slideshow"
-      ]
-    }
-  },
   "settingScreensaverImmichShuffleTitle": "随机播放",
   "@settingScreensaverImmichShuffleTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
@@ -47226,6 +47213,112 @@
       ]
     }
   },
+  "settingScreensaverVideoLengthTitle": "视频时长",
+  "@settingScreensaverVideoLengthTitle": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Setting label. Picks how long a video plays in a photo slideshow.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverVideoLengthDescription": "每个视频切换前播放的时长。",
+  "@settingScreensaverVideoLengthDescription": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "screensaverMediaVideoLengthFull": "完整视频",
+  "@screensaverMediaVideoLengthFull": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Option of Video length: each video plays to its end.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "screensaverMediaVideoLengthInterval": "与照片相同",
+  "@screensaverMediaVideoLengthInterval": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Option of Video length: a video stops once the seconds per photo run out, like a photo.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverImageIntervalDescription": "每张图片切换前显示的时长。",
+  "@settingScreensaverImageIntervalDescription": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Help below the Seconds per image setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Home Assistant Media screensaver",
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Home Assistant Media screensaver",
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverPhotoIntervalDescription": "每张照片切换前显示的时长。",
+  "@settingScreensaverPhotoIntervalDescription": {
+    "context": "Settings:Screensaver:Media slideshows",
+    "description": "Help below the Seconds per photo setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Local Media screensaver",
+        "Settings > Screensaver > Photo Gallery screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Local Media screensaver",
+        "Screensaver > Photo Gallery screensaver"
+      ]
+    }
+  },
   "settingScreensaverGalleryItemsTitle": "照片",
   "@settingScreensaverGalleryItemsTitle": {
     "context": "Settings:Screensaver:Photo Gallery screensaver",
@@ -47256,19 +47349,6 @@
   "@settingScreensaverGalleryIntervalTitle": {
     "context": "Settings:Screensaver:Photo Gallery screensaver",
     "description": "Setting label.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Photo Gallery screensaver"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Photo Gallery screensaver"
-      ]
-    }
-  },
-  "settingScreensaverGalleryIntervalDescription": "每张照片切换前显示的时长。视频完整播放。",
-  "@settingScreensaverGalleryIntervalDescription": {
-    "context": "Settings:Screensaver:Photo Gallery screensaver",
-    "description": "Help below the setting.",
     "x-locations": {
       "device": [
         "Settings > Screensaver > Photo Gallery screensaver"
@@ -47545,19 +47625,6 @@
   "@settingScreensaverMediaIntervalTitle": {
     "context": "Settings:Screensaver:Home Assistant Media screensaver",
     "description": "Setting label.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Home Assistant Media screensaver"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Home Assistant Media screensaver"
-      ]
-    }
-  },
-  "settingScreensaverMediaIntervalDescription": "每张图片切换前显示的时长。视频完整播放。",
-  "@settingScreensaverMediaIntervalDescription": {
-    "context": "Settings:Screensaver:Home Assistant Media screensaver",
-    "description": "Help below the setting.",
     "x-locations": {
       "device": [
         "Settings > Screensaver > Home Assistant Media screensaver"
@@ -48097,19 +48164,6 @@
   "@settingScreensaverLocalIntervalTitle": {
     "context": "Settings:Screensaver:Local Media screensaver",
     "description": "Setting label.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Local Media screensaver"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Local Media screensaver"
-      ]
-    }
-  },
-  "settingScreensaverLocalIntervalDescription": "每张照片切换前显示的时长。视频完整播放。",
-  "@settingScreensaverLocalIntervalDescription": {
-    "context": "Settings:Screensaver:Local Media screensaver",
-    "description": "Help below the setting.",
     "x-locations": {
       "device": [
         "Settings > Screensaver > Local Media screensaver"

@@ -3,7 +3,6 @@
   "settingScreensaverLocalFolderTitle": "Lokale map",
   "settingScreensaverLocalFolderDescription": "De map op dit apparaat met foto's en video's die de schermbeveiliging afspeelt. Selecteer de map op het apparaat of voer het pad hier op afstand in.",
   "settingScreensaverLocalIntervalTitle": "Seconden per foto",
-  "settingScreensaverLocalIntervalDescription": "Hoelang elke foto wordt getoond voordat de volgende verschijnt. Video's worden volledig afgespeeld.",
   "settingScreensaverLocalShuffleTitle": "Willekeurige volgorde",
   "settingScreensaverLocalShuffleDescription": "Speel de inhoud van de map in willekeurige volgorde af in plaats van op naam.",
   "settingScreensaverLocalRecursiveTitle": "Submappen toevoegen",

@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Pick how long screensaver videos play.** A new **Video length** row on the Immich Media, Home Assistant Media, Local Media and Photo Gallery screensaver pages, on the kiosk and in the remote admin. **Whole video** (the default, as before) plays each video to its end. **Same as photos** stops a video once its seconds per photo run out, or at its end if it is shorter, so a long clip no longer holds the screen for minutes. Nothing more is buffered or kept in memory either way (#1298).
+
+### Fixed
+- **Videos follow Fill the screen.** Videos in the photo slideshows always kept their frame between black bars, whatever **Fill the screen** said. They now follow the same rule as photos: **Smart** crops a video shaped close to the screen to the edges and **Always** crops every video. A video that is not enlarged keeps its black bars instead of the blurred backdrop photos get, since blurring every frame would cost too much on a kiosk (#1298).
+
 ## v2026.11.5 - 2026-11-04
 
 ### Added

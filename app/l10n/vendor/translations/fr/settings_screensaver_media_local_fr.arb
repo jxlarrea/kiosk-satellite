@@ -3,7 +3,6 @@
   "settingScreensaverLocalFolderTitle": "Dossier local",
   "settingScreensaverLocalFolderDescription": "Dossier sur cet appareil dont l'économiseur d'écran fait défiler les photos et vidéos. Choisi sur l'appareil ; le chemin peut aussi être saisi ici à distance.",
   "settingScreensaverLocalIntervalTitle": "Secondes par photo",
-  "settingScreensaverLocalIntervalDescription": "Durée d'affichage de chaque photo avant la suivante. Les vidéos sont lues en entier.",
   "settingScreensaverLocalShuffleTitle": "Aléatoire",
   "settingScreensaverLocalShuffleDescription": "Parcourir le dossier dans un ordre aléatoire plutôt que par nom.",
   "settingScreensaverLocalRecursiveTitle": "Inclure les sous-dossiers",

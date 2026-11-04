@@ -3854,11 +3854,24 @@ const screensaverMediaInterval = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 10,
   title: 'Seconds per image',
-  description:
-      'How long each image shows before the next. Videos play in full.',
+  description: 'How long each image shows before the next.',
   category: 'Screensaver',
   section: 'Home Assistant Media screensaver',
   subpage: 'Home Assistant Media screensaver',
+  dependsOn: 'screensaver.media_is_folder',
+);
+
+const screensaverMediaVideoLength = SettingDef<String>(
+  key: 'screensaver.media_video_length',
+  type: SettingType.select,
+  defaultValue: 'full',
+  title: 'Video length',
+  description: _videoLengthDescription,
+  category: 'Screensaver',
+  section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
+  options: _videoLengthOptions,
+  optionLabels: _videoLengthLabels,
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -3885,6 +3898,17 @@ const screensaverMediaRecursive = SettingDef<bool>(
   subpage: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.media_is_folder',
 );
+
+// How long a video slide plays (issue #1298). Videos play to their end by
+// default, as they always have. 'interval' cuts one off once the slideshow's
+// seconds per photo run out, so a long clip does not hold the screen for
+// minutes. Each slideshow mode has its own row, like its interval.
+const _videoLengthOptions = ['full', 'interval'];
+const _videoLengthLabels = {
+  'full': 'Whole video',
+  'interval': 'Same as photos',
+};
+const _videoLengthDescription = 'How long each video plays before the next.';
 
 // One set of transitions shared by every slideshow mode — a person who
 // switches modes should not have to relearn the vocabulary. 'Ken Burns'
@@ -4155,11 +4179,25 @@ const screensaverGalleryInterval = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 10,
   title: 'Seconds per photo',
-  description:
-      'How long each photo shows before the next. Videos play in full.',
+  description: 'How long each photo shows before the next.',
   category: 'Screensaver',
   section: 'Photo Gallery screensaver',
   subpage: 'Photo Gallery screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'gallery',
+);
+
+const screensaverGalleryVideoLength = SettingDef<String>(
+  key: 'screensaver.gallery_video_length',
+  type: SettingType.select,
+  defaultValue: 'full',
+  title: 'Video length',
+  description: _videoLengthDescription,
+  category: 'Screensaver',
+  section: 'Photo Gallery screensaver',
+  subpage: 'Photo Gallery screensaver',
+  options: _videoLengthOptions,
+  optionLabels: _videoLengthLabels,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -4243,11 +4281,25 @@ const screensaverLocalInterval = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 10,
   title: 'Seconds per photo',
-  description:
-      'How long each photo shows before the next. Videos play in full.',
+  description: 'How long each photo shows before the next.',
   category: 'Screensaver',
   section: 'Local Media screensaver',
   subpage: 'Local Media screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'local',
+);
+
+const screensaverLocalVideoLength = SettingDef<String>(
+  key: 'screensaver.local_video_length',
+  type: SettingType.select,
+  defaultValue: 'full',
+  title: 'Video length',
+  description: _videoLengthDescription,
+  category: 'Screensaver',
+  section: 'Local Media screensaver',
+  subpage: 'Local Media screensaver',
+  options: _videoLengthOptions,
+  optionLabels: _videoLengthLabels,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -4708,11 +4760,24 @@ const screensaverImmichInterval = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 10,
   title: 'Seconds per image',
-  description:
-      'How long each image shows before the next. Videos play in full.',
+  description: 'How long each image shows before the next.',
   category: 'Screensaver',
   section: 'Slideshow',
   subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichVideoLength = SettingDef<String>(
+  key: 'screensaver.immich_video_length',
+  type: SettingType.select,
+  defaultValue: 'full',
+  title: 'Video length',
+  description: _videoLengthDescription,
+  category: 'Screensaver',
+  section: 'Slideshow',
+  subpage: 'Immich Media screensaver',
+  options: _videoLengthOptions,
+  optionLabels: _videoLengthLabels,
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -13619,6 +13684,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMediaId,
   screensaverMediaIsFolder,
   screensaverMediaInterval,
+  screensaverMediaVideoLength,
   screensaverMediaShuffle,
   screensaverMediaRecursive,
   screensaverMediaTransition,
@@ -13633,6 +13699,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMediaVignetteStrength,
   screensaverLocalFolder,
   screensaverLocalInterval,
+  screensaverLocalVideoLength,
   screensaverLocalShuffle,
   screensaverLocalRecursive,
   screensaverLocalTransition,
@@ -13647,6 +13714,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverLocalVignetteStrength,
   screensaverGalleryItems,
   screensaverGalleryInterval,
+  screensaverGalleryVideoLength,
   screensaverGalleryShuffle,
   screensaverGalleryTransition,
   screensaverGalleryFill,
@@ -13672,6 +13740,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichCache,
   screensaverImmichCacheMax,
   screensaverImmichInterval,
+  screensaverImmichVideoLength,
   screensaverImmichShuffle,
   screensaverImmichTransition,
   screensaverImmichFill,

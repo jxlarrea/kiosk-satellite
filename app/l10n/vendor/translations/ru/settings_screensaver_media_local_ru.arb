@@ -3,7 +3,6 @@
   "settingScreensaverLocalFolderTitle": "Локальная папка",
   "settingScreensaverLocalFolderDescription": "Папка на этом устройстве, чьи фото и видео прокручивает заставка. Выбирается на устройстве; путь можно ввести здесь и удалённо.",
   "settingScreensaverLocalIntervalTitle": "Секунд на фото",
-  "settingScreensaverLocalIntervalDescription": "Как долго показывается каждое фото до следующего. Видео проигрываются целиком.",
   "settingScreensaverLocalShuffleTitle": "Перемешивание",
   "settingScreensaverLocalShuffleDescription": "Прокручивать папку в случайном порядке вместо порядка по имени.",
   "settingScreensaverLocalRecursiveTitle": "Включая подпапки",

@@ -3,7 +3,6 @@
   "settingScreensaverMediaIdTitle": "Джерело медіа",
   "settingScreensaverMediaIdDescription": "Медіаелемент Home Assistant, папка або камера. Натисніть Огляд, щоб вибрати.",
   "settingScreensaverMediaIntervalTitle": "Секунд на зображення",
-  "settingScreensaverMediaIntervalDescription": "Скільки часу кожне зображення показується перед наступним. Відео відтворюються повністю.",
   "settingScreensaverMediaShuffleTitle": "Випадковий порядок",
   "settingScreensaverMediaShuffleDescription": "Відтворювати папку у випадковому порядку.",
   "settingScreensaverMediaRecursiveTitle": "Включати вкладені папки",

@@ -1,7 +1,6 @@
 {
   "@@locale": "de",
   "settingScreensaverImmichIntervalTitle": "Sekunden pro Bild",
-  "settingScreensaverImmichIntervalDescription": "Wie lange jedes Bild angezeigt wird, bevor zum nächsten gewechselt wird. Videos werden vollständig abgespielt.",
   "settingScreensaverImmichShuffleTitle": "Zufällige Reihenfolge",
   "settingScreensaverImmichShuffleDescription": "Durchläuft die Medieninhalte in zufälliger Reihenfolge.",
   "settingScreensaverImmichTransitionTitle": "Übergang",

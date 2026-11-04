@@ -8,5 +8,11 @@
   "screensaverMediaTransitionRandom": "Случайный",
   "screensaverMediaFillOff": "Выкл",
   "screensaverMediaFillSmart": "Умно",
-  "screensaverMediaFillAlways": "Всегда"
+  "screensaverMediaFillAlways": "Всегда",
+  "settingScreensaverVideoLengthTitle": "Длительность видео",
+  "settingScreensaverVideoLengthDescription": "Как долго проигрывается каждое видео до следующего.",
+  "screensaverMediaVideoLengthFull": "Видео целиком",
+  "screensaverMediaVideoLengthInterval": "Как у фото",
+  "settingScreensaverImageIntervalDescription": "Как долго показывается каждое изображение до следующего.",
+  "settingScreensaverPhotoIntervalDescription": "Как долго показывается каждое фото до следующего."
 }

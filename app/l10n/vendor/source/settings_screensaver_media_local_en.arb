@@ -39,19 +39,6 @@
       ]
     }
   },
-  "settingScreensaverLocalIntervalDescription": "How long each photo shows before the next. Videos play in full.",
-  "@settingScreensaverLocalIntervalDescription": {
-    "context": "Settings:Screensaver:Local Media screensaver",
-    "description": "Help below the setting.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Local Media screensaver"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Local Media screensaver"
-      ]
-    }
-  },
   "settingScreensaverLocalShuffleTitle": "Shuffle",
   "@settingScreensaverLocalShuffleTitle": {
     "context": "Settings:Screensaver:Local Media screensaver",

@@ -8,5 +8,11 @@
   "screensaverMediaTransitionRandom": "随机",
   "screensaverMediaFillOff": "关闭",
   "screensaverMediaFillSmart": "智能",
-  "screensaverMediaFillAlways": "始终"
+  "screensaverMediaFillAlways": "始终",
+  "settingScreensaverVideoLengthTitle": "视频时长",
+  "settingScreensaverVideoLengthDescription": "每个视频切换前播放的时长。",
+  "screensaverMediaVideoLengthFull": "完整视频",
+  "screensaverMediaVideoLengthInterval": "与照片相同",
+  "settingScreensaverImageIntervalDescription": "每张图片切换前显示的时长。",
+  "settingScreensaverPhotoIntervalDescription": "每张照片切换前显示的时长。"
 }

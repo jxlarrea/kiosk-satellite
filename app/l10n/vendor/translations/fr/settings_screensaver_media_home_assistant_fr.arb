@@ -3,7 +3,6 @@
   "settingScreensaverMediaIdTitle": "Source multimédia",
   "settingScreensaverMediaIdDescription": "Un média, un dossier ou une caméra de Home Assistant. Utilisez Parcourir pour en choisir un.",
   "settingScreensaverMediaIntervalTitle": "Secondes par image",
-  "settingScreensaverMediaIntervalDescription": "Durée d'affichage de chaque image avant la suivante. Les vidéos sont lues en entier.",
   "settingScreensaverMediaShuffleTitle": "Aléatoire",
   "settingScreensaverMediaShuffleDescription": "Lire un dossier dans un ordre aléatoire.",
   "settingScreensaverMediaRecursiveTitle": "Inclure les sous-dossiers",

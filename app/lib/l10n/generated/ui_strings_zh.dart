@@ -11742,10 +11742,6 @@ class UiStringsZh extends UiStrings {
   String get settingScreensaverImmichIntervalTitle => '每张图片的显示时长（秒）';
 
   @override
-  String get settingScreensaverImmichIntervalDescription =>
-      '每张图片切换前显示的时长。视频完整播放。';
-
-  @override
   String get settingScreensaverImmichShuffleTitle => '随机播放';
 
   @override
@@ -11928,6 +11924,24 @@ class UiStringsZh extends UiStrings {
   String get screensaverMediaFillAlways => '始终';
 
   @override
+  String get settingScreensaverVideoLengthTitle => '视频时长';
+
+  @override
+  String get settingScreensaverVideoLengthDescription => '每个视频切换前播放的时长。';
+
+  @override
+  String get screensaverMediaVideoLengthFull => '完整视频';
+
+  @override
+  String get screensaverMediaVideoLengthInterval => '与照片相同';
+
+  @override
+  String get settingScreensaverImageIntervalDescription => '每张图片切换前显示的时长。';
+
+  @override
+  String get settingScreensaverPhotoIntervalDescription => '每张照片切换前显示的时长。';
+
+  @override
   String get settingScreensaverGalleryItemsTitle => '照片';
 
   @override
@@ -11936,10 +11950,6 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingScreensaverGalleryIntervalTitle => '每张照片的显示时长（秒）';
-
-  @override
-  String get settingScreensaverGalleryIntervalDescription =>
-      '每张照片切换前显示的时长。视频完整播放。';
 
   @override
   String get settingScreensaverGalleryShuffleTitle => '随机播放';
@@ -12007,10 +12017,6 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingScreensaverMediaIntervalTitle => '每张图片的显示时长（秒）';
-
-  @override
-  String get settingScreensaverMediaIntervalDescription =>
-      '每张图片切换前显示的时长。视频完整播放。';
 
   @override
   String get settingScreensaverMediaShuffleTitle => '随机播放';
@@ -12143,10 +12149,6 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingScreensaverLocalIntervalTitle => '每张照片的显示时长（秒）';
-
-  @override
-  String get settingScreensaverLocalIntervalDescription =>
-      '每张照片切换前显示的时长。视频完整播放。';
 
   @override
   String get settingScreensaverLocalShuffleTitle => '随机播放';
@@ -26945,10 +26947,6 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingScreensaverImmichIntervalTitle => '每张图片的显示时长（秒）';
 
   @override
-  String get settingScreensaverImmichIntervalDescription =>
-      '每张图片切换前显示的时长。视频完整播放。';
-
-  @override
   String get settingScreensaverImmichShuffleTitle => '随机播放';
 
   @override
@@ -27131,6 +27129,24 @@ class UiStringsZhCn extends UiStringsZh {
   String get screensaverMediaFillAlways => '始终';
 
   @override
+  String get settingScreensaverVideoLengthTitle => '视频时长';
+
+  @override
+  String get settingScreensaverVideoLengthDescription => '每个视频切换前播放的时长。';
+
+  @override
+  String get screensaverMediaVideoLengthFull => '完整视频';
+
+  @override
+  String get screensaverMediaVideoLengthInterval => '与照片相同';
+
+  @override
+  String get settingScreensaverImageIntervalDescription => '每张图片切换前显示的时长。';
+
+  @override
+  String get settingScreensaverPhotoIntervalDescription => '每张照片切换前显示的时长。';
+
+  @override
   String get settingScreensaverGalleryItemsTitle => '照片';
 
   @override
@@ -27139,10 +27155,6 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingScreensaverGalleryIntervalTitle => '每张照片的显示时长（秒）';
-
-  @override
-  String get settingScreensaverGalleryIntervalDescription =>
-      '每张照片切换前显示的时长。视频完整播放。';
 
   @override
   String get settingScreensaverGalleryShuffleTitle => '随机播放';
@@ -27210,10 +27222,6 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingScreensaverMediaIntervalTitle => '每张图片的显示时长（秒）';
-
-  @override
-  String get settingScreensaverMediaIntervalDescription =>
-      '每张图片切换前显示的时长。视频完整播放。';
 
   @override
   String get settingScreensaverMediaShuffleTitle => '随机播放';
@@ -27346,10 +27354,6 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingScreensaverLocalIntervalTitle => '每张照片的显示时长（秒）';
-
-  @override
-  String get settingScreensaverLocalIntervalDescription =>
-      '每张照片切换前显示的时长。视频完整播放。';
 
   @override
   String get settingScreensaverLocalShuffleTitle => '随机播放';

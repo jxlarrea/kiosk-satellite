@@ -3,7 +3,6 @@
   "settingScreensaverGalleryItemsTitle": "Фотографії",
   "settingScreensaverGalleryItemsDescription": "Фотографії та відео для показу в цій заставці. Вибираються з галереї на пристрої; повторний вибір замінює вибране.",
   "settingScreensaverGalleryIntervalTitle": "Секунд на фото",
-  "settingScreensaverGalleryIntervalDescription": "Скільки часу кожне фото показується перед наступним. Відео відтворюються повністю.",
   "settingScreensaverGalleryShuffleTitle": "Випадковий порядок",
   "settingScreensaverGalleryShuffleDescription": "Показувати вибране у випадковому порядку.",
   "settingScreensaverGalleryTransitionTitle": "Перехід",

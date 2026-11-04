@@ -12326,10 +12326,6 @@ class UiStringsEn extends UiStrings {
   String get settingScreensaverImmichIntervalTitle => 'Seconds per image';
 
   @override
-  String get settingScreensaverImmichIntervalDescription =>
-      'How long each image shows before the next. Videos play in full.';
-
-  @override
   String get settingScreensaverImmichShuffleTitle => 'Shuffle';
 
   @override
@@ -12529,6 +12525,27 @@ class UiStringsEn extends UiStrings {
   String get screensaverMediaFillAlways => 'Always';
 
   @override
+  String get settingScreensaverVideoLengthTitle => 'Video length';
+
+  @override
+  String get settingScreensaverVideoLengthDescription =>
+      'How long each video plays before the next.';
+
+  @override
+  String get screensaverMediaVideoLengthFull => 'Whole video';
+
+  @override
+  String get screensaverMediaVideoLengthInterval => 'Same as photos';
+
+  @override
+  String get settingScreensaverImageIntervalDescription =>
+      'How long each image shows before the next.';
+
+  @override
+  String get settingScreensaverPhotoIntervalDescription =>
+      'How long each photo shows before the next.';
+
+  @override
   String get settingScreensaverGalleryItemsTitle => 'Photos';
 
   @override
@@ -12537,10 +12554,6 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingScreensaverGalleryIntervalTitle => 'Seconds per photo';
-
-  @override
-  String get settingScreensaverGalleryIntervalDescription =>
-      'How long each photo shows before the next. Videos play in full.';
 
   @override
   String get settingScreensaverGalleryShuffleTitle => 'Shuffle';
@@ -12613,10 +12626,6 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingScreensaverMediaIntervalTitle => 'Seconds per image';
-
-  @override
-  String get settingScreensaverMediaIntervalDescription =>
-      'How long each image shows before the next. Videos play in full.';
 
   @override
   String get settingScreensaverMediaShuffleTitle => 'Shuffle';
@@ -12761,10 +12770,6 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingScreensaverLocalIntervalTitle => 'Seconds per photo';
-
-  @override
-  String get settingScreensaverLocalIntervalDescription =>
-      'How long each photo shows before the next. Videos play in full.';
 
   @override
   String get settingScreensaverLocalShuffleTitle => 'Shuffle';

@@ -39,19 +39,6 @@
       ]
     }
   },
-  "settingScreensaverGalleryIntervalDescription": "How long each photo shows before the next. Videos play in full.",
-  "@settingScreensaverGalleryIntervalDescription": {
-    "context": "Settings:Screensaver:Photo Gallery screensaver",
-    "description": "Help below the setting.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Photo Gallery screensaver"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Photo Gallery screensaver"
-      ]
-    }
-  },
   "settingScreensaverGalleryShuffleTitle": "Shuffle",
   "@settingScreensaverGalleryShuffleTitle": {
     "context": "Settings:Screensaver:Photo Gallery screensaver",

@@ -93,11 +93,17 @@ function fillHarness() {
     querySelector() { return this.children.find((c) => c.classList.contains('backdrop')); },
     remove() { this.parentElement.children.splice(this.parentElement.children.indexOf(this), 1); },
   });
-  const photos = [], events = {};
+  const photos = [], videos = [], events = {};
   const c = vm.createContext({
     CFG: { mediaFill: 'smart' },
     window: { innerWidth: 800, innerHeight: 480, addEventListener(name, callback) { events[name] = callback; } },
-    content: { querySelectorAll(selector) { assert.equal(selector, 'img.photo'); return photos; } },
+    content: {
+      querySelectorAll(selector) {
+        if (selector === 'video.slide-video') return videos;
+        assert.equal(selector, 'img.photo');
+        return photos;
+      },
+    },
     document: { createElement: node }, log() {},
   });
   const fillSource = source.slice(source.indexOf('function fillFor(img)'), source.indexOf('/* ── Camera WebRTC'));
@@ -106,7 +112,13 @@ function fillHarness() {
   const photo = { naturalWidth: 300, naturalHeight: 400, classList: classes() };
   photos.push(photo);
   const stage = c.stillFor(photo);
-  return { c, photo, stage, events };
+  const video = (videoWidth, videoHeight) => {
+    const v = { videoWidth, videoHeight, classList: classes() };
+    videos.push(v);
+    c.applyVideoFill(v);
+    return v;
+  };
+  return { c, photo, stage, events, video };
 }
 
 test('live fill changes reframe the current photo without replacing it', () => {
@@ -135,6 +147,128 @@ test('resizing a shared panel reevaluates Smart filling', () => {
   events.resize();
   assert.equal(stage.classList.contains('cover'), false);
   assert.ok(stage.querySelector('.backdrop'));
+});
+
+// Issue #1298: videos follow Fill the screen on their own shape, without
+// the photos' blurred backdrop.
+test('a video shaped close to the screen fills it on Smart', () => {
+  const { c, video } = fillHarness();
+  const wide = video(1280, 720);
+  const portrait = video(1080, 1920);
+  assert.equal(wide.classList.contains('cover'), true);
+  assert.equal(portrait.classList.contains('cover'), false);
+  c.window.__ksPhotoFill('off');
+  assert.equal(wide.classList.contains('cover'), false);
+  c.window.__ksPhotoFill('always');
+  assert.equal(wide.classList.contains('cover'), true);
+  assert.equal(portrait.classList.contains('cover'), true);
+});
+
+test('a video with no size yet keeps its frame', () => {
+  const { video } = fillHarness();
+  assert.equal(video(0, 0).classList.contains('cover'), false);
+});
+
+test('Video length changes live and ignores unknown values', () => {
+  const { c } = fillHarness();
+  c.window.__ksVideoLength('interval');
+  assert.equal(c.CFG.mediaVideoLength, 'interval');
+  c.window.__ksVideoLength('bogus');
+  assert.equal(c.CFG.mediaVideoLength, 'interval');
+  c.window.__ksVideoLength('full');
+  assert.equal(c.CFG.mediaVideoLength, 'full');
+});
+
+function videoHarness(cfg) {
+  const h = harness();
+  const videos = [];
+  h.context.CFG = cfg;
+  h.context.isVideo = () => true;
+  h.context.applyVideoFill = () => {};
+  h.context.document.createElement = () => {
+    const listeners = {};
+    const v = {
+      listeners,
+      addEventListener(name, callback) { (listeners[name] ||= []).push(callback); },
+      fire(name) { for (const callback of listeners[name] || []) callback(); },
+    };
+    videos.push(v);
+    return v;
+  };
+  const hass = { send: async () => ({ url: '/clip.mp4', mime_type: 'video/mp4' }), hassUrl: (u) => u };
+  return { ...h, videos, hass };
+}
+
+test('Same as photos moves on from a video when the hold runs out', async () => {
+  const { context: c, advance, videos, hass } = videoHarness({ mediaVideoLength: 'interval' });
+  let changes = 0;
+  await c.playItem(hass, 'v', ['v', 'w'], () => changes++, 10000);
+  advance(30000);
+  assert.equal(changes, 0, 'the hold starts once the video plays');
+  videos[0].fire('playing');
+  advance(9999);
+  assert.equal(changes, 0);
+  advance(1);
+  assert.equal(changes, 1);
+});
+
+test('Same as photos still moves on when a short video ends first', async () => {
+  const { context: c, advance, videos, hass } = videoHarness({ mediaVideoLength: 'interval' });
+  let changes = 0;
+  await c.playItem(hass, 'v', ['v', 'w'], () => changes++, 10000);
+  videos[0].fire('playing');
+  advance(4000);
+  videos[0].fire('ended');
+  assert.equal(changes, 1);
+});
+
+test('Same as photos holds paused while the screen is dark', async () => {
+  const { context: c, advance, videos, hass } = videoHarness({ mediaVideoLength: 'interval' });
+  let changes = 0;
+  await c.playItem(hass, 'v', ['v', 'w'], () => changes++, 10000);
+  videos[0].fire('playing');
+  advance(4000);
+  c.window.__ksPhotoActive(false);
+  advance(60000);
+  c.window.__ksPhotoActive(true);
+  advance(5999);
+  assert.equal(changes, 0);
+  advance(1);
+  assert.equal(changes, 1);
+});
+
+test('Whole video plays past the hold to its end', async () => {
+  const { context: c, advance, videos, hass } = videoHarness({ mediaVideoLength: 'full' });
+  let changes = 0;
+  await c.playItem(hass, 'v', ['v', 'w'], () => changes++, 10000);
+  videos[0].fire('playing');
+  advance(60000);
+  assert.equal(changes, 0);
+  videos[0].fire('ended');
+  assert.equal(changes, 1);
+});
+
+test('a single video loops with no hold', async () => {
+  const { context: c, advance, videos, hass } = videoHarness({ mediaVideoLength: 'interval' });
+  let changes = 0;
+  await c.playItem(hass, 'v', ['v'], () => changes++, 10000);
+  videos[0].fire('playing');
+  advance(60000);
+  assert.equal(changes, 0);
+  assert.equal(videos[0].loop, true);
+});
+
+test('a video cut short cannot advance the deck when it ends later', async () => {
+  const { context: c, videos, hass } = videoHarness({ mediaVideoLength: 'interval' });
+  let changes = 0;
+  await c.playItem(hass, 'v', ['v', 'w'], () => changes++, 10000);
+  await c.playItem(hass, 'w', ['v', 'w'], () => changes++, 10000);
+  // The first video ends under the hand-off, after the second took over.
+  videos[0].fire('ended');
+  videos[0].fire('error');
+  assert.equal(changes, 0);
+  videos[1].fire('ended');
+  assert.equal(changes, 1);
 });
 
 test('an Immich album resolves photos that report can_play false', async () => {

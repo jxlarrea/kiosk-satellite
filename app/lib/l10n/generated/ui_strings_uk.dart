@@ -12459,10 +12459,6 @@ class UiStringsUk extends UiStrings {
   String get settingScreensaverImmichIntervalTitle => 'Секунд на зображення';
 
   @override
-  String get settingScreensaverImmichIntervalDescription =>
-      'Скільки часу кожне зображення показується перед наступним. Відео відтворюються повністю.';
-
-  @override
   String get settingScreensaverImmichShuffleTitle => 'Випадковий порядок';
 
   @override
@@ -12665,6 +12661,27 @@ class UiStringsUk extends UiStrings {
   String get screensaverMediaFillAlways => 'Завжди';
 
   @override
+  String get settingScreensaverVideoLengthTitle => 'Тривалість відео';
+
+  @override
+  String get settingScreensaverVideoLengthDescription =>
+      'Скільки часу кожне відео відтворюється перед наступним.';
+
+  @override
+  String get screensaverMediaVideoLengthFull => 'Усе відео';
+
+  @override
+  String get screensaverMediaVideoLengthInterval => 'Як фото';
+
+  @override
+  String get settingScreensaverImageIntervalDescription =>
+      'Скільки часу кожне зображення показується перед наступним.';
+
+  @override
+  String get settingScreensaverPhotoIntervalDescription =>
+      'Скільки часу кожне фото показується перед наступним.';
+
+  @override
   String get settingScreensaverGalleryItemsTitle => 'Фотографії';
 
   @override
@@ -12673,10 +12690,6 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get settingScreensaverGalleryIntervalTitle => 'Секунд на фото';
-
-  @override
-  String get settingScreensaverGalleryIntervalDescription =>
-      'Скільки часу кожне фото показується перед наступним. Відео відтворюються повністю.';
 
   @override
   String get settingScreensaverGalleryShuffleTitle => 'Випадковий порядок';
@@ -12750,10 +12763,6 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get settingScreensaverMediaIntervalTitle => 'Секунд на зображення';
-
-  @override
-  String get settingScreensaverMediaIntervalDescription =>
-      'Скільки часу кожне зображення показується перед наступним. Відео відтворюються повністю.';
 
   @override
   String get settingScreensaverMediaShuffleTitle => 'Випадковий порядок';
@@ -12897,10 +12906,6 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get settingScreensaverLocalIntervalTitle => 'Секунд на фото';
-
-  @override
-  String get settingScreensaverLocalIntervalDescription =>
-      'Скільки часу кожне фото показується перед наступним. Відео відтворюються повністю.';
 
   @override
   String get settingScreensaverLocalShuffleTitle => 'Випадковий порядок';

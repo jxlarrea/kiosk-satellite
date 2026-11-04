@@ -3,7 +3,6 @@
   "settingScreensaverGalleryItemsTitle": "Foto's",
   "settingScreensaverGalleryItemsDescription": "De foto's en video's die deze schermbeveiliging afspeelt. Selecteer ze in de galerij op het apparaat. Als je opnieuw selecteert, wordt de huidige selectie vervangen.",
   "settingScreensaverGalleryIntervalTitle": "Seconden per foto",
-  "settingScreensaverGalleryIntervalDescription": "Hoelang elke foto wordt getoond voordat de volgende verschijnt. Video's worden volledig afgespeeld.",
   "settingScreensaverGalleryShuffleTitle": "Willekeurige volgorde",
   "settingScreensaverGalleryShuffleDescription": "Speel de selectie in willekeurige volgorde af.",
   "settingScreensaverGalleryTransitionTitle": "Overgang",

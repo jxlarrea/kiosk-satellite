@@ -12418,10 +12418,6 @@ class UiStringsRu extends UiStrings {
   String get settingScreensaverImmichIntervalTitle => 'Секунд на изображение';
 
   @override
-  String get settingScreensaverImmichIntervalDescription =>
-      'Как долго показывается каждое изображение до следующего. Видео проигрываются целиком.';
-
-  @override
   String get settingScreensaverImmichShuffleTitle => 'Перемешивание';
 
   @override
@@ -12621,6 +12617,27 @@ class UiStringsRu extends UiStrings {
   String get screensaverMediaFillAlways => 'Всегда';
 
   @override
+  String get settingScreensaverVideoLengthTitle => 'Длительность видео';
+
+  @override
+  String get settingScreensaverVideoLengthDescription =>
+      'Как долго проигрывается каждое видео до следующего.';
+
+  @override
+  String get screensaverMediaVideoLengthFull => 'Видео целиком';
+
+  @override
+  String get screensaverMediaVideoLengthInterval => 'Как у фото';
+
+  @override
+  String get settingScreensaverImageIntervalDescription =>
+      'Как долго показывается каждое изображение до следующего.';
+
+  @override
+  String get settingScreensaverPhotoIntervalDescription =>
+      'Как долго показывается каждое фото до следующего.';
+
+  @override
   String get settingScreensaverGalleryItemsTitle => 'Фотографии';
 
   @override
@@ -12629,10 +12646,6 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingScreensaverGalleryIntervalTitle => 'Секунд на фото';
-
-  @override
-  String get settingScreensaverGalleryIntervalDescription =>
-      'Как долго показывается каждое фото до следующего. Видео проигрываются целиком.';
 
   @override
   String get settingScreensaverGalleryShuffleTitle => 'Перемешивание';
@@ -12705,10 +12718,6 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingScreensaverMediaIntervalTitle => 'Секунд на изображение';
-
-  @override
-  String get settingScreensaverMediaIntervalDescription =>
-      'Как долго показывается каждое изображение до следующего. Видео проигрываются целиком.';
 
   @override
   String get settingScreensaverMediaShuffleTitle => 'Перемешивание';
@@ -12851,10 +12860,6 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingScreensaverLocalIntervalTitle => 'Секунд на фото';
-
-  @override
-  String get settingScreensaverLocalIntervalDescription =>
-      'Как долго показывается каждое фото до следующего. Видео проигрываются целиком.';
 
   @override
   String get settingScreensaverLocalShuffleTitle => 'Перемешивание';

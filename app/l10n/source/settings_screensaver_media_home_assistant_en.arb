@@ -39,19 +39,6 @@
       ]
     }
   },
-  "settingScreensaverMediaIntervalDescription": "How long each image shows before the next. Videos play in full.",
-  "@settingScreensaverMediaIntervalDescription": {
-    "context": "Settings:Screensaver:Home Assistant Media screensaver",
-    "description": "Help below the setting.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Home Assistant Media screensaver"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Home Assistant Media screensaver"
-      ]
-    }
-  },
   "settingScreensaverMediaShuffleTitle": "Shuffle",
   "@settingScreensaverMediaShuffleTitle": {
     "context": "Settings:Screensaver:Home Assistant Media screensaver",

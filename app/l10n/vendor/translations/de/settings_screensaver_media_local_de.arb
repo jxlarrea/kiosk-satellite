@@ -3,7 +3,6 @@
   "settingScreensaverLocalFolderTitle": "Lokaler Ordner",
   "settingScreensaverLocalFolderDescription": "Ordner auf diesem Gerät, dessen Fotos und Videos vom Bildschirmschoner angezeigt werden. Die Auswahl erfolgt auf dem Gerät. Über die Fernverwaltung kann auch ein Pfad eingegeben werden.",
   "settingScreensaverLocalIntervalTitle": "Sekunden pro Foto",
-  "settingScreensaverLocalIntervalDescription": "Wie lange jedes Foto angezeigt wird, bevor zum nächsten gewechselt wird. Videos werden vollständig abgespielt.",
   "settingScreensaverLocalShuffleTitle": "Zufällige Reihenfolge",
   "settingScreensaverLocalShuffleDescription": "Durchläuft den Ordner in zufälliger Reihenfolge, anstatt nach Namen zu sortieren.",
   "settingScreensaverLocalRecursiveTitle": "Unterordner einbeziehen",

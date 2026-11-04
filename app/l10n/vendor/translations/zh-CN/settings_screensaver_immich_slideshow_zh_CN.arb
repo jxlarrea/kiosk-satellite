@@ -1,7 +1,6 @@
 {
   "@@locale": "zh_CN",
   "settingScreensaverImmichIntervalTitle": "每张图片的显示时长（秒）",
-  "settingScreensaverImmichIntervalDescription": "每张图片切换前显示的时长。视频完整播放。",
   "settingScreensaverImmichShuffleTitle": "随机播放",
   "settingScreensaverImmichShuffleDescription": "以随机顺序轮播媒体。",
   "settingScreensaverImmichTransitionTitle": "切换效果",

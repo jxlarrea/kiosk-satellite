@@ -12556,10 +12556,6 @@ class UiStringsEs extends UiStrings {
   String get settingScreensaverImmichIntervalTitle => 'Segundos por imagen';
 
   @override
-  String get settingScreensaverImmichIntervalDescription =>
-      'Tiempo que se muestra cada imagen antes de pasar a la siguiente. Los videos se reproducen completos.';
-
-  @override
   String get settingScreensaverImmichShuffleTitle => 'Orden aleatorio';
 
   @override
@@ -12766,6 +12762,27 @@ class UiStringsEs extends UiStrings {
   String get screensaverMediaFillAlways => 'Siempre';
 
   @override
+  String get settingScreensaverVideoLengthTitle => 'Duración del video';
+
+  @override
+  String get settingScreensaverVideoLengthDescription =>
+      'Tiempo que se reproduce cada video antes de pasar al siguiente.';
+
+  @override
+  String get screensaverMediaVideoLengthFull => 'Video completo';
+
+  @override
+  String get screensaverMediaVideoLengthInterval => 'Igual que las fotos';
+
+  @override
+  String get settingScreensaverImageIntervalDescription =>
+      'Tiempo que se muestra cada imagen antes de pasar a la siguiente.';
+
+  @override
+  String get settingScreensaverPhotoIntervalDescription =>
+      'Tiempo que se muestra cada foto antes de pasar a la siguiente.';
+
+  @override
   String get settingScreensaverGalleryItemsTitle => 'Fotos';
 
   @override
@@ -12774,10 +12791,6 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingScreensaverGalleryIntervalTitle => 'Segundos por foto';
-
-  @override
-  String get settingScreensaverGalleryIntervalDescription =>
-      'Tiempo que se muestra cada foto antes de pasar a la siguiente. Los videos se reproducen completos.';
 
   @override
   String get settingScreensaverGalleryShuffleTitle => 'Orden aleatorio';
@@ -12852,10 +12865,6 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingScreensaverMediaIntervalTitle => 'Segundos por imagen';
-
-  @override
-  String get settingScreensaverMediaIntervalDescription =>
-      'Tiempo que se muestra cada imagen antes de pasar a la siguiente. Los videos se reproducen completos.';
 
   @override
   String get settingScreensaverMediaShuffleTitle => 'Orden aleatorio';
@@ -13003,10 +13012,6 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingScreensaverLocalIntervalTitle => 'Segundos por foto';
-
-  @override
-  String get settingScreensaverLocalIntervalDescription =>
-      'Tiempo que se muestra cada foto antes de pasar a la siguiente. Los videos se reproducen completos.';
 
   @override
   String get settingScreensaverLocalShuffleTitle => 'Orden aleatorio';

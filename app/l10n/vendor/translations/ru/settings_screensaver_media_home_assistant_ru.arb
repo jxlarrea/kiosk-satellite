@@ -3,7 +3,6 @@
   "settingScreensaverMediaIdTitle": "Источник медиа",
   "settingScreensaverMediaIdDescription": "Медиаэлемент, папка или камера Home Assistant. Используйте «Обзор» для выбора.",
   "settingScreensaverMediaIntervalTitle": "Секунд на изображение",
-  "settingScreensaverMediaIntervalDescription": "Как долго показывается каждое изображение до следующего. Видео проигрываются целиком.",
   "settingScreensaverMediaShuffleTitle": "Перемешивание",
   "settingScreensaverMediaShuffleDescription": "Проигрывать папку в случайном порядке.",
   "settingScreensaverMediaRecursiveTitle": "Включая подпапки",

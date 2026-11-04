@@ -3,7 +3,6 @@
   "settingScreensaverLocalFolderTitle": "Carpeta local",
   "settingScreensaverLocalFolderDescription": "Carpeta de este dispositivo cuyas fotos y videos recorre el protector de pantalla. Se elige en el dispositivo. También se puede escribir la ruta desde la administración remota.",
   "settingScreensaverLocalIntervalTitle": "Segundos por foto",
-  "settingScreensaverLocalIntervalDescription": "Tiempo que se muestra cada foto antes de pasar a la siguiente. Los videos se reproducen completos.",
   "settingScreensaverLocalShuffleTitle": "Orden aleatorio",
   "settingScreensaverLocalShuffleDescription": "Recorre la carpeta en orden aleatorio en lugar de ordenar por nombre.",
   "settingScreensaverLocalRecursiveTitle": "Incluir subcarpetas",

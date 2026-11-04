@@ -8,5 +8,11 @@
   "screensaverMediaTransitionRandom": "Zufällig",
   "screensaverMediaFillOff": "Deaktiviert",
   "screensaverMediaFillSmart": "Intelligent",
-  "screensaverMediaFillAlways": "Immer"
+  "screensaverMediaFillAlways": "Immer",
+  "settingScreensaverVideoLengthTitle": "Videolänge",
+  "settingScreensaverVideoLengthDescription": "Wie lange jedes Video läuft, bevor zum nächsten gewechselt wird.",
+  "screensaverMediaVideoLengthFull": "Ganzes Video",
+  "screensaverMediaVideoLengthInterval": "Wie Fotos",
+  "settingScreensaverImageIntervalDescription": "Wie lange jedes Bild angezeigt wird, bevor zum nächsten gewechselt wird.",
+  "settingScreensaverPhotoIntervalDescription": "Wie lange jedes Foto angezeigt wird, bevor zum nächsten gewechselt wird."
 }

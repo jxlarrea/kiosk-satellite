@@ -3,7 +3,6 @@
   "settingScreensaverLocalFolderTitle": "Локальна папка",
   "settingScreensaverLocalFolderDescription": "Папка на цьому пристрої, фотографії та відео з якої циклічно показує заставка. Вибирається на пристрої; шлях також можна ввести тут віддалено.",
   "settingScreensaverLocalIntervalTitle": "Секунд на фото",
-  "settingScreensaverLocalIntervalDescription": "Скільки часу кожне фото показується перед наступним. Відео відтворюються повністю.",
   "settingScreensaverLocalShuffleTitle": "Випадковий порядок",
   "settingScreensaverLocalShuffleDescription": "Показувати вміст папки у випадковому порядку замість сортування за назвою.",
   "settingScreensaverLocalRecursiveTitle": "Включати вкладені папки",
