@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12 draws the starting window outside system_server. -->
+    <bool name="disable_starting_window">false</bool>
+</resources>

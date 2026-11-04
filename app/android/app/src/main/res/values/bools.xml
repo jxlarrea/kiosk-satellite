@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- While Android replaces the home app it keeps trying to start home. On
+         Android 11 and older each try draws a starting window in system_server,
+         and that turned into hundreds of start and force stop cycles per update.
+         A refused window then stays registered with AccessibilityManager and pins
+         the old APK until the device reboots. Without a starting window, Android
+         tries once. -->
+    <bool name="disable_starting_window">true</bool>
+</resources>

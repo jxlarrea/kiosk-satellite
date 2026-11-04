@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Updates no longer use up storage until the next reboot.** On Android 11 and older, with Kiosk Satellite set as the home app, the old APK could stay on disk after an update until the device restarted, so devices with little storage eventually ran out of space and updates failed. Android kept trying to restart the home app during its own update and each try drew a starting window. Kiosk Satellite no longer asks those Android versions for one. Space already lost comes back with one reboot.
+
 ## v2026.11.6 - 2026-11-04
 
 ### Added
