@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.5 - 2026-11-04
 
 ### Added
 - **Wake up to music.** An alarm can ring with music from Music Assistant, Home Assistant or Sonos instead of its tone. A new **Alarm music** setting under **Settings, Alarms** sets the music for every alarm, and each alarm's **Music** row can follow it, keep to the tone with **None** or pick its own. Both open a music picker, on the kiosk and in the remote admin: a track, an album, a playlist, an artist, a station or a media folder, a random pick that changes every time it rings, **Shuffle**, **Preview** and the speaker it plays on. While the alarm rings, Now Playing switches to that speaker, which plays at the alarm volume and eases in like the tone. The alarm stays on screen in front of Now Playing. Stop and Snooze take the music out of the speaker's queue, switch Now Playing back and put the speaker's volume, shuffle and repeat back. If the music cannot play, the alarm rings its tone.
