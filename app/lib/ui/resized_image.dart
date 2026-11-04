@@ -155,6 +155,36 @@ Future<(int, int)> _uprightSize(Uint8List bytes) async {
   }
 }
 
+bool _isJpeg(Uint8List bytes) =>
+    bytes.length > 2 && bytes[0] == 0xFF && bytes[1] == 0xD8;
+
+/// The smallest size the JPEG decoder produces by itself that covers
+/// [width] x [height], or null when none comes close enough.
+///
+/// libjpeg-turbo scales by n/8 and sizes each side as `ceil(side * n / 8)`.
+/// Skia picks n by rounding the scale it is asked for to the nearest eighth,
+/// so asking for exactly that size gets it, upright or not. A size more
+/// than twice the target's pixels (just above an eighth) would cost memory
+/// for nothing, so that one is left to Android.
+@visibleForTesting
+(int, int)? jpegEighthSize(
+  int sourceWidth,
+  int sourceHeight,
+  int width,
+  int height,
+) {
+  // Below 16 pixels the rounding up could push Skia to the next eighth.
+  if (sourceWidth < 16 || sourceHeight < 16) return null;
+  for (var n = 1; n <= 8; n++) {
+    final w = (sourceWidth * n + 7) ~/ 8;
+    final h = (sourceHeight * n + 7) ~/ 8;
+    if (w < width || h < height) continue;
+    if (n == 8) return (sourceWidth, sourceHeight);
+    return w * h <= 2 * width * height ? (w, h) : null;
+  }
+  return null;
+}
+
 /// The size [ResizeImage] asks the codec for, with the codec's own way of
 /// filling in a missing side.
 @visibleForTesting
@@ -238,8 +268,9 @@ Future<(int, int)> _uprightSize(Uint8List bytes) async {
 }
 
 /// Decodes [bytes] at the size [target] picks from the upright intrinsic
-/// size: as is when that is the stored size, through Android when smaller,
-/// and through Flutter's own resize only when Android declines.
+/// size: as is when that is the stored size, at the JPEG decoder's own
+/// scale when one covers it, through Android otherwise, and through
+/// Flutter's own resize only when Android declines.
 Future<ui.Codec> _decode(
   Uint8List bytes,
   (int?, int?) Function(int width, int height) target,
@@ -263,6 +294,18 @@ Future<ui.Codec> _decode(
   );
   if (width == descriptor.width && height == descriptor.height) {
     return descriptor.instantiateCodec();
+  }
+  // A JPEG decodes at an eighth of its size, so asking for exactly that
+  // size leaves Impeller nothing to resize, and the widget scales the rest
+  // when it draws. This costs no more than Flutter's own decode did.
+  final eighth = _isJpeg(bytes)
+      ? jpegEighthSize(descriptor.width, descriptor.height, width, height)
+      : null;
+  if (eighth != null) {
+    return descriptor.instantiateCodec(
+      targetWidth: eighth.$1,
+      targetHeight: eighth.$2,
+    );
   }
   final scaled =
       width < descriptor.width && height <= descriptor.height ||

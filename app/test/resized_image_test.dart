@@ -120,6 +120,35 @@ void main() {
     });
   });
 
+  group('jpegEighthSize', () {
+    test('picks the smallest eighth that covers the target', () {
+      // An Immich preview shown at 960: 6/8.
+      expect(jpegEighthSize(1440, 1913, 960, 1275), (1080, 1435));
+      // A 512 cover at 366: 6/8.
+      expect(jpegEighthSize(512, 512, 366, 366), (384, 384));
+      // A 50 MP photo at 960: 1/8, sides rounded up like libjpeg-turbo.
+      expect(jpegEighthSize(8160, 6144, 960, 722), (1020, 768));
+      expect(jpegEighthSize(4001, 3001, 500, 375), (501, 376));
+    });
+
+    test('an exact eighth is taken as is', () {
+      expect(jpegEighthSize(800, 600, 400, 300), (400, 300));
+    });
+
+    test('a target past 7/8 decodes whole', () {
+      expect(jpegEighthSize(800, 500, 790, 493), (800, 500));
+    });
+
+    test('far more pixels than the target goes to Android', () {
+      // Just above 1/8: the next eighth has almost four times the pixels.
+      expect(jpegEighthSize(4000, 3000, 520, 390), isNull);
+    });
+
+    test('tiny images go to Android', () {
+      expect(jpegEighthSize(12, 12, 6, 6), isNull);
+    });
+  });
+
   test('without the risk the provider is a plain ResizeImage', () {
     GpuResize.risky = false;
     final bytes = Uint8List(8);

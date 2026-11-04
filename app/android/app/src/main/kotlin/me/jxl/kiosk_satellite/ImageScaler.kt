@@ -3,6 +3,7 @@ package me.jxl.kiosk_satellite
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ColorSpace
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.media.ExifInterface
@@ -140,6 +141,10 @@ class ImageScaler(context: Context, messenger: BinaryMessenger) {
         val options = BitmapFactory.Options().apply {
             inSampleSize = sample
             inPreferredConfig = Bitmap.Config.ARGB_8888
+            // Flutter decodes to sRGB, so a wide gamut photo keeps its colors.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                inPreferredColorSpace = ColorSpace.get(ColorSpace.Named.SRGB)
+            }
         }
         var decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: return null
         // Halve with filtering, which averages each 2x2 block, until one
@@ -169,17 +174,22 @@ class ImageScaler(context: Context, messenger: BinaryMessenger) {
         } finally {
             decoded.recycle()
         }
+        return output(scaled, png)
+    }
+
+    /** The answer for Flutter: PNG bytes, or raw premultiplied RGBA. */
+    private fun output(bitmap: Bitmap, png: Boolean): Map<String, Any> {
         try {
             if (png) {
                 val out = java.io.ByteArrayOutputStream()
-                scaled.compress(Bitmap.CompressFormat.PNG, 100, out)
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                 return mapOf("png" to out.toByteArray())
             }
-            val buffer = ByteBuffer.allocate(scaled.byteCount)
-            scaled.copyPixelsToBuffer(buffer)
-            return mapOf("width" to width, "height" to height, "pixels" to buffer.array())
+            val buffer = ByteBuffer.allocate(bitmap.byteCount)
+            bitmap.copyPixelsToBuffer(buffer)
+            return mapOf("width" to bitmap.width, "height" to bitmap.height, "pixels" to buffer.array())
         } finally {
-            scaled.recycle()
+            bitmap.recycle()
         }
     }
 
