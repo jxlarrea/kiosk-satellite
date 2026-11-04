@@ -1305,6 +1305,86 @@ void main() {
     });
   });
 
+  group('screensaver tint', () {
+    late List<String> tints;
+    late bool showing;
+
+    setUp(() async {
+      await api.dispose();
+      tints = [];
+      showing = true;
+      final settings = SettingsManager(bus, commands, log);
+      api = PluginHostApi(
+        commands,
+        bus,
+        (event) async => sent.add(event),
+        screensaver: PluginScreensaverFeed(
+          view: ValueNotifier(null),
+          night: ValueNotifier(false),
+          nowPlaying: () => false,
+          settings: settings,
+          setTint: (id, color) {
+            if (!showing) return false;
+            tints.add('$id ${color.toRadixString(16)}');
+            return true;
+          },
+          clearTint: (id) => tints.add('$id clear'),
+        ),
+      );
+    });
+
+    Future<Map<String, Object?>> tint(Map<String, Object?> params) =>
+        read('setScreensaverTint', params: params);
+
+    test('needs the screensaver capability', () async {
+      api.open({
+        ...session,
+        'capabilities': ['host.read'],
+      });
+      final catalog = (await read('getHostApi'))['data'] as Map;
+      expect(catalog['commands'], isNot(contains('setScreensaverTint')));
+      expect((await tint({'color': '#822222'}))['ok'], false);
+      expect(tints, isEmpty);
+    });
+
+    test('tints the plugin\'s own screensaver and clears with it', () async {
+      // A renderer needs no host capability for it, and gets nothing else.
+      api.open({
+        ...session,
+        'capabilities': ['screensaver'],
+      });
+      final catalog = (await read('getHostApi'))['data'] as Map;
+      expect(catalog['commands'], [
+        'getHostApi',
+        'setScreensaverTint',
+        'clearScreensaverTint',
+      ]);
+      expect(catalog['events'], isEmpty);
+      expect((await read('getScreensaverAppearance'))['ok'], false);
+      for (final bad in ['822222', '#82222', '#82222g', '#FF822222', '']) {
+        expect((await tint({'color': bad}))['ok'], false, reason: bad);
+      }
+      expect((await tint({'color': '#822222', 'extra': true}))['ok'], false);
+      expect(tints, isEmpty);
+
+      expect((await tint({'color': '#8a2Be2'}))['ok'], true);
+      expect(tints, ['example ff8a2be2']);
+
+      showing = false;
+      final refused = await tint({'color': '#822222'});
+      expect(refused['ok'], false);
+      expect(refused['error'], contains('on screen'));
+
+      expect((await read('clearScreensaverTint'))['ok'], true);
+      expect(tints.last, 'example clear');
+
+      // A session that ends takes its tint with it.
+      tints.clear();
+      api.close(session);
+      expect(tints, ['example clear']);
+    });
+  });
+
   group('Home Assistant access', () {
     late _FakeHa ha;
     late PluginHostApi haApi;

@@ -232,6 +232,32 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// (screensaver.appearance) all follow this one decision.
   final clockNight = ValueNotifier<bool>(false);
 
+  /// The color a plugin screensaver asked its corner widgets and At a
+  /// Glance row to wear (issue #1299), drawn the way Night mode's color is
+  /// on the clock. It belongs to the plugin screensaver that was on screen
+  /// when the plugin asked and ends once that one leaves the screen, so a
+  /// plugin that never clears it cannot tint any other screensaver.
+  final pluginTint = ValueNotifier<({String mode, int color})?>(null);
+
+  /// Tints the widgets over [pluginId]'s screensaver. False when none of
+  /// that plugin's screensavers is on screen.
+  bool setPluginTint(String pluginId, int color) {
+    final view = activeView.value;
+    if (!defs.isPluginScreensaver(view) || view!.split(':')[1] != pluginId) {
+      return false;
+    }
+    pluginTint.value = (mode: view, color: color);
+    return true;
+  }
+
+  /// Drops [pluginId]'s tint. Another plugin's stays.
+  void clearPluginTint(String pluginId) {
+    final tint = pluginTint.value;
+    if (tint != null && tint.mode.split(':')[1] == pluginId) {
+      pluginTint.value = null;
+    }
+  }
+
   /// The dark panel or black screen in this session is Night mode's, so
   /// the room brightening may undo it. A panel turned off by hand or by
   /// Turn screen off after is never Night mode's to light.
@@ -2006,6 +2032,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// coverage can flip mid-session (a schedule boundary swapping Dim for a
   /// content mode, music starting under Dim).
   void _setView(String? view) {
+    // A plugin's tint goes with its screensaver. The black screen-off
+    // cover in the same session keeps it for when the view comes back.
+    final tint = pluginTint.value;
+    if (tint != null && view != tint.mode && view != 'blank') {
+      pluginTint.value = null;
+    }
     activeView.value = view;
     bus.publish(ScreensaverViewChanged(view: view));
     _syncNowPlayingShown();
@@ -2355,6 +2387,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     activeView.dispose();
     pageReserve.dispose();
     clockNight.dispose();
+    pluginTint.dispose();
     dashboardShowing.dispose();
     scheduleNowPlaying.dispose();
     modeOverride.dispose();

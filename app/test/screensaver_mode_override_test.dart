@@ -106,6 +106,54 @@ void main() {
     await saver.stop();
   });
 
+  test('a plugin tint stays on the plugin screensaver it was set on', () async {
+    // Issue #1299: a plugin that never clears its tint must not color any
+    // other screensaver, not even its own other one.
+    await build({'ks.screensaver.mode': 'clock'});
+    published = {
+      'plugin:monitor:hw': 'Hardware (Monitor)',
+      'plugin:monitor:cpu': 'CPU (Monitor)',
+    };
+    expect(saver.setPluginTint('monitor', 0xFF822222), isFalse);
+    await saver.start();
+    await pumpEventQueue();
+    expect(saver.setPluginTint('monitor', 0xFF822222), isFalse);
+
+    saver.setModeOverride('a:1', 'plugin:monitor:hw');
+    await pumpEventQueue();
+    expect(saver.setPluginTint('other', 0xFF112233), isFalse);
+    expect(saver.setPluginTint('monitor', 0xFF822222), isTrue);
+    expect(saver.pluginTint.value, (
+      mode: 'plugin:monitor:hw',
+      color: 0xFF822222,
+    ));
+    // Another plugin cannot clear it.
+    saver.clearPluginTint('other');
+    expect(saver.pluginTint.value, isNotNull);
+
+    // The plugin's other screensaver starts untinted.
+    saver.setModeOverride('a:1', 'plugin:monitor:cpu');
+    await pumpEventQueue();
+    expect(saver.activeView.value, 'plugin:monitor:cpu');
+    expect(saver.pluginTint.value, isNull);
+
+    // So does the Clock, and coming back does not bring the tint back.
+    expect(saver.setPluginTint('monitor', 0xFF822222), isTrue);
+    saver.clearModeOverride('a:1');
+    await pumpEventQueue();
+    expect(saver.activeView.value, 'clock');
+    expect(saver.pluginTint.value, isNull);
+    saver.setModeOverride('a:1', 'plugin:monitor:cpu');
+    await pumpEventQueue();
+    expect(saver.pluginTint.value, isNull);
+
+    // The session ending drops it too.
+    expect(saver.setPluginTint('monitor', 0xFF822222), isTrue);
+    await saver.stop();
+    expect(saver.pluginTint.value, isNull);
+    saver.clearModeOverride('a:1');
+  });
+
   test('the countdown names the held mode', () async {
     await build({
       'ks.screensaver.enabled': true,

@@ -106,6 +106,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
     super.initState();
     container.screensaver.scheduleNowPlaying.addListener(_scheduleChanged);
     container.screensaver.clockNight.addListener(_scheduleChanged);
+    container.screensaver.pluginTint.addListener(_scheduleChanged);
     // Editing the Widgets group while the screensaver shows (the remote
     // admin can) applies immediately: the widget list is read at build,
     // so a changed list needs this rebuild to mount or unmount overlays.
@@ -166,6 +167,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
   void dispose() {
     container.screensaver.scheduleNowPlaying.removeListener(_scheduleChanged);
     container.screensaver.clockNight.removeListener(_scheduleChanged);
+    container.screensaver.pluginTint.removeListener(_scheduleChanged);
     _widgetsSub?.cancel();
     super.dispose();
   }
@@ -179,14 +181,19 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       container.settings.get(defs.screensaverClockNightHideWidgets);
 
   /// The color Night mode imposes on the corner widgets over the Clock
-  /// screensaver, or null: on any other view the widgets keep their own,
+  /// screensaver, or the tint a plugin screensaver asked for over itself
+  /// (issue #1299), or null: on any other view the widgets keep their own,
   /// Night mode being the clock's.
-  Color? _widgetNightColor(String view) => view == 'clock' && _night
-      ? _rgbOr(
-          container.settings.get(defs.screensaverClockNightColor),
-          const Color(0xFF822222),
-        )
-      : null;
+  Color? _widgetNightColor(String view) {
+    if (view == 'clock' && _night) {
+      return _rgbOr(
+        container.settings.get(defs.screensaverClockNightColor),
+        const Color(0xFF822222),
+      );
+    }
+    final tint = container.screensaver.pluginTint.value;
+    return tint != null && tint.mode == view ? Color(tint.color) : null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -433,6 +440,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                               return _GlanceOverlay(
                                 container: container,
                                 narrow: narrow,
+                                night: _widgetNightColor(view),
                               );
                             }
                             // Once the panels have been measured, the row
@@ -445,6 +453,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                                     container: container,
                                     narrow: true,
                                     corners: footprint.values,
+                                    night: _widgetNightColor(view),
                                   ),
                             );
                           },
@@ -1559,9 +1568,14 @@ class _GlanceOverlay extends StatelessWidget {
     required this.container,
     required this.narrow,
     this.corners = const [],
+    this.night,
   });
 
   final AppContainer container;
+
+  /// The color the row is drawn in alone, as Night mode draws it on the
+  /// clock: a plugin screensaver's tint. Null keeps its own colors.
+  final Color? night;
 
   /// Whether the mode's bottom corners are spoken for (the Immich
   /// metadata panels), so the row should wrap narrow instead of spreading
@@ -1608,6 +1622,7 @@ class _GlanceOverlay extends StatelessWidget {
                   container: container,
                   scale: scale,
                   narrow: narrow,
+                  night: night,
                 ),
               ),
             ),

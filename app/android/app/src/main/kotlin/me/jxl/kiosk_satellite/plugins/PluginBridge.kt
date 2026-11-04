@@ -299,7 +299,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 }
             }
             override fun executeCommand(command: String, arguments: Map<String, Any>, callback: PluginHost.CommandCallback) {
-                check(alive.get() && manifest.capabilities.any { it == "host.read" || it == "host.control" || it == "screensaver.mode" }) { "Host capability is required" }
+                check(alive.get() && manifest.capabilities.any { it == "host.read" || it == "host.control" || it == "screensaver.mode" || it == "screensaver" }) { "Host capability is required" }
                 require(command.length in 1..80 && arguments.size <= 2 && arguments.all { it.key.length <= 32 && (it.value is Boolean || (it.value is String && (it.value as String).length <= 2048)) }) { "Invalid host request" }
                 commandBudget.acquire()
                 val copied = HashMap(arguments)

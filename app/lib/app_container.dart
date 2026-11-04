@@ -222,6 +222,8 @@ class AppContainer {
         night: screensaver.clockNight,
         nowPlaying: () => screensaver.nowPlayingShown,
         settings: settings,
+        setTint: screensaver.setPluginTint,
+        clearTint: screensaver.clearPluginTint,
       )
       ..camera = PluginCamera(
         motion: motion,
