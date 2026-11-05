@@ -1492,6 +1492,13 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
         state == 'in_call' &&
         video['peer'] == true &&
         _status['cameraReady'] == true;
+    // It shows with the kiosk's name, so it never takes room from the
+    // controls.
+    final canSwitch =
+        kind == 'call' &&
+        (state == 'calling' || state == 'in_call') &&
+        video['camera'] == true &&
+        _status['canSwitchCamera'] == true;
     // A short landscape (a phone on its side) has no room for a disc
     // under the pill: End sits beside it there, under it everywhere else.
     final short = height < 480;
@@ -1535,9 +1542,14 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
         final auto = call['autoAnswerAt'];
         if (auto is num) {
           final left = (auto.toInt() - DateTime.now().millisecondsSinceEpoch);
-          stateLine = l10n(
-            context,
-          ).intercomAnswersIn('${math.max(0, (left / 1000).ceil())}');
+          final seconds = '${math.max(0, (left / 1000).ceil())}';
+          final withCamera =
+              _status['autoAnswerCamera'] == true &&
+              _status['cameraReady'] == true &&
+              video['farCamera'] == true;
+          stateLine = withCamera
+              ? l10n(context).intercomAnswersWithCameraIn(seconds)
+              : l10n(context).intercomAnswersIn(seconds);
         } else {
           stateLine = intercomText(context, "Ringing");
         }
@@ -1864,6 +1876,14 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
             ),
           ),
         ],
+        if (canSwitch) ...[
+          SizedBox(height: compact ? 12 : 16),
+          _SwitchCameraPill(
+            compact: compact,
+            overVideo: false,
+            onTap: () => _run('intercomSwitchCamera'),
+          ),
+        ],
         SizedBox(height: gap),
         _Meter(level: level, live: live, scale: meterScale),
         if (micDenied) ...[
@@ -1926,6 +1946,13 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
         sub: sub,
         stateLine: stateLine,
         caption: caption,
+        switchCamera: canSwitch
+            ? _SwitchCameraPill(
+                compact: compact,
+                overVideo: true,
+                onTap: () => _run('intercomSwitchCamera'),
+              )
+            : null,
         selfTile: state == 'calling' ? null : selfTile,
         controls: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2034,6 +2061,7 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
     required String? sub,
     required String stateLine,
     required bool caption,
+    required Widget? switchCamera,
     required Widget? selfTile,
     required Widget controls,
   }) {
@@ -2077,6 +2105,7 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
           right: 0,
           top: 0,
           child: IgnorePointer(
+            ignoring: !caption,
             child: AnimatedOpacity(
               opacity: caption ? 1 : 0,
               duration: const Duration(milliseconds: 200),
@@ -2133,6 +2162,10 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
                             color: Colors.white,
                           ),
                         ),
+                      if (switchCamera != null) ...[
+                        SizedBox(height: compact ? 10 : 16),
+                        switchCamera,
+                      ],
                     ],
                   ),
                 ),
@@ -2424,6 +2457,62 @@ class _Disc extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Moves the call to the other camera. It lives under the kiosk's name
+/// and comes and goes with it.
+class _SwitchCameraPill extends StatelessWidget {
+  const _SwitchCameraPill({
+    required this.compact,
+    required this.overVideo,
+    required this.onTap,
+  });
+
+  final bool compact;
+  final bool overVideo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final bg = overVideo
+        ? const Color(0xC7202124)
+        : scheme.surfaceContainerHighest;
+    final fg = overVideo ? const Color(0xFFE8EAED) : scheme.onSurface;
+    return Material(
+      color: bg,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 16 : 24,
+            vertical: compact ? 10 : 14,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cameraswitch, size: compact ? 20 : 26, color: fg),
+              SizedBox(width: compact ? 8 : 12),
+              Flexible(
+                child: Text(
+                  intercomText(context, "Switch camera"),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: compact ? 14 : 18,
+                    fontWeight: FontWeight.w500,
+                    color: fg,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

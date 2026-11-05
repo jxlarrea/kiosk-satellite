@@ -224,6 +224,102 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
+    Map<String, Object?> switchable() => status()..['canSwitchCamera'] = true;
+
+    testWidgets('Switch camera comes and goes with the details', (
+      tester,
+    ) async {
+      final container = await show(tester, const Size(1280, 800));
+      final taps = <String>[];
+      container.commands.register(
+        Command(
+          name: 'intercomSwitchCamera',
+          description: 'stub',
+          handler: (_) async {
+            taps.add('switch');
+            return const CommandResult.ok();
+          },
+        ),
+      );
+      container.bus.publish(IntercomStateChanged(switchable()));
+      await tester.pump();
+      final button = find.text('Switch camera');
+      expect(button, findsOneWidget);
+      final name = tester.getRect(find.text('Kitchen'));
+      expect(tester.getRect(button).top, greaterThan(name.bottom));
+      await tester.tap(button);
+      await tester.pump();
+      expect(taps, ['switch']);
+      await tester.pump(const Duration(seconds: 4));
+      expect(detailsOpacity(tester), 0);
+      // Hidden, a tap on the same spot only brings the details back.
+      await tester.tapAt(tester.getCenter(button));
+      await tester.pump();
+      expect(taps, ['switch']);
+      expect(detailsOpacity(tester), 1);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('Switch camera needs two cameras and the camera on', (
+      tester,
+    ) async {
+      final container = await show(tester, const Size(1280, 800));
+      container.bus.publish(IntercomStateChanged(status()));
+      await tester.pump();
+      expect(find.text('Switch camera'), findsNothing);
+      container.bus.publish(
+        IntercomStateChanged(status(camera: false)..['canSwitchCamera'] = true),
+      );
+      await tester.pump();
+      expect(find.text('Switch camera'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    for (final size in const [
+      Size(640, 360),
+      Size(787, 393),
+      Size(844, 390),
+      Size(390, 844),
+      Size(960, 480),
+    ]) {
+      testWidgets('Switch camera clears the controls at $size', (tester) async {
+        final container = await show(tester, size);
+        final s = switchable()..['talkMode'] = 'ptt';
+        container.bus.publish(IntercomStateChanged(s));
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        final pill = tester.getRect(find.text('Switch camera'));
+        final talk = tester.getRect(find.text('Hold to talk'));
+        expect(pill.bottom, lessThanOrEqualTo(talk.top));
+        await tester.pumpWidget(const SizedBox());
+      });
+    }
+
+    testWidgets('the countdown says when the camera will turn on', (
+      tester,
+    ) async {
+      final container = await show(tester, const Size(1280, 800));
+      Map<String, Object?> counting({required bool withCamera}) {
+        final s = status(state: 'ringing', camera: false);
+        s['autoAnswerCamera'] = withCamera;
+        (s['call'] as Map)['autoAnswerAt'] = DateTime.now()
+            .add(const Duration(seconds: 3))
+            .millisecondsSinceEpoch;
+        return s;
+      }
+
+      container.bus.publish(IntercomStateChanged(counting(withCamera: true)));
+      await tester.pump();
+      await tester.pump();
+      expect(find.textContaining('Camera on in'), findsOneWidget);
+      container.bus.publish(IntercomStateChanged(counting(withCamera: false)));
+      await tester.pump();
+      await tester.pump();
+      expect(find.textContaining('Camera on in'), findsNothing);
+      expect(find.textContaining('Answers in'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('a kiosk without a camera answers with one button', (
       tester,
     ) async {

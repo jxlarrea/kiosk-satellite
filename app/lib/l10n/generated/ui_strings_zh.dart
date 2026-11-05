@@ -2652,6 +2652,11 @@ class UiStringsZh extends UiStrings {
   String get intercomCalling => '正在呼叫…';
 
   @override
+  String intercomAnswersWithCameraIn(String seconds) {
+    return '$seconds 秒后打开摄像头';
+  }
+
+  @override
   String intercomAnswersIn(String seconds) {
     return '将在 $seconds 秒后接听';
   }
@@ -2767,6 +2772,9 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get intercomVideoAnswer => '视频';
+
+  @override
+  String get intercomSwitchCamera => '切换摄像头';
 
   @override
   String get intercomCameraButton => '摄像头';
@@ -8809,6 +8817,12 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get intercomVideoSection => '视频';
+
+  @override
+  String get settingIntercomAutoAnswerCameraTitle => '接听时打开摄像头';
+
+  @override
+  String get settingIntercomAutoAnswerCameraDescription => '自动接听的视频通话会打开摄像头。';
 
   @override
   String get settingKioskAllowDrawerTitle => '允许带快捷操作的菜单';
@@ -17920,6 +17934,11 @@ class UiStringsZhCn extends UiStringsZh {
   String get intercomCalling => '正在呼叫…';
 
   @override
+  String intercomAnswersWithCameraIn(String seconds) {
+    return '$seconds 秒后打开摄像头';
+  }
+
+  @override
   String intercomAnswersIn(String seconds) {
     return '将在 $seconds 秒后接听';
   }
@@ -18035,6 +18054,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get intercomVideoAnswer => '视频';
+
+  @override
+  String get intercomSwitchCamera => '切换摄像头';
 
   @override
   String get intercomCameraButton => '摄像头';
@@ -24077,6 +24099,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get intercomVideoSection => '视频';
+
+  @override
+  String get settingIntercomAutoAnswerCameraTitle => '接听时打开摄像头';
+
+  @override
+  String get settingIntercomAutoAnswerCameraDescription => '自动接听的视频通话会打开摄像头。';
 
   @override
   String get settingKioskAllowDrawerTitle => '允许带快捷操作的菜单';

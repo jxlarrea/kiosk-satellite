@@ -2739,6 +2739,11 @@ class UiStringsFr extends UiStrings {
   String get intercomCalling => 'Appel en cours…';
 
   @override
+  String intercomAnswersWithCameraIn(String seconds) {
+    return 'Caméra activée dans $seconds s';
+  }
+
+  @override
   String intercomAnswersIn(String seconds) {
     return 'Réponse dans $seconds s';
   }
@@ -2855,6 +2860,9 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get intercomVideoAnswer => 'Vidéo';
+
+  @override
+  String get intercomSwitchCamera => 'Changer de caméra';
 
   @override
   String get intercomCameraButton => 'Caméra';
@@ -9355,6 +9363,14 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get intercomVideoSection => 'Vidéo';
+
+  @override
+  String get settingIntercomAutoAnswerCameraTitle =>
+      'Répondre avec la caméra activée';
+
+  @override
+  String get settingIntercomAutoAnswerCameraDescription =>
+      'Les appels vidéo pris automatiquement s\'ouvrent avec la caméra activée.';
 
   @override
   String get settingKioskAllowDrawerTitle =>

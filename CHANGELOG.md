@@ -7,6 +7,8 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - **More variables for spoken alarm phrases (#1309).** A phrase can now use `{name}`, `{hour}`, `{minute}`, `{date}`, `{dayofmonth}`, `{month}` and `{year}`, so a phrase can avoid a time or date that a text to speech engine reads badly. `{name}` is the Home Assistant user the kiosk's token belongs to. `{day}` is still the day of the week, so existing phrases say the same thing. The hint under the Phrase box lists every variable.
 - **Hide all-day events on the Up next widget (#1312).** The widget has a new **Show all-day events** switch, on by default. Turn it off to list only events with a start time, so holidays and other all-day entries do not take up the widget's slots.
+- **Answer video calls automatically with the camera on.** The new **Answer with camera on** switch, off by default, appears under **Answer mode** when **Answer automatically** is picked. A call from a kiosk with its camera on then opens with the camera on, and the countdown says so. Voice calls stay voice only, pressing **Voice only** during the countdown keeps the camera off and Fleet Management never syncs the switch.
+- **Switch camera in a video call.** On a device with a front and a back camera, **Switch camera** now appears under the kiosk's name and call time after a tap on the screen. The next call starts on the camera picked in settings.
 
 ### Changed
 - **The README mentions video calls.** The Intercom entry now covers voice and video calls.

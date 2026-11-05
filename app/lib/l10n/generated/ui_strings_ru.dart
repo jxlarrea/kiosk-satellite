@@ -2726,6 +2726,11 @@ class UiStringsRu extends UiStrings {
   String get intercomCalling => 'Вызов…';
 
   @override
+  String intercomAnswersWithCameraIn(String seconds) {
+    return 'Камера включится через $seconds с';
+  }
+
+  @override
   String intercomAnswersIn(String seconds) {
     return 'Ответит через $seconds с';
   }
@@ -2844,6 +2849,9 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get intercomVideoAnswer => 'Видео';
+
+  @override
+  String get intercomSwitchCamera => 'Переключить камеру';
 
   @override
   String get intercomCameraButton => 'Камера';
@@ -9266,6 +9274,14 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get intercomVideoSection => 'Видео';
+
+  @override
+  String get settingIntercomAutoAnswerCameraTitle =>
+      'Отвечать с включенной камерой';
+
+  @override
+  String get settingIntercomAutoAnswerCameraDescription =>
+      'Видеозвонки с автоответом открываются с включенной камерой.';
 
   @override
   String get settingKioskAllowDrawerTitle => 'Разрешить меню быстрых действий';

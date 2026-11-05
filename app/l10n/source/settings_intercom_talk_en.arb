@@ -480,5 +480,31 @@
         "Intercom > Video"
       ]
     }
+  },
+  "settingIntercomAutoAnswerCameraTitle": "Answer with camera on",
+  "@settingIntercomAutoAnswerCameraTitle": {
+    "context": "Settings > Intercom > Answer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Answer"
+      ],
+      "remoteAdmin": [
+        "Intercom > Answer"
+      ]
+    }
+  },
+  "settingIntercomAutoAnswerCameraDescription": "Video calls answered automatically open with the camera on.",
+  "@settingIntercomAutoAnswerCameraDescription": {
+    "context": "Settings > Intercom > Answer",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Answer"
+      ],
+      "remoteAdmin": [
+        "Intercom > Answer"
+      ]
+    }
   }
 }

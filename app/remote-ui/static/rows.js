@@ -121,34 +121,49 @@ export function syncGatedRows(key, anchorRow) {
   // it reaches live: only a row whose presence must change counts.
   const changes = (o) => visible(o) !== !!document.querySelector(`[data-key="${o.key}"]`);
   if (!reached.some(changes)) return true;
+  // A row in another card of the same page (Answer with camera on, in
+  // Answer, gated on Video calls in Video) is placed there: nothing needs
+  // a heading. Any row of that card shows where it is. Rows on second-level
+  // pages stay with syncSubpages below, which owns those pages.
+  const shownCard = (o) => all
+    .filter((x) => x.key !== o.key && x.category === o.category
+      && (x.section || '') === (o.section || '')
+      && (x.subpage || '') === (o.subpage || ''))
+    .map((x) => document.querySelector(`[data-key="${x.key}"]`)?.parentNode)
+    .find(Boolean);
+  const placeable = (o) => sameCard(o)
+    || (!o.subpage && !anchor.subpage && !!shownCard(o));
   // Rows on second-level pages of the tab this row is on (the Player pick
   // swapping the Sendspin Player page for the AirPlay one) come and go with
   // their pages, drawn in place too.
-  const away = reached.filter((o) => !sameCard(o) && changes(o));
+  const away = reached.filter((o) => !placeable(o) && changes(o));
   if (away.length && (anchor.subpage || !away.every((o) => o.subpage)
       || !syncSubpages(away))) {
     return false;
   }
   // Schema order within the card decides where a returning row goes back:
   // in front of the first row after it that is currently on screen.
-  const order = all.filter(sameCard);
-  for (const o of reached.filter(sameCard)) {
-    const existing = card.querySelector(`[data-key="${o.key}"]`);
+  for (const o of reached.filter(placeable)) {
+    const home = sameCard(o) ? card : shownCard(o);
+    const order = all.filter((x) => x.category === o.category
+      && (x.section || '') === (o.section || '')
+      && (x.subpage || '') === (o.subpage || ''));
+    const existing = home.querySelector(`[data-key="${o.key}"]`);
     if (!visible(o)) { existing?.remove(); continue; }
     if (existing) continue;
     let before = null;
     for (let i = order.indexOf(o) + 1; i < order.length && !before; i++) {
-      before = card.querySelector(`[data-key="${order[i].key}"]`);
+      before = home.querySelector(`[data-key="${order[i].key}"]`);
     }
     // Custom controls can follow the schema rows, as in Voice Satellite's
     // General section. Keep a revealed child beside its preceding setting.
     if (!before) {
       for (let i = order.indexOf(o) - 1; i >= 0; i--) {
-        const previous = card.querySelector(`[data-key="${order[i].key}"]`);
+        const previous = home.querySelector(`[data-key="${order[i].key}"]`);
         if (previous) { before = previous.nextSibling; break; }
       }
     }
-    card.insertBefore(settingRow(o), before);
+    home.insertBefore(settingRow(o), before);
   }
   return true;
 }

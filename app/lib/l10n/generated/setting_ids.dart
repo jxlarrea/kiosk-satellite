@@ -1328,6 +1328,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingIntercomAnswerModeTitle",
     "description": "settingIntercomAnswerModeDescription",
   },
+  "intercom.auto_answer_camera": {
+    "title": "settingIntercomAutoAnswerCameraTitle",
+    "description": "settingIntercomAutoAnswerCameraDescription",
+  },
   "intercom.ring_seconds": {
     "title": "settingIntercomRingSecondsTitle",
     "description": "settingIntercomRingSecondsDescription",

@@ -313,9 +313,10 @@ async function flushSettingsUpdates() {
       }
     }
     // Hang up call when pressing this button reveals Hang up button while
-    // ringing in its own card (issue #991), and Video calls reveals Video
-    // quality, in place like the switches above.
-    if (!shapeChanged && ['intercom.hangup_key', 'intercom.video'].includes(setting.key)) {
+    // ringing in its own card (issue #991), Video calls reveals Video
+    // quality and both Video calls and Answer mode gate Answer with camera
+    // on, in place like the switches above.
+    if (!shapeChanged && ['intercom.hangup_key', 'intercom.video', 'intercom.answer_mode'].includes(setting.key)) {
       const byKey = Object.fromEntries(state.settings.map(s => [s.key, s]));
       if ((!rows.length && !depSatisfied(setting, byKey)) || (rows.length
           && rows.every(row => row.updateSetting?.() && syncGatedRows(setting.key, row)))) {

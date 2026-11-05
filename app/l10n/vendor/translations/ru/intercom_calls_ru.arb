@@ -66,5 +66,7 @@
   "intercomCameraOff": "Камера выключена",
   "intercomYourCameraOff": "Ваша камера выключена",
   "intercomVideoReconnecting": "Восстановление видео…",
-  "intercomCameraOffNotice": "Камера выключена. Этот киоск может показывать видео, но не отправлять его."
+  "intercomCameraOffNotice": "Камера выключена. Этот киоск может показывать видео, но не отправлять его.",
+  "intercomAnswersWithCameraIn": "Камера включится через {seconds} с",
+  "intercomSwitchCamera": "Переключить камеру"
 }

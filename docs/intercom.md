@@ -67,7 +67,13 @@ Voice is raw 16 kHz audio over one WebSocket per call, about 256 kbit/s each way
 
 On the roster, a kiosk that takes video has a video button beside its call button. Press it to call with your camera on. You see your own picture while the call rings, and so does the person at the other kiosk. They can answer with **Voice only** or **Video**, or decline.
 
-Your camera goes on in two ways only: pressing video on the roster or **Video** on a ringing call, and pressing **Camera** during a call. **Answer automatically**, a hardware button, Home Assistant and the remote admin all answer with the camera off. Any call can add video later: press **Camera** while you talk. While the camera sends, your own picture stays in the corner of the screen.
+Your camera goes on when you press video on the roster, **Video** on a ringing call or **Camera** during a call. A hardware button, Home Assistant and the remote admin always answer with the camera off. **Answer automatically** does too unless you turn on **Answer with camera on**.
+
+**Answer with camera on** appears under **Settings > Intercom > Answer** when **Answer mode** is **Answer automatically**. It is off by default. With it on, a call from a kiosk with its camera on opens with this kiosk's camera on as well, so people at the other kiosk can see the room with nobody at this kiosk pressing anything. The countdown reads **Camera on in 3 s**, and pressing **Voice only** or **Decline** stops the camera from turning on. A voice call stays voice only. The setting needs **Enable camera** and is never synced by Fleet Management.
+
+Any call can add video later: press **Camera** while you talk.
+
+On a device with a front and a back camera, **Switch camera** appears under the kiosk's name while the camera sends. Tap the screen to show it. The picture pauses for a moment while the camera changes. If the other camera does not start, the call goes back to the one it was using. The next call starts on the camera picked under **Settings > Camera**. Motion detection and the other camera features use the same camera as the call until it ends. While the camera sends, your own picture stays in the corner of the screen.
 
 The other kiosk's picture fills the screen and the controls float over it. The kiosk's name and the call's length show when the call connects, then hide after 3 seconds. Tap the screen or press a button to see them again. If the other kiosk turns its camera off, the call goes back to the voice screen. If the picture stops arriving, the last frame dims and the screen says the video is reconnecting. The voice carries on.
 
@@ -163,7 +169,7 @@ The intercom's routes sit in front of the admin login. Every one of them except 
 | `/api/intercom/audio/<id>` | WebSocket | `?token=` as above. Binary frames are 80 ms of PCM16 mono 16 kHz from the sender's microphone. Text frames: `{"type": "talk", "on": true}` and `{"type": "end"}`. |
 | `/api/intercom/video/<id>` | WebSocket | `?token=` as above. Opened by the caller as soon as the call rings, when both kiosks take video. Binary frames carry one H.264 frame in Annex B form after a 9 byte header: flags (bit 0 marks a key frame, which carries its SPS and PPS), width and height as 16 bit values and the capture time in milliseconds as a 32 bit value, all big endian. Text frames: `{"type": "camera", "on": true}`, `{"type": "ack", "n": 12}` for each frame received and `{"type": "key"}` to ask for a key frame. A sender with six frames unacknowledged drops frames until the next key frame. |
 
-Both pages use the commands `intercomStatus`, `intercomKiosks`, `intercomCall {id}` or `{kiosk}` (a name or address), `intercomBroadcast`, `intercomHangup`, `intercomTalk {on}`, `intercomMute {on}`, `intercomOpen`, `intercomSetDnd {on}`, `intercomSetKey {key}` or `{regenerate: true}` and `intercomDismiss`. `intercomAnswer`, `intercomDecline`, `intercomVideoCall {id}` and `intercomCamera {on}` are refused over the remote API: only the kiosk screen answers or turns the camera on. The WebSocket feed carries an `intercom` event with the whole status on every change.
+Both pages use the commands `intercomStatus`, `intercomKiosks`, `intercomCall {id}` or `{kiosk}` (a name or address), `intercomBroadcast`, `intercomHangup`, `intercomTalk {on}`, `intercomMute {on}`, `intercomSwitchCamera`, `intercomOpen`, `intercomSetDnd {on}`, `intercomSetKey {key}` or `{regenerate: true}` and `intercomDismiss`. `intercomAnswer`, `intercomDecline`, `intercomVideoCall {id}` and `intercomCamera {on}` are refused over the remote API: only the kiosk screen answers or turns the camera on. The WebSocket feed carries an `intercom` event with the whole status on every change.
 
 ## Notes
 

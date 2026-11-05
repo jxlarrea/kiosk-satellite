@@ -29124,5 +29124,29 @@
     "translation": "160dc2431271ef453edeb7b76fd6f1c8351d9f8233c52c21b18e674991e0b7d0",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingIntercomAutoAnswerCameraTitle": {
+    "source": "64db42887701ce30e4a0f97d64d1940eece17c31caa8959718fd8acdacda8281",
+    "translation": "b215b611f5a94c1e954c447c919f55fe81ea82bb47f8d8ff8ceaede4f57d2d85",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingIntercomAutoAnswerCameraDescription": {
+    "source": "971d51407a508a7013e3fc3474816e1f77152524948c264460cdba10f22f1b52",
+    "translation": "789b639319987775b27bf65a9b83d2cdf08f6d4c612fb54cb0dfe4ceb20b3ac0",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomAnswersWithCameraIn": {
+    "source": "6f76da38992bdb40b391625ee01481bcd4a90b45212e4e9b78b032496d081168",
+    "translation": "1676737bf9eba78930b716f63f8e7869cfed157ed6b15fb34b5b15f46a65ee7b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomSwitchCamera": {
+    "source": "2277a7aa8c52152754f53d17868bb1402f0b173afb9a4fad13568b861e7bd205",
+    "translation": "698db1252f4d7487ba57b21bdacfec2252523938369ca4e961cee0946aabc91a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

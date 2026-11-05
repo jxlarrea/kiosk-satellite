@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/services.dart' show EventChannel, MethodChannel;
+import 'package:flutter/services.dart'
+    show EventChannel, MethodCall, MethodChannel;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -41,6 +42,7 @@ class _AnnouncementPaths extends PathProviderPlatform {
 /// fanned out over the ready kiosks and the microphone chunks going out
 /// while the button is held.
 void main() {
+  var cameraFacings = <String>['front', 'back'];
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() => HttpOverrides.global = null);
 
@@ -153,6 +155,13 @@ void main() {
         ),
       );
     }
+    commands.register(
+      Command(
+        name: 'getCameraFacings',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(cameraFacings),
+      ),
+    );
     for (final name in ['playChime', 'screenOn', 'stopSound']) {
       commands.register(
         Command(
@@ -238,6 +247,7 @@ void main() {
       executed.where((e) => e.$1 == 'stopSound').map((e) => e.$2['id']);
 
   setUp(() {
+    cameraFacings = ['front', 'back'];
     peers = [
       {
         'id': 'kitchen',
@@ -2599,13 +2609,195 @@ void main() {
       await commands.execute('intercomHangup', const {});
     });
 
-    test('Answer automatically never turns the camera on', () async {
+    group('Switch camera', () {
+      Future<void> inCallWithCamera() async {
+        await buildVideo();
+        await settle(10);
+        await ring();
+        await commands.execute('intercomAnswer', {'video': true});
+        await settle(30);
+        intercom.cameraSwitchWait = const Duration(milliseconds: 60);
+      }
+
+      test('moves the call to the other camera and back', () async {
+        await inCallWithCamera();
+        expect(intercom.status()['canSwitchCamera'], true);
+        expect((await commands.execute('intercomSwitchCamera', {})).ok, true);
+        expect(demands.last?['facing'], 'back');
+        await intercom.video.handle(
+          const MethodCall('self', {'width': 640, 'height': 480}),
+        );
+        await commands.execute('intercomSwitchCamera', const {});
+        expect(demands.last?['facing'], 'front');
+        await commands.execute('intercomHangup', const {});
+        expect(demands.last, isNull);
+      });
+
+      test('a second tap waits for the first switch', () async {
+        await inCallWithCamera();
+        await commands.execute('intercomSwitchCamera', const {});
+        final count = demands.length;
+        await commands.execute('intercomSwitchCamera', const {});
+        expect(demands.length, count);
+        await commands.execute('intercomHangup', const {});
+      });
+
+      test('a camera that fails goes back and keeps the video', () async {
+        await inCallWithCamera();
+        await commands.execute('intercomSwitchCamera', const {});
+        bus.publish(const IntercomCameraLost());
+        await settle(10);
+        expect(demands.last?['facing'], 'front');
+        expect(videoOf()['camera'], true);
+        await commands.execute('intercomHangup', const {});
+      });
+
+      test('a camera that never starts goes back too', () async {
+        await inCallWithCamera();
+        await commands.execute('intercomSwitchCamera', const {});
+        await settle(90);
+        expect(demands.last?['facing'], 'front');
+        expect(videoOf()['camera'], true);
+        await commands.execute('intercomHangup', const {});
+      });
+
+      test('a failure away from a switch still turns the camera off', () async {
+        await inCallWithCamera();
+        bus.publish(const IntercomCameraLost());
+        await settle(10);
+        expect(videoOf()['camera'], false);
+        await commands.execute('intercomHangup', const {});
+      });
+
+      test('turning the camera back on keeps the camera picked', () async {
+        await inCallWithCamera();
+        await commands.execute('intercomSwitchCamera', const {});
+        await commands.execute('intercomCamera', {'on': false});
+        await commands.execute('intercomCamera', {'on': true});
+        await settle(10);
+        expect(demands.last?['facing'], 'back');
+        await commands.execute('intercomHangup', const {});
+      });
+
+      test('one camera has nothing to switch to', () async {
+        cameraFacings = ['front'];
+        await inCallWithCamera();
+        expect(intercom.status()['canSwitchCamera'], false);
+        final r = await commands.execute('intercomSwitchCamera', const {});
+        expect(r.ok, false);
+        await commands.execute('intercomHangup', const {});
+      });
+
+      test('the camera stays off in a call that did not turn it on', () async {
+        await buildVideo();
+        await settle(10);
+        await ring();
+        await commands.execute('intercomAnswer', const {});
+        await settle(30);
+        final r = await commands.execute('intercomSwitchCamera', const {});
+        expect(r.ok, false);
+        expect(demands, isEmpty);
+        await commands.execute('intercomHangup', const {});
+      });
+    });
+
+    test('Answer automatically leaves the camera off by default', () async {
       await buildVideo(prefs: {'ks.intercom.answer_mode': 'auto'});
       await ring();
       await settle(150);
       expect(intercom.state, 'in_call');
       expect(demands, isEmpty);
       expect(videoOf()['camera'], false);
+      await commands.execute('intercomHangup', const {});
+    });
+
+    test('Answer with camera on is opt in and stays on this kiosk', () {
+      expect(defs.intercomAutoAnswerCamera.defaultValue, false);
+      expect(defs.intercomAutoAnswerCamera.perDevice, true);
+      expect(defs.intercomAutoAnswerCamera.dependsOn, 'intercom.answer_mode');
+      expect(defs.intercomAutoAnswerCamera.dependsOnValue, 'auto');
+      expect(defs.intercomAutoAnswerCamera.alsoDependsOn, 'intercom.video');
+    });
+
+    test('Answer with camera on opens a video call with the camera', () async {
+      await buildVideo(
+        prefs: {
+          'ks.intercom.answer_mode': 'auto',
+          'ks.intercom.auto_answer_camera': true,
+        },
+      );
+      await ring();
+      expect(intercom.status()['autoAnswerCamera'], true);
+      await settle(150);
+      expect(intercom.state, 'in_call');
+      expect(demands.single, isNotNull);
+      expect(videoCalls, containsAll(['openSelf', 'sending']));
+      expect(videoOf()['camera'], true);
+      await commands.execute('intercomHangup', const {});
+    });
+
+    test('Answer with camera on leaves a voice call voice only', () async {
+      await buildVideo(
+        prefs: {
+          'ks.intercom.answer_mode': 'auto',
+          'ks.intercom.auto_answer_camera': true,
+        },
+      );
+      await ring(camera: false);
+      await settle(150);
+      expect(intercom.state, 'in_call');
+      expect(demands, isEmpty);
+      expect(videoOf()['camera'], false);
+      await commands.execute('intercomHangup', const {});
+    });
+
+    test(
+      'Voice only beats Answer with camera on during the countdown',
+      () async {
+        await buildVideo(
+          prefs: {
+            'ks.intercom.answer_mode': 'auto',
+            'ks.intercom.auto_answer_camera': true,
+          },
+        );
+        await ring();
+        await commands.execute('intercomAnswer', const {});
+        await settle(150);
+        expect(intercom.state, 'in_call');
+        expect(demands, isEmpty);
+        expect(videoOf()['camera'], false);
+        await commands.execute('intercomHangup', const {});
+      },
+    );
+
+    test('Answer with camera on needs the camera enabled', () async {
+      await buildVideo(
+        prefs: {
+          'ks.intercom.answer_mode': 'auto',
+          'ks.intercom.auto_answer_camera': true,
+          'ks.camera.enabled': false,
+        },
+      );
+      await ring();
+      await settle(150);
+      expect(intercom.state, 'in_call');
+      expect(demands, isEmpty);
+      expect(videoOf()['camera'], false);
+      await commands.execute('intercomHangup', const {});
+    });
+
+    test('a hardware button still answers with the camera off', () async {
+      await buildVideo(
+        prefs: {
+          'ks.intercom.auto_answer_camera': true,
+          'ks.intercom.hangup_key_ringing': 'answer',
+        },
+      );
+      await ring();
+      bus.publish(const IntercomHangupRequested(button: true));
+      await settle(30);
+      expect(intercom.state, 'in_call');
+      expect(demands, isEmpty);
       await commands.execute('intercomHangup', const {});
     });
 

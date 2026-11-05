@@ -2731,6 +2731,11 @@ class UiStringsNl extends UiStrings {
   String get intercomCalling => 'Bellen…';
 
   @override
+  String intercomAnswersWithCameraIn(String seconds) {
+    return 'Camera aan over $seconds s';
+  }
+
+  @override
   String intercomAnswersIn(String seconds) {
     return 'Neemt op over $seconds s';
   }
@@ -2849,6 +2854,9 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get intercomVideoAnswer => 'Video';
+
+  @override
+  String get intercomSwitchCamera => 'Camera wisselen';
 
   @override
   String get intercomCameraButton => 'Camera';
@@ -9311,6 +9319,13 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get intercomVideoSection => 'Video';
+
+  @override
+  String get settingIntercomAutoAnswerCameraTitle => 'Opnemen met camera aan';
+
+  @override
+  String get settingIntercomAutoAnswerCameraDescription =>
+      'Automatisch opgenomen video-oproepen starten met de camera aan.';
 
   @override
   String get settingKioskAllowDrawerTitle => 'Menu toestaan met snelle acties';

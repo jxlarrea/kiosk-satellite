@@ -66,5 +66,7 @@
   "intercomCameraOff": "Caméra désactivée",
   "intercomYourCameraOff": "Votre caméra est désactivée",
   "intercomVideoReconnecting": "Reconnexion de la vidéo…",
-  "intercomCameraOffNotice": "La caméra est désactivée. Ce kiosque peut afficher la vidéo, mais pas l'envoyer."
+  "intercomCameraOffNotice": "La caméra est désactivée. Ce kiosque peut afficher la vidéo, mais pas l'envoyer.",
+  "intercomAnswersWithCameraIn": "Caméra activée dans {seconds} s",
+  "intercomSwitchCamera": "Changer de caméra"
 }

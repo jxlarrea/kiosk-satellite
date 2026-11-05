@@ -66,5 +66,7 @@
   "intercomCameraOff": "Cámara apagada",
   "intercomYourCameraOff": "Tu cámara está apagada",
   "intercomVideoReconnecting": "Reconectando el video…",
-  "intercomCameraOffNotice": "La cámara está apagada. Este kiosko puede mostrar video, pero no enviarlo."
+  "intercomCameraOffNotice": "La cámara está apagada. Este kiosko puede mostrar video, pero no enviarlo.",
+  "intercomAnswersWithCameraIn": "Cámara encendida en {seconds} s",
+  "intercomSwitchCamera": "Cambiar cámara"
 }

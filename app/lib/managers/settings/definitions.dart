@@ -11561,6 +11561,23 @@ const intercomAnswerMode = SettingDef<String>(
   dependsOn: 'intercom.enabled',
 );
 
+/// Opt in to the one case where the camera goes on with nobody tapping: a
+/// call that opens on its own, from a caller with their camera on. Each
+/// kiosk decides for its own room, so it never travels with a fleet.
+const intercomAutoAnswerCamera = SettingDef<bool>(
+  key: 'intercom.auto_answer_camera',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Answer with camera on',
+  description: 'Video calls answered automatically open with the camera on.',
+  category: 'Intercom',
+  section: 'Answer',
+  perDevice: true,
+  dependsOn: 'intercom.answer_mode',
+  dependsOnValue: 'auto',
+  alsoDependsOn: 'intercom.video',
+);
+
 const intercomRingSeconds = SettingDef<String>(
   key: 'intercom.ring_seconds',
   type: SettingType.select,
@@ -11621,7 +11638,8 @@ const intercomTalkMode = SettingDef<String>(
 );
 
 /// Whether calls on this kiosk carry video. Sending also needs Enable
-/// camera, and the camera only ever goes on with a tap at the kiosk.
+/// camera, and the camera only goes on with a tap at the kiosk or through
+/// [intercomAutoAnswerCamera].
 const intercomVideo = SettingDef<bool>(
   key: 'intercom.video',
   type: SettingType.boolean,
@@ -14200,6 +14218,7 @@ const List<SettingDef<Object>> allSettings = [
   intercomKey,
   intercomMenu,
   intercomAnswerMode,
+  intercomAutoAnswerCamera,
   intercomRingSeconds,
   intercomRingSound,
   intercomAcceptAnnouncements,

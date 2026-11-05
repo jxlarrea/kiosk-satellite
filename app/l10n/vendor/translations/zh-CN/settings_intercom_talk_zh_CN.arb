@@ -36,5 +36,7 @@
   "intercomOptionVideoLow": "低",
   "intercomOptionVideoMedium": "中",
   "intercomOptionVideoHigh": "高",
-  "intercomVideoSection": "视频"
+  "intercomVideoSection": "视频",
+  "settingIntercomAutoAnswerCameraTitle": "接听时打开摄像头",
+  "settingIntercomAutoAnswerCameraDescription": "自动接听的视频通话会打开摄像头。"
 }

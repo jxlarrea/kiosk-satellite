@@ -36,5 +36,7 @@
   "intercomOptionVideoLow": "Laag",
   "intercomOptionVideoMedium": "Gemiddeld",
   "intercomOptionVideoHigh": "Hoog",
-  "intercomVideoSection": "Video"
+  "intercomVideoSection": "Video",
+  "settingIntercomAutoAnswerCameraTitle": "Opnemen met camera aan",
+  "settingIntercomAutoAnswerCameraDescription": "Automatisch opgenomen video-oproepen starten met de camera aan."
 }

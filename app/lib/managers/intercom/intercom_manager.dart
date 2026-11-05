@@ -151,6 +151,12 @@ class IntercomCall {
   /// Whether this kiosk's camera is sending.
   bool cameraOn = false;
 
+  /// The camera picked with Switch camera, null for the Camera setting.
+  String? lens;
+
+  /// The camera a switch in progress left: a failure goes back to it.
+  String? switchedFrom;
+
   /// Whether this kiosk's camera went on at any point, for Call again.
   bool hadCamera = false;
 
@@ -494,6 +500,13 @@ class IntercomManager extends Manager {
   /// How a picture that stopped arriving is told from a slow frame.
   Duration videoStallAfter = const Duration(seconds: 3);
   Duration videoRetryEvery = const Duration(seconds: 2);
+
+  /// How long a switch of camera has to show a picture before it goes back.
+  Duration cameraSwitchWait = const Duration(seconds: 8);
+  Timer? _cameraSwitchTimer;
+
+  /// Whether this device has a front and a back camera to switch between.
+  bool _bothCameras = false;
 
   /// Asks for the camera. Swapped in tests.
   Future<bool> Function() cameraPermission = () =>
@@ -1032,6 +1045,8 @@ class IntercomManager extends Manager {
     'micBusy': _micBusy,
     'video': videoEnabled,
     'cameraReady': cameraReady,
+    'autoAnswerCamera': _settings.get(defs.intercomAutoAnswerCamera),
+    'canSwitchCamera': cameraReady && _bothCameras,
     'self': {'id': _selfId, 'name': _selfName},
     'call': _call?.toJson(),
     'kiosks':
@@ -1152,6 +1167,13 @@ class IntercomManager extends Manager {
           description: 'Turn this kiosk\'s camera on or off in a call.',
           params: const {'on': 'true or false'},
           handler: (p) async => _setCamera(p['on'] == true),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'intercomSwitchCamera',
+          description: 'Switch between the front and back camera in a call.',
+          handler: (_) async => _switchCamera(),
         ),
       )
       ..register(
@@ -2213,23 +2235,28 @@ class IntercomManager extends Manager {
       if (c == null) return;
       c.selfWidth = width;
       c.selfHeight = height;
+      _endCameraSwitch(c);
       _changed();
     };
     video.onRequestKey = () => _videoLink?.sendMessage({'type': 'key'});
     video.onCameraFailed = (message) {
       log.warn(name, 'camera: $message');
-      if (_call?.cameraOn == true) unawaited(_setCamera(false));
+      _onCameraFailed();
     };
     video.listen();
     _subs.add(
       bus.on<IntercomCameraLost>().listen((_) {
         log.warn(name, 'camera lost during the call');
-        if (_call?.cameraOn == true) unawaited(_setCamera(false));
+        _onCameraFailed();
       }),
     );
     unawaited(() async {
       final r = await commands.execute('getCameraFacings', const {});
-      if (r.ok && r.data is List) _hasCamera = (r.data as List).isNotEmpty;
+      if (r.ok && r.data is List) {
+        final facings = r.data as List;
+        _hasCamera = facings.isNotEmpty;
+        _bothCameras = facings.contains('front') && facings.contains('back');
+      }
     }());
   }
 
@@ -2360,8 +2387,9 @@ class IntercomManager extends Manager {
   }
 
   /// Turns this kiosk's camera on or off in the current call. Only a tap
-  /// at the kiosk reaches this with on: an automatic answer, a hardware
-  /// button and Home Assistant all leave it off.
+  /// at the kiosk reaches this with on, or an automatic answer of a call
+  /// with the caller's camera on under Answer with camera on. A hardware
+  /// button and Home Assistant always leave it off.
   Future<CommandResult> _setCamera(bool on) async {
     final c = _call;
     if (c == null) return const CommandResult.fail('no call');
@@ -2374,11 +2402,7 @@ class IntercomManager extends Manager {
       if (_call != c) return const CommandResult.ok();
       c.cameraOn = true;
       c.hadCamera = true;
-      bus.publish(
-        IntercomCameraDemand(
-          intercomVideoConfig(_settings.get(defs.intercomVideoQuality)),
-        ),
-      );
+      _demandCamera(c);
       c.selfTexture = await video.openSelf();
       await video.setSending(true);
       log.info(name, 'camera on');
@@ -2391,8 +2415,58 @@ class IntercomManager extends Manager {
     return const CommandResult.ok();
   }
 
+  void _demandCamera(IntercomCall c) => bus.publish(
+    IntercomCameraDemand({
+      ...intercomVideoConfig(_settings.get(defs.intercomVideoQuality)),
+      if (c.lens != null) 'facing': c.lens!,
+    }),
+  );
+
+  /// Moves the call to the other camera. The Camera setting stays as it is,
+  /// so the next call starts there again.
+  Future<CommandResult> _switchCamera() async {
+    final c = _call;
+    if (c == null) return const CommandResult.fail('no call');
+    if (!c.cameraOn || !_bothCameras) {
+      return const CommandResult.fail('camera unavailable');
+    }
+    if (c.switchedFrom != null) return const CommandResult.ok();
+    final from = c.lens ?? _settings.get(defs.cameraDevice);
+    c.switchedFrom = from;
+    c.lens = from == 'back' ? 'front' : 'back';
+    _cameraSwitchTimer = Timer(cameraSwitchWait, () {
+      if (_call == c) _onCameraFailed();
+    });
+    log.info(name, 'switching to the ${c.lens} camera');
+    _demandCamera(c);
+    return const CommandResult.ok();
+  }
+
+  void _endCameraSwitch(IntercomCall c) {
+    _cameraSwitchTimer?.cancel();
+    _cameraSwitchTimer = null;
+    c.switchedFrom = null;
+  }
+
+  /// A camera that fails right after a switch goes back to the one that
+  /// worked. Any other failure turns the camera off.
+  void _onCameraFailed() {
+    final c = _call;
+    if (c == null || !c.cameraOn) return;
+    final from = c.switchedFrom;
+    if (from == null) {
+      unawaited(_setCamera(false));
+      return;
+    }
+    log.warn(name, 'the ${c.lens} camera did not start, back to $from');
+    _endCameraSwitch(c);
+    c.lens = from;
+    _demandCamera(c);
+  }
+
   Future<void> _stopCamera(IntercomCall c) async {
     if (!c.cameraOn) return;
+    _endCameraSwitch(c);
     c.cameraOn = false;
     c.selfTexture = null;
     c.selfWidth = 0;
@@ -2484,7 +2558,14 @@ class IntercomManager extends Manager {
     if (auto) {
       c.autoAnswerAt = DateTime.now().add(autoAnswerDelay);
       _autoTimer = Timer(autoAnswerDelay, () {
-        if (_call == c && _state == 'ringing') unawaited(_answer());
+        if (_call == c && _state == 'ringing') {
+          unawaited(
+            _answer(
+              video:
+                  c.farCamera && _settings.get(defs.intercomAutoAnswerCamera),
+            ),
+          );
+        }
       });
     } else {
       _chimeTimer = Timer.periodic(ringCadence, (_) => _ring());

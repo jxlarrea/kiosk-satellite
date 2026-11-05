@@ -36,5 +36,7 @@
   "intercomOptionVideoLow": "Niedrig",
   "intercomOptionVideoMedium": "Mittel",
   "intercomOptionVideoHigh": "Hoch",
-  "intercomVideoSection": "Video"
+  "intercomVideoSection": "Video",
+  "settingIntercomAutoAnswerCameraTitle": "Mit eingeschalteter Kamera annehmen",
+  "settingIntercomAutoAnswerCameraDescription": "Automatisch angenommene Videoanrufe starten mit eingeschalteter Kamera."
 }

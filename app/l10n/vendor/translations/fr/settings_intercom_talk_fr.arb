@@ -36,5 +36,7 @@
   "intercomOptionVideoLow": "Basse",
   "intercomOptionVideoMedium": "Moyenne",
   "intercomOptionVideoHigh": "Haute",
-  "intercomVideoSection": "Vidéo"
+  "intercomVideoSection": "Vidéo",
+  "settingIntercomAutoAnswerCameraTitle": "Répondre avec la caméra activée",
+  "settingIntercomAutoAnswerCameraDescription": "Les appels vidéo pris automatiquement s'ouvrent avec la caméra activée."
 }

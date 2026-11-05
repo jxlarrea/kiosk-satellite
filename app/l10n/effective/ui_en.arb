@@ -10441,6 +10441,22 @@
       ]
     }
   },
+  "intercomAnswersWithCameraIn": "Camera on in {seconds} s",
+  "@intercomAnswersWithCameraIn": {
+    "context": "Intercom call controls",
+    "description": "Countdown on a ringing video call that opens on its own with this kiosk's camera on.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    },
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
   "intercomAnswersIn": "Answers in {seconds} s",
   "@intercomAnswersIn": {
     "context": "Intercom call controls",
@@ -10846,6 +10862,17 @@
   "@intercomVideoAnswer": {
     "context": "Intercom call controls",
     "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomSwitchCamera": "Switch camera",
+  "@intercomSwitchCamera": {
+    "context": "Intercom call controls",
+    "description": "Button that moves a video call between the front and back camera.",
     "x-locations": {
       "device": [
         "Kiosk menu > Intercom > Call a kiosk",
@@ -34853,6 +34880,32 @@
       ],
       "remoteAdmin": [
         "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomAutoAnswerCameraTitle": "Answer with camera on",
+  "@settingIntercomAutoAnswerCameraTitle": {
+    "context": "Settings > Intercom > Answer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Answer"
+      ],
+      "remoteAdmin": [
+        "Intercom > Answer"
+      ]
+    }
+  },
+  "settingIntercomAutoAnswerCameraDescription": "Video calls answered automatically open with the camera on.",
+  "@settingIntercomAutoAnswerCameraDescription": {
+    "context": "Settings > Intercom > Answer",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Answer"
+      ],
+      "remoteAdmin": [
+        "Intercom > Answer"
       ]
     }
   },

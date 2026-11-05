@@ -1058,12 +1058,13 @@ class RemoteManager extends Manager {
 
   /// Commands that only the kiosk's own screen may run: answering an
   /// intercom call is a confirmation the remote admin must not give, and
-  /// the camera only ever goes on with someone at the kiosk.
+  /// the remote admin never turns the camera on in a call.
   static const _deviceOnly = {
     'intercomAnswer',
     'intercomDecline',
     'intercomVideoCall',
     'intercomCamera',
+    'intercomSwitchCamera',
   };
 
   /// What a fleet token opens: the follower's side of the fleet wire and

@@ -855,7 +855,10 @@ class MotionManager extends Manager {
       // A plugin that asked for a lens gets it for as long as it holds
       // the camera, and every leg rides along on that lens meanwhile.
       final plugin = _plugin;
-      final String camera = plugin?.facing ?? _settings.get(defs.cameraDevice);
+      final String camera =
+          plugin?.facing ??
+          _intercomVideo?['facing'] as String? ??
+          _settings.get(defs.cameraDevice);
       final (snapW, snapH) = snapshotResolution(
         _settings.get(defs.cameraSnapshotResolution),
       );

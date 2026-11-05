@@ -66,5 +66,7 @@
   "intercomCameraOff": "Kamera aus",
   "intercomYourCameraOff": "Deine Kamera ist aus",
   "intercomVideoReconnecting": "Video wird neu verbunden…",
-  "intercomCameraOffNotice": "Die Kamera ist aus. Dieser Kiosk kann Video anzeigen, aber nicht senden."
+  "intercomCameraOffNotice": "Die Kamera ist aus. Dieser Kiosk kann Video anzeigen, aber nicht senden.",
+  "intercomAnswersWithCameraIn": "Kamera an in {seconds} Sek.",
+  "intercomSwitchCamera": "Kamera wechseln"
 }

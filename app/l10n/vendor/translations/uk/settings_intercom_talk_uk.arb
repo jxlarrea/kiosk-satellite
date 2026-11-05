@@ -36,5 +36,7 @@
   "intercomOptionVideoLow": "Низька",
   "intercomOptionVideoMedium": "Середня",
   "intercomOptionVideoHigh": "Висока",
-  "intercomVideoSection": "Відео"
+  "intercomVideoSection": "Відео",
+  "settingIntercomAutoAnswerCameraTitle": "Відповідати з увімкненою камерою",
+  "settingIntercomAutoAnswerCameraDescription": "Відеовиклики з автоматичною відповіддю відкриваються з увімкненою камерою."
 }

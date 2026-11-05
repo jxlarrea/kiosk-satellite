@@ -112,6 +112,15 @@ void main() {
   group('a call sending video', () {
     const call = {'width': 640, 'height': 480, 'fps': 24, 'bitrate': 1000000};
 
+    test('a call can ask for the other camera', () async {
+      bus.publish(const IntercomCameraDemand({...call, 'facing': 'back'}));
+      await settle();
+      expect(stream?['camera'], 'back');
+      bus.publish(const IntercomCameraDemand(call));
+      await settle();
+      expect(stream?['camera'], 'front');
+    });
+
     test('stops streaming and starts it again afterward', () async {
       expect(configurations.last['enabled'], true);
       bus.publish(const IntercomCameraDemand(call));

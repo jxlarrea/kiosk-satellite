@@ -548,7 +548,8 @@ class IntercomCameraLost extends AppEvent {
 }
 
 /// A call wants this kiosk's camera sending, at [config]'s size, rate and
-/// bitrate, or is done with it when [config] is null.
+/// bitrate and on its `facing` if it names one, or is done with it when
+/// [config] is null.
 class IntercomCameraDemand extends AppEvent {
   const IntercomCameraDemand(this.config);
   final Map<String, Object>? config;

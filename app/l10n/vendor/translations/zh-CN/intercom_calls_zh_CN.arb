@@ -66,5 +66,7 @@
   "intercomCameraOff": "摄像头已关闭",
   "intercomYourCameraOff": "你的摄像头已关闭",
   "intercomVideoReconnecting": "正在重新连接视频…",
-  "intercomCameraOffNotice": "摄像头已关闭。此 Kiosk 设备可以显示视频，但无法发送。"
+  "intercomCameraOffNotice": "摄像头已关闭。此 Kiosk 设备可以显示视频，但无法发送。",
+  "intercomAnswersWithCameraIn": "{seconds} 秒后打开摄像头",
+  "intercomSwitchCamera": "切换摄像头"
 }

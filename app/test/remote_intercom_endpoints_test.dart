@@ -255,6 +255,7 @@ void main() {
       'intercomAnswer',
       'intercomDecline',
       'intercomVideoCall',
+      'intercomSwitchCamera',
       'intercomCamera',
     ]) {
       final (s, _) = await call('POST', '/api/commands/$name', token: token);

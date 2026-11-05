@@ -66,5 +66,7 @@
   "intercomCameraOff": "Camera uit",
   "intercomYourCameraOff": "Je camera staat uit",
   "intercomVideoReconnecting": "Video maakt opnieuw verbinding…",
-  "intercomCameraOffNotice": "De camera staat uit. Deze kiosk kan video tonen, maar niet verzenden."
+  "intercomCameraOffNotice": "De camera staat uit. Deze kiosk kan video tonen, maar niet verzenden.",
+  "intercomAnswersWithCameraIn": "Camera aan over {seconds} s",
+  "intercomSwitchCamera": "Camera wisselen"
 }

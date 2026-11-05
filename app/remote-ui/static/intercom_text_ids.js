@@ -176,6 +176,7 @@ export const intercomTextMessageIds = {
   "Video": "intercomVideoAnswer",
   "Camera": "intercomCameraButton",
   "Camera off": "intercomCameraOff",
+  "Switch camera": "intercomSwitchCamera",
   "Your camera is off": "intercomYourCameraOff",
   "Video reconnecting…": "intercomVideoReconnecting",
   "The camera is off. This kiosk can show video but not send it.": "intercomCameraOffNotice"

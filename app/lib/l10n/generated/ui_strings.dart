@@ -4827,6 +4827,12 @@ abstract class UiStrings {
   /// **'Calling…'**
   String get intercomCalling;
 
+  /// Countdown on a ringing video call that opens on its own with this kiosk's camera on.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera on in {seconds} s'**
+  String intercomAnswersWithCameraIn(String seconds);
+
   /// Label or guidance in this section.
   ///
   /// In en, this message translates to:
@@ -5024,6 +5030,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Video'**
   String get intercomVideoAnswer;
+
+  /// Button that moves a video call between the front and back camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch camera'**
+  String get intercomSwitchCamera;
 
   /// Label or guidance in this section.
   ///
@@ -16102,6 +16114,18 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Video'**
   String get intercomVideoSection;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer with camera on'**
+  String get settingIntercomAutoAnswerCameraTitle;
+
+  /// Setting description.
+  ///
+  /// In en, this message translates to:
+  /// **'Video calls answered automatically open with the camera on.'**
+  String get settingIntercomAutoAnswerCameraDescription;
 
   /// Setting label.
   ///

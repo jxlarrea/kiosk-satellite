@@ -63,6 +63,7 @@ class HeadlessSettings {
     defs.intercomHangupKey.key,
     defs.intercomHangupKeyRinging.key,
     defs.intercomVideo.key,
+    defs.intercomAutoAnswerCamera.key,
     defs.intercomVideoQuality.key,
     // Alarms: no panel to light.
     defs.alarmsSunriseMinutes.key,

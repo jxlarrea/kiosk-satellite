@@ -731,6 +731,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'intercomVideoCall' => strings.intercomVideoCall,
       'intercomVoiceOnly' => strings.intercomVoiceOnly,
       'intercomVideoAnswer' => strings.intercomVideoAnswer,
+      'intercomSwitchCamera' => strings.intercomSwitchCamera,
       'intercomCameraButton' => strings.intercomCameraButton,
       'intercomCameraOff' => strings.intercomCameraOff,
       'intercomYourCameraOff' => strings.intercomYourCameraOff,
@@ -2715,6 +2716,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'intercomOptionVideoMedium' => strings.intercomOptionVideoMedium,
       'intercomOptionVideoHigh' => strings.intercomOptionVideoHigh,
       'intercomVideoSection' => strings.intercomVideoSection,
+      'settingIntercomAutoAnswerCameraTitle' =>
+        strings.settingIntercomAutoAnswerCameraTitle,
+      'settingIntercomAutoAnswerCameraDescription' =>
+        strings.settingIntercomAutoAnswerCameraDescription,
       'settingKioskAllowDrawerTitle' => strings.settingKioskAllowDrawerTitle,
       'settingKioskAllowDrawerDescription' =>
         strings.settingKioskAllowDrawerDescription,

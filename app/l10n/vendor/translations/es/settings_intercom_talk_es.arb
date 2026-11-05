@@ -36,5 +36,7 @@
   "intercomOptionVideoLow": "Baja",
   "intercomOptionVideoMedium": "Media",
   "intercomOptionVideoHigh": "Alta",
-  "intercomVideoSection": "Video"
+  "intercomVideoSection": "Video",
+  "settingIntercomAutoAnswerCameraTitle": "Responder con la cámara encendida",
+  "settingIntercomAutoAnswerCameraDescription": "Las videollamadas contestadas automáticamente se abren con la cámara encendida."
 }
