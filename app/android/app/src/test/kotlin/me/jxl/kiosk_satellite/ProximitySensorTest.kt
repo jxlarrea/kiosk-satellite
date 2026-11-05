@@ -177,6 +177,38 @@ class ProximitySensorTest {
     }
 
     @Test
+    fun theSmartClockSensorIsMatchedByExactNameAndVendor() {
+        assertTrue(isRawCountSensor("Ltr578 Ambient Light Sensor", "Liteon"))
+        assertFalse(isRawCountSensor("Ltr578 Proximity Sensor", "Liteon"))
+        assertFalse(isRawCountSensor("Ltr578 Ambient Light Sensor", "AOSP"))
+        assertFalse(isRawCountSensor("Palm Proximity Sensor version 2", "Samsung"))
+    }
+
+    @Test
+    fun smartClockCountsReadAsNearWithNoUsableRange() {
+        // Lenovo Smart Clock (#1315): readings from its sensor dump.
+        val f = Feed(0f, 0f, risingCounts = true)
+        val rest = listOf(73f, 74f, 73f)
+        assertEquals(List(rest.size) { false }, f.readAll(rest))
+        val approach = listOf(158f, 121f, 112f, 117f, 116f, 120f, 169f, 78f, 74f, 73f)
+        assertEquals(
+            listOf(true, true, true, true, true, true, true, false, false, false),
+            f.readAll(approach),
+        )
+    }
+
+    @Test
+    fun aMissingRangeWithoutRisingCountsStaysAFlag() {
+        // Only a listed sensor reads as counts. Any other sensor with no
+        // range keeps the flag test, whatever it reports.
+        val f = Feed(0f, 0f)
+        assertEquals(
+            listOf(false, false, true, false),
+            f.readAll(listOf(5f, 3.2f, 0f, 73f)),
+        )
+    }
+
+    @Test
     fun theRestingLevelIsOnlyKnownInCountMode() {
         val flags = ProximityClassifier(9f, 9f)
         flags.near(1f, 0L)

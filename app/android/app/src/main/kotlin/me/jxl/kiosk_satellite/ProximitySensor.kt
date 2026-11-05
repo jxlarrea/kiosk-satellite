@@ -40,6 +40,8 @@ import java.util.Locale
  * bound (see [findSensortekDriver]) the raw count is read from its sysfs
  * file instead, so every model goes through the same raw-count path, and
  * the sensor stays registered only to keep the driver polling.
+ * The Lenovo Smart Clock reports raw counts in its own events (#1315), so
+ * it is matched by name instead (see [isRawCountSensor]).
  * Each event carries the raw reading so the log shows a sensor's shape.
  * The first sample after registering is the resting state (flagged
  * `initial`), not an approach: something resting on the sensor must not
@@ -117,10 +119,11 @@ class ProximitySensor(context: Context, messenger: BinaryMessenger) {
         private val sink: EventChannel.EventSink,
     ) : SensorEventListener {
         private val driver = sensortek
+        private val rawCountSensor = isRawCountSensor(sensor.name, sensor.vendor)
         private val classifier = ProximityClassifier(
             sensor.maximumRange,
             sensor.resolution,
-            risingCounts = driver != null,
+            risingCounts = driver != null || rawCountSensor,
         )
         private var last: Boolean? = null
         private var polling = driver?.rawFile != null
@@ -167,6 +170,8 @@ class ProximitySensor(context: Context, messenger: BinaryMessenger) {
         }
 
         private fun describeSource(): String = when {
+            driver == null && rawCountSensor ->
+                "source: sensor events as rising raw counts (${sensor.name})"
             driver == null -> "source: sensor events"
             polling -> "source: raw counts from ${driver.rawFile?.path} " +
                 "(driver ${driver.name}), polled every $RAW_POLL_MS ms"
@@ -210,7 +215,7 @@ class ProximitySensor(context: Context, messenger: BinaryMessenger) {
 
         /** What the session read since the last summary, for follow-up reports. */
         private fun summarize() {
-            if (driver == null) return
+            if (driver == null && !rawCountSensor) return
             val now = SystemClock.elapsedRealtime()
             if (now < summaryAt) return
             summaryAt = now + SUMMARY_MS
@@ -292,6 +297,24 @@ internal fun findSensortekDriver(
     null
 }
 
+/** The name and vendor of each sensor listed for [isRawCountSensor]. */
+private val RAW_COUNT_SENSORS = setOf("Ltr578 Ambient Light Sensor" to "Liteon")
+
+/**
+ * Whether this proximity sensor is known to report raw counts that rise as
+ * something comes closer, in its own events.
+ *
+ * The Lenovo Smart Clock's HAL (#1315) rests at about 73 and reaches the
+ * hundreds or thousands for a hand. It is reported to advertise a range of
+ * 0, which the classifier's test against the range skips. The match is on
+ * the exact name and vendor because the same chip can report normal flags under
+ * another HAL, and a sensor reporting real distances would read backwards
+ * as counts. The HAL gives the proximity sensor the light sensor's name,
+ * which is what makes this pair specific.
+ */
+internal fun isRawCountSensor(name: String, vendor: String): Boolean =
+    (name to vendor) in RAW_COUNT_SENSORS
+
 /** The raw file's text, a decimal count and a newline. */
 internal fun parseRawCount(text: String): Float =
     text.trim().toIntOrNull()?.takeIf { it >= 0 }?.toFloat()
@@ -321,9 +344,9 @@ internal fun proximityNearThreshold(maximumRange: Float, resolution: Float): Flo
  * sensor near for good.
  *
  * [risingCounts] starts in that mode for a sensor known to read higher as
- * something comes closer (see [findSensortekDriver]). Such a sensor may rest
- * at 0 and blip to a few counts, which would otherwise read as near and far
- * flags (#980).
+ * something comes closer (see [findSensortekDriver] and [isRawCountSensor]).
+ * Such a sensor may rest at 0 and blip to a few counts, which would otherwise
+ * read as near and far flags (#980).
  */
 internal class ProximityClassifier(
     private val maximumRange: Float,
