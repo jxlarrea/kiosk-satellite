@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.8 - 2026-11-05
 
 ### Added
 - **More variables for spoken alarm phrases (#1309).** A phrase can now use `{name}`, `{hour}`, `{minute}`, `{date}`, `{dayofmonth}`, `{month}` and `{year}`, so a phrase can avoid a time or date that a text to speech engine reads badly. `{name}` is the Home Assistant user the kiosk's token belongs to. `{day}` is still the day of the week, so existing phrases say the same thing. The hint under the Phrase box lists every variable.
