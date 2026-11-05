@@ -41,6 +41,9 @@ import java.util.concurrent.TimeUnit
  *  - Unrecoverable stack errors (SCAN_FAILED_INTERNAL_ERROR on some Echo
  *    Show builds) are retried with escalating backoff and surfaced as a
  *    FAILED state instead of a tight retry loop flooding the log.
+ *  - On Android 8.0 to 9 one scan registration that answers after Android's
+ *    2 second limit leaves the stack deaf with no error, until the adapter
+ *    restarts. [ScanRecoveryPolicy] explains the bug and sets the rules.
  *
  * ESPHome's scanner mode (passive/active) has no Android equivalent: the
  * platform scanner always performs active scanning and offers no SCAN_REQ
@@ -101,6 +104,8 @@ internal class BleScanEngine(
          * restart gap is milliseconds.
          */
         const val ROTATION_MS = 120_000L
+        const val ADAPTER_OFF_MS = 4_000L
+        const val ADAPTER_RESTART_RESUME_MS = 15_000L
         val FAILURE_BACKOFF_MS = longArrayOf(5_000, 15_000, 60_000, 300_000)
 
         /**
@@ -197,10 +202,9 @@ internal class BleScanEngine(
     // Whether the scan uses the screen-off filter list. A change restarts
     // the scan session too.
     private var screenOffFilters = screenOffScan
-    // One adapter restart per run: a bounce that does not clear the stack
-    // will not clear it on a loop either, and each one drops the proxy's
-    // GATT connections for nothing.
-    private var adapterBounced = false
+    // Adapter restarts and rotation pace after registration trouble. Used
+    // on the handler thread, except for the awaitingResults peek.
+    private val recovery = ScanRecoveryPolicy(Build.VERSION.SDK_INT)
 
     val isScanning: Boolean get() = scanning
     val lastAdvertisementAt: Long get() = lastCallbackAt
@@ -338,7 +342,8 @@ internal class BleScanEngine(
             // moment later (seen on the Echo Show 8 while its adapter was
             // still turning on), so resetting the failure counter at start
             // time keeps the retry backoff pinned to its shortest step.
-            if (consecutiveFailures != 0) handler.post {
+            if (consecutiveFailures != 0 || recovery.awaitingResults) handler.post {
+                recovery.recordResults()
                 if (consecutiveFailures != 0) {
                     consecutiveFailures = 0
                     // Closes the loop the failure notes open: without this a
@@ -372,6 +377,7 @@ internal class BleScanEngine(
                 }
                 BluetoothAdapter.STATE_ON -> handler.post {
                     consecutiveFailures = 0
+                    recovery.recordAdapterOn()
                     if (demanded) {
                         Log.i(TAG, "adapter back on, resuming scan")
                         startScanIfNeeded("adapter recovered")
@@ -384,10 +390,24 @@ internal class BleScanEngine(
     private val watchdog = object : Runnable {
         override fun run() {
             if (demanded && scanning) {
-                val silence = android.os.SystemClock.elapsedRealtime() - lastCallbackAt
+                val now = android.os.SystemClock.elapsedRealtime()
+                val silence = now - lastCallbackAt
                 if (lastCallbackAt != 0L && silence > SILENCE_RESTART_MS) {
-                    note("no advertisements for ${silence / 1000}s, restarting scan")
-                    restartScan("silence watchdog")
+                    if (recovery.shouldRestartOnSilence(now)) {
+                        note("no advertisements for ${silence / 1000}s after a scan " +
+                            "registration failure: restarting the Bluetooth adapter " +
+                            "to clear the stack")
+                        stopScanInternal(ScannerState.STOPPING)
+                        restartAdapter(now)
+                        // The STATE_ON receiver normally resumes the scan.
+                        // This covers a stack that ignored the restart.
+                        handler.postDelayed(
+                            { startScanIfNeeded("adapter restart") },
+                            ADAPTER_RESTART_RESUME_MS)
+                    } else {
+                        note("no advertisements for ${silence / 1000}s, restarting scan")
+                        restartScan("silence watchdog")
+                    }
                 }
             }
             handler.postDelayed(this, WATCHDOG_INTERVAL_MS)
@@ -396,7 +416,8 @@ internal class BleScanEngine(
 
     private val rotation = object : Runnable {
         override fun run() {
-            if (demanded && scanning) {
+            val due = recovery.shouldRotate(android.os.SystemClock.elapsedRealtime())
+            if (demanded && scanning && due) {
                 Log.i(TAG, "rotating scan session")
                 restartScan("session rotation")
             }
@@ -475,7 +496,17 @@ internal class BleScanEngine(
         // is what handles that.)
         val filters = scanFilters()
         try {
+            // startScan blocks until the stack answers the registration or
+            // Android gives up at 2 seconds, so this times the registration.
             scanner.startScan(filters, settings, callback)
+            val startMs = android.os.SystemClock.elapsedRealtime() - now
+            if (recovery.recordStart(startMs, now)) {
+                note(if (recovery.registrationSlow) {
+                    "scan registration is slow (${startMs}ms), rotating less often"
+                } else {
+                    "scan registration is fast again, rotating normally"
+                })
+            }
             startTimestamps.addLast(now)
             scanning = true
             lastCallbackAt = now // arm the silence watchdog from start time
@@ -485,7 +516,7 @@ internal class BleScanEngine(
             // its shortest step through an endless failure loop. The first
             // onScanResult resets it instead.
             onStateChange(ScannerState.RUNNING, mode)
-            Log.i(TAG, "scan started ($reason, ${duty.key})")
+            Log.i(TAG, "scan started ($reason, ${duty.key}, ${startMs}ms)")
         } catch (e: Exception) {
             note("startScan threw: $e")
             handleScanFailure(-1)
@@ -552,23 +583,31 @@ internal class BleScanEngine(
         // only an adapter restart clears it, which Home Assistant's
         // "power cycle the device" banner asks the user to do by hand.
         // Where Android still allows an app to do it (12L and older,
-        // exactly the Fire OS generation that wedges), do it ourselves,
-        // once: the STATE_ON receiver resumes scanning when the adapter
-        // returns. Deprecated calls, guarded, best effort.
-        if (errorCode == ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED &&
-            consecutiveFailures >= 3 && !adapterBounced &&
-            Build.VERSION.SDK_INT <= 32) {
-            adapterBounced = true
-            note("scan registration keeps failing: restarting the Bluetooth " +
-                "adapter to clear the stack")
-            @Suppress("DEPRECATION")
-            runCatching { adapter?.disable() }
-            handler.postDelayed({
-                @Suppress("DEPRECATION")
-                runCatching { adapter?.enable() }
-            }, 4_000)
+        // exactly the Fire OS generation that wedges), do it ourselves:
+        // the STATE_ON receiver resumes scanning when the adapter
+        // returns. [ScanRecoveryPolicy] decides when it may happen again.
+        if (errorCode == ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED) {
+            recovery.recordRegistrationFailure()
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (recovery.shouldRestartAfterFailures(consecutiveFailures, now)) {
+                note("scan registration keeps failing: restarting the Bluetooth " +
+                    "adapter to clear the stack")
+                restartAdapter(now)
+            }
         }
         handler.postDelayed({ startScanIfNeeded("failure retry") }, backoff)
+    }
+
+    /** Deprecated calls, guarded, best effort. STATE_ON resumes the scan. */
+    @SuppressLint("MissingPermission")
+    private fun restartAdapter(now: Long) {
+        recovery.recordAdapterRestart(now)
+        @Suppress("DEPRECATION")
+        runCatching { adapter?.disable() }
+        handler.postDelayed({
+            @Suppress("DEPRECATION")
+            runCatching { adapter?.enable() }
+        }, ADAPTER_OFF_MS)
     }
 
     /**

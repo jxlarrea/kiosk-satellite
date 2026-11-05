@@ -586,6 +586,8 @@ If half of the required permissions are missing, the symptoms are clear: the pro
 * A robust watchdog monitors the feed and automatically restarts the scan if advertisements suddenly stop arriving. A normal home containing any BLE devices is never completely silent for long. This is essential for some chipsets (particularly MediaTek) that are known to silently stall after several hours of continuous scanning.
 * Toggling Bluetooth off and on, flipping airplane mode, or a total crash of the Bluetooth stack will automatically suspend the proxy. It instantly resumes function the moment the adapter comes back online.
 * Scan restarts are carefully budgeted to stay under Android's strict, silent throttle limit of 5 starts per 30 seconds.
+* If Android repeatedly fails to register a scan, the Bluetooth adapter restarts to clear the stack. This is possible on Android 12L and older. After a restart that brought advertisements back, another can follow after 30 minutes if the problem returns. Each restart drops the proxy's active connections.
+* On Android 8.0 to 9, one scan registration that answers after Android's 2 second limit leaves the scan running with no advertisements and no error until the adapter restarts. The adapter now restarts if a scan goes silent after such a failure. If registration gets slow on these versions, scan sessions rotate every 30 minutes instead of every 2 minutes until it speeds up.
 * Any half open sockets left lingering by a Home Assistant restart or a messy Wi-Fi roam are actively detected and cleaned up within seconds.
 * The scanning process reliably survives the screen turning off.
 
