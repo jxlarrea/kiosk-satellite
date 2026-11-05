@@ -1,5 +1,31 @@
 {
   "@@locale": "en",
+  "settingScreensaverWidgetsEnabledTitle": "Enable screensaver widgets",
+  "@settingScreensaverWidgetsEnabledTitle": {
+    "context": "Settings > Screensaver > Widgets",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets"
+      ]
+    }
+  },
+  "settingScreensaverWidgetsEnabledDescription": "Small overlays in the corners of the screensaver.",
+  "@settingScreensaverWidgetsEnabledDescription": {
+    "context": "Settings > Screensaver > Widgets",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets"
+      ]
+    }
+  },
   "settingScreensaverWidgetsTitle": "Widgets",
   "@settingScreensaverWidgetsTitle": {
     "context": "Settings > Screensaver > Widgets",
@@ -160,6 +186,19 @@
   "@screensaverOverlayWidgetsEmpty": {
     "context": "Settings > Screensaver > Widgets",
     "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets"
+      ]
+    }
+  },
+  "screensaverOverlayShow": "Show this widget",
+  "@screensaverOverlayShow": {
+    "context": "Settings > Screensaver > Widgets",
+    "description": "Tooltip on the switch that shows or hides one widget in the list.",
     "x-locations": {
       "device": [
         "Settings > Screensaver > Widgets"

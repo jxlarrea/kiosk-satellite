@@ -13001,6 +13001,12 @@ class UiStringsZh extends UiStrings {
   }
 
   @override
+  String get settingScreensaverWidgetsEnabledTitle => '启用屏保小组件';
+
+  @override
+  String get settingScreensaverWidgetsEnabledDescription => '屏保角落中的小型叠加内容。';
+
+  @override
   String get settingScreensaverWidgetsTitle => '小组件';
 
   @override
@@ -13042,6 +13048,9 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get screensaverOverlayWidgetsEmpty => '暂无小组件';
+
+  @override
+  String get screensaverOverlayShow => '显示此小组件';
 
   @override
   String get screensaverOverlayRemove => '移除小组件';
@@ -28257,6 +28266,12 @@ class UiStringsZhCn extends UiStringsZh {
   }
 
   @override
+  String get settingScreensaverWidgetsEnabledTitle => '启用屏保小组件';
+
+  @override
+  String get settingScreensaverWidgetsEnabledDescription => '屏保角落中的小型叠加内容。';
+
+  @override
   String get settingScreensaverWidgetsTitle => '小组件';
 
   @override
@@ -28298,6 +28313,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get screensaverOverlayWidgetsEmpty => '暂无小组件';
+
+  @override
+  String get screensaverOverlayShow => '显示此小组件';
 
   @override
   String get screensaverOverlayRemove => '移除小组件';

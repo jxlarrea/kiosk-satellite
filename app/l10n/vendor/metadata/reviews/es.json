@@ -24053,5 +24053,20 @@
     "source": "bc051062da7e1dbc93223a7112fcb290e5410d752da0df6b6b6cd5942e9cd843",
     "translation": "2e2bdcaed62c1fda67a63c47d4cf25a35bcfc34e2a6eced015ac3bff0836604d",
     "author": "Xavier Larrea"
+  },
+  "settingScreensaverWidgetsEnabledDescription": {
+    "source": "03b38f74716d023b21eddd4ab34b335ad5f87fac2a01b186a05d3729379aced5",
+    "translation": "f9aa5a9738dbb16bec0e6c08d92e578012e16140a0abf18a8aee1b9042544006",
+    "author": "Xavier Larrea"
+  },
+  "screensaverOverlayShow": {
+    "source": "50e318b19404bbe4e85b59ddc78cc4760366cad4ec1da05b1816bd6bd37edc3e",
+    "translation": "7044d87627d1da03cd08ea2ddc6d5cc09e048c3f52b4c3954a255744e0eb9a25",
+    "author": "Xavier Larrea"
+  },
+  "settingScreensaverWidgetsEnabledTitle": {
+    "source": "a01b5ae7135c7802d0d4cf40280a61f9c5bb4c0ddd168c2c00595eaa935ec55c",
+    "translation": "4b5d24fbe04940ec3973ca7c6ebba1dee46dbf831aade2a54ca53e0d22368e49",
+    "author": "Xavier Larrea"
   }
 }

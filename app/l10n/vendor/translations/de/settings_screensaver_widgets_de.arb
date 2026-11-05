@@ -1,5 +1,7 @@
 {
   "@@locale": "de",
+  "settingScreensaverWidgetsEnabledTitle": "Bildschirmschoner-Widgets aktivieren",
+  "settingScreensaverWidgetsEnabledDescription": "Kleine Elemente, die in den Ecken des Bildschirmschoners eingeblendet werden.",
   "settingScreensaverWidgetsTitle": "Widgets",
   "settingScreensaverWidgetsDescription": "Kleine Elemente, die in den Ecken des Bildschirmschoners eingeblendet werden.",
   "settingScreensaverWidgetScaleTitle": "Globale Widget-Skalierung",
@@ -13,6 +15,7 @@
   "settingScreensaverVignetteStrengthTitle": "Intensität der Abdunklung",
   "settingScreensaverVignetteStrengthDescription": "Stärke der Hintergrundabdunklung hinter den Widgets, um die Lesbarkeit auf hellen Fotos zu verbessern. Der Wert 0 deaktiviert die Funktion.",
   "screensaverOverlayWidgetsEmpty": "Noch keine Widgets vorhanden",
+  "screensaverOverlayShow": "Dieses Widget anzeigen",
   "screensaverOverlayRemove": "Widget entfernen",
   "screensaverOverlayAdd": "Widget hinzufügen",
   "screensaverOverlayAddHelp": "Eine kleine Uhr, Wetterinformationen, Akkustand oder eine Entität in einer Ecke.",

@@ -1172,7 +1172,10 @@ export function settingRow(s) {
   // editor: one summary row per widget - its type and corner - plus an add
   // button, with every setting edited in a labeled modal, the same shape as
   // the device's dialog. One widget per corner. The type and corner labels
-  // are kept word-for-word with screensaver_widgets.dart.
+  // are kept word-for-word with screensaver_widgets.dart. Enable screensaver
+  // widgets heads the card, so this setting's own row stays out of sight as
+  // the place the list hangs from, and the list's first row carries its key
+  // for search to land on.
   if (s.key === 'screensaver.widgets') {
     let entries = [];
     try { entries = JSON.parse(s.value || '[]') || []; } catch (_) { entries = []; }
@@ -1233,6 +1236,8 @@ export function settingRow(s) {
     // Real siblings, not a wrapper: the card's dividers are drawn between
     // adjacent .row elements (see the schedule editor above).
     const frag = document.createDocumentFragment();
+    row.style.display = 'none';
+    delete row.dataset.key;
     frag.appendChild(row);
     let entryRows = [];
 
@@ -1673,6 +1678,7 @@ export function settingRow(s) {
               colored_icons: refs.colored.input.checked };
           }
           const entry = { position, type, config: entryConfig };
+          if (existing?.enabled === false) entry.enabled = false;
           // The corner list only offers free corners, but drop any claimant
           // anyway so a stale modal cannot double-book one.
           entries = [...others.filter((o) => o.position !== position), entry];
@@ -1682,9 +1688,31 @@ export function settingRow(s) {
       });
     };
 
+    // The widget's own switch, beside Delete. Its click stays in the
+    // actions, so flipping it does not open the editor.
+    const entrySwitch = (e) => {
+      const toggle = document.createElement('label');
+      toggle.className = 'switch';
+      toggle.title = screensaverText('Show this widget');
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = e.enabled !== false;
+      input.setAttribute('aria-label', toggle.title);
+      input.addEventListener('change', () => {
+        if (input.checked) delete e.enabled;
+        else e.enabled = false;
+        persist();
+      });
+      const slider = document.createElement('span');
+      slider.className = 'slider';
+      toggle.append(input, slider);
+      return toggle;
+    };
+
     const entryRow = (e) => cameraListRow(
       typeLabel(e.type), cornerLabel(e.position),
       [
+        entrySwitch(e),
         cameraAction(screensaverText('Delete'), () => {
           entries = entries.filter((o) => o !== e);
           persist();
@@ -1708,6 +1736,7 @@ export function settingRow(s) {
     const repaint = () => {
       const parent = row.parentNode;
       const fresh = [...entries.map(entryRow), addRow()];
+      fresh[0].dataset.key = s.key;
       if (!parent) {
         entryRows.forEach((el) => el.remove());
         fresh.forEach((el) => frag.appendChild(el));

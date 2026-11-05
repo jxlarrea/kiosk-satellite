@@ -1,5 +1,7 @@
 {
   "@@locale": "nl",
+  "settingScreensaverWidgetsEnabledTitle": "Schermbeveiligingswidgets inschakelen",
+  "settingScreensaverWidgetsEnabledDescription": "Kleine elementen in de hoeken van de schermbeveiliging.",
   "settingScreensaverWidgetsTitle": "Widgets",
   "settingScreensaverWidgetsDescription": "Kleine elementen in de hoeken van de schermbeveiliging.",
   "settingScreensaverWidgetScaleTitle": "Globale widgetschaal",
@@ -13,6 +15,7 @@
   "settingScreensaverVignetteStrengthTitle": "Vignettesterkte",
   "settingScreensaverVignetteStrengthDescription": "Bepaalt hoe donker de schaduw achter de widgets is, zodat ze op lichte foto's leesbaar blijven. Stel 0 in om dit uit te schakelen.",
   "screensaverOverlayWidgetsEmpty": "Nog geen widgets",
+  "screensaverOverlayShow": "Deze widget tonen",
   "screensaverOverlayRemove": "Widget verwijderen",
   "screensaverOverlayAdd": "Widget toevoegen",
   "screensaverOverlayAddHelp": "Voeg in een hoek een kleine klok, het weer, de batterijstatus of een entiteit toe.",

@@ -1975,6 +1975,21 @@ const cornerLabels = {
 // screensaver_widgets.dart for the shape). Replaces the mini clock settings
 // below, which migrate into a clock entry on startup.
 
+// Hides every widget and keeps the list, so an automation can clear the
+// screen and bring the same widgets back. Each entry's own switch (its
+// enabled key) works under this one, and a schedule entry's Widgets
+// override cannot turn widgets on while this is off.
+const screensaverWidgetsEnabled = SettingDef<bool>(
+  key: 'screensaver.widgets_enabled',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable screensaver widgets',
+  description: 'Small overlays in the corners of the screensaver.',
+  category: 'Screensaver',
+  section: 'Widgets',
+  subpage: 'Widgets',
+);
+
 const screensaverWidgets = SettingDef<String>(
   key: 'screensaver.widgets',
   type: SettingType.string,
@@ -13807,6 +13822,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverCalendarView,
   // The Widgets group: corner overlays riding over the mode panels above,
   // so it sits between them and the other overlay group, At a Glance.
+  screensaverWidgetsEnabled,
   screensaverWidgets,
   screensaverWidgetScale,
   screensaverWidgetFont,

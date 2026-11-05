@@ -160,9 +160,7 @@ bool photoMetadataShown(SettingsManager settings, String mode) =>
 String? photoMetadataCorner(SettingsManager settings, String mode) {
   if (!photoMetadataVisible(settings, mode)) return null;
   final claimed = {
-    for (final w in decodeScreensaverWidgets(
-      settings.get(defs.screensaverWidgets),
-    ))
+    for (final w in activeScreensaverWidgets(settings))
       if (screensaverWidgetAllowedOnMode(w.type, mode)) w.position,
   };
   final preferred = settings.get(photoMetadataDefs[mode]!.position);

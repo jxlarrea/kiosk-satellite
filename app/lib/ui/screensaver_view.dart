@@ -117,6 +117,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
     // read at build by the overlay row the photo and web modes carry.
     final live = {
       defs.screensaverWidgets.key,
+      defs.screensaverWidgetsEnabled.key,
       defs.screensaverWeatherEntity.key,
       defs.screensaverWeatherPreview.key,
       defs.screensaverWeatherBar.key,
@@ -493,10 +494,8 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                                       if ((scheduled ?? true) &&
                                           !_widgetsNightHidden(view))
                                         for (final spec
-                                            in decodeScreensaverWidgets(
-                                              container.settings.get(
-                                                defs.screensaverWidgets,
-                                              ),
+                                            in activeScreensaverWidgets(
+                                              container.settings,
                                             ))
                                           if (screensaverWidgetAllowedOnMode(
                                                 spec.type,

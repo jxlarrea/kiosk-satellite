@@ -13779,6 +13779,14 @@ class UiStringsRu extends UiStrings {
   }
 
   @override
+  String get settingScreensaverWidgetsEnabledTitle =>
+      'Включить виджеты заставки';
+
+  @override
+  String get settingScreensaverWidgetsEnabledDescription =>
+      'Маленькие наложения в углах заставки.';
+
+  @override
   String get settingScreensaverWidgetsTitle => 'Виджеты';
 
   @override
@@ -13823,6 +13831,9 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get screensaverOverlayWidgetsEmpty => 'Виджетов пока нет';
+
+  @override
+  String get screensaverOverlayShow => 'Показывать этот виджет';
 
   @override
   String get screensaverOverlayRemove => 'Убрать виджет';

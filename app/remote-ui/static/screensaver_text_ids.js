@@ -394,6 +394,7 @@ export const screensaverTextMessageIds = {
   "Visible states": "screensaverOverlayVisibleStates",
   "Show the widget only when its value is one of these, separated by commas. Leave empty to always show it.": "screensaverOverlayVisibleStatesHelp",
   "No widgets yet": "screensaverOverlayWidgetsEmpty",
+  "Show this widget": "screensaverOverlayShow",
   "Remove widget": "screensaverOverlayRemove",
   "Add widget": "screensaverOverlayAdd",
   "A small clock, the weather, the battery or an entity in a corner.": "screensaverOverlayAddHelp",

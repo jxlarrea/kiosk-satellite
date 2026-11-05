@@ -13842,6 +13842,14 @@ class UiStringsNl extends UiStrings {
   }
 
   @override
+  String get settingScreensaverWidgetsEnabledTitle =>
+      'Schermbeveiligingswidgets inschakelen';
+
+  @override
+  String get settingScreensaverWidgetsEnabledDescription =>
+      'Kleine elementen in de hoeken van de schermbeveiliging.';
+
+  @override
   String get settingScreensaverWidgetsTitle => 'Widgets';
 
   @override
@@ -13885,6 +13893,9 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get screensaverOverlayWidgetsEmpty => 'Nog geen widgets';
+
+  @override
+  String get screensaverOverlayShow => 'Deze widget tonen';
 
   @override
   String get screensaverOverlayRemove => 'Widget verwijderen';

@@ -93,6 +93,26 @@ void main() {
       },
     );
 
+    test('a widget that is off leaves its corner to the panel', () async {
+      final settings = await build({
+        'ks.screensaver.immich_metadata': true,
+        'ks.screensaver.widgets':
+            '[{"position":"bottom_left","type":"battery","enabled":false,'
+            '"config":{}}]',
+      });
+      expect(immichMetadataCorner(settings), 'bottom_left');
+    });
+
+    test('Enable screensaver widgets off frees every corner', () async {
+      final settings = await build({
+        'ks.screensaver.immich_metadata': true,
+        'ks.screensaver.widgets_enabled': false,
+        'ks.screensaver.widgets':
+            '[{"position":"bottom_left","type":"battery","config":{}}]',
+      });
+      expect(immichMetadataCorner(settings), 'bottom_left');
+    });
+
     test('nothing to say means no corner: the row need not narrow', () async {
       final settings = await build(const {});
       expect(immichMetadataCorner(settings), isNull);

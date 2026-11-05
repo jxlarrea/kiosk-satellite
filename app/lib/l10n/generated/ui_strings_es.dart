@@ -13950,6 +13950,14 @@ class UiStringsEs extends UiStrings {
   }
 
   @override
+  String get settingScreensaverWidgetsEnabledTitle =>
+      'Activar los widgets del protector de pantalla';
+
+  @override
+  String get settingScreensaverWidgetsEnabledDescription =>
+      'Pequeños elementos superpuestos en las esquinas del protector de pantalla.';
+
+  @override
   String get settingScreensaverWidgetsTitle => 'Widgets';
 
   @override
@@ -13996,6 +14004,9 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get screensaverOverlayWidgetsEmpty => 'Aún no hay widgets';
+
+  @override
+  String get screensaverOverlayShow => 'Mostrar este widget';
 
   @override
   String get screensaverOverlayRemove => 'Quitar widget';

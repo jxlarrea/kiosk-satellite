@@ -65,6 +65,55 @@ void main() {
     });
   });
 
+  group('turning widgets off', () {
+    const entries =
+        '[{"position":"top_left","type":"clock","config":{}},'
+        '{"position":"top_right","type":"battery","enabled":false,"config":{}}]';
+
+    Future<SettingsManager> settingsWith(Map<String, Object> initial) async {
+      SharedPreferences.setMockInitialValues(initial);
+      final log = Logger();
+      final settings = SettingsManager(EventBus(), CommandRegistry(log), log);
+      await settings.init();
+      return settings;
+    }
+
+    test('a missing flag reads as on, so old entries keep showing', () {
+      final widgets = decodeScreensaverWidgets(entries);
+      expect(widgets.first.enabled, isTrue);
+      expect(widgets.last.enabled, isFalse);
+    });
+
+    test('only an entry that is off stores the flag', () {
+      final encoded = encodeScreensaverWidgets(
+        decodeScreensaverWidgets(entries),
+      );
+      expect('"enabled"'.allMatches(encoded), hasLength(1));
+      expect(decodeScreensaverWidgets(encoded).last.enabled, isFalse);
+    });
+
+    test('an entry that is off does not draw', () async {
+      final settings = await settingsWith({'ks.screensaver.widgets': entries});
+      expect(settings.get(defs.screensaverWidgetsEnabled), isTrue);
+      expect(activeScreensaverWidgets(settings).map((w) => w.type), ['clock']);
+    });
+
+    test(
+      'Enable screensaver widgets off draws none and keeps the list',
+      () async {
+        final settings = await settingsWith({
+          'ks.screensaver.widgets': entries,
+          'ks.screensaver.widgets_enabled': false,
+        });
+        expect(activeScreensaverWidgets(settings), isEmpty);
+        expect(
+          decodeScreensaverWidgets(settings.get(defs.screensaverWidgets)),
+          hasLength(2),
+        );
+      },
+    );
+  });
+
   group('encodeScreensaverWidgets', () {
     test('stores in corner order, top-left to bottom-right', () {
       final encoded = encodeScreensaverWidgets([

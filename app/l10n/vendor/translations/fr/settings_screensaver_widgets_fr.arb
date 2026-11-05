@@ -1,5 +1,7 @@
 {
   "@@locale": "fr",
+  "settingScreensaverWidgetsEnabledTitle": "Activer les widgets de l'économiseur d'écran",
+  "settingScreensaverWidgetsEnabledDescription": "Petites superpositions dans les coins de l'économiseur d'écran.",
   "settingScreensaverWidgetsTitle": "Widgets",
   "settingScreensaverWidgetsDescription": "Petites superpositions dans les coins de l'économiseur d'écran.",
   "settingScreensaverWidgetScaleTitle": "Mise à l'échelle globale des widgets",
@@ -13,6 +15,7 @@
   "settingScreensaverVignetteStrengthTitle": "Intensité du vignettage",
   "settingScreensaverVignetteStrengthDescription": "Opacité de l'ombrage sombre derrière les widgets, pour la lisibilité sur les photos claires. 0 le désactive.",
   "screensaverOverlayWidgetsEmpty": "Pas encore de widgets",
+  "screensaverOverlayShow": "Afficher ce widget",
   "screensaverOverlayRemove": "Supprimer le widget",
   "screensaverOverlayAdd": "Ajouter un widget",
   "screensaverOverlayAddHelp": "Une petite horloge, la météo, la batterie ou une entité dans un coin.",

@@ -1,5 +1,7 @@
 {
   "@@locale": "uk",
+  "settingScreensaverWidgetsEnabledTitle": "Увімкнути віджети заставки",
+  "settingScreensaverWidgetsEnabledDescription": "Невеликі накладення в кутах заставки.",
   "settingScreensaverWidgetsTitle": "Віджети",
   "settingScreensaverWidgetsDescription": "Невеликі накладення в кутах заставки.",
   "settingScreensaverWidgetScaleTitle": "Загальне масштабування віджетів",
@@ -13,6 +15,7 @@
   "settingScreensaverVignetteStrengthTitle": "Інтенсивність віньєтування",
   "settingScreensaverVignetteStrengthDescription": "Затемнення фону за віджетами для читабельності на яскравих фото. 0 вимикає його.",
   "screensaverOverlayWidgetsEmpty": "Віджетів ще немає",
+  "screensaverOverlayShow": "Показувати цей віджет",
   "screensaverOverlayRemove": "Видалити віджет",
   "screensaverOverlayAdd": "Додати віджет",
   "screensaverOverlayAddHelp": "Маленький годинник, погода, акумулятор або об'єкт у кутку.",

@@ -13980,6 +13980,14 @@ class UiStringsDe extends UiStrings {
   }
 
   @override
+  String get settingScreensaverWidgetsEnabledTitle =>
+      'Bildschirmschoner-Widgets aktivieren';
+
+  @override
+  String get settingScreensaverWidgetsEnabledDescription =>
+      'Kleine Elemente, die in den Ecken des Bildschirmschoners eingeblendet werden.';
+
+  @override
   String get settingScreensaverWidgetsTitle => 'Widgets';
 
   @override
@@ -14024,6 +14032,9 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get screensaverOverlayWidgetsEmpty => 'Noch keine Widgets vorhanden';
+
+  @override
+  String get screensaverOverlayShow => 'Dieses Widget anzeigen';
 
   @override
   String get screensaverOverlayRemove => 'Widget entfernen';

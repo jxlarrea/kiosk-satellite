@@ -23900,6 +23900,18 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Enable screensaver widgets'**
+  String get settingScreensaverWidgetsEnabledTitle;
+
+  /// Help below this setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Small overlays in the corners of the screensaver.'**
+  String get settingScreensaverWidgetsEnabledDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Widgets'**
   String get settingScreensaverWidgetsTitle;
 
@@ -23974,6 +23986,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'No widgets yet'**
   String get screensaverOverlayWidgetsEmpty;
+
+  /// Tooltip on the switch that shows or hides one widget in the list.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this widget'**
+  String get screensaverOverlayShow;
 
   /// Label or guidance in this editor.
   ///

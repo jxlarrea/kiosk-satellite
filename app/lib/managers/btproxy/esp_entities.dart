@@ -254,6 +254,11 @@ class EspEntitySurface {
           'mdi:calendar-clock',
           defs.screensaverScheduleEnabled,
         ),
+        'screensaver_widgets': (
+          'Screensaver widgets',
+          'mdi:widgets-outline',
+          defs.screensaverWidgetsEnabled,
+        ),
         'hold_mode': ('Hold mode', 'mdi:pause-circle-outline', defs.haHoldMode),
         // Rotation alone, unlike Hold mode: the screensaver and screen off
         // still run while it is off (issue #1247).

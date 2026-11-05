@@ -764,6 +764,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingScreensaverCameraMuteTitle",
     "description": "settingScreensaverCameraMuteDescription",
   },
+  "screensaver.widgets_enabled": {
+    "title": "settingScreensaverWidgetsEnabledTitle",
+    "description": "settingScreensaverWidgetsEnabledDescription",
+  },
   "screensaver.widgets": {
     "title": "settingScreensaverWidgetsTitle",
     "description": "settingScreensaverWidgetsDescription",

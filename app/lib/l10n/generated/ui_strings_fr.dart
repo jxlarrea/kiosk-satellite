@@ -13946,6 +13946,14 @@ class UiStringsFr extends UiStrings {
   }
 
   @override
+  String get settingScreensaverWidgetsEnabledTitle =>
+      'Activer les widgets de l\'économiseur d\'écran';
+
+  @override
+  String get settingScreensaverWidgetsEnabledDescription =>
+      'Petites superpositions dans les coins de l\'économiseur d\'écran.';
+
+  @override
   String get settingScreensaverWidgetsTitle => 'Widgets';
 
   @override
@@ -13992,6 +14000,9 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get screensaverOverlayWidgetsEmpty => 'Pas encore de widgets';
+
+  @override
+  String get screensaverOverlayShow => 'Afficher ce widget';
 
   @override
   String get screensaverOverlayRemove => 'Supprimer le widget';

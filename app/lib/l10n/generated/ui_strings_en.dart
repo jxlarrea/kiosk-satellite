@@ -13687,6 +13687,14 @@ class UiStringsEn extends UiStrings {
   }
 
   @override
+  String get settingScreensaverWidgetsEnabledTitle =>
+      'Enable screensaver widgets';
+
+  @override
+  String get settingScreensaverWidgetsEnabledDescription =>
+      'Small overlays in the corners of the screensaver.';
+
+  @override
   String get settingScreensaverWidgetsTitle => 'Widgets';
 
   @override
@@ -13730,6 +13738,9 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get screensaverOverlayWidgetsEmpty => 'No widgets yet';
+
+  @override
+  String get screensaverOverlayShow => 'Show this widget';
 
   @override
   String get screensaverOverlayRemove => 'Remove widget';

@@ -1,5 +1,7 @@
 {
   "@@locale": "es",
+  "settingScreensaverWidgetsEnabledTitle": "Activar los widgets del protector de pantalla",
+  "settingScreensaverWidgetsEnabledDescription": "Pequeños elementos superpuestos en las esquinas del protector de pantalla.",
   "settingScreensaverWidgetsTitle": "Widgets",
   "settingScreensaverWidgetsDescription": "Pequeños elementos superpuestos en las esquinas del protector de pantalla.",
   "settingScreensaverWidgetScaleTitle": "Escala global de los widgets",
@@ -13,6 +15,7 @@
   "settingScreensaverVignetteStrengthTitle": "Intensidad del sombreado",
   "settingScreensaverVignetteStrengthDescription": "Oscuridad del fondo detrás de los widgets para facilitar su lectura sobre fotos claras. El valor 0 lo desactiva.",
   "screensaverOverlayWidgetsEmpty": "Aún no hay widgets",
+  "screensaverOverlayShow": "Mostrar este widget",
   "screensaverOverlayRemove": "Quitar widget",
   "screensaverOverlayAdd": "Añadir widget",
   "screensaverOverlayAddHelp": "Un reloj pequeño, el clima, la batería o una entidad en una esquina.",

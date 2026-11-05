@@ -2654,7 +2654,9 @@ class _CategoryContentState extends State<_CategoryContent> {
               after: _rowExtras(container),
               before: {
                 if (widget.category == 'Screensaver')
-                  screensaverWidgets.key: ?_pluginScreensaverEntry(container),
+                  screensaverWidgetsEnabled.key: ?_pluginScreensaverEntry(
+                    container,
+                  ),
               },
             ),
           ),
@@ -6617,7 +6619,12 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
       // anyway so a stale dialog cannot double-book one.
       for (final w in others)
         if (w.position != position) w,
-      ScreensaverWidget(position: position, type: type, config: config),
+      ScreensaverWidget(
+        position: position,
+        type: type,
+        config: config,
+        enabled: existing?.enabled ?? true,
+      ),
     ]);
   }
 
@@ -6641,12 +6648,34 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
             subtitle: Text(
               screensaverText(context, cornerLabels[w.position] ?? w.position),
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: screensaverText(context, 'Remove widget'),
-              onPressed: () => _save(
-                [...widgets]..removeWhere((x) => x.position == w.position),
-              ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Tooltip(
+                  message: screensaverText(context, 'Show this widget'),
+                  child: Switch(
+                    value: w.enabled,
+                    onChanged: (on) => _save([
+                      for (final x in widgets)
+                        x.position == w.position
+                            ? ScreensaverWidget(
+                                position: x.position,
+                                type: x.type,
+                                config: x.config,
+                                enabled: on,
+                              )
+                            : x,
+                    ]),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: screensaverText(context, 'Remove widget'),
+                  onPressed: () => _save(
+                    [...widgets]..removeWhere((x) => x.position == w.position),
+                  ),
+                ),
+              ],
             ),
             onTap: () => _edit(context, w),
           ),

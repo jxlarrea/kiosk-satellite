@@ -4689,6 +4689,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'screensaverOverlayHumidity' => strings.screensaverOverlayHumidity,
       'screensaverOverlayWind' => strings.screensaverOverlayWind,
       'screensaverOverlayVisibility' => strings.screensaverOverlayVisibility,
+      'settingScreensaverWidgetsEnabledTitle' =>
+        strings.settingScreensaverWidgetsEnabledTitle,
+      'settingScreensaverWidgetsEnabledDescription' =>
+        strings.settingScreensaverWidgetsEnabledDescription,
       'settingScreensaverWidgetsTitle' =>
         strings.settingScreensaverWidgetsTitle,
       'settingScreensaverWidgetsDescription' =>
@@ -4715,6 +4719,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverVignetteStrengthDescription,
       'screensaverOverlayWidgetsEmpty' =>
         strings.screensaverOverlayWidgetsEmpty,
+      'screensaverOverlayShow' => strings.screensaverOverlayShow,
       'screensaverOverlayRemove' => strings.screensaverOverlayRemove,
       'screensaverOverlayAdd' => strings.screensaverOverlayAdd,
       'screensaverOverlayAddHelp' => strings.screensaverOverlayAddHelp,

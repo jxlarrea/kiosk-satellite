@@ -1,5 +1,7 @@
 {
   "@@locale": "ru",
+  "settingScreensaverWidgetsEnabledTitle": "Включить виджеты заставки",
+  "settingScreensaverWidgetsEnabledDescription": "Маленькие наложения в углах заставки.",
   "settingScreensaverWidgetsTitle": "Виджеты",
   "settingScreensaverWidgetsDescription": "Маленькие наложения в углах заставки.",
   "settingScreensaverWidgetScaleTitle": "Общий масштаб виджетов",
@@ -13,6 +15,7 @@
   "settingScreensaverVignetteStrengthTitle": "Сила виньетки",
   "settingScreensaverVignetteStrengthDescription": "Затемнение позади виджетов для читаемости на светлых фото. 0 выключает.",
   "screensaverOverlayWidgetsEmpty": "Виджетов пока нет",
+  "screensaverOverlayShow": "Показывать этот виджет",
   "screensaverOverlayRemove": "Убрать виджет",
   "screensaverOverlayAdd": "Добавить виджет",
   "screensaverOverlayAddHelp": "Маленькие часы, погода, батарея или сущность в углу.",

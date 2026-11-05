@@ -51652,6 +51652,32 @@
       }
     }
   },
+  "settingScreensaverWidgetsEnabledTitle": "Включить виджеты заставки",
+  "@settingScreensaverWidgetsEnabledTitle": {
+    "context": "Settings > Screensaver > Widgets",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets"
+      ]
+    }
+  },
+  "settingScreensaverWidgetsEnabledDescription": "Маленькие наложения в углах заставки.",
+  "@settingScreensaverWidgetsEnabledDescription": {
+    "context": "Settings > Screensaver > Widgets",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets"
+      ]
+    }
+  },
   "settingScreensaverWidgetsTitle": "Виджеты",
   "@settingScreensaverWidgetsTitle": {
     "context": "Settings > Screensaver > Widgets",
@@ -51812,6 +51838,19 @@
   "@screensaverOverlayWidgetsEmpty": {
     "context": "Settings > Screensaver > Widgets",
     "description": "Label or guidance in this editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets"
+      ]
+    }
+  },
+  "screensaverOverlayShow": "Показывать этот виджет",
+  "@screensaverOverlayShow": {
+    "context": "Settings > Screensaver > Widgets",
+    "description": "Tooltip on the switch that shows or hides one widget in the list.",
     "x-locations": {
       "device": [
         "Settings > Screensaver > Widgets"
