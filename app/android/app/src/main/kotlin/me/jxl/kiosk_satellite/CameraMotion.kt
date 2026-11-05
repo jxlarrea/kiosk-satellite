@@ -364,7 +364,8 @@ class CameraMotion(
     private var boundVideoConfig: Map<*, *>? = null
 
     /** The size, rate and bitrate an intercom call asked for, null when no
-     *  call is sending. With RTSP bound the call rides its encoder. */
+     *  call is sending. Dart stops RTSP for the length of such a call, but a
+     *  session handing over can briefly have both on one encoder. */
     private var boundIntercom: Map<*, *>? = null
     private val boundVideo: Boolean get() = boundRtsp || boundIntercom != null
     private var cancelPending: Runnable? = null

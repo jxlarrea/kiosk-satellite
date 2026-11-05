@@ -101,9 +101,14 @@ class MotionManager extends Manager {
   String? _rtspTlsError;
   StreamSubscription<TlsIdentityChanged>? _tlsSubscription;
 
+  /// A call sending video takes the stream's place: RTSP stops for as long
+  /// as it lasts, so viewers cannot set the call's quality or watch and
+  /// listen during it. The setting itself never changes, so a crash in the
+  /// middle of a call cannot leave streaming off.
   bool get _rtspEnabled =>
       _settings.get(defs.cameraEnabled) &&
-      _settings.get(defs.cameraRtspEnabled);
+      _settings.get(defs.cameraRtspEnabled) &&
+      _intercomVideo == null;
 
   void _configureRtsp({bool force = false}) {
     final (width, height) = cameraStreamResolution(
@@ -601,6 +606,7 @@ class MotionManager extends Manager {
     // round trip later), the page's resume ends it.
     bus.on<IntercomCameraDemand>().listen((e) {
       _intercomVideo = e.config;
+      _configureRtsp();
       _sync();
     });
     bus.on<WakeWordDetected>().listen((_) => _setVoiceTurn(true));

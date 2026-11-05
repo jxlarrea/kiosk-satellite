@@ -71,9 +71,11 @@ Your camera goes on in two ways only: pressing video on the roster or **Video** 
 
 The other kiosk's picture fills the screen and the controls float over it. The kiosk's name and the call's length show when the call connects, then hide after 3 seconds. Tap the screen or press a button to see them again. If the other kiosk turns its camera off, the call goes back to the voice screen. If the picture stops arriving, the last frame dims and the screen says the video is reconnecting. The voice carries on.
 
-**Video quality** sets what this kiosk sends: Low is 640 x 480 at 15 frames a second, Medium is 640 x 480 at 24 and High is 1280 x 720 at 30. Higher quality uses more CPU. Motion detection and the other camera features keep running during a call. If RTSP streaming is on and a viewer is connected, the call uses that stream's size, rate and bitrate.
+**Video quality** sets what this kiosk sends: Low is 640 x 480 at 15 frames a second, Medium is 640 x 480 at 24 and High is 1280 x 720 at 30. Higher quality uses more CPU. Motion detection and the other camera features keep running during a call.
 
-Turn a kiosk during a call and its picture restarts at the new shape, with a short gap in the video. If the call is using an RTSP stream, the picture keeps its size with bars around it.
+RTSP and ONVIF streaming stop while this kiosk's camera is sending in a call, and start again when it stops. Connected viewers are dropped and have to reconnect, which most clients do on their own. The **RTSP Streaming** setting stays on throughout. A kiosk that only receives video, or is on a voice call, keeps streaming.
+
+Turn a kiosk during a call and its picture restarts at the new shape, with a short gap in the video.
 
 The dashboard stops drawing during a video call and picks up where it was when the call ends. Video is not available in announcements.
 

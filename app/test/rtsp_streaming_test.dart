@@ -109,6 +109,45 @@ void main() {
     await bus.dispose();
   });
 
+  group('a call sending video', () {
+    const call = {'width': 640, 'height': 480, 'fps': 24, 'bitrate': 1000000};
+
+    test('stops streaming and starts it again afterward', () async {
+      expect(configurations.last['enabled'], true);
+      bus.publish(const IntercomCameraDemand(call));
+      await settle();
+      expect(configurations.last['enabled'], false);
+      expect(stream?['rtsp'], false);
+      expect(stream?['intercom'], call);
+      bus.publish(const IntercomCameraDemand(null));
+      await settle();
+      expect(configurations.last['enabled'], true);
+    });
+
+    test('leaves the setting alone', () async {
+      bus.publish(const IntercomCameraDemand(call));
+      await settle();
+      expect(settings.get(defs.cameraRtspEnabled), true);
+    });
+
+    test('a viewer arriving during the call gets no stream', () async {
+      bus.publish(const IntercomCameraDemand(call));
+      await settle();
+      await demand(true);
+      expect(stream?['rtsp'], false);
+    });
+
+    test('streaming that was off stays off afterward', () async {
+      await settings.set(defs.cameraRtspEnabled, false);
+      await settle();
+      bus.publish(const IntercomCameraDemand(call));
+      await settle();
+      bus.publish(const IntercomCameraDemand(null));
+      await settle();
+      expect(configurations.last['enabled'], false);
+    });
+  });
+
   test('certificate changes leave plaintext viewers alone', () async {
     final before = configurations.length;
     bus.publish(const TlsIdentityChanged());

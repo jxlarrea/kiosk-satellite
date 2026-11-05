@@ -179,7 +179,7 @@ To display the RTSP video in Home Assistant, add the [Generic Camera integration
 
 ## Sharing the Camera
 
-Android gives one session camera access at a time. Motion detection, snapshots and RTSP share that session so taking a snapshot does not reopen the camera or reset exposure.
+Android gives one session camera access at a time. Motion detection, snapshots and RTSP share that session so taking a snapshot does not reopen the camera or reset exposure. RTSP and ONVIF streaming stop while the camera sends in an [intercom video call](intercom.md#video-calls) and start again afterward.
 
 Plugins with the `camera` capability receive frames from the same session. One plugin holds the camera at a time, and motion detection and the other camera features keep running while it does. A plugin with the `barcode` capability opens a full screen scanner that takes the camera for itself. Motion detection, face detection, hand gestures and RTSP pause while it is open, and snapshots fail. They resume when it closes. Both capabilities need **Enable camera** on. See [Camera and barcodes](https://github.com/jxlarrea/kiosk-satellite-plugins/blob/main/docs/camera.md) in the plugin SDK.
 
