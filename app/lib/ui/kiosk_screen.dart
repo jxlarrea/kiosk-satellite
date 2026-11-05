@@ -2163,6 +2163,11 @@ class _KioskScreenState extends State<KioskScreen>
         if (action.isForMainFrame &&
             (url.scheme == 'http' || url.scheme == 'https')) {
           await c.browser.prepareLoad(url.toString());
+          // A page's own location.reload(). Its fragment jumps stay in the
+          // renderer and never reach this callback.
+          if (await c.browser.reloadIfOwnFragmentUrl(url.toString())) {
+            return NavigationActionPolicy.CANCEL;
+          }
         }
         return NavigationActionPolicy.ALLOW;
       }

@@ -10,6 +10,10 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - **The README mentions video calls.** The Intercom entry now covers voice and video calls.
 
+### Fixed
+- **A dashboard with a hash in its URL recovers after an outage (#1311).** A reload of a URL with a hash, such as a Bubble Card popup address, did nothing, so the dashboard stayed on Home Assistant's "Unable to connect" screen until the app restarted. The kiosk's outage repair, the Retry button, pull to refresh with cache clearing, **Clear web cache** and a page's own `location.reload()` now all reload the page. A load of the same hash URL from the loadUrl command or an automation is now a reload too, as it already was for a URL with no hash.
+- **Going home closes a popup (#1311).** A dashboard view with a hash in the page's URL no longer counts as the same view when the requested path has no hash. Going home, rotation and the ESPHome view select now close an open popup, such as a Bubble Card popup, without reloading the page.
+
 ## v2026.11.7 - 2026-11-05
 
 ### Added

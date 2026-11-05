@@ -11,7 +11,10 @@ const template = source.match(
 )[0];
 
 function navigate(start, target, origin = 'http://ha.test:8123') {
-  const location = { origin, pathname: start, href: origin + start, search: '', hash: '' };
+  const [, pathname, search, hash] = start.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);
+  const location = {
+    origin, pathname, href: origin + start, search: search ?? '', hash: hash ?? '',
+  };
   const calls = [];
   // No custom pages on other servers, so no origin counts as one.
   const script = template
@@ -59,6 +62,24 @@ test('only the exact destination is already open', () => {
       result: 'already', path: '/' + target, calls: [],
     });
   }
+});
+
+test('a page with a popup hash is not on the same view without one', () => {
+  const { result, path, calls } = navigate('/dashboard/home#room', 'dashboard/home');
+  assert.equal(result, 'navigated');
+  assert.equal(path, '/dashboard/home');
+  assert.deepEqual(calls.at(-1), ['event', 'location-changed']);
+});
+
+test('a configured popup hash opens, and is already open when it matches', () => {
+  assert.equal(navigate('/dashboard/home', 'dashboard/home#room').result, 'navigated');
+  assert.equal(navigate('/dashboard/home#other', 'dashboard/home#room').result, 'navigated');
+  assert.equal(navigate('/dashboard/home#room', 'dashboard/home#room').result, 'already');
+});
+
+test('a query on the page alone still counts as the same view', () => {
+  assert.equal(navigate('/dashboard/home?kiosk', 'dashboard/home').result, 'already');
+  assert.equal(navigate('/dashboard/home?kiosk', 'dashboard/home?kiosk').result, 'already');
 });
 
 test('Summary pages, explicit views and parent views still navigate', () => {

@@ -41,6 +41,14 @@ class ConsoleEntry {
   final String message;
 }
 
+/// Whether loading [target] over [current] leaves the document in place.
+/// Chromium treats a load of a URL with a fragment over that same URL as a
+/// jump to the fragment, not a new document. The WebView plugin cancels every
+/// navigation it is asked about and issues it again as such a load, so a
+/// page's own `location.reload()` ends up here too.
+bool _loadKeepsDocument(String target, String current) =>
+    target == current && target.contains('#');
+
 /// WebView lifecycle: navigation, current URL, error recovery, screenshots.
 ///
 /// The manager does not build the widget — the UI layer owns the
@@ -1558,7 +1566,18 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     dismissOverlay();
     final mapped = urlMapper?.call(url) ?? url;
     await prepareLoad(mapped);
+    if (await reloadIfOwnFragmentUrl(mapped)) return;
     await _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(mapped)));
+  }
+
+  /// Reload the page when [url] is the address it is already on and that
+  /// address has a fragment, and answer whether it did. A load would change
+  /// nothing there (see [_loadKeepsDocument]), which left a dead dashboard
+  /// with a hash in its URL unrecoverable (issue #1311).
+  Future<bool> reloadIfOwnFragmentUrl(String url) async {
+    if (!_loadKeepsDocument(url, await liveUrl())) return false;
+    await _controller?.reload();
+    return true;
   }
 
   /// The document-start script group that hands every page the space

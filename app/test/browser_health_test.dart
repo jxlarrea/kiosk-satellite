@@ -18,6 +18,32 @@ class _PlatformController extends Fake
   int getViewId() => 1;
 }
 
+/// Records what the page was asked to do, on a page at [url].
+class _NavigationController extends _PlatformController {
+  _NavigationController(this.url);
+
+  final String url;
+  final List<String> loads = [];
+  int reloads = 0;
+
+  @override
+  Future<WebUri?> getUrl() async => WebUri(url);
+
+  @override
+  Future<void> loadUrl({
+    required URLRequest urlRequest,
+    Uri? iosAllowingReadAccessTo,
+    WebUri? allowingReadAccessTo,
+  }) async {
+    loads.add(urlRequest.url.toString());
+  }
+
+  @override
+  Future<void> reload() async {
+    reloads++;
+  }
+}
+
 /// The dashboard connection watchdog (issue #228).
 ///
 /// A wall panel that is never backgrounded, on a network that never drops,
@@ -414,6 +440,54 @@ void main() {
     expect(sources.where((s) => s.contains('dispatchEvent')), hasLength(1));
     // The close hook never reloads: that stays the watchdog's call.
     expect(browser.renavigations, 0);
+  });
+
+  group('a load of the page\'s own fragment URL (issue #1311)', () {
+    const page = 'http://192.168.1.10:8123/dashboard/home';
+
+    Future<_NavigationController> on(String url) async {
+      await build();
+      final platform = _NavigationController(url);
+      browser.attach(InAppWebViewController.fromPlatform(platform: platform));
+      return platform;
+    }
+
+    test('reloads, since the load would only jump to the fragment', () async {
+      final platform = await on('$page#room');
+      await browser.loadUrl('$page#room');
+      expect(platform.reloads, 1);
+      expect(platform.loads, isEmpty);
+    });
+
+    test('recovers a dead dashboard through the Retry path', () async {
+      final platform = await on('$page#room');
+      browser.onPageLoaded('$page#room');
+      await browser.retryLoad();
+      expect(platform.reloads, 1);
+      expect(platform.loads, isEmpty);
+    });
+
+    test('still loads a URL with no fragment', () async {
+      final platform = await on(page);
+      await browser.loadUrl(page);
+      expect(platform.reloads, 0);
+      expect(platform.loads, [page]);
+    });
+
+    test('still loads another fragment or the page without one', () async {
+      final platform = await on('$page#room');
+      await browser.loadUrl('$page#kitchen');
+      await browser.loadUrl(page);
+      expect(platform.reloads, 0);
+      expect(platform.loads, ['$page#kitchen', page]);
+    });
+
+    test('answers whether it reloaded, for the WebView callback', () async {
+      final platform = await on('$page#room');
+      expect(await browser.reloadIfOwnFragmentUrl('$page#kitchen'), isFalse);
+      expect(await browser.reloadIfOwnFragmentUrl('$page#room'), isTrue);
+      expect(platform.reloads, 1);
+    });
   });
 
   test('a socket-less connection is unblocked rather than cycled', () async {
