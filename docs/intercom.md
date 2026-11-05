@@ -65,7 +65,7 @@ Voice is raw 16 kHz audio over one WebSocket per call, about 256 kbit/s each way
 
 **Video calls** under **Settings > Intercom > Video** is on by default. To send video a kiosk also needs **Enable camera** on. A kiosk with that off, or without a camera, still shows video from others but sends none. Turn off **Video calls** to keep a kiosk to voice only. A device without a screen never takes video.
 
-On the roster, a kiosk that takes video has a video button beside its call button. Press it to call with your camera on. You see your own picture while the call rings, and the other kiosk sees you too. It answers with **Voice only** or **Video**, or declines.
+On the roster, a kiosk that takes video has a video button beside its call button. Press it to call with your camera on. You see your own picture while the call rings, and so does the person at the other kiosk. They can answer with **Voice only** or **Video**, or decline.
 
 Your camera goes on in two ways only: pressing video on the roster or **Video** on a ringing call, and pressing **Camera** during a call. **Answer automatically**, a hardware button, Home Assistant and the remote admin all answer with the camera off. Any call can add video later: press **Camera** while you talk. While the camera sends, your own picture stays in the corner of the screen.
 
