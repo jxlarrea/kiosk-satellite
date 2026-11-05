@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "ed6faa8fc3043645b0e164de4ec8de9558337b46",
+  "revision": "a327fae86533d15dd463f8b7a329262376ddd1af",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -13,7 +13,7 @@
     "app_launcher_errors_en.arb": "3f8855859bed85bd36afea30451c358c92cd43773b0532cca7d142134cd04d25",
     "app_launcher_overlay_en.arb": "9598d5f3383b23bed8c34a54795da71f211533160a84417010def4dd54f9a173",
     "app_launcher_picker_en.arb": "b4d2e5968625cce3c96e15035139871ccad8ba401497f5831c42ed77b2332e25",
-    "calendar_en.arb": "737d66b3998400cf774bc7c8af78ee5c74742aebeaff19fa38c9fd98d920fd18",
+    "calendar_en.arb": "28f29ed720362e7ec093a8e8ce3806e1c7fde7404122c3057a19bbb356b89c66",
     "camera_view_status_en.arb": "5c2fdaeb44fc707fa15cfb92a186ff2616e4ea255cd5ea3ff3dac37c532fedbe",
     "common_en.arb": "efa410cd7a1c83fc3e7c9642a7f6fb9b0a3d246d3eadea6811a16c28e0f6f444",
     "dashboard_picker_en.arb": "b4b2ca06d7ebc9015d070b9f388046281bd0820fe8e819eb009666323a7bdc14",

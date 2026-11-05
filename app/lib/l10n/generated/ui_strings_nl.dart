@@ -540,6 +540,9 @@ class UiStringsNl extends UiStrings {
   String get calendarWidgetWeek => 'Komende 7 dagen';
 
   @override
+  String get calendarWidgetAllDay => 'Afspraken voor de hele dag tonen';
+
+  @override
   String get calendarWidgetDots => 'Gekleurde stippen';
 
   @override

@@ -139,6 +139,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'calendarWidgetDays' => strings.calendarWidgetDays,
       'calendarWidgetTomorrow' => strings.calendarWidgetTomorrow,
       'calendarWidgetWeek' => strings.calendarWidgetWeek,
+      'calendarWidgetAllDay' => strings.calendarWidgetAllDay,
       'calendarWidgetDots' => strings.calendarWidgetDots,
       'calendarWidgetDotsHint' => strings.calendarWidgetDotsHint,
       'calendarVoiceSection' => strings.calendarVoiceSection,

@@ -541,6 +541,9 @@ class UiStringsUk extends UiStrings {
   String get calendarWidgetWeek => 'Наступні 7 днів';
 
   @override
+  String get calendarWidgetAllDay => 'Показувати події на весь день';
+
+  @override
   String get calendarWidgetDots => 'Кольорові крапки';
 
   @override

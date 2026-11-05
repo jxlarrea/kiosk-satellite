@@ -544,6 +544,10 @@ class UiStringsFr extends UiStrings {
   String get calendarWidgetWeek => '7 prochains jours';
 
   @override
+  String get calendarWidgetAllDay =>
+      'Afficher les événements sur toute la journée';
+
+  @override
   String get calendarWidgetDots => 'Points de couleur';
 
   @override

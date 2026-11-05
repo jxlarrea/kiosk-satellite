@@ -54,6 +54,7 @@
   "calendarWidgetDays": "Показано днів",
   "calendarWidgetTomorrow": "Сьогодні й завтра",
   "calendarWidgetWeek": "Наступні 7 днів",
+  "calendarWidgetAllDay": "Показувати події на весь день",
   "calendarWidgetDots": "Кольорові крапки",
   "calendarWidgetDotsHint": "Позначати події кольором їхнього календаря замість фото людини.",
   "calendarVoiceSection": "Голосовий календар",

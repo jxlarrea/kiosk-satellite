@@ -675,6 +675,19 @@
       ]
     }
   },
+  "calendarWidgetAllDay": "Show all-day events",
+  "@calendarWidgetAllDay": {
+    "context": "Screensaver > Widgets > Up next",
+    "description": "Switch. Off, the Up next widget lists only events with a start time and leaves out events that last the whole day, such as holidays.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Up next"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Up next"
+      ]
+    }
+  },
   "calendarWidgetDots": "Colored dots",
   "@calendarWidgetDots": {
     "context": "Screensaver > Widgets > Up next",

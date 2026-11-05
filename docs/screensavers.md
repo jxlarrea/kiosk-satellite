@@ -319,13 +319,15 @@ Shows the next [alarm](alarms.md) set on the kiosk when it rings within 24 hours
 
 ### Up next
 
-Shows what is still to come today on the [calendar](calendar.md), over any mode except Calendar and Camera Streams: the picture of the person linked to each event's calendar, the start time and the title. A calendar with no person linked shows its initial on its color, and a shared event shows everyone on it. Calendars hidden with their chips are left out. The corner stays empty once nothing else is on today. A tap on the widget opens the calendar on the Schedule view.
+Shows what is still to come on the [calendar](calendar.md), over any mode except Calendar and Camera Streams: the picture of the person linked to each event's calendar, the start time and the title. A calendar with no person linked shows its initial on its color, and a shared event shows everyone on it. Calendars hidden with their chips are left out. The corner stays empty once nothing else is on in the days shown. A tap on the widget opens the calendar on the Schedule view.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Corner | First free corner | Displays in the first available corner. |
 | Color | White | Applies to the times and titles. |
 | Events shown | 3 | How many coming events it lists, 1 to 5. |
+| Days shown | Today | How far ahead it looks: Today, Today and tomorrow or Next 7 days. |
+| Show all-day events | On | Turn this off to list only events with a start time. |
 | Colored dots | Off | Marks each event with a small dot in its calendar's color instead of the pictures. Night mode always uses the dots. |
 
 ### Entity

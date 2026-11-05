@@ -54,6 +54,7 @@
   "calendarWidgetDays": "Показано дней",
   "calendarWidgetTomorrow": "Сегодня и завтра",
   "calendarWidgetWeek": "Следующие 7 дней",
+  "calendarWidgetAllDay": "Показывать события на весь день",
   "calendarWidgetDots": "Цветные точки",
   "calendarWidgetDotsHint": "Отмечать события цветом их календаря вместо фото человека.",
   "calendarVoiceSection": "Голосовой календарь",

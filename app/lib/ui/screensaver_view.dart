@@ -2267,7 +2267,7 @@ class _CalendarWidgetOverlayState extends State<CalendarWidgetOverlay> {
               _cal.hidden.value,
             ),
             now,
-            allDay: true,
+            allDay: widget.spec.config['all_day'] != false,
             days: _days,
           )
           .take(count)

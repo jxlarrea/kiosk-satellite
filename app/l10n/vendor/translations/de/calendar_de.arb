@@ -54,6 +54,7 @@
   "calendarWidgetDays": "Angezeigte Tage",
   "calendarWidgetTomorrow": "Heute und morgen",
   "calendarWidgetWeek": "Nächste 7 Tage",
+  "calendarWidgetAllDay": "Ganztägige Termine anzeigen",
   "calendarWidgetDots": "Farbige Punkte",
   "calendarWidgetDotsHint": "Markiert Termine mit der Farbe ihres Kalenders statt mit dem Bild der Person.",
   "calendarVoiceSection": "Kalender per Sprache",

@@ -54,6 +54,7 @@
   "calendarWidgetDays": "Getoonde dagen",
   "calendarWidgetTomorrow": "Vandaag en morgen",
   "calendarWidgetWeek": "Komende 7 dagen",
+  "calendarWidgetAllDay": "Afspraken voor de hele dag tonen",
   "calendarWidgetDots": "Gekleurde stippen",
   "calendarWidgetDotsHint": "Markeer afspraken met de kleur van hun agenda in plaats van de foto van de persoon.",
   "calendarVoiceSection": "Agenda via spraak",

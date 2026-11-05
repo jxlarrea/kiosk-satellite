@@ -1204,7 +1204,7 @@ export function settingRow(s) {
       alarm: { color: '250,250,250', scale: 0, font: 'default',
         font_weight: 'default' },
       calendar: { color: '250,250,250', scale: 0, font: 'default',
-        font_weight: 'default', count: 3, days: 1, dots: false },
+        font_weight: 'default', count: 3, days: 1, all_day: true, dots: false },
     };
     // The typeface and weight pickers, the clock screensaver's vocabulary
     // (kept with definitions.dart) behind a Default that follows the
@@ -1367,8 +1367,9 @@ export function settingRow(s) {
             refs.weight.wrap, refs.percent.wrap, refs.low.wrap);
           return;
         }
-        // Up next: how many coming events it lists, how many days ahead and
-        // whether the pictures give way to the colored dots.
+        // Up next: how many coming events it lists, how many days ahead,
+        // whether all-day events count and whether the pictures give way to
+        // the colored dots.
         if (type === 'calendar') {
           const count = document.createElement('select');
           count.className = 'field';
@@ -1405,10 +1406,11 @@ export function settingRow(s) {
           daysLabel.className = 'desc';
           daysLabel.textContent = t('calendarWidgetDays');
           daysField.append(daysLabel, days);
+          refs.allDay = cameraToggle(t('calendarWidgetAllDay'), config.all_day !== false);
           refs.dots = cameraToggle(t('calendarWidgetDots'), config.dots === true,
             t('calendarWidgetDotsHint'));
           typeBlock.append(refs.color.wrap, refs.scale.wrap, refs.font.wrap,
-            refs.weight.wrap, countField, daysField, refs.dots.wrap);
+            refs.weight.wrap, countField, daysField, refs.allDay.wrap, refs.dots.wrap);
           return;
         }
         // Weather forecast: the Weather widget's entity picker, then how
@@ -1648,6 +1650,7 @@ export function settingRow(s) {
             entryConfig = { color, scale, font, font_weight,
               count: Number(refs.count?.value) || 3,
               days: Number(refs.days?.value) || 1,
+              all_day: refs.allDay.input.checked,
               dots: refs.dots.input.checked };
           } else if (type === 'entity') {
             if (!config.entity) return { ok: false, error: screensaverText('Pick an entity.') };

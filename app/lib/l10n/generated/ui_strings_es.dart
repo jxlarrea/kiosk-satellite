@@ -544,6 +544,9 @@ class UiStringsEs extends UiStrings {
   String get calendarWidgetWeek => 'Próximos 7 días';
 
   @override
+  String get calendarWidgetAllDay => 'Mostrar eventos de todo el día';
+
+  @override
   String get calendarWidgetDots => 'Puntos de color';
 
   @override

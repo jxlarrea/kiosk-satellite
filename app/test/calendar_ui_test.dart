@@ -494,6 +494,73 @@ void main() {
     await tester.pump(const Duration(seconds: 61));
   });
 
+  testWidgets('Up next leaves out all-day events when asked', (tester) async {
+    final c = await container();
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    Future<void> show(Map<String, Object?> config) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CalendarWidgetOverlay(
+              // A new key each time, so the widget starts over.
+              key: UniqueKey(),
+              container: c,
+              spec: ScreensaverWidget(
+                position: 'top_left',
+                type: 'calendar',
+                config: config,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      final now = DateTime.now();
+      final today = dateOnly(now);
+      final left = addDays(today, 1).difference(now);
+      c.calendar.snapshot.value = CalendarSnapshot(
+        events: [
+          CalendarEvent(
+            summary: 'Holiday',
+            start: today,
+            end: addDays(today, 1),
+            allDay: true,
+            calendars: const ['calendar.maya'],
+          ),
+          CalendarEvent(
+            summary: 'Standup',
+            start: now.add(left ~/ 3),
+            end: now.add(left ~/ 2),
+            allDay: false,
+            calendars: const ['calendar.maya'],
+          ),
+        ],
+        link: CalendarLink.live,
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(tester.takeException(), isNull);
+    }
+
+    // On by default, and all-day events come first.
+    await show({...screensaverWidgetDefaults('calendar'), 'count': 1});
+    expect(find.text('Holiday'), findsOneWidget);
+    expect(find.text('Standup'), findsNothing);
+
+    // A widget saved before the switch existed has no all_day key.
+    await show(const {'count': 1});
+    expect(find.text('Holiday'), findsOneWidget);
+
+    // Off, the timed event gets the slot.
+    await show(const {'count': 1, 'all_day': false});
+    expect(find.text('Holiday'), findsNothing);
+    expect(find.text('Standup'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 61));
+  });
+
   testWidgets('an empty week says so once, and the open view is reported', (
     tester,
   ) async {

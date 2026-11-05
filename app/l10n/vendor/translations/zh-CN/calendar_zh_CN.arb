@@ -54,6 +54,7 @@
   "calendarWidgetDays": "显示的天数",
   "calendarWidgetTomorrow": "今天和明天",
   "calendarWidgetWeek": "未来 7 天",
+  "calendarWidgetAllDay": "显示全天日程",
   "calendarWidgetDots": "彩色圆点",
   "calendarWidgetDotsHint": "用日历的颜色标记日程，而不是显示人物照片。",
   "calendarVoiceSection": "语音日历",

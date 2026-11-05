@@ -531,6 +531,9 @@ class UiStringsZh extends UiStrings {
   String get calendarWidgetWeek => '未来 7 天';
 
   @override
+  String get calendarWidgetAllDay => '显示全天日程';
+
+  @override
   String get calendarWidgetDots => '彩色圆点';
 
   @override
@@ -15794,6 +15797,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get calendarWidgetWeek => '未来 7 天';
+
+  @override
+  String get calendarWidgetAllDay => '显示全天日程';
 
   @override
   String get calendarWidgetDots => '彩色圆点';

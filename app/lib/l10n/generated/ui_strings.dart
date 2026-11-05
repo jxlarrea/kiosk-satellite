@@ -1058,6 +1058,12 @@ abstract class UiStrings {
   /// **'Next 7 days'**
   String get calendarWidgetWeek;
 
+  /// Switch. Off, the Up next widget lists only events with a start time and leaves out events that last the whole day, such as holidays.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all-day events'**
+  String get calendarWidgetAllDay;
+
   /// Switch. On, the Up next widget marks each event with a small dot in its calendar's color instead of the picture of the person the calendar belongs to.
   ///
   /// In en, this message translates to:

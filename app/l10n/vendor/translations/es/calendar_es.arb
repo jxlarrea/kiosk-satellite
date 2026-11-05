@@ -54,6 +54,7 @@
   "calendarWidgetDays": "Días mostrados",
   "calendarWidgetTomorrow": "Hoy y mañana",
   "calendarWidgetWeek": "Próximos 7 días",
+  "calendarWidgetAllDay": "Mostrar eventos de todo el día",
   "calendarWidgetDots": "Puntos de color",
   "calendarWidgetDotsHint": "Marca los eventos con el color de su calendario en lugar de la foto de la persona.",
   "calendarVoiceSection": "Calendario por voz",

@@ -28869,5 +28869,11 @@
     "translation": "2f769f51e1433e45f657185945d3c2ae16e089b07fe72093cd3e1faf8b4257dc",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "calendarWidgetAllDay": {
+    "source": "1bfefac3d56dac8c484702cbf3e38f7de032c4c3087b5eca1d8534156eddd5c4",
+    "translation": "dbed174abd77144796d0dc0869a98ad6aaab049af92b905cc2f0e39dcde23b43",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

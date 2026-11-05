@@ -24073,5 +24073,10 @@
     "source": "7dd6d776b434cc52ebf018be97528993a5ba65c008d16b91e0d3cfda4349fe98",
     "translation": "17c7c766074df86d19e053869ad81b1c061b4f2c5f6a82ed349be3a73d3a6532",
     "author": "Xavier Larrea"
+  },
+  "calendarWidgetAllDay": {
+    "source": "1bfefac3d56dac8c484702cbf3e38f7de032c4c3087b5eca1d8534156eddd5c4",
+    "translation": "cb55fe9e26329c4289d36f79f6c868a1ec457bb6b7ce0df62374a39cca6c354e",
+    "author": "Xavier Larrea"
   }
 }

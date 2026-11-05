@@ -2028,6 +2028,19 @@
       ]
     }
   },
+  "calendarWidgetAllDay": "Afspraken voor de hele dag tonen",
+  "@calendarWidgetAllDay": {
+    "context": "Screensaver > Widgets > Up next",
+    "description": "Switch. Off, the Up next widget lists only events with a start time and leaves out events that last the whole day, such as holidays.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Widgets > Up next"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Widgets > Up next"
+      ]
+    }
+  },
   "calendarWidgetDots": "Gekleurde stippen",
   "@calendarWidgetDots": {
     "context": "Screensaver > Widgets > Up next",

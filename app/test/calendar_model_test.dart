@@ -303,6 +303,13 @@ void main() {
     expect(titles(1), ['Trip', 'Today']);
     expect(titles(2), ['Trip', 'Today', 'Holiday', 'Tomorrow']);
     expect(titles(7), ['Trip', 'Today', 'Holiday', 'Tomorrow', 'Saturday']);
+    // Without all-day events, the days ahead list only timed ones.
+    expect(upNext(events, on(19, 11), days: 7).map((e) => e.summary), [
+      'Trip',
+      'Today',
+      'Tomorrow',
+      'Saturday',
+    ]);
   });
 
   test('the forecast is keyed by local date', () {

@@ -6,6 +6,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Added
 - **More variables for spoken alarm phrases (#1309).** A phrase can now use `{name}`, `{hour}`, `{minute}`, `{date}`, `{dayofmonth}`, `{month}` and `{year}`, so a phrase can avoid a time or date that a text to speech engine reads badly. `{name}` is the Home Assistant user the kiosk's token belongs to. `{day}` is still the day of the week, so existing phrases say the same thing. The hint under the Phrase box lists every variable.
+- **Hide all-day events on the Up next widget (#1312).** The widget has a new **Show all-day events** switch, on by default. Turn it off to list only events with a start time, so holidays and other all-day entries do not take up the widget's slots.
 
 ### Changed
 - **The README mentions video calls.** The Intercom entry now covers voice and video calls.

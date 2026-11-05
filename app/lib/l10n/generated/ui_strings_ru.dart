@@ -543,6 +543,9 @@ class UiStringsRu extends UiStrings {
   String get calendarWidgetWeek => 'Следующие 7 дней';
 
   @override
+  String get calendarWidgetAllDay => 'Показывать события на весь день';
+
+  @override
   String get calendarWidgetDots => 'Цветные точки';
 
   @override

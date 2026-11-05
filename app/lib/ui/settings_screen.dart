@@ -6463,6 +6463,13 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                       ),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
+                        title: Text(l10n(context).calendarWidgetAllDay),
+                        value: config['all_day'] != false,
+                        onChanged: (v) =>
+                            setDialogState(() => config['all_day'] = v),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
                         title: Text(l10n(context).calendarWidgetDots),
                         value: config['dots'] == true,
                         onChanged: (v) =>
