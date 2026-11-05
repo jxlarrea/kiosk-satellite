@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Sendspin keeps up with a drifting clock.** The Sendspin player corrected timing by one audio frame per chunk, about 225 parts per million on FLAC and 830 on PCM. A device whose clock ran further from the server's than that reached the 5 ms limit every few seconds and skipped with a short gap. The correction now grows with the error, up to 16 frames per chunk spread through the chunk, so a drifting device plays without skips and stays in step with its group. Devices that keep time well are unchanged (#1300).
+
 ## v2026.11.6 - 2026-11-04
 
 ### Added

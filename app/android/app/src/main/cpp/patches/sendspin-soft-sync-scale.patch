@@ -1,0 +1,170 @@
+diff --git a/src/sync_task.cpp b/src/sync_task.cpp
+index 0b318b2..8fd0d31 100644
+--- a/src/sync_task.cpp
++++ b/src/sync_task.cpp
+@@ -38,6 +38,16 @@ static constexpr int64_t HARD_SYNC_SETTLE_THRESHOLD_US =
+     500;  // Tighter threshold used while settling after a hard sync
+ static constexpr int64_t SOFT_SYNC_THRESHOLD_US = 100;
+ 
++/// @brief Below this error, soft sync corrects one frame per chunk. Above it, the correction grows
++/// with the error, so a clock that drifts faster than one frame per chunk stays below a hard sync.
++static constexpr int64_t SOFT_SYNC_SCALE_THRESHOLD_US = 1000;
++
++/// @brief Error (us) that earns one more frame of correction per chunk above the scale threshold.
++static constexpr int64_t SOFT_SYNC_US_PER_FRAME = 125;
++
++/// @brief Most frames a chunk gains or loses. The decode buffer reserves this many spare frames.
++static constexpr uint32_t SOFT_SYNC_MAX_FRAMES = 16;
++
+ static constexpr uint32_t INITIAL_SYNC_ZEROS_DURATION_MS = 25;
+ 
+ static constexpr size_t SYNC_TASK_STACK_SIZE = 6192;  // Opus uses more stack than FLAC
+@@ -73,6 +83,16 @@ static constexpr size_t SILENCE_SCRATCH_BYTES = 1024;
+ /// flood. .bss costs no heap and no flash; it is reserved and zeroed once at startup.
+ static uint8_t silence_scratch[SILENCE_SCRATCH_BYTES] = {};
+ 
++/// @brief Frames of correction a chunk gets for `abs_error_us`.
++static uint32_t soft_sync_frames(int64_t abs_error_us) {
++    if (abs_error_us < SOFT_SYNC_SCALE_THRESHOLD_US) {
++        return 1;
++    }
++    return static_cast<uint32_t>(std::min<int64_t>(
++        1 + (abs_error_us - SOFT_SYNC_SCALE_THRESHOLD_US) / SOFT_SYNC_US_PER_FRAME,
++        SOFT_SYNC_MAX_FRAMES));
++}
++
+ /// @brief Byte count for `duration_ms` of silence, rounded down to whole frames so per-write chunks
+ /// and track_sent_audio() accounting stay on frame boundaries (the ms->bytes result need not
+ /// align).
+@@ -331,12 +351,12 @@ SyncTaskState SyncTask::handle_synchronize_audio(SyncContext& sync_context) {
+         if (raw_error > SOFT_SYNC_THRESHOLD_US) {
+             // Slightly behind - add one interpolated frame between the last two decoded frames
+             // Playtime estimate is advanced by transfer_audio() when the extra frame is sent
+-            this->soft_sync_insert_frame(sync_context);
++            this->soft_sync_insert_frames(sync_context, soft_sync_frames(raw_error));
+         } else if (raw_error < -SOFT_SYNC_THRESHOLD_US) {
+             // Slightly ahead - remove last frame, blend into second-to-last
+             // Playtime estimate naturally reflects the removed frame: transfer_audio() sends
+             // fewer bytes
+-            this->soft_sync_drop_frame(sync_context);
++            this->soft_sync_drop_frames(sync_context, soft_sync_frames(-raw_error));
+         }
+         // else: Dead zone - pass decoded audio through directly
+         sync_context.release_chunk = true;
+@@ -525,6 +545,71 @@ int32_t SyncTask::soft_sync_insert_frame(SyncContext& sync_context) {
+     return 1;
+ }
+ 
++void SyncTask::soft_sync_insert_frames(SyncContext& sync_context, uint32_t count) {
++    // Spreads several inserted frames evenly through the chunk, each the average of its neighbors.
++    // Working from the end keeps the earlier positions valid.
++    const size_t frame_bytes = sync_context.bytes_per_frame;
++    const size_t frames = sync_context.decode_buffer->available() / frame_bytes;
++    if ((count <= 1) || (frames < 2 * (static_cast<size_t>(count) + 1)) ||
++        (sync_context.decode_buffer->free() < count * frame_bytes)) {
++        this->soft_sync_insert_frame(sync_context);
++        return;
++    }
++
++    const uint32_t num_channels = sync_context.current_stream_info.get_channels();
++    const uint32_t bytes_per_sample = sync_context.bytes_per_frame / num_channels;
++    uint8_t* start = sync_context.decode_buffer->get_buffer_start();
++    size_t current = frames;
++    for (uint32_t k = count; k >= 1; --k) {
++        const size_t position = frames * k / (static_cast<size_t>(count) + 1);
++        uint8_t* frame = start + position * frame_bytes;
++        std::memmove(frame + frame_bytes, frame, (current - position) * frame_bytes);
++        for (uint32_t chan = 0; chan < num_channels; ++chan) {
++            const size_t chan_offset =
++                static_cast<size_t>(chan) * static_cast<size_t>(bytes_per_sample);
++            const int32_t before =
++                unpack_audio_sample_to_q31(frame - frame_bytes + chan_offset, bytes_per_sample);
++            const int32_t after =
++                unpack_audio_sample_to_q31(frame + frame_bytes + chan_offset, bytes_per_sample);
++            pack_q31_as_audio_sample(before / 2 + after / 2, frame + chan_offset, bytes_per_sample);
++        }
++        ++current;
++        sync_context.decode_buffer->increase_buffer_length(frame_bytes);
++    }
++}
++
++void SyncTask::soft_sync_drop_frames(SyncContext& sync_context, uint32_t count) {
++    // Spreads several removed frames evenly through the chunk, each blended into the frame before
++    // it. decrease_buffer_length() releases bytes from the front, so the frames ahead of a removed
++    // one slide forward over it. Working from the end keeps the earlier positions valid.
++    const size_t frame_bytes = sync_context.bytes_per_frame;
++    const size_t frames = sync_context.decode_buffer->available() / frame_bytes;
++    if ((count <= 1) || (frames < 2 * (static_cast<size_t>(count) + 1))) {
++        this->soft_sync_drop_frame(sync_context);
++        return;
++    }
++
++    const uint32_t num_channels = sync_context.current_stream_info.get_channels();
++    const uint32_t bytes_per_sample = sync_context.bytes_per_frame / num_channels;
++    for (uint32_t k = count; k >= 1; --k) {
++        const size_t position = frames * k / (static_cast<size_t>(count) + 1);
++        uint8_t* start = sync_context.decode_buffer->get_buffer_start();
++        uint8_t* frame = start + position * frame_bytes;
++        for (uint32_t chan = 0; chan < num_channels; ++chan) {
++            const size_t chan_offset =
++                static_cast<size_t>(chan) * static_cast<size_t>(bytes_per_sample);
++            const int32_t before =
++                unpack_audio_sample_to_q31(frame - frame_bytes + chan_offset, bytes_per_sample);
++            const int32_t removed =
++                unpack_audio_sample_to_q31(frame + chan_offset, bytes_per_sample);
++            pack_q31_as_audio_sample(before / 2 + removed / 2, frame - frame_bytes + chan_offset,
++                                     bytes_per_sample);
++        }
++        std::memmove(start + frame_bytes, start, position * frame_bytes);
++        sync_context.decode_buffer->decrease_buffer_length(frame_bytes);
++    }
++}
++
+ DecodeResult SyncTask::decode_chunk(SyncContext& sync_context) {
+     if (sync_context.encoded_entry != nullptr &&
+         sync_context.encoded_entry->chunk_type == CHUNK_TYPE_STREAM_CLEAR_MARKER) {
+@@ -562,10 +647,10 @@ DecodeResult SyncTask::decode_chunk(SyncContext& sync_context) {
+             }
+ 
+             // Create or resize the decode buffer using the decoder's current required size
+-            // estimate; some codecs (for example, Opus) may require this to grow later. One extra
+-            // frame is reserved past the decoded data for soft-sync frame insertion.
+-            size_t needed =
+-                sync_context.decoder->get_decode_buffer_size() + sync_context.bytes_per_frame;
++            // estimate; some codecs (for example, Opus) may require this to grow later. Extra
++            // frames are reserved past the decoded data for soft-sync frame insertion.
++            size_t needed = sync_context.decoder->get_decode_buffer_size() +
++                            SOFT_SYNC_MAX_FRAMES * sync_context.bytes_per_frame;
+             if (sync_context.decode_buffer == nullptr) {
+                 sync_context.decode_buffer = TransferBuffer::create(
+                     needed, this->player_impl_->config.decode_buffer_location);
+@@ -608,9 +693,9 @@ DecodeResult SyncTask::decode_chunk(SyncContext& sync_context) {
+         if (!decoded) {
+             // The decoder raises its decoded-size estimate when it meets an unusually large chunk
+             // (e.g. a multi-frame Opus packet bigger than the typical 20ms buffer). Grow the
+-            // buffer to the new estimate (plus the reserved spare frame) and retry once.
+-            size_t needed =
+-                sync_context.decoder->get_decode_buffer_size() + sync_context.bytes_per_frame;
++            // buffer to the new estimate (plus the reserved spare frames) and retry once.
++            size_t needed = sync_context.decoder->get_decode_buffer_size() +
++                            SOFT_SYNC_MAX_FRAMES * sync_context.bytes_per_frame;
+             if (needed > sync_context.decode_buffer->capacity() &&
+                 sync_context.decode_buffer->reallocate(needed)) {
+                 decoded = sync_context.decoder->decode_audio_chunk(
+diff --git a/src/sync_task.h b/src/sync_task.h
+index 3f621b0..eb6a0d3 100644
+--- a/src/sync_task.h
++++ b/src/sync_task.h
+@@ -233,6 +233,12 @@ protected:
+     /// Returns 1 if a frame was added, 0 if preconditions not met.
+     int32_t soft_sync_insert_frame(SyncContext& sync_context);
+ 
++    /// @brief Adds `count` interpolated frames spread through the chunk
++    void soft_sync_insert_frames(SyncContext& sync_context, uint32_t count);
++
++    /// @brief Removes `count` frames spread through the chunk, blending each into the one before
++    void soft_sync_drop_frames(SyncContext& sync_context, uint32_t count);
++
+     /// @brief Decodes the current encoded chunk
+     DecodeResult decode_chunk(SyncContext& sync_context);
+ 
