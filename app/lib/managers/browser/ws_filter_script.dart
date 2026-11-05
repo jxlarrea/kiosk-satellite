@@ -52,6 +52,8 @@ const wsFilterScript = r'''
     shadow: {},           // entity_id -> compressed state
     listeners: [],        // frontend 'message' listeners on the current HA socket
     configCache: {},
+    registries: {},        // label and entity registries, read when a filter needs them
+    autoFixed: false,      // the view's allowlist was narrowed by a fixed attribute
     subs: {},              // command id -> what it subscribed to (census)
     // counters. cTotal counts every entity change seen (both A/B phases, so
     // the load can be shown comparable); cFwd counts those forwarded.
@@ -127,6 +129,20 @@ const wsFilterScript = r'''
             && JSON.stringify(p.a.entity_id) !== JSON.stringify(cur.a.entity_id)) {
             clearTimeout(S.tgtTimer);
             S.tgtTimer = setTimeout(function () { if (S.enabled) recompute(); }, 250);
+          }
+          // An entity left off for lacking a fixed attribute can gain it
+          // later: a Riemann sum or min/max helper takes its unit from its
+          // source. Its change is dropped here, so the card would never see
+          // the match without a rebuild.
+          if (S.autoFixed && S.allow && !S.allow.has(e)) {
+            for (var f = 0; f < AUTO_FIXED.length; f++) {
+              var fk = AUTO_FIXED[f];
+              if (fk in p.a && p.a[fk] !== cur.a[fk]) {
+                clearTimeout(S.tgtTimer);
+                S.tgtTimer = setTimeout(function () { if (S.enabled) recompute(); }, 250);
+                break;
+              }
+            }
           }
           for (var k in p.a) cur.a[k] = p.a[k];
         }
@@ -506,24 +522,33 @@ const wsFilterScript = r'''
   // finds nothing in them. Expand the filters against the registries the
   // frontend already carries (hass.entities / hass.devices / hass.areas), the
   // same identities HA itself resolves them with. Over-include on purpose:
-  // volatile tests (state/attributes) never shrink the set and excludes are
-  // ignored — an extra allowed entity costs a few updates, a missing one means
-  // a stale card. Filters we cannot resolve structurally (templates, name
-  // matches, boolean combinators) make the whole view unfilterable: the
-  // caller passes it through, which is always correct, just not faster.
+  // volatile tests (state, most attributes) never shrink the set and excludes
+  // are ignored, because an extra allowed entity costs a few updates while a
+  // missing one means a stale card. Filters we cannot resolve structurally
+  // (templates, name matches, boolean combinators) make the whole view
+  // unfilterable: the caller passes it through, which is always correct, just
+  // not faster.
   var AUTO_STRUCT = ['domain', 'entity_id', 'area', 'label', 'device', 'integration', 'group'];
   var AUTO_VOLATILE = ['state', 'attributes', 'last_changed', 'last_updated',
     'last_triggered', 'sort', 'options', 'type', 'active_choice'];
-  function globRe(g) {
-    // Escape each character. * is the only supported glob wildcard.
-    var s = String(g), esc = '';
-    for (var gi = 0; gi < s.length; gi++) {
-      var ch = s.charAt(gi);
-      if (ch === '*') esc += '.*';
-      else if (/[a-zA-Z0-9_]/.test(ch)) esc += ch;
-      else esc += '\\' + ch;
+  // Attributes that rarely change and stay while an entity is unavailable. A
+  // test on one of these narrows an include as `domain` does (issue #1314).
+  var AUTO_FIXED = ['device_class', 'unit_of_measurement', 'state_class'];
+  // The test auto-entities applies to a rule's value: a /regex/, a * glob or
+  // an exact match. Returns null for a value this cannot decide (comparisons,
+  // "5 m ago" and $$ JSON matches), which say nothing about a fixed identity.
+  function autoMatcher(pattern) {
+    if (typeof pattern !== 'string') return null;
+    if (pattern.indexOf('$$') === 0 || /^[<>=!]/.test(pattern) ||
+        /[mhd]\s+ago\s*$/i.test(pattern)) return null;
+    var slashed = pattern.charAt(0) === '/';
+    if ((slashed && pattern.slice(-1) === '/') || pattern.indexOf('*') >= 0) {
+      var source = slashed ? pattern.slice(1, -1) : '^' + pattern.replace(/\*/g, '.*') + '$';
+      var re;
+      try { re = new RegExp(source); } catch (e) { return null; }
+      return function (v) { return typeof v === 'string' && re.test(v); };
     }
-    return new RegExp('^' + esc + '$');
+    return function (v) { return v === pattern; };
   }
   // A filter value may be a string, an array, or (from the visual editor) an
   // object like {label: "x", active_choice: "label"}; flatten to strings.
@@ -532,6 +557,33 @@ const wsFilterScript = r'''
     if (Array.isArray(v)) { var o = []; v.forEach(function (x) { o = o.concat(vals(x, key)); }); return o; }
     if (typeof v === 'object') return key in v ? vals(v[key], key) : [];
     return [String(v)];
+  }
+  // One matcher for a rule's values, or null when any of them is undecidable.
+  function ruleMatcher(v, key) {
+    var tests = vals(v, key).map(autoMatcher);
+    if (tests.indexOf(null) >= 0) return null;
+    return function (x) { return tests.some(function (t) { return t(x); }); };
+  }
+  // hass carries neither label names nor an entity's config entry. The
+  // auto-entities editor saves `integration` as a config entry id. Read the
+  // registry the first time a view needs it, then rebuild. auto-entities makes
+  // the same call on this page. This returns nothing until the read finishes
+  // or when it fails, so the view passes through.
+  function registry(type, key, value, hass) {
+    var r = S.registries[type];
+    if (r) return r.data;
+    r = S.registries[type] = {};
+    try {
+      hass.connection.sendMessagePromise({ type: 'config/' + type + '_registry/list' })
+        .then(function (items) {
+          var data = {};
+          items.forEach(function (item) { data[item[key]] = item[value]; });
+          r.data = data;
+          if (S.registries[type] === r && S.enabled) recompute();
+        })
+        .catch(function () {});
+    } catch (e) {}
+    return r.data;
   }
   function expandAuto(card, acc, hass) {
     var f = card.filter || {};
@@ -550,42 +602,53 @@ const wsFilterScript = r'''
       if (bad) return false;
       var preds = [];
       if (c.domain != null) {
-        var doms = vals(c.domain, 'domain');
-        preds.push(function (id) { return doms.indexOf(id.split('.')[0]) >= 0; });
+        var md = ruleMatcher(c.domain, 'domain');
+        if (!md) return false;
+        preds.push(function (id) { return md(id.split('.')[0]); });
       }
       if (c.entity_id != null) {
-        var res = vals(c.entity_id, 'entity_id').map(globRe);
-        preds.push(function (id) { return res.some(function (re) { return re.test(id); }); });
+        var mi = ruleMatcher(c.entity_id, 'entity_id');
+        if (!mi) return false;
+        preds.push(function (id) { return mi(id); });
       }
       if (c.area != null) {
-        var wa = vals(c.area, 'area');
+        var ma = ruleMatcher(c.area, 'area');
+        if (!ma) return false;
         preds.push(function (id) {
           var e = ents[id]; if (!e) return false;
           var aid = e.area_id || (e.device_id && devs[e.device_id] && devs[e.device_id].area_id) || null;
           if (!aid) return false;
-          var an = areas[aid] && areas[aid].name;
-          return wa.indexOf(aid) >= 0 || (an != null && wa.indexOf(an) >= 0);
+          return ma(aid) || ma(areas[aid] && areas[aid].name);
         });
       }
       if (c.device != null) {
-        var wd = vals(c.device, 'device');
+        var mv = ruleMatcher(c.device, 'device');
+        if (!mv) return false;
         preds.push(function (id) {
           var e = ents[id]; if (!e || !e.device_id) return false;
           var d = devs[e.device_id];
-          return wd.indexOf(e.device_id) >= 0 || (d != null &&
-            ((d.name_by_user != null && wd.indexOf(d.name_by_user) >= 0) ||
-             (d.name != null && wd.indexOf(d.name) >= 0)));
+          return mv(e.device_id) || (d != null && (mv(d.name_by_user) || mv(d.name)));
         });
       }
       if (c.integration != null) {
-        var wi = vals(c.integration, 'integration');
-        preds.push(function (id) { var e = ents[id]; return !!e && wi.indexOf(e.platform) >= 0; });
-      }
-      if (c.label != null) {
-        var wl = vals(c.label, 'label');
+        var mn = ruleMatcher(c.integration, 'integration');
+        var entries = mn && registry('entity', 'entity_id', 'config_entry_id', hass);
+        if (!entries) return false;
         preds.push(function (id) {
           var e = ents[id];
-          return !!e && (e.labels || []).some(function (l) { return wl.indexOf(l) >= 0; });
+          return !!e && (mn(e.platform) || mn(entries[id]));
+        });
+      }
+      if (c.label != null) {
+        var ml = ruleMatcher(c.label, 'label');
+        var names = ml && registry('label', 'label_id', 'name', hass);
+        if (!names) return false;
+        var labelHit = function (l) { return ml(l) || ml(names[l]); };
+        preds.push(function (id) {
+          var e = ents[id]; if (!e) return false;
+          if ((e.labels || []).some(labelHit)) return true;
+          var d = devs[e.device_id];
+          return !!d && (d.labels || []).some(labelHit);
         });
       }
       // auto-entities matches the group's direct members, the ids in its
@@ -598,6 +661,19 @@ const wsFilterScript = r'''
           addTargets(hass.states && hass.states[g], members);
         });
         preds.push(function (id) { return members.has(id); });
+      }
+      // Read from the shadow: hass.states never saw a change this filter
+      // dropped. An exact key only, so `device_class 2` stays volatile.
+      if (c.attributes && typeof c.attributes === 'object') {
+        AUTO_FIXED.forEach(function (key) {
+          var test = autoMatcher(c.attributes[key]);
+          if (!test) return;
+          S.autoFixed = true;
+          preds.push(function (id) {
+            var st = S.shadow[id];
+            return !st || !st.a || test(st.a[key]);
+          });
+        });
       }
       // Volatile-only include (a bare `state:` filter) legitimately spans the
       // whole instance; a per-view allowlist cannot bound it.
@@ -631,6 +707,7 @@ const wsFilterScript = r'''
     collect(v.cards, acc); collect(v.badges, acc); collect(v.sections, acc);
     var autos = []; findAuto(v, autos);
     var hass = hassEl();
+    S.autoFixed = false;
     for (var a = 0; a < autos.length; a++) {
       if (!hass || !expandAuto(autos[a], acc, hass)) { lift(); return; }
     }
@@ -827,6 +904,7 @@ const wsFilterScript = r'''
     // the shadow so a view switch right after a reconnect still refreshes.
     S.listeners = [];
     S.subId = null;
+    S.registries = {};
     // The census is per socket: a reconnect re-subscribes everything under
     // fresh command ids, and keeping the old ones would count every
     // subscription once more for every reconnect the page has lived through.

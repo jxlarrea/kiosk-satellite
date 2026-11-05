@@ -5,12 +5,14 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../lib/managers/browser/ws_filter_script.dart', import.meta.url), 'utf8').split("r'''")[1].split("'''")[0];
 
-async function page({ hook = true, config, deferredConfig = false, states = {} } = {}) {
+async function page({ hook = true, config, deferredConfig = false, states = {},
+  entities = {}, devices = {}, areas = {}, registries = {} } = {}) {
   const timers = new Map();
   const listeners = {};
   const frames = [];
   const warnings = [];
   const requests = [];
+  const registryCalls = [];
   let nextTimer = 0;
   let define;
   class Root {
@@ -37,11 +39,18 @@ async function page({ hook = true, config, deferredConfig = false, states = {} }
     { path: 'other', cards: [{ type: 'entities', entities: ['sensor.other'] }] },
   ] };
   const host = { hass: {
-    connection: { sendMessagePromise: () => deferredConfig
-      ? new Promise((resolve, reject) => requests.push({ resolve, reject }))
-      : Promise.resolve(cfg) },
+    connection: { sendMessagePromise: message => {
+      if (message.type !== 'lovelace/config') {
+        registryCalls.push(message.type);
+        const items = registries[message.type];
+        return items ? Promise.resolve(items) : Promise.reject(Error('unknown command'));
+      }
+      return deferredConfig
+        ? new Promise((resolve, reject) => requests.push({ resolve, reject }))
+        : Promise.resolve(cfg);
+    } },
     panels: { lovelace: { component_name: 'lovelace' }, config: { component_name: 'config' } },
-    states: {}, entities: {},
+    states: {}, entities, devices, areas,
   } };
   let root = new Root();
   root.lovelace = { config: cfg };
@@ -110,7 +119,8 @@ async function page({ hook = true, config, deferredConfig = false, states = {} }
   }
   await drain();
   return {
-    context, get root() { return root; }, host, frames, warnings, emit, drain, listeners, requests, cfg, Root, AutoEntities,
+    context, get root() { return root; }, host, frames, warnings, emit, drain, listeners, requests, registryCalls, cfg, Root, AutoEntities,
+    connect() { socket = connect(); },
     api: context.window.__ksWs,
     navigate(path) {
       context.location.pathname = path;
@@ -492,6 +502,172 @@ test('hands auto-entities the plain hass so its own scan keeps the view filtered
   assert.equal(p.api.stats().runtimeAll, false);
   assert.equal(p.api.stats().mode, 'filtering');
   assert.equal(p.api.allow.has('light.b'), false);
+});
+
+const autoView = (...include) => ({ views: [{ path: 'home', cards: [{ type: 'custom:auto-entities',
+  filter: { include }, card: { type: 'entities' } }] }] });
+const sensorStates = {
+  'sensor.door_battery': { s: '20', a: { device_class: 'battery', unit_of_measurement: '%' } },
+  'sensor.phone_battery': { s: '80', a: { device_class: 'battery', unit_of_measurement: '%' } },
+  'sensor.power': { s: '150', a: { device_class: 'power', unit_of_measurement: 'W' } },
+  'sensor.riemann': { s: '1', a: {} },
+  'sensor.other': { s: '10', a: {} },
+};
+const allowed = p => [...p.api.allow].filter(id => id !== 'sun.sun').sort();
+
+test('narrows an auto-entities include by a fixed attribute (issue #1314)', async () => {
+  const p = await page({ states: sensorStates, config: autoView(
+    { domain: 'sensor', attributes: { device_class: 'battery' }, state: '< 25' }) });
+  assert.equal(p.api.stats().mode, 'filtering');
+  assert.deepEqual(allowed(p), ['sensor.door_battery', 'sensor.phone_battery']);
+  p.emit({ c: { 'sensor.power': { '+': { s: '151' } } } });
+  assert.equal(p.host.hass.states['sensor.power'].state, '150');
+  p.emit({ c: { 'sensor.door_battery': { '+': { s: '19' } } } });
+  assert.equal(p.host.hass.states['sensor.door_battery'].state, '19');
+});
+
+test('an entity with no known attributes stays on the list', async () => {
+  const p = await page({ states: { ...sensorStates, 'sensor.other': { s: '10' } }, config: autoView(
+    { domain: 'sensor', attributes: { device_class: 'battery' } }) });
+  assert.equal(p.api.allow.has('sensor.other'), true);
+});
+
+test('a fixed attribute alone is enough to filter the view', async () => {
+  const p = await page({ states: sensorStates, config: autoView(
+    { attributes: { unit_of_measurement: 'W' } }) });
+  assert.equal(p.api.stats().mode, 'filtering');
+  assert.deepEqual(allowed(p), ['sensor.power']);
+});
+
+test('fixed attributes match globs and regexes the way auto-entities does', async () => {
+  const p = await page({ states: sensorStates, config: autoView(
+    { domain: 'sensor', attributes: { device_class: '*atter*' } },
+    { domain: 'sensor', attributes: { device_class: '/^pow/' } }) });
+  assert.deepEqual(allowed(p), ['sensor.door_battery', 'sensor.phone_battery', 'sensor.power']);
+});
+
+test('attribute tests that cannot be resolved never narrow an include', async () => {
+  for (const attributes of [
+    { device_class: '!= 5' }, { unit_of_measurement: '< 5' }, { device_class: '$$"x"' },
+    { device_class: 5 }, { 'device_class 2': 'battery' }, { battery_level: 'low' },
+    { friendly_name: 'Door' },
+  ]) {
+    const p = await page({ states: sensorStates, config: autoView({ domain: 'sensor', attributes }) });
+    assert.equal(allowed(p).length, 5, JSON.stringify(attributes));
+  }
+});
+
+test('rebuilds when an unlisted entity gains a fixed attribute later', async () => {
+  const p = await page({ states: sensorStates, config: autoView(
+    { domain: 'sensor', attributes: { unit_of_measurement: 'W' } }) });
+  assert.equal(p.api.allow.has('sensor.riemann'), false);
+  p.emit({ c: { 'sensor.riemann': { '+': { s: '2', a: { unit_of_measurement: 'W' } } } } });
+  await p.drain();
+  assert.equal(p.api.allow.has('sensor.riemann'), true);
+  assert.equal(p.host.hass.states['sensor.riemann'].attributes.unit_of_measurement, 'W');
+  assert.equal(p.host.hass.states['sensor.riemann'].state, '2');
+});
+
+test('other attribute changes on unlisted entities do not rebuild', async () => {
+  const p = await page({ states: sensorStates, config: autoView(
+    { domain: 'sensor', attributes: { unit_of_measurement: 'W' } }) });
+  const frames = p.frames.length;
+  p.emit({ c: { 'sensor.door_battery': { '+': { a: { friendly_name: 'Door' } } } } });
+  await p.drain();
+  assert.equal(p.frames.length, frames);
+});
+
+const registryEntities = {
+  'light.a': { entity_id: 'light.a', platform: 'hue', device_id: 'd1', labels: [] },
+  'light.b': { entity_id: 'light.b', platform: 'hue', labels: ['kitchen_lights'] },
+  'light.c': { entity_id: 'light.c', platform: 'zha', labels: [] },
+  'sensor.other': { entity_id: 'sensor.other', platform: 'template', labels: [] },
+};
+const registryStates = { 'light.a': { s: 'on' }, 'light.b': { s: 'on' }, 'light.c': { s: 'on' } };
+const registryDevices = { d1: { id: 'd1', name: 'Lamp', labels: ['kitchen_lights'] } };
+const labelRegistry = [{ label_id: 'kitchen_lights', name: 'Kitchen Lights' }];
+const entityRegistry = [
+  { entity_id: 'light.a', config_entry_id: 'entryA' }, { entity_id: 'light.b', config_entry_id: 'entryB' },
+  { entity_id: 'light.c', config_entry_id: 'entryA' }, { entity_id: 'sensor.other', config_entry_id: null },
+];
+const registryPage = (rule, registries = {
+  'config/label_registry/list': labelRegistry, 'config/entity_registry/list': entityRegistry,
+}) => page({ states: registryStates, entities: registryEntities, devices: registryDevices,
+  registries, config: autoView(rule) });
+
+test('label rules reach entities through their device', async () => {
+  const p = await registryPage({ label: 'kitchen_lights' });
+  await p.drain();
+  assert.equal(p.api.stats().mode, 'filtering');
+  assert.deepEqual(allowed(p), ['light.a', 'light.b']);
+});
+
+test('label rules match the label name', async () => {
+  const p = await registryPage({ label: 'Kitchen Lights' });
+  await p.drain();
+  assert.equal(p.api.stats().mode, 'filtering');
+  assert.deepEqual(allowed(p), ['light.a', 'light.b']);
+});
+
+test('integration rules match the config entry the visual editor saves', async () => {
+  const p = await registryPage({ integration: 'entryA' });
+  await p.drain();
+  assert.equal(p.api.stats().mode, 'filtering');
+  assert.deepEqual(allowed(p), ['light.a', 'light.c']);
+});
+
+test('integration rules still match the platform name', async () => {
+  const p = await registryPage({ integration: 'hue' });
+  await p.drain();
+  assert.deepEqual(allowed(p), ['light.a', 'light.b']);
+});
+
+test('a view stays unfiltered when a registry it needs cannot be read', async () => {
+  for (const rule of [{ label: 'kitchen_lights' }, { integration: 'entryA' }]) {
+    const p = await registryPage(rule, {});
+    await p.drain();
+    assert.equal(p.api.allow, null, JSON.stringify(rule));
+  }
+});
+
+test('registries load once per socket and again after a reconnect', async () => {
+  const p = await registryPage({ label: 'kitchen_lights' });
+  await p.drain();
+  p.navigate('/lovelace/home');
+  await p.drain();
+  assert.deepEqual(p.registryCalls, ['config/label_registry/list']);
+  p.connect();
+  await p.drain();
+  assert.deepEqual(p.registryCalls, ['config/label_registry/list', 'config/label_registry/list']);
+});
+
+test('structural rules accept globs and regexes the way auto-entities does', async () => {
+  for (const [rule, ids] of [
+    [{ domain: '/^li/' }, ['light.a', 'light.b', 'light.c']],
+    [{ domain: 'li*' }, ['light.a', 'light.b', 'light.c']],
+    [{ entity_id: '/light\\.[ab]$/' }, ['light.a', 'light.b']],
+    [{ entity_id: 'light.*' }, ['light.a', 'light.b', 'light.c']],
+    [{ device: 'La*' }, ['light.a']],
+    [{ integration: '/^zh/' }, ['light.c']],
+    [{ label: 'kitchen*' }, ['light.a', 'light.b']],
+  ]) {
+    const p = await registryPage(rule);
+    await p.drain();
+    assert.equal(p.api.stats().mode, 'filtering', JSON.stringify(rule));
+    assert.deepEqual(allowed(p), ids, JSON.stringify(rule));
+  }
+});
+
+test('a structural rule with a comparison or time value passes the view through', async () => {
+  for (const rule of [{ domain: '!light' }, { area: '< 5' }, { entity_id: '$$x' }, { device: '5 m ago' },
+    { domain: '/(/' }]) {
+    const config = autoView(rule);
+    config.views[0].cards.push({ type: 'entities', entities: ['sensor.other'] });
+    const p = await page({ states: registryStates, entities: registryEntities,
+      devices: registryDevices, config });
+    await p.drain();
+    assert.equal(p.api.allow, null, JSON.stringify(rule));
+  }
 });
 
 test('a custom page under /local/ keeps its own sockets and says so', () => {
