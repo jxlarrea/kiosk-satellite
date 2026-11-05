@@ -379,10 +379,12 @@ class IntercomVideo(
             stopCodec()
             val surface: Surface = target(nextWidth, nextHeight) ?: return false
             val mine = ++generation
+            var starting: MediaCodec? = null
             try {
                 val software = if (route == ROUTE_SOFTWARE) softwareDecoder() else null
                 val decoder = if (software != null) MediaCodec.createByCodecName(software)
                     else MediaCodec.createDecoderByType("video/avc")
+                starting = decoder
                 // Asking a decoder without the feature fails configure
                 // outright: the MediaTek one in the Echo Shows does.
                 val lowLatency = Build.VERSION.SDK_INT >= 30 &&
@@ -444,6 +446,8 @@ class IntercomVideo(
             } catch (e: Exception) {
                 Log.w(TAG, "decoder route $route failed at ${nextWidth}x$nextHeight: ${e.message}")
                 stopCodec()
+                // It never became [codec], so nothing else lets it go.
+                try { starting?.release() } catch (_: Exception) { }
                 return false
             }
         }
