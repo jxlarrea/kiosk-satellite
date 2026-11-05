@@ -15,6 +15,7 @@ import 'package:web_socket_channel/io.dart';
 import '../../core/permissions.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
+import '../../core/headless.dart';
 import '../../core/kiosk_http_client.dart';
 import '../../core/manager.dart';
 import '../audio/mic_hub.dart';
@@ -29,6 +30,7 @@ import '../voice/voice_turns.dart';
 import 'intercom_audio.dart';
 import 'intercom_routes.dart';
 import 'intercom_sensors.dart';
+import 'intercom_video.dart';
 
 /// One kiosk on the roster, with what its identity probe said.
 class IntercomKiosk {
@@ -64,6 +66,9 @@ class IntercomKiosk {
   bool? enabled;
   String? keyFingerprint;
   bool dnd = false;
+
+  /// Whether it takes video calls.
+  bool video = false;
   DateTime? probedAt;
   bool probeFailed = false;
 
@@ -90,6 +95,7 @@ class IntercomKiosk {
       'address': address,
       'port': port,
       'version': version,
+      'video': video,
       'status': s,
       'statusText': switch (s) {
         'ready' => 'Ready',
@@ -139,6 +145,33 @@ class IntercomCall {
   /// When Answer automatically opens the call, for the countdown.
   DateTime? autoAnswerAt;
 
+  /// Whether the other kiosk takes video on this call.
+  bool peerVideo = false;
+
+  /// Whether this kiosk's camera is sending.
+  bool cameraOn = false;
+
+  /// Whether this kiosk's camera went on at any point, for Call again.
+  bool hadCamera = false;
+
+  /// Video frames sent and received, for the status and the logs.
+  int videoSent = 0;
+  int videoReceived = 0;
+
+  /// Whether the other kiosk says its camera is sending.
+  bool farCamera = false;
+
+  /// Whether a picture from the other kiosk has reached the screen, and
+  /// whether it stopped arriving while its camera is on.
+  bool farShown = false;
+  bool farStalled = false;
+  int? farTexture;
+  int? selfTexture;
+  int farWidth = 0;
+  int farHeight = 0;
+  int selfWidth = 0;
+  int selfHeight = 0;
+
   /// Frames sent and received, for the status and a silent link.
   int sent = 0;
   int received = 0;
@@ -178,6 +211,22 @@ class IntercomCall {
     'audioOnly': audioOnly,
     'message': message,
     if (kind == 'broadcast') 'targets': targets.values.toList(),
+    'video': {
+      'peer': peerVideo,
+      'camera': cameraOn,
+      'hadCamera': hadCamera,
+      'sent': videoSent,
+      'received': videoReceived,
+      'farCamera': farCamera,
+      'farShown': farShown,
+      'farStalled': farStalled,
+      'farTexture': farTexture,
+      'selfTexture': selfTexture,
+      'farWidth': farWidth,
+      'farHeight': farHeight,
+      'selfWidth': selfWidth,
+      'selfHeight': selfHeight,
+    },
   };
 }
 
@@ -428,6 +477,28 @@ class IntercomManager extends Manager {
   bool _fleetEnabled = false;
   bool _micGranted = true;
 
+  /// The call's camera and picture, and the socket that carries them.
+  final video = IntercomVideo();
+  IntercomVideoLink? _videoLink;
+  DateTime? _lastFarFrame;
+  Timer? _videoWatch;
+  Timer? _videoRetry;
+
+  /// Whether a picture is on the call screen. The dashboard under it stops
+  /// drawing meanwhile: on an Echo Show every core counts.
+  final videoOnScreen = ValueNotifier<bool>(false);
+
+  /// Whether this device has a camera, null before it has been asked.
+  bool? _hasCamera;
+
+  /// How a picture that stopped arriving is told from a slow frame.
+  Duration videoStallAfter = const Duration(seconds: 3);
+  Duration videoRetryEvery = const Duration(seconds: 2);
+
+  /// Asks for the camera. Swapped in tests.
+  Future<bool> Function() cameraPermission = () =>
+      ensureOsPermission(Permission.camera);
+
   /// The page kept the microphone through [pageMicWait]: a page that does
   /// not answer [IntercomMicHold], and the call is listen only.
   bool _micBusy = false;
@@ -518,6 +589,7 @@ class IntercomManager extends Manager {
   @override
   Future<void> init() async {
     _registerCommands();
+    _wireVideo();
     _voiceTurns.start();
     _subs.add(
       bus.on<RemoteObserversChanged>().listen((event) {
@@ -571,6 +643,12 @@ class IntercomManager extends Manager {
           unawaited(audio.setVolume(_playbackGain()));
         } else if (e.key == defs.intercomTalkMode.key) {
           unawaited(audio.setHandsFree(_handsFreeCall));
+          _changed();
+        } else if (e.key == defs.intercomVideo.key ||
+            e.key == defs.cameraEnabled.key) {
+          if (!cameraReady && _call?.cameraOn == true) {
+            unawaited(_setCamera(false));
+          }
           _changed();
         } else if (e.key == defs.intercomAnswerMode.key ||
             e.key == defs.lockdownEnabled.key ||
@@ -778,6 +856,7 @@ class IntercomManager extends Manager {
     k.enabled = data['enabled'] == true;
     k.keyFingerprint = '${data['key'] ?? ''}';
     k.dnd = data['dnd'] == true;
+    k.video = data['video'] == true;
     final n = '${data['name'] ?? ''}';
     if (n.isNotEmpty) k.name = n;
   }
@@ -951,6 +1030,8 @@ class IntercomManager extends Manager {
     'lockdown': _settings.get(defs.lockdownEnabled),
     'micGranted': _micGranted,
     'micBusy': _micBusy,
+    'video': videoEnabled,
+    'cameraReady': cameraReady,
     'self': {'id': _selfId, 'name': _selfName},
     'call': _call?.toJson(),
     'kiosks':
@@ -964,12 +1045,25 @@ class IntercomManager extends Manager {
         ),
   };
 
+  /// Whether calls here carry video at all.
+  bool get videoEnabled =>
+      enabled && !Headless.active && _settings.get(defs.intercomVideo);
+
+  /// Whether this kiosk can send video, not only show it.
+  bool get cameraReady =>
+      videoEnabled && _settings.get(defs.cameraEnabled) && _hasCamera != false;
+
   /// The talk mode this kiosk calls with. Hands free leans on the device's
   /// echo canceller, which plenty of devices have without reporting one, so
   /// the choice is always the user's.
   String get talkMode => _settings.get(defs.intercomTalkMode);
 
-  void _changed() => bus.publish(IntercomStateChanged(status()));
+  void _changed() {
+    final c = _call;
+    videoOnScreen.value =
+        c != null && (c.selfTexture != null || c.farTexture != null);
+    bus.publish(IntercomStateChanged(status()));
+  }
 
   bool get _active =>
       _state == 'in_call' || _state == 'broadcasting' || _state == 'listening';
@@ -1042,6 +1136,26 @@ class IntercomManager extends Manager {
       )
       ..register(
         Command(
+          name: 'intercomVideoCall',
+          description: 'Call another kiosk with this kiosk\'s camera on.',
+          params: const {'id': "The kiosk's id from intercomStatus"},
+          handler: (p) async {
+            final k = _kioskById('${p['id'] ?? ''}');
+            if (k == null) return const CommandResult.fail('unknown kiosk');
+            return _place(k, video: true);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'intercomCamera',
+          description: 'Turn this kiosk\'s camera on or off in a call.',
+          params: const {'on': 'true or false'},
+          handler: (p) async => _setCamera(p['on'] == true),
+        ),
+      )
+      ..register(
+        Command(
           name: 'intercomVoiceRequest',
           description:
               'What the Kiosk Satellite intercom script asks for, answered '
@@ -1069,7 +1183,8 @@ class IntercomManager extends Manager {
         Command(
           name: 'intercomAnswer',
           description: 'Answer the call ringing here.',
-          handler: (_) async => _answer(),
+          params: const {'video': 'true to answer with the camera on'},
+          handler: (p) async => _answer(video: p['video'] == true),
         ),
       )
       ..register(
@@ -1347,6 +1462,7 @@ class IntercomManager extends Manager {
               'endpoint': {'port': _server!.port, 'tls': _listenerTls},
             'key': keyFingerprint,
             'dnd': dnd,
+            'video': videoEnabled,
           }),
         ),
       )
@@ -1390,6 +1506,45 @@ class IntercomManager extends Manager {
       )
       ..register(
         Command(
+          name: 'intercomVerifyVideo',
+          description:
+              'Whether a token opens the video socket of the call named.',
+          quiet: true,
+          handler: (p) async {
+            final callId = '${p['call'] ?? ''}';
+            final ok =
+                videoEnabled &&
+                _verifyToken('${p['token'] ?? ''}', callId) &&
+                _call?.id == callId &&
+                (_state == 'ringing' || _state == 'in_call');
+            return ok
+                ? const CommandResult.ok()
+                : const CommandResult.fail('refused');
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'intercomAttachVideo',
+          description:
+              'The video socket of a call this kiosk was called on, opened '
+              'by the caller (the remote server hands it over).',
+          quiet: true,
+          handler: (p) async {
+            final channel = p['channel'];
+            final c = _call;
+            if (channel is! WebSocketChannel ||
+                c == null ||
+                c.id != '${p['call'] ?? ''}') {
+              return const CommandResult.fail('no such call');
+            }
+            await _attachVideo(channel, c);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'intercomAttachSocket',
           description:
               'The audio socket of a call this kiosk was called on, opened '
@@ -1412,7 +1567,7 @@ class IntercomManager extends Manager {
 
   // ── Placing a call ─────────────────────────────────────────────────
 
-  Future<CommandResult> _place(IntercomKiosk k) async {
+  Future<CommandResult> _place(IntercomKiosk k, {bool video = false}) async {
     if (!enabled) return const CommandResult.fail('intercom is off');
     if (!available) return const CommandResult.fail('needs the remote admin');
     if (_server == null) {
@@ -1443,9 +1598,16 @@ class IntercomManager extends Manager {
     _call = c;
     _setState('calling');
     log.info(name, 'calling ${k.name}');
+    final withCamera = video && k.video && cameraReady;
+    if (withCamera) unawaited(_setCamera(true));
     final res = await _post(
       '${k.callUrl}/api/intercom/call',
-      {'call': id, 'kind': 'call', 'from': _selfInfo()},
+      {
+        'call': id,
+        'kind': 'call',
+        'from': _selfInfo(),
+        if (videoEnabled) 'video': {'camera': withCamera},
+      },
       token: _tokens.issueToken(
         ttl: const Duration(seconds: 60),
         claims: {'intercom': id, 'from': _selfId, 'n': _nonce()},
@@ -1464,6 +1626,12 @@ class IntercomManager extends Manager {
         // The callee answers or declines through intercomSignal; its own
         // ring timeout tells us a miss, with a margin here.
         _ringTimer = Timer(_ringFor + callerMargin, () => _finish('no_answer'));
+        c.peerVideo = videoEnabled && data?['video'] == true;
+        if (c.peerVideo) {
+          unawaited(_connectVideo(k, c));
+        } else if (c.cameraOn) {
+          await _setCamera(false);
+        }
         _changed();
         return const CommandResult.ok();
       default:
@@ -2012,6 +2180,249 @@ class IntercomManager extends Manager {
     }
   }
 
+  // ── Video ──────────────────────────────────────────────────────────
+
+  void _wireVideo() {
+    video.onFrame = (frame) {
+      final link = _videoLink;
+      if (link == null) return;
+      link.sendFrame(frame);
+      _call?.videoSent = link.sent;
+    };
+    video.onFarSize = (width, height) {
+      final c = _call;
+      if (c == null) return;
+      c.farWidth = width;
+      c.farHeight = height;
+      _changed();
+    };
+    video.onFarTexture = (texture) {
+      final c = _call;
+      if (c == null || c.farTexture == null) return;
+      c.farTexture = texture;
+      _changed();
+    };
+    video.onFarShown = () {
+      final c = _call;
+      if (c == null) return;
+      c.farShown = true;
+      _changed();
+    };
+    video.onSelfSize = (width, height) {
+      final c = _call;
+      if (c == null) return;
+      c.selfWidth = width;
+      c.selfHeight = height;
+      _changed();
+    };
+    video.onRequestKey = () => _videoLink?.sendMessage({'type': 'key'});
+    video.onCameraFailed = (message) {
+      log.warn(name, 'camera: $message');
+      if (_call?.cameraOn == true) unawaited(_setCamera(false));
+    };
+    video.listen();
+    _subs.add(
+      bus.on<IntercomCameraLost>().listen((_) {
+        log.warn(name, 'camera lost during the call');
+        if (_call?.cameraOn == true) unawaited(_setCamera(false));
+      }),
+    );
+    unawaited(() async {
+      final r = await commands.execute('getCameraFacings', const {});
+      if (r.ok && r.data is List) _hasCamera = (r.data as List).isNotEmpty;
+    }());
+  }
+
+  /// Opens the video socket to the kiosk called, and keeps trying for as
+  /// long as the call lasts: the voice carries on without it.
+  Future<void> _connectVideo(IntercomKiosk k, IntercomCall c) async {
+    if (_call != c || _videoLink != null) return;
+    final uri = Uri(
+      scheme: k.callTls ? 'wss' : 'ws',
+      host: k.address,
+      port: k.callPort,
+      path: '/api/intercom/video/${c.id}',
+      queryParameters: {
+        'token': _tokens.issueToken(
+          ttl: const Duration(seconds: 60),
+          claims: {'intercom': c.id, 'from': _selfId, 'n': _nonce()},
+        ),
+      },
+    );
+    try {
+      final channel = socketFactory(uri);
+      await channel.ready.timeout(requestTimeout);
+      if (_call != c || !_videoLive(c)) {
+        await channel.sink.close();
+        return;
+      }
+      await _attachVideo(channel, c);
+    } catch (e) {
+      log.debug(name, 'video socket to ${k.name}: $e');
+      _retryVideo(k, c);
+    }
+  }
+
+  bool _videoLive(IntercomCall c) =>
+      _state == 'calling' || _state == 'ringing' || _state == 'in_call';
+
+  void _retryVideo(IntercomKiosk k, IntercomCall c) {
+    _videoRetry?.cancel();
+    if (_call != c || !_videoLive(c)) return;
+    _videoRetry = Timer(videoRetryEvery, () => _connectVideo(k, c));
+  }
+
+  Future<void> _attachVideo(WebSocketChannel channel, IntercomCall c) async {
+    final old = _videoLink;
+    _videoLink = null;
+    await old?.close();
+    final link = IntercomVideoLink(
+      channel,
+      onFrame: _onFarFrame,
+      onMessage: _onVideoMessage,
+      onClosed: _onVideoClosed,
+    );
+    _videoLink = link;
+    link.sendMessage({'type': 'camera', 'on': c.cameraOn});
+    if (c.cameraOn) unawaited(video.keyFrame());
+    _videoWatch?.cancel();
+    _videoWatch = Timer.periodic(const Duration(seconds: 1), (_) {
+      _watchFarVideo();
+    });
+    log.info(name, 'video connected with ${c.peer['name']}');
+  }
+
+  void _onVideoClosed(IntercomVideoLink link) {
+    if (_videoLink != link) return;
+    _videoLink = null;
+    final c = _call;
+    if (c == null || !_videoLive(c)) return;
+    if (c.outgoing) {
+      final k = _kioskById('${c.peer['id']}');
+      if (k != null) _retryVideo(k, c);
+    }
+  }
+
+  void _onFarFrame(Uint8List frame) {
+    final c = _call;
+    if (c == null) return;
+    _lastFarFrame = DateTime.now();
+    c.videoReceived++;
+    if (c.farStalled) {
+      c.farStalled = false;
+      _changed();
+    }
+    if (c.farTexture != null) video.push(frame);
+  }
+
+  void _onVideoMessage(Map<String, Object?> message) {
+    switch ('${message['type']}') {
+      case 'camera':
+        unawaited(_setFarCamera(message['on'] == true));
+      case 'key':
+        unawaited(video.keyFrame());
+    }
+  }
+
+  Future<void> _setFarCamera(bool on) async {
+    final c = _call;
+    if (c == null) return;
+    c.farCamera = on;
+    c.farStalled = false;
+    _lastFarFrame = null;
+    if (on) {
+      c.farTexture ??= await video.openFar();
+    } else {
+      await _closeFar(c);
+    }
+    _changed();
+  }
+
+  Future<void> _closeFar(IntercomCall c) async {
+    if (c.farTexture == null) return;
+    c.farTexture = null;
+    c.farShown = false;
+    c.farWidth = 0;
+    c.farHeight = 0;
+    await video.closeFar();
+  }
+
+  /// A picture that stopped arriving says so instead of freezing silently.
+  void _watchFarVideo() {
+    final c = _call;
+    if (c == null || !c.farCamera || !c.farShown || c.farStalled) return;
+    final last = _lastFarFrame;
+    if (last != null && DateTime.now().difference(last) < videoStallAfter) {
+      return;
+    }
+    c.farStalled = true;
+    _changed();
+  }
+
+  /// Turns this kiosk's camera on or off in the current call. Only a tap
+  /// at the kiosk reaches this with on: an automatic answer, a hardware
+  /// button and Home Assistant all leave it off.
+  Future<CommandResult> _setCamera(bool on) async {
+    final c = _call;
+    if (c == null) return const CommandResult.fail('no call');
+    if (c.cameraOn == on) return const CommandResult.ok();
+    if (on) {
+      if (!cameraReady) return const CommandResult.fail('camera unavailable');
+      if (!await cameraPermission()) {
+        return const CommandResult.fail('camera not granted');
+      }
+      if (_call != c) return const CommandResult.ok();
+      c.cameraOn = true;
+      c.hadCamera = true;
+      bus.publish(
+        IntercomCameraDemand(
+          intercomVideoConfig(_settings.get(defs.intercomVideoQuality)),
+        ),
+      );
+      c.selfTexture = await video.openSelf();
+      await video.setSending(true);
+      log.info(name, 'camera on');
+    } else {
+      await _stopCamera(c);
+      log.info(name, 'camera off');
+    }
+    _videoLink?.sendMessage({'type': 'camera', 'on': c.cameraOn});
+    _changed();
+    return const CommandResult.ok();
+  }
+
+  Future<void> _stopCamera(IntercomCall c) async {
+    if (!c.cameraOn) return;
+    c.cameraOn = false;
+    c.selfTexture = null;
+    c.selfWidth = 0;
+    c.selfHeight = 0;
+    await video.setSending(false);
+    await video.closeSelf();
+    bus.publish(const IntercomCameraDemand(null));
+  }
+
+  Future<void> _stopVideo(IntercomCall? c) async {
+    videoOnScreen.value = false;
+    _videoWatch?.cancel();
+    _videoRetry?.cancel();
+    _videoWatch = null;
+    _videoRetry = null;
+    final link = _videoLink;
+    _videoLink = null;
+    if (link != null) {
+      if (link.dropped > 0) {
+        log.debug(name, 'video link dropped ${link.dropped} frames');
+      }
+      await link.close();
+    }
+    if (c == null) return;
+    await _stopCamera(c);
+    await _closeFar(c);
+    c.farCamera = false;
+    c.farStalled = false;
+  }
+
   // ── A call coming in ───────────────────────────────────────────────
 
   Future<CommandResult> _incoming(Map<String, Object?> p) async {
@@ -2053,6 +2464,9 @@ class IntercomManager extends Manager {
       outgoing: false,
       peer: peer,
     );
+    final offer = p['video'];
+    c.peerVideo = c.kind == 'call' && videoEnabled && offer is Map;
+    c.farCamera = c.peerVideo && (offer as Map)['camera'] == true;
     _call = c;
     await _comeForward();
     if (c.kind == 'broadcast') {
@@ -2081,7 +2495,10 @@ class IntercomManager extends Manager {
       });
     }
     _changed();
-    return CommandResult.ok({'status': auto ? 'auto' : 'ringing'});
+    return CommandResult.ok({
+      'status': auto ? 'auto' : 'ringing',
+      'video': videoEnabled,
+    });
   }
 
   /// A call or an announcement coming in wakes a dark screen and brings
@@ -2094,7 +2511,7 @@ class IntercomManager extends Manager {
     if (!r.ok) await commands.execute('screenOn', const {});
   }
 
-  Future<CommandResult> _answer() async {
+  Future<CommandResult> _answer({bool video = false}) async {
     final c = _call;
     if (c == null || _state != 'ringing') {
       return const CommandResult.fail('nothing is ringing');
@@ -2109,6 +2526,7 @@ class IntercomManager extends Manager {
     _setState('in_call');
     await _startPlayback();
     _armConnectTimeout();
+    if (video && c.peerVideo) unawaited(_setCamera(true));
     final ok = await _signalPeer('answer');
     if (!ok && _call == c) {
       if (c.reason == 'tls') {
@@ -2535,6 +2953,7 @@ class IntercomManager extends Manager {
     _injectTimer?.cancel();
     _injectTimer = null;
     await _stopRing();
+    await _stopVideo(c);
     for (final l in _links.values.toList()) {
       await l.close();
     }

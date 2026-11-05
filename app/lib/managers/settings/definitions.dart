@@ -11605,6 +11605,32 @@ const intercomTalkMode = SettingDef<String>(
   dependsOn: 'intercom.enabled',
 );
 
+/// Whether calls on this kiosk carry video. Sending also needs Enable
+/// camera, and the camera only ever goes on with a tap at the kiosk.
+const intercomVideo = SettingDef<bool>(
+  key: 'intercom.video',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Video calls',
+  description: 'Send and show video in calls.',
+  category: 'Intercom',
+  section: 'Video',
+  dependsOn: 'intercom.enabled',
+);
+
+const intercomVideoQuality = SettingDef<String>(
+  key: 'intercom.video_quality',
+  type: SettingType.select,
+  defaultValue: 'medium',
+  title: 'Video quality',
+  description: 'Higher quality uses more CPU.',
+  category: 'Intercom',
+  section: 'Video',
+  options: ['low', 'medium', 'high'],
+  optionLabels: {'low': 'Low', 'medium': 'Medium', 'high': 'High'},
+  dependsOn: 'intercom.video',
+);
+
 /// Minutes a live call or announcement may run before this kiosk hangs
 /// up, 0 for no limit. Each side counts on its own, so the shorter limit
 /// ends the call for both.
@@ -14164,6 +14190,8 @@ const List<SettingDef<Object>> allSettings = [
   intercomMaxCallMinutes,
   intercomHangupKey,
   intercomHangupKeyRinging,
+  intercomVideo,
+  intercomVideoQuality,
   intercomTls,
   alarmsList,
   alarmsRuntime,

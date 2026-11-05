@@ -542,6 +542,18 @@ class AlarmStateChanged extends AppEvent {
 
 // ── Intercom ───────────────────────────────────────────────────────────
 
+/// The camera failed while a call was sending from it.
+class IntercomCameraLost extends AppEvent {
+  const IntercomCameraLost();
+}
+
+/// A call wants this kiosk's camera sending, at [config]'s size, rate and
+/// bitrate, or is done with it when [config] is null.
+class IntercomCameraDemand extends AppEvent {
+  const IntercomCameraDemand(this.config);
+  final Map<String, Object>? config;
+}
+
 /// The intercom's state changed: a call placed, ringing, answered, ended,
 /// a broadcast coming in, the roster of kiosks moved. Carries the whole
 /// `intercomStatus` shape so the remote admin redraws from the event

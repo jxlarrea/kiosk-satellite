@@ -57,5 +57,14 @@
   "intercomNameAnnouncing": "{name} macht eine Durchsage",
   "intercomHaMessage": "Home Assistant: {message}",
   "intercomEndCall": "Anruf beenden",
-  "intercomMaxDurationReached": "Maximale Anrufdauer erreicht"
+  "intercomMaxDurationReached": "Maximale Anrufdauer erreicht",
+  "intercomVoiceCall": "Sprachanruf",
+  "intercomVideoCall": "Videoanruf",
+  "intercomVoiceOnly": "Nur Sprache",
+  "intercomVideoAnswer": "Video",
+  "intercomCameraButton": "Kamera",
+  "intercomCameraOff": "Kamera aus",
+  "intercomYourCameraOff": "Deine Kamera ist aus",
+  "intercomVideoReconnecting": "Video wird neu verbunden…",
+  "intercomCameraOffNotice": "Die Kamera ist aus. Dieser Kiosk kann Video anzeigen, aber nicht senden."
 }

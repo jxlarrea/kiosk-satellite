@@ -57,5 +57,14 @@
   "intercomNameAnnouncing": "{name} está anunciando",
   "intercomHaMessage": "Home Assistant: {message}",
   "intercomEndCall": "Finalizar llamada",
-  "intercomMaxDurationReached": "Se alcanzó la duración máxima de la llamada"
+  "intercomMaxDurationReached": "Se alcanzó la duración máxima de la llamada",
+  "intercomVoiceCall": "Llamada de voz",
+  "intercomVideoCall": "Videollamada",
+  "intercomVoiceOnly": "Solo voz",
+  "intercomVideoAnswer": "Video",
+  "intercomCameraButton": "Cámara",
+  "intercomCameraOff": "Cámara apagada",
+  "intercomYourCameraOff": "Tu cámara está apagada",
+  "intercomVideoReconnecting": "Reconectando el video…",
+  "intercomCameraOffNotice": "La cámara está apagada. Este kiosko puede mostrar video, pero no enviarlo."
 }

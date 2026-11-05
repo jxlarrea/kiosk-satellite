@@ -284,6 +284,12 @@ class AppContainer {
         covered: screensaver.nowPlayingCovers.value,
       ),
     );
+    intercom.videoOnScreen.addListener(
+      () => browser.setCovered(
+        'intercom video',
+        covered: intercom.videoOnScreen.value,
+      ),
+    );
     voiceRequests = VoiceRequestsManager(bus, commands, log, settings);
     // It follows what the managers above are doing, through the bus and
     // the media players' own states.

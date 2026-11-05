@@ -57,5 +57,14 @@
   "intercomNameAnnouncing": "{name} kondigt aan",
   "intercomHaMessage": "Home Assistant: {message}",
   "intercomEndCall": "Gesprek beëindigen",
-  "intercomMaxDurationReached": "Maximale gespreksduur bereikt"
+  "intercomMaxDurationReached": "Maximale gespreksduur bereikt",
+  "intercomVoiceCall": "Spraakoproep",
+  "intercomVideoCall": "Video-oproep",
+  "intercomVoiceOnly": "Alleen spraak",
+  "intercomVideoAnswer": "Video",
+  "intercomCameraButton": "Camera",
+  "intercomCameraOff": "Camera uit",
+  "intercomYourCameraOff": "Je camera staat uit",
+  "intercomVideoReconnecting": "Video maakt opnieuw verbinding…",
+  "intercomCameraOffNotice": "De camera staat uit. Deze kiosk kan video tonen, maar niet verzenden."
 }

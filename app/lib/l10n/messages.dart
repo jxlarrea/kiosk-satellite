@@ -493,6 +493,7 @@ String settingsPageText(
   'Intercom' => switch (english) {
     'Answer' => l10n(context).intercomAnswerSection,
     'Talk' => l10n(context).intercomTalkSection,
+    'Video' => l10n(context).intercomVideoSection,
     _ => intercomText(context, english),
   },
   _ => english,

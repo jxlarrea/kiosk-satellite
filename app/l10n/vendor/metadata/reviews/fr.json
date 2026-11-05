@@ -28812,5 +28812,107 @@
     "translation": "94523bd4d8c238d1d90ed51c545ca632ef4179c079a170da5a49cae3a4df4a0d",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "intercomYourCameraOff": {
+    "source": "ac7d2eb7ef4f267a3ba6f4e693d15ab6743d14745194b5135b2d60478fa5fdc9",
+    "translation": "129709c9ff50ca417335c2d2ca5137c7855c80ee1dbdca0891ab7ccb74b4f6a1",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomOptionVideoLow": {
+    "source": "d49c10cbff5940c5c7013b82a2b64cfa3906b6ee75a9d284ada16a70251acdd5",
+    "translation": "2435a9bfbd8aa03eb28126f5abbb4032656e217adc55105b0afbd5881090ae42",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomVoiceCall": {
+    "source": "3cdd0aafd7243dde3e94cfc5fa6cfb1eb7311a6da410db961a630f88552dcdfa",
+    "translation": "c8f4cdb445495f3bfaa9c334806852ff937e93e8b988e3129afd25a7b4171c48",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomVideoCall": {
+    "source": "c30810c7478df1cd190b869833d115ec37cebc448987c149ed1a57a03391a0a8",
+    "translation": "883cf0832dfe8deeb35aa2da97c71ef60e01228810a5c8d9452c09e0656d7c63",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingIntercomVideoTitle": {
+    "source": "9340267d5fabc938c87471c4fe6021ab802ec6fb00982d8502448f898c30e1de",
+    "translation": "2caf8a1420169b5fdb446041afa0fb903921ba81f8c801bdc3d178806ee5319d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomOptionVideoHigh": {
+    "source": "3b5235efe670350ebf1cda78b50116390face9b4cea0239b5164bfb37fc87a93",
+    "translation": "9c3e565aa2f13df50449764af2202165d65b296f16363a551fcc8b1d3a9e170c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingIntercomVideoQualityTitle": {
+    "source": "bc051062da7e1dbc93223a7112fcb290e5410d752da0df6b6b6cd5942e9cd843",
+    "translation": "826a7d15a7399833ddf15caa2c1c16f27d56e4c22995bf3433a8721a33f25aa2",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingIntercomVideoDescription": {
+    "source": "46b02a2ccb4a637e7d6239dcbb60a25de6cf29954bcc3273cde6c7ce22171a91",
+    "translation": "075b08393602a6748891572224dc686313f48777bce75ec68c57a0d0418a766e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomCameraButton": {
+    "source": "807a4a51d180b01bd780586d65d4b5691ead4bea7d0f5cbb5d383cbd798abd4b",
+    "translation": "fc919992c43ecb6019961bf043fd692ee791b3a80c43a3c4bddd4247e7340ac5",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomVoiceOnly": {
+    "source": "9b3ff7ba73420660bd24d2fd90ddd668c494b95aa7afa9c36d413e05f81a0da6",
+    "translation": "34f6a536678c928622f41f985c8c74d163d16fd52539531604789861287cd95c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingIntercomVideoQualityDescription": {
+    "source": "eaccb3b4c74db2e50bba504771dd1366bcfd7352afe4aed1196069e4e138a585",
+    "translation": "76f2d480aae8646ac7abc08ebb750405cfd93c41a3d548f5eae18d3dec09da96",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomOptionVideoMedium": {
+    "source": "92bcd1efae33341a6af704b84a18ab43c2810d8534b89048ffcfe18a24c083dc",
+    "translation": "2aefe19b768a574b40efcc7f471f8e9d3b7194448af4759e355bb7dc494c89d8",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomVideoAnswer": {
+    "source": "46a21da9cd14d5ab1e9042e58a45b99f8fa4307076fa97c03a9d253ed8d228b3",
+    "translation": "ffda1e938e473fa28393d99e546cbf0e4587cadfc450af682047eabb6c783e1a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomVideoSection": {
+    "source": "9bdca10a5be12deb456fae5536743892f7c0f6c670c01f2b025bfc3fbae6f64b",
+    "translation": "ffda1e938e473fa28393d99e546cbf0e4587cadfc450af682047eabb6c783e1a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomCameraOffNotice": {
+    "source": "8cbd21e66fe518436851c1ab07928379eb9f3fecf24977ecea1feec839e6abd8",
+    "translation": "ebe650af8e72185ef5acbcf13826eedce130903bfc9c3b057ad9b1b3f68bddc9",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomVideoReconnecting": {
+    "source": "0d4557957a9d9cddf281c61a1723e0215b1710edd05be13bc5a1e16da17eaf9a",
+    "translation": "36bb7ab5b33e69e041e89b18c56b9c5979caf2d95941982616bc3fc6124111c4",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomCameraOff": {
+    "source": "b34d0cee33d3efb6cf039e617d3dbfa875d4caa503fd077e83d825559a66af16",
+    "translation": "4294c7371c426cc6016b9dc88ee76d26d22d35ab6f3cd2aa8a22ecba33674330",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

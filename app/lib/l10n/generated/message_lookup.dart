@@ -726,6 +726,15 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'intercomPlaying' => strings.intercomPlaying,
       'intercomAKiosk' => strings.intercomAKiosk,
       'intercomEndCall' => strings.intercomEndCall,
+      'intercomVoiceCall' => strings.intercomVoiceCall,
+      'intercomVideoCall' => strings.intercomVideoCall,
+      'intercomVoiceOnly' => strings.intercomVoiceOnly,
+      'intercomVideoAnswer' => strings.intercomVideoAnswer,
+      'intercomCameraButton' => strings.intercomCameraButton,
+      'intercomCameraOff' => strings.intercomCameraOff,
+      'intercomYourCameraOff' => strings.intercomYourCameraOff,
+      'intercomVideoReconnecting' => strings.intercomVideoReconnecting,
+      'intercomCameraOffNotice' => strings.intercomCameraOffNotice,
       'intercomCallFailed' => strings.intercomCallFailed,
       'intercomKeyFailed' => strings.intercomKeyFailed,
       'intercomBroadcastFailed' => strings.intercomBroadcastFailed,
@@ -2694,6 +2703,17 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'intercomOptionHangupRingingIgnore' =>
         strings.intercomOptionHangupRingingIgnore,
       'intercomTalkSection' => strings.intercomTalkSection,
+      'settingIntercomVideoTitle' => strings.settingIntercomVideoTitle,
+      'settingIntercomVideoDescription' =>
+        strings.settingIntercomVideoDescription,
+      'settingIntercomVideoQualityTitle' =>
+        strings.settingIntercomVideoQualityTitle,
+      'settingIntercomVideoQualityDescription' =>
+        strings.settingIntercomVideoQualityDescription,
+      'intercomOptionVideoLow' => strings.intercomOptionVideoLow,
+      'intercomOptionVideoMedium' => strings.intercomOptionVideoMedium,
+      'intercomOptionVideoHigh' => strings.intercomOptionVideoHigh,
+      'intercomVideoSection' => strings.intercomVideoSection,
       'settingKioskAllowDrawerTitle' => strings.settingKioskAllowDrawerTitle,
       'settingKioskAllowDrawerDescription' =>
         strings.settingKioskAllowDrawerDescription,

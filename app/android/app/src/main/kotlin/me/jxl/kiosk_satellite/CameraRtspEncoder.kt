@@ -50,6 +50,10 @@ class CameraRtspEncoder(
         private set
     var captureSize: Size? = null
         private set
+
+    /** What the encoder sends, once it has started. */
+    var outputSize: Size? = null
+        private set
     var software = false
         private set
 
@@ -81,6 +85,7 @@ class CameraRtspEncoder(
                 graphics = bridge
                 codecName = chosen.name
                 actualSize = "${size.width}x${size.height}"
+                outputSize = size
                 captureSize = inputSize
                 software = !hardware(chosen)
                 CameraDiagnostics.record(diagnosticSession, "encoder selected",
@@ -107,6 +112,10 @@ class CameraRtspEncoder(
 
     internal fun updateTransform(transform: RtspVideoTransform) {
         graphics?.updateTransform(transform)
+    }
+
+    internal fun setPreview(surface: Surface?) {
+        graphics?.setPreview(surface)
     }
 
     internal fun snapshot(done: (ByteArray?, String?) -> Unit) {

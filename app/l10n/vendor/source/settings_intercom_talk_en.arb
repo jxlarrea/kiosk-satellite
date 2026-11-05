@@ -376,5 +376,109 @@
         "Intercom > Talk"
       ]
     }
+  },
+  "settingIntercomVideoTitle": "Video calls",
+  "@settingIntercomVideoTitle": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoDescription": "Send and show video in calls.",
+  "@settingIntercomVideoDescription": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoQualityTitle": "Video quality",
+  "@settingIntercomVideoQualityTitle": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoQualityDescription": "Higher quality uses more CPU.",
+  "@settingIntercomVideoQualityDescription": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoLow": "Low",
+  "@intercomOptionVideoLow": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoMedium": "Medium",
+  "@intercomOptionVideoMedium": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoHigh": "High",
+  "@intercomOptionVideoHigh": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomVideoSection": "Video",
+  "@intercomVideoSection": {
+    "context": "Settings > Intercom > Video",
+    "description": "Section heading.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
   }
 }

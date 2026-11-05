@@ -49,6 +49,7 @@ class NativeMotion {
     bool paused = false,
     bool preview = false,
     bool rtsp = false,
+    Map<String, Object>? intercom,
     ({int width, int height})? plugin,
   }) {
     return _channel
@@ -86,6 +87,8 @@ class NativeMotion {
           // for it, since its frames are what the preview is made of.
           'preview': preview,
           'rtsp': rtsp,
+          // An intercom call's video: the size, rate and bitrate it wants.
+          'intercom': intercom,
           // A plugin holds the camera: the analysis stream is sized for
           // it and its frames go to the plugin natively.
           if (plugin != null)

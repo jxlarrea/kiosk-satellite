@@ -2830,6 +2830,34 @@ class UiStringsUk extends UiStrings {
   String get intercomEndCall => 'Завершити виклик';
 
   @override
+  String get intercomVoiceCall => 'Голосовий виклик';
+
+  @override
+  String get intercomVideoCall => 'Відеовиклик';
+
+  @override
+  String get intercomVoiceOnly => 'Лише голос';
+
+  @override
+  String get intercomVideoAnswer => 'Відео';
+
+  @override
+  String get intercomCameraButton => 'Камера';
+
+  @override
+  String get intercomCameraOff => 'Камеру вимкнено';
+
+  @override
+  String get intercomYourCameraOff => 'Вашу камеру вимкнено';
+
+  @override
+  String get intercomVideoReconnecting => 'Відновлення відео…';
+
+  @override
+  String get intercomCameraOffNotice =>
+      'Камеру вимкнено. Цей кіоск може показувати відео, але не надсилати його.';
+
+  @override
   String get intercomCallFailed => 'Не вдалося здійснити виклик';
 
   @override
@@ -9234,6 +9262,32 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get intercomTalkSection => 'Розмова';
+
+  @override
+  String get settingIntercomVideoTitle => 'Відеовиклики';
+
+  @override
+  String get settingIntercomVideoDescription =>
+      'Надсилає та показує відео під час викликів.';
+
+  @override
+  String get settingIntercomVideoQualityTitle => 'Якість відео';
+
+  @override
+  String get settingIntercomVideoQualityDescription =>
+      'Вища якість використовує більше ресурсів процесора.';
+
+  @override
+  String get intercomOptionVideoLow => 'Низька';
+
+  @override
+  String get intercomOptionVideoMedium => 'Середня';
+
+  @override
+  String get intercomOptionVideoHigh => 'Висока';
+
+  @override
+  String get intercomVideoSection => 'Відео';
 
   @override
   String get settingKioskAllowDrawerTitle => 'Дозволити меню зі швидкими діями';

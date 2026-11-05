@@ -10804,6 +10804,105 @@
       ]
     }
   },
+  "intercomVoiceCall": "Spraakoproep",
+  "@intercomVoiceCall": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomVideoCall": "Video-oproep",
+  "@intercomVideoCall": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomVoiceOnly": "Alleen spraak",
+  "@intercomVoiceOnly": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomVideoAnswer": "Video",
+  "@intercomVideoAnswer": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomCameraButton": "Camera",
+  "@intercomCameraButton": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomCameraOff": "Camera uit",
+  "@intercomCameraOff": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomYourCameraOff": "Je camera staat uit",
+  "@intercomYourCameraOff": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomVideoReconnecting": "Video maakt opnieuw verbinding…",
+  "@intercomVideoReconnecting": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomCameraOffNotice": "De camera staat uit. Deze kiosk kan video tonen, maar niet verzenden.",
+  "@intercomCameraOffNotice": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
   "intercomCallFailed": "Kon niet bellen",
   "@intercomCallFailed": {
     "context": "Intercom command errors",
@@ -34645,6 +34744,110 @@
       ],
       "remoteAdmin": [
         "Intercom > Talk"
+      ]
+    }
+  },
+  "settingIntercomVideoTitle": "Video-oproepen",
+  "@settingIntercomVideoTitle": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoDescription": "Verzendt en toont video tijdens gesprekken.",
+  "@settingIntercomVideoDescription": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoQualityTitle": "Videokwaliteit",
+  "@settingIntercomVideoQualityTitle": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoQualityDescription": "Hogere kwaliteit gebruikt meer CPU.",
+  "@settingIntercomVideoQualityDescription": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoLow": "Laag",
+  "@intercomOptionVideoLow": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoMedium": "Gemiddeld",
+  "@intercomOptionVideoMedium": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoHigh": "Hoog",
+  "@intercomOptionVideoHigh": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomVideoSection": "Video",
+  "@intercomVideoSection": {
+    "context": "Settings > Intercom > Video",
+    "description": "Section heading.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
       ]
     }
   },

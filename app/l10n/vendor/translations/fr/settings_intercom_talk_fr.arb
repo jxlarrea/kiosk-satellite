@@ -28,5 +28,13 @@
   "settingIntercomHangupKeyRingingDescription": "Ce que fait le bouton quand un appel sonne ici.",
   "intercomOptionHangupRingingAnswer": "Accepter",
   "intercomOptionHangupRingingDecline": "Refuser",
-  "intercomOptionHangupRingingIgnore": "Ignorer"
+  "intercomOptionHangupRingingIgnore": "Ignorer",
+  "settingIntercomVideoTitle": "Appels vidéo",
+  "settingIntercomVideoDescription": "Envoie et affiche la vidéo pendant les appels.",
+  "settingIntercomVideoQualityTitle": "Qualité vidéo",
+  "settingIntercomVideoQualityDescription": "Une qualité supérieure utilise plus de CPU.",
+  "intercomOptionVideoLow": "Basse",
+  "intercomOptionVideoMedium": "Moyenne",
+  "intercomOptionVideoHigh": "Haute",
+  "intercomVideoSection": "Vidéo"
 }

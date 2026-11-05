@@ -24,7 +24,7 @@ Configure it under **Settings, Intercom** on the kiosk, or the **Intercom** tab 
 
 ## Placing a call
 
-The **Intercom** entry in the kiosk menu opens the **Call a kiosk** screen, full screen like the app launcher: **Announce to all** at the top, then every kiosk as a row with its name and status. A tap on a Ready kiosk calls it. Kiosks with the intercom off, on Do not disturb, on another key or offline stay on the list dimmed with the reason and take no tap. The X, back or HOME closes the screen, and so does the screensaver.
+The **Intercom** entry in the kiosk menu opens the **Call a kiosk** screen, full screen like the app launcher: **Announce to all** at the top, then every kiosk as a row with its name and status. Press the call button on a Ready kiosk to call it. Kiosks with the intercom off, on Do not disturb, on another key or offline stay on the list dimmed with the reason and have no buttons. The X, back or HOME closes the screen, and so does the screensaver.
 
 The call takes the whole screen: the kiosk's name, Calling and Cancel. Nothing plays until the other side answers. Busy, Do not disturb, no answer and a different key end the call with one line on the screen.
 
@@ -61,6 +61,22 @@ During a call the kiosk holds the screensaver, the dashboard rotation and the re
 
 Voice is raw 16 kHz audio over one WebSocket per call, about 256 kbit/s each way on the local network, and reaches the other kiosk in roughly a quarter of a second.
 
+## Video calls
+
+**Video calls** under **Settings > Intercom > Video** is on by default. To send video a kiosk also needs **Enable camera** on. A kiosk with that off, or without a camera, still shows video from others but sends none. Turn off **Video calls** to keep a kiosk to voice only. A device without a screen never takes video.
+
+On the roster, a kiosk that takes video has a video button beside its call button. Press it to call with your camera on. You see your own picture while the call rings, and the other kiosk sees you too. It answers with **Voice only** or **Video**, or declines.
+
+Your camera goes on in two ways only: pressing video on the roster or **Video** on a ringing call, and pressing **Camera** during a call. **Answer automatically**, a hardware button, Home Assistant and the remote admin all answer with the camera off. Any call can add video later: press **Camera** while you talk. While the camera sends, your own picture stays in the corner of the screen.
+
+The other kiosk's picture fills the screen and the controls float over it. The kiosk's name and the call's length show when the call connects, then hide after 3 seconds. Tap the screen or press a button to see them again. If the other kiosk turns its camera off, the call goes back to the voice screen. If the picture stops arriving, the last frame dims and the screen says the video is reconnecting. The voice carries on.
+
+**Video quality** sets what this kiosk sends: Low is 640 x 480 at 15 frames a second, Medium is 640 x 480 at 24 and High is 1280 x 720 at 30. Higher quality uses more CPU. Motion detection and the other camera features keep running during a call. If RTSP streaming is on and a viewer is connected, the call uses that stream's size, rate and bitrate.
+
+Turn a kiosk during a call and its picture restarts at the new shape, with a short gap in the video. If the call is using an RTSP stream, the picture keeps its size with bars around it.
+
+The dashboard stops drawing during a video call and picks up where it was when the call ends. Video is not available in announcements.
+
 ## Announce to all
 
 **Announce to all** is one way: every Ready kiosk gets your voice at once, whatever its own talk mode, and nothing comes back. With push to talk you hold, speak and let go, and the line under the name says who hears you. With hands free the microphone stays open, with Mute, until Done. Kiosks on Do not disturb, with Accept announcements off or in a call are skipped and the screen names who is getting it.
@@ -71,7 +87,7 @@ On the receiving kiosks the screen says who is announcing. The ring plays once b
 
 ## The remote admin
 
-The Intercom tab carries the same settings and the Kiosks card, without Call buttons. While a call is live a card at the top names the other kiosk with the length and **End call**. The remote admin never answers a call: a browser only opens the microphone on a secure origin, and the remote admin is plain http. The Overview gets a **Do not disturb** tile that flips the answer mode and back.
+The Intercom tab carries the same settings and the Kiosks card, without Call buttons. While a call is live a card at the top names the other kiosk with the length and **End call**. A video call adds a Video tag. The remote admin cannot see the picture or turn a camera on. The remote admin never answers a call: a browser only opens the microphone on a secure origin, and the remote admin is plain http. The Overview gets a **Do not disturb** tile that flips the answer mode and back.
 
 ## Home Assistant
 
@@ -139,12 +155,13 @@ The intercom's routes sit in front of the admin login. Every one of them except 
 
 | Endpoint | Method | Description |
 | --- | --- | --- |
-| `/api/intercom/identity` | GET | `{id, name, version, enabled, key, dnd, endpoint: {port, tls}}`. `key` is the first eight hex digits of the key's SHA-256, what the status words compare. Public, one probe a second per client. |
-| `/api/intercom/call` | POST | `{call, kind: call or broadcast, from: {id, name, address, port, version, tls}}` answers `{status}`: `ringing`, `auto`, `listening`, `busy`, `dnd`, `off`, 409 with `status: tls` for incompatible encryption or 403 for another key. Plaintext requests are refused with 426 when encryption is required. |
+| `/api/intercom/identity` | GET | `{id, name, version, enabled, key, dnd, video, endpoint: {port, tls}}`. `key` is the first eight hex digits of the key's SHA-256, what the status words compare. Public, one probe a second per client. |
+| `/api/intercom/call` | POST | `{call, kind: call or broadcast, from: {id, name, address, port, version, tls}, video: {camera}}` answers `{status, video}`: `ringing`, `auto`, `listening`, `busy`, `dnd`, `off`, 409 with `status: tls` for incompatible encryption or 403 for another key. Plaintext requests are refused with 426 when encryption is required. |
 | `/api/intercom/call/<id>` | POST | `{action}`: `answer`, `decline`, `missed` from the callee, `cancel` and `hangup` from the caller. |
 | `/api/intercom/audio/<id>` | WebSocket | `?token=` as above. Binary frames are 80 ms of PCM16 mono 16 kHz from the sender's microphone. Text frames: `{"type": "talk", "on": true}` and `{"type": "end"}`. |
+| `/api/intercom/video/<id>` | WebSocket | `?token=` as above. Opened by the caller as soon as the call rings, when both kiosks take video. Binary frames carry one H.264 frame in Annex B form after a 9 byte header: flags (bit 0 marks a key frame, which carries its SPS and PPS), width and height as 16 bit values and the capture time in milliseconds as a 32 bit value, all big endian. Text frames: `{"type": "camera", "on": true}`, `{"type": "ack", "n": 12}` for each frame received and `{"type": "key"}` to ask for a key frame. A sender with six frames unacknowledged drops frames until the next key frame. |
 
-Both pages use the commands `intercomStatus`, `intercomKiosks`, `intercomCall {id}` or `{kiosk}` (a name or address), `intercomBroadcast`, `intercomHangup`, `intercomTalk {on}`, `intercomMute {on}`, `intercomOpen`, `intercomSetDnd {on}`, `intercomSetKey {key}` or `{regenerate: true}` and `intercomDismiss`. `intercomAnswer` and `intercomDecline` are refused over the remote API: only the kiosk screen answers. The WebSocket feed carries an `intercom` event with the whole status on every change.
+Both pages use the commands `intercomStatus`, `intercomKiosks`, `intercomCall {id}` or `{kiosk}` (a name or address), `intercomBroadcast`, `intercomHangup`, `intercomTalk {on}`, `intercomMute {on}`, `intercomOpen`, `intercomSetDnd {on}`, `intercomSetKey {key}` or `{regenerate: true}` and `intercomDismiss`. `intercomAnswer`, `intercomDecline`, `intercomVideoCall {id}` and `intercomCamera {on}` are refused over the remote API: only the kiosk screen answers or turns the camera on. The WebSocket feed carries an `intercom` event with the whole status on every change.
 
 ## Notes
 

@@ -2580,4 +2580,12 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingSendspinFullscreenTextScaleTitle",
     "description": "settingLibraryTextScaleDescription",
   },
+  "intercom.video": {
+    "title": "settingIntercomVideoTitle",
+    "description": "settingIntercomVideoDescription",
+  },
+  "intercom.video_quality": {
+    "title": "settingIntercomVideoQualityTitle",
+    "description": "settingIntercomVideoQualityDescription",
+  },
 };

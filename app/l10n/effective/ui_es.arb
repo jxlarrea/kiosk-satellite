@@ -10804,6 +10804,105 @@
       ]
     }
   },
+  "intercomVoiceCall": "Llamada de voz",
+  "@intercomVoiceCall": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomVideoCall": "Videollamada",
+  "@intercomVideoCall": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomVoiceOnly": "Solo voz",
+  "@intercomVoiceOnly": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomVideoAnswer": "Video",
+  "@intercomVideoAnswer": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomCameraButton": "Cámara",
+  "@intercomCameraButton": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomCameraOff": "Cámara apagada",
+  "@intercomCameraOff": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomYourCameraOff": "Tu cámara está apagada",
+  "@intercomYourCameraOff": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomVideoReconnecting": "Reconectando el video…",
+  "@intercomVideoReconnecting": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
+  "intercomCameraOffNotice": "La cámara está apagada. Este kiosko puede mostrar video, pero no enviarlo.",
+  "@intercomCameraOffNotice": {
+    "context": "Intercom call controls",
+    "description": "Label or guidance in this section.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Intercom > Call a kiosk",
+        "Active intercom call overlay"
+      ]
+    }
+  },
   "intercomCallFailed": "No se pudo llamar",
   "@intercomCallFailed": {
     "context": "Intercom command errors",
@@ -34645,6 +34744,110 @@
       ],
       "remoteAdmin": [
         "Intercom > Talk"
+      ]
+    }
+  },
+  "settingIntercomVideoTitle": "Videollamadas",
+  "@settingIntercomVideoTitle": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoDescription": "Envía y muestra video en las llamadas.",
+  "@settingIntercomVideoDescription": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoQualityTitle": "Calidad de video",
+  "@settingIntercomVideoQualityTitle": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "settingIntercomVideoQualityDescription": "Una calidad mayor usa más CPU.",
+  "@settingIntercomVideoQualityDescription": {
+    "context": "Settings > Intercom > Video",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoLow": "Baja",
+  "@intercomOptionVideoLow": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoMedium": "Media",
+  "@intercomOptionVideoMedium": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomOptionVideoHigh": "Alta",
+  "@intercomOptionVideoHigh": {
+    "context": "Settings > Intercom > Video",
+    "description": "Visible option. Its stored value stays unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
+      ]
+    }
+  },
+  "intercomVideoSection": "Video",
+  "@intercomVideoSection": {
+    "context": "Settings > Intercom > Video",
+    "description": "Section heading.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Video"
+      ],
+      "remoteAdmin": [
+        "Intercom > Video"
       ]
     }
   },

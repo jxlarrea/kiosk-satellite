@@ -38,6 +38,10 @@ internal class CameraRtspGlBridge(
     private var display = EGL14.EGL_NO_DISPLAY
     private var context = EGL14.EGL_NO_CONTEXT
     private var window = EGL14.EGL_NO_SURFACE
+    private var config: EGLConfig? = null
+
+    /** A second output beside the encoder: the self view of an intercom call. */
+    private var previewWindow = EGL14.EGL_NO_SURFACE
     private var texture: SurfaceTexture? = null
     private var cameraSurface: Surface? = null
     private var textureId = 0
@@ -52,6 +56,8 @@ internal class CameraRtspGlBridge(
                 -1f, 1f, 0f, 1f, 1f, 1f, 1f, 1f))
             position(0)
         }
+    private val previewVertices = ByteBuffer.allocateDirect(16 * 4).order(ByteOrder.nativeOrder())
+        .asFloatBuffer()
     private var overlay: RtspDateTimeOverlay? = null
     private var first = true
     private var lastPresentationNs = 0L
@@ -142,6 +148,7 @@ internal class CameraRtspGlBridge(
         check(EGL14.eglChooseConfig(display, attributes, 0, configs, 0, 1, count, 0) && count[0] > 0) {
             "No recordable EGL configuration"
         }
+        config = configs[0]
         context = EGL14.eglCreateContext(display, configs[0], EGL14.EGL_NO_CONTEXT,
             intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE), 0)
         check(context != EGL14.EGL_NO_CONTEXT) { "EGL context creation failed" }
@@ -197,6 +204,68 @@ internal class CameraRtspGlBridge(
         }
     }
 
+    /** Draws every encoded frame to [surface] too, or stops with null. Waits
+     *  for the GL thread, so a caller can release its surface right after. */
+    fun setPreview(surface: Surface?) {
+        if (closing.get()) return
+        val done = CountDownLatch(1)
+        val posted = handler.post {
+            try {
+                if (!closing.get()) applyPreview(surface)
+            } finally {
+                done.countDown()
+            }
+        }
+        if (posted) done.await(500, TimeUnit.MILLISECONDS)
+    }
+
+    private fun applyPreview(surface: Surface?) {
+        releasePreview()
+        if (surface == null || failed) return
+        try {
+            previewWindow = EGL14.eglCreateWindowSurface(display, config, surface,
+                intArrayOf(EGL14.EGL_NONE), 0)
+            check(previewWindow != EGL14.EGL_NO_SURFACE) { "EGL error ${EGL14.eglGetError()}" }
+            check(EGL14.eglMakeCurrent(display, previewWindow, previewWindow, context)) { "EGL makeCurrent failed" }
+            // The encoder must never wait for the screen.
+            EGL14.eglSwapInterval(display, 0)
+            check(EGL14.eglMakeCurrent(display, window, window, context)) { "EGL makeCurrent failed" }
+        } catch (e: Exception) {
+            CameraDiagnostics.record(diagnosticSession, "preview output failed", "size=$size", true, e)
+            EGL14.eglMakeCurrent(display, window, window, context)
+            releasePreview()
+        }
+    }
+
+    private fun releasePreview() {
+        if (previewWindow == EGL14.EGL_NO_SURFACE) return
+        EGL14.eglDestroySurface(display, previewWindow)
+        previewWindow = EGL14.EGL_NO_SURFACE
+    }
+
+    /** The self view is a mirror, unlike the frame sent to the other side. */
+    private fun drawPreview() {
+        if (previewWindow == EGL14.EGL_NO_SURFACE) return
+        try {
+            check(EGL14.eglMakeCurrent(display, previewWindow, previewWindow, context)) { "EGL makeCurrent failed" }
+            GLES20.glViewport(0, 0, size.width, size.height)
+            GLES20.glClearColor(0f, 0f, 0f, 1f)
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+            previewVertices.position(0)
+            GLES20.glVertexAttribPointer(position, 2, GLES20.GL_FLOAT, false, 16, previewVertices)
+            previewVertices.position(2)
+            GLES20.glVertexAttribPointer(coordinates, 2, GLES20.GL_FLOAT, false, 16, previewVertices)
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
+            check(EGL14.eglSwapBuffers(display, previewWindow)) { "EGL error ${EGL14.eglGetError()}" }
+        } catch (e: Exception) {
+            CameraDiagnostics.record(diagnosticSession, "preview output failed", "size=$size", true, e)
+            EGL14.eglMakeCurrent(display, window, window, context)
+            releasePreview()
+            return
+        }
+        check(EGL14.eglMakeCurrent(display, window, window, context)) { "EGL makeCurrent failed" }
+    }
+
     fun updateTransform(value: RtspVideoTransform) {
         if (!closing.get()) handler.post { if (!closing.get()) applyTransform(value) }
     }
@@ -212,6 +281,15 @@ internal class CameraRtspGlBridge(
             vertices.put(uv[i * 2 + 1])
         }
         vertices.position(0)
+        previewVertices.position(0)
+        for (i in 0..3) {
+            val x = if (i % 2 == 0) -scaleX else scaleX
+            previewVertices.put(if (value.frontFacing) -x else x)
+            previewVertices.put(if (i < 2) -scaleY else scaleY)
+            previewVertices.put(uv[i * 2])
+            previewVertices.put(uv[i * 2 + 1])
+        }
+        previewVertices.position(0)
         CameraDiagnostics.record(diagnosticSession, "video transform",
             "rotation=${value.rotationDegrees}, sensorRotation=${value.sensorRotationDegrees}, " +
                 "front=${value.frontFacing}, cameraTransform=${value.hasCameraTransform}, " +
@@ -248,6 +326,7 @@ internal class CameraRtspGlBridge(
                 "RTSP presentation timestamp failed"
             }
             check(EGL14.eglSwapBuffers(display, window)) { "RTSP graphics swap failed: ${EGL14.eglGetError()}" }
+            drawPreview()
             if (first) {
                 first = false
                 CameraDiagnostics.record(diagnosticSession, "first graphics frame", "size=$size")
@@ -288,6 +367,7 @@ internal class CameraRtspGlBridge(
         }
         if (display != EGL14.EGL_NO_DISPLAY) {
             EGL14.eglMakeCurrent(display, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT)
+            releasePreview()
             if (window != EGL14.EGL_NO_SURFACE) EGL14.eglDestroySurface(display, window)
             if (context != EGL14.EGL_NO_CONTEXT) EGL14.eglDestroyContext(display, context)
             EGL14.eglTerminate(display)

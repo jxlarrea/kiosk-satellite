@@ -2820,6 +2820,34 @@ class UiStringsEn extends UiStrings {
   String get intercomEndCall => 'End call';
 
   @override
+  String get intercomVoiceCall => 'Voice call';
+
+  @override
+  String get intercomVideoCall => 'Video call';
+
+  @override
+  String get intercomVoiceOnly => 'Voice only';
+
+  @override
+  String get intercomVideoAnswer => 'Video';
+
+  @override
+  String get intercomCameraButton => 'Camera';
+
+  @override
+  String get intercomCameraOff => 'Camera off';
+
+  @override
+  String get intercomYourCameraOff => 'Your camera is off';
+
+  @override
+  String get intercomVideoReconnecting => 'Video reconnecting…';
+
+  @override
+  String get intercomCameraOffNotice =>
+      'The camera is off. This kiosk can show video but not send it.';
+
+  @override
   String get intercomCallFailed => 'Could not call';
 
   @override
@@ -9151,6 +9179,31 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get intercomTalkSection => 'Talk';
+
+  @override
+  String get settingIntercomVideoTitle => 'Video calls';
+
+  @override
+  String get settingIntercomVideoDescription => 'Send and show video in calls.';
+
+  @override
+  String get settingIntercomVideoQualityTitle => 'Video quality';
+
+  @override
+  String get settingIntercomVideoQualityDescription =>
+      'Higher quality uses more CPU.';
+
+  @override
+  String get intercomOptionVideoLow => 'Low';
+
+  @override
+  String get intercomOptionVideoMedium => 'Medium';
+
+  @override
+  String get intercomOptionVideoHigh => 'High';
+
+  @override
+  String get intercomVideoSection => 'Video';
 
   @override
   String get settingKioskAllowDrawerTitle => 'Allow menu with quick actions';

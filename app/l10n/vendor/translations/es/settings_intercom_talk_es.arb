@@ -28,5 +28,13 @@
   "settingIntercomHangupKeyRingingDescription": "Lo que hace el botón cuando entra una llamada.",
   "intercomOptionHangupRingingAnswer": "Aceptar",
   "intercomOptionHangupRingingDecline": "Rechazar",
-  "intercomOptionHangupRingingIgnore": "Ignorar"
+  "intercomOptionHangupRingingIgnore": "Ignorar",
+  "settingIntercomVideoTitle": "Videollamadas",
+  "settingIntercomVideoDescription": "Envía y muestra video en las llamadas.",
+  "settingIntercomVideoQualityTitle": "Calidad de video",
+  "settingIntercomVideoQualityDescription": "Una calidad mayor usa más CPU.",
+  "intercomOptionVideoLow": "Baja",
+  "intercomOptionVideoMedium": "Media",
+  "intercomOptionVideoHigh": "Alta",
+  "intercomVideoSection": "Video"
 }

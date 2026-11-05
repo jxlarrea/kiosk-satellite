@@ -57,5 +57,14 @@
   "intercomInCallName": "正在与 {name} 通话",
   "intercomNameAnnouncing": "{name} 正在广播",
   "intercomHaMessage": "Home Assistant：{message}",
-  "intercomEndCall": "结束通话"
+  "intercomEndCall": "结束通话",
+  "intercomVoiceCall": "语音通话",
+  "intercomVideoCall": "视频通话",
+  "intercomVoiceOnly": "仅语音",
+  "intercomVideoAnswer": "视频",
+  "intercomCameraButton": "摄像头",
+  "intercomCameraOff": "摄像头已关闭",
+  "intercomYourCameraOff": "你的摄像头已关闭",
+  "intercomVideoReconnecting": "正在重新连接视频…",
+  "intercomCameraOffNotice": "摄像头已关闭。此 Kiosk 设备可以显示视频，但无法发送。"
 }

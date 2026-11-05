@@ -2754,6 +2754,33 @@ class UiStringsZh extends UiStrings {
   String get intercomEndCall => '结束通话';
 
   @override
+  String get intercomVoiceCall => '语音通话';
+
+  @override
+  String get intercomVideoCall => '视频通话';
+
+  @override
+  String get intercomVoiceOnly => '仅语音';
+
+  @override
+  String get intercomVideoAnswer => '视频';
+
+  @override
+  String get intercomCameraButton => '摄像头';
+
+  @override
+  String get intercomCameraOff => '摄像头已关闭';
+
+  @override
+  String get intercomYourCameraOff => '你的摄像头已关闭';
+
+  @override
+  String get intercomVideoReconnecting => '正在重新连接视频…';
+
+  @override
+  String get intercomCameraOffNotice => '摄像头已关闭。此 Kiosk 设备可以显示视频，但无法发送。';
+
+  @override
   String get intercomCallFailed => '无法呼叫';
 
   @override
@@ -8755,6 +8782,30 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get intercomTalkSection => '讲话';
+
+  @override
+  String get settingIntercomVideoTitle => '视频通话';
+
+  @override
+  String get settingIntercomVideoDescription => '在通话中发送并显示视频。';
+
+  @override
+  String get settingIntercomVideoQualityTitle => '视频质量';
+
+  @override
+  String get settingIntercomVideoQualityDescription => '质量越高，CPU 占用越多。';
+
+  @override
+  String get intercomOptionVideoLow => '低';
+
+  @override
+  String get intercomOptionVideoMedium => '中';
+
+  @override
+  String get intercomOptionVideoHigh => '高';
+
+  @override
+  String get intercomVideoSection => '视频';
 
   @override
   String get settingKioskAllowDrawerTitle => '允许带快捷操作的菜单';
@@ -17959,6 +18010,33 @@ class UiStringsZhCn extends UiStringsZh {
   String get intercomEndCall => '结束通话';
 
   @override
+  String get intercomVoiceCall => '语音通话';
+
+  @override
+  String get intercomVideoCall => '视频通话';
+
+  @override
+  String get intercomVoiceOnly => '仅语音';
+
+  @override
+  String get intercomVideoAnswer => '视频';
+
+  @override
+  String get intercomCameraButton => '摄像头';
+
+  @override
+  String get intercomCameraOff => '摄像头已关闭';
+
+  @override
+  String get intercomYourCameraOff => '你的摄像头已关闭';
+
+  @override
+  String get intercomVideoReconnecting => '正在重新连接视频…';
+
+  @override
+  String get intercomCameraOffNotice => '摄像头已关闭。此 Kiosk 设备可以显示视频，但无法发送。';
+
+  @override
   String get intercomCallFailed => '无法呼叫';
 
   @override
@@ -23960,6 +24038,30 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get intercomTalkSection => '讲话';
+
+  @override
+  String get settingIntercomVideoTitle => '视频通话';
+
+  @override
+  String get settingIntercomVideoDescription => '在通话中发送并显示视频。';
+
+  @override
+  String get settingIntercomVideoQualityTitle => '视频质量';
+
+  @override
+  String get settingIntercomVideoQualityDescription => '质量越高，CPU 占用越多。';
+
+  @override
+  String get intercomOptionVideoLow => '低';
+
+  @override
+  String get intercomOptionVideoMedium => '中';
+
+  @override
+  String get intercomOptionVideoHigh => '高';
+
+  @override
+  String get intercomVideoSection => '视频';
 
   @override
   String get settingKioskAllowDrawerTitle => '允许带快捷操作的菜单';

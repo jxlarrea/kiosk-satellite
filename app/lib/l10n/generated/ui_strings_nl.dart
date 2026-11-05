@@ -2836,6 +2836,34 @@ class UiStringsNl extends UiStrings {
   String get intercomEndCall => 'Gesprek beëindigen';
 
   @override
+  String get intercomVoiceCall => 'Spraakoproep';
+
+  @override
+  String get intercomVideoCall => 'Video-oproep';
+
+  @override
+  String get intercomVoiceOnly => 'Alleen spraak';
+
+  @override
+  String get intercomVideoAnswer => 'Video';
+
+  @override
+  String get intercomCameraButton => 'Camera';
+
+  @override
+  String get intercomCameraOff => 'Camera uit';
+
+  @override
+  String get intercomYourCameraOff => 'Je camera staat uit';
+
+  @override
+  String get intercomVideoReconnecting => 'Video maakt opnieuw verbinding…';
+
+  @override
+  String get intercomCameraOffNotice =>
+      'De camera staat uit. Deze kiosk kan video tonen, maar niet verzenden.';
+
+  @override
   String get intercomCallFailed => 'Kon niet bellen';
 
   @override
@@ -9254,6 +9282,32 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get intercomTalkSection => 'Praten';
+
+  @override
+  String get settingIntercomVideoTitle => 'Video-oproepen';
+
+  @override
+  String get settingIntercomVideoDescription =>
+      'Verzendt en toont video tijdens gesprekken.';
+
+  @override
+  String get settingIntercomVideoQualityTitle => 'Videokwaliteit';
+
+  @override
+  String get settingIntercomVideoQualityDescription =>
+      'Hogere kwaliteit gebruikt meer CPU.';
+
+  @override
+  String get intercomOptionVideoLow => 'Laag';
+
+  @override
+  String get intercomOptionVideoMedium => 'Gemiddeld';
+
+  @override
+  String get intercomOptionVideoHigh => 'Hoog';
+
+  @override
+  String get intercomVideoSection => 'Video';
 
   @override
   String get settingKioskAllowDrawerTitle => 'Menu toestaan met snelle acties';

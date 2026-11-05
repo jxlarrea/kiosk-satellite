@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_container.dart';
 import '../l10n/messages.dart';
@@ -116,6 +117,13 @@ class _IntercomSettingsPanelState extends State<IntercomSettingsPanel> {
           ),
         ],
         ...widget.cards,
+        if (_status['video'] == true && _status['cameraReady'] != true)
+          GroupNote(
+            intercomText(
+              context,
+              "The camera is off. This kiosk can show video but not send it.",
+            ),
+          ),
         if (enabled) ...[
           SectionHeading(intercomText(context, "Kiosks")),
           SearchLandingTarget(
@@ -848,9 +856,16 @@ class _RosterScreenState extends State<_RosterScreen> {
                               focusNode: announce == null && j == 0
                                   ? _first
                                   : null,
-                              onTap: () => _pick('intercomCall', {
+                              onCall: () => _pick('intercomCall', {
                                 'id': '${kiosks[j]['id']}',
                               }),
+                              onVideoCall:
+                                  kiosks[j]['video'] == true &&
+                                      c.intercom.cameraReady
+                                  ? () => _pick('intercomVideoCall', {
+                                      'id': '${kiosks[j]['id']}',
+                                    })
+                                  : null,
                             )
                           : const SizedBox.shrink();
                       if (rows.isNotEmpty) {
@@ -1030,28 +1045,138 @@ class _AnnouncePillState extends State<_AnnouncePill> {
   }
 }
 
-/// One kiosk on the roster, with a single call glyph and a readable
-/// status. The whole row is the touch target. Unavailable kiosks keep
-/// their names and reasons legible without looking actionable.
-class _KioskRow extends StatefulWidget {
+/// One kiosk on the roster: its name and status, and a button for each way
+/// to call it. Unavailable kiosks keep their names and reasons legible
+/// without looking actionable.
+class _KioskRow extends StatelessWidget {
   const _KioskRow({
     super.key,
     required this.kiosk,
     required this.compact,
     required this.focusNode,
-    required this.onTap,
+    required this.onCall,
+    required this.onVideoCall,
   });
 
   final Map<String, Object?> kiosk;
   final bool compact;
   final FocusNode? focusNode;
-  final VoidCallback onTap;
+  final VoidCallback onCall;
+
+  /// Null where a video call is not possible.
+  final VoidCallback? onVideoCall;
 
   @override
-  State<_KioskRow> createState() => _KioskRowState();
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final ready = kiosk['status'] == 'ready';
+    final okColor = theme.brightness == Brightness.dark
+        ? ksSage
+        : ksSageOnLight;
+    return Material(
+      color: ready
+          ? scheme.surfaceContainerLow
+          : scheme.surfaceContainerLow.withValues(alpha: 0.5),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Ks.radiusCard),
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: compact ? 88 : 96),
+        child: Padding(
+          padding: EdgeInsets.all(compact ? 16 : 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${kiosk['name']}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: compact ? 18 : 20,
+                        fontWeight: FontWeight.w500,
+                        height: 1.3,
+                        color: ready
+                            ? scheme.onSurface
+                            : scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: ready ? okColor : scheme.outline,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            intercomText(context, '${kiosk['statusText']}'),
+                            style: TextStyle(
+                              fontSize: compact ? 16 : 18,
+                              height: 1.3,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (ready) ...[
+                const SizedBox(width: 12),
+                _RosterButton(
+                  icon: Icons.call,
+                  label: intercomText(context, "Voice call"),
+                  focusNode: focusNode,
+                  onTap: onCall,
+                ),
+                if (onVideoCall != null) ...[
+                  const SizedBox(width: 8),
+                  _RosterButton(
+                    icon: Icons.videocam,
+                    label: intercomText(context, "Video call"),
+                    onTap: onVideoCall!,
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _KioskRowState extends State<_KioskRow> {
+/// A 56 px square button on a roster row, outlined while a remote drives.
+class _RosterButton extends StatefulWidget {
+  const _RosterButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.focusNode,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final FocusNode? focusNode;
+
+  @override
+  State<_RosterButton> createState() => _RosterButtonState();
+}
+
+class _RosterButtonState extends State<_RosterButton> {
   bool _focused = false;
 
   void _onKeys() {
@@ -1072,121 +1197,33 @@ class _KioskRowState extends State<_KioskRow> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final ready = widget.kiosk['status'] == 'ready';
+    final scheme = Theme.of(context).colorScheme;
     final highlight = _focused && _rosterKeysDriving.value;
-    final okColor = theme.brightness == Brightness.dark
-        ? ksSage
-        : ksSageOnLight;
-    final compact = widget.compact;
-    final radius = BorderRadius.circular(Ks.radiusCard);
+    final radius = BorderRadius.circular(Ks.radiusRow);
     return Semantics(
       button: true,
-      enabled: ready,
+      label: widget.label,
       child: Material(
-        color: ready
-            ? scheme.surfaceContainerLow
-            : scheme.surfaceContainerLow.withValues(alpha: 0.5),
+        color: scheme.primaryContainer,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: BorderSide(
-            color: highlight ? scheme.primary : scheme.outlineVariant,
-            width: highlight ? 2 : 1,
-          ),
+          side: highlight
+              ? BorderSide(color: scheme.primary, width: 2)
+              : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: ready ? widget.onTap : null,
+          onTap: widget.onTap,
           focusNode: widget.focusNode,
-          canRequestFocus: ready,
           onFocusChange: (f) => setState(() => _focused = f),
           borderRadius: radius,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: compact ? 88 : 96),
-            child: Padding(
-              padding: EdgeInsets.all(compact ? 16 : 20),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: ready
-                          ? scheme.primaryContainer
-                          : scheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(Ks.radiusRow),
-                    ),
-                    child: Icon(
-                      Icons.call_outlined,
-                      size: 24,
-                      color: ready
-                          ? scheme.onPrimaryContainer
-                          : scheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${widget.kiosk['name']}',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: compact ? 18 : 20,
-                            fontWeight: FontWeight.w500,
-                            height: 1.3,
-                            color: ready
-                                ? scheme.onSurface
-                                : scheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: ready ? okColor : scheme.outline,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                intercomText(
-                                  context,
-                                  '${widget.kiosk['statusText']}',
-                                ),
-                                style: TextStyle(
-                                  fontSize: compact ? 16 : 18,
-                                  height: 1.3,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 20,
-                    child: ready
-                        ? Icon(
-                            Icons.chevron_right,
-                            size: 20,
-                            color: scheme.onSurfaceVariant,
-                          )
-                        : null,
-                  ),
-                ],
-              ),
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: Icon(
+              widget.icon,
+              size: 28,
+              color: scheme.onPrimaryContainer,
             ),
           ),
         ),
@@ -1220,6 +1257,12 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
   double _far = 0;
   bool _held = false;
 
+  /// Whether the details over the video show. They come up for
+  /// [_detailsFor] on a tap or a key press and as the call connects.
+  bool _details = true;
+  Timer? _detailsTimer;
+  static const _detailsFor = Duration(seconds: 3);
+
   AppContainer get c => widget.container;
   String get _state => '${_status['state']}';
   Map<String, Object?> get _call =>
@@ -1227,14 +1270,33 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
   Map<String, Object?> get _peer =>
       (_call['peer'] as Map?)?.cast<String, Object?>() ?? const {};
 
+  Map<String, Object?> get _video =>
+      (_call['video'] as Map?)?.cast<String, Object?>() ?? const {};
+
   static const _shown = IntercomManager.callScreenStates;
+
+  void _showDetails() {
+    _detailsTimer?.cancel();
+    _detailsTimer = Timer(_detailsFor, () {
+      if (mounted) setState(() => _details = false);
+    });
+    if (!_details && mounted) setState(() => _details = true);
+  }
+
+  bool _onKey(KeyEvent event) {
+    if (event is KeyDownEvent && _shown.contains(_state)) _showDetails();
+    return false;
+  }
 
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_onKey);
     _stateSub = c.bus.on<IntercomStateChanged>().listen(_onState);
     _levelSub = c.bus.on<IntercomLevel>().listen((e) {
-      if (!mounted) return;
+      // Nothing over a picture shows the levels, and each one would
+      // rebuild the screen a dozen times a second.
+      if (!mounted || _video['farShown'] == true) return;
       setState(() {
         _near = e.near;
         _far = e.far;
@@ -1256,10 +1318,12 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKey);
     _stateSub?.cancel();
     _levelSub?.cancel();
     _tick?.cancel();
     _levelDecay?.cancel();
+    _detailsTimer?.cancel();
     super.dispose();
   }
 
@@ -1267,8 +1331,13 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
     if (!mounted) return;
     final was = _state;
     final wasPeer = _peer;
+    final wasShown = _video['farShown'] == true;
     setState(() => _status = e.status);
     if (_state != 'in_call' && _state != 'broadcasting') _held = false;
+    if (_state == 'in_call' &&
+        (was != 'in_call' || (!wasShown && _video['farShown'] == true))) {
+      _showDetails();
+    }
     if (_state == 'missed' && was == 'ringing') _missedToast(wasPeer);
     _syncTick();
   }
@@ -1323,6 +1392,7 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
   void _talk(bool on) {
     if (_held == on) return;
     setState(() => _held = on);
+    if (!on) _showDetails();
     unawaited(c.commands.execute('intercomTalk', {'on': on}));
   }
 
@@ -1379,7 +1449,11 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
             theme.brightness,
           ),
         ),
-        child: SafeArea(child: LayoutBuilder(builder: _screen)),
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => _showDetails(),
+          child: SafeArea(child: LayoutBuilder(builder: _screen)),
+        ),
       ),
     );
   }
@@ -1404,6 +1478,20 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
     final width = constraints.maxWidth;
     final height = constraints.maxHeight;
     final compact = height < 480 || width < 600;
+    final video = _video;
+    final selfTexture = video['selfTexture'] as int?;
+    final farTexture = video['farTexture'] as int?;
+    final farLive = farTexture != null && video['farShown'] == true;
+    // The picture takes the whole screen, with the controls over it: the
+    // other kiosk's, or this one's while the call is being placed.
+    final overVideo =
+        (state == 'ringing' || state == 'in_call') && farLive ||
+        state == 'calling' && selfTexture != null;
+    final canCamera =
+        kind == 'call' &&
+        state == 'in_call' &&
+        video['peer'] == true &&
+        _status['cameraReady'] == true;
     // A short landscape (a phone on its side) has no room for a disc
     // under the pill: End sits beside it there, under it everywhere else.
     final short = height < 480;
@@ -1426,6 +1514,14 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
       sub = intercomText(context, "is calling");
     } else if (state == 'listening') {
       sub = intercomText(context, "is announcing");
+    }
+
+    // This kiosk is on camera and the other is not: say so where the
+    // picture would be.
+    if (state == 'in_call' &&
+        video['camera'] == true &&
+        video['farCamera'] != true) {
+      sub = intercomText(context, "Camera off");
     }
 
     // The state line: the timer, or who hears you while the talk button
@@ -1489,7 +1585,9 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
     // The controls row and, for push to talk, the disc under the pill.
     final pillWidth = math.min(
       compact ? 360.0 : 480.0,
-      short ? width - 48 - 88 - 28 : width - 48,
+      short || (overVideo && width >= 640)
+          ? width - 48 - (canCamera ? 2 : 1) * ((compact ? 88 : 128) + 28)
+          : width - 48,
     );
     final controls = <Widget>[];
     final below = <Widget>[];
@@ -1499,10 +1597,26 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
           label: label,
           kind: kind,
           compact: compact,
+          overVideo: overVideo,
           onTap: () => _run(command),
         );
+    Widget cameraDisc() {
+      final on = video['camera'] == true;
+      return _Disc(
+        icon: on ? Icons.videocam : Icons.videocam_off,
+        label: on
+            ? intercomText(context, "Camera")
+            : intercomText(context, "Camera off"),
+        kind: on ? _DiscKind.plain : _DiscKind.dark,
+        compact: compact,
+        overVideo: overVideo,
+        onTap: () => _run('intercomCamera', {'on': !on}),
+      );
+    }
+
     switch (state) {
       case 'calling':
+        if (selfTexture != null) controls.add(cameraDisc());
         controls.add(
           disc(
             Icons.call_end,
@@ -1512,20 +1626,41 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
           ),
         );
       case 'ringing':
-        controls.addAll([
+        controls.add(
           disc(
             Icons.call_end,
             intercomText(context, "Decline"),
             _DiscKind.end,
             'intercomDecline',
           ),
-          disc(
-            Icons.call,
-            intercomText(context, "Answer"),
-            _DiscKind.primary,
-            'intercomAnswer',
-          ),
-        ]);
+        );
+        if (video['farCamera'] == true && _status['cameraReady'] == true) {
+          controls.addAll([
+            disc(
+              Icons.call,
+              intercomText(context, "Voice only"),
+              _DiscKind.plain,
+              'intercomAnswer',
+            ),
+            _Disc(
+              icon: Icons.videocam,
+              label: intercomText(context, "Video"),
+              kind: _DiscKind.primary,
+              compact: compact,
+              overVideo: overVideo,
+              onTap: () => _run('intercomAnswer', {'video': true}),
+            ),
+          ]);
+        } else {
+          controls.add(
+            disc(
+              Icons.call,
+              intercomText(context, "Answer"),
+              _DiscKind.primary,
+              'intercomAnswer',
+            ),
+          );
+        }
       case 'in_call' || 'broadcasting':
         final end = state == 'broadcasting'
             ? disc(
@@ -1558,12 +1693,16 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
             onDown: () => _talk(true),
             onUp: () => _talk(false),
           );
-          if (short) {
+          // Over video the pill shares a row with the discs wherever they
+          // fit, so the controls cover as little of the picture as they can.
+          final oneRow = short || (overVideo && width >= 640);
+          if (oneRow) {
             controls.add(
               Row(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  if (canCamera) ...[cameraDisc(), const SizedBox(width: 28)],
                   // The pill centers on the disc itself, not on the disc
                   // plus its label, so the two read as one row.
                   Padding(
@@ -1577,6 +1716,7 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
             );
           } else {
             controls.add(pill);
+            if (canCamera) below.add(cameraDisc());
             below.add(end);
           }
         } else {
@@ -1589,8 +1729,10 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
                   : intercomText(context, "Mute"),
               kind: muted ? _DiscKind.dark : _DiscKind.plain,
               compact: compact,
+              overVideo: overVideo,
               onTap: () => _run('intercomMute', {'on': !muted}),
             ),
+            if (canCamera) cameraDisc(),
             end,
           ]);
         }
@@ -1619,7 +1761,12 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
               label: intercomText(context, "Call again"),
               kind: _DiscKind.primary,
               compact: compact,
-              onTap: () => _run('intercomCall', {'id': '${_peer['id']}'}),
+              onTap: () => _run(
+                video['hadCamera'] == true && _status['cameraReady'] == true
+                    ? 'intercomVideoCall'
+                    : 'intercomCall',
+                {'id': '${_peer['id']}'},
+              ),
             ),
           );
         }
@@ -1741,6 +1888,68 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
       ],
     );
 
+    final selfTile = selfTexture != null || (overVideo && canCamera)
+        ? Positioned(
+            top: compact ? 12 : 24,
+            right: compact ? 12 : 28,
+            child: _SelfTile(
+              texture: selfTexture,
+              videoWidth: (video['selfWidth'] as int?) ?? 0,
+              videoHeight: (video['selfHeight'] as int?) ?? 0,
+              portrait: height > width,
+              compact: compact,
+              roomy: width >= 1000,
+            ),
+          )
+        : null;
+    if (overVideo) {
+      final caption = state == 'calling' || state == 'ringing'
+          ? true
+          : _held || _details;
+      return _videoStage(
+        far: state != 'calling',
+        texture: state == 'calling' ? selfTexture! : farTexture!,
+        compact: compact,
+        size: Size(width, height),
+        eyebrow: KsEyebrow(
+          label: intercomText(context, "Intercom"),
+          // A phone has no room for it beside the self view.
+          trail: width < 600
+              ? null
+              : talkMode == 'handsfree'
+              ? intercomText(context, "Hands free")
+              : intercomText(context, "Push to talk"),
+          compact: compact,
+          color: Colors.white,
+        ),
+        name: name,
+        sub: sub,
+        stateLine: stateLine,
+        caption: caption,
+        selfTile: state == 'calling' ? null : selfTile,
+        controls: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Wrap(
+              spacing: compact ? 28 : 56,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.start,
+              children: controls,
+            ),
+            if (below.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: compact ? 28 : 56,
+                alignment: WrapAlignment.center,
+                children: below,
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
     return Stack(
       children: [
         Positioned.fill(
@@ -1758,7 +1967,20 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Flexible(child: SingleChildScrollView(child: details)),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        // A long name wraps instead of running under the
+                        // self view.
+                        padding: EdgeInsets.symmetric(
+                          horizontal: selfTexture != null && width > height
+                              ? (compact ? 180 : 220)
+                              : 0,
+                        ),
+                        child: details,
+                      ),
+                    ),
+                  ),
                   SizedBox(height: gap),
                   Wrap(
                     spacing: compact ? 28 : 56,
@@ -1794,7 +2016,275 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
             compact: compact,
           ),
         ),
+        ?selfTile,
       ],
+    );
+  }
+
+  /// A call with a picture: the video fills the screen and everything else
+  /// floats over it. The gradients are fixed, so nothing here blurs or
+  /// repaints the frame.
+  Widget _videoStage({
+    required bool far,
+    required int texture,
+    required bool compact,
+    required Size size,
+    required Widget eyebrow,
+    required String name,
+    required String? sub,
+    required String stateLine,
+    required bool caption,
+    required Widget? selfTile,
+    required Widget controls,
+  }) {
+    final video = _video;
+    final w = (video[far ? 'farWidth' : 'selfWidth'] as int?) ?? 0;
+    final h = (video[far ? 'farHeight' : 'selfHeight'] as int?) ?? 0;
+    // A portrait picture on a landscape screen would lose most of itself
+    // to a crop.
+    final fit = far && h > w && size.width > size.height
+        ? BoxFit.contain
+        : BoxFit.cover;
+    final stalled = far && video['farStalled'] == true;
+    const shade = Color(0xA8000000);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(
+          color: Theme.of(context).colorScheme.surface,
+          child: _VideoFrame(texture: texture, width: w, height: h, fit: fit),
+        ),
+        if (stalled) const ColoredBox(color: Color(0x8C000000)),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: compact ? 170 : 300,
+          child: const IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [shade, Color(0x00000000)],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          child: IgnorePointer(
+            child: AnimatedOpacity(
+              opacity: caption ? 1 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [shade, Color(0x00000000)],
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    compact ? 16 : 28,
+                    compact ? 12 : 20,
+                    compact ? 120 : 300,
+                    compact ? 40 : 72,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      eyebrow,
+                      SizedBox(height: compact ? 10 : 16),
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: compact ? 30 : 40,
+                          fontWeight: FontWeight.w600,
+                          height: 1.1,
+                          letterSpacing: -0.5,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (sub != null && sub.isNotEmpty)
+                        Text(
+                          sub,
+                          style: TextStyle(
+                            fontSize: compact ? 16 : 22,
+                            height: 1.3,
+                            color: Colors.white,
+                          ),
+                        ),
+                      if (stateLine.isNotEmpty)
+                        Text(
+                          stateLine,
+                          style: TextStyle(
+                            fontSize: compact ? 17 : 24,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                            color: Colors.white,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (stalled)
+          Align(
+            alignment: const Alignment(0, -0.2),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xDB202124),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.videocam_off,
+                    size: 24,
+                    color: Color(0xFFE8EAED),
+                  ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      intercomText(context, "Video reconnecting…"),
+                      style: TextStyle(
+                        fontSize: compact ? 16 : 20,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ?selfTile,
+        Positioned(
+          left: 24,
+          right: 24,
+          bottom: compact ? 14 : 32,
+          child: Center(child: controls),
+        ),
+      ],
+    );
+  }
+}
+
+/// A native video texture, scaled to fill its box.
+class _VideoFrame extends StatelessWidget {
+  const _VideoFrame({
+    required this.texture,
+    required this.width,
+    required this.height,
+    required this.fit,
+  });
+
+  final int texture;
+  final int width;
+  final int height;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: FittedBox(
+        fit: fit,
+        child: SizedBox(
+          width: width > 0 ? width.toDouble() : 640,
+          height: height > 0 ? height.toDouble() : 480,
+          child: Texture(textureId: texture, filterQuality: FilterQuality.low),
+        ),
+      ),
+    );
+  }
+}
+
+/// This kiosk's own picture in the corner of a call, or a tile saying the
+/// camera is off. While the camera sends this stays on screen.
+class _SelfTile extends StatelessWidget {
+  const _SelfTile({
+    required this.texture,
+    required this.videoWidth,
+    required this.videoHeight,
+    required this.portrait,
+    required this.compact,
+    required this.roomy,
+  });
+
+  final int? texture;
+
+  /// The picture's own size: a phone held upright sends a tall one.
+  final int videoWidth;
+  final int videoHeight;
+  final bool portrait;
+  final bool compact;
+  final bool roomy;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = portrait
+        ? const Size(96, 128)
+        : compact
+        ? const Size(160, 100)
+        : roomy
+        ? const Size(256, 160)
+        : const Size(192, 120);
+    final id = texture;
+    return IgnorePointer(
+      child: Container(
+        width: size.width,
+        height: size.height,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: const Color(0xFF303136),
+          borderRadius: BorderRadius.circular(Ks.radiusRow),
+          border: Border.all(color: const Color(0x52FFFFFF)),
+        ),
+        child: id != null
+            ? _VideoFrame(
+                texture: id,
+                width: videoWidth,
+                height: videoHeight,
+                fit: BoxFit.cover,
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.videocam_off,
+                    size: compact ? 24 : 32,
+                    color: const Color(0xFFB6BABF),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      intercomText(context, "Your camera is off"),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: compact ? 13 : 16,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFFE8EAED),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }
@@ -1874,6 +2364,7 @@ class _Disc extends StatelessWidget {
     required this.kind,
     required this.compact,
     required this.onTap,
+    this.overVideo = false,
   });
 
   final IconData icon;
@@ -1882,10 +2373,22 @@ class _Disc extends StatelessWidget {
   final bool compact;
   final VoidCallback onTap;
 
+  /// Over a picture the discs and their labels read on any frame, in
+  /// either theme.
+  final bool overVideo;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final (bg, fg) = switch (kind) {
+      _DiscKind.plain when overVideo => (
+        const Color(0xC7202124),
+        const Color(0xFFE8EAED),
+      ),
+      _DiscKind.dark when overVideo => (
+        const Color(0xFFE8EAED),
+        const Color(0xFF202124),
+      ),
       _DiscKind.plain => (scheme.surfaceContainerHighest, scheme.onSurface),
       _DiscKind.primary => (scheme.primary, scheme.onPrimary),
       _DiscKind.end => (scheme.error, scheme.onError),
@@ -1917,7 +2420,7 @@ class _Disc extends StatelessWidget {
             style: TextStyle(
               fontSize: compact ? 13 : 16,
               fontWeight: FontWeight.w500,
-              color: scheme.onSurfaceVariant,
+              color: overVideo ? Colors.white : scheme.onSurfaceVariant,
             ),
           ),
         ],

@@ -251,7 +251,12 @@ void main() {
 
   test('answering and declining are refused over the wire', () async {
     final token = await login();
-    for (final name in ['intercomAnswer', 'intercomDecline']) {
+    for (final name in [
+      'intercomAnswer',
+      'intercomDecline',
+      'intercomVideoCall',
+      'intercomCamera',
+    ]) {
       final (s, _) = await call('POST', '/api/commands/$name', token: token);
       expect(s, 403, reason: name);
     }

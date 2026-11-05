@@ -57,5 +57,14 @@
   "intercomNameAnnouncing": "{name} оголошує",
   "intercomHaMessage": "Home Assistant: {message}",
   "intercomEndCall": "Завершити виклик",
-  "intercomMaxDurationReached": "Досягнуто максимальної тривалості виклику"
+  "intercomMaxDurationReached": "Досягнуто максимальної тривалості виклику",
+  "intercomVoiceCall": "Голосовий виклик",
+  "intercomVideoCall": "Відеовиклик",
+  "intercomVoiceOnly": "Лише голос",
+  "intercomVideoAnswer": "Відео",
+  "intercomCameraButton": "Камера",
+  "intercomCameraOff": "Камеру вимкнено",
+  "intercomYourCameraOff": "Вашу камеру вимкнено",
+  "intercomVideoReconnecting": "Відновлення відео…",
+  "intercomCameraOffNotice": "Камеру вимкнено. Цей кіоск може показувати відео, але не надсилати його."
 }

@@ -57,5 +57,14 @@
   "intercomNameAnnouncing": "{name} fait une annonce",
   "intercomHaMessage": "Home Assistant : {message}",
   "intercomEndCall": "Terminer l'appel",
-  "intercomMaxDurationReached": "Durée maximale d'appel atteinte"
+  "intercomMaxDurationReached": "Durée maximale d'appel atteinte",
+  "intercomVoiceCall": "Appel vocal",
+  "intercomVideoCall": "Appel vidéo",
+  "intercomVoiceOnly": "Voix seule",
+  "intercomVideoAnswer": "Vidéo",
+  "intercomCameraButton": "Caméra",
+  "intercomCameraOff": "Caméra désactivée",
+  "intercomYourCameraOff": "Votre caméra est désactivée",
+  "intercomVideoReconnecting": "Reconnexion de la vidéo…",
+  "intercomCameraOffNotice": "La caméra est désactivée. Ce kiosque peut afficher la vidéo, mais pas l'envoyer."
 }

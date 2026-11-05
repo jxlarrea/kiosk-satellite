@@ -28,5 +28,13 @@
   "intercomOptionHangupRingingAnswer": "接听",
   "intercomOptionHangupRingingDecline": "拒绝",
   "intercomOptionHangupRingingIgnore": "忽略",
-  "intercomTalkSection": "讲话"
+  "intercomTalkSection": "讲话",
+  "settingIntercomVideoTitle": "视频通话",
+  "settingIntercomVideoDescription": "在通话中发送并显示视频。",
+  "settingIntercomVideoQualityTitle": "视频质量",
+  "settingIntercomVideoQualityDescription": "质量越高，CPU 占用越多。",
+  "intercomOptionVideoLow": "低",
+  "intercomOptionVideoMedium": "中",
+  "intercomOptionVideoHigh": "高",
+  "intercomVideoSection": "视频"
 }

@@ -28,5 +28,13 @@
   "settingIntercomHangupKeyRingingDescription": "Was die Taste tut, wenn hier ein Anruf klingelt.",
   "intercomOptionHangupRingingAnswer": "Annehmen",
   "intercomOptionHangupRingingDecline": "Ablehnen",
-  "intercomOptionHangupRingingIgnore": "Ignorieren"
+  "intercomOptionHangupRingingIgnore": "Ignorieren",
+  "settingIntercomVideoTitle": "Videoanrufe",
+  "settingIntercomVideoDescription": "Sendet und zeigt Video in Anrufen.",
+  "settingIntercomVideoQualityTitle": "Videoqualität",
+  "settingIntercomVideoQualityDescription": "Höhere Qualität braucht mehr CPU.",
+  "intercomOptionVideoLow": "Niedrig",
+  "intercomOptionVideoMedium": "Mittel",
+  "intercomOptionVideoHigh": "Hoch",
+  "intercomVideoSection": "Video"
 }

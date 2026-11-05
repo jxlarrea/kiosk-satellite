@@ -28,5 +28,13 @@
   "intercomOptionHangupRingingAnswer": "Принять",
   "intercomOptionHangupRingingDecline": "Отклонить",
   "intercomOptionHangupRingingIgnore": "Игнорировать",
-  "intercomTalkSection": "Разговор"
+  "intercomTalkSection": "Разговор",
+  "settingIntercomVideoTitle": "Видеозвонки",
+  "settingIntercomVideoDescription": "Отправляет и показывает видео во время звонков.",
+  "settingIntercomVideoQualityTitle": "Качество видео",
+  "settingIntercomVideoQualityDescription": "Более высокое качество сильнее нагружает процессор.",
+  "intercomOptionVideoLow": "Низкое",
+  "intercomOptionVideoMedium": "Среднее",
+  "intercomOptionVideoHigh": "Высокое",
+  "intercomVideoSection": "Видео"
 }

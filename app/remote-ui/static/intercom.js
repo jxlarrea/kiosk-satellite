@@ -210,6 +210,7 @@ function liveCard() {
   const card = document.createElement('div');
   card.className = 'card intercom-built';
   const tags = [];
+  if (call.video?.camera || call.video?.farCamera) tags.push(tag(intercomText("Video")));
   let clock = null;
   if (call.since) {
     clock = tag(mmss(call.since), 'device');
@@ -281,6 +282,11 @@ export async function renderIntercomPage({ fetch = true } = {}) {
       card.appendChild(row);
     }
     card.appendChild(hintRow(intercomText("Discovered kiosks and saved fleet members. A kiosk is ready when it is reachable with intercom on, the same key and matching encryption settings.")));
+    if (status.video && !status.cameraReady) {
+      const note = hintRow(intercomText("The camera is off. This kiosk can show video but not send it."));
+      note.classList.add('intercom-built');
+      tab.appendChild(note);
+    }
     tab.append(h, card);
   }
 }

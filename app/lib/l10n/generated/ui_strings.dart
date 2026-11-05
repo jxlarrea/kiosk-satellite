@@ -4998,6 +4998,60 @@ abstract class UiStrings {
   /// Label or guidance in this section.
   ///
   /// In en, this message translates to:
+  /// **'Voice call'**
+  String get intercomVoiceCall;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Video call'**
+  String get intercomVideoCall;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice only'**
+  String get intercomVoiceOnly;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get intercomVideoAnswer;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get intercomCameraButton;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera off'**
+  String get intercomCameraOff;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Your camera is off'**
+  String get intercomYourCameraOff;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Video reconnecting…'**
+  String get intercomVideoReconnecting;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera is off. This kiosk can show video but not send it.'**
+  String get intercomCameraOffNotice;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
   /// **'Could not call'**
   String get intercomCallFailed;
 
@@ -15994,6 +16048,54 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Talk'**
   String get intercomTalkSection;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Video calls'**
+  String get settingIntercomVideoTitle;
+
+  /// Setting description.
+  ///
+  /// In en, this message translates to:
+  /// **'Send and show video in calls.'**
+  String get settingIntercomVideoDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Video quality'**
+  String get settingIntercomVideoQualityTitle;
+
+  /// Setting description.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher quality uses more CPU.'**
+  String get settingIntercomVideoQualityDescription;
+
+  /// Visible option. Its stored value stays unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get intercomOptionVideoLow;
+
+  /// Visible option. Its stored value stays unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get intercomOptionVideoMedium;
+
+  /// Visible option. Its stored value stays unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get intercomOptionVideoHigh;
+
+  /// Section heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get intercomVideoSection;
 
   /// Setting label.
   ///

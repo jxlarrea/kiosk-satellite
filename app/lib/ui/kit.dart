@@ -1202,11 +1202,15 @@ class KsEyebrow extends StatelessWidget {
     this.trail,
     this.compact = false,
     this.scale = 1,
+    this.color,
   });
 
   final String label;
   final String? trail;
   final bool compact;
+
+  /// The text color where the theme's would not read, over video.
+  final Color? color;
 
   /// Grows the mark and the caps together, for a screen with a text scale
   /// of its own.
@@ -1219,7 +1223,7 @@ class KsEyebrow extends StatelessWidget {
       fontSize: 12.5 * scale,
       fontWeight: FontWeight.w600,
       letterSpacing: .8 * scale,
-      color: scheme.onSurfaceVariant,
+      color: color ?? scheme.onSurfaceVariant,
     );
     final size = (compact ? 24.0 : 28.0) * scale;
     return Row(

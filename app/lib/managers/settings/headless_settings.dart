@@ -62,6 +62,8 @@ class HeadlessSettings {
     defs.intercomTalkMode.key,
     defs.intercomHangupKey.key,
     defs.intercomHangupKeyRinging.key,
+    defs.intercomVideo.key,
+    defs.intercomVideoQuality.key,
     // Alarms: no panel to light.
     defs.alarmsSunriseMinutes.key,
     // Gestures: the hand hold needs the camera.

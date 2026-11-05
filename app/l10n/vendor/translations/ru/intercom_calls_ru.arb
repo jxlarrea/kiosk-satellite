@@ -57,5 +57,14 @@
   "intercomInCallName": "Разговор: {name}",
   "intercomNameAnnouncing": "{name} объявляет",
   "intercomHaMessage": "Home Assistant: {message}",
-  "intercomEndCall": "Завершить звонок"
+  "intercomEndCall": "Завершить звонок",
+  "intercomVoiceCall": "Голосовой звонок",
+  "intercomVideoCall": "Видеозвонок",
+  "intercomVoiceOnly": "Только голос",
+  "intercomVideoAnswer": "Видео",
+  "intercomCameraButton": "Камера",
+  "intercomCameraOff": "Камера выключена",
+  "intercomYourCameraOff": "Ваша камера выключена",
+  "intercomVideoReconnecting": "Восстановление видео…",
+  "intercomCameraOffNotice": "Камера выключена. Этот киоск может показывать видео, но не отправлять его."
 }

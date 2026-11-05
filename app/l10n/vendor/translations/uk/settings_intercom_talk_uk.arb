@@ -28,5 +28,13 @@
   "settingIntercomHangupKeyRingingDescription": "Що робить кнопка, коли сюди надходить виклик.",
   "intercomOptionHangupRingingAnswer": "Прийняти",
   "intercomOptionHangupRingingDecline": "Відхилити",
-  "intercomOptionHangupRingingIgnore": "Ігнорувати"
+  "intercomOptionHangupRingingIgnore": "Ігнорувати",
+  "settingIntercomVideoTitle": "Відеовиклики",
+  "settingIntercomVideoDescription": "Надсилає та показує відео під час викликів.",
+  "settingIntercomVideoQualityTitle": "Якість відео",
+  "settingIntercomVideoQualityDescription": "Вища якість використовує більше ресурсів процесора.",
+  "intercomOptionVideoLow": "Низька",
+  "intercomOptionVideoMedium": "Середня",
+  "intercomOptionVideoHigh": "Висока",
+  "intercomVideoSection": "Відео"
 }

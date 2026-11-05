@@ -2841,6 +2841,34 @@ class UiStringsFr extends UiStrings {
   String get intercomEndCall => 'Terminer l\'appel';
 
   @override
+  String get intercomVoiceCall => 'Appel vocal';
+
+  @override
+  String get intercomVideoCall => 'Appel vidéo';
+
+  @override
+  String get intercomVoiceOnly => 'Voix seule';
+
+  @override
+  String get intercomVideoAnswer => 'Vidéo';
+
+  @override
+  String get intercomCameraButton => 'Caméra';
+
+  @override
+  String get intercomCameraOff => 'Caméra désactivée';
+
+  @override
+  String get intercomYourCameraOff => 'Votre caméra est désactivée';
+
+  @override
+  String get intercomVideoReconnecting => 'Reconnexion de la vidéo…';
+
+  @override
+  String get intercomCameraOffNotice =>
+      'La caméra est désactivée. Ce kiosque peut afficher la vidéo, mais pas l\'envoyer.';
+
+  @override
   String get intercomCallFailed => 'Impossible d\'appeler';
 
   @override
@@ -9297,6 +9325,32 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get intercomTalkSection => 'Conversation';
+
+  @override
+  String get settingIntercomVideoTitle => 'Appels vidéo';
+
+  @override
+  String get settingIntercomVideoDescription =>
+      'Envoie et affiche la vidéo pendant les appels.';
+
+  @override
+  String get settingIntercomVideoQualityTitle => 'Qualité vidéo';
+
+  @override
+  String get settingIntercomVideoQualityDescription =>
+      'Une qualité supérieure utilise plus de CPU.';
+
+  @override
+  String get intercomOptionVideoLow => 'Basse';
+
+  @override
+  String get intercomOptionVideoMedium => 'Moyenne';
+
+  @override
+  String get intercomOptionVideoHigh => 'Haute';
+
+  @override
+  String get intercomVideoSection => 'Vidéo';
 
   @override
   String get settingKioskAllowDrawerTitle =>

@@ -169,5 +169,14 @@ const intercomTextMessageIds = <String, String>{
   "Pick an MP3, OGG, WAV, FLAC, M4A or AAC file.": "intercomSoundFormats",
   "Known kiosks and whether each can take a call.": "searchIntercomKiosks",
   "Encryption mismatch": "intercomEncryptionMismatch",
-  "Encryption mismatch. Enable Encrypt communications on all kiosks in the call.": "intercomEncryptionMismatchHelp"
+  "Encryption mismatch. Enable Encrypt communications on all kiosks in the call.": "intercomEncryptionMismatchHelp",
+  "Voice call": "intercomVoiceCall",
+  "Video call": "intercomVideoCall",
+  "Voice only": "intercomVoiceOnly",
+  "Video": "intercomVideoAnswer",
+  "Camera": "intercomCameraButton",
+  "Camera off": "intercomCameraOff",
+  "Your camera is off": "intercomYourCameraOff",
+  "Video reconnecting…": "intercomVideoReconnecting",
+  "The camera is off. This kiosk can show video but not send it.": "intercomCameraOffNotice"
 };

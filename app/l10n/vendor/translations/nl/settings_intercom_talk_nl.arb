@@ -28,5 +28,13 @@
   "settingIntercomHangupKeyRingingDescription": "Wat de knop doet als hier een gesprek binnenkomt.",
   "intercomOptionHangupRingingAnswer": "Aannemen",
   "intercomOptionHangupRingingDecline": "Afwijzen",
-  "intercomOptionHangupRingingIgnore": "Negeren"
+  "intercomOptionHangupRingingIgnore": "Negeren",
+  "settingIntercomVideoTitle": "Video-oproepen",
+  "settingIntercomVideoDescription": "Verzendt en toont video tijdens gesprekken.",
+  "settingIntercomVideoQualityTitle": "Videokwaliteit",
+  "settingIntercomVideoQualityDescription": "Hogere kwaliteit gebruikt meer CPU.",
+  "intercomOptionVideoLow": "Laag",
+  "intercomOptionVideoMedium": "Gemiddeld",
+  "intercomOptionVideoHigh": "Hoog",
+  "intercomVideoSection": "Video"
 }

@@ -74,6 +74,21 @@ class IntercomRoutes {
       })(request);
     }
 
+    if (path.startsWith('api/intercom/video/')) {
+      final callId = path.substring('api/intercom/video/'.length);
+      final verified = await commands.execute('intercomVerifyVideo', {
+        'call': callId,
+        'token': request.url.queryParameters['token'],
+      });
+      if (!verified.ok) return _json(403, {'error': 'refused'});
+      return webSocketHandler((WebSocketChannel channel, String? protocol) {
+        commands.execute('intercomAttachVideo', {
+          'call': callId,
+          'channel': channel,
+        });
+      })(request);
+    }
+
     return Response.notFound('not found');
   }
 

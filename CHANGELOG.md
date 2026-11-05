@@ -4,6 +4,12 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Video calls on the intercom.** Kiosks can see each other during a call. Press the new video button on the roster to call with your camera on. **Video calls** under **Settings, Intercom** is on by default, and sending also needs **Enable camera**. The other kiosk sees you while it rings and answers with **Voice only** or **Video**. A **Camera** button turns the camera on or off during any call. The other kiosk's picture fills the screen with the controls over it, and the kiosk's name and the call's length hide after 3 seconds until you tap the screen or press a button. Answer automatically, hardware buttons, Home Assistant and the remote admin never turn the camera on. Turn a kiosk during a call and its picture restarts at the new shape. Video goes straight between the kiosks over the intercom's own key and encryption.
+
+### Changed
+- **Calling from the roster uses buttons.** Each kiosk on the Call a kiosk screen now has a call button instead of the whole row being the target, so a stray tap no longer starts a call.
+
 ### Fixed
 - **Sendspin keeps up with a drifting clock.** The Sendspin player corrected timing by one audio frame per chunk, about 225 parts per million on FLAC and 830 on PCM. A device whose clock ran further from the server's than that reached the 5 ms limit every few seconds and skipped with a short gap. The correction now grows with the error, up to 16 frames per chunk spread through the chunk, so a drifting device plays without skips and stays in step with its group. Devices that keep time well are unchanged (#1300).
 
