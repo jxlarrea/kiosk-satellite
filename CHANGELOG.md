@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **The README mentions video calls.** The Intercom entry now covers voice and video calls.
+
 ## v2026.11.7 - 2026-11-05
 
 ### Added

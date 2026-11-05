@@ -66,7 +66,7 @@
   <a href="assets/screenshots/remote.png"><img src="assets/screenshots/remote.png" alt="Remote Administration in Kiosk Satellite" width="650" /></a>
 </p>
 
-&bull; **Intercom:** Kiosks can call each other or broadcast to all kiosks at once using the [Intercom](https://kiosksatellite.com/docs/intercom/) feature. Kiosks are auto discovered in the local network. 
+&bull; **Intercom:** Make voice or video calls between kiosks or broadcast to all kiosks at once using the [Intercom](https://kiosksatellite.com/docs/intercom/) feature. Kiosks are auto discovered in the local network. 
 
 &bull; **Alarms:** Set [alarms](https://kiosksatellite.com/docs/alarms/) that ring on the kiosk itself, with no Home Assistant or network needed. A sunrise can brighten the screen before the alarm rings, and a Clock or Weather Mood screensaver can show the alarm with Snooze and Stop in its own style.
 
