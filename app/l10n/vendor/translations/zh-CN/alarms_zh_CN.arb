@@ -46,7 +46,7 @@
   "alarmsEaseHint": "在 {seconds} 秒内逐渐增加至闹钟音量。",
   "alarmsSpeak": "响铃时播报",
   "alarmsPhrase": "播报内容",
-  "alarmsPhraseHint": "{label}、{time} 和 {day} 会替换为闹钟的标签、时间和日期。",
+  "alarmsPhraseVariables": "可用变量：{variables}",
   "alarmsVoiceSection": "语音闹钟",
   "alarmsVoiceManage": "通过 Voice Satellite 管理闹钟",
   "alarmsVoiceHint": "需要在 Home Assistant 中配置 Kiosk Satellite 闹钟蓝图（脚本模板）和大语言模型（LLM）对话代理。",

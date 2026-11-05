@@ -264,8 +264,8 @@ class UiStringsDe extends UiStrings {
   String get alarmsPhrase => 'Satz';
 
   @override
-  String alarmsPhraseHint(String label, String time, String day) {
-    return '$label, $time und $day werden durch Bezeichnung, Uhrzeit und Tag des Weckers ersetzt.';
+  String alarmsPhraseVariables(String variables) {
+    return 'Verfügbare Variablen: $variables';
   }
 
   @override

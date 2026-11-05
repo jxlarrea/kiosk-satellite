@@ -123,6 +123,9 @@ export function settingsPageText(category, english) {
 
 // The URL Filter page's name, hint and hand-built rows, Settings > Web
 // Browsing on the device (settingsPageText in messages.dart).
+// The variables an alarm phrase can use, as the phrase hint lists them.
+export const ALARM_PHRASE_VARIABLES = '{label}, {name}, {time}, {hour}, {minute}, {date}, {day}, {dayofmonth}, {month}, {year}';
+
 const BROWSER_PAGE_TEXT = {
   'URL Filter': 'urlFilterTitle',
   'Block or allow pages by address pattern or regular expression': 'urlFilterHint',
@@ -237,7 +240,7 @@ export function localizeSetting(setting) {
     description: setting.key === 'voice.timer_named_phrase'
       ? t('settingVoiceTimerNamedPhraseDescription', { name: '{name}' }, englishDescription)
       : setting.key === 'alarms.phrase'
-        ? t('alarmsPhraseHint', { label: '{label}', time: '{time}', day: '{day}' }, englishDescription)
+        ? t('alarmsPhraseVariables', { variables: ALARM_PHRASE_VARIABLES }, englishDescription)
       : setting.descriptionMessageId
         ? t(setting.descriptionMessageId, {}, englishDescription) : setting.description,
   };

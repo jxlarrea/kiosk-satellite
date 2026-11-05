@@ -258,8 +258,8 @@ class UiStringsZh extends UiStrings {
   String get alarmsPhrase => '播报内容';
 
   @override
-  String alarmsPhraseHint(String label, String time, String day) {
-    return '$label、$time 和 $day 会替换为闹钟的标签、时间和日期。';
+  String alarmsPhraseVariables(String variables) {
+    return '可用变量：$variables';
   }
 
   @override
@@ -15523,8 +15523,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get alarmsPhrase => '播报内容';
 
   @override
-  String alarmsPhraseHint(String label, String time, String day) {
-    return '$label、$time 和 $day 会替换为闹钟的标签、时间和日期。';
+  String alarmsPhraseVariables(String variables) {
+    return '可用变量：$variables';
   }
 
   @override

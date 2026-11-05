@@ -66,7 +66,26 @@ On a Clock or Weather Mood screensaver that lets alarms take over, the screensav
 
 ## Spoken phrase
 
-An alarm with **Speak when it rings** on plays its tone twice, says its phrase, then plays the tone twice again, the way a timer speaks. `{label}`, `{time}` and `{day}` in the phrase become the alarm's label, its time and the day of the week, in the kiosk's language. The default is `It's {time}. {label}`. An alarm without a label drops the placeholder and the punctuation around it, so the default says "It's 7:00 AM."
+An alarm with **Speak when it rings** on plays its tone twice, says its phrase, then plays the tone twice again, the way a timer speaks. The default is `It's {time}. {label}`.
+
+These variables can go in a phrase. Words appear in the kiosk's language.
+
+| Variable | Becomes | Example |
+| --- | --- | --- |
+| `{label}` | The alarm's label | Gym |
+| `{name}` | The name of the Home Assistant user the kiosk's token belongs to | Sam |
+| `{time}` | The alarm's time | 7:05 AM |
+| `{hour}` | The hour, on the same clock as `{time}` | 7 |
+| `{minute}` | The minute, with no leading zero | 5 |
+| `{date}` | The full date | November 5, 2026 |
+| `{day}` | The day of the week | Thursday |
+| `{dayofmonth}` | The day of the month | 5 |
+| `{month}` | The month | November |
+| `{year}` | The year | 2026 |
+
+Use the separate variables when a text to speech engine reads `{time}` or `{date}` badly, for example `Good morning {name}. It's {hour} hours and {minute} minutes. Today is the {dayofmonth} of {month}, {year}.`
+
+A phrase without a label or a name drops the variable and the punctuation around it, so the default says "It's 7:00 AM." The name comes from Home Assistant when the alarm rings. If Home Assistant does not answer in time, the phrase is spoken without the name.
 
 Home Assistant makes the speech with the **Text to speech engine**, **Language** and **Voice** settings, the same way announcements are spoken, so the kiosk needs its Home Assistant address and token. The tone rings from the first second either way. When Home Assistant is slow or out of reach, the alarm rings without the words.
 

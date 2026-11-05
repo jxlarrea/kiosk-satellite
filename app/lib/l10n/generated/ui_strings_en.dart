@@ -263,8 +263,8 @@ class UiStringsEn extends UiStrings {
   String get alarmsPhrase => 'Phrase';
 
   @override
-  String alarmsPhraseHint(String label, String time, String day) {
-    return '$label, $time and $day become the alarm\'s label, time and day.';
+  String alarmsPhraseVariables(String variables) {
+    return 'Available variables: $variables';
   }
 
   @override

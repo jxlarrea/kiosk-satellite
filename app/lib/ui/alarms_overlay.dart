@@ -1558,7 +1558,7 @@ Future<String?> _showPhraseDialog(BuildContext context, String current) =>
         initial: current,
         maxLength: 200,
         maxLines: 3,
-        helper: l10n(context).alarmsPhraseHint('{label}', '{time}', '{day}'),
+        helper: l10n(context).alarmsPhraseVariables(alarmPhraseVariables),
       ),
     );
 

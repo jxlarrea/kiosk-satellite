@@ -263,8 +263,8 @@ class UiStringsNl extends UiStrings {
   String get alarmsPhrase => 'Tekst';
 
   @override
-  String alarmsPhraseHint(String label, String time, String day) {
-    return '$label, $time en $day staan voor het label, de tijd en de dag van het alarm.';
+  String alarmsPhraseVariables(String variables) {
+    return 'Beschikbare variabelen: $variables';
   }
 
   @override

@@ -29112,5 +29112,11 @@
     "translation": "e41c45c0e56313d97dedbf4e126af44e6184c7e6d58373adfb08db3ac548f6ef",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "alarmsPhraseVariables": {
+    "source": "7dd6d776b434cc52ebf018be97528993a5ba65c008d16b91e0d3cfda4349fe98",
+    "translation": "da1dde78439fe9f1e11b821e2fb09f566ae88d4e00a504b537aa5af0265846d1",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

@@ -263,8 +263,8 @@ class UiStringsUk extends UiStrings {
   String get alarmsPhrase => 'Фраза';
 
   @override
-  String alarmsPhraseHint(String label, String time, String day) {
-    return '$label, $time і $day замінюються на мітку, час і день будильника.';
+  String alarmsPhraseVariables(String variables) {
+    return 'Доступні змінні: $variables';
   }
 
   @override

@@ -46,7 +46,7 @@
   "alarmsEaseHint": "Громкость растёт до уровня будильника в течение {seconds} с.",
   "alarmsSpeak": "Произносить фразу при звонке",
   "alarmsPhrase": "Фраза",
-  "alarmsPhraseHint": "{label}, {time} и {day} заменяются на название, время и день будильника.",
+  "alarmsPhraseVariables": "Доступные переменные: {variables}",
   "alarmsVoiceSection": "Голосовые будильники",
   "alarmsVoiceManage": "Управление будильниками через Voice Satellite",
   "alarmsVoiceHint": "Требуются Blueprint будильников Kiosk Satellite и диалоговый LLM-агент в Home Assistant.",

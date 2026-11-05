@@ -615,10 +615,10 @@
       ]
     }
   },
-  "alarmsPhraseHint": "{label}, {time} and {day} become the alarm's label, time and day.",
-  "@alarmsPhraseHint": {
+  "alarmsPhraseVariables": "Available variables: {variables}",
+  "@alarmsPhraseVariables": {
     "context": "Alarm details",
-    "description": "Hint under the phrase text box. The three placeholders are shown to the user literally, in braces, and must not be translated.",
+    "description": "Hint under the phrase text box. {variables} is a list of words in braces, like {label}, {time}, which the user types as they are.",
     "x-locations": {
       "device": [
         "Kiosk menu > Alarms > an alarm"
@@ -628,17 +628,9 @@
       ]
     },
     "placeholders": {
-      "label": {
+      "variables": {
         "type": "String",
-        "description": "The literal text {label}."
-      },
-      "time": {
-        "type": "String",
-        "description": "The literal text {time}."
-      },
-      "day": {
-        "type": "String",
-        "description": "The literal text {day}."
+        "description": "The variables, in braces and separated by commas."
       }
     }
   },

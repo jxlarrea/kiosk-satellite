@@ -554,11 +554,11 @@ abstract class UiStrings {
   /// **'Phrase'**
   String get alarmsPhrase;
 
-  /// Hint under the phrase text box. The three placeholders are shown to the user literally, in braces, and must not be translated.
+  /// Hint under the phrase text box. {variables} is a list of words in braces, like {label}, {time}, which the user types as they are.
   ///
   /// In en, this message translates to:
-  /// **'{label}, {time} and {day} become the alarm\'s label, time and day.'**
-  String alarmsPhraseHint(String label, String time, String day);
+  /// **'Available variables: {variables}'**
+  String alarmsPhraseVariables(String variables);
 
   /// Heading of the group about setting alarms by voice.
   ///

@@ -45,7 +45,7 @@
   "alarmsEaseHint": "Atteint le volume de l'alarme en {seconds} secondes.",
   "alarmsSpeak": "Parler pendant la sonnerie",
   "alarmsPhrase": "Phrase",
-  "alarmsPhraseHint": "{label}, {time} et {day} sont remplacés par le libellé, l'heure et le jour de l'alarme.",
+  "alarmsPhraseVariables": "Variables disponibles : {variables}",
   "alarmsVoiceSection": "Alarmes vocales",
   "alarmsVoiceManage": "Gérer les alarmes avec Voice Satellite",
   "alarmsVoiceHint": "Nécessite le blueprint d'alarmes de Kiosk Satellite et un agent de conversation LLM dans Home Assistant.",

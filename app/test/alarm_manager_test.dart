@@ -403,8 +403,7 @@ void main() {
 
   group('Home Assistant events', () {
     List<String> fired() => [
-      for (final e in haEvents)
-        '${e.data['event_type']} ${e.data['alarm_id']}',
+      for (final e in haEvents) '${e.data['event_type']} ${e.data['alarm_id']}',
     ];
 
     test('a ring, a snooze and a stop each fire one', () async {
@@ -539,6 +538,83 @@ void main() {
       expect(
         alarms.phraseFor(alarm, DateTime(2026, 10, 2, 7)),
         "It's 7:00 AM. Gym",
+      );
+    });
+
+    test('fills the hour, the minute and the date', () async {
+      await build([
+        {
+          ...daily('07:00'),
+          'phrase':
+              '{hour} {minute} {dayofmonth} {month} {year}, {date}, {day}',
+        },
+      ]);
+      expect(
+        alarms.phraseFor(
+          alarms.alarms.value.single,
+          DateTime(2026, 10, 2, 19, 5),
+        ),
+        '7 5 2 October 2026, October 2, 2026, Friday',
+      );
+    });
+
+    test('{hour} reads 12 at midnight on an AM/PM clock', () async {
+      await build([
+        {...daily('00:00'), 'phrase': '{hour}'},
+      ]);
+      expect(
+        alarms.phraseFor(alarms.alarms.value.single, DateTime(2026, 10, 2)),
+        '12',
+      );
+    });
+
+    test('asks Home Assistant for the name only when it is used', () async {
+      await build([
+        {...daily('07:00'), 'phrase': 'Good morning {name}!'},
+      ]);
+      var asked = 0;
+      final named = AlarmManager(
+        bus,
+        registry,
+        Logger(),
+        settings,
+        clock: () => now,
+        userName: () async {
+          asked++;
+          return 'Sam';
+        },
+      );
+      final alarm = alarms.alarms.value.single;
+      expect(
+        await named.spokenPhrase(alarm, DateTime(2026, 10, 2, 7)),
+        'Good morning Sam!',
+      );
+      expect(asked, 1);
+      await named.spokenPhrase(
+        alarm.copyWith(phrase: "It's {time}"),
+        DateTime(2026, 10, 2, 7),
+      );
+      expect(asked, 1);
+    });
+
+    test('a failed name lookup says the phrase without it', () async {
+      await build([
+        {...daily('07:00'), 'phrase': 'Good morning {name}!'},
+      ]);
+      final named = AlarmManager(
+        bus,
+        registry,
+        Logger(),
+        settings,
+        clock: () => now,
+        userName: () async => throw StateError('offline'),
+      );
+      expect(
+        await named.spokenPhrase(
+          alarms.alarms.value.single,
+          DateTime(2026, 10, 2, 7),
+        ),
+        'Good morning!',
       );
     });
 

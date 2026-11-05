@@ -11979,7 +11979,8 @@ const alarmsPhrase = SettingDef<String>(
   defaultValue: "It's {time}. {label}",
   title: 'Phrase',
   description:
-      "{label}, {time} and {day} become the alarm's label, time and day.",
+      'Available variables: {label}, {name}, {time}, {hour}, {minute}, {date}, '
+      '{day}, {dayofmonth}, {month}, {year}',
   category: 'Alarms',
   section: 'Defaults',
 );

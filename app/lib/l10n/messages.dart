@@ -7,6 +7,7 @@ import 'generated/plugin_text_ids.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import '../managers/alarms/alarm_model.dart';
 import '../managers/settings/definitions.dart';
 import 'generated/message_lookup.dart';
 import 'generated/media_text_ids.dart';
@@ -79,7 +80,7 @@ extension LocalizedSetting on SettingDef<Object> {
     ).settingVoiceTimerNamedPhraseDescription('{name}'),
     'alarms.phrase' => l10n(
       context,
-    ).alarmsPhraseHint('{label}', '{time}', '{day}'),
+    ).alarmsPhraseVariables(alarmPhraseVariables),
     _ => messageById(l10n(context), descriptionMessageId, description),
   };
 }

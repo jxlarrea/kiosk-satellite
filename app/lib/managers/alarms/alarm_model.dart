@@ -259,33 +259,65 @@ DateTime? lastRing(Alarm alarm, DateTime now) {
   return best;
 }
 
-/// [template] with {label}, {time} and {day} filled in: the words an alarm
-/// says between its rings. A blank label leaves no stray punctuation or
-/// spaces behind.
+/// The variables a phrase can use, as the phrase hint lists them.
+const alarmPhraseVariables =
+    '{label}, {name}, {time}, {hour}, {minute}, {date}, {day}, {dayofmonth}, '
+    '{month}, {year}';
+
+/// [template] with its variables filled in: the words an alarm says between
+/// its rings. A blank label or name leaves no stray punctuation or spaces
+/// behind.
 String fillAlarmPhrase(
   String template, {
   required String label,
+  required String name,
   required String time,
+  required String hour,
+  required String minute,
+  required String date,
   required String day,
+  required String dayOfMonth,
+  required String month,
+  required String year,
 }) {
-  var text = template.replaceAll('{time}', time).replaceAll('{day}', day);
-  label = label.trim();
-  if (label.isNotEmpty) return text.replaceAll('{label}', label).trim();
-  // No label: the gap goes with the weaker of the marks around it, so
-  // "Hi, {label}. It's 7" says "Hi. It's 7", and nothing else the phrase
-  // says is touched.
-  text = text.replaceAllMapped(
-    RegExp(r'([.,!?;:]?)\s*\{label\}\s*([.,!?;:]?)'),
-    (m) {
-      final before = m[1]!, after = m[2]!;
-      if (after.isNotEmpty) return after;
-      return before.isEmpty ? ' ' : '$before ';
-    },
-  );
+  final words = {
+    'label': label.trim(),
+    'name': name.trim(),
+    'time': time,
+    'hour': hour,
+    'minute': minute,
+    'date': date,
+    'day': day,
+    'dayofmonth': dayOfMonth,
+    'month': month,
+    'year': year,
+  };
+  final blanks = [
+    for (final key in const ['label', 'name'])
+      if (words[key]!.isEmpty) key,
+  ];
+  var text = template;
+  if (blanks.isNotEmpty) {
+    // The gap goes with the weaker of the marks around it, so
+    // "Hi, {label}. It's 7" says "Hi. It's 7", and nothing else the phrase
+    // says is touched.
+    text = text
+        .replaceAllMapped(
+          RegExp('([.,!?;:]?)\\s*\\{(?:${blanks.join('|')})\\}\\s*([.,!?;:]?)'),
+          (m) {
+            final before = m[1]!, after = m[2]!;
+            if (after.isNotEmpty) return after;
+            return before.isEmpty ? ' ' : '$before ';
+          },
+        )
+        .replaceAll(RegExp(r'\s{2,}'), ' ')
+        .trim()
+        .replaceFirst(RegExp(r'^[.,;:]\s*'), '');
+  }
+  // One pass, so a label that reads like a variable stays as it is.
   return text
-      .replaceAll(RegExp(r'\s{2,}'), ' ')
-      .trim()
-      .replaceFirst(RegExp(r'^[.,;:]\s*'), '');
+      .replaceAllMapped(RegExp(r'\{(\w+)\}'), (m) => words[m[1]] ?? m[0]!)
+      .trim();
 }
 
 /// Which days a repeat covers, in words: Every day, Weekdays, Weekends or

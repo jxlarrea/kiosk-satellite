@@ -1,4 +1,4 @@
-import { deviceText, messageLanguage, overviewText, t } from './localization.js';
+import { ALARM_PHRASE_VARIABLES, deviceText, messageLanguage, overviewText, t } from './localization.js';
 import { api, cmd, state } from './core.js';
 import { cameraAction, cameraListRow, cameraToggle } from './cameras.js';
 import { attachTtsPickers } from './intercom.js';
@@ -399,7 +399,7 @@ function openEditor(existing) {
   const phraseField = field(t('alarmsPhrase'), phrase);
   const phraseHint = document.createElement('span');
   phraseHint.className = 'desc';
-  phraseHint.textContent = t('alarmsPhraseHint', { label: '{label}', time: '{time}', day: '{day}' });
+  phraseHint.textContent = t('alarmsPhraseVariables', { variables: ALARM_PHRASE_VARIABLES });
   phraseField.appendChild(phraseHint);
   const showPhrase = () => { phraseField.style.display = speak.input.checked ? '' : 'none'; };
   speak.input.addEventListener('change', showPhrase);

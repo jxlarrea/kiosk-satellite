@@ -46,7 +46,7 @@
   "alarmsEaseHint": "Verhoogt het volume in {seconds} seconden tot het ingestelde alarmvolume.",
   "alarmsSpeak": "Uitspreken wanneer het alarm afgaat",
   "alarmsPhrase": "Tekst",
-  "alarmsPhraseHint": "{label}, {time} en {day} staan voor het label, de tijd en de dag van het alarm.",
+  "alarmsPhraseVariables": "Beschikbare variabelen: {variables}",
   "alarmsVoiceSection": "Spraakalarmen",
   "alarmsVoiceManage": "Alarmen beheren met Voice Satellite",
   "alarmsVoiceHint": "Vereist de alarmblauwdruk van Kiosk Satellite en een LLM-gespreksagent in Home Assistant.",

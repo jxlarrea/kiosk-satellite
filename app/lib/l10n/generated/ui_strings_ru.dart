@@ -262,8 +262,8 @@ class UiStringsRu extends UiStrings {
   String get alarmsPhrase => 'Фраза';
 
   @override
-  String alarmsPhraseHint(String label, String time, String day) {
-    return '$label, $time и $day заменяются на название, время и день будильника.';
+  String alarmsPhraseVariables(String variables) {
+    return 'Доступные переменные: $variables';
   }
 
   @override

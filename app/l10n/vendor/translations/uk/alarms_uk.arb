@@ -45,7 +45,7 @@
   "alarmsEaseHint": "Досягає гучності будильника за {seconds} с.",
   "alarmsSpeak": "Говорити під час сигналу",
   "alarmsPhrase": "Фраза",
-  "alarmsPhraseHint": "{label}, {time} і {day} замінюються на мітку, час і день будильника.",
+  "alarmsPhraseVariables": "Доступні змінні: {variables}",
   "alarmsVoiceSection": "Голосові будильники",
   "alarmsVoiceManage": "Керувати будильниками через Voice Satellite",
   "alarmsVoiceHint": "Потрібні blueprint будильників Kiosk Satellite і агент розмови LLM у Home Assistant.",

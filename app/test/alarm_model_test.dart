@@ -179,14 +179,55 @@ void main() {
   });
 
   group('fillAlarmPhrase', () {
-    String fill(String t, {String label = ''}) =>
-        fillAlarmPhrase(t, label: label, time: '7:00 AM', day: 'Friday');
+    String fill(String t, {String label = '', String name = ''}) =>
+        fillAlarmPhrase(
+          t,
+          label: label,
+          name: name,
+          time: '7:00 AM',
+          hour: '7',
+          minute: '5',
+          date: 'October 2, 2026',
+          day: 'Friday',
+          dayOfMonth: '2',
+          month: 'October',
+          year: '2026',
+        );
 
     test('fills every placeholder', () {
       expect(
         fill("It's {time} on {day}. {label}", label: 'Gym'),
         "It's 7:00 AM on Friday. Gym",
       );
+    });
+
+    test('fills the hour, the minute and the date on their own', () {
+      expect(
+        fill(
+          '{hour} hours and {minute} minutes on the {dayofmonth} of {month}, {year}',
+        ),
+        '7 hours and 5 minutes on the 2 of October, 2026',
+      );
+      expect(fill('Today is {date}'), 'Today is October 2, 2026');
+    });
+
+    test('{day} stays the day of the week', () {
+      expect(fill('Happy {day}'), 'Happy Friday');
+    });
+
+    test('an empty name leaves no stray punctuation', () {
+      expect(fill('Good morning {name}! {time}'), 'Good morning! 7:00 AM');
+      expect(fill('{name}, wake up'), 'wake up');
+      expect(fill('Hi {name}. {label}', name: 'Sam'), 'Hi Sam.');
+      expect(fill('{label} {name} at {time}'), 'at 7:00 AM');
+    });
+
+    test('a label that reads like a variable stays as it is', () {
+      expect(fill('{label}', label: '{time}'), '{time}');
+    });
+
+    test('an unknown variable stays as it is', () {
+      expect(fill('{weather} at {time}'), '{weather} at 7:00 AM');
     });
 
     test('an empty label leaves no stray punctuation', () {
