@@ -1,11 +1,8 @@
 package me.jxl.kiosk_satellite
 
 import android.opengl.EGL14
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener
+import io.flutter.embedding.engine.FlutterJNI
 import java.io.File
 
 /**
@@ -59,33 +56,26 @@ object MainThreadEgl {
     /**
      * Releases the context after every surface teardown, not only the
      * Activity's destroy (issue #830 hit the wedge with no Activity
-     * destroyed). Every teardown in the embedding goes through
-     * `FlutterRenderer.stopRenderingToSurface`, which tells these listeners
-     * just before the engine drops its surface, on the main thread. The
-     * release is posted to the front of the main queue so it runs as soon
-     * as that teardown is over.
+     * destroyed).
+     *
+     * This has to happen before anything else on the main thread. The
+     * embedding can replace a surface in one call, teardown and creation
+     * back to back, and the new surface's make-current on the raster thread
+     * then fails against the context still held here. Impeller carries on
+     * after that failure: it creates its GL objects with no context, keeps
+     * the name 0 it gets for a buffer and never creates that buffer again.
+     * The next draw that uses it reads an offset as a pointer and crashes
+     * in the driver (issue #921).
      *
      * Nothing can be using the context on the main thread by then. A
      * merged teardown unmerges the threads on its way out, and they only
      * merge again after the raster thread gets a frame past make-current,
-     * which a context held here prevents. A merge that did happen would
-     * queue its first main thread task behind this one. So a context still
-     * current here is the stale one, and a teardown on the raster thread
-     * leaves nothing to release.
+     * which a context held here prevents. So a context still current here
+     * is the stale one, and a teardown on the raster thread leaves nothing
+     * to release.
      */
-    fun watch(engine: FlutterEngine) {
-        val main = Handler(Looper.getMainLooper())
-        engine.renderer.addIsDisplayingFlutterUiListener(
-            object : FlutterUiDisplayListener {
-                override fun onFlutterUiDisplayed() {}
-
-                override fun onFlutterUiNoLongerDisplayed() {
-                    main.postAtFrontOfQueue {
-                        if (release("after a surface teardown")) teardownReleases++
-                    }
-                }
-            },
-        )
+    internal fun afterSurfaceTeardown() {
+        if (release("after a surface teardown")) teardownReleases++
     }
 
     /** Whether a context is current on the calling thread. */
@@ -131,5 +121,18 @@ object MainThreadEgl {
         }?.name
     } catch (_: Exception) {
         null
+    }
+}
+
+/**
+ * The one place that runs between the engine dropping a surface and the
+ * embedding creating the next one. Every teardown goes through here, and a
+ * listener or a posted task would run too late (see
+ * [MainThreadEgl.afterSurfaceTeardown]).
+ */
+class SurfaceTeardownJni : FlutterJNI() {
+    override fun onSurfaceDestroyed() {
+        super.onSurfaceDestroyed()
+        MainThreadEgl.afterSurfaceTeardown()
     }
 }
