@@ -180,8 +180,14 @@ class _PluginScreensaverState extends State<PluginScreensaver> {
     final renderer = _renderers.value[widget.mode];
     if (renderer?['view'] == true) {
       return _NativeScreensaver(
-        // A republication builds a fresh view from the new factory.
-        key: ValueKey((widget.mode, renderer!['generation'])),
+        // A republication builds a fresh view from the new factory. Each
+        // session counts generations from the start, so the session is here
+        // too.
+        key: ValueKey((
+          widget.mode,
+          renderer!['session'],
+          renderer['generation'],
+        )),
         container: widget.container,
         renderer: renderer,
       );

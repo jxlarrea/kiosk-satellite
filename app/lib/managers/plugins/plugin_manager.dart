@@ -89,8 +89,9 @@ class PluginNativeOverlay {
   final Duration duration;
   final Size? measured;
 
-  /// A replaced overlay is a new view, so the generation is part of it.
-  String get id => '$pluginId/$key/$generation';
+  /// A replaced overlay is a new view, so the generation is part of it. Each
+  /// session counts generations from the start, so the session is too.
+  String get id => '$pluginId/$session/$key/$generation';
 
   bool get wraps => width == wrap || height == wrap;
 
@@ -617,7 +618,7 @@ class PluginManager extends Manager implements FleetPluginHost {
         case 'overlaySize':
           final data = call.arguments as Map;
           final id =
-              '${data['id']}/${data['key']}/${(data['generation'] as num).toInt()}';
+              '${data['id']}/${data['session']}/${data['key']}/${(data['generation'] as num).toInt()}';
           final size = Size(
             (data['width'] as num).toDouble(),
             (data['height'] as num).toDouble(),

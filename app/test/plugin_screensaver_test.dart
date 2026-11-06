@@ -235,6 +235,51 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('a new session builds its own view when its renderer matches the '
+      'last session', (tester) async {
+    final calls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform_views,
+      (call) async {
+        calls.add(call);
+        return call.method == 'create' ? 0 : null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform_views,
+        null,
+      ),
+    );
+    final c = AppContainer();
+    await c.settings.init();
+    Map<String, Object?> view(String session) => {
+      'key': 'dvd',
+      'title': 'DVD',
+      'view': true,
+      'generation': 1,
+      'session': session,
+      'pluginId': 'hello-world',
+    };
+    c.plugins.screensavers.value = {mode: view('first')};
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PluginScreensaver(container: c, mode: mode),
+      ),
+    );
+    await tester.pump();
+    final created = calls.where((c) => c.method == 'create').length;
+    // The restart lands between two frames, so nothing unmounts the old view
+    // on the way, and generations start over with each session.
+    c.plugins.screensavers.value = {};
+    c.plugins.screensavers.value = {mode: view('second')};
+    await tester.pump();
+    await tester.pump();
+    expect(calls.where((c) => c.method == 'create').length, created + 1);
+    expect(calls.where((c) => c.method == 'dispose'), isNotEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   group('asset publications keep the shown document until the next paints', () {
     Map<String, Object?> asset(String data) => {
       'entry': 'clock/index.html',

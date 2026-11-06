@@ -1746,8 +1746,8 @@ void main() {
     // their measured size.
     await overlays('first', [overlay('bar', 1), overlay('full', 3)]);
     expect(plugins.overlays.value.map((o) => o.id), [
-      'hello-world/bar/1',
-      'hello-world/full/3',
+      'hello-world/first/bar/1',
+      'hello-world/first/full/3',
     ]);
     expect(plugins.overlays.value.first.measured, const Size(300, 64));
     // A stale session changes nothing, and a new one starts empty.
@@ -2016,6 +2016,89 @@ void main() {
       expect(creates.map((c) => (c.arguments as Map)['hybrid']), [true, true]);
     },
   );
+
+  for (final hybrid in [false, true]) {
+    testWidgets(
+      'a new session builds its own view when its overlay matches the last '
+      'session (hybrid: $hybrid)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 600);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final sessions = <String>[];
+        messenger.setMockMethodCallHandler(SystemChannels.platform_views, (
+          call,
+        ) async {
+          final args = call.arguments;
+          if (call.method == 'create') {
+            final params = const StandardMessageCodec().decodeMessage(
+              ByteData.sublistView((args as Map)['params'] as Uint8List),
+            );
+            sessions.add((params as Map)['session'] as String);
+          }
+          return switch (call.method) {
+            'create' => 0,
+            'resize' => {
+              'width': (args as Map)['width'],
+              'height': args['height'],
+            },
+            _ => null,
+          };
+        });
+        addTearDown(
+          () => messenger.setMockMethodCallHandler(
+            SystemChannels.platform_views,
+            null,
+          ),
+        );
+        Future<void> measured(String token) => native('overlaySize', {
+          'id': 'hello-world',
+          'session': token,
+          'key': 'bar',
+          'generation': 1,
+          'width': 188,
+          'height': 485,
+        });
+        Rect rect() => tester.getRect(
+          find.byType(hybrid ? PlatformViewLink : AndroidView),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Stack(
+              fit: StackFit.expand,
+              children: [
+                PluginNativeOverlays(plugins: plugins, hybrid: hybrid),
+              ],
+            ),
+          ),
+        );
+        await overlaySession('first');
+        await overlays('first', [overlay('bar', 1)]);
+        await tester.pump();
+        await measured('first');
+        await tester.pump();
+        expect(rect().size, const Size(188, 485));
+        // The restart lands between two frames, so nothing unmounts the old
+        // view on the way, and generations start over with each session.
+        await native('hostSessionClosed', {
+          'id': 'hello-world',
+          'session': 'first',
+        });
+        await overlaySession('second');
+        await overlays('second', [overlay('bar', 1)]);
+        await tester.pump();
+        expect(sessions, ['first', 'second']);
+        expect(rect().size, const Size(1, 1));
+        // The old view's size is not the new view's.
+        await measured('first');
+        await tester.pump();
+        expect(rect().size, const Size(1, 1));
+        await measured('second');
+        await tester.pump();
+        expect(rect().size, const Size(188, 485));
+      },
+    );
+  }
 
   testWidgets('native overlays wait for their size and follow their anchor', (
     tester,
