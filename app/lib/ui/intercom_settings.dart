@@ -1258,7 +1258,8 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
   bool _held = false;
 
   /// Whether the details over the video show. They come up for
-  /// [_detailsFor] on a tap or a key press and as the call connects.
+  /// [_detailsFor] on a tap or a key press and as the call connects. Over
+  /// a picture the controls come and go with them.
   bool _details = true;
   Timer? _detailsTimer;
   static const _detailsFor = Duration(seconds: 3);
@@ -1274,6 +1275,16 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
       (_call['video'] as Map?)?.cast<String, Object?>() ?? const {};
 
   static const _shown = IntercomManager.callScreenStates;
+
+  /// The picture takes the whole screen, with the controls over it: the
+  /// other kiosk's, or this one's while the call is being placed.
+  bool get _overVideo {
+    final video = _video;
+    return (_state == 'ringing' || _state == 'in_call') &&
+            video['farTexture'] != null &&
+            video['farShown'] == true ||
+        _state == 'calling' && video['selfTexture'] != null;
+  }
 
   void _showDetails() {
     _detailsTimer?.cancel();
@@ -1443,12 +1454,15 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
     final theme = Theme.of(context);
     return SizedBox.expand(
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: ksGroundGradient(
-            theme.colorScheme.surface,
-            theme.brightness,
-          ),
-        ),
+        // Black in either theme around a picture, safe area included.
+        decoration: _overVideo
+            ? const BoxDecoration(color: Colors.black)
+            : BoxDecoration(
+                gradient: ksGroundGradient(
+                  theme.colorScheme.surface,
+                  theme.brightness,
+                ),
+              ),
         child: Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) => _showDetails(),
@@ -1481,12 +1495,7 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
     final video = _video;
     final selfTexture = video['selfTexture'] as int?;
     final farTexture = video['farTexture'] as int?;
-    final farLive = farTexture != null && video['farShown'] == true;
-    // The picture takes the whole screen, with the controls over it: the
-    // other kiosk's, or this one's while the call is being placed.
-    final overVideo =
-        (state == 'ringing' || state == 'in_call') && farLive ||
-        state == 'calling' && selfTexture != null;
+    final overVideo = _overVideo;
     final canCamera =
         kind == 'call' &&
         state == 'in_call' &&
@@ -1923,7 +1932,7 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
           )
         : null;
     if (overVideo) {
-      final caption = state == 'calling' || state == 'ringing'
+      final overlay = state == 'calling' || state == 'ringing'
           ? true
           : _held || _details;
       return _videoStage(
@@ -1945,7 +1954,7 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
         name: name,
         sub: sub,
         stateLine: stateLine,
-        caption: caption,
+        overlay: overlay,
         switchCamera: canSwitch
             ? _SwitchCameraPill(
                 compact: compact,
@@ -2060,7 +2069,7 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
     required String name,
     required String? sub,
     required String stateLine,
-    required bool caption,
+    required bool overlay,
     required Widget? switchCamera,
     required Widget? selfTile,
     required Widget controls,
@@ -2075,11 +2084,12 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
         : BoxFit.cover;
     final stalled = far && video['farStalled'] == true;
     const shade = Color(0xA8000000);
+    const fade = Duration(milliseconds: 200);
     return Stack(
       fit: StackFit.expand,
       children: [
         ColoredBox(
-          color: Theme.of(context).colorScheme.surface,
+          color: Colors.black,
           child: _VideoFrame(texture: texture, width: w, height: h, fit: fit),
         ),
         if (stalled) const ColoredBox(color: Color(0x8C000000)),
@@ -2088,13 +2098,17 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
           right: 0,
           bottom: 0,
           height: compact ? 170 : 300,
-          child: const IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [shade, Color(0x00000000)],
+          child: IgnorePointer(
+            child: AnimatedOpacity(
+              opacity: overlay ? 1 : 0,
+              duration: fade,
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [shade, Color(0x00000000)],
+                  ),
                 ),
               ),
             ),
@@ -2105,10 +2119,10 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
           right: 0,
           top: 0,
           child: IgnorePointer(
-            ignoring: !caption,
+            ignoring: !overlay,
             child: AnimatedOpacity(
-              opacity: caption ? 1 : 0,
-              duration: const Duration(milliseconds: 200),
+              opacity: overlay ? 1 : 0,
+              duration: fade,
               child: DecoratedBox(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -2210,7 +2224,19 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
           left: 24,
           right: 24,
           bottom: compact ? 14 : 32,
-          child: Center(child: controls),
+          // Hidden, a tap or a key press only brings them back: nothing
+          // here should end a call nobody can see the button for.
+          child: ExcludeFocus(
+            excluding: !overlay,
+            child: IgnorePointer(
+              ignoring: !overlay,
+              child: AnimatedOpacity(
+                opacity: overlay ? 1 : 0,
+                duration: fade,
+                child: Center(child: controls),
+              ),
+            ),
+          ),
         ),
       ],
     );

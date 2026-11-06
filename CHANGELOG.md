@@ -4,6 +4,10 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **Video calls show more of the picture.** The call buttons now fade out with the kiosk's name 3 seconds after a call connects. Tap the screen to bring them back. They stay on screen while a call rings and while **Hold to talk** is held.
+- **Video calls use a black background.** The area around the picture is now black in every theme.
+
 ### Fixed
 - **Video calls no longer crash on Android 9 and older.** If the other kiosk's camera turned off or the call ended before the first frame of video arrived, the app crashed. The same could happen with the self view.
 - **A crash on the microphone thread with software echo cancellation.** The app could crash when a sound stopped playing at the exact moment the microphone read the list of active players.

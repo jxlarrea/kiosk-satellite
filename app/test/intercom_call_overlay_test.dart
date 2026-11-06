@@ -182,6 +182,139 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
+    double controlsOpacity(WidgetTester tester) => tester
+        .widget<AnimatedOpacity>(
+          find.ancestor(
+            of: find.text('End'),
+            matching: find.byType(AnimatedOpacity),
+          ),
+        )
+        .opacity;
+
+    testWidgets('the controls leave with the details', (tester) async {
+      final container = await show(tester, const Size(1280, 800));
+      container.bus.publish(IntercomStateChanged(status()));
+      await tester.pump();
+      expect(controlsOpacity(tester), 1);
+      await tester.pump(const Duration(seconds: 3, milliseconds: 100));
+      expect(controlsOpacity(tester), 0);
+      await tester.tapAt(const Offset(640, 300));
+      await tester.pump();
+      expect(controlsOpacity(tester), 1);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a tap on a hidden End only brings the controls back', (
+      tester,
+    ) async {
+      final container = await show(tester, const Size(1280, 800));
+      final hangups = <String>[];
+      container.commands.register(
+        Command(
+          name: 'intercomHangup',
+          description: 'stub',
+          handler: (_) async {
+            hangups.add('end');
+            return const CommandResult.ok();
+          },
+        ),
+      );
+      container.bus.publish(IntercomStateChanged(status()));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3, milliseconds: 100));
+      final end = tester.getCenter(find.byIcon(Icons.call_end));
+      await tester.tapAt(end);
+      await tester.pump();
+      expect(hangups, isEmpty);
+      expect(controlsOpacity(tester), 1);
+      await tester.tapAt(end);
+      await tester.pump();
+      expect(hangups, ['end']);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('holding to talk keeps the controls up', (tester) async {
+      final container = await show(tester, const Size(1280, 800));
+      container.commands.register(
+        Command(
+          name: 'intercomTalk',
+          description: 'stub',
+          handler: (_) async => const CommandResult.ok(),
+        ),
+      );
+      container.bus.publish(
+        IntercomStateChanged(status()..['talkMode'] = 'ptt'),
+      );
+      await tester.pump();
+      final hold = await tester.startGesture(
+        tester.getCenter(find.text('Hold to talk')),
+      );
+      await tester.pump(const Duration(seconds: 5));
+      expect(controlsOpacity(tester), 1);
+      await hold.up();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3, milliseconds: 100));
+      expect(controlsOpacity(tester), 0);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('ringing and calling keep the controls up', (tester) async {
+      final container = await show(tester, const Size(1280, 800));
+      container.bus.publish(
+        IntercomStateChanged(status(state: 'ringing', camera: false)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 5));
+      final decline = tester.widget<AnimatedOpacity>(
+        find.ancestor(
+          of: find.text('Decline'),
+          matching: find.byType(AnimatedOpacity),
+        ),
+      );
+      expect(decline.opacity, 1);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    for (final brightness in Brightness.values) {
+      testWidgets('the picture sits on black in $brightness', (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1280, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        SharedPreferences.setMockInitialValues({});
+        final container = AppContainer();
+        await container.settings.init();
+        addTearDown(container.settings.dispose);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(brightness: brightness),
+            home: Scaffold(body: IntercomCallOverlay(container: container)),
+          ),
+        );
+        container.bus.publish(IntercomStateChanged(status()));
+        await tester.pump();
+        final ground = tester.widget<DecoratedBox>(
+          find
+              .descendant(
+                of: find.byType(IntercomCallOverlay),
+                matching: find.byType(DecoratedBox),
+              )
+              .first,
+        );
+        final box = ground.decoration as BoxDecoration;
+        expect(box.color, Colors.black);
+        expect(box.gradient, isNull);
+        final behind = tester.widget<ColoredBox>(
+          find
+              .ancestor(
+                of: find.byType(Texture).first,
+                matching: find.byType(ColoredBox),
+              )
+              .first,
+        );
+        expect(behind.color, Colors.black);
+        await tester.pumpWidget(const SizedBox());
+      });
+    }
+
     testWidgets('placing a call shows this kiosk, even if a picture arrives', (
       tester,
     ) async {
