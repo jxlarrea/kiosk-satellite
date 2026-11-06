@@ -38,7 +38,12 @@ object EchoReference {
         sources.remove(source)
     }
 
-    fun sources(): List<Source> = sources
+    /**
+     * A copy, read in one step. The mic thread must not walk the live list:
+     * Kotlin's toSet reads a one item list by size and then get(0), and a
+     * player stopping between the two threw on that thread.
+     */
+    fun sources(): List<Source> = ArrayList(sources)
 
     fun audible() {
         lastAudibleMs = SystemClock.elapsedRealtime()
