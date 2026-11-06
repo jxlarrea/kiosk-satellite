@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.9 - 2026-11-06
 
 ### Changed
 - **Video calls show more of the picture.** The call buttons now fade out with the kiosk's name 3 seconds after a call connects. Tap the screen to bring them back. They stay on screen while a call rings and while **Hold to talk** is held.
