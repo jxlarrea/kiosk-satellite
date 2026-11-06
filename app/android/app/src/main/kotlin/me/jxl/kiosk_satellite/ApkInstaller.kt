@@ -170,6 +170,9 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                 // pinning blocks that screen outright (issue #170), and by
                 // the time the session reports PENDING_USER_ACTION the
                 // launch has already been refused once.
+                // Asked for the same reason: the reclaim and the pin would
+                // fight the move to the other launcher.
+                "stepsAsideForInstall" -> work(result) { UpdateHomeHandoff.wanted(context) }
                 "needsConfirmation" -> work(result) {
                     if (call.argument<Boolean>("useShizuku") == true) { shizuku.requireReady(); false }
                     else !canInstallNativelySilently() && helper.status() != "ready"
@@ -240,12 +243,12 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
         try {
             if (useShizuku) {
                 Log.i(TAG, "installing through Shizuku")
-                return shizuku.install(apk, ::pauseScannerForPackageReplacement)
+                return shizuku.install(apk, ::prepareForSilentReplacement)
             }
             val nativeSilent = canInstallNativelySilently()
             if (!nativeSilent && !useSystemInstaller) {
                 Log.i(TAG, "trying the update helper")
-                if (helper.install(apk, ::pauseScannerForPackageReplacement)) return "silent"
+                if (helper.install(apk, ::prepareForSilentReplacement)) return "silent"
                 Log.i(TAG, "update helper unavailable before commit; requesting system installer fallback")
                 return "fallback"
             }
@@ -289,7 +292,7 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                 // Recorded before the commit: the outcome can arrive first.
                 if (silent) silentSessions.add(sessionId)
                 try {
-                    if (silent) pauseScannerForPackageReplacement()
+                    if (silent) prepareForSilentReplacement()
                     session.commit(status.intentSender)
                 } catch (e: Exception) {
                     silentSessions.remove(sessionId)
@@ -304,6 +307,13 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
         }
     }
 
+    /** A confirm screen needs no handoff: it stays in front of the kiosk
+     *  until the install is over. */
+    private fun prepareForSilentReplacement() {
+        pauseScannerForPackageReplacement()
+        UpdateHomeHandoff.stepAside(context)
+    }
+
     private fun pauseScannerForPackageReplacement() {
         if (!BluetoothProxyRuntime.pauseScannerForPackageReplacement()) {
             Log.w(TAG, "BLE scanner did not stop before the install commit")
@@ -312,6 +322,7 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
 
     private fun resumeScannerAfterPackageReplacementFailure() {
         BluetoothProxyRuntime.resumeScannerAfterPackageReplacementFailure()
+        UpdateHomeHandoff.comeBack(context)
     }
 
     fun dispose() {

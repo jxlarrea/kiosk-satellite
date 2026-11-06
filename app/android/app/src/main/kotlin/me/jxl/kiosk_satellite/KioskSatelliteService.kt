@@ -72,6 +72,12 @@ class KioskSatelliteService : Service() {
         private const val KEY_REASONS = "reasons"
         private const val KEY_CPU_AWAKE = "cpu_awake"
         private const val KEY_LAST_ERROR = "last_error"
+        private const val KEY_ORPHAN_RESTART_AT = "orphan_restart_at"
+
+        /// One orphan restart per window, so a device where this signature
+        /// meant something else cannot restart in a loop. A second orphan
+        /// needs a second install, which is never this quick.
+        private const val ORPHAN_RESTART_SPACING_MS = 10 * 60_000L
 
         /// Reason ids, shared with the Dart ServiceManager, which computes
         /// them from the settings. [REASON_SESSIONS] is the floor: the
@@ -206,6 +212,19 @@ class KioskSatelliteService : Service() {
             )
         }
 
+        /**
+         * The Activity Manager's NullPointerException for a process it has
+         * no UID record for, a race on Android 10 when the HOME app's
+         * package is replaced (see [UpdateHomeHandoff]). No retry can pass,
+         * and the sensor, audio and camera services treat the process as
+         * idle for as long as it lives. Only a new process gets a record.
+         */
+        internal fun isOrphanedUid(e: Throwable): Boolean =
+            e is NullPointerException && e.message?.contains("UidRecord") == true
+
+        internal fun orphanRestartAllowed(lastAt: Long, now: Long): Boolean =
+            now - lastAt !in 0 until ORPHAN_RESTART_SPACING_MS
+
         private fun reasonsOf(prefs: android.content.SharedPreferences): Set<String> =
             (prefs.getStringSet(KEY_REASONS, null) ?: emptySet()) + REASON_SESSIONS
 
@@ -234,6 +253,7 @@ class KioskSatelliteService : Service() {
     private var cpuLock: PowerManager.WakeLock? = null
     private var screenReceiver: BroadcastReceiver? = null
     private var channelLanguage: String? = null
+    private var orphanedUid = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -295,11 +315,26 @@ class KioskSatelliteService : Service() {
             (wanted == base || !startForegroundWith(notification, base, prefs))
         ) {
             isForeground = false
+            if (orphanedUid && restartOrphanedProcess(prefs)) return
             Log.w(TAG, "foreground refused; stopping until the next resume")
             stopSelf()
             return
         }
         syncCpuLock(prefs.getBoolean(KEY_CPU_AWAKE, true))
+    }
+
+    /** Same restart as the remote admin's, which is what clears this state. */
+    private fun restartOrphanedProcess(prefs: android.content.SharedPreferences): Boolean {
+        val now = System.currentTimeMillis()
+        if (!orphanRestartAllowed(prefs.getLong(KEY_ORPHAN_RESTART_AT, 0L), now)) return false
+        // commit(), not apply(): the process ends below.
+        prefs.edit().putLong(KEY_ORPHAN_RESTART_AT, now).commit()
+        Log.w(TAG, "Android has no UID record for this process; restarting")
+        CrashJournal.note(this, "restarted: Android lost this process's UID record")
+        BackgroundBridge.prepareRelaunch(this)
+        me.jxl.kiosk_satellite.plugins.PluginBridge.noteDeliberateExit(this)
+        android.os.Process.killProcess(android.os.Process.myPid())
+        return true
     }
 
     /** Asks again for the full set of types when the last start fell short. */
@@ -324,6 +359,7 @@ class KioskSatelliteService : Service() {
         true
     } catch (e: Exception) {
         Log.w(TAG, "startForeground(types=$types) failed: $e")
+        if (isOrphanedUid(e)) orphanedUid = true
         prefs.edit()
             .putString(KEY_LAST_ERROR, "${e.javaClass.simpleName}: ${e.message}")
             .apply()

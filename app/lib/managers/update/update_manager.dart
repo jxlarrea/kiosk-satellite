@@ -1006,7 +1006,8 @@ class UpdateManager extends Manager {
     // the session is committed — by PENDING_USER_ACTION it is too late.
     // The kiosk re-arms when the install is declined or fails (below);
     // a successful install kills the process and the relaunch re-arms.
-    if (await _needsConfirmation(shizuku: useShizukuUpdates)) {
+    if (await _needsConfirmation(shizuku: useShizukuUpdates) ||
+        await _stepsAsideForInstall()) {
       _kioskPaused = (await commands.execute(
         'pauseKioskForInstall',
         const {},
@@ -1078,6 +1079,19 @@ class UpdateManager extends Manager {
           true;
     } catch (_) {
       if (shizuku) rethrow;
+      return false;
+    }
+  }
+
+  /// Whether the install moves the screen to the device's other launcher
+  /// first (see UpdateHomeHandoff). The pin would block that move and the
+  /// foreground reclaim would undo it, so the kiosk stands down for it the
+  /// same way it does for a confirmation.
+  Future<bool> _stepsAsideForInstall() async {
+    try {
+      return await _installer.invokeMethod<bool>('stepsAsideForInstall') ??
+          false;
+    } catch (_) {
       return false;
     }
   }

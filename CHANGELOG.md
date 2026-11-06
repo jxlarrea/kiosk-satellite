@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Updates no longer leave a Meta Portal without its sensors and mic.** On Android 10 with Kiosk Satellite as the home app, an update could leave the app running with no working light sensor or microphone and with the Kiosk Satellite Service stopped until the next restart. The device's other launcher now shows during a silent update and Kiosk Satellite reopens when the install finishes. If the problem still happens, for example after an install over adb, the app restarts once.
+
 ## v2026.11.8 - 2026-11-05
 
 ### Added
