@@ -39,10 +39,54 @@ class CrashResourcesTest {
             File(proc, "task/$it").mkdirs()
             File(proc, "task/$it/comm").writeText("Thread-$it")
         }
-        val snapshot = CrashResources.snapshot(proc)
+        val snapshot = CrashResources.snapshot(proc, limit = 256)
         assertTrue(snapshot.contains("process_status=unavailable"))
         assertTrue(snapshot.contains("read=256 listed=300 limit=256"))
         assertTrue(snapshot.contains("Thread-: 256"))
+    }
+
+    @Test fun repeatedUnknownNamesAreReportedAsTheirLeadingLetters() {
+        val proc = temp.newFolder()
+        var task = 0
+        fun threads(name: String, count: Int) = repeat(count) {
+            File(proc, "task/$task").mkdirs()
+            File(proc, "task/$task/comm").writeText(name)
+            task++
+        }
+        threads("LeakyWorker-${task}", 40)
+        threads("OkHttp 192.168.", 9)
+        threads("ws://192.168.1.", 9)
+        threads("kitchen.local", 9)
+        threads("rare-name", 7)
+        val snapshot = CrashResources.snapshot(proc)
+        assertTrue(snapshot, snapshot.contains("~LeakyWorker: 40"))
+        assertTrue(snapshot, snapshot.contains("~OkHttp: 9"))
+        assertTrue(snapshot, snapshot.contains("other: 25"))
+        assertFalse(snapshot, snapshot.contains("192.168"))
+        assertFalse(snapshot, snapshot.contains("kitchen"))
+        assertFalse(snapshot, snapshot.contains("rare-name"))
+    }
+
+    @Test fun anIpAddressOrUrlNeverSurvivesTheStem() {
+        assertEquals("OkHttp", CrashResources.repeatedNameStem("OkHttp 192.168."))
+        assertEquals("ThreadPoolForeg", CrashResources.repeatedNameStem("ThreadPoolForeg"))
+        assertEquals("hwuiTask", CrashResources.repeatedNameStem("hwuiTask1"))
+        assertNull(CrashResources.repeatedNameStem("kitchen.local"))
+        assertNull(CrashResources.repeatedNameStem("user@host"))
+        assertNull(CrashResources.repeatedNameStem("ws://192.168.1."))
+        assertNull(CrashResources.repeatedNameStem("192.168.1.5"))
+        assertNull(CrashResources.repeatedNameStem("1.raster"))
+    }
+
+    @Test fun fullLeakFitsTheJournalsResourceSpace() {
+        val proc = temp.newFolder()
+        repeat(1700) {
+            File(proc, "task/$it").mkdirs()
+            File(proc, "task/$it/comm").writeText("Worker${it % 20}".take(4) + ('A' + it % 20) + "x-$it")
+        }
+        val snapshot = CrashResources.snapshot(proc)
+        assertTrue(snapshot, snapshot.contains("read=1700 listed=1700 limit=2048"))
+        assertTrue(snapshot.length < 4096)
     }
 
     @Test fun diagnosticFailureCannotEraseTheOriginalCrash() {
