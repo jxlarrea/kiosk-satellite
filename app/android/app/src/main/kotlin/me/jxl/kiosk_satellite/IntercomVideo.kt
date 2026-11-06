@@ -115,6 +115,19 @@ internal object IntercomVideoHub {
 }
 
 /**
+ * Releases a producer whether or not it ever made a surface. Below Android 10
+ * the engine backs a producer with a SurfaceTexture, and its release() calls
+ * surface.release() with no null check, so a far camera that went away before
+ * a first frame took the app down when the call ended. Handing out a surface
+ * first lets release() finish. Catching the exception would not: the producer
+ * would stay unreleased and its finalizer would run the same release again.
+ */
+internal fun TextureRegistry.SurfaceProducer.releaseAlways() {
+    if (handlesCropAndRotation()) getSurface()
+    release()
+}
+
+/**
  * Video for intercom calls: the picture from the other kiosk and this kiosk's
  * own. Frames cross to Dart, which carries them over the call's video socket
  * with the intercom's key and TLS, and come back through a background queue
@@ -195,7 +208,7 @@ class IntercomVideo(
         self = null
         IntercomVideoHub.currentEncoder()?.setPreview(null)
         producer.setCallback(null)
-        producer.release()
+        producer.releaseAlways()
     }
 
     private fun showSelf() {
@@ -499,7 +512,7 @@ class IntercomVideo(
                 }
                 main.post {
                     producer.setCallback(null)
-                    producer.release()
+                    producer.releaseAlways()
                     glSurface?.release()
                     glEntry?.release()
                 }

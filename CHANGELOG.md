@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- **Video calls no longer crash on Android 9 and older.** If the other kiosk's camera turned off or the call ended before the first frame of video arrived, the app crashed. The same could happen with the self view.
 - **A rare graphics driver crash on OpenGL ES devices (#921).** When a drawing surface was replaced while a dashboard was on screen, a buffer could be created with no graphics context and crash the app on a later frame. Seen on a Meta Portal Go and a Xiaomi Pad 5. The context is now released as soon as the old surface is gone.
 - **Updates no longer leave a Meta Portal without its sensors and mic.** On Android 10 with Kiosk Satellite as the home app, an update could leave the app running with no working light sensor or microphone and with the Kiosk Satellite Service stopped until the next restart. The device's other launcher now shows during a silent update and Kiosk Satellite reopens when the install finishes. If the problem still happens, for example after an install over adb, the app restarts once.
 
