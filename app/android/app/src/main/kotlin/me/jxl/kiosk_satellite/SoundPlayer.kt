@@ -75,6 +75,16 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         private const val STREAM_STARTUP_BUFFER_MS = 250
         private const val STREAM_REBUFFER_MS = 500
 
+        /** How long a stream may send nothing before the read fails. A TTS
+         *  answer goes quiet while the conversation agent runs a tool. A
+         *  stream with no length cannot resume, so a failed read makes
+         *  ExoPlayer drop what it has and load again from byte 0, which
+         *  plays the answer twice (issue #1323). The source is always the
+         *  loopback relay, so this does not measure the network. Longer than
+         *  the voice turn's 120 second playback guard, so a turn ends before
+         *  this can fire. */
+        private const val STREAM_READ_TIMEOUT_MS = 180_000
+
         /** Cap on how long ExoPlayer.release() may block its caller (the
          *  main thread) waiting for the internal playback thread. */
         private const val RELEASE_TIMEOUT_MS = 50L
@@ -513,7 +523,8 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                         DefaultDataSource.Factory(
                             appContext,
                             DefaultHttpDataSource.Factory()
-                                .setUserAgent(AppIdentity.userAgent),
+                                .setUserAgent(AppIdentity.userAgent)
+                                .setReadTimeoutMs(STREAM_READ_TIMEOUT_MS),
                         ),
                         StreamedWavExtractorsFactory(),
                     ),

@@ -214,6 +214,67 @@ void main() {
     expect(log.recent.last.message, 'sound snd1: audio sink ended');
   });
 
+  test('ending a sound frees a stream that has gone quiet', () async {
+    // A raw socket writes at once, as Home Assistant does, and reports the
+    // moment the relay lets go.
+    final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(server.close);
+    final dropped = Completer<void>();
+    server.listen((socket) {
+      socket.listen(
+        (_) {
+          // Nothing follows, as while an agent runs a tool.
+          socket.write(
+            'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
+            '3\r\nabc\r\n',
+          );
+        },
+        onError: (_) {},
+        onDone: () {
+          dropped.complete();
+          socket.destroy();
+        },
+      );
+    });
+    final result = await commands.execute('playSound', {
+      'url': 'http://127.0.0.1:${server.port}/tts.mp3',
+      'stream': true,
+    });
+    final id = (result.data as Map)['id'] as String;
+    final uri = Uri.parse((calls.last.arguments as Map)['source']);
+    final response = await (await client.getUrl(uri)).close();
+    final heard = Completer<void>();
+    final read = Completer<void>();
+    response.listen(
+      (_) {
+        if (!heard.isCompleted) heard.complete();
+      },
+      onError: (_) {
+        if (!read.isCompleted) read.complete();
+      },
+      onDone: () {
+        if (!read.isCompleted) read.complete();
+      },
+      cancelOnError: false,
+    );
+    // What was said reaches the player while the stream is quiet.
+    await heard.future.timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => fail('the audio stayed in the relay'),
+    );
+    expect(read.isCompleted, isFalse);
+    await nativeEvent('ended', {'id': id});
+    await read.future.timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => fail('the player read stayed blocked'),
+    );
+    await dropped.future.timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => fail('the upstream stayed open'),
+    );
+    expect(log.recent.any((e) => e.message.contains('relay failed')), isFalse);
+  });
+
   test('a truncated HTTP body is discarded and the relay closes', () async {
     upstream.listen((req) async {
       final socket = await req.response.detachSocket(writeHeaders: false);

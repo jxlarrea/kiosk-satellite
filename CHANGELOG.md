@@ -10,6 +10,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Crash reports can show a thread leak.** A small number of installs run out of threads and crash in a loop, and the reports could not show why. A report now samples up to 2,048 threads instead of 256 and includes the leading letters of any thread name shared by 8 or more threads. Other names stay grouped as other, and no address or URL in a thread name is sent.
 
 ### Fixed
+- **Streamed answers no longer start over after a pause (#1323).** If a conversation agent spoke a short sentence and then ran a tool for more than 8 seconds, the sentence played twice before the answer. The sentence now plays once, right away and in full, and the answer follows when it is ready.
 - **Video calls no longer crash on Android 9 and older.** If the other kiosk's camera turned off or the call ended before the first frame of video arrived, the app crashed. The same could happen with the self view.
 - **A crash on the microphone thread with software echo cancellation.** The app could crash when a sound stopped playing at the exact moment the microphone read the list of active players.
 - **A rare graphics driver crash on OpenGL ES devices (#921).** When a drawing surface was replaced while a dashboard was on screen, a buffer could be created with no graphics context and crash the app on a later frame. Seen on a Meta Portal Go and a Xiaomi Pad 5. The context is now released as soon as the old surface is gone.

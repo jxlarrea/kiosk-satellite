@@ -225,8 +225,7 @@ class SoundManager extends Manager {
               await File(stale).delete();
             } catch (_) {}
           }
-          final token = _streamTokens.remove(id);
-          if (token != null) _relayTargets.remove(token);
+          _closeRelay(id);
           bus.publish(SoundEnded(id: id, error: error));
       }
       return null;
@@ -343,8 +342,7 @@ class SoundManager extends Manager {
             });
             if (ok != true) {
               _ephemeral.remove(id);
-              final token = _streamTokens.remove(id);
-              if (token != null) _relayTargets.remove(token);
+              _closeRelay(id);
               return const CommandResult.fail('native playback failed');
             }
             return CommandResult.ok({'id': id});
@@ -816,6 +814,15 @@ class SoundManager extends Manager {
     return 'http://127.0.0.1:${relay.port}/s/$token';
   }
 
+  /// Forget the relay of sound [id] and drop its upstream. A stopped player
+  /// cannot interrupt its own blocked read, so while the stream is quiet only
+  /// this frees its loader thread and the connection to Home Assistant. A
+  /// captured stream runs to its end: a failed sound is what a capture is for.
+  void _closeRelay(String id) {
+    final token = _streamTokens.remove(id);
+    if (token != null) _relayTargets.remove(token)?.close();
+  }
+
   Future<HttpServer> _startRelay() async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen(
@@ -839,6 +846,7 @@ class SoundManager extends Manager {
       return;
     }
     final client = HttpClient();
+    target.clients.add(client);
     final elapsed = Stopwatch()..start();
     var bytes = 0;
     // ExoPlayer may retry a request. Keep one response per capture, never
@@ -850,6 +858,10 @@ class SoundManager extends Manager {
       final out = await client.getUrl(Uri.parse(target.url));
       final upstream = await out.close();
       final res = req.response;
+      // Up to 8 KB would otherwise wait for more data. A stream that goes
+      // quiet would hold back the end of what was said, or all of a short
+      // sentence, until the next audio arrives.
+      res.bufferOutput = false;
       res.statusCode = upstream.statusCode;
       final type = upstream.headers.contentType;
       if (type != null) res.headers.contentType = type;
@@ -897,11 +909,11 @@ class SoundManager extends Manager {
       log.debug(name, 'sound ${target.id}: HTTP relay closed');
     } catch (e) {
       capture?.discard('HTTP transfer failed');
-      log.warn(
-        name,
-        'sound ${target.id}: HTTP relay failed '
-        'bytes=$bytes elapsed=${elapsed.elapsedMilliseconds}ms: $e',
-      );
+      final message =
+          'sound ${target.id}: HTTP relay '
+          '${target.closed ? 'closed with the sound' : 'failed'} '
+          'bytes=$bytes elapsed=${elapsed.elapsedMilliseconds}ms: $e';
+      target.closed ? log.debug(name, message) : log.warn(name, message);
       try {
         req.response.statusCode = HttpStatus.badGateway;
       } catch (_) {}
@@ -909,6 +921,7 @@ class SoundManager extends Manager {
         await req.response.close();
       } catch (_) {}
     } finally {
+      target.clients.remove(client);
       client.close(force: true);
     }
   }
@@ -933,4 +946,16 @@ class _SoundRelayTarget {
   final String url;
   final SoundCapture? capture;
   bool captureClaimed = false;
+
+  /// The upstream requests still open for this sound.
+  final clients = <HttpClient>{};
+  bool closed = false;
+
+  void close() {
+    if (capture != null) return;
+    closed = true;
+    for (final client in clients) {
+      client.close(force: true);
+    }
+  }
 }
