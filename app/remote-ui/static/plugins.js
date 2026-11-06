@@ -1173,8 +1173,10 @@ const pageViewer = Math.random().toString(36).slice(2);
 let shownPluginPage = '';
 function checkInPluginPage() {
   const [tab, id] = currentPath.split('/');
+  // Search results take the page's place without changing the route.
   const shown = tab === 'plugins' && id && id !== DIRECTORY_PAGE && !document.hidden
-    && !document.querySelector('#app')?.classList.contains('hidden') ? id : '';
+    && !document.querySelector('#app')?.classList.contains('hidden')
+    && document.querySelector('#tab-plugins')?.classList.contains('active') ? id : '';
   if (shownPluginPage && shownPluginPage !== shown) {
     cmd('setPluginPageOpen', { id: shownPluginPage, viewer: pageViewer, open: false }).catch(() => {});
   }

@@ -17,9 +17,14 @@ plugin = dict(capabilities=['shizuku'], id='hello', name='Hello World', descript
 plugins = [plugin]
 enabled = True
 calls = []
+page_checks = []
+
+
 def api(route):
     name = route.request.url.rsplit('/', 1)[-1]
     calls.append(name)
+    if name == 'setPluginPageOpen':
+        page_checks.append(route.request.post_data_json)
     data = dict(enabled=enabled, plugins=plugins) if name == 'getPluginState' else dict(status='ready', granted=True, uid=2000) if name == 'getShizukuState' else {}
     route.fulfill(json=dict(ok=True, data=data))
 try:
@@ -46,6 +51,14 @@ try:
         }""")
         field = page.locator('#settingsSearch')
         results = page.locator('#tab-search')
+
+        def wait_for_check(match):
+            for _ in range(60):
+                if any(match(check) for check in page_checks):
+                    return
+                page.wait_for_timeout(100)
+            raise AssertionError(f'no matching page check in {page_checks}')
+
         field.fill('Plugin')
         for title in ['Enable Plugins', 'Add plugin', 'Create a plugin', 'Hello World']:
             expect(results.get_by_text(title, exact=True).first).to_be_visible()
@@ -64,12 +77,20 @@ try:
         results.get_by_text('Nearby devices', exact=True).last.click()
         expect(page.locator('[data-search-id="x:shizuku:bluetooth"]')).to_have_class('row shizuku-action search-hit')
         field.fill('floating window')
+        # Searching tells no plugin that its page is open.
+        assert not page_checks, page_checks
         results.get_by_text('Greeting', exact=True).click()
         target = page.locator('[data-search-id="plugin:hello:setting:greeting"]')
         expect(target).to_be_visible()
         expect(target).to_have_class('row search-hit')
         assert page.url.endswith('#plugins/hello')
+        wait_for_check(lambda check: check['id'] == 'hello' and check.get('open') is not False)
+        # Search results cover the page, so the plugin hears that it closed.
         field.fill('Shizuku access')
+        wait_for_check(lambda check: check['id'] == 'hello' and check.get('open') is False)
+        page_checks.clear()
+        page.wait_for_timeout(2500)
+        assert not page_checks, page_checks
         results.get_by_text('Shizuku access', exact=True).last.click()
         expect(page.locator('[data-search-id="plugin:hello:shizuku"]')).to_have_class('row search-hit')
         field.fill('Hello World')
@@ -89,7 +110,7 @@ try:
         expect(results.get_by_text('Greeting', exact=True)).to_have_count(0)
         read_only = {'isScreenOn', 'evalJs', 'haStatus', 'esphomeStatus',
                      'sendspinStatus', 'hasUiGuard', 'fleetStatus', 'fleet',
-                     'voiceStatus'}
+                     'voiceStatus', 'setPluginPageOpen'}
         assert all(name.startswith('get') or name in read_only for name in calls), calls
         assert errors == [], errors
         browser.close()
