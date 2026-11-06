@@ -23,5 +23,7 @@
   "overviewOpenService": "Ouvrir le service",
   "overviewPermissionMissing": "Autorisation manquante : {permission}",
   "overviewSystemUpdate": "Mise à jour du système disponible",
-  "overviewSystemImageUpdateHelp": "La version {version} de l'image système est prête à être installée. L'appareil redémarre deux fois pour l'installer."
+  "overviewSystemImageUpdateHelp": "La version {version} de l'image système est prête à être installée. L'appareil redémarre deux fois pour l'installer.",
+  "overviewPluginUpdate": "Mise à jour de {name} disponible",
+  "overviewPluginUpdateHelp": "La version {version} est prête à être vérifiée et installée."
 }

@@ -4530,6 +4530,16 @@ class UiStringsZh extends UiStrings {
   String get overviewSystemUpdate => '有可用的系统更新';
 
   @override
+  String overviewPluginUpdate(String name) {
+    return '$name 有可用更新';
+  }
+
+  @override
+  String overviewPluginUpdateHelp(String version) {
+    return '$version 版已可查看并安装。';
+  }
+
+  @override
   String overviewSystemImageUpdateHelp(String version) {
     return '系统镜像 $version 版已可安装。安装时设备会重启两次。';
   }
@@ -19810,6 +19820,16 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get overviewSystemUpdate => '有可用的系统更新';
+
+  @override
+  String overviewPluginUpdate(String name) {
+    return '$name 有可用更新';
+  }
+
+  @override
+  String overviewPluginUpdateHelp(String version) {
+    return '$version 版已可查看并安装。';
+  }
 
   @override
   String overviewSystemImageUpdateHelp(String version) {

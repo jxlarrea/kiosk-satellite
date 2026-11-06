@@ -339,7 +339,7 @@ esbuild, on the first run. Run `npm run build` from `app/` by hand before
 server serves the page at `/` and the files at `/static/<name>`, gzipped
 for browsers that accept it and discovered from the asset manifest, so
 adding a module is just adding the file. Tabs: Overview (a Needs attention card for an update
-to install, a missing grant a switched-on feature needs, a lost Home
+to install, a plugin update to review, a missing grant a switched-on feature needs, a lost Home
 Assistant connection or a stopped wake word engine, hidden while there is
 nothing; the screenshot with a badge while the panel is dark, on the
 screensaver, showing Now Playing, the intercom or a camera view, taken again

@@ -115,6 +115,19 @@ void main() {
   tearDown(() => repository.close());
 
   test(
+    'latestRelease reads the manifest and digest and nothing else',
+    () async {
+      final latest = await repository.latestRelease(url);
+      expect(latest.manifest['version'], '1.0.0');
+      expect(latest.sha256, '${sha256.convert(bytes)}');
+      expect(requests.map((u) => u.pathSegments.last), [
+        'latest',
+        'kiosk-satellite-plugin.json',
+      ]);
+    },
+  );
+
+  test(
     'manual release uploads and missing or mismatched GitHub digests are rejected',
     () async {
       for (final uploader in [

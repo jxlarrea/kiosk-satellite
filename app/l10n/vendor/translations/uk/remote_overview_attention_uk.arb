@@ -23,5 +23,7 @@
   "overviewOpenService": "Відкрити службу",
   "overviewPermissionMissing": "Відсутній дозвіл: {permission}",
   "overviewSystemUpdate": "Доступне оновлення системи",
-  "overviewSystemImageUpdateHelp": "Версія {version} образу системи готова до встановлення. Для цього пристрій двічі перезапуститься."
+  "overviewSystemImageUpdateHelp": "Версія {version} образу системи готова до встановлення. Для цього пристрій двічі перезапуститься.",
+  "overviewPluginUpdate": "Доступне оновлення {name}",
+  "overviewPluginUpdateHelp": "Версія {version} готова до перегляду та встановлення."
 }

@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## v2026.11.9 - 2026-11-06
 
+### Added
+- **Plugin update notices (#1324).** Plugin updates are now checked a minute after the app starts and every 12 hours. A plugin with a newer release shows its new version in Plugin Manager and gets a row under **Needs attention** on the remote admin Overview. **Update** opens the usual review. Plugin updates never install automatically.
+
 ### Changed
 - **Video calls show more of the picture.** The call buttons now fade out with the kiosk's name 3 seconds after a call connects. Tap the screen to bring them back. They stay on screen while a call rings and while **Hold to talk** is held.
 - **Video calls use a black background.** The area around the picture is now black in every theme.

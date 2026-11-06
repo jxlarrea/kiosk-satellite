@@ -4735,6 +4735,16 @@ class UiStringsFr extends UiStrings {
   String get overviewSystemUpdate => 'Mise à jour du système disponible';
 
   @override
+  String overviewPluginUpdate(String name) {
+    return 'Mise à jour de $name disponible';
+  }
+
+  @override
+  String overviewPluginUpdateHelp(String version) {
+    return 'La version $version est prête à être vérifiée et installée.';
+  }
+
+  @override
   String overviewSystemImageUpdateHelp(String version) {
     return 'La version $version de l\'image système est prête à être installée. L\'appareil redémarre deux fois pour l\'installer.';
   }

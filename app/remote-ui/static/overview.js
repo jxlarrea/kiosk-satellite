@@ -9,7 +9,7 @@ import { readFilterStatus } from './filter_status.js';
 import { agoLabel } from './notices.js';
 import { loadScreenshot, quick, renderQuickControls } from './panels.js';
 import { adbHint, permissionSpecs } from './permissions.js';
-import { loadPlugins } from './plugins.js';
+import { loadPlugins, reviewPluginUpdate } from './plugins.js';
 import { showTab } from './tabs.js';
 import { attachSlider, showToast } from './widgets.js';
 import { openVsMigrationWizard } from './vs_native.js';
@@ -374,7 +374,7 @@ function openButton(btn, label, tab) {
    painted whole from the cache. A settings change repaints from the
    cache without a single command. */
 const health = { ha: null, wake: null, voice: null, esp: null, media: null, svc: null,
-  upd: null, sys: null, perms: null, guard: null, buttons: null, fleet: null, tiles: null };
+  upd: null, sys: null, perms: null, guard: null, buttons: null, fleet: null, tiles: null, plugins: null };
 const SOURCES = {
   ha: { topics: ['ha'], read: async () => { health.ha = await ask('haStatus'); } },
   // Wake word pushes arrive as their own message (ks-wakeword below).
@@ -410,6 +410,10 @@ const SOURCES = {
   } },
   fleet: { topics: ['fleetsync'], read: async () => { health.fleet = await ask('fleetStatus'); } },
   tiles: { topics: ['plugin-tiles'], read: async () => { health.tiles = await ask('getPluginStatusTiles'); } },
+  plugins: { topics: ['plugin-updates'], read: async () => {
+    const updates = await ask('getPluginUpdates');
+    health.plugins = Array.isArray(updates) ? updates : [];
+  } },
 };
 const dataOf = (r) => (r && r.ok !== false && r.data !== undefined ? r.data : null);
 // One read per source at a time: a tab shown during a read joins it.
@@ -612,6 +616,18 @@ function paintHealth({ filter = true } = {}) {
       action: (btn) => {
         overviewLabel(btn, 'Open guide');
         btn.onclick = () => window.open(health.sys.manualUrl, '_blank', 'noreferrer');
+      },
+    });
+  }
+  // Never installed from here without a person: Update opens the review.
+  for (const plugin of health.plugins ?? []) {
+    items.push({
+      key: `plugin-update:${plugin.id}`,
+      name: t('overviewPluginUpdate', {name: plugin.name}),
+      desc: t('overviewPluginUpdateHelp', {version: plugin.version}),
+      action: (btn) => {
+        overviewLabel(btn, 'Update');
+        btn.onclick = () => reviewPluginUpdate(plugin, btn);
       },
     });
   }

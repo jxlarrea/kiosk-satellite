@@ -23,5 +23,7 @@
   "overviewOpenService": "Открыть службу",
   "overviewPermissionMissing": "Нет разрешения: {permission}",
   "overviewSystemUpdate": "Доступно обновление системы",
-  "overviewSystemImageUpdateHelp": "Версия {version} образа системы готова к установке. Для этого устройство дважды перезагрузится."
+  "overviewSystemImageUpdateHelp": "Версия {version} образа системы готова к установке. Для этого устройство дважды перезагрузится.",
+  "overviewPluginUpdate": "Доступно обновление {name}",
+  "overviewPluginUpdateHelp": "Версия {version} готова к просмотру и установке."
 }

@@ -291,6 +291,38 @@
       ]
     }
   },
+  "overviewPluginUpdate": "{name} update available",
+  "@overviewPluginUpdate": {
+    "context": "Remote admin > Overview > Needs attention",
+    "description": "A newer release of an installed plugin. The name is the plugin's own name.",
+    "x-locations": {
+      "device": [],
+      "remoteAdmin": [
+        "Overview > Needs attention"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "overviewPluginUpdateHelp": "Version {version} is ready to review and install.",
+  "@overviewPluginUpdateHelp": {
+    "context": "Remote admin > Overview > Needs attention",
+    "description": "Under a plugin's update notice. Update opens a review of the release before it installs.",
+    "x-locations": {
+      "device": [],
+      "remoteAdmin": [
+        "Overview > Needs attention"
+      ]
+    },
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "overviewSystemImageUpdateHelp": "Version {version} of the system image is ready to install. The device restarts twice to install it.",
   "@overviewSystemImageUpdateHelp": {
     "context": "Remote admin > Overview > Needs attention",

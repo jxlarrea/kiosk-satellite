@@ -4702,6 +4702,16 @@ class UiStringsUk extends UiStrings {
   String get overviewSystemUpdate => 'Доступне оновлення системи';
 
   @override
+  String overviewPluginUpdate(String name) {
+    return 'Доступне оновлення $name';
+  }
+
+  @override
+  String overviewPluginUpdateHelp(String version) {
+    return 'Версія $version готова до перегляду та встановлення.';
+  }
+
+  @override
   String overviewSystemImageUpdateHelp(String version) {
     return 'Версія $version образу системи готова до встановлення. Для цього пристрій двічі перезапуститься.';
   }

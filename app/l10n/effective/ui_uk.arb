@@ -17730,6 +17730,38 @@
       ]
     }
   },
+  "overviewPluginUpdate": "Доступне оновлення {name}",
+  "@overviewPluginUpdate": {
+    "context": "Remote admin > Overview > Needs attention",
+    "description": "A newer release of an installed plugin. The name is the plugin's own name.",
+    "x-locations": {
+      "device": [],
+      "remoteAdmin": [
+        "Overview > Needs attention"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "overviewPluginUpdateHelp": "Версія {version} готова до перегляду та встановлення.",
+  "@overviewPluginUpdateHelp": {
+    "context": "Remote admin > Overview > Needs attention",
+    "description": "Under a plugin's update notice. Update opens a review of the release before it installs.",
+    "x-locations": {
+      "device": [],
+      "remoteAdmin": [
+        "Overview > Needs attention"
+      ]
+    },
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "overviewSystemImageUpdateHelp": "Версія {version} образу системи готова до встановлення. Для цього пристрій двічі перезапуститься.",
   "@overviewSystemImageUpdateHelp": {
     "context": "Remote admin > Overview > Needs attention",

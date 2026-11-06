@@ -164,8 +164,9 @@ class PluginRepository {
     throw const FormatException('Too many GitHub redirects');
   }
 
-  Future<Map<String, Object?>> preview(String url) async {
-    final repository = repositoryUrl(url);
+  /// The latest stable release of [repository] and its manifest. Costs one
+  /// GitHub API request.
+  Future<_Release> _latestRelease(Uri repository) async {
     final release = jsonDecode(
       utf8.decode(
         await _get(
@@ -260,7 +261,35 @@ class PluginRepository {
         ).hasMatch(version)) {
       throw const FormatException('Invalid plugin ID or version');
     }
-    final packageName = '$id-$version.zip';
+    return _Release(tag, assets, manifest, assetUrl);
+  }
+
+  /// The manifest and package digest of the latest release of [url], for
+  /// the update check. Unlike [preview] this reads no package checksum or
+  /// README and leaves no install approval behind.
+  Future<({Map manifest, String? sha256})> latestRelease(String url) async {
+    final release = await _latestRelease(repositoryUrl(url));
+    final package = release.packageName;
+    final digest = release.assets
+        .whereType<Map>()
+        .where((a) => a['name'] == package)
+        .firstOrNull?['digest'];
+    return (
+      manifest: release.manifest,
+      sha256: digest is String && digest.startsWith('sha256:')
+          ? digest.substring('sha256:'.length)
+          : null,
+    );
+  }
+
+  Future<Map<String, Object?>> preview(String url) async {
+    final repository = repositoryUrl(url);
+    final release = await _latestRelease(repository);
+    final tag = release.tag;
+    final assets = release.assets;
+    final manifest = release.manifest;
+    final assetUrl = release.assetUrl;
+    final packageName = release.packageName;
     final downloadUrl = assetUrl(packageName, maxPackageBytes);
     final checksumUrl = assetUrl('$packageName.sha256', 1024);
     final checksum = RegExp(
@@ -391,6 +420,18 @@ class PluginRepository {
     _previews.clear();
     _client.close();
   }
+}
+
+class _Release {
+  const _Release(this.tag, this.assets, this.manifest, this.assetUrl);
+  final String tag;
+  final List assets;
+  final Map manifest;
+
+  /// A checked download URL for the named asset, up to a size limit.
+  final Uri Function(String name, int limit) assetUrl;
+
+  String get packageName => '${manifest['id']}-${manifest['version']}.zip';
 }
 
 class _Preview {

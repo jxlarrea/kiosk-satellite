@@ -4720,6 +4720,16 @@ class UiStringsNl extends UiStrings {
   String get overviewSystemUpdate => 'Systeemupdate beschikbaar';
 
   @override
+  String overviewPluginUpdate(String name) {
+    return 'Update voor $name beschikbaar';
+  }
+
+  @override
+  String overviewPluginUpdateHelp(String version) {
+    return 'Versie $version staat klaar om te controleren en te installeren.';
+  }
+
+  @override
   String overviewSystemImageUpdateHelp(String version) {
     return 'Versie $version van de systeemimage staat klaar om te installeren. Het apparaat start daarvoor twee keer opnieuw op.';
   }

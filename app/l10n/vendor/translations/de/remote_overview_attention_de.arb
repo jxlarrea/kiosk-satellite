@@ -23,5 +23,7 @@
   "overviewOpenService": "Dienst öffnen",
   "overviewPermissionMissing": "Berechtigung fehlt: {permission}",
   "overviewSystemUpdate": "Systemupdate verfügbar",
-  "overviewSystemImageUpdateHelp": "Version {version} des System-Images ist bereit zur Installation. Das Gerät startet dafür zweimal neu."
+  "overviewSystemImageUpdateHelp": "Version {version} des System-Images ist bereit zur Installation. Das Gerät startet dafür zweimal neu.",
+  "overviewPluginUpdate": "Update für {name} verfügbar",
+  "overviewPluginUpdateHelp": "Version {version} ist bereit zur Prüfung und Installation."
 }

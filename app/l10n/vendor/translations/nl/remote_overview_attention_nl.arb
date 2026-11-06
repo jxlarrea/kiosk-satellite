@@ -23,5 +23,7 @@
   "overviewOpenService": "Service openen",
   "overviewPermissionMissing": "Toestemming ontbreekt: {permission}",
   "overviewSystemUpdate": "Systeemupdate beschikbaar",
-  "overviewSystemImageUpdateHelp": "Versie {version} van de systeemimage staat klaar om te installeren. Het apparaat start daarvoor twee keer opnieuw op."
+  "overviewSystemImageUpdateHelp": "Versie {version} van de systeemimage staat klaar om te installeren. Het apparaat start daarvoor twee keer opnieuw op.",
+  "overviewPluginUpdate": "Update voor {name} beschikbaar",
+  "overviewPluginUpdateHelp": "Versie {version} staat klaar om te controleren en te installeren."
 }

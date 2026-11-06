@@ -17730,6 +17730,38 @@
       ]
     }
   },
+  "overviewPluginUpdate": "Mise à jour de {name} disponible",
+  "@overviewPluginUpdate": {
+    "context": "Remote admin > Overview > Needs attention",
+    "description": "A newer release of an installed plugin. The name is the plugin's own name.",
+    "x-locations": {
+      "device": [],
+      "remoteAdmin": [
+        "Overview > Needs attention"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "overviewPluginUpdateHelp": "La version {version} est prête à être vérifiée et installée.",
+  "@overviewPluginUpdateHelp": {
+    "context": "Remote admin > Overview > Needs attention",
+    "description": "Under a plugin's update notice. Update opens a review of the release before it installs.",
+    "x-locations": {
+      "device": [],
+      "remoteAdmin": [
+        "Overview > Needs attention"
+      ]
+    },
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "overviewSystemImageUpdateHelp": "La version {version} de l'image système est prête à être installée. L'appareil redémarre deux fois pour l'installer.",
   "@overviewSystemImageUpdateHelp": {
     "context": "Remote admin > Overview > Needs attention",

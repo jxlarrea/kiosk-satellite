@@ -163,6 +163,7 @@ void main() {
         return {'plugins': <Object?>[], 'enabled': true};
       });
       await plugins.init();
+      plugins.stopUpdateChecks();
       await plugins.refresh();
       addTearDown(() async {
         messenger.setMockMethodCallHandler(PluginManager.channel, null);

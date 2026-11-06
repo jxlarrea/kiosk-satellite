@@ -282,6 +282,18 @@ class PluginManager extends Manager implements FleetPluginHost {
   });
   final status = ValueNotifier<String>('');
   final enabled = ValueNotifier<bool>(false);
+
+  /// Installed plugins with a newer release, as id to version. This only
+  /// tells people: an update always goes through its review, so nothing
+  /// here ever installs one.
+  final updates = ValueNotifier<Map<String, String>>(const {});
+
+  /// The newest release known for each installed plugin, as a list entry.
+  final _latest = <String, Map<String, Object?>>{};
+  Timer? _firstUpdateCheck;
+  Timer? _updateChecks;
+  Future<void>? _checkingUpdates;
+  bool _updatesChecked = false;
   bool _disposed = false;
   late final PluginHostApi _hostReads;
 
@@ -415,6 +427,22 @@ class PluginManager extends Manager implements FleetPluginHost {
 
     installed.addListener(publishSettings);
     enabled.addListener(publishSettings);
+    updates.addListener(publishSettings);
+    // The Overview's Needs attention list, and what a finished install or
+    // a switched off Plugin Manager takes off it.
+    updates.addListener(() {
+      if (!_disposed) bus.publish(const RemoteStatusChanged('plugin-updates'));
+    });
+    installed.addListener(_readUpdates);
+    enabled.addListener(_readUpdates);
+    enabled.addListener(() {
+      // Switched on after the first check found Plugin Manager off.
+      if (enabled.value &&
+          !_updatesChecked &&
+          _firstUpdateCheck?.isActive == false) {
+        unawaited(checkUpdates());
+      }
+    });
     // Screensaver mode lists each plugin screensaver by title and plugin
     // name, so the remote admin rebuilds its dropdown when either changes.
     // A slideshow's new photos leave the list alone.
@@ -810,6 +838,12 @@ class PluginManager extends Manager implements FleetPluginHost {
       const {'id': 'Installed plugin ID'},
     );
     register(
+      'getPluginUpdates',
+      'List installed plugins with a newer release, from the last update check.',
+      (_) async => pendingUpdates,
+      const {},
+    );
+    register(
       'installPluginRepository',
       'Install the release from a reviewed repository preview.',
       (p) => installRepository(
@@ -964,6 +998,16 @@ class PluginManager extends Manager implements FleetPluginHost {
     );
     // Plugin startup must not hold up the dashboard or remote administration.
     unawaited(_initialize());
+    // Not at boot: the network may still be settling, the plugins are
+    // still starting and the check is never urgent.
+    _firstUpdateCheck = Timer(
+      const Duration(minutes: 1),
+      () => unawaited(checkUpdates()),
+    );
+    _updateChecks = Timer.periodic(
+      const Duration(hours: 12),
+      (_) => unawaited(checkUpdates()),
+    );
   }
 
   Future<void> _initialize() async {
@@ -1029,11 +1073,122 @@ class PluginManager extends Manager implements FleetPluginHost {
       );
     }
     final preview = await previewRepository(source['repository'] as String);
+    final available = PluginRepository.hasUpdate(preview, plugin);
+    // What this check found is newer than the last scheduled one.
+    _latest[id] = PluginDirectory.releaseEntry(
+      preview['manifest'] as Map,
+      repository: preview['repository'] as String,
+      sha256: preview['sha256'] as String?,
+    );
+    _readUpdates();
     return {
       ...preview,
       'installedVersion': plugin['version'],
-      'updateAvailable': PluginRepository.hasUpdate(preview, plugin),
+      'updateAvailable': available,
     };
+  }
+
+  /// Ends the scheduled update checks. A widget test calls this after
+  /// init, because a pending timer fails it before its tear down runs.
+  @visibleForTesting
+  void stopUpdateChecks() {
+    _firstUpdateCheck?.cancel();
+    _updateChecks?.cancel();
+  }
+
+  /// The plugins [updates] names, for the Overview.
+  List<Map<String, Object?>> get pendingUpdates => [
+    for (final plugin in installed.value)
+      if (updates.value['${plugin['id']}'] case final version?)
+        {'id': plugin['id'], 'name': plugin['name'], 'version': version},
+  ];
+
+  /// Looks for newer releases of the installed plugins. Community Plugins
+  /// answers for all it lists in one download. A plugin it does not list
+  /// costs one GitHub API request. Failures keep what was already known.
+  Future<void> checkUpdates() => _checkingUpdates ??= _checkUpdates()
+      .whenComplete(() => _checkingUpdates = null);
+
+  Future<void> _checkUpdates() async {
+    if (_disposed || !enabled.value) return;
+    _updatesChecked = true;
+    final plugins = [
+      for (final plugin in installed.value)
+        if (_updateSource(plugin) != null) plugin,
+    ];
+    if (plugins.isEmpty) return;
+    final List<Map> listed;
+    try {
+      final data = await directory.read();
+      listed = (data['plugins'] as List).cast<Map>();
+    } catch (error) {
+      log.warn(name, 'plugin update check skipped: $error');
+      return;
+    }
+    for (final plugin in plugins) {
+      if (_disposed) return;
+      final id = plugin['id'] as String;
+      final source = _updateSource(plugin);
+      if (source == null) continue;
+      final entry = listed
+          .where((e) => e['id'] == id && e['repositoryKey'] == source)
+          .firstOrNull;
+      try {
+        if (entry != null) {
+          _latest[id] = Map<String, Object?>.from(entry);
+          continue;
+        }
+        final release = await repository.latestRelease(source);
+        if (release.manifest['id'] == id) {
+          _latest[id] = PluginDirectory.releaseEntry(
+            release.manifest,
+            repository: source,
+            sha256: release.sha256,
+          );
+        }
+      } catch (error) {
+        log.warn(name, 'update check failed for $id: $error');
+      }
+    }
+    _readUpdates();
+  }
+
+  /// Where this kiosk can look for a newer [plugin] itself. A plugin from
+  /// a ZIP has no such place, and a fleet leader keeps a synced one in step.
+  String? _updateSource(Map<String, Object?> plugin) {
+    final source = plugin['source'];
+    if (source is! Map || source['repository'] is! String) return null;
+    if (fleetManaged('${plugin['id']}')) return null;
+    try {
+      return PluginRepository.repositoryUrl(
+        source['repository'] as String,
+      ).toString();
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// Sets [updates] from the newest releases known, against what is
+  /// installed now, so an install takes its plugin off the list.
+  void _readUpdates() {
+    if (_disposed) return;
+    final next = <String, String>{};
+    if (enabled.value) {
+      for (final plugin in installed.value) {
+        final id = '${plugin['id']}';
+        final latest = _latest[id];
+        if (latest == null || _updateSource(plugin) == null) continue;
+        final standing = PluginDirectory.installStatus(
+          latest,
+          plugin,
+          appVersion: appVersion(),
+        );
+        if (standing['updateAvailable'] == true) {
+          next[id] = '${latest['version']}';
+        }
+      }
+    }
+    if (!mapEquals(next, updates.value)) updates.value = next;
   }
 
   Future<List<Map<String, Object?>>> installRepository(
@@ -1080,7 +1235,11 @@ class PluginManager extends Manager implements FleetPluginHost {
     'enabled': enabled.value,
     'plugins': [
       for (final p in installed.value)
-        if (fleetManaged('${p['id']}')) {...p, 'fleetManaged': true} else p,
+        {
+          ...p,
+          if (fleetManaged('${p['id']}')) 'fleetManaged': true,
+          'updateVersion': ?updates.value['${p['id']}'],
+        },
     ],
   };
 
@@ -1746,6 +1905,7 @@ class PluginManager extends Manager implements FleetPluginHost {
   @override
   Future<void> dispose() async {
     _disposed = true;
+    stopUpdateChecks();
     for (final viewers in _pageViewers.values) {
       for (final timer in viewers.values) {
         timer?.cancel();
@@ -1776,5 +1936,6 @@ class PluginManager extends Manager implements FleetPluginHost {
     shizuku.dispose();
     status.dispose();
     enabled.dispose();
+    updates.dispose();
   }
 }

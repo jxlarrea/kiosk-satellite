@@ -55,6 +55,7 @@ void main() {
           return {'status': 'ready', 'granted': true, 'uid': 2000};
         });
         await container.plugins.init();
+        container.plugins.stopUpdateChecks();
         calls.clear();
         tester.view.physicalSize = Size(width, 1000);
         tester.view.devicePixelRatio = 1;

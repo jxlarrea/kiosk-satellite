@@ -8272,6 +8272,18 @@ abstract class UiStrings {
   /// **'System update available'**
   String get overviewSystemUpdate;
 
+  /// A newer release of an installed plugin. The name is the plugin's own name.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} update available'**
+  String overviewPluginUpdate(String name);
+
+  /// Under a plugin's update notice. Update opens a review of the release before it installs.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} is ready to review and install.'**
+  String overviewPluginUpdateHelp(String version);
+
   /// Translate the interface text. Keep external names, versions and technical details unchanged.
   ///
   /// In en, this message translates to:

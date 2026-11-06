@@ -377,6 +377,9 @@ function directoryRow(entry) {
   return row;
 }
 
+// The Update button of a plugin on the Overview: the same review as here.
+export const reviewPluginUpdate = (plugin, trigger) => installListed(plugin, true, trigger);
+
 async function installListed(entry, update, trigger) {
   if (busy) return;
   busy = true;
@@ -817,7 +820,7 @@ function reconcilePluginPage(page, plugin, force = null) {
 // What a full render draws apart from setting values and status lines.
 // Runtime lists such as entities and charts are read on their own.
 const PAGE_FIELDS = ['id', 'name', 'description', 'version', 'sha256', 'icon', 'source', 'enabled', 'running',
-  'fleetManaged', 'capabilities', 'groups', 'settings', 'buttons', 'commands', 'actionOptions'];
+  'fleetManaged', 'capabilities', 'groups', 'settings', 'buttons', 'commands', 'actionOptions', 'updateVersion'];
 const pageStructure = (state) => JSON.stringify([state.enabled === true,
   (state.plugins || []).map((plugin) => PAGE_FIELDS.map((field) => plugin[field] ?? null))]);
 let renderedStructure = '';
@@ -959,7 +962,8 @@ function render(root, state) {
     const row = subpageEntry('plugins', plugin.id, { iconName: 'Plugins' });
     row.querySelector('.name').textContent = plugin.name;
     const repository = plugin.source?.repository?.match(/^https:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/?$/i)?.[1];
-    row.querySelector('.desc').textContent = `${repository || 'ZIP'} · ${plugin.version}`;
+    row.querySelector('.desc').textContent = [`${repository || 'ZIP'} · ${plugin.version}`,
+      ...(plugin.updateVersion ? [t('overviewNewVersion', { version: plugin.updateVersion })] : [])].join(' · ');
     row.addEventListener('click', (event) => { if (busy) event.stopImmediatePropagation(); }, true);
     row.setAttribute('role', 'link'); row.tabIndex = 0;
     row.onkeydown = (event) => {

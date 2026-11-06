@@ -697,18 +697,21 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                 ? const SizedBox.shrink()
                 : WarnRow(pluginError(context, status)),
           ),
-          ValueListenableBuilder<List<Map<String, Object?>>>(
-            valueListenable: widget.plugins.installed,
-            builder: (context, plugins, _) => SettingsCard(
+          ListenableBuilder(
+            listenable: Listenable.merge([
+              widget.plugins.installed,
+              widget.plugins.updates,
+            ]),
+            builder: (context, _) => SettingsCard(
               children: [
-                if (plugins.isEmpty)
+                if (widget.plugins.installed.value.isEmpty)
                   HintRow(
                     pluginText(
                       context,
                       'No plugins installed. Add a repository to get started.',
                     ),
                   ),
-                for (final plugin in plugins)
+                for (final plugin in widget.plugins.installed.value)
                   // A phone gives the name and repository the row beside
                   // the switch, and the update, about and uninstall
                   // buttons a line of their own under them.
@@ -772,7 +775,12 @@ class _PluginSettingsPanelState extends State<PluginSettingsPanel> {
                           children: [
                             Text('${plugin['name']}'),
                             Text(
-                              _pluginEntryHint(plugin),
+                              [
+                                _pluginEntryHint(plugin),
+                                if (widget.plugins.updates.value[plugin['id']]
+                                    case final version?)
+                                  l10n(context).overviewNewVersion(version),
+                              ].join(' · '),
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
                                     color: Theme.of(

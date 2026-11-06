@@ -23,5 +23,7 @@
   "overviewOpenService": "打开服务",
   "overviewPermissionMissing": "缺少权限：{permission}",
   "overviewSystemUpdate": "有可用的系统更新",
-  "overviewSystemImageUpdateHelp": "系统镜像 {version} 版已可安装。安装时设备会重启两次。"
+  "overviewSystemImageUpdateHelp": "系统镜像 {version} 版已可安装。安装时设备会重启两次。",
+  "overviewPluginUpdate": "{name} 有可用更新",
+  "overviewPluginUpdateHelp": "{version} 版已可查看并安装。"
 }

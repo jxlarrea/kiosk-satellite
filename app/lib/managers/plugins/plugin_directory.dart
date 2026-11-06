@@ -300,6 +300,26 @@ class PluginDirectory {
     return true;
   }
 
+  /// A release read from GitHub in the shape of a list entry, so
+  /// [installStatus] can judge a plugin the list does not carry.
+  static Map<String, Object?> releaseEntry(
+    Map manifest, {
+    required String repository,
+    String? sha256,
+  }) {
+    final minAppVersion = manifest['minAppVersion'];
+    return {
+      'id': manifest['id'],
+      'version': manifest['version'],
+      'repositoryKey': PluginRepository.repositoryUrl(repository).toString(),
+      'sha256': sha256,
+      'minAppVersion':
+          minAppVersion is String && appVersionPattern.hasMatch(minAppVersion)
+          ? minAppVersion
+          : null,
+    };
+  }
+
   /// How a listed plugin stands against the installed one with its ID:
   /// installed from this repository, and whether the list knows a newer
   /// release. A plugin with the same ID from elsewhere counts as installed
