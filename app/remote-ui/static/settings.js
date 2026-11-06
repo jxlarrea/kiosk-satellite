@@ -2502,6 +2502,8 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
             try {
               const u = new URL(byKey['browser.start_url']?.value || '');
               homePath = u.pathname.replace(/^\/+|\/+$/g, '') || null;
+              // A hash in the start URL is a popup, which the return opens.
+              if (homePath && u.hash) homePath += u.search + u.hash;
             } catch (_) {}
             const note = document.createElement('div');
             note.className = 'row';

@@ -1203,7 +1203,7 @@ class HomeAssistantManager extends Manager {
       final external = externalPageNavPath(start, customPages);
       if (external != null) return external;
     }
-    final path = navPathOfUri(uri);
+    final path = landingPathOfUri(uri);
     return path.isEmpty ? null : path;
   }
 
@@ -1423,7 +1423,7 @@ class HomeAssistantManager extends Manager {
     if (page.contains('://')) return externalPageNavPath(page, customPages);
     if (!page.startsWith('/')) return null;
     final uri = Uri.tryParse(page);
-    final path = uri == null ? '' : navPathOfUri(uri);
+    final path = uri == null ? '' : landingPathOfUri(uri);
     return path.isEmpty ? null : path;
   }
 

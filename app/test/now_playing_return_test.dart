@@ -125,6 +125,23 @@ void main() {
     });
   });
 
+  group('a start URL with a popup hash (issue #1327)', () {
+    const home = 'http://ha.test:8123/lovelace/home#room';
+
+    test('the screensaver lands on the view with its hash', () async {
+      await build({'ks.browser.start_url': home});
+      await startSaver();
+      expect(pushes, ['lovelace/home#room']);
+    });
+
+    test('a page already on that hash stays put', () async {
+      await build({'ks.browser.start_url': home});
+      pathname = '/lovelace/home#room';
+      await startSaver();
+      expect(pushes, isEmpty);
+    });
+  });
+
   group('Last view', () {
     test('Now Playing holds the return home and stays put', () async {
       await build({'ks.sendspin.fullscreen_return': 'last'});
@@ -156,6 +173,15 @@ void main() {
       expect(saver.isActive, isTrue);
       await dismiss();
       expect(pushes, ['lovelace/home']);
+    });
+
+    test('the page comes back with the popup it had open', () async {
+      await build({'ks.sendspin.fullscreen_return': 'last'});
+      pathname = '/lovelace/media#room';
+      await startSaver();
+      await music(true);
+      await dismiss();
+      expect(pushes, ['lovelace/home', 'lovelace/media#room']);
     });
 
     test('a plain screensaver keeps going home', () async {

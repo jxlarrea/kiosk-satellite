@@ -368,6 +368,38 @@ void main() {
       expect(ha.homeViewPath(), 'local/wall.html#den');
     });
 
+    test('the home view of a dashboard keeps its popup hash', () async {
+      await build([]);
+      await settings.set(
+        defs.startUrl,
+        'http://ha.test:8123/dashboard/home#room',
+      );
+      expect(ha.homeViewPath(), 'dashboard/home#room');
+      await settings.set(
+        defs.startUrl,
+        'http://ha.test:8123/dashboard/home?kiosk#room',
+      );
+      expect(ha.homeViewPath(), 'dashboard/home?kiosk#room');
+    });
+
+    test('the home view of a dashboard with no hash stays bare', () async {
+      await build([]);
+      await settings.set(
+        defs.startUrl,
+        'http://ha.test:8123/dashboard/home?kiosk',
+      );
+      expect(ha.homeViewPath(), 'dashboard/home');
+    });
+
+    test('the ESPHome view select matches without the hash', () {
+      expect(
+        matchDashboardView('http://ha.test/dashboard/home#room', const [
+          'dashboard/home',
+        ]),
+        'dashboard/home',
+      );
+    });
+
     test('Save & Validate saves only a page Home Assistant serves', () async {
       await build([]);
       final requested = <String>[];

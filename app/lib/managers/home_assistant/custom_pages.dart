@@ -184,6 +184,18 @@ String navPathOfUri(Uri uri) {
       (uri.hasFragment && uri.fragment.isNotEmpty ? '#${uri.fragment}' : '');
 }
 
+/// The path that brings the page back to [uri]: [navPathOfUri] plus a
+/// dashboard's fragment, which is an open popup. The query goes with the
+/// fragment, since a path with either has to match the page's whole URL.
+/// Without a fragment a dashboard keeps its bare path.
+String landingPathOfUri(Uri uri) {
+  final path = navPathOfUri(uri);
+  if (path.isEmpty || isCustomPagePath(path) || uri.fragment.isEmpty) {
+    return path;
+  }
+  return '$path${uri.hasQuery ? '?${uri.query}' : ''}#${uri.fragment}';
+}
+
 /// The page's file, its path or URL without the fragment: what the server
 /// serves and the validation asks for.
 String customPageFile(String path) {
