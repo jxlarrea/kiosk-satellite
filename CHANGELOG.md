@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.11 - 2026-11-07
 
 ### Added
 - **24-hour clock for the calendar and alarms.** Settings > Calendar > 24-hour clock picks 24-hour times or AM/PM for the calendar and the Up next widget. Settings > Alarms > 24-hour clock does the same for the alarm list, the time wheel, the ringing screen, the next alarm widget, the remote administration's alarms page and `{time}` and `{hour}` in the spoken phrase. Both used to follow Android's clock setting, which is where they start. With them off, times use AM/PM in every language, including the ones that write 24-hour times by default. With the alarms on AM/PM, the time picker in remote administration takes the hour from 1 to 12 with an AM or PM choice, as the kiosk's wheel does.
