@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.10 - 2026-11-06
 
 ### Added
 - **Plugins can tell when Now Playing is on screen (#1335).** `getScreensaverAppearance` and the `screensaver.appearance` event now include `nowPlaying`, which is true while the player is on screen, including a paused player and a shared layout. `nowPlayingShared` is true while the screensaver stays in sight beside the player. A plugin drawn over the screensaver can now get out of the way of the player. Music playing with no player on screen leaves both false.
