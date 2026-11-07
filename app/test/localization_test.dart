@@ -84,20 +84,12 @@ void main() {
     }
   });
 
-  test('every localized category has messages for its visible settings', () {
+  test('every visible setting has messages', () {
+    // These two show a {token} in their text, which a settings message
+    // cannot carry, so LocalizedSetting picks their messages by key.
+    const byKey = {'voice.timer_named_phrase', 'alarms.phrase'};
     for (final setting in allSettings.where(
-      (s) =>
-          [
-            'Sendspin',
-            'DLNA',
-            'Intercom',
-            'Kiosk',
-            'Home',
-            'Launcher',
-            'Gestures',
-            'ESPHome',
-          ].contains(s.category) &&
-          !s.hidden,
+      (s) => !s.hidden && !byKey.contains(s.key),
     )) {
       expect(setting.titleMessageId, isNotNull, reason: setting.key);
       expect(setting.descriptionMessageId, isNotNull, reason: setting.key);

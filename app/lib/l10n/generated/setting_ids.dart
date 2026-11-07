@@ -2428,6 +2428,14 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingCalendarWeatherEntityTitle",
     "description": "settingCalendarWeatherEntityDescription",
   },
+  "calendar.allow_edit": {
+    "title": "settingCalendarAllowEditTitle",
+    "description": "settingCalendarAllowEditDescription",
+  },
+  "calendar.allow_delete": {
+    "title": "settingCalendarAllowDeleteTitle",
+    "description": "settingCalendarAllowDeleteDescription",
+  },
   "calendar.menu": {
     "title": "settingShowInKioskMenuTitle",
     "description": "settingUiDrawerItemsDescription",

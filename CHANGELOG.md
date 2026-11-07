@@ -8,6 +8,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Talk right after the wake word only applies to Assist pipelines.** With it on, a realtime conversation skipped the wake sound and sent what was said right after the wake word, which could carry the end of the wake word along ("So, what time is it?"). Realtime conversations now always start after the wake sound when Play chimes is on.
 
 ### Fixed
+- **The calendar editing settings follow the app language.** Settings > Calendar > Allow adding and editing events and Allow deleting events showed their labels and hints in English in every language, on the kiosk and in remote administration.
 - **No reply to the echo of a realtime answer.** Right after an answer stopped playing, its echo could still reach the microphone. An OpenAI conversation could take that for the user and reply, often with something nobody asked for. Speech that starts in that moment now has to be as loud as talking over an answer. xAI and Gemini conversations already worked this way. The app log now shows where each stretch of speech starts and stops against the end of the last answer, and when the provider heard no words.
 
 ## v2026.11.11 - 2026-11-07
