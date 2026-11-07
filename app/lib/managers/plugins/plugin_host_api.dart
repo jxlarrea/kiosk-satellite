@@ -57,6 +57,7 @@ class PluginScreensaverFeed {
     required this.view,
     required this.night,
     required this.nowPlaying,
+    required this.nowPlayingShared,
     required this.settings,
     this.setTint,
     this.clearTint,
@@ -72,8 +73,12 @@ class PluginScreensaverFeed {
   /// Drops a plugin's tint.
   final void Function(String pluginId)? clearTint;
 
-  /// Whether Now Playing fills the screensaver, hiding the view under it.
+  /// Whether the Now Playing player is on screen, alone or sharing the
+  /// screen with the view.
   final bool Function() nowPlaying;
+
+  /// Whether the view stays in sight beside the player.
+  final bool Function() nowPlayingShared;
   final SettingsManager settings;
 }
 
@@ -1286,20 +1291,27 @@ class PluginHostApi {
   }
 
   /// The screensaver's look as plugins follow it: the view, whether the
-  /// Clock screensaver wears its Night mode colors and those colors as
-  /// ARGB, null outside Night mode. The card color is the flip clock's
-  /// alone. Night mode never shows under Now Playing, which hides the face.
+  /// player is on screen and shares it, whether the Clock screensaver
+  /// wears its Night mode colors and those colors as ARGB, null outside
+  /// Night mode. The card color is the flip clock's alone. A player that
+  /// fills the screen hides the face and its Night mode. Beside a shared
+  /// player the face stays in sight and keeps it.
   Map<String, Object?>? _screensaverAppearance() {
     final feed = screensaver;
     if (feed == null) return null;
     final view = feed.view.value;
-    final night = view == 'clock' && feed.night.value && !feed.nowPlaying();
+    final nowPlaying = feed.nowPlaying();
+    final shared = nowPlaying && feed.nowPlayingShared();
+    final night =
+        view == 'clock' && feed.night.value && (!nowPlaying || shared);
     final s = feed.settings;
     int color(defs.SettingDef<String> def) =>
         _argb(s.get(def)) ?? _argb(def.defaultValue)!;
     return {
       'view': view,
       'night': night,
+      'nowPlaying': nowPlaying,
+      'nowPlayingShared': shared,
       'textColor': night ? color(defs.screensaverClockNightColor) : null,
       'backgroundColor': night
           ? color(defs.screensaverClockNightBgColor)
@@ -1374,6 +1386,9 @@ class PluginHostApi {
   }
 
   void _onEvent(AppEvent event) {
+    // The player's layout changes with no new view, but the screensaver
+    // reapplies its view when it does. Goes on to screensaver.view below.
+    if (event is ScreensaverViewChanged) _onScreensaverAppearance();
     if ((event is FullscreenViewChanged && event.view == 'nowPlaying') ||
         (event is SettingChanged &&
             (event.key == defs.screensaverClockNightColor.key ||

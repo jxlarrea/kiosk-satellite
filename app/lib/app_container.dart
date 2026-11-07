@@ -221,6 +221,7 @@ class AppContainer {
         view: screensaver.activeView,
         night: screensaver.clockNight,
         nowPlaying: () => screensaver.nowPlayingShown,
+        nowPlayingShared: () => screensaver.nowPlayingShared,
         settings: settings,
         setTint: screensaver.setPluginTint,
         clearTint: screensaver.clearPluginTint,

@@ -4,7 +4,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Plugins can tell when Now Playing is on screen (#1335).** `getScreensaverAppearance` and the `screensaver.appearance` event now include `nowPlaying`, which is true while the player is on screen, including a paused player and a shared layout. `nowPlayingShared` is true while the screensaver stays in sight beside the player. A plugin drawn over the screensaver can now get out of the way of the player. Music playing with no player on screen leaves both false.
+
 ### Fixed
+- **Plugins follow Night mode beside a shared player.** `getScreensaverAppearance` and `screensaver.appearance` reported `night` as false under any Now Playing player, even when the Clock screensaver showed its Night mode colors in a shared layout. `night` is now false only when the player fills the screen.
 - **A followed Music Assistant group keeps this device online (#1334).** Selecting a Music Assistant group with this device in it took the device's Sendspin player offline, which left the group with a member that could not play. The Sendspin player now stays online and plays with the group while the floating player and Now Playing follow the group. Selecting any other player still takes it offline.
 - **This device's own Music Assistant player is found on every server (#1334).** A player with a hash id and a different name in Music Assistant was not recognized as this device, so the speaker group menu had nothing to read and the device's own player was offered as a player to follow.
 
