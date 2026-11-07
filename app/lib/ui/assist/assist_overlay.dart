@@ -397,19 +397,32 @@ class _AssistOverlayState extends State<AssistOverlay>
             : _pluginSkin(_shown)
             ? _shown.docked
                   ? const SizedBox.shrink()
-                  : _pluginContent(context, _shown)
+                  : _overScreensaver(_pluginContent(context, _shown))
             // Docked, touches reach the screen under it: only the caption
             // and the close button take them.
             : _shown.docked
             ? _docked(context, _shown)
-            : GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onDoubleTap: c.voice.dismiss,
-                child: _content(context, _localizedPreview(context, _shown)),
+            : _overScreensaver(
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onDoubleTap: c.voice.dismiss,
+                  child: _content(context, _localizedPreview(context, _shown)),
+                ),
               ),
       ),
     );
   }
+
+  /// The overlay draws over the screensaver, and a touch that lands on it
+  /// is meant for it: it is marked on its way down, ahead of the kiosk
+  /// screen's own report of the same touch, so the screensaver stays up.
+  /// The docked bubble's surroundings are not marked: a touch there is on
+  /// the screensaver.
+  Widget _overScreensaver(Widget child) => Listener(
+    behavior: HitTestBehavior.deferToChild,
+    onPointerDown: (_) => c.screensaver.markControlTouch(),
+    child: child,
+  );
 
   /// Preview's sample turn in the kiosk's language. A real turn's words
   /// are never looked up: an answer that happens to read like one of the
@@ -986,7 +999,7 @@ class _AssistOverlayState extends State<AssistOverlay>
     // dashboard and a paused page would take it without redrawing.
     return ValueListenableBuilder<bool>(
       valueListenable: c.voice.underlayPaused,
-      child: placed,
+      child: _overScreensaver(placed),
       builder: (context, paused, child) => Stack(
         fit: StackFit.expand,
         children: [

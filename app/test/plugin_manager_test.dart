@@ -1951,6 +1951,125 @@ void main() {
   );
 
   testWidgets(
+    'touches on an overlay over the screensaver are reported as control touches',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      messenger.setMockMethodCallHandler(SystemChannels.platform_views, (
+        call,
+      ) async {
+        final args = call.arguments;
+        return switch (call.method) {
+          'create' => 0,
+          'resize' => {
+            'width': (args as Map)['width'],
+            'height': args['height'],
+          },
+          _ => null,
+        };
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(
+          SystemChannels.platform_views,
+          null,
+        ),
+      );
+      // The kiosk screen's own report of every touch comes after the
+      // overlay's, as it does over the screensaver.
+      final reports = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Listener(
+            onPointerDown: (_) => reports.add('touch'),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // The screensaver under it.
+                Listener(
+                  behavior: HitTestBehavior.opaque,
+                  child: const SizedBox.expand(),
+                ),
+                PluginNativeOverlays(
+                  plugins: plugins,
+                  onTop: true,
+                  onControlTouch: () => reports.add('control'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await overlaySession('first');
+      await overlays('first', [
+        overlay('card', 1, width: 200, height: 120, onTop: true),
+      ]);
+      await tester.pump();
+      final card = tester.getRect(find.byType(AndroidView));
+      await tester.tapAt(card.center);
+      await tester.pump();
+      expect(reports, ['control', 'touch']);
+      // A touch beside it is the screensaver's.
+      reports.clear();
+      await tester.tapAt(const Offset(700, 500));
+      await tester.pump();
+      expect(reports, ['touch']);
+
+      // A visual-only overlay lets the touch through.
+      await overlays('first', [
+        overlay(
+          'card',
+          2,
+          width: 200,
+          height: 120,
+          onTop: true,
+          touchable: false,
+        ),
+      ]);
+      await tester.pump();
+      reports.clear();
+      await tester.tapAt(card.center);
+      await tester.pump();
+      expect(reports, ['touch']);
+
+      // A touch outside that only closes the overlay is the overlay's.
+      await overlays('first', [
+        overlay(
+          'card',
+          3,
+          width: 200,
+          height: 120,
+          onTop: true,
+          closeOnOutsideTouch: true,
+        ),
+      ]);
+      await tester.pump();
+      reports.clear();
+      await tester.tapAt(const Offset(700, 500));
+      await tester.pump();
+      expect(reports, ['control', 'touch']);
+      // Passed through, it is for what is under it.
+      await overlays('first', [
+        overlay(
+          'card',
+          4,
+          width: 200,
+          height: 120,
+          onTop: true,
+          closeOnOutsideTouch: true,
+          passOutsideTouch: true,
+        ),
+      ]);
+      await tester.pump();
+      reports.clear();
+      await tester.tapAt(const Offset(700, 500));
+      await tester.pump();
+      expect(reports, ['touch']);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'hybrid overlays sit in the view tree and are painted while measured',
     (tester) async {
       tester.view.physicalSize = const Size(800, 600);

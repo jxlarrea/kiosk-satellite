@@ -1918,7 +1918,10 @@ class _KioskScreenState extends State<KioskScreen>
                   // sits above everything below.
                   ScreensaverBlankOverlay(container: c, underVoice: true),
                   // A turn a plugin skin draws: double tap dismisses it.
-                  AssistPluginSkinTouch(container: c),
+                  _OverScreensaver(
+                    container: c,
+                    child: AssistPluginSkinTouch(container: c),
+                  ),
                   // Plugin overlays that asked to be on top, in the voice
                   // overlay's slot: over the screensaver, the menu and the
                   // camera views, under a notification or call card, the
@@ -1930,6 +1933,7 @@ class _KioskScreenState extends State<KioskScreen>
                     plugins: c.plugins,
                     onTop: true,
                     hybrid: c.settings.get(defs.hybridPluginOverlays),
+                    onControlTouch: c.screensaver.markControlTouch,
                   ),
                   // Above every overlay a notification could arrive
                   // behind (the screensaver, a camera wall, a plugin drawn
@@ -1937,15 +1941,24 @@ class _KioskScreenState extends State<KioskScreen>
                   // covering them for, and below the lockdown shield,
                   // which is the one thing whose whole job is that nothing
                   // here answers a touch.
-                  NotificationOverlay(notifications: c.notifications),
+                  _OverScreensaver(
+                    container: c,
+                    child: NotificationOverlay(notifications: c.notifications),
+                  ),
                   // The intercom's call card: over the screensaver and a
                   // camera wall like a notification, since a call coming
                   // in wakes the screen for exactly this, and under the
                   // lockdown shield, whose kiosk answers as Do not disturb.
-                  IntercomCallOverlay(container: c),
+                  _OverScreensaver(
+                    container: c,
+                    child: IntercomCallOverlay(container: c),
+                  ),
                   // An announcement from Home Assistant: its own card, with
                   // the spoken text, in the same slot.
-                  AnnouncementOverlay(container: c),
+                  _OverScreensaver(
+                    container: c,
+                    child: AnnouncementOverlay(container: c),
+                  ),
                   // Native Voice Satellite: the assist overlay, in the same
                   // slot, over the screensaver and the camera views.
                   AssistOverlay(container: c),
@@ -3149,6 +3162,24 @@ class _WebViewMissingNotice extends StatelessWidget {
       ),
     );
   }
+}
+
+/// An overlay drawn over the screensaver. A touch that lands on it is
+/// meant for it, so it is marked as a control touch on its way down,
+/// ahead of the kiosk screen's own report of the same touch, and does not
+/// wake the screensaver. A touch on nothing passes through as before.
+class _OverScreensaver extends StatelessWidget {
+  const _OverScreensaver({required this.container, required this.child});
+
+  final AppContainer container;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    behavior: HitTestBehavior.deferToChild,
+    onPointerDown: (_) => container.screensaver.markControlTouch(),
+    child: child,
+  );
 }
 
 /// A full screen page of the kiosk Stack, left out of the frame and its

@@ -104,9 +104,15 @@ class PluginNativeOverlays extends StatefulWidget {
     required this.plugins,
     this.onTop = false,
     this.hybrid = false,
+    this.onControlTouch,
   });
   final PluginManager plugins;
   final bool onTop;
+
+  /// Hears a touch on an overlay's view, or outside one that only closes
+  /// it, on its way down: the layer over the screensaver marks it, so the
+  /// touch reaches the plugin and does not wake the screensaver.
+  final VoidCallback? onControlTouch;
 
   /// Places each overlay's view in the Android view tree (hybrid
   /// composition) instead of drawing it into a texture. On Android 10 and
@@ -199,7 +205,11 @@ class _PluginNativeOverlaysState extends State<PluginNativeOverlays> {
               _OutsideTouch(
                 key: ValueKey('outside:${overlay.id}@$_epoch'),
                 passThrough: overlay.passOutsideTouch,
-                onTouch: () => unawaited(widget.plugins.closeOverlay(overlay)),
+                onTouch: () {
+                  // A touch passed through is for what is under it.
+                  if (!overlay.passOutsideTouch) widget.onControlTouch?.call();
+                  unawaited(widget.plugins.closeOverlay(overlay));
+                },
               ),
             _NativeOverlay(
               key: ValueKey('${overlay.id}@$_epoch'),
@@ -208,6 +218,7 @@ class _PluginNativeOverlaysState extends State<PluginNativeOverlays> {
               leaving: _leaving.contains(overlay.id),
               hybrid: widget.hybrid,
               onLeft: () => _left(overlay.id),
+              onTouch: widget.onControlTouch,
             ),
           ],
         ],
@@ -246,10 +257,14 @@ class _NativeOverlay extends StatefulWidget {
     required this.leaving,
     required this.hybrid,
     required this.onLeft,
+    this.onTouch,
   });
   final PluginNativeOverlay overlay;
   final Map<String, Object?> theme;
   final bool hybrid;
+
+  /// A touch on the view, on its way down.
+  final VoidCallback? onTouch;
 
   /// Playing its exit transition. It no longer takes touches.
   final bool leaving;
@@ -440,26 +455,29 @@ class _NativeOverlayState extends State<_NativeOverlay>
                   // leaving one takes none.
                   child: IgnorePointer(
                     ignoring: !_ready || !overlay.touchable || widget.leaving,
-                    child: _view(
-                      // The density is fixed when the view is built, so a
-                      // new Scale UI factor builds it again.
-                      key: ValueKey(scale),
-                      params: {
-                        'id': overlay.pluginId,
-                        'session': overlay.session,
-                        'key': overlay.key,
-                        'generation': overlay.generation,
-                        'width': overlay.width,
-                        'height': overlay.height,
-                        'insets': [
-                          overlay.insets.left.round(),
-                          overlay.insets.top.round(),
-                          overlay.insets.right.round(),
-                          overlay.insets.bottom.round(),
-                        ],
-                        'scale': scale,
-                        'theme': widget.theme,
-                      },
+                    child: Listener(
+                      onPointerDown: (_) => widget.onTouch?.call(),
+                      child: _view(
+                        // The density is fixed when the view is built, so a
+                        // new Scale UI factor builds it again.
+                        key: ValueKey(scale),
+                        params: {
+                          'id': overlay.pluginId,
+                          'session': overlay.session,
+                          'key': overlay.key,
+                          'generation': overlay.generation,
+                          'width': overlay.width,
+                          'height': overlay.height,
+                          'insets': [
+                            overlay.insets.left.round(),
+                            overlay.insets.top.round(),
+                            overlay.insets.right.round(),
+                            overlay.insets.bottom.round(),
+                          ],
+                          'scale': scale,
+                          'theme': widget.theme,
+                        },
+                      ),
                     ),
                   ),
                 ),

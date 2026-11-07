@@ -88,6 +88,23 @@ void main() {
     },
   );
 
+  test(
+    'a control touch off the screensaver still restarts its idle timer',
+    () async {
+      await build();
+      var now = DateTime(2026, 9, 18);
+      saver.clock = () => now;
+      saver.notifyActivity('touch');
+      final due = saver.idleDue;
+      expect(due, isNotNull);
+      now = now.add(const Duration(seconds: 10));
+      saver.markControlTouch();
+      saver.notifyActivity('touch');
+      expect(saver.isActive, false);
+      expect(saver.idleDue, due!.add(const Duration(seconds: 10)));
+    },
+  );
+
   for (final reason in ['voice', 'start_conversation', '']) {
     test('Now Playing returns after a page interaction ($reason)', () async {
       await showNowPlaying();

@@ -1322,8 +1322,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       return;
     }
     // Overlay controls consume their touch without dismissing the view.
+    // Off the screensaver the touch is still activity.
     if (_touchOnControl &&
         (source == 'touch' || source == 'touch_page' || source == 'tap')) {
+      if (!_active) _resetIdleTimer();
       return;
     }
     // Shared layouts dismiss through the screensaver panel. Generic touch
