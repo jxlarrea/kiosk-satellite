@@ -424,8 +424,10 @@ const pad2 = (n) => String(n).padStart(2, '0');
 
 // A time of day at rest: the control box showing the value with a clock
 // glyph, tap opens the picker. Empty reads Not set. `full` makes it the
-// labeled field of an editor.
-export function timeBox({ title, value, onPick, full = false }) {
+// labeled field of an editor. `h12` reads and picks the time with AM/PM
+// (Settings > Alarms > 24-hour clock off); `format` writes the value for
+// the box. The value is "HH:mm" either way.
+export function timeBox({ title, value, onPick, full = false, h12 = false, format = null }) {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'time-box';
@@ -436,12 +438,12 @@ export function timeBox({ title, value, onPick, full = false }) {
   let current = value || '';
   const set = (v) => {
     current = v || '';
-    text.textContent = current || 'Not set';
+    text.textContent = current ? (format ? format(current) : current) : 'Not set';
     btn.classList.toggle('empty', !current);
   };
   set(current);
   btn.addEventListener('click', async () => {
-    const picked = await pickTime({ title, value: current });
+    const picked = await pickTime({ title, value: current, h12 });
     if (picked == null) return;
     set(picked);
     onPick(picked);
@@ -449,20 +451,33 @@ export function timeBox({ title, value, onPick, full = false }) {
   return { el: btn, set, get value() { return current; } };
 }
 
+// The AM and PM words in the page's language, and whether the language
+// writes them before the hour (下午4:05).
+function dayPeriods() {
+  const lang = messageLanguage() || undefined;
+  const parts = (h) => new Intl.DateTimeFormat(lang, { hour: 'numeric', hourCycle: 'h12' })
+    .formatToParts(new Date(2000, 0, 1, h));
+  const word = (h) => parts(h).find((p) => p.type === 'dayPeriod')?.value || (h < 12 ? 'AM' : 'PM');
+  const order = parts(9).map((p) => p.type);
+  return { am: word(9), pm: word(21), first: order.indexOf('dayPeriod') < order.indexOf('hour') };
+}
+
 // The one time picker, on both surfaces (the device's showKsTimePicker):
 // two boxes, hour and minute, 24 hour. Tap a box to type; the chevrons
 // step it (hours by 1, minutes by 5) so a tablet with no keyboard can set
 // a time with taps. An entry out of range paints the box error and
-// disables Set. Resolves to "HH:mm", or null when cancelled.
-export function pickTime({ title, value }) {
+// disables Set. `h12` counts the hours 1 to 12 beside an AM and PM
+// choice, as the device's alarm wheel does. Resolves to "HH:mm", or null
+// when cancelled.
+export function pickTime({ title, value, h12 = false }) {
   return new Promise((resolve) => {
     const [h0, m0] = String(value || '').split(':').map((n) => parseInt(n, 10));
     const { back, body, foot } = modalShell({
-      title, width: 360, onDismiss: () => { back.remove(); resolve(null); },
+      title, width: h12 ? 460 : 360, onDismiss: () => { back.remove(); resolve(null); },
     });
     const wrap = document.createElement('div');
     wrap.className = 'time-pick';
-    const column = (label, initial, max, delta) => {
+    const column = (label, initial, min, max, delta, pad = true) => {
       const col = document.createElement('div');
       col.className = 'time-col';
       const inp = document.createElement('input');
@@ -470,19 +485,21 @@ export function pickTime({ title, value }) {
       inp.inputMode = 'numeric';
       inp.maxLength = 2;
       inp.className = 'time-digits';
-      inp.value = pad2(initial);
+      const show = (n) => (pad ? pad2(n) : String(n));
+      inp.value = show(initial);
       const read = () => {
         const v = /^\d{1,2}$/.test(inp.value.trim()) ? Number(inp.value) : NaN;
-        return v >= 0 && v <= max ? v : null;
+        return v >= min && v <= max ? v : null;
       };
       const check = () => {
         inp.classList.toggle('error', read() == null);
         setBtn.disabled = !(hour.read() != null && minute.read() != null);
       };
       const step = (d) => {
-        const current = read() ?? 0;
+        const current = read() ?? min;
         const base = Math.abs(d) === 5 ? Math.floor(current / 5) * 5 : current;
-        inp.value = pad2((((base + d) % (max + 1)) + max + 1) % (max + 1));
+        const span = max - min + 1;
+        inp.value = show((((base - min + d) % span) + span) % span + min);
         check();
       };
       inp.addEventListener('input', check);
@@ -504,16 +521,47 @@ export function pickTime({ title, value }) {
     const setBtn = document.createElement('button');
     setBtn.className = 'btn-primary';
     setBtn.textContent = t('commonSet');
-    const hour = column(t('commonHour'), Number.isInteger(h0) ? Math.min(23, Math.max(0, h0)) : 0, 23, 1);
-    const minute = column(t('commonMinute'), Number.isInteger(m0) ? Math.min(59, Math.max(0, m0)) : 0, 59, 5);
+    const h24 = Number.isInteger(h0) ? Math.min(23, Math.max(0, h0)) : 0;
+    let pm = h24 >= 12;
+    const hour = h12
+      ? column(t('commonHour'), h24 % 12 === 0 ? 12 : h24 % 12, 1, 12, 1, false)
+      : column(t('commonHour'), h24, 0, 23, 1);
+    const minute = column(t('commonMinute'), Number.isInteger(m0) ? Math.min(59, Math.max(0, m0)) : 0, 0, 59, 5);
     setBtn.addEventListener('click', () => {
       const h = hour.read();
       const m = minute.read();
       if (h == null || m == null) return;
       back.remove();
-      resolve(`${pad2(h)}:${pad2(m)}`);
+      resolve(`${pad2(h12 ? (h % 12) + (pm ? 12 : 0) : h)}:${pad2(m)}`);
     });
-    wrap.append(hour.col, colon, minute.col);
+    if (h12) {
+      const { am, pm: pmWord, first } = dayPeriods();
+      const period = document.createElement('div');
+      period.className = 'time-period';
+      period.setAttribute('role', 'radiogroup');
+      const choice = (label, isPm) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = label;
+        b.setAttribute('role', 'radio');
+        b.addEventListener('click', () => { pm = isPm; paint(); });
+        return b;
+      };
+      const amBtn = choice(am, false);
+      const pmBtn = choice(pmWord, true);
+      const paint = () => {
+        amBtn.classList.toggle('active', !pm);
+        pmBtn.classList.toggle('active', pm);
+        amBtn.setAttribute('aria-checked', String(!pm));
+        pmBtn.setAttribute('aria-checked', String(pm));
+      };
+      paint();
+      period.append(amBtn, pmBtn);
+      if (first) wrap.append(period, hour.col, colon, minute.col);
+      else wrap.append(hour.col, colon, minute.col, period);
+    } else {
+      wrap.append(hour.col, colon, minute.col);
+    }
     body.appendChild(wrap);
     foot.append(cancel, setBtn);
     hour.check();

@@ -94,7 +94,7 @@ Home Assistant makes the speech with the **Text to speech engine**, **Language**
 | Setting | What it does |
 | --- | --- |
 | Show in the kiosk menu | Opens [Device > User Interface > Drawer menu items](drawer-menu.md), where the Alarms entry is turned on or off. On by default. |
-| 24-hour clock | Shows alarm times as 19:00 instead of 7:00 PM: the alarm list, the time wheel, the ringing screen, the next alarm widget and `{time}` and `{hour}` in the spoken phrase. The first start takes Android's clock setting, after that it is set here. |
+| 24-hour clock | Shows alarm times as 19:00 instead of 7:00 PM: the alarm list, the time wheel, the ringing screen, the next alarm widget, the alarms page in remote administration and `{time}` and `{hour}` in the spoken phrase. With it off, the time picker in remote administration takes the hour from 1 to 12 with AM or PM. The first start takes Android's clock setting, after that it is set here. |
 | Manage alarms | Opens the alarm list. Shows when the next alarm rings. |
 | Alarm volume | How loud alarms ring. It sets the Android alarm volume while an alarm rings and puts it back after, apart from the media and assistant volumes. |
 | Ease in the volume | The default for new alarms and alarms that never chose: start quiet and grow to the alarm volume. Off by default. |

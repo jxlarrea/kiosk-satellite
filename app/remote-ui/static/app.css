@@ -763,6 +763,18 @@
   .time-label { font-size: 12.5px; color: var(--muted); }
   .time-colon { font-size: 44px; line-height: 1; color: var(--text);
     padding-bottom: 60px; }
+  /* AM and PM beside the hours when the clock is 12 hour: two stacked
+     choices the height of a digit box, the chosen one on primary soft. */
+  .time-period { display: flex; flex-direction: column; gap: 6px;
+    padding-bottom: 22px; }
+  .time-period button { min-width: 64px; height: 37px; padding: 0 12px;
+    border-radius: var(--radius-sm); background: var(--surface-2);
+    border: 1px solid var(--border); color: var(--muted); font-size: 15px;
+    cursor: pointer; }
+  .time-period button.active { background: var(--primary-soft);
+    border-color: var(--primary); color: var(--text); }
+  .time-period button:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: 2px; }
   /* A calendar date at rest: the time box with a calendar glyph, tap
      opens the date picker (widgets.js pickDate). */
   .date-box { display: inline-flex; align-items: center; gap: 10px;

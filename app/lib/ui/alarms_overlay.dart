@@ -1020,11 +1020,26 @@ class _DetailsStep extends StatelessWidget {
     if (next != null) onChanged(next);
   }
 
+  /// Below this width the time goes over the details instead of beside
+  /// them, so a tablet in portrait keeps the rows wide enough for Repeat.
+  static const _twoColumnWidth = 900.0;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      LayoutBuilder(builder: (context, box) => _page(context, box.maxWidth));
+
+  Widget _page(BuildContext context, double width) {
     final s = l10n(context);
     final scheme = Theme.of(context).colorScheme;
     final now = DateTime.now();
+    final gutter = compact ? 20.0 : 40.0;
+    final twoColumns = !compact && width >= _twoColumnWidth;
+    final rowsWidth = width - 2 * gutter - (twoColumns ? 260 + 48 : 0);
+    final discSize = compact ? 38.0 : 48.0;
+    // The discs go under Repeat when the line cannot hold them beside it:
+    // the icon and its gap, room for the name, then the seven discs.
+    final discsWidth = 7 * discSize + 6 * (discSize > 40 ? 10 : 6);
+    final stackDays = rowsWidth < 40 + 140 + discsWidth;
     // A one time alarm in the draft rings at the next time its clock
     // reads, whatever day it was first set for.
     final preview = alarm.repeats
@@ -1093,10 +1108,10 @@ class _DetailsStep extends StatelessWidget {
         _DetailRow(
           icon: Icons.repeat,
           name: s.alarmsRepeat,
-          stacked: compact,
+          stacked: stackDays,
           control: DayDiscs(
             days: alarm.days,
-            size: compact ? 38 : 48,
+            size: discSize,
             onChanged: (days) => onChanged(alarm.copyWith(days: days)),
           ),
         ),
@@ -1161,7 +1176,6 @@ class _DetailsStep extends StatelessWidget {
           ),
       ],
     );
-    final gutter = compact ? 20.0 : 40.0;
     return Column(
       children: [
         SizedBox(height: compact ? 56 : 72),
@@ -1169,7 +1183,7 @@ class _DetailsStep extends StatelessWidget {
           child: EdgeFade(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: gutter),
-              child: compact
+              child: !twoColumns
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [head, const SizedBox(height: 12), rows],

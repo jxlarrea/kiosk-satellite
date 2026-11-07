@@ -291,7 +291,11 @@ function openEditor(existing) {
   const form = document.createElement('div');
   form.className = 'modal-form';
 
-  const time = timeBox({ title: t('alarmsTime'), value: draft.time, full: true, onPick: (v) => { draft.time = v; } });
+  // On the alarms' own clock, as the device's wheel.
+  const time = timeBox({
+    title: t('alarmsTime'), value: draft.time, full: true, format: alarmTimeText,
+    h12: byKey('alarms.clock_24h')?.value === false, onPick: (v) => { draft.time = v; },
+  });
 
   // Seven discs in the locale's week order, filled while the day is on.
   const discs = document.createElement('div');
