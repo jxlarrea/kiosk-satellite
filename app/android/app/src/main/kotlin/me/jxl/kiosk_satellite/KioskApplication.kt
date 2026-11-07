@@ -50,6 +50,13 @@ class KioskApplication : Application(), CameraXConfig.Provider {
     override fun getCameraXConfig(): CameraXConfig =
         CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
             .setAvailableCamerasLimiter(readableCamerasSelector())
+            .apply {
+                // A HAL1 camera leaks two threads on every failed open, so
+                // CameraX's own reopen retries are kept short there.
+                if (LegacyCameraShim.marked(this@KioskApplication)) {
+                    setCameraOpenRetryMaxTimeoutInMillisWhileResuming(LegacyCameraShim.RETRY_CAP_MS)
+                }
+            }
             .build()
 
     private lateinit var micRecorder: MicRecorder

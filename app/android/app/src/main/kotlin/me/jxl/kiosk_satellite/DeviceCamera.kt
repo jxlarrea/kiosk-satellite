@@ -369,8 +369,13 @@ class DeviceCamera(
         // (see the hasCamera comment, issue #193).
         CameraEnumeration.facings(context) { facings ->
             if (completed) return@facings
-            if (facings.isEmpty()) done(null, NO_CAMERA_MESSAGE)
-            else snapshotIdle(facing, target, diagnosticId, done) { cleanup = it }
+            if (facings.isEmpty()) {
+                done(null, NO_CAMERA_MESSAGE)
+                return@facings
+            }
+            // See LegacyCameraShim: failed opens on a HAL1 camera leak threads.
+            LegacyCameraShim.restartIfSpent(context)
+            snapshotIdle(facing, target, diagnosticId, done) { cleanup = it }
         }
     }
 

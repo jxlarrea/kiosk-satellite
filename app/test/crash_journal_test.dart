@@ -77,6 +77,20 @@ native_thread_sample: read=120 listed=120 limit=256
     expect(wd.reportable, isTrue);
   });
 
+  test('a camera watchdog restart is reported', () {
+    final wd = parseCrashJournal(
+      '=== crash at 2026-11-07 16:51:58 (app 2026.11.12, thread main) ===\n'
+      'java.lang.RuntimeException: process restarted deliberately: the '
+      'camera watchdog found 400 leaked camera threads; each failed open of '
+      "this device's HAL1 camera leaves 2 threads running until the app "
+      'restarts\n'
+      '\tat dalvik.system.VMStack.getThreadStackTrace(Native Method)\n',
+    ).single;
+    expect(wd.deliberate, isTrue);
+    expect(wd.watchdog, isTrue);
+    expect(wd.reportable, isTrue);
+  });
+
   test('a crash a shell asked for is journaled but not reported', () {
     final adb = parseCrashJournal(
       '=== crash at 2026-09-12 17:58:00 (app 2026.9.44, thread main) ===\n'

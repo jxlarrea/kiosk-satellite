@@ -1030,8 +1030,14 @@ class CameraMotion(
         // forever (see DeviceCamera's hasCamera comment, issue #193).
         CameraEnumeration.facings(context) { facings ->
             if (session != mySession) return@facings
-            if (facings.isEmpty()) sink.error("camera", NO_CAMERA_MESSAGE, null)
-            else bindProvider(facing, sink, mySession, diagnosticId)
+            if (facings.isEmpty()) {
+                sink.error("camera", NO_CAMERA_MESSAGE, null)
+                return@facings
+            }
+            // Every failed open on a HAL1 camera leaks two threads for good,
+            // so the app restarts before they run out.
+            LegacyCameraShim.restartIfSpent(context)
+            bindProvider(facing, sink, mySession, diagnosticId)
         }
     }
 
@@ -1131,6 +1137,9 @@ class CameraMotion(
                     lastProcessedNs = 0L
                     analyzeFromNs = 0L
                     resetVisionGate()
+                    // The shim's thread exists only once a camera is open, so
+                    // the first frame is the earliest a HAL1 device shows.
+                    LegacyCameraShim.of(context).markIfShim()
                     Log.i(TAG, "camera $cameraId first frame ${image.width}x${image.height}, " +
                         "capture fallback=$captureLevel, RTSP=$boundRtsp")
                     CameraDiagnostics.record(diagnosticId, if (captureLevel > 0) "analysis recovered" else "first analysis frame", "camera=$cameraId, " +

@@ -48,12 +48,15 @@ class CrashEntry {
   /// fuse), noted so the death is visible in the Logs screen.
   bool get deliberate => headline.contains(deliberateMarker);
 
-  /// The frame or main thread watchdog killing a wedged UI: the app asked
-  /// for it, but nobody else did, so it is reported, apart from crashes.
+  /// The frame or main thread watchdog killing a wedged UI, or the camera
+  /// watchdog clearing threads a HAL1 camera leaked (LegacyCameraShim.kt):
+  /// the app asked for it, but nobody else did, so it is reported, apart
+  /// from crashes.
   bool get watchdog =>
       deliberate &&
       (headline.contains('frame watchdog') ||
-          headline.contains('main thread watchdog'));
+          headline.contains('main thread watchdog') ||
+          headline.contains('camera watchdog'));
 
   /// A shell user ran `am crash` against the app (adb, or a tool with
   /// shell rights): Android delivers that as an uncaught exception on the
