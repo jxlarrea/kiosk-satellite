@@ -42,6 +42,26 @@ if(NOT sendspin_sync_result EQUAL 0)
     message(FATAL_ERROR "Cannot apply sendspin-cpp soft sync patch: ${sendspin_sync_error}")
 endif()
 
+# IXWebSocket's server closes its listening socket in stop() and on listen()
+# errors without forgetting the number, and its destructor stops it again.
+# sendspin-cpp stops the server and then destroys it, so the same number was
+# closed twice. A file opened on it in between, such as a Java FileInputStream,
+# was closed too, and fdsan aborted the app. The patch closes it once.
+FetchContent_GetProperties(ixwebsocket)
+set(ixwebsocket_fd_patch "${CMAKE_CURRENT_LIST_DIR}/patches/ixwebsocket-server-fd-close-once.patch")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${ixwebsocket_fd_patch}")
+execute_process(
+    COMMAND git checkout -- ixwebsocket/IXSocketServer.cpp ixwebsocket/IXSocketServer.h
+    WORKING_DIRECTORY "${ixwebsocket_SOURCE_DIR}"
+    OUTPUT_QUIET ERROR_QUIET)
+execute_process(
+    COMMAND git apply "${ixwebsocket_fd_patch}"
+    WORKING_DIRECTORY "${ixwebsocket_SOURCE_DIR}"
+    RESULT_VARIABLE ixwebsocket_fd_result ERROR_VARIABLE ixwebsocket_fd_error)
+if(NOT ixwebsocket_fd_result EQUAL 0)
+    message(FATAL_ERROR "Cannot apply IXWebSocket server fd patch: ${ixwebsocket_fd_error}")
+endif()
+
 add_library(sendspin_jni SHARED sendspin_jni.cpp)
 
 target_compile_features(sendspin_jni PRIVATE cxx_std_20)
@@ -49,6 +69,13 @@ target_compile_options(sendspin_jni PRIVATE -Wall -Wextra)
 
 find_library(log-lib log)
 target_link_libraries(sendspin_jni PRIVATE sendspin ${log-lib})
+
+# Standalone regression for the Sendspin server closing its listening socket
+# twice. Build this target explicitly and run it on Android.
+add_executable(sendspin_server_stop_test EXCLUDE_FROM_ALL
+    ../../test/cpp/sendspin_server_stop_test.cpp)
+target_compile_features(sendspin_server_stop_test PRIVATE cxx_std_17)
+target_link_libraries(sendspin_server_stop_test PRIVATE ixwebsocket)
 
 add_library(kiosk_wake_fft SHARED
     wake_fft.cpp micro_fft.cpp log_mel.cpp micro_frontend.cpp)

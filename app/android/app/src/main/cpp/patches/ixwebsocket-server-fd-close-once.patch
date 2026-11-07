@@ -1,0 +1,100 @@
+diff --git a/ixwebsocket/IXSocketServer.cpp b/ixwebsocket/IXSocketServer.cpp
+index c4ea1af..d0f0d19 100644
+--- a/ixwebsocket/IXSocketServer.cpp
++++ b/ixwebsocket/IXSocketServer.cpp
+@@ -94,7 +94,7 @@ namespace ix
+             ss << "SocketServer::listen() error calling setsockopt(SO_REUSEADDR) "
+                << "at address " << _host << ":" << _port << " : " << strerror(Socket::getErrno());
+ 
+-            Socket::closeSocket(_serverFd);
++            closeServerSocket();
+             return std::make_pair(false, ss.str());
+         }
+ 
+@@ -111,7 +111,7 @@ namespace ix
+                    << "at address " << _host << ":" << _port << " : "
+                    << strerror(Socket::getErrno());
+ 
+-                Socket::closeSocket(_serverFd);
++                closeServerSocket();
+                 return std::make_pair(false, ss.str());
+             }
+ 
+@@ -123,7 +123,7 @@ namespace ix
+                    << "at address " << _host << ":" << _port << " : "
+                    << strerror(Socket::getErrno());
+ 
+-                Socket::closeSocket(_serverFd);
++                closeServerSocket();
+                 return std::make_pair(false, ss.str());
+             }
+         }
+@@ -140,7 +140,7 @@ namespace ix
+                    << "at address " << _host << ":" << _port << " : "
+                    << strerror(Socket::getErrno());
+ 
+-                Socket::closeSocket(_serverFd);
++                closeServerSocket();
+                 return std::make_pair(false, ss.str());
+             }
+ 
+@@ -152,7 +152,7 @@ namespace ix
+                    << "at address " << _host << ":" << _port << " : "
+                    << strerror(Socket::getErrno());
+ 
+-                Socket::closeSocket(_serverFd);
++                closeServerSocket();
+                 return std::make_pair(false, ss.str());
+             }
+         }
+@@ -166,7 +166,7 @@ namespace ix
+             ss << "SocketServer::listen() error calling listen "
+                << "at address " << _host << ":" << _port << " : " << strerror(Socket::getErrno());
+ 
+-            Socket::closeSocket(_serverFd);
++            closeServerSocket();
+             return std::make_pair(false, ss.str());
+         }
+ 
+@@ -194,6 +194,19 @@ namespace ix
+         _conditionVariable.wait(lock);
+     }
+ 
++    // The destructor stops the server again after an explicit stop(), and
++    // listen() closes the socket on its error paths before the server is
++    // destroyed. Closing a number that is no longer ours closes whatever was
++    // opened on it since, so close once and forget the number.
++    void SocketServer::closeServerSocket()
++    {
++        if (_serverFd != -1)
++        {
++            Socket::closeSocket(_serverFd);
++            _serverFd = -1;
++        }
++    }
++
+     void SocketServer::stopAcceptingConnections()
+     {
+         _stop = true;
+@@ -229,7 +242,7 @@ namespace ix
+         }
+ 
+         _conditionVariable.notify_one();
+-        Socket::closeSocket(_serverFd);
++        closeServerSocket();
+     }
+ 
+     void SocketServer::setConnectionStateFactory(
+diff --git a/ixwebsocket/IXSocketServer.h b/ixwebsocket/IXSocketServer.h
+index c56b650..061843d 100644
+--- a/ixwebsocket/IXSocketServer.h
++++ b/ixwebsocket/IXSocketServer.h
+@@ -73,6 +73,8 @@ namespace ix
+         void stopAcceptingConnections();
+ 
+     private:
++        void closeServerSocket();
++
+         // Member variables
+         int _port;
+         std::string _host;
