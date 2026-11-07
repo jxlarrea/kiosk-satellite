@@ -93,8 +93,13 @@ class LateClaim {
 /// Carries claims between kiosks. UDP on the real network; tests hand in
 /// a loopback.
 abstract class ArbitrationTransport {
-  /// Start receiving. False when the port cannot be opened.
-  Future<bool> open(void Function(Uint8List data, String from) onPacket);
+  /// Start receiving. False when the port cannot be opened. [onReopen]
+  /// runs when the transport had to open its port again, after the network
+  /// closed it.
+  Future<bool> open(
+    void Function(Uint8List data, String from) onPacket, {
+    void Function()? onReopen,
+  });
 
   /// To every kiosk on the subnet.
   void send(Uint8List data);
@@ -109,27 +114,78 @@ abstract class ArbitrationTransport {
 /// Kiosks it has heard from also get the claim addressed to them, which
 /// Wi-Fi acknowledges and retries where a broadcast gets neither.
 class UdpArbitrationTransport implements ArbitrationTransport {
-  UdpArbitrationTransport({this.port = WakeArbiter.port});
+  UdpArbitrationTransport({
+    this.port = WakeArbiter.port,
+    this.reopenAfter = const Duration(seconds: 5),
+  });
 
   final int port;
+  final Duration reopenAfter;
   RawDatagramSocket? _socket;
+  void Function(Uint8List data, String from)? _onPacket;
+  void Function()? _onReopen;
+  Timer? _reopen;
+  bool _open = false;
   static final _broadcast = InternetAddress('255.255.255.255');
 
   @override
-  Future<bool> open(void Function(Uint8List data, String from) onPacket) async {
+  Future<bool> open(
+    void Function(Uint8List data, String from) onPacket, {
+    void Function()? onReopen,
+  }) async {
+    _onPacket = onPacket;
+    _onReopen = onReopen;
+    await _bind();
+    _open = true;
+    return true;
+  }
+
+  Future<void> _bind() async {
     final socket = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
       port,
       reuseAddress: true,
     );
     socket.broadcastEnabled = true;
-    socket.listen((event) {
-      if (event != RawSocketEvent.read) return;
-      final d = socket.receive();
-      if (d != null) onPacket(d.data, d.address.address);
-    });
+    socket.listen(
+      (event) {
+        if (event != RawSocketEvent.read) return;
+        final d = socket.receive();
+        if (d != null) _onPacket?.call(d.data, d.address.address);
+      },
+      // A send that fails, such as with no network while Wi-Fi joins at
+      // boot, does not throw: the socket reports it here and closes.
+      onError: (Object _) {},
+      onDone: () => _closed(socket),
+    );
     _socket = socket;
-    return true;
+  }
+
+  /// The socket closed under us: open the port again.
+  void _closed(RawDatagramSocket socket) {
+    if (!_open || _socket != socket) return;
+    _socket = null;
+    _scheduleReopen();
+  }
+
+  /// Tries every [reopenAfter] until the port opens or [close] is called.
+  void _scheduleReopen() {
+    _reopen?.cancel();
+    _reopen = Timer(reopenAfter, () async {
+      if (!_open || _socket != null) return;
+      try {
+        await _bind();
+      } catch (_) {
+        if (_open) _scheduleReopen();
+        return;
+      }
+      if (!_open) {
+        _socket?.close();
+        _socket = null;
+        return;
+      }
+      _onReopen?.call();
+    });
   }
 
   @override
@@ -141,8 +197,8 @@ class UdpArbitrationTransport implements ArbitrationTransport {
     if (to != null) _send(data, to);
   }
 
-  /// With no network, such as Wi-Fi still joining at boot, the send throws.
-  /// That is a lost datagram like any other, which arbitration expects.
+  /// A datagram sent while the socket is closed or that fails is lost,
+  /// which arbitration expects.
   void _send(Uint8List data, InternetAddress to) {
     try {
       _socket?.send(data, to, port);
@@ -153,6 +209,9 @@ class UdpArbitrationTransport implements ArbitrationTransport {
 
   @override
   Future<void> close() async {
+    _open = false;
+    _reopen?.cancel();
+    _reopen = null;
     _socket?.close();
     _socket = null;
   }
@@ -225,7 +284,13 @@ class WakeArbiter {
   Future<void> start() async {
     if (_running) return;
     try {
-      _running = await _transport.open(_onPacket);
+      _running = await _transport.open(
+        _onPacket,
+        onReopen: () {
+          _log.info(_tag, 'listening on UDP $port again after a failed send');
+          _sayHello();
+        },
+      );
       _log.info(_tag, 'listening on UDP $port');
     } catch (e) {
       _log.warn(_tag, 'cannot listen on UDP $port: $e');

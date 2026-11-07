@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -25,7 +26,10 @@ class _End implements ArbitrationTransport {
   bool dropBroadcast = false;
 
   @override
-  Future<bool> open(void Function(Uint8List data, String from) onPacket) async {
+  Future<bool> open(
+    void Function(Uint8List data, String from) onPacket, {
+    void Function()? onReopen,
+  }) async {
     _onPacket = onPacket;
     wire._ends.add(this);
     return true;
@@ -317,6 +321,61 @@ void main() {
       final r = await pending;
       expect(r.won, isTrue);
       expect(r.rivals, 0);
+    });
+  });
+
+  group('UdpArbitrationTransport', () {
+    Future<int> freePort() async {
+      final probe = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+      final port = probe.port;
+      probe.close();
+      return port;
+    }
+
+    test('opens its port again after a failed send', () async {
+      // A send fails without throwing: the socket reports the error on its
+      // stream and closes, as with no network while Wi-Fi joins at boot.
+      // An oversized datagram fails the same way on any machine.
+      final port = await freePort();
+      final transport = UdpArbitrationTransport(
+        port: port,
+        reopenAfter: const Duration(milliseconds: 50),
+      );
+      final received = <String>[];
+      final reopened = Completer<void>();
+      await transport.open(
+        (data, from) => received.add(String.fromCharCodes(data)),
+        onReopen: reopened.complete,
+      );
+      addTearDown(transport.close);
+
+      transport.sendTo(Uint8List(70000), '127.0.0.1');
+      await reopened.future.timeout(const Duration(seconds: 5));
+
+      // Listening and sending again on the same port.
+      transport.sendTo(Uint8List.fromList('hello'.codeUnits), '127.0.0.1');
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (received.isEmpty && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      expect(received, ['hello']);
+    });
+
+    test('stays closed once closed', () async {
+      final port = await freePort();
+      var reopens = 0;
+      final transport = UdpArbitrationTransport(
+        port: port,
+        reopenAfter: const Duration(milliseconds: 50),
+      );
+      await transport.open((_, _) {}, onReopen: () => reopens++);
+      transport.sendTo(Uint8List(70000), '127.0.0.1');
+      await transport.close();
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(reopens, 0);
+      // The port is free again.
+      final other = await RawDatagramSocket.bind(InternetAddress.anyIPv4, port);
+      other.close();
     });
   });
 }

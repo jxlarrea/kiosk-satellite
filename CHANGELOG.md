@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Wake word arbitration works after a boot without Wi-Fi.** If the app started before Wi-Fi had an address, as an Echo Dot can after a reboot, the first arbitration message failed and closed UDP port 2330 until the app restarted. The kiosk still answered its wake word, but if it and another kiosk both heard it, both could answer. The port now opens again 5 seconds after it closes, and the other kiosks hear from this one again.
+
 ## v2026.11.12 - 2026-11-07
 
 ### Added
