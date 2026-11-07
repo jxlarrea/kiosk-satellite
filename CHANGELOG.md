@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **The Weather Mood condition icon shows when rain starts.** If the weather changed to rain or heavy rain with the screensaver up, the conditions chip could show an empty circle or the previous rain icon until the temperature next changed.
+
 ## v2026.11.10 - 2026-11-06
 
 ### Added

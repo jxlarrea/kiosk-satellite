@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../l10n/messages.dart';
+import 'text_snapshot.dart';
 
 /// Shared temperature selection for the weather widget and Weather Mood bar.
 class WeatherTemperatureReading {
@@ -212,31 +213,86 @@ class WeatherConditionIcon extends StatelessWidget {
         shadows: shadows,
       );
     }
+    final svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+        '<path d="$path"/></svg>';
     Widget glyph(Color color) => SvgPicture.string(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
-      '<path d="$path"/></svg>',
+      svg,
       width: size,
       height: size,
       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
     );
-    if (shadows.isEmpty) return glyph(color);
-    return Stack(
-      children: [
-        for (final shadow in shadows)
-          Transform.translate(
-            offset: shadow.offset,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(
-                sigmaX: shadow.blurSigma,
-                sigmaY: shadow.blurSigma,
-              ),
-              child: glyph(shadow.color),
+    return _RetakeSnapshotOnLoad(
+      svg: svg,
+      child: shadows.isEmpty
+          ? glyph(color)
+          : Stack(
+              children: [
+                for (final shadow in shadows)
+                  Transform.translate(
+                    offset: shadow.offset,
+                    child: ImageFiltered(
+                      imageFilter: ui.ImageFilter.blur(
+                        sigmaX: shadow.blurSigma,
+                        sigmaY: shadow.blurSigma,
+                      ),
+                      child: glyph(shadow.color),
+                    ),
+                  ),
+                glyph(color),
+              ],
             ),
-          ),
-        glyph(color),
-      ],
     );
   }
+}
+
+/// Retakes the [TextSnapshot] around [child] once [svg] has loaded.
+///
+/// An SVG draws nothing until it compiles, which happens on a background
+/// isolate the first time it is drawn. A snapshot taken before that would
+/// otherwise keep the empty space, since a child repainting does not retake
+/// it: a Weather Mood chip showed an empty circle when rain first arrived
+/// with the screensaver up.
+class _RetakeSnapshotOnLoad extends StatefulWidget {
+  const _RetakeSnapshotOnLoad({required this.svg, required this.child});
+
+  final String svg;
+  final Widget child;
+
+  @override
+  State<_RetakeSnapshotOnLoad> createState() => _RetakeSnapshotOnLoadState();
+}
+
+class _RetakeSnapshotOnLoadState extends State<_RetakeSnapshotOnLoad> {
+  @override
+  void initState() {
+    super.initState();
+    _retakeOnLoad();
+  }
+
+  @override
+  void didUpdateWidget(_RetakeSnapshotOnLoad old) {
+    super.didUpdateWidget(old);
+    if (old.svg != widget.svg) _retakeOnLoad();
+  }
+
+  Future<void> _retakeOnLoad() async {
+    final svg = widget.svg;
+    // Shares its compile with the SvgPicture in the child.
+    try {
+      await SvgStringLoader(svg).loadBytes(null);
+    } catch (_) {
+      return;
+    }
+    // The picture reaches the child on the same bytes, so it has drawn by
+    // the end of the next frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.svg == svg) TextSnapshot.refresh(context);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 String weatherMoodConditionText(BuildContext context, String condition) {
