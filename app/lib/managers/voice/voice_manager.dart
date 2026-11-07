@@ -2217,7 +2217,6 @@ class VoiceManager extends Manager {
 
   RealtimeOptions _realtimeOptions() => RealtimeOptions(
     wakeSound: _settings.get(defs.voiceWakeSound),
-    seamless: _settings.get(defs.voiceSeamlessWake),
     idleSeconds: _settings.get(defs.voiceRealtimeIdleSeconds).toInt(),
     talkOver: _settings.get(defs.voiceRealtimeTalkOver),
     talkOverLevel: RealtimeSession.talkOverLevel(

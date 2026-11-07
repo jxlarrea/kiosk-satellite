@@ -2125,6 +2125,29 @@ void main() {
       });
     });
 
+    test(
+      'the wake chime plays and the pre-roll never reaches the provider',
+      () {
+        fakeAsync((time) {
+          final h = _Harness(time);
+          unawaited(h.session.wake('Hey Jarvis'));
+          time.flushMicrotasks();
+          expect(h.chimes.chimes, ['wake']);
+          // What the wake word engine held from before the stream opened.
+          h.mic.speak(preRoll: true);
+          time.elapse(const Duration(milliseconds: 600));
+          h.mic.speak(preRoll: true);
+          h.backend.emit(const RealtimeReady());
+          time.flushMicrotasks();
+          expect(h.backend.audio, isEmpty);
+          h.mic.speak();
+          expect(h.backend.audio, hasLength(1));
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      },
+    );
+
     test('an opening is said first, after the announcement chime', () {
       fakeAsync((time) {
         final h = _Harness(time);

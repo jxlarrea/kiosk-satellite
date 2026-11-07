@@ -15,7 +15,6 @@ import 'realtime_player.dart';
 class RealtimeOptions {
   const RealtimeOptions({
     this.wakeSound = true,
-    this.seamless = false,
     this.idleSeconds = 10,
     this.talkOver = true,
     this.talkOverLevel = RealtimeSession.bargeInLevel,
@@ -23,10 +22,11 @@ class RealtimeOptions {
     this.historyHours = 0,
   });
 
+  /// The wake chime (Play chimes). Talk right after the wake word does not
+  /// apply: the pre-roll carried the end of the wake word, whose match is
+  /// aligned a syllable early ("So, what time is it?"), and the chime is
+  /// sound the echo canceller learns from before the first answer.
   final bool wakeSound;
-
-  /// Keep what was said right after the wake word, with no chime.
-  final bool seamless;
 
   /// The session ends after this long with nobody talking.
   final int idleSeconds;
@@ -278,7 +278,7 @@ class RealtimeSession {
     // Listening shows with the wake chime, which holds its start until
     // its track has settled (see LeadInProcessor); without one, now. An
     // opening has nothing to listen to until it is said.
-    final wakeChime = _opening.isEmpty && opts.wakeSound && !opts.seamless;
+    final wakeChime = _opening.isEmpty && opts.wakeSound;
     if (_opening.isNotEmpty) {
       _show(
         const AssistView(
@@ -395,7 +395,8 @@ class RealtimeSession {
   void _onMic(int gen, Uint8List pcm, bool preRoll) {
     if (gen != _gen || !_busy) return;
     final opts = options();
-    if (preRoll && !opts.seamless) return;
+    // Talk right after the wake word does not apply here: the pre-roll goes.
+    if (preRoll) return;
     final deaf = _deafUntil;
     if (deaf != null) {
       if (_now().isBefore(deaf)) {
