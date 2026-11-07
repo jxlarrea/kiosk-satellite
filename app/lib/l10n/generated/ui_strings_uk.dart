@@ -9058,8 +9058,15 @@ class UiStringsUk extends UiStrings {
   String get settingIntercomRingSoundTitle => 'Звук дзвінка';
 
   @override
-  String get settingIntercomRingSoundDescription =>
-      'Відтворюється з гучністю сповіщень.';
+  String get settingIntercomRingSoundVolumeDescription =>
+      'Відтворюється з гучністю дзвінка.';
+
+  @override
+  String get settingIntercomRingVolumeTitle => 'Гучність дзвінка';
+
+  @override
+  String get settingIntercomRingVolumeDescription =>
+      'Наскільки гучно дзвонить виклик, окремо від гучності медіа.';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle => 'Приймати оголошення';

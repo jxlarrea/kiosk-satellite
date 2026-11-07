@@ -8590,7 +8590,13 @@ class UiStringsZh extends UiStrings {
   String get settingIntercomRingSoundTitle => '来电铃声';
 
   @override
-  String get settingIntercomRingSoundDescription => '以通知音量播放。';
+  String get settingIntercomRingSoundVolumeDescription => '以铃声音量播放。';
+
+  @override
+  String get settingIntercomRingVolumeTitle => '铃声音量';
+
+  @override
+  String get settingIntercomRingVolumeDescription => '来电响铃的音量，独立于媒体音量。';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle => '接收广播';
@@ -23883,7 +23889,13 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingIntercomRingSoundTitle => '来电铃声';
 
   @override
-  String get settingIntercomRingSoundDescription => '以通知音量播放。';
+  String get settingIntercomRingSoundVolumeDescription => '以铃声音量播放。';
+
+  @override
+  String get settingIntercomRingVolumeTitle => '铃声音量';
+
+  @override
+  String get settingIntercomRingVolumeDescription => '来电响铃的音量，独立于媒体音量。';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle => '接收广播';

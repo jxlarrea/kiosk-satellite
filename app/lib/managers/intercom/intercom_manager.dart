@@ -2925,10 +2925,7 @@ class IntercomManager extends Manager {
   /// again.
   Future<void> _ring({bool short = false}) async {
     final generation = _ringGeneration;
-    final volume = _settings
-        .get(defs.notificationsVolume)
-        .toDouble()
-        .clamp(0.0, 1.0);
+    final volume = _ringVolume();
     final sound = _settings.get(defs.intercomRingSound).trim();
     final path = sound.isEmpty ? null : await NotificationSounds.resolve(sound);
     if (generation != _ringGeneration) return;
@@ -2956,6 +2953,9 @@ class IntercomManager extends Manager {
       log.debug(name, 'ring${short ? ' (short)' : ''} at $volume');
     }
   }
+
+  double _ringVolume() =>
+      _settings.get(defs.intercomRingVolume).toDouble().clamp(0.0, 1.0);
 
   /// Silences the ring, whichever player has it.
   Future<void> _stopRing() async {

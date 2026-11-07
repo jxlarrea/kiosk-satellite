@@ -9123,8 +9123,15 @@ class UiStringsFr extends UiStrings {
   String get settingIntercomRingSoundTitle => 'Sonnerie';
 
   @override
-  String get settingIntercomRingSoundDescription =>
-      'Joué au volume des notifications.';
+  String get settingIntercomRingSoundVolumeDescription =>
+      'Jouée au volume de la sonnerie.';
+
+  @override
+  String get settingIntercomRingVolumeTitle => 'Volume de la sonnerie';
+
+  @override
+  String get settingIntercomRingVolumeDescription =>
+      'Volume de la sonnerie des appels, indépendamment du volume multimédia.';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle => 'Accepter les annonces';

@@ -33932,8 +33932,34 @@
       ]
     }
   },
-  "settingIntercomRingSoundDescription": "Joué au volume des notifications.",
-  "@settingIntercomRingSoundDescription": {
+  "settingIntercomRingSoundVolumeDescription": "Jouée au volume de la sonnerie.",
+  "@settingIntercomRingSoundVolumeDescription": {
+    "context": "Settings > Intercom > Answer",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Answer"
+      ],
+      "remoteAdmin": [
+        "Intercom > Answer"
+      ]
+    }
+  },
+  "settingIntercomRingVolumeTitle": "Volume de la sonnerie",
+  "@settingIntercomRingVolumeTitle": {
+    "context": "Settings > Intercom > Answer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Answer"
+      ],
+      "remoteAdmin": [
+        "Intercom > Answer"
+      ]
+    }
+  },
+  "settingIntercomRingVolumeDescription": "Volume de la sonnerie des appels, indépendamment du volume multimédia.",
+  "@settingIntercomRingVolumeDescription": {
     "context": "Settings > Intercom > Answer",
     "description": "Help below this setting.",
     "x-locations": {

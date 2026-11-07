@@ -11612,17 +11612,35 @@ const intercomRingSeconds = SettingDef<String>(
 );
 
 /// A file in the sounds folder like the notification sound, or empty for
-/// the bundled chime. Plays at the notification volume.
+/// the bundled chime. Plays at [intercomRingVolume].
 const intercomRingSound = SettingDef<String>(
   key: 'intercom.ring_sound',
   type: SettingType.string,
   defaultValue: '',
   title: 'Ring sound',
-  description: 'Plays at the notification volume.',
+  description: 'Plays at the ring volume.',
   category: 'Intercom',
   section: 'Answer',
   dependsOn: 'intercom.enabled',
   validator: validateNotificationSound,
+);
+
+/// How loud a call rings here, the built-in ring or [intercomRingSound],
+/// on the same scale as the notification volume the ring used to follow.
+/// An install from before it starts on its notification volume.
+const intercomRingVolume = SettingDef<num>(
+  key: 'intercom.ring_volume',
+  type: SettingType.number,
+  defaultValue: 0.7,
+  title: 'Ring volume',
+  description: 'How loud a call rings, apart from the media volume.',
+  category: 'Intercom',
+  section: 'Answer',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  unit: '%',
+  dependsOn: 'intercom.enabled',
 );
 
 /// Off, the kiosk refuses Announce to all from the other kiosks.
@@ -12384,8 +12402,9 @@ const fleetDefaultExcluded = {
   'browser.cutout_mode',
   // Which way the panel is mounted.
   'screen.orientation',
-  // The intercom volume: every speaker is its own, like the other volumes.
+  // The intercom volumes: every speaker is its own, like the other volumes.
   'intercom.volume',
+  'intercom.ring_volume',
   // The answer mode carries Do not disturb, which each room sets for itself.
   'intercom.answer_mode',
   // Voice Satellite's mute is the room's, and every room plays its sounds
@@ -12662,6 +12681,52 @@ const fleetFormerDefaultExcluded = <Set<String>>[
     'audio.assistant_volume',
     'notifications.volume',
     'ha.tap_sound_volume',
+    'screensaver.gallery_items',
+    'screensaver.local_folder',
+    'screensaver.clock_background',
+    'notifications.chime_file',
+    'launcher.apps',
+    'motion.sensitivity',
+    'motion.fps',
+    'face.sensitivity',
+    'camera.snapshot_resolution',
+    'motion.use_entity',
+    'motion.entity',
+    'browser.cutout_mode',
+    'screen.orientation',
+    'intercom.volume',
+    'intercom.answer_mode',
+    'voice.mute',
+    'voice.tts_output',
+  },
+  // Before the intercom's ring volume joined.
+  {
+    'browser.zoom',
+    'screensaver.website_zoom',
+    'screensaver.clock_scale',
+    'screensaver.widget_scale',
+    'screensaver.immich_metadata_scale',
+    'screensaver.glance_scale',
+    'face.preview_scale',
+    'sendspin.player_size',
+    'screen.default_brightness',
+    'screen.adaptive_min_brightness',
+    'screen.adaptive_max_brightness',
+    'screen.adaptive_dark_lux',
+    'screen.adaptive_bright_lux',
+    'screen.adaptive_use_entity',
+    'screen.adaptive_light_entity',
+    'screensaver.brightness_level',
+    'screensaver.dim_level',
+    'audio.media_volume',
+    'audio.assistant_volume',
+    'notifications.volume',
+    'ha.tap_sound_volume',
+    'voice_chimes.wake_volume',
+    'voice_chimes.done_volume',
+    'voice_chimes.error_volume',
+    'voice_chimes.alert_volume',
+    'voice_chimes.announce_volume',
     'screensaver.gallery_items',
     'screensaver.local_folder',
     'screensaver.clock_background',
@@ -14263,6 +14328,7 @@ const List<SettingDef<Object>> allSettings = [
   intercomAutoAnswerCamera,
   intercomRingSeconds,
   intercomRingSound,
+  intercomRingVolume,
   intercomAcceptAnnouncements,
   intercomTalkMode,
   intercomMaxCallMinutes,

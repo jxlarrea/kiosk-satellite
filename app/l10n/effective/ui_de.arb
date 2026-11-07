@@ -33932,8 +33932,34 @@
       ]
     }
   },
-  "settingIntercomRingSoundDescription": "Wird mit der Benachrichtigungslautstärke wiedergegeben.",
-  "@settingIntercomRingSoundDescription": {
+  "settingIntercomRingSoundVolumeDescription": "Wird mit der Klingellautstärke wiedergegeben.",
+  "@settingIntercomRingSoundVolumeDescription": {
+    "context": "Settings > Intercom > Answer",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Answer"
+      ],
+      "remoteAdmin": [
+        "Intercom > Answer"
+      ]
+    }
+  },
+  "settingIntercomRingVolumeTitle": "Klingellautstärke",
+  "@settingIntercomRingVolumeTitle": {
+    "context": "Settings > Intercom > Answer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Answer"
+      ],
+      "remoteAdmin": [
+        "Intercom > Answer"
+      ]
+    }
+  },
+  "settingIntercomRingVolumeDescription": "Wie laut ein Anruf klingelt, unabhängig von der Medienlautstärke.",
+  "@settingIntercomRingVolumeDescription": {
     "context": "Settings > Intercom > Answer",
     "description": "Help below this setting.",
     "x-locations": {

@@ -9034,8 +9034,15 @@ class UiStringsRu extends UiStrings {
   String get settingIntercomRingSoundTitle => 'Звук звонка';
 
   @override
-  String get settingIntercomRingSoundDescription =>
-      'Проигрывается на громкости уведомлений.';
+  String get settingIntercomRingSoundVolumeDescription =>
+      'Проигрывается на громкости звонка.';
+
+  @override
+  String get settingIntercomRingVolumeTitle => 'Громкость звонка';
+
+  @override
+  String get settingIntercomRingVolumeDescription =>
+      'Насколько громко звонит вызов, отдельно от громкости медиа.';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle => 'Принимать объявления';

@@ -9134,8 +9134,15 @@ class UiStringsEs extends UiStrings {
   String get settingIntercomRingSoundTitle => 'Sonido del timbre';
 
   @override
-  String get settingIntercomRingSoundDescription =>
-      'Se reproduce al volumen de las notificaciones.';
+  String get settingIntercomRingSoundVolumeDescription =>
+      'Se reproduce al volumen del timbre.';
+
+  @override
+  String get settingIntercomRingVolumeTitle => 'Volumen del timbre';
+
+  @override
+  String get settingIntercomRingVolumeDescription =>
+      'Volumen del timbre de las llamadas, independiente del volumen multimedia.';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle => 'Aceptar anuncios';

@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Ring volume for the intercom.** Settings > Intercom > Answer > Ring volume sets how loud a call rings, the built-in ring or a picked ring sound, apart from the media volume. The ring used to play at the notification volume, so an updated kiosk starts on that level. Each kiosk keeps its own, so new fleet profiles leave it out.
+
 ### Changed
 - **Talk right after the wake word only applies to Assist pipelines.** With it on, a realtime conversation skipped the wake sound and sent what was said right after the wake word, which could carry the end of the wake word along ("So, what time is it?"). Realtime conversations now always start after the wake sound when Play chimes is on.
 

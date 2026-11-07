@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "175f69de8b9bc70702105fc16f4f1a0a66c1a09c",
+  "revision": "3d3ee26e3269adf77de34e441ee4a3ed90d4714a",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -120,7 +120,7 @@
     "settings_home_assistant_user_interface_en.arb": "1b5b2d1cce0484b52e406b390bbd501486786bc3c2ce7662d2ca5c50af30309f",
     "settings_home_launcher_en.arb": "7dde832d28722212100e03d4a51282a47d69e4ee44756bff574800fbeec76162",
     "settings_home_launcher_status_en.arb": "1b102faa19f53b7c39b925fd65425efdb016ff7c248a0981238695354d2426d9",
-    "settings_intercom_answer_en.arb": "22a2819b9f429e82d7d5b4942301d942a60b743f9b4916c0942784a71dc89339",
+    "settings_intercom_answer_en.arb": "59118996cc16690318a3b0a59c3c6455808f7b405606c1ece8491b6b049a8c7d",
     "settings_intercom_general_en.arb": "3a1d3535b855b5658be40b64a8e04c759bb6a1690a28d3283befaeda2c829d29",
     "settings_intercom_kiosks_en.arb": "135b6b4da593ab57a523e70d84494c604d036d6da47d869407d3c03a20ba072e",
     "settings_intercom_talk_en.arb": "2802b9745497417a7d9a8c3cedd3432429745151232cc1a054c4b24f3e14b33a",

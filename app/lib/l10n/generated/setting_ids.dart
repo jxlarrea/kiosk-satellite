@@ -1338,7 +1338,11 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "intercom.ring_sound": {
     "title": "settingIntercomRingSoundTitle",
-    "description": "settingIntercomRingSoundDescription",
+    "description": "settingIntercomRingSoundVolumeDescription",
+  },
+  "intercom.ring_volume": {
+    "title": "settingIntercomRingVolumeTitle",
+    "description": "settingIntercomRingVolumeDescription",
   },
   "intercom.accept_announcements": {
     "title": "settingIntercomAcceptAnnouncementsTitle",

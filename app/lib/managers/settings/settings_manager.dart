@@ -446,6 +446,14 @@ class SettingsManager extends Manager {
         );
       }
     }
+    // The intercom rang at the notification volume before it had a volume
+    // of its own. Written once, so the ring keeps its loudness.
+    if (_prefs.get(_prefix + intercomRingVolume.key) == null) {
+      await _prefs.setDouble(
+        _prefix + intercomRingVolume.key,
+        get(notificationsVolume).toDouble(),
+      );
+    }
     // The preview's automatic language choice is now explicit English.
     if (_prefs.get(_prefix + uiLanguage.key) == 'system') {
       await _prefs.setString(_prefix + uiLanguage.key, 'en');

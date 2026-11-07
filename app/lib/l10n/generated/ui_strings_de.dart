@@ -9176,8 +9176,15 @@ class UiStringsDe extends UiStrings {
   String get settingIntercomRingSoundTitle => 'Klingelton';
 
   @override
-  String get settingIntercomRingSoundDescription =>
-      'Wird mit der Benachrichtigungslautstärke wiedergegeben.';
+  String get settingIntercomRingSoundVolumeDescription =>
+      'Wird mit der Klingellautstärke wiedergegeben.';
+
+  @override
+  String get settingIntercomRingVolumeTitle => 'Klingellautstärke';
+
+  @override
+  String get settingIntercomRingVolumeDescription =>
+      'Wie laut ein Anruf klingelt, unabhängig von der Medienlautstärke.';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle => 'Durchsagen annehmen';

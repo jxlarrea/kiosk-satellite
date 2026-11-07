@@ -8977,8 +8977,15 @@ class UiStringsEn extends UiStrings {
   String get settingIntercomRingSoundTitle => 'Ring sound';
 
   @override
-  String get settingIntercomRingSoundDescription =>
-      'Plays at the notification volume.';
+  String get settingIntercomRingSoundVolumeDescription =>
+      'Plays at the ring volume.';
+
+  @override
+  String get settingIntercomRingVolumeTitle => 'Ring volume';
+
+  @override
+  String get settingIntercomRingVolumeDescription =>
+      'How loud a call rings, apart from the media volume.';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle => 'Accept announcements';

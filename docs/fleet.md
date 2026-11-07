@@ -91,6 +91,7 @@ Settings that scale the UI, control screen brightness, or manage volume often de
 | `browser.cutout_mode` Display cutout | Screen & Audio |
 | `screen.orientation` Screen orientation | Screen & Audio |
 | `intercom.volume` Intercom volume | Screen & Audio |
+| `intercom.ring_volume` Ring volume | Intercom |
 | `intercom.answer_mode` Answer mode, which carries Do not disturb | Intercom |
 | `voice.mute` Mute, `voice.tts_output` Play sounds on | Voice Satellite |
 

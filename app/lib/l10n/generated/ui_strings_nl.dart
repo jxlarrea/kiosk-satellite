@@ -9079,8 +9079,15 @@ class UiStringsNl extends UiStrings {
   String get settingIntercomRingSoundTitle => 'Beltoon';
 
   @override
-  String get settingIntercomRingSoundDescription =>
-      'Speelt af bij het meldingsvolume.';
+  String get settingIntercomRingSoundVolumeDescription =>
+      'Speelt af bij het beltoonvolume.';
+
+  @override
+  String get settingIntercomRingVolumeTitle => 'Beltoonvolume';
+
+  @override
+  String get settingIntercomRingVolumeDescription =>
+      'Het volume waarmee een oproep overgaat, los van het mediavolume.';
 
   @override
   String get settingIntercomAcceptAnnouncementsTitle =>

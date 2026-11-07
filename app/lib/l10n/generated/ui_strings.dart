@@ -15668,8 +15668,20 @@ abstract class UiStrings {
   /// Help below this setting.
   ///
   /// In en, this message translates to:
-  /// **'Plays at the notification volume.'**
-  String get settingIntercomRingSoundDescription;
+  /// **'Plays at the ring volume.'**
+  String get settingIntercomRingSoundVolumeDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring volume'**
+  String get settingIntercomRingVolumeTitle;
+
+  /// Help below this setting.
+  ///
+  /// In en, this message translates to:
+  /// **'How loud a call rings, apart from the media volume.'**
+  String get settingIntercomRingVolumeDescription;
 
   /// Setting label.
   ///

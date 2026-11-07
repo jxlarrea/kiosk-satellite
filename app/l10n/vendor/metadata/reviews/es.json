@@ -24118,5 +24118,20 @@
     "source": "e01f2268c5366003a0c1060278b2ef9b8bf34ec62ee5d34b30936422589c2621",
     "translation": "eed876692589c4353d0bf9626f1eb807dd6fe0f3eb032a35619e8a00c07d841f",
     "author": "Xavier Larrea"
+  },
+  "settingIntercomRingVolumeTitle": {
+    "source": "543a80b5b244d9acbf4951bd9f8b9522997c0e4ab34e9e6baf4fd9a315cc232a",
+    "translation": "b6abdb76da37d6c03334c76ad6f95c22aff6e41021ffd0478c9d61ff2eb36353",
+    "author": "Xavier Larrea"
+  },
+  "settingIntercomRingSoundVolumeDescription": {
+    "source": "e994b7ed2c91951f774643caea1b384b52d05f0385eba381dd76463a17eeb863",
+    "translation": "f22ec639fb03b24b336a1756dc181b205bce8d9d522e6aff41c9bf8c0fde1392",
+    "author": "Xavier Larrea"
+  },
+  "settingIntercomRingVolumeDescription": {
+    "source": "8e9adb5d4f3937a566db9592a60ea633111d981cc4cedf62ca24f8f5261cda71",
+    "translation": "c4fe1ba094418344927939dcb37df18e8dbe918287099e7500be3bac9985eb0d",
+    "author": "Xavier Larrea"
   }
 }

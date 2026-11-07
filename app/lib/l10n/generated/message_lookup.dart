@@ -2622,8 +2622,12 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingIntercomRingSecondsDescription' =>
         strings.settingIntercomRingSecondsDescription,
       'settingIntercomRingSoundTitle' => strings.settingIntercomRingSoundTitle,
-      'settingIntercomRingSoundDescription' =>
-        strings.settingIntercomRingSoundDescription,
+      'settingIntercomRingSoundVolumeDescription' =>
+        strings.settingIntercomRingSoundVolumeDescription,
+      'settingIntercomRingVolumeTitle' =>
+        strings.settingIntercomRingVolumeTitle,
+      'settingIntercomRingVolumeDescription' =>
+        strings.settingIntercomRingVolumeDescription,
       'settingIntercomAcceptAnnouncementsTitle' =>
         strings.settingIntercomAcceptAnnouncementsTitle,
       'settingIntercomAcceptAnnouncementsDescription' =>
