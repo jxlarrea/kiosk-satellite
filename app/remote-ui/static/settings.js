@@ -399,7 +399,7 @@ async function flushSettingsUpdates() {
     // A replaced generic input cannot stand in for a custom picker.
     if (shapeChanged || hasDependants || layoutSettings.has(setting.key)) {
       rebuild = true;
-    } else if (['sendspin.player', 'sendspin.player_name'].includes(setting.key)) {
+    } else if (['sendspin.player', 'sendspin.player_name', 'sendspin.kept_for'].includes(setting.key)) {
       updatePlayerRow();
     } else if (!rows.length || rows.some(row => !row.updateSetting?.())) {
       rebuild = true;

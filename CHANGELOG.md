@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **A followed Music Assistant group keeps this device online (#1334).** Selecting a Music Assistant group with this device in it took the device's Sendspin player offline, which left the group with a member that could not play. The Sendspin player now stays online and plays with the group while the floating player and Now Playing follow the group. Selecting any other player still takes it offline.
+- **This device's own Music Assistant player is found on every server (#1334).** A player with a hash id and a different name in Music Assistant was not recognized as this device, so the speaker group menu had nothing to read and the device's own player was offered as a player to follow.
+
 ## v2026.11.9 - 2026-11-06
 
 ### Added

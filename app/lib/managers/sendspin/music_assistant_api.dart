@@ -245,12 +245,74 @@ class MusicAssistantApi {
   /// one that answered.
   String? groupProblem;
 
+  /// Whether [player] from a `players/all` answer stands for the Sendspin
+  /// client [clientId]: Music Assistant hides the bare player behind a
+  /// universal one, whose id embeds the client id on some servers and is a
+  /// hash on others. Either way its output protocols name the client.
+  static bool standsFor(Map<Object?, Object?> player, String clientId) {
+    final wanted = clientId.toLowerCase();
+    if (wanted.isEmpty) return false;
+    if ('${player['player_id'] ?? ''}'.toLowerCase().contains(wanted)) {
+      return true;
+    }
+    final outputs = player['output_protocols'];
+    return outputs is List &&
+        outputs.any(
+          (o) =>
+              o is Map &&
+              '${o['output_protocol_id'] ?? ''}'.toLowerCase() == wanted,
+        );
+  }
+
+  /// Whether the group of [groupId] has the Sendspin client [clientId] in
+  /// it. Null when the server cannot be reached or does not list [groupId].
+  ///
+  /// A playing sync group lists only its live members, so a member whose
+  /// client is down is named only in the group's saved configuration. A
+  /// token that cannot read the configuration gets the live list alone.
+  Future<bool?> groupHolds(
+    String groupId,
+    String clientId, {
+    String ownName = '',
+  }) async {
+    final res = await call('players/all');
+    final players = res.result;
+    if (!res.ok || players is! List) return null;
+    final byId = <String, Map<Object?, Object?>>{
+      for (final p in players)
+        if (p is Map) '${p['player_id'] ?? ''}': p,
+    };
+    final group = byId[groupId];
+    if (group == null) return null;
+    final own = ownPlayerId(byId, clientId, ownName: ownName).toLowerCase();
+    final wanted = clientId.toLowerCase();
+    bool names(Object? members) =>
+        members is List &&
+        members.any((m) {
+          final id = '$m'.toLowerCase();
+          return id == wanted || (own.isNotEmpty && id == own);
+        });
+    if (names(group['group_members']) ||
+        names(group['group_childs']) ||
+        names(group['static_group_members'])) {
+      return true;
+    }
+    if (group['type'] != 'group') return false;
+    final config = await call(
+      'config/players/get',
+      args: {'player_id': groupId},
+    );
+    final saved = config.result;
+    final values = saved is Map ? saved['values'] : null;
+    final entry = values is Map ? values['group_members'] : null;
+    return entry is Map && names(entry['value']);
+  }
+
   /// The id Music Assistant lists the player [playerId] under, out of the
-  /// players [byId]: the id itself; a wrapper whose id embeds it (one
-  /// server's universal players are named after the player they wrap);
-  /// a wrapper whose members name it (another server's carry a hash);
-  /// and last the player registered under [ownName], the name this
-  /// device joined the server with. Empty when none fits.
+  /// players [byId]: the id itself; a wrapper that [standsFor] it; a
+  /// wrapper whose members name it; and last the player registered under
+  /// [ownName], the name this device joined the server with. Empty when
+  /// none fits.
   static String ownPlayerId(
     Map<String, Map<Object?, Object?>> byId,
     String playerId, {
@@ -259,8 +321,11 @@ class MusicAssistantApi {
     if (byId.containsKey(playerId)) return playerId;
     final wanted = playerId.toLowerCase();
     if (wanted.isNotEmpty) {
-      for (final id in byId.keys) {
-        if (id.toLowerCase().contains(wanted)) return id;
+      for (final entry in byId.entries) {
+        if (entry.key.toLowerCase().contains(wanted) ||
+            standsFor(entry.value, playerId)) {
+          return entry.key;
+        }
       }
       for (final entry in byId.entries) {
         final p = entry.value;

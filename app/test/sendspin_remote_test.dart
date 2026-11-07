@@ -112,6 +112,32 @@ class _FakeLrclib extends LrclibApi {
   }
 }
 
+/// Answers `players/all` with [players] and `config/players/get` with the
+/// group's [saved] members, or a refusal without any.
+class _GroupApi extends _FakeApi {
+  _GroupApi(super.players, {this.saved});
+
+  final List<String>? saved;
+
+  @override
+  Future<MusicAssistantResult> call(
+    String command, {
+    Map<String, Object?> args = const {},
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    if (command != 'config/players/get') {
+      return super.call(command, args: args, timeout: timeout);
+    }
+    return saved == null
+        ? const MusicAssistantResult.failure('scope')
+        : MusicAssistantResult.success({
+            'values': {
+              'group_members': {'value': saved},
+            },
+          }, const {});
+  }
+}
+
 class _FakeRemote extends MaRemotePlayer {
   _FakeRemote({
     required super.baseUrl,
@@ -479,7 +505,12 @@ void main() {
     late List<MethodCall> nativeCalls;
     _FakeRemote? fake;
 
-    Future<void> build({String player = 'ma:p1', bool enabled = true}) async {
+    Future<void> build({
+      String player = 'ma:p1',
+      bool enabled = true,
+      MusicAssistantApi Function()? api,
+      String keptFor = '',
+    }) async {
       SharedPreferences.setMockInitialValues({
         'ks.${defs.deviceName.key}': 'Wall Tablet',
         'ks.${defs.sendspinEnabled.key}': enabled,
@@ -490,6 +521,7 @@ void main() {
         if (player.isNotEmpty) 'ks.${defs.sendspinPlayerSource.key}': 'ma',
         'ks.${defs.sendspinPlayerName.key}': 'Kitchen',
         'ks.${defs.sendspinLyrics.key}': true,
+        'ks.${defs.sendspinKeptFor.key}': keptFor,
       });
       nativeCalls = [];
       messenger.setMockMethodCallHandler(channel, (call) async {
@@ -504,7 +536,7 @@ void main() {
       sendspin = SendspinManager(bus, commands, log, settings);
       // Lyrics lookups must never open a real socket in a test.
       sendspin.apiFactory = ({required baseUrl, required token}) =>
-          _FakeApi(const []);
+          api?.call() ?? _FakeApi(const []);
       fake = null;
       sendspin.remoteFactory =
           ({
@@ -698,6 +730,183 @@ void main() {
       // The device is a remote control in this mode: the local client
       // never starts, so Music Assistant shows this device offline.
       expect(nativeCalls.map((c) => c.method), isNot(contains('start')));
+    });
+
+    group('a followed group this device is in (issue #1334)', () {
+      // A hash wrapper naming the client only as its output, as Music
+      // Assistant 2.10 lists a Sendspin device.
+      const wrapper = {
+        'player_id': 'up9498417e',
+        'name': 'Living Room',
+        'type': 'player',
+        'output_protocols': [
+          {'output_protocol_id': 'abc123', 'protocol_domain': 'sendspin'},
+        ],
+      };
+      Map<String, Object?> group(List<String> members) => {
+        'player_id': 'p1',
+        'name': 'Whole House',
+        'type': 'group',
+        'group_members': members,
+      };
+      Iterable<String> methods() => nativeCalls.map((c) => c.method);
+      Future<void> settle() async {
+        for (var i = 0; i < 5; i++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
+
+      test('keeps the local player on from boot', () async {
+        await build(
+          api: () => _GroupApi([
+            wrapper,
+            group(['up9498417e', 'kitchen']),
+          ]),
+        );
+        await settle();
+        expect(methods(), contains('start'));
+        expect(settings.get(defs.sendspinKeptFor), 'ma:p1');
+      });
+
+      test('a playing group that lists only live members still counts by '
+          'its saved members', () async {
+        await build(
+          api: () => _GroupApi(
+            [
+              wrapper,
+              group(['kitchen']),
+            ],
+            saved: ['up9498417e', 'kitchen'],
+          ),
+        );
+        await settle();
+        expect(methods(), contains('start'));
+      });
+
+      test('a group without this device leaves it a remote', () async {
+        await build(
+          api: () => _GroupApi(
+            [
+              wrapper,
+              group(['kitchen']),
+            ],
+            saved: ['kitchen'],
+          ),
+        );
+        await settle();
+        expect(methods(), isNot(contains('start')));
+        expect(settings.get(defs.sendspinKeptFor), '');
+      });
+
+      test(
+        'a token that cannot read the configuration uses the live list',
+        () async {
+          await build(
+            api: () => _GroupApi([
+              wrapper,
+              group(['kitchen']),
+            ]),
+          );
+          await settle();
+          expect(methods(), isNot(contains('start')));
+        },
+      );
+
+      test('a switched off player stays off', () async {
+        await build(
+          enabled: false,
+          api: () => _GroupApi([
+            wrapper,
+            group(['up9498417e']),
+          ]),
+        );
+        await settle();
+        expect(methods(), isNot(contains('start')));
+      });
+
+      test('no answer at boot keeps what was known for this pick', () async {
+        await build(api: () => _GroupApi(const []), keptFor: 'ma:p1');
+        await settle();
+        expect(methods(), contains('start'));
+        expect(settings.get(defs.sendspinKeptFor), 'ma:p1');
+      });
+
+      test('picking the group leaves the running player alone', () async {
+        await build(
+          player: '',
+          api: () => _GroupApi([
+            wrapper,
+            group(['up9498417e', 'kitchen']),
+          ]),
+        );
+        await settle();
+        nativeCalls.clear();
+        await settings.set(defs.sendspinPlayerSource, 'ma');
+        await settings.set(defs.sendspinPlayer, 'ma:p1');
+        await Future<void>.delayed(const Duration(milliseconds: 1100));
+        await settle();
+        expect(methods(), isNot(contains('stop')));
+        expect(methods(), isNot(contains('start')));
+        expect(settings.get(defs.sendspinKeptFor), 'ma:p1');
+        expect(fake?.playerId, 'p1');
+      });
+
+      test(
+        'picking a player outside it still stops the local player',
+        () async {
+          await build(
+            player: '',
+            api: () => _GroupApi(
+              [
+                wrapper,
+                group(['kitchen']),
+              ],
+              saved: ['kitchen'],
+            ),
+          );
+          await settle();
+          nativeCalls.clear();
+          await settings.set(defs.sendspinPlayerSource, 'ma');
+          await settings.set(defs.sendspinPlayer, 'ma:p1');
+          await Future<void>.delayed(const Duration(milliseconds: 1100));
+          await settle();
+          expect(methods(), contains('stop'));
+        },
+      );
+
+      test('a setting the client started with still restarts it', () async {
+        await build(
+          api: () => _GroupApi([
+            wrapper,
+            group(['up9498417e']),
+          ]),
+        );
+        await settle();
+        nativeCalls.clear();
+        await settings.set(defs.sendspinCodec, 'flac');
+        await Future<void>.delayed(const Duration(milliseconds: 1100));
+        await settle();
+        expect(methods(), containsAllInOrder(['stop', 'start']));
+      });
+
+      test('the group changing in Music Assistant is followed', () async {
+        var members = ['kitchen'];
+        await build(
+          api: () => _GroupApi([wrapper, group(members)], saved: members),
+        );
+        await settle();
+        expect(methods(), isNot(contains('start')));
+        members = ['up9498417e', 'kitchen'];
+        fake!.members.value = members;
+        await settle();
+        expect(methods(), contains('start'));
+        nativeCalls.clear();
+        members = ['kitchen'];
+        fake!.members.value = members;
+        await settle();
+        expect(methods(), contains('stop'));
+        expect(settings.get(defs.sendspinKeptFor), '');
+      });
     });
 
     test('the follower runs without the local player enabled', () async {
@@ -959,6 +1168,16 @@ void main() {
         // "This device" already is that choice.
         {'player_id': 'abc123', 'display_name': 'Me', 'available': true},
         {'player_id': 'upabc123', 'display_name': 'Me Too', 'available': true},
+        // Or a wrapper with a hash id, naming the client as its output
+        // (issue #1334).
+        {
+          'player_id': 'up9498417e',
+          'display_name': 'Me Again',
+          'available': true,
+          'output_protocols': [
+            {'output_protocol_id': 'abc123', 'protocol_domain': 'sendspin'},
+          ],
+        },
       ]);
       final result = await sendspin.commands.execute('mediaPlayers', const {});
       expect(result.ok, isTrue);

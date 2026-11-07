@@ -95,6 +95,35 @@ void main() {
     );
   });
 
+  testWidgets('a followed group this device is in keeps the player on', (
+    tester,
+  ) async {
+    await open(tester, {
+      'ks.sendspin.enabled': true,
+      'ks.sendspin.player_source': 'ma',
+      'ks.sendspin.player': 'ma:syncgroup_1',
+      'ks.sendspin.player_name': 'Whole House',
+      'ks.sendspin.kept_for': 'ma:syncgroup_1',
+    });
+    expect(find.textContaining('is picked.'), findsNothing);
+  });
+
+  testWidgets('a group kept on earlier says nothing for another pick', (
+    tester,
+  ) async {
+    await open(tester, {
+      'ks.sendspin.enabled': true,
+      'ks.sendspin.player_source': 'ma',
+      'ks.sendspin.player': 'ma:kitchen',
+      'ks.sendspin.player_name': 'Kitchen',
+      'ks.sendspin.kept_for': 'ma:syncgroup_1',
+    });
+    expect(
+      find.text('The Sendspin player stays offline while Kitchen is picked.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a source with no player picked yet is named itself', (
     tester,
   ) async {

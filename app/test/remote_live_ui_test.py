@@ -182,6 +182,14 @@ with sync_playwright() as playwright:
     change('sendspin.player_name', 'Office')
     expect(page.locator('.player-warn')).to_contain_text('Office')
     expect(page.locator('[data-key="sendspin.duck_percent"]')).to_have_attribute('data-kept', 'yes')
+    # A followed group this device is in keeps the Sendspin player on, so
+    # the warning leaves without the page rebuilding (issue #1334).
+    change('sendspin.kept_for', 'ma:media_player.second')
+    expect(page.locator('.player-warn')).to_have_count(0)
+    expect(page.locator('[data-key="sendspin.duck_percent"]')).to_have_attribute('data-kept', 'yes')
+    change('sendspin.kept_for', 'ma:another')
+    expect(page.locator('.player-warn')).to_contain_text('Office')
+    change('sendspin.kept_for', '')
 
     def route(path):
         page.evaluate('(path) => { location.hash = path; }', path)

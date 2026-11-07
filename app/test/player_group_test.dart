@@ -149,6 +149,46 @@ void main() {
       expect(MusicAssistantApi.ownPlayerId(byId, 'upother'), 'upother');
     });
 
+    test('a hash wrapper is found by the output protocol naming the client '
+        '(issue #1334)', () {
+      // Music Assistant 2.10's players/all leaves the bare Sendspin player
+      // out. A universal player with a hash id, renamed in Music Assistant,
+      // names the client only in its output protocols.
+      final byId = <String, Map<Object?, Object?>>{
+        'syncgroup_4qmxyzfg': {
+          'player_id': 'syncgroup_4qmxyzfg',
+          'name': 'Whole House',
+          'group_members': ['b9d9137b42c0'],
+          'output_protocols': [
+            {'output_protocol_id': 'native', 'protocol_domain': 'sync_group'},
+          ],
+        },
+        'up9498417e': {
+          'player_id': 'up9498417e',
+          'name': 'Living Room',
+          'output_protocols': [
+            {
+              'output_protocol_id': 'B9D9137B42C0',
+              'protocol_domain': 'sendspin',
+            },
+          ],
+        },
+      };
+      expect(MusicAssistantApi.ownPlayerId(byId, 'b9d9137b42c0'), 'up9498417e');
+      expect(
+        MusicAssistantApi.standsFor(byId['up9498417e']!, 'b9d9137b42c0'),
+        isTrue,
+      );
+      expect(
+        MusicAssistantApi.standsFor(
+          byId['syncgroup_4qmxyzfg']!,
+          'b9d9137b42c0',
+        ),
+        isFalse,
+      );
+      expect(MusicAssistantApi.standsFor(byId['up9498417e']!, ''), isFalse);
+    });
+
     test('a player the list lacks is named with what the list holds', () async {
       final api = _ListingApi(players);
       expect(await api.fetchGroup('tablet-x'), isNull);

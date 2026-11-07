@@ -241,7 +241,10 @@ export async function updatePlayerRow() {
 function offlineNotice(source, id, name) {
   const value = (key) => (state.settings || []).find((s) => s.key === key)?.value;
   const sourceSetting = () => (state.settings || []).find((s) => s.key === 'sendspin.player_source');
-  const sendspinOff = value('sendspin.enabled') === true && !(!source && !id);
+  // A followed group this device is in keeps the Sendspin player on.
+  const kept = value('sendspin.kept_for');
+  const sendspinOff = value('sendspin.enabled') === true && !(!source && !id)
+    && !(kept && kept === value('sendspin.player'));
   const airplayOff = value('airplay.enabled') === true && !(!source && id === AIRPLAY);
   if (!sendspinOff && !airplayOff) return '';
   const player = !source && !id ? mediaText('Sendspin Player')

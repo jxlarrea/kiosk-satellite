@@ -7660,7 +7660,12 @@ String? _offlineNotice(BuildContext context, AppContainer container) {
   final source = settings.get(sendspinPlayerSource);
   final local = source.isEmpty;
   final pick = settings.get(sendspinPlayer);
-  final sendspinOff = settings.get(sendspinEnabled) && !(local && pick.isEmpty);
+  // A followed group this device is in keeps the Sendspin player on.
+  final kept = settings.get(sendspinKeptFor);
+  final sendspinOff =
+      settings.get(sendspinEnabled) &&
+      !(local && pick.isEmpty) &&
+      !(kept.isNotEmpty && kept == pick);
   final airplayOff =
       settings.get(airplayEnabled) &&
       !(local && pick == SendspinManager.airplayPick);

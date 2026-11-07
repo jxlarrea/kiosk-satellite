@@ -9674,6 +9674,20 @@ const sendspinPlayerActive = SettingDef<bool>(
   perDevice: true,
 );
 
+/// The followed Music Assistant player whose group this device plays in, so
+/// the local player stays on under that pick (issue #1334). Kept by the
+/// manager and read by the warning under the Player row on both surfaces.
+const sendspinKeptFor = SettingDef<String>(
+  key: 'sendspin.kept_for',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Sendspin player kept on for',
+  description: 'Internal: the followed group this device plays in.',
+  category: 'Sendspin',
+  hidden: true,
+  perDevice: true,
+);
+
 /// Where the kiosk menu's Music Assistant row had its own switch. A link to
 /// Drawer menu items now (issue #1194), which decides every row.
 const sendspinMaShortcut = SettingDef<bool>(
@@ -14126,6 +14140,7 @@ const List<SettingDef<Object>> allSettings = [
   voiceTimerPosition,
   sendspinClientId,
   sendspinPlayerActive,
+  sendspinKeptFor,
   sendspinLocalPlayerName,
   dlnaEnabled,
   dlnaAudioBackground,

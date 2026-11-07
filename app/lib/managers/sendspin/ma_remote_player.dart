@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math' show Random, max, min;
 
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart'
+    show ValueNotifier, listEquals, visibleForTesting;
 
 import '../../core/logging.dart';
 import 'music_assistant_api.dart';
@@ -239,6 +240,7 @@ class MaRemotePlayer implements RemotePlayer {
       if (player is Map) {
         _player = player;
         _readVolume(player);
+        _readMembers(player);
         await _readGroup(session, player);
         await _readOwner(session, player);
       }
@@ -297,6 +299,19 @@ class MaRemotePlayer implements RemotePlayer {
     if (level is num) _volume = level.round().clamp(0, 100);
     final muted = player['volume_muted'];
     if (muted is bool) _muted = muted;
+  }
+
+  /// The players Music Assistant last listed in this player's group.
+  final members = ValueNotifier<List<String>>(const []);
+
+  void _readMembers(Object? player) {
+    final next = <String>[
+      if (player is Map)
+        for (final key in const ['group_members', 'static_group_members'])
+          if (player[key] case final List listed)
+            for (final m in listed) '$m',
+    ];
+    if (!listEquals(next, members.value)) members.value = next;
   }
 
   /// The leader of the group [player] plays in, or empty while it plays
@@ -638,6 +653,7 @@ class MaRemotePlayer implements RemotePlayer {
         // Publish their metadata now and refresh the queue for handoffs.
         if (data is Map) _player = data;
         _readVolume(data);
+        _readMembers(data);
         // A leader carries its group's volume itself and a player left
         // alone has none; a member waits for the refresh below to ask its
         // leader.
