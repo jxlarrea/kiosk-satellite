@@ -1,15 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+import '../core/app_locales.dart';
 import '../managers/gestures/gesture_mappings.dart';
 import 'messages.dart';
 
 String localizedHandHoldDuration(BuildContext context, num seconds) {
   if (seconds == 0) return l10n(context).gestureHoldInstant;
-  final number = NumberFormat(
-    '0.#',
-    Localizations.localeOf(context).toString(),
-  );
+  final number = NumberFormat('0.#', appLocaleName(context));
   return l10n(context).gestureHoldSeconds(number.format(seconds));
 }
 

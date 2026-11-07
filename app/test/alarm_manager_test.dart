@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
@@ -626,6 +628,43 @@ void main() {
       expect(
         alarms.phraseFor(alarms.alarms.value.single, DateTime(2026, 10, 2, 7)),
         'Happy Friday, Gym',
+      );
+    });
+
+    test('{time} and {hour} follow the alarms 24-hour clock', () async {
+      final evening = DateTime(2026, 10, 2, 19, 5);
+      await build(
+        [
+          {...daily('19:05'), 'phrase': '{time} {hour}'},
+        ],
+        extra: {'ks.alarms.clock_24h': true},
+      );
+      expect(alarms.phraseFor(alarms.alarms.value.single, evening), '19:05 19');
+      await settings.set(defs.alarmsClock24h, false);
+      expect(
+        alarms.phraseFor(alarms.alarms.value.single, evening),
+        '7:05 PM 7',
+      );
+    });
+
+    test('an AM/PM clock says AM/PM in a 24-hour language', () async {
+      await initializeDateFormatting();
+      await build(
+        [
+          {...daily('19:05'), 'phrase': '{time}'},
+        ],
+        extra: {'ks.alarms.clock_24h': false},
+      );
+      // With plain spaces, which every text to speech engine reads.
+      expect(
+        Intl.withLocale(
+          'es',
+          () => alarms.phraseFor(
+            alarms.alarms.value.single,
+            DateTime(2026, 10, 2, 19, 5),
+          ),
+        ),
+        '7:05 p. m.',
       );
     });
 

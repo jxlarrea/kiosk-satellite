@@ -1438,8 +1438,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingCalendarDefaultViewDescription' =>
         strings.settingCalendarDefaultViewDescription,
       'settingCalendarWeekStartTitle' => strings.settingCalendarWeekStartTitle,
-      'settingCalendarWeekStartDescription' =>
-        strings.settingCalendarWeekStartDescription,
+      'settingCalendarWeekStartAppLanguageDescription' =>
+        strings.settingCalendarWeekStartAppLanguageDescription,
       'settingCalendarWeatherEntityTitle' =>
         strings.settingCalendarWeatherEntityTitle,
       'settingCalendarWeatherEntityDescription' =>

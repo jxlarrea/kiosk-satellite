@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:intl/date_symbol_data_local.dart';
@@ -8,20 +9,63 @@ import 'package:intl/intl.dart';
 /// The clock screensaver and the Immich metadata rows used to compose dates
 /// from hardcoded English name arrays, so a Dutch device read
 /// "Sunday, August 1" where it expected "zondag 1 augustus". These helpers
-/// format through CLDR data in the device's locale instead, which localizes
+/// format through CLDR data in the app's language instead, which localizes
 /// the names AND the word order in one move.
 ///
-/// Only the device's own locale is loaded (not the full CLDR set): these
-/// run on low-RAM kiosks, and en_US is compiled into intl as the fallback.
-Future<void> initLocaleDates() async {
-  final locale = Intl.canonicalizedLocale(Platform.localeName);
-  try {
-    await initializeDateFormatting(locale);
-    Intl.defaultLocale = locale;
-  } catch (_) {
-    // No CLDR data for this locale: stay on the en_US built-ins rather
-    // than fail startup over a date string.
+/// Points every DateFormat and NumberFormat built without a locale at the
+/// app's [language] (a picker tag such as "nl" or "zh-CN"), so dates, day
+/// names and numbers read in the language the interface uses, not the
+/// Android one. Called once settings load and on every language change.
+///
+/// The CLDR data for every locale ships compiled into intl. Loading it only
+/// fills its tables, runs synchronously and happens once.
+void applyAppDateLanguage(String language) {
+  unawaited(initializeDateFormatting());
+  Intl.defaultLocale = appDateLocale(language, Platform.localeName);
+}
+
+/// The intl locale for the app's [language]. When the Android locale
+/// [device] speaks the same language, its region is kept, so English on a
+/// British device still writes "Sunday 2 August". The language always comes
+/// from the app.
+String appDateLocale(String language, String device) {
+  final app = Intl.canonicalizedLocale(language);
+  final base = app.split('_').first;
+  final local = Intl.canonicalizedLocale(device);
+  if (app == base &&
+      local.split('_').first == base &&
+      DateFormat.localeExists(local)) {
+    return local;
   }
+  if (DateFormat.localeExists(app)) return app;
+  if (DateFormat.localeExists(base)) return base;
+  return 'en_US';
+}
+
+/// The first day of the week in the date locale, 0 = Sunday: Monday for
+/// English on a British device, Sunday on an American one. Material's own
+/// value reads the same CLDR data but only for the bare app language.
+int localeFirstWeekday() {
+  try {
+    // CLDR counts from Monday.
+    return (DateFormat().dateSymbols.FIRSTDAYOFWEEK + 1) % 7;
+  } catch (_) {
+    return 0;
+  }
+}
+
+/// A 12-hour time in the date locale, even in a language that writes 24
+/// hours by default: "4:05 PM", "4:05 p. m.", or "下午4:05" with the period
+/// first where the language puts it there. [short] drops the minutes:
+/// "4 PM".
+DateFormat twelveHourFormat({bool short = false}) {
+  final periodFirst = const {
+    'zh',
+    'ja',
+    'ko',
+  }.contains(Intl.getCurrentLocale().split(RegExp('[_-]')).first);
+  if (short) return DateFormat(periodFirst ? 'ah时' : 'h a');
+  return DateFormat(periodFirst ? 'ah:mm' : 'h:mm a');
 }
 
 /// "Sunday, August 2" / "zondag 2 augustus" (the clock screensaver).

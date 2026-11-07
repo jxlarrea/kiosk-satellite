@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/locale_dates.dart';
 import '../../l10n/messages.dart';
 import '../../managers/voice/assist_view.dart';
 import '../weather_readings.dart';
@@ -489,14 +490,13 @@ class AssistResultPanel extends StatelessWidget {
         ? ''
         : '${forecast.first['condition'] ?? ''}';
     final type = '${data['forecast_type'] ?? 'daily'}';
-    final locale = Localizations.localeOf(context).toLanguageTag();
     String when(Map<String, Object?> f) {
       if (type == 'hourly') return '${f['time'] ?? ''}';
       final raw = '${f['date'] ?? ''}';
       final parsed = DateTime.tryParse(raw);
       final short = parsed == null
           ? (raw.length > 3 ? raw.substring(0, 3) : raw)
-          : DateFormat.E(locale).format(parsed);
+          : shortWeekdayName(parsed);
       if (type != 'twice_daily') return short;
       return '$short ${voiceText(context, f['is_daytime'] == false ? 'Night' : 'Day')}';
     }

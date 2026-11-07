@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/app_locales.dart';
 import '../l10n/messages.dart';
 import '../managers/plugins/plugin_directory.dart';
 import '../managers/plugins/plugin_manager.dart';
@@ -185,9 +186,7 @@ class _PluginDirectoryPanelState extends State<PluginDirectoryPanel> {
   /// Search, sort and page size on one line, or search over sort and page
   /// size on a narrow pane.
   Widget _toolbar(BuildContext context) {
-    final number = NumberFormat.decimalPattern(
-      Localizations.localeOf(context).toString(),
-    );
+    final number = NumberFormat.decimalPattern(appLocaleName(context));
     InputDecoration box({required Widget icon, String? hint}) =>
         InputDecoration(
           prefixIcon: icon,
@@ -425,9 +424,7 @@ class _Pager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final number = NumberFormat.decimalPattern(
-      Localizations.localeOf(context).toString(),
-    );
+    final number = NumberFormat.decimalPattern(appLocaleName(context));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -481,9 +478,7 @@ class _DirectoryRow extends StatelessWidget {
     final muted = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final number = NumberFormat.compact(
-      locale: Localizations.localeOf(context).toString(),
-    );
+    final number = NumberFormat.compact(locale: appLocaleName(context));
     final installed = status['installed'] == true;
     final update = status['updateAvailable'] == true;
     final needs = status['needsAppVersion'] as String?;

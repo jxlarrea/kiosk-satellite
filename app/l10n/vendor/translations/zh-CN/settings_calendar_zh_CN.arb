@@ -3,7 +3,7 @@
   "settingCalendarDefaultViewTitle": "默认视图",
   "settingCalendarDefaultViewDescription": "打开日历时显示的视图。",
   "settingCalendarWeekStartTitle": "每周开始于",
-  "settingCalendarWeekStartDescription": "跟随设备语言，除非另行设置。",
+  "settingCalendarWeekStartAppLanguageDescription": "跟随应用语言，除非另行设置。",
   "settingCalendarWeatherEntityTitle": "天气",
   "settingCalendarWeatherEntityDescription": "为每天添加天气预报。",
   "settingCalendarAllowEditTitle": "允许添加和编辑日程",

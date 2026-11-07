@@ -242,7 +242,7 @@ async function refreshList() {
   } else {
     for (const e of entries) {
       const desc = e.dir ? 'Folder'
-        : `${fileSizeLabel(e.size || 0)} · ${new Date(e.modified || 0).toLocaleString()}`;
+        : `${fileSizeLabel(e.size || 0)} · ${new Date(e.modified || 0).toLocaleString(messageLanguage())}`;
       if (e.dir) {
         const row = cameraListRow(e.name, desc, [], {
           icon: 'folder',

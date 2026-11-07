@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../app_container.dart';
+import '../core/app_locales.dart';
 import '../l10n/messages.dart';
 import '../l10n/gesture_messages.dart';
 import '../managers/gestures/gesture_mappings.dart';
@@ -216,9 +217,7 @@ class _HandGestureTesterDialogState extends State<HandGestureTesterDialog> {
                                 ? l10n(context).gestureHoldConfirmed
                                 : l10n(context).gestureHoldProgress(
                                     NumberFormat.percentPattern(
-                                      Localizations.localeOf(
-                                        context,
-                                      ).toString(),
+                                      appLocaleName(context),
                                     ).format(_hold.progress),
                                   ),
                             textAlign: TextAlign.center,

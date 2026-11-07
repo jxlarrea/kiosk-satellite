@@ -74,7 +74,7 @@ These variables can go in a phrase. Words appear in the kiosk's language.
 | --- | --- | --- |
 | `{label}` | The alarm's label | Gym |
 | `{name}` | The name of the Home Assistant user the kiosk's token belongs to | Sam |
-| `{time}` | The alarm's time | 7:05 AM |
+| `{time}` | The alarm's time, on the clock **24-hour clock** picks | 7:05 AM |
 | `{hour}` | The hour, on the same clock as `{time}` | 7 |
 | `{minute}` | The minute, with no leading zero | 5 |
 | `{date}` | The full date | November 5, 2026 |
@@ -94,6 +94,7 @@ Home Assistant makes the speech with the **Text to speech engine**, **Language**
 | Setting | What it does |
 | --- | --- |
 | Show in the kiosk menu | Opens [Device > User Interface > Drawer menu items](drawer-menu.md), where the Alarms entry is turned on or off. On by default. |
+| 24-hour clock | Shows alarm times as 19:00 instead of 7:00 PM: the alarm list, the time wheel, the ringing screen, the next alarm widget and `{time}` and `{hour}` in the spoken phrase. The first start takes Android's clock setting, after that it is set here. |
 | Manage alarms | Opens the alarm list. Shows when the next alarm rings. |
 | Alarm volume | How loud alarms ring. It sets the Android alarm volume while an alarm rings and puts it back after, apart from the media and assistant volumes. |
 | Ease in the volume | The default for new alarms and alarms that never chose: start quiet and grow to the alarm volume. Off by default. |

@@ -3,7 +3,7 @@
   "settingCalendarDefaultViewTitle": "Standaardweergave",
   "settingCalendarDefaultViewDescription": "De weergave waarmee de agenda opent.",
   "settingCalendarWeekStartTitle": "Week begint op",
-  "settingCalendarWeekStartDescription": "Volgt de taal van het apparaat, tenzij ingesteld.",
+  "settingCalendarWeekStartAppLanguageDescription": "Volgt de taal van de app, tenzij ingesteld.",
   "settingCalendarWeatherEntityTitle": "Weer",
   "settingCalendarWeatherEntityDescription": "Voegt de weersverwachting aan elke dag toe.",
   "settingCalendarAllowEditTitle": "Afspraken toevoegen en bewerken toestaan",

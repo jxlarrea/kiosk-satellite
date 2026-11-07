@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_container.dart';
+import '../core/app_locales.dart';
 import '../l10n/messages.dart';
 import '../core/events.dart';
 import '../managers/device/device_details.dart';
@@ -543,10 +544,7 @@ class _TtsVoiceRowState extends State<TtsVoiceRow> {
         if (v is Map) {'voice_id': '${v['voice_id']}', 'name': '${v['name']}'},
     ];
     final names = _isLanguage
-        ? await DeviceDetails.languageNames(
-            languages,
-            Localizations.localeOf(context).toLanguageTag(),
-          )
+        ? await DeviceDetails.languageNames(languages, appLanguageTag(context))
         : const <String, String>{};
     if (!mounted) return false;
     setState(() {

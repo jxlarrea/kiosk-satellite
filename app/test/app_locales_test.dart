@@ -97,4 +97,56 @@ void main() {
     expect(await resolve(tester, const Locale('it', 'IT')), const Locale('en'));
     expect(await resolve(tester, const Locale('sv')), const Locale('en'));
   });
+
+  testWidgets('the app language wins over a CJK rendering locale', (
+    tester,
+  ) async {
+    // English interface on a Chinese device: the root renders as zh for
+    // its glyphs, but numbers and dates must stay English.
+    tester.platformDispatcher.localesTestValue = [const Locale('zh', 'CN')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    const ui = Locale('en');
+    late Locale rendering;
+    late String name;
+    late String tag;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: appLocalizationsForUiLocale(ui),
+        supportedLocales: appSupportedLocales,
+        locale: appRenderingLocale(ui, const [Locale('zh', 'CN')]),
+        home: Builder(
+          builder: (context) {
+            rendering = Localizations.localeOf(context);
+            name = appLocaleName(context);
+            tag = appLanguageTag(context);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(rendering.languageCode, 'zh');
+    expect(name, 'en');
+    expect(tag, 'en');
+  });
+
+  testWidgets('a regional app language reads as a tag', (tester) async {
+    const ui = Locale('zh', 'CN');
+    late String tag;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: appLocalizationsForUiLocale(ui),
+        supportedLocales: appSupportedLocales,
+        locale: ui,
+        home: Builder(
+          builder: (context) {
+            tag = appLanguageTag(context);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tag, 'zh-CN');
+  });
 }

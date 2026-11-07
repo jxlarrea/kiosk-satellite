@@ -9229,8 +9229,8 @@ abstract class UiStrings {
   /// Setting description.
   ///
   /// In en, this message translates to:
-  /// **'Follows the device language unless set.'**
-  String get settingCalendarWeekStartDescription;
+  /// **'Follows the app language unless set.'**
+  String get settingCalendarWeekStartAppLanguageDescription;
 
   /// Setting label.
   ///

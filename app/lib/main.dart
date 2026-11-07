@@ -13,7 +13,6 @@ import 'core/events.dart';
 import 'core/frame_watchdog.dart';
 import 'core/headless.dart';
 import 'core/ha_http_overrides.dart';
-import 'core/locale_dates.dart';
 import 'core/user_authorities.dart';
 import 'managers/kiosk/kiosk_manager.dart'
     show hidesNavigationBar, hidesStatusBar;
@@ -42,10 +41,6 @@ Future<void> main() async {
   // Before any image decodes: whether resized images must be scaled on the
   // CPU instead of by Impeller's OpenGL ES blit.
   await GpuResize.init();
-
-  // Date strings (clock screensaver, photo metadata) follow the device's
-  // locale (issue #108).
-  await initLocaleDates();
 
   // Before the container: managers read it while they start.
   await Headless.detect();

@@ -5240,8 +5240,8 @@ class UiStringsEn extends UiStrings {
   String get settingCalendarWeekStartTitle => 'Week starts on';
 
   @override
-  String get settingCalendarWeekStartDescription =>
-      'Follows the device language unless set.';
+  String get settingCalendarWeekStartAppLanguageDescription =>
+      'Follows the app language unless set.';
 
   @override
   String get settingCalendarWeatherEntityTitle => 'Weather';

@@ -19696,8 +19696,8 @@
       ]
     }
   },
-  "settingCalendarWeekStartDescription": "Según el idioma del dispositivo, salvo que se elija otro día.",
-  "@settingCalendarWeekStartDescription": {
+  "settingCalendarWeekStartAppLanguageDescription": "Según el idioma de la aplicación, salvo que se elija otro día.",
+  "@settingCalendarWeekStartAppLanguageDescription": {
     "context": "Settings > Calendar > Display",
     "description": "Setting description.",
     "x-locations": {

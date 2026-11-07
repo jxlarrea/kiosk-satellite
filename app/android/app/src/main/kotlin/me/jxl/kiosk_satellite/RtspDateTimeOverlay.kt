@@ -18,7 +18,7 @@ import java.util.TimeZone
 import kotlin.math.ceil
 import kotlin.math.min
 
-/** Reads device preferences once per displayed second, independently of the app language. */
+/** Reads the app language and the device clock preferences once per displayed second. */
 internal class RtspDateTimeText(private val context: Context) {
     private var second = Long.MIN_VALUE
     private var preferences = ""
@@ -31,14 +31,15 @@ internal class RtspDateTimeText(private val context: Context) {
         val currentSecond = Math.floorDiv(now, 1000L)
         if (currentSecond == second) return text
         second = currentSecond
-        val locale = context.resources.configuration.locales[0]
+        val locale = NativeMessages.formatLocale(context)
         val zone = TimeZone.getDefault()
         val use24Hour = DateFormat.is24HourFormat(context)
         val datePreference = android.provider.Settings.System.getString(context.contentResolver, "date_format")
         val key = "$locale|${zone.id}|$use24Hour|$datePreference"
         if (key != preferences) {
             preferences = key
-            dateFormat = DateFormat.getDateFormat(context).apply { timeZone = zone }
+            val localized = NativeMessages.withLocale(context, locale)
+            dateFormat = DateFormat.getDateFormat(localized).apply { timeZone = zone }
             timeFormat = SimpleDateFormat(
                 DateFormat.getBestDateTimePattern(locale, if (use24Hour) "Hms" else "hms"), locale,
             ).apply { timeZone = zone }

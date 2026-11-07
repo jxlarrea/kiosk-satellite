@@ -3,7 +3,7 @@
   "settingCalendarDefaultViewTitle": "Vue par défaut",
   "settingCalendarDefaultViewDescription": "La vue à l'ouverture du calendrier.",
   "settingCalendarWeekStartTitle": "La semaine commence le",
-  "settingCalendarWeekStartDescription": "Suit la langue de l'appareil, sauf choix contraire.",
+  "settingCalendarWeekStartAppLanguageDescription": "Suit la langue de l'application, sauf choix contraire.",
   "settingCalendarWeatherEntityTitle": "Météo",
   "settingCalendarWeatherEntityDescription": "Ajoute la prévision à chaque jour.",
   "settingCalendarAllowEditTitle": "Autoriser l’ajout et la modification d’événements",

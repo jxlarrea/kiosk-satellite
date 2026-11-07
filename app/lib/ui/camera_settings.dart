@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../app_container.dart';
+import '../core/app_locales.dart';
 import '../l10n/messages.dart';
 import '../core/events.dart';
 import '../managers/camera/models.dart';
@@ -395,10 +396,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     if (seconds <= 0) return cameraStreamsText(context, 'Off');
     if (seconds < 60) return l10n(context).cameraStreamsSeconds('$seconds');
     if (seconds % 3600 == 0) return l10n(context).haHours('${seconds ~/ 3600}');
-    final number = NumberFormat(
-      '0.#',
-      Localizations.localeOf(context).toString(),
-    );
+    final number = NumberFormat('0.#', appLocaleName(context));
     return l10n(context).haMinutes(number.format(seconds / 60));
   }
 

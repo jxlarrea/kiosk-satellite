@@ -2012,6 +2012,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingScreensaverWeatherAlarmTakeoverTitle",
     "description": "settingScreensaverWeatherAlarmTakeoverDescription",
   },
+  "alarms.clock_24h": {
+    "title": "settingScreensaverClock24hTitle",
+    "description": "settingScreensaverClock24hDescription",
+  },
   "alarms.volume": {
     "title": "settingAlarmsVolumeTitle",
     "description": "settingAlarmsVolumeDescription",
@@ -2412,9 +2416,13 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingCalendarDefaultViewTitle",
     "description": "settingCalendarDefaultViewDescription",
   },
+  "calendar.clock_24h": {
+    "title": "settingScreensaverClock24hTitle",
+    "description": "settingScreensaverClock24hDescription",
+  },
   "calendar.week_start": {
     "title": "settingCalendarWeekStartTitle",
-    "description": "settingCalendarWeekStartDescription",
+    "description": "settingCalendarWeekStartAppLanguageDescription",
   },
   "calendar.weather_entity": {
     "title": "settingCalendarWeatherEntityTitle",

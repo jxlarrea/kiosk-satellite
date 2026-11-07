@@ -14,6 +14,7 @@ import 'theme.dart';
 import 'thumb_cache.dart';
 
 import '../app_container.dart';
+import '../core/app_locales.dart';
 import '../l10n/messages.dart';
 import '../core/events.dart';
 import '../managers/sendspin/audiobook_chapters.dart';
@@ -1278,10 +1279,7 @@ class _BlurredArtState extends State<_BlurredArt> {
 List<String> audioQualityLabels(BuildContext context, Object? quality) {
   if (quality is! Map) return const [];
   final strings = l10n(context);
-  final number = NumberFormat(
-    '0.#',
-    Localizations.localeOf(context).toString(),
-  );
+  final number = NumberFormat('0.#', appLocaleName(context));
   final lossless = quality['lossless'] == true;
   final codec = quality['codec'] as String?;
   final sampleRate = quality['sampleRate'] as num?;

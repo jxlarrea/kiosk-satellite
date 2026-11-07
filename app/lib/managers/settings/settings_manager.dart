@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -433,6 +434,17 @@ class SettingsManager extends Manager {
         name,
         'Voice Satellite runtime set to ${assigned ? 'dashboard' : 'native'}',
       );
+    }
+    // The calendar and alarms used to follow Android's clock. They keep
+    // what they showed and are the user's to change from here on. Written
+    // once, so a fresh install starts on the device's clock too.
+    for (final clock in [calendarClock24h, alarmsClock24h]) {
+      if (_prefs.get(_prefix + clock.key) == null) {
+        await _prefs.setBool(
+          _prefix + clock.key,
+          PlatformDispatcher.instance.alwaysUse24HourFormat,
+        );
+      }
     }
     // The preview's automatic language choice is now explicit English.
     if (_prefs.get(_prefix + uiLanguage.key) == 'system') {

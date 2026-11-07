@@ -5063,7 +5063,7 @@ class UiStringsZh extends UiStrings {
   String get settingCalendarWeekStartTitle => '每周开始于';
 
   @override
-  String get settingCalendarWeekStartDescription => '跟随设备语言，除非另行设置。';
+  String get settingCalendarWeekStartAppLanguageDescription => '跟随应用语言，除非另行设置。';
 
   @override
   String get settingCalendarWeatherEntityTitle => '天气';
@@ -20356,7 +20356,7 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingCalendarWeekStartTitle => '每周开始于';
 
   @override
-  String get settingCalendarWeekStartDescription => '跟随设备语言，除非另行设置。';
+  String get settingCalendarWeekStartAppLanguageDescription => '跟随应用语言，除非另行设置。';
 
   @override
   String get settingCalendarWeatherEntityTitle => '天气';

@@ -5270,8 +5270,8 @@ class UiStringsRu extends UiStrings {
   String get settingCalendarWeekStartTitle => 'Неделя начинается с';
 
   @override
-  String get settingCalendarWeekStartDescription =>
-      'Как в языке устройства, если не задано иное.';
+  String get settingCalendarWeekStartAppLanguageDescription =>
+      'Как в языке приложения, если не задано иное.';
 
   @override
   String get settingCalendarWeatherEntityTitle => 'Погода';

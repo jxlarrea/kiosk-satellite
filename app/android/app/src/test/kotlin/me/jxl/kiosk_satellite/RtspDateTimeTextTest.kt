@@ -26,6 +26,7 @@ class RtspDateTimeTextTest {
         originalZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
         Settings.System.putString(context.contentResolver, Settings.System.TIME_12_24, "24")
+        kiosk("en")
     }
 
     @After fun cleanup() { TimeZone.setDefault(originalZone) }
@@ -62,12 +63,25 @@ class RtspDateTimeTextTest {
         assertTrue(clock.at(noon - 1000).contains("8:44:04"))
     }
 
-    @Test fun kioskLanguageDoesNotOverrideDeviceFormat() {
+    private fun kiosk(language: String) {
         context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            .edit().putString("flutter.ks.ui.language", "es").commit()
-        assertTrue(RtspDateTimeText(device("en-US")).at(noon).startsWith("9/18/26"))
-        context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            .edit().putString("flutter.ks.ui.language", "en").commit()
+            .edit().putString("flutter.ks.ui.language", language).commit()
+    }
+
+    @Test fun kioskLanguageSetsTheFormatOverTheDeviceLanguage() {
+        kiosk("es")
+        val spanish = RtspDateTimeText(device("en-US")).at(noon)
+        assertTrue(spanish, spanish.startsWith("18/9/26"))
+        kiosk("en")
+        val english = RtspDateTimeText(device("de-DE")).at(noon)
+        assertTrue(english, english.startsWith("9/18/26"))
+    }
+
+    @Test fun deviceRegionStaysWhenItSpeaksTheKioskLanguage() {
+        kiosk("en")
+        val british = RtspDateTimeText(device("en-GB")).at(noon)
+        assertTrue(british, british.startsWith("18/09/2026"))
+        kiosk("de")
         val german = RtspDateTimeText(device("de-DE")).at(noon)
         assertTrue(german, german.startsWith("18.09.26"))
     }

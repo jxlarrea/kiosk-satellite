@@ -12,6 +12,7 @@ import '../managers/calendar/calendar_model.dart';
 import '../managers/calendar/calendar_requests.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'calendar_overlay.dart';
+import 'clock_setting.dart';
 import 'kit.dart';
 import 'time_picker.dart';
 import 'toast.dart';
@@ -78,18 +79,22 @@ Future<bool> showCalendarEditor(
         start: start,
         calendar: calendar,
       );
-      return roomy
-          ? Dialog(
-              insetPadding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
+      return ClockSetting(
+        container: container,
+        setting: defs.calendarClock24h,
+        child: roomy
+            ? Dialog(
+                insetPadding: const EdgeInsets.all(16),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: form,
+                ),
+              )
+            : Dialog.fullscreen(
+                backgroundColor: calendarGround(Theme.of(context)),
                 child: form,
               ),
-            )
-          : Dialog.fullscreen(
-              backgroundColor: calendarGround(Theme.of(context)),
-              child: form,
-            );
+      );
     },
   );
   return saved ?? false;

@@ -5308,8 +5308,8 @@ class UiStringsFr extends UiStrings {
   String get settingCalendarWeekStartTitle => 'La semaine commence le';
 
   @override
-  String get settingCalendarWeekStartDescription =>
-      'Suit la langue de l\'appareil, sauf choix contraire.';
+  String get settingCalendarWeekStartAppLanguageDescription =>
+      'Suit la langue de l\'application, sauf choix contraire.';
 
   @override
   String get settingCalendarWeatherEntityTitle => 'Météo';

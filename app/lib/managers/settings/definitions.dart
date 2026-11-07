@@ -11824,6 +11824,18 @@ const alarmsMenu = SettingDef<bool>(
   linksTo: 'ui.drawer_items',
 );
 
+/// Alarm times in 24 hours or with AM/PM, on the alarm screens, the
+/// ringing screen, the next alarm widget and the spoken phrase. Seeded once
+/// from Android's clock (see SettingsManager.init).
+const alarmsClock24h = SettingDef<bool>(
+  key: 'alarms.clock_24h',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: '24-hour clock',
+  description: 'Show a 24-hour time instead of AM/PM.',
+  category: 'Alarms',
+);
+
 /// The alarm stream is set to this share of its range while an alarm
 /// rings, apart from the media and assistant volumes.
 const alarmsVolume = SettingDef<num>(
@@ -12090,13 +12102,13 @@ const calendarDefaultView = SettingDef<String>(
 );
 
 /// The first day of the week and month views. The language default is the
-/// one the device's language uses.
+/// one the app's language uses.
 const calendarWeekStart = SettingDef<String>(
   key: 'calendar.week_start',
   type: SettingType.select,
   defaultValue: 'locale',
   title: 'Week starts on',
-  description: 'Follows the device language unless set.',
+  description: 'Follows the app language unless set.',
   category: 'Calendar',
   section: 'Display',
   options: ['locale', 'sunday', 'monday', 'saturday'],
@@ -12106,6 +12118,20 @@ const calendarWeekStart = SettingDef<String>(
     'monday': 'Monday',
     'saturday': 'Saturday',
   },
+);
+
+/// Calendar times in 24 hours or with AM/PM, the calendar's own choice
+/// rather than Android's clock. Seeded once from Android's clock (see
+/// SettingsManager.init) so an update keeps what the calendar showed.
+/// Covers the Up next widget too.
+const calendarClock24h = SettingDef<bool>(
+  key: 'calendar.clock_24h',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: '24-hour clock',
+  description: 'Show a 24-hour time instead of AM/PM.',
+  category: 'Calendar',
+  section: 'Display',
 );
 
 /// The weather entity whose daily forecast goes on each day's header.
@@ -14248,6 +14274,7 @@ const List<SettingDef<Object>> allSettings = [
   alarmsList,
   alarmsRuntime,
   alarmsMenu,
+  alarmsClock24h,
   alarmsVolume,
   alarmsEaseIn,
   alarmsEaseInSeconds,
@@ -14264,6 +14291,7 @@ const List<SettingDef<Object>> allSettings = [
   calendarHidden,
   calendarDefaultView,
   calendarWeekStart,
+  calendarClock24h,
   calendarWeatherEntity,
   calendarAllowEdit,
   calendarAllowDelete,

@@ -206,7 +206,7 @@ Map<String, String> photoExifDetails(PhotoExif? exif) {
     iso: exif.iso,
   );
   return {
-    // Localized through the device locale, as Immich's date is.
+    // Localized in the app's language, as Immich's date is.
     'date': ?(taken == null ? null : longDate(taken)),
     'camera': ?camera,
     'settings': ?settings,

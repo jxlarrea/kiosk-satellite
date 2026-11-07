@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
+import '../../core/locale_dates.dart';
 import '../../core/manager.dart';
 import '../home_assistant/ha_tts.dart';
 import '../music_library/music_pick.dart';
@@ -835,7 +836,7 @@ class AlarmManager extends Manager {
         _template(alarm),
         label: alarm.label,
         name: userName,
-        time: _safeFormat((l) => DateFormat.jm(l), at),
+        time: _spokenTime(at),
         hour: _spokenHour(at),
         minute: '${at.minute}',
         date: _safeFormat((l) => DateFormat.yMMMMd(l), at),
@@ -881,15 +882,23 @@ class AlarmManager extends Manager {
     }
   }
 
-  /// The hour the way {time} reads it, so 7 at 19:00 on an AM/PM clock.
-  static String _spokenHour(DateTime at) {
-    String pattern;
+  bool get _use24h => _settings.get(defs.alarmsClock24h);
+
+  /// The time on the clock Settings > Alarms > 24-hour clock picks: 19:00,
+  /// or 7:00 PM.
+  String _spokenTime(DateTime at) {
+    String out;
     try {
-      pattern = DateFormat.jm().pattern!;
+      out = (_use24h ? DateFormat.Hm() : twelveHourFormat()).format(at);
     } catch (_) {
-      pattern = DateFormat.jm('en_US').pattern!;
+      out = DateFormat(_use24h ? 'HH:mm' : 'h:mm a', 'en_US').format(at);
     }
-    if (pattern.contains('H')) return '${at.hour}';
+    return _plainSpaces(out);
+  }
+
+  /// The hour the way {time} reads it, so 7 at 19:00 on an AM/PM clock.
+  String _spokenHour(DateTime at) {
+    if (_use24h) return '${at.hour}';
     final hour = at.hour % 12;
     return '${hour == 0 ? 12 : hour}';
   }
@@ -903,8 +912,11 @@ class AlarmManager extends Manager {
     } catch (_) {
       out = make('en_US').format(t);
     }
-    return out.replaceAll(RegExp('[\u00a0\u202f]'), ' ');
+    return _plainSpaces(out);
   }
+
+  static String _plainSpaces(String s) =>
+      s.replaceAll(RegExp('[\u00a0\u202f]'), ' ');
 
   /// Has Home Assistant say the phrase and hands the audio to the ring,
   /// which plays it after every second pass of the tone. The tone rings

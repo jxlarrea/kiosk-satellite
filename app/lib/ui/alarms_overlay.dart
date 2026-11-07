@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../app_container.dart';
+import '../core/locale_dates.dart';
 import '../l10n/generated/ui_strings.dart';
 import '../l10n/messages.dart';
 import '../managers/alarms/alarm_manager.dart';
@@ -12,6 +13,7 @@ import '../managers/alarms/alarm_model.dart';
 import '../managers/music_library/music_pick.dart';
 import '../managers/notifications/notification_sounds.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'clock_setting.dart';
 import 'kit.dart';
 import 'music_picker.dart';
 import 'theme.dart';
@@ -33,7 +35,13 @@ class AlarmsOverlay extends StatelessWidget {
     valueListenable: container.alarms.visible,
     builder: (context, visible, _) {
       if (!visible) return const SizedBox.shrink();
-      return Positioned.fill(child: _AlarmsScreen(container: container));
+      return Positioned.fill(
+        child: ClockSetting(
+          container: container,
+          setting: defs.alarmsClock24h,
+          child: _AlarmsScreen(container: container),
+        ),
+      );
     },
   );
 }
@@ -46,6 +54,8 @@ bool _compact(BuildContext context) {
   return size.width < 600 || size.height < 480;
 }
 
+/// Settings > Alarms > 24-hour clock, through the ClockSetting around each
+/// alarm screen.
 bool _use24h(BuildContext context) =>
     MediaQuery.alwaysUse24HourFormatOf(context);
 
@@ -95,9 +105,9 @@ String alarmDayText(BuildContext context, DateTime at, DateTime now) {
   return DateFormat.MMMEd().format(at);
 }
 
-/// The weekday order the device's locale starts its week with, 0 = Sunday.
+/// The weekday order the date locale starts its week with, 0 = Sunday.
 List<int> _weekOrder(BuildContext context) {
-  final first = MaterialLocalizations.of(context).firstDayOfWeekIndex;
+  final first = localeFirstWeekday();
   return [for (var i = 0; i < 7; i++) (first + i) % 7];
 }
 
@@ -742,9 +752,14 @@ class _AlarmWheelState extends State<AlarmWheel> {
     final h24 = _use24h(context);
     if (_h24 != h24) {
       if (_h24 != null) {
-        _hours.dispose();
-        _minutes.dispose();
-        _period.dispose();
+        // The wheels still hold the old controllers until this rebuild
+        // detaches them.
+        final old = [_hours, _minutes, _period];
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          for (final c in old) {
+            c.dispose();
+          }
+        });
       }
       _build(h24);
     }
@@ -833,6 +848,11 @@ class _AlarmWheelState extends State<AlarmWheel> {
             ),
           ),
           Row(
+            // New wheels when the clock changes (Settings > Alarms >
+            // 24-hour clock, possibly from the remote admin): a wheel
+            // handed a new controller keeps the old one's offset, so the
+            // hours would stay on the old row number.
+            key: ValueKey(h24),
             mainAxisSize: MainAxisSize.min,
             children: [
               _column(
@@ -1758,7 +1778,13 @@ class AlarmsManageCard extends StatelessWidget {
   final AppContainer container;
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<AlarmStatus>(
+  Widget build(BuildContext context) => ClockSetting(
+    container: container,
+    setting: defs.alarmsClock24h,
+    child: Builder(builder: _card),
+  );
+
+  Widget _card(BuildContext context) => ValueListenableBuilder<AlarmStatus>(
     valueListenable: container.alarms.status,
     builder: (context, status, _) {
       final s = l10n(context);

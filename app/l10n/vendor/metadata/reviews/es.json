@@ -24113,5 +24113,10 @@
     "source": "91000cb81b88692ca329366bd66615e5844405e9239e135917176b6d86c42c6c",
     "translation": "d30de0be119868d2f8f1ffea320362e1dfb82bd9dec3807e2b90f1283e27d89a",
     "author": "Xavier Larrea"
+  },
+  "settingCalendarWeekStartAppLanguageDescription": {
+    "source": "e01f2268c5366003a0c1060278b2ef9b8bf34ec62ee5d34b30936422589c2621",
+    "translation": "eed876692589c4353d0bf9626f1eb807dd6fe0f3eb032a35619e8a00c07d841f",
+    "author": "Xavier Larrea"
   }
 }

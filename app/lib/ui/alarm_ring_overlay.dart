@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../l10n/messages.dart';
 import '../managers/alarms/alarm_manager.dart';
+import '../managers/settings/definitions.dart' as defs;
 import 'alarms_overlay.dart' show alarmTimeParts, alarmTimeText;
+import 'clock_setting.dart';
 import 'theme.dart';
 
 /// The alarm's own full screen view: the sunrise glow before a sunrise
@@ -24,7 +26,11 @@ class AlarmRingOverlay extends StatelessWidget {
     builder: (context, status, _) {
       if (!status.ownView) return const SizedBox.shrink();
       return Positioned.fill(
-        child: _OwnView(container: container, status: status),
+        child: ClockSetting(
+          container: container,
+          setting: defs.alarmsClock24h,
+          child: _OwnView(container: container, status: status),
+        ),
       );
     },
   );

@@ -4,10 +4,15 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **24-hour clock for the calendar and alarms.** Settings > Calendar > 24-hour clock picks 24-hour times or AM/PM for the calendar and the Up next widget. Settings > Alarms > 24-hour clock does the same for the alarm list, the time wheel, the ringing screen, the next alarm widget, the remote administration's alarms page and `{time}` and `{hour}` in the spoken phrase. Both used to follow Android's clock setting, which is where they start. With them off, times use AM/PM in every language, including the ones that write 24-hour times by default.
+
 ### Changed
+- **Dates and numbers follow the app language.** The clock screensavers, Weather Mood, calendar, alarms, photo details, wake word activations, Celestial, the camera stream date and time and the remote administration's file and chart dates used the Android language. They now use the language set under Device > User Interface > Language. If the Android language is the same language, its region is kept, so English on a British device still shows day first dates and starts the week on Monday in the calendar and alarms. The calendar's Week starts on hint now says it follows the app language.
 - **Talk right after the wake word says it only covers Assist pipelines (#1336).** The hint now says that the setting has no effect on realtime conversations, where speech right after the wake word can still be cut off while the connection opens.
 
 ### Fixed
+- **The alarm time wheel keeps its hour when the clock changes.** If the clock switched between 12 and 24 hours while the wheel was open, the hour wheel jumped to a different hour, such as 10 instead of 23.
 - **A rare crash when the Sendspin player stops or restarts.** Stopping the player closed its server socket twice. If a file had been opened on the same number in between, it was closed too and the app crashed. This could happen when an alarm with music stopped, when the player was turned off and when its settings changed.
 - **The Weather Mood condition icon shows when rain starts.** If the weather changed to rain or heavy rain with the screensaver up, the conditions chip could show an empty circle or the previous rain icon until the temperature next changed.
 

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../app_container.dart';
+import '../core/locale_dates.dart';
 import '../l10n/generated/ui_strings.dart';
 import '../l10n/messages.dart';
 import '../managers/calendar/calendar_edits.dart';
@@ -15,6 +16,7 @@ import '../managers/calendar/calendar_model.dart';
 import '../core/events.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'calendar_editor.dart';
+import 'clock_setting.dart';
 import 'kit.dart';
 import 'theme.dart';
 import 'weather_readings.dart' show weatherConditionIcon;
@@ -62,16 +64,18 @@ int calendarFirstWeekday(BuildContext context, AppContainer c) =>
       'sunday' => 0,
       'monday' => 1,
       'saturday' => 6,
-      _ => MaterialLocalizations.of(context).firstDayOfWeekIndex,
+      _ => localeFirstWeekday(),
     };
 
-/// A time the way the device reads them: 4:00 PM, or 16:00.
+/// A time as the clock above reads them: 16:00, or 4:00 PM. Under the
+/// calendar that is its 24-hour clock setting (ClockSetting), elsewhere
+/// Android's clock. A 12-hour time stays 12-hour in a language that writes
+/// 24 hours by default, with the period where the language puts it.
 String calendarTime(BuildContext context, DateTime t, {bool short = false}) {
   if (MediaQuery.alwaysUse24HourFormatOf(context)) {
     return DateFormat.Hm().format(t);
   }
-  if (short && t.minute == 0) return DateFormat.j().format(t);
-  return DateFormat.jm().format(t);
+  return twelveHourFormat(short: short && t.minute == 0).format(t);
 }
 
 /// An event's time, or All day.
@@ -647,8 +651,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
+  // Times follow Settings > Calendar > 24-hour clock.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ClockSetting(
+    container: c,
+    setting: defs.calendarClock24h,
+    child: Builder(builder: _screen),
+  );
+
+  Widget _screen(BuildContext context) {
     final theme = Theme.of(context);
     final layout = calendarLayout(MediaQuery.sizeOf(context));
     final s = l10n(context);
@@ -3554,13 +3565,18 @@ Future<void> showCalendarEvent(
       full.calendars.any((id) => cal.calendarAllows(id, feature));
   final action = await showDialog<String>(
     context: context,
-    builder: (context) => _EventDialog(
+    builder: (context) => ClockSetting(
       container: container,
-      event: event,
-      full: full,
-      canEdit: changes && calendarCanEdit(container) && allows(calendarUpdates),
-      canDelete:
-          changes && calendarCanDelete(container) && allows(calendarDeletes),
+      setting: defs.calendarClock24h,
+      child: _EventDialog(
+        container: container,
+        event: event,
+        full: full,
+        canEdit:
+            changes && calendarCanEdit(container) && allows(calendarUpdates),
+        canDelete:
+            changes && calendarCanDelete(container) && allows(calendarDeletes),
+      ),
     ),
   );
   if (action != 'edit' || !context.mounted) return;

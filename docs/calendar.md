@@ -68,7 +68,8 @@ Pick a weather entity under **Weather** to add the daily forecast to each day in
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Default view | Week | The view the calendar opens on. |
-| Week starts on | Language default | Sunday, Monday or Saturday, or the first day the device language uses. |
+| Week starts on | Language default | Sunday, Monday or Saturday, or the first day the app language uses in your region. |
+| 24-hour clock | As Android | Shows times as 16:00 instead of 4:00 PM, in the calendar and in the Up next widget. The first start takes Android's clock setting, after that it is set here. |
 | Weather | None | The weather entity for the daily forecast. |
 | Allow adding and editing events | Off | Adds **New event** and **Edit**. See [Adding and changing events](#adding-and-changing-events). |
 | Allow deleting events | Off | Adds **Delete** to each event. |

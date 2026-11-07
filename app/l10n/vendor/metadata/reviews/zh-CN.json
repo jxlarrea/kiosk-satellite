@@ -28917,5 +28917,11 @@
     "translation": "f30077bbd2d5291630b81e9411acf229aec424cd51ed349a8f0012143de9c02c",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingCalendarWeekStartAppLanguageDescription": {
+    "source": "e01f2268c5366003a0c1060278b2ef9b8bf34ec62ee5d34b30936422589c2621",
+    "translation": "26da0a0510c65cc17fab9cdcac99b355c0ca7b090d60cd1a759bd4eefd07bbe0",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

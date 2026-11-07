@@ -19696,8 +19696,8 @@
       ]
     }
   },
-  "settingCalendarWeekStartDescription": "Как в языке устройства, если не задано иное.",
-  "@settingCalendarWeekStartDescription": {
+  "settingCalendarWeekStartAppLanguageDescription": "Как в языке приложения, если не задано иное.",
+  "@settingCalendarWeekStartAppLanguageDescription": {
     "context": "Settings > Calendar > Display",
     "description": "Setting description.",
     "x-locations": {

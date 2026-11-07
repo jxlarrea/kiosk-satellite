@@ -15,7 +15,7 @@ function svg(tag, attributes) {
   return el;
 }
 function number(value) { return value == null ? pluginText('No data') : Math.abs(value) >= 1e6 ? value.toExponential(2) : Number(value.toFixed(2)).toString(); }
-function time(value) { return new Date(value).toLocaleString([], { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); }
+function time(value) { return new Date(value).toLocaleString(messageLanguage() || undefined, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); }
 
 function domain(times, bars) {
   const step = times.length > 1 ? Math.min(...times.slice(1).map((time, i) => time - times[i])) : 1;

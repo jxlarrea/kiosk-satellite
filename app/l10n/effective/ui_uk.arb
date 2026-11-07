@@ -19696,8 +19696,8 @@
       ]
     }
   },
-  "settingCalendarWeekStartDescription": "Відповідає мові пристрою, якщо не вибрано інше.",
-  "@settingCalendarWeekStartDescription": {
+  "settingCalendarWeekStartAppLanguageDescription": "Відповідає мові застосунку, якщо не вибрано інше.",
+  "@settingCalendarWeekStartAppLanguageDescription": {
     "context": "Settings > Calendar > Display",
     "description": "Setting description.",
     "x-locations": {

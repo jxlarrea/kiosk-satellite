@@ -120,7 +120,7 @@ Displays a completely black screen while leaving the underlying application runn
 
 ### Clock
 
-Renders a full screen clock with four selectable styles via **Style**: **Digital Clock**, **Flip Clock** (split-flap cards), **Roller Clock** (rolling digits styled after the Lenovo Smart Clock 2) or **Hand Clock** (a dial with hands, ticks and numbers). Date formats adapt automatically to the device's system language.
+Renders a full screen clock with four selectable styles via **Style**: **Digital Clock**, **Flip Clock** (split-flap cards), **Roller Clock** (rolling digits styled after the Lenovo Smart Clock 2) or **Hand Clock** (a dial with hands, ticks and numbers). Dates use the app language set under **Device > User Interface > Language**.
 
 | Setting | Notes |
 | --- | --- |
@@ -310,7 +310,7 @@ Reads hardware battery state directly from Android rather than a Home Assistant 
 
 ### Next alarm
 
-Shows the next [alarm](alarms.md) set on the kiosk when it rings within 24 hours, and the snooze while one runs, over any mode except Calendar and Camera Streams. The corner stays empty the rest of the time. A tap on the widget opens the alarm list.
+Shows the next [alarm](alarms.md) set on the kiosk when it rings within 24 hours, and the snooze while one runs, over any mode except Calendar and Camera Streams. The corner stays empty the rest of the time. A tap on the widget opens the alarm list. Times follow **Settings > Alarms > 24-hour clock**.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
@@ -319,7 +319,7 @@ Shows the next [alarm](alarms.md) set on the kiosk when it rings within 24 hours
 
 ### Up next
 
-Shows what is still to come on the [calendar](calendar.md), over any mode except Calendar and Camera Streams: the picture of the person linked to each event's calendar, the start time and the title. A calendar with no person linked shows its initial on its color, and a shared event shows everyone on it. Calendars hidden with their chips are left out. The corner stays empty once nothing else is on in the days shown. A tap on the widget opens the calendar on the Schedule view.
+Shows what is still to come on the [calendar](calendar.md), over any mode except Calendar and Camera Streams: the picture of the person linked to each event's calendar, the start time and the title. A calendar with no person linked shows its initial on its color, and a shared event shows everyone on it. Calendars hidden with their chips are left out. The corner stays empty once nothing else is on in the days shown. A tap on the widget opens the calendar on the Schedule view. Times follow **Settings > Calendar > 24-hour clock**.
 
 | Setting | Default | Notes |
 | --- | --- | --- |

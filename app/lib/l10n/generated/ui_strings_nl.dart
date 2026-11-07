@@ -5292,8 +5292,8 @@ class UiStringsNl extends UiStrings {
   String get settingCalendarWeekStartTitle => 'Week begint op';
 
   @override
-  String get settingCalendarWeekStartDescription =>
-      'Volgt de taal van het apparaat, tenzij ingesteld.';
+  String get settingCalendarWeekStartAppLanguageDescription =>
+      'Volgt de taal van de app, tenzij ingesteld.';
 
   @override
   String get settingCalendarWeatherEntityTitle => 'Weer';

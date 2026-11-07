@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_container.dart';
+import '../core/app_locales.dart';
 import '../core/events.dart';
 import '../core/lifecycle.dart';
 import '../l10n/messages.dart';
@@ -497,7 +498,7 @@ class _CelestialScreensaverState extends State<CelestialScreensaver>
   CelestialNames _names(BuildContext context) {
     String t(String english) => screensaverText(context, english);
     return CelestialNames(
-      language: Localizations.localeOf(context).languageCode,
+      language: appLocaleName(context).split('_').first,
       bodies: {
         SkyBody.sun: t('Sun'),
         SkyBody.moon: t('Moon'),

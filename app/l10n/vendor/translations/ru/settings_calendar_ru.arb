@@ -3,7 +3,7 @@
   "settingCalendarDefaultViewTitle": "Вид по умолчанию",
   "settingCalendarDefaultViewDescription": "Вид, с которым открывается календарь.",
   "settingCalendarWeekStartTitle": "Неделя начинается с",
-  "settingCalendarWeekStartDescription": "Как в языке устройства, если не задано иное.",
+  "settingCalendarWeekStartAppLanguageDescription": "Как в языке приложения, если не задано иное.",
   "settingCalendarWeatherEntityTitle": "Погода",
   "settingCalendarWeatherEntityDescription": "Добавляет прогноз к каждому дню.",
   "settingCalendarAllowEditTitle": "Разрешить добавлять и изменять события",

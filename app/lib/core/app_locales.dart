@@ -13,6 +13,16 @@ Locale appLocaleForLanguage(String language) {
   return const Locale('en');
 }
 
+/// The app's language as an intl locale name ("en", "zh_CN"), for numbers
+/// and dates built from a context. Use this rather than
+/// Localizations.localeOf, which returns the rendering locale: on a Chinese
+/// device with an English interface that is zh, not en.
+String appLocaleName(BuildContext context) => l10n(context).localeName;
+
+/// The app's language as a BCP 47 tag ("en", "zh-CN").
+String appLanguageTag(BuildContext context) =>
+    appLocaleName(context).replaceAll('_', '-');
+
 /// Preserve regional CJK glyphs when the interface uses a non-CJK language.
 /// Rubik falls back to system fonts for CJK text, including device-language
 /// dates and media titles. Those fonts use the paragraph locale to select

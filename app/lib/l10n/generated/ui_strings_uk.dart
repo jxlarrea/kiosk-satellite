@@ -5277,8 +5277,8 @@ class UiStringsUk extends UiStrings {
   String get settingCalendarWeekStartTitle => 'Тиждень починається з';
 
   @override
-  String get settingCalendarWeekStartDescription =>
-      'Відповідає мові пристрою, якщо не вибрано інше.';
+  String get settingCalendarWeekStartAppLanguageDescription =>
+      'Відповідає мові застосунку, якщо не вибрано інше.';
 
   @override
   String get settingCalendarWeatherEntityTitle => 'Погода';
