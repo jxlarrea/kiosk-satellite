@@ -37,22 +37,15 @@ On the CM14.1 image the Action button goes through an accessibility service inst
 
 ## Wake Word
 
-Pick the engine with **Wake word engine** under **Voice Satellite > Wake Word**, with the **VS Wake word engine** select in Home Assistant or in the setup wizard. The Dot offers four:
+Pick the engine with **Wake word engine** under **Voice Satellite > Wake Word**, with the **VS Wake word engine** select in Home Assistant or in the setup wizard. The Dot offers three:
 
 | Engine | What it is |
 |---|---|
 | vsWakeWord | The default. Its models ship with the app. |
 | microWakeWord | The engine of Home Assistant's voice hardware. Its models ship with the app, and it also offers the custom models Home Assistant has. |
 | openWakeWord | Its models ship with the app. |
-| Amazon | The engine the Dot shipped with, running the stock wake word models. On the CM14.1 image it needs 2026.10.3 or newer. The [Echo Show 5](echo-show-5.md#wake-word) and [Echo Show 8](echo-show-8.md#wake-word) images offer it too. Other devices do not. |
 
-The first three also take your own models. See [Custom wake word models](custom-wake-words.md).
-
-### Amazon
-
-The image runs the Dot's engine on the Dot itself. With **Amazon** picked, a **Wake word language** select shows up under the engine. It follows Kiosk Satellite's language by default and falls back to English (United States) if the image has no models for it.
-
-Each model also has its own stop word, so **Stop word interruption** works as it does with the other engines. Saying "stop" ends a ringing timer or a reply. **Wake word sensitivity** applies too.
+All three also take your own models. See [Custom wake word models](custom-wake-words.md).
 
 ## Volume
 

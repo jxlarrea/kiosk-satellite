@@ -9,6 +9,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Changed
 - **Talk right after the wake word only applies to Assist pipelines.** With it on, a realtime conversation skipped the wake sound and sent what was said right after the wake word, which could carry the end of the wake word along ("So, what time is it?"). Realtime conversations now always start after the wake sound when Play chimes is on.
+- **Amazon's wake word engine is no longer offered.** The Amazon option is gone from Wake word engine on the Echo Dot, Echo Show 5 and Echo Show 8 images, along with the Wake word language setting. A kiosk that used it moves to vsWakeWord with the Alexa wake word on its first start after the update, and the selects in Home Assistant follow.
 
 ### Fixed
 - **No more crash loop when an old camera keeps failing to open.** On Android 11 and older, a camera that runs through Android's HAL1 compatibility layer, such as on Echo Shows with Android 7.1, leaves two threads running after every failed open until the app restarts. A camera that kept failing ran the app out of threads in under an hour, and the crash came back after every restart. The app is now restarted at 400 leaked camera threads, well before that point, with the kiosk brought back to the front. On these devices CameraX also retries a failed open for 2 seconds instead of 10. The restart is noted in the crash log as a camera watchdog restart.

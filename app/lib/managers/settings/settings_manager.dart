@@ -454,6 +454,21 @@ class SettingsManager extends Manager {
         get(notificationsVolume).toDouble(),
       );
     }
+    // Amazon's wake word engine is off (PryonCatalog.enabled). A kiosk that
+    // listened with it moves to vsWakeWord's Alexa once, the closest match
+    // to every wake word Amazon's engine offered.
+    const amazonEngineMigration = 'voice.amazon_engine_off.migrated';
+    if (!PryonCatalog.enabled && internal(amazonEngineMigration).isEmpty) {
+      if (_prefs.get(_prefix + voiceWakeWordEngine.key) == 'pryon') {
+        await _prefs.setString(_prefix + voiceWakeWordEngine.key, 'vswakeword');
+        await _prefs.setString(_prefix + voiceWakeWords.key, '["alexa"]');
+        log.info(
+          name,
+          "moved from Amazon's wake word engine to vsWakeWord Alexa",
+        );
+      }
+      await setInternal(amazonEngineMigration, '1');
+    }
     // The preview's automatic language choice is now explicit English.
     if (_prefs.get(_prefix + uiLanguage.key) == 'system') {
       await _prefs.setString(_prefix + uiLanguage.key, 'en');

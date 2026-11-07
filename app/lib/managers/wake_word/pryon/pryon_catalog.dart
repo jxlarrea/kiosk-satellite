@@ -9,6 +9,11 @@
 ///
 /// Amazon's models are per locale. The service names the locales that listen
 /// with each one, and the Wake word language setting picks among them.
+///
+/// The engine is off for now ([PryonCatalog.enabled]): the service is never
+/// asked, so the engine and its language setting stay hidden on every device
+/// and a kiosk that had it set listens with vsWakeWord (SettingsManager moves
+/// it there once).
 library;
 
 import 'dart:async';
@@ -70,6 +75,11 @@ class PryonWord {
 
 abstract final class PryonCatalog {
   static const _channel = MethodChannel('kiosk_satellite/background');
+
+  /// Whether Kiosk Satellite offers Amazon's engine at all. Off, [init]
+  /// leaves the service alone even on an Echo image, so nothing is offered.
+  /// Tests turn it on.
+  static bool enabled = false;
 
   /// The service's socket. Tests point it at a fake one.
   static String socketPath = pryonSocketPath;
@@ -178,7 +188,7 @@ abstract final class PryonCatalog {
   /// there is nothing to listen with. Before the settings render: both
   /// settings UIs and the ESPHome select read the hidden options.
   static Future<void> init(Logger log) async {
-    if (await _imageHasService()) {
+    if (enabled && await _imageHasService()) {
       try {
         _words = parseHello(await _hello());
         log.info(

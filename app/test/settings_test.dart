@@ -190,6 +190,37 @@ void main() {
     });
   }
 
+  test("Amazon's wake word engine moves to vsWakeWord Alexa once", () async {
+    await build({
+      'ks.voice.wake_word_engine': 'pryon',
+      'ks.voice.wake_words': '["computer","echo"]',
+    });
+    expect(settings.get(defs.voiceWakeWordEngine), 'vswakeword');
+    expect(settings.get(defs.voiceWakeWords), '["alexa"]');
+
+    // Written once: Amazon's engine set again later (an old backup, a
+    // fleet profile) is left alone, and the voice manager listens with
+    // vsWakeWord for it.
+    await settings.set(defs.voiceWakeWordEngine, 'pryon');
+    await settings.set(defs.voiceWakeWords, '["ok_nabu"]');
+    final bus = EventBus();
+    final reopened = SettingsManager(bus, CommandRegistry(log), log);
+    await reopened.init();
+    expect(reopened.get(defs.voiceWakeWordEngine), 'pryon');
+    expect(reopened.get(defs.voiceWakeWords), '["ok_nabu"]');
+    await reopened.dispose();
+    await bus.dispose();
+  });
+
+  test('another wake word engine is not migrated', () async {
+    await build({
+      'ks.voice.wake_word_engine': 'microwakeword',
+      'ks.voice.wake_words': '["hey_jarvis"]',
+    });
+    expect(settings.get(defs.voiceWakeWordEngine), 'microwakeword');
+    expect(settings.get(defs.voiceWakeWords), '["hey_jarvis"]');
+  });
+
   test('the audio faders default to full, matching old behavior', () async {
     await build({});
     // An untouched install must sound exactly as it did before the mixer

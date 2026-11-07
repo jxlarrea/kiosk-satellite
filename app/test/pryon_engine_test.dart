@@ -104,9 +104,11 @@ void main() {
           PryonCatalog.socketPath = '${dir.path}/sock';
           final service = await _FakeService.start(PryonCatalog.socketPath);
           Headless.debugActive = headless;
+          PryonCatalog.enabled = true;
           addTearDown(() async {
             messenger.setMockMethodCallHandler(channel, null);
             Headless.debugActive = false;
+            PryonCatalog.enabled = false;
             PryonCatalog.socketPath = '/dev/socket/biscuit-pryon';
             await service.close();
             await dir.delete(recursive: true);
@@ -128,6 +130,35 @@ void main() {
         },
       );
     }
+
+    test('hides the engine on the image while it is off', () async {
+      final messenger = TestWidgetsFlutterBinding.ensureInitialized()
+          .defaultBinaryMessenger;
+      const channel = MethodChannel('kiosk_satellite/background');
+      final asked = <String>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        asked.add(call.method);
+        return call.method == 'pryon' ? true : null;
+      });
+      final dir = await Directory.systemTemp.createTemp('pryon');
+      PryonCatalog.socketPath = '${dir.path}/sock';
+      final service = await _FakeService.start(PryonCatalog.socketPath);
+      addTearDown(() async {
+        messenger.setMockMethodCallHandler(channel, null);
+        PryonCatalog.socketPath = '/dev/socket/biscuit-pryon';
+        await service.close();
+        await dir.delete(recursive: true);
+        defs.deviceHiddenOptions.remove(defs.voiceWakeWordEngine.key);
+        defs.deviceHiddenKeys.remove(defs.voiceAmazonLocale.key);
+      });
+
+      expect(PryonCatalog.enabled, isFalse);
+      await PryonCatalog.init(Logger());
+      expect(asked, isEmpty);
+      expect(PryonCatalog.available, isFalse);
+      expect(defs.deviceHiddenOptions[defs.voiceWakeWordEngine.key], {'pryon'});
+      expect(defs.deviceHiddenKeys, contains(defs.voiceAmazonLocale.key));
+    });
 
     test('hides the engine and its language without the image', () async {
       // A tablet, or an Echo on another ROM: neither ro.biscuit.pryon nor
