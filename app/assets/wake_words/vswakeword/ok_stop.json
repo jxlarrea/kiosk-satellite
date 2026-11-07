@@ -148,13 +148,6 @@
         40,
         5,
         3
-      ],
-      [
-        38,
-        40,
-        5,
-        3,
-        34
       ]
     ],
     "wake_word_target_phonemes": [
@@ -193,29 +186,20 @@
         "t",
         "\u0251",
         "\u02d0"
-      ],
-      [
-        "s",
-        "t",
-        "\u0251",
-        "\u02d0",
-        "p"
       ]
     ],
     "max_edit_distance": 1,
     "wake_word_trail_tolerance": 1,
-    "min_matched_confidence": 3.2,
+    "min_matched_confidence": 2.816,
     "target_max_edit_distance": [
       1,
       1,
-      0,
       0
     ],
     "target_min_matched_confidence": [
-      3.2,
-      5.5,
-      5.5,
-      12.0
+      2.816,
+      4.84,
+      4.84
     ],
     "wake_word_target_anchors": [
       [
@@ -227,9 +211,6 @@
       ],
       [
         6
-      ],
-      [
-        0
       ]
     ]
   },
@@ -237,7 +218,7 @@
     "required_hits": 1,
     "cooldown_ms": 2000,
     "hit_mode": "consecutive",
-    "high_confidence_bypass": 6.8,
+    "high_confidence_bypass": 5.984,
     "high_confidence_bypass_min_hits": 1,
     "stream_match": true,
     "stream_buffer_ms": 2500,
