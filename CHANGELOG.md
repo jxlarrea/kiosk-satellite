@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **No reply to the echo of a realtime answer.** Right after an answer stopped playing, its echo could still reach the microphone. An OpenAI conversation could take that for the user and reply, often with something nobody asked for. Speech that starts in that moment now has to be as loud as talking over an answer. xAI and Gemini conversations already worked this way. The app log now shows where each stretch of speech starts and stops against the end of the last answer, and when the provider heard no words.
+
 ## v2026.11.11 - 2026-11-07
 
 ### Added

@@ -92,12 +92,19 @@ class RealtimeAudio extends RealtimeEvent {
 }
 
 /// The user started talking. While an answer plays, this is a barge-in.
+/// [audioMs] is where the speech starts in the audio sent this session,
+/// when the provider says (OpenAI and xAI's audio_start_ms). It arrives
+/// half a second or more after the speech started.
 class RealtimeSpeechStarted extends RealtimeEvent {
-  const RealtimeSpeechStarted();
+  const RealtimeSpeechStarted({this.audioMs});
+  final int? audioMs;
 }
 
+/// [audioMs] is where the speech ends in the audio sent this session, when
+/// the provider says.
 class RealtimeSpeechStopped extends RealtimeEvent {
-  const RealtimeSpeechStopped();
+  const RealtimeSpeechStopped({this.audioMs});
+  final int? audioMs;
 }
 
 /// What the user said, once transcribed. [complete] is false while the

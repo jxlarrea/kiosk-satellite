@@ -144,6 +144,24 @@ class RealtimeSession {
   int _heldBytes = 0;
   bool _ready = false;
 
+  /// The audio sent to the provider this session, in samples at [_inRate]:
+  /// the clock the provider places speech on.
+  int _sentSamples = 0;
+  int _inRate = 24000;
+  int get _sentMs => _sentSamples * 1000 ~/ _inRate;
+
+  void _sendAudio(Uint8List pcm) {
+    _backend?.sendAudio(pcm);
+    _sentSamples += pcm.length ~/ 2;
+  }
+
+  /// Where the last answer stopped playing in the audio sent, null after
+  /// the user cut it.
+  int? _sentAtPlayEnd;
+
+  /// The last answer stopped because the user talked over it.
+  bool _cutByUser = false;
+
   /// Mic audio is dropped until then: the wake chime.
   DateTime? _deafUntil;
 
@@ -291,6 +309,7 @@ class RealtimeSession {
     final caps = backend.capabilities;
     _outRate = caps.outputRate;
     _resampler = PcmResampler(from: 16000, to: caps.inputRate);
+    _inRate = caps.inputRate;
     _events = backend.events.listen((e) => _onEvent(gen, e));
     _ticker = Timer.periodic(tick, (_) => _onTick(gen));
 
@@ -411,7 +430,7 @@ class RealtimeSession {
       // The canceller has not caught up with this answer yet: the room's
       // own noise instead.
       final comfort = _room.comfort(pcm.length);
-      if (_ready) _backend?.sendAudio(_resampler?.convert(comfort) ?? comfort);
+      if (_ready) _sendAudio(_resampler?.convert(comfort) ?? comfort);
       return;
     }
     // The canceller mutes the microphone outright while it cancels, and a
@@ -436,7 +455,7 @@ class RealtimeSession {
       }
       return;
     }
-    _backend?.sendAudio(converted);
+    _sendAudio(converted);
   }
 
   /// The microphone's level through the answer playing now, logged when
@@ -626,8 +645,41 @@ class RealtimeSession {
     if (!_loud(level)) return;
     if (++_suspectLoud < bargeInChunks) return;
     _suspect = false;
-    onTrace?.call('talked over the answer: $_talkOverDetail');
+    onTrace?.call('$_suspectTaken: $_talkOverDetail');
     unawaited(_confirmBargeIn(gen));
+  }
+
+  /// The speech being weighed started after the answer stopped playing,
+  /// in its echo tail.
+  bool _suspectAfterAnswer = false;
+
+  String get _suspectWhere => _suspectAfterAnswer
+      ? 'speech right after the answer'
+      : 'speech over the answer';
+
+  String get _suspectTaken => _suspectAfterAnswer
+      ? 'spoke right after the answer'
+      : 'talked over the answer';
+
+  /// Speech the provider places before the end of the last answer's echo
+  /// tail in the audio sent: the answer's own voice can still be in the
+  /// microphone, and the provider says speech started half a second or
+  /// more after it did, by when the answer may be over. Without a place
+  /// from the provider, speech reported within the tail. xAI and Gemini
+  /// never hear this stretch unless the user is loud (see [_holdBack]).
+  bool _inAnswerTail(int? audioMs) {
+    final end = _sentAtPlayEnd;
+    if (end == null) return false;
+    if (audioMs != null) return audioMs < end + echoTail.inMilliseconds;
+    return _inEchoTail;
+  }
+
+  /// Where the provider placed the speech, against the last answer's end.
+  String _speechAt(int? audioMs) {
+    if (audioMs == null) return '';
+    final end = _sentAtPlayEnd;
+    return ' at ${audioMs}ms of the audio sent'
+        '${end == null ? '' : ', the last answer ended at ${end}ms'}';
   }
 
   /// With the turns in the provider's hands (xAI), whatever it hears over
@@ -646,12 +698,12 @@ class RealtimeSession {
     if (_heldBack.length > _recentChunks) _heldBack.removeAt(0);
     if (_recent.where(_loud).length < bargeInChunks) {
       final comfort = _room.comfort(pcm.length);
-      _backend?.sendAudio(_resampler?.convert(comfort) ?? comfort);
+      _sendAudio(_resampler?.convert(comfort) ?? comfort);
       return;
     }
     _talkingOver = true;
     for (final chunk in _heldBack) {
-      _backend?.sendAudio(_resampler?.convert(chunk) ?? chunk);
+      _sendAudio(_resampler?.convert(chunk) ?? chunk);
     }
     _heldBack.clear();
     _startSuspect();
@@ -661,7 +713,9 @@ class RealtimeSession {
 
   Future<void> _confirmBargeIn(int gen) async {
     _recent.clear();
-    await _bargeIn(gen);
+    // Right after an answer there is nothing left to cut: the user starts
+    // a new exchange.
+    if (_playing || _responding || _staged.isNotEmpty) await _bargeIn(gen);
     if (gen != _gen) return;
     _newExchange = true;
     _show(
@@ -733,19 +787,22 @@ class RealtimeSession {
     switch (event) {
       case RealtimeReady():
         await _onReady(gen);
-      case RealtimeSpeechStarted():
+      case RealtimeSpeechStarted(:final audioMs):
+        onTrace?.call('speech started${_speechAt(audioMs)}');
         // The conversation is over once the goodbye plays: Gemini taking
         // the room or the answer's echo for speech does not cut it.
         if (_goodbyeDone) return;
         _userSpeaking = true;
         _touch();
-        if (_clientTurns && (_playing || _responding)) {
+        final afterAnswer = !_playing && !_responding && _inAnswerTail(audioMs);
+        if (_clientTurns && (_playing || _responding || afterAnswer)) {
           // Maybe the user, maybe a trace of the answer's own voice: the
           // microphone shows which, starting with what it already heard.
           _startSuspect();
-          onTrace?.call('speech over the answer: $_talkOverDetail');
+          _suspectAfterAnswer = afterAnswer;
+          onTrace?.call('$_suspectWhere: $_talkOverDetail');
           if (_suspectLoud >= bargeInChunks) {
-            onTrace?.call('talked over the answer: $_talkOverDetail');
+            onTrace?.call('$_suspectTaken: $_talkOverDetail');
             await _confirmBargeIn(gen);
             return;
           }
@@ -764,7 +821,8 @@ class RealtimeSession {
             reactive: true,
           ),
         );
-      case RealtimeSpeechStopped():
+      case RealtimeSpeechStopped(:final audioMs):
+        onTrace?.call('speech stopped${_speechAt(audioMs)}');
         _userSpeaking = false;
         if (_suspect) {
           // It never got loud: not the user. The answer carries on and the
@@ -882,7 +940,7 @@ class RealtimeSession {
       return;
     }
     for (final pcm in _held) {
-      _backend?.sendAudio(pcm);
+      _sendAudio(pcm);
     }
     _held.clear();
     _heldBytes = 0;
@@ -1005,6 +1063,7 @@ class RealtimeSession {
   /// model how much was heard.
   Future<void> _bargeIn(int gen) async {
     _logEcho();
+    _cutByUser = true;
     _staged.clear();
     _stagedFrames = 0;
     _stagedSince = null;
@@ -1046,6 +1105,9 @@ class RealtimeSession {
     if (_wasPlaying && !playing) {
       _logEcho();
       _playEnded = now;
+      // A cut answer leaves no echo tail to weigh: the user is talking.
+      _sentAtPlayEnd = _cutByUser ? null : _sentMs;
+      _cutByUser = false;
       _touch();
       _armStop(false);
       _opened();
@@ -1234,6 +1296,10 @@ class RealtimeSession {
     _itemStart.clear();
     _wasPlaying = false;
     _playEnded = null;
+    _sentSamples = 0;
+    _sentAtPlayEnd = null;
+    _cutByUser = false;
+    _suspectAfterAnswer = false;
     _outLevels.clear();
     _outRaw.clear();
     _levelBase = 0;

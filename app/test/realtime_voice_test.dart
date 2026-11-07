@@ -1107,6 +1107,46 @@ void main() {
       await backend.close();
     });
 
+    test(
+      'speech comes with its place in the audio, no words are logged',
+      () async {
+        final lines = <String>[];
+        socket = _Socket();
+        events = [];
+        final backend = OpenAiRealtimeBackend(
+          config: const RealtimeConfig(provider: RealtimeProvider.openai),
+          toolbox: _Tools(),
+          log: lines.add,
+          connector: (_, _) async => socket,
+        );
+        backend.events.listen(events.add);
+        await backend.start(const RealtimeStart());
+        socket
+          ..server({'type': 'session.updated'})
+          ..server({
+            'type': 'input_audio_buffer.speech_started',
+            'audio_start_ms': 4120,
+            'item_id': 'u1',
+          })
+          ..server({
+            'type': 'input_audio_buffer.speech_stopped',
+            'audio_end_ms': 4980,
+            'item_id': 'u1',
+          })
+          ..server({
+            'type': 'conversation.item.input_audio_transcription.completed',
+            'item_id': 'u1',
+            'transcript': ' ',
+          });
+        await pumpEventQueue();
+        expect(events.whereType<RealtimeSpeechStarted>().single.audioMs, 4120);
+        expect(events.whereType<RealtimeSpeechStopped>().single.audioMs, 4980);
+        expect(events.whereType<RealtimeUserText>(), isEmpty);
+        expect(lines, contains('heard no words in that speech'));
+        await backend.close();
+      },
+    );
+
     test('failures with no handling of their own are logged', () async {
       final lines = <String>[];
       socket = _Socket();
@@ -2436,6 +2476,119 @@ void main() {
           h.backend.emit(const RealtimeSpeechStarted());
           time.flushMicrotasks();
           expect(h.player.flushes, 1);
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      });
+
+      /// The audio sent to the provider so far, in ms at 24 kHz.
+      int sentMs(_Harness h) =>
+          h.backend.audio.fold<int>(0, (n, pcm) => n + pcm.length ~/ 2) *
+          1000 ~/
+          24000;
+
+      /// A second of the room, then an answer that plays out and is done.
+      /// Where it ended in the audio sent.
+      int playOut(FakeAsync time, _Harness h) {
+        h.backend.clientTurns = true;
+        h.wakeAndConnect();
+        for (var i = 0; i < 12; i++) {
+          time.elapse(const Duration(milliseconds: 80));
+          h.mic.speak(value: 40);
+        }
+        h.answer('a1');
+        h.backend.emit(const RealtimeResponseDone());
+        time.flushMicrotasks();
+        h.player.frames = 24000;
+        time.elapse(const Duration(milliseconds: 100));
+        return sentMs(h);
+      }
+
+      /// The provider hears speech placed at [audioMs] and its end, with
+      /// the microphone at [level] in between.
+      void speech(FakeAsync time, _Harness h, int? audioMs, int level) {
+        h.backend.emit(RealtimeSpeechStarted(audioMs: audioMs));
+        time.flushMicrotasks();
+        for (var i = 0; i < 5; i++) {
+          time.elapse(const Duration(milliseconds: 80));
+          h.mic.speak(value: level);
+        }
+        h.backend.emit(const RealtimeSpeechStopped());
+        time.flushMicrotasks();
+      }
+
+      test('the echo right after an answer gets no reply', () {
+        fakeAsync((time) {
+          final h = _Harness(time);
+          final end = playOut(time, h);
+          expect(end, greaterThan(0));
+          speech(time, h, end + 200, 300);
+          expect(h.backend.turns, [false]);
+          expect(h.backend.interruptions, isEmpty);
+          expect(h.player.flushes, 0);
+          expect(
+            h.traces,
+            contains(startsWith('speech right after the answer: ')),
+          );
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      });
+
+      test(
+        'speech placed under the answer and told after it gets no reply',
+        () {
+          fakeAsync((time) {
+            final h = _Harness(time);
+            final end = playOut(time, h);
+            speech(time, h, end - 300, 300);
+            expect(h.backend.turns, [false]);
+            h.session.cancel();
+            time.flushMicrotasks();
+          });
+        },
+      );
+
+      test('without a place, speech told in the echo tail is weighed', () {
+        fakeAsync((time) {
+          final h = _Harness(time);
+          playOut(time, h);
+          speech(time, h, null, 300);
+          expect(h.backend.turns, [false]);
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      });
+
+      test('loud speech right after an answer is the user, nothing cut', () {
+        fakeAsync((time) {
+          final h = _Harness(time);
+          final end = playOut(time, h);
+          speech(time, h, end + 200, 3000);
+          expect(h.backend.turns, [true]);
+          expect(h.backend.interruptions, isEmpty);
+          expect(h.player.flushes, 0);
+          expect(
+            h.traces,
+            contains(startsWith('spoke right after the answer: ')),
+          );
+          expect(h.traces, isNot(contains(startsWith('interrupted after'))));
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      });
+
+      test('speech past the echo tail is the user, however quiet', () {
+        fakeAsync((time) {
+          final h = _Harness(time);
+          final end = playOut(time, h);
+          speech(
+            time,
+            h,
+            end + RealtimeSession.echoTail.inMilliseconds + 200,
+            300,
+          );
+          expect(h.backend.turns, [true]);
           h.session.cancel();
           time.flushMicrotasks();
         });

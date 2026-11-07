@@ -520,10 +520,10 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
         _onError(msg['error']);
       case 'input_audio_buffer.speech_started':
         _serverInterrupted = _responding && !_clientTurns;
-        _emit(const RealtimeSpeechStarted());
+        _emit(RealtimeSpeechStarted(audioMs: _audioMs(msg['audio_start_ms'])));
       case 'input_audio_buffer.speech_stopped':
         _lastSpeechItem = '${msg['item_id'] ?? ''}';
-        _emit(const RealtimeSpeechStopped());
+        _emit(RealtimeSpeechStopped(audioMs: _audioMs(msg['audio_end_ms'])));
       case 'conversation.item.input_audio_transcription.delta'
           when !_dropped.contains('${msg['item_id'] ?? ''}'):
         final id = '${msg['item_id'] ?? ''}';
@@ -538,7 +538,12 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
         final id = '${msg['item_id'] ?? ''}';
         _userText.remove(id);
         final text = '${msg['transcript'] ?? ''}'.trim();
-        if (text.isNotEmpty) _emit(RealtimeUserText(text));
+        if (text.isNotEmpty) {
+          _emit(RealtimeUserText(text));
+        } else {
+          // The model still heard the audio and may answer it.
+          log?.call('heard no words in that speech');
+        }
       case 'conversation.item.input_audio_transcription.failed':
         // The model still heard the user. Only the overlay goes without
         // their words.
@@ -635,6 +640,8 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
         log?.call('$type: ${realtimeLogText(msg['error'] ?? msg)}');
     }
   }
+
+  static int? _audioMs(Object? value) => value is num ? value.round() : null;
 
   static bool _failure(String type) =>
       type.contains('fail') ||
