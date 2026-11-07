@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.12 - 2026-11-07
 
 ### Added
 - **Brighten for touch interactions.** Settings > Screensaver > Brighten for touch interactions restores the brightness from before the screensaver for 5 seconds after a touch that does not dismiss the screensaver, such as a tap on a notification, the Voice Satellite bubble or a plugin card. Each touch starts the countdown again. It can be set from 1 to 15 seconds, or 0 to turn it off, and shows when Screensaver brightness is on.
