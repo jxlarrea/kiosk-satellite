@@ -516,6 +516,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingScreensaverNotificationBrightnessTitle",
     "description": "settingScreensaverNotificationBrightnessDescription",
   },
+  "screensaver.touch_brightness_seconds": {
+    "title": "settingScreensaverTouchBrightnessSecondsTitle",
+    "description": "settingScreensaverTouchBrightnessSecondsDescription",
+  },
   "screensaver.screen_off_minutes": {
     "title": "settingScreensaverScreenOffMinutesTitle",
     "description": "settingScreensaverScreenOffMinutesDescription",

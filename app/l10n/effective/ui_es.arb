@@ -44607,6 +44607,32 @@
       ]
     }
   },
+  "settingScreensaverTouchBrightnessSecondsTitle": "Aumentar el brillo al tocar",
+  "@settingScreensaverTouchBrightnessSecondsTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverTouchBrightnessSecondsDescription": "Reduce la atenuación del protector de pantalla durante este tiempo después de un toque que no lo cierra. Con 0, se desactiva.",
+  "@settingScreensaverTouchBrightnessSecondsDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverScreenOffMinutesTitle": "Apagar la pantalla después de",
   "@settingScreensaverScreenOffMinutesTitle": {
     "context": "Settings:Screensaver",

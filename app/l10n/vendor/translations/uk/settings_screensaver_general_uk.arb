@@ -18,6 +18,8 @@
   "settingScreensaverBrightnessLevelDescription": "Застосовується до всіх режимів заставки, крім Затемнення та Чорного.",
   "settingScreensaverNotificationBrightnessTitle": "Підвищувати яскравість для сповіщень",
   "settingScreensaverNotificationBrightnessDescription": "Знімати затемнення заставки під час відображення сповіщення.",
+  "settingScreensaverTouchBrightnessSecondsTitle": "Підвищувати яскравість при дотику",
+  "settingScreensaverTouchBrightnessSecondsDescription": "Знімати затемнення заставки на цей час після дотику, який її не закриває. Встановіть 0, щоб вимкнути.",
   "settingScreensaverScreenOffMinutesTitle": "Вимкнути екран через",
   "settingScreensaverScreenOffMinutesDescription": "Повністю вимикає дисплей після зазначеного часу роботи заставки. Встановіть 0, щоб екран ніколи не згасав. Вимагає дозволу адміністратора пристрою.",
   "settingScreensaverScreenOffWakeToScreensaverTitle": "Пробудження до заставки",

@@ -18,6 +18,8 @@
   "settingScreensaverBrightnessLevelDescription": "适用于调暗和黑屏以外的所有模式。",
   "settingScreensaverNotificationBrightnessTitle": "通知期间提高亮度",
   "settingScreensaverNotificationBrightnessDescription": "屏幕上显示通知时，暂时取消屏保调暗。",
+  "settingScreensaverTouchBrightnessSecondsTitle": "触摸时提高亮度",
+  "settingScreensaverTouchBrightnessSecondsDescription": "触摸屏幕但未退出屏保时，在此时长内暂时取消屏保调暗。设为 0 时关闭。",
   "settingScreensaverScreenOffMinutesTitle": "屏保启动后关屏时间",
   "settingScreensaverScreenOffMinutesDescription": "屏保启动后，经过设定时间关闭屏幕。设为 0 时不自动关屏。需要设备管理器权限。",
   "settingScreensaverScreenOffWakeToScreensaverTitle": "唤醒后打开屏保",

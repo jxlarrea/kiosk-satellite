@@ -20744,6 +20744,18 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Brighten for touch interactions'**
+  String get settingScreensaverTouchBrightnessSecondsTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lift the screensaver dimming for this long after a touch that does not dismiss it. Set to 0 to turn it off.'**
+  String get settingScreensaverTouchBrightnessSecondsDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Turn screen off after'**
   String get settingScreensaverScreenOffMinutesTitle;
 

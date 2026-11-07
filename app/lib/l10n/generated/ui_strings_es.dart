@@ -12087,6 +12087,14 @@ class UiStringsEs extends UiStrings {
       'Reduce la atenuación del protector de pantalla mientras se muestra una notificación.';
 
   @override
+  String get settingScreensaverTouchBrightnessSecondsTitle =>
+      'Aumentar el brillo al tocar';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      'Reduce la atenuación del protector de pantalla durante este tiempo después de un toque que no lo cierra. Con 0, se desactiva.';
+
+  @override
   String get settingScreensaverScreenOffMinutesTitle =>
       'Apagar la pantalla después de';
 

@@ -12086,6 +12086,14 @@ class UiStringsFr extends UiStrings {
       'Suspendre le tamisage de l\'économiseur d\'écran tant qu\'une notification est affichée.';
 
   @override
+  String get settingScreensaverTouchBrightnessSecondsTitle =>
+      'Éclaircir au toucher';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      'Suspendre le tamisage de l\'économiseur d\'écran pendant cette durée après un toucher qui ne le ferme pas. Réglez sur 0 pour désactiver.';
+
+  @override
   String get settingScreensaverScreenOffMinutesTitle =>
       'Éteindre l\'écran après';
 

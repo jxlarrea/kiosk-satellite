@@ -44607,6 +44607,32 @@
       ]
     }
   },
+  "settingScreensaverTouchBrightnessSecondsTitle": "Oplichten bij aanraken",
+  "@settingScreensaverTouchBrightnessSecondsTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverTouchBrightnessSecondsDescription": "Verhoog de helderheid van de schermbeveiliging zo lang na een aanraking die haar niet sluit. Stel 0 in om dit uit te zetten.",
+  "@settingScreensaverTouchBrightnessSecondsDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverScreenOffMinutesTitle": "Scherm uitschakelen na",
   "@settingScreensaverScreenOffMinutesTitle": {
     "context": "Settings:Screensaver",

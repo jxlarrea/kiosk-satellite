@@ -11868,6 +11868,14 @@ class UiStringsEn extends UiStrings {
       'Lift the screensaver dimming while a notification is on screen.';
 
   @override
+  String get settingScreensaverTouchBrightnessSecondsTitle =>
+      'Brighten for touch interactions';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      'Lift the screensaver dimming for this long after a touch that does not dismiss it. Set to 0 to turn it off.';
+
+  @override
   String get settingScreensaverScreenOffMinutesTitle => 'Turn screen off after';
 
   @override

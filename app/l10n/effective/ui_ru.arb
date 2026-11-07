@@ -44607,6 +44607,32 @@
       ]
     }
   },
+  "settingScreensaverTouchBrightnessSecondsTitle": "Ярче при касании",
+  "@settingScreensaverTouchBrightnessSecondsTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverTouchBrightnessSecondsDescription": "Снимать затемнение заставки на это время после касания, которое её не закрывает. 0: выключено.",
+  "@settingScreensaverTouchBrightnessSecondsDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverScreenOffMinutesTitle": "Выключать экран через",
   "@settingScreensaverScreenOffMinutesTitle": {
     "context": "Settings:Screensaver",

@@ -11307,6 +11307,13 @@ class UiStringsZh extends UiStrings {
       '屏幕上显示通知时，暂时取消屏保调暗。';
 
   @override
+  String get settingScreensaverTouchBrightnessSecondsTitle => '触摸时提高亮度';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      '触摸屏幕但未退出屏保时，在此时长内暂时取消屏保调暗。设为 0 时关闭。';
+
+  @override
   String get settingScreensaverScreenOffMinutesTitle => '屏保启动后关屏时间';
 
   @override
@@ -26604,6 +26611,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingScreensaverNotificationBrightnessDescription =>
       '屏幕上显示通知时，暂时取消屏保调暗。';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsTitle => '触摸时提高亮度';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      '触摸屏幕但未退出屏保时，在此时长内暂时取消屏保调暗。设为 0 时关闭。';
 
   @override
   String get settingScreensaverScreenOffMinutesTitle => '屏保启动后关屏时间';

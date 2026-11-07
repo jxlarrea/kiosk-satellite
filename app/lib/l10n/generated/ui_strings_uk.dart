@@ -11998,6 +11998,14 @@ class UiStringsUk extends UiStrings {
       'Знімати затемнення заставки під час відображення сповіщення.';
 
   @override
+  String get settingScreensaverTouchBrightnessSecondsTitle =>
+      'Підвищувати яскравість при дотику';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      'Знімати затемнення заставки на цей час після дотику, який її не закриває. Встановіть 0, щоб вимкнути.';
+
+  @override
   String get settingScreensaverScreenOffMinutesTitle => 'Вимкнути екран через';
 
   @override

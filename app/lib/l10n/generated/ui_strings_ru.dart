@@ -11962,6 +11962,14 @@ class UiStringsRu extends UiStrings {
       'Снимать затемнение заставки, пока на экране уведомление.';
 
   @override
+  String get settingScreensaverTouchBrightnessSecondsTitle =>
+      'Ярче при касании';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      'Снимать затемнение заставки на это время после касания, которое её не закрывает. 0: выключено.';
+
+  @override
   String get settingScreensaverScreenOffMinutesTitle => 'Выключать экран через';
 
   @override

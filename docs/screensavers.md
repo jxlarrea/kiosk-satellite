@@ -15,6 +15,7 @@ Navigate to **Settings > Screensaver** (available in the on device settings and 
 | Screensaver brightness | off | Enables an independent display brightness level while the screensaver is active. |
 | Brightness level | 20% | Defines the screensaver brightness level across all modes except Dim and Black. |
 | Brighten for notifications | on | Automatically restores full display brightness while an incoming notification is visible. Appears when Screensaver brightness is enabled. |
+| Brighten for touch interactions | 5 s | Restores full display brightness for this many seconds after a touch that does not dismiss the screensaver, such as a tap on a notification or a plugin card. 0 turns it off. Appears when Screensaver brightness is enabled. |
 | Turn screen off after | 0 (never) | Powers off the physical display panel after the screensaver has been running for the specified duration. |
 | Use a black screen instead | off | Appears when **Turn screen off after** is greater than 0. Shows a plain black screen at zero brightness without powering off the panel. Hides widgets, timers, notifications and Now Playing. |
 | Wake to screensaver | Off | Picks what brings the screensaver back instead of the dashboard after the screen has turned off: motion, face, proximity, person, the power button and touch. The **Turn screen off after** countdown starts over. See [Turning the Screen Off](#turning-the-screen-off). |
@@ -356,6 +357,8 @@ Entity formatting matches At a Glance rules: custom Home Assistant icons display
 When [Adaptive brightness](screen.md#adaptive-brightness) is enabled, the screensaver brightness setting defines the baseline output for a bright room. Ambient light dimming scales the screensaver brightness proportionally alongside the dashboard. A clock set to 20% during the day automatically scales down to a fraction of that level in a dark room without requiring slider adjustments.
 
 **Brighten for notifications** (enabled by default) temporarily restores full pre-screensaver display brightness while a [notification](esphome.md#notifications) card is visible on screen. Once all notification cards are dismissed, display brightness returns to the configured screensaver level. Only the backlight level adjusts; clock faces, photos, or black overlays remain unchanged beneath the notification card. This brightening behavior also applies to Dim, Black, and scheduled brightness overrides. Disable this feature in bedroom environments to prevent night notifications from illuminating the room.
+
+**Brighten for touch interactions** (5 seconds by default, up to 15) restores the same brightness after a touch that leaves the screensaver up, so you can see what you are tapping. That covers taps on cards drawn over the screensaver, such as notifications, the Voice Satellite bubble or a plugin overlay, Now Playing controls, a slideshow's edge zones and the first tap of a double tap. Each touch starts the countdown again, and the screensaver level comes back once it runs out. A touch that dismisses the screensaver, or wakes it from a black screen, does not count. Set it to 0 to keep the screensaver dimmed while you use it. Like notifications, it also applies to Dim, Black and scheduled brightness.
 
 ## Turning the Screen Off
 

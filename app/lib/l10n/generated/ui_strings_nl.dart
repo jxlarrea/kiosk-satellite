@@ -12010,6 +12010,14 @@ class UiStringsNl extends UiStrings {
       'Verhoog de helderheid van de schermbeveiliging zolang er een melding op het scherm staat.';
 
   @override
+  String get settingScreensaverTouchBrightnessSecondsTitle =>
+      'Oplichten bij aanraken';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      'Verhoog de helderheid van de schermbeveiliging zo lang na een aanraking die haar niet sluit. Stel 0 in om dit uit te zetten.';
+
+  @override
   String get settingScreensaverScreenOffMinutesTitle =>
       'Scherm uitschakelen na';
 

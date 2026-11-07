@@ -44607,6 +44607,32 @@
       ]
     }
   },
+  "settingScreensaverTouchBrightnessSecondsTitle": "Éclaircir au toucher",
+  "@settingScreensaverTouchBrightnessSecondsTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverTouchBrightnessSecondsDescription": "Suspendre le tamisage de l'économiseur d'écran pendant cette durée après un toucher qui ne le ferme pas. Réglez sur 0 pour désactiver.",
+  "@settingScreensaverTouchBrightnessSecondsDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverScreenOffMinutesTitle": "Éteindre l'écran après",
   "@settingScreensaverScreenOffMinutesTitle": {
     "context": "Settings:Screensaver",

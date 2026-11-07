@@ -3875,6 +3875,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverNotificationBrightnessTitle,
       'settingScreensaverNotificationBrightnessDescription' =>
         strings.settingScreensaverNotificationBrightnessDescription,
+      'settingScreensaverTouchBrightnessSecondsTitle' =>
+        strings.settingScreensaverTouchBrightnessSecondsTitle,
+      'settingScreensaverTouchBrightnessSecondsDescription' =>
+        strings.settingScreensaverTouchBrightnessSecondsDescription,
       'settingScreensaverScreenOffMinutesTitle' =>
         strings.settingScreensaverScreenOffMinutesTitle,
       'settingScreensaverScreenOffMinutesDescription' =>

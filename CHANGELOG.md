@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Brighten for touch interactions.** Settings > Screensaver > Brighten for touch interactions restores the brightness from before the screensaver for 5 seconds after a touch that does not dismiss the screensaver, such as a tap on a notification, the Voice Satellite bubble or a plugin card. Each touch starts the countdown again. It can be set from 1 to 15 seconds, or 0 to turn it off, and shows when Screensaver brightness is on.
 - **Ring volume for the intercom.** Settings > Intercom > Answer > Ring volume sets how loud a call rings, the built-in ring or a picked ring sound, apart from the media volume. The ring used to play at the notification volume, so an updated kiosk starts on that level. Each kiosk keeps its own, so new fleet profiles leave it out.
 
 ### Changed

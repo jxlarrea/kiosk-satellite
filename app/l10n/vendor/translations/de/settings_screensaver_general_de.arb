@@ -18,6 +18,8 @@
   "settingScreensaverBrightnessLevelDescription": "Gilt für alle Modi außer „Dimmen“ und „Schwarz“.",
   "settingScreensaverNotificationBrightnessTitle": "Helligkeit bei Benachrichtigungen erhöhen",
   "settingScreensaverNotificationBrightnessDescription": "Reduziert die Abdunklung des Bildschirmschoners, solange eine Benachrichtigung angezeigt wird.",
+  "settingScreensaverTouchBrightnessSecondsTitle": "Helligkeit bei Berührung erhöhen",
+  "settingScreensaverTouchBrightnessSecondsDescription": "Reduziert die Abdunklung des Bildschirmschoners für diese Dauer nach einer Berührung, die ihn nicht beendet. Bei 0 ist die Funktion aus.",
   "settingScreensaverScreenOffMinutesTitle": "Bildschirm ausschalten nach",
   "settingScreensaverScreenOffMinutesDescription": "Schaltet den Bildschirm aus, wenn der Bildschirmschoner die angegebene Zeit aktiv war. Bei 0 bleibt der Bildschirm dauerhaft eingeschaltet. Erfordert die Geräteadministrator-Berechtigung.",
   "settingScreensaverScreenOffWakeToScreensaverTitle": "Nach dem Aufwecken zum Bildschirmschoner zurückkehren",

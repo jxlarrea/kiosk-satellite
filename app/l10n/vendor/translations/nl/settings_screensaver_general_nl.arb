@@ -18,6 +18,8 @@
   "settingScreensaverBrightnessLevelDescription": "Geldt voor alle modi behalve Dimmen en Zwart.",
   "settingScreensaverNotificationBrightnessTitle": "Oplichten bij meldingen",
   "settingScreensaverNotificationBrightnessDescription": "Verhoog de helderheid van de schermbeveiliging zolang er een melding op het scherm staat.",
+  "settingScreensaverTouchBrightnessSecondsTitle": "Oplichten bij aanraken",
+  "settingScreensaverTouchBrightnessSecondsDescription": "Verhoog de helderheid van de schermbeveiliging zo lang na een aanraking die haar niet sluit. Stel 0 in om dit uit te zetten.",
   "settingScreensaverScreenOffMinutesTitle": "Scherm uitschakelen na",
   "settingScreensaverScreenOffMinutesDescription": "Schakelt het scherm uit zodra de schermbeveiliging gedurende de ingestelde tijd actief is geweest. Stel 0 in om het scherm onbeperkt aan te laten. Hiervoor is toestemming voor apparaatbeheer vereist.",
   "settingScreensaverScreenOffWakeToScreensaverTitle": "Schermbeveiliging tonen bij wekken",

@@ -18,6 +18,8 @@
   "settingScreensaverBrightnessLevelDescription": "S'applique à tous les modes sauf Tamisé et Noir.",
   "settingScreensaverNotificationBrightnessTitle": "Éclaircir pour les notifications",
   "settingScreensaverNotificationBrightnessDescription": "Suspendre le tamisage de l'économiseur d'écran tant qu'une notification est affichée.",
+  "settingScreensaverTouchBrightnessSecondsTitle": "Éclaircir au toucher",
+  "settingScreensaverTouchBrightnessSecondsDescription": "Suspendre le tamisage de l'économiseur d'écran pendant cette durée après un toucher qui ne le ferme pas. Réglez sur 0 pour désactiver.",
   "settingScreensaverScreenOffMinutesTitle": "Éteindre l'écran après",
   "settingScreensaverScreenOffMinutesDescription": "Coupe l'alimentation du panneau d'affichage une fois l'économiseur d'écran actif depuis la durée définie. Réglez sur 0 pour garder l'écran allumé indéfiniment. Nécessite l'autorisation Administrateur de l'appareil.",
   "settingScreensaverScreenOffWakeToScreensaverTitle": "Réveiller vers l'économiseur d'écran",

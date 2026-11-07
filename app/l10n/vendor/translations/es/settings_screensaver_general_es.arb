@@ -18,6 +18,8 @@
   "settingScreensaverBrightnessLevelDescription": "Se aplica a todos los modos excepto Atenuar y Negro.",
   "settingScreensaverNotificationBrightnessTitle": "Aumentar el brillo para las notificaciones",
   "settingScreensaverNotificationBrightnessDescription": "Reduce la atenuación del protector de pantalla mientras se muestra una notificación.",
+  "settingScreensaverTouchBrightnessSecondsTitle": "Aumentar el brillo al tocar",
+  "settingScreensaverTouchBrightnessSecondsDescription": "Reduce la atenuación del protector de pantalla durante este tiempo después de un toque que no lo cierra. Con 0, se desactiva.",
   "settingScreensaverScreenOffMinutesTitle": "Apagar la pantalla después de",
   "settingScreensaverScreenOffMinutesDescription": "Apaga la pantalla cuando el protector de pantalla lleva activo el tiempo indicado. Con 0, la pantalla permanece encendida indefinidamente. Requiere permiso de administrador del dispositivo.",
   "settingScreensaverScreenOffWakeToScreensaverTitle": "Volver al protector de pantalla al despertar",

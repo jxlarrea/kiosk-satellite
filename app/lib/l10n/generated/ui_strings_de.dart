@@ -12126,6 +12126,14 @@ class UiStringsDe extends UiStrings {
       'Reduziert die Abdunklung des Bildschirmschoners, solange eine Benachrichtigung angezeigt wird.';
 
   @override
+  String get settingScreensaverTouchBrightnessSecondsTitle =>
+      'Helligkeit bei Berührung erhöhen';
+
+  @override
+  String get settingScreensaverTouchBrightnessSecondsDescription =>
+      'Reduziert die Abdunklung des Bildschirmschoners für diese Dauer nach einer Berührung, die ihn nicht beendet. Bei 0 ist die Funktion aus.';
+
+  @override
   String get settingScreensaverScreenOffMinutesTitle =>
       'Bildschirm ausschalten nach';
 

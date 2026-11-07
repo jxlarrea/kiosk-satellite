@@ -5394,6 +5394,27 @@ const screensaverNotificationBrightness = SettingDef<bool>(
   dependsOn: 'screensaver.brightness_enabled',
 );
 
+/// A touch the screensaver keeps, on a plugin card, a notification or the
+/// first tap of a double tap, is someone using the panel, and a dimmed one
+/// is hard to use. The lift lasts this long after the last such touch.
+/// 0 turns it off.
+const screensaverTouchBrightnessSeconds = SettingDef<num>(
+  key: 'screensaver.touch_brightness_seconds',
+  type: SettingType.number,
+  defaultValue: 5,
+  min: 0,
+  max: 15,
+  step: 1,
+  unit: 's',
+  title: 'Brighten for touch interactions',
+  description:
+      'Lift the screensaver dimming for this long after a touch that does '
+      'not dismiss it. Set to 0 to turn it off.',
+  category: 'Screensaver',
+  // Under the switch it qualifies, as Brighten for notifications is.
+  dependsOn: 'screensaver.brightness_enabled',
+);
+
 // The screensaver deliberately holds the panel awake (see the manager's
 // start()), so the OS idle timeout can never fire under it; this timer is
 // the one sanctioned way a session ends in a truly dark panel. Wake paths
@@ -13736,6 +13757,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverBrightnessEnabled,
   screensaverBrightnessLevel,
   screensaverNotificationBrightness,
+  screensaverTouchBrightnessSeconds,
   screensaverScreenOffMinutes,
   screensaverScreenOffBlack,
   screensaverScreenOffWakeToScreensaver,

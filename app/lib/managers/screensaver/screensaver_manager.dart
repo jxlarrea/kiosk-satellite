@@ -427,6 +427,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// is not a message (issue #278).
   bool _notificationShowing = false;
 
+  /// Lifted for a touch the screensaver kept, until [_touchLiftTimer]
+  /// runs out, Brighten for touch interactions seconds after the last one.
+  bool _touchLifted = false;
+  Timer? _touchLiftTimer;
+
   /// The visual overlay the UI should render, or null for none.
   ///
   /// One of 'blank' | 'black' | 'clock' | 'media' | 'website' | ... Dim
@@ -1298,6 +1303,42 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       source == 'screensaver_touch';
 
   void notifyActivity(String source) {
+    final lit = _active && !_blanked;
+    _handleActivity(source);
+    // A touch that left the screensaver up is someone using the panel. A
+    // touch that woke it from black is not: it only brought the
+    // screensaver back.
+    if (source == 'touch' && lit && _active && !_blanked) _liftForTouch();
+  }
+
+  /// Lifts the dimming the way a notification does, for Brighten for touch
+  /// interactions seconds after the last touch.
+  void _liftForTouch() {
+    final seconds = _settings.get(defs.screensaverTouchBrightnessSeconds);
+    if (seconds <= 0 || _savedBrightness == null) return;
+    _touchLiftTimer?.cancel();
+    _touchLiftTimer = Timer(Duration(seconds: seconds.toInt()), () {
+      _touchLiftTimer = null;
+      _touchLifted = false;
+      if (_active) unawaited(_applyVisuals());
+    });
+    if (_touchLifted) return;
+    _touchLifted = true;
+    unawaited(
+      commands.execute('setBrightness', {
+        'level': _savedBrightness,
+        'ceiling': true,
+      }),
+    );
+  }
+
+  void _endTouchLift() {
+    _touchLiftTimer?.cancel();
+    _touchLiftTimer = null;
+    _touchLifted = false;
+  }
+
+  void _handleActivity(String source) {
     // A ringing alarm on this screensaver ends through its Snooze and Stop
     // buttons only: a brush of the hand, motion or a face never dismisses
     // it.
@@ -2156,7 +2197,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         liftForVoice ||
         (_notificationShowing &&
             _savedBrightness != null &&
-            _settings.get(defs.screensaverNotificationBrightness));
+            _settings.get(defs.screensaverNotificationBrightness)) ||
+        (_touchLifted && _savedBrightness != null);
     switch (mode) {
       case 'dim':
         // Backlight only — no overlay. stop() restores the saved level.
@@ -2257,6 +2299,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     if (!_active) return;
     final nowPlaying = _nowPlayingSession;
     _active = false;
+    _endTouchLift();
     holdSensorDismiss = false;
     _startedForNowPlaying = false;
     alarmTakeover.value = null;
@@ -2386,6 +2429,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _scheduleTimer?.cancel();
     _screenOffTimer?.cancel();
     _nightTimer?.cancel();
+    _endTouchLift();
     activeView.dispose();
     pageReserve.dispose();
     clockNight.dispose();

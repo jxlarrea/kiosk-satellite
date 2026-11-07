@@ -24133,5 +24133,15 @@
     "source": "8e9adb5d4f3937a566db9592a60ea633111d981cc4cedf62ca24f8f5261cda71",
     "translation": "c4fe1ba094418344927939dcb37df18e8dbe918287099e7500be3bac9985eb0d",
     "author": "Xavier Larrea"
+  },
+  "settingScreensaverTouchBrightnessSecondsDescription": {
+    "source": "633a728e7521d02252f957c2471f2e790ff343359f2516df72e46e47413f0682",
+    "translation": "cf124907aadf2870391d7b4ab345b8f0e92e7b166f11e8cfdabbd43393762314",
+    "author": "Xavier Larrea"
+  },
+  "settingScreensaverTouchBrightnessSecondsTitle": {
+    "source": "f2b6161e2eb3648bf2eebda2c1a405957cd6d9dcba574f27e48d9c6bd10fce3e",
+    "translation": "d593c3c0e4a826c2a45576ddcf1dd5040863182e8e768ec986e00ebb1cfbc73d",
+    "author": "Xavier Larrea"
   }
 }

@@ -44607,6 +44607,32 @@
       ]
     }
   },
+  "settingScreensaverTouchBrightnessSecondsTitle": "Підвищувати яскравість при дотику",
+  "@settingScreensaverTouchBrightnessSecondsTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverTouchBrightnessSecondsDescription": "Знімати затемнення заставки на цей час після дотику, який її не закриває. Встановіть 0, щоб вимкнути.",
+  "@settingScreensaverTouchBrightnessSecondsDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverScreenOffMinutesTitle": "Вимкнути екран через",
   "@settingScreensaverScreenOffMinutesTitle": {
     "context": "Settings:Screensaver",

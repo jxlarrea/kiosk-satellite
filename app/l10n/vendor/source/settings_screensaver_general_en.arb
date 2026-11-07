@@ -234,6 +234,32 @@
       ]
     }
   },
+  "settingScreensaverTouchBrightnessSecondsTitle": "Brighten for touch interactions",
+  "@settingScreensaverTouchBrightnessSecondsTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverTouchBrightnessSecondsDescription": "Lift the screensaver dimming for this long after a touch that does not dismiss it. Set to 0 to turn it off.",
+  "@settingScreensaverTouchBrightnessSecondsDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverScreenOffMinutesTitle": "Turn screen off after",
   "@settingScreensaverScreenOffMinutesTitle": {
     "context": "Settings:Screensaver",

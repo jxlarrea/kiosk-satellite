@@ -18,6 +18,8 @@
   "settingScreensaverBrightnessLevelDescription": "Применяется ко всем режимам, кроме «Затемнение» и «Чёрная».",
   "settingScreensaverNotificationBrightnessTitle": "Ярче для уведомлений",
   "settingScreensaverNotificationBrightnessDescription": "Снимать затемнение заставки, пока на экране уведомление.",
+  "settingScreensaverTouchBrightnessSecondsTitle": "Ярче при касании",
+  "settingScreensaverTouchBrightnessSecondsDescription": "Снимать затемнение заставки на это время после касания, которое её не закрывает. 0: выключено.",
   "settingScreensaverScreenOffMinutesTitle": "Выключать экран через",
   "settingScreensaverScreenOffMinutesDescription": "Гасит панель дисплея, когда заставка отработала заданное время. 0: держать экран включённым неограниченно. Требуется разрешение администратора устройства.",
   "settingScreensaverScreenOffWakeToScreensaverTitle": "Пробуждать в заставку",
