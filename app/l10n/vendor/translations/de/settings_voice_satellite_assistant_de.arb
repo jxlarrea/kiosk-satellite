@@ -10,7 +10,7 @@
   "voiceThisKiosk": "Dieser Kiosk",
   "voiceSelectFailed": "Konnte in Home Assistant nicht geändert werden.",
   "settingVoiceSeamlessWakeTitle": "Direkt nach dem Aktivierungswort sprechen",
-  "settingVoiceSeamlessWakeDescription": "Überspringt den Aktivierungston und behält, was du direkt nach dem Aktivierungswort sagst.",
+  "settingVoiceSeamlessWakeAssistDescription": "Überspringt den Aktivierungston und behält, was du direkt nach dem Aktivierungswort sagst. Nur für Assist-Pipelines, nicht für Echtzeit-Gespräche.",
   "settingVoiceFollowupDelayTitle": "Verzögerung vor Folgefragen",
   "settingVoiceFollowupDelayDescription": "Eine Pause, bevor auf die Antwort auf eine Frage gehört wird.",
   "settingVoiceFollowupChimeTitle": "Ton vor einer Folgefrage",

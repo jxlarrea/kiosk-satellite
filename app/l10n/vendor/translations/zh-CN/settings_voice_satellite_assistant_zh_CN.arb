@@ -10,7 +10,7 @@
   "voiceThisKiosk": "此 Kiosk 设备",
   "voiceSelectFailed": "无法在 Home Assistant 中更改。",
   "settingVoiceSeamlessWakeTitle": "唤醒词后直接讲话",
-  "settingVoiceSeamlessWakeDescription": "跳过唤醒提示音，并保留唤醒词后紧接着说的内容。",
+  "settingVoiceSeamlessWakeAssistDescription": "跳过唤醒提示音，并保留唤醒词后紧接着说的内容。仅适用于 Assist 管线，不适用于实时语音对话。",
   "settingVoiceFollowupDelayTitle": "追问延迟",
   "settingVoiceFollowupDelayDescription": "提出问题后，开始聆听回答前的等待时间。",
   "settingVoiceFollowupChimeTitle": "追问前播放提示音",

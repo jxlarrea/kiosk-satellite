@@ -10,7 +10,7 @@
   "voiceThisKiosk": "Ce kiosque",
   "voiceSelectFailed": "Impossible de le modifier dans Home Assistant.",
   "settingVoiceSeamlessWakeTitle": "Parler juste après le mot de réveil",
-  "settingVoiceSeamlessWakeDescription": "Ignore le son de réveil et garde ce que vous dites juste après le mot de réveil.",
+  "settingVoiceSeamlessWakeAssistDescription": "Ignore le son de réveil et garde ce que vous dites juste après le mot de réveil. Uniquement pour les pipelines Assist, pas pour les conversations en temps réel.",
   "settingVoiceFollowupDelayTitle": "Délai avant le suivi",
   "settingVoiceFollowupDelayDescription": "Une pause avant d'écouter la réponse à une question.",
   "settingVoiceFollowupChimeTitle": "Son avant un suivi",

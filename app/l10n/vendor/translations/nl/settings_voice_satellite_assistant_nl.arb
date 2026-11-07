@@ -10,7 +10,7 @@
   "voiceThisKiosk": "Deze kiosk",
   "voiceSelectFailed": "Dit kon niet worden gewijzigd in Home Assistant.",
   "settingVoiceSeamlessWakeTitle": "Praat direct na het wekwoord",
-  "settingVoiceSeamlessWakeDescription": "Sla het wekgeluid over en neem op wat je direct na het wekwoord zegt.",
+  "settingVoiceSeamlessWakeAssistDescription": "Sla het wekgeluid over en neem op wat je direct na het wekwoord zegt. Alleen voor Assist-pijplijnen, niet voor realtime gesprekken.",
   "settingVoiceFollowupDelayTitle": "Follow-upvertraging",
   "settingVoiceFollowupDelayDescription": "De pauze voordat er naar je antwoord op een vervolgvraag wordt geluisterd.",
   "settingVoiceFollowupChimeTitle": "Wekgeluid voor een vervolgvraag",

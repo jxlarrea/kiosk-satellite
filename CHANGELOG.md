@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **Talk right after the wake word says it only covers Assist pipelines (#1336).** The hint now says that the setting has no effect on realtime conversations, where speech right after the wake word can still be cut off while the connection opens.
+
 ### Fixed
 - **The Weather Mood condition icon shows when rain starts.** If the weather changed to rain or heavy rain with the screensaver up, the conditions chip could show an empty circle or the previous rain icon until the temperature next changed.
 

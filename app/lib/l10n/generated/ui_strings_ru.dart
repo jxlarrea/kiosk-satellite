@@ -14113,8 +14113,8 @@ class UiStringsRu extends UiStrings {
       'Говорить сразу после слова пробуждения';
 
   @override
-  String get settingVoiceSeamlessWakeDescription =>
-      'Пропускать звук пробуждения и ловить сказанное сразу после слова пробуждения.';
+  String get settingVoiceSeamlessWakeAssistDescription =>
+      'Пропускать звук пробуждения и ловить сказанное сразу после слова пробуждения. Только для конвейеров Assist, не для разговоров в реальном времени.';
 
   @override
   String get settingVoiceFollowupDelayTitle => 'Задержка уточнения';

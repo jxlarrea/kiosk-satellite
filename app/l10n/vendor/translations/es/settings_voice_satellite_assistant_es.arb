@@ -10,7 +10,7 @@
   "voiceThisKiosk": "Este kiosko",
   "voiceSelectFailed": "No se pudo cambiar en Home Assistant.",
   "settingVoiceSeamlessWakeTitle": "Hablar justo después de la palabra de activación",
-  "settingVoiceSeamlessWakeDescription": "Omite el sonido de activación y conserva lo que dices justo después de la palabra de activación.",
+  "settingVoiceSeamlessWakeAssistDescription": "Omite el sonido de activación y conserva lo que dices justo después de la palabra de activación. Solo para canales de Assist, no para conversaciones en tiempo real.",
   "settingVoiceFollowupDelayTitle": "Retraso del seguimiento",
   "settingVoiceFollowupDelayDescription": "Una pausa antes de escuchar la respuesta a una pregunta.",
   "settingVoiceFollowupChimeTitle": "Sonido antes de un seguimiento",

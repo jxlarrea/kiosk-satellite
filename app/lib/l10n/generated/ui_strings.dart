@@ -24476,8 +24476,8 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Skip the wake sound and keep what you say right after the wake word.'**
-  String get settingVoiceSeamlessWakeDescription;
+  /// **'Skip the wake sound and keep what you say right after the wake word. Only for Assist pipelines, not realtime conversations.'**
+  String get settingVoiceSeamlessWakeAssistDescription;
 
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///

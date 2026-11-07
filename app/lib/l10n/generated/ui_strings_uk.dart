@@ -14168,8 +14168,8 @@ class UiStringsUk extends UiStrings {
       'Говорити одразу після слова активації';
 
   @override
-  String get settingVoiceSeamlessWakeDescription =>
-      'Пропускає звук активації та зберігає те, що ви кажете одразу після слова активації.';
+  String get settingVoiceSeamlessWakeAssistDescription =>
+      'Пропускає звук активації та зберігає те, що ви кажете одразу після слова активації. Лише для конвеєрів Assist, не для розмов у реальному часі.';
 
   @override
   String get settingVoiceFollowupDelayTitle => 'Затримка перед уточненням';

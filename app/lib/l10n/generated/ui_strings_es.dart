@@ -14293,8 +14293,8 @@ class UiStringsEs extends UiStrings {
       'Hablar justo después de la palabra de activación';
 
   @override
-  String get settingVoiceSeamlessWakeDescription =>
-      'Omite el sonido de activación y conserva lo que dices justo después de la palabra de activación.';
+  String get settingVoiceSeamlessWakeAssistDescription =>
+      'Omite el sonido de activación y conserva lo que dices justo después de la palabra de activación. Solo para canales de Assist, no para conversaciones en tiempo real.';
 
   @override
   String get settingVoiceFollowupDelayTitle => 'Retraso del seguimiento';

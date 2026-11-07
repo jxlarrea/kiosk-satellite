@@ -1838,7 +1838,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "voice.seamless_wake": {
     "title": "settingVoiceSeamlessWakeTitle",
-    "description": "settingVoiceSeamlessWakeDescription",
+    "description": "settingVoiceSeamlessWakeAssistDescription",
   },
   "voice.followup_delay_ms": {
     "title": "settingVoiceFollowupDelayTitle",

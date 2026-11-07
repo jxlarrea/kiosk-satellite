@@ -6972,7 +6972,8 @@ const voiceSeamlessWake = SettingDef<bool>(
   defaultValue: false,
   title: 'Talk right after the wake word',
   description:
-      'Skip the wake sound and keep what you say right after the wake word.',
+      'Skip the wake sound and keep what you say right after the wake word. '
+      'Only for Assist pipelines, not realtime conversations.',
   category: 'Voice Satellite',
   subpage: 'Assistant',
   section: 'Wake word and command',

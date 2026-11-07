@@ -14023,8 +14023,8 @@ class UiStringsEn extends UiStrings {
   String get settingVoiceSeamlessWakeTitle => 'Talk right after the wake word';
 
   @override
-  String get settingVoiceSeamlessWakeDescription =>
-      'Skip the wake sound and keep what you say right after the wake word.';
+  String get settingVoiceSeamlessWakeAssistDescription =>
+      'Skip the wake sound and keep what you say right after the wake word. Only for Assist pipelines, not realtime conversations.';
 
   @override
   String get settingVoiceFollowupDelayTitle => 'Follow-up delay';

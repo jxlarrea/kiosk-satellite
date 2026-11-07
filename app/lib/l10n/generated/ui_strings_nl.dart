@@ -14181,8 +14181,8 @@ class UiStringsNl extends UiStrings {
   String get settingVoiceSeamlessWakeTitle => 'Praat direct na het wekwoord';
 
   @override
-  String get settingVoiceSeamlessWakeDescription =>
-      'Sla het wekgeluid over en neem op wat je direct na het wekwoord zegt.';
+  String get settingVoiceSeamlessWakeAssistDescription =>
+      'Sla het wekgeluid over en neem op wat je direct na het wekwoord zegt. Alleen voor Assist-pijplijnen, niet voor realtime gesprekken.';
 
   @override
   String get settingVoiceFollowupDelayTitle => 'Follow-upvertraging';

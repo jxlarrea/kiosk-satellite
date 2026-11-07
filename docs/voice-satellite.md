@@ -63,7 +63,7 @@ When Home Assistant runs the integration, onboarding offers the same migration i
 | Voice Satellite | Mute microphone | Stops listening for the wake word. |
 | | Keep listening in the background | Hears the wake word while another app is in front and comes back on a detection. **Return to the previous app** goes back when the turn ends. |
 | Assistant | Assistant 1 and 2, Finished speaking detection | Home Assistant's selects: the pipeline that answers each wake word and how long a pause ends a command. Every validated realtime provider is one more choice. See [Realtime conversations](#realtime-conversations). |
-| | Talk right after the wake word | Skips the wake sound and keeps what you say right after the wake word. |
+| | Talk right after the wake word | Skips the wake sound and keeps what you say right after the wake word. Only for Assist pipelines, not realtime conversations. |
 | | Follow-up delay, Chime before a follow-up | A pause and a chime before listening for the answer to a question. |
 | | Play sounds on, Play as | Where answers and chimes play. See [below](#play-sounds-on-a-media-player). |
 | Realtime | Providers | A row per provider with its status. **Configure** opens its API key, model, voice and endpoint, plus **Reasoning effort** for OpenAI and Gemini, xAI's **Web Search** and **X Search** switches and Gemini's **Google Search** and **Ignore talk not meant for it** switches, and **Save & Validate** stores them once the provider connects. **Clear** removes them. |

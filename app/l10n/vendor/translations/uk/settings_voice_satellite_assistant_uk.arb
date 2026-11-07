@@ -10,7 +10,7 @@
   "voiceThisKiosk": "Цей кіоск",
   "voiceSelectFailed": "Не вдалося змінити це в Home Assistant.",
   "settingVoiceSeamlessWakeTitle": "Говорити одразу після слова активації",
-  "settingVoiceSeamlessWakeDescription": "Пропускає звук активації та зберігає те, що ви кажете одразу після слова активації.",
+  "settingVoiceSeamlessWakeAssistDescription": "Пропускає звук активації та зберігає те, що ви кажете одразу після слова активації. Лише для конвеєрів Assist, не для розмов у реальному часі.",
   "settingVoiceFollowupDelayTitle": "Затримка перед уточненням",
   "settingVoiceFollowupDelayDescription": "Пауза перед тим, як слухати відповідь на запитання.",
   "settingVoiceFollowupChimeTitle": "Звук перед уточненням",

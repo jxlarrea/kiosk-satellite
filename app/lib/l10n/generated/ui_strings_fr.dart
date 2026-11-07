@@ -14292,8 +14292,8 @@ class UiStringsFr extends UiStrings {
       'Parler juste après le mot de réveil';
 
   @override
-  String get settingVoiceSeamlessWakeDescription =>
-      'Ignore le son de réveil et garde ce que vous dites juste après le mot de réveil.';
+  String get settingVoiceSeamlessWakeAssistDescription =>
+      'Ignore le son de réveil et garde ce que vous dites juste après le mot de réveil. Uniquement pour les pipelines Assist, pas pour les conversations en temps réel.';
 
   @override
   String get settingVoiceFollowupDelayTitle => 'Délai avant le suivi';

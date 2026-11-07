@@ -29015,5 +29015,11 @@
     "translation": "fc2b98ec3533806d823e8505baa51adef1a6fa353499c6f73605a3a4b922018b",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingVoiceSeamlessWakeAssistDescription": {
+    "source": "91000cb81b88692ca329366bd66615e5844405e9239e135917176b6d86c42c6c",
+    "translation": "37b9ced8d6e2ae2a3142460ab5799fcc4fbbc196c1fc9214aa5cd6cb1fe3a129",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

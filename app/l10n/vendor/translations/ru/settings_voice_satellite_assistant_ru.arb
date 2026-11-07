@@ -10,7 +10,7 @@
   "voiceThisKiosk": "Этот киоск",
   "voiceSelectFailed": "Не удалось изменить это в Home Assistant.",
   "settingVoiceSeamlessWakeTitle": "Говорить сразу после слова пробуждения",
-  "settingVoiceSeamlessWakeDescription": "Пропускать звук пробуждения и ловить сказанное сразу после слова пробуждения.",
+  "settingVoiceSeamlessWakeAssistDescription": "Пропускать звук пробуждения и ловить сказанное сразу после слова пробуждения. Только для конвейеров Assist, не для разговоров в реальном времени.",
   "settingVoiceFollowupDelayTitle": "Задержка уточнения",
   "settingVoiceFollowupDelayDescription": "Пауза перед слушанием ответа на вопрос.",
   "settingVoiceFollowupChimeTitle": "Сигнал перед уточнением",

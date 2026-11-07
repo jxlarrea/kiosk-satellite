@@ -24108,5 +24108,10 @@
     "source": "3731ba7c62c6ca0b5980a0d081f979bf9add2d9f002616fc03e15ef9247cd16d",
     "translation": "a88b00f388a563fb6dba76558c9662a6ba29b5b318ffdc5e43475284cedc02d3",
     "author": "Xavier Larrea"
+  },
+  "settingVoiceSeamlessWakeAssistDescription": {
+    "source": "91000cb81b88692ca329366bd66615e5844405e9239e135917176b6d86c42c6c",
+    "translation": "d30de0be119868d2f8f1ffea320362e1dfb82bd9dec3807e2b90f1283e27d89a",
+    "author": "Xavier Larrea"
   }
 }
