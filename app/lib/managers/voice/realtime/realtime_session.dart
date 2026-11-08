@@ -114,8 +114,13 @@ class RealtimeSession {
   final DateTime Function() _now;
   final Duration tick;
 
-  /// The stretch of the silence the bar counts down over.
+  /// The stretch of the silence the bar counts down over, or all of it
+  /// when End after silence is shorter.
   static const countdown = Duration(seconds: 5);
+
+  /// The shortest wait for the first words after the wake word. End after
+  /// silence can be 2 seconds, too short to start talking after the chime.
+  static const firstWordsWait = Duration(seconds: 5);
 
   /// The self-heal in the wake word manager gives a turn ten minutes.
   static const maxLength = Duration(minutes: 9);
@@ -191,6 +196,9 @@ class RealtimeSession {
   DateTime _started = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _activity = DateTime.fromMillisecondsSinceEpoch(0);
   bool _userSpeaking = false;
+
+  /// Whether the user has spoken in this conversation yet.
+  bool _heardUser = false;
   bool _responding = false;
   bool _awaiting = false;
 
@@ -794,6 +802,7 @@ class RealtimeSession {
         // the room or the answer's echo for speech does not cut it.
         if (_goodbyeDone) return;
         _userSpeaking = true;
+        _heardUser = true;
         _touch();
         final afterAnswer = !_playing && !_responding && _inAnswerTail(audioMs);
         if (_clientTurns && (_playing || _responding || afterAnswer)) {
@@ -1170,7 +1179,8 @@ class RealtimeSession {
       onCountdown(1);
       return;
     }
-    final idle = Duration(seconds: math.max(3, options().idleSeconds));
+    var idle = Duration(seconds: math.max(2, options().idleSeconds));
+    if (!_heardUser && idle < firstWordsWait) idle = firstWordsWait;
     final silent = now.difference(_activity);
     final left = idle - silent;
     if (left <= Duration.zero) {
@@ -1178,9 +1188,8 @@ class RealtimeSession {
       unawaited(_end(gen, sound: 'done'));
       return;
     }
-    onCountdown(
-      left >= countdown ? 1 : left.inMilliseconds / countdown.inMilliseconds,
-    );
+    final span = idle < countdown ? idle : countdown;
+    onCountdown(left >= span ? 1 : left.inMilliseconds / span.inMilliseconds);
   }
 
   /// Asks the player where it is, now and then, to correct the estimate.
@@ -1271,6 +1280,7 @@ class RealtimeSession {
   }
 
   void _reset() {
+    _heardUser = false;
     _opening = '';
     _onOpened = null;
     _chimed = Future<void>.value();

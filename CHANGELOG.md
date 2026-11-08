@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **End after silence goes down to 2 seconds.** Settings > Voice Satellite > Realtime > End after silence used to start at 5 seconds. Under 5 seconds the bar counts down over the whole wait. The first words after the wake word still get 5 seconds.
+
 ## v2026.11.13 - 2026-11-08
 
 ### Added

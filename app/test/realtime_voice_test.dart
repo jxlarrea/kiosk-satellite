@@ -2922,6 +2922,43 @@ void main() {
       });
     });
 
+    test('a short silence waits 5 seconds for the first words', () {
+      fakeAsync((time) {
+        final h = _Harness(
+          time,
+          options: const RealtimeOptions(idleSeconds: 2),
+        );
+        h.wakeAndConnect();
+        time.elapse(const Duration(seconds: 3));
+        expect(h.session.busy, isTrue);
+        expect(h.countdown.last, lessThan(1));
+        time.elapse(const Duration(seconds: 3));
+        expect(h.session.busy, isFalse);
+      });
+    });
+
+    test('a short silence ends 2 seconds after the answer', () {
+      fakeAsync((time) {
+        final h = _Harness(
+          time,
+          options: const RealtimeOptions(idleSeconds: 2),
+        );
+        h.wakeAndConnect();
+        h.backend
+          ..emit(const RealtimeSpeechStarted())
+          ..emit(const RealtimeSpeechStopped());
+        h.answer('a1');
+        h.backend.emit(const RealtimeResponseDone());
+        h.player.frames = 24000;
+        time.elapse(const Duration(milliseconds: 1500));
+        expect(h.session.busy, isTrue);
+        // The bar counts down over the whole 2 seconds.
+        expect(h.countdown.last, lessThan(1));
+        time.elapse(const Duration(seconds: 2));
+        expect(h.session.busy, isFalse);
+      });
+    });
+
     test('someone talking holds the end off', () {
       fakeAsync((time) {
         final h = _Harness(

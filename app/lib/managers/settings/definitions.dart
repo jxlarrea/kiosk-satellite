@@ -7609,7 +7609,7 @@ const voiceRealtimeIdleSeconds = SettingDef<num>(
   category: 'Voice Satellite',
   subpage: 'Realtime',
   section: 'Conversation',
-  min: 5,
+  min: 2,
   max: 60,
   step: 1,
   unit: 's',
