@@ -8,6 +8,7 @@ import '../../core/events.dart';
 import '../../l10n/messages.dart';
 import '../../managers/alarms/alarm_manager.dart';
 import '../../managers/browser/visibility_mask_script.dart';
+import '../../managers/camera/models.dart';
 import '../../managers/device/screen_capture.dart';
 import '../../managers/navigation/compass_layout.dart';
 import '../../managers/settings/definitions.dart' as defs;
@@ -212,7 +213,7 @@ class CompassController {
     'now_playing' =>
       compassKindConfigurable(c, view.kind) &&
           c.sendspin.nowPlaying.value != null,
-    'camera' => c.camera.config.views.any((v) => v.id == view.id),
+    'camera' => compassCameraViews(c).any((v) => v.id == view.id),
     'app_launcher' =>
       compassKindConfigurable(c, view.kind) &&
           (c.kiosk.locked ? c.launcher.kioskApps : c.launcher.apps).isNotEmpty,
@@ -609,12 +610,19 @@ bool compassKindConfigurable(AppContainer c, String kind) => switch (kind) {
   'now_playing' =>
     c.settings.get(defs.sendspinPlayerActive) &&
         c.settings.get(defs.sendspinFullscreen),
-  'camera' => c.camera.config.views.isNotEmpty,
+  'camera' => compassCameraViews(c).isNotEmpty,
   'app_launcher' =>
     c.settings.get(defs.launcherEnabled) && c.launcher.apps.isNotEmpty,
   'intercom' => c.intercom.enabled,
   _ => false,
 };
+
+/// The camera views a layout can show: the ones with cameras in them. An
+/// empty view shows nothing, so the kiosk menu leaves it out too.
+List<CameraViewConfig> compassCameraViews(AppContainer c) => [
+  for (final v in c.camera.config.views)
+    if (v.cameraIds.isNotEmpty) v,
+];
 
 /// The glyph a view is known by, the one the drawer and the settings use.
 IconData compassViewIcon(CompassView view) => switch (view.kind) {

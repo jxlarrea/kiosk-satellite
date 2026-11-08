@@ -797,9 +797,9 @@ class _CompassViewDialogState extends State<_CompassViewDialog> {
       : '';
   late String _camera = widget.replacing?.kind == 'camera'
       ? widget.replacing!.id
-      : c.camera.config.defaultView?.id ??
-            c.camera.config.views.firstOrNull?.id ??
-            '';
+      : (compassCameraViews(c).where((v) => v.isDefault).firstOrNull?.id ??
+            compassCameraViews(c).firstOrNull?.id ??
+            '');
 
   bool _taken(String kind) =>
       kind != widget.replacing?.kind && widget.layout.holds(CompassView(kind));
@@ -885,7 +885,7 @@ class _CompassViewDialogState extends State<_CompassViewDialog> {
           ),
         );
       }
-      final views = c.camera.config.views;
+      final views = compassCameraViews(c);
       if (kind == 'camera' && _kind == 'camera' && views.length > 1) {
         rows.add(
           Padding(

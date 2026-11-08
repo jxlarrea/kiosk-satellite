@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -230,5 +232,59 @@ void main() {
     await tester.tap(find.text('Compass'));
     await tester.pump();
     expect(container.settings.get(defs.navStyle), 'compass');
+  });
+
+  group('camera views', () {
+    Future<AppContainer> withCameras(List<Map<String, Object?>> views) async {
+      SharedPreferences.setMockInitialValues({
+        'ks.camera.config': jsonEncode({
+          'version': 1,
+          'servers': [
+            {'id': 's1', 'name': 'Go2RTC', 'baseUrl': 'http://go2rtc.local'},
+          ],
+          'cameras': [
+            {
+              'id': 'cam1',
+              'name': 'Door',
+              'kind': 'go2rtc',
+              'serverId': 's1',
+              'streamName': 'door',
+            },
+          ],
+          'views': views,
+        }),
+      });
+      final container = AppContainer();
+      await container.settings.init();
+      await container.camera.init();
+      addTearDown(() async {
+        await container.camera.dispose();
+        await container.settings.dispose();
+        await container.bus.dispose();
+        await container.log.dispose();
+      });
+      return container;
+    }
+
+    test('only views with cameras can be placed', () async {
+      final container = await withCameras([
+        {'id': 'default', 'name': 'Default', 'cameraIds': <String>[]},
+        {
+          'id': 'door',
+          'name': 'Door',
+          'cameraIds': ['cam1'],
+        },
+      ]);
+      expect([for (final v in compassCameraViews(container)) v.id], ['door']);
+      expect(compassKindConfigurable(container, 'camera'), isTrue);
+    });
+
+    test('an empty camera view leaves the kind unavailable', () async {
+      final container = await withCameras([
+        {'id': 'default', 'name': 'Default', 'cameraIds': <String>[]},
+      ]);
+      expect(compassCameraViews(container), isEmpty);
+      expect(compassKindConfigurable(container, 'camera'), isFalse);
+    });
   });
 }

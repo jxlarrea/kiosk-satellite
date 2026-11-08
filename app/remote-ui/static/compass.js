@@ -95,13 +95,14 @@ function holds(l, kind) {
 // ── Names ────────────────────────────────────────────────────────────
 
 // The camera views, asked of the kiosk once: the stored configuration
-// carries credentials, so the settings list only says it is set.
+// carries credentials, so the settings list only says it is set. Only views
+// with cameras count, as in the kiosk menu: an empty one shows nothing.
 let cameraList = null;
 let cameraLoad = null;
 function loadCameraViews() {
   cameraLoad ||= cmd('cameraGetConfig').then((r) => {
     const views = r?.ok && Array.isArray(r.data?.views) ? r.data.views : [];
-    cameraList = views.filter((v) => v && v.id);
+    cameraList = views.filter((v) => v && v.id && Array.isArray(v.cameraIds) && v.cameraIds.length > 0);
     return cameraList;
   }).catch(() => { cameraList = []; return cameraList; }).finally(() => { cameraLoad = null; });
   return cameraLoad;
@@ -378,7 +379,7 @@ function pickView({ title, confirm, layout, replacing = null }) {
     let path = replacing?.kind === 'dashboard' ? replacing.path : '';
     const views = cameraViews();
     let camera = replacing?.kind === 'camera' ? replacing.id
-      : (views.find((v) => v.id === 'default')?.id || views[0]?.id || '');
+      : (views.find((v) => v.isDefault)?.id || views[0]?.id || '');
     const done = (value) => { shell.close(); resolve(value); };
     const shell = modalShell({ title, width: 520, onDismiss: () => done(null) });
     const list = document.createElement('div');
