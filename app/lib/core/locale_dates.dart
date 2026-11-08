@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/generated/language_codes.dart';
+
 /// Locale-aware date strings for every date the app shows (issue #108).
 ///
 /// The clock screensaver and the Immich metadata rows used to compose dates
@@ -14,8 +16,9 @@ import 'package:intl/intl.dart';
 ///
 /// Points every DateFormat and NumberFormat built without a locale at the
 /// app's [language] (a picker tag such as "nl" or "zh-CN"), so dates, day
-/// names and numbers read in the language the interface uses, not the
-/// Android one. Called once settings load and on every language change.
+/// names and numbers read in the language the interface uses, or in the
+/// Android one when the app does not offer it (see [appDateLocale]). Called
+/// once settings load and on every language change.
 ///
 /// The CLDR data for every locale ships compiled into intl. Loading it only
 /// fills its tables, runs synchronously and happens once.
@@ -26,16 +29,24 @@ void applyAppDateLanguage(String language) {
 
 /// The intl locale for the app's [language]. When the Android locale
 /// [device] speaks the same language, its region is kept, so English on a
-/// British device still writes "Sunday 2 August". The language always comes
-/// from the app.
+/// British device still writes "Sunday 2 August". When Android speaks a
+/// language the app does not offer, dates follow Android, so a Czech device
+/// with an English interface still writes "sobota 7. listopadu". Otherwise
+/// the language comes from the app.
 String appDateLocale(String language, String device) {
   final app = Intl.canonicalizedLocale(language);
   final base = app.split('_').first;
   final local = Intl.canonicalizedLocale(device);
-  if (app == base &&
-      local.split('_').first == base &&
-      DateFormat.localeExists(local)) {
+  final localBase = local.split('_').first;
+  if (app == base && localBase == base && DateFormat.localeExists(local)) {
     return local;
+  }
+  final offered = messageLanguageOptions.any(
+    (option) => option.split('-').first == localBase,
+  );
+  if (!offered) {
+    if (DateFormat.localeExists(local)) return local;
+    if (DateFormat.localeExists(localBase)) return localBase;
   }
   if (DateFormat.localeExists(app)) return app;
   if (DateFormat.localeExists(base)) return base;

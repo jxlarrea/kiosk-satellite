@@ -121,7 +121,7 @@ Displays a completely black screen while leaving the underlying application runn
 
 ### Clock
 
-Renders a full screen clock with four selectable styles via **Style**: **Digital Clock**, **Flip Clock** (split-flap cards), **Roller Clock** (rolling digits styled after the Lenovo Smart Clock 2) or **Hand Clock** (a dial with hands, ticks and numbers). Dates use the app language set under **Device > User Interface > Language**.
+Renders a full screen clock with four selectable styles via **Style**: **Digital Clock**, **Flip Clock** (split-flap cards), **Roller Clock** (rolling digits styled after the Lenovo Smart Clock 2) or **Hand Clock** (a dial with hands, ticks and numbers). Dates use the app language set under **Device > User Interface > Language**. If the app does not offer the Android language, such as Czech or Italian, dates use the Android language instead.
 
 | Setting | Notes |
 | --- | --- |

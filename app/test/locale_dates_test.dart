@@ -45,6 +45,22 @@ void main() {
       expect(appDateLocale('zh-CN', 'zh_TW'), 'zh_CN');
     });
 
+    test('a device language the app does not offer keeps the dates', () {
+      expect(appDateLocale('en', 'cs_CZ'), 'cs');
+      expect(appDateLocale('en', 'it_IT'), 'it');
+      expect(appDateLocale('de', 'pt_BR'), 'pt_BR');
+      // Chinese is offered, so a Taiwanese device keeps the app language.
+      expect(appDateLocale('en', 'zh_TW'), 'en');
+    });
+
+    test('a Czech device with an English interface writes Czech dates', () {
+      applyAppDateLanguage('en');
+      expect(
+        Intl.withLocale(appDateLocale('en', 'cs_CZ'), () => fullDate(sunday)),
+        'neděle 2. srpna',
+      );
+    });
+
     test('an unknown device locale falls back to the app language', () {
       expect(appDateLocale('fr', 'fr_XX'), 'fr');
       expect(appDateLocale('xx', 'en_US'), 'en_US');

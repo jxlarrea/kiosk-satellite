@@ -11,12 +11,17 @@ internal object NativeMessages {
     /**
      * The kiosk language for dates and numbers. When the device speaks the same
      * language its region is kept, so English on a British device still writes
-     * 18/09/2026. The language always comes from the app, as in Flutter.
+     * 18/09/2026. When the device speaks a language the app does not offer,
+     * dates follow the device, so Czech stays Czech under an English interface.
+     * Otherwise the language comes from the app, as in Flutter.
      */
     fun formatLocale(context: Context): Locale {
         val app = Locale.forLanguageTag(language(context))
         val device = context.resources.configuration.locales[0]
-        return if (app.country.isEmpty() && device.language == app.language) device else app
+        if (app.country.isEmpty() && device.language == app.language) return device
+        val offered = context.resources.getStringArray(R.array.ks_message_languages)
+            .any { Locale.forLanguageTag(it).language == device.language }
+        return if (offered) app else device
     }
 
     fun withLocale(context: Context, locale: Locale): Context {
