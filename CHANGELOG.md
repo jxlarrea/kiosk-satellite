@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.11.13 - 2026-11-08
+
+### Fixed
+- **Dates follow Android when the app does not offer its language (#1341, #1317).** Since 2026.11.11 dates and numbers use the app language, so a Czech or Italian Android with the app in English showed "Saturday, November 7" on the screensaver. If the app does not offer the Android language, dates, day names and numbers now use the Android one, as they did before 2026.11.11. An Android language the app offers still gives way to the app language.
+
 ## v2026.11.12 - 2026-11-07
 
 ### Added
@@ -16,7 +21,6 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Wake word arbitration works after a boot without Wi-Fi.** If the app started before Wi-Fi had an address, as an Echo Dot can after a reboot, the first arbitration message failed and closed UDP port 2330 until the app restarted. The kiosk still answered its wake word, but if it and another kiosk both heard it, both could answer. The port now opens again 5 seconds after it closes, and the other kiosks hear from this one again.
 - **No more crash loop when an old camera keeps failing to open.** On Android 11 and older, a camera that runs through Android's HAL1 compatibility layer, such as on Echo Shows with Android 7.1, leaves two threads running after every failed open until the app restarts. A camera that kept failing ran the app out of threads in under an hour, and the crash came back after every restart. The app is now restarted at 400 leaked camera threads, well before that point, with the kiosk brought back to the front. On these devices CameraX also retries a failed open for 2 seconds instead of 10. The restart is noted in the crash log as a camera watchdog restart.
 - **A tap on an overlay over the screensaver no longer wakes it (#1340).** Taps on a plugin overlay drawn over the screensaver, such as the Live Activities cards and their buttons, also dismissed the screensaver and the overlay with it. The same happened with the docked Voice Satellite bubble, including a double tap to end the conversation, a full screen voice overlay, notification cards, the intercom call card and announcements. A tap on any of these now stays with it and the screensaver stays up. A tap anywhere else still wakes it.
-- **Dates follow Android when the app does not offer its language (#1341, #1317).** Since 2026.11.11 dates and numbers use the app language, so a Czech or Italian Android with the app in English showed "Saturday, November 7" on the screensaver. If the app does not offer the Android language, dates, day names and numbers now use the Android one, as they did before 2026.11.11. An Android language the app offers still gives way to the app language.
 - **The calendar editing settings follow the app language.** Settings > Calendar > Allow adding and editing events and Allow deleting events showed their labels and hints in English in every language, on the kiosk and in remote administration.
 - **No reply to the echo of a realtime answer.** Right after an answer stopped playing, its echo could still reach the microphone. An OpenAI conversation could take that for the user and reply, often with something nobody asked for. Speech that starts in that moment now has to be as loud as talking over an answer. xAI and Gemini conversations already worked this way. The app log now shows where each stretch of speech starts and stops against the end of the last answer, and when the provider heard no words.
 
