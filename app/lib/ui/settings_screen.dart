@@ -80,6 +80,7 @@ import 'shizuku_settings.dart';
 import '../managers/wake_word/permission_descriptions.dart';
 import 'wake_word_tester.dart';
 import 'wake_activations.dart';
+import 'compass/compass_settings.dart';
 import 'update_helper_settings.dart';
 import 'plugin_directory.dart';
 import 'plugin_settings.dart';
@@ -233,6 +234,8 @@ const _updateDocsUrl =
 // The icon is a Material [IconData], or the path of an SVG asset for a
 // category named after a product with a mark of its own.
 const _categories = <(String, String, Object, String)>[
+  // How the kiosk is moved around: the drawer menu or Compass.
+  ('Navigation', 'Navigation', Icons.explore_outlined, 'Classic or Compass'),
   (
     'Home Assistant',
     'Home Assistant',
@@ -351,6 +354,7 @@ const _categories = <(String, String, Object, String)>[
 /// then choose among a few pages, instead of reading the whole list. The
 /// icon colors keep cycling across groups, so neighbors never share one.
 const _railGroups = <String, String>{
+  'Navigation': 'Kiosk Satellite',
   'Home Assistant': 'Home Assistant',
   'Screen & Audio': 'Display',
   'Sendspin': 'Media & Cameras',
@@ -492,7 +496,9 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _selected = 0;
+  // Opens on Home Assistant, the page most visits are for, though
+  // Navigation sits above it in the rail.
+  int _selected = _categories.indexWhere((c) => c.$1 == 'Home Assistant');
 
   /// Search over every pane, One UI style: the field lives with the rail (or
   /// the hub on narrow screens), typing swaps the content for results, and a
@@ -11330,6 +11336,14 @@ class SettingTile extends StatelessWidget {
         trailing: const Icon(Icons.chevron_right),
         onTap: () => openSettingRow(context, c, target),
       );
+    }
+    // Settings > Navigation: the style cards and the Compass layout map,
+    // mirrored on the remote (compass.js).
+    if (def.key == navStyle.key) {
+      return CompassStyleRow(container: c, onChanged: onChanged);
+    }
+    if (def.key == navCompassLayout.key) {
+      return CompassLayoutEditor(container: c, onChanged: onChanged);
     }
     // The kiosk menu's rows (issue #1194): picked and arranged in the
     // shared picker, never typed as JSON.

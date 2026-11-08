@@ -2071,3 +2071,73 @@
   color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
 .alarm-music-choose svg { flex: none; color: var(--muted); }
 .alarm-music-choose span { flex: 1; }
+
+/* Settings > Navigation (compass.js): the style cards, the Compass layout
+   map and its view dialog, mirroring compass_settings.dart. */
+.row.compass-style-row, .row.compass-layout-row { display: block; }
+.compass-styles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.compass-choice { display: flex; align-items: center; gap: 14px; text-align: left; padding: 13px;
+  border-radius: 14px; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  font: inherit; cursor: pointer; }
+.compass-choice.on { border: 2px solid var(--primary); padding: 12px; background: var(--primary-soft); }
+.compass-choice-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.compass-choice-text .name { font-size: 15px; font-weight: 600; }
+.compass-choice-text .desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.compass-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--outline);
+  box-sizing: border-box; flex: none; }
+.compass-choice.on .compass-radio { border-color: var(--primary);
+  background: radial-gradient(circle, var(--primary) 0 4px, transparent 4.5px); }
+.compass-pic { width: 84px; height: 54px; flex: none; border-radius: 8px; background: var(--surface-2);
+  display: grid; gap: 4px; padding: 7px; box-sizing: border-box; }
+.compass-pic.classic { grid-template-columns: 26px 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.compass-pic.classic i { background: var(--surface-high); border-radius: 3px; }
+.compass-pic.classic i.drawer { grid-row: 1 / span 2; background: var(--surface); }
+.compass-pic.compass { grid-template-columns: repeat(3, 16px); grid-template-rows: repeat(3, 10px);
+  justify-content: center; align-content: center; }
+.compass-pic.compass i { background: var(--surface-high); border-radius: 2px; }
+.compass-pic.compass i:nth-child(1) { grid-column: 2; grid-row: 1; }
+.compass-pic.compass i:nth-child(2) { grid-column: 1; grid-row: 2; }
+.compass-pic.compass i:nth-child(3) { grid-column: 2; grid-row: 2; background: var(--primary-fill); }
+.compass-pic.compass i:nth-child(4) { grid-column: 3; grid-row: 2; }
+.compass-pic.compass i:nth-child(5) { grid-column: 2; grid-row: 3; }
+.row.compass-layout-row { padding-top: 18px; padding-bottom: 18px; }
+.compass-hint { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.45; }
+.compass-map { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 112px));
+  grid-template-rows: repeat(5, 54px); gap: 10px; justify-content: center; }
+.compass-line { pointer-events: none; background: var(--border); }
+.compass-line.across { grid-column: 1 / -1; grid-row: 3; align-self: center; height: 2px;
+  margin-inline: calc((100% - 40px) / 10); }
+.compass-line.down { grid-column: 3; grid-row: 1 / -1; justify-self: center; width: 2px; margin-block: 27px; }
+.compass-tile { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; min-width: 0; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-high);
+  color: var(--text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 0 4px; }
+.compass-tile span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compass-tile .compass-icon { color: var(--muted); display: flex; }
+.compass-tile.center { background: var(--primary-container); border: 2px solid var(--primary); }
+.compass-tile.center .compass-icon { color: var(--on-primary-container); }
+.compass-tile.add { background: var(--surface); border: 1.5px dashed var(--outline); color: var(--muted); }
+.compass-tile.picked { box-shadow: 0 0 0 3px var(--warn); }
+.compass-tile.unset { opacity: .5; }
+.compass-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-height: 44px;
+  border-top: 1px solid var(--divider); margin-top: 14px; padding-top: 14px; }
+/* Nothing picked: no rule and no room left for the bar. */
+.compass-bar:empty { display: none; }
+.compass-bar-info { flex: 1 1 160px; min-width: 0; }
+.compass-bar-info .name { font-size: 15px; font-weight: 500; }
+.compass-bar-info .desc { font-size: 13px; color: var(--muted); }
+.compass-remove { color: var(--error); }
+.compass-kinds { display: flex; flex-direction: column; }
+.compass-kind { display: flex; align-items: center; gap: 14px; padding: 10px 4px; cursor: pointer; border-radius: 10px; }
+.compass-kind.on { background: var(--primary-soft); }
+.compass-kind.off { opacity: .5; cursor: default; }
+.compass-kind .compass-icon { color: var(--muted); display: flex; padding-left: 8px; }
+.compass-kind-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.compass-kind-text .name { font-size: 15px; }
+.compass-kind-text .desc { font-size: 12.5px; color: var(--muted); }
+.compass-kind-extra { padding: 4px 4px 12px 46px; }
+.compass-kind-extra .dp-field, .compass-kind-extra select { width: 100%; }
+@media (max-width: 640px) {
+  .compass-styles { grid-template-columns: minmax(0, 1fr); }
+  .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; grid-template-rows: repeat(5, 46px); }
+  .compass-tile { font-size: 10.5px; border-radius: 9px; }
+}

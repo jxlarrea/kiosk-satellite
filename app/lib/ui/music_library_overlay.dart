@@ -267,6 +267,10 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
     unawaited(
       source.follow(c.musicLibrary.pick.value).then((_) {
         if (!mounted) return;
+        // Another speaker's tree: what the last one showed is not this.
+        c.musicLibrary.shownPages.removeWhere(
+          (page, _) => page.startsWith('${source.key}:'),
+        );
         setState(() {
           _stack.clear();
           _futures.clear();
@@ -1787,10 +1791,20 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
     Widget Function(Object data) build,
   ) {
     final s = l10n(context);
-    final future = _remember('${_source?.key}:$key', load);
+    final page = '${_source?.key}:$key';
+    final shown = c.musicLibrary.shownPages;
+    final future = _remember(
+      page,
+      () => load().then((data) {
+        shown[page] = data;
+        return data;
+      }),
+    );
     return FutureBuilder<Object>(
       key: ValueKey(key),
       future: future,
+      // What this page showed last time, until the fresh copy lands.
+      initialData: shown[page],
       builder: (context, snap) {
         if (snap.hasError) return _failure(key, snap.error);
         if (!snap.hasData) {

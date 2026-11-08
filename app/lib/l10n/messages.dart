@@ -432,6 +432,8 @@ String settingsPageText(
   String english,
 ) => switch (category) {
   'About' => supportText(context, english),
+  // Its groups are named in the settings rail's own catalog.
+  'Navigation' => navigationText(context, english),
   'Voice Satellite' => voiceText(context, english),
   'ESPHome' => esphomeText(context, english),
   'Device' => deviceText(context, english),

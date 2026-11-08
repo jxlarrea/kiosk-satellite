@@ -13,6 +13,7 @@ import '../../l10n/generated/setting_option_ids.dart';
 
 import '../btproxy/node_name.dart';
 import '../music_library/music_pick.dart';
+import '../navigation/compass_layout.dart';
 
 enum SettingType { string, boolean, number, select, password }
 
@@ -13191,6 +13192,101 @@ const uiDrawerItems = SettingDef<String>(
   section: 'User Interface',
 );
 
+// Settings > Navigation: how the kiosk is moved around. Classic is the
+// drawer menu and the gestures it came with, Compass lays views out in a
+// cross and swipes between them, with a Menu view in place of the drawer.
+const navStyle = SettingDef<String>(
+  key: 'nav.style',
+  type: SettingType.select,
+  defaultValue: 'classic',
+  options: ['classic', 'compass'],
+  optionLabels: {'classic': 'Classic', 'compass': 'Compass'},
+  title: 'Navigation style',
+  description:
+      'Classic keeps the drawer menu, pull to refresh and the dashboard '
+      'carousel. Compass swipes between views laid out in a cross.',
+  category: 'Navigation',
+  section: 'Navigation style',
+);
+
+/// The views around the center (see managers/navigation/compass_layout.dart
+/// for the stored shape). Edited in the layout editor on both surfaces,
+/// never typed. Empty is Home Assistant with the Menu on its left.
+const navCompassLayout = SettingDef<String>(
+  key: 'nav.compass_layout',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Compass layout',
+  description: 'Up to two views on each side, one of each kind.',
+  category: 'Navigation',
+  section: 'Compass layout',
+  dependsOn: 'nav.style',
+  dependsOnValue: 'compass',
+  validator: validateCompassLayout,
+  normalizer: normalizeCompassLayout,
+);
+
+const navCompassAnimation = SettingDef<String>(
+  key: 'nav.compass_animation',
+  type: SettingType.select,
+  defaultValue: 'zoom',
+  options: ['zoom', 'slide'],
+  optionLabels: {'zoom': 'Zoom', 'slide': 'Slide'},
+  title: 'Swipe animation',
+  description:
+      'Zoom out to show the views around, or slide straight across.',
+  category: 'Navigation',
+  section: 'Compass options',
+  dependsOn: 'nav.style',
+  dependsOnValue: 'compass',
+);
+
+const navCompassPosition = SettingDef<bool>(
+  key: 'nav.compass_position',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show position while swiping',
+  description: 'A small map of where you are.',
+  category: 'Navigation',
+  section: 'Compass options',
+  dependsOn: 'nav.style',
+  dependsOnValue: 'compass',
+);
+
+/// Back to the center view after this long without a touch. 0 stays put.
+const navCompassReturnMinutes = SettingDef<num>(
+  key: 'nav.compass_return_minutes',
+  type: SettingType.number,
+  defaultValue: 5,
+  min: 0,
+  max: 30,
+  step: 1,
+  unit: 'min',
+  title: 'Return to center',
+  description:
+      'Go back to the center view after no touch for this long. Set to 0 '
+      'to stay on the view.',
+  category: 'Navigation',
+  section: 'Compass options',
+  dependsOn: 'nav.style',
+  dependsOnValue: 'compass',
+);
+
+// The Menu view draws the drawer menu's own list, so its items are picked
+// there.
+const navCompassMenuItems = SettingDef<String>(
+  key: 'nav.compass_menu_items',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Menu items',
+  description: 'What the Menu view shows. Shared with the drawer menu.',
+  category: 'Navigation',
+  section: 'Compass options',
+  dependsOn: 'nav.style',
+  dependsOnValue: 'compass',
+  linksTo: 'ui.drawer_items',
+);
+
 /// Every source Show system toast notifications can turn off, in the
 /// order both pickers list them.
 const toastSources = [
@@ -13646,6 +13742,12 @@ const ledSettings = <SettingDef<Object>>[
 ];
 
 const List<SettingDef<Object>> allSettings = [
+  navStyle,
+  navCompassLayout,
+  navCompassAnimation,
+  navCompassPosition,
+  navCompassReturnMinutes,
+  navCompassMenuItems,
   startUrl,
   secureProxy,
   autoReloadOnError,

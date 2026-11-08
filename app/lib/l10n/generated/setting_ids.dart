@@ -2620,4 +2620,28 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingIntercomVideoQualityTitle",
     "description": "settingIntercomVideoQualityDescription",
   },
+  "nav.style": {
+    "title": "settingNavStyleTitle",
+    "description": "settingNavStyleDescription",
+  },
+  "nav.compass_layout": {
+    "title": "settingNavCompassLayoutTitle",
+    "description": "settingNavCompassLayoutDescription",
+  },
+  "nav.compass_animation": {
+    "title": "settingNavCompassAnimationTitle",
+    "description": "settingNavCompassAnimationDescription",
+  },
+  "nav.compass_position": {
+    "title": "settingNavCompassPositionTitle",
+    "description": "settingNavCompassPositionDescription",
+  },
+  "nav.compass_return_minutes": {
+    "title": "settingNavCompassReturnMinutesTitle",
+    "description": "settingNavCompassReturnMinutesDescription",
+  },
+  "nav.compass_menu_items": {
+    "title": "settingNavCompassMenuItemsTitle",
+    "description": "settingNavCompassMenuItemsDescription",
+  },
 };

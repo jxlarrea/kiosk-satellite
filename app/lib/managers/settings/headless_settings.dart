@@ -28,6 +28,8 @@ class HeadlessSettings {
 
   /// Whole pages with nothing that works without a screen.
   static const _hiddenCategories = {
+    // No screen to swipe across or menu to open.
+    'Navigation',
     'Browser',
     'Web Content',
     'Screensaver',

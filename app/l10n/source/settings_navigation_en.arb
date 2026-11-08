@@ -1,0 +1,773 @@
+{
+  "@@locale": "en",
+  "settingsGroupKioskSatellite": "Kiosk Satellite",
+  "@settingsGroupKioskSatellite": {
+    "context": "Settings:Menu",
+    "description": "Heading above a group of Settings menu entries. The product name, keep it as is.",
+    "x-locations": {
+      "device": [
+        "Settings > menu"
+      ],
+      "remoteAdmin": [
+        "Sidebar menu"
+      ]
+    }
+  },
+  "settingsMenuNavigation": "Navigation",
+  "@settingsMenuNavigation": {
+    "context": "Settings:Menu",
+    "description": "Settings menu entry for how the kiosk is moved around.",
+    "x-locations": {
+      "device": [
+        "Settings > menu"
+      ],
+      "remoteAdmin": [
+        "Sidebar menu"
+      ]
+    }
+  },
+  "settingsMenuNavigationSummary": "Classic or Compass",
+  "@settingsMenuNavigationSummary": {
+    "context": "Settings:Menu",
+    "description": "Summary under the Navigation entry. Classic and Compass are the two navigation styles.",
+    "x-locations": {
+      "device": [
+        "Settings > menu"
+      ],
+      "remoteAdmin": [
+        "Sidebar menu"
+      ]
+    }
+  },
+  "navigationStyleSection": "Navigation style",
+  "@navigationStyleSection": {
+    "context": "Settings:Navigation",
+    "description": "Heading of the group that picks the navigation style.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "navigationLayoutSection": "Compass layout",
+  "@navigationLayoutSection": {
+    "context": "Settings:Navigation",
+    "description": "Heading of the group that places views around the center. Compass is the name of the navigation style.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "navigationOptionsSection": "Compass options",
+  "@navigationOptionsSection": {
+    "context": "Settings:Navigation",
+    "description": "Heading of the Compass settings group.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavStyleTitle": "Navigation style",
+  "@settingNavStyleTitle": {
+    "context": "Settings:Navigation",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavStyleDescription": "Classic keeps the drawer menu, pull to refresh and the dashboard carousel. Compass swipes between views laid out in a cross.",
+  "@settingNavStyleDescription": {
+    "context": "Settings:Navigation",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassLayoutTitle": "Compass layout",
+  "@settingNavCompassLayoutTitle": {
+    "context": "Settings:Navigation",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassLayoutDescription": "Up to two views on each side, one of each kind.",
+  "@settingNavCompassLayoutDescription": {
+    "context": "Settings:Navigation",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassAnimationTitle": "Swipe animation",
+  "@settingNavCompassAnimationTitle": {
+    "context": "Settings:Navigation",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassAnimationDescription": "Zoom out to show the views around, or slide straight across.",
+  "@settingNavCompassAnimationDescription": {
+    "context": "Settings:Navigation",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassPositionTitle": "Show position while swiping",
+  "@settingNavCompassPositionTitle": {
+    "context": "Settings:Navigation",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassPositionDescription": "A small map of where you are.",
+  "@settingNavCompassPositionDescription": {
+    "context": "Settings:Navigation",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassReturnMinutesTitle": "Return to center",
+  "@settingNavCompassReturnMinutesTitle": {
+    "context": "Settings:Navigation",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassReturnMinutesDescription": "Go back to the center view after no touch for this long. Set to 0 to stay on the view.",
+  "@settingNavCompassReturnMinutesDescription": {
+    "context": "Settings:Navigation",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassMenuItemsTitle": "Menu items",
+  "@settingNavCompassMenuItemsTitle": {
+    "context": "Settings:Navigation",
+    "description": "Setting label. Opens the Drawer menu items picker.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "settingNavCompassMenuItemsDescription": "What the Menu view shows. Shared with the drawer menu.",
+  "@settingNavCompassMenuItemsDescription": {
+    "context": "Settings:Navigation",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "navigationClassic": "Classic",
+  "@navigationClassic": {
+    "context": "Settings:Navigation",
+    "description": "Navigation style option: the drawer menu.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "navigationCompass": "Compass",
+  "@navigationCompass": {
+    "context": "Settings:Navigation",
+    "description": "Navigation style option and feature name: views laid out in a cross you swipe between.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "navigationZoom": "Zoom",
+  "@navigationZoom": {
+    "context": "Settings:Navigation",
+    "description": "Swipe animation option.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "navigationSlide": "Slide",
+  "@navigationSlide": {
+    "context": "Settings:Navigation",
+    "description": "Swipe animation option.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassClassicHint": "Drawer menu, pull to refresh and the dashboard carousel.",
+  "@compassClassicHint": {
+    "context": "Settings:Navigation",
+    "description": "Description on the Classic choice card.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassCompassHint": "Swipe between views laid out in a cross.",
+  "@compassCompassHint": {
+    "context": "Settings:Navigation",
+    "description": "Description on the Compass choice card.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassLayoutHint": "Up to two views on each side, one of each kind. Tap a view to change it, the center one too.",
+  "@compassLayoutHint": {
+    "context": "Settings:Navigation",
+    "description": "Hint above the layout map.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassOffNote": "Pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off while Compass is on.",
+  "@compassOffNote": {
+    "context": "Settings:Navigation",
+    "description": "Note under the Compass options.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassMenu": "Menu",
+  "@compassMenu": {
+    "context": "Device:Compass",
+    "description": "Name of the view that replaces the drawer menu, at the far end of the left side.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation",
+        "Compass navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassHomeDashboard": "Home Assistant",
+  "@compassHomeDashboard": {
+    "context": "Settings:Navigation",
+    "description": "The dashboard the kiosk starts on, as a view in the layout. The product name, keep it as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation",
+        "Compass navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassAppLauncher": "App Launcher",
+  "@compassAppLauncher": {
+    "context": "Settings:Navigation",
+    "description": "View name.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation",
+        "Compass navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassCenter": "Center",
+  "@compassCenter": {
+    "context": "Settings:Navigation",
+    "description": "Label on the view in the middle of the layout.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassAddTile": "Add",
+  "@compassAddTile": {
+    "context": "Settings:Navigation",
+    "description": "Empty place on the layout map that adds a view.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassAddView": "Add view",
+  "@compassAddView": {
+    "context": "Settings:Navigation",
+    "description": "Row that adds a view to a side.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassMoveIn": "Move in",
+  "@compassMoveIn": {
+    "context": "Settings:Navigation",
+    "description": "Button that moves a view closer to the center.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassMoveOut": "Move out",
+  "@compassMoveOut": {
+    "context": "Settings:Navigation",
+    "description": "Button that moves a view away from the center.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassReplace": "Replace",
+  "@compassReplace": {
+    "context": "Settings:Navigation",
+    "description": "Button that swaps a view for another.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassRemove": "Remove",
+  "@compassRemove": {
+    "context": "Settings:Navigation",
+    "description": "Button that takes a view out of the layout.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassChange": "Change",
+  "@compassChange": {
+    "context": "Settings:Navigation",
+    "description": "Button that picks another center view.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassSideUp": "Up",
+  "@compassSideUp": {
+    "context": "Settings:Navigation",
+    "description": "Side of the layout, above the center.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassSideRight": "Right",
+  "@compassSideRight": {
+    "context": "Settings:Navigation",
+    "description": "Side of the layout, right of the center.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassSideDown": "Down",
+  "@compassSideDown": {
+    "context": "Settings:Navigation",
+    "description": "Side of the layout, below the center.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassSideLeft": "Left",
+  "@compassSideLeft": {
+    "context": "Settings:Navigation",
+    "description": "Side of the layout, left of the center.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassFirstView": "{side}, first view",
+  "@compassFirstView": {
+    "context": "Settings:Navigation",
+    "description": "Where the selected view sits.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    },
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "Right"
+      }
+    }
+  },
+  "compassSecondView": "{side}, second view",
+  "@compassSecondView": {
+    "context": "Settings:Navigation",
+    "description": "Where the selected view sits.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    },
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "Right"
+      }
+    }
+  },
+  "compassAddAbove": "Add a view above",
+  "@compassAddAbove": {
+    "context": "Settings:Navigation",
+    "description": "Dialog title.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassAddBelow": "Add a view below",
+  "@compassAddBelow": {
+    "context": "Settings:Navigation",
+    "description": "Dialog title.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassAddLeft": "Add a view on the left",
+  "@compassAddLeft": {
+    "context": "Settings:Navigation",
+    "description": "Dialog title.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassAddRight": "Add a view on the right",
+  "@compassAddRight": {
+    "context": "Settings:Navigation",
+    "description": "Dialog title.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassChangeCenter": "Change the center view",
+  "@compassChangeCenter": {
+    "context": "Settings:Navigation",
+    "description": "Dialog title.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassReplaceTitle": "Replace {name}",
+  "@compassReplaceTitle": {
+    "context": "Settings:Navigation",
+    "description": "Dialog title.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Calendar"
+      }
+    }
+  },
+  "compassKindDashboard": "Home Assistant dashboard",
+  "@compassKindDashboard": {
+    "context": "Settings:Navigation",
+    "description": "View kind in the add dialog.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassKindDashboardHint": "Any view, Custom Pages and app pages",
+  "@compassKindDashboardHint": {
+    "context": "Settings:Navigation",
+    "description": "Hint under the dashboard choice.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassKindTaken": "Already placed",
+  "@compassKindTaken": {
+    "context": "Settings:Navigation",
+    "description": "Hint under a view kind the layout already holds.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassKindUnavailable": "Not set up on this kiosk",
+  "@compassKindUnavailable": {
+    "context": "Settings:Navigation",
+    "description": "Hint under a view kind with nothing to show yet.",
+    "x-locations": {
+      "device": [
+        "Settings > Navigation"
+      ],
+      "remoteAdmin": [
+        "Navigation"
+      ]
+    }
+  },
+  "compassKioskLocked": "Kiosk locked",
+  "@compassKioskLocked": {
+    "context": "Device:Compass",
+    "description": "Badge in the Menu view header while kiosk mode is on.",
+    "x-locations": {
+      "device": [
+        "Compass navigation"
+      ]
+    }
+  },
+  "compassQuickControls": "Quick controls",
+  "@compassQuickControls": {
+    "context": "Device:Compass",
+    "description": "Heading over the switches and one-tap actions in the Menu view.",
+    "x-locations": {
+      "device": [
+        "Compass navigation > Menu"
+      ]
+    }
+  },
+  "compassOpen": "Open",
+  "@compassOpen": {
+    "context": "Device:Compass",
+    "description": "Heading over the pages the Menu view opens, such as Calendar or Camera View.",
+    "x-locations": {
+      "device": [
+        "Compass navigation > Menu"
+      ]
+    }
+  },
+  "compassStateOn": "On",
+  "@compassStateOn": {
+    "context": "Device:Compass",
+    "description": "State under a switch in the Menu view that is on.",
+    "x-locations": {
+      "device": [
+        "Compass navigation > Menu"
+      ]
+    }
+  },
+  "compassStateOff": "Off",
+  "@compassStateOff": {
+    "context": "Device:Compass",
+    "description": "State under a switch in the Menu view that is off.",
+    "x-locations": {
+      "device": [
+        "Compass navigation > Menu"
+      ]
+    }
+  },
+  "compassHoldMode": "Hold Mode",
+  "@compassHoldMode": {
+    "context": "Device:Compass",
+    "description": "Name of the Hold Mode switch in the Menu view. Use the same term as the drawer menu's Turn On Hold Mode.",
+    "x-locations": {
+      "device": [
+        "Compass navigation > Menu"
+      ]
+    }
+  }
+}

@@ -109,6 +109,13 @@
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
           <span class="nav-text"><span class="nav-title">Overview</span><span class="nav-sub" data-headless-text="Status and quick controls">Screen and quick controls</span></span>
         </button>
+        <div class="nav-group no-headless" role="group" aria-labelledby="navhead-kiosk-satellite">
+          <h2 class="nav-head" id="navhead-kiosk-satellite">Kiosk Satellite</h2>
+          <button data-tab="navigation">
+            <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5z"/></svg></span>
+            <span class="nav-text"><span class="nav-title">Navigation</span><span class="nav-sub">Classic or Compass</span></span>
+          </button>
+        </div>
         <div class="nav-group" role="group" aria-labelledby="navhead-home-assistant">
           <h2 class="nav-head" id="navhead-home-assistant">Home Assistant</h2>
           <button data-tab="homeassistant">
@@ -360,6 +367,7 @@
     <!-- Settings, one tab per category, the same groupings, in the same
          order, as the device's settings rail. -->
     <div class="tab" id="tab-search"></div>
+    <div class="tab" id="tab-navigation"></div>
     <div class="tab" id="tab-browser"></div>
     <div class="tab" id="tab-leds"></div>
     <div class="tab" id="tab-kiosk"></div>

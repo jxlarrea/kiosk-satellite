@@ -10848,6 +10848,200 @@ class UiStringsDe extends UiStrings {
   String get settingsLedEffects => 'Effekte';
 
   @override
+  String get settingsGroupKioskSatellite => 'Kiosk Satellite';
+
+  @override
+  String get settingsMenuNavigation => 'Navigation';
+
+  @override
+  String get settingsMenuNavigationSummary => 'Klassisch oder Compass';
+
+  @override
+  String get navigationStyleSection => 'Navigationsstil';
+
+  @override
+  String get navigationLayoutSection => 'Compass-Layout';
+
+  @override
+  String get navigationOptionsSection => 'Compass-Optionen';
+
+  @override
+  String get settingNavStyleTitle => 'Navigationsstil';
+
+  @override
+  String get settingNavStyleDescription =>
+      'Klassisch behält das Seitenmenü, Zum Aktualisieren herunterziehen und das Dashboard-Karussell. Mit Compass wischen Sie zwischen Ansichten, die in einem Kreuz angeordnet sind.';
+
+  @override
+  String get settingNavCompassLayoutTitle => 'Compass-Layout';
+
+  @override
+  String get settingNavCompassLayoutDescription =>
+      'Bis zu zwei Ansichten pro Seite, jede Art nur einmal.';
+
+  @override
+  String get settingNavCompassAnimationTitle => 'Wischanimation';
+
+  @override
+  String get settingNavCompassAnimationDescription =>
+      'Herauszoomen, um die umliegenden Ansichten zu zeigen, oder direkt hinüberschieben.';
+
+  @override
+  String get settingNavCompassPositionTitle => 'Position beim Wischen anzeigen';
+
+  @override
+  String get settingNavCompassPositionDescription =>
+      'Eine kleine Karte, die zeigt, wo Sie sind.';
+
+  @override
+  String get settingNavCompassReturnMinutesTitle => 'Zur Mitte zurückkehren';
+
+  @override
+  String get settingNavCompassReturnMinutesDescription =>
+      'Nach so langer Zeit ohne Berührung zur mittleren Ansicht zurückkehren. Mit 0 bleibt die Ansicht stehen.';
+
+  @override
+  String get settingNavCompassMenuItemsTitle => 'Menüeinträge';
+
+  @override
+  String get settingNavCompassMenuItemsDescription =>
+      'Was die Menüansicht zeigt. Wird mit dem Seitenmenü geteilt.';
+
+  @override
+  String get navigationClassic => 'Klassisch';
+
+  @override
+  String get navigationCompass => 'Compass';
+
+  @override
+  String get navigationZoom => 'Zoom';
+
+  @override
+  String get navigationSlide => 'Schieben';
+
+  @override
+  String get compassClassicHint =>
+      'Seitenmenü, Zum Aktualisieren herunterziehen und das Dashboard-Karussell.';
+
+  @override
+  String get compassCompassHint =>
+      'Zwischen Ansichten wischen, die in einem Kreuz angeordnet sind.';
+
+  @override
+  String get compassLayoutHint =>
+      'Bis zu zwei Ansichten pro Seite, jede Art nur einmal. Tippen Sie auf eine Ansicht, um sie zu ändern, auch auf die mittlere.';
+
+  @override
+  String get compassOffNote =>
+      'Zum Aktualisieren herunterziehen, das Dashboard-Karussell und das Wischen vom Rand, das das Seitenmenü öffnet, sind aus, solange Compass aktiv ist.';
+
+  @override
+  String get compassMenu => 'Menü';
+
+  @override
+  String get compassHomeDashboard => 'Home Assistant';
+
+  @override
+  String get compassAppLauncher => 'App-Launcher';
+
+  @override
+  String get compassCenter => 'Mitte';
+
+  @override
+  String get compassAddTile => 'Hinzufügen';
+
+  @override
+  String get compassAddView => 'Ansicht hinzufügen';
+
+  @override
+  String get compassMoveIn => 'Nach innen';
+
+  @override
+  String get compassMoveOut => 'Nach außen';
+
+  @override
+  String get compassReplace => 'Ersetzen';
+
+  @override
+  String get compassRemove => 'Entfernen';
+
+  @override
+  String get compassChange => 'Ändern';
+
+  @override
+  String get compassSideUp => 'Oben';
+
+  @override
+  String get compassSideRight => 'Rechts';
+
+  @override
+  String get compassSideDown => 'Unten';
+
+  @override
+  String get compassSideLeft => 'Links';
+
+  @override
+  String compassFirstView(String side) {
+    return '$side, erste Ansicht';
+  }
+
+  @override
+  String compassSecondView(String side) {
+    return '$side, zweite Ansicht';
+  }
+
+  @override
+  String get compassAddAbove => 'Ansicht oben hinzufügen';
+
+  @override
+  String get compassAddBelow => 'Ansicht unten hinzufügen';
+
+  @override
+  String get compassAddLeft => 'Ansicht links hinzufügen';
+
+  @override
+  String get compassAddRight => 'Ansicht rechts hinzufügen';
+
+  @override
+  String get compassChangeCenter => 'Mittlere Ansicht ändern';
+
+  @override
+  String compassReplaceTitle(String name) {
+    return '$name ersetzen';
+  }
+
+  @override
+  String get compassKindDashboard => 'Home Assistant-Dashboard';
+
+  @override
+  String get compassKindDashboardHint =>
+      'Jede Ansicht, eigene Seiten und App-Seiten';
+
+  @override
+  String get compassKindTaken => 'Bereits platziert';
+
+  @override
+  String get compassKindUnavailable => 'Auf diesem Kiosk nicht eingerichtet';
+
+  @override
+  String get compassKioskLocked => 'Kiosk gesperrt';
+
+  @override
+  String get compassQuickControls => 'Schnellsteuerung';
+
+  @override
+  String get compassOpen => 'Öffnen';
+
+  @override
+  String get compassStateOn => 'An';
+
+  @override
+  String get compassStateOff => 'Aus';
+
+  @override
+  String get compassHoldMode => 'Pausenmodus';
+
+  @override
   String get settingAdaptiveBrightnessTitle => 'Adaptive Helligkeit';
 
   @override

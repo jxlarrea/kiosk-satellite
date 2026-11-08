@@ -24143,5 +24143,300 @@
     "source": "f2b6161e2eb3648bf2eebda2c1a405957cd6d9dcba574f27e48d9c6bd10fce3e",
     "translation": "d593c3c0e4a826c2a45576ddcf1dd5040863182e8e768ec986e00ebb1cfbc73d",
     "author": "Xavier Larrea"
+  },
+  "navigationSlide": {
+    "source": "768e11a62ac1a37a309bff195c7319b7c70c70ecbae32363d7f9b94bc07d7d6c",
+    "translation": "f63f4efb7de97e75476bf04430aa654ba245a5cf5166a1212522dc4c419c306c",
+    "author": "Xavier Larrea"
+  },
+  "compassKindDashboardHint": {
+    "source": "22af0c37907b4d00306fff2377db6a28f891c808df441698070f6ce6f088f962",
+    "translation": "45d584e67ba1eac535cd91755cda91a50b9405afa496eba7015c06ce4832b004",
+    "author": "Xavier Larrea"
+  },
+  "compassKioskLocked": {
+    "source": "82a352adb3037234168e481daddaba8890adbb7e92174ff50c1bdc7130237e30",
+    "translation": "2e9381db6dad9c86a749b63aea105f936e58c9c7617793eb706648880ba125c8",
+    "author": "Xavier Larrea"
+  },
+  "compassSideRight": {
+    "source": "3e82cb4a587790e7dcfb765e18c77cf6046dba61ea7ed6abcd88b1e4b8520feb",
+    "translation": "81964b768399454831b61904252620207eaccdc83c16dc5148984c324fd17968",
+    "author": "Xavier Larrea"
+  },
+  "compassHoldMode": {
+    "source": "3381efec1ed7a474dd276b8a53467c5741e52d737d090cc497d05a07d8cf944e",
+    "translation": "5ecdc9a808d5350d82eef86553f0e7e436cffbea8d2065be493491a0f7818f78",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassLayoutTitle": {
+    "source": "f5d1cab4c0bb83116d4768846ed53af18f2fd8a571bcbefb2a86c5309a08b356",
+    "translation": "3e60d0bb24a9caf4677eb860ec49add35570d62bd038deef2c06eab53eda9e62",
+    "author": "Xavier Larrea"
+  },
+  "compassStateOff": {
+    "source": "596f2ad7a2fb4c78df16c3164dbf9dd3ed57c7da4bdc1113062154aa9a064e5b",
+    "translation": "e252efe6974743f63e8e27f312630e1a66d9d794272a90c6f50a7bdbfb45a92d",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassPositionTitle": {
+    "source": "4fa22ac802db0ec57c78f328bc3655a8e9130fa132a94c2f545b63110727190a",
+    "translation": "092b8e882c449c3194604af6a440bdfd1cf6c9c5c3768e3792640caeab1a334f",
+    "author": "Xavier Larrea"
+  },
+  "compassAppLauncher": {
+    "source": "72e5e9b13e39b26765a17c232add25edaeabf44ac1128a95c1749cbe7e41784f",
+    "translation": "22823056afd736a0d19964928076c32cc8cfeefae441006e3dc8d9e906f1f944",
+    "author": "Xavier Larrea"
+  },
+  "compassSideDown": {
+    "source": "a2235ae358805923d06f99632f28b01d6d1e141d04f2fc56e4270f6e7af16699",
+    "translation": "b5112afc67b898a1c3a0552b16cf9a8b9b93af4070675d4da889470f2fec3615",
+    "author": "Xavier Larrea"
+  },
+  "compassAddRight": {
+    "source": "0c4c267d8aef6aebb47ab4a442c27f1fe4acdda675e1fabaa44c2e3f347c0dc2",
+    "translation": "ee99abe249403633506220a770034f979c8241bba15175cb9b09e8c6eeb36832",
+    "author": "Xavier Larrea"
+  },
+  "compassChangeCenter": {
+    "source": "7cfdb08cea9dccbb6a17e655d9975de46a9f7576e55688bf748a768b4ab23b16",
+    "translation": "cf916a85f69645733882463c21201613414a1b80e89b5c16f45d7e0cac82abe8",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassPositionDescription": {
+    "source": "853dee94d0183036800d1db3d1a8fa93a1c03f0c2d657e83fe2d78089ec474fe",
+    "translation": "64942624c598e4378a9e96382987eebeb7aa7ec9578f90de74d8bf5e3242318b",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassMenuItemsDescription": {
+    "source": "eff7fb232b27b51d6acd1b4219aa126914d5c7ddebb559026d323865dbb86a6f",
+    "translation": "02c2c0773c55e4fb185a2370920c77332e4f32e9221ffa0d48d8c84dc608108c",
+    "author": "Xavier Larrea"
+  },
+  "navigationClassic": {
+    "source": "0bb75ad6ba9322d71fd4f5145f5442c0b468d8669f635e2c42dabc384b158193",
+    "translation": "151a9fa1e670d8f7619264f65a476514f1d3c979d38b684a66ad03fbdde8921c",
+    "author": "Xavier Larrea"
+  },
+  "compassReplaceTitle": {
+    "source": "b86b566bbbd1e805cd477e69b532ce270a2c2af45ddae29dfd5c4ad3656aa2fa",
+    "translation": "156ffbca64bb6d8dcf0cb8b5c36efecdff1ac94ef9fcff62eb2f311d1258f785",
+    "author": "Xavier Larrea"
+  },
+  "compassStateOn": {
+    "source": "8c7457e3dcbb694eb4c2adcd0290ade6de8d1884d6463c06e18a7e0c72e815f4",
+    "translation": "0a0ca661486c7ebc46cd98f54d9ca5ff2b2cad46d7fa2686b8807273ffb0ca04",
+    "author": "Xavier Larrea"
+  },
+  "compassKindDashboard": {
+    "source": "0f00ee063ca97b659ca5c6483c0f704489dae887e75007f45170177284d32624",
+    "translation": "7cb0eb2fca851357efea83824bff5797ce4dba060040ca3a8c32d9f830001ecf",
+    "author": "Xavier Larrea"
+  },
+  "settingsMenuNavigationSummary": {
+    "source": "e808b49c87707ed0674ef1cdab1ef2fd730b27d3cc23b03d6c83a883edf82201",
+    "translation": "d8bc56b68e4bb846cb00301e1e78bcbc8fbdf03316ff424d09030c29a96d9406",
+    "author": "Xavier Larrea"
+  },
+  "settingNavStyleTitle": {
+    "source": "a1c3c13d7e225199daa63903d2b9986c65977b91af7ab2ae65b661425c6cf7ad",
+    "translation": "c4d417140805579afc868421fdaa74526b9cf7b33bdd75a128d630e87fca2dd2",
+    "author": "Xavier Larrea"
+  },
+  "compassAddTile": {
+    "source": "eba9dffaf3bfe2e7844e96ecdb0c51e855ecc8871961f8ba1de3ddc8913fb9ed",
+    "translation": "7542a5e800f9280a797d6cf866857347bb5719eec65e73aca17bb334a3b9b047",
+    "author": "Xavier Larrea"
+  },
+  "compassFirstView": {
+    "source": "c0a0bcb9197adc8a81004dada17771abda5662cd52b23cde2b68122aa15a22a5",
+    "translation": "675beda14c6131729785d2b1cd2747dce014656b9b8c206300040ff88b17fcd0",
+    "author": "Xavier Larrea"
+  },
+  "settingsGroupKioskSatellite": {
+    "source": "039992724327b8df056eb0def9221f6c0f67ba1aabcbc891be6337ea4c0fe3bb",
+    "translation": "09d0248b1ddaa7f22284a06106e94defd942ddf3fffe910d4214762a2c61afdf",
+    "author": "Xavier Larrea"
+  },
+  "compassMoveIn": {
+    "source": "09913cf0111977cd32a8994345b0051ad91afe488325d0162fe14bfb5f8f748b",
+    "translation": "3aa1970d859b19251c7b6be2882c6605f92d289b0ac2c2a532d60f04e713ff3c",
+    "author": "Xavier Larrea"
+  },
+  "compassAddView": {
+    "source": "a28584027b4d2172863543f70230cd26506c5309ea65714b1378998f1c92642a",
+    "translation": "abf81dd6b783a3430d98889137fae926baac874f262436eb48d1f273235a3e06",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassAnimationDescription": {
+    "source": "0fb26d114e27fc9d02de844360a5720c183c1282b42ba000a4723a8f40ce763b",
+    "translation": "824f8095a97ac8749b4c32119e5a7e633a80a2f7ab46301ad0b69e09dfd66633",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassAnimationTitle": {
+    "source": "2d693c23654f269e4a6295ddf959b531b999a5d65f09587e5e3911a288c42afb",
+    "translation": "68d3f78c0c3066c35b615485cf830b7aa7d97cd8ef8772299152a2d1108a2939",
+    "author": "Xavier Larrea"
+  },
+  "compassOffNote": {
+    "source": "fb09dd1bca0c1e47867f7f92a79887e198da2f350611bd5abc469f1a5ce81190",
+    "translation": "b0adeb66793264569c81bfcacbb4ca9ee00119ee21c61cdf195ddb07313257d2",
+    "author": "Xavier Larrea"
+  },
+  "compassCompassHint": {
+    "source": "01b0b2a011f3889ea4d807752cab3f47f696ef9c41aeb5e5d3a6b0f305686bac",
+    "translation": "5bb2604aac3628aff6957afaa99bb23d8ccb953042e612ce239bd7056f13f60d",
+    "author": "Xavier Larrea"
+  },
+  "compassHomeDashboard": {
+    "source": "59f7ed14cd065e89a465ea3d32934f59b067f33a32b3e332ce63eb46a23dd4c7",
+    "translation": "2a366abb0cd47f51f3725bf0fb7ebcb4fefa6e20f4971e25fe2bb8da8145ce2b",
+    "author": "Xavier Larrea"
+  },
+  "compassKindTaken": {
+    "source": "20ba4da774c94bf8490c1c6e28214e5a345d944e720bc3bf0ca0b9aed9930f68",
+    "translation": "242e824145fd09b07dc7d0ef9d914637f19efee3f3841cdbdc608304ece02ad3",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassReturnMinutesTitle": {
+    "source": "8f6e71e140e03e7c59f46145b6547b005d2eb403f4329772124bacfaf1e12bd7",
+    "translation": "cadbfce4870cea3f0a8bb859959f3dbea46fbd70c9117bbaf704d188ee20fd77",
+    "author": "Xavier Larrea"
+  },
+  "compassSideLeft": {
+    "source": "1356a1fb21e0b18b3c914a68dcce1304b24a6fed9b981a78ebfff3872f85e4d8",
+    "translation": "4c3c1258fbbf7a2dd35db14e1679ecda826372f35065cf02cc17b71b208af46a",
+    "author": "Xavier Larrea"
+  },
+  "navigationLayoutSection": {
+    "source": "2d1e402e7d036a324ce3651725701e6c3877507e92446ea89fbc091b80986f34",
+    "translation": "3e60d0bb24a9caf4677eb860ec49add35570d62bd038deef2c06eab53eda9e62",
+    "author": "Xavier Larrea"
+  },
+  "compassChange": {
+    "source": "0ce9930e5b389ca65586f853040862ff2c2a956b086d8313fdf1fec38a4331e0",
+    "translation": "b322167924121f7b81492c4ceced19d2f683a6eb789354345431dc0225437f28",
+    "author": "Xavier Larrea"
+  },
+  "navigationZoom": {
+    "source": "a211d163d20b0cf9b14193bb992d9f147c07c0764395bcf5902de2b8c438c049",
+    "translation": "509c517ede79fef060a5f3a109fd1f45951eef2c7970b25c20992011e36a4070",
+    "author": "Xavier Larrea"
+  },
+  "compassMenu": {
+    "source": "3b69b6a4613ad49eb51fa7878afce603356fe184bab20ebf1543857cea448ad5",
+    "translation": "23fbd830a5c5c09ca20ac2e9038b851338b104405266e8516e49c8524340ce66",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassLayoutDescription": {
+    "source": "13808fa6785fc2212fcf52aa9f524dae95463835fb20e19742c04ba0e8ac87d3",
+    "translation": "bac4cc31cb22b9bd5d000be77c81fbd840c9bd8edad7c6b0f66005f254890548",
+    "author": "Xavier Larrea"
+  },
+  "compassAddAbove": {
+    "source": "29bd14b9acf7bfce0604676ec22d170a47a968ccfe35f8aebe6b9379c50ee1d8",
+    "translation": "a2f80777f412d32f8bdbb3601d197a27748f50325fcfec2b4f71ebcc973af106",
+    "author": "Xavier Larrea"
+  },
+  "compassOpen": {
+    "source": "8f333e758368b0cca6939420b129ac502db0a4ef0b96cc4eb14f1bc0c7b5d1ea",
+    "translation": "a01a5fce396edb612052db25ebeb325a72134c8369eb9c771d47ab18d8124247",
+    "author": "Xavier Larrea"
+  },
+  "settingsMenuNavigation": {
+    "source": "fff3811b425be20240cdbf74be8aa2bef0f8c9b3fc841a22cc265dd96cd27a26",
+    "translation": "6d4ca0e85a74b8d3d1406766cf9c05cbd77e65298cca59df9006a5fee50ee10b",
+    "author": "Xavier Larrea"
+  },
+  "compassSecondView": {
+    "source": "298d8563c27fdcd0d6fc3b3f09f893b4d16cf1c33b5b42f1055c27dcf25716e7",
+    "translation": "117e33f46fe161e57c0dc21f41d5c95f446c990819fbd6293f692e852fd2fccd",
+    "author": "Xavier Larrea"
+  },
+  "compassKindUnavailable": {
+    "source": "a6c9226b490e16eaaf67623cee2c59fa1d5a7974355a4e7dbf3d7335ae51711b",
+    "translation": "2f5fb019ea512a506d7530daebb28b7f458a92dfca0320a8c0702c39e7895a00",
+    "author": "Xavier Larrea"
+  },
+  "compassClassicHint": {
+    "source": "0d42a18b9be18a2e60a9c6c8729cf7c31cbf721828ebda1838d59d86d825a18a",
+    "translation": "2d5b684241db2807fcd1c4912de7139f4e92004e157c7d0fafdf9c91366ede8e",
+    "author": "Xavier Larrea"
+  },
+  "compassQuickControls": {
+    "source": "3ab2141b148a57942b60dfc9da4d80f39f6f4d5dc766d988712deaee5631fcb0",
+    "translation": "ee9f8fcd85077dde720c886b4e7bd89f052fddc4368266f93bd590c17183e09a",
+    "author": "Xavier Larrea"
+  },
+  "compassAddBelow": {
+    "source": "5bcfbefc727086d2843ef09c1c39a4324c65660f165c63a542a819fa61326645",
+    "translation": "8ce5547e744b6ea39d99b00e03a3f2b73d6e0c8a21c0c2f18a119e3e88f55ba2",
+    "author": "Xavier Larrea"
+  },
+  "compassLayoutHint": {
+    "source": "9edc561e116dcc9e55fc7568bc577db5afed3f0c8cad90c2ac7be3a852443c5d",
+    "translation": "a9d6f056be9fa51abc4d4b27ac12b55c792e61b41518d68ac4b211e361eab041",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassReturnMinutesDescription": {
+    "source": "54ab6ea5f630e286479e853c5197ec252f8750efbd8b7e1700db5cc21a2f439d",
+    "translation": "fb4801e523f5d1e23ecb6062297094f6aa378f8a2b1d4d50551edd12161bed1a",
+    "author": "Xavier Larrea"
+  },
+  "settingNavStyleDescription": {
+    "source": "437ffcbd40908a20f9fc4748bbd11edb3403b8a6f151a0c1ba85f21c95f0328f",
+    "translation": "073303df5c1b31ace0d81651fcbe41236dee728fa58d6637293789ba54e86250",
+    "author": "Xavier Larrea"
+  },
+  "compassAddLeft": {
+    "source": "fe93d5da3aaf5ae76b801bb67921236da64db88e2bf4d44629da70dbec1d0603",
+    "translation": "d4d2ccf44a66f8b784333b13b0cd6433a07286a02c87bee70f27013f67995ae7",
+    "author": "Xavier Larrea"
+  },
+  "compassCenter": {
+    "source": "29ac7c85ff7daadfb9838518f9020bf42e42a892046ec8f56446a84763c2e565",
+    "translation": "fed34f0449c27518a2b7c2892633fd9ba80365ff0e5afbd6a80c78afa8877358",
+    "author": "Xavier Larrea"
+  },
+  "navigationOptionsSection": {
+    "source": "10e9d62af21a5fe6c8edce767a237d10b546bb6e31bcf990c4691b5673e51621",
+    "translation": "c5bd1e4e8b716064044311c36700e14c29a5d64498986052597797232f77a8c3",
+    "author": "Xavier Larrea"
+  },
+  "navigationStyleSection": {
+    "source": "29352cabac2fa08440b0b6c53178460056431cc4fd6265c56bf4103b09a25309",
+    "translation": "c4d417140805579afc868421fdaa74526b9cf7b33bdd75a128d630e87fca2dd2",
+    "author": "Xavier Larrea"
+  },
+  "compassMoveOut": {
+    "source": "398b770aeeba0de439b994dbe9d39add82463cc758fc617f9ba6f74c954e715a",
+    "translation": "d9865e34c2d64dd109e35555d29113199685ff0e1bc5319271f048a980807e18",
+    "author": "Xavier Larrea"
+  },
+  "compassRemove": {
+    "source": "7311643f99c7e2e9b46a64d451194dcb1c3d640f3a108175a19022a74e9dfbd7",
+    "translation": "f039f4a8c9759318cc3ee9c91607d97c020c8a45c6fb90b096c97f78118841da",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassMenuItemsTitle": {
+    "source": "b89b3e88cf6d3f90a28b06a0ef2f0870c69566c9ab22e72a673dee080d2a896d",
+    "translation": "d774d678a2fe1bc5ba40c75a96682bd6f9c888baacf3058c98069a687f63eebb",
+    "author": "Xavier Larrea"
+  },
+  "compassReplace": {
+    "source": "21945bd70f5c15df1ad80b413ba074a0146514a63889beb562313d68e1a8b5f0",
+    "translation": "74e59f0166de0061bdeb9e7c658d3449d22d163dad2a18ae403b1a716145cb2c",
+    "author": "Xavier Larrea"
+  },
+  "navigationCompass": {
+    "source": "e4ec0f28759a3a11277d81588149d4ea90719074a2fe92d24ea58127be05d37e",
+    "translation": "f082ac980336071f811f28ac635cd7733b90b92e51a101943067eed38e525063",
+    "author": "Xavier Larrea"
+  },
+  "compassSideUp": {
+    "source": "a9f72459cf5854d9473f65233a34dd60d7f5b1ea9dc715d198dee4e12455182d",
+    "translation": "60099afac8e37df342fc6f2e4bd6ab2b9b8df718d7dbe5190d1a445a0668118c",
+    "author": "Xavier Larrea"
   }
 }

@@ -10697,6 +10697,201 @@ class UiStringsRu extends UiStrings {
   String get settingsLedEffects => 'Эффекты';
 
   @override
+  String get settingsGroupKioskSatellite => 'Kiosk Satellite';
+
+  @override
+  String get settingsMenuNavigation => 'Навигация';
+
+  @override
+  String get settingsMenuNavigationSummary => 'Классическая или Compass';
+
+  @override
+  String get navigationStyleSection => 'Стиль навигации';
+
+  @override
+  String get navigationLayoutSection => 'Раскладка Compass';
+
+  @override
+  String get navigationOptionsSection => 'Параметры Compass';
+
+  @override
+  String get settingNavStyleTitle => 'Стиль навигации';
+
+  @override
+  String get settingNavStyleDescription =>
+      'Классическая сохраняет боковое меню, «Потяните для обновления» и карусель панели. Compass переключает виды, расположенные крестом, свайпом.';
+
+  @override
+  String get settingNavCompassLayoutTitle => 'Раскладка Compass';
+
+  @override
+  String get settingNavCompassLayoutDescription =>
+      'До двух видов с каждой стороны, по одному каждого типа.';
+
+  @override
+  String get settingNavCompassAnimationTitle => 'Анимация свайпа';
+
+  @override
+  String get settingNavCompassAnimationDescription =>
+      'Отдалить, чтобы показать соседние виды, или просто пролистнуть.';
+
+  @override
+  String get settingNavCompassPositionTitle =>
+      'Показывать положение при свайпе';
+
+  @override
+  String get settingNavCompassPositionDescription =>
+      'Небольшая карта того, где вы сейчас.';
+
+  @override
+  String get settingNavCompassReturnMinutesTitle => 'Возвращаться в центр';
+
+  @override
+  String get settingNavCompassReturnMinutesDescription =>
+      'Возвращаться к центральному виду, если столько времени никто не касается экрана. Установите 0, чтобы оставаться на виде.';
+
+  @override
+  String get settingNavCompassMenuItemsTitle => 'Пункты меню';
+
+  @override
+  String get settingNavCompassMenuItemsDescription =>
+      'Что показывает вид «Меню». Общее с боковым меню.';
+
+  @override
+  String get navigationClassic => 'Классическая';
+
+  @override
+  String get navigationCompass => 'Compass';
+
+  @override
+  String get navigationZoom => 'Масштаб';
+
+  @override
+  String get navigationSlide => 'Сдвиг';
+
+  @override
+  String get compassClassicHint =>
+      'Боковое меню, «Потяните для обновления» и карусель панели.';
+
+  @override
+  String get compassCompassHint =>
+      'Свайп между видами, расположенными крестом.';
+
+  @override
+  String get compassLayoutHint =>
+      'До двух видов с каждой стороны, по одному каждого типа. Коснитесь вида, чтобы изменить его, в том числе центральный.';
+
+  @override
+  String get compassOffNote =>
+      '«Потяните для обновления», карусель панели и свайп от края, открывающий боковое меню, отключены, пока включён Compass.';
+
+  @override
+  String get compassMenu => 'Меню';
+
+  @override
+  String get compassHomeDashboard => 'Home Assistant';
+
+  @override
+  String get compassAppLauncher => 'Лаунчер приложений';
+
+  @override
+  String get compassCenter => 'Центр';
+
+  @override
+  String get compassAddTile => 'Добавить';
+
+  @override
+  String get compassAddView => 'Добавить вид';
+
+  @override
+  String get compassMoveIn => 'Ближе';
+
+  @override
+  String get compassMoveOut => 'Дальше';
+
+  @override
+  String get compassReplace => 'Заменить';
+
+  @override
+  String get compassRemove => 'Убрать';
+
+  @override
+  String get compassChange => 'Изменить';
+
+  @override
+  String get compassSideUp => 'Сверху';
+
+  @override
+  String get compassSideRight => 'Справа';
+
+  @override
+  String get compassSideDown => 'Снизу';
+
+  @override
+  String get compassSideLeft => 'Слева';
+
+  @override
+  String compassFirstView(String side) {
+    return '$side, первый вид';
+  }
+
+  @override
+  String compassSecondView(String side) {
+    return '$side, второй вид';
+  }
+
+  @override
+  String get compassAddAbove => 'Добавить вид сверху';
+
+  @override
+  String get compassAddBelow => 'Добавить вид снизу';
+
+  @override
+  String get compassAddLeft => 'Добавить вид слева';
+
+  @override
+  String get compassAddRight => 'Добавить вид справа';
+
+  @override
+  String get compassChangeCenter => 'Изменить центральный вид';
+
+  @override
+  String compassReplaceTitle(String name) {
+    return 'Заменить: $name';
+  }
+
+  @override
+  String get compassKindDashboard => 'Панель Home Assistant';
+
+  @override
+  String get compassKindDashboardHint =>
+      'Любой вид, свои страницы и страницы приложений';
+
+  @override
+  String get compassKindTaken => 'Уже размещено';
+
+  @override
+  String get compassKindUnavailable => 'Не настроено на этом киоске';
+
+  @override
+  String get compassKioskLocked => 'Киоск заблокирован';
+
+  @override
+  String get compassQuickControls => 'Быстрые действия';
+
+  @override
+  String get compassOpen => 'Открыть';
+
+  @override
+  String get compassStateOn => 'Вкл.';
+
+  @override
+  String get compassStateOff => 'Выкл.';
+
+  @override
+  String get compassHoldMode => 'Режим удержания';
+
+  @override
   String get settingAdaptiveBrightnessTitle => 'Адаптивная яркость';
 
   @override

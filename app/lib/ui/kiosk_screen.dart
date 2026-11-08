@@ -72,6 +72,10 @@ import 'settings_screen.dart';
 import 'voice_timer_overlay.dart';
 import 'web_console_panel.dart';
 import 'webview_server_trust.dart';
+import 'compass/compass_controller.dart';
+import '../managers/navigation/compass_layout.dart';
+import 'compass/compass_stage.dart';
+import '../managers/browser/compass_page_script.dart';
 
 /// Watches the navigator for the kiosk screen (issue #377): a dialog
 /// pushed over it — the exit confirm, the PIN prompt, a picker — must flip
@@ -135,6 +139,8 @@ class _KioskScreenState extends State<KioskScreen>
     c.calendar.visible,
     c.screensaver.nowPlayingCovers,
     c.sendspin.fullscreenActive,
+    _compass.menuVisible,
+    _compass.planeCovered,
   ]);
 
   /// The kiosk plane leaves the frame under something that hides the whole
@@ -145,6 +151,8 @@ class _KioskScreenState extends State<KioskScreen>
   /// through an image view, which on an Echo Show costs a bitmap and a
   /// garbage collection every few frames.
   bool get _planeHidden {
+    // A Compass swipe's stage covers everything while it moves.
+    if (_compass.planeCovered.value) return true;
     if (!c.browser.renderingFrozenState.value) return false;
     final view = c.screensaver.activeView.value;
     return view == 'weather_mood' ||
@@ -153,6 +161,7 @@ class _KioskScreenState extends State<KioskScreen>
         c.voice.covers.value ||
         c.musicLibrary.visible.value ||
         c.calendar.visible.value ||
+        _compass.menuVisible.value ||
         _nowPlayingCovers;
   }
 
@@ -170,6 +179,12 @@ class _KioskScreenState extends State<KioskScreen>
   bool _pagesHidden() => c.voice.covers.value || _nowPlayingCovers;
 
   bool _consoleOpen = false;
+
+  /// Compass navigation (Settings > Navigation): the views in a cross,
+  /// the swipe between them and the Menu view that takes the drawer's
+  /// place. Idle while Classic is picked.
+  late final CompassController _compass = CompassController(c)..start();
+
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<KioskExitGesture>? _gestureSub;
   StreamSubscription<GestureActionCompleted>? _gestureResultSub;
@@ -319,6 +334,19 @@ class _KioskScreenState extends State<KioskScreen>
         c.camera.focusCamera(null);
       case BackAction.hideCameraView:
         c.camera.hideView();
+      case BackAction.openDrawer when _compass.enabled:
+        // Compass has no drawer. Back walks home to the center, and from
+        // the center opens the Menu, the way it opens the drawer.
+        unawaited(
+          _compass.current.value.isCenter
+              ? _compass.goMenu()
+              : _compass.goCenter(),
+        );
+      // Away from the center, back goes home there, whatever a locked
+      // kiosk's menu rules say.
+      case BackAction.back
+          when _compass.enabled && !_compass.current.value.isCenter:
+        unawaited(_compass.goCenter());
       case BackAction.openDrawer:
         // Mirrors the edge swipe: opening while locked earns only the
         // restricted quick menu, never the full one.
@@ -393,6 +421,7 @@ class _KioskScreenState extends State<KioskScreen>
   /// through to the page (discussion #1069), and a pull there must not
   /// reload it.
   bool get _ptrEnabled =>
+      !_compass.enabled &&
       c.settings.get(defs.pullToRefresh) &&
       !(c.kiosk.locked && c.settings.get(defs.kioskDisablePullRefresh)) &&
       !c.screensaver.isActive;
@@ -401,7 +430,25 @@ class _KioskScreenState extends State<KioskScreen>
   /// the screensaver is up for the same reason as [_ptrEnabled]. A swipe
   /// must not take the screensaver's view away.
   bool get _carouselEnabled =>
-      c.settings.get(defs.haDashboardCarousel) && !c.screensaver.isActive;
+      !_compass.enabled &&
+      c.settings.get(defs.haDashboardCarousel) &&
+      !c.screensaver.isActive;
+
+  /// Compass's page probe, live while Compass is picked and the
+  /// screensaver is down.
+  bool get _compassPageEnabled => _compass.enabled && !c.screensaver.isActive;
+
+  /// Push the navigation style onto the live page and the native state
+  /// that depends on it: pull to refresh and the carousel stand down
+  /// while Compass is on.
+  Future<void> _syncNavigation() async {
+    await _syncPullToRefresh();
+    await _syncCarousel();
+    await c.browser.runJs(
+      'window.__ksCompassEnabled = $_compassPageEnabled;',
+    );
+    if (mounted) setState(() {});
+  }
 
   /// Push the current effective carousel state onto the live page. The
   /// sync call makes the script act on it now: build the preview strip, or
@@ -729,6 +776,10 @@ class _KioskScreenState extends State<KioskScreen>
       await _syncPullToRefresh();
       return;
     }
+    if (e.key == defs.navStyle.key) {
+      await _syncNavigation();
+      return;
+    }
     // Wake word detection is negotiated with the Voice Satellite card at page
     // load (it asks whether we can run its engine natively, and we answer with
     // our own enabled setting). Reload so that handoff is re-evaluated:
@@ -873,6 +924,9 @@ class _KioskScreenState extends State<KioskScreen>
       _syncNavCapture();
       unawaited(_syncPullToRefresh());
       unawaited(_syncCarousel());
+      unawaited(
+        c.browser.runJs('window.__ksCompassEnabled = $_compassPageEnabled;'),
+      );
     });
     _backSub = c.bus.on<KioskBackPressed>().listen((_) {
       if (!mounted || _settingsOpen) return;
@@ -1189,6 +1243,15 @@ class _KioskScreenState extends State<KioskScreen>
     ),
     UserScript(
       source: dashboardCarouselScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    // Compass's page probe: the same always-injected, flag-gated contract.
+    UserScript(
+      source: 'window.__ksCompassEnabled = $_compassPageEnabled;',
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    UserScript(
+      source: compassPageScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     // Haptics and the tap sound: same always-injected, flag-gated contract.
@@ -1557,8 +1620,29 @@ class _KioskScreenState extends State<KioskScreen>
       final ok = await _askPin();
       if (!ok || !mounted) return;
     }
+    // Compass has no drawer: the gesture earns the full Menu view, or
+    // Settings itself when the layout holds no Menu.
+    if (_compass.enabled) {
+      if (_compass.layout.holds(CompassView.menu)) {
+        await _compass.goMenu(unlocked: true);
+      } else {
+        await _openSettings();
+      }
+      return;
+    }
     setState(() => _drawerRestricted = false);
     _drawer.fling(velocity: 1);
+  }
+
+  /// The locked Menu view's Settings tile: the PIN, when one is set, then
+  /// the full Menu. Under lockdown the shield takes every touch, so this
+  /// is never reached there.
+  Future<void> _unlockMenu() async {
+    if (c.kiosk.pinRequired) {
+      final ok = await _askPin();
+      if (!ok || !mounted) return;
+    }
+    await _compass.goMenu(unlocked: true);
   }
 
   Future<bool> _askPin() async {
@@ -1623,6 +1707,7 @@ class _KioskScreenState extends State<KioskScreen>
     FocusManager.instance.removeEarlyKeyEventHandler(_onEarlyKey);
     _drawerFocus.dispose();
     _drawer.dispose();
+    _compass.dispose();
     _settingsSub?.cancel();
     _gestureSub?.cancel();
     _gestureResultSub?.cancel();
@@ -1749,7 +1834,9 @@ class _KioskScreenState extends State<KioskScreen>
     );
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Listener(
+      body: CompassGestureLayer(
+        controller: _compass,
+        child: Listener(
         onPointerDown: (_) =>
             c.bus.publish(const ActivityDetected(source: 'touch')),
         child: AnimatedBuilder(
@@ -1849,7 +1936,9 @@ class _KioskScreenState extends State<KioskScreen>
                   // (and its PIN) opens the menu, or, when the owner opted
                   // into quick actions, the same swipe opens the restricted
                   // one (which mode is decided as the drag starts).
-                  if (!open && (!c.kiosk.locked || _quickMenuAvailable))
+                  if (!open &&
+                      !_compass.enabled &&
+                      (!c.kiosk.locked || _quickMenuAvailable))
                     Positioned(
                       left: 0,
                       top: 0,
@@ -1875,6 +1964,13 @@ class _KioskScreenState extends State<KioskScreen>
                   // screensaver does; the screensaver stays away while it
                   // plays (playback reports activity).
                   DlnaMediaOverlay(container: c),
+                  // Compass's Menu view, in the drawer's place: under every
+                  // page it opens, so they come up over it.
+                  _CompassMenu(
+                    compass: _compass,
+                    onSettings: _openSettings,
+                    onUnlock: _unlockMenu,
+                  ),
                   // Below the screensaver: an abandoned launcher gives way
                   // to it (the manager also closes on screensaver start).
                   AppLauncherOverlay(container: c),
@@ -1909,6 +2005,10 @@ class _KioskScreenState extends State<KioskScreen>
                     child: ScreensaverOverlay(container: c),
                   ),
                   CameraViewOverlay(container: c),
+                  // A Compass swipe in motion, over every view it moves
+                  // between (the camera view included). Only drawn while
+                  // a swipe is under way.
+                  CompassStageView(controller: _compass),
                   // The camera preview a face wake leaves behind
                   // (discussion #371): over the screensaver, whose fade
                   // out it appears through, and answering no touch.
@@ -1988,6 +2088,7 @@ class _KioskScreenState extends State<KioskScreen>
             );
           },
         ),
+      ),
       ),
     );
   }
@@ -2240,6 +2341,13 @@ class _KioskScreenState extends State<KioskScreen>
       );
       // The carousel reports its drag edges so the native scrollbars
       // stay asleep during the strip animation (see carousel_script).
+      // Compass's page probe: what the touch that just went down lands on.
+      controller.addJavaScriptHandler(
+        handlerName: 'ksCompassTouch',
+        callback: (args) {
+          _compass.pageTouched(args.isEmpty ? null : args.first);
+        },
+      );
       controller.addJavaScriptHandler(
         handlerName: 'ksCarouselDrag',
         callback: (args) {
@@ -2297,6 +2405,7 @@ class _KioskScreenState extends State<KioskScreen>
         'window.__ksCarouselOverCards = '
         '${c.settings.get(defs.haCarouselOverCards)};',
       );
+      c.browser.runJs('window.__ksCompassEnabled = $_compassPageEnabled;');
       c.browser.runJs(
         'window.__ksHapticsEnabled = '
         '${c.settings.get(defs.haHaptics)};'
@@ -3296,4 +3405,75 @@ class _PausedUnderState extends State<PausedUnder> {
       ],
     );
   }
+}
+
+/// Compass's Menu view: the drawer's items as full-screen tiles, up while
+/// the Menu is the view on screen. A small tab on the right edge says the
+/// way back is to the right.
+class _CompassMenu extends StatelessWidget {
+  const _CompassMenu({
+    required this.compass,
+    required this.onSettings,
+    required this.onUnlock,
+  });
+
+  final CompassController compass;
+  final VoidCallback onSettings;
+  final VoidCallback onUnlock;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([compass.menuVisible, compass.menuUnlocked]),
+    builder: (context, _) {
+      if (!compass.menuVisible.value) return const SizedBox.shrink();
+      final c = compass.c;
+      final scheme = Theme.of(context).colorScheme;
+      return Positioned.fill(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Redrawn on every setting change while it shows: its switches
+            // (HA Kiosk Mode, Hold Mode) show their state, and that state
+            // can change from the menu itself, Home Assistant or the remote
+            // admin.
+            StreamBuilder<SettingChanged>(
+              stream: c.bus.on<SettingChanged>(),
+              builder: (context, _) => KioskDrawer(
+                container: c,
+                tiles: true,
+                restricted: c.kiosk.locked && !compass.menuUnlocked.value,
+                onClose: () {},
+                onSettings: onSettings,
+                onUnlock: onUnlock,
+              ),
+            ),
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: IgnorePointer(
+                  child: Container(
+                    width: 22,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHigh,
+                      borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(12),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

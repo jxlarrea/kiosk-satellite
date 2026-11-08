@@ -25,7 +25,7 @@ import { clearSearchReturnTab, searchReturnTab } from './search.js';
 // tab lives in the URL, so a reload keeps you where you were, Back goes back,
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
-export const TABS = ['dashboard', 'homeassistant', 'esphome', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'home', 'launcher', 'screenaudio', 'screensaver',
+export const TABS = ['dashboard', 'navigation', 'homeassistant', 'esphome', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'home', 'launcher', 'screenaudio', 'screensaver',
   'camera', 'sendspin', 'cameras', 'dlna', 'intercom', 'alarms', 'calendar', 'files', 'gestures', 'leds', 'device', 'fleet', 'plugins', 'about', 'logs'];
 // A page's title, by what is left on it on a device without a screen.
 export function tabTitle(tab) {
@@ -35,7 +35,7 @@ export function tabTitle(tab) {
 // somewhere sensible.
 export const LEGACY_TABS = { screen: 'screenaudio', audio: 'screenaudio', remote: 'device', console: 'logs', btproxy: 'esphome', mqtt: 'esphome' };
 export const TAB_TITLES = {
-  dashboard: 'Overview', browser: 'Web Browsing',
+  dashboard: 'Overview', navigation: 'Navigation', browser: 'Web Browsing',
   kiosk: 'Kiosk Mode', lockdown: 'Lockdown Mode', launcher: 'App Launcher', home: 'Home Launcher', screenaudio: 'Screen & Audio', screensaver: 'Screensaver',
   camera: 'Camera',
   homeassistant: 'Home Assistant',

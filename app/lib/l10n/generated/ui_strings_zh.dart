@@ -10131,6 +10131,191 @@ class UiStringsZh extends UiStrings {
   String get settingsLedEffects => '效果';
 
   @override
+  String get settingsGroupKioskSatellite => 'Kiosk Satellite';
+
+  @override
+  String get settingsMenuNavigation => '导航';
+
+  @override
+  String get settingsMenuNavigationSummary => '经典或 Compass';
+
+  @override
+  String get navigationStyleSection => '导航方式';
+
+  @override
+  String get navigationLayoutSection => 'Compass 布局';
+
+  @override
+  String get navigationOptionsSection => 'Compass 选项';
+
+  @override
+  String get settingNavStyleTitle => '导航方式';
+
+  @override
+  String get settingNavStyleDescription =>
+      '经典保留抽屉菜单、下拉刷新和仪表盘滑动切换。Compass 将视图排成十字形，滑动即可切换。';
+
+  @override
+  String get settingNavCompassLayoutTitle => 'Compass 布局';
+
+  @override
+  String get settingNavCompassLayoutDescription => '每侧最多两个视图，每种类型只能放一个。';
+
+  @override
+  String get settingNavCompassAnimationTitle => '滑动动画';
+
+  @override
+  String get settingNavCompassAnimationDescription => '缩小以显示周围的视图，或直接平移。';
+
+  @override
+  String get settingNavCompassPositionTitle => '滑动时显示位置';
+
+  @override
+  String get settingNavCompassPositionDescription => '一张显示当前位置的小地图。';
+
+  @override
+  String get settingNavCompassReturnMinutesTitle => '返回中心';
+
+  @override
+  String get settingNavCompassReturnMinutesDescription =>
+      '无触摸达到此时长后返回中心视图。设为 0 则停留在当前视图。';
+
+  @override
+  String get settingNavCompassMenuItemsTitle => '菜单项';
+
+  @override
+  String get settingNavCompassMenuItemsDescription => '菜单视图显示的内容。与抽屉菜单共用。';
+
+  @override
+  String get navigationClassic => '经典';
+
+  @override
+  String get navigationCompass => 'Compass';
+
+  @override
+  String get navigationZoom => '缩放';
+
+  @override
+  String get navigationSlide => '平移';
+
+  @override
+  String get compassClassicHint => '抽屉菜单、下拉刷新和仪表盘滑动切换。';
+
+  @override
+  String get compassCompassHint => '在排成十字形的视图之间滑动切换。';
+
+  @override
+  String get compassLayoutHint => '每侧最多两个视图，每种类型只能放一个。点按视图即可更改，中心视图也可以。';
+
+  @override
+  String get compassOffNote => '启用 Compass 时，下拉刷新、仪表盘滑动切换以及从边缘滑动打开抽屉菜单的手势均会关闭。';
+
+  @override
+  String get compassMenu => '菜单';
+
+  @override
+  String get compassHomeDashboard => 'Home Assistant';
+
+  @override
+  String get compassAppLauncher => '应用启动器';
+
+  @override
+  String get compassCenter => '中心';
+
+  @override
+  String get compassAddTile => '添加';
+
+  @override
+  String get compassAddView => '添加视图';
+
+  @override
+  String get compassMoveIn => '移近';
+
+  @override
+  String get compassMoveOut => '移远';
+
+  @override
+  String get compassReplace => '替换';
+
+  @override
+  String get compassRemove => '移除';
+
+  @override
+  String get compassChange => '更改';
+
+  @override
+  String get compassSideUp => '上';
+
+  @override
+  String get compassSideRight => '右';
+
+  @override
+  String get compassSideDown => '下';
+
+  @override
+  String get compassSideLeft => '左';
+
+  @override
+  String compassFirstView(String side) {
+    return '$side，第一个视图';
+  }
+
+  @override
+  String compassSecondView(String side) {
+    return '$side，第二个视图';
+  }
+
+  @override
+  String get compassAddAbove => '在上方添加视图';
+
+  @override
+  String get compassAddBelow => '在下方添加视图';
+
+  @override
+  String get compassAddLeft => '在左侧添加视图';
+
+  @override
+  String get compassAddRight => '在右侧添加视图';
+
+  @override
+  String get compassChangeCenter => '更改中心视图';
+
+  @override
+  String compassReplaceTitle(String name) {
+    return '替换$name';
+  }
+
+  @override
+  String get compassKindDashboard => 'Home Assistant 仪表盘';
+
+  @override
+  String get compassKindDashboardHint => '任意视图、自定义网页和应用页面';
+
+  @override
+  String get compassKindTaken => '已放置';
+
+  @override
+  String get compassKindUnavailable => '此 Kiosk 上未设置';
+
+  @override
+  String get compassKioskLocked => 'Kiosk 已锁定';
+
+  @override
+  String get compassQuickControls => '快捷控制';
+
+  @override
+  String get compassOpen => '打开';
+
+  @override
+  String get compassStateOn => '开';
+
+  @override
+  String get compassStateOff => '关';
+
+  @override
+  String get compassHoldMode => '页面保持模式';
+
+  @override
   String get settingAdaptiveBrightnessTitle => '自适应亮度';
 
   @override
@@ -25435,6 +25620,191 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingsLedEffects => '效果';
+
+  @override
+  String get settingsGroupKioskSatellite => 'Kiosk Satellite';
+
+  @override
+  String get settingsMenuNavigation => '导航';
+
+  @override
+  String get settingsMenuNavigationSummary => '经典或 Compass';
+
+  @override
+  String get navigationStyleSection => '导航方式';
+
+  @override
+  String get navigationLayoutSection => 'Compass 布局';
+
+  @override
+  String get navigationOptionsSection => 'Compass 选项';
+
+  @override
+  String get settingNavStyleTitle => '导航方式';
+
+  @override
+  String get settingNavStyleDescription =>
+      '经典保留抽屉菜单、下拉刷新和仪表盘滑动切换。Compass 将视图排成十字形，滑动即可切换。';
+
+  @override
+  String get settingNavCompassLayoutTitle => 'Compass 布局';
+
+  @override
+  String get settingNavCompassLayoutDescription => '每侧最多两个视图，每种类型只能放一个。';
+
+  @override
+  String get settingNavCompassAnimationTitle => '滑动动画';
+
+  @override
+  String get settingNavCompassAnimationDescription => '缩小以显示周围的视图，或直接平移。';
+
+  @override
+  String get settingNavCompassPositionTitle => '滑动时显示位置';
+
+  @override
+  String get settingNavCompassPositionDescription => '一张显示当前位置的小地图。';
+
+  @override
+  String get settingNavCompassReturnMinutesTitle => '返回中心';
+
+  @override
+  String get settingNavCompassReturnMinutesDescription =>
+      '无触摸达到此时长后返回中心视图。设为 0 则停留在当前视图。';
+
+  @override
+  String get settingNavCompassMenuItemsTitle => '菜单项';
+
+  @override
+  String get settingNavCompassMenuItemsDescription => '菜单视图显示的内容。与抽屉菜单共用。';
+
+  @override
+  String get navigationClassic => '经典';
+
+  @override
+  String get navigationCompass => 'Compass';
+
+  @override
+  String get navigationZoom => '缩放';
+
+  @override
+  String get navigationSlide => '平移';
+
+  @override
+  String get compassClassicHint => '抽屉菜单、下拉刷新和仪表盘滑动切换。';
+
+  @override
+  String get compassCompassHint => '在排成十字形的视图之间滑动切换。';
+
+  @override
+  String get compassLayoutHint => '每侧最多两个视图，每种类型只能放一个。点按视图即可更改，中心视图也可以。';
+
+  @override
+  String get compassOffNote => '启用 Compass 时，下拉刷新、仪表盘滑动切换以及从边缘滑动打开抽屉菜单的手势均会关闭。';
+
+  @override
+  String get compassMenu => '菜单';
+
+  @override
+  String get compassHomeDashboard => 'Home Assistant';
+
+  @override
+  String get compassAppLauncher => '应用启动器';
+
+  @override
+  String get compassCenter => '中心';
+
+  @override
+  String get compassAddTile => '添加';
+
+  @override
+  String get compassAddView => '添加视图';
+
+  @override
+  String get compassMoveIn => '移近';
+
+  @override
+  String get compassMoveOut => '移远';
+
+  @override
+  String get compassReplace => '替换';
+
+  @override
+  String get compassRemove => '移除';
+
+  @override
+  String get compassChange => '更改';
+
+  @override
+  String get compassSideUp => '上';
+
+  @override
+  String get compassSideRight => '右';
+
+  @override
+  String get compassSideDown => '下';
+
+  @override
+  String get compassSideLeft => '左';
+
+  @override
+  String compassFirstView(String side) {
+    return '$side，第一个视图';
+  }
+
+  @override
+  String compassSecondView(String side) {
+    return '$side，第二个视图';
+  }
+
+  @override
+  String get compassAddAbove => '在上方添加视图';
+
+  @override
+  String get compassAddBelow => '在下方添加视图';
+
+  @override
+  String get compassAddLeft => '在左侧添加视图';
+
+  @override
+  String get compassAddRight => '在右侧添加视图';
+
+  @override
+  String get compassChangeCenter => '更改中心视图';
+
+  @override
+  String compassReplaceTitle(String name) {
+    return '替换$name';
+  }
+
+  @override
+  String get compassKindDashboard => 'Home Assistant 仪表盘';
+
+  @override
+  String get compassKindDashboardHint => '任意视图、自定义网页和应用页面';
+
+  @override
+  String get compassKindTaken => '已放置';
+
+  @override
+  String get compassKindUnavailable => '此 Kiosk 上未设置';
+
+  @override
+  String get compassKioskLocked => 'Kiosk 已锁定';
+
+  @override
+  String get compassQuickControls => '快捷控制';
+
+  @override
+  String get compassOpen => '打开';
+
+  @override
+  String get compassStateOn => '开';
+
+  @override
+  String get compassStateOff => '关';
+
+  @override
+  String get compassHoldMode => '页面保持模式';
 
   @override
   String get settingAdaptiveBrightnessTitle => '自适应亮度';

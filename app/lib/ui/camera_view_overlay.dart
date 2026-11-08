@@ -132,6 +132,12 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
   @override
   void didUpdateWidget(ClosingCameraPlayer old) {
     super.didUpdateWidget(old);
+    // Compass moved here or away with its own swipe: no slide on top.
+    // Only the opened view's player answers it: the screensaver's grid is
+    // the same widget and never slides.
+    final camera = widget.container.camera;
+    final instant = widget.interactive && camera.instantNextChange;
+    if (widget.interactive) camera.instantNextChange = false;
     final next = widget.view;
     if (next?.id == _mounted?.id && (next == null) == (_mounted == null)) {
       // The same view re-shown while it is on its way out. Without this,
@@ -162,9 +168,9 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
     _drop?.cancel();
     if (next == null) {
       if (_mounted == null) return;
-      if (!widget.interactive) {
-        // The screensaver's grid: hide it now, let it shut down, drop it
-        // shortly after.
+      if (!widget.interactive || instant) {
+        // The screensaver's grid, or a view Compass swiped away from:
+        // hide it now, let it shut down, drop it shortly after.
         setState(() => _closing = true);
         _startDropTimer();
       } else {
@@ -182,7 +188,9 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
       // From the bottom edge when a view is opening, from wherever it has
       // got to when one is caught on its way out, and with no movement at
       // all when a view simply replaces another already on screen.
-      if (widget.interactive) {
+      if (instant) {
+        _slide.value = 1;
+      } else if (widget.interactive) {
         _slide.forward(from: wasOpen ? _slide.value : 0);
       }
     }

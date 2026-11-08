@@ -537,6 +537,14 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "low": "intercomOptionVideoLow",
     "medium": "intercomOptionVideoMedium",
     "high": "intercomOptionVideoHigh"
+  },
+  "nav.style": {
+    "classic": "navigationClassic",
+    "compass": "navigationCompass"
+  },
+  "nav.compass_animation": {
+    "zoom": "navigationZoom",
+    "slide": "navigationSlide"
   }
 };
 const settingPlaceholderMessageIds = <String, String>{

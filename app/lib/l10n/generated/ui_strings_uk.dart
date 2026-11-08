@@ -10720,6 +10720,201 @@ class UiStringsUk extends UiStrings {
   String get settingsLedEffects => 'Ефекти';
 
   @override
+  String get settingsGroupKioskSatellite => 'Kiosk Satellite';
+
+  @override
+  String get settingsMenuNavigation => 'Навігація';
+
+  @override
+  String get settingsMenuNavigationSummary => 'Класична або Compass';
+
+  @override
+  String get navigationStyleSection => 'Стиль навігації';
+
+  @override
+  String get navigationLayoutSection => 'Розкладка Compass';
+
+  @override
+  String get navigationOptionsSection => 'Параметри Compass';
+
+  @override
+  String get settingNavStyleTitle => 'Стиль навігації';
+
+  @override
+  String get settingNavStyleDescription =>
+      'Класична залишає бічне меню, оновлення потягуванням вниз і карусель панелі керування. Compass перемикає подання, розташовані хрестом, свайпом.';
+
+  @override
+  String get settingNavCompassLayoutTitle => 'Розкладка Compass';
+
+  @override
+  String get settingNavCompassLayoutDescription =>
+      'До двох подань з кожного боку, по одному кожного типу.';
+
+  @override
+  String get settingNavCompassAnimationTitle => 'Анімація свайпу';
+
+  @override
+  String get settingNavCompassAnimationDescription =>
+      'Віддалити, щоб показати сусідні подання, або просто прогорнути.';
+
+  @override
+  String get settingNavCompassPositionTitle =>
+      'Показувати позицію під час свайпу';
+
+  @override
+  String get settingNavCompassPositionDescription =>
+      'Невелика мапа того, де ви зараз.';
+
+  @override
+  String get settingNavCompassReturnMinutesTitle => 'Повертатися до центру';
+
+  @override
+  String get settingNavCompassReturnMinutesDescription =>
+      'Повертатися до центрального подання, якщо стільки часу ніхто не торкається екрана. Встановіть 0, щоб залишатися на поданні.';
+
+  @override
+  String get settingNavCompassMenuItemsTitle => 'Пункти меню';
+
+  @override
+  String get settingNavCompassMenuItemsDescription =>
+      'Що показує подання «Меню». Спільне з бічним меню.';
+
+  @override
+  String get navigationClassic => 'Класична';
+
+  @override
+  String get navigationCompass => 'Compass';
+
+  @override
+  String get navigationZoom => 'Масштаб';
+
+  @override
+  String get navigationSlide => 'Зсув';
+
+  @override
+  String get compassClassicHint =>
+      'Бічне меню, оновлення потягуванням вниз і карусель панелі керування.';
+
+  @override
+  String get compassCompassHint =>
+      'Свайп між поданнями, розташованими хрестом.';
+
+  @override
+  String get compassLayoutHint =>
+      'До двох подань з кожного боку, по одному кожного типу. Торкніться подання, щоб змінити його, зокрема центральне.';
+
+  @override
+  String get compassOffNote =>
+      'Оновлення потягуванням вниз, карусель панелі керування та свайп від краю, що відкриває бічне меню, вимкнені, поки ввімкнено Compass.';
+
+  @override
+  String get compassMenu => 'Меню';
+
+  @override
+  String get compassHomeDashboard => 'Home Assistant';
+
+  @override
+  String get compassAppLauncher => 'Лаунчер застосунків';
+
+  @override
+  String get compassCenter => 'Центр';
+
+  @override
+  String get compassAddTile => 'Додати';
+
+  @override
+  String get compassAddView => 'Додати подання';
+
+  @override
+  String get compassMoveIn => 'Ближче';
+
+  @override
+  String get compassMoveOut => 'Далі';
+
+  @override
+  String get compassReplace => 'Замінити';
+
+  @override
+  String get compassRemove => 'Вилучити';
+
+  @override
+  String get compassChange => 'Змінити';
+
+  @override
+  String get compassSideUp => 'Угорі';
+
+  @override
+  String get compassSideRight => 'Праворуч';
+
+  @override
+  String get compassSideDown => 'Унизу';
+
+  @override
+  String get compassSideLeft => 'Ліворуч';
+
+  @override
+  String compassFirstView(String side) {
+    return '$side, перше подання';
+  }
+
+  @override
+  String compassSecondView(String side) {
+    return '$side, друге подання';
+  }
+
+  @override
+  String get compassAddAbove => 'Додати подання вгорі';
+
+  @override
+  String get compassAddBelow => 'Додати подання внизу';
+
+  @override
+  String get compassAddLeft => 'Додати подання ліворуч';
+
+  @override
+  String get compassAddRight => 'Додати подання праворуч';
+
+  @override
+  String get compassChangeCenter => 'Змінити центральне подання';
+
+  @override
+  String compassReplaceTitle(String name) {
+    return 'Замінити: $name';
+  }
+
+  @override
+  String get compassKindDashboard => 'Панель керування Home Assistant';
+
+  @override
+  String get compassKindDashboardHint =>
+      'Будь-яке подання, власні сторінки та сторінки застосунків';
+
+  @override
+  String get compassKindTaken => 'Уже розміщено';
+
+  @override
+  String get compassKindUnavailable => 'Не налаштовано на цьому кіоску';
+
+  @override
+  String get compassKioskLocked => 'Кіоск заблоковано';
+
+  @override
+  String get compassQuickControls => 'Швидкі дії';
+
+  @override
+  String get compassOpen => 'Відкрити';
+
+  @override
+  String get compassStateOn => 'Увімкнено';
+
+  @override
+  String get compassStateOff => 'Вимкнено';
+
+  @override
+  String get compassHoldMode => 'Утримання';
+
+  @override
   String get settingAdaptiveBrightnessTitle => 'Адаптивна яскравість';
 
   @override

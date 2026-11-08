@@ -923,6 +923,7 @@ export async function loadGestures() {
 // Satellite shares the Home Assistant tab, as it shares that pane on the
 // device.
 export const CATEGORY_TABS = [
+  ['tab-navigation', ['Navigation']],
   // The URL Filter page, which no setting draws (url_filter.js).
   ['tab-browser', ['Browser'], { extra: ['URL Filter'] }],
   ['tab-kiosk', ['Kiosk']],

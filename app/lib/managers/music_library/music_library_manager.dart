@@ -139,6 +139,13 @@ class MusicLibraryManager extends Manager {
   /// The overlay is up.
   final visible = ValueNotifier<bool>(false);
 
+  /// The content each library page last showed, by its page key. The
+  /// library screen is built fresh on every open, so without these a
+  /// reopened library showed a spinner where its shelves had been until
+  /// Music Assistant answered again. It draws these at once and swaps in
+  /// the fresh copy when it lands.
+  final shownPages = <String, Object>{};
+
   /// Bumped when an open arrives while it is already up.
   final reopened = ValueNotifier<int>(0);
 

@@ -44,6 +44,7 @@ import {
 import { loadSettings, refreshRealMacNote, syncSubpages, updateCelestialLocationRow, updateCelestialPermissionRows, updateClockNightAdminRows, updateOnvifEventsRows, updatePersonSensorRows, updateRtspRows } from './settings.js';
 import { dashboardField } from './dashboard_picker.js';
 import { drawerItemsText, openDrawerItemsPicker } from './drawer_items.js';
+import { compassLayoutRow, compassStyleRow } from './compass.js';
 import { SEARCH_CATEGORY_TABS, jumpToResult } from './search.js';
 import { updatePlayerRow } from './panels.js';
 import {
@@ -667,6 +668,11 @@ export function settingRow(s) {
     });
     return row;
   }
+
+  // Settings > Navigation: the style cards and the Compass layout map,
+  // mirroring the device (compass_settings.dart).
+  if (s.key === 'nav.style') return compassStyleRow(row, s, save);
+  if (s.key === 'nav.compass_layout') return compassLayoutRow(row, s, save);
 
   // The kiosk menu's rows (issue #1194), picked and arranged in the shared
   // picker like the device's. The summary names the rows on.

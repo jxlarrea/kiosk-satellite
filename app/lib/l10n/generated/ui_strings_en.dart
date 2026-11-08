@@ -10608,6 +10608,198 @@ class UiStringsEn extends UiStrings {
   String get settingsLedEffects => 'Effects';
 
   @override
+  String get settingsGroupKioskSatellite => 'Kiosk Satellite';
+
+  @override
+  String get settingsMenuNavigation => 'Navigation';
+
+  @override
+  String get settingsMenuNavigationSummary => 'Classic or Compass';
+
+  @override
+  String get navigationStyleSection => 'Navigation style';
+
+  @override
+  String get navigationLayoutSection => 'Compass layout';
+
+  @override
+  String get navigationOptionsSection => 'Compass options';
+
+  @override
+  String get settingNavStyleTitle => 'Navigation style';
+
+  @override
+  String get settingNavStyleDescription =>
+      'Classic keeps the drawer menu, pull to refresh and the dashboard carousel. Compass swipes between views laid out in a cross.';
+
+  @override
+  String get settingNavCompassLayoutTitle => 'Compass layout';
+
+  @override
+  String get settingNavCompassLayoutDescription =>
+      'Up to two views on each side, one of each kind.';
+
+  @override
+  String get settingNavCompassAnimationTitle => 'Swipe animation';
+
+  @override
+  String get settingNavCompassAnimationDescription =>
+      'Zoom out to show the views around, or slide straight across.';
+
+  @override
+  String get settingNavCompassPositionTitle => 'Show position while swiping';
+
+  @override
+  String get settingNavCompassPositionDescription =>
+      'A small map of where you are.';
+
+  @override
+  String get settingNavCompassReturnMinutesTitle => 'Return to center';
+
+  @override
+  String get settingNavCompassReturnMinutesDescription =>
+      'Go back to the center view after no touch for this long. Set to 0 to stay on the view.';
+
+  @override
+  String get settingNavCompassMenuItemsTitle => 'Menu items';
+
+  @override
+  String get settingNavCompassMenuItemsDescription =>
+      'What the Menu view shows. Shared with the drawer menu.';
+
+  @override
+  String get navigationClassic => 'Classic';
+
+  @override
+  String get navigationCompass => 'Compass';
+
+  @override
+  String get navigationZoom => 'Zoom';
+
+  @override
+  String get navigationSlide => 'Slide';
+
+  @override
+  String get compassClassicHint =>
+      'Drawer menu, pull to refresh and the dashboard carousel.';
+
+  @override
+  String get compassCompassHint => 'Swipe between views laid out in a cross.';
+
+  @override
+  String get compassLayoutHint =>
+      'Up to two views on each side, one of each kind. Tap a view to change it, the center one too.';
+
+  @override
+  String get compassOffNote =>
+      'Pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off while Compass is on.';
+
+  @override
+  String get compassMenu => 'Menu';
+
+  @override
+  String get compassHomeDashboard => 'Home Assistant';
+
+  @override
+  String get compassAppLauncher => 'App Launcher';
+
+  @override
+  String get compassCenter => 'Center';
+
+  @override
+  String get compassAddTile => 'Add';
+
+  @override
+  String get compassAddView => 'Add view';
+
+  @override
+  String get compassMoveIn => 'Move in';
+
+  @override
+  String get compassMoveOut => 'Move out';
+
+  @override
+  String get compassReplace => 'Replace';
+
+  @override
+  String get compassRemove => 'Remove';
+
+  @override
+  String get compassChange => 'Change';
+
+  @override
+  String get compassSideUp => 'Up';
+
+  @override
+  String get compassSideRight => 'Right';
+
+  @override
+  String get compassSideDown => 'Down';
+
+  @override
+  String get compassSideLeft => 'Left';
+
+  @override
+  String compassFirstView(String side) {
+    return '$side, first view';
+  }
+
+  @override
+  String compassSecondView(String side) {
+    return '$side, second view';
+  }
+
+  @override
+  String get compassAddAbove => 'Add a view above';
+
+  @override
+  String get compassAddBelow => 'Add a view below';
+
+  @override
+  String get compassAddLeft => 'Add a view on the left';
+
+  @override
+  String get compassAddRight => 'Add a view on the right';
+
+  @override
+  String get compassChangeCenter => 'Change the center view';
+
+  @override
+  String compassReplaceTitle(String name) {
+    return 'Replace $name';
+  }
+
+  @override
+  String get compassKindDashboard => 'Home Assistant dashboard';
+
+  @override
+  String get compassKindDashboardHint => 'Any view, Custom Pages and app pages';
+
+  @override
+  String get compassKindTaken => 'Already placed';
+
+  @override
+  String get compassKindUnavailable => 'Not set up on this kiosk';
+
+  @override
+  String get compassKioskLocked => 'Kiosk locked';
+
+  @override
+  String get compassQuickControls => 'Quick controls';
+
+  @override
+  String get compassOpen => 'Open';
+
+  @override
+  String get compassStateOn => 'On';
+
+  @override
+  String get compassStateOff => 'Off';
+
+  @override
+  String get compassHoldMode => 'Hold Mode';
+
+  @override
   String get settingAdaptiveBrightnessTitle => 'Adaptive brightness';
 
   @override

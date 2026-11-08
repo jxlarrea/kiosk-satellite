@@ -26,7 +26,16 @@ void main() {
       MaterialApp(home: SettingsScreen(container: container)),
     );
     await tester.pump(const Duration(milliseconds: 300));
-    await tester.ensureVisible(find.text('App Launcher'));
+    await tester.scrollUntilVisible(
+      find.text('App Launcher'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView).first,
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('App Launcher'));
     for (var i = 0; i < 10; i++) {

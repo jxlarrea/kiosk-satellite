@@ -35,4 +35,6 @@ In the restricted quick actions menu of a locked kiosk, an entry also needs its 
 
 The pages of these features each have a **Show in the kiosk menu** row that opens this setting, as does the App Launcher page. Before this setting existed, those rows were switches. After the update, the menu keeps the entries those switches had on.
 
+With [Compass navigation](navigation.md) there is no drawer. The Menu view shows the same list, as quick controls and cards.
+
 [Fleet Management](fleet.md) syncs the list under the Device category.

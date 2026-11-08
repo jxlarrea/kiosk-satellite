@@ -734,7 +734,17 @@ class CameraManager extends Manager {
     return const CommandResult.ok();
   }
 
-  Future<CommandResult> showView(String viewId, {bool toggle = false}) async {
+  /// The next open or close of the view skips the slide: Compass moves
+  /// between views with its own swipe, and the view sliding in or out
+  /// after it lands would play the move twice. Read and cleared by the
+  /// overlay when the change reaches it.
+  bool instantNextChange = false;
+
+  Future<CommandResult> showView(
+    String viewId, {
+    bool toggle = false,
+    bool instant = false,
+  }) async {
     final view = _config.findView(viewId);
     if (view == null) return const CommandResult.fail('view not found');
     if (view.cameraIds.isEmpty) {
@@ -753,6 +763,7 @@ class CameraManager extends Manager {
     _clearInterruptedView();
     await _prepareToShowView();
     focusedCameraId.value = null;
+    if (instant) instantNextChange = true;
     activeViewId.value = view.id;
     _publishState();
     return CommandResult.ok(_stateJson());
@@ -768,7 +779,8 @@ class CameraManager extends Manager {
   /// Closes the view. One that opened over another app hands the screen
   /// back to it, unless [returnToPreviousApp] is false: the Home key is the
   /// user leaving on their own.
-  void hideView({bool returnToPreviousApp = true}) {
+  void hideView({bool returnToPreviousApp = true, bool instant = false}) {
+    if (instant && activeViewId.value != null) instantNextChange = true;
     _clearInterruptedView();
     final wasOpen = activeViewId.value != null;
     _hideActiveView();

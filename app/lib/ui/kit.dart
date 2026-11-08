@@ -348,6 +348,13 @@ class _EdgeFadeState extends State<EdgeFade> {
   bool _top = false;
   bool _bottom = false;
 
+  /// Whether the scrollable has reported its extent yet. Its first answer
+  /// applies at once: a list that comes up already overflowing (a page
+  /// opened with its content cached, a swipe landing on it) would
+  /// otherwise fade its mask in over the first 200ms, a flicker right as
+  /// the page appears. Changes after that animate as before.
+  bool _known = false;
+
   /// Test hooks: the two decisions that drive the overlays, which is what
   /// the widget tests pin down rather than the painted gradients.
   @visibleForTesting
@@ -366,8 +373,9 @@ class _EdgeFadeState extends State<EdgeFade> {
         metrics.axisDirection == AxisDirection.left;
     final top = (reversed ? metrics.extentAfter : metrics.extentBefore) > 1;
     final bottom = (reversed ? metrics.extentBefore : metrics.extentAfter) > 1;
-    if (top != _top || bottom != _bottom) {
+    if (!_known || top != _top || bottom != _bottom) {
       setState(() {
+        _known = true;
         _top = top;
         _bottom = bottom;
       });
@@ -388,6 +396,9 @@ class _EdgeFadeState extends State<EdgeFade> {
       width: vertical ? null : Ks.fadeEdge,
       child: IgnorePointer(
         child: TweenAnimationBuilder<double>(
+          // A fresh builder starts at its end value, so the first answer
+          // shows without a fade-in.
+          key: ValueKey(_known),
           tween: Tween(end: show ? 1.0 : 0.0),
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,

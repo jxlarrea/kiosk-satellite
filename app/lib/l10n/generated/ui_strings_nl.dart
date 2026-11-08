@@ -10732,6 +10732,201 @@ class UiStringsNl extends UiStrings {
   String get settingsLedEffects => 'Effecten';
 
   @override
+  String get settingsGroupKioskSatellite => 'Kiosk Satellite';
+
+  @override
+  String get settingsMenuNavigation => 'Navigatie';
+
+  @override
+  String get settingsMenuNavigationSummary => 'Klassiek of Compass';
+
+  @override
+  String get navigationStyleSection => 'Navigatiestijl';
+
+  @override
+  String get navigationLayoutSection => 'Compass-indeling';
+
+  @override
+  String get navigationOptionsSection => 'Compass-opties';
+
+  @override
+  String get settingNavStyleTitle => 'Navigatiestijl';
+
+  @override
+  String get settingNavStyleDescription =>
+      'Klassiek behoudt het zijmenu, trekken om te vernieuwen en de dashboardcarrousel. Met Compass veeg je tussen weergaven die in een kruis liggen.';
+
+  @override
+  String get settingNavCompassLayoutTitle => 'Compass-indeling';
+
+  @override
+  String get settingNavCompassLayoutDescription =>
+      'Maximaal twee weergaven per kant, één van elke soort.';
+
+  @override
+  String get settingNavCompassAnimationTitle => 'Veeganimatie';
+
+  @override
+  String get settingNavCompassAnimationDescription =>
+      'Uitzoomen om de omliggende weergaven te tonen, of recht doorschuiven.';
+
+  @override
+  String get settingNavCompassPositionTitle =>
+      'Positie tonen tijdens het vegen';
+
+  @override
+  String get settingNavCompassPositionDescription =>
+      'Een kleine kaart van waar je bent.';
+
+  @override
+  String get settingNavCompassReturnMinutesTitle => 'Terug naar het midden';
+
+  @override
+  String get settingNavCompassReturnMinutesDescription =>
+      'Ga terug naar de middelste weergave na zo lang zonder aanraking. Zet op 0 om op de weergave te blijven.';
+
+  @override
+  String get settingNavCompassMenuItemsTitle => 'Menu-items';
+
+  @override
+  String get settingNavCompassMenuItemsDescription =>
+      'Wat de Menuweergave toont. Gedeeld met het zijmenu.';
+
+  @override
+  String get navigationClassic => 'Klassiek';
+
+  @override
+  String get navigationCompass => 'Compass';
+
+  @override
+  String get navigationZoom => 'Zoom';
+
+  @override
+  String get navigationSlide => 'Schuiven';
+
+  @override
+  String get compassClassicHint =>
+      'Zijmenu, trekken om te vernieuwen en de dashboardcarrousel.';
+
+  @override
+  String get compassCompassHint =>
+      'Veeg tussen weergaven die in een kruis liggen.';
+
+  @override
+  String get compassLayoutHint =>
+      'Maximaal twee weergaven per kant, één van elke soort. Tik op een weergave om die te wijzigen, ook de middelste.';
+
+  @override
+  String get compassOffNote =>
+      'Trekken om te vernieuwen, de dashboardcarrousel en het vegen vanaf de rand dat het zijmenu opent staan uit zolang Compass aan staat.';
+
+  @override
+  String get compassMenu => 'Menu';
+
+  @override
+  String get compassHomeDashboard => 'Home Assistant';
+
+  @override
+  String get compassAppLauncher => 'Appstarter';
+
+  @override
+  String get compassCenter => 'Midden';
+
+  @override
+  String get compassAddTile => 'Toevoegen';
+
+  @override
+  String get compassAddView => 'Weergave toevoegen';
+
+  @override
+  String get compassMoveIn => 'Naar binnen';
+
+  @override
+  String get compassMoveOut => 'Naar buiten';
+
+  @override
+  String get compassReplace => 'Vervangen';
+
+  @override
+  String get compassRemove => 'Verwijderen';
+
+  @override
+  String get compassChange => 'Wijzigen';
+
+  @override
+  String get compassSideUp => 'Boven';
+
+  @override
+  String get compassSideRight => 'Rechts';
+
+  @override
+  String get compassSideDown => 'Onder';
+
+  @override
+  String get compassSideLeft => 'Links';
+
+  @override
+  String compassFirstView(String side) {
+    return '$side, eerste weergave';
+  }
+
+  @override
+  String compassSecondView(String side) {
+    return '$side, tweede weergave';
+  }
+
+  @override
+  String get compassAddAbove => 'Weergave boven toevoegen';
+
+  @override
+  String get compassAddBelow => 'Weergave onder toevoegen';
+
+  @override
+  String get compassAddLeft => 'Weergave links toevoegen';
+
+  @override
+  String get compassAddRight => 'Weergave rechts toevoegen';
+
+  @override
+  String get compassChangeCenter => 'Middelste weergave wijzigen';
+
+  @override
+  String compassReplaceTitle(String name) {
+    return '$name vervangen';
+  }
+
+  @override
+  String get compassKindDashboard => 'Home Assistant-dashboard';
+
+  @override
+  String get compassKindDashboardHint =>
+      'Elke weergave, eigen pagina\'s en app-pagina\'s';
+
+  @override
+  String get compassKindTaken => 'Al geplaatst';
+
+  @override
+  String get compassKindUnavailable => 'Niet ingesteld op deze kiosk';
+
+  @override
+  String get compassKioskLocked => 'Kiosk vergrendeld';
+
+  @override
+  String get compassQuickControls => 'Snelle bediening';
+
+  @override
+  String get compassOpen => 'Openen';
+
+  @override
+  String get compassStateOn => 'Aan';
+
+  @override
+  String get compassStateOff => 'Uit';
+
+  @override
+  String get compassHoldMode => 'Wachtstand';
+
+  @override
   String get settingAdaptiveBrightnessTitle => 'Adaptieve helderheid';
 
   @override

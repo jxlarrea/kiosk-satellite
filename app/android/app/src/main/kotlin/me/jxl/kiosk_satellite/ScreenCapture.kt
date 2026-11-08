@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
 
 /**
  * Captures the composed Android window via [PixelCopy], including the
@@ -49,6 +50,7 @@ class ScreenCapture(
                 "capture" -> capture(
                     (call.argument<Number>("width"))?.toInt() ?: 1280,
                     (call.argument<Number>("quality"))?.toInt() ?: 80,
+                    call.argument<Boolean>("raw") == true,
                     result,
                 )
                 else -> result.notImplemented()
@@ -61,7 +63,13 @@ class ScreenCapture(
         thread.quitSafely()
     }
 
-    private fun capture(width: Int, quality: Int, result: MethodChannel.Result) {
+    /**
+     * [raw] answers with the pixels themselves, RGBA in a map with the
+     * width and height, for a frame that goes straight back on screen
+     * (Compass navigation's swipe): no JPEG encode here and no decode in
+     * Flutter, which on an Echo Show cost more than the copy.
+     */
+    private fun capture(width: Int, quality: Int, raw: Boolean, result: MethodChannel.Result) {
         // Window PixelCopy is API 26; older devices use the WebView fallback.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             result.success(null)
@@ -108,6 +116,21 @@ class ScreenCapture(
                 main.post { result.success(null) }
                 return
             }
+            if (raw) {
+                // ARGB_8888 is laid out R, G, B, A in memory: the order
+                // Flutter's rgba8888 decode expects.
+                val buffer = ByteBuffer.allocate(frame.byteCount)
+                frame.copyPixelsToBuffer(buffer)
+                val answer = mapOf(
+                    "width" to frame.width,
+                    "height" to frame.height,
+                    "rowBytes" to frame.rowBytes,
+                    "pixels" to buffer.array(),
+                )
+                frame.recycle()
+                main.post { result.success(answer) }
+                return
+            }
             val out = ByteArrayOutputStream()
             frame.compress(Bitmap.CompressFormat.JPEG, quality.coerceIn(1, 100), out)
             frame.recycle()
@@ -118,7 +141,7 @@ class ScreenCapture(
                 if (status != PixelCopy.SUCCESS) {
                     bitmap.recycle()
                     finish(null)
-                } else if (under.isEmpty() || !hasTransparency(bitmap)) {
+                } else if (under.isEmpty() || !hasTransparency(bitmap, if (raw) 8 else 1)) {
                     finish(bitmap)
                 } else {
                     underlay(bitmap, under, ::finish)
@@ -193,14 +216,23 @@ internal fun surfaceLayers(root: View): List<SurfaceView> {
     return found
 }
 
-/** True when any pixel of [bitmap] lets a layer below it show through. */
-internal fun hasTransparency(bitmap: Bitmap): Boolean {
+/**
+ * True when any pixel of [bitmap] lets a layer below it show through.
+ * [step] samples every step-th row and column: a transparent region is a
+ * whole surface's worth of pixels, never a lone one, and a swipe's
+ * snapshot cannot wait on a full scan of a tablet-sized frame.
+ */
+internal fun hasTransparency(bitmap: Bitmap, step: Int = 1): Boolean {
     val row = IntArray(bitmap.width)
-    for (y in 0 until bitmap.height) {
+    var y = 0
+    while (y < bitmap.height) {
         bitmap.getPixels(row, 0, bitmap.width, 0, y, bitmap.width, 1)
-        for (pixel in row) {
-            if (pixel ushr 24 != 0xFF) return true
+        var x = 0
+        while (x < row.size) {
+            if (row[x] ushr 24 != 0xFF) return true
+            x += step
         }
+        y += step
     }
     return false
 }

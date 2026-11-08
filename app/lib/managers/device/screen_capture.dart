@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart';
@@ -58,6 +59,36 @@ class ScreenCapture {
     } catch (_) {
       // MissingPluginException while the Activity is destroyed, or any
       // platform failure: not an error, just "no window to capture".
+      return null;
+    }
+  }
+
+  /// The display as an image ready to paint, [width] pixels across: the
+  /// raw pixels straight from the copy, with no JPEG round trip. Null
+  /// under the same conditions as [capture].
+  static Future<ui.Image?> captureImage({int width = 1280}) async {
+    try {
+      final answer = await _channel.invokeMapMethod<String, Object?>(
+        'capture',
+        {'width': width, 'raw': true},
+      );
+      if (answer == null) return null;
+      final w = answer['width'];
+      final h = answer['height'];
+      final rowBytes = answer['rowBytes'];
+      final pixels = answer['pixels'];
+      if (w is! int || h is! int || pixels is! Uint8List) return null;
+      final done = Completer<ui.Image>();
+      ui.decodeImageFromPixels(
+        pixels,
+        w,
+        h,
+        ui.PixelFormat.rgba8888,
+        done.complete,
+        rowBytes: rowBytes is int ? rowBytes : null,
+      );
+      return await done.future;
+    } catch (_) {
       return null;
     }
   }

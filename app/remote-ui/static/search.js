@@ -12,6 +12,7 @@ import { REALTIME_PROVIDERS, providerKeys } from './vs_native.js';
 // pages themselves, and a short list of hand-built rows the definitions do
 // not cover. Keep SEARCH_EXTRAS in step with handBuiltSearchEntries there.
 export const SEARCH_CATEGORY_TABS = {
+  'Navigation': 'navigation',
   'Browser': 'browser', 'Kiosk': 'kiosk', 'Lockdown': 'lockdown',
   'Launcher': 'launcher', 'Home': 'home', 'Screen & Audio': 'screenaudio',
   'Screensaver': 'screensaver', 'Camera': 'camera',

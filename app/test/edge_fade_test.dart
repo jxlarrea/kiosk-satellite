@@ -44,6 +44,50 @@ void main() {
     expect(edges(tester), (false, true));
   });
 
+  testWidgets('the first answer shows at once, not faded in', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            height: 300,
+            child: EdgeFade(
+              child: ListView(
+                children: [
+                  for (var i = 0; i < 20; i++)
+                    SizedBox(height: 40, child: Text('row $i')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    // One frame for the list's first metrics to land, no animation time.
+    await tester.pump();
+    final fades = tester.widgetList<TweenAnimationBuilder<double>>(
+      find.byType(TweenAnimationBuilder<double>),
+    );
+    final bottom = fades.last;
+    expect(bottom.tween.end, 1.0);
+    // The builder holding the bottom edge is drawn at full strength in this
+    // very frame: its gradient is already there.
+    expect(
+      find.descendant(
+        of: find.byWidget(bottom),
+        matching: find.byType(DecoratedBox),
+      ),
+      findsOneWidget,
+    );
+    final box = tester.widget<DecoratedBox>(
+      find.descendant(
+        of: find.byWidget(bottom),
+        matching: find.byType(DecoratedBox),
+      ),
+    );
+    final gradient = (box.decoration as BoxDecoration).gradient!;
+    expect(gradient.colors.first.a, 1.0);
+  });
+
   testWidgets('mid-scroll fades both edges, the end only the top', (
     tester,
   ) async {

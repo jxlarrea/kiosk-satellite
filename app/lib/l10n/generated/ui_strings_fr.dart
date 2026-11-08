@@ -10802,6 +10802,200 @@ class UiStringsFr extends UiStrings {
   String get settingsLedEffects => 'Effets';
 
   @override
+  String get settingsGroupKioskSatellite => 'Kiosk Satellite';
+
+  @override
+  String get settingsMenuNavigation => 'Navigation';
+
+  @override
+  String get settingsMenuNavigationSummary => 'Classique ou Compass';
+
+  @override
+  String get navigationStyleSection => 'Style de navigation';
+
+  @override
+  String get navigationLayoutSection => 'Disposition de Compass';
+
+  @override
+  String get navigationOptionsSection => 'Options de Compass';
+
+  @override
+  String get settingNavStyleTitle => 'Style de navigation';
+
+  @override
+  String get settingNavStyleDescription =>
+      'Classique garde le menu latéral, l\'actualisation par glissement et le carrousel de tableau de bord. Compass passe d\'une vue à l\'autre par glissement, les vues étant disposées en croix.';
+
+  @override
+  String get settingNavCompassLayoutTitle => 'Disposition de Compass';
+
+  @override
+  String get settingNavCompassLayoutDescription =>
+      'Jusqu\'à deux vues de chaque côté, une de chaque type.';
+
+  @override
+  String get settingNavCompassAnimationTitle => 'Animation de balayage';
+
+  @override
+  String get settingNavCompassAnimationDescription =>
+      'Dézoomer pour montrer les vues autour, ou glisser directement.';
+
+  @override
+  String get settingNavCompassPositionTitle =>
+      'Afficher la position pendant le balayage';
+
+  @override
+  String get settingNavCompassPositionDescription =>
+      'Une petite carte de l\'endroit où vous êtes.';
+
+  @override
+  String get settingNavCompassReturnMinutesTitle => 'Revenir au centre';
+
+  @override
+  String get settingNavCompassReturnMinutesDescription =>
+      'Revenir à la vue centrale après ce délai sans toucher l\'écran. Mettez 0 pour rester sur la vue.';
+
+  @override
+  String get settingNavCompassMenuItemsTitle => 'Éléments du menu';
+
+  @override
+  String get settingNavCompassMenuItemsDescription =>
+      'Ce qu\'affiche la vue Menu. Partagé avec le menu latéral.';
+
+  @override
+  String get navigationClassic => 'Classique';
+
+  @override
+  String get navigationCompass => 'Compass';
+
+  @override
+  String get navigationZoom => 'Zoom';
+
+  @override
+  String get navigationSlide => 'Glisser';
+
+  @override
+  String get compassClassicHint =>
+      'Menu latéral, actualisation par glissement et carrousel de tableau de bord.';
+
+  @override
+  String get compassCompassHint => 'Glissez entre des vues disposées en croix.';
+
+  @override
+  String get compassLayoutHint =>
+      'Jusqu\'à deux vues de chaque côté, une de chaque type. Touchez une vue pour la modifier, y compris celle du centre.';
+
+  @override
+  String get compassOffNote =>
+      'L\'actualisation par glissement, le carrousel de tableau de bord et le glissement depuis le bord qui ouvre le menu latéral sont désactivés tant que Compass est actif.';
+
+  @override
+  String get compassMenu => 'Menu';
+
+  @override
+  String get compassHomeDashboard => 'Home Assistant';
+
+  @override
+  String get compassAppLauncher => 'Lanceur d\'applications';
+
+  @override
+  String get compassCenter => 'Centre';
+
+  @override
+  String get compassAddTile => 'Ajouter';
+
+  @override
+  String get compassAddView => 'Ajouter une vue';
+
+  @override
+  String get compassMoveIn => 'Rapprocher';
+
+  @override
+  String get compassMoveOut => 'Éloigner';
+
+  @override
+  String get compassReplace => 'Remplacer';
+
+  @override
+  String get compassRemove => 'Retirer';
+
+  @override
+  String get compassChange => 'Modifier';
+
+  @override
+  String get compassSideUp => 'Haut';
+
+  @override
+  String get compassSideRight => 'Droite';
+
+  @override
+  String get compassSideDown => 'Bas';
+
+  @override
+  String get compassSideLeft => 'Gauche';
+
+  @override
+  String compassFirstView(String side) {
+    return '$side, première vue';
+  }
+
+  @override
+  String compassSecondView(String side) {
+    return '$side, deuxième vue';
+  }
+
+  @override
+  String get compassAddAbove => 'Ajouter une vue en haut';
+
+  @override
+  String get compassAddBelow => 'Ajouter une vue en bas';
+
+  @override
+  String get compassAddLeft => 'Ajouter une vue à gauche';
+
+  @override
+  String get compassAddRight => 'Ajouter une vue à droite';
+
+  @override
+  String get compassChangeCenter => 'Modifier la vue centrale';
+
+  @override
+  String compassReplaceTitle(String name) {
+    return 'Remplacer $name';
+  }
+
+  @override
+  String get compassKindDashboard => 'Tableau de bord Home Assistant';
+
+  @override
+  String get compassKindDashboardHint =>
+      'N\'importe quelle vue, pages personnalisées et pages d\'applications';
+
+  @override
+  String get compassKindTaken => 'Déjà placée';
+
+  @override
+  String get compassKindUnavailable => 'Non configuré sur ce kiosque';
+
+  @override
+  String get compassKioskLocked => 'Kiosque verrouillé';
+
+  @override
+  String get compassQuickControls => 'Commandes rapides';
+
+  @override
+  String get compassOpen => 'Ouvrir';
+
+  @override
+  String get compassStateOn => 'Activé';
+
+  @override
+  String get compassStateOff => 'Désactivé';
+
+  @override
+  String get compassHoldMode => 'Mode maintien';
+
+  @override
   String get settingAdaptiveBrightnessTitle => 'Luminosité adaptative';
 
   @override

@@ -18551,6 +18551,360 @@ abstract class UiStrings {
   /// **'Effects'**
   String get settingsLedEffects;
 
+  /// Heading above a group of Settings menu entries. The product name, keep it as is.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk Satellite'**
+  String get settingsGroupKioskSatellite;
+
+  /// Settings menu entry for how the kiosk is moved around.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation'**
+  String get settingsMenuNavigation;
+
+  /// Summary under the Navigation entry. Classic and Compass are the two navigation styles.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic or Compass'**
+  String get settingsMenuNavigationSummary;
+
+  /// Heading of the group that picks the navigation style.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation style'**
+  String get navigationStyleSection;
+
+  /// Heading of the group that places views around the center. Compass is the name of the navigation style.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass layout'**
+  String get navigationLayoutSection;
+
+  /// Heading of the Compass settings group.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass options'**
+  String get navigationOptionsSection;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation style'**
+  String get settingNavStyleTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic keeps the drawer menu, pull to refresh and the dashboard carousel. Compass swipes between views laid out in a cross.'**
+  String get settingNavStyleDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass layout'**
+  String get settingNavCompassLayoutTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to two views on each side, one of each kind.'**
+  String get settingNavCompassLayoutDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe animation'**
+  String get settingNavCompassAnimationTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out to show the views around, or slide straight across.'**
+  String get settingNavCompassAnimationDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Show position while swiping'**
+  String get settingNavCompassPositionTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'A small map of where you are.'**
+  String get settingNavCompassPositionDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to center'**
+  String get settingNavCompassReturnMinutesTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back to the center view after no touch for this long. Set to 0 to stay on the view.'**
+  String get settingNavCompassReturnMinutesDescription;
+
+  /// Setting label. Opens the Drawer menu items picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu items'**
+  String get settingNavCompassMenuItemsTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'What the Menu view shows. Shared with the drawer menu.'**
+  String get settingNavCompassMenuItemsDescription;
+
+  /// Navigation style option: the drawer menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get navigationClassic;
+
+  /// Navigation style option and feature name: views laid out in a cross you swipe between.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass'**
+  String get navigationCompass;
+
+  /// Swipe animation option.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom'**
+  String get navigationZoom;
+
+  /// Swipe animation option.
+  ///
+  /// In en, this message translates to:
+  /// **'Slide'**
+  String get navigationSlide;
+
+  /// Description on the Classic choice card.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawer menu, pull to refresh and the dashboard carousel.'**
+  String get compassClassicHint;
+
+  /// Description on the Compass choice card.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe between views laid out in a cross.'**
+  String get compassCompassHint;
+
+  /// Hint above the layout map.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to two views on each side, one of each kind. Tap a view to change it, the center one too.'**
+  String get compassLayoutHint;
+
+  /// Note under the Compass options.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off while Compass is on.'**
+  String get compassOffNote;
+
+  /// Name of the view that replaces the drawer menu, at the far end of the left side.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get compassMenu;
+
+  /// The dashboard the kiosk starts on, as a view in the layout. The product name, keep it as is.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Assistant'**
+  String get compassHomeDashboard;
+
+  /// View name.
+  ///
+  /// In en, this message translates to:
+  /// **'App Launcher'**
+  String get compassAppLauncher;
+
+  /// Label on the view in the middle of the layout.
+  ///
+  /// In en, this message translates to:
+  /// **'Center'**
+  String get compassCenter;
+
+  /// Empty place on the layout map that adds a view.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get compassAddTile;
+
+  /// Row that adds a view to a side.
+  ///
+  /// In en, this message translates to:
+  /// **'Add view'**
+  String get compassAddView;
+
+  /// Button that moves a view closer to the center.
+  ///
+  /// In en, this message translates to:
+  /// **'Move in'**
+  String get compassMoveIn;
+
+  /// Button that moves a view away from the center.
+  ///
+  /// In en, this message translates to:
+  /// **'Move out'**
+  String get compassMoveOut;
+
+  /// Button that swaps a view for another.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get compassReplace;
+
+  /// Button that takes a view out of the layout.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get compassRemove;
+
+  /// Button that picks another center view.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get compassChange;
+
+  /// Side of the layout, above the center.
+  ///
+  /// In en, this message translates to:
+  /// **'Up'**
+  String get compassSideUp;
+
+  /// Side of the layout, right of the center.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get compassSideRight;
+
+  /// Side of the layout, below the center.
+  ///
+  /// In en, this message translates to:
+  /// **'Down'**
+  String get compassSideDown;
+
+  /// Side of the layout, left of the center.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get compassSideLeft;
+
+  /// Where the selected view sits.
+  ///
+  /// In en, this message translates to:
+  /// **'{side}, first view'**
+  String compassFirstView(String side);
+
+  /// Where the selected view sits.
+  ///
+  /// In en, this message translates to:
+  /// **'{side}, second view'**
+  String compassSecondView(String side);
+
+  /// Dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a view above'**
+  String get compassAddAbove;
+
+  /// Dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a view below'**
+  String get compassAddBelow;
+
+  /// Dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a view on the left'**
+  String get compassAddLeft;
+
+  /// Dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a view on the right'**
+  String get compassAddRight;
+
+  /// Dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the center view'**
+  String get compassChangeCenter;
+
+  /// Dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace {name}'**
+  String compassReplaceTitle(String name);
+
+  /// View kind in the add dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Assistant dashboard'**
+  String get compassKindDashboard;
+
+  /// Hint under the dashboard choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Any view, Custom Pages and app pages'**
+  String get compassKindDashboardHint;
+
+  /// Hint under a view kind the layout already holds.
+  ///
+  /// In en, this message translates to:
+  /// **'Already placed'**
+  String get compassKindTaken;
+
+  /// Hint under a view kind with nothing to show yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set up on this kiosk'**
+  String get compassKindUnavailable;
+
+  /// Badge in the Menu view header while kiosk mode is on.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk locked'**
+  String get compassKioskLocked;
+
+  /// Heading over the switches and one-tap actions in the Menu view.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick controls'**
+  String get compassQuickControls;
+
+  /// Heading over the pages the Menu view opens, such as Calendar or Camera View.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get compassOpen;
+
+  /// State under a switch in the Menu view that is on.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get compassStateOn;
+
+  /// State under a switch in the Menu view that is off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get compassStateOff;
+
+  /// Name of the Hold Mode switch in the Menu view. Use the same term as the drawer menu's Turn On Hold Mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold Mode'**
+  String get compassHoldMode;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

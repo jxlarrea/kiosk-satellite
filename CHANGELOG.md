@@ -4,8 +4,15 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Compass navigation.** Settings > Navigation, under a new Kiosk Satellite heading, picks Classic, which is the drawer menu, or Compass. Compass lays views out in a cross around a center view and you swipe between them. Each side holds up to two views, one of each kind: a Home Assistant dashboard view, the Menu, the Music Library, the calendar, alarms, Now Playing, a camera view, the App Launcher or the intercom. The center can be any of them. While a swipe moves, the view shrinks to show the views around it, and Swipe animation can set a plain slide instead. The Menu view holds the drawer menu's items as quick controls and cards, with Settings at the top. A new layout has it on the left, and with remote admin off a layout always gets one so Settings stays reachable. On a locked kiosk, Allowed Actions decide which views a swipe reaches, and the Menu shows only the allowed actions with Settings behind the exit gesture or PIN. Back goes to the center, Return to center goes back after a set time without a touch and Show position while swiping draws a small map of the layout. Pull to refresh, the dashboard carousel and the drawer's edge swipe are off while Compass is on. The layout is edited on a map of the cross on tablets and in the remote admin, and in lists on phones.
+
 ### Changed
 - **End after silence goes down to 2 seconds.** Settings > Voice Satellite > Realtime > End after silence used to start at 5 seconds. Under 5 seconds the bar counts down over the whole wait. The first words after the wake word still get 5 seconds.
+- **The Music Library opens with its shelves in place.** It used to show a spinner where Discover, Recently played and the other shelves had been every time it opened, until Music Assistant answered again. It now shows what each page showed last time right away and swaps in the fresh copy when it arrives.
+
+### Fixed
+- **Scrolling lists no longer flicker their edge fade when a page opens.** The fade at the top or bottom of a list that has more to show used to fade in over the first moment after the page appeared. It now shows right away, and only later changes, such as scrolling to the end, fade.
 
 ## v2026.11.13 - 2026-11-08
 

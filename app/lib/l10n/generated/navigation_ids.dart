@@ -69,5 +69,11 @@ const navigationMessageIds = <String, String>{
   "Effects": "settingsLedEffects",
   "Calendar": "settingsMenuCalendar",
   "Family calendars from Home Assistant": "settingsMenuCalendarSummary",
-  "Household": "settingsGroupHousehold"
+  "Household": "settingsGroupHousehold",
+  "Kiosk Satellite": "settingsGroupKioskSatellite",
+  "Navigation": "settingsMenuNavigation",
+  "Classic or Compass": "settingsMenuNavigationSummary",
+  "Navigation style": "navigationStyleSection",
+  "Compass layout": "navigationLayoutSection",
+  "Compass options": "navigationOptionsSection"
 };
