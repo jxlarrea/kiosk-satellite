@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## v2026.11.13 - 2026-11-08
 
+### Added
+- **Close overlays ESPHome button.** It closes everything shown over the dashboard and leaves the page where it is: the screensaver (including Now Playing), the camera view, the calendar, the Music Library, the alarm list, the app launcher and overlay pages such as Music Assistant, custom pages and opened links. A ringing alarm, an intercom call, the voice overlay, notifications and Settings stay up. The screensaver closes only if it is up, so a press does not turn on a dark screen.
+
 ### Fixed
 - **Dates follow Android when the app does not offer its language (#1341, #1317).** Since 2026.11.11 dates and numbers use the app language, so a Czech or Italian Android with the app in English showed "Saturday, November 7" on the screensaver. If the app does not offer the Android language, dates, day names and numbers now use the Android one, as they did before 2026.11.11. An Android language the app offers still gives way to the app language.
 

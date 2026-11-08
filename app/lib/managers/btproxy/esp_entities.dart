@@ -766,6 +766,7 @@ class EspEntitySurface {
       ),
       button('reload', 'Reload page', 'mdi:refresh'),
       button('load_start_url', 'Go to dashboard', 'mdi:view-dashboard'),
+      button('close_overlays', 'Close overlays', 'mdi:layers-off-outline'),
       button('clear_cache', 'Clear cache', 'mdi:broom'),
       button('restart', 'Restart app', '', deviceClass: 'restart'),
       if (_rebootListed)
@@ -1411,6 +1412,7 @@ class EspEntitySurface {
     'notifications_dismiss_all',
     'reload',
     'load_start_url',
+    'close_overlays',
     'clear_cache',
     'bring_to_front',
     'open_launcher',
@@ -2220,6 +2222,28 @@ class EspEntitySurface {
     _noise.reset();
   }
 
+  /// Close overlays: everything drawn over the dashboard that closes
+  /// without side effects, leaving the page as it is. A ringing alarm, a
+  /// call, the voice overlay, notifications and Settings stay. The
+  /// screensaver is stopped only when it is up, since stopping it lights
+  /// the screen.
+  Future<void> _closeOverlays() async {
+    for (final name in const [
+      'hideCameraView',
+      'hideCalendar',
+      'hideMusicLibrary',
+      'hideAlarms',
+      'hideAppLauncher',
+      'hideOverlayPage',
+    ]) {
+      await commands.execute(name, const {});
+    }
+    final screensaver = await commands.execute('isScreensaverActive', const {});
+    if (screensaver.data == true) {
+      await commands.execute('stopScreensaver', const {});
+    }
+  }
+
   /// A command from Home Assistant landed (via the native hub). State
   /// echoes ride the ordinary change events the acted-on managers publish,
   /// so HA sees the real outcome, not an optimistic assumption.
@@ -2369,6 +2393,8 @@ class EspEntitySurface {
         await commands.execute('alarmSnooze', const {'source': 'esphome'});
       case 'load_start_url':
         await commands.execute('loadStartUrl', const {});
+      case 'close_overlays':
+        await _closeOverlays();
       case 'clear_cache':
         await commands.execute('clearWebCache', const {});
       case 'restart':

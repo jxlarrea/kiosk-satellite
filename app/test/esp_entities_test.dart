@@ -278,6 +278,11 @@ void main() {
       'showMusicAssistant',
       'openMusicLibrary',
       'hideCameraView',
+      'hideCalendar',
+      'hideMusicLibrary',
+      'hideAlarms',
+      'hideAppLauncher',
+      'hideOverlayPage',
       'showCameraView',
       'haNavigate',
       'installUpdate',
@@ -727,6 +732,40 @@ void main() {
     },
   );
 
+  test('Close overlays closes every overlay and leaves the page', () async {
+    var screensaver = false;
+    commands.register(
+      Command(
+        name: 'isScreensaverActive',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(screensaver),
+      ),
+    );
+    await attach();
+    executed.clear();
+    await surface.handleCommand('close_overlays', null);
+    final closed = [for (final e in executed) e.$1];
+    expect(
+      closed,
+      containsAll([
+        'hideCameraView',
+        'hideCalendar',
+        'hideMusicLibrary',
+        'hideAlarms',
+        'hideAppLauncher',
+        'hideOverlayPage',
+      ]),
+    );
+    // No screensaver up: the screen is left as it is.
+    expect(closed, isNot(contains('stopScreensaver')));
+    expect(closed, isNot(contains('loadStartUrl')));
+
+    screensaver = true;
+    executed.clear();
+    await surface.handleCommand('close_overlays', null);
+    expect(executed.map((e) => e.$1), contains('stopScreensaver'));
+  });
+
   test('Now Playing follows the view and brings it up', () async {
     commands.register(
       Command(
@@ -1014,6 +1053,7 @@ void main() {
         'notifications_dismiss_all',
         'reload',
         'load_start_url',
+        'close_overlays',
         'clear_cache',
         'restart',
         'bring_to_front',
