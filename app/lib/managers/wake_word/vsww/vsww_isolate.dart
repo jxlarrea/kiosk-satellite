@@ -407,7 +407,9 @@ class _IsolateWorker {
       // below-gate alignment. Not the stream's: it reuses its last verdict
       // until new phonemes arrive, so its near score would outlive the word.
       final scored = combined.matched ? combined : perWindow;
-      if (!k.isStop && _nearMisses) {
+      // The stop word too: it only scores while armed, so its near misses
+      // are the "stop" a response talked over.
+      if (_nearMisses) {
         final miss = k.nearMiss.update(
           score: scored.score,
           threshold: scored.threshold.isFinite
@@ -426,6 +428,7 @@ class _IsolateWorker {
             'type': WakeMsg.nearMiss,
             'id': k.id,
             'wakeWord': k.wakeWord,
+            if (k.isStop) 'stop': true,
             ...miss,
           });
         }
@@ -476,7 +479,22 @@ class _IsolateWorker {
           // interruptible state down. Deciding here would fork that state.
           // The gate's cooldown, not a self-disarm, is what stops the same
           // word firing twice before the card's command lands.
-          _main.send({'type': WakeMsg.detection, 'id': k.id, 'stop': true});
+          final conf = combined.matchedConfidence;
+          _main.send({
+            'type': WakeMsg.detection,
+            'id': k.id,
+            'wakeWord': k.wakeWord,
+            'stop': true,
+            // For the diagnostics log, as with a wake word.
+            'score': conf.isFinite ? conf : 0.0,
+            'threshold': combined.gateThreshold.isFinite
+                ? combined.gateThreshold
+                : 0.0,
+            'editDistance': combined.editDistance < (1 << 20)
+                ? combined.editDistance
+                : -1,
+            'decoded': k.manifest.ctc.phonemesFor(decode.ids),
+          });
           return;
         }
         final wakeEnd = _wakeEndSample(k, combined, identical(combined, perWindow));
@@ -593,6 +611,7 @@ class _IsolateWorker {
       if (!k.isStop) continue;
       k.stream.reset();
       k.gate.reset();
+      k.nearMiss.reset();
     }
     _log('info', active ? 'stop word armed' : 'stop word disarmed');
   }

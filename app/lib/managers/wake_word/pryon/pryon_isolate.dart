@@ -224,9 +224,29 @@ class _PryonWorker {
     if (_tester) return;
 
     if (w.isStop) {
-      if (!fired || !_stopArmed) return;
+      if (!_stopArmed) return;
+      if (!fired) {
+        if (nearMisses) {
+          _main.send({
+            'type': WakeMsg.nearMiss,
+            'id': w.id,
+            'wakeWord': w.wakeWord,
+            'stop': true,
+            'score': score,
+            'threshold': threshold,
+          });
+        }
+        return;
+      }
       _log('info', 'stop word detected (${score.toStringAsFixed(3)})');
-      _main.send({'type': WakeMsg.detection, 'id': w.id, 'stop': true});
+      _main.send({
+        'type': WakeMsg.detection,
+        'id': w.id,
+        'wakeWord': w.wakeWord,
+        'stop': true,
+        'score': score,
+        'threshold': threshold,
+      });
       return;
     }
     if (_detected) return;

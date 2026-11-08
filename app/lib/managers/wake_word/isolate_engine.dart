@@ -577,6 +577,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   }
 
   Future<void> _onDetectionMessage(Map msg) async {
+    _lastDetection = {
+      for (final e in msg.entries)
+        if (e.key != 'type') '${e.key}': e.value,
+    };
     if (msg['stop'] == true) {
       // Report only. The card decides what "stop" means and disarms us as part
       // of ending the interruptible state; unlike a wake word, the stop
@@ -590,10 +594,6 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       wakeWord: msg['wakeWord'] as String? ?? '',
       manifestUrl: '',
     );
-    _lastDetection = {
-      for (final e in msg.entries)
-        if (e.key != 'type') '${e.key}': e.value,
-    };
     // Fall back to "now": an engine that cannot align its match still must not
     // replay the wake word, and detection never precedes the wake word ending.
     _wakeEndSample = msg['wakeEndSample'] as int? ?? _preRoll.absSamples;

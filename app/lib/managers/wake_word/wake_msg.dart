@@ -26,7 +26,8 @@ class WakeMsg {
 
   /// A wake word that scored within reach of its threshold and fell back
   /// without firing, one per episode (see NearMissTracker): {id, wakeWord,
-  /// score, threshold, ...}. Enabled only while diagnostics are recording.
+  /// score, threshold, ...}, with `stop: true` for the armed stop word.
+  /// Enabled only while diagnostics are recording.
   static const nearMiss = 'nearMiss';
 
   // main -> isolate (control; audio arrives as a bare Uint8List)

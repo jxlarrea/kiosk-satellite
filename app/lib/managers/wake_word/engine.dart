@@ -360,17 +360,19 @@ abstract class WakeWordEngine {
   /// PCM16, or null when nothing is being recorded.
   Uint8List? recentAudio(Duration length) => null;
 
-  /// Near misses as the detector spots them: a wake word that scored within
-  /// reach of its threshold and fell back without firing, with its peak
-  /// score and threshold in [detail]. Always reported by engines that can;
-  /// the manager keeps them only while diagnostics is on.
+  /// Near misses as the detector spots them: a wake word, or the armed stop
+  /// word (`stop: true` in [detail]), that scored within reach of its
+  /// threshold and fell back without firing, with its peak score and
+  /// threshold in [detail]. Always reported by engines that can; the
+  /// manager keeps them only while diagnostics is on.
   set onNearMiss(
     void Function(WakeWordModelRef model, Map<String, Object?> detail)? sink,
   ) {}
 
-  /// What the detector reported with its latest wake word detection (score,
-  /// threshold and whatever else the engine knows), or null. Read by the
-  /// detection callback, which runs before the next detection can land.
+  /// What the detector reported with its latest wake word or stop word
+  /// detection (score, threshold and whatever else the engine knows), or
+  /// null. Read by the detection callbacks, which run before the next
+  /// detection can land.
   Map<String, Object?>? get lastDetection => null;
 
   /// Pause/resume *detection* without tearing the engine down. The mic stays

@@ -9,7 +9,8 @@ import 'toast.dart';
 import 'wake_audio_player.dart';
 
 /// The activations and near misses wake word diagnostics saved, as two
-/// groups, newest first, each row with its scores, the clip's levels and a
+/// groups, newest first, the stop word's among them marked as such, each row
+/// with its scores, the clip's levels and a
 /// button that plays the clip on the kiosk. One player for both, so two
 /// clips never play over each other. Sits under the switch on the Wake word
 /// diagnostics page; the remote admin draws the same groups from
@@ -100,7 +101,11 @@ class _WakeDiagnosticsListsState extends State<WakeDiagnosticsLists> {
       subtitle: Text.rich(
         TextSpan(
           children: [
-            TextSpan(text: shortDateTime(a.at)),
+            TextSpan(
+              text: a.stop
+                  ? '${voiceText(context, 'Stop word')} · ${shortDateTime(a.at)}'
+                  : shortDateTime(a.at),
+            ),
             TextSpan(text: '\n${activationStats(context, a)}'),
             if (a.clipped > 0)
               TextSpan(

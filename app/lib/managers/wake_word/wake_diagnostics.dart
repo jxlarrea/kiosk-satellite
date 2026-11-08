@@ -7,11 +7,13 @@ import 'package:path_provider/path_provider.dart';
 
 import 'pcm16.dart';
 
-/// One wake word activation or near miss, as wake word diagnostics saved it.
+/// One wake word or stop word activation or near miss, as wake word
+/// diagnostics saved it.
 class WakeActivation {
   const WakeActivation({
     required this.id,
     this.nearMiss = false,
+    this.stop = false,
     required this.at,
     required this.wakeWord,
     required this.engine,
@@ -32,6 +34,10 @@ class WakeActivation {
   /// Scored within reach of the threshold and fell back without firing.
   /// [score] is then the episode's peak.
   final bool nearMiss;
+
+  /// The stop word, heard while a response, media or a timer could be
+  /// interrupted, rather than a wake word.
+  final bool stop;
   final DateTime at;
   final String wakeWord;
   final String engine;
@@ -63,6 +69,7 @@ class WakeActivation {
   Map<String, Object?> toJson() => {
     'id': id,
     if (nearMiss) 'nearMiss': true,
+    if (stop) 'stop': true,
     'at': at.toUtc().toIso8601String(),
     'wakeWord': wakeWord,
     'engine': engine,
@@ -86,6 +93,7 @@ class WakeActivation {
     return WakeActivation(
       id: id,
       nearMiss: raw['nearMiss'] == true,
+      stop: raw['stop'] == true,
       at: at.toLocal(),
       wakeWord: '${raw['wakeWord'] ?? ''}',
       engine: '${raw['engine'] ?? ''}',
@@ -104,9 +112,11 @@ class WakeActivation {
 
 /// The last [capacity] wake word activations and the last [capacity] near
 /// misses, with a short clip of each, kept on disk so they survive a
-/// restart. Separate allowances, so a noisy room's near misses never push
-/// the real activations out. Only written while the user has wake word
-/// diagnostics on; turning it off calls [clear].
+/// restart. The stop word gets the same two allowances of its own. Separate
+/// allowances, so a noisy room's near misses never push the real activations
+/// out, and a long answer full of stop word near misses never pushes out the
+/// wake word's. Only written while the user has wake word diagnostics on;
+/// turning it off calls [clear].
 class WakeWordDiagnostics extends ChangeNotifier {
   WakeWordDiagnostics({
     @visibleForTesting Future<Directory> Function()? directory,
@@ -177,15 +187,16 @@ class WakeWordDiagnostics extends ChangeNotifier {
     return await file.exists() ? file : null;
   }
 
-  /// Save one activation, or a near miss when [nearMiss]: [pcm] is the
-  /// audio leading up to it (16 kHz mono PCM16) and [detection] what the
-  /// detector reported.
+  /// Save one activation, or a near miss when [nearMiss], of the stop word
+  /// when [stop]: [pcm] is the audio leading up to it (16 kHz mono PCM16)
+  /// and [detection] what the detector reported.
   Future<WakeActivation> record({
     required String wakeWord,
     required String engine,
     required Uint8List pcm,
     Map<String, Object?>? detection,
     bool nearMiss = false,
+    bool stop = false,
     DateTime? at,
   }) => _serial(() async {
     final when = at ?? DateTime.now();
@@ -201,6 +212,7 @@ class WakeWordDiagnostics extends ChangeNotifier {
     final activation = WakeActivation(
       id: id,
       nearMiss: nearMiss,
+      stop: stop,
       at: when,
       wakeWord: wakeWord,
       engine: engine,
@@ -223,7 +235,7 @@ class WakeWordDiagnostics extends ChangeNotifier {
     final kept = <WakeActivation>[];
     var sameKind = 0;
     for (final e in [activation, ..._entries]) {
-      if (e.nearMiss == nearMiss && ++sameKind > capacity) {
+      if (e.nearMiss == nearMiss && e.stop == stop && ++sameKind > capacity) {
         try {
           await File('${dir.path}/${e.id}.wav').delete();
         } catch (_) {}

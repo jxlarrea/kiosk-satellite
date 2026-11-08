@@ -48,6 +48,7 @@ async function clipUrl(a) {
 
 // "office-tablet-hey-luna-20260926-124512.wav", "...-near-miss.wav" for a
 // near miss: sorts by device, then word, then time in a downloads folder.
+// The stop word's phrase ("ok-stop") already sets its clips apart.
 function clipName(a) {
   const slug = (s) => String(s || '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -105,7 +106,8 @@ function row(a, repaint) {
   // Date, then the numbers, then what vsWakeWord heard: one fact a line,
   // the same three lines the device shows.
   const desc = r.querySelector('.desc');
-  desc.append(when(a), document.createElement('br'), stats(a));
+  desc.append(a.stop ? `${voiceText('Stop word')} · ${when(a)}` : when(a),
+    document.createElement('br'), stats(a));
   if (a.clipped > 0) {
     const clipped = document.createElement('strong');
     clipped.style.color = 'var(--error)';

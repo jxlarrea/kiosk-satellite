@@ -294,7 +294,8 @@ class _MwwWorker {
         if (probability == null) continue;
 
         final trigger = k.gate.update(probability, _absSamples ~/ 16);
-        if (!k.isStop && _nearMisses) {
+        // The stop word too, which only scores while armed.
+        if (_nearMisses) {
           final miss = k.nearMiss.update(
             score: k.gate.windowMean,
             threshold: k.gate.cutoff,
@@ -305,6 +306,7 @@ class _MwwWorker {
               'type': WakeMsg.nearMiss,
               'id': k.id,
               'wakeWord': k.wakeWord,
+              if (k.isStop) 'stop': true,
               ...miss,
             });
           }
@@ -340,7 +342,16 @@ class _MwwWorker {
           // Report and keep listening: the card owns the stop state and
           // disarms us as it tears the interruptible state down. Deciding here
           // would fork that state (see the vsWakeWord isolate).
-          _main.send({'type': WakeMsg.detection, 'id': k.id, 'stop': true});
+          _main.send({
+            'type': WakeMsg.detection,
+            'id': k.id,
+            'wakeWord': k.wakeWord,
+            'stop': true,
+            // For the diagnostics log, as with a wake word.
+            'score': k.gate.windowMean,
+            'threshold': k.gate.cutoff,
+            'trigger': trigger.name,
+          });
           return;
         }
 
@@ -404,6 +415,7 @@ class _MwwWorker {
     for (final k in _kws) {
       if (!k.isStop) continue;
       k.gate.reset();
+      k.nearMiss.reset();
       k.accumLen = 0;
     }
     _log('info', active ? 'stop word armed' : 'stop word disarmed');

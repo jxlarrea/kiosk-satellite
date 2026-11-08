@@ -29,6 +29,7 @@ class _RecordingEngine extends WakeWordEngine {
   bool _running = false;
   bool recording = false;
   DetectionCallback? onDetection;
+  StopDetectionCallback? onStopDetection;
   Uint8List clip = _pcm(List.filled(16000, 1000));
   Map<String, Object?>? detection = {'score': 0.91, 'threshold': 0.65};
 
@@ -48,6 +49,7 @@ class _RecordingEngine extends WakeWordEngine {
     EngineFailureCallback? onFailure,
   }) async {
     this.onDetection = onDetection;
+    this.onStopDetection = onStopDetection;
     _running = true;
   }
 
@@ -274,6 +276,47 @@ void main() {
       },
     );
 
+    test(
+      'the stop word has its own allowances and keeps its flag on disk',
+      () async {
+        final d = store();
+        await d.record(wakeWord: 'A', engine: 'e', pcm: _pcm([1]));
+        await d.record(
+          wakeWord: 'A',
+          engine: 'e',
+          pcm: _pcm([1]),
+          nearMiss: true,
+        );
+        final start = DateTime(2026, 11, 8, 7);
+        for (var i = 0; i < 12; i++) {
+          await d.record(
+            wakeWord: 'Ok Stop',
+            engine: 'e',
+            pcm: _pcm([i]),
+            stop: true,
+            at: start.add(Duration(seconds: i)),
+          );
+          await d.record(
+            wakeWord: 'Ok Stop',
+            engine: 'e',
+            pcm: _pcm([i]),
+            nearMiss: true,
+            stop: true,
+            at: start.add(Duration(seconds: i, milliseconds: 500)),
+          );
+        }
+        expect(d.activations, hasLength(11));
+        expect(d.activations.where((a) => !a.stop), hasLength(1));
+        expect(d.nearMisses, hasLength(11));
+        expect(d.nearMisses.where((a) => !a.stop), hasLength(1));
+        final again = store();
+        await again.load();
+        expect(again.activations.where((a) => a.stop), hasLength(10));
+        expect(again.nearMisses.where((a) => a.stop), hasLength(10));
+        expect(again.activations.first.stop, isTrue);
+      },
+    );
+
     test('clear deletes everything, the folder included', () async {
       final d = store();
       await d.record(wakeWord: 'A', engine: 'e', pcm: _pcm([1]));
@@ -446,6 +489,72 @@ void main() {
           ((list.data as Map)['nearMisses'] as List).single['nearMiss'],
           true,
         );
+      },
+    );
+
+    test('on: a stop word detection saves its clip and scores', () async {
+      await commands.execute('setWakeWordConfig', const {
+        'engine': 'microWakeWord',
+        'models': [
+          {'id': 'okay_nabu', 'wakeWord': 'Okay Nabu', 'manifestUrl': 'x'},
+        ],
+        'stopModel': {'id': 'stop', 'wakeWord': 'Stop', 'manifestUrl': 'y'},
+      });
+      await settings.set(defs.wakeWordDiagnostics, true);
+      await settle();
+      engine.detection = {
+        'id': 'stop',
+        'wakeWord': 'Stop',
+        'stop': true,
+        'score': 0.97,
+        'threshold': 0.5,
+      };
+      await engine.onStopDetection!();
+      await settle();
+      final a = wakeWord.diagnostics.activations.single;
+      expect(a.stop, isTrue);
+      expect(a.nearMiss, isFalse);
+      expect(a.wakeWord, 'Stop');
+      expect(a.score, 0.97);
+      expect(a.threshold, 0.5);
+      final list = await commands.execute('getWakeWordActivations', const {});
+      expect(
+        ((list.data as Map)['activations'] as List).single['stop'],
+        true,
+      );
+    });
+
+    test('a stop word detection never takes a wake word\'s score', () async {
+      await settings.set(defs.wakeWordDiagnostics, true);
+      await settle();
+      // lastDetection still holds the wake word that opened the turn.
+      await engine.onStopDetection!();
+      await settle();
+      final a = wakeWord.diagnostics.activations.single;
+      expect(a.stop, isTrue);
+      expect(a.score, isNull);
+    });
+
+    test(
+      'stop word near misses keep a gap of their own from the wake word\'s',
+      () async {
+        await settings.set(defs.wakeWordDiagnostics, true);
+        await settle();
+        final sink = engine.nearMissSink!;
+        const stop = WakeWordModelRef(
+          id: 'stop',
+          wakeWord: 'Stop',
+          manifestUrl: '',
+        );
+        sink(nabu, {'score': 0.5, 'threshold': 0.65});
+        sink(stop, {'stop': true, 'score': 0.4, 'threshold': 0.5});
+        // Within the stop word's gap.
+        sink(stop, {'stop': true, 'score': 0.45, 'threshold': 0.5});
+        await settle();
+        final misses = wakeWord.diagnostics.nearMisses;
+        expect(misses, hasLength(2));
+        expect(misses.where((a) => a.stop).single.score, 0.4);
+        expect(misses.where((a) => !a.stop).single.score, 0.5);
       },
     );
 

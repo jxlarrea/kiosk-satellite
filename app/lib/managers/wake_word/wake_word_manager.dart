@@ -424,20 +424,28 @@ class WakeWordManager extends Manager
   }
 
   /// At most one near miss per this, so one noisy conversation cannot fill
-  /// all ten slots in a few seconds.
+  /// all ten slots in a few seconds. The wake word and the stop word each
+  /// have their own clock: a stop word missed under a response must not
+  /// hide a wake word missed a second later, or the other way around.
   static const _nearMissGap = Duration(seconds: 3);
   DateTime? _lastNearMiss;
+  DateTime? _lastStopNearMiss;
 
   void _onNearMiss(WakeWordModelRef model, Map<String, Object?> detail) {
     // A tester (or a clip playing back through the speaker, which holds
     // one) is not the room: its near misses are not worth keeping.
     if (!_diagnosticsOn || _testers > 0) return;
+    final stop = detail['stop'] == true;
     final now = DateTime.now();
-    final last = _lastNearMiss;
+    final last = stop ? _lastStopNearMiss : _lastNearMiss;
     if (last != null && now.difference(last) < _nearMissGap) return;
     final pcm = _engine.recentAudio(WakeWordDiagnostics.clipLength);
     if (pcm == null || pcm.isEmpty) return;
-    _lastNearMiss = now;
+    if (stop) {
+      _lastStopNearMiss = now;
+    } else {
+      _lastNearMiss = now;
+    }
     diagnostics
         .record(
           wakeWord: model.wakeWord,
@@ -445,6 +453,7 @@ class WakeWordManager extends Manager
           pcm: pcm,
           detection: detail,
           nearMiss: true,
+          stop: stop,
           at: now,
         )
         .then(
@@ -1788,6 +1797,7 @@ class WakeWordManager extends Manager
   /// silence a timer), and it disarms us as part of tearing that down.
   Future<void> _onStopDetection() async {
     log.info(name, 'stop word detected');
+    _recordStopActivation();
     bus.publish(const StopWordDetected());
   }
 
@@ -1883,6 +1893,32 @@ class WakeWordManager extends Manager
           (_) {},
           onError: (Object e) =>
               log.warn(name, 'could not save the activation: $e'),
+        );
+  }
+
+  /// The stop word's counterpart of [_recordActivation]. The clip is what
+  /// the mic heard under the response, which is what tells a stop word the
+  /// echo canceller let through from one it did not.
+  void _recordStopActivation() {
+    if (!_diagnosticsOn || _testers > 0) return;
+    final pcm = _engine.recentAudio(WakeWordDiagnostics.clipLength);
+    if (pcm == null || pcm.isEmpty) return;
+    final detection = _engine.lastDetection;
+    final phrase = detection?['wakeWord'];
+    diagnostics
+        .record(
+          wakeWord: phrase is String && phrase.isNotEmpty
+              ? phrase
+              : _config?.stopModel?.wakeWord ?? '',
+          engine: _config?.engine.label ?? '',
+          pcm: pcm,
+          detection: detection?['stop'] == true ? detection : null,
+          stop: true,
+        )
+        .then(
+          (_) {},
+          onError: (Object e) =>
+              log.warn(name, 'could not save the stop word activation: $e'),
         );
   }
 
