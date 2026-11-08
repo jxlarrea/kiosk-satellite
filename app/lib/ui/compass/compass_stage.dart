@@ -636,8 +636,8 @@ class CompassStageView extends StatelessWidget {
                     showPosition: controller.showPosition,
                     colors: _StageColors(
                       ground: dark
-                          ? const Color(0xFF111214)
-                          : Color.lerp(scheme.surface, Colors.black, 0.18)!,
+                          ? const Color(0xFF060607)
+                          : Color.lerp(scheme.surface, Colors.black, 0.42)!,
                       card: scheme.surfaceContainer,
                       ink: scheme.onSurfaceVariant,
                       dot: scheme.outline,

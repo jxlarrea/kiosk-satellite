@@ -14,7 +14,10 @@ void main() {
       ),
     );
     ledger.update(
-      const VoiceInteractionChanged(active: true, source: InteractionSource.page),
+      const VoiceInteractionChanged(
+        active: true,
+        source: InteractionSource.page,
+      ),
     );
     expect(ledger.held.toList(), ['page:voice', 'page:legacy']);
     final stillHeld = ledger.update(
@@ -45,9 +48,33 @@ void main() {
       ),
     );
     final stillHeld = ledger.update(
-      const VoiceInteractionChanged(active: false, source: InteractionSource.page),
+      const VoiceInteractionChanged(
+        active: false,
+        source: InteractionSource.page,
+      ),
     );
     expect(stillHeld, isTrue);
     expect(ledger.held.toList(), ['sendspin:media']);
+  });
+
+  test('needsScreen ignores page media and reasonless pauses', () {
+    final ledger = ActiveInteractions();
+    ledger.update(
+      const VoiceInteractionChanged(
+        active: true,
+        reason: 'media',
+        source: InteractionSource.page,
+      ),
+    );
+    ledger.update(const VoiceInteractionChanged(active: true));
+    expect(ledger.needsScreen, isFalse);
+    ledger.update(
+      const VoiceInteractionChanged(
+        active: true,
+        reason: 'timer',
+        source: InteractionSource.page,
+      ),
+    );
+    expect(ledger.needsScreen, isTrue);
   });
 }

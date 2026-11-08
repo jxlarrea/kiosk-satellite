@@ -524,4 +524,72 @@ void main() {
     await pumpEventQueue();
     expect(saver.idleDue, isNotNull);
   });
+
+  Future<void> openNowPlaying() async {
+    await commands.execute('startScreensaver', {'nowPlaying': true});
+    await pumpEventQueue();
+  }
+
+  Future<void> playing() async {
+    bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+    await pumpEventQueue();
+  }
+
+  test('Now Playing opens by hand past a pauseScreensaver hold', () async {
+    await build(nowPlaying: true);
+    await playing();
+    await commands.execute('pauseScreensaver', {'paused': true});
+    await pumpEventQueue();
+    await saver.start();
+    expect(saver.isActive, isFalse);
+    await openNowPlaying();
+    expect(saver.isActive, isTrue);
+    expect(saver.activeView.value, isNotNull);
+  });
+
+  test(
+    'Now Playing opened by hand stays up while the page plays media',
+    () async {
+      await build(nowPlaying: true);
+      await playing();
+      await page(true);
+      await openNowPlaying();
+      expect(saver.activeView.value, isNotNull);
+      await page(true);
+      expect(saver.isActive, isTrue);
+      expect(saver.activeView.value, isNotNull);
+    },
+  );
+
+  test('a voice turn still keeps Now Playing from opening', () async {
+    await build(nowPlaying: true);
+    await playing();
+    await page(true, 'voice');
+    await openNowPlaying();
+    expect(saver.isActive, isFalse);
+  });
+
+  test('a voice turn closes Now Playing opened by hand', () async {
+    await build(nowPlaying: true);
+    await playing();
+    await openNowPlaying();
+    expect(saver.isActive, isTrue);
+    await page(true, 'voice');
+    expect(saver.isActive, isFalse);
+  });
+
+  test('Hold Mode pins Now Playing opened by hand', () async {
+    await build(nowPlaying: true);
+    await playing();
+    await settings.set(defs.haHoldMode, true);
+    await pumpEventQueue();
+    await saver.start();
+    expect(saver.isActive, isFalse);
+    await openNowPlaying();
+    expect(saver.isActive, isTrue);
+    await settings.set(defs.haHoldMode, false);
+    await settings.set(defs.haHoldMode, true);
+    await pumpEventQueue();
+    expect(saver.isActive, isTrue);
+  });
 }

@@ -397,6 +397,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// #774). A session the idle clock or a plain start opened keeps going
   /// in the configured mode instead.
   bool _startedForNowPlaying = false;
+
+  /// The session opens Now Playing because someone asked for it: the
+  /// Menu, the floating player, Compass or the command. It opens like any
+  /// other view, so holds that only keep the screensaver from starting by
+  /// itself do not apply to it, nor does Hold Mode.
+  bool _openedByHand = false;
   bool _restoreForNowPlaying = false;
   Future<void>? _interactionStop;
   bool _cameraViewActive = false;
@@ -598,7 +604,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       _paused = _interactions.update(e);
       // The native satellite's overlay draws over the screensaver, full
       // screen or docked.
-      if (_paused && e.source != InteractionSource.native) {
+      if (_paused &&
+          e.source != InteractionSource.native &&
+          !(_openedByHand && !_interactions.needsScreen)) {
         _stopForInteraction();
       }
       _resetIdleTimer();
@@ -977,10 +985,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // Hold mode pins whatever is on screen right now (issue #266): a
       // showing screensaver is never what the user meant to pin, so
       // engaging hold dismisses it and stops the idle clock; releasing
-      // the hold puts the clock back.
+      // the hold puts the clock back. Now Playing opened by hand is a view
+      // like any other, so hold pins it instead.
       if (e.key == defs.haHoldMode.key) {
         if (e.value == true) {
-          unawaited(stop());
+          if (!_openedByHand) unawaited(stop());
           _cancelIdleTimer();
         } else {
           _resetIdleTimer();
@@ -1074,9 +1083,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           name: 'startScreensaver',
           description:
               'Start the screensaver now. nowPlaying: true marks a session '
-              'opened for the Now Playing view, which ends with the view.',
+              'opened for the Now Playing view, which ends with the view. '
+              'It opens like any other view: a page playing media, a '
+              'pauseScreensaver hold and Hold Mode do not stop it.',
           handler: (params) async {
-            await start(forNowPlaying: params['nowPlaying'] == true);
+            final nowPlaying = params['nowPlaying'] == true;
+            await start(forNowPlaying: nowPlaying, byHand: nowPlaying);
             return const CommandResult.ok();
           },
         ),
@@ -1881,15 +1893,22 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     return true;
   }
 
-  Future<void> start({bool force = false, bool forNowPlaying = false}) async {
+  /// [byHand] opens Now Playing because someone asked for it: page holds
+  /// that only keep the screensaver away (media on the page, a
+  /// pauseScreensaver hold) and Hold Mode let it through.
+  Future<void> start({
+    bool force = false,
+    bool forNowPlaying = false,
+    bool byHand = false,
+  }) async {
     if (_active) return;
+    final held = _paused && !(byHand && !_interactions.needsScreen);
     // Say why a start goes nowhere: a page hold that never gets released
     // (a leaked "interaction running" from the dashboard) otherwise reads
     // as "Now Playing launched" followed by nothing at all.
-    if (!force &&
-        (_paused || _voiceTurn || _cameraViewActive || _assistOverlay)) {
+    if (!force && (held || _voiceTurn || _cameraViewActive || _assistOverlay)) {
       final why = <String>[
-        if (_paused) 'interaction held (${_interactions.held.join(', ')})',
+        if (held) 'interaction held (${_interactions.held.join(', ')})',
         if (_voiceTurn) 'voice turn',
         if (_cameraViewActive) 'camera view',
         if (_assistOverlay) 'voice overlay',
@@ -1906,7 +1925,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // Hold mode refuses every start, commanded ones included: "keep this
     // view on screen" beats a startScreensaver arriving over ESPHome or a
     // gesture (issue #266).
-    if (_settings.get(defs.haHoldMode) && !force) return;
+    if (_settings.get(defs.haHoldMode) && !force && !byHand) return;
     // No screensaver under Lockdown Mode unless the owner opted in: by
     // default the locked dashboard stays glanceable. Opted in, it renders
     // under the screen-level shield — visible, but untouchable like
@@ -1918,6 +1937,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     }
     _active = true;
     _startedForNowPlaying = forNowPlaying;
+    _openedByHand = byHand;
     _panelDark = false;
     _blanked = false;
     // A fresh session starts with no half-open double-tap chain.
@@ -2302,6 +2322,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _endTouchLift();
     holdSensorDismiss = false;
     _startedForNowPlaying = false;
+    _openedByHand = false;
     alarmTakeover.value = null;
     renderPaused.value = false;
     _nowPlayingShared = false;

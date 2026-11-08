@@ -392,5 +392,32 @@ void main() {
         expect(states, [true, false, true, false]);
       },
     );
+
+    test('an overlay closing while its freeze runs leaves the dashboard '
+        'showing', () async {
+      await build({});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      // The Calendar closes while the native side is still hiding the
+      // dashboard for it.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            calls.add(call);
+            if (call.method == 'setHidden' &&
+                (call.arguments as Map)['hidden'] == true) {
+              browser.setCovered('calendar', covered: false);
+            }
+            return 1;
+          });
+      browser.setCovered('calendar', covered: true);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      await pumpEventQueue();
+      final hidden = [
+        for (final c in calls)
+          if (c.method == 'setHidden') (c.arguments as Map)['hidden'],
+      ];
+      expect(hidden.first, isTrue);
+      expect(hidden.last, isFalse);
+      expect(browser.renderingFrozen, isFalse);
+    });
   });
 }

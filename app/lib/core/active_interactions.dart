@@ -17,6 +17,14 @@ class ActiveInteractions {
     return _active.isNotEmpty;
   }
 
+  /// Whether an open hold is for something that needs the screen: a voice
+  /// turn, a timer, an alarm or a call. Media playing on the page and a
+  /// reasonless pause only keep the screensaver from starting by itself.
+  bool get needsScreen =>
+      _active.any((entry) => !_idleOnlyReasons.contains(entry.$2));
+
+  static const _idleOnlyReasons = {'', 'media'};
+
   /// The holds still open, as `source:reason` (`source:legacy` for a
   /// reasonless pause), for the log line that says why the screensaver
   /// stood down.

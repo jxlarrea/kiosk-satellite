@@ -256,6 +256,8 @@ When the views share the display, tap the screensaver panel to dismiss them. Sli
 
 When **Launch Now Playing when music starts playing** is enabled, the view opens immediately upon track start rather than waiting for the idle timeout. Pausing playback returns the display to the standard screensaver once the pause timeout expires.
 
+Opening Now Playing yourself works like opening any other view. This covers the floating player, the kiosk menu, a [Compass](navigation.md) swipe, a gesture and the Show Now Playing command. The view opens while the dashboard plays media or holds off the screensaver and while Hold Mode is on. Hold Mode then keeps it on screen. A voice turn, a ringing timer or alarm and an intercom call still come first.
+
 ### Media Controls
 
 When **Show media controls** is enabled, transport buttons, a progress bar, and secondary toggles appear over the artwork:

@@ -266,8 +266,17 @@ class CompassController {
     current.value = slot;
     _switching = true;
     try {
-      await _open(view);
-      await _closeAllBut(view);
+      if (view.kind == 'now_playing') {
+        // The screensaver refuses Now Playing over a camera view, so the
+        // other views go first. The camera's state reaches the screensaver
+        // over the bus, a turn later.
+        await _closeAllBut(view);
+        await Future<void>.delayed(Duration.zero);
+        await _open(view);
+      } else {
+        await _open(view);
+        await _closeAllBut(view);
+      }
     } finally {
       _switching = false;
     }

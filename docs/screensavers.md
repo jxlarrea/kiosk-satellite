@@ -495,7 +495,7 @@ Touch interactions instantly dismiss the screensaver and reset the idle clock. T
 * **DLNA Media**: Casting DLNA video or image media to the kiosk dismisses the screensaver and holds it off during playback. Background DLNA audio playback deliberately does not dismiss the screensaver.
 * **Media Player**: Active music playback holds off the screensaver unless the player's **"Now Playing" instead of the screensaver** mode is enabled, which renders a full screen Now Playing view during playback (see [Media Player](sendspin.md)).
 * **ESPHome Controls**: Toggling the **Screensaver** master switch off removes active screensavers. Toggling **Screensaver active** off or pressing **Postpone screensaver** dismisses active screensavers and re-arms the timeout clock.
-* **Hold Mode**: Activating Hold Mode in Home Assistant settings pins the current view, preventing screensaver activation, pausing dashboard view rotation, and suspending home return timers. Activating Hold Mode dismisses active screensavers. Hold Mode can be toggled from app settings, drawer notices, gestures, optional kiosk menu items, or the Hold mode switch in Home Assistant, with optional auto-expiry timers available.
+* **Hold Mode**: Activating Hold Mode in Home Assistant settings pins the current view, preventing screensaver activation, pausing dashboard view rotation, and suspending home return timers. Activating Hold Mode dismisses active screensavers, except a Now Playing view you opened yourself, which stays on screen. Hold Mode can be toggled from app settings, drawer notices, gestures, optional kiosk menu items, or the Hold mode switch in Home Assistant, with optional auto-expiry timers available.
 
 ## Around the Dashboard
 

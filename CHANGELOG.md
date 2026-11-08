@@ -10,9 +10,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - **End after silence goes down to 2 seconds.** Settings > Voice Satellite > Realtime > End after silence used to start at 5 seconds. Under 5 seconds the bar counts down over the whole wait. The first words after the wake word still get 5 seconds.
 - **The Music Library opens with its shelves in place.** It used to show a spinner where Discover, Recently played and the other shelves had been every time it opened, until Music Assistant answered again. It now shows what each page showed last time right away and swaps in the fresh copy when it arrives.
+- **Now Playing opens like any other view.** Opening Now Playing from the floating player, the kiosk menu, a gesture or the Show Now Playing command used to do nothing while the dashboard played media, while a pauseScreensaver hold was on or while Hold Mode was on, since those keep the screensaver from starting. It now opens through them, and Hold Mode keeps it on screen instead of closing it. A voice turn, a ringing timer or alarm and an intercom call still come first. Now Playing still starts by itself only when the screensaver could start.
 
 ### Fixed
 - **Scrolling lists no longer flicker their edge fade when a page opens.** The fade at the top or bottom of a list that has more to show used to fade in over the first moment after the page appeared. It now shows right away, and only later changes, such as scrolling to the end, fade.
+- **The dashboard no longer goes black after an overlay closes right as it opens.** The dashboard stops drawing a second after the calendar, the Music Library or another full-screen overlay opens over it. If the overlay closed while that pause was being applied, the dashboard stayed hidden with nothing over it until the screensaver or another overlay came and went. The pause now notices and shows the dashboard again right away.
 
 ## v2026.11.13 - 2026-11-08
 

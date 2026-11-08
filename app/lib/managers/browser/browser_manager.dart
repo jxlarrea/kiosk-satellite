@@ -1265,6 +1265,16 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
         _freezeKeepAliveEvery,
         (_) => pingHaConnection(),
       );
+      // The freeze is several native calls long. An overlay that closed in
+      // the middle of it (Compass swiping off the Calendar a second after
+      // it opened) found the books still saying "not frozen" and had
+      // nothing to undo, which left the dashboard hidden with nothing over
+      // it. Thaw now if nothing wants the freeze anymore.
+      if (!_wantFrozen) {
+        log.info(name, 'freeze undone: its cover left while it ran');
+        await _syncFreeze();
+        return;
+      }
       log.info(
         name,
         'rendering paused under '
