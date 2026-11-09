@@ -1,5 +1,6 @@
 package me.jxl.kiosk_satellite
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -15,6 +16,7 @@ import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.platform.PlatformPlugin
 
 /**
  * Attaches to the process-wide engine from [KioskApplication] instead of
@@ -57,6 +59,12 @@ class MainActivity : FlutterActivity() {
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? =
         FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
+
+    override fun providePlatformPlugin(
+        activity: Activity?,
+        flutterEngine: FlutterEngine,
+    ): PlatformPlugin? =
+        SystemBarsPlatformPlugin(this, flutterEngine.platformChannel, this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // The home-launcher crash fuse (issue #219): a kiosk that cannot

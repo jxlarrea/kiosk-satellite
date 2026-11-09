@@ -161,7 +161,9 @@ Future<void> main() async {
 /// (issues #1076 and #1102). Manual with the shown overlays rather than
 /// edgeToEdge: the latter would make Flutter undo the edge-to-edge window
 /// MainActivity sets up itself. Manual drops the sticky flag for a bar it
-/// hides, so SystemBars.kt sets the swipe behavior on the window itself. The
+/// hides, so SystemBars.kt sets the swipe behavior on the window itself, and
+/// SystemBarsPlatformPlugin adds the sticky flag back to each write
+/// (issue #1358). The
 /// native side pads the content by the visible bars (CutoutLayout), so the
 /// dashboard sits between them.
 Future<void> applySystemBars(SettingsManager settings) {

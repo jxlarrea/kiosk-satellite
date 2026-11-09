@@ -7,6 +7,35 @@ import android.os.Looper
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import io.flutter.embedding.engine.systemchannels.PlatformChannel
+import io.flutter.plugin.platform.PlatformPlugin
+
+/**
+ * Flutter's platform plugin, with the sticky flag added to each of its
+ * system UI writes that hides a bar (issue #1358).
+ *
+ * With only one bar hidden, applySystemBars in main.dart uses Flutter's
+ * manual mode, which hides the bar without IMMERSIVE_STICKY. Up to Android
+ * 11, a hidden navigation bar without an immersive flag makes Android lay a
+ * full-screen nav_input_consumer window over the app that swallows the next
+ * touch to bring the bar back. Android 8.1 does it even on a device that has
+ * no navigation bar. Flutter writes those flags on every mode change and on
+ * every resume, so re-asserting at focus alone left the consumer in place.
+ * Every one of those writes goes through updateSystemUiOverlays, which makes
+ * it the one spot that catches them all. Adding the flag there turns manual
+ * mode into what immersiveSticky already writes when both bars hide, and on
+ * Android 11 and newer it matches the swipe behavior SystemBars sets anyway.
+ */
+class SystemBarsPlatformPlugin(
+    private val activity: Activity,
+    channel: PlatformChannel,
+    delegate: PlatformPlugin.PlatformPluginDelegate,
+) : PlatformPlugin(activity, channel, delegate) {
+    override fun updateSystemUiOverlays() {
+        super.updateSystemUiOverlays()
+        SystemBars.keepSticky(activity)
+    }
+}
 
 /**
  * Re-asserts the kiosk's immersive mode from the native side when a window
@@ -89,6 +118,22 @@ object SystemBars {
                 if (!activity.isFinishing && !activity.isDestroyed) hide(activity)
             }, delay)
         }
+    }
+
+    /** Adds IMMERSIVE_STICKY to the window's legacy flags when they hide a
+     *  bar without it. See SystemBarsPlatformPlugin. */
+    fun keepSticky(activity: Activity) {
+        @Suppress("DEPRECATION")
+        val decor = activity.window?.decorView ?: return
+        @Suppress("DEPRECATION")
+        val flags = decor.systemUiVisibility
+        @Suppress("DEPRECATION")
+        val hidden = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_FULLSCREEN
+        @Suppress("DEPRECATION")
+        val sticky = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        if (flags and hidden == 0 || flags and sticky != 0) return
+        @Suppress("DEPRECATION")
+        decor.systemUiVisibility = flags or sticky
     }
 
     fun hide(activity: Activity) {
