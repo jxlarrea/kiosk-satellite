@@ -170,6 +170,8 @@ The Alarms category carries the alarm defaults (the volume, the tone, snooze, Si
 
 The Calendar category carries the [calendars](calendar.md) with their names, colors and people, and the Display and Kiosk settings. The calendars hidden with their chips stay on each kiosk.
 
+The Navigation category carries the navigation style, the [Compass](navigation.md) layout and its options. A camera view in the layout only shows on a follower that has it, so sync Camera Streams too if the layout holds one.
+
 Custom wake word models are the exception: a leader passes its models to every follower whose profile syncs Voice Satellite, and those followers mirror the leader's set. See [Custom Wake Word Models](custom-wake-words.md).
 
 Files referenced by settings (like notification chimes, alarm tones, gallery photos, or local media folders) do not sync; only their file paths travel. If a follower lacks the corresponding file, it defaults back just as it would for a missing local file. The Voice Satellite selection lives on the page itself and also stays strictly local to the kiosk.

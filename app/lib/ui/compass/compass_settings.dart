@@ -417,7 +417,8 @@ class _CompassLayoutEditorState extends State<CompassLayoutEditor> {
     final picked = _picked != null && layout.viewAt(_picked!) != null
         ? _picked
         : null;
-    final height = (cell * 0.52).clamp(46.0, 58.0);
+    // Room for the icon over a label of up to two lines.
+    final height = (cell * 0.56).clamp(54.0, 62.0);
     const gap = 8.0;
 
     // Grid cell of each place: the center in column 2, row 2, the sides
@@ -550,11 +551,13 @@ class _CompassLayoutEditorState extends State<CompassLayoutEditor> {
                 const SizedBox(height: 2),
                 Text(
                   _label(view),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    height: 1.15,
+                  ),
                 ),
               ],
             ),

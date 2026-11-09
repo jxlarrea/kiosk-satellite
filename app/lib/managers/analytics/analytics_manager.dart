@@ -16,6 +16,7 @@ import '../browser/url_filter.dart';
 import '../calendar/calendar_model.dart';
 import '../home_assistant/custom_pages.dart';
 import '../kiosk/drawer_items.dart';
+import '../navigation/compass_layout.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../update/update_http_client.dart';
@@ -390,6 +391,7 @@ class AnalyticsManager extends Manager {
   Future<Map<String, Object?>> _usage() async {
     final s = _settings;
     final drawer = DrawerItems.decode(s.get(defs.uiDrawerItems));
+    final compassLayout = CompassLayout.decode(s.get(defs.navCompassLayout));
     String fleetRole() {
       if (s.get(defs.fleetLeader)) return 'leader';
       if (s.get(defs.fleetLeaderInfo).trim().isNotEmpty) return 'follower';
@@ -797,6 +799,16 @@ class AnalyticsManager extends Manager {
       'ha_kiosk_mode': s.get(defs.haKioskMode),
       'dashboard_carousel': s.get(defs.haDashboardCarousel),
       'dashboard_rotation': s.get(defs.haRotationEnabled),
+      // Navigation: the style, and with Compass the kinds of view the
+      // layout holds, joined by commas (a scalar every server takes).
+      // Never the dashboard paths or camera views behind them.
+      'navigation': s.get(defs.navStyle),
+      'compass_views': s.get(defs.navStyle) == 'compass'
+          ? ({
+              for (final slot in compassLayout.slots)
+                compassLayout.viewAt(slot)!.kind,
+            }.toList()..sort()).join(',')
+          : '',
       // Custom pages: how many, where they live and where the kiosk shows
       // them. Their names and addresses stay on the kiosk.
       'custom_pages': pages.length,

@@ -12278,6 +12278,7 @@ String? validateCalendarList(Object? value) {
 /// The Web Content grants ride with Web Browsing, the one category without
 /// a page of its own.
 const fleetSyncCategories = <(String, String, String)>[
+  ('Navigation', 'Navigation', ''),
   // ha.satellite_entity stays per kiosk; its row (Assigned satellite) is
   // on the Voice Satellite page, so the note goes there.
   ('Home Assistant', 'Home Assistant', ''),
@@ -13245,8 +13246,7 @@ const navCompassAnimation = SettingDef<String>(
   options: ['zoom', 'slide'],
   optionLabels: {'zoom': 'Zoom', 'slide': 'Slide'},
   title: 'Swipe animation',
-  description:
-      'Zoom out to show the views around, or slide straight across.',
+  description: 'Zoom out to show the views around, or slide straight across.',
   category: 'Navigation',
   section: 'Compass options',
   dependsOn: 'nav.style',

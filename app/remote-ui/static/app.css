@@ -2122,7 +2122,8 @@
 .compass-tile { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; min-width: 0; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-high);
   color: var(--text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 0 4px; }
-.compass-tile span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.compass-tile span:last-child { max-width: 100%; overflow: hidden; text-align: center; line-height: 1.15;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .compass-tile .compass-icon { color: var(--muted); display: flex; }
 .compass-tile.center { background: var(--primary-container); border: 2px solid var(--primary); }
 .compass-tile.center .compass-icon { color: var(--on-primary-container); }
@@ -2149,6 +2150,6 @@
 .compass-kind-extra .dp-field, .compass-kind-extra select { width: 100%; }
 @media (max-width: 640px) {
   .compass-styles { grid-template-columns: minmax(0, 1fr); }
-  .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; grid-template-rows: repeat(5, 46px); }
+  .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; grid-template-rows: repeat(5, 52px); }
   .compass-tile { font-size: 10.5px; border-radius: 9px; }
 }

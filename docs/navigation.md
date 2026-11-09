@@ -26,7 +26,7 @@ While a swipe is in motion, the view shrinks to show the views around it, and th
 | Calendar | Nothing. |
 | Alarms | Nothing. |
 | Now Playing | The Sendspin player and the Now Playing view on. A swipe skips it while nothing is loaded. |
-| Camera View | A [camera view](cameras.md). |
+| Camera View | A [camera view](cameras.md) with cameras in it. |
 | App Launcher | The App Launcher on with apps picked. |
 | Intercom | The [intercom](intercom.md) on. |
 
@@ -53,7 +53,7 @@ While [Kiosk Mode](kiosk.md) is on, **Kiosk Mode > Allowed Actions** decides wha
 ### Options
 
 - **Show position while swiping** shows a small map of the layout in the corner with your place marked.
-- **Return to center** goes back to the center view after no touch for this long. Set it to 0 to stay on the view.
+- **Return to center** goes back to the center view after no touch for this long. Set it to 0 to stay on the view. It waits while Hold Mode is on.
 - **Menu items** opens **Drawer menu items**. The Menu view and the drawer menu share the same list.
 
 With Compass on, pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off.

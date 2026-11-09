@@ -134,6 +134,9 @@ class CompassController {
           current.value = CompassSlot.center;
         }
         _dropStaleShots();
+      } else if (e.key == defs.haHoldMode.key ||
+          e.key == defs.navCompassReturnMinutes.key) {
+        _armReturn();
       } else if (e.key == defs.navStyle.key && !enabled) {
         menuVisible.value = false;
         menuUnlocked.value = false;
@@ -447,12 +450,15 @@ class CompassController {
     _ => true,
   };
 
+  /// Hold Mode pins the view on screen, so the timer stands down while it
+  /// is on and starts over when it goes off.
   void _armReturn() {
     _returnTimer?.cancel();
     final minutes = c.settings.get(defs.navCompassReturnMinutes).toInt();
-    if (!enabled || minutes <= 0) return;
+    if (!enabled || minutes <= 0 || c.settings.get(defs.haHoldMode)) return;
     _returnTimer = Timer(Duration(minutes: minutes), () {
       if (current.value.isCenter || stage.value != null) return;
+      if (c.settings.get(defs.haHoldMode)) return;
       // A ringing alarm or a call keeps its screen; the next touch arms
       // the timer again.
       if (!swipeReady && !c.screensaver.isActive) return;
