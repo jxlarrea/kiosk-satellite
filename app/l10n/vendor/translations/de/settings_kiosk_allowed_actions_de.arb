@@ -1,7 +1,7 @@
 {
   "@@locale": "de",
   "settingKioskAllowDrawerTitle": "Menü mit Schnellaktionen erlauben",
-  "settingKioskAllowDrawerMenuDescription": "Zeigt das Menü ohne Exit-Geste oder PIN, beschränkt auf die unten ausgewählten Aktionen. In der klassischen Navigation öffnet es ein Wischen vom Bildschirmrand. In Compass ist es die Menü-Ansicht.",
+  "settingKioskAllowQuickControlsDescription": "Zeigt das Menü ohne Exit-Geste oder PIN, beschränkt auf die unten ausgewählten Aktionen. In der klassischen Navigation öffnet es ein Wischen vom Bildschirmrand. In Compass ist es die Ansicht Schnellsteuerung.",
   "settingKioskAllowDashboardTitle": "Dashboard",
   "settingKioskAllowDashboardDescription": "Lädt die Startseite neu.",
   "settingKioskAllowHaKioskTitle": "HA-Kioskmodus",

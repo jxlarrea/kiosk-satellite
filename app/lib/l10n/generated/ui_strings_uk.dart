@@ -9332,8 +9332,8 @@ class UiStringsUk extends UiStrings {
   String get settingKioskAllowDrawerTitle => 'Дозволити меню зі швидкими діями';
 
   @override
-  String get settingKioskAllowDrawerMenuDescription =>
-      'Показує меню без жесту виходу чи PIN-коду, обмежене вибраними нижче діями. У класичній навігації його відкриває свайп від краю. У Compass це вид «Меню».';
+  String get settingKioskAllowQuickControlsDescription =>
+      'Показує меню без жесту виходу чи PIN-коду, обмежене вибраними нижче діями. У класичній навігації його відкриває свайп від краю. У Compass це вид «Швидкі дії».';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Панель керування';
@@ -10780,8 +10780,8 @@ class UiStringsUk extends UiStrings {
   String get settingNavCompassMenuItemsTitle => 'Пункти меню';
 
   @override
-  String get settingNavCompassMenuItemsDescription =>
-      'Що показує подання «Меню». Спільне з бічним меню.';
+  String get settingNavQuickControlsItemsDescription =>
+      'Що показує подання «Швидкі дії». Спільне з бічним меню.';
 
   @override
   String get navigationClassic => 'Класична';
@@ -10815,7 +10815,7 @@ class UiStringsUk extends UiStrings {
       'Вимкнено, поки ввімкнено навігацію Compass.';
 
   @override
-  String get compassMenu => 'Меню';
+  String get compassQuickControlsView => 'Швидкі дії';
 
   @override
   String get compassHomeDashboard => 'Home Assistant';

@@ -9450,8 +9450,8 @@ class UiStringsDe extends UiStrings {
       'Menü mit Schnellaktionen erlauben';
 
   @override
-  String get settingKioskAllowDrawerMenuDescription =>
-      'Zeigt das Menü ohne Exit-Geste oder PIN, beschränkt auf die unten ausgewählten Aktionen. In der klassischen Navigation öffnet es ein Wischen vom Bildschirmrand. In Compass ist es die Menü-Ansicht.';
+  String get settingKioskAllowQuickControlsDescription =>
+      'Zeigt das Menü ohne Exit-Geste oder PIN, beschränkt auf die unten ausgewählten Aktionen. In der klassischen Navigation öffnet es ein Wischen vom Bildschirmrand. In Compass ist es die Ansicht Schnellsteuerung.';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Dashboard';
@@ -10907,8 +10907,8 @@ class UiStringsDe extends UiStrings {
   String get settingNavCompassMenuItemsTitle => 'Menüeinträge';
 
   @override
-  String get settingNavCompassMenuItemsDescription =>
-      'Was die Menüansicht zeigt. Wird mit dem Seitenmenü geteilt.';
+  String get settingNavQuickControlsItemsDescription =>
+      'Was die Ansicht Schnellsteuerung zeigt. Wird mit dem Seitenmenü geteilt.';
 
   @override
   String get navigationClassic => 'Klassisch';
@@ -10942,7 +10942,7 @@ class UiStringsDe extends UiStrings {
       'Aus, solange die Compass-Navigation aktiv ist.';
 
   @override
-  String get compassMenu => 'Menü';
+  String get compassQuickControlsView => 'Schnellsteuerung';
 
   @override
   String get compassHomeDashboard => 'Home Assistant';

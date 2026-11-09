@@ -34993,8 +34993,8 @@
       ]
     }
   },
-  "settingKioskAllowDrawerMenuDescription": "Toont het menu zonder afsluitgebaar of pincode. Alleen de hieronder geselecteerde acties zijn beschikbaar. In klassieke navigatie opent een veegbeweging vanaf de rand het menu. In Compass is het de Menu-weergave.",
-  "@settingKioskAllowDrawerMenuDescription": {
+  "settingKioskAllowQuickControlsDescription": "Toont het menu zonder afsluitgebaar of pincode. Alleen de hieronder geselecteerde acties zijn beschikbaar. In klassieke navigatie opent een veegbeweging vanaf de rand het menu. In Compass is het de weergave Snelle bediening.",
+  "@settingKioskAllowQuickControlsDescription": {
     "context": "Settings > Kiosk Mode > Allowed Actions",
     "description": "Help below this setting.",
     "x-locations": {
@@ -40362,8 +40362,8 @@
       ]
     }
   },
-  "settingNavCompassMenuItemsDescription": "Wat de Menuweergave toont. Gedeeld met het zijmenu.",
-  "@settingNavCompassMenuItemsDescription": {
+  "settingNavQuickControlsItemsDescription": "Wat de weergave Snelle bediening toont. Gedeeld met het zijmenu.",
+  "@settingNavQuickControlsItemsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40494,8 +40494,8 @@
       ]
     }
   },
-  "compassMenu": "Menu",
-  "@compassMenu": {
+  "compassQuickControlsView": "Snelle bediening",
+  "@compassQuickControlsView": {
     "context": "Device:Compass",
     "description": "Name of the view that replaces the drawer menu, at the far end of the left side.",
     "x-locations": {
@@ -40869,7 +40869,7 @@
   "compassKioskLocked": "Kiosk vergrendeld",
   "@compassKioskLocked": {
     "context": "Device:Compass",
-    "description": "Badge in the Menu view header while kiosk mode is on.",
+    "description": "Badge in the Quick Controls view header while kiosk mode is on.",
     "x-locations": {
       "device": [
         "Compass navigation"
@@ -40879,7 +40879,7 @@
   "compassQuickControls": "Snelle bediening",
   "@compassQuickControls": {
     "context": "Device:Compass",
-    "description": "Heading over the switches and one-tap actions in the Menu view.",
+    "description": "Heading over the switches and one-tap actions in the Quick Controls view.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
@@ -40889,7 +40889,7 @@
   "compassOpen": "Openen",
   "@compassOpen": {
     "context": "Device:Compass",
-    "description": "Heading over the pages the Menu view opens, such as Calendar or Camera View.",
+    "description": "Heading over the pages the Quick Controls view opens, such as Calendar or Camera View.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
@@ -40899,7 +40899,7 @@
   "compassStateOn": "Aan",
   "@compassStateOn": {
     "context": "Device:Compass",
-    "description": "State under a switch in the Menu view that is on.",
+    "description": "State under a switch in the Quick Controls view that is on.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
@@ -40909,7 +40909,7 @@
   "compassStateOff": "Uit",
   "@compassStateOff": {
     "context": "Device:Compass",
-    "description": "State under a switch in the Menu view that is off.",
+    "description": "State under a switch in the Quick Controls view that is off.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
@@ -40919,7 +40919,7 @@
   "compassHoldMode": "Wachtstand",
   "@compassHoldMode": {
     "context": "Device:Compass",
-    "description": "Name of the Hold Mode switch in the Menu view. Use the same term as the drawer menu's Turn On Hold Mode.",
+    "description": "Name of the Hold Mode switch in the Quick Controls view. Use the same term as the drawer menu's Turn On Hold Mode.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"

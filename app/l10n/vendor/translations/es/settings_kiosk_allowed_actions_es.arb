@@ -1,7 +1,7 @@
 {
   "@@locale": "es",
   "settingKioskAllowDrawerTitle": "Permitir menú con acciones rápidas",
-  "settingKioskAllowDrawerMenuDescription": "Muestra el menú sin el gesto de salida ni PIN, limitado a las acciones seleccionadas abajo. En la navegación Clásica, un deslizamiento desde el borde lo abre. En Compass es la vista Menú.",
+  "settingKioskAllowQuickControlsDescription": "Muestra el menú sin el gesto de salida ni PIN, limitado a las acciones seleccionadas abajo. En la navegación Clásica, un deslizamiento desde el borde lo abre. En Compass es la vista Controles rápidos.",
   "settingKioskAllowDashboardTitle": "Panel de control",
   "settingKioskAllowDashboardDescription": "Vuelve a cargar la página de inicio.",
   "settingKioskAllowHaKioskTitle": "Modo kiosko de HA",

@@ -1,7 +1,7 @@
 {
   "@@locale": "ru",
   "settingKioskAllowDrawerTitle": "Разрешить меню быстрых действий",
-  "settingKioskAllowDrawerMenuDescription": "Показывает меню без жеста выхода или PIN, ограниченное действиями, выбранными ниже. В классической навигации его открывает свайп от края. В Compass это вид «Меню».",
+  "settingKioskAllowQuickControlsDescription": "Показывает меню без жеста выхода или PIN, ограниченное действиями, выбранными ниже. В классической навигации его открывает свайп от края. В Compass это вид «Быстрые действия».",
   "settingKioskAllowDashboardTitle": "Панель",
   "settingKioskAllowDashboardDescription": "Перезагрузить стартовую страницу.",
   "settingKioskAllowHaKioskTitle": "Режим киоска HA",

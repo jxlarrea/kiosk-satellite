@@ -1152,7 +1152,7 @@ const kioskAllowDrawer = SettingDef<bool>(
   description:
       'Shows the menu without the exit gesture or PIN, limited to the '
       'actions selected below. In Classic navigation an edge swipe opens '
-      'it. In Compass it is the Menu view.',
+      'it. In Compass it is the Quick Controls view.',
   category: 'Kiosk',
   section: 'Allowed Actions',
   subpage: 'Allowed Actions',
@@ -13332,7 +13332,7 @@ const navCompassMenuItems = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Menu items',
-  description: 'What the Menu view shows. Shared with the drawer menu.',
+  description: 'What the Quick Controls view shows. Shared with the drawer menu.',
   category: 'Navigation',
   section: 'Compass options',
   dependsOn: 'nav.style',

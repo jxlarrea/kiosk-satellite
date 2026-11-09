@@ -12,7 +12,7 @@ The center view is the one the kiosk rests on. Each side holds up to two views, 
 - Swipe down to show the view above, and swipe up to come back.
 - A swipe across a side does nothing. From the view on the right, swipe right to go back toward the center first.
 
-The **Menu** view holds the drawer menu's items: Settings as a button at the top, switches and one-tap actions as quick controls and the pages they open as cards. A new layout has it on the left of the center. It is optional and can go on any side. With remote admin off, a layout without a Menu gets one on the left anyway, so Settings can always be reached.
+The **Quick Controls** view holds the drawer menu's items: switches and one-tap actions as quick controls, then Settings and the pages they open as square cards. A new layout has it on the left of the center. It is optional and can go on any side. With remote admin off, a layout without Quick Controls gets it on the left anyway, so Settings can always be reached.
 
 While a swipe is in motion, the view shrinks to show the views around it, and the new view grows to fill the screen when you let go. Let go past a third of the screen, or flick, to move. A shorter swipe goes back. Set **Swipe animation** to **Slide** to move straight across without the zoom.
 
@@ -21,7 +21,7 @@ While a swipe is in motion, the view shrinks to show the views around it, and th
 | View | Also needs |
 | --- | --- |
 | Home Assistant dashboard | Any view, a [Custom Page](custom-pages.md) or an app page, picked in the dashboard picker. |
-| Menu | Nothing. |
+| Quick Controls | Nothing. |
 | Music Library | A [Music Library](music-library.md) source set up. |
 | Calendar | Nothing. |
 | Alarms | Nothing. |
@@ -56,15 +56,15 @@ Views in the layout skip their own **Close when idle** and the camera view's **A
 
 ### Back and the exit gesture
 
-Back goes to the center view. At the center, back opens the Menu when the layout has one. Without a Menu, the exit gesture opens Settings.
+Back goes to the center view. At the center, back opens Quick Controls when the layout has it. Without Quick Controls, the exit gesture opens Settings.
 
-While [Kiosk Mode](kiosk.md) is on, **Kiosk Mode > Allowed Actions** decides what a swipe reaches. A view whose action is off is skipped: Apps for the App Launcher, Camera View, Intercom, Alarms, Calendar and Music Library for their views, and Floating Player for Now Playing. The center and a dashboard view always show. The Menu shows only with **Allow menu with quick actions** on, and then holds only the allowed actions, with Settings locked. Tap Settings, or use the exit gesture, and enter the PIN to get the full Menu.
+While [Kiosk Mode](kiosk.md) is on, **Kiosk Mode > Allowed Actions** decides what a swipe reaches. A view whose action is off is skipped: Apps for the App Launcher, Camera View, Intercom, Alarms, Calendar and Music Library for their views, and Floating Player for Now Playing. The center and a dashboard view always show. Quick Controls shows only with **Allow menu with quick actions** on, and then holds only the allowed actions, with Settings locked. Tap Settings, or use the exit gesture, and enter the PIN to get all of Quick Controls.
 
 ### Options
 
 - **Show position while swiping** shows a small map of the layout in the corner with your place marked.
 - **Return to center** goes back to the center view after no touch for this long. Set it to 0 to stay on the view. It waits while Hold Mode is on.
-- **Menu items** opens **Drawer menu items**. The Menu view and the drawer menu share the same list.
+- **Menu items** opens **Drawer menu items**. The Quick Controls view and the drawer menu share the same list.
 
 With Compass on, pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off. Settings > Navigation says so under the style cards. Their settings stay in place, greyed out with "Off while Compass navigation is on." under them, and come back as they were when you switch to Classic.
 

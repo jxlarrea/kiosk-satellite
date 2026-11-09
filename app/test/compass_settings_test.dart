@@ -44,7 +44,7 @@ void main() {
     home: Scaffold(body: child),
   );
 
-  group('the Menu view', () {
+  group('the Quick Controls view', () {
     for (final size in const [
       Size(1280, 800),
       Size(787, 393),
@@ -114,7 +114,7 @@ void main() {
       );
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('Menu'), findsOneWidget);
+      expect(find.text('Quick Controls'), findsOneWidget);
       expect(find.text('Calendar'), findsOneWidget);
       // A full right side offers no Add; up, down and left each offer one.
       expect(find.text('Add'), findsNWidgets(3));

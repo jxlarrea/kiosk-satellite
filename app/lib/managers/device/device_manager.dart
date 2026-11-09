@@ -52,7 +52,9 @@ class DeviceManager extends Manager {
   late final String osVersion;
   late final String appVersion;
   late final String packageName;
-  late final String buildNumber;
+
+  /// Empty until [init] reads it.
+  String buildNumber = '';
 
   /// Android API level, or null off Android. Worth reporting: most of what
   /// bites a kiosk on this platform is versioned by it, not by the marketing

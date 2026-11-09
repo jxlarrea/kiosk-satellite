@@ -1,7 +1,7 @@
 {
   "@@locale": "fr",
   "settingKioskAllowDrawerTitle": "Autoriser le menu avec actions rapides",
-  "settingKioskAllowDrawerMenuDescription": "Affiche le menu sans le geste de sortie ni le code PIN, limité aux actions sélectionnées ci-dessous. En navigation Classique, un balayage depuis le bord l'ouvre. Dans Compass, c'est la vue Menu.",
+  "settingKioskAllowQuickControlsDescription": "Affiche le menu sans le geste de sortie ni le code PIN, limité aux actions sélectionnées ci-dessous. En navigation Classique, un balayage depuis le bord l'ouvre. Dans Compass, c'est la vue Commandes rapides.",
   "settingKioskAllowDashboardTitle": "Tableau de bord",
   "settingKioskAllowDashboardDescription": "Recharger la page de démarrage.",
   "settingKioskAllowHaKioskTitle": "Mode kiosque HA",

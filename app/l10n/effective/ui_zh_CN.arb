@@ -34993,8 +34993,8 @@
       ]
     }
   },
-  "settingKioskAllowDrawerMenuDescription": "无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“菜单”视图。",
-  "@settingKioskAllowDrawerMenuDescription": {
+  "settingKioskAllowQuickControlsDescription": "无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“快捷控制”视图。",
+  "@settingKioskAllowQuickControlsDescription": {
     "context": "Settings > Kiosk Mode > Allowed Actions",
     "description": "Help below this setting.",
     "x-locations": {
@@ -40362,8 +40362,8 @@
       ]
     }
   },
-  "settingNavCompassMenuItemsDescription": "菜单视图显示的内容。与抽屉菜单共用。",
-  "@settingNavCompassMenuItemsDescription": {
+  "settingNavQuickControlsItemsDescription": "快捷控制视图显示的内容。与抽屉菜单共用。",
+  "@settingNavQuickControlsItemsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40494,8 +40494,8 @@
       ]
     }
   },
-  "compassMenu": "菜单",
-  "@compassMenu": {
+  "compassQuickControlsView": "快捷控制",
+  "@compassQuickControlsView": {
     "context": "Device:Compass",
     "description": "Name of the view that replaces the drawer menu, at the far end of the left side.",
     "x-locations": {
@@ -40869,7 +40869,7 @@
   "compassKioskLocked": "Kiosk 已锁定",
   "@compassKioskLocked": {
     "context": "Device:Compass",
-    "description": "Badge in the Menu view header while kiosk mode is on.",
+    "description": "Badge in the Quick Controls view header while kiosk mode is on.",
     "x-locations": {
       "device": [
         "Compass navigation"
@@ -40879,7 +40879,7 @@
   "compassQuickControls": "快捷控制",
   "@compassQuickControls": {
     "context": "Device:Compass",
-    "description": "Heading over the switches and one-tap actions in the Menu view.",
+    "description": "Heading over the switches and one-tap actions in the Quick Controls view.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
@@ -40889,7 +40889,7 @@
   "compassOpen": "打开",
   "@compassOpen": {
     "context": "Device:Compass",
-    "description": "Heading over the pages the Menu view opens, such as Calendar or Camera View.",
+    "description": "Heading over the pages the Quick Controls view opens, such as Calendar or Camera View.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
@@ -40899,7 +40899,7 @@
   "compassStateOn": "开",
   "@compassStateOn": {
     "context": "Device:Compass",
-    "description": "State under a switch in the Menu view that is on.",
+    "description": "State under a switch in the Quick Controls view that is on.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
@@ -40909,7 +40909,7 @@
   "compassStateOff": "关",
   "@compassStateOff": {
     "context": "Device:Compass",
-    "description": "State under a switch in the Menu view that is off.",
+    "description": "State under a switch in the Quick Controls view that is off.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
@@ -40919,7 +40919,7 @@
   "compassHoldMode": "页面保持模式",
   "@compassHoldMode": {
     "context": "Device:Compass",
-    "description": "Name of the Hold Mode switch in the Menu view. Use the same term as the drawer menu's Turn On Hold Mode.",
+    "description": "Name of the Hold Mode switch in the Quick Controls view. Use the same term as the drawer menu's Turn On Hold Mode.",
     "x-locations": {
       "device": [
         "Compass navigation > Menu"

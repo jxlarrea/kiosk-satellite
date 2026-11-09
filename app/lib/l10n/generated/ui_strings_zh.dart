@@ -8848,8 +8848,8 @@ class UiStringsZh extends UiStrings {
   String get settingKioskAllowDrawerTitle => '允许带快捷操作的菜单';
 
   @override
-  String get settingKioskAllowDrawerMenuDescription =>
-      '无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“菜单”视图。';
+  String get settingKioskAllowQuickControlsDescription =>
+      '无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“快捷控制”视图。';
 
   @override
   String get settingKioskAllowDashboardTitle => '仪表盘';
@@ -10188,7 +10188,7 @@ class UiStringsZh extends UiStrings {
   String get settingNavCompassMenuItemsTitle => '菜单项';
 
   @override
-  String get settingNavCompassMenuItemsDescription => '菜单视图显示的内容。与抽屉菜单共用。';
+  String get settingNavQuickControlsItemsDescription => '快捷控制视图显示的内容。与抽屉菜单共用。';
 
   @override
   String get navigationClassic => '经典';
@@ -10218,7 +10218,7 @@ class UiStringsZh extends UiStrings {
   String get settingOffUnderCompass => '启用 Compass 导航时关闭。';
 
   @override
-  String get compassMenu => '菜单';
+  String get compassQuickControlsView => '快捷控制';
 
   @override
   String get compassHomeDashboard => 'Home Assistant';
@@ -24346,8 +24346,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingKioskAllowDrawerTitle => '允许带快捷操作的菜单';
 
   @override
-  String get settingKioskAllowDrawerMenuDescription =>
-      '无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“菜单”视图。';
+  String get settingKioskAllowQuickControlsDescription =>
+      '无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“快捷控制”视图。';
 
   @override
   String get settingKioskAllowDashboardTitle => '仪表盘';
@@ -25686,7 +25686,7 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingNavCompassMenuItemsTitle => '菜单项';
 
   @override
-  String get settingNavCompassMenuItemsDescription => '菜单视图显示的内容。与抽屉菜单共用。';
+  String get settingNavQuickControlsItemsDescription => '快捷控制视图显示的内容。与抽屉菜单共用。';
 
   @override
   String get navigationClassic => '经典';
@@ -25716,7 +25716,7 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingOffUnderCompass => '启用 Compass 导航时关闭。';
 
   @override
-  String get compassMenu => '菜单';
+  String get compassQuickControlsView => '快捷控制';
 
   @override
   String get compassHomeDashboard => 'Home Assistant';

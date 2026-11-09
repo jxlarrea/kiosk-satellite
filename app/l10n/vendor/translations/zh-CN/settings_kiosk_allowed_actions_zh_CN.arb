@@ -1,7 +1,7 @@
 {
   "@@locale": "zh_CN",
   "settingKioskAllowDrawerTitle": "允许带快捷操作的菜单",
-  "settingKioskAllowDrawerMenuDescription": "无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“菜单”视图。",
+  "settingKioskAllowQuickControlsDescription": "无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“快捷控制”视图。",
   "settingKioskAllowDashboardTitle": "仪表盘",
   "settingKioskAllowDashboardDescription": "重新加载起始页面。",
   "settingKioskAllowHaKioskTitle": "HA Kiosk 模式",

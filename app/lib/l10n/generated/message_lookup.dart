@@ -2726,8 +2726,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingIntercomAutoAnswerCameraDescription' =>
         strings.settingIntercomAutoAnswerCameraDescription,
       'settingKioskAllowDrawerTitle' => strings.settingKioskAllowDrawerTitle,
-      'settingKioskAllowDrawerMenuDescription' =>
-        strings.settingKioskAllowDrawerMenuDescription,
+      'settingKioskAllowQuickControlsDescription' =>
+        strings.settingKioskAllowQuickControlsDescription,
       'settingKioskAllowDashboardTitle' =>
         strings.settingKioskAllowDashboardTitle,
       'settingKioskAllowDashboardDescription' =>
@@ -3328,8 +3328,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingNavCompassReturnMinutesDescription,
       'settingNavCompassMenuItemsTitle' =>
         strings.settingNavCompassMenuItemsTitle,
-      'settingNavCompassMenuItemsDescription' =>
-        strings.settingNavCompassMenuItemsDescription,
+      'settingNavQuickControlsItemsDescription' =>
+        strings.settingNavQuickControlsItemsDescription,
       'navigationClassic' => strings.navigationClassic,
       'navigationCompass' => strings.navigationCompass,
       'navigationZoom' => strings.navigationZoom,
@@ -3339,7 +3339,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'compassLayoutHint' => strings.compassLayoutHint,
       'compassOffNote' => strings.compassOffNote,
       'settingOffUnderCompass' => strings.settingOffUnderCompass,
-      'compassMenu' => strings.compassMenu,
+      'compassQuickControlsView' => strings.compassQuickControlsView,
       'compassHomeDashboard' => strings.compassHomeDashboard,
       'compassAppLauncher' => strings.compassAppLauncher,
       'compassCenter' => strings.compassCenter,

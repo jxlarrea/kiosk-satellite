@@ -13,7 +13,7 @@ const SIDE_LIMIT = 2;
 
 // Stroke icons in the nav rail's style, one per kind.
 const ICONS = {
-  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  menu: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
   dashboard: '<path d="M3 11 12 4l9 7M5 10v10h14V10"/>',
   music_library: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -120,7 +120,7 @@ function homePath() {
 
 function viewLabel(v) {
   switch (v.kind) {
-    case 'menu': return t('compassMenu', {}, 'Menu');
+    case 'menu': return t('compassQuickControlsView', {}, 'Quick Controls');
     case 'dashboard': {
       if (!v.path) return t('compassHomeDashboard', {}, 'Home Assistant');
       const m = matchDashboard(cachedDashboards(), v.path);

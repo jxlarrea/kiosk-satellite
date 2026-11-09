@@ -3453,51 +3453,20 @@ class _CompassMenu extends StatelessWidget {
     builder: (context, _) {
       if (!compass.menuVisible.value) return const SizedBox.shrink();
       final c = compass.c;
-      final scheme = Theme.of(context).colorScheme;
+      // Redrawn on every setting change while it shows: its switches (HA
+      // Kiosk Mode, Hold Mode) show their state, and that state can change
+      // from the view itself, Home Assistant or the remote admin.
       return Positioned.fill(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Redrawn on every setting change while it shows: its switches
-            // (HA Kiosk Mode, Hold Mode) show their state, and that state
-            // can change from the menu itself, Home Assistant or the remote
-            // admin.
-            StreamBuilder<SettingChanged>(
-              stream: c.bus.on<SettingChanged>(),
-              builder: (context, _) => KioskDrawer(
-                container: c,
-                tiles: true,
-                restricted: c.kiosk.locked && !compass.menuUnlocked.value,
-                onClose: () {},
-                onSettings: onSettings,
-                onUnlock: onUnlock,
-              ),
-            ),
-            Positioned(
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: IgnorePointer(
-                  child: Container(
-                    width: 22,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHigh,
-                      borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(12),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.chevron_right,
-                      size: 18,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        child: StreamBuilder<SettingChanged>(
+          stream: c.bus.on<SettingChanged>(),
+          builder: (context, _) => KioskDrawer(
+            container: c,
+            tiles: true,
+            restricted: c.kiosk.locked && !compass.menuUnlocked.value,
+            onClose: () {},
+            onSettings: onSettings,
+            onUnlock: onUnlock,
+          ),
         ),
       );
     },

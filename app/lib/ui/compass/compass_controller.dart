@@ -777,7 +777,7 @@ List<CameraViewConfig> compassCameraViews(AppContainer c) => [
 
 /// The glyph a view is known by, the one the drawer and the settings use.
 IconData compassViewIcon(CompassView view) => switch (view.kind) {
-  'menu' => Icons.menu,
+  'menu' => Icons.tune,
   'dashboard' => Icons.dashboard_outlined,
   'music_library' => Icons.library_music_outlined,
   'calendar' => Icons.calendar_month_outlined,
@@ -798,7 +798,7 @@ String compassViewLabel(
   final strings = l10n(context);
   switch (view.kind) {
     case 'menu':
-      return strings.compassMenu;
+      return strings.compassQuickControlsView;
     case 'dashboard':
       if (view.path.isEmpty) return strings.compassHomeDashboard;
       final list = DashboardCatalog.current.value;

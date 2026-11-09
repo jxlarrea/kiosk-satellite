@@ -9351,8 +9351,8 @@ class UiStringsNl extends UiStrings {
   String get settingKioskAllowDrawerTitle => 'Menu toestaan met snelle acties';
 
   @override
-  String get settingKioskAllowDrawerMenuDescription =>
-      'Toont het menu zonder afsluitgebaar of pincode. Alleen de hieronder geselecteerde acties zijn beschikbaar. In klassieke navigatie opent een veegbeweging vanaf de rand het menu. In Compass is het de Menu-weergave.';
+  String get settingKioskAllowQuickControlsDescription =>
+      'Toont het menu zonder afsluitgebaar of pincode. Alleen de hieronder geselecteerde acties zijn beschikbaar. In klassieke navigatie opent een veegbeweging vanaf de rand het menu. In Compass is het de weergave Snelle bediening.';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Dashboard';
@@ -10792,8 +10792,8 @@ class UiStringsNl extends UiStrings {
   String get settingNavCompassMenuItemsTitle => 'Menu-items';
 
   @override
-  String get settingNavCompassMenuItemsDescription =>
-      'Wat de Menuweergave toont. Gedeeld met het zijmenu.';
+  String get settingNavQuickControlsItemsDescription =>
+      'Wat de weergave Snelle bediening toont. Gedeeld met het zijmenu.';
 
   @override
   String get navigationClassic => 'Klassiek';
@@ -10827,7 +10827,7 @@ class UiStringsNl extends UiStrings {
       'Uit zolang Compass-navigatie aan staat.';
 
   @override
-  String get compassMenu => 'Menu';
+  String get compassQuickControlsView => 'Snelle bediening';
 
   @override
   String get compassHomeDashboard => 'Home Assistant';

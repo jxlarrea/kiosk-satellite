@@ -76,7 +76,7 @@ const kioskTextMessageIds = <String, String>{
   "Disable Gestures": "settingKioskDisableGesturesTitle",
   "Ignore the gestures from the Gestures page while kiosk mode is on.": "settingKioskDisableGesturesDescription",
   "Allow menu with quick actions": "settingKioskAllowDrawerTitle",
-  "Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Menu view.": "settingKioskAllowDrawerMenuDescription",
+  "Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Quick Controls view.": "settingKioskAllowQuickControlsDescription",
   "Dashboard": "settingKioskAllowDashboardTitle",
   "Reload the start page.": "settingKioskAllowDashboardDescription",
   "HA Kiosk Mode": "settingKioskAllowHaKioskTitle",

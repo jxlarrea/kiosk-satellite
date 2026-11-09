@@ -29144,7 +29144,7 @@
     "ownerAuthored": true
   },
   "compassHoldMode": {
-    "source": "3381efec1ed7a474dd276b8a53467c5741e52d737d090cc497d05a07d8cf944e",
+    "source": "818c7f03a4e9238f162135de35074bbe6ab03cc1be1025e702c1e217b56d0d22",
     "translation": "a09b90cb64bf1d3a597c9f684d616c0484c1612964109fb92cabc30d350a0217",
     "author": "Xavier Larrea",
     "ownerAuthored": true
@@ -29156,13 +29156,13 @@
     "ownerAuthored": true
   },
   "compassOpen": {
-    "source": "8f333e758368b0cca6939420b129ac502db0a4ef0b96cc4eb14f1bc0c7b5d1ea",
+    "source": "531aeb26d928671e10f2e450629cea16b0c43e2e5df5622d905cd77af7b0f36a",
     "translation": "9fb440435a0466471535fbd53edeba3bfb5abf47f12a7890ef30b67606558a7e",
     "author": "Xavier Larrea",
     "ownerAuthored": true
   },
   "compassStateOn": {
-    "source": "8c7457e3dcbb694eb4c2adcd0290ade6de8d1884d6463c06e18a7e0c72e815f4",
+    "source": "54461edfe6a2b16e24038ce74f49fdaf592260bd23160c95f74f1e31d40a7968",
     "translation": "df16db5ac6986ccc07bc9f02905d8db441fdc6a85feecb5298da42e9272c4801",
     "author": "Xavier Larrea",
     "ownerAuthored": true
@@ -29204,7 +29204,7 @@
     "ownerAuthored": true
   },
   "compassKioskLocked": {
-    "source": "82a352adb3037234168e481daddaba8890adbb7e92174ff50c1bdc7130237e30",
+    "source": "aa9bee83c4ff795eeca42c652e5086d989b37e7b3982593cb11f5c06f0b7d525",
     "translation": "c96005b5918ae34bdaff4bea957c7447eb7a57802cb95e2bc2db68403bd6dff3",
     "author": "Xavier Larrea",
     "ownerAuthored": true
@@ -29360,7 +29360,7 @@
     "ownerAuthored": true
   },
   "compassStateOff": {
-    "source": "596f2ad7a2fb4c78df16c3164dbf9dd3ed57c7da4bdc1113062154aa9a064e5b",
+    "source": "23c2572ea7ab608bec53d4341e2a51dbe8af281e9c2bbf13de0fbdf59d2ba0e2",
     "translation": "da60ff35b212a8aa4758f2a8bf63f12cdc79fb2f84d64ab2ed2689d80417bdf5",
     "author": "Xavier Larrea",
     "ownerAuthored": true
@@ -29372,7 +29372,7 @@
     "ownerAuthored": true
   },
   "compassQuickControls": {
-    "source": "3ab2141b148a57942b60dfc9da4d80f39f6f4d5dc766d988712deaee5631fcb0",
+    "source": "0c49fd2be3c360a2bf622f5d9776c7e65772da9fbcc576cc2010f7f9bedc25b9",
     "translation": "92381e3304b546bba339e32fc3547c47e93d373e733dd5f61a155c83e9cf81e9",
     "author": "Xavier Larrea",
     "ownerAuthored": true
@@ -29410,6 +29410,24 @@
   "settingCameraAutoDismissCompassDescription": {
     "source": "58197d2f45060b71ad25026203ad74bc2bf52a99735d8d18e7da8dccec5780b9",
     "translation": "2e9c264722b61424922068368ca48041814e95ef19fafbe8302826bbe5146e8c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "compassQuickControlsView": {
+    "source": "c40c6e71ba0b6f95c4e216c94932f6766f278be2aa8bb922693e2d37b10a6587",
+    "translation": "92381e3304b546bba339e32fc3547c47e93d373e733dd5f61a155c83e9cf81e9",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingNavQuickControlsItemsDescription": {
+    "source": "727f620bfca165e10e0b6901a6ccecdade995150f4c43dc2844d25ef6c741bac",
+    "translation": "d7360a728b22cc5335a28a9b0adbe107ad71fe92cdbae6a0b8eeba2daa1a5bce",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingKioskAllowQuickControlsDescription": {
+    "source": "4a076c5243267cd032eed86821bceddb1f91af4259847bd2ea0ff0600aaa3f5d",
+    "translation": "98cbfea732ad7dcb2f8cb1187e9001521b6ef67ef2d868baa92e851a34ab2f53",
     "author": "Xavier Larrea",
     "ownerAuthored": true
   }

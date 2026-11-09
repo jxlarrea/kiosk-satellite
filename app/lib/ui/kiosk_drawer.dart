@@ -998,13 +998,13 @@ class KioskDrawer extends StatelessWidget {
 }
 
 extension _MenuView on KioskDrawer {
-  /// Compass navigation's Menu view, the quick controls layout: the
-  /// switches and one-tap actions as pills that light up while on, the
-  /// pages the menu opens as large icon cards, Settings as a button in the
-  /// header and Restart and Exit as quiet links at the foot. Every item is
-  /// the drawer's own row ([_row]), drawn by [_menuPiece]. On a locked
-  /// kiosk only the Allowed Actions show, and Settings is a locked button
-  /// that asks for the exit gesture's PIN.
+  /// Compass navigation's Quick Controls view: the switches and one-tap
+  /// actions as pills that light up while on, Settings and the pages the
+  /// menu opens as square cards, and Restart and Exit as quiet links at
+  /// the foot with the version and build across from them. Every item is the drawer's own row ([_row]),
+  /// drawn by [_menuPiece]. On a locked kiosk only the Allowed Actions
+  /// show, and Settings is a locked card that asks for the exit gesture's
+  /// PIN.
   Widget _tilesView(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
@@ -1022,7 +1022,26 @@ extension _MenuView on KioskDrawer {
         if (!_menuOpens.contains(id) && !drawerPowerItems.contains(id))
           _row(context, id, divided: false),
     ];
+    // Settings leads the pages: the first card, locked behind the PIN on a
+    // locked kiosk.
+    final Widget? settings = items.contains('settings')
+        ? _MenuCard(
+            icon: Icons.settings_outlined,
+            label: strings.commonSettings,
+            onTap: () {
+              onClose();
+              onSettings();
+            },
+          )
+        : restricted && onUnlock != null
+        ? _MenuCard(
+            icon: Icons.lock_outline,
+            label: strings.commonSettings,
+            onTap: onUnlock!,
+          )
+        : null;
     final opens = [
+      ?settings,
       for (final id in listed)
         if (_menuOpens.contains(id)) _row(context, id, divided: false),
     ];
@@ -1030,22 +1049,6 @@ extension _MenuView on KioskDrawer {
       for (final id in listed)
         if (drawerPowerItems.contains(id)) _row(context, id, divided: false),
     ];
-    final Widget? settings = items.contains('settings')
-        ? FilledButton.icon(
-            onPressed: () {
-              onClose();
-              onSettings();
-            },
-            icon: const Icon(Icons.settings_outlined),
-            label: Text(strings.commonSettings),
-          )
-        : restricted && onUnlock != null
-        ? FilledButton.tonalIcon(
-            onPressed: onUnlock,
-            icon: const Icon(Icons.lock_outline),
-            label: Text(strings.commonSettings),
-          )
-        : null;
     final theming = items.contains('theme')
         ? SegmentedButton<String>(
             showSelectedIcon: false,
@@ -1071,15 +1074,28 @@ extension _MenuView on KioskDrawer {
                 c.settings.setFromJson(defs.uiTheme.key, selection.first),
           )
         : null;
+    // The foot's buttons drop their own padding, so the version sits on the
+    // page's edge like everything above it.
+    final footStyle = TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      minimumSize: const Size(0, 40),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+    );
     final Widget? version = restricted
         ? null
         : ValueListenableBuilder<UpdateInfo?>(
             valueListenable: c.update.available,
             builder: (context, info, _) => info == null
                 ? TextButton(
+                    style: footStyle,
                     onPressed: () => _checkNow(context),
                     child: Text(
-                      strings.drawerVersion(c.device.appVersion),
+                      strings.drawerVersion(
+                        c.device.buildNumber.isEmpty
+                            ? c.device.appVersion
+                            : '${c.device.appVersion} (${c.device.buildNumber})',
+                      ),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -1107,48 +1123,6 @@ extension _MenuView on KioskDrawer {
             side: BorderSide.none,
           )
         : null;
-    Widget heading(String text) => Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        text.toUpperCase(),
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: scheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1,
-        ),
-      ),
-    );
-    final title = Row(
-      spacing: 16,
-      children: [
-        SvgPicture.asset('assets/branding/mark.svg', width: 60, height: 60),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Kiosk Satellite',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontFamily: Ks.displayFont,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                c.device.deviceName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
     return Material(
       color: scheme.surface,
       child: SafeArea(
@@ -1159,120 +1133,148 @@ extension _MenuView on KioskDrawer {
             // without scrolling.
             final compact = box.maxHeight < 560;
             final pad = wide ? (compact ? 16.0 : 28.0) : 16.0;
-            // Room on the right for the tab that points back to the center.
-            final right = pad + (wide ? 20 : 12);
             final gap = compact ? 8.0 : 12.0;
-            final inner = box.maxWidth - pad - right;
-            Widget grid(List<Widget> children, int columns, double height) {
-              final cell = (inner - gap * (columns - 1)) / columns;
-              return Wrap(
-                spacing: gap,
-                runSpacing: gap,
-                children: [
-                  for (final child in children)
-                    SizedBox(width: cell, height: height, child: child),
-                ],
-              );
-            }
+            // The room between the header and the first section, and
+            // between sections.
+            final afterHeader = compact ? 18.0 : 32.0;
+            final betweenSections = compact ? 16.0 : 28.0;
+            const headingHeight = 28.0;
+            const footHeight = 40.0;
+            final headerHeight = wide ? (compact ? 48.0 : 64.0) : 56.0;
+            final inner = box.maxWidth - pad * 2;
 
-            // A short row spreads out rather than leave empty columns.
-            final quickColumns = wide ? quick.length.clamp(3, 5) : 2;
-            final pillHeight = wide ? (compact ? 54.0 : 80.0) : 60.0;
-            final openColumns = wide
-                ? math.max(4, math.min(opens.length, 8))
-                : 3;
-            final quickRows = (quick.length / quickColumns).ceil();
-            final openRows = math.max(1, (opens.length / openColumns).ceil());
-            final double cardHeight;
-            var footerRoom = gap;
-            if (wide) {
-              // What is left once everything else has its height.
-              final headerHeight = compact ? 56.0 : 72.0;
-              final footerHeight = compact ? 36.0 : 44.0;
-              final labelHeight = compact ? 26.0 : 30.0;
-              final used =
-                  pad * 2 +
-                  headerHeight +
-                  gap * 2 +
-                  (quick.isEmpty
-                      ? 0
-                      : labelHeight +
-                            quickRows * pillHeight +
-                            (quickRows - 1) * gap +
-                            gap) +
-                  (opens.isEmpty ? 0 : labelHeight) +
-                  footerHeight +
-                  (openRows - 1) * gap;
-              cardHeight = ((box.maxHeight - used) / openRows).clamp(
-                84.0,
-                compact ? 220.0 : 300.0,
-              );
-              // Whatever the cards leave goes above the foot, so the version
-              // and Restart and Exit sit at the bottom of the screen.
-              footerRoom = math.max(
-                gap,
-                box.maxHeight - used - openRows * cardHeight + gap,
-              );
-            } else {
-              cardHeight = 104;
-            }
-            final footer = Row(
-              mainAxisAlignment: wide
-                  ? MainAxisAlignment.start
-                  : MainAxisAlignment.center,
-              children: [
-                if (wide) Expanded(child: Row(children: [?version])),
-                ...power,
-              ],
-            );
-            final body = <Widget>[
-              if (wide)
-                SizedBox(
-                  height: compact ? 56 : 72,
-                  child: Row(
-                    spacing: 12,
-                    children: [
-                      Expanded(child: title),
-                      ?locked,
-                      ?settings,
-                      ?theming,
-                    ],
+            Widget heading(String text) => SizedBox(
+              height: headingHeight,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  text.toUpperCase(),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
                   ),
-                )
-              else ...[
-                SizedBox(
-                  height: 68,
-                  child: Row(
-                    spacing: 12,
+                ),
+              ),
+            );
+            Widget grid(List<Widget> children, double width, double height) =>
+                Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final child in children)
+                      SizedBox(width: width, height: height, child: child),
+                  ],
+                );
+
+            // A short row of pills spreads out rather than leave empty
+            // columns.
+            final quickColumns = wide ? quick.length.clamp(3, 5) : 2;
+            final pillWidth = (inner - gap * (quickColumns - 1)) / quickColumns;
+            final pillHeight = compact ? 52.0 : 64.0;
+            final quickRows = (quick.length / quickColumns).ceil();
+            // Square cards, in one row while they stay big enough to read.
+            final minCard = compact ? 76.0 : (wide ? 96.0 : 88.0);
+            final maxCard = compact ? 112.0 : 136.0;
+            var openColumns = math.max(1, opens.length);
+            double cardSide() =>
+                (inner - gap * (openColumns - 1)) / openColumns;
+            while (openColumns > 1 && cardSide() < minCard) {
+              openColumns--;
+            }
+            final card = math.min(cardSide(), maxCard);
+            final openRows = (opens.length / openColumns).ceil();
+
+            final used =
+                pad * 2 +
+                headerHeight +
+                afterHeader +
+                (quick.isEmpty
+                    ? 0
+                    : headingHeight +
+                          quickRows * pillHeight +
+                          (quickRows - 1) * gap +
+                          betweenSections) +
+                (opens.isEmpty
+                    ? 0
+                    : headingHeight + openRows * card + (openRows - 1) * gap) +
+                footHeight;
+            // Whatever is left goes above the foot, so the version and
+            // Restart and Exit sit at the bottom of the screen.
+            final footRoom = math.max(betweenSections, box.maxHeight - used);
+
+            final title = Row(
+              spacing: compact ? 12 : 16,
+              children: [
+                SvgPicture.asset(
+                  'assets/branding/mark.svg',
+                  width: compact ? 40 : 52,
+                  height: compact ? 40 : 52,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(child: title),
-                      ?theming,
+                      Text(
+                        'Kiosk Satellite',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            (compact
+                                    ? theme.textTheme.titleLarge
+                                    : theme.textTheme.headlineSmall)
+                                ?.copyWith(
+                                  fontFamily: Ks.displayFont,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      Text(
+                        c.device.deviceName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                if (locked != null)
-                  Align(alignment: Alignment.centerLeft, child: locked),
-                if (settings != null) SizedBox(height: 52, child: settings),
               ],
-              SizedBox(height: gap),
-              if (quick.isNotEmpty) ...[
-                heading(strings.compassQuickControls),
-                grid(quick, quickColumns, pillHeight),
-                SizedBox(height: gap * 1.5),
-              ],
-              if (opens.isNotEmpty) ...[
-                heading(strings.compassOpen),
-                grid(opens, openColumns, cardHeight),
-              ],
-              SizedBox(height: footerRoom),
-              footer,
-              if (!wide && version != null) Center(child: version),
-            ];
+            );
+            final footer = SizedBox(
+              height: footHeight,
+              child: Row(children: [...power, const Spacer(), ?version]),
+            );
             return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(pad, pad, right, pad),
+              padding: EdgeInsets.all(pad),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: body,
+                children: [
+                  SizedBox(
+                    height: headerHeight,
+                    child: Row(
+                      spacing: 12,
+                      children: [
+                        Expanded(child: title),
+                        ?locked,
+                        ?theming,
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: afterHeader),
+                  if (quick.isNotEmpty) ...[
+                    heading(strings.compassQuickControls),
+                    grid(quick, pillWidth, pillHeight),
+                    SizedBox(height: betweenSections),
+                  ],
+                  if (opens.isNotEmpty) ...[
+                    heading(strings.compassOpen),
+                    grid(opens, card, card),
+                  ],
+                  SizedBox(height: footRoom),
+                  footer,
+                ],
               ),
             );
           },
@@ -1281,8 +1283,9 @@ extension _MenuView on KioskDrawer {
     );
   }
 
-  /// One item of the Menu view: a quick control pill, a page card or a
-  /// link at the foot, by what the item does. Toggles carry their state.
+  /// One item of the Quick Controls view: a quick control pill, a page
+  /// card or a link at the foot, by what the item does. Toggles carry
+  /// their state.
   Widget _menuPiece(
     BuildContext context, {
     required String id,
@@ -1294,12 +1297,7 @@ extension _MenuView on KioskDrawer {
       return _MenuLink(icon: icon, label: label, onTap: onTap);
     }
     if (_menuOpens.contains(id)) {
-      return _MenuCard(
-        icon: icon,
-        label: label,
-        onTap: onTap,
-        accent: _menuOpens.indexOf(id) % 4,
-      );
+      return _MenuCard(icon: icon, label: label, onTap: onTap);
     }
     final strings = l10n(context);
     bool? on;
@@ -1311,12 +1309,10 @@ extension _MenuView on KioskDrawer {
         on = c.settings.get(defs.haHoldMode);
         name = strings.compassHoldMode;
     }
-    final quick = _menuQuick.indexOf(id);
     return _MenuPill(
       icon: icon,
       label: name,
       onTap: onTap,
-      accent: (quick >= 0 ? quick : id.length) % 4,
       on: on,
       state: on == null
           ? null
@@ -1327,9 +1323,8 @@ extension _MenuView on KioskDrawer {
   }
 }
 
-/// The Menu view's page items, which go in the large cards, in the order
-/// their colors cycle. Everything else but Restart and Exit is a quick
-/// control.
+/// The Quick Controls view's page items, which go in the square cards
+/// after Settings. Everything else but Restart and Exit is a quick control.
 const _menuOpens = [
   'camera',
   'intercom',
@@ -1341,53 +1336,35 @@ const _menuOpens = [
   'apps',
 ];
 
-/// The quick controls in the order their disc colors cycle; a plugin's
-/// action takes one by its name.
-const _menuQuick = [
-  'ha_kiosk',
-  'screensaver',
-  'lockdown',
-  'hold',
-  'clear_cache',
-  'player',
-];
-
-/// The four brand accents the discs cycle, as the settings rail paints
-/// them: sage, teal, ochre and rust.
-List<Color> _menuAccents(BuildContext context) {
-  final theme = Theme.of(context);
-  final scheme = theme.colorScheme;
-  return [
-    theme.brightness == Brightness.dark ? ksSage : ksSageOnLight,
-    scheme.primary,
-    scheme.tertiary,
-    scheme.error,
-  ];
-}
-
-/// The app's circled icon: a solid disc with the glyph in white, as the
-/// settings rail and the drawer's pages wear them.
+/// The app's circled icon, in one quiet color for every item: the
+/// secondary container with its glyph on it.
 class _MenuDisc extends StatelessWidget {
   const _MenuDisc({
     required this.icon,
     required this.size,
-    required this.color,
-    this.glyph = Colors.white,
+    this.color,
+    this.glyph,
   });
 
   final Object icon;
   final double size;
-  final Color color;
-  final Color glyph;
+  final Color? color;
+  final Color? glyph;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    alignment: Alignment.center,
-    child: _menuGlyph(icon, size * 0.52, glyph),
-  );
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color ?? scheme.secondaryContainer,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: _menuGlyph(icon, size * 0.5, glyph ?? scheme.onSecondaryContainer),
+    );
+  }
 }
 
 /// An item's glyph: a Material icon, or a product mark drawn in [color].
@@ -1402,13 +1379,12 @@ Widget _menuGlyph(Object icon, double size, Color color) => icon is String
 
 /// A quick control: a pill with the circled glyph, the name and, for a
 /// switch, its state. A switch that is on fills with the primary color and
-/// its disc turns white.
+/// its disc turns light.
 class _MenuPill extends StatelessWidget {
   const _MenuPill({
     required this.icon,
     required this.label,
     required this.onTap,
-    required this.accent,
     this.on,
     this.state,
   });
@@ -1416,7 +1392,6 @@ class _MenuPill extends StatelessWidget {
   final Object icon;
   final String label;
   final VoidCallback onTap;
-  final int accent;
   final bool? on;
   final String? state;
 
@@ -1431,20 +1406,20 @@ class _MenuPill extends StatelessWidget {
       button: true,
       child: Material(
         color: lit ? scheme.primary : scheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               spacing: 12,
               children: [
                 _MenuDisc(
                   icon: icon,
-                  size: 40,
-                  color: lit ? scheme.onPrimary : _menuAccents(context)[accent],
-                  glyph: lit ? scheme.primary : Colors.white,
+                  size: 36,
+                  color: lit ? scheme.onPrimary : null,
+                  glyph: lit ? scheme.primary : null,
                 ),
                 Expanded(
                   child: Column(
@@ -1482,20 +1457,18 @@ class _MenuPill extends StatelessWidget {
   }
 }
 
-/// A page the menu opens: a large circled glyph in one of the brand
-/// accents over its name.
+/// A page the menu opens, or Settings: a square card with the circled
+/// glyph over its name.
 class _MenuCard extends StatelessWidget {
   const _MenuCard({
     required this.icon,
     required this.label,
     required this.onTap,
-    required this.accent,
   });
 
   final Object icon;
   final String label;
   final VoidCallback onTap;
-  final int accent;
 
   @override
   Widget build(BuildContext context) {
@@ -1503,31 +1476,39 @@ class _MenuCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     return Material(
       color: scheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: LayoutBuilder(
           builder: (context, box) {
-            final disc = (box.maxHeight * 0.34).clamp(40.0, 72.0);
+            final small = box.maxWidth < 100;
+            final style =
+                (small
+                        ? theme.textTheme.labelMedium
+                        : theme.textTheme.titleSmall)
+                    ?.copyWith(fontWeight: FontWeight.w500, height: 1.2);
+            // Room for two lines under every disc, so the discs line up
+            // across the row whether a name wraps or not.
+            final labelHeight = (style?.fontSize ?? 14) * 1.2 * 2;
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.all(8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                spacing: box.maxHeight < 110 ? 6 : 12,
+                spacing: small ? 6 : 10,
                 children: [
                   _MenuDisc(
                     icon: icon,
-                    size: disc,
-                    color: _menuAccents(context)[accent],
+                    size: (box.maxWidth * 0.4).clamp(32.0, 56.0),
                   ),
-                  Text(
-                    label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w500,
+                  SizedBox(
+                    height: labelHeight,
+                    child: Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: style,
                     ),
                   ),
                 ],
@@ -1557,7 +1538,13 @@ class _MenuLink extends StatelessWidget {
     final color = Theme.of(context).colorScheme.error;
     return TextButton.icon(
       onPressed: onTap,
-      style: TextButton.styleFrom(foregroundColor: color),
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        minimumSize: const Size(0, 40),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+      ),
       icon: _menuGlyph(icon, 20, color),
       label: Text(label),
     );

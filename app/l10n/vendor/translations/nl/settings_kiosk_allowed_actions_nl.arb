@@ -1,7 +1,7 @@
 {
   "@@locale": "nl",
   "settingKioskAllowDrawerTitle": "Menu toestaan met snelle acties",
-  "settingKioskAllowDrawerMenuDescription": "Toont het menu zonder afsluitgebaar of pincode. Alleen de hieronder geselecteerde acties zijn beschikbaar. In klassieke navigatie opent een veegbeweging vanaf de rand het menu. In Compass is het de Menu-weergave.",
+  "settingKioskAllowQuickControlsDescription": "Toont het menu zonder afsluitgebaar of pincode. Alleen de hieronder geselecteerde acties zijn beschikbaar. In klassieke navigatie opent een veegbeweging vanaf de rand het menu. In Compass is het de weergave Snelle bediening.",
   "settingKioskAllowDashboardTitle": "Dashboard",
   "settingKioskAllowDashboardDescription": "Herlaad de startpagina.",
   "settingKioskAllowHaKioskTitle": "HA Kioskmodus",

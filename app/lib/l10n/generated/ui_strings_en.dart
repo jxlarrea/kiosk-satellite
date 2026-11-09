@@ -9247,8 +9247,8 @@ class UiStringsEn extends UiStrings {
   String get settingKioskAllowDrawerTitle => 'Allow menu with quick actions';
 
   @override
-  String get settingKioskAllowDrawerMenuDescription =>
-      'Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Menu view.';
+  String get settingKioskAllowQuickControlsDescription =>
+      'Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Quick Controls view.';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Dashboard';
@@ -10667,8 +10667,8 @@ class UiStringsEn extends UiStrings {
   String get settingNavCompassMenuItemsTitle => 'Menu items';
 
   @override
-  String get settingNavCompassMenuItemsDescription =>
-      'What the Menu view shows. Shared with the drawer menu.';
+  String get settingNavQuickControlsItemsDescription =>
+      'What the Quick Controls view shows. Shared with the drawer menu.';
 
   @override
   String get navigationClassic => 'Classic';
@@ -10700,7 +10700,7 @@ class UiStringsEn extends UiStrings {
   String get settingOffUnderCompass => 'Off while Compass navigation is on.';
 
   @override
-  String get compassMenu => 'Menu';
+  String get compassQuickControlsView => 'Quick Controls';
 
   @override
   String get compassHomeDashboard => 'Home Assistant';

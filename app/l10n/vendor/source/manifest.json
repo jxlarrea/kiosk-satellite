@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "aa14ca836f232f4c2f4ede3a511fa9290f961eb7",
+  "revision": "9ce2acaa4860c5447dc720a770036f54a03f16f5",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -124,7 +124,7 @@
     "settings_intercom_general_en.arb": "3a1d3535b855b5658be40b64a8e04c759bb6a1690a28d3283befaeda2c829d29",
     "settings_intercom_kiosks_en.arb": "135b6b4da593ab57a523e70d84494c604d036d6da47d869407d3c03a20ba072e",
     "settings_intercom_talk_en.arb": "2802b9745497417a7d9a8c3cedd3432429745151232cc1a054c4b24f3e14b33a",
-    "settings_kiosk_allowed_actions_en.arb": "cecb42a262b0e8b2ec4d23e11149131f24f7da58348f0cbcbb0e5619817a6980",
+    "settings_kiosk_allowed_actions_en.arb": "5a6cc45d7cab99b61e7c59f475fadcc6b78fea740916d0f14c81e459116a35cc",
     "settings_kiosk_general_en.arb": "a45e0a0510b43f5a2f6f0deb5a508ddd31e2fb9ce5a69a1af9f2e4f1a4fe11a3",
     "settings_kiosk_permissions_en.arb": "686c9c49e03d50ec06070dbbf9717bccf2916fc68464d2ac12c4de3cd7f2e337",
     "settings_leds_en.arb": "ba45feb28eb45ea9ef9b299e6c53da2ad9458231218351e87a98c4a9d368f512",
@@ -142,7 +142,7 @@
     "settings_media_player_sendspin_en.arb": "bb179909cfd4142e937858ad633d282bf937dd0c33ab7e56c1138203ac5da73b",
     "settings_media_player_sonos_en.arb": "daf0a51ab1dc951f25e3091c6ce8125abb0f98b18787a659530e94a79f86b68c",
     "settings_menu_en.arb": "38edc050fb68458838d35967fcdfc5f7616522b8694e1e04d543b01d9f6f09d6",
-    "settings_navigation_en.arb": "8767467d4a283e4dd8a8c2a0ce315acdcce616693992063d8e70ee4546d1615e",
+    "settings_navigation_en.arb": "84bad2c199e60ed442b4c03e4ad4cb061641d22c7a559f6304cff63a1ea7dd1f",
     "settings_screen_audio_adaptive_brightness_en.arb": "c1be19f7cef2d2c97e6be6c8eb0611201560b56fe22f99d5b1f941089ff012aa",
     "settings_screen_audio_devices_en.arb": "fe204a3ce97097a890e4c1d6f45de836c998aee747daa76f7e543b076c5ae1f6",
     "settings_screen_audio_microphone_en.arb": "24f090c6c65960048a08b1c89ded36ab31f575ce0b1795c2065fb74969c2c7f2",

@@ -1414,7 +1414,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "kiosk.allow_drawer": {
     "title": "settingKioskAllowDrawerTitle",
-    "description": "settingKioskAllowDrawerMenuDescription",
+    "description": "settingKioskAllowQuickControlsDescription",
   },
   "kiosk.allow_dashboard": {
     "title": "settingKioskAllowDashboardTitle",
@@ -2642,6 +2642,6 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "nav.compass_menu_items": {
     "title": "settingNavCompassMenuItemsTitle",
-    "description": "settingNavCompassMenuItemsDescription",
+    "description": "settingNavQuickControlsItemsDescription",
   },
 };

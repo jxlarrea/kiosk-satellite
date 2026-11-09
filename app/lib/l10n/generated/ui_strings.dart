@@ -16166,8 +16166,8 @@ abstract class UiStrings {
   /// Help below this setting.
   ///
   /// In en, this message translates to:
-  /// **'Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Menu view.'**
-  String get settingKioskAllowDrawerMenuDescription;
+  /// **'Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Quick Controls view.'**
+  String get settingKioskAllowQuickControlsDescription;
 
   /// Setting label.
   ///
@@ -18662,8 +18662,8 @@ abstract class UiStrings {
   /// Help below the setting.
   ///
   /// In en, this message translates to:
-  /// **'What the Menu view shows. Shared with the drawer menu.'**
-  String get settingNavCompassMenuItemsDescription;
+  /// **'What the Quick Controls view shows. Shared with the drawer menu.'**
+  String get settingNavQuickControlsItemsDescription;
 
   /// Navigation style option: the drawer menu.
   ///
@@ -18722,8 +18722,8 @@ abstract class UiStrings {
   /// Name of the view that replaces the drawer menu, at the far end of the left side.
   ///
   /// In en, this message translates to:
-  /// **'Menu'**
-  String get compassMenu;
+  /// **'Quick Controls'**
+  String get compassQuickControlsView;
 
   /// The dashboard the kiosk starts on, as a view in the layout. The product name, keep it as is.
   ///
@@ -18881,37 +18881,37 @@ abstract class UiStrings {
   /// **'Not set up on this kiosk'**
   String get compassKindUnavailable;
 
-  /// Badge in the Menu view header while kiosk mode is on.
+  /// Badge in the Quick Controls view header while kiosk mode is on.
   ///
   /// In en, this message translates to:
   /// **'Kiosk locked'**
   String get compassKioskLocked;
 
-  /// Heading over the switches and one-tap actions in the Menu view.
+  /// Heading over the switches and one-tap actions in the Quick Controls view.
   ///
   /// In en, this message translates to:
   /// **'Quick controls'**
   String get compassQuickControls;
 
-  /// Heading over the pages the Menu view opens, such as Calendar or Camera View.
+  /// Heading over the pages the Quick Controls view opens, such as Calendar or Camera View.
   ///
   /// In en, this message translates to:
   /// **'Open'**
   String get compassOpen;
 
-  /// State under a switch in the Menu view that is on.
+  /// State under a switch in the Quick Controls view that is on.
   ///
   /// In en, this message translates to:
   /// **'On'**
   String get compassStateOn;
 
-  /// State under a switch in the Menu view that is off.
+  /// State under a switch in the Quick Controls view that is off.
   ///
   /// In en, this message translates to:
   /// **'Off'**
   String get compassStateOff;
 
-  /// Name of the Hold Mode switch in the Menu view. Use the same term as the drawer menu's Turn On Hold Mode.
+  /// Name of the Hold Mode switch in the Quick Controls view. Use the same term as the drawer menu's Turn On Hold Mode.
   ///
   /// In en, this message translates to:
   /// **'Hold Mode'**
