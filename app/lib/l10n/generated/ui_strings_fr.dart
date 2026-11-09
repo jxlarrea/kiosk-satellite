@@ -10878,8 +10878,7 @@ class UiStringsFr extends UiStrings {
   String get navigationSlide => 'Glisser';
 
   @override
-  String get compassClassicHint =>
-      'Menu latéral, actualisation par glissement et carrousel de tableau de bord.';
+  String get compassClassicViewHint => 'Vue Home Assistant avec menu latéral.';
 
   @override
   String get compassCompassHint => 'Glissez entre des vues disposées en croix.';

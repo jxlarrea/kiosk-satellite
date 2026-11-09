@@ -10773,8 +10773,7 @@ class UiStringsRu extends UiStrings {
   String get navigationSlide => 'Сдвиг';
 
   @override
-  String get compassClassicHint =>
-      'Боковое меню, «Потяните для обновления» и карусель панели.';
+  String get compassClassicViewHint => 'Вид Home Assistant с боковым меню.';
 
   @override
   String get compassCompassHint =>

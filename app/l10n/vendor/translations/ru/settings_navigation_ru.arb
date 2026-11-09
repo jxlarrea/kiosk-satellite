@@ -22,7 +22,7 @@
   "navigationCompass": "Compass",
   "navigationZoom": "Масштаб",
   "navigationSlide": "Сдвиг",
-  "compassClassicHint": "Боковое меню, «Потяните для обновления» и карусель панели.",
+  "compassClassicViewHint": "Вид Home Assistant с боковым меню.",
   "compassCompassHint": "Свайп между видами, расположенными крестом.",
   "compassLayoutHint": "До двух видов с каждой стороны, по одному каждого типа. Коснитесь вида, чтобы изменить его, в том числе центральный.",
   "compassOffNote": "«Потяните для обновления», карусель панели и свайп от края, открывающий боковое меню, отключены, пока включён Compass.",

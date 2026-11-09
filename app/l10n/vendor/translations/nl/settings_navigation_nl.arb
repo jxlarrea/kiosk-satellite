@@ -22,7 +22,7 @@
   "navigationCompass": "Compass",
   "navigationZoom": "Zoom",
   "navigationSlide": "Schuiven",
-  "compassClassicHint": "Zijmenu, trekken om te vernieuwen en de dashboardcarrousel.",
+  "compassClassicViewHint": "Home Assistant-weergave met zijmenu.",
   "compassCompassHint": "Veeg tussen weergaven die in een kruis liggen.",
   "compassLayoutHint": "Maximaal twee weergaven per kant, één van elke soort. Tik op een weergave om die te wijzigen, ook de middelste.",
   "compassOffNote": "Trekken om te vernieuwen, de dashboardcarrousel en het vegen vanaf de rand dat het zijmenu opent staan uit zolang Compass aan staat.",

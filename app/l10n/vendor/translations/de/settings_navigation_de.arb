@@ -22,7 +22,7 @@
   "navigationCompass": "Compass",
   "navigationZoom": "Zoom",
   "navigationSlide": "Schieben",
-  "compassClassicHint": "Seitenmenü, Zum Aktualisieren herunterziehen und das Dashboard-Karussell.",
+  "compassClassicViewHint": "Home Assistant-Ansicht mit Seitenmenü.",
   "compassCompassHint": "Zwischen Ansichten wischen, die in einem Kreuz angeordnet sind.",
   "compassLayoutHint": "Bis zu zwei Ansichten pro Seite, jede Art nur einmal. Tippen Sie auf eine Ansicht, um sie zu ändern, auch auf die mittlere.",
   "compassOffNote": "Zum Aktualisieren herunterziehen, das Dashboard-Karussell und das Wischen vom Rand, das das Seitenmenü öffnet, sind aus, solange Compass aktiv ist.",

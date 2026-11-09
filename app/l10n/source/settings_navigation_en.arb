@@ -286,8 +286,8 @@
       ]
     }
   },
-  "compassClassicHint": "Drawer menu, pull to refresh and the dashboard carousel.",
-  "@compassClassicHint": {
+  "compassClassicViewHint": "Home Assistant view with drawer menu.",
+  "@compassClassicViewHint": {
     "context": "Settings:Navigation",
     "description": "Description on the Classic choice card.",
     "x-locations": {

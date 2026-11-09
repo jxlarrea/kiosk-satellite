@@ -176,7 +176,7 @@ export function compassStyleRow(row, s, save) {
   const grid = document.createElement('div');
   grid.className = 'compass-styles';
   const choices = [
-    ['classic', t('navigationClassic', {}, 'Classic'), t('compassClassicHint', {}, 'Drawer menu, pull to refresh and the dashboard carousel.')],
+    ['classic', t('navigationClassic', {}, 'Classic'), t('compassClassicViewHint', {}, 'Home Assistant view with drawer menu.')],
     ['compass', t('navigationCompass', {}, 'Compass'), t('compassCompassHint', {}, 'Swipe between views laid out in a cross.')],
   ];
   const buttons = [];

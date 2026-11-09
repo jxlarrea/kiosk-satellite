@@ -40427,8 +40427,8 @@
       ]
     }
   },
-  "compassClassicHint": "Seitenmenü, Zum Aktualisieren herunterziehen und das Dashboard-Karussell.",
-  "@compassClassicHint": {
+  "compassClassicViewHint": "Home Assistant-Ansicht mit Seitenmenü.",
+  "@compassClassicViewHint": {
     "context": "Settings:Navigation",
     "description": "Description on the Classic choice card.",
     "x-locations": {

@@ -10882,8 +10882,8 @@ class UiStringsEs extends UiStrings {
   String get navigationSlide => 'Deslizar';
 
   @override
-  String get compassClassicHint =>
-      'Menú lateral, deslizar para recargar y el carrusel del panel de control.';
+  String get compassClassicViewHint =>
+      'Vista de Home Assistant con menú lateral.';
 
   @override
   String get compassCompassHint => 'Desliza entre vistas dispuestas en cruz.';

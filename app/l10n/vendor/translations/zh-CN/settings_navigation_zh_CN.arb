@@ -22,7 +22,7 @@
   "navigationCompass": "Compass",
   "navigationZoom": "缩放",
   "navigationSlide": "平移",
-  "compassClassicHint": "抽屉菜单、下拉刷新和仪表盘滑动切换。",
+  "compassClassicViewHint": "带抽屉菜单的 Home Assistant 页面。",
   "compassCompassHint": "在排成十字形的视图之间滑动切换。",
   "compassLayoutHint": "每侧最多两个视图，每种类型只能放一个。点按视图即可更改，中心视图也可以。",
   "compassOffNote": "启用 Compass 时，下拉刷新、仪表盘滑动切换以及从边缘滑动打开抽屉菜单的手势均会关闭。",

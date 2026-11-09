@@ -10796,8 +10796,7 @@ class UiStringsUk extends UiStrings {
   String get navigationSlide => 'Зсув';
 
   @override
-  String get compassClassicHint =>
-      'Бічне меню, оновлення потягуванням вниз і карусель панелі керування.';
+  String get compassClassicViewHint => 'Вид Home Assistant із бічним меню.';
 
   @override
   String get compassCompassHint =>

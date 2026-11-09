@@ -37,7 +37,7 @@ class CompassStyleRow extends StatelessWidget {
 
     final classic = _StyleChoice(
       title: strings.navigationClassic,
-      hint: strings.compassClassicHint,
+      hint: strings.compassClassicViewHint,
       picture: const _ClassicPicture(),
       selected: value == 'classic',
       onTap: () => pick('classic'),

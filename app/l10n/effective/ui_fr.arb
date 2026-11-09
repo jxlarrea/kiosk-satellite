@@ -40427,8 +40427,8 @@
       ]
     }
   },
-  "compassClassicHint": "Menu latéral, actualisation par glissement et carrousel de tableau de bord.",
-  "@compassClassicHint": {
+  "compassClassicViewHint": "Vue Home Assistant avec menu latéral.",
+  "@compassClassicViewHint": {
     "context": "Settings:Navigation",
     "description": "Description on the Classic choice card.",
     "x-locations": {

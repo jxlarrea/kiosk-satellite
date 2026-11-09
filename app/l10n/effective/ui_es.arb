@@ -40427,8 +40427,8 @@
       ]
     }
   },
-  "compassClassicHint": "Menú lateral, deslizar para recargar y el carrusel del panel de control.",
-  "@compassClassicHint": {
+  "compassClassicViewHint": "Vista de Home Assistant con menú lateral.",
+  "@compassClassicViewHint": {
     "context": "Settings:Navigation",
     "description": "Description on the Classic choice card.",
     "x-locations": {

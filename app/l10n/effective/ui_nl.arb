@@ -40427,8 +40427,8 @@
       ]
     }
   },
-  "compassClassicHint": "Zijmenu, trekken om te vernieuwen en de dashboardcarrousel.",
-  "@compassClassicHint": {
+  "compassClassicViewHint": "Home Assistant-weergave met zijmenu.",
+  "@compassClassicViewHint": {
     "context": "Settings:Navigation",
     "description": "Description on the Classic choice card.",
     "x-locations": {

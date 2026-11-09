@@ -40427,8 +40427,8 @@
       ]
     }
   },
-  "compassClassicHint": "Боковое меню, «Потяните для обновления» и карусель панели.",
-  "@compassClassicHint": {
+  "compassClassicViewHint": "Вид Home Assistant с боковым меню.",
+  "@compassClassicViewHint": {
     "context": "Settings:Navigation",
     "description": "Description on the Classic choice card.",
     "x-locations": {

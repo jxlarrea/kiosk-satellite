@@ -40427,8 +40427,8 @@
       ]
     }
   },
-  "compassClassicHint": "抽屉菜单、下拉刷新和仪表盘滑动切换。",
-  "@compassClassicHint": {
+  "compassClassicViewHint": "带抽屉菜单的 Home Assistant 页面。",
+  "@compassClassicViewHint": {
     "context": "Settings:Navigation",
     "description": "Description on the Classic choice card.",
     "x-locations": {

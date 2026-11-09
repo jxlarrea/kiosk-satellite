@@ -10202,7 +10202,7 @@ class UiStringsZh extends UiStrings {
   String get navigationSlide => '平移';
 
   @override
-  String get compassClassicHint => '抽屉菜单、下拉刷新和仪表盘滑动切换。';
+  String get compassClassicViewHint => '带抽屉菜单的 Home Assistant 页面。';
 
   @override
   String get compassCompassHint => '在排成十字形的视图之间滑动切换。';
@@ -25699,7 +25699,7 @@ class UiStringsZhCn extends UiStringsZh {
   String get navigationSlide => '平移';
 
   @override
-  String get compassClassicHint => '抽屉菜单、下拉刷新和仪表盘滑动切换。';
+  String get compassClassicViewHint => '带抽屉菜单的 Home Assistant 页面。';
 
   @override
   String get compassCompassHint => '在排成十字形的视图之间滑动切换。';

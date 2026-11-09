@@ -10808,8 +10808,7 @@ class UiStringsNl extends UiStrings {
   String get navigationSlide => 'Schuiven';
 
   @override
-  String get compassClassicHint =>
-      'Zijmenu, trekken om te vernieuwen en de dashboardcarrousel.';
+  String get compassClassicViewHint => 'Home Assistant-weergave met zijmenu.';
 
   @override
   String get compassCompassHint =>

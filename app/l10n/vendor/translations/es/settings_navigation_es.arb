@@ -22,7 +22,7 @@
   "navigationCompass": "Compass",
   "navigationZoom": "Zoom",
   "navigationSlide": "Deslizar",
-  "compassClassicHint": "Menú lateral, deslizar para recargar y el carrusel del panel de control.",
+  "compassClassicViewHint": "Vista de Home Assistant con menú lateral.",
   "compassCompassHint": "Desliza entre vistas dispuestas en cruz.",
   "compassLayoutHint": "Hasta dos vistas por lado, una de cada tipo. Toca una vista para cambiarla, también la del centro.",
   "compassOffNote": "Deslizar para recargar, el carrusel del panel de control y el deslizamiento desde el borde que abre el menú lateral se desactivan mientras Compass está activo.",

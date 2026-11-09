@@ -10923,8 +10923,7 @@ class UiStringsDe extends UiStrings {
   String get navigationSlide => 'Schieben';
 
   @override
-  String get compassClassicHint =>
-      'Seitenmenü, Zum Aktualisieren herunterziehen und das Dashboard-Karussell.';
+  String get compassClassicViewHint => 'Home Assistant-Ansicht mit Seitenmenü.';
 
   @override
   String get compassCompassHint =>

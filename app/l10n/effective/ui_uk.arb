@@ -40427,8 +40427,8 @@
       ]
     }
   },
-  "compassClassicHint": "Бічне меню, оновлення потягуванням вниз і карусель панелі керування.",
-  "@compassClassicHint": {
+  "compassClassicViewHint": "Вид Home Assistant із бічним меню.",
+  "@compassClassicViewHint": {
     "context": "Settings:Navigation",
     "description": "Description on the Classic choice card.",
     "x-locations": {

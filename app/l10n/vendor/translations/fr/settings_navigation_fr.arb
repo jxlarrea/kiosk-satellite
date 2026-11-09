@@ -22,7 +22,7 @@
   "navigationCompass": "Compass",
   "navigationZoom": "Zoom",
   "navigationSlide": "Glisser",
-  "compassClassicHint": "Menu latéral, actualisation par glissement et carrousel de tableau de bord.",
+  "compassClassicViewHint": "Vue Home Assistant avec menu latéral.",
   "compassCompassHint": "Glissez entre des vues disposées en croix.",
   "compassLayoutHint": "Jusqu'à deux vues de chaque côté, une de chaque type. Touchez une vue pour la modifier, y compris celle du centre.",
   "compassOffNote": "L'actualisation par glissement, le carrousel de tableau de bord et le glissement depuis le bord qui ouvre le menu latéral sont désactivés tant que Compass est actif.",

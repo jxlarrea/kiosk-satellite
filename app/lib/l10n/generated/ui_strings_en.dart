@@ -10683,8 +10683,7 @@ class UiStringsEn extends UiStrings {
   String get navigationSlide => 'Slide';
 
   @override
-  String get compassClassicHint =>
-      'Drawer menu, pull to refresh and the dashboard carousel.';
+  String get compassClassicViewHint => 'Home Assistant view with drawer menu.';
 
   @override
   String get compassCompassHint => 'Swipe between views laid out in a cross.';

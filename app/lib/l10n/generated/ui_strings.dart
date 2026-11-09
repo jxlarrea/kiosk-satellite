@@ -18692,8 +18692,8 @@ abstract class UiStrings {
   /// Description on the Classic choice card.
   ///
   /// In en, this message translates to:
-  /// **'Drawer menu, pull to refresh and the dashboard carousel.'**
-  String get compassClassicHint;
+  /// **'Home Assistant view with drawer menu.'**
+  String get compassClassicViewHint;
 
   /// Description on the Compass choice card.
   ///
