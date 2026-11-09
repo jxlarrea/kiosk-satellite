@@ -188,19 +188,6 @@
         "\u02d0"
       ]
     ],
-    "max_edit_distance": 1,
-    "wake_word_trail_tolerance": 1,
-    "min_matched_confidence": 2.816,
-    "target_max_edit_distance": [
-      1,
-      1,
-      0
-    ],
-    "target_min_matched_confidence": [
-      2.816,
-      4.84,
-      4.84
-    ],
     "wake_word_target_anchors": [
       [
         6
@@ -212,7 +199,21 @@
       [
         6
       ]
-    ]
+    ],
+    "max_edit_distance": 1,
+    "wake_word_trail_tolerance": 1,
+    "min_matched_confidence": 2.816,
+    "target_max_edit_distance": [
+      1,
+      1,
+      0
+    ],
+    "target_min_matched_confidence": [
+      2.816,
+      8.84,
+      4.84
+    ],
+    "gate_change_2026_11_09_v3": "v3: k-slice target (t1) 4.84 -> 8.84, priced jointly on the measured Echo banks (-2.8 of 720 device takes) vs the open-mic battery (music 25 -> 14, speech 68 -> 46 clips) and the timer-alarm far end (2 -> 0 of 400); t0/t2 unchanged"
   },
   "runtime": {
     "required_hits": 1,
@@ -224,5 +225,6 @@
     "stream_buffer_ms": 2500,
     "stream_lag_frames": 20
   },
-  "stop_classifier": true
+  "stop_classifier": true,
+  "deployed_from": "/app/data/runs/ok_stop_v3_ctc_mid/checkpoints/ok_stop-ctc-bestwakerecall-ep056.pt"
 }
