@@ -459,6 +459,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   bool get isActive => _active;
 
+  /// Whether Now Playing opened by hand would be refused right now: a
+  /// voice turn, the voice overlay or a hold for something that needs the
+  /// screen comes first. Compass skips its Now Playing view meanwhile.
+  bool get nowPlayingBlocked =>
+      _voiceTurn || _assistOverlay || (_paused && _interactions.needsScreen);
+
   /// Whether the Sendspin now-playing display is active (a track loaded),
   /// mirrored from its bus event for the motion-dismiss policy above.
   bool _sendspinNowPlaying = false;

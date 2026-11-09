@@ -181,6 +181,10 @@ class CompassController {
 
   Timer? _startTimer;
 
+  /// True while a swipe moves: the plugin overlays drawn on top step aside,
+  /// since the snapshots under them already show them.
+  final overlaysHidden = ValueNotifier<bool>(false);
+
   /// Shows the view in hand. [gentle] is for the start and for switching
   /// to Compass: it leaves the screen alone while something else is up,
   /// such as Now Playing launched by a track or the screensaver, and the
@@ -200,6 +204,7 @@ class CompassController {
 
   void dispose() {
     _startTimer?.cancel();
+    _verifyTimer?.cancel();
     _settingsSub?.cancel();
     _activitySub?.cancel();
     _returnTimer?.cancel();
@@ -210,6 +215,7 @@ class CompassController {
     _clearShots();
     current.dispose();
     planeCovered.dispose();
+    overlaysHidden.dispose();
     menuVisible.dispose();
     menuUnlocked.dispose();
     stage.dispose();
@@ -252,7 +258,8 @@ class CompassController {
     'menu' => true,
     'now_playing' =>
       compassKindConfigurable(c, view.kind) &&
-          c.sendspin.nowPlaying.value != null,
+          c.sendspin.nowPlaying.value != null &&
+          !c.screensaver.nowPlayingBlocked,
     'camera' => compassCameraViews(c).any((v) => v.id == view.id),
     'app_launcher' =>
       compassKindConfigurable(c, view.kind) &&
@@ -274,7 +281,11 @@ class CompassController {
     if (c.screensaver.isActive && !nowPlaying) return false;
     if (c.kiosk.lockdownActive) return false;
     if (c.browser.overlayUrl.value != null) return false;
-    if (c.plugins.windows.value.isNotEmpty) return false;
+    // A plugin's window draws over the dashboard, in its layer. On another
+    // view it waits underneath, hidden, and must not hold the swipe up.
+    if (c.plugins.windows.value.isNotEmpty && currentView.isDashboard) {
+      return false;
+    }
     if (c.dlna.media.value != null) return false;
     final phase = c.alarms.status.value.phase;
     if (phase == AlarmPhase.ringing || phase == AlarmPhase.sunrise) {
@@ -283,6 +294,10 @@ class CompassController {
     if (c.intercom.screenShown && !c.intercom.rosterVisible.value) {
       return false;
     }
+    // Now Playing draws over every other view. One left open under it,
+    // such as the library a track was started from, is not in the way,
+    // and it is where the kiosk lands when Now Playing closes.
+    if (nowPlaying) return true;
     final view = currentView;
     bool only(bool up, String kind) => !up || view.kind == kind;
     final camera = c.camera.activeViewId.value;
@@ -325,6 +340,22 @@ class CompassController {
     // plane a swipe left out comes back if this view shows the dashboard.
     if (stage.value == null) await settlePlane();
     _armReturn();
+    _verifyShown(slot);
+  }
+
+  Timer? _verifyTimer;
+
+  /// A view can refuse to open, such as Now Playing during a voice turn.
+  /// Once it has had time to come up, a view still missing is handled like
+  /// one that closed: the kiosk lands on what is up, or the center.
+  void _verifyShown(CompassSlot slot) {
+    _verifyTimer?.cancel();
+    _verifyTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (current.value != slot || stage.value != null || _switching) return;
+      final view = currentView;
+      if (view.isDashboard || _isUp(view)) return;
+      _settle();
+    });
   }
 
   /// Straight to the center, no swipe drawn: back, the exit gesture's

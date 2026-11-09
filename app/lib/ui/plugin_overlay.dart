@@ -11,6 +11,7 @@ import '../managers/plugins/plugin_manager.dart';
 import '../l10n/messages.dart';
 import 'theme.dart';
 import 'ui_scale.dart' show UiScaleExempt, UiScaleScope;
+import 'compass/compass_touch_claims.dart';
 
 /// Plugin overlays and floating windows stay below the kiosk drawer and
 /// ambient overlays. Windows sit over the native overlays.
@@ -211,14 +212,18 @@ class _PluginNativeOverlaysState extends State<PluginNativeOverlays> {
                   unawaited(widget.plugins.closeOverlay(overlay));
                 },
               ),
-            _NativeOverlay(
+            // A touch on the overlay is the plugin's, never a Compass
+            // swipe. One that misses it (not touchable) is left alone.
+            CompassClaimTouches(
               key: ValueKey('${overlay.id}@$_epoch'),
-              overlay: overlay,
-              theme: theme,
-              leaving: _leaving.contains(overlay.id),
-              hybrid: widget.hybrid,
-              onLeft: () => _left(overlay.id),
-              onTouch: widget.onControlTouch,
+              child: _NativeOverlay(
+                overlay: overlay,
+                theme: theme,
+                leaving: _leaving.contains(overlay.id),
+                hybrid: widget.hybrid,
+                onLeft: () => _left(overlay.id),
+                onTouch: widget.onControlTouch,
+              ),
             ),
           ],
         ],
@@ -240,18 +245,22 @@ class _OutsideTouch extends StatelessWidget {
   final VoidCallback onTouch;
 
   @override
-  Widget build(BuildContext context) => Listener(
-    behavior: passThrough
-        ? HitTestBehavior.translucent
-        : HitTestBehavior.opaque,
-    onPointerDown: (_) => onTouch(),
-    child: const SizedBox.expand(),
-  );
+  Widget build(BuildContext context) {
+    final closer = Listener(
+      behavior: passThrough
+          ? HitTestBehavior.translucent
+          : HitTestBehavior.opaque,
+      onPointerDown: (_) => onTouch(),
+      child: const SizedBox.expand(),
+    );
+    // A touch that only closes is not a Compass swipe either. One passed
+    // through belongs to what is under it, which can be one.
+    return passThrough ? closer : CompassClaimTouches(child: closer);
+  }
 }
 
 class _NativeOverlay extends StatefulWidget {
   const _NativeOverlay({
-    super.key,
     required this.overlay,
     required this.theme,
     required this.leaving,

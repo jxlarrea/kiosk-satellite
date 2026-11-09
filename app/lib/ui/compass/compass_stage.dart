@@ -9,6 +9,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../../managers/navigation/compass_layout.dart';
 import 'compass_controller.dart';
+import 'compass_touch_claims.dart';
 
 /// How far a finger travels before the swipe decides which way it goes.
 const _decideDistance = 24.0;
@@ -174,6 +175,8 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
     }
     _pointer = null;
     if (_model != null || !ctrl.swipeReady) return;
+    // A plugin overlay took this touch: its slider or button, not a swipe.
+    if (CompassTouchClaims.claimed(e.pointer)) return;
     _pointer = e.pointer;
     _start = e.position;
     _downAt = DateTime.now();
@@ -363,6 +366,9 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
         // live view to the stage never jumps.
         model.update(progress: 0, scale: 1);
         model.markReady();
+        // The snapshot holds the plugin overlays drawn on top. The live
+        // ones step aside while it moves, or they would show twice.
+        ctrl.overlaysHidden.value = true;
         _motionFrom = Timeline.now;
         _motionTo = 0;
         _coverPlaneAfterPaint(model);
@@ -519,6 +525,7 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
     final model = _model;
     _model = null;
     _settling = false;
+    ctrl.overlaysHidden.value = false;
     if (model == null) return;
     _report(model);
     _follow.stop();

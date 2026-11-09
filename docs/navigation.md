@@ -44,6 +44,10 @@ A swipe that starts on a slider, a map or a card that scrolls sideways stays wit
 
 A swipe only works while the view on screen is the one in the layout. A camera view opened by a doorbell, a ringing alarm, an intercom call, an opened link or the screensaver keep the swipe off until they close.
 
+### Plugin overlays
+
+A swipe that starts on a plugin overlay, such as a navigation bar, stays with the plugin. Overlays drawn over the dashboard show on dashboard views only. Overlays a plugin draws on top show over every view and move with the view while you swipe. A plugin's window shows over dashboard views, where swipes wait until you close it.
+
 ### Back and the exit gesture
 
 Back goes to the center view. At the center, back opens the Menu when the layout has one. Without a Menu, the exit gesture opens Settings.

@@ -264,6 +264,7 @@ class _KioskScreenState extends State<KioskScreen>
     if (last != null && now.difference(last) < _backEcho) return;
     if (_drawer.value == 0 &&
         !c.screensaver.isActive &&
+        !_compass.menuVisible.value &&
         !c.launcher.visible.value &&
         !c.intercom.rosterVisible.value &&
         !c.alarms.visible.value &&
@@ -2029,11 +2030,20 @@ class _KioskScreenState extends State<KioskScreen>
                   // turn they are over the black cover too, so a plugin
                   // skin draws the turn there. The rest live in the kiosk
                   // plane.
-                  PluginNativeOverlays(
-                    plugins: c.plugins,
-                    onTop: true,
-                    hybrid: c.settings.get(defs.hybridPluginOverlays),
-                    onControlTouch: c.screensaver.markControlTouch,
+                  // A Compass swipe in motion hides them: its snapshots
+                  // already show them, moving with each view.
+                  ValueListenableBuilder<bool>(
+                    valueListenable: _compass.overlaysHidden,
+                    builder: (context, hidden, child) => Offstage(
+                      offstage: hidden,
+                      child: TickerMode(enabled: !hidden, child: child!),
+                    ),
+                    child: PluginNativeOverlays(
+                      plugins: c.plugins,
+                      onTop: true,
+                      hybrid: c.settings.get(defs.hybridPluginOverlays),
+                      onControlTouch: c.screensaver.markControlTouch,
+                    ),
                   ),
                   // Above every overlay a notification could arrive
                   // behind (the screensaver, a camera wall, a plugin drawn
