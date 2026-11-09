@@ -27,6 +27,13 @@ public final class OverlaySpec {
     /** Grows in from, or shrinks out to, a slightly smaller size while it fades. Suits a centered card. */
     public static final String SCALE = "scale";
 
+    /** In the dashboard's plane: over the dashboard, under the KS pages and views, the menu and the screensaver. The default. */
+    public static final String LAYER_DASHBOARD = "dashboard";
+    /** Over every KS page and view, camera views included. Hidden while the screensaver or the menu is up. */
+    public static final String LAYER_VIEWS = "views";
+    /** The KS voice overlay's slot: over the screensaver, the menu and camera views. The same as onTop(true). */
+    public static final String LAYER_TOP = "top";
+
     private String anchor = CENTER;
     private int width = WRAP;
     private int height = WRAP;
@@ -42,7 +49,7 @@ public final class OverlaySpec {
     private String exit = NONE;
     private int transitionDuration = 200;
     private boolean closeOnBack = true;
-    private boolean onTop;
+    private String layer = LAYER_DASHBOARD;
     private boolean touchable = true;
 
     /** A wrapped overlay at one of the anchor constants. */
@@ -76,8 +83,14 @@ public final class OverlaySpec {
     public OverlaySpec transitionDuration(int ms) { this.transitionDuration = ms; return this; }
     /** Back closes the overlay and sends overlay.closed. On by default. */
     public OverlaySpec closeOnBack(boolean closeOnBack) { this.closeOnBack = closeOnBack; return this; }
-    /** Draw where the KS voice overlay does: over the screensaver, the menu and camera views. Off by default. */
-    public OverlaySpec onTop(boolean onTop) { this.onTop = onTop; return this; }
+    /** Which layer the overlay draws in: LAYER_DASHBOARD, LAYER_VIEWS or LAYER_TOP. LAYER_DASHBOARD by default. */
+    public OverlaySpec layer(String layer) { this.layer = layer; return this; }
+    /** Draw where the KS voice overlay does: over the screensaver, the menu and camera views. Off by default. The same as layer(LAYER_TOP). */
+    public OverlaySpec onTop(boolean onTop) {
+        if (onTop) layer = LAYER_TOP;
+        else if (LAYER_TOP.equals(layer)) layer = LAYER_DASHBOARD;
+        return this;
+    }
     /** Off makes the overlay visual only: every touch passes through to whatever is under it. On by default. */
     public OverlaySpec touchable(boolean touchable) { this.touchable = touchable; return this; }
 
@@ -98,6 +111,7 @@ public final class OverlaySpec {
     public String exit() { return exit; }
     public int transitionDuration() { return transitionDuration; }
     public boolean closeOnBack() { return closeOnBack; }
-    public boolean onTop() { return onTop; }
+    public String layer() { return layer; }
+    public boolean onTop() { return LAYER_TOP.equals(layer); }
     public boolean touchable() { return touchable; }
 }

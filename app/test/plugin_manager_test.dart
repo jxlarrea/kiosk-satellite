@@ -1177,7 +1177,7 @@ void main() {
     int offsetX = 0,
     int offsetY = 0,
     bool closeOnBack = true,
-    bool onTop = false,
+    String layer = 'dashboard',
     bool touchable = true,
     bool closeOnOutsideTouch = false,
     bool passOutsideTouch = false,
@@ -1194,7 +1194,7 @@ void main() {
     'offsetX': offsetX,
     'offsetY': offsetY,
     'closeOnBack': closeOnBack,
-    'onTop': onTop,
+    'layer': layer,
     'touchable': touchable,
     'closeOnOutsideTouch': closeOnOutsideTouch,
     'passOutsideTouch': passOutsideTouch,
@@ -1992,7 +1992,7 @@ void main() {
                 ),
                 PluginNativeOverlays(
                   plugins: plugins,
-                  onTop: true,
+                  layer: PluginOverlayLayer.top,
                   onControlTouch: () => reports.add('control'),
                 ),
               ],
@@ -2002,7 +2002,7 @@ void main() {
       );
       await overlaySession('first');
       await overlays('first', [
-        overlay('card', 1, width: 200, height: 120, onTop: true),
+        overlay('card', 1, width: 200, height: 120, layer: 'top'),
       ]);
       await tester.pump();
       final card = tester.getRect(find.byType(AndroidView));
@@ -2022,7 +2022,7 @@ void main() {
           2,
           width: 200,
           height: 120,
-          onTop: true,
+          layer: 'top',
           touchable: false,
         ),
       ]);
@@ -2039,7 +2039,7 @@ void main() {
           3,
           width: 200,
           height: 120,
-          onTop: true,
+          layer: 'top',
           closeOnOutsideTouch: true,
         ),
       ]);
@@ -2055,7 +2055,7 @@ void main() {
           4,
           width: 200,
           height: 120,
-          onTop: true,
+          layer: 'top',
           closeOnOutsideTouch: true,
           passOutsideTouch: true,
         ),
@@ -2250,7 +2250,10 @@ void main() {
           fit: StackFit.expand,
           children: [
             PluginOverlay(plugins: plugins),
-            PluginNativeOverlays(plugins: plugins, onTop: true),
+            PluginNativeOverlays(
+              plugins: plugins,
+              layer: PluginOverlayLayer.top,
+            ),
           ],
         ),
       ),
@@ -2263,7 +2266,7 @@ void main() {
         'saver',
         3,
         anchor: 'bottom-right',
-        onTop: true,
+        layer: 'top',
         touchable: false,
       ),
     ]);
@@ -2336,6 +2339,62 @@ void main() {
         .ignoring;
     expect(ignoring(0), isFalse);
     expect(ignoring(2), isTrue);
+  });
+  testWidgets('each layer draws only its own overlays', (tester) async {
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    messenger.setMockMethodCallHandler(SystemChannels.platform_views, (
+      call,
+    ) async {
+      final args = call.arguments;
+      return switch (call.method) {
+        'create' => 0,
+        'resize' => {'width': (args as Map)['width'], 'height': args['height']},
+        _ => null,
+      };
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(
+        SystemChannels.platform_views,
+        null,
+      ),
+    );
+    Finder keyed(String key) => find.byKey(ValueKey(key), skipOffstage: false);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Stack(
+          fit: StackFit.expand,
+          children: [
+            for (final layer in PluginOverlayLayer.values)
+              KeyedSubtree(
+                key: ValueKey(layer.name),
+                child: PluginNativeOverlays(plugins: plugins, layer: layer),
+              ),
+          ],
+        ),
+      ),
+    );
+    await overlaySession('first');
+    await overlays('first', [
+      overlay('bar', 1, width: 100, height: 40),
+      overlay('nav', 2, width: 100, height: 40, layer: 'views'),
+      overlay('glow', 3, width: 100, height: 40, layer: 'top'),
+    ]);
+    await tester.pump();
+    int count(String layer) => find
+        .descendant(of: keyed(layer), matching: find.byType(AndroidView))
+        .evaluate()
+        .length;
+    expect(count('dashboard'), 1);
+    expect(count('views'), 1);
+    expect(count('top'), 1);
+    expect(plugins.overlays.value.map((o) => o.layer), [
+      PluginOverlayLayer.dashboard,
+      PluginOverlayLayer.views,
+      PluginOverlayLayer.top,
+    ]);
+    expect(plugins.backOverlayIn(PluginOverlayLayer.views)?.key, 'nav');
   });
   testWidgets('native overlays follow the Scale UI factor', (tester) async {
     tester.view.physicalSize = const Size(800, 600);

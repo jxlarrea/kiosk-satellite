@@ -18,7 +18,7 @@ internal class PluginOverlays<F : Any>(private val clock: () -> Long = System::n
         val offsetX: Int = 0,
         val offsetY: Int = 0,
         val closeOnBack: Boolean = true,
-        val onTop: Boolean = false,
+        val layer: String = DASHBOARD,
         val touchable: Boolean = true,
         val closeOnOutsideTouch: Boolean = false,
         val passOutsideTouch: Boolean = false,
@@ -39,6 +39,7 @@ internal class PluginOverlays<F : Any>(private val clock: () -> Long = System::n
         require(entries.containsKey(key) || entries.size < MAX_OVERLAYS) { "At most four overlays are supported" }
         val p = placement
         require(p.anchor in ANCHORS) { "Unknown overlay anchor" }
+        require(p.layer in LAYERS) { "Unknown overlay layer" }
         require(validSize(p.width) && validSize(p.height)) { "Overlay sizes must be WRAP, FILL or 1 to 4096 dp" }
         require(p.insets.size == 4 && p.insets.all { it in 0..MAX_INSET }) { "Overlay insets must be 0 to 4096 dp" }
         require(p.offsetX in -MAX_OFFSET..MAX_OFFSET && p.offsetY in -MAX_OFFSET..MAX_OFFSET) { "Overlay offsets must be -4096 to 4096 dp" }
@@ -52,7 +53,7 @@ internal class PluginOverlays<F : Any>(private val clock: () -> Long = System::n
         val entry = Entry(key, mapOf(
             "anchor" to p.anchor, "width" to p.width, "height" to p.height, "insets" to p.insets,
             "offsetX" to p.offsetX, "offsetY" to p.offsetY,
-            "closeOnBack" to p.closeOnBack, "onTop" to p.onTop, "touchable" to p.touchable,
+            "closeOnBack" to p.closeOnBack, "layer" to p.layer, "touchable" to p.touchable,
             "closeOnOutsideTouch" to p.closeOnOutsideTouch, "passOutsideTouch" to p.passOutsideTouch,
             "enter" to p.enter, "exit" to p.exit, "duration" to p.duration,
         ), factory, ++generation)
@@ -82,6 +83,8 @@ internal class PluginOverlays<F : Any>(private val clock: () -> Long = System::n
         const val MAX_OFFSET = 4096
         const val NONE = "none"
         val TRANSITIONS = setOf(NONE, "fade", "slide", "scale")
+        const val DASHBOARD = "dashboard"
+        val LAYERS = setOf(DASHBOARD, "views", "top")
         const val WRAP = -1
         const val FILL = -2
         val ANCHORS = setOf("top-left", "top", "top-right", "left", "center", "right", "bottom-left", "bottom", "bottom-right")

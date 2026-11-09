@@ -1706,6 +1706,41 @@ void main() {
     });
   });
 
+  group('Navigation view (issue #1366)', () {
+    test('getNavigationView reads the view on screen', () async {
+      expect((await read('getNavigationView'))['data'], {
+        'mode': 'classic',
+        'view': 'dashboard',
+        'id': null,
+      });
+      bus.publish(
+        const NavigationViewChanged(mode: 'compass', view: 'camera', id: 'a1'),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect((await read('getNavigationView'))['data'], {
+        'mode': 'compass',
+        'view': 'camera',
+        'id': 'a1',
+      });
+      expect(executed, isEmpty);
+    });
+
+    test('navigation.view follows the view', () async {
+      subscribe('navigation.view');
+      bus.publish(
+        const NavigationViewChanged(mode: 'classic', view: 'calendar'),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 180));
+      expect(sent.single['event'], 'navigation.view');
+      expect(sent.single['payload'], {
+        'mode': 'classic',
+        'view': 'calendar',
+        'id': null,
+        'time': (sent.single['payload'] as Map)['time'],
+      });
+    });
+  });
+
   group('Voice skins (issue #1027)', () {
     late SettingsManager settings;
     late ValueNotifier<AssistView> view;

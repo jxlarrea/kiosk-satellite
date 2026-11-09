@@ -92,9 +92,10 @@ Map<String, Object?> pluginOverlayTheme(ThemeData theme) {
   };
 }
 
-/// Native plugin overlays, bottom to top. The kiosk has two of these
-/// layers: one in the kiosk plane under the menu and the screensaver, and
-/// one in the voice overlay's slot for overlays that asked to be on top.
+/// Native plugin overlays, bottom to top. The kiosk has three of these
+/// layers: one in the kiosk plane under the menu and the screensaver, one
+/// over every page and view that hides under the screensaver and the menu,
+/// and one in the voice overlay's slot for overlays that asked to be on top.
 ///
 /// An overlay that leaves with an exit transition stays in its place until
 /// the transition ends, with its view alive, so a hidden, replaced or
@@ -103,12 +104,12 @@ class PluginNativeOverlays extends StatefulWidget {
   const PluginNativeOverlays({
     super.key,
     required this.plugins,
-    this.onTop = false,
+    this.layer = PluginOverlayLayer.dashboard,
     this.hybrid = false,
     this.onControlTouch,
   });
   final PluginManager plugins;
-  final bool onTop;
+  final PluginOverlayLayer layer;
 
   /// Hears a touch on an overlay's view, or outside one that only closes
   /// it, on its way down: the layer over the screensaver marks it, so the
@@ -155,7 +156,7 @@ class _PluginNativeOverlaysState extends State<PluginNativeOverlays> {
   void _sync() {
     final live = {
       for (final o in widget.plugins.overlays.value)
-        if (o.onTop == widget.onTop) o.id: o,
+        if (o.layer == widget.layer) o.id: o,
     };
     // A re-created Activity re-keys every view, so nothing can stay to
     // play its exit.

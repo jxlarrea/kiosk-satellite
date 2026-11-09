@@ -37,6 +37,22 @@ class PluginWindow {
 /// A native overlay a plugin shows through SDK 1 showOverlay. Sizes and the
 /// inset are in dp, or [wrap] and [fill]. [measured] is the wrapped view's
 /// size in physical pixels once Android has measured it.
+/// Where a native overlay draws. The dashboard layer is in the kiosk plane,
+/// under the KS pages and views. The views layer is over every page and
+/// view and hides under the screensaver and the menu. The top layer is the
+/// voice overlay's slot, over the screensaver and the menu.
+enum PluginOverlayLayer {
+  dashboard,
+  views,
+  top;
+
+  static PluginOverlayLayer parse(Object? value) => switch (value) {
+    'views' => views,
+    'top' => top,
+    _ => dashboard,
+  };
+}
+
 class PluginNativeOverlay {
   const PluginNativeOverlay({
     required this.pluginId,
@@ -48,7 +64,7 @@ class PluginNativeOverlay {
     required this.height,
     required this.insets,
     required this.closeOnBack,
-    required this.onTop,
+    required this.layer,
     required this.touchable,
     this.offset = Offset.zero,
     this.closeOnOutsideTouch = false,
@@ -76,7 +92,7 @@ class PluginNativeOverlay {
   /// Where the overlay moves from its anchored place, in dp.
   final Offset offset;
   final bool closeOnBack;
-  final bool onTop;
+  final PluginOverlayLayer layer;
   final bool touchable;
 
   /// A touch outside the overlay closes it. With [passOutsideTouch] that
@@ -107,7 +123,7 @@ class PluginNativeOverlay {
     insets: insets,
     offset: offset,
     closeOnBack: closeOnBack,
-    onTop: onTop,
+    layer: layer,
     touchable: touchable,
     closeOnOutsideTouch: closeOnOutsideTouch,
     passOutsideTouch: passOutsideTouch,
@@ -1772,7 +1788,7 @@ class PluginManager extends Manager implements FleetPluginHost {
                 (raw['offsetY'] as num? ?? 0).toDouble(),
               ),
               closeOnBack: raw['closeOnBack'] == true,
-              onTop: raw['onTop'] == true,
+              layer: PluginOverlayLayer.parse(raw['layer']),
               touchable: raw['touchable'] != false,
               closeOnOutsideTouch: raw['closeOnOutsideTouch'] == true,
               passOutsideTouch: raw['passOutsideTouch'] == true,
@@ -1816,6 +1832,10 @@ class PluginManager extends Manager implements FleetPluginHost {
   /// The overlay a back press closes: the topmost that allows it.
   PluginNativeOverlay? get backOverlay =>
       overlays.value.where((o) => o.closeOnBack).lastOrNull;
+
+  /// The topmost overlay of [layer] that back closes.
+  PluginNativeOverlay? backOverlayIn(PluginOverlayLayer layer) =>
+      overlays.value.where((o) => o.closeOnBack && o.layer == layer).lastOrNull;
 
   /// Back closed an overlay. It goes at once, and the plugin hears
   /// overlay.closed unless it replaced the overlay in the meantime.

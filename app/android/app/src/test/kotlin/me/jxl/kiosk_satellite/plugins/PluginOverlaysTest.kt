@@ -17,12 +17,12 @@ class PluginOverlaysTest {
         val overlays = PluginOverlays<String>()
         val entry = overlays.show("full", PluginOverlays.Placement(
             "center", PluginOverlays.FILL, PluginOverlays.FILL, listOf(0, 8, 0, 96), offsetX = -40, offsetY = 12,
-            closeOnBack = false, onTop = true, touchable = false, closeOnOutsideTouch = true, passOutsideTouch = true,
+            closeOnBack = false, layer = "views", touchable = false, closeOnOutsideTouch = true, passOutsideTouch = true,
             enter = "slide", exit = "fade", duration = 300,
         ), "factory")
         assertEquals(listOf(mapOf(
             "anchor" to "center", "width" to PluginOverlays.FILL, "height" to PluginOverlays.FILL, "insets" to listOf(0, 8, 0, 96),
-            "offsetX" to -40, "offsetY" to 12, "closeOnBack" to false, "onTop" to true, "touchable" to false,
+            "offsetX" to -40, "offsetY" to 12, "closeOnBack" to false, "layer" to "views", "touchable" to false,
             "closeOnOutsideTouch" to true, "passOutsideTouch" to true, "enter" to "slide", "exit" to "fade", "duration" to 300,
             "key" to "full", "generation" to entry.generation,
         )), overlays.snapshot())
@@ -34,6 +34,7 @@ class PluginOverlaysTest {
         rejects { overlays.bar(key = "Bar") }
         val wrap = PluginOverlays.WRAP
         rejects { overlays.placed(PluginOverlays.Placement("middle", wrap, wrap)) }
+        rejects { overlays.placed(PluginOverlays.Placement("top", wrap, wrap, layer = "above")) }
         rejects { overlays.bar(width = 0) }
         rejects { overlays.bar(width = 4097) }
         rejects { overlays.placed(PluginOverlays.Placement("top", wrap, wrap, listOf(0, 0, 0, 4097))) }

@@ -589,7 +589,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 overlays.show(key, PluginOverlays.Placement(
                     spec.anchor() ?: "", spec.width(), spec.height(),
                     listOf(spec.insetLeft(), spec.insetTop(), spec.insetRight(), spec.insetBottom()),
-                    spec.offsetX(), spec.offsetY(), spec.closeOnBack(), spec.onTop(), spec.touchable(),
+                    spec.offsetX(), spec.offsetY(), spec.closeOnBack(), spec.layer() ?: "", spec.touchable(),
                     spec.closeOnOutsideTouch(), spec.passOutsideTouch(), spec.enter() ?: "", spec.exit() ?: "", spec.transitionDuration(),
                 ), factory)
                 notifyOverlays()

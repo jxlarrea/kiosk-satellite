@@ -958,6 +958,36 @@ class CalendarViewChanged extends AppEvent {
   final String? view;
 }
 
+/// The page or view on screen changed: the dashboard, an overlay page, a
+/// KS page such as the calendar, a camera view, Now Playing or the menu.
+/// [mode] is the navigation style, classic or compass. [id] is the camera
+/// view's ID, null for every other view. Internal: plugins hear it as
+/// navigation.view.
+class NavigationViewChanged extends AppEvent {
+  const NavigationViewChanged({
+    required this.mode,
+    required this.view,
+    this.id,
+  });
+
+  final String mode;
+  final String view;
+  final String? id;
+
+  @override
+  Map<String, Object?> toJson() => {'mode': mode, 'view': view, 'id': id};
+
+  @override
+  bool operator ==(Object other) =>
+      other is NavigationViewChanged &&
+      other.mode == mode &&
+      other.view == view &&
+      other.id == id;
+
+  @override
+  int get hashCode => Object.hash(mode, view, id);
+}
+
 class CameraViewStateChanged extends AppEvent {
   const CameraViewStateChanged({
     required this.viewId,
