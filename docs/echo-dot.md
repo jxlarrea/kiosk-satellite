@@ -54,6 +54,8 @@ Kiosk Satellite reads the models the image has when it starts, so restart the Do
 
 With **Amazon** picked, a **Wake word language** select shows up under the engine. It lists the locales of the models you installed and starts on the first one in `locales.txt`. If you remove the files of the picked locale, the first one is used. **Wake word sensitivity** applies too.
 
+Each model also has its own stop word, so **Stop word interruption** works as it does with the other engines. Saying "stop" ends a ringing timer or a reply.
+
 ## Volume
 
 The image removes the speaker's sound from the Dot's microphones while music plays, so the wake word works at any media volume, up to 100%. Keep the **Master volume** on the **Audio** page at 100%, which leaves the assistant, alarms and intercom at full strength, and set the media volume as you like.
