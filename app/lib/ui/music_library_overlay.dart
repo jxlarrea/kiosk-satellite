@@ -223,13 +223,16 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
 
   void _armIdle() {
     _idle?.cancel();
+    // As a Compass view, Return to center decides when it goes.
+    if (c.musicLibrary.compassView.value) return;
     final minutes =
         int.tryParse(c.settings.get(defs.libraryIdleCloseMinutes)) ?? 0;
     if (minutes <= 0) return;
-    _idle = Timer(
-      Duration(minutes: minutes),
-      () => c.musicLibrary.visible.value = false,
-    );
+    _idle = Timer(Duration(minutes: minutes), () {
+      if (!c.musicLibrary.compassView.value) {
+        c.musicLibrary.visible.value = false;
+      }
+    });
   }
 
   void _sourceChanged() {

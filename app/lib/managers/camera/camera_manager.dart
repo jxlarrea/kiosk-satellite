@@ -51,6 +51,11 @@ class CameraManager extends Manager {
   CameraConfiguration get config => _config;
 
   final activeViewId = ValueNotifier<String?>(null);
+
+  /// True while Compass shows the camera view as the view in hand. Compass
+  /// then decides when it goes (Return to center), so Auto-dismiss stands
+  /// down. Live cameras still hold the screensaver off.
+  final compassView = ValueNotifier<bool>(false);
   final focusedCameraId = ValueNotifier<String?>(null);
 
   bool _saving = false;
@@ -101,6 +106,8 @@ class CameraManager extends Manager {
     _autoDismiss?.cancel();
     _autoDismiss = null;
     if (activeViewId.value == null) return;
+    // As a Compass view, Return to center decides when it goes.
+    if (compassView.value) return;
     final seconds = _settings.get(defs.cameraAutoDismissSeconds).toInt();
     if (seconds <= 0) return;
     _autoDismiss = Timer(Duration(seconds: seconds), () {
@@ -115,6 +122,7 @@ class CameraManager extends Manager {
     _load();
     activeViewId.addListener(_armAutoDismiss);
     focusedCameraId.addListener(_armAutoDismiss);
+    compassView.addListener(_armAutoDismiss);
     _settingsSub = bus.on<SettingChanged>().listen((event) {
       if (event.key == defs.cameraAutoDismissSeconds.key) {
         // A changed duration re-times an already-open view from now.
@@ -309,6 +317,8 @@ class CameraManager extends Manager {
     closeRelaySessions();
     await _relayServer?.close(force: true);
     _relayServer = null;
+    compassView.removeListener(_armAutoDismiss);
+    compassView.dispose();
     activeViewId.dispose();
     focusedCameraId.dispose();
   }

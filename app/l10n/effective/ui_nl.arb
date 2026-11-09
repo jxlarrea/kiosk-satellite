@@ -19813,8 +19813,8 @@
       ]
     }
   },
-  "settingCalendarIdleCloseMinutesDescription": "Keert na zo lang zonder aanraking terug naar het dashboard.",
-  "@settingCalendarIdleCloseMinutesDescription": {
+  "settingIdleCloseCompassDescription": "Keert na zo lang zonder aanraking terug naar het dashboard. In de Compass-indeling geldt Terug naar het midden.",
+  "@settingIdleCloseCompassDescription": {
     "context": "Settings > Calendar > Kiosk",
     "description": "Setting description.",
     "x-locations": {
@@ -22604,8 +22604,8 @@
       ]
     }
   },
-  "settingCameraAutoDismissSecondsDescription": "Sluit een geopende cameraweergave automatisch. Bij 0 blijft deze geopend. Dit heeft geen invloed op de cameraschermbeveiliging.",
-  "@settingCameraAutoDismissSecondsDescription": {
+  "settingCameraAutoDismissCompassDescription": "Sluit een geopende cameraweergave na zo lang. Bij 0 blijft deze geopend. Dit heeft geen invloed op de cameraschermbeveiliging. In de Compass-indeling geldt Terug naar het midden.",
+  "@settingCameraAutoDismissCompassDescription": {
     "context": "Settings > Camera Streams > Playback",
     "description": "Help below this setting.",
     "x-locations": {

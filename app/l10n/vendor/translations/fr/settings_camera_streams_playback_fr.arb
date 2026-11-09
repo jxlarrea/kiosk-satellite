@@ -11,7 +11,7 @@
   "settingCameraPinchZoomTitle": "Pincer pour zoomer sur une seule caméra",
   "settingCameraPinchZoomDescription": "Zoomer dans l'image avec deux doigts quand une seule caméra est à l'écran. Faites glisser pour vous déplacer, appuyez deux fois pour réinitialiser.",
   "settingCameraAutoDismissSecondsTitle": "Fermer automatiquement après",
-  "settingCameraAutoDismissSecondsDescription": "Fermer automatiquement une vue caméra ouverte ; 0 la laisse affichée. L'économiseur d'écran caméra n'est pas affecté.",
+  "settingCameraAutoDismissCompassDescription": "Ferme une vue caméra ouverte après ce délai. 0 la laisse affichée. L'économiseur d'écran caméra n'est pas affecté. Dans la disposition de Compass, Revenir au centre s'applique à la place.",
   "cameraStreamsPlayback": "Lecture",
   "cameraStreamsOff": "Désactivé",
   "cameraStreamsSeconds": "{seconds} s",

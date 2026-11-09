@@ -5342,8 +5342,8 @@ class UiStringsFr extends UiStrings {
       'Fermer en cas d\'inactivité';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription =>
-      'Revient au tableau de bord après ce délai sans contact.';
+  String get settingIdleCloseCompassDescription =>
+      'Revient au tableau de bord après ce délai sans contact. Dans la disposition de Compass, Revenir au centre s\'applique à la place.';
 
   @override
   String get settingKioskAllowCalendarTitle => 'Calendrier';
@@ -6079,8 +6079,8 @@ class UiStringsFr extends UiStrings {
       'Fermer automatiquement après';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      'Fermer automatiquement une vue caméra ouverte ; 0 la laisse affichée. L\'économiseur d\'écran caméra n\'est pas affecté.';
+  String get settingCameraAutoDismissCompassDescription =>
+      'Ferme une vue caméra ouverte après ce délai. 0 la laisse affichée. L\'économiseur d\'écran caméra n\'est pas affecté. Dans la disposition de Compass, Revenir au centre s\'applique à la place.';
 
   @override
   String get cameraStreamsPlayback => 'Lecture';

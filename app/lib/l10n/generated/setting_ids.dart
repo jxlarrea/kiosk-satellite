@@ -1038,7 +1038,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "camera.auto_dismiss_seconds": {
     "title": "settingCameraAutoDismissSecondsTitle",
-    "description": "settingCameraAutoDismissSecondsDescription",
+    "description": "settingCameraAutoDismissCompassDescription",
   },
   "browser.auto_reload_on_error": {
     "title": "settingAutoReloadOnErrorTitle",
@@ -2450,7 +2450,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "calendar.idle_close_minutes": {
     "title": "settingCalendarIdleCloseMinutesTitle",
-    "description": "settingCalendarIdleCloseMinutesDescription",
+    "description": "settingIdleCloseCompassDescription",
   },
   "kiosk.allow_calendar": {
     "title": "settingKioskAllowCalendarTitle",
@@ -2578,7 +2578,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "library.idle_close_minutes": {
     "title": "settingCalendarIdleCloseMinutesTitle",
-    "description": "settingCalendarIdleCloseMinutesDescription",
+    "description": "settingIdleCloseCompassDescription",
   },
   "kiosk.allow_music_library": {
     "title": "libraryTitle",

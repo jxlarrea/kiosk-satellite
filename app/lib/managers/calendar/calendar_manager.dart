@@ -126,6 +126,11 @@ class CalendarManager extends Manager implements CalendarStore {
   /// The full screen calendar is up.
   final visible = ValueNotifier<bool>(false);
 
+  /// True while Compass shows this as the view in hand. Compass then
+  /// decides when it goes (Return to center), so its own idle close stands
+  /// down, and the screensaver starts over it as over a dashboard.
+  final compassView = ValueNotifier<bool>(false);
+
   /// The Calendar screensaver mode is on screen.
   final screensaverShown = ValueNotifier<bool>(false);
 
@@ -240,9 +245,9 @@ class CalendarManager extends Manager implements CalendarStore {
       )
       ..add(
         // An abandoned calendar gives way to the screensaver, as the app
-        // launcher and the alarm list do.
+        // launcher and the alarm list do. A Compass view stays under it.
         bus.on<ScreensaverStateChanged>().listen((e) {
-          if (e.active) visible.value = false;
+          if (e.active && !compassView.value) visible.value = false;
         }),
       );
   }
@@ -259,6 +264,7 @@ class CalendarManager extends Manager implements CalendarStore {
     await _unsubscribeAll();
     await _socket.close();
     visible.dispose();
+    compassView.dispose();
     screensaverShown.dispose();
     highlight.dispose();
     reopened.dispose();

@@ -11,7 +11,7 @@
   "settingCalendarAllowDeleteTitle": "Afspraken verwijderen toestaan",
   "settingCalendarAllowDeleteDescription": "Voegt Verwijderen toe aan elke afspraak.",
   "settingCalendarIdleCloseMinutesTitle": "Sluiten bij inactiviteit",
-  "settingCalendarIdleCloseMinutesDescription": "Keert na zo lang zonder aanraking terug naar het dashboard.",
+  "settingIdleCloseCompassDescription": "Keert na zo lang zonder aanraking terug naar het dashboard. In de Compass-indeling geldt Terug naar het midden.",
   "settingKioskAllowCalendarTitle": "Agenda",
   "settingKioskAllowCalendarDescription": "Open de gezinsagenda vanuit het kioskmenu.",
   "calendarWeekStartLocale": "Volgens de taal",

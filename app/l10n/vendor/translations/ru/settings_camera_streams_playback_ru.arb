@@ -11,7 +11,7 @@
   "settingCameraPinchZoomTitle": "Масштабирование щипком (одна камера)",
   "settingCameraPinchZoomDescription": "Приближать картинку двумя пальцами, когда на экране одна камера. Перетаскивайте для перемещения, двойное касание для сброса.",
   "settingCameraAutoDismissSecondsTitle": "Автозакрытие через",
-  "settingCameraAutoDismissSecondsDescription": "Автоматически закрывать открытый вид камер; 0 оставляет его открытым. Заставка с камерами не затрагивается.",
+  "settingCameraAutoDismissCompassDescription": "Закрывает открытый вид камер через это время. 0 оставляет его открытым. Заставка с камерами не затрагивается. В раскладке Compass вместо этого действует «Возвращаться в центр».",
   "cameraStreamsPlayback": "Воспроизведение",
   "cameraStreamsOff": "Выкл",
   "cameraStreamsSeconds": "{seconds} с",

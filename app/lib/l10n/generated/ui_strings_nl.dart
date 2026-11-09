@@ -5325,8 +5325,8 @@ class UiStringsNl extends UiStrings {
   String get settingCalendarIdleCloseMinutesTitle => 'Sluiten bij inactiviteit';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription =>
-      'Keert na zo lang zonder aanraking terug naar het dashboard.';
+  String get settingIdleCloseCompassDescription =>
+      'Keert na zo lang zonder aanraking terug naar het dashboard. In de Compass-indeling geldt Terug naar het midden.';
 
   @override
   String get settingKioskAllowCalendarTitle => 'Agenda';
@@ -6059,8 +6059,8 @@ class UiStringsNl extends UiStrings {
   String get settingCameraAutoDismissSecondsTitle => 'Automatisch sluiten na';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      'Sluit een geopende cameraweergave automatisch. Bij 0 blijft deze geopend. Dit heeft geen invloed op de cameraschermbeveiliging.';
+  String get settingCameraAutoDismissCompassDescription =>
+      'Sluit een geopende cameraweergave na zo lang. Bij 0 blijft deze geopend. Dit heeft geen invloed op de cameraschermbeveiliging. In de Compass-indeling geldt Terug naar het midden.';
 
   @override
   String get cameraStreamsPlayback => 'Afspelen';

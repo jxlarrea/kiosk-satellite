@@ -447,6 +447,11 @@ class IntercomManager extends Manager {
   /// app launcher's [visible] works.
   final rosterVisible = ValueNotifier<bool>(false);
 
+  /// True while Compass shows the roster as the view in hand. Compass then
+  /// decides when it goes (Return to center), so its own idle close stands
+  /// down, and the screensaver starts over it as over a dashboard.
+  final compassView = ValueNotifier<bool>(false);
+
   /// The states the full screen call card shows in, its last words
   /// included.
   static const callScreenStates = {
@@ -635,7 +640,8 @@ class IntercomManager extends Manager {
     // does.
     _subs.add(
       bus.on<ScreensaverStateChanged>().listen((e) {
-        if (e.active) rosterVisible.value = false;
+        // A Compass view stays under the screensaver, as a dashboard does.
+        if (e.active && !compassView.value) rosterVisible.value = false;
       }),
     );
     _subs.add(
@@ -711,6 +717,7 @@ class IntercomManager extends Manager {
     _missedTimer?.cancel();
     _limitTimer?.cancel();
     rosterVisible.dispose();
+    compassView.dispose();
   }
 
   Future<void> _onEnabledChanged() async {

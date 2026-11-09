@@ -1454,8 +1454,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingCalendarAllowDeleteDescription,
       'settingCalendarIdleCloseMinutesTitle' =>
         strings.settingCalendarIdleCloseMinutesTitle,
-      'settingCalendarIdleCloseMinutesDescription' =>
-        strings.settingCalendarIdleCloseMinutesDescription,
+      'settingIdleCloseCompassDescription' =>
+        strings.settingIdleCloseCompassDescription,
       'settingKioskAllowCalendarTitle' =>
         strings.settingKioskAllowCalendarTitle,
       'settingKioskAllowCalendarDescription' =>
@@ -1691,8 +1691,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingCameraPinchZoomDescription,
       'settingCameraAutoDismissSecondsTitle' =>
         strings.settingCameraAutoDismissSecondsTitle,
-      'settingCameraAutoDismissSecondsDescription' =>
-        strings.settingCameraAutoDismissSecondsDescription,
+      'settingCameraAutoDismissCompassDescription' =>
+        strings.settingCameraAutoDismissCompassDescription,
       'cameraStreamsPlayback' => strings.cameraStreamsPlayback,
       'cameraStreamsOff' => strings.cameraStreamsOff,
       'cameraStreamsGridHelp' => strings.cameraStreamsGridHelp,

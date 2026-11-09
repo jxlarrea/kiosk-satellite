@@ -11,7 +11,7 @@
   "settingCameraPinchZoomTitle": "Масштабування однієї камери щипком",
   "settingCameraPinchZoomDescription": "Збільшувати зображення двома пальцями, коли на екрані лише одна камера. Перетягуйте для переміщення, двічі торкніться для скидання.",
   "settingCameraAutoDismissSecondsTitle": "Автоматично закривати через",
-  "settingCameraAutoDismissSecondsDescription": "Самостійно закривати відкритий перегляд камери; 0 залишає його відкритим. Заставка камери не змінюється.",
+  "settingCameraAutoDismissCompassDescription": "Закриває відкритий перегляд камери через цей час. 0 залишає його відкритим. Заставка камери не змінюється. У розкладці Compass натомість діє «Повертатися до центру».",
   "cameraStreamsPlayback": "Відтворення",
   "cameraStreamsOff": "Вимкнено",
   "cameraStreamsSeconds": "{seconds} с",

@@ -150,6 +150,11 @@ class AlarmManager extends Manager {
   /// The full screen alarm list is up.
   final visible = ValueNotifier<bool>(false);
 
+  /// True while Compass shows this as the view in hand. Compass then
+  /// decides when it goes (Return to center), so its own idle close stands
+  /// down, and the screensaver starts over it as over a dashboard.
+  final compassView = ValueNotifier<bool>(false);
+
   /// The alarm the list should open on, set just before [visible] by
   /// openAlarms with `alarm: next`. The alarm screen takes it and clears it.
   final focus = ValueNotifier<String?>(null);
@@ -215,6 +220,7 @@ class AlarmManager extends Manager {
     // Setting an alarm is not idle time: the screensaver waits while the
     // list is up.
     visible.addListener(_syncHold);
+    compassView.addListener(_syncHold);
     _subs
       ..add(
         bus.on<SettingChanged>().listen((e) {
@@ -241,8 +247,8 @@ class AlarmManager extends Manager {
         // gives the kiosk back: the glow ends, the ring still comes.
         bus.on<ScreensaverStateChanged>().listen((e) {
           // An abandoned list gives way to the screensaver, as the app
-          // launcher does.
-          if (e.active) visible.value = false;
+          // launcher does. A Compass view stays under it.
+          if (e.active && !compassView.value) visible.value = false;
           if (e.active || _s.takeover == null) return;
           if (_s.phase == AlarmPhase.sunrise) {
             unawaited(_endSunriseEarly());
@@ -269,6 +275,7 @@ class AlarmManager extends Manager {
       await sub.cancel();
     }
     visible.dispose();
+    compassView.dispose();
     focus.dispose();
     alarms.dispose();
     status.dispose();
@@ -277,8 +284,9 @@ class AlarmManager extends Manager {
   bool _listHeld = false;
 
   void _syncHold() {
-    if (visible.value == _listHeld) return;
-    _listHeld = visible.value;
+    final held = visible.value && !compassView.value;
+    if (held == _listHeld) return;
+    _listHeld = held;
     unawaited(
       commands.execute('holdScreensaver', {
         'holder': 'alarms',

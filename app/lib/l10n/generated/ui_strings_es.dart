@@ -5339,8 +5339,8 @@ class UiStringsEs extends UiStrings {
   String get settingCalendarIdleCloseMinutesTitle => 'Cerrar si está inactivo';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription =>
-      'Vuelve al panel de control tras este tiempo sin tocar la pantalla.';
+  String get settingIdleCloseCompassDescription =>
+      'Vuelve al panel de control tras este tiempo sin tocar la pantalla. En el diseño de Compass se aplica Volver al centro.';
 
   @override
   String get settingKioskAllowCalendarTitle => 'Calendario';
@@ -6082,8 +6082,8 @@ class UiStringsEs extends UiStrings {
       'Cerrar automáticamente después de';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      'Cierra automáticamente una vista de cámaras abierta. Con 0 permanece abierta. No afecta al protector de pantalla de cámaras.';
+  String get settingCameraAutoDismissCompassDescription =>
+      'Cierra una vista de cámaras abierta tras este tiempo. Con 0 permanece abierta. No afecta al protector de pantalla de cámaras. En el diseño de Compass se aplica Volver al centro.';
 
   @override
   String get cameraStreamsPlayback => 'Reproducción';

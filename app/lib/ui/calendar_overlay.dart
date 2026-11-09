@@ -477,12 +477,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   void _armIdle() {
     _idle?.cancel();
-    // As the screensaver it is what idle leads to, so it stays.
-    if (widget.screensaver) return;
+    // As the screensaver it is what idle leads to, so it stays. As a
+    // Compass view, Return to center decides when it goes.
+    if (widget.screensaver || c.calendar.compassView.value) return;
     final minutes =
         int.tryParse(c.settings.get(defs.calendarIdleCloseMinutes)) ?? 0;
     if (minutes <= 0) return;
-    _idle = Timer(Duration(minutes: minutes), () => cal.visible.value = false);
+    _idle = Timer(Duration(minutes: minutes), () {
+      if (!cal.compassView.value) cal.visible.value = false;
+    });
   }
 
   int get _firstWeekday => calendarFirstWeekday(context, c);

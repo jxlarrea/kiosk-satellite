@@ -5310,8 +5310,8 @@ class UiStringsUk extends UiStrings {
       'Закривати під час бездіяльності';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription =>
-      'Повертатися до панелі керування після такого часу без дотиків.';
+  String get settingIdleCloseCompassDescription =>
+      'Повертатися до панелі керування після такого часу без дотиків. У розкладці Compass натомість діє «Повертатися до центру».';
 
   @override
   String get settingKioskAllowCalendarTitle => 'Календар';
@@ -6033,8 +6033,8 @@ class UiStringsUk extends UiStrings {
       'Автоматично закривати через';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      'Самостійно закривати відкритий перегляд камери; 0 залишає його відкритим. Заставка камери не змінюється.';
+  String get settingCameraAutoDismissCompassDescription =>
+      'Закриває відкритий перегляд камери через цей час. 0 залишає його відкритим. Заставка камери не змінюється. У розкладці Compass натомість діє «Повертатися до центру».';
 
   @override
   String get cameraStreamsPlayback => 'Відтворення';

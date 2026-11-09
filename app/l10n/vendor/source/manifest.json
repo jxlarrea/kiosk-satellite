@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "ffdaf8b7ddff519f44ba5d61faff56ce089518f9",
+  "revision": "aa14ca836f232f4c2f4ede3a511fa9290f961eb7",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -72,7 +72,7 @@
     "settings_alarms_en.arb": "fc738478debffd09765521309c6f9f6fc8c6369963978888790c6aca1abc5ef8",
     "settings_app_launcher_en.arb": "94eee759b7be8bd0767d511dd3d5fe1e5f42866b7f982e05dc2131bfcf2d610f",
     "settings_app_launcher_permissions_en.arb": "c25bccf91d6d6b85929ffa7694c790a5a6d48af89df83182f417afbb7a221201",
-    "settings_calendar_en.arb": "04a53dec46d5a14734b06fc96c9c1f72775e505c15eb203952eb73b24481e777",
+    "settings_calendar_en.arb": "47c089080855af7baa29aa7969b7a34b1421b3b81bad8bfe26871e5818cfc2e3",
     "settings_camera_general_en.arb": "eea9a98c30ef60009c0c0a693d0073028785ceb81db6ab5d10b2eaa6ccc53f8f",
     "settings_camera_motion_en.arb": "39ebe3fdcb6b7912976e889bba488426f16aeced9e2ef111fd7cc5b1319e82b1",
     "settings_camera_permissions_en.arb": "af1f4abccaf91497313d69f836cf52fad5396437ee97554c472c4949e7462cbb",
@@ -82,7 +82,7 @@
     "settings_camera_streaming_en.arb": "79da37186df1297eb61c9c480e8ef935b94ec11a5bc5e71ca300c1783d713119",
     "settings_camera_streams_errors_en.arb": "6d5c95e55b74e9e05a4a5510859926dfa3197b9c433d1cd623d1d681dd06b680",
     "settings_camera_streams_imports_en.arb": "cc2d60fc2fc24843121590e1a38a99f24c5f62c8cadb8328a9d4943243df8520",
-    "settings_camera_streams_playback_en.arb": "e97207dbcc80942f39836b6e2a2d9f57e1dd93f1a5d59d8ddacfd3c7f26b239c",
+    "settings_camera_streams_playback_en.arb": "fdac30dc952ff42b6f5463e877dd28bf0653f39399bede9b22c75bdac8e63a0e",
     "settings_camera_streams_servers_en.arb": "3c059d5b863b09c01bf2a6598e41c5ed2b67c2058679663b13a71106cc365f62",
     "settings_camera_streams_sources_en.arb": "b85c8cba27a7fd63065b77ff64f20067a9d12d49b0e65354857c60b879935444",
     "settings_camera_streams_views_en.arb": "746f18287ad876da17886b6412d4bf0dfed6d4c098ec98152750aac6dd3115a9",

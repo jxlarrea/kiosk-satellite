@@ -19813,8 +19813,8 @@
       ]
     }
   },
-  "settingCalendarIdleCloseMinutesDescription": "Повертатися до панелі керування після такого часу без дотиків.",
-  "@settingCalendarIdleCloseMinutesDescription": {
+  "settingIdleCloseCompassDescription": "Повертатися до панелі керування після такого часу без дотиків. У розкладці Compass натомість діє «Повертатися до центру».",
+  "@settingIdleCloseCompassDescription": {
     "context": "Settings > Calendar > Kiosk",
     "description": "Setting description.",
     "x-locations": {
@@ -22604,8 +22604,8 @@
       ]
     }
   },
-  "settingCameraAutoDismissSecondsDescription": "Самостійно закривати відкритий перегляд камери; 0 залишає його відкритим. Заставка камери не змінюється.",
-  "@settingCameraAutoDismissSecondsDescription": {
+  "settingCameraAutoDismissCompassDescription": "Закриває відкритий перегляд камери через цей час. 0 залишає його відкритим. Заставка камери не змінюється. У розкладці Compass натомість діє «Повертатися до центру».",
+  "@settingCameraAutoDismissCompassDescription": {
     "context": "Settings > Camera Streams > Playback",
     "description": "Help below this setting.",
     "x-locations": {

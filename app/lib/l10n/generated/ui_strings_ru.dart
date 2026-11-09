@@ -5303,8 +5303,8 @@ class UiStringsRu extends UiStrings {
       'Закрывать при бездействии';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription =>
-      'Возвращаться к панели после этого времени без касаний.';
+  String get settingIdleCloseCompassDescription =>
+      'Возвращаться к панели после этого времени без касаний. В раскладке Compass вместо этого действует «Возвращаться в центр».';
 
   @override
   String get settingKioskAllowCalendarTitle => 'Календарь';
@@ -6024,8 +6024,8 @@ class UiStringsRu extends UiStrings {
   String get settingCameraAutoDismissSecondsTitle => 'Автозакрытие через';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      'Автоматически закрывать открытый вид камер; 0 оставляет его открытым. Заставка с камерами не затрагивается.';
+  String get settingCameraAutoDismissCompassDescription =>
+      'Закрывает открытый вид камер через это время. 0 оставляет его открытым. Заставка с камерами не затрагивается. В раскладке Compass вместо этого действует «Возвращаться в центр».';
 
   @override
   String get cameraStreamsPlayback => 'Воспроизведение';

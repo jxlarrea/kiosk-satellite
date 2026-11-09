@@ -11,7 +11,7 @@
   "settingCameraPinchZoomTitle": "Zwei-Finger-Zoom für Einzelkamera",
   "settingCameraPinchZoomDescription": "Vergrößert das Bild mit zwei Fingern, wenn nur eine Kamera angezeigt wird. Zum Verschieben ziehen und zum Zurücksetzen doppeltippen.",
   "settingCameraAutoDismissSecondsTitle": "Automatisch schließen nach",
-  "settingCameraAutoDismissSecondsDescription": "Schließt eine geöffnete Kameraansicht automatisch. Bei 0 bleibt sie dauerhaft geöffnet. Hat keinen Einfluss auf den Kamera-Bildschirmschoner.",
+  "settingCameraAutoDismissCompassDescription": "Schließt eine geöffnete Kameraansicht nach dieser Zeit. Bei 0 bleibt sie geöffnet. Hat keinen Einfluss auf den Kamera-Bildschirmschoner. Im Compass-Layout gilt stattdessen Zur Mitte zurückkehren.",
   "cameraStreamsPlayback": "Wiedergabe",
   "cameraStreamsOff": "Deaktiviert",
   "cameraStreamsSeconds": "{seconds} Sek.",

@@ -11,7 +11,7 @@
   "settingCameraPinchZoomTitle": "Knijpen om op één camera in te zoomen",
   "settingCameraPinchZoomDescription": "Zoom met twee vingers in wanneer er één camera in beeld is. Sleep om het beeld te verplaatsen en dubbeltik om de zoom te herstellen.",
   "settingCameraAutoDismissSecondsTitle": "Automatisch sluiten na",
-  "settingCameraAutoDismissSecondsDescription": "Sluit een geopende cameraweergave automatisch. Bij 0 blijft deze geopend. Dit heeft geen invloed op de cameraschermbeveiliging.",
+  "settingCameraAutoDismissCompassDescription": "Sluit een geopende cameraweergave na zo lang. Bij 0 blijft deze geopend. Dit heeft geen invloed op de cameraschermbeveiliging. In de Compass-indeling geldt Terug naar het midden.",
   "cameraStreamsPlayback": "Afspelen",
   "cameraStreamsOff": "Uit",
   "cameraStreamsSeconds": "{seconds} s",

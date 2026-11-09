@@ -134,6 +134,7 @@ class CompassController {
         if (_layout.viewAt(current.value) == null) {
           current.value = CompassSlot.center;
         }
+        _syncViewFlags();
         _dropStaleShots();
         // A new view in hand, such as another center or the center's
         // dashboard view picked again, shows right away.
@@ -147,14 +148,18 @@ class CompassController {
           e.key == defs.navCompassReturnMinutes.key) {
         _armReturn();
       } else if (e.key == defs.navStyle.key && !enabled) {
+        _syncViewFlags();
         menuVisible.value = false;
         menuUnlocked.value = false;
         current.value = CompassSlot.center;
         _clearShots();
       } else if (e.key == defs.navStyle.key) {
+        _syncViewFlags();
         unawaited(_bringUp(gentle: true));
       }
     });
+    current.addListener(_syncViewFlags);
+    _syncViewFlags();
     // The kiosk starts on the dashboard. A center that is not one opens
     // once the screen is up.
     _startTimer = Timer(
@@ -181,6 +186,18 @@ class CompassController {
 
   Timer? _startTimer;
 
+  /// Tells the views which one Compass holds: that one leaves its own idle
+  /// close and screensaver hold to Compass.
+  void _syncViewFlags() {
+    final kind = enabled ? currentView.kind : '';
+    c.musicLibrary.compassView.value = kind == 'music_library';
+    c.calendar.compassView.value = kind == 'calendar';
+    c.alarms.compassView.value = kind == 'alarms';
+    c.launcher.compassView.value = kind == 'app_launcher';
+    c.intercom.compassView.value = kind == 'intercom';
+    c.camera.compassView.value = kind == 'camera';
+  }
+
   /// True while a swipe moves: the plugin overlays drawn on top step aside,
   /// since the snapshots under them already show them.
   final overlaysHidden = ValueNotifier<bool>(false);
@@ -191,6 +208,9 @@ class CompassController {
   /// center opens once that closes.
   Future<void> _bringUp({bool gentle = false}) async {
     if (!enabled || stage.value != null || _switching) return;
+    // Opening a view would end the screensaver. Once it ends, the overlay
+    // listener brings the view in hand up.
+    if (_underScreensaver) return;
     final view = currentView;
     if (gentle &&
         (view.isDashboard ||
@@ -203,6 +223,7 @@ class CompassController {
   }
 
   void dispose() {
+    current.removeListener(_syncViewFlags);
     _startTimer?.cancel();
     _verifyTimer?.cancel();
     _settingsSub?.cancel();
@@ -335,6 +356,7 @@ class CompassController {
       }
     } finally {
       _switching = false;
+      _lastUp = _upKeys();
     }
     // Moved without a swipe (back, the timer, a page closed by hand): a
     // plane a swipe left out comes back if this view shows the dashboard.
@@ -352,6 +374,7 @@ class CompassController {
     _verifyTimer?.cancel();
     _verifyTimer = Timer(const Duration(milliseconds: 1500), () {
       if (current.value != slot || stage.value != null || _switching) return;
+      if (_underScreensaver) return;
       final view = currentView;
       if (view.isDashboard || _isUp(view)) return;
       _settle();
@@ -454,29 +477,77 @@ class CompassController {
   /// always shows.
   Timer? _settleTimer;
 
+  /// Return to center came due while the screensaver was up.
+  bool _returnOnWake = false;
+
+  /// The layout views up at the last look, for telling which one just came
+  /// up when two are.
+  Set<String> _lastUp = const {};
+
+  Set<String> _upKeys() => {
+    for (final slot in _layout.slots)
+      if (_layout.viewAt(slot) case final view?
+          when !view.isDashboard && !view.isMenu && _isUp(view))
+        view.key,
+  };
+
+  bool _saverWasUp = false;
+
   /// Pages change in steps that are not one moment: Now Playing's library
   /// button stops the screensaver and opens the library a beat later. The
   /// layout is read again once things have settled, not on every edge,
   /// or the gap between the two reads as the view in hand going away.
   void _onOverlayChanged() {
     if (_switching || !enabled || stage.value != null) return;
+    final saverUp = _underScreensaver;
+    final woke = _saverWasUp && !saverUp;
+    _saverWasUp = saverUp;
+    if (woke) {
+      // Return to center came due under the screensaver: go there the
+      // moment it ends, before the view in hand shows again.
+      if (_returnOnWake && !current.value.isCenter) {
+        _returnOnWake = false;
+        unawaited(goCenter());
+        return;
+      }
+      _returnOnWake = false;
+    }
     _settleTimer?.cancel();
     _settleTimer = Timer(const Duration(milliseconds: 300), _settle);
   }
 
+  /// The screensaver runs over the view in hand. Nothing under it moves
+  /// while it is up, except Now Playing, which is a screensaver itself.
+  bool get _underScreensaver => c.screensaver.isActive && !_nowPlayingUp;
+
   void _settle() {
     if (_switching || !enabled || stage.value != null) return;
+    if (_underScreensaver) return;
     final view = currentView;
     // A view of the layout came up over the one in hand: it is the
-    // current one now.
+    // current one now, the one that just came up first. The rest close, as
+    // a swipe would close them, except under Now Playing: the library a
+    // track started from waits there and shows again when it closes.
+    final up = _upKeys();
+    final before = _lastUp;
+    _lastUp = up;
+    CompassSlot? picked;
     for (final slot in _layout.slots) {
       final candidate = _layout.viewAt(slot);
       if (candidate == null || candidate.key == view.key) continue;
-      if (!candidate.isDashboard && !candidate.isMenu && _isUp(candidate)) {
-        current.value = slot;
-        if (candidate.kind != 'menu') menuVisible.value = false;
-        return;
+      if (!up.contains(candidate.key)) continue;
+      if (!before.contains(candidate.key)) {
+        picked = slot;
+        break;
       }
+      picked ??= slot;
+    }
+    if (picked != null) {
+      final candidate = _layout.viewAt(picked)!;
+      current.value = picked;
+      menuVisible.value = false;
+      if (candidate.kind != 'now_playing') unawaited(_closeAllBut(candidate));
+      return;
     }
     if (view.isDashboard || _isUp(view)) return;
     // The view in hand went away. A page the layout does not hold may have
@@ -527,9 +598,15 @@ class CompassController {
     _returnTimer = Timer(Duration(minutes: minutes), () {
       if (current.value.isCenter || stage.value != null) return;
       if (c.settings.get(defs.haHoldMode)) return;
+      // Opening the center now would end the screensaver: the kiosk goes
+      // back to the center as the screensaver ends instead.
+      if (_underScreensaver) {
+        _returnOnWake = true;
+        return;
+      }
       // A ringing alarm or a call keeps its screen; the next touch arms
       // the timer again.
-      if (!swipeReady && !c.screensaver.isActive) return;
+      if (!swipeReady) return;
       unawaited(goCenter());
     });
   }

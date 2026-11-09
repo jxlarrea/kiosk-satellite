@@ -9283,8 +9283,8 @@ abstract class UiStrings {
   /// Setting description.
   ///
   /// In en, this message translates to:
-  /// **'Returns to the dashboard after no touch for this long.'**
-  String get settingCalendarIdleCloseMinutesDescription;
+  /// **'Returns to the dashboard after no touch for this long. In the Compass layout, Return to center applies instead.'**
+  String get settingIdleCloseCompassDescription;
 
   /// Setting label.
   ///
@@ -10507,8 +10507,8 @@ abstract class UiStrings {
   /// Help below this setting.
   ///
   /// In en, this message translates to:
-  /// **'Close an opened camera view on its own; 0 keeps it up. The camera screensaver is unaffected.'**
-  String get settingCameraAutoDismissSecondsDescription;
+  /// **'Closes an opened camera view after this long. 0 keeps it open. The camera screensaver is unaffected. In the Compass layout, Return to center applies instead.'**
+  String get settingCameraAutoDismissCompassDescription;
 
   /// Label or guidance in this section.
   ///

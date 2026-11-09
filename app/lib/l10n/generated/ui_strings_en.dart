@@ -5271,8 +5271,8 @@ class UiStringsEn extends UiStrings {
   String get settingCalendarIdleCloseMinutesTitle => 'Close when idle';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription =>
-      'Returns to the dashboard after no touch for this long.';
+  String get settingIdleCloseCompassDescription =>
+      'Returns to the dashboard after no touch for this long. In the Compass layout, Return to center applies instead.';
 
   @override
   String get settingKioskAllowCalendarTitle => 'Calendar';
@@ -5991,8 +5991,8 @@ class UiStringsEn extends UiStrings {
   String get settingCameraAutoDismissSecondsTitle => 'Auto-dismiss after';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      'Close an opened camera view on its own; 0 keeps it up. The camera screensaver is unaffected.';
+  String get settingCameraAutoDismissCompassDescription =>
+      'Closes an opened camera view after this long. 0 keeps it open. The camera screensaver is unaffected. In the Compass layout, Return to center applies instead.';
 
   @override
   String get cameraStreamsPlayback => 'Playback';

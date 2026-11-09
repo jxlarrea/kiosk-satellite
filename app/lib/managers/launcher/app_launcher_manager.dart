@@ -84,6 +84,11 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
   /// Whether the launcher overlay is up. The overlay widget listens.
   final visible = ValueNotifier<bool>(false);
 
+  /// True while Compass shows this as the view in hand. Compass then
+  /// decides when it goes (Return to center), so its own idle close stands
+  /// down, and the screensaver starts over it as over a dashboard.
+  final compassView = ValueNotifier<bool>(false);
+
   /// PNG bytes per package, null cached too (missing app, no icon). Cleared
   /// never: icons are stable and the set is bounded by the whitelist.
   final _icons = <String, Uint8List?>{};
@@ -301,7 +306,8 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
     // An abandoned launcher gives way to the screensaver rather than
     // greeting whoever walks past at 3am.
     _saverSub = bus.on<ScreensaverStateChanged>().listen((e) {
-      if (e.active) visible.value = false;
+      // A Compass view stays under the screensaver, as a dashboard does.
+      if (e.active && !compassView.value) visible.value = false;
     });
 
     // Auto-return rides on bringToFront, which Android 10+ only honors
@@ -548,6 +554,7 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
     await _saverSub?.cancel();
     _returnTimer?.cancel();
     visible.dispose();
+    compassView.dispose();
   }
 }
 

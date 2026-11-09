@@ -48,6 +48,12 @@ A swipe only works while the view on screen is the one in the layout. A camera v
 
 A swipe that starts on a plugin overlay, such as a navigation bar, stays with the plugin. Overlays drawn over the dashboard show on dashboard views only. Overlays a plugin draws on top show over every view and move with the view while you swipe. A plugin's window shows over dashboard views, where swipes wait until you close it.
 
+### The screensaver
+
+The screensaver starts over any view after the idle timeout, as it does over the dashboard, and the view is still there when it ends. A camera view is the exception: live cameras hold the screensaver off, as they do everywhere else. If Return to center comes due while the screensaver runs, the kiosk lands on the center when it ends.
+
+Views in the layout skip their own **Close when idle** and the camera view's **Auto-dismiss after**. **Return to center** decides when they go instead. Opened outside the layout, such as a camera view a doorbell opens, they keep their own setting.
+
 ### Back and the exit gesture
 
 Back goes to the center view. At the center, back opens the Menu when the layout has one. Without a Menu, the exit gesture opens Settings.

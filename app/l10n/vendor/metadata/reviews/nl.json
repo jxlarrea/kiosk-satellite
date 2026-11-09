@@ -29396,5 +29396,17 @@
     "translation": "86ae5c08d5a6c80849ed05c789b3c7ee23d78162303766d84ee85a76d51e0bbc",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingCameraAutoDismissCompassDescription": {
+    "source": "58197d2f45060b71ad25026203ad74bc2bf52a99735d8d18e7da8dccec5780b9",
+    "translation": "ebba12c8ca8e87bbc1b9dcd1fa44a05437f3040b87b084043b00e28ed503fee0",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingIdleCloseCompassDescription": {
+    "source": "e6eec92ad2fc6f98527d2ae36288f4cd48e75d0ad7314a402cc612ec9b1fa334",
+    "translation": "d6df97f8f48dc8476710bbaa258feb019feceed74fd8d0f20767599f401d4afc",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

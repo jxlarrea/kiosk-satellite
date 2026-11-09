@@ -9184,8 +9184,9 @@ const cameraAutoDismissSeconds = SettingDef<num>(
   unit: ' s',
   title: 'Auto-dismiss after',
   description:
-      'Close an opened camera view on its own; 0 keeps it up. The camera '
-      'screensaver is unaffected.',
+      'Closes an opened camera view after this long. 0 keeps it open. The '
+      'camera screensaver is unaffected. In the Compass layout, Return to '
+      'center applies instead.',
   category: 'Cameras',
 );
 
@@ -10437,7 +10438,9 @@ const libraryIdleCloseMinutes = SettingDef<String>(
   type: SettingType.select,
   defaultValue: '2',
   title: 'Close when idle',
-  description: 'Returns to the dashboard after no touch for this long.',
+  description:
+      'Returns to the dashboard after no touch for this long. In the '
+      'Compass layout, Return to center applies instead.',
   category: 'Sendspin',
   subpage: 'Music Library',
   section: 'Music Library',
@@ -12276,7 +12279,9 @@ const calendarIdleCloseMinutes = SettingDef<String>(
   type: SettingType.select,
   defaultValue: '2',
   title: 'Close when idle',
-  description: 'Returns to the dashboard after no touch for this long.',
+  description:
+      'Returns to the dashboard after no touch for this long. In the '
+      'Compass layout, Return to center applies instead.',
   category: 'Calendar',
   section: 'Kiosk',
   options: ['0', '1', '2', '5', '10'],

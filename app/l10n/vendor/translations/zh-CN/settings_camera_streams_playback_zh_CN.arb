@@ -11,7 +11,7 @@
   "settingCameraPinchZoomTitle": "双指缩放单个摄像头画面",
   "settingCameraPinchZoomDescription": "只显示单个摄像头画面时，可用双指缩放，拖动画面查看不同位置，双击恢复原状。",
   "settingCameraAutoDismissSecondsTitle": "摄像头画面自动关闭时间",
-  "settingCameraAutoDismissSecondsDescription": "在设定时间后自动关闭已打开的摄像头画面。设为 0 时一直显示，不影响摄像头屏保。",
+  "settingCameraAutoDismissCompassDescription": "在设定时间后关闭已打开的摄像头画面。设为 0 时一直显示。不影响摄像头屏保。在 Compass 布局中改用“返回中心”。",
   "cameraStreamsPlayback": "播放",
   "cameraStreamsOff": "关闭",
   "cameraStreamsSeconds": "{seconds} 秒",

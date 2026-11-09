@@ -19813,8 +19813,8 @@
       ]
     }
   },
-  "settingCalendarIdleCloseMinutesDescription": "Revient au tableau de bord après ce délai sans contact.",
-  "@settingCalendarIdleCloseMinutesDescription": {
+  "settingIdleCloseCompassDescription": "Revient au tableau de bord après ce délai sans contact. Dans la disposition de Compass, Revenir au centre s'applique à la place.",
+  "@settingIdleCloseCompassDescription": {
     "context": "Settings > Calendar > Kiosk",
     "description": "Setting description.",
     "x-locations": {
@@ -22604,8 +22604,8 @@
       ]
     }
   },
-  "settingCameraAutoDismissSecondsDescription": "Fermer automatiquement une vue caméra ouverte ; 0 la laisse affichée. L'économiseur d'écran caméra n'est pas affecté.",
-  "@settingCameraAutoDismissSecondsDescription": {
+  "settingCameraAutoDismissCompassDescription": "Ferme une vue caméra ouverte après ce délai. 0 la laisse affichée. L'économiseur d'écran caméra n'est pas affecté. Dans la disposition de Compass, Revenir au centre s'applique à la place.",
+  "@settingCameraAutoDismissCompassDescription": {
     "context": "Settings > Camera Streams > Playback",
     "description": "Help below this setting.",
     "x-locations": {

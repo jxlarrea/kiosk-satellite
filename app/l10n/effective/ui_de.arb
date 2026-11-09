@@ -19813,8 +19813,8 @@
       ]
     }
   },
-  "settingCalendarIdleCloseMinutesDescription": "Kehrt nach dieser Zeit ohne Berührung zum Dashboard zurück.",
-  "@settingCalendarIdleCloseMinutesDescription": {
+  "settingIdleCloseCompassDescription": "Kehrt nach dieser Zeit ohne Berührung zum Dashboard zurück. Im Compass-Layout gilt stattdessen Zur Mitte zurückkehren.",
+  "@settingIdleCloseCompassDescription": {
     "context": "Settings > Calendar > Kiosk",
     "description": "Setting description.",
     "x-locations": {
@@ -22604,8 +22604,8 @@
       ]
     }
   },
-  "settingCameraAutoDismissSecondsDescription": "Schließt eine geöffnete Kameraansicht automatisch. Bei 0 bleibt sie dauerhaft geöffnet. Hat keinen Einfluss auf den Kamera-Bildschirmschoner.",
-  "@settingCameraAutoDismissSecondsDescription": {
+  "settingCameraAutoDismissCompassDescription": "Schließt eine geöffnete Kameraansicht nach dieser Zeit. Bei 0 bleibt sie geöffnet. Hat keinen Einfluss auf den Kamera-Bildschirmschoner. Im Compass-Layout gilt stattdessen Zur Mitte zurückkehren.",
+  "@settingCameraAutoDismissCompassDescription": {
     "context": "Settings > Camera Streams > Playback",
     "description": "Help below this setting.",
     "x-locations": {

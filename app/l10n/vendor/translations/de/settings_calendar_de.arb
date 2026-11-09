@@ -11,7 +11,7 @@
   "settingCalendarAllowDeleteTitle": "Termine löschen erlauben",
   "settingCalendarAllowDeleteDescription": "Fügt jedem Termin Löschen hinzu.",
   "settingCalendarIdleCloseMinutesTitle": "Bei Inaktivität schließen",
-  "settingCalendarIdleCloseMinutesDescription": "Kehrt nach dieser Zeit ohne Berührung zum Dashboard zurück.",
+  "settingIdleCloseCompassDescription": "Kehrt nach dieser Zeit ohne Berührung zum Dashboard zurück. Im Compass-Layout gilt stattdessen Zur Mitte zurückkehren.",
   "settingKioskAllowCalendarTitle": "Kalender",
   "settingKioskAllowCalendarDescription": "Den Familienkalender über das Kiosk-Menü öffnen.",
   "calendarWeekStartLocale": "Wie die Sprache",

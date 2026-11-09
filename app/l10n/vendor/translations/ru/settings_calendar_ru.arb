@@ -11,7 +11,7 @@
   "settingCalendarAllowDeleteTitle": "Разрешить удалять события",
   "settingCalendarAllowDeleteDescription": "Добавляет к каждому событию кнопку Удалить.",
   "settingCalendarIdleCloseMinutesTitle": "Закрывать при бездействии",
-  "settingCalendarIdleCloseMinutesDescription": "Возвращаться к панели после этого времени без касаний.",
+  "settingIdleCloseCompassDescription": "Возвращаться к панели после этого времени без касаний. В раскладке Compass вместо этого действует «Возвращаться в центр».",
   "settingKioskAllowCalendarTitle": "Календарь",
   "settingKioskAllowCalendarDescription": "Открывать семейный календарь из меню киоска.",
   "calendarWeekStartLocale": "Как в языке",

@@ -5375,8 +5375,8 @@ class UiStringsDe extends UiStrings {
       'Bei Inaktivität schließen';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription =>
-      'Kehrt nach dieser Zeit ohne Berührung zum Dashboard zurück.';
+  String get settingIdleCloseCompassDescription =>
+      'Kehrt nach dieser Zeit ohne Berührung zum Dashboard zurück. Im Compass-Layout gilt stattdessen Zur Mitte zurückkehren.';
 
   @override
   String get settingKioskAllowCalendarTitle => 'Kalender';
@@ -6120,8 +6120,8 @@ class UiStringsDe extends UiStrings {
       'Automatisch schließen nach';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      'Schließt eine geöffnete Kameraansicht automatisch. Bei 0 bleibt sie dauerhaft geöffnet. Hat keinen Einfluss auf den Kamera-Bildschirmschoner.';
+  String get settingCameraAutoDismissCompassDescription =>
+      'Schließt eine geöffnete Kameraansicht nach dieser Zeit. Bei 0 bleibt sie geöffnet. Hat keinen Einfluss auf den Kamera-Bildschirmschoner. Im Compass-Layout gilt stattdessen Zur Mitte zurückkehren.';
 
   @override
   String get cameraStreamsPlayback => 'Wiedergabe';

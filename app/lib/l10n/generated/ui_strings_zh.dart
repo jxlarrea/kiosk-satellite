@@ -5090,7 +5090,8 @@ class UiStringsZh extends UiStrings {
   String get settingCalendarIdleCloseMinutesTitle => '闲置时关闭';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription => '在这段时间内无触摸后返回仪表盘。';
+  String get settingIdleCloseCompassDescription =>
+      '在这段时间内无触摸后返回仪表盘。在 Compass 布局中改用“返回中心”。';
 
   @override
   String get settingKioskAllowCalendarTitle => '日历';
@@ -5777,8 +5778,8 @@ class UiStringsZh extends UiStrings {
   String get settingCameraAutoDismissSecondsTitle => '摄像头画面自动关闭时间';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      '在设定时间后自动关闭已打开的摄像头画面。设为 0 时一直显示，不影响摄像头屏保。';
+  String get settingCameraAutoDismissCompassDescription =>
+      '在设定时间后关闭已打开的摄像头画面。设为 0 时一直显示。不影响摄像头屏保。在 Compass 布局中改用“返回中心”。';
 
   @override
   String get cameraStreamsPlayback => '播放';
@@ -20587,7 +20588,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingCalendarIdleCloseMinutesTitle => '闲置时关闭';
 
   @override
-  String get settingCalendarIdleCloseMinutesDescription => '在这段时间内无触摸后返回仪表盘。';
+  String get settingIdleCloseCompassDescription =>
+      '在这段时间内无触摸后返回仪表盘。在 Compass 布局中改用“返回中心”。';
 
   @override
   String get settingKioskAllowCalendarTitle => '日历';
@@ -21274,8 +21276,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingCameraAutoDismissSecondsTitle => '摄像头画面自动关闭时间';
 
   @override
-  String get settingCameraAutoDismissSecondsDescription =>
-      '在设定时间后自动关闭已打开的摄像头画面。设为 0 时一直显示，不影响摄像头屏保。';
+  String get settingCameraAutoDismissCompassDescription =>
+      '在设定时间后关闭已打开的摄像头画面。设为 0 时一直显示。不影响摄像头屏保。在 Compass 布局中改用“返回中心”。';
 
   @override
   String get cameraStreamsPlayback => '播放';

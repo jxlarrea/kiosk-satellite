@@ -123,7 +123,7 @@ Under **Settings > Media Player > Music Library**:
 | --- | --- |
 | Source | The source the library opens on. **Automatic** starts with the source of the speaker Now Playing follows, else the first one set up. Picking a source in the library changes it too. |
 | Show on Now Playing | Adds the library button next to the close button on the Now Playing view. On by default. |
-| Close when idle | Returns to the dashboard after no touch for this long. Two minutes by default. The screensaver waits while the library is open. |
+| Close when idle | Returns to the dashboard after no touch for this long. Two minutes by default. The screensaver waits while the library is open. In the [Compass](navigation.md) layout, Return to center applies instead and the screensaver starts over the library. |
 | Show in the kiosk menu | Opens [Device > User Interface > Drawer menu items](drawer-menu.md), where the Music Library entry is turned on or off. On by default. |
 
 The **User Interface** group below them sets how the library looks:

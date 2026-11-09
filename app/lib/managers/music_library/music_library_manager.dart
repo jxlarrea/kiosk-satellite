@@ -141,6 +141,11 @@ class MusicLibraryManager extends Manager {
   /// The overlay is up.
   final visible = ValueNotifier<bool>(false);
 
+  /// True while Compass shows this as the view in hand. Compass then
+  /// decides when it goes (Return to center), so its own idle close stands
+  /// down, and the screensaver starts over it as over a dashboard.
+  final compassView = ValueNotifier<bool>(false);
+
   /// The content each library page last showed, by its page key. The
   /// library screen is built fresh on every open, so without these a
   /// reopened library showed a spinner where its shelves had been until
@@ -203,12 +208,16 @@ class MusicLibraryManager extends Manager {
       ..add(
         // The library holds the screensaver, so one starting now was asked
         // for. Now Playing comes up over the library and goes back to it;
-        // anything else replaces it.
+        // anything else replaces it. A Compass view stays under the
+        // screensaver, as a dashboard does.
         bus.on<ScreensaverStateChanged>().listen((e) {
-          if (e.active && !e.nowPlaying) visible.value = false;
+          if (e.active && !e.nowPlaying && !compassView.value) {
+            visible.value = false;
+          }
         }),
       );
     visible.addListener(_onVisible);
+    compassView.addListener(_syncHold);
     PluginPlayers.published.addListener(_onPluginPlayers);
   }
 
@@ -228,6 +237,7 @@ class MusicLibraryManager extends Manager {
       await sub.cancel();
     }
     visible.removeListener(_onVisible);
+    compassView.removeListener(_syncHold);
     PluginPlayers.published.removeListener(_onPluginPlayers);
     _nowPlaying?.removeListener(_onNowPlaying);
     _startTimeout?.cancel();
@@ -241,6 +251,7 @@ class MusicLibraryManager extends Manager {
     _http.close(force: true);
     await _ha.close();
     visible.dispose();
+    compassView.dispose();
     reopened.dispose();
     source.dispose();
     pick.dispose();
@@ -251,11 +262,17 @@ class MusicLibraryManager extends Manager {
   /// is up, and the library's own idle timer closes it.
   void _onVisible() {
     if (visible.value) _pickSource();
+    _syncHold();
+  }
+
+  bool _held = false;
+
+  void _syncHold() {
+    final held = visible.value && !compassView.value;
+    if (held == _held) return;
+    _held = held;
     unawaited(
-      commands.execute('holdScreensaver', {
-        'holder': 'library',
-        'held': visible.value,
-      }),
+      commands.execute('holdScreensaver', {'holder': 'library', 'held': held}),
     );
   }
 

@@ -11,7 +11,7 @@
   "settingCalendarAllowDeleteTitle": "允许删除日程",
   "settingCalendarAllowDeleteDescription": "在每个日程中添加“删除”按钮。",
   "settingCalendarIdleCloseMinutesTitle": "闲置时关闭",
-  "settingCalendarIdleCloseMinutesDescription": "在这段时间内无触摸后返回仪表盘。",
+  "settingIdleCloseCompassDescription": "在这段时间内无触摸后返回仪表盘。在 Compass 布局中改用“返回中心”。",
   "settingKioskAllowCalendarTitle": "日历",
   "settingKioskAllowCalendarDescription": "从 Kiosk 菜单打开家庭日历。",
   "calendarWeekStartLocale": "跟随语言",

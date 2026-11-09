@@ -143,8 +143,8 @@
       ]
     }
   },
-  "settingCalendarIdleCloseMinutesDescription": "Returns to the dashboard after no touch for this long.",
-  "@settingCalendarIdleCloseMinutesDescription": {
+  "settingIdleCloseCompassDescription": "Returns to the dashboard after no touch for this long. In the Compass layout, Return to center applies instead.",
+  "@settingIdleCloseCompassDescription": {
     "context": "Settings > Calendar > Kiosk",
     "description": "Setting description.",
     "x-locations": {

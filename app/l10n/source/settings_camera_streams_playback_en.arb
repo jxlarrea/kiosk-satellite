@@ -143,8 +143,8 @@
       ]
     }
   },
-  "settingCameraAutoDismissSecondsDescription": "Close an opened camera view on its own; 0 keeps it up. The camera screensaver is unaffected.",
-  "@settingCameraAutoDismissSecondsDescription": {
+  "settingCameraAutoDismissCompassDescription": "Closes an opened camera view after this long. 0 keeps it open. The camera screensaver is unaffected. In the Compass layout, Return to center applies instead.",
+  "@settingCameraAutoDismissCompassDescription": {
     "context": "Settings > Camera Streams > Playback",
     "description": "Help below this setting.",
     "x-locations": {

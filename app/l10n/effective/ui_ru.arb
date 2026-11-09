@@ -19813,8 +19813,8 @@
       ]
     }
   },
-  "settingCalendarIdleCloseMinutesDescription": "Возвращаться к панели после этого времени без касаний.",
-  "@settingCalendarIdleCloseMinutesDescription": {
+  "settingIdleCloseCompassDescription": "Возвращаться к панели после этого времени без касаний. В раскладке Compass вместо этого действует «Возвращаться в центр».",
+  "@settingIdleCloseCompassDescription": {
     "context": "Settings > Calendar > Kiosk",
     "description": "Setting description.",
     "x-locations": {
@@ -22604,8 +22604,8 @@
       ]
     }
   },
-  "settingCameraAutoDismissSecondsDescription": "Автоматически закрывать открытый вид камер; 0 оставляет его открытым. Заставка с камерами не затрагивается.",
-  "@settingCameraAutoDismissSecondsDescription": {
+  "settingCameraAutoDismissCompassDescription": "Закрывает открытый вид камер через это время. 0 оставляет его открытым. Заставка с камерами не затрагивается. В раскладке Compass вместо этого действует «Возвращаться в центр».",
+  "@settingCameraAutoDismissCompassDescription": {
     "context": "Settings > Camera Streams > Playback",
     "description": "Help below this setting.",
     "x-locations": {

@@ -11,7 +11,7 @@
   "settingCalendarAllowDeleteTitle": "Autoriser la suppression d’événements",
   "settingCalendarAllowDeleteDescription": "Ajoute Supprimer à chaque événement.",
   "settingCalendarIdleCloseMinutesTitle": "Fermer en cas d'inactivité",
-  "settingCalendarIdleCloseMinutesDescription": "Revient au tableau de bord après ce délai sans contact.",
+  "settingIdleCloseCompassDescription": "Revient au tableau de bord après ce délai sans contact. Dans la disposition de Compass, Revenir au centre s'applique à la place.",
   "settingKioskAllowCalendarTitle": "Calendrier",
   "settingKioskAllowCalendarDescription": "Ouvrir le calendrier familial depuis le menu du kiosque.",
   "calendarWeekStartLocale": "Selon la langue",

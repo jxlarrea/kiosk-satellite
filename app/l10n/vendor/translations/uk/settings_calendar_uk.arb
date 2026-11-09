@@ -11,7 +11,7 @@
   "settingCalendarAllowDeleteTitle": "Дозволити видаляти події",
   "settingCalendarAllowDeleteDescription": "Додає до кожної події кнопку Видалити.",
   "settingCalendarIdleCloseMinutesTitle": "Закривати під час бездіяльності",
-  "settingCalendarIdleCloseMinutesDescription": "Повертатися до панелі керування після такого часу без дотиків.",
+  "settingIdleCloseCompassDescription": "Повертатися до панелі керування після такого часу без дотиків. У розкладці Compass натомість діє «Повертатися до центру».",
   "settingKioskAllowCalendarTitle": "Календар",
   "settingKioskAllowCalendarDescription": "Відкривати сімейний календар з меню кіоска.",
   "calendarWeekStartLocale": "Як у мові",

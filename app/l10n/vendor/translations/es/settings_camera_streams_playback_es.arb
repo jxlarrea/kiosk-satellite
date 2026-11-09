@@ -11,7 +11,7 @@
   "settingCameraPinchZoomTitle": "Pellizcar para ampliar una sola cámara",
   "settingCameraPinchZoomDescription": "Amplía la imagen con dos dedos cuando solo hay una cámara en pantalla. Arrastra para desplazarte y toca dos veces para restablecer la imagen.",
   "settingCameraAutoDismissSecondsTitle": "Cerrar automáticamente después de",
-  "settingCameraAutoDismissSecondsDescription": "Cierra automáticamente una vista de cámaras abierta. Con 0 permanece abierta. No afecta al protector de pantalla de cámaras.",
+  "settingCameraAutoDismissCompassDescription": "Cierra una vista de cámaras abierta tras este tiempo. Con 0 permanece abierta. No afecta al protector de pantalla de cámaras. En el diseño de Compass se aplica Volver al centro.",
   "cameraStreamsPlayback": "Reproducción",
   "cameraStreamsOff": "Desactivado",
   "cameraStreamsSeconds": "{seconds} s",

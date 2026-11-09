@@ -73,7 +73,7 @@ Pick a weather entity under **Weather** to add the daily forecast to each day in
 | Weather | None | The weather entity for the daily forecast. |
 | Allow adding and editing events | Off | Adds **New event** and **Edit**. See [Adding and changing events](#adding-and-changing-events). |
 | Allow deleting events | Off | Adds **Delete** to each event. |
-| Close when idle | 2 minutes | Returns to the dashboard after no touch for this long. Never keeps it open. The screensaver also closes it when it starts. It does not apply to the Calendar screensaver. |
+| Close when idle | 2 minutes | Returns to the dashboard after no touch for this long. Never keeps it open. The screensaver also closes it when it starts. It does not apply to the Calendar screensaver. In the [Compass](navigation.md) layout, Return to center applies instead and the calendar stays open under the screensaver. |
 | Show in the kiosk menu | On | Opens [Device > User Interface > Drawer menu items](drawer-menu.md), where the Calendar entry is turned on or off. The restricted menu also needs **Calendar** under **Kiosk Mode, Allowed Actions**. |
 
 ## How it reads Home Assistant
