@@ -142,6 +142,7 @@ class DeviceDetails(
     private val channel = MethodChannel(messenger, "kiosk_satellite/device_details")
     private val cpuWorker = MethodWorker("ks-cpu")
     private val linkWorker = MethodWorker("ks-link")
+    private val interfaceWorker = MethodWorker("ks-interfaces")
     private val bluetoothWorker = MethodWorker("ks-bluetooth")
 
     /**
@@ -305,6 +306,9 @@ class DeviceDetails(
                 // Binder calls into system_server, so off the main thread:
                 // a stalled system server must not cost the UI a frame.
                 "link" -> linkWorker.read(result) { link() }
+                // Which interfaces carry the device's address and which never
+                // should (issue #1371). Binder calls, so off the main thread.
+                "interfaceOrder" -> interfaceWorker.read(result) { interfaceOrder() }
                 else -> result.notImplemented()
             }
         }
@@ -313,6 +317,7 @@ class DeviceDetails(
     fun dispose() {
         cpuWorker.shutdown()
         linkWorker.shutdown()
+        interfaceWorker.shutdown()
         bluetoothWorker.shutdown()
         channel.setMethodCallHandler(null)
         try {
@@ -810,6 +815,60 @@ class DeviceDetails(
             "rssi" to info?.rssi?.takeIf { it in -126..-1 },
             "speedMbps" to info?.linkSpeed?.takeIf { it > 0 },
             "frequencyMhz" to info?.frequency?.takeIf { it > 0 },
+        )
+    }
+
+    /**
+     * The interface order the device's address is picked by (issue #1371).
+     *
+     * `preferred` lists the interfaces of the networks Android has, the
+     * default network first and then Ethernet, Wi-Fi and the rest. A VPN is
+     * never preferred, even as the default network: the admin URL has to
+     * open from the LAN, not through the tunnel. `last` lists the interfaces
+     * that should lose to any other: VPNs and point-to-point links. A OnePlus
+     * on OxygenOS runs a `vgate0` with a 172.30 address that comes before
+     * `wlan0` in interface order and routes nowhere.
+     */
+    private fun interfaceOrder(): Map<String, List<String>> {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val active = cm.activeNetwork
+        val physical = mutableListOf<Triple<Boolean, Int, String>>()
+        val vpn = mutableListOf<String>()
+        // Deprecated at API 31 in favor of callbacks, but still answered, and
+        // a one-shot read needs no registration to tear down.
+        @Suppress("DEPRECATION")
+        for (network in cm.allNetworks) {
+            val name = cm.getLinkProperties(network)?.interfaceName ?: continue
+            val caps = cm.getNetworkCapabilities(network) ?: continue
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+                vpn += name
+                continue
+            }
+            val rank = when {
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> 0
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> 1
+                else -> 2
+            }
+            physical += Triple(network == active, rank, name)
+        }
+        val preferred = physical
+            .sortedWith(compareBy({ !it.first }, { it.second }))
+            .map { it.third }
+            .distinct()
+        val pointToPoint = try {
+            NetworkInterface.getNetworkInterfaces()?.toList().orEmpty().filter {
+                try {
+                    it.isPointToPoint
+                } catch (e: Exception) {
+                    false
+                }
+            }.map { it.name }
+        } catch (e: Exception) {
+            emptyList()
+        }
+        return mapOf(
+            "preferred" to preferred,
+            "last" to (vpn + pointToPoint).distinct().filter { it !in preferred },
         )
     }
 

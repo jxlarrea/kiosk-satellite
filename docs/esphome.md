@@ -145,7 +145,7 @@ Every item in this list corresponds directly to a kiosk setting. They are fully 
 | **Panel brightness** | sensor | Reports the actual brightness level as read directly from the panel, in percentage. |
 | **Android version**, **Android build** | text sensor | System software identifiers. |
 | **App version** | text sensor | Reports the specific release of Kiosk Satellite running on the device. This is excellent for sorting a fleet of kiosks by version. |
-| **IPv4 address**, **IPv6 address** | text sensor | Displays the primary network address. For IPv6, it prioritizes a routable address over a link local `fe80::` address. |
+| **IPv4 address**, **IPv6 address** | text sensor | Displays the address of the Wi-Fi or Ethernet network the device uses, even while a VPN is on. For IPv6, it prioritizes a routable address over a link local `fe80::` address. |
 | **IPv4 addresses by interface**, **IPv6 addresses by interface** | text sensor | Displays addresses broken down by interface (e.g., `wlan0: 192.168.1.5; eth0: 10.0.3.2`), allowing automations to easily distinguish wired from wireless connections. Re checks moments after any network change. |
 | **App uptime**, **Network uptime** | timestamp | Records exactly when the app launched and when the network connection was established. |
 | **Last seen** | timestamp | Updates on every completed poll. |

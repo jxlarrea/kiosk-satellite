@@ -53,4 +53,67 @@ void main() {
       expect(family.oneLine, startsWith('interface0: 2001:db8:0::dead'));
     },
   );
+
+  group('interface order (issue #1371)', () {
+    test('the default network leads a point-to-point link listed first', () {
+      final ordered = orderInterfaces(
+        const {
+          'vgate0': ['172.30.254.128'],
+          'wlan0': ['192.168.1.50'],
+        },
+        preferred: const ['wlan0'],
+        last: const ['vgate0'],
+      );
+      expect(ordered.keys, ['wlan0', 'vgate0']);
+      expect(
+        summarizeIpFamily(ordered, preferGlobal: false).primary,
+        '192.168.1.50',
+      );
+    });
+
+    test('a VPN trails the LAN even when it comes first', () {
+      final ordered = orderInterfaces(
+        const {
+          'tun0': ['10.8.0.2'],
+          'eth0': ['192.168.1.60'],
+          'wlan0': ['192.168.1.50'],
+        },
+        preferred: const ['eth0', 'wlan0'],
+        last: const ['tun0'],
+      );
+      expect(ordered.keys, ['eth0', 'wlan0', 'tun0']);
+    });
+
+    test('interfaces Android does not name keep their place in between', () {
+      final ordered = orderInterfaces(
+        const {
+          'p2p0': ['10.0.0.1'],
+          'rndis0': ['192.168.42.129'],
+          'vgate0': ['172.30.254.128'],
+          'wlan0': ['192.168.1.50'],
+        },
+        preferred: const ['wlan0'],
+        last: const ['vgate0'],
+      );
+      expect(ordered.keys, ['wlan0', 'p2p0', 'rndis0', 'vgate0']);
+    });
+
+    test('a preferred interface with no address is skipped', () {
+      final ordered = orderInterfaces(
+        const {
+          'wlan0': ['192.168.1.50'],
+        },
+        preferred: const ['eth0', 'wlan0'],
+      );
+      expect(ordered.keys, ['wlan0']);
+    });
+
+    test('no order from Android leaves interface order alone', () {
+      final ordered = orderInterfaces(const {
+        'vgate0': ['172.30.254.128'],
+        'wlan0': ['192.168.1.50'],
+      });
+      expect(ordered.keys, ['vgate0', 'wlan0']);
+    });
+  });
 }

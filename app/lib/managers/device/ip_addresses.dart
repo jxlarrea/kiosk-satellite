@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'device_details.dart';
+
 /// One address family as the entities report it (issue #213).
 ///
 /// The raw reading is a map of interface name to the addresses on it. The
@@ -38,6 +42,76 @@ class IpFamily {
     }
     return line.length > 255 ? '${line.substring(0, 252)}...' : line;
   }
+}
+
+/// Every non-loopback address of [type], keyed by interface name, with the
+/// default network's interface first and VPNs and point-to-point links last
+/// (see [orderInterfaces]). Link-local addresses are included. Throws when
+/// the platform cannot list interfaces.
+Future<Map<String, List<String>>> listAddresses(
+  InternetAddressType type,
+) async {
+  final interfaces = await NetworkInterface.list(
+    type: type,
+    includeLoopback: false,
+    includeLinkLocal: true,
+  );
+  final byInterface = {
+    for (final interface in interfaces)
+      if (interface.addresses.isNotEmpty)
+        interface.name: [
+          for (final address in interface.addresses) address.address,
+        ],
+  };
+  final order = await DeviceDetails.interfaceOrder();
+  if (order == null) return byInterface;
+  return orderInterfaces(
+    byInterface,
+    preferred: order.preferred,
+    last: order.last,
+  );
+}
+
+/// The IPv4 address the LAN reaches the device on, or null when there is
+/// none. A 169.254 address is skipped: it means DHCP failed and routes
+/// nowhere. Throws when the platform cannot list interfaces.
+Future<String?> lanIpv4() async {
+  for (final addresses in (await listAddresses(
+    InternetAddressType.IPv4,
+  )).values) {
+    for (final address in addresses) {
+      if (!address.startsWith('169.254.')) return address;
+    }
+  }
+  return null;
+}
+
+/// [byInterface] reordered so the interface that carries the device's
+/// address comes first (issue #1371). The [preferred] interfaces lead in the
+/// order given, the ones in [last] trail and every other keeps its place in
+/// between. Interface order alone put a OnePlus's `vgate0`, a point-to-point
+/// link with a 172.30 address, ahead of `wlan0`.
+Map<String, List<String>> orderInterfaces(
+  Map<String, List<String>> byInterface, {
+  List<String> preferred = const [],
+  List<String> last = const [],
+}) {
+  int group(String name) => preferred.contains(name)
+      ? 0
+      : last.contains(name)
+      ? 2
+      : 1;
+  final names = byInterface.keys.toList();
+  final position = {for (var i = 0; i < names.length; i++) names[i]: i};
+  names.sort((a, b) {
+    final byGroup = group(a).compareTo(group(b));
+    if (byGroup != 0) return byGroup;
+    if (group(a) == 0) {
+      return preferred.indexOf(a).compareTo(preferred.indexOf(b));
+    }
+    return position[a]!.compareTo(position[b]!);
+  });
+  return {for (final name in names) name: byInterface[name]!};
 }
 
 /// Summarizes one family of the `getIpAddresses` reading.

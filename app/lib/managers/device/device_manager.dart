@@ -19,6 +19,7 @@ import '../settings/settings_manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../wake_word/background_listening.dart';
 import 'device_details.dart';
+import 'ip_addresses.dart';
 import 'stats_history.dart';
 import 'logcat.dart';
 
@@ -708,8 +709,10 @@ class DeviceManager extends Manager {
     }
   }
 
-  /// Every non-loopback address of [type], keyed by interface name in
-  /// interface order. Link-local IPv6 included: Dart drops every fe80::
+  /// Every non-loopback address of [type], keyed by interface name. The
+  /// default network's interface leads and VPNs and point-to-point links
+  /// trail, so the first address is the one the LAN reaches the device on
+  /// (issue #1371). Link-local IPv6 included: Dart drops every fe80::
   /// address by default — the device reports them, we just would not have.
   /// They are worth listing: a device with a global address and a stale
   /// link-local one that no longer routes looks identical from here unless
@@ -718,25 +721,14 @@ class DeviceManager extends Manager {
     InternetAddressType type,
   ) async {
     try {
-      final interfaces = await NetworkInterface.list(
-        type: type,
-        includeLoopback: false,
-        includeLinkLocal: true,
-      );
-      return {
-        for (final interface in interfaces)
-          if (interface.addresses.isNotEmpty)
-            interface.name: [
-              for (final address in interface.addresses) address.address,
-            ],
-      };
+      return await listAddresses(type);
     } catch (e) {
       log.warn(name, 'addressesByInterface failed: $e');
       return const {};
     }
   }
 
-  /// Every non-loopback IPv6 address, in interface order. See
+  /// Every non-loopback IPv6 address, default network first. See
   /// [addressesByInterface] for why link-local addresses are included.
   Future<List<String>> ipv6Addresses() async => [
     for (final addresses in (await addressesByInterface(
@@ -745,20 +737,15 @@ class DeviceManager extends Manager {
       ...addresses,
   ];
 
-  /// First non-loopback IPv4 address, or null (e.g. no network). Link-local
-  /// 169.254 addresses are skipped: this is the address the admin URL and
-  /// the setup screen print for people to visit, and a DHCP-failure address
-  /// routes nowhere.
+  /// The IPv4 address the admin URL and the setup screen print for people
+  /// to visit, or null (e.g. no network). See [lanIpv4].
   Future<String?> ipAddress() async {
-    for (final addresses in (await addressesByInterface(
-      InternetAddressType.IPv4,
-    )).values) {
-      for (final address in addresses) {
-        if (address.startsWith('169.254.')) continue;
-        return address;
-      }
+    try {
+      return await lanIpv4();
+    } catch (e) {
+      log.warn(name, 'ipAddress failed: $e');
+      return null;
     }
-    return null;
   }
 
   /// Hook up the ambient light stream when the hardware exists. The native

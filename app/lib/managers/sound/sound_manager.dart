@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../device/ip_addresses.dart';
 import '../notifications/notification_sounds.dart';
 import '../settings/settings_manager.dart';
 import 'sound_capture.dart';
@@ -786,18 +787,8 @@ class SoundManager extends Manager {
   }
 
   /// The kiosk's address on the local network, for speakers to reach it.
-  Future<String> _lanAddress() async {
-    final interfaces = await NetworkInterface.list(
-      type: InternetAddressType.IPv4,
-      includeLinkLocal: false,
-    );
-    for (final i in interfaces) {
-      for (final a in i.addresses) {
-        if (!a.isLoopback) return a.address;
-      }
-    }
-    throw StateError('no network address');
-  }
+  Future<String> _lanAddress() async =>
+      await lanIpv4() ?? (throw StateError('no network address'));
 
   /// Register [url] under a one-shot token and return the loopback address
   /// the native player streams it from.

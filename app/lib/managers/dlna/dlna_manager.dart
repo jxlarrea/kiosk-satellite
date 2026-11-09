@@ -11,6 +11,7 @@ import '../../core/headless.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../device/ip_addresses.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'upnp_xml.dart';
@@ -386,18 +387,8 @@ class DlnaManager extends Manager {
         '${(8 + r.nextInt(4)).toRadixString(16)}${hex(3)}-${hex(12)}';
   }
 
-  Future<String> _localIp() async {
-    final interfaces = await NetworkInterface.list(
-      type: InternetAddressType.IPv4,
-      includeLinkLocal: false,
-    );
-    for (final i in interfaces) {
-      for (final a in i.addresses) {
-        if (!a.isLoopback) return a.address;
-      }
-    }
-    throw StateError('no network address');
-  }
+  Future<String> _localIp() async =>
+      await lanIpv4() ?? (throw StateError('no network address'));
 
   // ── SSDP ────────────────────────────────────────────────────────────
 

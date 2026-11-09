@@ -221,6 +221,25 @@ class DeviceDetails {
     }
   }
 
+  /// The interface order the device's address is picked by (issue #1371):
+  /// `preferred` names the interfaces of the networks Android has, the
+  /// default network first, and `last` names VPNs and point-to-point links.
+  /// Null off Android or when the platform declines.
+  static Future<({List<String> preferred, List<String> last})?>
+  interfaceOrder() async {
+    try {
+      final raw = await _channel.invokeMapMethod<String, Object?>(
+        'interfaceOrder',
+      );
+      if (raw == null) return null;
+      List<String> names(Object? v) =>
+          v is List ? [for (final n in v) '$n'] : const [];
+      return (preferred: names(raw['preferred']), last: names(raw['last']));
+    } catch (_) {
+      return null;
+    }
+  }
+
   Map<String, Object?>? _map(String key) {
     final v = _raw[key];
     return v is Map ? v.cast<String, Object?>() : null;
