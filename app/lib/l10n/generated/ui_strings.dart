@@ -27179,12 +27179,6 @@ abstract class UiStrings {
   /// **'The language of Amazon\'s wake word models. The wake word selects offer the wake words it has.'**
   String get settingVoiceAmazonLocaleDescription;
 
-  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Kiosk Satellite\'s language'**
-  String get voiceOptionAppLanguage;
-
   /// Setting label.
   ///
   /// In en, this message translates to:

@@ -14765,9 +14765,6 @@ class UiStringsZh extends UiStrings {
       'Amazon 唤醒词模型的语言。唤醒词选择框会提供该语言的唤醒词。';
 
   @override
-  String get voiceOptionAppLanguage => 'Kiosk Satellite 的语言';
-
-  @override
   String get settingDisableCacheTitle => '禁用缓存';
 
   @override
@@ -30268,9 +30265,6 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingVoiceAmazonLocaleDescription =>
       'Amazon 唤醒词模型的语言。唤醒词选择框会提供该语言的唤醒词。';
-
-  @override
-  String get voiceOptionAppLanguage => 'Kiosk Satellite 的语言';
 
   @override
   String get settingDisableCacheTitle => '禁用缓存';

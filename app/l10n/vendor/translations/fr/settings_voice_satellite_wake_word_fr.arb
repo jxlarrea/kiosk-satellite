@@ -97,6 +97,5 @@
   "voiceModelOwwWindow": "Ce n'est pas un modèle openWakeWord : il n'accepte pas la fenêtre d'embeddings de 16 x 96.",
   "voiceModelNoLoad": "Le modèle ne se charge pas : {error}",
   "settingVoiceAmazonLocaleTitle": "Langue du mot de réveil",
-  "settingVoiceAmazonLocaleDescription": "La langue des modèles de mots de réveil d'Amazon. Les sélecteurs de mot de réveil proposent les mots de réveil de cette langue.",
-  "voiceOptionAppLanguage": "Langue de Kiosk Satellite"
+  "settingVoiceAmazonLocaleDescription": "La langue des modèles de mots de réveil d'Amazon. Les sélecteurs de mot de réveil proposent les mots de réveil de cette langue."
 }

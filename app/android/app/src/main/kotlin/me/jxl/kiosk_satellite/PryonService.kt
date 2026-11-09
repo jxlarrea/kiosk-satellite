@@ -1,18 +1,18 @@
 package me.jxl.kiosk_satellite
 
 /**
- * Whether the ROM runs Amazon's wake word engine as a service, on the
- * biscuit-pryon socket (PryonCatalog).
+ * Whether the ROM runs pryond, the service for Amazon's wake word engine on
+ * the pryond socket (PryonCatalog).
  *
- * The Echo Dot image says so with `ro.biscuit.pryon`, the Echo Show images
- * with `ro.echo.pryon`. Both run the same service, so the engine is offered
- * with a screen and without one.
+ * The Echo Dot and Echo Show images say so with `ro.kiosk_satellite.pryon`.
+ * The service is the same with a screen and without one. Whether it has
+ * anything to listen with is up to the files installed on the device, which
+ * the service reports in its hello.
  */
 object PryonService {
-    val properties = listOf("ro.biscuit.pryon", "ro.echo.pryon")
+    const val PROPERTY = "ro.kiosk_satellite.pryon"
 
-    fun detect(property: (String) -> String): Boolean =
-        properties.any { property(it) == "1" }
+    fun detect(property: (String) -> String): Boolean = property(PROPERTY) == "1"
 
     val available: Boolean by lazy { detect(Headless::property) }
 }

@@ -15571,9 +15571,6 @@ class UiStringsEn extends UiStrings {
       'The language of Amazon\'s wake word models. The wake word selects offer the wake words it has.';
 
   @override
-  String get voiceOptionAppLanguage => 'Kiosk Satellite\'s language';
-
-  @override
   String get settingDisableCacheTitle => 'Disable cache';
 
   @override

@@ -14,10 +14,12 @@ import 'package:kiosk_satellite/managers/wake_word/engine.dart';
 import 'package:kiosk_satellite/managers/wake_word/pryon/pryon_catalog.dart';
 import 'package:kiosk_satellite/managers/wake_word/pryon/pryon_engine.dart';
 
-/// What biscuit-pryond says first on the Echo images, shortened to three
-/// of its models: en-US first, as the service orders them.
+/// What pryond says first on the Echo images with Pryon's files installed,
+/// shortened to three of its models: en-US first, as the service orders
+/// them.
 const _hello =
-    '{"event":"hello","version":1,"models":['
+    '{"event":"hello","version":2,"available":true,"missing":[],'
+    '"locales":["en-US","en-CA","de-DE"],"models":['
     '{"model":"alexa-en-US","locales":["en-US"],'
     '"wake_words":["ALEXA"],"stop_words":["STOP"],'
     '"accept_thresholds":{"ALEXA":0.923,"STOP":0.18}},'
@@ -26,7 +28,28 @@ const _hello =
     '"accept_thresholds":{"ECHO":0.769,"HEY_DISNEY":0.25,"STOP":0.18}},'
     '{"model":"echo-de-DE","locales":["de-DE"],'
     '"wake_words":["ECHO"],"stop_words":["STOP"],'
-    '"accept_thresholds":{"ECHO":0.751,"STOP":0.18}}]}';
+    '"accept_thresholds":{"ECHO":0.751,"STOP":0.18}}],"skipped":[]}';
+
+/// pryond on an image without Pryon's files.
+const _helloWithoutFiles =
+    '{"event":"hello","version":2,"available":false,'
+    '"missing":["libpryon_lite.so","libpryon_lite-PRL1000.so"],'
+    '"locales":[],"models":[],"skipped":[]}';
+
+/// A model that lists its words while the service says it cannot listen.
+const _helloUnavailableWithModels =
+    '{"event":"hello","version":2,"available":false,"missing":[],'
+    '"locales":["en-US"],"models":['
+    '{"model":"alexa-en-US","locales":["en-US"],'
+    '"wake_words":["ALEXA"],"stop_words":["STOP"]}],'
+    '"skipped":[{"model":"echo-nl-NL",'
+    '"reason":"cannot read /system/lib/libtvm_modelops_ww_v5_cnet.so"}]}';
+
+/// The hello of the old images, from before pryond.
+const _helloVersion1 =
+    '{"event":"hello","version":1,"models":['
+    '{"model":"alexa-en-US","locales":["en-US"],'
+    '"wake_words":["ALEXA"],"stop_words":["STOP"]}]}';
 
 /// Amazon's wake word engine on the Echo images: the catalog the
 /// service's hello fills, the config the settings resolve to, and the engine
@@ -36,104 +59,116 @@ void main() {
 
   group('PryonCatalog', () {
     test("reads every model's words, thresholds and locales", () {
-      final words = PryonCatalog.parseHello(_hello);
-      expect(words.first, const PryonWord(
-        id: 'alexa',
-        model: 'alexa-en-US',
-        keyword: 'ALEXA',
-        acceptThreshold: 0.923,
-        locales: ['en-US'],
-      ));
+      final words = PryonCatalog.parseHello(_hello).words;
+      expect(
+        words.first,
+        const PryonWord(
+          id: 'alexa',
+          model: 'alexa-en-US',
+          keyword: 'ALEXA',
+          acceptThreshold: 0.923,
+          locales: ['en-US'],
+        ),
+      );
       expect(words.first.url, 'pryon:alexa-en-US/ALEXA');
-      expect([for (final w in words) w.url], [
-        'pryon:alexa-en-US/ALEXA',
-        'pryon:alexa-en-US/STOP',
-        'pryon:echo-en-US/ECHO',
-        'pryon:echo-en-US/HEY_DISNEY',
-        'pryon:echo-en-US/STOP',
-        'pryon:echo-de-DE/ECHO',
-        'pryon:echo-de-DE/STOP',
-      ]);
+      expect(
+        [for (final w in words) w.url],
+        [
+          'pryon:alexa-en-US/ALEXA',
+          'pryon:alexa-en-US/STOP',
+          'pryon:echo-en-US/ECHO',
+          'pryon:echo-en-US/HEY_DISNEY',
+          'pryon:echo-en-US/STOP',
+          'pryon:echo-de-DE/ECHO',
+          'pryon:echo-de-DE/STOP',
+        ],
+      );
     });
 
     test('lists the locales in the service order', () {
-      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello);
+      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello).words;
       expect(PryonCatalog.locales, ['en-US', 'en-CA', 'de-DE']);
       expect(PryonCatalog.localeLabel('de-DE'), 'Deutsch (Deutschland)');
       expect(PryonCatalog.localeLabel('xx-YY'), 'xx-YY');
     });
 
     test("offers each locale its own models' wake words", () {
-      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello);
-      expect([for (final w in PryonCatalog.wakeWordsFor('en-US')) w.url], [
-        'pryon:alexa-en-US/ALEXA',
-        'pryon:echo-en-US/ECHO',
-        'pryon:echo-en-US/HEY_DISNEY',
-      ]);
-      expect([for (final w in PryonCatalog.wakeWordsFor('de-DE')) w.url], [
-        'pryon:echo-de-DE/ECHO',
-      ]);
-      expect(PryonCatalog.stopWordFor('echo-de-DE')?.url, 'pryon:echo-de-DE/STOP');
-    });
-
-    test("follows the setting, else the app's language", () {
-      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello);
-      expect(PryonCatalog.resolveLocale('en-CA', 'de'), 'en-CA');
-      expect(PryonCatalog.resolveLocale('', 'de'), 'de-DE');
-      expect(PryonCatalog.resolveLocale('', 'en'), 'en-US');
-      // A language the service has no model for, or a locale it lost.
-      expect(PryonCatalog.resolveLocale('', 'ru'), 'en-US');
-      expect(PryonCatalog.resolveLocale('fr-FR', 'zh-CN'), 'en-US');
-    });
-
-    // The Echo Dot image says so with ro.biscuit.pryon, the Echo Show images
-    // with ro.echo.pryon (PryonService.kt), and the Shows have a screen.
-    for (final headless in [false, true]) {
-      test(
-        'offers the engine where the image runs the service, '
-        '${headless ? 'without' : 'with'} a screen',
-        () async {
-          final messenger = TestWidgetsFlutterBinding.ensureInitialized()
-              .defaultBinaryMessenger;
-          const channel = MethodChannel('kiosk_satellite/background');
-          messenger.setMockMethodCallHandler(
-            channel,
-            (call) async => call.method == 'pryon' ? true : null,
-          );
-          final dir = await Directory.systemTemp.createTemp('pryon');
-          PryonCatalog.socketPath = '${dir.path}/sock';
-          final service = await _FakeService.start(PryonCatalog.socketPath);
-          Headless.debugActive = headless;
-          PryonCatalog.enabled = true;
-          addTearDown(() async {
-            messenger.setMockMethodCallHandler(channel, null);
-            Headless.debugActive = false;
-            PryonCatalog.enabled = false;
-            PryonCatalog.socketPath = '/dev/socket/biscuit-pryon';
-            await service.close();
-            await dir.delete(recursive: true);
-            defs.deviceHiddenOptions.remove(defs.voiceWakeWordEngine.key);
-            defs.deviceHiddenKeys.remove(defs.voiceAmazonLocale.key);
-          });
-
-          await PryonCatalog.init(Logger());
-          expect(PryonCatalog.available, isTrue);
-          expect(PryonCatalog.locales, ['en-US', 'en-CA', 'de-DE']);
-          expect(
-            defs.deviceHiddenOptions[defs.voiceWakeWordEngine.key],
-            isNull,
-          );
-          expect(
-            defs.deviceHiddenKeys,
-            isNot(contains(defs.voiceAmazonLocale.key)),
-          );
-        },
+      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello).words;
+      expect(
+        [for (final w in PryonCatalog.wakeWordsFor('en-US')) w.url],
+        [
+          'pryon:alexa-en-US/ALEXA',
+          'pryon:echo-en-US/ECHO',
+          'pryon:echo-en-US/HEY_DISNEY',
+        ],
       );
+      expect(
+        [for (final w in PryonCatalog.wakeWordsFor('de-DE')) w.url],
+        ['pryon:echo-de-DE/ECHO'],
+      );
+      expect(
+        PryonCatalog.stopWordFor('echo-de-DE')?.url,
+        'pryon:echo-de-DE/STOP',
+      );
+    });
+
+    test('follows the setting, else the first locale', () {
+      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello).words;
+      expect(PryonCatalog.resolveLocale('en-CA'), 'en-CA');
+      expect(PryonCatalog.resolveLocale('de-DE'), 'de-DE');
+      expect(PryonCatalog.resolveLocale(''), 'en-US');
+      // A locale whose files were removed.
+      expect(PryonCatalog.resolveLocale('fr-FR'), 'en-US');
+      // Without English the first is another language.
+      PryonCatalog.debugWords = [
+        for (final w in PryonCatalog.parseHello(_hello).words)
+          if (w.model == 'echo-de-DE') w,
+      ];
+      expect(PryonCatalog.resolveLocale(''), 'de-DE');
+      PryonCatalog.debugWords = const [];
+      expect(PryonCatalog.resolveLocale('en-US'), '');
+    });
+
+    // The Echo Dot and Echo Show images say so with ro.kiosk_satellite.pryon
+    // (PryonService.kt), and the Shows have a screen.
+    for (final headless in [false, true]) {
+      test('offers the engine where the image runs the service, '
+          '${headless ? 'without' : 'with'} a screen', () async {
+        final messenger = TestWidgetsFlutterBinding.ensureInitialized()
+            .defaultBinaryMessenger;
+        const channel = MethodChannel('kiosk_satellite/background');
+        messenger.setMockMethodCallHandler(
+          channel,
+          (call) async => call.method == 'pryon' ? true : null,
+        );
+        final dir = await Directory.systemTemp.createTemp('pryon');
+        PryonCatalog.socketPath = '${dir.path}/sock';
+        final service = await _FakeService.start(PryonCatalog.socketPath);
+        Headless.debugActive = headless;
+        addTearDown(() async {
+          messenger.setMockMethodCallHandler(channel, null);
+          Headless.debugActive = false;
+          PryonCatalog.socketPath = '/dev/socket/pryond';
+          await service.close();
+          await dir.delete(recursive: true);
+          defs.deviceHiddenOptions.remove(defs.voiceWakeWordEngine.key);
+          defs.deviceHiddenKeys.remove(defs.voiceAmazonLocale.key);
+        });
+
+        await PryonCatalog.init(Logger());
+        expect(PryonCatalog.available, isTrue);
+        expect(PryonCatalog.locales, ['en-US', 'en-CA', 'de-DE']);
+        expect(defs.deviceHiddenOptions[defs.voiceWakeWordEngine.key], isNull);
+        expect(
+          defs.deviceHiddenKeys,
+          isNot(contains(defs.voiceAmazonLocale.key)),
+        );
+      });
     }
 
     test('hides the engine on the image while it is off', () async {
-      final messenger = TestWidgetsFlutterBinding.ensureInitialized()
-          .defaultBinaryMessenger;
+      final messenger =
+          TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger;
       const channel = MethodChannel('kiosk_satellite/background');
       final asked = <String>[];
       messenger.setMockMethodCallHandler(channel, (call) async {
@@ -143,16 +178,17 @@ void main() {
       final dir = await Directory.systemTemp.createTemp('pryon');
       PryonCatalog.socketPath = '${dir.path}/sock';
       final service = await _FakeService.start(PryonCatalog.socketPath);
+      PryonCatalog.enabled = false;
       addTearDown(() async {
         messenger.setMockMethodCallHandler(channel, null);
-        PryonCatalog.socketPath = '/dev/socket/biscuit-pryon';
+        PryonCatalog.enabled = true;
+        PryonCatalog.socketPath = '/dev/socket/pryond';
         await service.close();
         await dir.delete(recursive: true);
         defs.deviceHiddenOptions.remove(defs.voiceWakeWordEngine.key);
         defs.deviceHiddenKeys.remove(defs.voiceAmazonLocale.key);
       });
 
-      expect(PryonCatalog.enabled, isFalse);
       await PryonCatalog.init(Logger());
       expect(asked, isEmpty);
       expect(PryonCatalog.available, isFalse);
@@ -160,9 +196,99 @@ void main() {
       expect(defs.deviceHiddenKeys, contains(defs.voiceAmazonLocale.key));
     });
 
+    for (final (name, hello) in [
+      ('without the files', _helloWithoutFiles),
+      ('while the service says it cannot listen', _helloUnavailableWithModels),
+      ('with a hello from before pryond', _helloVersion1),
+    ]) {
+      test('hides the engine on the image $name', () async {
+        final messenger = TestWidgetsFlutterBinding.ensureInitialized()
+            .defaultBinaryMessenger;
+        const channel = MethodChannel('kiosk_satellite/background');
+        messenger.setMockMethodCallHandler(
+          channel,
+          (call) async => call.method == 'pryon' ? true : null,
+        );
+        final dir = await Directory.systemTemp.createTemp('pryon');
+        PryonCatalog.socketPath = '${dir.path}/sock';
+        final service = await _FakeService.start(
+          PryonCatalog.socketPath,
+          hello: hello,
+        );
+        addTearDown(() async {
+          messenger.setMockMethodCallHandler(channel, null);
+          PryonCatalog.socketPath = '/dev/socket/pryond';
+          await service.close();
+          await dir.delete(recursive: true);
+          defs.deviceHiddenOptions.remove(defs.voiceWakeWordEngine.key);
+          defs.deviceHiddenKeys.remove(defs.voiceAmazonLocale.key);
+        });
+
+        await PryonCatalog.init(Logger());
+        expect(PryonCatalog.available, isFalse);
+        expect(PryonCatalog.locales, isEmpty);
+        expect(defs.deviceHiddenOptions[defs.voiceWakeWordEngine.key], {
+          'pryon',
+        });
+        expect(defs.deviceHiddenKeys, contains(defs.voiceAmazonLocale.key));
+      });
+    }
+
+    test('logs the missing files and the skipped models', () async {
+      final messenger =
+          TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger;
+      const channel = MethodChannel('kiosk_satellite/background');
+      messenger.setMockMethodCallHandler(
+        channel,
+        (call) async => call.method == 'pryon' ? true : null,
+      );
+      final dir = await Directory.systemTemp.createTemp('pryon');
+      PryonCatalog.socketPath = '${dir.path}/sock';
+      final service = await _FakeService.start(
+        PryonCatalog.socketPath,
+        hello:
+            '{"event":"hello","version":2,"available":false,'
+            '"missing":["libpryon_lite.so"],"locales":[],"models":[],'
+            '"skipped":[{"model":"echo-nl-NL",'
+            '"reason":"no readable words.shrunk.txt"}]}',
+      );
+      addTearDown(() async {
+        messenger.setMockMethodCallHandler(channel, null);
+        PryonCatalog.socketPath = '/dev/socket/pryond';
+        await service.close();
+        await dir.delete(recursive: true);
+        defs.deviceHiddenOptions.remove(defs.voiceWakeWordEngine.key);
+        defs.deviceHiddenKeys.remove(defs.voiceAmazonLocale.key);
+      });
+
+      final log = Logger();
+      await PryonCatalog.init(log);
+      final warnings = [
+        for (final e in log.recent)
+          if (e.level == LogLevel.warn && e.tag == 'pryon') e.message,
+      ];
+      expect(warnings, contains(contains('libpryon_lite.so')));
+      expect(
+        warnings,
+        contains(allOf(contains('echo-nl-NL'), contains('words.shrunk.txt'))),
+      );
+    });
+
+    test('reads what the service is missing and skipped', () {
+      final hello = PryonCatalog.parseHello(_helloUnavailableWithModels);
+      expect(hello.available, isFalse);
+      // Listed models are not offered while the service cannot listen.
+      expect(hello.words, isEmpty);
+      expect(hello.skipped.single.model, 'echo-nl-NL');
+      expect(hello.skipped.single.reason, contains('libtvm_modelops'));
+      final without = PryonCatalog.parseHello(_helloWithoutFiles);
+      expect(without.missing, ['libpryon_lite.so', 'libpryon_lite-PRL1000.so']);
+      expect(PryonCatalog.parseHello(_hello).available, isTrue);
+      expect(PryonCatalog.parseHello(_helloVersion1).available, isFalse);
+    });
+
     test('hides the engine and its language without the image', () async {
-      // A tablet, or an Echo on another ROM: neither ro.biscuit.pryon nor
-      // ro.echo.pryon.
+      // A tablet, or an Echo on another ROM: no ro.kiosk_satellite.pryon.
       await PryonCatalog.init(Logger());
       addTearDown(() {
         defs.deviceHiddenOptions.remove(defs.voiceWakeWordEngine.key);
@@ -187,16 +313,15 @@ void main() {
     });
 
     test("offers the locale's wake words and its model's stop word", () {
-      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello);
+      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello).words;
       final offered = offeredWakeWords(
         WakeWordEngineType.pryon,
         pryonLocale: 'en-US',
       );
-      expect([for (final w in offered) (w.id, w.phrase)], [
-        ('alexa', 'Alexa'),
-        ('echo', 'Echo'),
-        ('hey_disney', 'Hey Disney'),
-      ]);
+      expect(
+        [for (final w in offered) (w.id, w.phrase)],
+        [('alexa', 'Alexa'), ('echo', 'Echo'), ('hey_disney', 'Hey Disney')],
+      );
       final config = buildWakeConfig(
         engine: WakeWordEngineType.pryon,
         activeIds: const ['echo', 'ok_nabu'],
@@ -217,7 +342,7 @@ void main() {
     });
 
     test("falls back to the locale's first wake word", () {
-      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello);
+      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello).words;
       final config = buildWakeConfig(
         engine: WakeWordEngineType.pryon,
         activeIds: const ['alexa'],
@@ -252,7 +377,7 @@ void main() {
     setUp(() async {
       dir = await Directory.systemTemp.createTemp('pryon');
       PryonCatalog.socketPath = '${dir.path}/sock';
-      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello);
+      PryonCatalog.debugWords = PryonCatalog.parseHello(_hello).words;
       service = await _FakeService.start(PryonCatalog.socketPath);
       mic = StreamController<Uint8List>();
       engine = PryonEngine(
@@ -270,7 +395,7 @@ void main() {
       // closing.
       unawaited(mic.close());
       await service.close();
-      PryonCatalog.socketPath = '/dev/socket/biscuit-pryon';
+      PryonCatalog.socketPath = '/dev/socket/pryond';
       await dir.delete(recursive: true);
     });
 
@@ -382,12 +507,22 @@ void main() {
       await engine.setStopWordActive(true);
       // The image reports a "stop" under its 0.18 as a near miss from 0.05.
       service.send(
-        detection(keyword: 'STOP', accepted: false, score: 0.12, threshold: 0.05),
+        detection(
+          keyword: 'STOP',
+          accepted: false,
+          score: 0.12,
+          threshold: 0.05,
+        ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 200));
       expect(stops, 0);
       service.send(
-        detection(keyword: 'STOP', accepted: false, score: 0.16, threshold: 0.05),
+        detection(
+          keyword: 'STOP',
+          accepted: false,
+          score: 0.16,
+          threshold: 0.05,
+        ),
       );
       await _until(() => stops == 1);
     });
@@ -396,7 +531,12 @@ void main() {
       await start('moderately');
       await engine.setStopWordActive(true);
       service.send(
-        detection(keyword: 'STOP', accepted: false, score: 0.17, threshold: 0.05),
+        detection(
+          keyword: 'STOP',
+          accepted: false,
+          score: 0.17,
+          threshold: 0.05,
+        ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 200));
       expect(stops, 0);
@@ -448,21 +588,26 @@ Future<void> _until(bool Function() done) async {
   }
 }
 
-/// biscuit-pryond as the engine sees it: the hello, then frames in and
-/// JSON lines out.
+/// pryond as the engine sees it: the hello, then frames in and JSON lines
+/// out.
 class _FakeService {
-  _FakeService._(this._server) {
+  _FakeService._(this._server, this._helloLine) {
     _server.listen(_onClient);
   }
 
-  static Future<_FakeService> start(String path) async => _FakeService._(
+  static Future<_FakeService> start(
+    String path, {
+    String hello = _hello,
+  }) async => _FakeService._(
     await ServerSocket.bind(
       InternetAddress(path, type: InternetAddressType.unix),
       0,
     ),
+    hello,
   );
 
   final ServerSocket _server;
+  final String _helloLine;
   Socket? _client;
   final _buffer = BytesBuilder();
 
@@ -476,7 +621,7 @@ class _FakeService {
 
   void _onClient(Socket client) {
     _client = client;
-    client.write('$_hello\n');
+    client.write('$_helloLine\n');
     client.listen(_onBytes, onError: (_) {});
   }
 

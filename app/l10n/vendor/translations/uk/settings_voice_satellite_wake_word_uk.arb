@@ -97,6 +97,5 @@
   "voiceModelOwwWindow": "Це не модель openWakeWord: вона не приймає вікно вбудовувань 16 x 96.",
   "voiceModelNoLoad": "Модель не завантажується: {error}",
   "settingVoiceAmazonLocaleTitle": "Мова слова активації",
-  "settingVoiceAmazonLocaleDescription": "Мова моделей слів активації Amazon. У списках слів активації доступні слова активації цієї мови.",
-  "voiceOptionAppLanguage": "Мова Kiosk Satellite"
+  "settingVoiceAmazonLocaleDescription": "Мова моделей слів активації Amazon. У списках слів активації доступні слова активації цієї мови."
 }

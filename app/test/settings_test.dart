@@ -4,6 +4,7 @@ import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
+import 'package:kiosk_satellite/managers/wake_word/pryon/pryon_catalog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -190,7 +191,10 @@ void main() {
     });
   }
 
-  test("Amazon's wake word engine moves to vsWakeWord Alexa once", () async {
+  test("Amazon's wake word engine moves to vsWakeWord Alexa once while it "
+      'is off', () async {
+    PryonCatalog.enabled = false;
+    addTearDown(() => PryonCatalog.enabled = true);
     await build({
       'ks.voice.wake_word_engine': 'pryon',
       'ks.voice.wake_words': '["computer","echo"]',
@@ -212,7 +216,45 @@ void main() {
     await bus.dispose();
   });
 
+  test("Amazon's wake word engine stays while it is on", () async {
+    await build({
+      'ks.voice.wake_word_engine': 'pryon',
+      'ks.voice.wake_words': '["computer","echo"]',
+    });
+    expect(settings.get(defs.voiceWakeWordEngine), 'pryon');
+    expect(settings.get(defs.voiceWakeWords), '["computer","echo"]');
+  });
+
+  test("Amazon's wake word language is an installed locale", () async {
+    PryonCatalog.debugWords = const [
+      PryonWord(
+        id: 'echo',
+        model: 'echo-nl-NL',
+        keyword: 'ECHO',
+        locales: ['nl-NL'],
+      ),
+      PryonWord(
+        id: 'alexa',
+        model: 'alexa-en-US',
+        keyword: 'ALEXA',
+        locales: ['en-US'],
+      ),
+    ];
+    addTearDown(() => PryonCatalog.debugWords = const []);
+    await build({});
+    // The first locale until one is picked, and no app language option.
+    expect(settings.optionsFor(defs.voiceAmazonLocale), ['nl-NL', 'en-US']);
+    expect(settings.get(defs.voiceAmazonLocale), 'nl-NL');
+    await settings.set(defs.voiceAmazonLocale, 'en-US');
+    expect(settings.get(defs.voiceAmazonLocale), 'en-US');
+    // A pick whose files were removed.
+    await settings.set(defs.voiceAmazonLocale, 'de-DE');
+    expect(settings.get(defs.voiceAmazonLocale), 'nl-NL');
+  });
+
   test('another wake word engine is not migrated', () async {
+    PryonCatalog.enabled = false;
+    addTearDown(() => PryonCatalog.enabled = true);
     await build({
       'ks.voice.wake_word_engine': 'microwakeword',
       'ks.voice.wake_words': '["hey_jarvis"]',

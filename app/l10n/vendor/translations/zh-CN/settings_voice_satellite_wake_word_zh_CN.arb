@@ -97,6 +97,5 @@
   "voiceModelOwwWindow": "不是 openWakeWord 模型：它不接受 16 x 96 的嵌入窗口。",
   "voiceModelNoLoad": "模型无法加载：{error}",
   "settingVoiceAmazonLocaleTitle": "唤醒词语言",
-  "settingVoiceAmazonLocaleDescription": "Amazon 唤醒词模型的语言。唤醒词选择框会提供该语言的唤醒词。",
-  "voiceOptionAppLanguage": "Kiosk Satellite 的语言"
+  "settingVoiceAmazonLocaleDescription": "Amazon 唤醒词模型的语言。唤醒词选择框会提供该语言的唤醒词。"
 }

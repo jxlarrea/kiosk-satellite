@@ -15873,9 +15873,6 @@ class UiStringsFr extends UiStrings {
       'La langue des modèles de mots de réveil d\'Amazon. Les sélecteurs de mot de réveil proposent les mots de réveil de cette langue.';
 
   @override
-  String get voiceOptionAppLanguage => 'Langue de Kiosk Satellite';
-
-  @override
   String get settingDisableCacheTitle => 'Désactiver le cache';
 
   @override

@@ -97,6 +97,5 @@
   "voiceModelOwwWindow": "Kein openWakeWord-Modell: Es nimmt das Embedding-Fenster von 16 x 96 nicht an.",
   "voiceModelNoLoad": "Das Modell lässt sich nicht laden: {error}",
   "settingVoiceAmazonLocaleTitle": "Sprache des Aktivierungsworts",
-  "settingVoiceAmazonLocaleDescription": "Die Sprache der Aktivierungswort-Modelle von Amazon. Die Auswahlfelder für Aktivierungswörter bieten die Aktivierungswörter dieser Sprache an.",
-  "voiceOptionAppLanguage": "Sprache von Kiosk Satellite"
+  "settingVoiceAmazonLocaleDescription": "Die Sprache der Aktivierungswort-Modelle von Amazon. Die Auswahlfelder für Aktivierungswörter bieten die Aktivierungswörter dieser Sprache an."
 }

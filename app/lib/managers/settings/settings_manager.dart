@@ -139,7 +139,7 @@ class SettingsManager extends Manager {
       def.key == cameraRtspResolution.key
       ? _cameraStreamResolutions ?? const []
       : def.key == voiceAmazonLocale.key
-      ? ['', ...PryonCatalog.locales]
+      ? PryonCatalog.locales
       : def.key == micEchoCancellationMethod.key
       ? _echoMethodOptions()
       : _realtimeOptions(def) ??
@@ -171,7 +171,7 @@ class SettingsManager extends Manager {
   String? optionLabel(SettingDef<Object> def, String value) =>
       def.key == cameraRtspResolution.key
       ? cameraResolutionLabel(value)
-      : def.key == voiceAmazonLocale.key && value.isNotEmpty
+      : def.key == voiceAmazonLocale.key
       ? PryonCatalog.localeLabel(value)
       // Model ids read as they are; voices are names.
       : _realtimeLists[def.key] != null && value.isNotEmpty
@@ -476,9 +476,9 @@ class SettingsManager extends Manager {
         get(notificationsVolume).toDouble(),
       );
     }
-    // Amazon's wake word engine is off (PryonCatalog.enabled). A kiosk that
-    // listened with it moves to vsWakeWord's Alexa once, the closest match
-    // to every wake word Amazon's engine offered.
+    // While Amazon's wake word engine is off (PryonCatalog.enabled), a kiosk
+    // that listened with it moves to vsWakeWord's Alexa once, the closest
+    // match to every wake word Amazon's engine offered.
     const amazonEngineMigration = 'voice.amazon_engine_off.migrated';
     if (!PryonCatalog.enabled && internal(amazonEngineMigration).isEmpty) {
       if (_prefs.get(_prefix + voiceWakeWordEngine.key) == 'pryon') {
@@ -758,6 +758,11 @@ class SettingsManager extends Manager {
 
   T get<T>(SettingDef<T> def) {
     final raw = _prefs.get(_prefix + def.key);
+    // Amazon's wake word language is one of the locales installed on the
+    // Echo, the first one until another is picked.
+    if (def.key == voiceAmazonLocale.key) {
+      return PryonCatalog.resolveLocale(raw is String ? raw : '') as T;
+    }
     // The `raw != null` guard matters: when T is inferred nullable (e.g.
     // Object? from a caller's ternary), `null is T` is true, which would
     // wrongly return null for an unstored setting instead of its default.

@@ -22,13 +22,14 @@ class PryonServiceTest {
     private fun detectsOnEveryDevice(headless: Boolean) {
         setScreen(headless)
         assertEquals(headless, Headless.active(RuntimeEnvironment.getApplication()))
-        // The Echo Dot image.
-        assertTrue(PryonService.detect(props("ro.biscuit.pryon" to "1")))
-        // The Echo Show images.
-        assertTrue(PryonService.detect(props("ro.echo.pryon" to "1")))
+        // The Echo Dot and Echo Show images.
+        assertTrue(PryonService.detect(props("ro.kiosk_satellite.pryon" to "1")))
         // Any other device keeps the engine hidden.
         assertFalse(PryonService.detect(props()))
-        assertFalse(PryonService.detect(props("ro.echo.pryon" to "0")))
+        assertFalse(PryonService.detect(props("ro.kiosk_satellite.pryon" to "0")))
+        // The old images' properties, from before pryond, do not count.
+        assertFalse(PryonService.detect(props("ro.biscuit.pryon" to "1")))
+        assertFalse(PryonService.detect(props("ro.echo.pryon" to "1")))
         // The other features of the images do not make the service.
         assertFalse(PryonService.detect(props("ro.echo.ota" to "1", "ro.biscuit.ota" to "1")))
     }

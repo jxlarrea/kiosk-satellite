@@ -169,7 +169,7 @@ List<OfferedWakeWord> offeredWakeWords(
   String pryonLocale = '',
 }) {
   // Amazon's engine listens only with the models the Echo image has for
-  // [pryonLocale] (PryonCatalog.resolveLocale).
+  // [pryonLocale] (the Wake word language setting).
   if (engine == WakeWordEngineType.pryon) {
     return [
       for (final w in PryonCatalog.wakeWordsFor(pryonLocale))

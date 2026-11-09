@@ -6,10 +6,10 @@ import 'dart:typed_data';
 
 import '../wake_msg.dart';
 
-/// The Echo images' wake word service (biscuit-pryond).
+/// The Echo images' wake word service (pryond).
 ///
 /// A leaf like wake_msg.dart: the compute isolate depends on it.
-const pryonSocketPath = '/dev/socket/biscuit-pryon';
+const pryonSocketPath = '/dev/socket/pryond';
 
 /// Entry point of the compute isolate for Amazon's engine.
 ///
@@ -47,7 +47,13 @@ void pryonIsolateEntry(SendPort mainPort) {
 }
 
 class _Word {
-  _Word(this.id, this.wakeWord, this.offset, this.accept, {this.isStop = false});
+  _Word(
+    this.id,
+    this.wakeWord,
+    this.offset,
+    this.accept, {
+    this.isStop = false,
+  });
 
   final String id;
   final String wakeWord;

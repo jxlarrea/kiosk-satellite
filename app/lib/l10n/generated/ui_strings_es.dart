@@ -15882,9 +15882,6 @@ class UiStringsEs extends UiStrings {
       'El idioma de los modelos de palabras de activación de Amazon. Los selectores de palabra de activación ofrecen las palabras de activación de ese idioma.';
 
   @override
-  String get voiceOptionAppLanguage => 'Idioma de Kiosk Satellite';
-
-  @override
   String get settingDisableCacheTitle => 'Desactivar caché';
 
   @override

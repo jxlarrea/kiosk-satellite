@@ -510,9 +510,6 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "ha_entity": "screensaverCelestialLocationHaEntity",
     "manual": "screensaverCelestialLocationManual"
   },
-  "voice.amazon_locale": {
-    "": "voiceOptionAppLanguage"
-  },
   "camera.onvif.events_source": {
     "camera": "cameraOnvifEventsSourceCamera",
     "person": "cameraOnvifEventsSourcePerson",

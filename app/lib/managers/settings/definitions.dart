@@ -7144,9 +7144,10 @@ const voiceWakeWordEngine = SettingDef<String>(
   dependsOn: 'voice.enabled',
 );
 
-/// The locale of Amazon's wake word models, under the Amazon engine. Empty
-/// follows the app's language. The options are the locales the Echo
-/// image's service lists (PryonCatalog), so SettingsManager fills them in.
+/// The locale of Amazon's wake word models, under the Amazon engine. The
+/// options are the locales the Echo image's service lists (PryonCatalog), so
+/// SettingsManager fills them in. Empty, or a locale the service does not
+/// have, reads as its first one.
 const voiceAmazonLocale = SettingDef<String>(
   key: 'voice.amazon_locale',
   type: SettingType.select,
@@ -7157,8 +7158,7 @@ const voiceAmazonLocale = SettingDef<String>(
       'offer the wake words it has.',
   category: 'Voice Satellite',
   subpage: 'Wake Word',
-  options: [''],
-  optionLabels: {'': "Kiosk Satellite's language"},
+  options: [],
   dependsOn: 'voice.wake_word_engine',
   dependsOnValue: 'pryon',
 );
@@ -13351,7 +13351,8 @@ const navCompassMenuItems = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Menu items',
-  description: 'What the Quick Controls view shows. Shared with the drawer menu.',
+  description:
+      'What the Quick Controls view shows. Shared with the drawer menu.',
   category: 'Navigation',
   section: 'Compass options',
   dependsOn: 'nav.style',

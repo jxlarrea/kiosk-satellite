@@ -31,6 +31,8 @@ Go through the setup wizard on the screen or at `http://<show ip>:2324` in a bro
 
 Pick the engine with **Wake word engine** under **Voice Satellite > Wake Word**, with the **VS Wake word engine** select in Home Assistant or in the setup wizard. The Show offers vsWakeWord, microWakeWord and openWakeWord.
 
+**Amazon**, the engine Echo devices shipped with, shows up only when you install Pryon's files in `/data/pryon` on image 2026.11.4 or newer. See [Amazon's wake word engine](https://github.com/jxlarrea/lineageos-echo-kiosk-satellite/blob/main/docs/echo-show-8.md#amazons-wake-word-engine) in the image guide. Kiosk Satellite reads the models the image has when it starts, so restart the Show after you install or change the files. With **Amazon** picked, a **Wake word language** select shows up under the engine. It lists the locales of the models you installed and starts on the first one in `locales.txt`.
+
 ## Volume
 
 Keep the Show's media volume at 50% and Kiosk Satellite's media player and assistant volumes at 100%. The Show 8's speakers are much louder than the Echo Show 5's, and 50% already fills a room. Above it, music drowns out a voice from across the room and the wake word misses more often. A fresh install of the image starts at these levels.

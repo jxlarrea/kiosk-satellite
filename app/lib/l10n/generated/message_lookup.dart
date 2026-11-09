@@ -5335,7 +5335,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingVoiceAmazonLocaleTitle' => strings.settingVoiceAmazonLocaleTitle,
       'settingVoiceAmazonLocaleDescription' =>
         strings.settingVoiceAmazonLocaleDescription,
-      'voiceOptionAppLanguage' => strings.voiceOptionAppLanguage,
       'settingDisableCacheTitle' => strings.settingDisableCacheTitle,
       'settingDisableCacheDescription' =>
         strings.settingDisableCacheDescription,

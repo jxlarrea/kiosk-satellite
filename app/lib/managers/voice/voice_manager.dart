@@ -470,16 +470,9 @@ class VoiceManager extends Manager {
             unawaited(_sync());
           }
           // Another engine offers other wake words, and Amazon's engine
-          // other ones in another language. The app's language only counts
-          // while it picks that language.
+          // other ones in another language.
           if (e.key == defs.voiceWakeWordEngine.key ||
               e.key == defs.voiceAmazonLocale.key) {
-            _refreshSelects();
-          }
-          if (e.key == defs.uiLanguage.key &&
-              _engine == WakeWordEngineType.pryon &&
-              _settings.get(defs.voiceAmazonLocale).isEmpty) {
-            unawaited(_sync());
             _refreshSelects();
           }
           if (e.key == defs.voiceRuntime.key ||
@@ -2013,11 +2006,8 @@ class VoiceManager extends Manager {
   }
 
   /// The locale Amazon's engine listens with: the Wake word language
-  /// setting, else the app's language (PryonCatalog.resolveLocale).
-  String get _pryonLocale => PryonCatalog.resolveLocale(
-    _settings.get(defs.voiceAmazonLocale),
-    _settings.get(defs.uiLanguage),
-  );
+  /// setting, which reads as an installed locale.
+  String get _pryonLocale => _settings.get(defs.voiceAmazonLocale);
 
   WakeWordEngineType get _engine {
     final engine = voiceEngines[_settings.get(defs.voiceWakeWordEngine)];

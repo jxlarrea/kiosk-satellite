@@ -1,19 +1,17 @@
 /// Amazon's wake word engine on the Echo images.
 ///
 /// The Kiosk Satellite Edition images for the Echo Dot and the Echo Shows
-/// run Amazon's own engine (Pryon), with the models the Dot shipped with, as
-/// a service: biscuit-pryond, on a local socket. When an app connects, the
-/// service first lists every model it has and the keywords each one spots. This
-/// reads that list once at boot, so the wake word selects offer exactly what
-/// the service has, and leaves the engine out on every other device.
+/// run pryond, a service for Amazon's own engine (Pryon), on a local socket.
+/// The images ship none of Amazon's files: the service listens with the ones
+/// the user installs in /data/pryon. When an app connects, the service first
+/// says whether it has everything it needs and lists every model it can use
+/// and the keywords each one spots. This reads that list once at boot, so the
+/// wake word selects offer exactly what the service has, and leaves the
+/// engine out on every other device and on an image without the files.
 ///
 /// Amazon's models are per locale. The service names the locales that listen
-/// with each one, and the Wake word language setting picks among them.
-///
-/// The engine is off for now ([PryonCatalog.enabled]): the service is never
-/// asked, so the engine and its language setting stay hidden on every device
-/// and a kiosk that had it set listens with vsWakeWord (SettingsManager moves
-/// it there once).
+/// with each one, and the Wake word language setting picks among them,
+/// starting on the first.
 library;
 
 import 'dart:async';
@@ -25,6 +23,30 @@ import 'package:flutter/services.dart';
 import '../../../core/logging.dart';
 import '../../settings/definitions.dart' as defs;
 import 'pryon_isolate.dart';
+
+/// The service's first line: whether it can listen, what it can listen
+/// with and what it left out.
+class PryonHello {
+  const PryonHello({
+    required this.available,
+    this.words = const [],
+    this.missing = const [],
+    this.skipped = const [],
+  });
+
+  /// Every Pryon library is readable and a model with a wake word has a
+  /// locale. The engine is offered only then.
+  final bool available;
+
+  /// The words of the models it can use. Empty unless [available].
+  final List<PryonWord> words;
+
+  /// The library files the service cannot read.
+  final List<String> missing;
+
+  /// The models it cannot use, each with the reason.
+  final List<({String model, String reason})> skipped;
+}
 
 /// One keyword the service spots: a wake word, or the stop word.
 class PryonWord {
@@ -77,9 +99,9 @@ abstract final class PryonCatalog {
   static const _channel = MethodChannel('kiosk_satellite/background');
 
   /// Whether Kiosk Satellite offers Amazon's engine at all. Off, [init]
-  /// leaves the service alone even on an Echo image, so nothing is offered.
-  /// Tests turn it on.
-  static bool enabled = false;
+  /// leaves the service alone even on an Echo image, so nothing is offered,
+  /// and SettingsManager moves a kiosk on it to vsWakeWord once.
+  static bool enabled = true;
 
   /// The service's socket. Tests point it at a fake one.
   static String socketPath = pryonSocketPath;
@@ -96,16 +118,17 @@ abstract final class PryonCatalog {
 
   /// Every locale a model listens with, in the service's order (en-US
   /// first).
-  static List<String> get locales => {
-    for (final w in _words) ...w.locales,
-  }.toList();
+  static List<String> get locales =>
+      {for (final w in _words) ...w.locales}.toList();
 
   /// The wake words [locale] listens with. A keyword two of its models spot
   /// is offered once, from the first.
   static List<PryonWord> wakeWordsFor(String locale) {
     final byId = <String, PryonWord>{};
     for (final w in _words) {
-      if (!w.stop && w.locales.contains(locale)) byId.putIfAbsent(w.id, () => w);
+      if (!w.stop && w.locales.contains(locale)) {
+        byId.putIfAbsent(w.id, () => w);
+      }
     }
     return byId.values.toList();
   }
@@ -121,33 +144,12 @@ abstract final class PryonCatalog {
   /// The service answered with at least one wake word.
   static bool get available => _words.any((w) => !w.stop);
 
-  // The locale an app language falls back to when it has several.
-  static const _languageDefaults = {
-    'en': 'en-US',
-    'es': 'es-US',
-    'fr': 'fr-FR',
-    'de': 'de-DE',
-    'it': 'it-IT',
-    'pt': 'pt-BR',
-    'ja': 'ja-JP',
-    'nl': 'nl-NL',
-    'ar': 'ar-SA',
-    'hi': 'hi-IN',
-  };
-
-  /// The locale to listen with: [setting] when the service has it, else the
-  /// one matching [appLanguage] (`es`, `zh-CN`), else en-US, else the first.
-  static String resolveLocale(String setting, String appLanguage) {
+  /// The locale to listen with: [setting] when the service has it, else
+  /// the first one it lists. Empty without the service.
+  static String resolveLocale(String setting) {
     final all = locales;
     if (all.isEmpty) return '';
-    if (all.contains(setting)) return setting;
-    final language = appLanguage.split(RegExp('[-_]')).first;
-    final preferred = _languageDefaults[language];
-    if (preferred != null && all.contains(preferred)) return preferred;
-    for (final l in all) {
-      if (l.startsWith('$language-')) return l;
-    }
-    return all.contains('en-US') ? 'en-US' : all.first;
+    return all.contains(setting) ? setting : all.first;
   }
 
   static const _localeNames = {
@@ -190,12 +192,30 @@ abstract final class PryonCatalog {
   static Future<void> init(Logger log) async {
     if (enabled && await _imageHasService()) {
       try {
-        _words = parseHello(await _hello());
-        log.info(
-          'pryon',
-          'Amazon wake word models for ${locales.length} locales: '
-              '${{for (final w in _words) w.model}.length} models',
-        );
+        final hello = parseHello(await _hello());
+        if (hello.missing.isNotEmpty) {
+          log.warn(
+            'pryon',
+            "Amazon's wake word engine is missing ${hello.missing.length} "
+                'files in /data/pryon: ${hello.missing.join(', ')}',
+          );
+        }
+        for (final s in hello.skipped) {
+          log.warn(
+            'pryon',
+            'Amazon wake word model ${s.model} skipped: ${s.reason}',
+          );
+        }
+        _words = hello.available ? hello.words : const [];
+        if (available) {
+          log.info(
+            'pryon',
+            'Amazon wake word models for ${locales.length} locales: '
+                '${{for (final w in _words) w.model}.length} models',
+          );
+        } else {
+          log.warn('pryon', "Amazon's wake word engine is not available");
+        }
       } catch (e) {
         _words = const [];
         log.warn('pryon', 'the wake word service did not answer: $e');
@@ -225,12 +245,25 @@ abstract final class PryonCatalog {
     }
   }
 
-  /// The words in the service's first line, model by model in its order:
-  /// each model's wake words, then its stop word.
-  static List<PryonWord> parseHello(String line) {
+  /// The service's first line. Its words go model by model in its order:
+  /// each model's wake words, then its stop word. A hello without
+  /// `"available": true`, such as one from before version 2, offers nothing.
+  static PryonHello parseHello(String line) {
     final hello = jsonDecode(line);
     if (hello is! Map || hello['event'] != 'hello') {
       throw const FormatException('not a hello');
+    }
+    final missing = [
+      for (final f in hello['missing'] as List? ?? const [])
+        if ('$f'.isNotEmpty) '$f',
+    ];
+    final skipped = [
+      for (final m in hello['skipped'] as List? ?? const [])
+        if (m is Map)
+          (model: '${m['model'] ?? ''}', reason: '${m['reason'] ?? ''}'),
+    ];
+    if (hello['available'] != true) {
+      return PryonHello(available: false, missing: missing, skipped: skipped);
     }
     final words = <PryonWord>[];
     for (final m in hello['models'] as List? ?? const []) {
@@ -264,7 +297,12 @@ abstract final class PryonCatalog {
         }
       }
     }
-    return words;
+    return PryonHello(
+      available: words.any((w) => !w.stop),
+      words: words,
+      missing: missing,
+      skipped: skipped,
+    );
   }
 
   /// Tests only.

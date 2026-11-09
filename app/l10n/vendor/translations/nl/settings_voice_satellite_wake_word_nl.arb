@@ -97,6 +97,5 @@
   "voiceModelOwwWindow": "Geen openWakeWord-model: het gebruikt geen embeddingvenster van 16 x 96.",
   "voiceModelNoLoad": "Het model laadt niet: {error}",
   "settingVoiceAmazonLocaleTitle": "Taal van het wekwoord",
-  "settingVoiceAmazonLocaleDescription": "De taal van de wekwoordmodellen van Amazon. De wekwoordkeuzes bieden de wekwoorden van die taal aan.",
-  "voiceOptionAppLanguage": "Taal van Kiosk Satellite"
+  "settingVoiceAmazonLocaleDescription": "De taal van de wekwoordmodellen van Amazon. De wekwoordkeuzes bieden de wekwoorden van die taal aan."
 }

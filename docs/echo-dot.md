@@ -37,15 +37,22 @@ On the CM14.1 image the Action button goes through an accessibility service inst
 
 ## Wake Word
 
-Pick the engine with **Wake word engine** under **Voice Satellite > Wake Word**, with the **VS Wake word engine** select in Home Assistant or in the setup wizard. The Dot offers three:
+Pick the engine with **Wake word engine** under **Voice Satellite > Wake Word**, with the **VS Wake word engine** select in Home Assistant or in the setup wizard. The Dot offers these:
 
 | Engine | What it is |
 |---|---|
 | vsWakeWord | The default. Its models ship with the app. |
 | microWakeWord | The engine of Home Assistant's voice hardware. Its models ship with the app, and it also offers the custom models Home Assistant has. |
 | openWakeWord | Its models ship with the app. |
+| Amazon | The engine the Dot shipped with. It shows up only when you install Pryon's files in `/data/pryon` on image 2026.11.3 or newer. See [Amazon's wake word engine](https://github.com/jxlarrea/lineageos-echo-kiosk-satellite/blob/main/docs/echo-dot.md#amazons-wake-word-engine) in the image guide. The [Echo Show 5](echo-show-5.md#wake-word) and [Echo Show 8](echo-show-8.md#wake-word) images offer it too. |
 
-All three also take your own models. See [Custom wake word models](custom-wake-words.md).
+vsWakeWord, microWakeWord and openWakeWord also take your own models. See [Custom wake word models](custom-wake-words.md).
+
+### Amazon
+
+Kiosk Satellite reads the models the image has when it starts, so restart the Dot after you install or change the files in `/data/pryon`. If the engine does not show up, the app log lists the files the image could not read and the models it skipped.
+
+With **Amazon** picked, a **Wake word language** select shows up under the engine. It lists the locales of the models you installed and starts on the first one in `locales.txt`. If you remove the files of the picked locale, the first one is used. **Wake word sensitivity** applies too.
 
 ## Volume
 
