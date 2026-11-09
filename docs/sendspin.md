@@ -23,7 +23,7 @@ A core rule applies to all media sources: both the floating player card and the 
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Player source | This device | Selects what the floating player and Now Playing view display and control: a player on this device, or an external player from Home Assistant, Music Assistant, or a Sonos household. Selecting an external source takes the local Sendspin player offline, unless the source is a Music Assistant group with this device in it. |
-| Player | Sendspin Player | With "This device" as the source: **Sendspin Player**, the native Sendspin player, **AirPlay**, an iPhone, iPad or Mac playing to the device (see [AirPlay](#airplay)), or **Local Media Session**, whichever other app plays on the device (see [Local Media Session](#local-media-session)). For external sources, this dropdown populates with players available from that specific provider. |
+| Player | Sendspin Player | With "This device" as the source: **Sendspin Player**, the native Sendspin player, **AirPlay**, an iPhone, iPad or Mac playing to the device (see [AirPlay](#airplay)), **Local Media Session**, whichever other app plays on the device (see [Local Media Session](#local-media-session)), or a player a plugin offers (see [Plugin players](#plugin-players)). For external sources, this dropdown populates with players available from that specific provider. |
 | Duck volume during voice interactions | 10% | Lowers the selected player to this percentage of its current volume during voice interactions and intercom calls, then restores its previous volume. Applies to every source with volume control. Capped at 10% so the microphone still hears you over the music. |
 | Volume buttons control the player | Off | Routes the device's hardware volume buttons to the followed player, either only while the Now Playing view is on screen or whenever the player is playing. With "This device" as the source and the Sendspin player picked, the buttons control the Music Assistant group while this device plays in one and **Adjust the group volume** is on, so each room keeps its balance. Playing alone, the buttons keep changing the device's own volume. Not shown for the Local Media Session or the AirPlay receiver. The mute button mutes the player or the group. While the Now Playing view is up, a press shows its volume slider for a moment. Lockdown and "Disable volume buttons" under Kiosk still leave the buttons dead. |
 | Volume button step | 5% | How far one press of a volume button moves the followed player, from 1% to 10%. Shown only while the buttons are routed to the player. A sensitive amplifier or a bedroom at night wants a smaller step. |
@@ -175,6 +175,7 @@ Capabilities vary slightly by player source:
 | Sonos (Direct UPnP) | Supported | Supported | Supported |
 | Local Media Session | Supported | Supported | Not supported |
 | AirPlay | Supported | Supported | Supported, from the sender's Up Next |
+| Plugin player | Supported, the buttons the plugin offers | Supported | Supported when the plugin keeps a queue |
 
 Unsupported controls are hidden automatically. For example, if a Home Assistant player does not report position seeking, the progress bar thumb is removed.
 
@@ -201,6 +202,16 @@ Play, pause, next and previous go back to the sender as remote commands, the way
 What the remote control takes depends on the sender. A Mac's Music app takes all of the above. An iPhone or iPad takes play, pause, next and previous only, so the progress bar cannot be dragged and there is no shuffle, repeat or queue while one plays. The volume slider sets the device's media volume, and the sender's own volume control scales the audio on top of it unless **Follow the sender's volume** is off. Music ducks during voice interactions like every other source.
 
 The receiver speaks AirPlay 1, the original protocol, so it does not join AirPlay 2 multi-room groups.
+
+## Plugin players
+
+A [plugin](plugins.md) can offer players of its own, such as a receiver for another protocol or a player for an online catalog. With **Player source** on "This device", the **Player** dropdown lists them after Local Media Session, named after the plugin and the player, such as **Hello World: Internet Archive**. The Sendspin player and the AirPlay receiver go offline while one is picked, the same as with AirPlay.
+
+A plugin player plays through the same audio output as the Sendspin player. The echo canceller removes it from the microphone, so the wake word works over the music. The volume slider and the volume buttons set the device's media volume, and the music ducks during voice interactions.
+
+The floating player and Now Playing view show what it plays with the buttons the plugin offers, so a receiver that only shows what plays has none. A plugin that keeps a queue shows it in the queue panel, where songs can be reordered and removed. A plugin can also add a source to the [Music Library](music-library.md).
+
+While the plugin is off, stopped or still starting, the pick stays and the player shows as unavailable. It plays again once the plugin runs.
 
 ## The Music Assistant Shortcut
 

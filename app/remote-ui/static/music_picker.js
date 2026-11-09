@@ -44,6 +44,8 @@ const ICONS = {
 };
 ICONS.radio = ICONS.radios;
 ICONS.sonos_playlists = ICONS.playlists;
+// A puzzle piece, as on the Plugin Manager entry: a plugin player's library.
+ICONS.plugin = 'M4 7h4V5.5a2 2 0 0 1 4 0V7h4v4h1.5a2 2 0 0 1 0 4H16v4H4z';
 const RANDOM_ICONS = { tracks: ICONS.tracks, favorites: ICONS.favorites, playlists: ICONS.playlists, albums: ICONS.albums, radio: ICONS.radios };
 const KIND_ICONS = { artist: ICONS.artists, album: ICONS.albums, track: ICONS.tracks, playlist: ICONS.playlists, radio: ICONS.radios, folder: ICONS.folder };
 
@@ -56,8 +58,12 @@ const el = (tag, cls, text) => {
   return node;
 };
 
-const sourceName = (k) => t(k === 'ha' ? 'librarySourceHa' : k === 'sonos' ? 'librarySourceSonos' : 'librarySourceMa');
-const sourceHint = (k) => t(k === 'ha' ? 'librarySourceHaHint' : k === 'sonos' ? 'librarySourceSonosHint' : 'librarySourceMaHint');
+/* The sources plugin players offer go by the names the device sends. */
+const pluginSourceNames = {};
+const sourceName = (k) => pluginSourceNames[k]
+  ?? t(k === 'ha' ? 'librarySourceHa' : k === 'sonos' ? 'librarySourceSonos' : 'librarySourceMa');
+const sourceHint = (k) => (k in pluginSourceNames ? ''
+  : t(k === 'ha' ? 'librarySourceHaHint' : k === 'sonos' ? 'librarySourceSonosHint' : 'librarySourceMaHint'));
 
 function viewName(key) {
   return ({
@@ -238,6 +244,7 @@ export function pickMusic({ current = null } = {}) {
       render();
       const info = await call('libraryPickerSource', { source: key, speaker: keep ?? '' });
       if (gen !== st.gen) return;
+      Object.assign(pluginSourceNames, info.data?.names || {});
       if (!info.ok) {
         Object.assign(st, { loading: false, error: info.error === 'no_source' ? 'no_source' : info.error });
         render();
@@ -465,7 +472,7 @@ export function pickMusic({ current = null } = {}) {
       }
       const pills = el('div', 'mp-pills');
       pills.append(
-        pill(ICONS[st.source] || ICONS.ma, st.source ? sourceName(st.source) : '',
+        pill(ICONS[st.source] || (st.source in pluginSourceNames ? ICONS.plugin : ICONS.ma), st.source ? sourceName(st.source) : '',
           t('musicPickerSourceLabel', { name: st.source ? sourceName(st.source) : '' }),
           st.sources.length > 1 ? () => { st.menu = st.menu === 'sources' ? null : 'sources'; render(); } : null),
         pill(ICONS.volume, hasSpeaker() ? st.speakerName : t('musicPickerNoSpeakers'),
@@ -748,7 +755,7 @@ export function pickMusic({ current = null } = {}) {
       };
       if (sources) {
         st.sources.forEach((k) => m.appendChild(item({
-          icon: ICONS[k], name: sourceName(k), sub: sourceHint(k), on: k === st.source,
+          icon: ICONS[k] || ICONS.plugin, name: sourceName(k), sub: sourceHint(k), on: k === st.source,
           onClick: async () => {
             st.menu = null;
             if (k === st.source) { render(); return; }

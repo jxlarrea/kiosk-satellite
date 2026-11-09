@@ -56,7 +56,7 @@ class PluginManifest(val json: JSONObject) {
         require(json.getInt("schemaVersion") == 1) { "Unsupported manifest schema" }
         require(apiVersion == 1) { "This plugin needs a different SDK version" }
         require(minAndroidSdk >= 24) { "Minimum Android SDK must be at least 24" }
-        require(capabilities.all { it in setOf("overlay", "native", "entities", "host.read", "host.control", "shizuku", "screensaver", "noise", "ha", "voice.skin", "voice.text", "camera", "barcode", "ma", "screensaver.mode") }) { "Unsupported plugin capability" }
+        require(capabilities.all { it in setOf("overlay", "native", "entities", "host.read", "host.control", "shizuku", "screensaver", "noise", "ha", "voice.skin", "voice.text", "camera", "barcode", "ma", "screensaver.mode", "player") }) { "Unsupported plugin capability" }
         // The room's noise level and the conversation's words are host reads, opted into on their own.
         require("noise" !in capabilities || "host.read" in capabilities) { "Unsupported plugin capability" }
         require("voice.text" !in capabilities || "host.read" in capabilities) { "Unsupported plugin capability" }

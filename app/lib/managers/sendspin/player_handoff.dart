@@ -31,9 +31,12 @@ class PlayerHandoff {
   final String Function() load;
   final Future<void> Function(String json) save;
 
-  /// The source a player pick belongs to.
+  /// The source a player pick belongs to. This device's own players,
+  /// a plugin's among them, belong to the device source ('').
   static String sourceOf(String player) =>
-      player.contains(':') ? player.substring(0, player.indexOf(':')) : '';
+      player.contains(':') && !player.startsWith('plugin:')
+      ? player.substring(0, player.indexOf(':'))
+      : '';
 
   /// Who holds the player now, empty when nobody does.
   List<String> get owners => _record()?.owners ?? const [];

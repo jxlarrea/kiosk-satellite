@@ -148,22 +148,31 @@ export async function updatePlayerRow() {
   updateSessionPermissions(tab, !source && byKey['sendspin.player']?.value === LOCAL_SESSION);
   const row = tab.querySelector('[data-key="sendspin.player"]');
   if (!row) return;
-  if (row.playerSource === source && row.refreshPlayer) {
+  // The players running plugins publish join this device's own.
+  const plugins = source ? [] : await pluginPlayers();
+  // The source may have changed while the list loaded: the newer call
+  // paints that one, so this one must not paint its stale source over it.
+  if ((Object.fromEntries((state.settings || []).map((s) => [s.key, s.value]))['sendspin.player_source'] || '') !== source) return;
+  const pluginKey = plugins.map(p => p.id).join(',');
+  if (row.playerSource === source && row.pluginPlayers === pluginKey && row.refreshPlayer) {
     row.refreshPlayer();
     return;
   }
   row.stopPlayerWatch?.();
   row.playerSource = source;
+  row.pluginPlayers = pluginKey;
   row.querySelectorAll('input, select, .ep-field').forEach(el => el.remove());
   row.classList.add('dp-field-row');
   // The entity picker over the source's players, or this device's own three.
-  const spec = source ? playerSpec(source) : fixedPlayerSpec('players:local', [
+  const spec = source ? playerSpec(source) : fixedPlayerSpec(`players:local:${pluginKey}`, [
     { id: '', name: mediaText('Sendspin Player'), iconPath: PLAYER_ICONS.speaker,
       group: '', available: true, raw: {} },
     { id: AIRPLAY, name: AIRPLAY_NAME, iconPath: PLAYER_ICONS.airplay,
       group: '', available: true, raw: {} },
     { id: LOCAL_SESSION, name: mediaText(LOCAL_SESSION_NAME), iconPath: PLAYER_ICONS.session,
       group: '', available: true, raw: {} },
+    ...plugins.map(p => ({ id: p.id, name: p.name, iconPath: PLAYER_ICONS.plugin,
+      group: '', available: true, raw: {} })),
   ]);
   const titles = { ma: 'Music Assistant player', ha: 'Home Assistant media player', sonos: 'Sonos room' };
   const picked = () => {
@@ -232,6 +241,17 @@ export async function updatePlayerRow() {
   row.updateSetting = () => { paint(); return true; };
   row.stopPlayerWatch = null;
   paint();
+}
+
+/* The players running plugins publish, as mediaPlayers lists them for the
+   device source. None when the device cannot say. */
+async function pluginPlayers() {
+  try {
+    const r = await cmd('mediaPlayers', { source: 'device' });
+    return r?.ok && Array.isArray(r.data?.players) ? r.data.players : [];
+  } catch {
+    return [];
+  }
 }
 
 /* What the pick turns off on this device, under the Player row: the

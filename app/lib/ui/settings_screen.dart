@@ -38,6 +38,7 @@ import '../managers/settings/definitions.dart';
 import '../managers/person/person_sensor_manager.dart' show LogAccess;
 import '../managers/sendspin/session_player.dart' show SessionPlayer;
 import '../managers/sendspin/sendspin_manager.dart' show SendspinManager;
+import '../managers/plugins/plugin_players.dart' show PluginPlayers;
 import '../managers/service/service_manager.dart'
     show batteryAdbHint, overlayAdbHint;
 import '../managers/settings/export_filename.dart';
@@ -7724,17 +7725,36 @@ class _PlayerRow extends StatefulWidget {
 }
 
 class _PlayerRowState extends State<_PlayerRow> {
+  @override
+  void initState() {
+    super.initState();
+    PluginPlayers.published.addListener(_onPluginPlayers);
+  }
+
+  @override
+  void dispose() {
+    PluginPlayers.published.removeListener(_onPluginPlayers);
+    super.dispose();
+  }
+
+  /// A plugin started or stopped offering a player.
+  void _onPluginPlayers() {
+    if (mounted) setState(() {});
+  }
+
   static const _titles = {
     'ma': 'Music Assistant player',
     'ha': 'Home Assistant media player',
     'sonos': 'Sonos room',
   };
 
-  /// This device's own three players, or the picked source's.
+  /// This device's own three players and the ones running plugins
+  /// publish, or the picked source's.
   PickSpec _spec(BuildContext context, String source) => source.isEmpty
       ? fixedPlayerSpec(
           context,
-          key: 'players:local',
+          // A list per set of plugin players, so a new one shows.
+          key: 'players:local:${PluginPlayers.published.value.keys.join(',')}',
           items: [
             PickItem(
               id: '',
@@ -7752,6 +7772,12 @@ class _PlayerRowState extends State<_PlayerRow> {
               name: mediaText(context, SendspinManager.localSessionName),
               icon: 'mdi:cellphone-sound',
             ),
+            for (final player in PluginPlayers.published.value.values)
+              PickItem(
+                id: player.pick,
+                name: player.name,
+                icon: 'mdi:puzzle-outline',
+              ),
           ],
         )
       : playerSpec(context, widget.container.commands, source: source);
@@ -7769,7 +7795,7 @@ class _PlayerRowState extends State<_PlayerRow> {
           ? SendspinManager.localSessionName
           : id == SendspinManager.airplayPick
           ? SendspinManager.airplayName
-          : name,
+          : PluginPlayers.published.value[id]?.name ?? name,
     );
     // The manager maintains this flag from the same inputs, but over the
     // async bus — write it here too so the pane rebuild below already

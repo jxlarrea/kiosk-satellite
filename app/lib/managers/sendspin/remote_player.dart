@@ -192,6 +192,9 @@ enum PlayerSourceKind {
 
   /// This device's AirPlay receiver, `airplay`.
   airplay,
+
+  /// A player a plugin publishes, `plugin:<plugin id>/<key>`.
+  plugin,
 }
 
 /// A parsed `sendspin.player` value: which system the player belongs to
@@ -211,6 +214,9 @@ class PlayerSource {
     }
     if (v.startsWith('sonos:')) {
       return PlayerSource(PlayerSourceKind.sonos, v.substring(6));
+    }
+    if (v.startsWith('plugin:')) {
+      return PlayerSource(PlayerSourceKind.plugin, v.substring(7));
     }
     if (v.startsWith('session:')) {
       return PlayerSource(PlayerSourceKind.mediaSession, v.substring(8));
@@ -234,5 +240,6 @@ class PlayerSource {
     PlayerSourceKind.sonos => 'sonos:$id',
     PlayerSourceKind.mediaSession => 'session:$id',
     PlayerSourceKind.airplay => 'airplay',
+    PlayerSourceKind.plugin => 'plugin:$id',
   };
 }

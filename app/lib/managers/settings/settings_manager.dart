@@ -13,6 +13,7 @@ import '../device_camera/camera_resolutions.dart';
 import '../kiosk/drawer_items.dart';
 import '../wake_word/pryon/pryon_catalog.dart';
 import 'definitions.dart';
+import '../plugins/plugin_players.dart';
 
 export 'definitions.dart';
 
@@ -154,7 +155,19 @@ class SettingsManager extends Manager {
                 ...pluginVoiceSkins().keys,
                 if (isPluginVoiceSkin(get(def))) get(def) as String,
               },
+              if (def.key == librarySource.key) ...{
+                ...pluginLibraries().keys,
+                if (PluginPlayers.isPick(get(def) as String))
+                  get(def) as String,
+              },
             ];
+
+  /// The Music Library sources running plugins offer, by their player's
+  /// pick, named the way the Player pick names them.
+  Map<String, String> pluginLibraries() => {
+    for (final player in PluginPlayers.published.value.values)
+      if (player.library) player.pick: player.name,
+  };
   String? optionLabel(SettingDef<Object> def, String value) =>
       def.key == cameraRtspResolution.key
       ? cameraResolutionLabel(value)
@@ -175,6 +188,15 @@ class SettingsManager extends Manager {
                 ? pluginVoiceSkins()[value] ??
                       (isPluginVoiceSkin(value)
                           ? 'Unavailable plugin skin'
+                          : null)
+                : def.key == librarySource.key
+                ? pluginLibraries()[value] ??
+                      // A plugin that is not running: the name its player
+                      // was picked under, else the plugin and the key.
+                      (PluginPlayers.isPick(value)
+                          ? (get(sendspinPlayer) == value
+                                ? get(sendspinPlayerName)
+                                : value.substring(PluginPlayers.prefix.length))
                           : null)
                 : null);
 
@@ -890,7 +912,9 @@ class SettingsManager extends Manager {
                       isCameraStreamResolution(value)) ||
                   (def.key == screensaverMode.key &&
                       isPluginScreensaver(value)) ||
-                  (isVoiceSkinSetting(def.key) && isPluginVoiceSkin(value))):
+                  (isVoiceSkinSetting(def.key) && isPluginVoiceSkin(value)) ||
+                  (def.key == librarySource.key &&
+                      PluginPlayers.isPick(value))):
         await set(def, value, source: source);
       default:
         return false;
@@ -972,6 +996,7 @@ class SettingsManager extends Manager {
                 !pluginScreensavers().containsKey(get(def)))
               get(def) as String: 'Unavailable plugin screensaver',
             if (isVoiceSkinSetting(def.key)) ...pluginVoiceSkins(),
+            if (def.key == librarySource.key) ...pluginLibraries(),
             if (def.key == voiceAmazonLocale.key)
               for (final locale in PryonCatalog.locales)
                 locale: PryonCatalog.localeLabel(locale),

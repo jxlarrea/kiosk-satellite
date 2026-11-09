@@ -370,7 +370,7 @@ Two actions follow a player from an automation, the way the Media Player page's 
 
 `esphome.<node name>_media_player_list` takes no arguments and answers with every player the kiosk can follow, read through `response_variable`: each with its `source` (`device`, `home_assistant`, `music_assistant` or `sonos`), its `name`, its `id` and whether it is `available`, plus `current`, the pick in force. A Sonos room's id is the serial the Sonos page shows under its address.
 
-`esphome.<node name>_media_player_set` takes a `source` and a `player`, the player by its name as listed or by its id, and answers with what it picked. The `device` source puts the kiosk back on its own Sendspin player, or with `player` set to `media_session` on the Local Media Session and `airplay` on the AirPlay receiver. Any other `player` picks the Sendspin player, but one must still be given, since no ESPHome action argument is optional.
+`esphome.<node name>_media_player_set` takes a `source` and a `player`, the player by its name as listed or by its id, and answers with what it picked. The `device` source puts the kiosk back on its own Sendspin player, or with `player` set to `media_session` on the Local Media Session, `airplay` on the AirPlay receiver and a plugin player's name or id on that player. The list shows plugin players under the `device` source. Any other `player` picks the Sendspin player, but one must still be given, since no ESPHome action argument is optional.
 
 ```yaml
 - action: esphome.kitchen_tablet_media_player_set

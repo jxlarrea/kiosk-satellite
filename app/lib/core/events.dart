@@ -1099,6 +1099,20 @@ class AirPlaySessionChanged extends AppEvent {
   final Map<String, Object?>? session;
 }
 
+/// A plugin player sent a new state while it is the pick, or null once it
+/// stopped being one (SDK `player`).
+class PluginPlayerStateChanged extends AppEvent {
+  const PluginPlayerStateChanged(this.pick, this.state);
+  final String pick;
+  final Map<String, Object?>? state;
+}
+
+/// A plugin player's queue changed, so a queue on screen reads it again.
+class PluginPlayerQueueChanged extends AppEvent {
+  const PluginPlayerQueueChanged(this.pick);
+  final String pick;
+}
+
 /// The followed player's state, title, artist or source moved (issue
 /// #741): what the ESPHome media sensors show. Published only on a real
 /// change, never for a position tick.

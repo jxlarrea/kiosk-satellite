@@ -104,7 +104,9 @@ class SettingDef<T> {
   /// list of them for a row that belongs to more than one mode (the Immich
   /// From date, which both Since and Timeframe want).
   /// A map with `gt` gates on a number greater than the supplied value, one
-  /// with `ne` on any value but the supplied one (a picker set to anything).
+  /// with `ne` on any value but the supplied one (a picker set to anything),
+  /// and with `neStartsWith` beside it on no value that starts with that
+  /// prefix either.
   final Object dependsOnValue;
 
   /// Whether [value] satisfies [dependsOnValue], which is a list when the
@@ -119,6 +121,12 @@ class SettingDef<T> {
     }
     if (wanted is Map && wanted.containsKey('ne')) {
       final ne = wanted['ne'];
+      // A prefix none of the values may start with either: every pick of
+      // a kind, such as each plugin player's.
+      final prefix = wanted['neStartsWith'];
+      if (prefix is String && value is String && value.startsWith(prefix)) {
+        return false;
+      }
       return ne is List ? !ne.contains(value) : value != ne;
     }
     return value == wanted;
@@ -9295,6 +9303,8 @@ const sendspinVolumeKeys = SettingDef<String>(
   alsoDependsOn: 'sendspin.player',
   alsoDependsOnValue: {
     'ne': ['session:*', 'airplay'],
+    // Nor a player a plugin publishes.
+    'neStartsWith': 'plugin:',
   },
 );
 
@@ -9500,6 +9510,8 @@ const sendspinEnabled = SettingDef<bool>(
   alsoDependsOn: 'sendspin.player',
   alsoDependsOnValue: {
     'ne': ['session:*', 'airplay'],
+    // Nor a player a plugin publishes.
+    'neStartsWith': 'plugin:',
   },
   type: SettingType.boolean,
   defaultValue: false,

@@ -97,6 +97,15 @@ public interface PluginHost {
     default void publishScreensaverView(String key, String title, OverlayFactory factory, boolean touch) { throw new UnsupportedOperationException("Touch screensavers are unavailable"); }
     /** SDK 1, screensaver. Remove a renderer. KS retains the session with a black background. */
     default void removeScreensaver(String key) { throw new UnsupportedOperationException("Screensavers are unavailable"); }
+    /**
+     * SDK 1, player. Offer a player under Media Player > Player, listed under This device as the plugin's name and the
+     * title, such as "Radio: Internet Archive". KS calls listener.onActivate once the user picks it and
+     * onDeactivate when the pick moves on. Publishing again under the same key changes the title. key is 1 to 40
+     * lowercase letters, digits and underscores, title up to 80 characters. At most two players per plugin.
+     */
+    default void publishPlayer(String key, String title, PlayerListener listener) { throw new UnsupportedOperationException("Players are unavailable"); }
+    /** SDK 1, player. Withdraw a player. A pick that names it stays and shows the player as unavailable. */
+    default void removePlayer(String key) { throw new UnsupportedOperationException("Players are unavailable"); }
     /** Publish a bounded chart snapshot. SDK 1. */
     default void publishSeries(String key, Map<String, Object> chart) { throw new UnsupportedOperationException("Charts are unavailable"); }
     /** Remove this session's chart with the given key. */

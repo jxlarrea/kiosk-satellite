@@ -10,6 +10,7 @@ import '../managers/music_library/ha_library_source.dart';
 import '../managers/music_library/library_model.dart';
 import '../managers/music_library/music_library_manager.dart';
 import '../managers/music_library/music_pick.dart';
+import '../managers/plugins/plugin_players.dart';
 import 'kit.dart';
 import 'music_library_overlay.dart' show LibraryArt;
 import 'toast.dart';
@@ -494,13 +495,16 @@ class _MusicPickerViewState extends State<MusicPickerView> {
   String _sourceName(UiStrings s, String key) => switch (key) {
     'ha' => s.librarySourceHa,
     'sonos' => s.librarySourceSonos,
-    _ => s.librarySourceMa,
+    'ma' => s.librarySourceMa,
+    // A plugin player's library, by the name the Player pick shows.
+    _ => PluginPlayers.published.value[key]?.name ?? key,
   };
 
   IconData _sourceIcon(String key) => switch (key) {
     'ha' => Icons.home_outlined,
     'sonos' => Icons.speaker_outlined,
-    _ => Icons.library_music_outlined,
+    'ma' => Icons.library_music_outlined,
+    _ => Icons.extension_outlined,
   };
 
   String _viewName(UiStrings s, String key) => switch (key) {
@@ -1431,7 +1435,8 @@ class _MusicPickerViewState extends State<MusicPickerView> {
             sub: switch (k) {
               'ha' => s.librarySourceHaHint,
               'sonos' => s.librarySourceSonosHint,
-              _ => s.librarySourceMaHint,
+              'ma' => s.librarySourceMaHint,
+              _ => '',
             },
             on: k == _source,
           ),

@@ -13,6 +13,7 @@ import '../../core/events.dart';
 import '../../ui/mdi_icon.dart';
 import 'fleet_plugin_host.dart';
 import 'plugin_directory.dart';
+import 'plugin_players.dart';
 import 'plugin_repository.dart';
 import '../home_assistant/plugin_ha_socket.dart';
 import '../sendspin/plugin_ma_socket.dart';
@@ -457,6 +458,7 @@ class PluginManager extends Manager implements FleetPluginHost {
     }
 
     screensavers.addListener(publishScreensaverOptions);
+    PluginPlayers.published.addListener(_publishLibraryOptions);
     installed.addListener(publishScreensaverOptions);
     // The Overview's plugin tiles, apart from the readings and charts a
     // plugin page follows: those move often, the tiles rarely.
@@ -496,6 +498,7 @@ class PluginManager extends Manager implements FleetPluginHost {
           _setOverlays(data['id'] as String, const []);
           _setContentInsets(data['id'] as String, null);
           _setSetup(data['id'] as String, null);
+          _setPlayers(data['id'] as String, '', const []);
           _hostReads.open(call.arguments as Map);
           // A new session has not heard that its settings page is open.
           if (_pageViewers.containsKey(data['id'])) {
@@ -515,6 +518,7 @@ class PluginManager extends Manager implements FleetPluginHost {
             _setOverlays(data['id'] as String, const []);
             _setContentInsets(data['id'] as String, null);
             _setSetup(data['id'] as String, null);
+            _setPlayers(data['id'] as String, '', const []);
           }
         case 'cameraOpen':
           return camera == null
@@ -595,6 +599,47 @@ class PluginManager extends Manager implements FleetPluginHost {
             _setScreensavers(
               data['id'] as String,
               data['screensavers'] as List,
+            );
+          }
+        case 'players':
+          final data = call.arguments as Map;
+          if (_runtimeSessions[data['id']] == data['session'] &&
+              data['session'] != null) {
+            _setPlayers(
+              data['id'] as String,
+              data['session'] as String,
+              data['players'] as List,
+            );
+          }
+        case 'playerState':
+          final data = call.arguments as Map;
+          if (_runtimeSessions[data['id']] == data['session'] &&
+              data['session'] != null) {
+            final pick = PluginPlayers.pickOf(
+              data['id'] as String,
+              '${data['key']}',
+            );
+            final raw = data['state'];
+            final state = raw is Map
+                ? <String, Object?>{
+                    for (final e in raw.entries) '${e.key}': e.value,
+                  }
+                : null;
+            if (state == null) {
+              PluginPlayers.states.remove(pick);
+            } else {
+              PluginPlayers.states[pick] = state;
+            }
+            bus.publish(PluginPlayerStateChanged(pick, state));
+          }
+        case 'playerQueue':
+          final data = call.arguments as Map;
+          if (_runtimeSessions[data['id']] == data['session'] &&
+              data['session'] != null) {
+            bus.publish(
+              PluginPlayerQueueChanged(
+                PluginPlayers.pickOf(data['id'] as String, '${data['key']}'),
+              ),
             );
           }
         case 'contentInsets':
@@ -1546,6 +1591,18 @@ class PluginManager extends Manager implements FleetPluginHost {
     };
   }
 
+  /// The Music Library's Source lists the libraries plugin players offer.
+  void _publishLibraryOptions() {
+    if (!_disposed) bus.publish(SettingOptionsChanged(defs.librarySource.key));
+  }
+
+  /// A plugin's published players, named after the plugin for the picker.
+  void _setPlayers(String id, String session, List value) {
+    final name =
+        installed.value.where((p) => p['id'] == id).firstOrNull?['name'] ?? id;
+    PluginPlayers.setPlugin(id, session, '$name', value);
+  }
+
   void _setScreensavers(String id, List value) {
     final next = {...screensavers.value}
       ..removeWhere((_, item) => item['pluginId'] == id);
@@ -1634,6 +1691,7 @@ class PluginManager extends Manager implements FleetPluginHost {
       if (!enabled.value || item['running'] != true) {
         _runtimeSessions.remove(item['id']);
         _setContentInsets(item['id'] as String, null);
+        _setPlayers(item['id'] as String, '', const []);
       }
       _setCharts(
         item['id'] as String,
@@ -1650,6 +1708,12 @@ class PluginManager extends Manager implements FleetPluginHost {
     }
     for (final id in statusTiles.value.keys.toList()) {
       if (!items.any((p) => p['id'] == id)) _setStatusTiles(id, const []);
+    }
+    for (final id
+        in PluginPlayers.published.value.values
+            .map((p) => p.pluginId)
+            .toSet()) {
+      if (!items.any((p) => p['id'] == id)) _setPlayers(id, '', const []);
     }
     for (final id
         in screensavers.value.values
@@ -1928,6 +1992,7 @@ class PluginManager extends Manager implements FleetPluginHost {
     charts.dispose();
     statusTiles.dispose();
     setup.dispose();
+    PluginPlayers.published.removeListener(_publishLibraryOptions);
     screensavers.dispose();
     installed.dispose();
     windows.dispose();

@@ -8,6 +8,7 @@ import 'ha_library_source.dart';
 import 'library_model.dart';
 import 'music_library_manager.dart';
 import 'sonos_library_source.dart';
+import '../plugins/plugin_players.dart';
 
 /// What the Kiosk Satellite music script asks for: play something on the
 /// speaker this kiosk's Now Playing follows (or one the user names),
@@ -175,7 +176,10 @@ class MusicRequests {
     }
     if (named.isEmpty) {
       final pick = _library.pick.value;
-      final source = pick.contains(':')
+      // A plugin player's library is keyed by the player's own pick.
+      final source = PluginPlayers.isPick(pick)
+          ? pick
+          : pick.contains(':')
           ? pick.substring(0, pick.indexOf(':'))
           : (_library.pickIn('ma') ? 'ma' : '');
       if (source.isEmpty || !_library.available.contains(source)) {

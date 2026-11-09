@@ -18,6 +18,8 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../analytics/usage_counters.dart';
 import 'airplay_player.dart';
+import 'plugin_player.dart';
+import '../plugins/plugin_players.dart';
 import 'ha_remote_player.dart';
 import 'artwork_cache.dart';
 import 'queue_artwork_cache.dart';
@@ -444,6 +446,10 @@ class SendspinManager extends Manager {
     if (url.startsWith(AirPlayPlayer.artworkScheme)) {
       return AirPlayManager.artworkFor(url);
     }
+    // A plugin player's, sent as bytes and kept by the plugin bridge.
+    if (PluginRemotePlayer.artworkPick(url) case final pick?) {
+      return PluginPlayers.artwork(pick);
+    }
     // A Sendspin server's cover frame, held by the native engine.
     if (url.startsWith(artworkFrameScheme)) {
       final seq = int.tryParse(url.split('-').last) ?? 0;
@@ -569,6 +575,9 @@ class SendspinManager extends Manager {
     final remote = _remote;
     if (remote is AirPlayPlayer && remote.clientName.isNotEmpty) {
       return remote.clientName;
+    }
+    if (remote is PluginRemotePlayer && remote.name != null) {
+      return remote.name!;
     }
     if (remote is SessionPlayer &&
         remote.package == SessionPlayer.anyApp &&
@@ -761,7 +770,10 @@ class SendspinManager extends Manager {
   /// the device's media volume: the local player, another app's media
   /// session or an AirPlay sender.
   bool get _deviceVolume =>
-      _remote == null || _remote is SessionPlayer || _remote is AirPlayPlayer;
+      _remote == null ||
+      _remote is SessionPlayer ||
+      _remote is AirPlayPlayer ||
+      _remote is PluginRemotePlayer;
 
   /// Whether the view's volume slider and mute act on the whole group
   /// this device plays in (issue #867): the local player, grouped in
@@ -1326,6 +1338,21 @@ class SendspinManager extends Manager {
     });
     AirPlayManager.albumCoverAdded.addListener(_onAirPlayCover);
 
+    // A plugin player's states and queue changes, for its follower while
+    // it is the pick.
+    bus.on<PluginPlayerStateChanged>().listen((e) {
+      final remote = _remote;
+      if (remote is PluginRemotePlayer && remote.pick == e.pick) {
+        remote.handle(e.state);
+      }
+    });
+    bus.on<PluginPlayerQueueChanged>().listen((e) {
+      final remote = _remote;
+      if (remote is PluginRemotePlayer && remote.pick == e.pick && queueOpen) {
+        unawaited(refreshQueue());
+      }
+    });
+
     // The "Show the Sendspin player" gesture with nothing on screen to
     // show: the queue may still exist server-side, invisible to this app
     // since it restarted (issue #178) — go look for it.
@@ -1355,6 +1382,15 @@ class SendspinManager extends Manager {
       // pick once the source is this device again, is stale.
       if (e.key == defs.sendspinPlayerSource.key) {
         unawaited(_reconcilePick());
+      }
+      // This device's own players belong to the device source: a pick of
+      // a plugin player, the AirPlay receiver or the Local Media Session
+      // puts the source on this device, whoever set the pick.
+      if (e.key == defs.sendspinPlayer.key &&
+          _deviceOnly(_source.kind) &&
+          _settings.get(defs.sendspinPlayerSource).isNotEmpty) {
+        log.info(name, '${_source.value} plays on this device: source set');
+        unawaited(_settings.set(defs.sendspinPlayerSource, ''));
       }
       // The lyrics toggle flipping mid-track (the Now Playing view's
       // button, or either settings surface): fetch for the track already
@@ -1864,16 +1900,28 @@ class SendspinManager extends Manager {
             'Assistant group keeps Music Assistant\'s own entities, for '
             'pickers that play sounds on a player. With rooms true, the '
             'Sonos group lists every room on its own instead of one row '
-            'per group, the way the speaker selection pill lists them.',
+            'per group, the way the speaker selection pill lists them. '
+            'The device group lists the players running plugins add to this '
+            'device\'s own.',
         params: const {
-          'source': 'ma | ha | sonos, default all',
+          'source': 'ma | ha | sonos | device, default all',
           'speakers': 'true to keep Music Assistant entities in ha',
           'rooms': 'true to list every Sonos room on its own',
         },
         handler: (p) async {
           final only = '${p['source'] ?? ''}'.trim();
           bool want(String group) => only.isEmpty || only == group;
-          final players = <Map<String, Object?>>[];
+          final players = <Map<String, Object?>>[
+            // This device's players that running plugins offer.
+            if (want('device'))
+              for (final info in PluginPlayers.published.value.values)
+                {
+                  'id': info.pick,
+                  'name': info.name,
+                  'group': 'device',
+                  'available': true,
+                },
+          ];
           final notes = <String, String>{};
           if (!want('ma')) {
             // Skipped.
@@ -1932,8 +1980,9 @@ class SendspinManager extends Manager {
             'music_assistant or sonos) and the player by name or id, the '
             'way the Media Player page picks one. The device source puts '
             'this device back on its own Sendspin player, with player '
-            'media_session on whichever app plays on the device, or with '
-            'player airplay on its AirPlay receiver.',
+            'media_session on whichever app plays on the device, with '
+            'player airplay on its AirPlay receiver, or with a plugin '
+            'player\'s id or name on that player.',
         params: const {
           'source': 'device | home_assistant | music_assistant | sonos',
           'player': 'the player name, or its id',
@@ -1945,10 +1994,25 @@ class SendspinManager extends Manager {
             final player = '${p['player'] ?? ''}';
             final session = isLocalSessionName(player);
             final airplay = player.trim().toLowerCase() == airplayPick;
+            final plugin = pluginPlayerNamed(player);
+            // A plugin player named by its pick while its plugin is not
+            // running: the pick stays and plays once the plugin publishes it.
+            final unpublished =
+                plugin == null && PluginPlayers.parse(player.trim()) != null;
             final (pick, id, name) = session
                 ? (localSessionPick, 'media_session', localSessionName)
                 : airplay
                 ? (airplayPick, airplayPick, airplayName)
+                : plugin != null
+                ? (plugin.pick, plugin.pick, plugin.name)
+                : unpublished
+                ? (
+                    player.trim(),
+                    player.trim(),
+                    _settings.get(defs.sendspinPlayer) == player.trim()
+                        ? _settings.get(defs.sendspinPlayerName)
+                        : player.trim(),
+                  )
                 : ('', '', '');
             await _settings.set(defs.sendspinPlayerSource, '');
             await Future<void>.delayed(Duration.zero);
@@ -2304,14 +2368,19 @@ class SendspinManager extends Manager {
     if (picked.isLocal || picked.kind == kind) return;
     // This device's other players: the apps playing on it and the
     // AirPlay receiver.
-    if (kind == PlayerSourceKind.local &&
-        (picked.kind == PlayerSourceKind.mediaSession ||
-            picked.kind == PlayerSourceKind.airplay)) {
+    if (kind == PlayerSourceKind.local && _deviceOnly(picked.kind)) {
       return;
     }
     await _settings.set(defs.sendspinPlayer, '');
     await _settings.set(defs.sendspinPlayerName, '');
   }
+
+  /// Whether [kind] is one of this device's own players other than the
+  /// Sendspin player, which only the device source offers.
+  static bool _deviceOnly(PlayerSourceKind kind) =>
+      kind == PlayerSourceKind.plugin ||
+      kind == PlayerSourceKind.airplay ||
+      kind == PlayerSourceKind.mediaSession;
 
   /// One topology read from the speaker at [host], its connections
   /// dropped after.
@@ -2370,6 +2439,24 @@ class SendspinManager extends Manager {
 
   /// What that pick is called, a name no language translates.
   static const airplayName = 'AirPlay';
+
+  /// The running plugin player [name] names: its pick, the name the
+  /// picker shows or its own title, case aside.
+  static PluginPlayerInfo? pluginPlayerNamed(String name) {
+    final n = name.trim().toLowerCase();
+    if (n.isEmpty) return null;
+    final players = PluginPlayers.published.value.values;
+    return players
+            .where(
+              (p) =>
+                  p.pick.toLowerCase() == n ||
+                  p.pick.substring(PluginPlayers.prefix.length).toLowerCase() ==
+                      n,
+            )
+            .firstOrNull ??
+        players.where((p) => p.name.toLowerCase() == n).firstOrNull ??
+        players.where((p) => p.title.toLowerCase() == n).firstOrNull;
+  }
 
   /// Whether an action's player names the local media session rather
   /// than the Sendspin player.
@@ -2482,6 +2569,8 @@ class SendspinManager extends Manager {
     // The AirPlay receiver plays out of this device like the local player
     // and ducks on the same factor, whether or not a sender plays.
     unawaited(AirPlayManager.duck(voiceActive.value ? factor : 1.0));
+    // And so does every plugin player's output.
+    unawaited(PluginPlayers.duck(voiceActive.value ? factor : 1.0));
   }
 
   Future<void> _retireRemote(RemotePlayer remote, VolumeDucker? ducker) async {
@@ -2516,6 +2605,7 @@ class SendspinManager extends Manager {
       PlayerSourceKind.sonos => source.id.isNotEmpty && sonosHost.isNotEmpty,
       PlayerSourceKind.mediaSession => source.id.isNotEmpty,
       PlayerSourceKind.airplay => true,
+      PlayerSourceKind.plugin => PluginPlayers.parse(source.value) != null,
     };
     final key = want
         ? switch (source.kind) {
@@ -2528,6 +2618,7 @@ class SendspinManager extends Manager {
                   '${_settings.get(defs.sendspinSonosGroupVolume)}|${_settings.get(defs.sendspinSonosInputs)}',
             PlayerSourceKind.mediaSession => 'session|${source.id}',
             PlayerSourceKind.airplay => 'airplay',
+            PlayerSourceKind.plugin => source.value,
             _ => '',
           }
         : '';
@@ -2579,6 +2670,11 @@ class SendspinManager extends Manager {
         log: log,
       ),
       PlayerSourceKind.airplay => AirPlayPlayer(onSnapshot: snapshot),
+      PlayerSourceKind.plugin => PluginRemotePlayer(
+        pick: source.value,
+        onSnapshot: snapshot,
+        onUnavailable: _publishMediaSummary,
+      ),
       _ => remoteFactory(
         baseUrl: maUrl,
         token: maToken,
@@ -3299,11 +3395,17 @@ class SendspinManager extends Manager {
   bool get queueEditable {
     if (!queueAvailable) return false;
     final remote = _remote;
-    return remote == null || remote is MaRemotePlayer || remote is SonosPlayer;
+    return remote == null ||
+        remote is MaRemotePlayer ||
+        remote is SonosPlayer ||
+        remote is PluginRemotePlayer;
   }
 
   /// Take the item [id] out of the queue.
   Future<bool> removeQueueItem(String id) async {
+    if (_remote case final PluginRemotePlayer plugin) {
+      return _edited(PluginPlayers.editQueue(plugin.pick, 'remove', item: id));
+    }
     if (_remote case final SonosPlayer sonos) {
       return _edited(sonos.removeQueueTrack(id));
     }
@@ -3324,6 +3426,11 @@ class SendspinManager extends Manager {
   /// from where it is; a Sonos by track number.
   Future<bool> moveQueueItem(String id, int from, int to) async {
     if (from == to) return true;
+    if (_remote case final PluginRemotePlayer plugin) {
+      return _edited(
+        PluginPlayers.editQueue(plugin.pick, 'move', item: id, to: to),
+      );
+    }
     if (_remote case final SonosPlayer sonos) {
       return _edited(sonos.moveQueueTrack(from + 1, to + 1));
     }
@@ -3338,6 +3445,17 @@ class SendspinManager extends Manager {
   /// Move the item [id] right after the playing one. Music Assistant does
   /// that on a shift of zero; a Sonos is given the position.
   Future<bool> playQueueItemNext(String id) async {
+    if (_remote case final PluginRemotePlayer plugin) {
+      final rows = queueItems.value;
+      final from = rows.indexWhere((r) => r['id'] == id);
+      final current = rows.indexWhere((r) => r['current'] == true);
+      if (from < 0) return false;
+      // Right after the playing one, counted in the queue as it is now.
+      final to = from < current ? current : current + 1;
+      return _edited(
+        PluginPlayers.editQueue(plugin.pick, 'move', item: id, to: to),
+      );
+    }
     if (_remote case final SonosPlayer sonos) {
       final rows = queueItems.value;
       final from = rows.indexWhere((r) => r['id'] == id);
@@ -3357,6 +3475,9 @@ class SendspinManager extends Manager {
 
   /// Empty the queue.
   Future<bool> clearQueue() async {
+    if (_remote case final PluginRemotePlayer plugin) {
+      return _edited(PluginPlayers.editQueue(plugin.pick, 'clear'));
+    }
     if (_remote case final SonosPlayer sonos) {
       return _edited(sonos.clearQueueTracks());
     }

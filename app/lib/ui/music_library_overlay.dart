@@ -11,6 +11,8 @@ import '../l10n/generated/ui_strings.dart';
 import '../l10n/messages.dart';
 import '../managers/music_library/ha_library_source.dart';
 import '../managers/music_library/library_model.dart';
+import '../managers/music_library/plugin_library_source.dart';
+import '../managers/plugins/plugin_players.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kit.dart';
 import 'music_library_queue.dart';
@@ -244,7 +246,7 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
       _roots = source is HaLibrarySource ? _loadRoots(source) : null;
       _place = source == null || source.hasDiscover
           ? _Place('discover')
-          : source is HaLibrarySource
+          : source is HaLibrarySource || source is PluginLibrarySource
           ? _Place('browse')
           : _Place('library', category: source.categories.firstOrNull);
     });
@@ -593,7 +595,9 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
   String _sourceName(UiStrings s, String key) => switch (key) {
     'ha' => s.librarySourceHa,
     'sonos' => s.librarySourceSonos,
-    _ => s.librarySourceMa,
+    'ma' => s.librarySourceMa,
+    // A plugin player's, by the name the Player pick shows.
+    _ => PluginPlayers.published.value[key]?.name ?? key,
   };
 
   String _categoryName(UiStrings s, String key) => switch (key) {
@@ -661,11 +665,12 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   title: Text(_sourceName(s, key)),
-                  subtitle: Text(switch (key) {
-                    'ha' => s.librarySourceHaHint,
-                    'sonos' => s.librarySourceSonosHint,
-                    _ => s.librarySourceMaHint,
-                  }),
+                  subtitle: switch (key) {
+                    'ha' => Text(s.librarySourceHaHint),
+                    'sonos' => Text(s.librarySourceSonosHint),
+                    'ma' => Text(s.librarySourceMaHint),
+                    _ => null,
+                  },
                   trailing: key == current
                       ? Icon(
                           Icons.check_rounded,
@@ -4086,7 +4091,13 @@ class _SourceMark extends StatelessWidget {
       _ => null,
     };
     if (asset == null) {
-      return Icon(Icons.speaker_outlined, size: size, color: color);
+      return Icon(
+        PluginPlayers.isPick(source)
+            ? Icons.extension_outlined
+            : Icons.speaker_outlined,
+        size: size,
+        color: color,
+      );
     }
     return SizedBox.square(
       dimension: size,
