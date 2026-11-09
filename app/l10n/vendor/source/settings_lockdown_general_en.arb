@@ -20,6 +20,26 @@
       ]
     }
   },
+  "settingLockdownAutoUnlockMinutesTitle": "Unlock automatically after",
+  "@settingLockdownAutoUnlockMinutesTitle": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Setting label.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
+  "settingLockdownAutoUnlockMinutesDescription": "Turns Lockdown Mode off after this long when it is started from the kiosk menu. Set to 0 to stay locked.",
+  "@settingLockdownAutoUnlockMinutesDescription": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
   "settingLockdownBlackoutTitle": "Blackout screen",
   "@settingLockdownBlackoutTitle": {
     "context": "Lockdown Mode > Blackout screen",

@@ -9246,6 +9246,13 @@ class UiStringsZh extends UiStrings {
       '禁用屏幕交互，直到通过 Home Assistant 或退出手势关闭。';
 
   @override
+  String get settingLockdownAutoUnlockMinutesTitle => '自动解锁时间';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      '从 Kiosk 菜单启动锁定模式时，在此时长后关闭锁定模式。设为 0 则保持锁定。';
+
+  @override
   String get settingLockdownBlackoutTitle => '黑屏';
 
   @override
@@ -24742,6 +24749,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingLockdownEnabledDescription =>
       '禁用屏幕交互，直到通过 Home Assistant 或退出手势关闭。';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesTitle => '自动解锁时间';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      '从 Kiosk 菜单启动锁定模式时，在此时长后关闭锁定模式。设为 0 则保持锁定。';
 
   @override
   String get settingLockdownBlackoutTitle => '黑屏';

@@ -1,3 +1,4 @@
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,6 +58,97 @@ void main() {
       expect(defs.lockdownExitGesture.options, defs.kioskExitGesture.options);
       expect(defs.lockdownExitGesture.dependsOn, defs.lockdownEnabled.key);
     });
+  });
+
+  group('unlock automatically after (issue #1367)', () {
+    late SettingsManager settings;
+    late KioskManager kiosk;
+    KioskManager? built;
+
+    test('the setting is a 0 to 10 minute slider, off by default and not '
+        'gated on the toggle', () {
+      expect(defs.allSettings, contains(defs.lockdownAutoUnlockMinutes));
+      expect(defs.lockdownAutoUnlockMinutes.defaultValue, 0);
+      expect(defs.lockdownAutoUnlockMinutes.min, 0);
+      expect(defs.lockdownAutoUnlockMinutes.max, 10);
+      expect(defs.lockdownAutoUnlockMinutes.step, 1);
+      expect(defs.lockdownAutoUnlockMinutes.dependsOn, isNull);
+    });
+
+    Future<void> build(Map<String, Object> initial) async {
+      SharedPreferences.setMockInitialValues(initial);
+      final bus = EventBus();
+      final log = Logger();
+      final commands = CommandRegistry(log);
+      commands.register(
+        Command(
+          name: 'bringToFront',
+          description: 'test stub',
+          handler: (_) async => const CommandResult.ok(true),
+        ),
+      );
+      settings = SettingsManager(bus, commands, log);
+      await settings.init();
+      kiosk = KioskManager(bus, commands, log, settings);
+      await kiosk.init();
+      built = kiosk;
+    }
+
+    tearDown(() async {
+      await built?.dispose();
+      built = null;
+    });
+
+    test('a menu lock lifts after the set minutes', () async {
+      await build({'ks.lockdown.auto_unlock_minutes': 2});
+      fakeAsync((async) {
+        kiosk.lockFromMenu();
+        async.flushMicrotasks();
+        expect(settings.get(defs.lockdownEnabled), isTrue);
+        async.elapse(const Duration(minutes: 1, seconds: 59));
+        expect(settings.get(defs.lockdownEnabled), isTrue);
+        async.elapse(const Duration(seconds: 2));
+        expect(settings.get(defs.lockdownEnabled), isFalse);
+      });
+    });
+
+    test('0 keeps a menu lock on', () async {
+      await build({});
+      fakeAsync((async) {
+        kiosk.lockFromMenu();
+        async.flushMicrotasks();
+        async.elapse(const Duration(minutes: 30));
+        expect(settings.get(defs.lockdownEnabled), isTrue);
+      });
+    });
+
+    test('a lock from the setting itself never times out', () async {
+      await build({'ks.lockdown.auto_unlock_minutes': 1});
+      fakeAsync((async) {
+        settings.set(defs.lockdownEnabled, true);
+        async.flushMicrotasks();
+        async.elapse(const Duration(minutes: 5));
+        expect(settings.get(defs.lockdownEnabled), isTrue);
+      });
+    });
+
+    test(
+      'an early unlock cancels the timer, so a later remote lock holds',
+      () async {
+        await build({'ks.lockdown.auto_unlock_minutes': 2});
+        fakeAsync((async) {
+          kiosk.lockFromMenu();
+          async.flushMicrotasks();
+          async.elapse(const Duration(minutes: 1));
+          settings.set(defs.lockdownEnabled, false);
+          async.flushMicrotasks();
+          settings.set(defs.lockdownEnabled, true);
+          async.flushMicrotasks();
+          async.elapse(const Duration(minutes: 5));
+          expect(settings.get(defs.lockdownEnabled), isTrue);
+        });
+      },
+    );
   });
 
   group('foreground watchdog under lockdown', () {

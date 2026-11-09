@@ -9851,6 +9851,14 @@ class UiStringsFr extends UiStrings {
       'Désactive les interactions à l\'écran jusqu\'à ce que le mode soit désactivé depuis Home Assistant ou via le geste de sortie.';
 
   @override
+  String get settingLockdownAutoUnlockMinutesTitle =>
+      'Déverrouiller automatiquement après';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      'Désactive le mode verrouillage après ce délai lorsqu\'il est lancé depuis le menu du kiosque. Mettez 0 pour rester verrouillé.';
+
+  @override
   String get settingLockdownBlackoutTitle => 'Écran noir';
 
   @override

@@ -540,7 +540,7 @@ class KioskDrawer extends StatelessWidget {
       case 'lockdown':
         return item(Icons.lock_outline, strings.drawerLockdown, () async {
           onClose();
-          await c.settings.set(defs.lockdownEnabled, true);
+          await c.kiosk.lockFromMenu();
         });
       case 'hold':
         return _holdItem(context, divided: divided);

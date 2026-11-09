@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "9ce2acaa4860c5447dc720a770036f54a03f16f5",
+  "revision": "1286241295d8c804df6ae6871a224daac02d3331",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -128,7 +128,7 @@
     "settings_kiosk_general_en.arb": "a45e0a0510b43f5a2f6f0deb5a508ddd31e2fb9ce5a69a1af9f2e4f1a4fe11a3",
     "settings_kiosk_permissions_en.arb": "686c9c49e03d50ec06070dbbf9717bccf2916fc68464d2ac12c4de3cd7f2e337",
     "settings_leds_en.arb": "ba45feb28eb45ea9ef9b299e6c53da2ad9458231218351e87a98c4a9d368f512",
-    "settings_lockdown_general_en.arb": "9bae4ee2cec72e78df3ea75a1e8a30d30609fb3f4e27f419d33d8d8993c87d48",
+    "settings_lockdown_general_en.arb": "bad3efa49c4f1517478a84403c9e3f034254ac0b1a1d542776402f8c72991a27",
     "settings_lockdown_permissions_en.arb": "5e1c4165f637ce0c7d46c2f52587044bf47da538e3c17ca74a6e512a771547f1",
     "settings_media_player_airplay_en.arb": "a42e3091effd1fbbe7f2d278cfc36154523106b0624512780e371e07a2b6838c",
     "settings_media_player_cache_en.arb": "ce251f8e7c3307fc7863779680cc610a8d2bf50b41e9d904b3f84ad153564a8a",

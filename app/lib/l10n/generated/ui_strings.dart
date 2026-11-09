@@ -16928,6 +16928,18 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Unlock automatically after'**
+  String get settingLockdownAutoUnlockMinutesTitle;
+
+  /// Help below this setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Turns Lockdown Mode off after this long when it is started from the kiosk menu. Set to 0 to stay locked.'**
+  String get settingLockdownAutoUnlockMinutesDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Blackout screen'**
   String get settingLockdownBlackoutTitle;
 

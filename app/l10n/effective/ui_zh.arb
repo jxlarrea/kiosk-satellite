@@ -36624,6 +36624,26 @@
       ]
     }
   },
+  "settingLockdownAutoUnlockMinutesTitle": "自动解锁时间",
+  "@settingLockdownAutoUnlockMinutesTitle": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Setting label.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
+  "settingLockdownAutoUnlockMinutesDescription": "从 Kiosk 菜单启动锁定模式时，在此时长后关闭锁定模式。设为 0 则保持锁定。",
+  "@settingLockdownAutoUnlockMinutesDescription": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
   "settingLockdownBlackoutTitle": "黑屏",
   "@settingLockdownBlackoutTitle": {
     "context": "Lockdown Mode > Blackout screen",

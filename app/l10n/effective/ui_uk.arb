@@ -36624,6 +36624,26 @@
       ]
     }
   },
+  "settingLockdownAutoUnlockMinutesTitle": "Автоматично розблокувати через",
+  "@settingLockdownAutoUnlockMinutesTitle": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Setting label.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
+  "settingLockdownAutoUnlockMinutesDescription": "Вимикає режим блокування через цей час, якщо його увімкнено з меню кіоска. Встановіть 0, щоб блокування залишалося.",
+  "@settingLockdownAutoUnlockMinutesDescription": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
   "settingLockdownBlackoutTitle": "Затемнення екрана",
   "@settingLockdownBlackoutTitle": {
     "context": "Lockdown Mode > Blackout screen",

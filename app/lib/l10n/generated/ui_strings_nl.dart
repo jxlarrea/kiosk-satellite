@@ -9794,6 +9794,14 @@ class UiStringsNl extends UiStrings {
       'Blokkeer interacties met het scherm totdat de modus via Home Assistant of met het afsluitgebaar wordt uitgeschakeld.';
 
   @override
+  String get settingLockdownAutoUnlockMinutesTitle =>
+      'Automatisch ontgrendelen na';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      'Schakelt de vergrendelingsmodus uit na deze tijd als die vanuit het kioskmenu is gestart. Zet op 0 om vergrendeld te blijven.';
+
+  @override
   String get settingLockdownBlackoutTitle => 'Scherm zwart maken';
 
   @override

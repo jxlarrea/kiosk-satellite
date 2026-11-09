@@ -9685,6 +9685,14 @@ class UiStringsEn extends UiStrings {
       'Disables screen interactions until turned off either from Home Assistant or with the exit gesture.';
 
   @override
+  String get settingLockdownAutoUnlockMinutesTitle =>
+      'Unlock automatically after';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      'Turns Lockdown Mode off after this long when it is started from the kiosk menu. Set to 0 to stay locked.';
+
+  @override
   String get settingLockdownBlackoutTitle => 'Blackout screen';
 
   @override

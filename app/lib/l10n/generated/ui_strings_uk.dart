@@ -9777,6 +9777,14 @@ class UiStringsUk extends UiStrings {
       'Вимикає взаємодію з екраном, доки його не буде вимкнено через Home Assistant або за допомогою жесту виходу.';
 
   @override
+  String get settingLockdownAutoUnlockMinutesTitle =>
+      'Автоматично розблокувати через';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      'Вимикає режим блокування через цей час, якщо його увімкнено з меню кіоска. Встановіть 0, щоб блокування залишалося.';
+
+  @override
   String get settingLockdownBlackoutTitle => 'Затемнення екрана';
 
   @override

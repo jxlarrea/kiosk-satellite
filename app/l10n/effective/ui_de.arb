@@ -36624,6 +36624,26 @@
       ]
     }
   },
+  "settingLockdownAutoUnlockMinutesTitle": "Automatisch entsperren nach",
+  "@settingLockdownAutoUnlockMinutesTitle": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Setting label.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
+  "settingLockdownAutoUnlockMinutesDescription": "Schaltet den Sperrmodus nach dieser Zeit aus, wenn er über das Kiosk-Menü gestartet wurde. Mit 0 bleibt die Sperre bestehen.",
+  "@settingLockdownAutoUnlockMinutesDescription": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
   "settingLockdownBlackoutTitle": "Bildschirm schwarz schalten",
   "@settingLockdownBlackoutTitle": {
     "context": "Lockdown Mode > Blackout screen",

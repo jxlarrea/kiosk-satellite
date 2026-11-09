@@ -2,6 +2,8 @@
   "@@locale": "ru",
   "settingLockdownEnabledTitle": "Включить режим блокировки",
   "settingLockdownEnabledDescription": "Отключает взаимодействие с экраном до выключения из Home Assistant или жестом выхода.",
+  "settingLockdownAutoUnlockMinutesTitle": "Автоматически разблокировать через",
+  "settingLockdownAutoUnlockMinutesDescription": "Выключает режим блокировки через это время, если он включён из меню киоска. Установите 0, чтобы блокировка сохранялась.",
   "settingLockdownBlackoutTitle": "Гасить экран",
   "settingLockdownBlackoutDescription": "Делает экран чёрным во время блокировки.",
   "settingLockdownAllowScreensaverTitle": "Разрешить заставку",

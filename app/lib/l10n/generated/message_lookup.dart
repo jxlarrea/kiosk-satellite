@@ -2936,6 +2936,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingLockdownEnabledTitle' => strings.settingLockdownEnabledTitle,
       'settingLockdownEnabledDescription' =>
         strings.settingLockdownEnabledDescription,
+      'settingLockdownAutoUnlockMinutesTitle' =>
+        strings.settingLockdownAutoUnlockMinutesTitle,
+      'settingLockdownAutoUnlockMinutesDescription' =>
+        strings.settingLockdownAutoUnlockMinutesDescription,
       'settingLockdownBlackoutTitle' => strings.settingLockdownBlackoutTitle,
       'settingLockdownBlackoutDescription' =>
         strings.settingLockdownBlackoutDescription,

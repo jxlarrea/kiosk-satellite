@@ -9755,6 +9755,14 @@ class UiStringsRu extends UiStrings {
       'Отключает взаимодействие с экраном до выключения из Home Assistant или жестом выхода.';
 
   @override
+  String get settingLockdownAutoUnlockMinutesTitle =>
+      'Автоматически разблокировать через';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      'Выключает режим блокировки через это время, если он включён из меню киоска. Установите 0, чтобы блокировка сохранялась.';
+
+  @override
   String get settingLockdownBlackoutTitle => 'Гасить экран';
 
   @override

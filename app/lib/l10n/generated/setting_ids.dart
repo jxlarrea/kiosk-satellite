@@ -1516,6 +1516,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingShowInKioskMenuTitle",
     "description": "settingUiDrawerItemsDescription",
   },
+  "lockdown.auto_unlock_minutes": {
+    "title": "settingLockdownAutoUnlockMinutesTitle",
+    "description": "settingLockdownAutoUnlockMinutesDescription",
+  },
   "lockdown.blackout": {
     "title": "settingLockdownBlackoutTitle",
     "description": "settingLockdownBlackoutDescription",

@@ -116,7 +116,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   /// the exit gesture while this holds.
   bool get locked => _settings.get(defs.kioskEnabled);
 
-  StreamSubscription<SettingChanged>? _languageSubscription;
+  StreamSubscription<SettingChanged>? _settingsSubscription;
 
   String get _lockShieldText => lookupUiStrings(
     appLocaleForLanguage(_settings.get(defs.uiLanguage)),
@@ -126,6 +126,27 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   /// a touch shield over everything and the exit gesture disables the mode
   /// instead of opening the menu.
   bool get lockdownActive => _settings.get(defs.lockdownEnabled);
+
+  /// Lifts a lock started from the kiosk menu after Unlock automatically
+  /// after (issue #1367). Canceled when the lock ends any other way.
+  Timer? _autoUnlockTimer;
+
+  /// The kiosk menu's Lockdown Mode entry. Locks from Home Assistant or
+  /// the remote admin go straight to the setting and never time out.
+  Future<void> lockFromMenu() async {
+    await _settings.set(defs.lockdownEnabled, true);
+    _autoUnlockTimer?.cancel();
+    _autoUnlockTimer = null;
+    final minutes = _settings.get(defs.lockdownAutoUnlockMinutes).round();
+    if (minutes <= 0 || !lockdownActive) return;
+    log.info(name, 'lockdown from the menu: unlocking in $minutes min');
+    _autoUnlockTimer = Timer(Duration(minutes: minutes), () async {
+      _autoUnlockTimer = null;
+      if (!lockdownActive) return;
+      log.info(name, 'lockdown: unlocking automatically');
+      await _settings.set(defs.lockdownEnabled, false);
+    });
+  }
 
   /// Taps a gesture variant needs; 0 disables the counter. Lockdown and
   /// kiosk each pick their own variant, but only one is armed at a time —
@@ -708,9 +729,14 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       _armReclaim();
     });
 
-    _languageSubscription = bus.on<SettingChanged>().listen((event) {
+    _settingsSubscription = bus.on<SettingChanged>().listen((event) {
       if (event.key == defs.uiLanguage.key && pushFlags) {
         unawaited(_invoke<void>('lockShieldText', {'text': _lockShieldText}));
+      }
+      // A lock that ends any other way takes its menu timer with it.
+      if (event.key == defs.lockdownEnabled.key && event.value != true) {
+        _autoUnlockTimer?.cancel();
+        _autoUnlockTimer = null;
       }
     });
     if (!Platform.isAndroid) return;
@@ -945,12 +971,14 @@ class KioskManager extends Manager with WidgetsBindingObserver {
 
   @override
   Future<void> dispose() async {
-    await _languageSubscription?.cancel();
+    await _settingsSubscription?.cancel();
     if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
     _reclaimTimer?.cancel();
     _reclaimTimer = null;
     _installPauseTimer?.cancel();
     _installPauseTimer = null;
+    _autoUnlockTimer?.cancel();
+    _autoUnlockTimer = null;
   }
 
   /// Whether the flag bundle actually goes to the platform. Keyed off the

@@ -2,6 +2,8 @@
   "@@locale": "zh_CN",
   "settingLockdownEnabledTitle": "启用锁定模式",
   "settingLockdownEnabledDescription": "禁用屏幕交互，直到通过 Home Assistant 或退出手势关闭。",
+  "settingLockdownAutoUnlockMinutesTitle": "自动解锁时间",
+  "settingLockdownAutoUnlockMinutesDescription": "从 Kiosk 菜单启动锁定模式时，在此时长后关闭锁定模式。设为 0 则保持锁定。",
   "settingLockdownBlackoutTitle": "黑屏",
   "settingLockdownBlackoutDescription": "锁定时将屏幕变为黑色。",
   "settingLockdownAllowScreensaverTitle": "允许屏保",

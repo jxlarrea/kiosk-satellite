@@ -1381,6 +1381,25 @@ const lockdownMenu = SettingDef<bool>(
   linksTo: 'ui.drawer_items',
 );
 
+// A lock started from the kiosk menu is usually a screen wipe (issue
+// #1367), so it can lift on its own. Locks from Home Assistant or the
+// remote admin hold until turned off. Not gated on lockdown.enabled: it is
+// set up while the screen is unlocked.
+const lockdownAutoUnlockMinutes = SettingDef<num>(
+  key: 'lockdown.auto_unlock_minutes',
+  type: SettingType.number,
+  defaultValue: 0,
+  title: 'Unlock automatically after',
+  description:
+      'Turns Lockdown Mode off after this long when it is started from the '
+      'kiosk menu. Set to 0 to stay locked.',
+  category: 'Lockdown',
+  min: 0,
+  max: 10,
+  step: 1,
+  unit: 'min',
+);
+
 // The blackout variant: the same shield painted solid black. The panel
 // stays lit (turning it off would freeze the app and the admin server
 // with it, same reasoning as the screensaver's black mode) but the
@@ -13854,6 +13873,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowedApps,
   lockdownEnabled,
   lockdownMenu,
+  lockdownAutoUnlockMinutes,
   lockdownBlackout,
   lockdownAllowScreensaver,
   lockdownExitGesture,

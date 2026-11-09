@@ -2,6 +2,8 @@
   "@@locale": "fr",
   "settingLockdownEnabledTitle": "Activer le mode verrouillage",
   "settingLockdownEnabledDescription": "Désactive les interactions à l'écran jusqu'à ce que le mode soit désactivé depuis Home Assistant ou via le geste de sortie.",
+  "settingLockdownAutoUnlockMinutesTitle": "Déverrouiller automatiquement après",
+  "settingLockdownAutoUnlockMinutesDescription": "Désactive le mode verrouillage après ce délai lorsqu'il est lancé depuis le menu du kiosque. Mettez 0 pour rester verrouillé.",
   "settingLockdownBlackoutTitle": "Écran noir",
   "settingLockdownBlackoutDescription": "Rend l'écran noir tant qu'il est verrouillé.",
   "settingLockdownAllowScreensaverTitle": "Autoriser l'économiseur d'écran",

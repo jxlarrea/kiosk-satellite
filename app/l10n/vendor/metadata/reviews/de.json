@@ -29610,5 +29610,17 @@
     "translation": "6d59044bc0d951193af51fb590537f8a54cbaefac8c8df8fa403b4113a6a9dce",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingLockdownAutoUnlockMinutesTitle": {
+    "source": "29ed49a052eca30d3f6ba64653f897bb0b45a52a7ed302fbe0da858614c26f7c",
+    "translation": "fe5997def0023f168d2009ddf6f409f74d1373ebb143932b0825b78ec97206cf",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingLockdownAutoUnlockMinutesDescription": {
+    "source": "aca8b8e2a8e479083c96adc29ec2c4bbf7eab2b6520cdf6764ccaf8cabe57a9e",
+    "translation": "5efaa04fd0d35761ce7853b2bbab3f4d9e5134c965a3fe5342d216a78ea33240",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

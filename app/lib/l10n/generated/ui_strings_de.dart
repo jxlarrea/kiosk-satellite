@@ -9896,6 +9896,14 @@ class UiStringsDe extends UiStrings {
       'Deaktiviert die Interaktion mit dem Bildschirm, bis der Sperrmodus über Home Assistant oder die Exit-Geste deaktiviert wird.';
 
   @override
+  String get settingLockdownAutoUnlockMinutesTitle =>
+      'Automatisch entsperren nach';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      'Schaltet den Sperrmodus nach dieser Zeit aus, wenn er über das Kiosk-Menü gestartet wurde. Mit 0 bleibt die Sperre bestehen.';
+
+  @override
   String get settingLockdownBlackoutTitle => 'Bildschirm schwarz schalten';
 
   @override

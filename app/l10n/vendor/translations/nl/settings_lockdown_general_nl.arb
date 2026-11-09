@@ -2,6 +2,8 @@
   "@@locale": "nl",
   "settingLockdownEnabledTitle": "Vergrendelingsmodus inschakelen",
   "settingLockdownEnabledDescription": "Blokkeer interacties met het scherm totdat de modus via Home Assistant of met het afsluitgebaar wordt uitgeschakeld.",
+  "settingLockdownAutoUnlockMinutesTitle": "Automatisch ontgrendelen na",
+  "settingLockdownAutoUnlockMinutesDescription": "Schakelt de vergrendelingsmodus uit na deze tijd als die vanuit het kioskmenu is gestart. Zet op 0 om vergrendeld te blijven.",
   "settingLockdownBlackoutTitle": "Scherm zwart maken",
   "settingLockdownBlackoutDescription": "Maakt het scherm zwart zolang het is vergrendeld.",
   "settingLockdownAllowScreensaverTitle": "Schermbeveiliging toestaan",

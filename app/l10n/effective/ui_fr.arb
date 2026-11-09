@@ -36624,6 +36624,26 @@
       ]
     }
   },
+  "settingLockdownAutoUnlockMinutesTitle": "Déverrouiller automatiquement après",
+  "@settingLockdownAutoUnlockMinutesTitle": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Setting label.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
+  "settingLockdownAutoUnlockMinutesDescription": "Désactive le mode verrouillage après ce délai lorsqu'il est lancé depuis le menu du kiosque. Mettez 0 pour rester verrouillé.",
+  "@settingLockdownAutoUnlockMinutesDescription": {
+    "context": "Lockdown Mode > Unlock automatically after",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "remoteAdmin": [
+        "Lockdown Mode > Unlock automatically after"
+      ]
+    }
+  },
   "settingLockdownBlackoutTitle": "Écran noir",
   "@settingLockdownBlackoutTitle": {
     "context": "Lockdown Mode > Blackout screen",

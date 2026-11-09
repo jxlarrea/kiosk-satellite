@@ -9856,6 +9856,14 @@ class UiStringsEs extends UiStrings {
       'Desactiva las interacciones con la pantalla hasta que se desactive desde Home Assistant o con el gesto de salida.';
 
   @override
+  String get settingLockdownAutoUnlockMinutesTitle =>
+      'Desbloquear automáticamente tras';
+
+  @override
+  String get settingLockdownAutoUnlockMinutesDescription =>
+      'Desactiva el modo de bloqueo tras este tiempo cuando se activa desde el menú del kiosko. Pon 0 para mantener el bloqueo.';
+
+  @override
   String get settingLockdownBlackoutTitle => 'Pantalla en negro';
 
   @override
