@@ -4670,6 +4670,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverWeatherBarTitlesTitle,
       'settingScreensaverWeatherBarTitlesDescription' =>
         strings.settingScreensaverWeatherBarTitlesDescription,
+      'screensaverWeatherBarHighLowDescription' =>
+        strings.screensaverWeatherBarHighLowDescription,
       'screensaverWeatherBarHumidityDescription' =>
         strings.screensaverWeatherBarHumidityDescription,
       'screensaverWeatherBarWindDescription' =>

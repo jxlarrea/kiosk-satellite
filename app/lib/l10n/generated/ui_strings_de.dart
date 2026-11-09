@@ -13995,6 +13995,10 @@ class UiStringsDe extends UiStrings {
       'Jeden Messwert über seinem Wert benennen. Ohne Titel erscheinen die Werte so groß wie die Temperatur.';
 
   @override
+  String get screensaverWeatherBarHighLowDescription =>
+      'Den heutigen Höchst- und Tiefstwert anzeigen, wenn die Wetterentität eine Tagesvorhersage hat.';
+
+  @override
   String get screensaverWeatherBarHumidityDescription =>
       'Die Luftfeuchtigkeit anzeigen, wenn die Wetterentität sie meldet.';
 

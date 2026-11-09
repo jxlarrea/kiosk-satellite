@@ -51717,6 +51717,19 @@
       ]
     }
   },
+  "screensaverWeatherBarHighLowDescription": "Mostrar la máxima y la mínima de hoy cuando la entidad meteorológica tenga un pronóstico diario.",
+  "@screensaverWeatherBarHighLowDescription": {
+    "context": "Settings:Screensaver:Weather Mood screensaver",
+    "description": "Weather Mood clock or weather information bar control.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Weather Mood screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Weather Mood screensaver"
+      ]
+    }
+  },
   "screensaverWeatherBarHumidityDescription": "Mostrar la humedad cuando la entidad meteorológica la proporcione.",
   "@screensaverWeatherBarHumidityDescription": {
     "context": "Settings:Screensaver:Weather Mood screensaver",

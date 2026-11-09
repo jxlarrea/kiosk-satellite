@@ -23930,6 +23930,12 @@ abstract class UiStrings {
   /// Weather Mood clock or weather information bar control.
   ///
   /// In en, this message translates to:
+  /// **'Show today\'s high and low when the weather entity has a daily forecast.'**
+  String get screensaverWeatherBarHighLowDescription;
+
+  /// Weather Mood clock or weather information bar control.
+  ///
+  /// In en, this message translates to:
   /// **'Show humidity when the weather entity reports it.'**
   String get screensaverWeatherBarHumidityDescription;
 

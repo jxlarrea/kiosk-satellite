@@ -9,6 +9,7 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../core/lifecycle.dart';
 import '../l10n/messages.dart';
+import '../managers/calendar/calendar_manager.dart' show parseForecast;
 import '../managers/home_assistant/home_assistant_manager.dart'
     show GlanceSubscription;
 import '../managers/settings/definitions.dart' as defs;
@@ -242,6 +243,12 @@ class _WeatherMoodScreensaverState extends State<WeatherMoodScreensaver>
       onTranslations: (translations) {
         if (!mounted || generation != _generation) return;
         setState(() => _translations = translations);
+      },
+      // For the weather bar's high and low.
+      forecastEntity: entity.startsWith('weather.') ? entity : null,
+      onForecast: (forecast) {
+        if (!mounted || generation != _generation) return;
+        setState(() => _readings.daily = parseForecast(forecast));
       },
     );
     if (!mounted || generation != _generation) {

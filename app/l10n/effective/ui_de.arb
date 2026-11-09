@@ -51717,6 +51717,19 @@
       ]
     }
   },
+  "screensaverWeatherBarHighLowDescription": "Den heutigen Höchst- und Tiefstwert anzeigen, wenn die Wetterentität eine Tagesvorhersage hat.",
+  "@screensaverWeatherBarHighLowDescription": {
+    "context": "Settings:Screensaver:Weather Mood screensaver",
+    "description": "Weather Mood clock or weather information bar control.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Weather Mood screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Weather Mood screensaver"
+      ]
+    }
+  },
   "screensaverWeatherBarHumidityDescription": "Die Luftfeuchtigkeit anzeigen, wenn die Wetterentität sie meldet.",
   "@screensaverWeatherBarHumidityDescription": {
     "context": "Settings:Screensaver:Weather Mood screensaver",

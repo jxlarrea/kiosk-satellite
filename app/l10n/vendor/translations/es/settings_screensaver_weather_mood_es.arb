@@ -45,6 +45,7 @@
   "settingScreensaverWeatherBarOpacityDescription": "Oscurecer la barra inferior para facilitar la lectura de la información meteorológica.",
   "settingScreensaverWeatherBarTitlesTitle": "Mostrar títulos",
   "settingScreensaverWeatherBarTitlesDescription": "Nombrar cada dato sobre su valor. Si se desactiva, los valores tienen el tamaño de la temperatura.",
+  "screensaverWeatherBarHighLowDescription": "Mostrar la máxima y la mínima de hoy cuando la entidad meteorológica tenga un pronóstico diario.",
   "screensaverWeatherBarHumidityDescription": "Mostrar la humedad cuando la entidad meteorológica la proporcione.",
   "screensaverWeatherBarWindDescription": "Mostrar la velocidad del viento cuando la entidad meteorológica la proporcione.",
   "screensaverWeatherBarVisibilityDescription": "Mostrar la visibilidad cuando la entidad meteorológica la proporcione.",

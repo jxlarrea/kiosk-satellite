@@ -51717,6 +51717,19 @@
       ]
     }
   },
+  "screensaverWeatherBarHighLowDescription": "天气实体提供每日预报时显示今天的最高和最低气温。",
+  "@screensaverWeatherBarHighLowDescription": {
+    "context": "Settings:Screensaver:Weather Mood screensaver",
+    "description": "Weather Mood clock or weather information bar control.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Weather Mood screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Weather Mood screensaver"
+      ]
+    }
+  },
   "screensaverWeatherBarHumidityDescription": "天气实体提供湿度时显示。",
   "@screensaverWeatherBarHumidityDescription": {
     "context": "Settings:Screensaver:Weather Mood screensaver",

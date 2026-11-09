@@ -45,6 +45,7 @@
   "settingScreensaverWeatherBarOpacityDescription": "Затемнювати нижню панель, щоб погодна інформація залишалася розбірливою.",
   "settingScreensaverWeatherBarTitlesTitle": "Показувати заголовки",
   "settingScreensaverWeatherBarTitlesDescription": "Підписувати кожен показник над його значенням. Без заголовків значення мають розмір температури.",
+  "screensaverWeatherBarHighLowDescription": "Показувати сьогоднішній максимум і мінімум, коли погодний об'єкт має щоденний прогноз.",
   "screensaverWeatherBarHumidityDescription": "Показувати вологість, коли погодний об'єкт повідомляє її.",
   "screensaverWeatherBarWindDescription": "Показувати швидкість вітру, коли погодний об'єкт повідомляє її.",
   "screensaverWeatherBarVisibilityDescription": "Показувати видимість, коли погодний об'єкт повідомляє її.",

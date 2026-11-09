@@ -29622,5 +29622,11 @@
     "translation": "5efaa04fd0d35761ce7853b2bbab3f4d9e5134c965a3fe5342d216a78ea33240",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "screensaverWeatherBarHighLowDescription": {
+    "source": "2226af2e04fee18bc3fb94667501faad0a3b7e122465078caa9041f8632c5668",
+    "translation": "74876aafdda557ba9b75c30e17ccabaf816c9c4172ce9788d29b76bdbc54ca47",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

@@ -13027,6 +13027,10 @@ class UiStringsZh extends UiStrings {
       '在各读数上方显示名称。关闭后，数值大小与温度相同。';
 
   @override
+  String get screensaverWeatherBarHighLowDescription =>
+      '天气实体提供每日预报时显示今天的最高和最低气温。';
+
+  @override
   String get screensaverWeatherBarHumidityDescription => '天气实体提供湿度时显示。';
 
   @override
@@ -28527,6 +28531,10 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingScreensaverWeatherBarTitlesDescription =>
       '在各读数上方显示名称。关闭后，数值大小与温度相同。';
+
+  @override
+  String get screensaverWeatherBarHighLowDescription =>
+      '天气实体提供每日预报时显示今天的最高和最低气温。';
 
   @override
   String get screensaverWeatherBarHumidityDescription => '天气实体提供湿度时显示。';

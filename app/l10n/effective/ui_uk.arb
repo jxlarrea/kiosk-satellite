@@ -51717,6 +51717,19 @@
       ]
     }
   },
+  "screensaverWeatherBarHighLowDescription": "Показувати сьогоднішній максимум і мінімум, коли погодний об'єкт має щоденний прогноз.",
+  "@screensaverWeatherBarHighLowDescription": {
+    "context": "Settings:Screensaver:Weather Mood screensaver",
+    "description": "Weather Mood clock or weather information bar control.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Weather Mood screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Weather Mood screensaver"
+      ]
+    }
+  },
   "screensaverWeatherBarHumidityDescription": "Показувати вологість, коли погодний об'єкт повідомляє її.",
   "@screensaverWeatherBarHumidityDescription": {
     "context": "Settings:Screensaver:Weather Mood screensaver",

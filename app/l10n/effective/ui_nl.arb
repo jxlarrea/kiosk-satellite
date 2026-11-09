@@ -51717,6 +51717,19 @@
       ]
     }
   },
+  "screensaverWeatherBarHighLowDescription": "Toon de hoogste en laagste temperatuur van vandaag wanneer de weerentiteit een dagelijkse voorspelling heeft.",
+  "@screensaverWeatherBarHighLowDescription": {
+    "context": "Settings:Screensaver:Weather Mood screensaver",
+    "description": "Weather Mood clock or weather information bar control.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Weather Mood screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Weather Mood screensaver"
+      ]
+    }
+  },
   "screensaverWeatherBarHumidityDescription": "Toon vochtigheid wanneer de weerentiteit het meldt.",
   "@screensaverWeatherBarHumidityDescription": {
     "context": "Settings:Screensaver:Weather Mood screensaver",

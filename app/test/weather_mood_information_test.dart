@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/core/app_locales.dart';
 import 'package:kiosk_satellite/l10n/generated/ui_strings.dart';
+import 'package:kiosk_satellite/managers/calendar/calendar_manager.dart'
+    show parseForecast;
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/glance/glance_manager.dart';
 import 'package:kiosk_satellite/ui/digital_clock_face.dart';
@@ -550,6 +552,71 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+  test('high and low read today from the daily forecast', () {
+    final r = WeatherMoodReadings();
+    final today = DateTime(2026, 11, 9, 15);
+    expect(r.highLow(today), isNull);
+    r.daily = parseForecast([
+      {'datetime': '2026-11-08T12:00:00', 'temperature': 20, 'templow': 9},
+      {'datetime': '2026-11-09T12:00:00', 'temperature': 22.6, 'templow': 13.2},
+    ]);
+    expect(r.highLow(today), '23° / 13°');
+    // A forecast without a low has nothing to pair the high with.
+    r.daily = parseForecast([
+      {'datetime': '2026-11-09T12:00:00', 'temperature': 22},
+    ]);
+    expect(r.highLow(today), isNull);
+  });
+  testWidgets('High and low adds a chip with today\'s forecast', (
+    tester,
+  ) async {
+    final c = await container();
+    await c.settings.set(defs.screensaverWeatherBarHumidity, false);
+    await c.settings.set(defs.screensaverWeatherBarWind, false);
+    await c.settings.set(defs.screensaverWeatherBarVisibility, false);
+    await c.settings.set(defs.screensaverWeatherBarTitles, true);
+    final readings = WeatherMoodReadings()
+      ..update({
+        'state': 'sunny',
+        'attributes': {'temperature': 18, 'temperature_unit': '°C'},
+      });
+    final now = DateTime.now();
+    readings.daily = parseForecast([
+      {
+        'datetime': DateTime(
+          now.year,
+          now.month,
+          now.day,
+          12,
+        ).toIso8601String(),
+        'temperature': 21.4,
+        'templow': 11.6,
+      },
+    ]);
+    Future<void> show() async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1280, 800);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: WeatherMoodInformation(container: c, readings: readings),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    expect(defs.screensaverWeatherBarHighLow.defaultValue, true);
+    await show();
+    expect(find.text('21° / 12°'), findsOneWidget);
+    expect(find.text('High and low'), findsOneWidget);
+    expect(find.byIcon(Icons.thermostat), findsOneWidget);
+    await c.settings.set(defs.screensaverWeatherBarHighLow, false);
+    await show();
+    expect(find.text('21° / 12°'), findsNothing);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets('a ringing alarm keeps Snooze and Stop big on a small screen', (
     tester,
   ) async {

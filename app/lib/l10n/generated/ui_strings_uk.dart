@@ -13848,6 +13848,10 @@ class UiStringsUk extends UiStrings {
       'Підписувати кожен показник над його значенням. Без заголовків значення мають розмір температури.';
 
   @override
+  String get screensaverWeatherBarHighLowDescription =>
+      'Показувати сьогоднішній максимум і мінімум, коли погодний об\'єкт має щоденний прогноз.';
+
+  @override
   String get screensaverWeatherBarHumidityDescription =>
       'Показувати вологість, коли погодний об\'єкт повідомляє її.';
 

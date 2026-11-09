@@ -45,6 +45,7 @@
   "settingScreensaverWeatherBarOpacityDescription": "加深底栏背景，使天气信息更易阅读。",
   "settingScreensaverWeatherBarTitlesTitle": "显示标题",
   "settingScreensaverWeatherBarTitlesDescription": "在各读数上方显示名称。关闭后，数值大小与温度相同。",
+  "screensaverWeatherBarHighLowDescription": "天气实体提供每日预报时显示今天的最高和最低气温。",
   "screensaverWeatherBarHumidityDescription": "天气实体提供湿度时显示。",
   "screensaverWeatherBarWindDescription": "天气实体提供风速时显示。",
   "screensaverWeatherBarVisibilityDescription": "天气实体提供能见度时显示。",

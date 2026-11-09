@@ -9,6 +9,8 @@ import 'alarm_ring_overlay.dart';
 import '../app_container.dart';
 import '../core/locale_dates.dart';
 import '../l10n/messages.dart';
+import '../managers/calendar/calendar_manager.dart' show DayForecast;
+import '../managers/calendar/calendar_model.dart' show dateOnly;
 import '../managers/settings/definitions.dart' as defs;
 import 'clock_faces.dart';
 import 'digital_clock_face.dart';
@@ -114,6 +116,20 @@ Color _color(String value) {
 class WeatherMoodReadings {
   String condition = '';
   final attributes = <String, Object?>{};
+
+  /// The entity's daily forecast by local date, for today's high and low.
+  /// Empty when the integration has no daily forecast.
+  Map<DateTime, DayForecast> daily = const {};
+
+  /// Today's high and low as the weather widget shows them, or null
+  /// unless the forecast has both.
+  String? highLow([DateTime? now]) {
+    final today = daily[dateOnly(now ?? DateTime.now())];
+    final high = today?.high, low = today?.low;
+    if (high == null || low == null) return null;
+    return '${high.round()}° / ${low.round()}°';
+  }
+
   bool get available =>
       condition.isNotEmpty &&
       condition != 'unknown' &&
@@ -551,7 +567,10 @@ class WeatherMoodBar extends StatelessWidget {
       const EdgeInsets.fromLTRB(6, 6, 18, 6),
       (screensaverText(context, title), value, icon, titles),
     );
+    final highLow = readings.highLow();
     final metrics = <Widget>[
+      if (s.get(defs.screensaverWeatherBarHighLow) && highLow != null)
+        metric('High and low', highLow, Icons.thermostat),
       if (s.get(defs.screensaverWeatherBarHumidity) &&
           readings.number('humidity') != null)
         metric(

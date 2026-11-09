@@ -24493,5 +24493,10 @@
     "source": "29ed49a052eca30d3f6ba64653f897bb0b45a52a7ed302fbe0da858614c26f7c",
     "translation": "5df18fe6197cc5d3eff160b55777c189d4c534c28926401354608ce254dc117a",
     "author": "Xavier Larrea"
+  },
+  "screensaverWeatherBarHighLowDescription": {
+    "source": "2226af2e04fee18bc3fb94667501faad0a3b7e122465078caa9041f8632c5668",
+    "translation": "6c97c9be24265d9a4a12461c59052f3fb50328e6d4838dae48ac279f7929a682",
+    "author": "Xavier Larrea"
   }
 }

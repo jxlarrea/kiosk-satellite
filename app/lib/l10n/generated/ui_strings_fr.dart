@@ -13964,6 +13964,10 @@ class UiStringsFr extends UiStrings {
       'Nommer chaque mesure au-dessus de sa valeur. Sans titres, les valeurs ont la taille de la température.';
 
   @override
+  String get screensaverWeatherBarHighLowDescription =>
+      'Afficher les températures max. et min. du jour lorsque l’entité météo fournit une prévision quotidienne.';
+
+  @override
   String get screensaverWeatherBarHumidityDescription =>
       'Afficher l’humidité lorsque l’entité météo la fournit.';
 

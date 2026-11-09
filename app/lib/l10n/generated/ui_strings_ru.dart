@@ -13801,6 +13801,10 @@ class UiStringsRu extends UiStrings {
       'Называть каждое показание над его значением. Выключено: значения размером с температуру.';
 
   @override
+  String get screensaverWeatherBarHighLowDescription =>
+      'Показывать сегодняшний максимум и минимум, когда у сущности погоды есть ежедневный прогноз.';
+
+  @override
   String get screensaverWeatherBarHumidityDescription =>
       'Показывать влажность, когда сущность погоды её сообщает.';
 

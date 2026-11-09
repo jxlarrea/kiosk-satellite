@@ -539,6 +539,7 @@
   "Darken the bottom bar to keep weather information readable.": "settingScreensaverWeatherBarOpacityDescription",
   "Show titles": "settingScreensaverWeatherBarTitlesTitle",
   "Name each reading above its value. When off, values match the temperature size.": "settingScreensaverWeatherBarTitlesDescription",
+  "Show today's high and low when the weather entity has a daily forecast.": "screensaverWeatherBarHighLowDescription",
   "Show humidity when the weather entity reports it.": "screensaverWeatherBarHumidityDescription",
   "Show wind speed when the weather entity reports it.": "screensaverWeatherBarWindDescription",
   "Show visibility when the weather entity reports it.": "screensaverWeatherBarVisibilityDescription",

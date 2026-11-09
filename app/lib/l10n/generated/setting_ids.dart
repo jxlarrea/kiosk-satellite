@@ -1804,6 +1804,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "screensaverOverlayForecast",
     "description": "screensaverOverlayForecastHelp",
   },
+  "screensaver.weather_bar_high_low": {
+    "title": "screensaverOverlayHighLow",
+    "description": "screensaverWeatherBarHighLowDescription",
+  },
   "screensaver.weather_bar_humidity": {
     "title": "screensaverOverlayHumidity",
     "description": "screensaverWeatherBarHumidityDescription",

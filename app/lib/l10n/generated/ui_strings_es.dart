@@ -13966,6 +13966,10 @@ class UiStringsEs extends UiStrings {
       'Nombrar cada dato sobre su valor. Si se desactiva, los valores tienen el tamaño de la temperatura.';
 
   @override
+  String get screensaverWeatherBarHighLowDescription =>
+      'Mostrar la máxima y la mínima de hoy cuando la entidad meteorológica tenga un pronóstico diario.';
+
+  @override
   String get screensaverWeatherBarHumidityDescription =>
       'Mostrar la humedad cuando la entidad meteorológica la proporcione.';
 

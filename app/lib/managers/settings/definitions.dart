@@ -2667,6 +2667,19 @@ const screensaverWeatherBarForecast = SettingDef<bool>(
   dependsOn: 'screensaver.weather_bar',
 );
 
+const screensaverWeatherBarHighLow = SettingDef<bool>(
+  key: 'screensaver.weather_bar_high_low',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: "High and low",
+  description:
+      "Show today's high and low when the weather entity has a daily forecast.",
+  category: 'Screensaver',
+  section: 'Weather information',
+  subpage: 'Weather Mood screensaver',
+  dependsOn: 'screensaver.weather_bar',
+);
+
 const screensaverWeatherBarHumidity = SettingDef<bool>(
   key: 'screensaver.weather_bar_humidity',
   type: SettingType.boolean,
@@ -13973,6 +13986,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverWeatherBarLocation,
   screensaverWeatherBarFeelsLike,
   screensaverWeatherBarForecast,
+  screensaverWeatherBarHighLow,
   screensaverWeatherBarHumidity,
   screensaverWeatherBarWind,
   screensaverWeatherBarVisibility,

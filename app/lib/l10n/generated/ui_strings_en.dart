@@ -13703,6 +13703,10 @@ class UiStringsEn extends UiStrings {
       'Name each reading above its value. When off, values match the temperature size.';
 
   @override
+  String get screensaverWeatherBarHighLowDescription =>
+      'Show today\'s high and low when the weather entity has a daily forecast.';
+
+  @override
   String get screensaverWeatherBarHumidityDescription =>
       'Show humidity when the weather entity reports it.';
 

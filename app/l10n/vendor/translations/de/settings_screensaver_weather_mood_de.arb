@@ -45,6 +45,7 @@
   "settingScreensaverWeatherBarOpacityDescription": "Die untere Leiste abdunkeln, damit die Wetterinformationen gut lesbar bleiben.",
   "settingScreensaverWeatherBarTitlesTitle": "Titel anzeigen",
   "settingScreensaverWeatherBarTitlesDescription": "Jeden Messwert über seinem Wert benennen. Ohne Titel erscheinen die Werte so groß wie die Temperatur.",
+  "screensaverWeatherBarHighLowDescription": "Den heutigen Höchst- und Tiefstwert anzeigen, wenn die Wetterentität eine Tagesvorhersage hat.",
   "screensaverWeatherBarHumidityDescription": "Die Luftfeuchtigkeit anzeigen, wenn die Wetterentität sie meldet.",
   "screensaverWeatherBarWindDescription": "Die Windgeschwindigkeit anzeigen, wenn die Wetterentität sie meldet.",
   "screensaverWeatherBarVisibilityDescription": "Die Sichtweite anzeigen, wenn die Wetterentität sie meldet.",

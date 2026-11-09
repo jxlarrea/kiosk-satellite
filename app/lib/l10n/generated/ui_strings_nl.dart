@@ -13860,6 +13860,10 @@ class UiStringsNl extends UiStrings {
       'Toon de naam van elke meting boven de waarde. Als dit uitstaat, worden de waarden even groot als de temperatuur weergegeven.';
 
   @override
+  String get screensaverWeatherBarHighLowDescription =>
+      'Toon de hoogste en laagste temperatuur van vandaag wanneer de weerentiteit een dagelijkse voorspelling heeft.';
+
+  @override
   String get screensaverWeatherBarHumidityDescription =>
       'Toon vochtigheid wanneer de weerentiteit het meldt.';
 
