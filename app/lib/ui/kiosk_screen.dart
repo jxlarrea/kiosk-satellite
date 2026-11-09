@@ -2242,6 +2242,8 @@ class _KioskScreenState extends State<KioskScreen>
         c.browser.showLinkOverlay(url.toString());
         return NavigationActionPolicy.CANCEL;
       }
+      // Read before the link's own action shadows the navigation's.
+      final tapped = action.hasGesture == true;
       if (url.scheme == 'ks') {
         // Cancel whatever it names: a link that is ours by scheme must never
         // reach Chromium, which would put its error page over the dashboard.
@@ -2259,7 +2261,21 @@ class _KioskScreenState extends State<KioskScreen>
           }
           return NavigationActionPolicy.CANCEL;
         }
-        final result = await c.gestures.runGestureAction(action);
+        // A video call turns this kiosk's camera on, which only a tap at
+        // the kiosk may do (issue #1350). A page script or a Home Assistant
+        // push that moves the page to the link carries no gesture and is
+        // refused, with no toast since nobody tapped. Gestures never run
+        // it, so it goes to the command straight away.
+        final video = action['type'] == 'intercom_video_call';
+        if (video && !tapped) {
+          c.log.warn('kiosk', 'video call link without a tap: $url');
+          return NavigationActionPolicy.CANCEL;
+        }
+        final result = video
+            ? await c.commands.execute('intercomVideoCall', {
+                'id': action['kioskId'],
+              })
+            : await c.gestures.runGestureAction(action);
         if (!result.ok && mounted) {
           showToast(
             context,

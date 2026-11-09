@@ -306,6 +306,8 @@ String describeGestureAction(Map<String, Object?> action) {
       return 'Open Call a kiosk';
     case 'intercom_call':
       return 'Call ${action['kioskName'] ?? action['kioskId']}';
+    case 'intercom_video_call':
+      return 'Video call ${action['kioskId']}';
     case 'intercom_hangup':
       return 'End the intercom call';
     case 'intercom_answer':

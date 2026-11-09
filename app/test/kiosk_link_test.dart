@@ -61,6 +61,20 @@ void main() {
       });
     });
 
+    test('an intercom link ending in /video places a video call', () {
+      expect(kioskLinkAction('ks://intercom/kitchen/video'), {
+        'type': 'intercom_video_call',
+        'kioskId': 'kitchen',
+      });
+      expect(kioskLinkAction('ks://intercom/Kiosk-A/Video/'), {
+        'type': 'intercom_video_call',
+        'kioskId': 'Kiosk-A',
+      });
+      expect(kioskLinkAction('ks://intercom/kitchen/voice'), isNull);
+      expect(kioskLinkAction('ks://intercom/kitchen/video/x'), isNull);
+      expect(kioskLinkAction('ks://intercom//video'), isNull);
+    });
+
     test('tolerates the hostless form, a trailing slash and space', () {
       expect(kioskLinkAction('ks:apps'), {'type': 'app_launcher'});
       expect(kioskLinkAction(' ks://apps/ '), {'type': 'app_launcher'});

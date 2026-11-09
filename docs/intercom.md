@@ -67,7 +67,7 @@ Voice is raw 16 kHz audio over one WebSocket per call, about 256 kbit/s each way
 
 On the roster, a kiosk that takes video has a video button beside its call button. Press it to call with your camera on. You see your own picture while the call rings, and so does the person at the other kiosk. They can answer with **Voice only** or **Video**, or decline.
 
-Your camera goes on when you press video on the roster, **Video** on a ringing call or **Camera** during a call. A hardware button, Home Assistant and the remote admin always answer with the camera off. **Answer automatically** does too unless you turn on **Answer with camera on**.
+Your camera goes on when you press video on the roster, tap a `ks://intercom/<kiosk id>/video` [dashboard link](dashboard-links.md), press **Video** on a ringing call or press **Camera** during a call. A hardware button, Home Assistant and the remote admin always answer with the camera off. **Answer automatically** does too unless you turn on **Answer with camera on**.
 
 **Answer with camera on** appears under **Settings > Intercom > Answer** when **Answer mode** is **Answer automatically**. It is off by default. With it on, a call from a kiosk with its camera on opens with this kiosk's camera on as well, so people at the other kiosk can see the room with nobody at this kiosk pressing anything. The countdown reads **Camera on in 3 s**, and pressing **Voice only** or **Decline** stops the camera from turning on. A voice call stays voice only. The setting needs **Enable camera** and is never synced by Fleet Management.
 

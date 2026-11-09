@@ -28,6 +28,7 @@ A `ks://` link runs the same action a [gesture](gestures.md) can, with the same 
 | `ks://camera/close` | Closes whatever camera view is showing. |
 | `ks://intercom` | Opens the [intercom's](intercom.md) Call a kiosk sheet. |
 | `ks://intercom/<kiosk id>` | Calls that kiosk straight away. The id is the one under Intercom, Kiosks. |
+| `ks://intercom/<kiosk id>/video` | Calls that kiosk with this kiosk's camera on, like the video button on the roster. It runs only when someone taps the link on this kiosk's screen, never from a page script or Home Assistant. If either kiosk cannot take video, the call is voice only. |
 | `ks://screensaver` | Starts the screensaver. |
 | `ks://screensaver/stop` | Stops it. |
 | `ks://alarms` | Opens the full screen [alarm](alarms.md) list. |

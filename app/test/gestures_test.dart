@@ -1100,6 +1100,33 @@ void main() {
       );
     });
 
+    test(
+      'no gesture or plugin setting places a video call (issue #1350)',
+      () async {
+        await build(
+          '[{"id":"g1","trigger":{"type":"claps","claps":3},'
+          '"action":{"type":"intercom_video_call","kioskId":"kitchen"}}]',
+        );
+        commands.register(
+          Command(
+            name: 'intercomVideoCall',
+            description: 'test stub',
+            handler: (p) async {
+              executed.add(('intercomVideoCall', p));
+              return const CommandResult.ok();
+            },
+          ),
+        );
+        await fire('g1');
+        final refused = await gestures.runPluginSettingAction(const {
+          'type': 'intercom_video_call',
+          'kioskId': 'kitchen',
+        });
+        expect(refused.ok, isFalse);
+        expect(executed, isEmpty);
+      },
+    );
+
     group('plugin kiosk links (issue #1213)', () {
       test('run what a dashboard link runs', () async {
         await build('[]');
@@ -1122,6 +1149,7 @@ void main() {
         for (final url in [
           'ks://android-settings',
           'ks://intercom/kitchen',
+          'ks://intercom/kitchen/video',
           'ks://nothing',
           'https://example.com',
         ]) {

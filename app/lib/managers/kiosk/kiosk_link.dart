@@ -38,6 +38,15 @@ Map<String, Object?>? kioskLinkAction(String url) {
   final args = parts.skip(1).map(_decode).toList();
   if (args.any((a) => a == null || a.isEmpty)) return null;
   final arg = args.isEmpty ? null : args.first;
+  // ks://intercom/<kiosk id>/video is the only link with a second part
+  // (issue #1350). It is its own action type, not a flag on intercom_call,
+  // so a gesture mapping or a plugin's action setting can never carry it:
+  // only the dashboard WebView runs it, and only for a tap.
+  if (name == 'intercom' && args.length == 2) {
+    return args[1]!.toLowerCase() == 'video'
+        ? {'type': 'intercom_video_call', 'kioskId': arg}
+        : null;
+  }
   if (args.length > 1) return null;
 
   switch (name) {

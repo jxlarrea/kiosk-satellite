@@ -103,6 +103,7 @@ String localizedGestureAction(
           ? gestureText(context, 'Toggle the camera view')
           : s.gestureCameraToggleName(name);
     case 'intercom_call':
+    case 'intercom_video_call':
       return s.gestureCall('${action['kioskName'] ?? action['kioskId']}');
     case 'launch_app':
       return s.gestureOpenApp('${action['package']}');

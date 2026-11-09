@@ -395,11 +395,16 @@ class GesturesManager extends Manager {
   /// Android Settings is left out because it is a way out of the kiosk, and
   /// launchApp holds plugins to the App Launcher's apps for the same
   /// reason. Calling a kiosk is left out because a kiosk can answer on its
-  /// own, which opens its microphone.
+  /// own, which opens its microphone, and a video call also turns this
+  /// kiosk's camera on.
   Future<CommandResult> runPluginKioskLink(String url) async {
     final action = kioskLinkAction(url);
     if (action == null) return const CommandResult.fail('unknown kiosk link');
-    if (const {'android_settings', 'intercom_call'}.contains(action['type'])) {
+    if (const {
+      'android_settings',
+      'intercom_call',
+      'intercom_video_call',
+    }.contains(action['type'])) {
       return const CommandResult.fail('plugins cannot open this link');
     }
     if (_settings.get(defs.lockdownEnabled)) {
@@ -469,6 +474,12 @@ class GesturesManager extends Manager {
         // carries the intercom's gates, and a kiosk that is off or on
         // Do not disturb ends the call with the reason on the card.
         return _run('intercomCall', {'id': a['kioskId'] ?? ''});
+      case 'intercom_video_call':
+        // Only the dashboard WebView runs ks://intercom/<id>/video, and
+        // only for a tap (issue #1350). A gesture, a plugin or a mapping
+        // written over the remote admin never turns the camera on.
+        log.warn(name, 'a video call runs only from a dashboard tap');
+        return const CommandResult.fail('needs a tap on the kiosk');
       case 'intercom_open':
         // Open only: the sheet closes on its own. The command carries the
         // intercom's gates (off, or no remote admin), so a mapping left
