@@ -3774,6 +3774,9 @@ class UiStringsZh extends UiStrings {
   String get pluginDragToReorder => '拖动排序';
 
   @override
+  String get pluginDuplicate => '创建副本';
+
+  @override
   String get pluginDone => '完成';
 
   @override
@@ -19263,6 +19266,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get pluginDragToReorder => '拖动排序';
+
+  @override
+  String get pluginDuplicate => '创建副本';
 
   @override
   String get pluginDone => '完成';

@@ -3512,6 +3512,8 @@ void main() {
     await tester.tap(find.text('Home'));
     await tester.pumpAndSettle();
     expect(find.text('Delete'), findsOneWidget);
+    // Duplicate waits for the plugin to offer it.
+    expect(find.text('Duplicate'), findsNothing);
     await tester.enterText(find.widgetWithText(TextFormField, 'Home'), 'House');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
@@ -3569,6 +3571,135 @@ void main() {
     await plugins.refresh();
     await tester.pumpAndSettle();
     expect(find.text('Collapse after'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('Duplicate adds a copy of a row when the list offers it', (
+    tester,
+  ) async {
+    // A phone's footer holds Delete, Duplicate, Cancel and Save.
+    tester.view.physicalSize = const Size(360, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    installed[0]['settings'] = [
+      {
+        'key': 'items',
+        'title': 'Items',
+        'type': 'list',
+        'addTitle': 'Add item',
+        'maxItems': 3,
+        'duplicate': true,
+        'default': [],
+        'fields': [
+          {
+            'key': 'label',
+            'title': 'Label',
+            'type': 'string',
+            'required': true,
+          },
+          {'key': 'tap', 'title': 'Tap action', 'type': 'action'},
+          {
+            'key': 'stops',
+            'title': 'Stops',
+            'type': 'list',
+            'addTitle': 'Add stop',
+            'maxItems': 2,
+            'duplicate': true,
+            'fields': [
+              {'key': 'name', 'title': 'Name', 'type': 'string'},
+            ],
+          },
+        ],
+      },
+    ];
+    final home = {
+      'label': 'Home',
+      'tap': {'type': 'refresh'},
+      'stops': [
+        {'name': 'Main St'},
+      ],
+    };
+    installed[0]['values'] = {
+      'items': [home],
+    };
+    await plugins.refresh();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: PluginDetailPanel(plugins: plugins, id: 'hello-world'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    List<Object?> savedItems() =>
+        ((calls.lastWhere((c) => c.method == 'configure').arguments
+                    as Map)['values']
+                as Map)['items']
+            as List;
+    Future<void> open(String label) async {
+      await tester.tap(find.text(label).first);
+      await tester.pumpAndSettle();
+    }
+
+    // Cancel after Duplicate adds nothing.
+    await open('Home');
+    await tester.tap(find.text('Duplicate'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(calls.where((c) => c.method == 'configure'), isEmpty);
+
+    // The copy takes what the editor shows, action included, and lands
+    // after the others while the row it came from stays as saved.
+    await open('Home');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Home'), 'Away');
+    await tester.tap(find.text('Duplicate'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add item'), findsWidgets);
+    expect(find.text('Delete'), findsNothing);
+    expect(find.text('Duplicate'), findsNothing);
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(savedItems(), [
+      home,
+      {...home, 'label': 'Away'},
+    ]);
+
+    // A nested row copies inside the editor, and Duplicate leaves once
+    // the nested list is full.
+    await open('Away');
+    await tester.tap(find.text('Main St'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Duplicate'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add stop'), findsWidgets);
+    await tester.enterText(find.byType(TextFormField).first, 'Oak Ave');
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Main St'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete'), findsOneWidget);
+    expect(find.text('Duplicate'), findsNothing);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect((savedItems().last as Map)['stops'], [
+      {'name': 'Main St'},
+      {'name': 'Oak Ave'},
+    ]);
+
+    // A full list has no room for a copy.
+    await open('Home');
+    await tester.tap(find.text('Duplicate'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(savedItems(), hasLength(3));
+    await open('Away');
+    expect(find.text('Delete'), findsOneWidget);
+    expect(find.text('Duplicate'), findsNothing);
     expect(tester.takeException(), isNull);
   });
   testWidgets('SDK 1 controls retain edits during runtime status updates', (

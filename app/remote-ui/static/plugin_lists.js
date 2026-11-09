@@ -181,6 +181,11 @@ function rowTitle(list, row, at) {
 }
 
 function addTitle(list) { return list.addTitle || t('commonAdd'); }
+function maxItems(list) { return list.maxItems || 32; }
+// Whether the editor offers Duplicate on a row of [list] holding [count]
+// rows. A plugin turns it on per list, and a full list has no room for
+// the copy.
+function canDuplicate(list, count) { return list.duplicate === true && count < maxItems(list); }
 
 /* ------------------------------------------------------------ sources */
 
@@ -448,7 +453,7 @@ function listRows({ list, rows, onOpen, onReorder, plugin = null, path = list.ke
   const at = { plugin, path };
   const choiceFields = plugin ? rowFields(list).filter(takesChoices) : [];
   const box = el('div', 'plugin-list-rows');
-  const max = list.maxItems || 32;
+  const max = maxItems(list);
   const iconKey = list.row?.icon || null;
   const titleIsEntity = fieldOf(list, rowKey(list, 'title'))?.type === 'entity';
   const entities = rowShowsEntities(list);
@@ -557,11 +562,12 @@ export function listSetting({ setting, rows, showTitle, onChange, plugin = null 
   block.appendChild(listRows({
     list: setting, rows, plugin,
     onOpen: async (index) => {
-      const result = await editRow({ list: setting, row: index == null ? null : rows[index], plugin });
+      const result = await editRow({ list: setting, row: index == null ? null : rows[index], plugin,
+        duplicate: canDuplicate(setting, rows.length) });
       if (!result) return;
       const next = [...rows];
       if (result.row == null) next.splice(index, 1);
-      else if (index == null) next.push(result.row);
+      else if (index == null || result.copied) next.push(result.row);
       else next[index] = result.row;
       onChange(next);
     },
@@ -578,12 +584,17 @@ export function listSetting({ setting, rows, showTitle, onChange, plugin = null 
 // Edits one row of [list] in a modal, a new one when [row] is null.
 // Resolves to { row } on Save, { row: null } on Delete, null on Cancel.
 // A nested row opens in the same modal, so there is one editing surface.
-// [plugin] lists the choices of fields that take them.
-export function editRow({ list, row, plugin = null }) {
+// [plugin] lists the choices of fields that take them. [duplicate] offers
+// Duplicate on an existing row, which turns the editor into a new row
+// holding a copy of what it shows, resolved as { row, copied: true }.
+export function editRow({ list, row, plugin = null, duplicate = false }) {
   return new Promise((resolve) => {
     const shell = modalShell({ title: '', width: 600 });
     const draft = filledRow(list, row);
     let entry = null;
+    // Duplicate turned the outer row into a new one. The draft keeps what
+    // was on screen and Save adds it, leaving the saved row as it was.
+    let copied = false;
     // Text typed into number fields that they do not take, per row being
     // edited. The row keeps its last valid number and Save waits while a
     // shown field holds such text.
@@ -593,7 +604,7 @@ export function editRow({ list, row, plugin = null }) {
     const render = () => {
       const level = entry ? entry.list : list;
       const values = entry ? entry.draft : draft;
-      const isNew = entry ? entry.index == null : row == null;
+      const isNew = entry ? entry.index == null : row == null || copied;
       shell.head.replaceChildren();
       if (entry) {
         const back = iconButton(t('commonBack'), BACK);
@@ -602,7 +613,7 @@ export function editRow({ list, row, plugin = null }) {
         shell.head.append(back);
       }
       const path = entry ? `${list.key}.${entry.list.key}` : list.key;
-      shell.head.append(entry ? entry.title : (row ? rowTitle(list, row, { plugin, path }) : addTitle(list)));
+      shell.head.append(entry ? entry.title : (isNew ? addTitle(list) : rowTitle(list, row, { plugin, path })));
       const form = el('div', 'modal-form plugin-editor');
       const save = el('button', 'btn-primary', entry ? pluginText('Done') : t('commonSave'));
       if (!typed.has(values)) typed.set(values, {});
@@ -618,6 +629,7 @@ export function editRow({ list, row, plugin = null }) {
       }
       shell.body.replaceChildren(form);
       shell.foot.replaceChildren();
+      let copy = null;
       if (!isNew) {
         const remove = el('button', 'btn-text danger', t('commonDelete'));
         remove.onclick = () => {
@@ -626,16 +638,32 @@ export function editRow({ list, row, plugin = null }) {
           entry = null; render();
         };
         shell.foot.append(remove);
+        if (entry ? canDuplicate(entry.list, draft[entry.list.key].length) : duplicate) {
+          copy = el('button', 'btn-text plugin-duplicate', pluginText('Duplicate'));
+          copy.onclick = () => {
+            if (entry) entry = { ...entry, index: null, title: addTitle(entry.list) };
+            else copied = true;
+            render();
+          };
+          shell.foot.append(copy);
+        }
       }
       const cancel = el('button', 'btn-text', t('commonCancel'));
       cancel.onclick = () => { if (entry) { entry = null; render(); } else finish(null); };
       save.onclick = () => {
-        if (!entry) { finish({ row: draft }); return; }
+        if (!entry) { finish(copied ? { row: draft, copied } : { row: draft }); return; }
         const rows = draft[entry.list.key];
         if (entry.index == null) rows.push(entry.draft); else rows[entry.index] = entry.draft;
         entry = null; render();
       };
-      shell.foot.append(cancel, save);
+      // Beside Duplicate, Cancel and Save wrap as a pair on a phone.
+      if (copy) {
+        const end = el('div', 'plugin-foot-end');
+        end.append(cancel, save);
+        shell.foot.append(end);
+      } else {
+        shell.foot.append(cancel, save);
+      }
       refresh();
     };
 

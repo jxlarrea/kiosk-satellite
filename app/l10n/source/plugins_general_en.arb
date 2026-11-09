@@ -430,6 +430,19 @@
       ]
     }
   },
+  "pluginDuplicate": "Duplicate",
+  "@pluginDuplicate": {
+    "context": "Settings > Plugin Manager",
+    "description": "Button in the row editor of a plugin list setting that turns the open row into a new row holding a copy of it. Save then adds the copy.",
+    "x-locations": {
+      "device": [
+        "Settings > Plugin Manager"
+      ],
+      "remoteAdmin": [
+        "Plugin Manager"
+      ]
+    }
+  },
   "pluginDone": "Done",
   "@pluginDone": {
     "context": "Settings > Plugin Manager",

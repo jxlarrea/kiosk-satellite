@@ -3896,6 +3896,9 @@ class UiStringsEs extends UiStrings {
   String get pluginDragToReorder => 'Arrastra para reordenar';
 
   @override
+  String get pluginDuplicate => 'Duplicar';
+
+  @override
   String get pluginDone => 'Hecho';
 
   @override

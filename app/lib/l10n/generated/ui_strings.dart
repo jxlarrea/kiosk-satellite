@@ -6904,6 +6904,12 @@ abstract class UiStrings {
   /// **'Drag to reorder'**
   String get pluginDragToReorder;
 
+  /// Button in the row editor of a plugin list setting that turns the open row into a new row holding a copy of it. Save then adds the copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get pluginDuplicate;
+
   /// Button that keeps the changes to a nested row and returns to the row that holds it, in the row editor of a plugin list setting.
   ///
   /// In en, this message translates to:

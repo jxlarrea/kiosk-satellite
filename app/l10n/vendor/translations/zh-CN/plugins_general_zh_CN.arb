@@ -32,5 +32,6 @@
   "pluginCameraViewGone": "此摄像头画面已不存在，请另选一个。",
   "pluginDragToReorder": "拖动排序",
   "pluginDone": "完成",
+  "pluginDuplicate": "创建副本",
   "pluginRequired": "必填"
 }

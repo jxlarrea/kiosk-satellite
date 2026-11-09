@@ -3878,6 +3878,9 @@ class UiStringsUk extends UiStrings {
   String get pluginDragToReorder => 'Перетягніть для зміни порядку';
 
   @override
+  String get pluginDuplicate => 'Дублювати';
+
+  @override
   String get pluginDone => 'Готово';
 
   @override

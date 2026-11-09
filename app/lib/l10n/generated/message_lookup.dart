@@ -1046,6 +1046,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'pluginChooseCameraView' => strings.pluginChooseCameraView,
       'pluginCameraViewGone' => strings.pluginCameraViewGone,
       'pluginDragToReorder' => strings.pluginDragToReorder,
+      'pluginDuplicate' => strings.pluginDuplicate,
       'pluginDone' => strings.pluginDone,
       'pluginRequired' => strings.pluginRequired,
       'pluginAddPlugin' => strings.pluginAddPlugin,

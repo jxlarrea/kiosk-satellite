@@ -32,5 +32,6 @@
   "pluginCameraViewGone": "Deze cameraweergave bestaat niet meer. Kies een andere.",
   "pluginDragToReorder": "Sleep om de volgorde te wijzigen",
   "pluginDone": "Klaar",
+  "pluginDuplicate": "Dupliceren",
   "pluginRequired": "Verplicht"
 }

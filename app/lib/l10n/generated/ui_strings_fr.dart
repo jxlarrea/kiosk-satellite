@@ -3900,6 +3900,9 @@ class UiStringsFr extends UiStrings {
   String get pluginDragToReorder => 'Glisser pour réorganiser';
 
   @override
+  String get pluginDuplicate => 'Dupliquer';
+
+  @override
   String get pluginDone => 'Terminé';
 
   @override

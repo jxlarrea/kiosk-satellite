@@ -186,6 +186,7 @@ const pluginTextMessageIds = <String, String>{
   "This camera view is gone. Choose another.": "pluginCameraViewGone",
   "Drag to reorder": "pluginDragToReorder",
   "Done": "pluginDone",
+  "Duplicate": "pluginDuplicate",
   "Required": "pluginRequired",
   "Invalid list setting": "pluginErrorListSetting",
   "Invalid setting condition": "pluginErrorSettingCondition",

@@ -32,5 +32,6 @@
   "pluginCameraViewGone": "Цього вигляду камер більше немає. Виберіть інший.",
   "pluginDragToReorder": "Перетягніть для зміни порядку",
   "pluginDone": "Готово",
+  "pluginDuplicate": "Дублювати",
   "pluginRequired": "Обов'язково"
 }

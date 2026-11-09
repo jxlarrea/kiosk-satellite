@@ -3891,6 +3891,9 @@ class UiStringsNl extends UiStrings {
   String get pluginDragToReorder => 'Sleep om de volgorde te wijzigen';
 
   @override
+  String get pluginDuplicate => 'Dupliceren';
+
+  @override
   String get pluginDone => 'Klaar';
 
   @override

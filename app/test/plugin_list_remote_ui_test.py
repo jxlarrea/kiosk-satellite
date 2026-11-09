@@ -126,7 +126,23 @@ clock = {
     'values': {'label': 'Kitchen', 'custom': False, 'size': 5, 'summary': 'Plain'},
     'status': 'Plain colors',
 }
-installed = [copy.deepcopy(plugin), sensors, monitor, thresholds, clock]
+# A list that offers Duplicate, with a tap action and a nested list.
+commutes = {
+    'id': 'commutes', 'name': 'Commutes', 'version': '1.0.0', 'description': 'Row copies',
+    'capabilities': [], 'enabled': True, 'running': True, 'commands': [], 'groups': [],
+    'settings': [
+        {'key': 'trips', 'title': 'Trips', 'type': 'list', 'addTitle': 'Add trip', 'maxItems': 3, 'duplicate': True,
+         'default': [], 'row': {'title': 'label'},
+         'fields': [
+             {'key': 'label', 'title': 'Label', 'type': 'string', 'required': True},
+             {'key': 'tap', 'title': 'Tap action', 'type': 'action'},
+             {'key': 'stops', 'title': 'Stops', 'type': 'list', 'addTitle': 'Add stop', 'maxItems': 2, 'duplicate': True,
+              'fields': [{'key': 'name', 'title': 'Name', 'type': 'string'}]},
+         ]},
+    ],
+    'values': {'trips': [{'label': 'Home', 'tap': {'type': 'refresh'}, 'stops': [{'name': 'Main St'}]}]},
+}
+installed = [copy.deepcopy(plugin), sensors, monitor, thresholds, clock, commutes]
 setup = {'runs': {}, 'choices': {}, 'choiceRevisions': {}}
 setup_runs = []
 icons = {'mdi:home': 'M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z', 'mdi:garage': 'M19,20H17V11H7V20H5V9L12,5L19,9V20Z',
@@ -257,8 +273,11 @@ try:
         assert saved[-1]['items'][1]['camera'] == 'a1b2c3d4e5f60718293a4b5c6d7e8f90'
         expect(rows.nth(1)).to_contain_text('Front door')
 
-        # Delete takes the row out.
+        # Duplicate waits for the plugin to offer it.
         rows.nth(1).click()
+        expect(modal.get_by_role('button', name='Duplicate', exact=True)).to_have_count(0)
+
+        # Delete takes the row out.
         modal.get_by_role('button', name='Delete', exact=True).click()
         expect(rows).to_have_count(1)
         assert [i['label'] for i in saved[-1]['items']] == ['Cameras']
@@ -464,6 +483,75 @@ try:
           const page = [...document.querySelectorAll('#tab-plugins > .subpage')].find((el) => el.dataset.subpage === 'clock');
           return page.kept === true && page.querySelector('[data-setting-key="label"]').kept === true;
         }''')
+
+        # Duplicate turns the open row into a new one holding what the
+        # editor shows, action included. Cancel then adds nothing, and Save
+        # adds it after the others while the source row stays as saved.
+        page.evaluate("(async () => (await import('/static/tabs.js')).showTab('plugins/commutes', {refresh: false}))()")
+        expect(page.locator('#pageTitle')).to_contain_text('Commutes')
+        rows = page.locator('#tab-plugins > .subpage[data-subpage="commutes"] .plugin-list-row')
+        modal = page.locator('.modal-card')
+        duplicate = modal.get_by_role('button', name='Duplicate', exact=True)
+        before = len(saved)
+        rows.first.click()
+        duplicate.click()
+        expect(modal.locator('.modal-title')).to_have_text('Add trip')
+        modal.get_by_role('button', name='Cancel', exact=True).click()
+        expect(modal).to_have_count(0)
+        assert len(saved) == before, saved[-1]
+        home = copy.deepcopy(commutes['values']['trips'][0])
+        rows.first.click()
+        # Duplicate sits beside Delete, ahead of Cancel and Save.
+        names = modal.locator('.modal-foot button').all_inner_texts()
+        assert names == ['Delete', 'Duplicate', 'Cancel', 'Save'], names
+        modal.locator('.form-field:has-text("Label") input').fill('Away')
+        duplicate.click()
+        expect(modal.get_by_role('button', name='Delete', exact=True)).to_have_count(0)
+        expect(duplicate).to_have_count(0)
+        modal.get_by_role('button', name='Save', exact=True).click()
+        expect(modal).to_have_count(0)
+        assert saved[-1]['trips'] == [home, {**home, 'label': 'Away'}], saved[-1]
+
+        # A nested row copies inside the editor, and Duplicate leaves once
+        # the nested list is full.
+        rows.nth(1).click()
+        modal.locator('.plugin-list-box').get_by_text('Main St', exact=True).click()
+        duplicate.click()
+        expect(modal.locator('.modal-title')).to_contain_text('Add stop')
+        modal.locator('.form-field:has-text("Name") input').fill('Oak Ave')
+        modal.get_by_role('button', name='Done', exact=True).click()
+        modal.locator('.plugin-list-box').get_by_text('Main St', exact=True).click()
+        expect(modal.get_by_role('button', name='Delete', exact=True)).to_be_visible()
+        expect(duplicate).to_have_count(0)
+        modal.get_by_role('button', name='Back', exact=True).click()
+        modal.get_by_role('button', name='Save', exact=True).click()
+        assert saved[-1]['trips'][1]['stops'] == [{'name': 'Main St'}, {'name': 'Oak Ave'}], saved[-1]
+
+        # A full list has no room for a copy.
+        rows.first.click()
+        duplicate.click()
+        modal.get_by_role('button', name='Save', exact=True).click()
+        expect(rows).to_have_count(3)
+        rows.nth(1).click()
+        expect(modal.get_by_role('button', name='Delete', exact=True)).to_be_visible()
+        expect(duplicate).to_have_count(0)
+        modal.get_by_role('button', name='Delete', exact=True).click()
+        expect(rows).to_have_count(2)
+
+        # A phone's footer keeps all four buttons inside the card.
+        page.set_viewport_size({'width': 360, 'height': 740})
+        rows.first.click()
+        expect(duplicate).to_be_visible()
+        assert page.evaluate('''() => {
+          const foot = document.querySelector('.modal-card .modal-foot');
+          const box = foot.getBoundingClientRect();
+          return [...foot.querySelectorAll('button')].every((b) => {
+            const r = b.getBoundingClientRect();
+            return r.left >= box.left - 0.5 && r.right <= box.right + 0.5;
+          });
+        }''')
+        page.screenshot(path='/tmp/kiosk-plugin-list-duplicate-phone.png')
+        modal.get_by_role('button', name='Cancel', exact=True).click()
         assert not errors, errors
         browser.close()
 finally:

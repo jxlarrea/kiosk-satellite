@@ -120,6 +120,8 @@ class PluginPackageTest {
         PluginManifest(listManifest())
         rejects { PluginManifest(withItems { it.put("fields", org.json.JSONArray()) }) }
         rejects { PluginManifest(withItems { it.put("maxItems", 33) }) }
+        PluginManifest(withItems { it.put("duplicate", true) })
+        rejects { PluginManifest(withItems { it.put("duplicate", "yes") }) }
         rejects { PluginManifest(withItems { it.put("minItems", 5) }) }
         rejects { PluginManifest(withItems { it.put("row", JSONObject().put("title", "missing")) }) }
         rejects { PluginManifest(withItems { it.put("row", JSONObject().put("icon", "label")) }) }

@@ -353,6 +353,7 @@ class PluginManifest(val json: JSONObject) {
         if (field.has("maxItems")) require(field.get("maxItems").let { it is Int && it in 1..MAX_LIST_ITEMS }) { "Invalid list setting" }
         if (field.has("minItems")) require(field.get("minItems").let { it is Int && it in 0..maxItems(field) }) { "Invalid list setting" }
         if (field.has("addTitle")) text(field, "addTitle", 40)
+        if (field.has("duplicate")) require(field.get("duplicate") is Boolean) { "Invalid list setting" }
         val row = field.opt("row") ?: return
         require(row is JSONObject && row.keys().asSequence().all { it in setOf("title", "subtitle", "icon") }) { "Invalid list setting" }
         fun shown(key: Any?) = key is String && byKey[key]?.getString("type").let { it != null && it != "list" }

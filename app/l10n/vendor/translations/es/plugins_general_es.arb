@@ -32,5 +32,6 @@
   "pluginCameraViewGone": "Esta vista de cámaras ya no existe. Elige otra.",
   "pluginDragToReorder": "Arrastra para reordenar",
   "pluginDone": "Hecho",
+  "pluginDuplicate": "Duplicar",
   "pluginRequired": "Obligatorio"
 }

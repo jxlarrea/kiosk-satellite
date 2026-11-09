@@ -234,6 +234,15 @@ String pluginRowTitle(
   return label ?? value;
 }
 
+/// The most rows [list] takes.
+int _maxItems(Map list) => (list['maxItems'] as num?)?.toInt() ?? 32;
+
+/// Whether the row editor offers Duplicate on a row of [list] holding
+/// [count] rows. A plugin turns it on per list, and a full list has no
+/// room for the copy.
+bool _canDuplicate(Map list, int count) =>
+    list['duplicate'] == true && count < _maxItems(list);
+
 String _addTitle(BuildContext context, Map list) =>
     list['addTitle']?.toString() ?? l10n(context).commonAdd;
 
@@ -538,7 +547,7 @@ class PluginRows extends StatelessWidget {
 
   Widget _rows(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final max = (list['maxItems'] as num?)?.toInt() ?? 32;
+    final max = _maxItems(list);
     final iconKey = (list['row'] as Map?)?['icon'] as String?;
     final titleIsEntity =
         _fieldOf(list, _rowKey(list, 'title', 'string'))?['type'] == 'entity';
@@ -662,12 +671,13 @@ class PluginListSetting extends StatelessWidget {
       list: setting,
       row: index == null ? null : rows[index],
       services: services,
+      duplicate: _canDuplicate(setting, rows.length),
     );
     if (result == null) return;
     final next = [...rows];
     if (result.row == null) {
       next.removeAt(index!);
-    } else if (index == null) {
+    } else if (index == null || result.copied) {
       next.add(result.row!);
     } else {
       next[index] = result.row!;
@@ -710,23 +720,35 @@ class PluginListSetting extends StatelessWidget {
 /// What the row editor hands back: the saved row, or null for a deleted
 /// one. Dismissing the editor resolves to no result at all.
 class PluginRowEdit {
-  const PluginRowEdit(this.row);
+  const PluginRowEdit(this.row, {this.copied = false});
 
   final Map<String, Object?>? row;
+
+  /// The row is a copy made with Duplicate, added after the others
+  /// while the row it came from stays as it was.
+  final bool copied;
 }
 
 /// Edits one row of [list] in a modal. A new row when [row] is null.
 /// Save stays off until every shown required field is filled in.
+/// [duplicate] offers Duplicate on an existing row, which turns the
+/// editor into a new row holding a copy of what it shows.
 Future<PluginRowEdit?> showPluginRowEditor(
   BuildContext context, {
   required Map list,
   Map? row,
   required PluginFieldServices services,
+  bool duplicate = false,
 }) => showDialog<PluginRowEdit>(
   context: context,
   // A stray tap outside must not throw away a half-made row.
   barrierDismissible: false,
-  builder: (_) => _PluginRowEditor(list: list, row: row, services: services),
+  builder: (_) => _PluginRowEditor(
+    list: list,
+    row: row,
+    services: services,
+    duplicate: duplicate,
+  ),
 );
 
 /// A nested row being edited inside the row editor.
@@ -746,11 +768,13 @@ class _PluginRowEditor extends StatefulWidget {
     required this.list,
     required this.row,
     required this.services,
+    required this.duplicate,
   });
 
   final Map list;
   final Map? row;
   final PluginFieldServices services;
+  final bool duplicate;
 
   @override
   State<_PluginRowEditor> createState() => _PluginRowEditorState();
@@ -761,6 +785,10 @@ class _PluginRowEditorState extends State<_PluginRowEditor> {
     widget.list,
     widget.row,
   );
+
+  /// Duplicate turned the outer row into a new one. The draft keeps what
+  /// was on screen and Save adds it, leaving the saved row as it was.
+  bool _copied = false;
 
   /// The nested row shown in place of the outer one. Its Done or Cancel
   /// comes back here, so there is only ever one editing surface.
@@ -816,6 +844,23 @@ class _PluginRowEditorState extends State<_PluginRowEditor> {
     });
   }
 
+  /// Turns the row on screen into a new one holding a copy of it.
+  void _duplicate() {
+    final entry = _entry;
+    setState(() {
+      if (entry == null) {
+        _copied = true;
+      } else {
+        _entry = _Entry(
+          entry.list,
+          null,
+          entry.draft,
+          _addTitle(context, entry.list),
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = l10n(context);
@@ -824,7 +869,9 @@ class _PluginRowEditorState extends State<_PluginRowEditor> {
     final list = entry?.list ?? widget.list;
     final fields = (list['fields'] as List).whereType<Map>().toList();
     final draft = entry?.draft ?? _draft;
-    final isNew = entry == null ? widget.row == null : entry.index == null;
+    final isNew = entry == null
+        ? widget.row == null || _copied
+        : entry.index == null;
     final complete =
         pluginRowComplete(fields, draft) &&
         !fields.any(
@@ -834,7 +881,7 @@ class _PluginRowEditorState extends State<_PluginRowEditor> {
         );
     final title =
         entry?.title ??
-        (widget.row == null
+        (isNew
             ? _addTitle(context, list)
             : pluginRowTitle(
                 context,
@@ -878,6 +925,27 @@ class _PluginRowEditorState extends State<_PluginRowEditor> {
                 : () => _closeEntry(delete: true),
             child: Text(strings.commonDelete),
           );
+    final canDuplicate =
+        !isNew &&
+        (entry == null
+            ? widget.duplicate
+            : _canDuplicate(
+                entry.list,
+                (_draft[entry.list['key']] as List).length,
+              ));
+    final duplicate = canDuplicate
+        ? TextButton(
+            onPressed: _duplicate,
+            child: Text(pluginText(context, 'Duplicate')),
+          )
+        : null;
+    final start = delete == null
+        ? null
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 8,
+            children: [delete, ?duplicate],
+          );
     final buttons = Row(
       mainAxisSize: MainAxisSize.min,
       spacing: 8,
@@ -892,7 +960,10 @@ class _PluginRowEditorState extends State<_PluginRowEditor> {
           onPressed: !complete
               ? null
               : entry == null
-              ? () => Navigator.pop(context, PluginRowEdit(_draft))
+              ? () => Navigator.pop(
+                  context,
+                  PluginRowEdit(_draft, copied: _copied),
+                )
               : () => _closeEntry(save: true),
           child: Text(
             entry == null ? strings.commonSave : pluginText(context, 'Done'),
@@ -930,7 +1001,16 @@ class _PluginRowEditorState extends State<_PluginRowEditor> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Row(children: [?delete, const Spacer(), buttons]),
+                // Delete and Duplicate go above Cancel and Save when a
+                // phone has no room for all four on one line.
+                child: OverflowBar(
+                  alignment: start == null
+                      ? MainAxisAlignment.end
+                      : MainAxisAlignment.spaceBetween,
+                  overflowAlignment: OverflowBarAlignment.end,
+                  overflowSpacing: 8,
+                  children: [?start, buttons],
+                ),
               ),
             ],
           ),
@@ -944,7 +1024,7 @@ class _PluginRowEditorState extends State<_PluginRowEditor> {
         actionsAlignment: isNew
             ? MainAxisAlignment.end
             : MainAxisAlignment.spaceBetween,
-        actions: [?delete, buttons],
+        actions: [?start, buttons],
       );
     }
     // Back on an entry returns to its row instead of closing the editor.

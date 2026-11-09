@@ -3919,6 +3919,9 @@ class UiStringsDe extends UiStrings {
   String get pluginDragToReorder => 'Zum Neuordnen ziehen';
 
   @override
+  String get pluginDuplicate => 'Duplizieren';
+
+  @override
   String get pluginDone => 'Fertig';
 
   @override

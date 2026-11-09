@@ -3880,6 +3880,9 @@ class UiStringsRu extends UiStrings {
   String get pluginDragToReorder => 'Перетащите для изменения порядка';
 
   @override
+  String get pluginDuplicate => 'Дублировать';
+
+  @override
   String get pluginDone => 'Готово';
 
   @override
