@@ -29793,5 +29793,17 @@
     "translation": "00fea8a656bd30e23f1681b1f3a23a5ffde88f9d80120add90bd1aac316f472f",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingOffUnderCompass": {
+    "source": "5d86e819bde965f5c337ee0478f3b0b65cc2ca295ad3de0948e3203ed6742bd9",
+    "translation": "fbeb93f8ca1a5fe0263e47a56a5d901b5387ae5ea30ed7d2919fe102ba6e96bb",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingKioskAllowDrawerMenuDescription": {
+    "source": "6c1f7834d7e424253a55ba57357b4fd67f192b0641c07048eccb6ea07210654a",
+    "translation": "3b0c8b825b1b9597b72f540377fec30c8cd0baf6888c3c1760c9cb6204a6654a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

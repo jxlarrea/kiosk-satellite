@@ -58,5 +58,6 @@
   "compassOpen": "打开",
   "compassStateOn": "开",
   "compassStateOff": "关",
-  "compassHoldMode": "页面保持模式"
+  "compassHoldMode": "页面保持模式",
+  "settingOffUnderCompass": "启用 Compass 导航时关闭。"
 }

@@ -983,6 +983,9 @@ class SettingsManager extends Manager {
         if (def.alsoDependsOn != null) 'alsoDependsOn': def.alsoDependsOn,
         if (def.alsoDependsOn != null)
           'alsoDependsOnValue': def.alsoDependsOnValue,
+        if (def.offWhen != null) 'offWhen': def.offWhen,
+        if (def.offWhen != null) 'offWhenValue': def.offWhenValue,
+        if (def.offNote != null) 'offNote': def.offNote,
         if (def.hidden || deviceHiddenKeys.contains(def.key)) 'hidden': true,
         if (def.multiline) 'multiline': true,
         if (def.linksTo != null) 'linksTo': def.linksTo,

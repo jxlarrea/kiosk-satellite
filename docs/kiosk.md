@@ -21,7 +21,7 @@ Navigate to **Settings**, then **Kiosk Mode**. This same configuration page is a
 | Disable context menus | Suppresses standard long press menus and text selection features inside the active web view. |
 | Disable pull to refresh | Ignores any pull to refresh swipe gestures while Kiosk Mode is active. |
 | Disable Gestures | Keeps all custom mappings from the [Gestures page](gestures.md) dormant for as long as Kiosk Mode is on. |
-| Allow menu with quick actions | Opts a restricted version of the menu back in: only the harmless actions you explicitly select below this switch will be visible. Everything else remains hidden behind the exit gesture and PIN. Which entries the menu offers at all and their order are set in [Drawer menu items](drawer-menu.md). |
+| Allow menu with quick actions | Opts a restricted version of the menu back in: only the harmless actions you explicitly select below this switch will be visible. Everything else remains hidden behind the exit gesture and PIN. In Classic navigation an edge swipe opens it. In [Compass](navigation.md) it is the Menu view. Which entries the menu offers at all and their order are set in [Drawer menu items](drawer-menu.md). |
 
 ### Allowed Apps
 

@@ -338,6 +338,21 @@
       ]
     }
   },
+  "settingOffUnderCompass": "Off while Compass navigation is on.",
+  "@settingOffUnderCompass": {
+    "context": "Settings",
+    "description": "Line under a setting that Compass navigation switches off, such as pull to refresh or the dashboard carousel.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Enable pull to refresh",
+        "Settings > Home Assistant > User Interface > Enable dashboard carousel"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Enable pull to refresh",
+        "Home Assistant > User Interface > Enable dashboard carousel"
+      ]
+    }
+  },
   "compassMenu": "Menu",
   "@compassMenu": {
     "context": "Device:Compass",

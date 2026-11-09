@@ -34,6 +34,9 @@ class SettingDef<T> {
     this.dependsOnValue = true,
     this.alsoDependsOn,
     this.alsoDependsOnValue = true,
+    this.offWhen,
+    this.offWhenValue = true,
+    this.offNote,
     this.hidden = false,
     this.min,
     this.max,
@@ -144,6 +147,23 @@ class SettingDef<T> {
 
   bool alsoDependsSatisfiedBy(Object? value) =>
       _satisfies(value, alsoDependsOnValue);
+
+  /// Key of a setting that switches this row off while it holds
+  /// [offWhenValue]. Unlike [dependsOn] the row stays, greyed out with
+  /// [offNote] under it: it belongs to a feature people may already use
+  /// and would go looking for, such as pull to refresh under Compass
+  /// navigation. Both UIs read it.
+  final String? offWhen;
+
+  /// The value [offWhen] holds while this row is off, the shape of
+  /// [dependsOnValue].
+  final Object offWhenValue;
+
+  /// The message id of the line an off row shows under its description.
+  final String? offNote;
+
+  bool offBy(Object? value) =>
+      offWhen != null && _satisfies(value, offWhenValue);
 
   /// Persisted and readable, but never shown as a settings row. For state the
   /// app tracks on the user's behalf — e.g. whether the chosen media is a
@@ -586,6 +606,9 @@ const pullToRefresh = SettingDef<bool>(
       'Drag down from the top of the page to reload it. Off by '
       'default: on a scrolling dashboard an accidental pull is easy.',
   category: 'Browser',
+  offWhen: 'nav.style',
+  offWhenValue: 'compass',
+  offNote: 'settingOffUnderCompass',
 );
 
 const pullToRefreshClearCache = SettingDef<bool>(
@@ -599,6 +622,9 @@ const pullToRefreshClearCache = SettingDef<bool>(
       'data are kept.',
   category: 'Browser',
   dependsOn: 'browser.pull_to_refresh',
+  offWhen: 'nav.style',
+  offWhenValue: 'compass',
+  offNote: 'settingOffUnderCompass',
 );
 
 const browserZoom = SettingDef<num>(
@@ -1032,6 +1058,9 @@ const kioskDisablePullRefresh = SettingDef<bool>(
   description: 'Ignore the pull-to-refresh gesture while kiosk mode is on.',
   category: 'Kiosk',
   dependsOn: 'kiosk.enabled',
+  offWhen: 'nav.style',
+  offWhenValue: 'compass',
+  offNote: 'settingOffUnderCompass',
 );
 
 // Gestures themselves are not a kiosk feature: anything configured on the
@@ -1121,8 +1150,9 @@ const kioskAllowDrawer = SettingDef<bool>(
   defaultValue: false,
   title: 'Allow menu with quick actions',
   description:
-      'An edge swipe opens the menu without the exit gesture or PIN, '
-      'limited to the actions selected below.',
+      'Shows the menu without the exit gesture or PIN, limited to the '
+      'actions selected below. In Classic navigation an edge swipe opens '
+      'it. In Compass it is the Menu view.',
   category: 'Kiosk',
   section: 'Allowed Actions',
   subpage: 'Allowed Actions',
@@ -8650,6 +8680,9 @@ const haDashboardCarousel = SettingDef<bool>(
   category: 'Home Assistant',
   section: 'User Interface',
   subpage: 'User Interface',
+  offWhen: 'nav.style',
+  offWhenValue: 'compass',
+  offNote: 'settingOffUnderCompass',
 );
 
 /// Carousel priority over gesture-handling cards (#238). By default a
@@ -8675,6 +8708,9 @@ const haCarouselOverCards = SettingDef<bool>(
   section: 'User Interface',
   subpage: 'User Interface',
   dependsOn: 'ha.dashboard_carousel',
+  offWhen: 'nav.style',
+  offWhenValue: 'compass',
+  offNote: 'settingOffUnderCompass',
 );
 
 /// Haptic feedback for the dashboard (in-page script, see

@@ -3,7 +3,7 @@
 // The layout is stored in nav.compass_layout (see compass_layout.dart):
 // a center view and up to two views on each side, one of each kind.
 import { t } from './localization.js';
-import { cmd, state } from './core.js';
+import { cmd, state, syncOffRows } from './core.js';
 import { modalShell } from './widgets.js';
 import { dashboardField, loadDashboards, cachedDashboards, matchDashboard } from './dashboard_picker.js';
 
@@ -180,12 +180,18 @@ export function compassStyleRow(row, s, save) {
     ['compass', t('navigationCompass', {}, 'Compass'), t('compassCompassHint', {}, 'Swipe between views laid out in a cross.')],
   ];
   const buttons = [];
+  // What Compass switches off, under the cards while it is picked. The
+  // rows themselves stay, greyed out (syncOffRows).
+  const note = document.createElement('div');
+  note.className = 'compass-off-note';
+  note.textContent = t('compassOffNote', {}, 'Pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off while Compass is on.');
   const paint = () => {
     const value = setting(s.key) ?? s.value;
     buttons.forEach(([v, b]) => {
       b.classList.toggle('on', v === value);
       b.setAttribute('aria-checked', v === value ? 'true' : 'false');
     });
+    note.hidden = value !== 'compass';
   };
   for (const [value, name, hint] of choices) {
     const b = document.createElement('button');
@@ -208,11 +214,12 @@ export function compassStyleRow(row, s, save) {
       if ((setting(s.key) ?? s.value) === value) return;
       await save(value);
       paint();
+      syncOffRows();
     });
     buttons.push([value, b]);
     grid.appendChild(b);
   }
-  row.appendChild(grid);
+  row.append(grid, note);
   row.setAttribute('role', 'radiogroup');
   row.setAttribute('aria-label', s.title);
   row.updateSetting = () => { paint(); return true; };

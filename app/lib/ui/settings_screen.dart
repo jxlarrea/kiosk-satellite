@@ -11383,11 +11383,24 @@ class SettingTile extends StatelessWidget {
     }
     switch (def.type) {
       case SettingType.boolean:
+        // Switched off by another setting (pull to refresh under Compass):
+        // greyed out in place, with the reason under its description.
+        final offBy = def.offWhen == null
+            ? null
+            : c.settings.defByKey(def.offWhen!);
+        final off = offBy != null && def.offBy(c.settings.get(offBy));
         return SwitchListTile(
           title: Text(def.localizedTitle(context)),
-          subtitle: Text(def.localizedDescription(context)),
+          subtitle: off
+              ? Text(
+                  '${def.localizedDescription(context)}\n'
+                  '${def.localizedOffNote(context)}',
+                )
+              : Text(def.localizedDescription(context)),
           value: c.settings.get(def) as bool,
-          onChanged: (v) async {
+          onChanged: off
+              ? null
+              : (v) async {
             if (def.key == remoteTls.key &&
                 !await confirmRemoteProtocol(context, c, v)) {
               return;

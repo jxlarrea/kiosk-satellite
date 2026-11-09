@@ -2726,8 +2726,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingIntercomAutoAnswerCameraDescription' =>
         strings.settingIntercomAutoAnswerCameraDescription,
       'settingKioskAllowDrawerTitle' => strings.settingKioskAllowDrawerTitle,
-      'settingKioskAllowDrawerDescription' =>
-        strings.settingKioskAllowDrawerDescription,
+      'settingKioskAllowDrawerMenuDescription' =>
+        strings.settingKioskAllowDrawerMenuDescription,
       'settingKioskAllowDashboardTitle' =>
         strings.settingKioskAllowDashboardTitle,
       'settingKioskAllowDashboardDescription' =>
@@ -3338,6 +3338,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'compassCompassHint' => strings.compassCompassHint,
       'compassLayoutHint' => strings.compassLayoutHint,
       'compassOffNote' => strings.compassOffNote,
+      'settingOffUnderCompass' => strings.settingOffUnderCompass,
       'compassMenu' => strings.compassMenu,
       'compassHomeDashboard' => strings.compassHomeDashboard,
       'compassAppLauncher' => strings.compassAppLauncher,

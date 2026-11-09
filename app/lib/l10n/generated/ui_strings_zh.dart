@@ -8847,8 +8847,8 @@ class UiStringsZh extends UiStrings {
   String get settingKioskAllowDrawerTitle => '允许带快捷操作的菜单';
 
   @override
-  String get settingKioskAllowDrawerDescription =>
-      '从边缘滑动即可打开菜单，无需退出手势或 PIN 码，仅提供下方选定的操作。';
+  String get settingKioskAllowDrawerMenuDescription =>
+      '无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“菜单”视图。';
 
   @override
   String get settingKioskAllowDashboardTitle => '仪表盘';
@@ -10212,6 +10212,9 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get compassOffNote => '启用 Compass 时，下拉刷新、仪表盘滑动切换以及从边缘滑动打开抽屉菜单的手势均会关闭。';
+
+  @override
+  String get settingOffUnderCompass => '启用 Compass 导航时关闭。';
 
   @override
   String get compassMenu => '菜单';
@@ -24341,8 +24344,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingKioskAllowDrawerTitle => '允许带快捷操作的菜单';
 
   @override
-  String get settingKioskAllowDrawerDescription =>
-      '从边缘滑动即可打开菜单，无需退出手势或 PIN 码，仅提供下方选定的操作。';
+  String get settingKioskAllowDrawerMenuDescription =>
+      '无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“菜单”视图。';
 
   @override
   String get settingKioskAllowDashboardTitle => '仪表盘';
@@ -25706,6 +25709,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get compassOffNote => '启用 Compass 时，下拉刷新、仪表盘滑动切换以及从边缘滑动打开抽屉菜单的手势均会关闭。';
+
+  @override
+  String get settingOffUnderCompass => '启用 Compass 导航时关闭。';
 
   @override
   String get compassMenu => '菜单';

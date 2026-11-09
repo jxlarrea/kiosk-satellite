@@ -2111,14 +2111,17 @@
 .compass-pic.compass i:nth-child(3) { grid-column: 2; grid-row: 2; background: var(--primary-fill); }
 .compass-pic.compass i:nth-child(4) { grid-column: 3; grid-row: 2; }
 .compass-pic.compass i:nth-child(5) { grid-column: 2; grid-row: 3; }
-.row.compass-layout-row { padding-top: 18px; padding-bottom: 18px; }
+.row.compass-layout-row { padding-top: 18px; padding-bottom: 18px; container-type: inline-size; }
 .compass-hint { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.45; }
 .compass-map { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 112px));
-  grid-template-rows: repeat(5, 54px); gap: 10px; justify-content: center; }
+  /* Taller tiles where the card is wide: the height follows the card's
+     width (container query units), 54px on a narrow card up to 84px. */
+  --tile-h: clamp(54px, 9cqi, 84px);
+  grid-template-rows: repeat(5, var(--tile-h)); gap: 10px; justify-content: center; }
 .compass-line { pointer-events: none; background: var(--border); }
 .compass-line.across { grid-column: 1 / -1; grid-row: 3; align-self: center; height: 2px;
   margin-inline: calc((100% - 40px) / 10); }
-.compass-line.down { grid-column: 3; grid-row: 1 / -1; justify-self: center; width: 2px; margin-block: 27px; }
+.compass-line.down { grid-column: 3; grid-row: 1 / -1; justify-self: center; width: 2px; margin-block: calc(var(--tile-h) / 2); }
 .compass-tile { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; min-width: 0; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-high);
   color: var(--text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 0 4px; }
@@ -2139,17 +2142,22 @@
 .compass-bar-info .desc { font-size: 13px; color: var(--muted); }
 .compass-remove { color: var(--error); }
 .compass-kinds { display: flex; flex-direction: column; }
-.compass-kind { display: flex; align-items: center; gap: 14px; padding: 10px 4px; cursor: pointer; border-radius: 10px; }
+.compass-kind { display: flex; align-items: center; gap: 14px; padding: 10px 12px; cursor: pointer; border-radius: 10px; }
 .compass-kind.on { background: var(--primary-soft); }
 .compass-kind.off { opacity: .5; cursor: default; }
-.compass-kind .compass-icon { color: var(--muted); display: flex; padding-left: 8px; }
+.compass-kind .compass-icon { color: var(--muted); display: flex; }
 .compass-kind-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .compass-kind-text .name { font-size: 15px; }
 .compass-kind-text .desc { font-size: 12.5px; color: var(--muted); }
-.compass-kind-extra { padding: 4px 4px 12px 46px; }
+.compass-kind-extra { padding: 4px 0 12px; }
+.compass-off-note { margin-top: 12px; color: var(--muted); font-size: 13px; }
+.compass-off-note[hidden] { display: none; }
+.row.is-off .name, .row.is-off .desc, .row.is-off .off-note { opacity: .55; }
+.row.is-off > :not(.info) { opacity: .5; pointer-events: none; }
+.row .off-note { margin-top: 4px; font-size: 12.5px; color: var(--muted); }
 .compass-kind-extra .dp-field, .compass-kind-extra select { width: 100%; }
 @media (max-width: 640px) {
   .compass-styles { grid-template-columns: minmax(0, 1fr); }
-  .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; grid-template-rows: repeat(5, 52px); }
+  .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; --tile-h: clamp(52px, 14cqi, 64px); }
   .compass-tile { font-size: 10.5px; border-radius: 9px; }
 }

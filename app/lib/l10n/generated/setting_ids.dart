@@ -1414,7 +1414,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "kiosk.allow_drawer": {
     "title": "settingKioskAllowDrawerTitle",
-    "description": "settingKioskAllowDrawerDescription",
+    "description": "settingKioskAllowDrawerMenuDescription",
   },
   "kiosk.allow_dashboard": {
     "title": "settingKioskAllowDashboardTitle",

@@ -34993,8 +34993,8 @@
       ]
     }
   },
-  "settingKioskAllowDrawerDescription": "Ein Wischen vom Bildschirmrand öffnet das Menü ohne Exit-Geste oder PIN, beschränkt auf die unten ausgewählten Aktionen.",
-  "@settingKioskAllowDrawerDescription": {
+  "settingKioskAllowDrawerMenuDescription": "Zeigt das Menü ohne Exit-Geste oder PIN, beschränkt auf die unten ausgewählten Aktionen. In der klassischen Navigation öffnet es ein Wischen vom Bildschirmrand. In Compass ist es die Menü-Ansicht.",
+  "@settingKioskAllowDrawerMenuDescription": {
     "context": "Settings > Kiosk Mode > Allowed Actions",
     "description": "Help below this setting.",
     "x-locations": {
@@ -40476,6 +40476,21 @@
       ],
       "remoteAdmin": [
         "Navigation"
+      ]
+    }
+  },
+  "settingOffUnderCompass": "Aus, solange die Compass-Navigation aktiv ist.",
+  "@settingOffUnderCompass": {
+    "context": "Settings",
+    "description": "Line under a setting that Compass navigation switches off, such as pull to refresh or the dashboard carousel.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Enable pull to refresh",
+        "Settings > Home Assistant > User Interface > Enable dashboard carousel"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Enable pull to refresh",
+        "Home Assistant > User Interface > Enable dashboard carousel"
       ]
     }
   },

@@ -34993,8 +34993,8 @@
       ]
     }
   },
-  "settingKioskAllowDrawerDescription": "An edge swipe opens the menu without the exit gesture or PIN, limited to the actions selected below.",
-  "@settingKioskAllowDrawerDescription": {
+  "settingKioskAllowDrawerMenuDescription": "Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Menu view.",
+  "@settingKioskAllowDrawerMenuDescription": {
     "context": "Settings > Kiosk Mode > Allowed Actions",
     "description": "Help below this setting.",
     "x-locations": {
@@ -40476,6 +40476,21 @@
       ],
       "remoteAdmin": [
         "Navigation"
+      ]
+    }
+  },
+  "settingOffUnderCompass": "Off while Compass navigation is on.",
+  "@settingOffUnderCompass": {
+    "context": "Settings",
+    "description": "Line under a setting that Compass navigation switches off, such as pull to refresh or the dashboard carousel.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Enable pull to refresh",
+        "Settings > Home Assistant > User Interface > Enable dashboard carousel"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Enable pull to refresh",
+        "Home Assistant > User Interface > Enable dashboard carousel"
       ]
     }
   },

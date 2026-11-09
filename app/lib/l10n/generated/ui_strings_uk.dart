@@ -9332,8 +9332,8 @@ class UiStringsUk extends UiStrings {
   String get settingKioskAllowDrawerTitle => 'Дозволити меню зі швидкими діями';
 
   @override
-  String get settingKioskAllowDrawerDescription =>
-      'Свайп від краю відкриває меню без жесту виходу чи PIN-коду, обмежене вибраними нижче діями.';
+  String get settingKioskAllowDrawerMenuDescription =>
+      'Показує меню без жесту виходу чи PIN-коду, обмежене вибраними нижче діями. У класичній навігації його відкриває свайп від краю. У Compass це вид «Меню».';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Панель керування';
@@ -10810,6 +10810,10 @@ class UiStringsUk extends UiStrings {
   @override
   String get compassOffNote =>
       'Оновлення потягуванням вниз, карусель панелі керування та свайп від краю, що відкриває бічне меню, вимкнені, поки ввімкнено Compass.';
+
+  @override
+  String get settingOffUnderCompass =>
+      'Вимкнено, поки ввімкнено навігацію Compass.';
 
   @override
   String get compassMenu => 'Меню';

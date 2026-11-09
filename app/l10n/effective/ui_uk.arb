@@ -34993,8 +34993,8 @@
       ]
     }
   },
-  "settingKioskAllowDrawerDescription": "Свайп від краю відкриває меню без жесту виходу чи PIN-коду, обмежене вибраними нижче діями.",
-  "@settingKioskAllowDrawerDescription": {
+  "settingKioskAllowDrawerMenuDescription": "Показує меню без жесту виходу чи PIN-коду, обмежене вибраними нижче діями. У класичній навігації його відкриває свайп від краю. У Compass це вид «Меню».",
+  "@settingKioskAllowDrawerMenuDescription": {
     "context": "Settings > Kiosk Mode > Allowed Actions",
     "description": "Help below this setting.",
     "x-locations": {
@@ -40476,6 +40476,21 @@
       ],
       "remoteAdmin": [
         "Navigation"
+      ]
+    }
+  },
+  "settingOffUnderCompass": "Вимкнено, поки ввімкнено навігацію Compass.",
+  "@settingOffUnderCompass": {
+    "context": "Settings",
+    "description": "Line under a setting that Compass navigation switches off, such as pull to refresh or the dashboard carousel.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Enable pull to refresh",
+        "Settings > Home Assistant > User Interface > Enable dashboard carousel"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Enable pull to refresh",
+        "Home Assistant > User Interface > Enable dashboard carousel"
       ]
     }
   },

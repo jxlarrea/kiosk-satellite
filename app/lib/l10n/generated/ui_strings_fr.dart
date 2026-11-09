@@ -9397,8 +9397,8 @@ class UiStringsFr extends UiStrings {
       'Autoriser le menu avec actions rapides';
 
   @override
-  String get settingKioskAllowDrawerDescription =>
-      'Un balayage depuis le bord ouvre le menu sans le geste de sortie ni le code PIN, limité aux actions sélectionnées ci-dessous.';
+  String get settingKioskAllowDrawerMenuDescription =>
+      'Affiche le menu sans le geste de sortie ni le code PIN, limité aux actions sélectionnées ci-dessous. En navigation Classique, un balayage depuis le bord l\'ouvre. Dans Compass, c\'est la vue Menu.';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Tableau de bord';
@@ -10891,6 +10891,10 @@ class UiStringsFr extends UiStrings {
   @override
   String get compassOffNote =>
       'L\'actualisation par glissement, le carrousel de tableau de bord et le glissement depuis le bord qui ouvre le menu latéral sont désactivés tant que Compass est actif.';
+
+  @override
+  String get settingOffUnderCompass =>
+      'Désactivé tant que la navigation Compass est active.';
 
   @override
   String get compassMenu => 'Menu';

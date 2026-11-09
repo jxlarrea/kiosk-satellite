@@ -1,7 +1,7 @@
 {
   "@@locale": "uk",
   "settingKioskAllowDrawerTitle": "Дозволити меню зі швидкими діями",
-  "settingKioskAllowDrawerDescription": "Свайп від краю відкриває меню без жесту виходу чи PIN-коду, обмежене вибраними нижче діями.",
+  "settingKioskAllowDrawerMenuDescription": "Показує меню без жесту виходу чи PIN-коду, обмежене вибраними нижче діями. У класичній навігації його відкриває свайп від краю. У Compass це вид «Меню».",
   "settingKioskAllowDashboardTitle": "Панель керування",
   "settingKioskAllowDashboardDescription": "Перезавантажити початкову сторінку.",
   "settingKioskAllowHaKioskTitle": "Режим кіоска HA",

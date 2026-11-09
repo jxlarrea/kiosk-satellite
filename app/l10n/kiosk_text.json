@@ -75,7 +75,7 @@
   "Disable Gestures": "settingKioskDisableGesturesTitle",
   "Ignore the gestures from the Gestures page while kiosk mode is on.": "settingKioskDisableGesturesDescription",
   "Allow menu with quick actions": "settingKioskAllowDrawerTitle",
-  "An edge swipe opens the menu without the exit gesture or PIN, limited to the actions selected below.": "settingKioskAllowDrawerDescription",
+  "Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Menu view.": "settingKioskAllowDrawerMenuDescription",
   "Dashboard": "settingKioskAllowDashboardTitle",
   "Reload the start page.": "settingKioskAllowDashboardDescription",
   "HA Kiosk Mode": "settingKioskAllowHaKioskTitle",

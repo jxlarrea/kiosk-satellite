@@ -58,5 +58,6 @@
   "compassOpen": "Открыть",
   "compassStateOn": "Вкл.",
   "compassStateOff": "Выкл.",
-  "compassHoldMode": "Режим удержания"
+  "compassHoldMode": "Режим удержания",
+  "settingOffUnderCompass": "Отключено, пока включена навигация Compass."
 }

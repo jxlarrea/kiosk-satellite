@@ -9450,8 +9450,8 @@ class UiStringsDe extends UiStrings {
       'Menü mit Schnellaktionen erlauben';
 
   @override
-  String get settingKioskAllowDrawerDescription =>
-      'Ein Wischen vom Bildschirmrand öffnet das Menü ohne Exit-Geste oder PIN, beschränkt auf die unten ausgewählten Aktionen.';
+  String get settingKioskAllowDrawerMenuDescription =>
+      'Zeigt das Menü ohne Exit-Geste oder PIN, beschränkt auf die unten ausgewählten Aktionen. In der klassischen Navigation öffnet es ein Wischen vom Bildschirmrand. In Compass ist es die Menü-Ansicht.';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Dashboard';
@@ -10937,6 +10937,10 @@ class UiStringsDe extends UiStrings {
   @override
   String get compassOffNote =>
       'Zum Aktualisieren herunterziehen, das Dashboard-Karussell und das Wischen vom Rand, das das Seitenmenü öffnet, sind aus, solange Compass aktiv ist.';
+
+  @override
+  String get settingOffUnderCompass =>
+      'Aus, solange die Compass-Navigation aktiv ist.';
 
   @override
   String get compassMenu => 'Menü';

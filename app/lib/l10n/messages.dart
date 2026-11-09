@@ -83,6 +83,11 @@ extension LocalizedSetting on SettingDef<Object> {
     ).alarmsPhraseVariables(alarmPhraseVariables),
     _ => messageById(l10n(context), descriptionMessageId, description),
   };
+
+  /// The line a row shows while another setting switches it off
+  /// ([SettingDef.offWhen]).
+  String localizedOffNote(BuildContext context) =>
+      messageById(l10n(context), offNote, '');
 }
 
 /// Translate menu presentation while keeping category and route keys stable.

@@ -9351,8 +9351,8 @@ class UiStringsNl extends UiStrings {
   String get settingKioskAllowDrawerTitle => 'Menu toestaan met snelle acties';
 
   @override
-  String get settingKioskAllowDrawerDescription =>
-      'Een veegbeweging vanaf de rand opent het menu zonder afsluitgebaar of pincode. Alleen de hieronder geselecteerde acties zijn beschikbaar.';
+  String get settingKioskAllowDrawerMenuDescription =>
+      'Toont het menu zonder afsluitgebaar of pincode. Alleen de hieronder geselecteerde acties zijn beschikbaar. In klassieke navigatie opent een veegbeweging vanaf de rand het menu. In Compass is het de Menu-weergave.';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Dashboard';
@@ -10822,6 +10822,10 @@ class UiStringsNl extends UiStrings {
   @override
   String get compassOffNote =>
       'Trekken om te vernieuwen, de dashboardcarrousel en het vegen vanaf de rand dat het zijmenu opent staan uit zolang Compass aan staat.';
+
+  @override
+  String get settingOffUnderCompass =>
+      'Uit zolang Compass-navigatie aan staat.';
 
   @override
   String get compassMenu => 'Menu';

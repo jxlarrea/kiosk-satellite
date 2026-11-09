@@ -34993,8 +34993,8 @@
       ]
     }
   },
-  "settingKioskAllowDrawerDescription": "从边缘滑动即可打开菜单，无需退出手势或 PIN 码，仅提供下方选定的操作。",
-  "@settingKioskAllowDrawerDescription": {
+  "settingKioskAllowDrawerMenuDescription": "无需退出手势或 PIN 码即可显示菜单，仅提供下方选定的操作。在经典导航中，从边缘滑动即可打开菜单；在 Compass 中，它就是“菜单”视图。",
+  "@settingKioskAllowDrawerMenuDescription": {
     "context": "Settings > Kiosk Mode > Allowed Actions",
     "description": "Help below this setting.",
     "x-locations": {
@@ -40476,6 +40476,21 @@
       ],
       "remoteAdmin": [
         "Navigation"
+      ]
+    }
+  },
+  "settingOffUnderCompass": "启用 Compass 导航时关闭。",
+  "@settingOffUnderCompass": {
+    "context": "Settings",
+    "description": "Line under a setting that Compass navigation switches off, such as pull to refresh or the dashboard carousel.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Enable pull to refresh",
+        "Settings > Home Assistant > User Interface > Enable dashboard carousel"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Enable pull to refresh",
+        "Home Assistant > User Interface > Enable dashboard carousel"
       ]
     }
   },

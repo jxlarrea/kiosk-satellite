@@ -11,7 +11,7 @@ import {
   updateMicChannelRow,
 } from './audio.js';
 import { MIC_GROUP_NOTE, cameraAction, exportFileName } from './cameras.js';
-import { $, api, cacheSettings, cmd, depSatisfied, state } from './core.js';
+import { $, api, cacheSettings, cmd, depSatisfied, state, syncOffRows } from './core.js';
 import { readOnlyRow, renderAnalyticsIntro, renderUpdateHelper, renderUpdateSourceDocs } from './device.js';
 import { adbHint, permissionSpecs } from './permissions.js';
 import { renderServicePage } from './service.js';
@@ -412,6 +412,7 @@ async function flushSettingsUpdates() {
   // Pages that paint from the settings cache (the Overview's tiles)
   // repaint off this instead of re-reading the device.
   document.dispatchEvent(new CustomEvent('ks-settings', { detail: changed.map(s => s.key) }));
+  syncOffRows();
   if (!rebuild) return;
   liveSettingsRendering = true;
   const restoreDraft = preserveDraft();
@@ -2756,6 +2757,7 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
   // Satellite and Home Assistant sections above clear their tab roots after
   // renderFleetPage() has already put it there.
   applyManagedBanners();
+  syncOffRows();
 
   // Counterpart to the capture at the top: put the view back where the
   // person was. One extra frame so late async renders have laid out.

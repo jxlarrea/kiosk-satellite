@@ -56,6 +56,6 @@ While [Kiosk Mode](kiosk.md) is on, **Kiosk Mode > Allowed Actions** decides wha
 - **Return to center** goes back to the center view after no touch for this long. Set it to 0 to stay on the view. It waits while Hold Mode is on.
 - **Menu items** opens **Drawer menu items**. The Menu view and the drawer menu share the same list.
 
-With Compass on, pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off.
+With Compass on, pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off. Settings > Navigation says so under the style cards. Their settings stay in place, greyed out with "Off while Compass navigation is on." under them, and come back as they were when you switch to Classic.
 
 [Fleet Management](fleet.md) syncs Navigation with the other settings of its category.

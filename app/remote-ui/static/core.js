@@ -214,6 +214,41 @@ export function depSatisfied(s, byKey) {
     && holds(s.alsoDependsOn, s.alsoDependsOnValue);
 }
 
+// Rows another setting switches off while it holds a value (offWhen, pull
+// to refresh under Compass navigation): greyed out in place with the
+// reason under the description, never hidden, the device's SettingTile.
+// Run after a render and after any setting changes.
+export function syncOffRows() {
+  const all = state.settings || [];
+  const byKey = Object.fromEntries(all.map((s) => [s.key, s]));
+  for (const s of all) {
+    if (!s.offWhen) continue;
+    const by = byKey[s.offWhen];
+    const off = !!by && dependsSatisfiedBy(by.value, s.offWhenValue);
+    for (const row of document.querySelectorAll(`.row[data-key="${s.key}"]`)) {
+      row.classList.toggle('is-off', off);
+      let note = row.querySelector('.off-note');
+      if (off && !note) {
+        note = document.createElement('div');
+        note.className = 'off-note';
+        note.textContent = t(s.offNote);
+        (row.querySelector('.info') || row).appendChild(note);
+      } else if (!off && note) {
+        note.remove();
+      }
+      for (const control of row.querySelectorAll('input, select, textarea, button')) {
+        if (off && !control.disabled) {
+          control.disabled = true;
+          control.dataset.offDisabled = '1';
+        } else if (!off && control.dataset.offDisabled) {
+          control.disabled = false;
+          delete control.dataset.offDisabled;
+        }
+      }
+    }
+  }
+}
+
 // The rows whose gates name `key`, either one: what a flip of that setting
 // can reach directly.
 export function gatedOn(all, key) {

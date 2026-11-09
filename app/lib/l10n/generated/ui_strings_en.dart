@@ -9247,8 +9247,8 @@ class UiStringsEn extends UiStrings {
   String get settingKioskAllowDrawerTitle => 'Allow menu with quick actions';
 
   @override
-  String get settingKioskAllowDrawerDescription =>
-      'An edge swipe opens the menu without the exit gesture or PIN, limited to the actions selected below.';
+  String get settingKioskAllowDrawerMenuDescription =>
+      'Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Menu view.';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Dashboard';
@@ -10696,6 +10696,9 @@ class UiStringsEn extends UiStrings {
   @override
   String get compassOffNote =>
       'Pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off while Compass is on.';
+
+  @override
+  String get settingOffUnderCompass => 'Off while Compass navigation is on.';
 
   @override
   String get compassMenu => 'Menu';

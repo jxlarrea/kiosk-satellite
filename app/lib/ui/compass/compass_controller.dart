@@ -128,12 +128,21 @@ class CompassController {
     _settingsSub = c.bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.navCompassLayout.key ||
           e.key == defs.remoteEnabled.key) {
+        final before = currentView;
         _layout = _readLayout();
         // A layout without the view on screen anymore lands on the center.
         if (_layout.viewAt(current.value) == null) {
           current.value = CompassSlot.center;
         }
         _dropStaleShots();
+        // A new view in hand, such as another center or the center's
+        // dashboard view picked again, shows right away.
+        final now = currentView;
+        if (now.key != before.key ||
+            now.path != before.path ||
+            now.id != before.id) {
+          unawaited(_bringUp());
+        }
       } else if (e.key == defs.haHoldMode.key ||
           e.key == defs.navCompassReturnMinutes.key) {
         _armReturn();
@@ -142,8 +151,16 @@ class CompassController {
         menuUnlocked.value = false;
         current.value = CompassSlot.center;
         _clearShots();
+      } else if (e.key == defs.navStyle.key) {
+        unawaited(_bringUp(gentle: true));
       }
     });
+    // The kiosk starts on the dashboard. A center that is not one opens
+    // once the screen is up.
+    _startTimer = Timer(
+      const Duration(seconds: 1),
+      () => unawaited(_bringUp(gentle: true)),
+    );
     _activitySub = c.bus
         .on<ActivityDetected>()
         .where((e) => e.source == 'touch')
@@ -162,7 +179,27 @@ class CompassController {
     });
   }
 
+  Timer? _startTimer;
+
+  /// Shows the view in hand. [gentle] is for the start and for switching
+  /// to Compass: it leaves the screen alone while something else is up,
+  /// such as Now Playing launched by a track or the screensaver, and the
+  /// center opens once that closes.
+  Future<void> _bringUp({bool gentle = false}) async {
+    if (!enabled || stage.value != null || _switching) return;
+    final view = currentView;
+    if (gentle &&
+        (view.isDashboard ||
+            _isUp(view) ||
+            _anythingUp ||
+            c.screensaver.isActive)) {
+      return;
+    }
+    await show(current.value);
+  }
+
   void dispose() {
+    _startTimer?.cancel();
     _settingsSub?.cancel();
     _activitySub?.cancel();
     _returnTimer?.cancel();

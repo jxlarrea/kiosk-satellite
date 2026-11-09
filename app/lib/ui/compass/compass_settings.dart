@@ -52,20 +52,38 @@ class CompassStyleRow extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, box) {
         final wide = box.maxWidth >= 560;
+        final cards = wide
+            ? IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 14,
+                  children: [
+                    Expanded(child: classic),
+                    Expanded(child: compass),
+                  ],
+                ),
+              )
+            : Column(spacing: 10, children: [classic, compass]);
+        final theme = Theme.of(context);
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: wide
-              ? IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: 14,
-                    children: [
-                      Expanded(child: classic),
-                      Expanded(child: compass),
-                    ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              cards,
+              // What Compass switches off. The rows themselves stay,
+              // greyed out (SettingDef.offWhen).
+              if (value == 'compass') ...[
+                const SizedBox(height: 12),
+                Text(
+                  strings.compassOffNote,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                )
-              : Column(spacing: 10, children: [classic, compass]),
+                ),
+              ],
+            ],
+          ),
         );
       },
     );
@@ -873,13 +891,15 @@ class _CompassViewDialogState extends State<_CompassViewDialog> {
               : kind == 'dashboard'
               ? Text(strings.compassKindDashboardHint)
               : null,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          // The dialog's own margin on the left. The icons sit further in,
+          // clear of the edge and in line with the dashboard field's chevron.
+          contentPadding: const EdgeInsets.fromLTRB(24, 0, 40, 0),
         ),
       );
       if (kind == 'dashboard' && _kind == 'dashboard') {
         rows.add(
           Padding(
-            padding: const EdgeInsets.fromLTRB(56, 0, 24, 12),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
             child: DashboardField(
               container: c,
               value: _path.isEmpty ? (home ?? '') : _path,
@@ -892,7 +912,7 @@ class _CompassViewDialogState extends State<_CompassViewDialog> {
       if (kind == 'camera' && _kind == 'camera' && views.length > 1) {
         rows.add(
           Padding(
-            padding: const EdgeInsets.fromLTRB(56, 0, 24, 12),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
             child: KsDropdown<String>(
               expand: true,
               value: views.any((v) => v.id == _camera) ? _camera : null,

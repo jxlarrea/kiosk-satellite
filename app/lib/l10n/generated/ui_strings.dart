@@ -16166,8 +16166,8 @@ abstract class UiStrings {
   /// Help below this setting.
   ///
   /// In en, this message translates to:
-  /// **'An edge swipe opens the menu without the exit gesture or PIN, limited to the actions selected below.'**
-  String get settingKioskAllowDrawerDescription;
+  /// **'Shows the menu without the exit gesture or PIN, limited to the actions selected below. In Classic navigation an edge swipe opens it. In Compass it is the Menu view.'**
+  String get settingKioskAllowDrawerMenuDescription;
 
   /// Setting label.
   ///
@@ -18712,6 +18712,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Pull to refresh, the dashboard carousel and the edge swipe that opens the drawer menu are off while Compass is on.'**
   String get compassOffNote;
+
+  /// Line under a setting that Compass navigation switches off, such as pull to refresh or the dashboard carousel.
+  ///
+  /// In en, this message translates to:
+  /// **'Off while Compass navigation is on.'**
+  String get settingOffUnderCompass;
 
   /// Name of the view that replaces the drawer menu, at the far end of the left side.
   ///

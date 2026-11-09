@@ -195,7 +195,6 @@ void main() {
         ).encode(),
       );
       final compass = CompassController(container)..start();
-      addTearDown(compass.dispose);
       final layout = compass.layout;
       CompassSlot? right(CompassSlot from) =>
           layout.step(from, CompassMove.right, available: compass.available);
@@ -219,6 +218,8 @@ void main() {
       expect(compass.available(CompassView.menu), isFalse);
       compass.menuUnlocked.value = true;
       expect(compass.available(CompassView.menu), isTrue);
+      // Disposed in the test: its start timer must not outlive it.
+      compass.dispose();
     });
   });
 

@@ -9409,8 +9409,8 @@ class UiStringsEs extends UiStrings {
       'Permitir menú con acciones rápidas';
 
   @override
-  String get settingKioskAllowDrawerDescription =>
-      'Un deslizamiento desde el borde abre el menú sin gesto de salida ni PIN, limitado a las acciones seleccionadas abajo.';
+  String get settingKioskAllowDrawerMenuDescription =>
+      'Muestra el menú sin el gesto de salida ni PIN, limitado a las acciones seleccionadas abajo. En la navegación Clásica, un deslizamiento desde el borde lo abre. En Compass es la vista Menú.';
 
   @override
   String get settingKioskAllowDashboardTitle => 'Panel de control';
@@ -10895,6 +10895,10 @@ class UiStringsEs extends UiStrings {
   @override
   String get compassOffNote =>
       'Deslizar para recargar, el carrusel del panel de control y el deslizamiento desde el borde que abre el menú lateral se desactivan mientras Compass está activo.';
+
+  @override
+  String get settingOffUnderCompass =>
+      'Desactivado mientras la navegación Compass está activa.';
 
   @override
   String get compassMenu => 'Menú';

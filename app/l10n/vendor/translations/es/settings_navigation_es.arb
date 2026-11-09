@@ -58,5 +58,6 @@
   "compassOpen": "Abrir",
   "compassStateOn": "Activado",
   "compassStateOff": "Desactivado",
-  "compassHoldMode": "Modo de pausa"
+  "compassHoldMode": "Modo de pausa",
+  "settingOffUnderCompass": "Desactivado mientras la navegación Compass está activa."
 }
