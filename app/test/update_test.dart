@@ -430,6 +430,27 @@ void main() {
     expect(installed, hasLength(2));
   });
 
+  test('startup deletes installed downloads and keeps a newer one '
+      '(#1359)', () async {
+    final dir = Directory('${cache.path}/updates');
+    await dir.create(recursive: true);
+    Future<File> put(String name) =>
+        File('${dir.path}/$name').writeAsBytes([1]);
+    final installedNow = await put(
+      'kiosk-satellite-update-1.0.0-0123456789ab.apk',
+    );
+    final older = await put('kiosk-satellite-update-0.9.0-upload.apk');
+    final part = await put('upload.apk.part');
+    final newer = await put('kiosk-satellite-update-1.1.0-0123456789ab.apk');
+
+    await update.init();
+
+    expect(await installedNow.exists(), isFalse);
+    expect(await older.exists(), isFalse);
+    expect(await part.exists(), isFalse);
+    expect(await newer.exists(), isTrue);
+  });
+
   test('a cached APK from the previous release is never reused, even at '
       'the exact byte size of the new one', () async {
     // Two consecutive builds can differ by nothing but a same-length

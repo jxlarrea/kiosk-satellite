@@ -63,10 +63,23 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
      */
     private val silentSessions = ConcurrentHashMap.newKeySet<Int>()
 
+    /**
+     * Sessions this app abandoned itself. Android still reports each one as
+     * ABORTED, on Android 8.1 twice, and that report must not read as the
+     * person declining: it lands in the middle of the attempt that
+     * replaced the session and would resume the kiosk over its confirm
+     * screen. Never pruned: a few ints per install attempt.
+     */
+    private val abandoned = ConcurrentHashMap.newKeySet<Int>()
+
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context, intent: Intent) {
             if (intent.action != ACTION_STATUS) return
             val sessionId = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1)
+            if (sessionId in abandoned) {
+                Log.i(TAG, "session $sessionId ended after it was abandoned")
+                return
+            }
             when (val status = intent.getIntExtra(
                     PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
                 PackageInstaller.STATUS_PENDING_USER_ACTION -> {
@@ -82,6 +95,10 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                         }
                     if (confirm == null) {
                         Log.w(TAG, "pending user action without an intent")
+                        abandonQuietly(sessionId)
+                        resumeScannerAfterPackageReplacementFailure()
+                        channel.invokeMethod(
+                            "installFailed", "Android asked for a confirmation it cannot show")
                         return
                     }
                     // A confirmed update kills us without ordinary teardown.
@@ -92,6 +109,7 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                     try {
                         ctx.startActivity(confirm)
                     } catch (e: Exception) {
+                        abandonQuietly(sessionId)
                         resumeScannerAfterPackageReplacementFailure()
                         Log.w(TAG, "could not show the install confirmation: $e")
                         channel.invokeMethod(
@@ -119,6 +137,11 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                     val aborted =
                         status == PackageInstaller.STATUS_FAILURE_ABORTED && !verifier
                     val silent = silentSessions.remove(sessionId)
+                    // Android normally destroys a failed session itself, but
+                    // a sealed session left behind keeps a full copy of the
+                    // APK in /data/app/vmdl<id>.tmp until it is three days
+                    // old (issue #1359). Each retry then adds another copy.
+                    abandonQuietly(sessionId)
                     resumeScannerAfterPackageReplacementFailure()
                     Log.w(TAG, "install failed: $message")
                     channel.invokeMethod(
@@ -148,6 +171,7 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             context.registerReceiver(receiver, IntentFilter(ACTION_STATUS))
         }
+        worker.execute { abandonEarlierSessions(atStartup = true) }
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "installApk" -> {
@@ -199,6 +223,45 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
         }
     }
 
+    /**
+     * Abandons this app's own earlier install sessions. Android keeps a
+     * leftover session, and the APK copy in its stage folder, until it is
+     * three days old and only checks at boot (issue #1359). A confirm screen
+     * left alone is one: it never reports back, so nothing else ends its
+     * session, and each retry used to add another copy. A new install
+     * replaces every earlier attempt, and at startup none of them can still
+     * complete, since a self-update that went through killed the process and
+     * finished its session. Android ignores the abandon of a session it is
+     * already installing.
+     */
+    private fun abandonEarlierSessions(atStartup: Boolean) {
+        val installer = context.packageManager.packageInstaller
+        val stale = try {
+            installer.mySessions
+        } catch (e: Exception) {
+            Log.w(TAG, "could not list install sessions: $e")
+            return
+        }
+        for (info in stale) {
+            // A restart while Android's confirm screen is up must not pull
+            // the session from under it. Older versions cannot tell the age.
+            if (atStartup && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                System.currentTimeMillis() - info.createdMillis < 30 * 60_000L) continue
+            Log.i(TAG, "abandoning earlier install session ${info.sessionId}")
+            abandonQuietly(info.sessionId)
+        }
+    }
+
+    /** Abandon fails when Android already destroyed the session, which is
+     *  the normal end of a failed install, so that is no error. */
+    private fun abandonQuietly(sessionId: Int) {
+        if (sessionId < 0) return
+        abandoned.add(sessionId)
+        try {
+            context.packageManager.packageInstaller.abandonSession(sessionId)
+        } catch (_: Exception) {}
+    }
+
     private fun inspect(apk: File): Map<String, Any>? {
         val info = context.packageManager.getPackageArchiveInfo(apk.path, 0) ?: return null
         val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode
@@ -240,6 +303,7 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
 
     /** A fallback asks Dart to release kiosk protections before creating a session. */
     private fun install(apk: File, useSystemInstaller: Boolean, useShizuku: Boolean): String {
+        abandonEarlierSessions(atStartup = false)
         try {
             if (useShizuku) {
                 Log.i(TAG, "installing through Shizuku")
@@ -276,28 +340,36 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                     else PackageInstaller.SessionParams.USER_ACTION_REQUIRED)
             }
             val sessionId = installer.createSession(params)
-            installer.openSession(sessionId).use { session ->
-                session.openWrite("app.apk", 0, apk.length()).use { out ->
-                    apk.inputStream().use { it.copyTo(out) }
-                    session.fsync(out)
+            var committed = false
+            try {
+                installer.openSession(sessionId).use { session ->
+                    session.openWrite("app.apk", 0, apk.length()).use { out ->
+                        apk.inputStream().use { it.copyTo(out) }
+                        session.fsync(out)
+                    }
+                    val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                    } else {
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                    }
+                    val status = PendingIntent.getBroadcast(
+                        context, sessionId,
+                        Intent(ACTION_STATUS).setPackage(context.packageName), flags)
+                    // Recorded before the commit: the outcome can arrive first.
+                    if (silent) silentSessions.add(sessionId)
+                    try {
+                        if (silent) prepareForSilentReplacement()
+                        session.commit(status.intentSender)
+                        committed = true
+                    } catch (e: Exception) {
+                        silentSessions.remove(sessionId)
+                        throw e
+                    }
                 }
-                val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                } else {
-                    PendingIntent.FLAG_UPDATE_CURRENT
-                }
-                val status = PendingIntent.getBroadcast(
-                    context, sessionId,
-                    Intent(ACTION_STATUS).setPackage(context.packageName), flags)
-                // Recorded before the commit: the outcome can arrive first.
-                if (silent) silentSessions.add(sessionId)
-                try {
-                    if (silent) prepareForSilentReplacement()
-                    session.commit(status.intentSender)
-                } catch (e: Exception) {
-                    silentSessions.remove(sessionId)
-                    throw e
-                }
+            } finally {
+                // A write that ran out of space or a refused commit would
+                // otherwise leave the session and its partial copy behind.
+                if (!committed) abandonQuietly(sessionId)
             }
             Log.i(TAG, "session $sessionId committed (${if (silent) "silent" else "confirm"})")
             return if (silent) "silent" else "confirm"

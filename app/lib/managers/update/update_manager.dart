@@ -246,6 +246,7 @@ class UpdateManager extends Manager {
       _sdkInt = android.version.sdkInt;
       supportedAbis = android.supportedAbis;
     }
+    await _sweepInstalledApks();
     // The installer's asynchronous outcomes. Success never arrives: Android
     // kills the process as it swaps the code, and the relaunch receiver
     // brings the app back already running the new version.
@@ -812,6 +813,29 @@ class UpdateManager extends Manager {
     final dir = Directory('${(await getTemporaryDirectory()).path}/updates');
     await dir.create(recursive: true);
     return dir;
+  }
+
+  /// Deletes what the updates/ folder holds once it is no use. A download
+  /// stays after its install went through, and Android only clears an app
+  /// cache when storage runs low, so the APK sat there until the next
+  /// update (issue #1359). At startup an APK that is not newer than the
+  /// running version has been installed or never will be, and a half
+  /// upload belongs to a request that is gone. A newer download stays: a
+  /// declined install reuses it (issue #170).
+  Future<void> _sweepInstalledApks() async {
+    try {
+      final dir = Directory('${(await getTemporaryDirectory()).path}/updates');
+      if (!await dir.exists()) return;
+      final named = RegExp(r'^kiosk-satellite-update-(.+)-[^-]+\.apk$');
+      await for (final file in dir.list()) {
+        final version = named.firstMatch(file.uri.pathSegments.last)?[1];
+        if (version != null && _isNewer(version, _currentVersion)) continue;
+        await file.delete(recursive: true);
+        log.info(name, 'deleted ${file.uri.pathSegments.last} from the cache');
+      }
+    } catch (e) {
+      log.warn(name, 'could not clean the update cache: $e');
+    }
   }
 
   /// The installer copies the APK into its session before committing, so
