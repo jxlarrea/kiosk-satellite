@@ -259,6 +259,12 @@ class EspEntitySurface {
           'mdi:widgets-outline',
           defs.screensaverWidgetsEnabled,
         ),
+        // Listed with the Now Playing switch, which needs the view on.
+        'now_playing_alongside_screensaver': (
+          'Now Playing alongside screensaver',
+          'mdi:view-split-vertical',
+          defs.sendspinFullscreenSplit,
+        ),
         'hold_mode': ('Hold mode', 'mdi:pause-circle-outline', defs.haHoldMode),
         // Rotation alone, unlike Hold mode: the screensaver and screen off
         // still run while it is off (issue #1247).
@@ -657,6 +663,9 @@ class EspEntitySurface {
     };
 
     final intercomOn = _settings.get(defs.intercomEnabled);
+    final nowPlayingListed =
+        _settings.get(defs.sendspinPlayerActive) &&
+        _settings.get(defs.sendspinFullscreen);
     final catalog = <Map<String, Object?>>[
       // ── Controls ─────────────────────────────────────────────────────
       {
@@ -686,8 +695,7 @@ class EspEntitySurface {
       // turn-on brings it up the way the kiosk menu entry does (a paused
       // track opens paused). Only with the view enabled, like the menu
       // entry: a switch that can only fail is worse than no switch.
-      if (_settings.get(defs.sendspinPlayerActive) &&
-          _settings.get(defs.sendspinFullscreen))
+      if (nowPlayingListed)
         {
           'type': 'switch',
           'objectId': 'now_playing',
@@ -1074,6 +1082,8 @@ class EspEntitySurface {
                     e.key != 'screensaver_motion' &&
                     e.key != 'screensaver_face')) &&
             (proximityPresent || e.key != 'screensaver_proximity') &&
+            (e.key != 'now_playing_alongside_screensaver' ||
+                nowPlayingListed) &&
             (!e.key.startsWith('vs_') || _voiceNative))
           {
             'type': 'switch',
@@ -1406,6 +1416,7 @@ class EspEntitySurface {
     'screen',
     'screensaver_active',
     'now_playing',
+    'now_playing_alongside_screensaver',
     'postpone_screensaver',
     'screensaver_next_slide',
     'screensaver_previous_slide',

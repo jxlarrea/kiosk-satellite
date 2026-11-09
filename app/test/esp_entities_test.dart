@@ -1090,6 +1090,7 @@ void main() {
         'screensaver',
         'screensaver_schedule',
         'screensaver_widgets',
+        'now_playing_alongside_screensaver',
         'hold_mode',
         'dashboard_rotation',
         'camera_enabled',
@@ -1381,6 +1382,16 @@ void main() {
     await surface.handleCommand('screensaver_widgets', true);
     expect(settings.get(defs.screensaverWidgetsEnabled), isTrue);
   });
+
+  test(
+    'the alongside switch shows Now Playing beside the screensaver',
+    () async {
+      await surface.handleCommand('now_playing_alongside_screensaver', true);
+      expect(settings.get(defs.sendspinFullscreenSplit), isTrue);
+      await surface.handleCommand('now_playing_alongside_screensaver', false);
+      expect(settings.get(defs.sendspinFullscreenSplit), isFalse);
+    },
+  );
 
   test('the schedule switch turns scheduled screensavers on and off', () async {
     await surface.handleCommand('screensaver_schedule', true);
