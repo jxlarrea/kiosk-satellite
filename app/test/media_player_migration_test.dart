@@ -52,6 +52,27 @@ void main() {
     expect(sonos.get(defs.sendspinPlayerSource), 'sonos');
   });
 
+  test('this device\'s own picks stay under this device', () async {
+    for (final pick in const [
+      'plugin:hello-world/archive',
+      'airplay',
+      'session:*',
+    ]) {
+      final settings = await boot({'ks.sendspin.player': pick});
+      expect(settings.get(defs.sendspinPlayerSource), '', reason: pick);
+      expect(settings.get(defs.sendspinPlayer), pick);
+    }
+  });
+
+  test('a plugin pick stored under another source moves back', () async {
+    final settings = await boot({
+      'ks.sendspin.player': 'plugin:hello-world/archive',
+      'ks.sendspin.player_source': 'ma',
+    });
+    expect(settings.get(defs.sendspinPlayerSource), '');
+    expect(settings.get(defs.sendspinPlayer), 'plugin:hello-world/archive');
+  });
+
   test('an existing source is left alone', () async {
     final settings = await boot({
       'ks.sendspin.player': 'ma:abc',

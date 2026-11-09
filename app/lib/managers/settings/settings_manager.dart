@@ -652,14 +652,23 @@ class SettingsManager extends Manager {
       await _prefs.remove('${_prefix}sendspin.ma_player_name');
     }
     // The pick is filtered by a source now: a pick stored before the
-    // source existed names its own. The Local Media Session and the
-    // AirPlay receiver are this device's own picks and belong under the
-    // empty source.
+    // source existed names its own. The Local Media Session, the AirPlay
+    // receiver and plugin players are this device's own picks and belong
+    // under the empty source, so one stored under another source (an
+    // earlier build of this very migration gave plugin picks 'ma') moves
+    // back to it.
     final picked = _prefs.getString('${_prefix}sendspin.player') ?? '';
-    if (picked.trim().isNotEmpty &&
-        !picked.startsWith('session:') &&
-        picked != 'airplay' &&
-        (_prefs.getString('${_prefix}sendspin.player_source') ?? '').isEmpty) {
+    final storedSource =
+        _prefs.getString('${_prefix}sendspin.player_source') ?? '';
+    final deviceOnly =
+        picked.startsWith('session:') ||
+        picked == 'airplay' ||
+        picked.startsWith('plugin:');
+    if (deviceOnly && storedSource.isNotEmpty) {
+      await _prefs.setString('${_prefix}sendspin.player_source', '');
+      log.info(name, 'migrated sendspin.player_source = (this device)');
+    }
+    if (picked.trim().isNotEmpty && !deviceOnly && storedSource.isEmpty) {
       final source = picked.startsWith('ha:')
           ? 'ha'
           : picked.startsWith('sonos:')
