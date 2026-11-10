@@ -467,6 +467,15 @@ class _CompassLayoutEditorState extends State<CompassLayoutEditor> {
       return null;
     }
 
+    // How many views sit before and after the center on each arm.
+    final before = (
+      left: layout.side(CompassArm.left).length,
+      top: layout.side(CompassArm.up).length,
+    );
+    final after = (
+      left: layout.side(CompassArm.right).length,
+      top: layout.side(CompassArm.down).length,
+    );
     final width = 5 * cell + 4 * gap;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -486,21 +495,28 @@ class _CompassLayoutEditorState extends State<CompassLayoutEditor> {
               height: 5 * height + 4 * gap,
               child: Stack(
                 children: [
-                  // The two arms, behind the tiles.
-                  Positioned(
-                    left: cell / 2,
-                    right: cell / 2,
-                    top: 2 * (height + gap) + height / 2 - 1,
-                    height: 2,
-                    child: ColoredBox(color: theme.colorScheme.outlineVariant),
-                  ),
-                  Positioned(
-                    left: 2 * (cell + gap) + cell / 2 - 1,
-                    width: 2,
-                    top: height / 2,
-                    bottom: height / 2,
-                    child: ColoredBox(color: theme.colorScheme.outlineVariant),
-                  ),
+                  // The two arms, behind the tiles. Each one ends at the
+                  // last view on its side, short of the Add tile.
+                  if (before.left + after.left > 0)
+                    Positioned(
+                      left: (2 - before.left) * (cell + gap) + cell / 2,
+                      width: (before.left + after.left) * (cell + gap),
+                      top: 2 * (height + gap) + height / 2 - 1,
+                      height: 2,
+                      child: ColoredBox(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                    ),
+                  if (before.top + after.top > 0)
+                    Positioned(
+                      left: 2 * (cell + gap) + cell / 2 - 1,
+                      width: 2,
+                      top: (2 - before.top) * (height + gap) + height / 2,
+                      height: (before.top + after.top) * (height + gap),
+                      child: ColoredBox(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                    ),
                   for (var row = 0; row < 5; row++)
                     for (var col = 0; col < 5; col++)
                       if (at(col, row) case final tile?)
@@ -588,7 +604,7 @@ class _CompassLayoutEditorState extends State<CompassLayoutEditor> {
   Widget _addTile(BuildContext context, CompassArm arm) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      // The card's own color, so the arm behind stops at the tile's edge.
+      // The card's own color.
       color: scheme.surfaceContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),

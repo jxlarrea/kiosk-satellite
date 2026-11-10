@@ -288,11 +288,15 @@ export function compassLayoutRow(row, s, save) {
   const render = () => {
     const l = layout();
     map.replaceChildren();
-    // The two arms, as grid items under the tiles.
+    // The two arms, as grid items under the tiles. Each one ends at the
+    // last view on its side, short of the Add tile.
     const across = document.createElement('i');
     across.className = 'compass-line across';
+    across.style.gridColumn = `${3 - l.left.length} / ${4 + l.right.length}`;
+    across.style.setProperty('--span', String(l.left.length + l.right.length + 1));
     const down = document.createElement('i');
     down.className = 'compass-line down';
+    down.style.gridRow = `${3 - l.up.length} / ${4 + l.down.length}`;
     map.append(across, down);
     // The center in column 2, row 2, the sides running out from it.
     const center = tile(l.center, { col: 2, row: 2 }, 'center');

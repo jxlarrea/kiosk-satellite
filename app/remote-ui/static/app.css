@@ -2117,11 +2117,15 @@
   /* Taller tiles where the card is wide: the height follows the card's
      width (container query units), 54px on a narrow card up to 84px. */
   --tile-h: clamp(54px, 9cqi, 84px);
-  grid-template-rows: repeat(5, var(--tile-h)); gap: 10px; justify-content: center; }
+  --gap: 10px;
+  grid-template-rows: repeat(5, var(--tile-h)); gap: var(--gap); justify-content: center; }
 .compass-line { pointer-events: none; background: var(--border); }
-.compass-line.across { grid-column: 1 / -1; grid-row: 3; align-self: center; height: 2px;
-  margin-inline: calc((100% - 40px) / 10); }
-.compass-line.down { grid-column: 3; grid-row: 1 / -1; justify-self: center; width: 2px; margin-block: calc(var(--tile-h) / 2); }
+/* compass.js sets the columns or rows each arm covers, from the last view
+   on one side to the last on the other. The margins pull both ends in by
+   half a tile. */
+.compass-line.across { grid-row: 3; align-self: center; height: 2px;
+  margin-inline: calc((100% - (var(--span, 5) - 1) * var(--gap)) / (var(--span, 5) * 2)); }
+.compass-line.down { grid-column: 3; justify-self: center; width: 2px; margin-block: calc(var(--tile-h) / 2); }
 .compass-tile { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; min-width: 0; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-high);
   color: var(--text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 0 4px; }
@@ -2158,6 +2162,6 @@
 .compass-kind-extra .dp-field, .compass-kind-extra select { width: 100%; margin-bottom: 0; }
 @media (max-width: 640px) {
   .compass-styles { grid-template-columns: minmax(0, 1fr); }
-  .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; --tile-h: clamp(52px, 14cqi, 64px); }
+  .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); --gap: 6px; --tile-h: clamp(52px, 14cqi, 64px); }
   .compass-tile { font-size: 10.5px; border-radius: 9px; }
 }
