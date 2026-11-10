@@ -97,6 +97,7 @@ void main() {
 
   for (final (updater, codename, gain) in [
     ('echo', 'crown', 24),
+    ('echo', 'athena', 24),
     ('echo', 'cronos', 20),
     ('echo', 'checkers', 20),
     ('biscuit', 'biscuit', 5),

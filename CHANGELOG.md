@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Microphone base gain for the 2nd generation Echo Show 8.** On the Kiosk Satellite Edition image, the 2nd generation Echo Show 8 (`athena`) now adds the same 24 dB base gain under Microphone gain as the 1st generation. The slider's 0 dB is the right level for the device, and a gain set before goes back to 0 dB once.
 - **Dashboard links for plugin actions (#1385).** `ks://plugin/<plugin id>/<action id>` runs a plugin action from a dashboard button, the same as its entry in the kiosk menu, so a button opens a plugin's screen on the kiosk that was tapped. Open an action on the plugin's page, on the kiosk or in the remote admin, to copy its link from **Dashboard link**. Anything after the action ID goes to the plugin, so a plugin that supports it can take a camera name or another value from the link. Plugins cannot open these links themselves. See [Dashboard Links](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/dashboard-links.md).
 
 ### Fixed
