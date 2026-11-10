@@ -247,5 +247,6 @@
     "stream_match": true,
     "stream_buffer_ms": 2500,
     "stream_lag_frames": 24
-  }
+  },
+  "deployed_from": "/app/data/runs/ok_nabu_v128_ctc_mid/checkpoints/ok_nabu-ctc-best-ep044.pt"
 }
