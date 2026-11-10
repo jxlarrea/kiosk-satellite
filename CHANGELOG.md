@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.14 - 2026-11-10
 
 ### Added
 - **HTML5 Geolocation for pages (#1383).** A new **Enable geolocation access** switch under Settings > Web Browsing > HTML5 Geolocation lets pages read the device location, so a weather radar or map card can center on the tablet. This includes frames a page allows with `allow="geolocation"`, such as a Windy embed. While it is on, a Required system permissions group under it shows the Location grant with a Grant button, on the kiosk and in the remote admin. Only pages loaded over HTTPS can ask for the location. It is off by default.
@@ -19,6 +19,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Stop word in wake word diagnostics.** Wake word diagnostics now also records the stop word. Each stop word activation saves a clip with its score and threshold, and a "stop" that came close without triggering during an answer, media or a ringing timer is saved as a near miss. Stop word entries are marked "Stop word" in the Activations and Near misses lists and keep their own 10 slots in each, so they never push out the wake word's.
 
 ### Changed
+- **Improved vsWakeWord models for Okay Nabu, Alexa and the stop word.** The ok_nabu, alexa and ok_stop models were retrained with new native accents, so they detect better on every device. The stop word also triggers less often on music and speech that only sounds like "stop".
 - **Amazon's wake word engine with your own files.** On the Echo Dot 2026.11.3 and Echo Show 5 and Show 8 2026.11.4 images and newer, Wake word engine offers Amazon again when Pryon's files are installed in `/data/pryon`, along with the Wake word language setting. Wake word language lists only the installed locales and starts on the first one. Its Kiosk Satellite's language option is gone. Stop word interruption works with it as with the other engines, so saying "stop" ends a ringing timer or a reply. The images include none of these files. See "Amazon's wake word engine" in the image guides. The models are read when Kiosk Satellite starts, so restart the Echo after installing them. If the engine is not offered, the app log lists the files the image could not read and the models it skipped. A kiosk moved to vsWakeWord in 2026.11.12 stays there until Amazon is picked again.
 - **End after silence goes down to 2 seconds.** Settings > Voice Satellite > Realtime > End after silence used to start at 5 seconds. Under 5 seconds the bar counts down over the whole wait. The first words after the wake word still get 5 seconds.
 - **The Music Library opens with its shelves in place.** It used to show a spinner where Discover, Recently played and the other shelves had been every time it opened, until Music Assistant answered again. It now shows what each page showed last time right away and swaps in the fresh copy when it arrives.
