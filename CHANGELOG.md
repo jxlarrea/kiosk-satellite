@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.11.15 - 2026-11-10
+
+### Fixed
+- **Crash on every start on Android 10 after updating to 2026.11.14 (#1386, #1392).** The cleanup of leftover update sessions added in 2026.11.14 called an Android method that only exists from Android 11. On Android 10, any kiosk with a leftover update session crashed as soon as the app started, which hit Meta Portals and Lenovo tablets. The cleanup no longer calls it on Android 10 and a failure in it can no longer stop the app. If the app does not start, it cannot update from inside the app, so install this version over 2026.11.14 with `adb install -r`. Settings are kept.
+
 ## v2026.11.14 - 2026-11-10
 
 ### Added

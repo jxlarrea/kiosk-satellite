@@ -171,7 +171,14 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             context.registerReceiver(receiver, IntentFilter(ACTION_STATUS))
         }
-        worker.execute { abandonEarlierSessions(atStartup = true) }
+        // Housekeeping only, so nothing it throws may end the process.
+        worker.execute {
+            try {
+                abandonEarlierSessions(atStartup = true)
+            } catch (t: Throwable) {
+                Log.w(TAG, "could not clean up earlier install sessions: $t")
+            }
+        }
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "installApk" -> {
@@ -244,8 +251,13 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
         }
         for (info in stale) {
             // A restart while Android's confirm screen is up must not pull
-            // the session from under it. Older versions cannot tell the age.
-            if (atStartup && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            // the session from under it. Android 10 and older cannot tell
+            // the age: getCreatedMillis only exists from Android 11, and
+            // calling it on Android 10 threw NoSuchMethodError on every
+            // start with a session left over (issue #1386). Android 10 has
+            // getUpdatedMillis, but never sends its value to apps, so it
+            // reads 0.
+            if (atStartup && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                 System.currentTimeMillis() - info.createdMillis < 30 * 60_000L) continue
             Log.i(TAG, "abandoning earlier install session ${info.sessionId}")
             abandonQuietly(info.sessionId)
