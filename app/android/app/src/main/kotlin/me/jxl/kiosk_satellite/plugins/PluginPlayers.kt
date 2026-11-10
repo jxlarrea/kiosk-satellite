@@ -5,6 +5,7 @@ import me.jxl.kiosk.plugins.PlayerLibrary
 import me.jxl.kiosk.plugins.PlayerListener
 import me.jxl.kiosk.plugins.PlayerQueue
 import me.jxl.kiosk.plugins.PluginPlayer
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * The players one plugin session publishes (SDK `player`). Each is offered under Media Player > Player as
@@ -143,6 +144,9 @@ internal class PluginPlayers(private val clock: () -> Long = System::nanoTime) {
     }
 }
 
+/** The last number given to a plugin player's picture, across every handle. */
+private val artworkIds = AtomicInteger()
+
 /**
  * A plugin player while it is the pick: what the plugin holds between onActivate and onDeactivate. Updates and
  * queue notices go to the app through [changed] and [queueChanged]; after [deactivate] they are dropped.
@@ -160,7 +164,10 @@ internal class PlayerHandle(
         private set
     @Volatile var artwork: ByteArray? = null
         private set
-    /** Counts artwork changes, so the app asks for the new picture. */
+    /**
+     * Names the current picture, so the app asks for the new one. Taken from a counter the whole app shares:
+     * the app keeps covers by this number past the handle, so a later handle must not hand out the same one.
+     */
     @Volatile var artworkId = 0
         private set
 
@@ -173,12 +180,15 @@ internal class PlayerHandle(
                 artwork = null
             } else if (previous == null || !previous.contentEquals(bytes)) {
                 artwork = bytes.copyOf()
-                artworkId++
+                artworkId = artworkIds.incrementAndGet()
             }
             this.state = value
         }
         changed(this)
     }
+
+    /** The picture [id] names, or null once the plugin has sent another: a cover is never kept under another's number. */
+    fun artworkFor(id: Int): ByteArray? = synchronized(this) { if (id == artworkId) artwork else null }
 
     override fun queueChanged() { if (active) queueChanged(this) }
 

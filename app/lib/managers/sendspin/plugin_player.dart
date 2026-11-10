@@ -205,6 +205,12 @@ class PluginRemotePlayer implements RemotePlayer {
     return hash < 0 ? rest : rest.substring(0, hash);
   }
 
+  /// The picture a [snapshotFrom] cover address names, 0 for none.
+  static int artworkId(String url) {
+    final hash = url.lastIndexOf('#');
+    return hash < 0 ? 0 : int.tryParse(url.substring(hash + 1)) ?? 0;
+  }
+
   /// A queue answer as the Now Playing panel lists it: the played ones
   /// above the playing one, the rest after it.
   @visibleForTesting

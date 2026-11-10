@@ -97,6 +97,7 @@ void main() {
       })!;
       expect(snap['artworkUrl'], 'plugin-art:$pick#3');
       expect(PluginRemotePlayer.artworkPick('${snap['artworkUrl']}'), pick);
+      expect(PluginRemotePlayer.artworkId('${snap['artworkUrl']}'), 3);
       final url = PluginRemotePlayer.snapshotFrom(pick, {
         'state': 'paused',
         'artworkUrl': 'https://example.com/a.jpg',

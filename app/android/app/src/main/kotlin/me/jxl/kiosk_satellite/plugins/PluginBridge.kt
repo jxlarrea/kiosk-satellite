@@ -953,7 +953,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                         }
                         "playerCommand" -> playerCommand(args)
                         "playerQueueEdit" -> playerQueueEdit(args)
-                        "playerArtwork" -> playerSession(args)?.second?.handle?.artwork
+                        "playerArtwork" -> playerSession(args)?.second?.handle
+                            ?.artworkFor((args["artworkId"] as? Number)?.toInt() ?: 0)
                         "playerDuck" -> {
                             PluginAudio.setDuck((args["factor"] as? Number)?.toFloat() ?: 1f)
                             null

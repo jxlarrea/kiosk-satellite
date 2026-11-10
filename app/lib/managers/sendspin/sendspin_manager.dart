@@ -448,7 +448,7 @@ class SendspinManager extends Manager {
     }
     // A plugin player's, sent as bytes and kept by the plugin bridge.
     if (PluginRemotePlayer.artworkPick(url) case final pick?) {
-      return PluginPlayers.artwork(pick);
+      return PluginPlayers.artwork(pick, PluginRemotePlayer.artworkId(url));
     }
     // A Sendspin server's cover frame, held by the native engine.
     if (url.startsWith(artworkFrameScheme)) {

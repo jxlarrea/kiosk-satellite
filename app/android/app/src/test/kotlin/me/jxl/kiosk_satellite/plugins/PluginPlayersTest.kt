@@ -115,6 +115,24 @@ class PluginPlayersTest {
         assertEquals("Albums", (shelves.single() as Map<*, *>)["title"])
     }
 
+    @Test fun artworkNumbersAreNotReusedByALaterHandle() {
+        val entry = PluginPlayers.Entry("radio", "Radio", Listener(), discover = false, search = false)
+        val earlier = PlayerHandle(entry, changed = {}, queueChanged = {})
+        earlier.update(mapOf("state" to "playing", "artwork" to byteArrayOf(1)))
+        val old = earlier.artworkId
+        earlier.update(mapOf("state" to "playing", "artwork" to byteArrayOf(2)))
+        val last = earlier.artworkId
+        // The picture a number named is gone once the plugin sends another.
+        assertNull(earlier.artworkFor(old))
+        earlier.deactivate()
+        val later = PlayerHandle(entry, changed = {}, queueChanged = {})
+        later.update(mapOf("state" to "playing", "artwork" to byteArrayOf(3)))
+        assertTrue(later.artworkId > last)
+        assertNull(later.artworkFor(old))
+        assertTrue(later.artworkFor(later.artworkId)!!.contentEquals(byteArrayOf(3)))
+        later.deactivate()
+    }
+
     @Test fun handleSendsUpdatesUntilDeactivatedAndOwnsOneOutput() {
         val entry = PluginPlayers.Entry("radio", "Radio", Listener(), discover = false, search = false)
         var changes = 0
@@ -122,9 +140,11 @@ class PluginPlayersTest {
         val handle = PlayerHandle(entry, changed = { changes++ }, queueChanged = {}, outputFactory = { _, _ -> FakeOutput().also { outputs += it } })
         handle.update(mapOf("state" to "playing", "actions" to listOf("pause"), "artwork" to byteArrayOf(9)))
         assertEquals(1, changes)
-        assertEquals(1, handle.artworkId)
+        val first = handle.artworkId
+        assertTrue(first > 0)
         handle.update(mapOf("state" to "playing", "actions" to listOf("pause"), "artwork" to byteArrayOf(9)))
-        assertEquals(1, handle.artworkId)
+        assertEquals(first, handle.artworkId)
+        assertTrue(handle.artworkFor(first)!!.contentEquals(byteArrayOf(9)))
         assertTrue(handle.allows("pause"))
         assertFalse(handle.allows("next"))
         handle.openAudio(48000, 2, PluginPlayer.ENCODING_PCM_16)

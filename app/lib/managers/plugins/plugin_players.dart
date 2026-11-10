@@ -232,11 +232,16 @@ class PluginPlayers {
     }
   }
 
-  static Future<Uint8List?> artwork(String pick) async {
+  /// The picture [artworkId] names, or null once the player has sent
+  /// another, so a cover is never kept under another's address.
+  static Future<Uint8List?> artwork(String pick, int artworkId) async {
     final target = _target(pick);
     if (target == null) return null;
     try {
-      return await _channel.invokeMethod<Uint8List>('playerArtwork', target);
+      return await _channel.invokeMethod<Uint8List>('playerArtwork', {
+        ...target,
+        'artworkId': artworkId,
+      });
     } catch (_) {
       return null;
     }
