@@ -49,6 +49,21 @@ object EchoReference {
         lastAudibleMs = SystemClock.elapsedRealtime()
     }
 
+    /** The output device the last tapped track played to, 0 before the first. */
+    @Volatile private var outputDevice = 0
+
+    /**
+     * A tapped track plays to the output device [id]. When that is another
+     * one than the last track's, the echo arrives at another delay and the
+     * canceller has to find it again ([SoftwareEcho.outputMoved]).
+     */
+    fun routed(id: Int) {
+        if (id == 0) return
+        val last = outputDevice
+        outputDevice = id
+        if (last != 0 && last != id) SoftwareEcho.outputMoved()
+    }
+
     /** Whether anything played recently enough to still be echoing. */
     fun playedWithin(ms: Long): Boolean =
         SystemClock.elapsedRealtime() - lastAudibleMs < ms
@@ -84,6 +99,25 @@ abstract class PresentedQueue(rate: Int) : EchoReference.Source {
     /** The 16 kHz position of queued[0]. */
     private var queuedFrom = 0L
 
+    /**
+     * What the speaker still plays after the player stopped or flushed its
+     * track: the samples the mixer had already taken. Android drops what
+     * sits in the track's buffer and plays these out, 110 to 180 ms of sound
+     * on a Galaxy Tab S8 and an Echo Show 5. Dropped from the reference with
+     * the rest, the microphone heard them with nothing to cancel them
+     * against, at the end of every stopped song and of every answer the user
+     * talked over. Up to [tailReady] they had played when the player
+     * stopped, at [tailNs], and the rest plays from then on.
+     */
+    private var tail = ShortArray(0)
+    private var tailLength = 0
+    private var tailGiven = 0
+    private var tailReady = 0
+    private var tailNs = 0L
+
+    /** Closed by its player: it leaves [EchoReference] once its tail is handed out. */
+    @Volatile private var closed = false
+
     /** Source frames written since the stream (re)started. */
     protected var written = 0L
 
@@ -103,6 +137,8 @@ abstract class PresentedQueue(rate: Int) : EchoReference.Source {
                 written += frames
                 queuedLength = 0
                 queuedFrom = written * EchoReference.RATE / rate
+                tailLength = 0
+                tailGiven = 0
                 resampler.reset()
             }
             return
@@ -151,23 +187,94 @@ abstract class PresentedQueue(rate: Int) : EchoReference.Source {
         }
     }
 
-    override fun take(): ShortArray? {
-        val presented = presented()
-        return synchronized(lock) { taken(presented) }
+    /**
+     * The player is about to pause, flush or release its track, with
+     * [presented] source frames at the speaker and [mixed] taken by the
+     * mixer: what lies between still plays and stays in the reference,
+     * handed out as it plays. Call it before the track stops; the flush
+     * that follows drops the rest.
+     */
+    protected fun keepPlaying(presented: Long, mixed: Long, nowNs: Long = System.nanoTime()) {
+        synchronized(lock) {
+            if (queuedLength == 0) return
+            val length = queuedLength.toLong()
+            val played = (presented * EchoReference.RATE / rate - queuedFrom).coerceIn(0L, length)
+            val playing = (mixed * EchoReference.RATE / rate - queuedFrom)
+                .coerceIn(played, minOf(length, played + MAX_TAIL)).toInt()
+            if (playing == 0) return
+            // A tail still on its way out goes first, and counts as played.
+            val pending = dueLocked(Long.MAX_VALUE)
+            val next = ShortArray(pending + playing)
+            System.arraycopy(tail, tailGiven, next, 0, pending)
+            System.arraycopy(queued, 0, next, pending, playing)
+            tail = next
+            tailLength = next.size
+            tailGiven = 0
+            tailReady = pending + played.toInt()
+            tailNs = nowNs
+            System.arraycopy(queued, playing, queued, 0, queuedLength - playing)
+            queuedLength -= playing
+            queuedFrom += playing
+        }
     }
 
-    private fun taken(presented: Long): ShortArray? {
-        if (queuedLength == 0) return null
+    /** How many tail samples have played by [nowNs] and are not handed out yet. Under [lock]. */
+    private fun dueLocked(nowNs: Long): Int {
+        if (tailGiven >= tailLength) return 0
+        if (nowNs == Long.MAX_VALUE) return tailLength - tailGiven
+        val played = tailReady + (nowNs - tailNs).coerceAtLeast(0L) * EchoReference.RATE / 1_000_000_000L
+        return (minOf(played, tailLength.toLong()) - tailGiven).coerceAtLeast(0L).toInt()
+    }
+
+    /**
+     * The player is gone. Its tail is still playing, so the source stays
+     * with [EchoReference] until the canceller has taken it, and a moment
+     * longer: the canceller reads what it takes a few milliseconds later,
+     * and drops a source's samples with the source.
+     */
+    protected fun closeAfterTail() {
+        synchronized(lock) {
+            closed = true
+            queuedLength = 0
+            if (tailGiven >= tailLength) tailNs = System.nanoTime()
+        }
+        if (!SoftwareEcho.enabled) EchoReference.remove(this)
+    }
+
+    override fun take(): ShortArray? = take(System.nanoTime())
+
+    internal fun take(nowNs: Long): ShortArray? {
+        val presented = if (closed) 0L else presented()
+        val (out, done) = synchronized(lock) {
+            taken(presented, nowNs) to (closed && tailGiven >= tailLength && nowNs - tailNs > LINGER_NS)
+        }
+        if (done) EchoReference.remove(this)
+        return out
+    }
+
+    private fun taken(presented: Long, nowNs: Long): ShortArray? {
+        val due = dueLocked(nowNs)
         val presented16 = presented * EchoReference.RATE / rate
-        val upto = (presented16 - queuedFrom).coerceIn(0L, queuedLength.toLong()).toInt()
-        if (upto == 0) return null
-        val out = queued.copyOf(upto)
+        val upto = if (queuedLength == 0) 0 else (presented16 - queuedFrom).coerceIn(0L, queuedLength.toLong()).toInt()
+        if (due + upto == 0) return null
+        val out = ShortArray(due + upto)
+        System.arraycopy(tail, tailGiven, out, 0, due)
+        tailGiven += due
+        System.arraycopy(queued, 0, out, due, upto)
         val g = gain
         if (g != 1f) for (i in out.indices) out[i] = (out[i] * g).toInt().toShort()
         System.arraycopy(queued, upto, queued, 0, queuedLength - upto)
         queuedLength -= upto
         queuedFrom += upto
         return out
+    }
+
+    private companion object {
+        /** The longest tail kept, 300 ms: more than any output holds past its mixer. */
+        const val MAX_TAIL = EchoReference.RATE * 3L / 10
+
+        /** How long a closed source stays after its player stopped. */
+        const val LINGER_NS = 1_000_000_000L
     }
 }
 
@@ -221,6 +328,16 @@ class TrackClock(private val track: AudioTrack) {
 
     init {
         reset()
+        // Where the track plays, now and whenever Android moves it.
+        runCatching {
+            track.routedDevice?.let { EchoReference.routed(it.id) }
+            track.addOnRoutingChangedListener(
+                android.media.AudioRouting.OnRoutingChangedListener { router ->
+                    runCatching { router.routedDevice }.getOrNull()?.let { EchoReference.routed(it.id) }
+                },
+                android.os.Handler(android.os.Looper.getMainLooper()),
+            )
+        }
     }
 
     /** The track's frames start over from its head now. */
@@ -246,6 +363,9 @@ class TrackClock(private val track: AudioTrack) {
             (total - bufferUs).coerceIn(0L, 1_000_000L)
         }.getOrDefault(0L)
     }
+
+    /** Frames the mixer has taken since [reset]: the speaker still plays those past [presented]. */
+    fun mixed(): Long = synchronized(lock) { (head() - headBase).coerceAtLeast(0L) }
 
     /** Frames presented since [reset], never past [written]. */
     fun presented(written: Long): Long = synchronized(lock) {
@@ -294,8 +414,18 @@ class TrackTap(
         EchoReference.add(this)
     }
 
+    /** The track is about to be released: call it while the track still plays. */
     fun close() {
-        EchoReference.remove(this)
+        stopping()
+        closeAfterTail()
+    }
+
+    /**
+     * The track is about to be paused or flushed: what the mixer already
+     * took still plays and stays in the reference ([keepPlaying]).
+     */
+    fun stopping() {
+        keepPlaying(presented(), trackClock.mixed())
     }
 
     fun wrote(bytes: ByteArray, offset: Int, length: Int) {
@@ -341,7 +471,7 @@ class SinkTap : PresentedQueue(48000), androidx.media3.exoplayer.audio.TeeAudioP
     }
 
     fun close() {
-        EchoReference.remove(this)
+        closeAfterTail()
     }
 
     /** For the sink's builder: the tracks it makes, clocked here. */
@@ -360,6 +490,12 @@ class SinkTap : PresentedQueue(48000), androidx.media3.exoplayer.audio.TeeAudioP
         }
 
     override fun flush(sampleRate: Int, channelCount: Int, encoding: Int) {
+        // The sink flushes its processors before it stops its track, so the
+        // track still says where the speaker and the mixer are.
+        trackClock?.let { clock ->
+            val rate = synchronized(lock) { rate }
+            keepPlaying(presented(), clock.mixed() * rate / clock.rate)
+        }
         restart(sampleRate)
         synchronized(lock) {
             channels = channelCount

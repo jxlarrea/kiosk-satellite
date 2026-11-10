@@ -361,6 +361,33 @@ Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeDelayMs(JNIEnv*, jclass, jlon
     return d < 0 ? __builtin_nan("") : d / 16.0;
 }
 
+// The echo delay as the canceller has it now, into out: [the delay it applies
+// in samples, how far the echo trails the reference in samples, 1 once the
+// delay is kept, the windows of sound it rests on]. The first two are -1
+// while it has no estimate.
+extern "C" JNIEXPORT void JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeDelayInfo(JNIEnv* env, jclass, jlong handle, jintArray out) {
+    auto* v = vqe(handle);
+    jint info[4];
+    {
+        std::lock_guard<std::mutex> guard(v->lock);
+        info[0] = localvqe_echo_delay(v->ctx);
+        info[1] = localvqe_echo_lag(v->ctx);
+        info[2] = localvqe_echo_delay_locked(v->ctx);
+        info[3] = localvqe_echo_delay_windows(v->ctx);
+    }
+    env->SetIntArrayRegion(out, 0, 4, info);
+}
+
+// The output moved to another device: the canceller finds the echo delay
+// again and keeps what it learned otherwise.
+extern "C" JNIEXPORT void JNICALL
+Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeRelock(JNIEnv*, jclass, jlong handle) {
+    auto* v = vqe(handle);
+    std::lock_guard<std::mutex> guard(v->lock);
+    localvqe_relock(v->ctx);
+}
+
 extern "C" JNIEXPORT void JNICALL
 Java_me_jxl_kiosk_1satellite_SoftwareEcho_nativeVqeDestroy(JNIEnv*, jclass, jlong handle) {
     auto* v = vqe(handle);

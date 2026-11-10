@@ -268,6 +268,7 @@ class RealtimeAudio(context: Context, messenger: BinaryMessenger) {
             queue.clear()
             // Writes are nonblocking and share this lock, so no old
             // slice can arrive between the flush and the next play.
+            tap?.stopping()
             runCatching { t.pause() }
             val stream = streamPlayed()
             val heard = answerPlayed()

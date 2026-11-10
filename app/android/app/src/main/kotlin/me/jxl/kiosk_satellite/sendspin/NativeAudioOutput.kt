@@ -367,6 +367,7 @@ class NativeAudioOutput {
             started = false
             val t = track ?: return
             try {
+                tap?.stopping()
                 t.pause()
                 t.flush()
                 tap?.flushed()

@@ -8,8 +8,10 @@
 #     (NEON paths that need VFPv4, 32-bit indexing, small mat-mul and conv
 #     kernels),
 #   - localvqe-armv7.patch: LocalVQE's echo front-end and GTCRN transforms in
-#     NEON, localvqe_resume / localvqe_echo_delay in its C API, and its
-#     static single-library ggml build on every Android ABI.
+#     NEON, an echo delay kept only after 4 s of playing reference (upstream
+#     keeps the estimate it has 3.5 s in, silence included), localvqe_resume /
+#     localvqe_relock / localvqe_echo_delay and its companions in its C API,
+#     and its static single-library ggml build on every Android ABI.
 # A local checkout can stand in with -DFETCHCONTENT_SOURCE_DIR_LOCALVQE=<dir>.
 
 include(FetchContent)

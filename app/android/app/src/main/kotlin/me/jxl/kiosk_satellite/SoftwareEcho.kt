@@ -182,9 +182,11 @@ object SoftwareEcho {
          * A frame the speaker played: [AEC3] once [STRIKES] stretches in a
          * row say GTCRN cannot cope, [GTCRN] once [GOOD] in a row say it
          * does, else null. The stretches run on across playback periods:
-         * realtime answers are often shorter than one.
+         * realtime answers are often shorter than one. With [judge] off
+         * (the method is settled) each stretch is only measured, for the
+         * log: a canceller that stops working must show there too.
          */
-        fun playing(heardLevel: Int, leftLevel: Int): String? {
+        fun playing(heardLevel: Int, leftLevel: Int, judge: Boolean): String? {
             if (learning > 0) {
                 learning--
                 return null
@@ -208,6 +210,7 @@ object SoftwareEcho {
             // A stretch GTCRN cleans well counts whatever the room. One it
             // does not waits for the room: on a quiet device little comes
             // off because there was little echo to begin with.
+            if (!judge) return null
             val good = best >= MIN_REMOVED_DB || (bestRatio != null && bestRatio <= MAX_ROOM_RATIO)
             if (!good && bestRatio == null) return null
             val bad = !good
@@ -432,6 +435,9 @@ object SoftwareEcho {
                     ringAt = 0
                     enabled = true
                     checking = method == AUTO
+                    loggedDelay = -1
+                    loggedKept = false
+                    outputMoved = false
                     ran(GTCRN, if (checking) "testing" else if (method.startsWith(DETECTED)) "detected" else "picked")
                     EchoCheck.started()
                     val testing = if (checking) ", ${EchoCheck.progress()}" else ""
@@ -525,6 +531,17 @@ object SoftwareEcho {
             if (!working) {
                 working = true
                 workingSinceNs = System.nanoTime()
+                // The line at the end of this sound reports what was measured in it.
+                EchoCheck.lastLeft = -1
+            }
+            if (outputMoved) {
+                outputMoved = false
+                if (vqe != 0L) {
+                    nativeVqeRelock(vqe)
+                    loggedDelay = -1
+                    loggedKept = false
+                    report("GTCRN echo delay measured again: the sound moved to another output")
+                }
             }
             val frames = chunk.size / FRAME_BYTES
             val need = frames * FRAME
@@ -556,8 +573,8 @@ object SoftwareEcho {
                     val back = remember(heard, played)
                     heard = heardRing[back]
                     played = playedRing[back]
-                    if (played >= 100 && checking) {
-                        when (EchoCheck.playing(heard, meanAbs(chunk, at))) {
+                    if (played >= 100) {
+                        when (EchoCheck.playing(heard, meanAbs(chunk, at), checking)) {
                             AEC3 -> switchTo = true
                             GTCRN -> {
                                 report("echo cancellation: GTCRN (detected: %.0f dB under the microphone)".format(EchoCheck.lastRemovedDb))
@@ -577,9 +594,46 @@ object SoftwareEcho {
                 at += FRAME_BYTES
             }
             for (stream in streams.values) stream.cursor += need
+            if (vqe != 0L) reportDelay()
             if (switchTo) aec3Pending = true
         }
         return true
+    }
+
+    /**
+     * The sound moved to another output (a speaker, headphones), where the
+     * echo arrives at another delay: GTCRN finds it again at the next sound.
+     * It keeps a delay for good once it has heard 4 s of a sound, and a
+     * delay later than the real one cancels nothing. AEC3 follows the delay
+     * on its own.
+     */
+    @Volatile private var outputMoved = false
+
+    fun outputMoved() {
+        outputMoved = true
+    }
+
+    /** GTCRN's echo delay as last logged: the delay in samples, and whether it is kept. */
+    private var loggedDelay = -1
+    private var loggedKept = false
+    private val delayInfo = IntArray(4)
+
+    /**
+     * A line when GTCRN's echo delay changes or settles. Until it has heard
+     * 4 s of a sound it follows each new estimate, and an estimate from a
+     * short sound can be wrong: the log then shows it move to the right one.
+     */
+    private fun reportDelay() {
+        nativeVqeDelayInfo(vqe, delayInfo)
+        val delay = delayInfo[0]
+        val kept = delayInfo[2] == 1
+        if (delay < 0 || (delay == loggedDelay && kept == loggedKept)) return
+        loggedDelay = delay
+        loggedKept = kept
+        report("GTCRN echo delay %d ms (the echo is %d ms behind the reference)%s".format(
+            delay / 16, delayInfo[1] / 16,
+            if (kept) ", kept from here on" else ", still measuring (${delayInfo[3]} of 10 windows of sound)",
+        ))
     }
 
     /**
@@ -688,5 +742,7 @@ object SoftwareEcho {
     @JvmStatic private external fun nativeVqeRender(handle: Long, pcm: ByteArray, offset: Int)
     @JvmStatic private external fun nativeVqeCapture(handle: Long, pcm: ByteArray, offset: Int, work: Boolean)
     @JvmStatic private external fun nativeVqeDelayMs(handle: Long): Double
+    @JvmStatic private external fun nativeVqeDelayInfo(handle: Long, out: IntArray)
+    @JvmStatic private external fun nativeVqeRelock(handle: Long)
     @JvmStatic private external fun nativeVqeDestroy(handle: Long)
 }

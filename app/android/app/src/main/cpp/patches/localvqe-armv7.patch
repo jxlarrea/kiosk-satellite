@@ -127,7 +127,7 @@ index 0000000..28a13c0
 +    for (int m = 0; m < h; m++) { out[2*m] = zr[m] * s; out[2*m + 1] = zi[m] * s; }
 +}
 diff --git a/ggml/daf_frontend.cpp b/ggml/daf_frontend.cpp
-index 23ad059..d227a69 100644
+index 23ad059..aaf1dfa 100644
 --- a/ggml/daf_frontend.cpp
 +++ b/ggml/daf_frontend.cpp
 @@ -3,55 +3,186 @@
@@ -284,21 +284,21 @@ index 23ad059..d227a69 100644
          }
 +        vst1q_f32(out + k, s0); vst1q_f32(out + k + 4, s1);
 +        vst1q_f32(out + k + 8, s2); vst1q_f32(out + k + 12, s3);
-+    }
+     }
+-    if (inv) {
+-        const float s = 1.0f / (float)n;
+-        for (size_t i = 0; i < n; i++) { re[i] *= s; im[i] *= s; }
 +    for (; k < c4; k += 4) {
 +        float32x4_t s = vdupq_n_f32(b);
 +        for (int i = 0; i < n; i++) s = vmlaq_n_f32(s, vld1q_f32(x + (size_t)i * S + k), w[i]);
 +        vst1q_f32(out + k, s);
      }
--    if (inv) {
--        const float s = 1.0f / (float)n;
--        for (size_t i = 0; i < n; i++) { re[i] *= s; im[i] *= s; }
 +#else
 +    for (int k = 0; k < cnt; k++) {
 +        float s = b;
 +        for (int i = 0; i < n; i++) s += w[i] * x[(size_t)i * S + k];
 +        out[k] = s;
-     }
++    }
 +#endif
  }
  
@@ -365,7 +365,7 @@ index 23ad059..d227a69 100644
      fe.hg.assign(8, 0);
      fe.hb.assign((size_t)NB*16, 0);
      fe.hp.assign((size_t)N*8, 0);
-@@ -152,6 +284,7 @@ void daf_reset(daf_frontend& fe) {
+@@ -152,15 +284,39 @@ void daf_reset(daf_frontend& fe) {
      fe.gcc_Si.assign(daf_frontend::G_NFFT/2 + 1, 0);
      fe.mic_ring.assign(daf_frontend::G_WIN, 0);
      fe.ref_ring.assign(daf_frontend::G_WIN, 0);
@@ -373,7 +373,11 @@ index 23ad059..d227a69 100644
      fe.n_seen = 0;
      fe.gcc_maxrms = 1e-12f;
      fe.gcc_conf = 0.0f;
-@@ -161,6 +294,15 @@ void daf_reset(daf_frontend& fe) {
+     fe.cur_shift = 0;
+     fe.gcc_locked = false;
++    fe.gcc_kept = 0;
++    fe.gcc_lag = -1;
+     fe.ref_dline.assign(daf_frontend::G_MAXLAG + daf_frontend::M, 0);
      fe.ref_dpos = 0;
  }
  
@@ -384,12 +388,24 @@ index 23ad059..d227a69 100644
 +    std::fill(fe.ref_dline.begin(), fe.ref_dline.end(), 0.0f);
 +    std::fill(fe.mic_ring.begin(), fe.mic_ring.end(), 0.0f);
 +    std::fill(fe.ref_ring.begin(), fe.ref_ring.end(), 0.0f);
++    if (!fe.gcc_locked) fe.gcc_maxrms = 1e-12f;
++}
++
++void daf_relock(daf_frontend& fe) {
++    std::fill(fe.gcc_Sr.begin(), fe.gcc_Sr.end(), 0.0f);
++    std::fill(fe.gcc_Si.begin(), fe.gcc_Si.end(), 0.0f);
++    fe.gcc_maxrms = 1e-12f;
++    fe.gcc_conf = 0.0f;
++    fe.gcc_kept = 0;
++    fe.gcc_lag = -1;
++    fe.cur_shift = 0;
++    fe.gcc_locked = false;
 +}
 +
  // torch GRUCell: gates [r,z,n]; h' = (1-z)*n + z*h
  static void gru_cell(const float* x, int nin, float* h, int nh,
                       const float* wih, const float* whh,
-@@ -177,9 +319,9 @@ static void gru_cell(const float* x, int nin, float* h, int nh,
+@@ -177,9 +333,9 @@ static void gru_cell(const float* x, int nin, float* h, int nh,
          gh[g] = t;
      }
      for (int i = 0; i < nh; i++) {
@@ -402,7 +418,7 @@ index 23ad059..d227a69 100644
          h[i] = (1.0f - z) * n + z * h[i];
      }
  }
-@@ -206,15 +348,20 @@ static void gcc_update(daf_frontend& fe) {
+@@ -206,15 +362,23 @@ static void gcc_update(daf_frontend& fe) {
      static thread_local std::vector<float> Xr(NF/2+1), Xi(NF/2+1), Dr(NF/2+1), Di(NF/2+1);
      static thread_local std::vector<float> pad(NF), c(NF);
      float rms = 0;
@@ -413,9 +429,14 @@ index 23ad059..d227a69 100644
 +    for (int i = 0; i < r0; i++) rms += fe.ref_ring[i] * fe.ref_ring[i];
      rms = sqrtf(rms / W);
      fe.gcc_maxrms = std::max(fe.gcc_maxrms, rms);
-     const bool keep = rms > fe.gcc_maxrms * powf(10.0f, -daf_frontend::G_GATE_DB / 20.0f);
-     if (keep) {
+-    const bool keep = rms > fe.gcc_maxrms * powf(10.0f, -daf_frontend::G_GATE_DB / 20.0f);
+-    if (keep) {
 -        std::memcpy(pad.data(), fe.ref_ring.data(), W * sizeof(float));
++    const bool keep = rms > daf_frontend::G_MIN_RMS &&
++        rms > fe.gcc_maxrms * powf(10.0f, -daf_frontend::G_GATE_DB / 20.0f);
++    // A window that adds nothing leaves the estimate where it was.
++    if (!keep) return;
++    {
 +        std::memcpy(pad.data(), fe.ref_ring.data() + r0, n1 * sizeof(float));
 +        std::memcpy(pad.data() + n1, fe.ref_ring.data(), r0 * sizeof(float));
          std::memset(pad.data() + W, 0, (NF - W) * sizeof(float));
@@ -426,7 +447,27 @@ index 23ad059..d227a69 100644
          std::memset(pad.data() + W, 0, (NF - W) * sizeof(float));
          rfft(pad.data(), NF, Dr.data(), Di.data());
          for (int k = 0; k <= NF/2; k++) {
-@@ -240,15 +387,261 @@ static void gcc_update(daf_frontend& fe) {
+@@ -225,6 +389,7 @@ static void gcc_update(daf_frontend& fe) {
+             fe.gcc_Si[k] += si / mag;
+         }
+     }
++    fe.gcc_kept++;
+     irfft(fe.gcc_Sr.data(), fe.gcc_Si.data(), NF, c.data());
+     int best = 0; float peak = c[0], asum = 0;
+     for (int l = 0; l < daf_frontend::G_MAXLAG; l++) {
+@@ -233,22 +398,272 @@ static void gcc_update(daf_frontend& fe) {
+     }
+     const float conf = peak / (asum / daf_frontend::G_MAXLAG + 1e-12f);
+     fe.gcc_conf = conf;
++    fe.gcc_lag = best;
+     fe.cur_shift = (conf > daf_frontend::G_CONF_THR)
+         ? std::max(0, best - daf_frontend::M) / daf_frontend::M * daf_frontend::M
+         : 0;
+-    if (conf > daf_frontend::G_CONF_THR && fe.n_seen >= daf_frontend::LOCK_AFTER)
++    // Locked on evidence, not on time: the samples seen include the silence
++    // before a sound and the tail after it, and a stream that ended right
++    // after it started once decided the delay for good.
++    if (conf > daf_frontend::G_CONF_THR && fe.gcc_kept >= daf_frontend::G_LOCK_WINDOWS)
          fe.gcc_locked = true;
  }
  
@@ -690,7 +731,7 @@ index 23ad059..d227a69 100644
  
      // analysis
      std::memcpy(xn.data(), fe.x_old.data(), M * sizeof(float));
-@@ -256,32 +649,13 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
+@@ -256,32 +671,13 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
      std::memcpy(fe.x_old.data(), x_cur, M * sizeof(float));
      rfft(xn.data(), NF, Xr_.data(), Xi_.data());
  
@@ -729,7 +770,7 @@ index 23ad059..d227a69 100644
      irfft(Yr.data(), Yi.data(), NF, buf.data());
      for (int i = 0; i < M; i++) e_out[i] = d_cur[i] - buf[M + i];
  
-@@ -291,25 +665,6 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
+@@ -291,25 +687,6 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
      rfft(xn.data(), NF, Er.data(), Ei.data());
      std::memcpy(xn.data() + M, d_cur, M * sizeof(float));
      rfft(xn.data(), NF, Dr.data(), Di.data());
@@ -755,7 +796,7 @@ index 23ad059..d227a69 100644
      for (int k = 0; k < NB; k++) meanP[k] /= (float)N;
  
      // ── controller features ──
-@@ -336,95 +691,58 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
+@@ -336,95 +713,58 @@ static void daf_block(daf_frontend& fe, const float* d_cur, const float* x_cur,
      gru_cell(fb.data(), 10, fe.hg.data(), 8,
               fe.g_wih.data(), fe.g_whh.data(), fe.g_bih.data(), fe.g_bhh.data(),
               gi.data(), gh.data());
@@ -892,7 +933,7 @@ index 23ad059..d227a69 100644
      }
      // round-robin overlap-save constraint
      {
-@@ -442,10 +760,10 @@ void daf_process(daf_frontend& fe, const float* mic, const float* ref,
+@@ -442,10 +782,10 @@ void daf_process(daf_frontend& fe, const float* mic, const float* ref,
      const int DL = (int)fe.ref_dline.size();
      for (int o = 0; o < hop; o += M) {
          // GCC rings + hop cadence
@@ -907,7 +948,7 @@ index 23ad059..d227a69 100644
          // ref delay line (linear ring)
          for (int i = 0; i < M; i++)
              fe.ref_dline[(fe.ref_dpos + i) % DL] = ref[o + i];
-@@ -479,10 +797,10 @@ void daf_prime_delay(daf_frontend& fe, const float* mic, const float* ref, int n
+@@ -479,10 +819,10 @@ void daf_prime_delay(daf_frontend& fe, const float* mic, const float* ref, int n
      int best_shift = 0;
      float best_conf = 0.0f;
      for (int o = 0; o + M <= n; o += M) {
@@ -923,7 +964,7 @@ index 23ad059..d227a69 100644
          if (fe.n_seen >= W && ((fe.n_seen - W) % daf_frontend::G_HOP) < M) {
              gcc_update(fe);
 diff --git a/ggml/daf_frontend.h b/ggml/daf_frontend.h
-index f86c597..e7a2e16 100644
+index f86c597..3ddfce8 100644
 --- a/ggml/daf_frontend.h
 +++ b/ggml/daf_frontend.h
 @@ -48,6 +48,7 @@ struct daf_frontend {
@@ -934,7 +975,7 @@ index f86c597..e7a2e16 100644
  
      // controller state
      std::vector<float> hg;                 // (8)
-@@ -56,7 +57,8 @@ struct daf_frontend {
+@@ -56,16 +57,29 @@ struct daf_frontend {
  
      // GCC state
      std::vector<float> gcc_Sr, gcc_Si;     // (G_NFFT/2+1)
@@ -944,14 +985,46 @@ index f86c597..e7a2e16 100644
      long long n_seen = 0;
      float gcc_maxrms = 1e-12f;
      float gcc_conf = 0.0f;                 // confidence of the last gcc_update
-@@ -91,6 +93,11 @@ bool daf_init_tensors(daf_frontend& fe, const std::map<std::string, NpyArray>& t
+     int cur_shift = 0;                     // applied ref delay (samples)
+-    bool gcc_locked = false;               // shift frozen after first confident
+-                                           // estimate past LOCK_AFTER (stable
+-                                           // ref stream; re-shifts force filter
++    bool gcc_locked = false;               // shift frozen once G_LOCK_WINDOWS
++                                           // windows of reference agree on a
++                                           // confident estimate (stable ref
++                                           // stream; re-shifts force filter
+                                            // re-convergence)
+-    static constexpr long long LOCK_AFTER = 56000;  // 3.5 s                     // applied ref delay (samples)
++    int gcc_kept = 0;                      // windows that passed the level gate
++    int gcc_lag = -1;                      // lag of the correlation peak (samples), -1 before the first
++    // Windows of playing reference before the shift locks: 4 s of continuous
++    // sound gives 10 (a window is 1 s long and a new one starts every 0.5 s),
++    // and so do four or five short sounds. The estimate from less is
++    // confident and wrong too often to keep: over one 0.15 s burst of music
++    // the peak sat at a wrong lag one time in five, over 2 s one time in a
++    // hundred, over 4 s never. Silence does not count.
++    static constexpr int G_LOCK_WINDOWS = 10;
++    // A window quieter than this (-60 dBFS) is no evidence, however quiet
++    // everything before it was.
++    static constexpr float G_MIN_RMS = 1e-3f;
+ 
+     // ref delay line for shift application
+     std::vector<float> ref_dline;          // G_MAXLAG + M
+@@ -91,6 +105,18 @@ bool daf_init_tensors(daf_frontend& fe, const std::map<std::string, NpyArray>& t
  /// Reset all online state (new utterance).
  void daf_reset(daf_frontend& fe);
  
 +/// Clear the signal histories after a gap in the stream (reference spectra
 +/// ring, the last reference block, the delay line and the GCC windows) while
 +/// keeping the filter taps, P, the controller state and the delay estimate.
++/// Until the delay locks, the level gate starts over too: a quiet sound after
++/// a loud one still counts.
 +void daf_resume(daf_frontend& fe);
++
++/// Forget the delay estimate and find it again (the output moved to another
++/// device, so the echo arrives at another delay). The filter taps stay and
++/// adapt to the new path.
++void daf_relock(daf_frontend& fe);
 +
  /// One-shot global bulk-delay estimate over the whole (already-available)
  /// mic/ref signal, for non-real-time callers (file/demo). Seeds cur_shift and
@@ -1145,7 +1218,7 @@ index dcb4aea..6ff7bda 100644
      cp.mem_size = (size_t)n_op * (ggml_tensor_overhead() + 32) + ggml_graph_overhead_custom(n_op, false);
      cp.mem_buffer = nullptr;
 diff --git a/ggml/localvqe_api.cpp b/ggml/localvqe_api.cpp
-index 7feffba..8c853d2 100644
+index 7feffba..0a4c671 100644
 --- a/ggml/localvqe_api.cpp
 +++ b/ggml/localvqe_api.cpp
 @@ -593,8 +593,7 @@ static int process_gtcrn_frame(localvqe_ctx* ctx, const float* mic,
@@ -1158,7 +1231,7 @@ index 7feffba..8c853d2 100644
      for (int f = 0; f < 257; ++f) {
          spe[f * 2] = re_e[f]; spe[f * 2 + 1] = im_e[f];
          spy[f * 2] = re_y[f]; spy[f * 2 + 1] = im_y[f];
-@@ -790,6 +789,35 @@ LOCALVQE_API void localvqe_reset(localvqe_ctx_t handle) {
+@@ -790,6 +789,60 @@ LOCALVQE_API void localvqe_reset(localvqe_ctx_t handle) {
      // policy, not stream state.
  }
  
@@ -1191,14 +1264,39 @@ index 7feffba..8c853d2 100644
 +    return ctx->daf.cur_shift;
 +}
 +
++LOCALVQE_API int localvqe_echo_lag(localvqe_ctx_t handle) {
++    if (!handle) return -1;
++    auto* ctx = reinterpret_cast<localvqe_ctx*>(handle);
++    if (!ctx->daf.loaded || ctx->daf.gcc_conf <= daf_frontend::G_CONF_THR) return -1;
++    return ctx->daf.gcc_lag;
++}
++
++LOCALVQE_API int localvqe_echo_delay_locked(localvqe_ctx_t handle) {
++    if (!handle) return 0;
++    auto* ctx = reinterpret_cast<localvqe_ctx*>(handle);
++    return ctx->daf.loaded && ctx->daf.gcc_locked ? 1 : 0;
++}
++
++LOCALVQE_API int localvqe_echo_delay_windows(localvqe_ctx_t handle) {
++    if (!handle) return 0;
++    auto* ctx = reinterpret_cast<localvqe_ctx*>(handle);
++    return ctx->daf.loaded ? ctx->daf.gcc_kept : 0;
++}
++
++LOCALVQE_API void localvqe_relock(localvqe_ctx_t handle) {
++    if (!handle) return;
++    auto* ctx = reinterpret_cast<localvqe_ctx*>(handle);
++    if (ctx->daf.loaded) daf_relock(ctx->daf);
++}
++
  LOCALVQE_API int localvqe_set_noise_gate(localvqe_ctx_t handle,
                                          int enabled,
                                          float threshold_dbfs) {
 diff --git a/ggml/localvqe_api.h b/ggml/localvqe_api.h
-index 841f050..d9e5548 100644
+index 841f050..81e1259 100644
 --- a/ggml/localvqe_api.h
 +++ b/ggml/localvqe_api.h
-@@ -240,6 +240,22 @@ LOCALVQE_API int localvqe_process_frame_s16(localvqe_ctx_t ctx,
+@@ -240,6 +240,48 @@ LOCALVQE_API int localvqe_process_frame_s16(localvqe_ctx_t ctx,
   */
  LOCALVQE_API void localvqe_reset(localvqe_ctx_t ctx);
  
@@ -1217,6 +1315,32 @@ index 841f050..d9e5548 100644
 + * (16 kHz), or -1 while it has none or the model has no front-end.
 + */
 +LOCALVQE_API int localvqe_echo_delay(localvqe_ctx_t ctx);
++
++/**
++ * How far the echo trails the reference, in samples (16 kHz): the lag of the
++ * front-end's correlation peak, before it is rounded down to the delay it
++ * applies. -1 while it has none.
++ */
++LOCALVQE_API int localvqe_echo_lag(localvqe_ctx_t ctx);
++
++/**
++ * 1 once the front-end has heard enough playing reference to keep its echo
++ * delay (about 4 s of sound), 0 while it still follows each new estimate.
++ */
++LOCALVQE_API int localvqe_echo_delay_locked(localvqe_ctx_t ctx);
++
++/**
++ * How many windows of playing reference the echo delay rests on so far. It
++ * is kept once there are 10 (localvqe_echo_delay_locked).
++ */
++LOCALVQE_API int localvqe_echo_delay_windows(localvqe_ctx_t ctx);
++
++/**
++ * Forget the echo delay and find it again, for when the output moves to
++ * another device and the echo arrives at another delay. The filter keeps its
++ * taps and adapts them to the new path.
++ */
++LOCALVQE_API void localvqe_relock(localvqe_ctx_t ctx);
 +
  /**
   * Configure the residual-echo noise gate.
