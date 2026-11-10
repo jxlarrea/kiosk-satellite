@@ -15898,6 +15898,25 @@ class UiStringsFr extends UiStrings {
       'Accepter les certificats non fiables ou auto-signés. À n\'utiliser que sur votre propre réseau, car cela désactive la vérification des certificats.';
 
   @override
+  String get webGeolocationSection => 'Géolocalisation HTML5';
+
+  @override
+  String get settingWebGeolocationTitle =>
+      'Activer l\'accès à la géolocalisation';
+
+  @override
+  String get settingWebGeolocationDescription =>
+      'Permet aux pages de lire la position de l\'appareil, par exemple pour un radar météo ou une carte. Seules les pages chargées en HTTPS peuvent la demander.';
+
+  @override
+  String get webGeolocationPermissionHeld =>
+      'Les pages peuvent lire la position de l\'appareil.';
+
+  @override
+  String get webGeolocationPermissionMissing =>
+      'Sans cette autorisation, les pages ne peuvent pas lire la position de l\'appareil.';
+
+  @override
   String get settingAutoReloadOnErrorTitle =>
       'Rechargement automatique en cas d\'erreur';
 

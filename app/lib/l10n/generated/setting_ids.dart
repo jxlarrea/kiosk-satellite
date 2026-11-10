@@ -2652,4 +2652,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingNavCompassMenuItemsTitle",
     "description": "settingNavQuickControlsItemsDescription",
   },
+  "web.geolocation": {
+    "title": "settingWebGeolocationTitle",
+    "description": "settingWebGeolocationDescription",
+  },
 };

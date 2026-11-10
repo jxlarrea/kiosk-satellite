@@ -496,6 +496,13 @@ String settingsPageText(
     ).settingBrowserUrlFilterNoticeDescription,
     "Links or pages that match a Block rule don't load. Add an Allow only rule to load only the pages it matches." =>
       l10n(context).urlFilterIntroSub,
+    'HTML5 Geolocation' => l10n(context).webGeolocationSection,
+    'Pages can read the device location.' => l10n(
+      context,
+    ).webGeolocationPermissionHeld,
+    'Without this pages cannot read the device location.' => l10n(
+      context,
+    ).webGeolocationPermissionMissing,
     _ => english,
   },
   'Intercom' => switch (english) {

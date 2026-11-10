@@ -133,6 +133,10 @@ const BROWSER_PAGE_TEXT = {
   'Show blocked page notice': 'settingBrowserUrlFilterNoticeTitle',
   "Show a short notice with the rule's name when a page is blocked.": 'settingBrowserUrlFilterNoticeDescription',
   "Links or pages that match a Block rule don't load. Add an Allow only rule to load only the pages it matches.": 'urlFilterIntroSub',
+  // HTML5 Geolocation: the group's name and the lines of its Location grant.
+  'HTML5 Geolocation': 'webGeolocationSection',
+  'Pages can read the device location.': 'webGeolocationPermissionHeld',
+  'Without this pages cannot read the device location.': 'webGeolocationPermissionMissing',
 };
 
 function browserPageText(english) {

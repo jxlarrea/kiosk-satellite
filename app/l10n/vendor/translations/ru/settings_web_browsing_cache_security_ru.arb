@@ -5,5 +5,10 @@
   "settingAllowMixedContentTitle": "Разрешить смешанный контент",
   "settingAllowMixedContentDescription": "Позволить HTTPS-страницам грузить небезопасные HTTP-ресурсы. Помогает, когда Home Assistant подмешивает http:// контент в https:// панель.",
   "settingIgnoreSslErrorsTitle": "Игнорировать ошибки SSL",
-  "settingIgnoreSslErrorsDescription": "Принимать недоверенные или самоподписанные сертификаты. Используйте только в собственной сети: это отключает проверку сертификатов."
+  "settingIgnoreSslErrorsDescription": "Принимать недоверенные или самоподписанные сертификаты. Используйте только в собственной сети: это отключает проверку сертификатов.",
+  "webGeolocationSection": "Геолокация HTML5",
+  "settingWebGeolocationTitle": "Включить доступ к геолокации",
+  "settingWebGeolocationDescription": "Позволяет страницам читать местоположение устройства, например для погодного радара или карты. Запрашивать его могут только страницы, загруженные по HTTPS.",
+  "webGeolocationPermissionHeld": "Страницы могут читать местоположение устройства.",
+  "webGeolocationPermissionMissing": "Без этого разрешения страницы не могут читать местоположение устройства."
 }

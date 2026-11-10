@@ -896,14 +896,21 @@ const webCamera = SettingDef<bool>(
   hidden: true,
 );
 
+/// Whether a page may read the device position through the HTML5
+/// Geolocation API (issue #1383): a weather radar or map card centering on
+/// the tablet. Off by default, and the one web grant with a row, in
+/// its own group on the Web Browsing page with the Location grant under it.
+/// Chromium offers the API to pages loaded over HTTPS only.
 const webGeolocation = SettingDef<bool>(
   key: 'web.geolocation',
   type: SettingType.boolean,
-  defaultValue: true,
+  defaultValue: false,
   title: 'Enable geolocation access',
-  description: 'Let web pages request the device location.',
-  category: 'Web Content',
-  hidden: true,
+  description:
+      'Lets pages read the device location, such as a weather radar or a '
+      'map. Only pages loaded over HTTPS can ask for it.',
+  category: 'Browser',
+  section: 'HTML5 Geolocation',
 );
 
 const webAutoplay = SettingDef<bool>(

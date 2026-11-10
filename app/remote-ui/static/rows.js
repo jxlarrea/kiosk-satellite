@@ -41,7 +41,7 @@ import {
   toastsShownText,
   wakeSourcesText,
 } from './pickers.js';
-import { loadSettings, refreshRealMacNote, syncSubpages, updateCelestialLocationRow, updateCelestialPermissionRows, updateClockNightAdminRows, updateOnvifEventsRows, updatePersonSensorRows, updateRtspRows } from './settings.js';
+import { loadSettings, refreshRealMacNote, syncSubpages, updateCelestialLocationRow, updateCelestialPermissionRows, updateWebGeolocationRows, updateClockNightAdminRows, updateOnvifEventsRows, updatePersonSensorRows, updateRtspRows } from './settings.js';
 import { dashboardField } from './dashboard_picker.js';
 import { drawerItemsText, openDrawerItemsPicker } from './drawer_items.js';
 import { compassLayoutRow, compassStyleRow } from './compass.js';
@@ -369,6 +369,7 @@ export function settingRow(s) {
     if (s.key === 'screensaver.celestial_location' || s.key === 'screensaver.mode') {
       updateCelestialPermissionRows();
     }
+    if (s.key === 'web.geolocation') updateWebGeolocationRows();
     // The Ambient light row follows the reading's source (issue #911).
     if (s.key === 'screen.adaptive_use_entity' || s.key === 'screen.adaptive_light_entity') {
       updateAdaptiveBrightnessRows({ reprobe: true });

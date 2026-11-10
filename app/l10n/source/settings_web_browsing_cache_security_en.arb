@@ -77,5 +77,70 @@
         "Web Browsing > Ignore SSL errors"
       ]
     }
+  },
+  "webGeolocationSection": "HTML5 Geolocation",
+  "@webGeolocationSection": {
+    "context": "Settings > Web Browsing > HTML5 Geolocation",
+    "description": "Heading of the group with the switch that lets web pages read the device location through the browser's Geolocation API. HTML5 Geolocation is the name of that browser feature.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing"
+      ],
+      "remoteAdmin": [
+        "Web Browsing"
+      ]
+    }
+  },
+  "settingWebGeolocationTitle": "Enable geolocation access",
+  "@settingWebGeolocationTitle": {
+    "context": "Settings > Web Browsing > HTML5 Geolocation > Enable geolocation access",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > HTML5 Geolocation > Enable geolocation access"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > HTML5 Geolocation > Enable geolocation access"
+      ]
+    }
+  },
+  "settingWebGeolocationDescription": "Lets pages read the device location, such as a weather radar or a map. Only pages loaded over HTTPS can ask for it.",
+  "@settingWebGeolocationDescription": {
+    "context": "Settings > Web Browsing > HTML5 Geolocation > Enable geolocation access",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > HTML5 Geolocation > Enable geolocation access"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > HTML5 Geolocation > Enable geolocation access"
+      ]
+    }
+  },
+  "webGeolocationPermissionHeld": "Pages can read the device location.",
+  "@webGeolocationPermissionHeld": {
+    "context": "Settings > Web Browsing > Required system permissions",
+    "description": "Line under the Location permission row while the permission is granted and Enable geolocation access is on. Pages are the web pages the kiosk shows.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Required system permissions"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Required system permissions"
+      ]
+    }
+  },
+  "webGeolocationPermissionMissing": "Without this pages cannot read the device location.",
+  "@webGeolocationPermissionMissing": {
+    "context": "Settings > Web Browsing > Required system permissions",
+    "description": "Line under the Location permission row while the permission is missing and Enable geolocation access is on. Pages are the web pages the kiosk shows.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Required system permissions"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Required system permissions"
+      ]
+    }
   }
 }

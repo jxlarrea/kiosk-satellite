@@ -181,6 +181,7 @@ List<Widget> _sectionedCards(
                   def.category == 'Screen & Audio' ||
                   def.category == 'Screensaver' ||
                   def.category == 'Voice Satellite' ||
+                  def.category == 'Browser' ||
                   def.category == 'LED Control')
               ? Builder(
                   builder: (context) => SectionHeading(
@@ -2655,6 +2656,13 @@ class _CategoryContentState extends State<_CategoryContent> {
               widget.category == 'Camera' &&
                       container.deviceCamera.cameraKnownAbsent
                   ? const [cameraEnabled]
+                  // HTML5 Geolocation is placed by hand below, after the
+                  // URL Filter.
+                  : widget.category == 'Browser'
+                  ? [
+                      for (final def in _inlineDefsFor(widget.category))
+                        if (def.key != webGeolocation.key) def,
+                    ]
                   : _inlineDefsFor(widget.category),
               () => setState(() {}),
               replace: _rowReplacements(container),
@@ -2668,9 +2676,29 @@ class _CategoryContentState extends State<_CategoryContent> {
             ),
           ),
           // No setting draws the URL Filter, so its row is placed here,
-          // last on the page.
-          if (widget.category == 'Browser')
+          // after the page's own rows. HTML5 Geolocation closes the page
+          // (issue #1383): its switch, then the Location grant while it is
+          // on. Mirrored on the remote (settings.js,
+          // updateWebGeolocationRows).
+          if (widget.category == 'Browser') ...[
             _subpageEntryCard(container, 'Browser', 'URL Filter'),
+            ..._sectionedCards(container, const [
+              webGeolocation,
+            ], () => setState(() {})),
+            if (container.settings.get(webGeolocation)) ...[
+              SectionHeading(
+                esphomeText(context, 'Required system permissions'),
+              ),
+              SettingsCard(
+                children: [
+                  _LocationPermissionsTile(
+                    container: container,
+                    use: _LocationUse.pages,
+                  ),
+                ],
+              ),
+            ],
+          ],
         ],
         // Last and on their own card, like the Voice Satellite permissions:
         // the OS's to give, not ours to set. Always shown - Lockdown Mode
@@ -3772,7 +3800,10 @@ class _CategoryContentState extends State<_CategoryContent> {
           id: 'x:celestial_location_permissions',
           child: SettingsCard(
             children: [
-              _LocationPermissionsTile(container: container, celestial: true),
+              _LocationPermissionsTile(
+                container: container,
+                use: _LocationUse.sky,
+              ),
             ],
           ),
         ),
@@ -10167,6 +10198,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           needed:
               settings.get(btproxyEnabled) ||
               settings.get(locationEnabled) ||
+              settings.get(webGeolocation) ||
               (settings.get(screensaverMode) == 'celestial' &&
                   settings.get(screensaverCelestialLocation) == 'gps'),
           missingIcon: Icons.location_off_outlined,
@@ -10462,22 +10494,27 @@ class _RealMacStatusRowState extends State<_RealMacStatusRow> {
 /// the dialog, then the OS location settings screen when the switch is
 /// what is off, and nudges the location manager so a stream refused for
 /// the missing grant comes up at once. The Celestial screensaver's GPS
-/// source shows the same row with its own lines.
+/// source and Web Browsing's HTML5 Geolocation show the same row with their
+/// own lines.
 class _LocationPermissionsTile extends StatefulWidget {
   const _LocationPermissionsTile({
     required this.container,
-    this.celestial = false,
+    this.use = _LocationUse.sensors,
   });
 
   final AppContainer container;
 
-  /// Worded for the Celestial sky instead of the location sensors.
-  final bool celestial;
+  /// What reads the position, which the held and missing lines name.
+  final _LocationUse use;
 
   @override
   State<_LocationPermissionsTile> createState() =>
       _LocationPermissionsTileState();
 }
+
+/// Who a [_LocationPermissionsTile] answers for: the ESPHome location
+/// sensors, the Celestial sky or the pages of the web views.
+enum _LocationUse { sensors, sky, pages }
 
 class _LocationPermissionsTileState extends State<_LocationPermissionsTile>
     with WidgetsBindingObserver {
@@ -10545,29 +10582,44 @@ class _LocationPermissionsTileState extends State<_LocationPermissionsTile>
                 'needs precise location.',
               )
             : perms == null || !perms.location
-            ? widget.celestial
-                  ? screensaverText(
-                      context,
-                      'Without this the GPS receiver cannot be read and the '
-                      'sky has no location.',
-                    )
-                  : esphomeText(
-                      context,
-                      'Without this the GPS receiver cannot be read and the '
-                      'location sensors stay unknown.',
-                    )
+            ? switch (widget.use) {
+                _LocationUse.sky => screensaverText(
+                  context,
+                  'Without this the GPS receiver cannot be read and the '
+                  'sky has no location.',
+                ),
+                _LocationUse.pages => settingsPageText(
+                  context,
+                  'Browser',
+                  'Without this pages cannot read the device location.',
+                ),
+                _LocationUse.sensors => esphomeText(
+                  context,
+                  'Without this the GPS receiver cannot be read and the '
+                  'location sensors stay unknown.',
+                ),
+              }
             : !perms.locationServicesOn
             ? esphomeText(
                 context,
                 'Location is off in the device settings, so the receiver '
                 'delivers nothing.',
               )
-            : widget.celestial
-            ? screensaverText(context, 'The sky can follow the GPS receiver.')
-            : esphomeText(
-                context,
-                'The location sensors can read the GPS receiver.',
-              ),
+            : switch (widget.use) {
+                _LocationUse.sky => screensaverText(
+                  context,
+                  'The sky can follow the GPS receiver.',
+                ),
+                _LocationUse.pages => settingsPageText(
+                  context,
+                  'Browser',
+                  'Pages can read the device location.',
+                ),
+                _LocationUse.sensors => esphomeText(
+                  context,
+                  'The location sensors can read the GPS receiver.',
+                ),
+              },
       ),
       trailing: granted == true
           ? null
@@ -11401,13 +11453,13 @@ class SettingTile extends StatelessWidget {
           onChanged: off
               ? null
               : (v) async {
-            if (def.key == remoteTls.key &&
-                !await confirmRemoteProtocol(context, c, v)) {
-              return;
-            }
-            await c.settings.setFromJson(def.key, v);
-            onChanged();
-          },
+                  if (def.key == remoteTls.key &&
+                      !await confirmRemoteProtocol(context, c, v)) {
+                    return;
+                  }
+                  await c.settings.setFromJson(def.key, v);
+                  onChanged();
+                },
         );
       case SettingType.select:
         final options = _optionsFor(def);

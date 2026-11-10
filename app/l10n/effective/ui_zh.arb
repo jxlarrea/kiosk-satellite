@@ -56724,6 +56724,71 @@
       ]
     }
   },
+  "webGeolocationSection": "HTML5 地理位置",
+  "@webGeolocationSection": {
+    "context": "Settings > Web Browsing > HTML5 Geolocation",
+    "description": "Heading of the group with the switch that lets web pages read the device location through the browser's Geolocation API. HTML5 Geolocation is the name of that browser feature.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing"
+      ],
+      "remoteAdmin": [
+        "Web Browsing"
+      ]
+    }
+  },
+  "settingWebGeolocationTitle": "启用地理位置访问",
+  "@settingWebGeolocationTitle": {
+    "context": "Settings > Web Browsing > HTML5 Geolocation > Enable geolocation access",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > HTML5 Geolocation > Enable geolocation access"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > HTML5 Geolocation > Enable geolocation access"
+      ]
+    }
+  },
+  "settingWebGeolocationDescription": "允许页面读取设备位置，例如天气雷达或地图。只有通过 HTTPS 加载的页面才能请求位置。",
+  "@settingWebGeolocationDescription": {
+    "context": "Settings > Web Browsing > HTML5 Geolocation > Enable geolocation access",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > HTML5 Geolocation > Enable geolocation access"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > HTML5 Geolocation > Enable geolocation access"
+      ]
+    }
+  },
+  "webGeolocationPermissionHeld": "页面可以读取设备位置。",
+  "@webGeolocationPermissionHeld": {
+    "context": "Settings > Web Browsing > Required system permissions",
+    "description": "Line under the Location permission row while the permission is granted and Enable geolocation access is on. Pages are the web pages the kiosk shows.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Required system permissions"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Required system permissions"
+      ]
+    }
+  },
+  "webGeolocationPermissionMissing": "没有此权限，页面无法读取设备位置。",
+  "@webGeolocationPermissionMissing": {
+    "context": "Settings > Web Browsing > Required system permissions",
+    "description": "Line under the Location permission row while the permission is missing and Enable geolocation access is on. Pages are the web pages the kiosk shows.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Required system permissions"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Required system permissions"
+      ]
+    }
+  },
   "settingAutoReloadOnErrorTitle": "出错时自动重新加载",
   "@settingAutoReloadOnErrorTitle": {
     "context": "Settings > Web Browsing > Auto-reload on error",

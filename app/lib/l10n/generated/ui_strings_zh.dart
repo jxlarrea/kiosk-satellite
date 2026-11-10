@@ -14790,6 +14790,22 @@ class UiStringsZh extends UiStrings {
       '接受不受信任或自签名证书。此项会禁用证书验证，请仅在自己的网络中使用。';
 
   @override
+  String get webGeolocationSection => 'HTML5 地理位置';
+
+  @override
+  String get settingWebGeolocationTitle => '启用地理位置访问';
+
+  @override
+  String get settingWebGeolocationDescription =>
+      '允许页面读取设备位置，例如天气雷达或地图。只有通过 HTTPS 加载的页面才能请求位置。';
+
+  @override
+  String get webGeolocationPermissionHeld => '页面可以读取设备位置。';
+
+  @override
+  String get webGeolocationPermissionMissing => '没有此权限，页面无法读取设备位置。';
+
+  @override
   String get settingAutoReloadOnErrorTitle => '出错时自动重新加载';
 
   @override
@@ -30294,6 +30310,22 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingIgnoreSslErrorsDescription =>
       '接受不受信任或自签名证书。此项会禁用证书验证，请仅在自己的网络中使用。';
+
+  @override
+  String get webGeolocationSection => 'HTML5 地理位置';
+
+  @override
+  String get settingWebGeolocationTitle => '启用地理位置访问';
+
+  @override
+  String get settingWebGeolocationDescription =>
+      '允许页面读取设备位置，例如天气雷达或地图。只有通过 HTTPS 加载的页面才能请求位置。';
+
+  @override
+  String get webGeolocationPermissionHeld => '页面可以读取设备位置。';
+
+  @override
+  String get webGeolocationPermissionMissing => '没有此权限，页面无法读取设备位置。';
 
   @override
   String get settingAutoReloadOnErrorTitle => '出错时自动重新加载';

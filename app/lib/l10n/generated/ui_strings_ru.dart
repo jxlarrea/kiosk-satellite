@@ -15701,6 +15701,24 @@ class UiStringsRu extends UiStrings {
       'Принимать недоверенные или самоподписанные сертификаты. Используйте только в собственной сети: это отключает проверку сертификатов.';
 
   @override
+  String get webGeolocationSection => 'Геолокация HTML5';
+
+  @override
+  String get settingWebGeolocationTitle => 'Включить доступ к геолокации';
+
+  @override
+  String get settingWebGeolocationDescription =>
+      'Позволяет страницам читать местоположение устройства, например для погодного радара или карты. Запрашивать его могут только страницы, загруженные по HTTPS.';
+
+  @override
+  String get webGeolocationPermissionHeld =>
+      'Страницы могут читать местоположение устройства.';
+
+  @override
+  String get webGeolocationPermissionMissing =>
+      'Без этого разрешения страницы не могут читать местоположение устройства.';
+
+  @override
   String get settingAutoReloadOnErrorTitle => 'Автоперезагрузка при ошибке';
 
   @override

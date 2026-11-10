@@ -27221,6 +27221,36 @@ abstract class UiStrings {
   /// **'Accept untrusted or self-signed certificates. Use only on your own network, since it disables certificate verification.'**
   String get settingIgnoreSslErrorsDescription;
 
+  /// Heading of the group with the switch that lets web pages read the device location through the browser's Geolocation API. HTML5 Geolocation is the name of that browser feature.
+  ///
+  /// In en, this message translates to:
+  /// **'HTML5 Geolocation'**
+  String get webGeolocationSection;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable geolocation access'**
+  String get settingWebGeolocationTitle;
+
+  /// Help below this setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets pages read the device location, such as a weather radar or a map. Only pages loaded over HTTPS can ask for it.'**
+  String get settingWebGeolocationDescription;
+
+  /// Line under the Location permission row while the permission is granted and Enable geolocation access is on. Pages are the web pages the kiosk shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Pages can read the device location.'**
+  String get webGeolocationPermissionHeld;
+
+  /// Line under the Location permission row while the permission is missing and Enable geolocation access is on. Pages are the web pages the kiosk shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Without this pages cannot read the device location.'**
+  String get webGeolocationPermissionMissing;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

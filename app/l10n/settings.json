@@ -2650,5 +2650,9 @@
   "nav.compass_menu_items": {
     "title": "settingNavCompassMenuItemsTitle",
     "description": "settingNavQuickControlsItemsDescription"
+  },
+  "web.geolocation": {
+    "title": "settingWebGeolocationTitle",
+    "description": "settingWebGeolocationDescription"
   }
 }

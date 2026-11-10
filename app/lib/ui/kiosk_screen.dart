@@ -833,6 +833,11 @@ class _KioskScreenState extends State<KioskScreen>
         await c.browser.runJs('location.reload();');
       }
     }
+    // Turned off, a page already watching the position keeps its grant
+    // until it loads again.
+    if (e.key == defs.webGeolocation.key && e.value == false) {
+      await c.browser.runJs('location.reload();');
+    }
   }
 
   /// The scanner for a plugin's scanBarcode, above every route.
@@ -2220,7 +2225,10 @@ class _KioskScreenState extends State<KioskScreen>
       allowsInlineMediaPlayback: true,
       iframeAllow: 'camera; microphone',
       transparentBackground: true,
-      geolocationEnabled: c.settings.get(defs.webGeolocation),
+      // Always on: the setting is read at each request instead (see
+      // _webGeolocationResponse), since this flag is fixed when the view
+      // is created.
+      geolocationEnabled: true,
       javaScriptCanOpenWindowsAutomatically: c.settings.get(defs.webPopups),
       // Android: let HTTPS pages pull in HTTP subresources.
       mixedContentMode: c.settings.get(defs.allowMixedContent)
@@ -2575,6 +2583,8 @@ class _KioskScreenState extends State<KioskScreen>
     },
     onPermissionRequest: (controller, request) =>
         _webPermissionResponse(c, request),
+    onGeolocationPermissionsShowPrompt: (controller, origin) =>
+        _webGeolocationResponse(c, origin),
   );
 }
 
@@ -2628,6 +2638,30 @@ Future<bool> _webResourceAllowed(
   // Anything else the page asks for (e.g. protected media id) follows the
   // camera/mic decision conservatively: deny unless explicitly handled.
   return false;
+}
+
+/// Android asks about the HTML5 Geolocation API here, not through
+/// onPermissionRequest, and an unanswered request is refused (issue #1383).
+/// Allowed with Enable geolocation access on and the Location grant held,
+/// for the page and for the frames it hands the feature to with
+/// allow="geolocation". Never retained: Chromium would keep the origin's
+/// grant after the setting is turned off.
+Future<GeolocationPermissionShowPromptResponse> _webGeolocationResponse(
+  AppContainer c,
+  String origin,
+) async {
+  final allow =
+      c.settings.get(defs.webGeolocation) &&
+      await ensureOsPermission(Permission.location);
+  c.log.info(
+    'kiosk',
+    'geolocation ${allow ? 'allowed' : 'refused'} for $origin',
+  );
+  return GeolocationPermissionShowPromptResponse(
+    origin: origin,
+    allow: allow,
+    retain: false,
+  );
 }
 
 class _OverlayHost extends StatefulWidget {
@@ -3255,6 +3289,8 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
         },
         onPermissionRequest: (controller, request) =>
             _webPermissionResponse(widget.container, request),
+        onGeolocationPermissionsShowPrompt: (controller, origin) =>
+            _webGeolocationResponse(widget.container, origin),
         onRenderProcessGone: (controller, detail) =>
             widget.onRenderGone?.call(),
       ),

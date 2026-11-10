@@ -26,6 +26,9 @@ void main() {
     // Web Content has no settings page anymore: everything defaults on.
     expect(settings.get(defs.webMicrophone), isTrue);
     expect(settings.get(defs.webCamera), isTrue);
+    // Geolocation is the exception: it has a row and starts off (#1383).
+    expect(settings.get(defs.webGeolocation), isFalse);
+    expect(settings.visible(defs.webGeolocation), isTrue);
     expect(settings.get(defs.screensaverTimeoutSeconds), 300);
   });
 
@@ -47,6 +50,9 @@ void main() {
     await build({});
     await settings.set(defs.webCamera, true);
     expect(settings.get(defs.webCamera), isTrue);
+    // Geolocation is the exception: it has a row and starts off (#1383).
+    expect(settings.get(defs.webGeolocation), isFalse);
+    expect(settings.visible(defs.webGeolocation), isTrue);
     // Simulate a fresh app run against the same store.
     final bus = EventBus();
     final log = Logger();
@@ -190,6 +196,21 @@ void main() {
       await bus.dispose();
     });
   }
+
+  test('geolocation access stored before it had a row is dropped once '
+      '(#1383)', () async {
+    await build({'ks.web.geolocation': true});
+    expect(settings.get(defs.webGeolocation), isFalse);
+
+    // Turned on from its row, it stays on.
+    await settings.set(defs.webGeolocation, true);
+    final bus = EventBus();
+    final reopened = SettingsManager(bus, CommandRegistry(log), log);
+    await reopened.init();
+    expect(reopened.get(defs.webGeolocation), isTrue);
+    await reopened.dispose();
+    await bus.dispose();
+  });
 
   test("Amazon's wake word engine moves to vsWakeWord Alexa once while it "
       'is off', () async {

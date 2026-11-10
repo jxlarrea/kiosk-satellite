@@ -15929,6 +15929,24 @@ class UiStringsDe extends UiStrings {
       'Akzeptiert nicht vertrauenswürdige oder selbst signierte Zertifikate. Nur im eigenen Netzwerk verwenden, da dadurch die Zertifikatsprüfung deaktiviert wird.';
 
   @override
+  String get webGeolocationSection => 'HTML5-Geolokalisierung';
+
+  @override
+  String get settingWebGeolocationTitle => 'Standortzugriff aktivieren';
+
+  @override
+  String get settingWebGeolocationDescription =>
+      'Erlaubt Seiten, den Standort des Geräts zu lesen, etwa für ein Wetterradar oder eine Karte. Nur über HTTPS geladene Seiten können ihn anfragen.';
+
+  @override
+  String get webGeolocationPermissionHeld =>
+      'Seiten können den Standort des Geräts lesen.';
+
+  @override
+  String get webGeolocationPermissionMissing =>
+      'Ohne diese Berechtigung können Seiten den Standort des Geräts nicht lesen.';
+
+  @override
   String get settingAutoReloadOnErrorTitle =>
       'Bei Fehler automatisch neu laden';
 

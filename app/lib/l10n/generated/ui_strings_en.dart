@@ -15596,6 +15596,24 @@ class UiStringsEn extends UiStrings {
       'Accept untrusted or self-signed certificates. Use only on your own network, since it disables certificate verification.';
 
   @override
+  String get webGeolocationSection => 'HTML5 Geolocation';
+
+  @override
+  String get settingWebGeolocationTitle => 'Enable geolocation access';
+
+  @override
+  String get settingWebGeolocationDescription =>
+      'Lets pages read the device location, such as a weather radar or a map. Only pages loaded over HTTPS can ask for it.';
+
+  @override
+  String get webGeolocationPermissionHeld =>
+      'Pages can read the device location.';
+
+  @override
+  String get webGeolocationPermissionMissing =>
+      'Without this pages cannot read the device location.';
+
+  @override
   String get settingAutoReloadOnErrorTitle => 'Auto-reload on error';
 
   @override

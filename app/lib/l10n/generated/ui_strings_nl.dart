@@ -15783,6 +15783,24 @@ class UiStringsNl extends UiStrings {
       'Accepteer niet-vertrouwde of zelfondertekende certificaten. Gebruik dit alleen op je eigen netwerk, omdat certificaatcontrole hiermee wordt uitgeschakeld.';
 
   @override
+  String get webGeolocationSection => 'HTML5-geolocatie';
+
+  @override
+  String get settingWebGeolocationTitle => 'Toegang tot geolocatie inschakelen';
+
+  @override
+  String get settingWebGeolocationDescription =>
+      'Laat pagina\'s de locatie van het apparaat lezen, bijvoorbeeld voor een weerradar of een kaart. Alleen pagina\'s die via HTTPS zijn geladen, kunnen erom vragen.';
+
+  @override
+  String get webGeolocationPermissionHeld =>
+      'Pagina\'s kunnen de locatie van het apparaat lezen.';
+
+  @override
+  String get webGeolocationPermissionMissing =>
+      'Zonder deze toestemming kunnen pagina\'s de locatie van het apparaat niet lezen.';
+
+  @override
   String get settingAutoReloadOnErrorTitle => 'Automatisch herladen bij fout';
 
   @override

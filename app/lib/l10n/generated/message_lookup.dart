@@ -5346,6 +5346,13 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingIgnoreSslErrorsTitle' => strings.settingIgnoreSslErrorsTitle,
       'settingIgnoreSslErrorsDescription' =>
         strings.settingIgnoreSslErrorsDescription,
+      'webGeolocationSection' => strings.webGeolocationSection,
+      'settingWebGeolocationTitle' => strings.settingWebGeolocationTitle,
+      'settingWebGeolocationDescription' =>
+        strings.settingWebGeolocationDescription,
+      'webGeolocationPermissionHeld' => strings.webGeolocationPermissionHeld,
+      'webGeolocationPermissionMissing' =>
+        strings.webGeolocationPermissionMissing,
       'settingAutoReloadOnErrorTitle' => strings.settingAutoReloadOnErrorTitle,
       'settingAutoReloadOnErrorDescription' =>
         strings.settingAutoReloadOnErrorDescription,

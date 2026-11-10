@@ -1213,6 +1213,7 @@ async function renderSettings({ cached = false } = {}) {
   updatePersonSensorRows();
   updateClockNightAdminRows();
   updateCelestialPermissionRows();
+  updateWebGeolocationRows();
   updateRtspRows();
   updateOnvifEventsRows();
   updateCelestialLocationRow();
@@ -2875,26 +2876,17 @@ export function updateCelestialLocationRow() {
     });
 }
 
-/* The Celestial screensaver's Required system permissions group while the
-   GPS is the location source, mirroring the device's: the Location grant
-   with the system location switch, right after the group holding the
-   Location select. Grant on device runs the dialog on the tablet, and the
-   Current location row asks again once it is granted. */
-export function updateCelestialPermissionRows() {
-  const panel = document.getElementById('tab-screensaver')
-    ?.querySelector('.subpage[data-subpage="Celestial screensaver"]');
-  if (!panel) return;
-  for (const stale of panel.querySelectorAll('.celestial-permission')) stale.remove();
-  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
-  const source = byKey['screensaver.celestial_location'];
-  if (!source || source.value !== 'gps' || !depSatisfied(source, byKey)) return;
-  const card = panel.querySelector('[data-key="screensaver.celestial_location"]')?.closest('.card');
-  if (!card) return;
+/* A Required system permissions group holding the Location grant with
+   the system location switch, mirroring the device's
+   _LocationPermissionsTile: placed after `card`, tagged `cls` so the
+   caller can clear it, with the lines of whatever reads the position.
+   Grant on device runs the dialog on the tablet. */
+function locationPermissionGroup(card, cls, { held, missing, onGranted }) {
   const h = document.createElement('h2');
-  h.className = 'card-title celestial-permission';
+  h.className = `card-title ${cls}`;
   h.textContent = screensaverText('Required system permissions');
   const permCard = document.createElement('div');
-  permCard.className = 'card celestial-permission';
+  permCard.className = `card ${cls}`;
   const permRow = document.createElement('div');
   permRow.className = 'row';
   const info = document.createElement('div');
@@ -2916,11 +2908,11 @@ export function updateCelestialPermissionRows() {
       : p.location === true && p.locationServicesOn === true;
     info.querySelector('.desc').textContent = ok === null
       ? screensaverText('Status unavailable.')
-      : ok ? screensaverText('The sky can follow the GPS receiver.')
+      : ok ? held
       : p.location !== true && p.locationApproximate === true
         ? esphomeText('Only approximate location is allowed, and the GPS receiver needs precise location.')
       : p.location !== true
-        ? screensaverText('Without this the GPS receiver cannot be read and the sky has no location.')
+        ? missing
         : esphomeText('Location is off in the device settings, so the receiver delivers nothing.');
     stateEl.textContent = ok === null ? '' : ok ? screensaverText('Granted') : screensaverText('Missing');
     stateEl.style.color = ok ? 'var(--ok)' : 'var(--error)';
@@ -2943,7 +2935,7 @@ export function updateCelestialPermissionRows() {
         const now = await readPerm();
         if (now && now.location === true && now.locationServicesOn === true) {
           paint(now);
-          updateCelestialLocationRow();
+          onGranted?.();
           return;
         }
       }
@@ -2952,6 +2944,49 @@ export function updateCelestialPermissionRows() {
     permRow.appendChild(btn);
   };
   readPerm().then((p) => { if (permCard.isConnected) paint(p); });
+}
+
+/* The Celestial screensaver's Required system permissions group while the
+   GPS is the location source, mirroring the device's: the Location grant
+   right after the group holding the Location select. The Current location
+   row asks again once it is granted. */
+export function updateCelestialPermissionRows() {
+  const panel = document.getElementById('tab-screensaver')
+    ?.querySelector('.subpage[data-subpage="Celestial screensaver"]');
+  if (!panel) return;
+  for (const stale of panel.querySelectorAll('.celestial-permission')) stale.remove();
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  const source = byKey['screensaver.celestial_location'];
+  if (!source || source.value !== 'gps' || !depSatisfied(source, byKey)) return;
+  const card = panel.querySelector('[data-key="screensaver.celestial_location"]')?.closest('.card');
+  if (!card) return;
+  locationPermissionGroup(card, 'celestial-permission', {
+    held: screensaverText('The sky can follow the GPS receiver.'),
+    missing: screensaverText('Without this the GPS receiver cannot be read and the sky has no location.'),
+    onGranted: updateCelestialLocationRow,
+  });
+}
+
+/* Web Browsing's HTML5 Geolocation group (issue #1383), mirroring the
+   device's page: the group closes the page, after the URL Filter, which
+   the tab render appends last, and its Location grant follows while
+   Enable geolocation access is on. */
+export function updateWebGeolocationRows() {
+  const tab = document.getElementById('tab-browser');
+  if (!tab) return;
+  for (const stale of tab.querySelectorAll('.web-geolocation-permission')) stale.remove();
+  const row = tab.querySelector(':scope > .card [data-key="web.geolocation"]');
+  const card = row?.closest('.card');
+  if (!card) return;
+  const heading = card.previousElementSibling;
+  const filter = tab.querySelector(':scope > .card [data-subpage-entry="URL Filter"]')?.closest('.card');
+  if (filter && heading?.matches('h2.card-title')) heading.before(filter);
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  if (byKey['web.geolocation']?.value !== true) return;
+  locationPermissionGroup(card, 'web-geolocation-permission', {
+    held: settingsPageText('Browser', 'Pages can read the device location.'),
+    missing: settingsPageText('Browser', 'Without this pages cannot read the device location.'),
+  });
 }
 
 /* The Clock screensaver's Required system permissions group while Turn
@@ -3027,6 +3062,7 @@ document.addEventListener('ks-settings', (e) => {
       || key === 'screensaver.mode')) {
     updateCelestialPermissionRows();
   }
+  if ((e.detail || []).includes('web.geolocation')) updateWebGeolocationRows();
 });
 
 export function updatePersonSensorRows() {

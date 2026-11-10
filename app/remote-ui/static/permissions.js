@@ -130,7 +130,7 @@ function allPermissionSpecs(on, value) {
       missing: 'Without this Android lists no media sessions, so Now Playing cannot follow the apps playing on this device.',
       idle: 'Lets Now Playing follow the apps playing on this device.' },
     { key: 'location', name: 'Location', ask: 'location',
-      needed: on('btproxy.enabled') || on('location.enabled')
+      needed: on('btproxy.enabled') || on('location.enabled') || on('web.geolocation')
         || (value('screensaver.mode') === 'celestial'
           && value('screensaver.celestial_location') === 'gps'),
       held: 'Pages, Bluetooth scanning and the location sensors can use the device position.',

@@ -5,5 +5,10 @@
   "settingAllowMixedContentTitle": "Permitir contenido mixto",
   "settingAllowMixedContentDescription": "Permite que las páginas HTTPS carguen recursos HTTP no seguros. Útil cuando Home Assistant incluye contenido http:// en un panel de control que usa https:// para conectarse.",
   "settingIgnoreSslErrorsTitle": "Ignorar errores SSL",
-  "settingIgnoreSslErrorsDescription": "Acepta certificados no confiables o autofirmados. Úsalo solo en tu propia red, ya que desactiva la verificación de certificados."
+  "settingIgnoreSslErrorsDescription": "Acepta certificados no confiables o autofirmados. Úsalo solo en tu propia red, ya que desactiva la verificación de certificados.",
+  "webGeolocationSection": "Geolocalización HTML5",
+  "settingWebGeolocationTitle": "Permitir acceso a la geolocalización",
+  "settingWebGeolocationDescription": "Permite que las páginas lean la ubicación del dispositivo, como un radar meteorológico o un mapa. Solo las páginas cargadas por HTTPS pueden solicitarla.",
+  "webGeolocationPermissionHeld": "Las páginas pueden leer la ubicación del dispositivo.",
+  "webGeolocationPermissionMissing": "Sin este permiso, las páginas no pueden leer la ubicación del dispositivo."
 }

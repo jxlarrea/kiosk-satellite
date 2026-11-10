@@ -521,6 +521,19 @@ class SettingsManager extends Manager {
       }
       await setInternal(entitiesDefaultMigration, '1');
     }
+    // Enable geolocation access was a hidden switch, on by default, that
+    // allowed nothing: Android's geolocation request went unanswered. It
+    // works now and starts off (issue #1383), so a value stored before it
+    // had a row (a settings import or a fleet sync wrote the old default)
+    // is dropped once.
+    const geolocationMigration = 'web.geolocation_off.migrated';
+    if (internal(geolocationMigration).isEmpty) {
+      if (_prefs.get(_prefix + webGeolocation.key) != null) {
+        await _prefs.remove(_prefix + webGeolocation.key);
+        log.info(name, 'turned geolocation access off on upgrade');
+      }
+      await setInternal(geolocationMigration, '1');
+    }
     // The music duck used to go up to 25%, more than the software echo
     // canceller keeps out of the microphone. Bring existing installs down
     // to the new ceiling once.

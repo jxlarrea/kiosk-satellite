@@ -29483,5 +29483,35 @@
     "translation": "21b0f8e893f8cf2a429bfb9ffa1933ad56f5813e9d8824b5dc33a3ce7b753a1b",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "webGeolocationSection": {
+    "source": "c255fe64036a656f8fb3acca4d7f4c2cee26e135e9ccfa13f836cb3fbb667e80",
+    "translation": "0ad5c25b69e1e7008b82ec565320d1d02a71698d1f658018aed3889401d21bc8",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "webGeolocationPermissionMissing": {
+    "source": "10062f608066517564b756e5b921f02edafd50ffcc18fd48ad390fdea11b321a",
+    "translation": "9060de60a1763ffef6987c7b8edac18aa68412ab51e0decf017b8713da6f3591",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingWebGeolocationDescription": {
+    "source": "3d31f4fcf258e151b7226d38f477a2b48503b418fdf33889ee9b38407d3f624c",
+    "translation": "5e4773bd7e940f93ecb94f6eb6fc7ad6bb1c308ccbed5e7e9db15dba11474849",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingWebGeolocationTitle": {
+    "source": "354ce56f363b070165ce36b3f5d2641e42fa0d65d62b9041d00fd15e9784f608",
+    "translation": "73057459bd8f5c9cbf2ca80c8be686e83c2729fcdbf5b169f6857f3cfea11f3a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "webGeolocationPermissionHeld": {
+    "source": "172c0bcad2ca953fc20c43ddde47fff6a37cb887ce2eb82cc729f89116bc9b04",
+    "translation": "db2c48a24750c3b52bb3ffb3d0c0a7030f909aeee9cfe9d9333a72582004643f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }
