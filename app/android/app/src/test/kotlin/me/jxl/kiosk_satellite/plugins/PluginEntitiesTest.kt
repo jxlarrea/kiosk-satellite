@@ -72,6 +72,39 @@ class PluginEntitiesTest {
         store.close()
         rejects { store.switchCommand("power", true) }
     }
+    @Test fun numbersValidateTheirRangeAndWaitForPluginConfirmation() {
+        val store = PluginEntities()
+        store.publish("number", "volume", "Volume", mapOf("min" to 0, "max" to 1, "step" to 0.05, "unit" to "%", "mode" to "slider"), 0.3)
+        val entity = store.snapshot().single()
+        assertEquals(0.0, entity["min"]); assertEquals(1.0, entity["max"]); assertEquals(0.05, entity["step"])
+        assertEquals(2, entity["mode"]); assertEquals(2, entity["accuracyDecimals"]); assertEquals(0.3, entity["state"])
+        // Home Assistant sends a float, and the plugin gets the value it meant.
+        assertEquals(mapOf("value" to 0.3), store.number("volume", 0.3f))
+        assertEquals(mapOf("value" to 1.0), store.number("volume", 1.0f))
+        assertEquals(0.3, store.snapshot().single()["state"])
+        for (invalid in listOf(null, "0.5", true, 1.5, -0.1, Double.NaN, Double.POSITIVE_INFINITY)) {
+            rejects { store.number("volume", invalid) }
+        }
+        rejects { store.number("missing", 0.5) }
+        store.publish("number", "volume", "Volume", mapOf("min" to 0, "max" to 1, "step" to 0.05), 0.30000001192092896)
+        store.publish("number", "volume", "Volume", mapOf("min" to 0, "max" to 1, "step" to 0.05), null)
+        assertNull(store.snapshot().single()["state"])
+        for (metadata in listOf(mapOf("min" to 5, "max" to 5), mapOf("step" to 0), mapOf("step" to 101), mapOf("mode" to "dial"),
+            mapOf("unit" to "x".repeat(33)), mapOf("deviceClass" to "volume"), mapOf("max" to Double.MAX_VALUE), mapOf("min" to "0"))) {
+            rejects { store.publish("number", "volume", "Volume", metadata, null) }
+        }
+        rejects { store.publish("number", "volume", "Volume", emptyMap(), 101.0) }
+        rejects { store.publish("number", "volume", "Volume", emptyMap(), Double.NaN) }
+        store.publish("number", "level", "Level", emptyMap(), 50.0)
+        store.snapshot().last().let {
+            assertEquals(0.0, it["min"]); assertEquals(100.0, it["max"]); assertEquals(1.0, it["step"])
+            assertEquals(0, it["mode"]); assertEquals(0, it["accuracyDecimals"]); assertEquals("", it["unit"])
+        }
+        store.remove("number", "level")
+        rejects { store.number("level", 10.0) }
+        store.close()
+        rejects { store.number("volume", 0.5) }
+    }
     @Test fun capacityRateAndSessionRevocationAreBounded() {
         var now = 0L
         val store = PluginEntities { now }

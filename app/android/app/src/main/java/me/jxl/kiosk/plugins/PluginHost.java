@@ -211,4 +211,11 @@ public interface PluginHost {
     /** SDK 1, entities. Changes arrive as select.KEY with {option: string}. Publish the applied option to confirm it. */
     default void publishSelect(String key, String name, String[] options, String state) { throw new UnsupportedOperationException("SDK 1 required"); }
     default void removeSelect(String key) { throw new UnsupportedOperationException("SDK 1 required"); }
+    /**
+     * SDK 1, entities. A number with a nullable state. Metadata: min (default 0), max (default 100), step (default 1),
+     * unit and mode ("auto", "slider" or "box"). Changes arrive as number.KEY with {value: double}. Publish the
+     * applied value to confirm it.
+     */
+    default void publishNumber(String key, String name, Map<String, Object> metadata, Double state) { throw new UnsupportedOperationException("Plugin numbers are unavailable"); }
+    default void removeNumber(String key) { throw new UnsupportedOperationException("Plugin numbers are unavailable"); }
 }

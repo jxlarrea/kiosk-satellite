@@ -836,7 +836,12 @@ class PluginManager extends Manager implements FleetPluginHost {
             'command': entity['command'],
           });
         }
-        if (!const ['light', 'select', 'switch'].contains(entity['type'])) {
+        if (!const [
+          'light',
+          'select',
+          'switch',
+          'number',
+        ].contains(entity['type'])) {
           throw StateError('Plugin entity is read-only');
         }
         if (entity['type'] == 'select' &&
@@ -845,6 +850,12 @@ class PluginManager extends Manager implements FleetPluginHost {
         }
         if (entity['type'] == 'switch' && p['value'] is! bool) {
           throw ArgumentError('Switch command must be boolean');
+        }
+        if (entity['type'] == 'number') {
+          final value = p['value'];
+          if (value is! num || !value.isFinite) {
+            throw ArgumentError('Number command must be a finite number');
+          }
         }
         return update('entityCommand', {
           'id': entity['pluginId'],
@@ -855,7 +866,8 @@ class PluginManager extends Manager implements FleetPluginHost {
       },
       const {
         'objectId': 'Plugin entity object ID',
-        'value': 'Light command map, select option string or switch boolean',
+        'value':
+            'Light command map, select option string, switch boolean or number',
       },
     );
     register(
@@ -1920,6 +1932,7 @@ class PluginManager extends Manager implements FleetPluginHost {
                 'text_sensor' => 'mdi:text-box-outline',
                 'binary_sensor' => 'mdi:checkbox-marked-circle-outline',
                 'switch' => 'mdi:toggle-switch',
+                'number' => 'mdi:ray-vertex',
                 _ => 'mdi:form-select',
               },
             },
@@ -1936,6 +1949,7 @@ class PluginManager extends Manager implements FleetPluginHost {
             'text_sensor',
             'binary_sensor',
             'select',
+            'number',
           ].contains(previous['type']) &&
           !nextEntities.any((e) => e['objectId'] == previous['objectId'])) {
         bus.publish(

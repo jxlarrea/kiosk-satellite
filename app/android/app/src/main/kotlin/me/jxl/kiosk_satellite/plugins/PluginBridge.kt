@@ -699,6 +699,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             override fun removeSwitch(key: String) = removeEntity("switch", key)
             override fun publishSelect(key: String, name: String, options: Array<String>, state: String?) = publishEntity("select", key, name, mapOf("options" to options.toList()), state)
             override fun removeSelect(key: String) = removeEntity("select", key)
+            override fun publishNumber(key: String, name: String, metadata: Map<String, Any>, state: Double?) = publishEntity("number", key, name, metadata, state)
+            override fun removeNumber(key: String) = removeEntity("number", key)
             override fun publishLight(key: String, name: String, effects: Array<String>, state: Map<String, Any>) {
                 require("entities" in manifest.capabilities)
                 require(key.matches(Regex("[a-z][a-z0-9_]{0,39}")) && name.length in 1..80)
@@ -937,6 +939,7 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                                 }
                                 "switch" -> session.entities.switchCommand(key, args["value"])
                                 "select" -> session.entities.select(key, args["value"])
+                                "number" -> session.entities.number(key, args["value"])
                                 else -> throw IllegalArgumentException("Plugin entity is read-only")
                             }
                             try { session.call { session.plugin!!.onEvent("$type.$key", value) } }

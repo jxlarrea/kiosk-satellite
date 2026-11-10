@@ -41,7 +41,7 @@ export function updatePluginReadings(container, readings, title = pluginText('Re
     }
     existing.delete(key);
     const value = formatPluginReading(reading);
-    const unit = reading.type === 'sensor' && reading.state != null ? reading.unit || '' : '';
+    const unit = (reading.type === 'sensor' || reading.type === 'number') && reading.state != null ? reading.unit || '' : '';
     row.classList.toggle('multiline', value.includes('\n'));
     const label = row.querySelector('dt');
     if (label.textContent !== reading.name) label.textContent = reading.name;

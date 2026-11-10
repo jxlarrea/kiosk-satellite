@@ -91,7 +91,7 @@ class PluginManifest(val json: JSONObject) {
             // "*" claims what no other group names, and "sensor.*" every reading of one type, for keys only
             // known at runtime.
             for ((kind, used, pattern, maximum) in listOf(
-                GroupReferences("readings", readingKeys, "\\*|(sensor|text_sensor|binary_sensor|select|switch)\\.([a-z][a-z0-9_]{0,39}|\\*)", 32),
+                GroupReferences("readings", readingKeys, "\\*|(sensor|text_sensor|binary_sensor|select|switch|number)\\.([a-z][a-z0-9_]{0,39}|\\*)", 32),
                 GroupReferences("charts", chartKeys, "\\*|[a-z][a-z0-9_]{0,39}", 4)
             )) {
                 if (!group.has(kind)) continue

@@ -31,6 +31,33 @@ class PluginEntityWireTest {
             assertEquals(on, store.snapshot().single()["state"])
         }
     }
+    @Test fun numbersDescribeTheirRangeAndCarryHomeAssistantValues() {
+        val store = PluginEntities()
+        store.publish("number", "volume", "Volume", mapOf("min" to 0.1, "max" to 1, "step" to 0.05, "unit" to "%", "mode" to "slider"), 0.3)
+        val entry = store.snapshot().single()
+        val entity = EspEntity.fromMap(entry + ("objectId" to "plugin_demo____number_volume"))
+        assertTrue(entity is EspEntity.Number)
+        val (type, description) = EntityCodec.describe(entity, "demo")
+        assertEquals(Msg.LIST_ENTITIES_NUMBER_RESPONSE, type)
+        val fields = mutableMapOf<Int, Any>()
+        ProtoReader(description).let { r -> while (r.next()) when (r.field) {
+            6, 7, 8 -> fields[r.field] = r.asFloat()
+            11 -> fields[r.field] = r.asString()
+            12 -> fields[r.field] = r.asInt()
+        } }
+        assertEquals(mapOf(6 to 0.1f, 7 to 1f, 8 to 0.05f, 11 to "%", 12 to 2), fields)
+        var state: Float? = null
+        ProtoReader(EntityCodec.state(entity, entry["state"])!!.second).let { r -> while (r.next()) if (r.field == 2) state = r.asFloat() }
+        assertEquals(0.3f, state)
+        var missing = false
+        ProtoReader(EntityCodec.state(entity, null)!!.second).let { r -> while (r.next()) if (r.field == 3) missing = r.asBool() }
+        assertTrue(missing)
+        val request = EntityCodec.parseCommand(Msg.NUMBER_COMMAND_REQUEST,
+            ProtoWriter().apply { fixed32(1, entity.key); float(2, 0.7f) }.toByteArray())!!
+        assertEquals(entity.key, request.key)
+        assertEquals(mapOf("value" to 0.7), store.number("volume", request.value))
+        assertEquals(0.3, store.snapshot().single()["state"])
+    }
     @Test fun pluginReadingsAndSelectsUseNativeEntityDescriptionsAndMissingStates() {
         val store = PluginEntities()
         store.publish("sensor", "latency", "Latency", mapOf("unit" to "ms", "stateClass" to "measurement", "accuracyDecimals" to 2), 12.5)

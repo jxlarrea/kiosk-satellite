@@ -649,6 +649,89 @@ void main() {
     },
   );
 
+  test(
+    'number commands check the value, wait for confirmation and clear with their session',
+    () async {
+      await native('hostSession', {
+        'id': 'hello-world',
+        'session': 'numbers',
+        'capabilities': ['entities'],
+      });
+      final states = <PluginEntityStateChanged>[];
+      final stateSub = bus.on<PluginEntityStateChanged>().listen(states.add);
+      Future<void> publish(double? value) async {
+        final entries = [
+          {
+            'type': 'number',
+            'key': 'volume',
+            'name': 'Volume',
+            'min': 0.0,
+            'max': 1.0,
+            'step': 0.05,
+            'unit': '',
+            'mode': 2,
+            'accuracyDecimals': 2,
+            'state': value,
+          },
+        ];
+        installed[0]['entities'] = entries;
+        await native('entities', {
+          'id': 'hello-world',
+          'session': 'numbers',
+          'entities': entries,
+        });
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      await publish(0.3);
+      const id = 'plugin_hello_world____number_volume';
+      final entity =
+          ((await commands.execute('getPluginEntities', {})).data as List)
+              .single;
+      expect(entity['icon'], 'mdi:ray-vertex');
+      expect(entity['mode'], 2);
+      for (final invalid in [null, '0.5', true, double.nan]) {
+        expect(
+          (await commands.execute('pluginEntityCommand', {
+            'objectId': id,
+            'value': invalid,
+          })).ok,
+          false,
+        );
+      }
+      expect(calls.where((c) => c.method == 'entityCommand'), isEmpty);
+      expect(
+        (await commands.execute('pluginEntityCommand', {
+          'objectId': id,
+          'value': 0.7,
+        })).ok,
+        true,
+      );
+      expect(calls.lastWhere((c) => c.method == 'entityCommand').arguments, {
+        'id': 'hello-world',
+        'key': 'volume',
+        'type': 'number',
+        'value': 0.7,
+      });
+      expect(
+        ((await commands.execute('getPluginEntities', {})).data as List)
+            .single['state'],
+        0.3,
+      );
+      await publish(0.7);
+      expect(states.last.value, 0.7);
+      await native('hostSessionClosed', {
+        'id': 'hello-world',
+        'session': 'numbers',
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect((await commands.execute('getPluginEntities', {})).data, isEmpty);
+      expect(states.last.objectId, id);
+      expect(states.last.value, isNull);
+      await stateSub.cancel();
+    },
+  );
+
   setUp(() async {
     originalPicker = FilePicker.platform;
     picker = _ZipPicker();

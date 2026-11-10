@@ -68,7 +68,9 @@ class _ReadingRow extends StatelessWidget {
             (state is num && !state.isFinite)
         ? pluginText(context, rawValue)
         : rawValue;
-    final unit = reading['type'] == 'sensor' && reading['state'] != null
+    final unit =
+        const ['sensor', 'number'].contains(reading['type']) &&
+            reading['state'] != null
         ? '${reading['unit'] ?? ''}'
         : '';
     final multiline = value.contains('\n');

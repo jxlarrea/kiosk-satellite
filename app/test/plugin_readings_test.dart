@@ -66,6 +66,14 @@ void main() {
           'state': 'Automatic',
         },
         {'type': 'switch', 'key': 'switch', 'name': 'Chart', 'state': false},
+        {
+          'type': 'number',
+          'key': 'volume',
+          'name': 'Volume',
+          'state': 0.3,
+          'accuracyDecimals': 2,
+          'unit': 'dB',
+        },
       ];
       for (final width in [320.0, 760.0]) {
         tester.view.resetPhysicalSize();
@@ -88,6 +96,7 @@ void main() {
         );
         expect(find.text('Readings'), findsOneWidget);
         expect(find.text('12.50 %', findRichText: true), findsOneWidget);
+        expect(find.text('0.30 dB', findRichText: true), findsOneWidget);
         expect(find.text('No data', findRichText: true), findsOneWidget);
         expect(find.text('°C', findRichText: true), findsNothing);
         expect(find.byType(Switch), findsNothing);
