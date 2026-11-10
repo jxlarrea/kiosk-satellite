@@ -98,6 +98,7 @@ void main() {
   for (final (updater, codename, gain) in [
     ('echo', 'crown', 24),
     ('echo', 'cronos', 20),
+    ('echo', 'checkers', 20),
     ('biscuit', 'biscuit', 5),
   ]) {
     test('the $codename adds $gain dB under the user\'s gain', () async {
@@ -133,7 +134,7 @@ void main() {
   });
 
   test('an Echo Show the image does not name has no base gain', () async {
-    await boot({}, 'echo', 'checkers');
+    await boot({}, 'echo', 'unknown');
     expect(EchoImageSettings.micGainBaseDb, 0);
     expect(defs.deviceHiddenKeys, contains(defs.micNoiseSuppression.key));
   });
