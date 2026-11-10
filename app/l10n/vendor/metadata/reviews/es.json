@@ -24523,5 +24523,15 @@
     "source": "3d31f4fcf258e151b7226d38f477a2b48503b418fdf33889ee9b38407d3f624c",
     "translation": "582224422a3b595517180c0f00c7f11290fb97c1051fc63ee4c101f4e3ed6af7",
     "author": "Xavier Larrea"
+  },
+  "pluginDashboardLink": {
+    "source": "ff48ab28817245aca3141f05dc23777e8d529cb48cd12c048f32b5898bf7c768",
+    "translation": "b0ca803139777b135785a4a092655664e6867aab43f5eaf86dc510c7b02f14d2",
+    "author": "Xavier Larrea"
+  },
+  "pluginDashboardLinkHint": {
+    "source": "f780af0384d32fe00ed7fcab095912fc38e27465806ce870bd1b54fcf07eb9dc",
+    "translation": "719e568d5308eb85a8e62f949b5adfe9d5332323c3e48bb8a0be798ea18d4702",
+    "author": "Xavier Larrea"
   }
 }

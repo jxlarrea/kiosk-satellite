@@ -14260,6 +14260,32 @@
       ]
     }
   },
+  "pluginDashboardLink": "Enlace del panel de control",
+  "@pluginDashboardLink": {
+    "context": "Settings > Plugin Manager > a plugin > Actions",
+    "description": "Visible label, help or status in this section.",
+    "x-locations": {
+      "device": [
+        "Settings > Plugin Manager > a plugin > Actions"
+      ],
+      "remoteAdmin": [
+        "Plugin Manager > a plugin > Actions"
+      ]
+    }
+  },
+  "pluginDashboardLinkHint": "Usa este enlace en la acción al tocar de un botón del panel de control.",
+  "@pluginDashboardLinkHint": {
+    "context": "Settings > Plugin Manager > a plugin > Actions",
+    "description": "Visible label, help or status in this section.",
+    "x-locations": {
+      "device": [
+        "Settings > Plugin Manager > a plugin > Actions"
+      ],
+      "remoteAdmin": [
+        "Plugin Manager > a plugin > Actions"
+      ]
+    }
+  },
   "pluginPlugin": "Plugin",
   "@pluginPlugin": {
     "context": "Settings > Plugin Manager",

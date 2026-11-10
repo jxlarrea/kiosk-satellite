@@ -3778,6 +3778,13 @@ class UiStringsNl extends UiStrings {
       'Deze keuze staat niet meer in de lijst.';
 
   @override
+  String get pluginDashboardLink => 'Dashboardlink';
+
+  @override
+  String get pluginDashboardLinkHint =>
+      'Gebruik deze link als tikactie van een dashboardknop.';
+
+  @override
   String get pluginPlugin => 'Plug-in';
 
   @override

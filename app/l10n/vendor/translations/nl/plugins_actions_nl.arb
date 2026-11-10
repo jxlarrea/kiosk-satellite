@@ -10,5 +10,7 @@
   "pluginConfigureName": "{name} instellen",
   "pluginThePluginDidNotAnswerInTime": "De plug-in heeft niet op tijd geantwoord.",
   "pluginNoChoicesYetRefreshToLookForThem": "Nog geen keuzes. Vernieuw om ernaar te zoeken.",
-  "pluginThisChoiceIsNoLongerListed": "Deze keuze staat niet meer in de lijst."
+  "pluginThisChoiceIsNoLongerListed": "Deze keuze staat niet meer in de lijst.",
+  "pluginDashboardLink": "Dashboardlink",
+  "pluginDashboardLinkHint": "Gebruik deze link als tikactie van een dashboardknop."
 }

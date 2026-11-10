@@ -10,5 +10,7 @@
   "pluginConfigureName": "Настройка: {name}",
   "pluginThePluginDidNotAnswerInTime": "Плагин не ответил вовремя.",
   "pluginNoChoicesYetRefreshToLookForThem": "Вариантов пока нет. Обновите, чтобы найти их.",
-  "pluginThisChoiceIsNoLongerListed": "Этого варианта больше нет в списке."
+  "pluginThisChoiceIsNoLongerListed": "Этого варианта больше нет в списке.",
+  "pluginDashboardLink": "Ссылка на панели",
+  "pluginDashboardLinkHint": "Укажите эту ссылку в действии нажатия кнопки на панели."
 }

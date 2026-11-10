@@ -14260,6 +14260,32 @@
       ]
     }
   },
+  "pluginDashboardLink": "仪表盘链接",
+  "@pluginDashboardLink": {
+    "context": "Settings > Plugin Manager > a plugin > Actions",
+    "description": "Visible label, help or status in this section.",
+    "x-locations": {
+      "device": [
+        "Settings > Plugin Manager > a plugin > Actions"
+      ],
+      "remoteAdmin": [
+        "Plugin Manager > a plugin > Actions"
+      ]
+    }
+  },
+  "pluginDashboardLinkHint": "将仪表盘按钮的点击动作指向此链接。",
+  "@pluginDashboardLinkHint": {
+    "context": "Settings > Plugin Manager > a plugin > Actions",
+    "description": "Visible label, help or status in this section.",
+    "x-locations": {
+      "device": [
+        "Settings > Plugin Manager > a plugin > Actions"
+      ],
+      "remoteAdmin": [
+        "Plugin Manager > a plugin > Actions"
+      ]
+    }
+  },
   "pluginPlugin": "插件",
   "@pluginPlugin": {
     "context": "Settings > Plugin Manager",

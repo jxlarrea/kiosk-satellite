@@ -1012,6 +1012,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.pluginNoChoicesYetRefreshToLookForThem,
       'pluginThisChoiceIsNoLongerListed' =>
         strings.pluginThisChoiceIsNoLongerListed,
+      'pluginDashboardLink' => strings.pluginDashboardLink,
+      'pluginDashboardLinkHint' => strings.pluginDashboardLinkHint,
       'pluginPlugin' => strings.pluginPlugin,
       'pluginEnablePlugins' => strings.pluginEnablePlugins,
       'pluginPluginsAddAdditionalCommunityDevelopedFeaturesToKioskSatellite' =>

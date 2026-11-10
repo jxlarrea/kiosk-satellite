@@ -10,7 +10,7 @@ import { currentPath, showTab, subpageEntry } from './tabs.js';
 import { dashboardField } from './dashboard_picker.js';
 import { actionField, cameraViewSpec, fieldVisible, iconField, listSetting, numberControl } from './plugin_lists.js';
 import { choiceControl, refreshPluginSetup, setupButtonRow } from './plugin_setup.js';
-import { hintRow, introRow, messageBox, modalShell, showToast, swatch } from './widgets.js';
+import { copyBox, hintRow, introRow, messageBox, modalShell, showToast, swatch } from './widgets.js';
 import { SUBPAGE_ICONS, subpageIcon } from './icons.js';
 import { marked } from './vendor-marked.js';
 import DOMPurify from './vendor-purify.js';
@@ -553,7 +553,7 @@ function info(title, description = '') {
   return node;
 }
 
-function actionOptionsDialog(action, options) {
+function actionOptionsDialog(plugin, action, options) {
   return new Promise((resolve) => {
     const shell = modalShell({ title: action.title, onDismiss: () => { shell.close(); resolve(null); } });
     shell.body.append(hintRow(pluginText('To assign a gesture, open Gestures and choose Run a plugin action.')));
@@ -567,6 +567,12 @@ function actionOptionsDialog(action, options) {
       input.onchange = () => { selected[key] = input.checked; };
       const toggle = element('label', undefined, 'switch'); toggle.append(input, element('span', undefined, 'slider')); row.append(toggle); shell.body.append(row);
     }
+    // The ks:// link that runs this action (issue #1385).
+    const linkRow = element('div', undefined, 'row');
+    const linkInfo = info(pluginText('Dashboard link'), pluginText("Point a dashboard button's tap action at this link."));
+    const link = copyBox(`ks://plugin/${plugin.id}/${action.id}`);
+    link.el.style.cssText = 'width:100%; max-width:none; margin-top:8px;';
+    linkInfo.append(link.el); linkRow.append(linkInfo); shell.body.append(linkRow);
     const cancel = element('button', pluginText('Cancel'), 'btn-text'); cancel.onclick = () => { shell.close(); resolve(null); };
     const save = element('button', pluginText('Save'), 'btn-primary'); save.onclick = () => { shell.close(); resolve(selected); };
     shell.foot.append(cancel, save);
@@ -1084,7 +1090,7 @@ function render(root, state) {
         row.replaceChildren(info(action.title, [pluginText('Gestures'), options.drawer && pluginText('Kiosk drawer'), options.homeAssistant && pluginText('Home Assistant')].filter(Boolean).join(' · ')));
         const button = iconButton(t("pluginConfigureName", {name: action.title}), 'm9 5 7 7-7 7');
         button.onclick = () => run(async () => {
-          const selected = await actionOptionsDialog(action, options);
+          const selected = await actionOptionsDialog(plugin, action, options);
           if (selected) { await command('configurePluginAction', { id: plugin.id, command: action.id, ...selected }); await refresh(); }
         }, button);
         row.append(button); actions.append(row);

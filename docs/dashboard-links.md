@@ -39,6 +39,7 @@ A `ks://` link runs the same action a [gesture](gestures.md) can, with the same 
 | `ks://voice` | Starts a voice command, as if the wake word fired. Requires [Voice Satellite](voice-satellite.md) to be on. |
 | `ks://voice/stop` | Dismisses a ringing timer, or ends the voice command in progress. |
 | `ks://voice/mute` | Mutes the wake word, or unmutes it when it is muted. The same mute as the Voice Satellite **Mute** switch in Home Assistant. |
+| `ks://plugin/<plugin id>/<action id>` | Runs that [plugin](plugins.md) action, the same as its entry in the kiosk menu. Open the action on the plugin's page to copy the link from **Dashboard link**. Anything after the action ID goes to the plugin, such as a camera name in `ks://plugin/<plugin id>/<action id>/front-door`. The plugin's documentation says what it accepts. |
 | `ks://hold` | Toggles hold mode, which pins the current view. |
 | `ks://ha-kiosk` | Toggles HA kiosk mode, the Home Assistant header and sidebar. |
 | `ks://android-settings` | Opens the Android Settings app with the kiosk running behind it. |

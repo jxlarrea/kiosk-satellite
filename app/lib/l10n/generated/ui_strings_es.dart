@@ -3783,6 +3783,13 @@ class UiStringsEs extends UiStrings {
       'Esta opción ya no aparece en la lista.';
 
   @override
+  String get pluginDashboardLink => 'Enlace del panel de control';
+
+  @override
+  String get pluginDashboardLinkHint =>
+      'Usa este enlace en la acción al tocar de un botón del panel de control.';
+
+  @override
   String get pluginPlugin => 'Plugin';
 
   @override

@@ -6720,6 +6720,18 @@ abstract class UiStrings {
   /// Visible label, help or status in this section.
   ///
   /// In en, this message translates to:
+  /// **'Dashboard link'**
+  String get pluginDashboardLink;
+
+  /// Visible label, help or status in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Point a dashboard button\'s tap action at this link.'**
+  String get pluginDashboardLinkHint;
+
+  /// Visible label, help or status in this section.
+  ///
+  /// In en, this message translates to:
   /// **'Plugin'**
   String get pluginPlugin;
 

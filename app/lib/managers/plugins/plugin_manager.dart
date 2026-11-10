@@ -1068,6 +1068,7 @@ class PluginManager extends Manager implements FleetPluginHost {
       const {
         'id': 'Plugin ID',
         'command': 'Command ID from the plugin manifest',
+        'args': 'Optional list of strings the plugin receives as args',
       },
     );
     // Plugin startup must not hold up the dashboard or remote administration.

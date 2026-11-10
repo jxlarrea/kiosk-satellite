@@ -15,6 +15,12 @@
 /// for `intent://` too.
 library;
 
+/// How many arguments a `ks://plugin` link may pass after its action, and
+/// how long each may be once decoded. The native side holds plugins to the
+/// same limits.
+const maxPluginLinkArgs = 8;
+const maxPluginLinkArgLength = 256;
+
 /// The action named by a `ks://` URL, or null when [url] is not one of ours
 /// or names nothing the scheme offers.
 ///
@@ -46,6 +52,26 @@ Map<String, Object?>? kioskLinkAction(String url) {
     return args[1]!.toLowerCase() == 'video'
         ? {'type': 'intercom_video_call', 'kioskId': arg}
         : null;
+  }
+  // ks://plugin/<plugin id>/<action id> runs a plugin's declared action,
+  // like its kiosk menu entry (issue #1385). Action IDs are camelCase, so
+  // both parts keep their case. Any parts after the action go to the
+  // plugin as its arguments, such as the camera in
+  // ks://plugin/doorbell/showCamera/front-door. Only a link carries them:
+  // gestures, the menu entry and Home Assistant run an action without.
+  if (name == 'plugin') {
+    if (args.length < 2) return null;
+    final extra = args.skip(2).cast<String>().toList();
+    if (extra.length > maxPluginLinkArgs ||
+        extra.any((a) => a.length > maxPluginLinkArgLength)) {
+      return null;
+    }
+    return {
+      'type': 'plugin_action',
+      'pluginId': arg,
+      'command': args[1],
+      if (extra.isNotEmpty) 'args': extra,
+    };
   }
   if (args.length > 1) return null;
 

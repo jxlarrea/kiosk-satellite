@@ -1596,7 +1596,16 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
         val session = sessions[id] ?: throw IllegalStateException("Enable the plugin first")
         val command = args["command"] as? String ?: throw IllegalArgumentException("Missing command")
         require(session.manifest.hasCommand(command)) { "Unknown plugin command" }
-        try { session.call { session.plugin!!.execute(command, emptyMap()) } }
+        // The parts of a ks://plugin link after the action (issue #1385).
+        // Gestures, the drawer and Home Assistant send none, and the
+        // plugin then hears an empty map as before.
+        val extra = args["args"]?.let { raw ->
+            val list = raw as? List<*> ?: throw IllegalArgumentException("Invalid plugin command arguments")
+            require(list.size in 1..8 && list.all { it is String && it.length in 1..256 }) { "Invalid plugin command arguments" }
+            list.map { it as String }
+        }
+        val arguments: Map<String, Any> = if (extra == null) emptyMap() else mapOf("args" to extra)
+        try { session.call { session.plugin!!.execute(command, arguments) } }
         catch (error: Throwable) { fail(id, error); throw error }
     }
 

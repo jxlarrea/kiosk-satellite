@@ -396,7 +396,8 @@ class GesturesManager extends Manager {
   /// launchApp holds plugins to the App Launcher's apps for the same
   /// reason. Calling a kiosk is left out because a kiosk can answer on its
   /// own, which opens its microphone, and a video call also turns this
-  /// kiosk's camera on.
+  /// kiosk's camera on. A plugin action is left out so one plugin cannot
+  /// run another's actions (issue #1385).
   Future<CommandResult> runPluginKioskLink(String url) async {
     final action = kioskLinkAction(url);
     if (action == null) return const CommandResult.fail('unknown kiosk link');
@@ -404,6 +405,7 @@ class GesturesManager extends Manager {
       'android_settings',
       'intercom_call',
       'intercom_video_call',
+      'plugin_action',
     }.contains(action['type'])) {
       return const CommandResult.fail('plugins cannot open this link');
     }

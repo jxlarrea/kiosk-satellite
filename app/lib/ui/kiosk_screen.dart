@@ -2332,9 +2332,18 @@ class _KioskScreenState extends State<KioskScreen>
           c.log.warn('kiosk', 'video call link without a tap: $url');
           return NavigationActionPolicy.CANCEL;
         }
+        // A plugin action runs the way its kiosk menu entry does (issue
+        // #1385): the plugin's own screen is the sign it ran, so only a
+        // failure gets a toast, not the gesture's Ran toast as well.
         final result = video
             ? await c.commands.execute('intercomVideoCall', {
                 'id': action['kioskId'],
+              })
+            : action['type'] == 'plugin_action'
+            ? await c.commands.execute('runPluginCommand', {
+                'id': action['pluginId'],
+                'command': action['command'],
+                if (action['args'] != null) 'args': action['args'],
               })
             : await c.gestures.runGestureAction(action);
         if (!result.ok && mounted) {

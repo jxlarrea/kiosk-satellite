@@ -10,5 +10,7 @@
   "pluginConfigureName": "{name} konfigurieren",
   "pluginThePluginDidNotAnswerInTime": "Das Plugin hat nicht rechtzeitig geantwortet.",
   "pluginNoChoicesYetRefreshToLookForThem": "Noch keine Auswahl vorhanden. Aktualisiere, um danach zu suchen.",
-  "pluginThisChoiceIsNoLongerListed": "Diese Auswahl ist nicht mehr aufgeführt."
+  "pluginThisChoiceIsNoLongerListed": "Diese Auswahl ist nicht mehr aufgeführt.",
+  "pluginDashboardLink": "Dashboard-Link",
+  "pluginDashboardLinkHint": "Verwende diesen Link als Tippaktion einer Dashboard-Schaltfläche."
 }

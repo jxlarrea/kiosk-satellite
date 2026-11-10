@@ -75,6 +75,50 @@ void main() {
       expect(kioskLinkAction('ks://intercom//video'), isNull);
     });
 
+    test('a plugin link runs that plugin action', () {
+      expect(kioskLinkAction('ks://plugin/reolink-doorbell/showCamera'), {
+        'type': 'plugin_action',
+        'pluginId': 'reolink-doorbell',
+        'command': 'showCamera',
+      });
+      expect(kioskLinkAction('KS://Plugin/hello-world/showWindow/'), {
+        'type': 'plugin_action',
+        'pluginId': 'hello-world',
+        'command': 'showWindow',
+      });
+      expect(kioskLinkAction('ks://plugin'), isNull);
+      expect(kioskLinkAction('ks://plugin/hello-world'), isNull);
+      expect(kioskLinkAction('ks://plugin//showWindow'), isNull);
+    });
+
+    test('a plugin link passes the parts after the action as args', () {
+      expect(
+        kioskLinkAction('ks://plugin/reolink-doorbell/showCamera/Front%20Door'),
+        {
+          'type': 'plugin_action',
+          'pluginId': 'reolink-doorbell',
+          'command': 'showCamera',
+          'args': ['Front Door'],
+        },
+      );
+      expect(kioskLinkAction('ks://plugin/demo/run/a/b/'), {
+        'type': 'plugin_action',
+        'pluginId': 'demo',
+        'command': 'run',
+        'args': ['a', 'b'],
+      });
+      expect(kioskLinkAction('ks://plugin/demo/run/a//b'), isNull);
+      final nine = List.filled(9, 'x').join('/');
+      expect(kioskLinkAction('ks://plugin/demo/run/$nine'), isNull);
+      expect(kioskLinkAction('ks://plugin/demo/run/${'x' * 257}'), isNull);
+      expect(
+        kioskLinkAction(
+          'ks://plugin/demo/run/${List.filled(8, 'x').join('/')}',
+        ),
+        isNotNull,
+      );
+    });
+
     test('tolerates the hostless form, a trailing slash and space', () {
       expect(kioskLinkAction('ks:apps'), {'type': 'app_launcher'});
       expect(kioskLinkAction(' ks://apps/ '), {'type': 'app_launcher'});

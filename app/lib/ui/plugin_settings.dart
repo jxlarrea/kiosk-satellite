@@ -1490,6 +1490,22 @@ class _PluginSettingsState extends State<_PluginSettings> {
                           setDialogState(() => homeAssistant = value),
                     ),
                   ),
+                  // The ks:// link that runs this action (issue #1385).
+                  SettingsRow(
+                    stack: true,
+                    title: Text(pluginText(context, 'Dashboard link')),
+                    subtitle: Text(
+                      pluginText(
+                        context,
+                        "Point a dashboard button's tap action at this link.",
+                      ),
+                    ),
+                    trailing: CopyBox(
+                      value:
+                          'ks://plugin/${widget.plugin['id']}/${command['id']}',
+                      multiline: true,
+                    ),
+                  ),
                 ],
               ),
             ),

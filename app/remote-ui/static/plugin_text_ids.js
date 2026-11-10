@@ -229,5 +229,7 @@ export const pluginTextMessageIds = {
   "Most downloads": "pluginSortMostDownloads",
   "Plugins per page": "pluginPluginsPerPage",
   "Listed in Community Plugins": "pluginListedChip",
-  "Not listed in Community Plugins": "pluginNotListedChip"
+  "Not listed in Community Plugins": "pluginNotListedChip",
+  "Dashboard link": "pluginDashboardLink",
+  "Point a dashboard button's tap action at this link.": "pluginDashboardLinkHint"
 };

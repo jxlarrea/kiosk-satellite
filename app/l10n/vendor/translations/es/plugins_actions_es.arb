@@ -10,5 +10,7 @@
   "pluginConfigureName": "Configurar {name}",
   "pluginThePluginDidNotAnswerInTime": "El plugin no respondió a tiempo.",
   "pluginNoChoicesYetRefreshToLookForThem": "Todavía no hay opciones. Actualiza para buscarlas.",
-  "pluginThisChoiceIsNoLongerListed": "Esta opción ya no aparece en la lista."
+  "pluginThisChoiceIsNoLongerListed": "Esta opción ya no aparece en la lista.",
+  "pluginDashboardLink": "Enlace del panel de control",
+  "pluginDashboardLinkHint": "Usa este enlace en la acción al tocar de un botón del panel de control."
 }

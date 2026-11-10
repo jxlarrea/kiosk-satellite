@@ -10,5 +10,7 @@
   "pluginConfigureName": "配置 {name}",
   "pluginThePluginDidNotAnswerInTime": "插件未及时响应。",
   "pluginNoChoicesYetRefreshToLookForThem": "暂无选项。请刷新以查找。",
-  "pluginThisChoiceIsNoLongerListed": "此选项已不在列表中。"
+  "pluginThisChoiceIsNoLongerListed": "此选项已不在列表中。",
+  "pluginDashboardLink": "仪表盘链接",
+  "pluginDashboardLinkHint": "将仪表盘按钮的点击动作指向此链接。"
 }

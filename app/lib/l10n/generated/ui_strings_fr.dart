@@ -3787,6 +3787,13 @@ class UiStringsFr extends UiStrings {
       'Ce choix ne figure plus dans la liste.';
 
   @override
+  String get pluginDashboardLink => 'Lien du tableau de bord';
+
+  @override
+  String get pluginDashboardLinkHint =>
+      'Utilisez ce lien comme action d\'appui d\'un bouton du tableau de bord.';
+
+  @override
   String get pluginPlugin => 'Plugin';
 
   @override

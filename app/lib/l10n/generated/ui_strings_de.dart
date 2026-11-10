@@ -3805,6 +3805,13 @@ class UiStringsDe extends UiStrings {
       'Diese Auswahl ist nicht mehr aufgeführt.';
 
   @override
+  String get pluginDashboardLink => 'Dashboard-Link';
+
+  @override
+  String get pluginDashboardLinkHint =>
+      'Verwende diesen Link als Tippaktion einer Dashboard-Schaltfläche.';
+
+  @override
   String get pluginPlugin => 'Plugin';
 
   @override

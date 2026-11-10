@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Dashboard links for plugin actions (#1385).** `ks://plugin/<plugin id>/<action id>` runs a plugin action from a dashboard button, the same as its entry in the kiosk menu, so a button opens a plugin's screen on the kiosk that was tapped. Open an action on the plugin's page, on the kiosk or in the remote admin, to copy its link from **Dashboard link**. Anything after the action ID goes to the plugin, so a plugin that supports it can take a camera name or another value from the link. Plugins cannot open these links themselves. See [Dashboard Links](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/dashboard-links.md).
+
 ## v2026.11.15 - 2026-11-10
 
 ### Fixed

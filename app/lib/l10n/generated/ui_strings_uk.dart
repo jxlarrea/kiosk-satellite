@@ -3765,6 +3765,13 @@ class UiStringsUk extends UiStrings {
       'Цього варіанта більше немає в списку.';
 
   @override
+  String get pluginDashboardLink => 'Посилання на панелі';
+
+  @override
+  String get pluginDashboardLinkHint =>
+      'Вкажіть це посилання в дії натискання кнопки на панелі.';
+
+  @override
   String get pluginPlugin => 'Плагін';
 
   @override

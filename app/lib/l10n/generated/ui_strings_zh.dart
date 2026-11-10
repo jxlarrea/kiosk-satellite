@@ -3665,6 +3665,12 @@ class UiStringsZh extends UiStrings {
   String get pluginThisChoiceIsNoLongerListed => '此选项已不在列表中。';
 
   @override
+  String get pluginDashboardLink => '仪表盘链接';
+
+  @override
+  String get pluginDashboardLinkHint => '将仪表盘按钮的点击动作指向此链接。';
+
+  @override
   String get pluginPlugin => '插件';
 
   @override
@@ -19185,6 +19191,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get pluginThisChoiceIsNoLongerListed => '此选项已不在列表中。';
+
+  @override
+  String get pluginDashboardLink => '仪表盘链接';
+
+  @override
+  String get pluginDashboardLinkHint => '将仪表盘按钮的点击动作指向此链接。';
 
   @override
   String get pluginPlugin => '插件';

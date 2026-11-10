@@ -3753,6 +3753,13 @@ class UiStringsEn extends UiStrings {
       'This choice is no longer listed.';
 
   @override
+  String get pluginDashboardLink => 'Dashboard link';
+
+  @override
+  String get pluginDashboardLinkHint =>
+      'Point a dashboard button\'s tap action at this link.';
+
+  @override
   String get pluginPlugin => 'Plugin';
 
   @override
