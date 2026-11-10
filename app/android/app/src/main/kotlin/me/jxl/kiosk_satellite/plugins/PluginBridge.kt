@@ -43,6 +43,12 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
         internal const val MAX_THUMBNAIL_BYTES = 256 * 1024L
 
         /**
+         * How long a Shizuku command sent from stop() may keep running once stop() returns:
+         * the longest command timeout plus the client's watchdog margin.
+         */
+        internal const val SHIZUKU_DRAIN_MS = 40_000L
+
+        /**
          * Restart app and Exit end the process on purpose, so a startup still
          * inside its 30 seconds did not fail.
          */
@@ -326,22 +332,33 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
                 .also { cameraThread = it }
         @Synchronized fun closeCameraThread() { cameraThread?.shutdownNow(); cameraThread = null }
         private var shizukuClient: PluginShizuku.Client? = null
-        @Synchronized fun closeShizuku() { shizukuClient?.close(); shizukuClient = null }
+        /** After stop(): a command the plugin sent while stopping still finishes, then the helper closes. */
+        @Synchronized fun drainShizuku() { shizukuClient?.drain(SHIZUKU_DRAIN_MS); shizukuClient = null }
         @Synchronized fun shizukuClient(): PluginShizuku.Client {
-            check(alive.get() && "shizuku" in manifest.capabilities) { "SDK 1 shizuku access is required" }
+            check(shizukuOpen()) { "SDK 1 shizuku access is required" }
             return shizukuClient ?: shizuku.client().also { shizukuClient = it }
         }
+        /** Shizuku stays open while stop() runs, so a plugin can undo root changes such as iptables rules. */
+        private fun shizukuOpen() = (alive.get() || stopping) && "shizuku" in manifest.capabilities
         val alive = AtomicBoolean(true)
+        /** True while plugin.stop() runs. Every other host call is already revoked. */
+        @Volatile var stopping = false
         @Volatile var loader: ClassLoader? = null
         val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "plugin-$id").apply { isDaemon = true } }
         var plugin: KioskPlugin? = null
         val host = object : PluginHost {
             override fun shizukuState(): Map<String, Any> {
-                check(alive.get() && "shizuku" in manifest.capabilities) { "SDK 1 shizuku access is required" }
+                check(shizukuOpen()) { "SDK 1 shizuku access is required" }
                 return shizuku.state()
             }
             override fun executeShizuku(command: Array<String>, timeoutMs: Int, callback: PluginHost.CommandCallback) {
                 shizukuClient().execute(command, timeoutMs) { ok, data, error ->
+                    if (stopping) {
+                        // stop() holds the plugin's executor and the worker waits for it, so a result
+                        // stop() is waiting for goes straight to the plugin.
+                        try { callback.onResult(ok, data, error) } catch (_: Throwable) { /* The session is ending. */ }
+                        return@execute
+                    }
                     worker.execute {
                         if (alive.get() && sessions[id] === this@Session) {
                             try { call { callback.onResult(ok, data, error) } }
@@ -1254,9 +1271,10 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
         } else {
             startupGeneration++
             // Revoke every host before waiting for stop callbacks from individual plugins.
+            // Shizuku stays for stopSession, which opens it to each plugin's stop() and then drains it.
             sessions.forEach { (id, session) ->
                 session.alive.set(false)
-                session.closeShizuku(); session.closeCharts(); session.closeStatusTiles(); session.triggers.close(); session.actionBudget.close(); session.closeEntities(); session.closeScreensavers(); session.closePlayers(); session.overlays.close(); session.closeSetup()
+                session.closeCharts(); session.closeStatusTiles(); session.triggers.close(); session.actionBudget.close(); session.closeEntities(); session.closeScreensavers(); session.closePlayers(); session.overlays.close(); session.closeSetup()
                 emit("hideWindow", mapOf("id" to id))
             }
             for (id in sessions.keys.toList()) {
@@ -1445,7 +1463,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
     private fun stopSession(id: String) {
         val session = sessions.remove(id) ?: return
         session.alive.set(false)
-        session.closeShizuku(); session.closeCharts(); session.closeStatusTiles(); session.triggers.close(); session.actionBudget.close(); session.closeEntities(); session.closeScreensavers(); session.closePlayers(); session.overlays.close(); session.closeSetup()
+        session.stopping = true
+        session.closeCharts(); session.closeStatusTiles(); session.triggers.close(); session.actionBudget.close(); session.closeEntities(); session.closeScreensavers(); session.closePlayers(); session.overlays.close(); session.closeSetup()
         session.subscriptions.clear()
         endCamera(session, null, "closed", notifyApp = true)
         session.scan?.let { scan ->
@@ -1460,6 +1479,8 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             throw error
         }
         finally {
+            session.stopping = false
+            session.drainShizuku()
             session.executor.shutdownNow()
             session.closeCameraThread()
         }

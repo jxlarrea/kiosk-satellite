@@ -55,13 +55,15 @@ internal class PluginShizuku(private val context: Context, private val changed: 
 
     inner class Client {
         private val closed = AtomicBoolean(false)
+        /** Set once the plugin has stopped: no new commands, but one already sent may finish. */
+        private val draining = AtomicBoolean(false)
         private val busy = AtomicBoolean(false)
         private val io = Executors.newSingleThreadExecutor { task -> Thread(task, "plugin-shizuku").apply { isDaemon = true } }
         private var helper: Helper? = null
         private var lastRequest = 0L
         fun execute(command: Array<String>, timeoutMs: Int, result: (Boolean, Map<String, Any>?, String?) -> Unit) {
             PluginShizukuCommand.validate(command, timeoutMs)
-            check(!closed.get()) { "Shizuku session has ended" }
+            check(!closed.get() && !draining.get()) { "Shizuku session has ended" }
             check(busy.compareAndSet(false, true)) { "One Shizuku command may be pending per plugin" }
             val args = command.copyOf()
             synchronized(this) {
@@ -97,6 +99,16 @@ internal class PluginShizuku(private val context: Context, private val changed: 
         fun close() {
             if (!closed.compareAndSet(false, true)) return
             disconnect(); io.shutdownNow(); clients.remove(this)
+        }
+        /**
+         * Takes no new commands and closes once the command already sent has finished, so a
+         * cleanup command a plugin sends from stop() is not cut off. Closes after limitMs anyway.
+         */
+        fun drain(limitMs: Long) {
+            if (closed.get() || !draining.compareAndSet(false, true)) return
+            // io runs one task at a time, so this close waits for the command ahead of it.
+            try { io.execute { close() } } catch (_: Exception) { close(); return }
+            main.postDelayed({ close() }, limitMs)
         }
         private inner class Helper : ServiceConnection {
             private val stopped = AtomicBoolean(false)
