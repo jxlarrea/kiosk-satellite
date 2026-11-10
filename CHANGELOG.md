@@ -10,6 +10,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Fixed
 - **Plugins can undo their Shizuku changes when they stop.** Kiosk Satellite closed a plugin's Shizuku access before it called the plugin's `stop()`, so a plugin could not remove what it had set up as root, such as the iptables rules an AirPlay 2 receiver adds. Those stayed until a reboot after the plugin was turned off, updated or removed. Shizuku now stays open while `stop()` runs and a result that `stop()` waits for reaches it. A command sent from `stop()` still finishes after `stop()` returns, for up to 40 seconds.
 - **Plugin player shows an earlier track's cover after it is picked again (jxlarrea/kiosk-satellite-plugins#66).** A plugin player that sends its covers as bytes numbered them from 1 each time it became the pick, while the app keeps covers by that number until it restarts. After a plugin update, a reinstall or a switch to another player and back, the first tracks could show covers from the earlier session, in Now Playing and in the Android media session. Cover numbers no longer repeat while the app runs, and a cover that is fetched while the track changes is no longer kept under the earlier track's number.
+- **Camera view dropdown in the remote admin's Add a view dialog.** In Settings > Navigation, the dropdown that picks a camera view when adding or replacing a Compass view showed as the browser's plain control. It now looks like the other dropdowns.
 
 ## v2026.11.15 - 2026-11-10
 

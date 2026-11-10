@@ -440,6 +440,7 @@ function pickView({ title, confirm, layout, replacing = null }) {
           const holder = document.createElement('div');
           holder.className = 'compass-kind-extra';
           const select = document.createElement('select');
+          select.className = 'field';
           for (const v of views) {
             const o = document.createElement('option');
             o.value = v.id; o.textContent = v.name || v.id; o.selected = v.id === camera;

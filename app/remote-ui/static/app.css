@@ -2155,7 +2155,7 @@
 .row.is-off .name, .row.is-off .desc, .row.is-off .off-note { opacity: .55; }
 .row.is-off > :not(.info) { opacity: .5; pointer-events: none; }
 .row .off-note { margin-top: 4px; font-size: 12.5px; color: var(--muted); }
-.compass-kind-extra .dp-field, .compass-kind-extra select { width: 100%; }
+.compass-kind-extra .dp-field, .compass-kind-extra select { width: 100%; margin-bottom: 0; }
 @media (max-width: 640px) {
   .compass-styles { grid-template-columns: minmax(0, 1fr); }
   .compass-map { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; --tile-h: clamp(52px, 14cqi, 64px); }
