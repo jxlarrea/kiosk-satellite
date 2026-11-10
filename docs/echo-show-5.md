@@ -1,6 +1,8 @@
-# Echo Show 5
+# Echo Show 5 (2nd gen)
 
 This setup has been verified on a 2nd generation Echo Show 5 (`cronos`) running the [Kiosk Satellite Edition of LineageOS for the Echo Show 5](https://github.com/jxlarrea/lineageos-echo-kiosk-satellite/blob/main/docs/echo-show-5.md), a LineageOS 18.1 (Android 11) image tuned for Kiosk Satellite. It is the recommended way to run Kiosk Satellite on the Show. The image builds on [R0rt1z2](https://github.com/R0rt1z2)'s LineageOS 18.1 port, which brings the screen, camera and Bluetooth, and adds what a kiosk needs on top.
+
+The [Echo Show 5 (1st gen)](echo-show-5-1st-gen.md) from 2019 has its own image and guide.
 
 ## Why This Image
 
