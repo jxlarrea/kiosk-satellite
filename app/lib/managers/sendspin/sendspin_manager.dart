@@ -282,6 +282,13 @@ class SendspinManager extends Manager {
 
   Timer? _idleGrace;
 
+  /// Runs while a cleared queue waits to take the track off the card (see
+  /// [_syncClearedDrop]). Shorter than the pause grace above, so a track
+  /// that goes never shows as paused first.
+  Timer? _clearedGrace;
+  @visibleForTesting
+  static Duration clearedGraceTime = const Duration(seconds: 2);
+
   /// The 'playing' flag as published to the UI. Lags reality through the
   /// grace window: at the instant playback stops, a pause and a track
   /// change are indistinguishable (both are a stream/end), so the UI keeps
@@ -372,6 +379,7 @@ class SendspinManager extends Manager {
 
   void _onArtworkChanged(int seq) {
     if (seq == 0) {
+      log.debug(name, 'cover frame cleared');
       _artFrameSeq = 0;
       _artFrameFor = null;
       return;
@@ -379,6 +387,10 @@ class SendspinManager extends Manager {
     // A frame while the current URL has none of its own is that track's.
     // Otherwise it is the next track's, whose metadata follows.
     final current = _sessionArtUrl.isNotEmpty && _artFrameFor != _sessionArtUrl;
+    log.debug(
+      name,
+      'cover frame $seq arrived for the ${current ? 'current' : 'next'} track',
+    );
     _artFramesUnsent = false;
     _artFrameSeq = seq;
     _artFrameFor = current ? _sessionArtUrl : null;
@@ -420,12 +432,36 @@ class SendspinManager extends Manager {
     unawaited(_pushSessionArtwork(_sessionArtUrl, shown));
   }
 
+  /// The shown frame could not be read: the native side keeps only the
+  /// newest one and the server sent another before this one was fetched,
+  /// or a new session started. The card showed its placeholder for the
+  /// whole track (issue #1393). A newer frame no track has claimed is the
+  /// same cover sent again, so it is shown. Otherwise the URL is.
+  void _onFrameLost(String url, String source) {
+    final seq = int.tryParse(source.split('-').last) ?? 0;
+    if (_artFrameSeq != 0 && _artFrameSeq != seq && _artFrameFor == null) {
+      _artFrameFor = url;
+    } else {
+      _artFrameSeq = 0;
+      _artFrameFor = null;
+    }
+    log.info(
+      name,
+      'cover frame $seq was replaced before it was read; showing '
+      '${_artFrameFor == url ? 'frame $_artFrameSeq' : 'the cover URL'}',
+    );
+    _showSessionArt(publish: true);
+  }
+
   /// Hand the local stream's cover to the native media session, which
   /// cannot fetch it itself: the Music Assistant image proxy is often
   /// self-signed, and [fetchArtwork] knows which hosts to trust.
   Future<void> _pushSessionArtwork(String url, String source) async {
     final bytes = await loadArtwork(source);
     if (url != _sessionArtUrl || source != _sessionArtShown) return;
+    if (source != url && (bytes == null || bytes.isEmpty)) {
+      return _onFrameLost(url, source);
+    }
     if (source == url && bytes != null) _sessionArtLoaded = true;
     try {
       await _channel.invokeMethod('setArtwork', {'url': url, 'bytes': bytes});
@@ -1163,8 +1199,11 @@ class SendspinManager extends Manager {
       switch (call.method) {
         case 'stateChanged':
           // A new connection may be to a server that sends frames.
+          // It also holds no frame yet, whatever the last one left.
           if (map['connected'] == true && _status['connected'] != true) {
             _artFramesUnsent = false;
+            _artFrameSeq = 0;
+            _artFrameFor = null;
           }
           _status = {..._status, ...map};
           _remoteMediaChanged();
@@ -1270,6 +1309,7 @@ class SendspinManager extends Manager {
               };
             }
             _syncQueuePoll();
+            _syncClearedDrop();
             if (!playing) unawaited(_watcher?.refresh());
             // Announce local playback outside full-screen player mode.
             // Screensavers allow this music behind their configured view.
@@ -2763,6 +2803,7 @@ class SendspinManager extends Manager {
     _restartDebounce?.cancel();
     _pausedHoldTimer?.cancel();
     _queuePoll?.cancel();
+    _clearedGrace?.cancel();
     final watcher = _watcher;
     _watcher = null;
     await watcher?.stop();
@@ -3010,6 +3051,7 @@ class SendspinManager extends Manager {
     _watcher = null;
     _watchSig = '';
     _localQueueSnapshot = null;
+    _syncClearedDrop();
     _syncWithheld();
     if (old != null) unawaited(old.stop());
     _syncQueuePoll();
@@ -3034,16 +3076,8 @@ class SendspinManager extends Manager {
     if (_remote == null && nowPlaying.value != null) {
       _setNowPlaying(nowPlaying.value);
     }
-    if (snapshot == null) {
-      // The queue cleared in Music Assistant: the stream merely ended,
-      // which read as a pause, and the last track sat on the card and
-      // the view with controls that had nothing left to act on.
-      if (_watcher!.queueEmpty && !_playing && nowPlaying.value != null) {
-        log.info(name, 'queue cleared in Music Assistant; track dropped');
-        _dropStoppedTrack();
-      }
-      return;
-    }
+    _syncClearedDrop();
+    if (snapshot == null) return;
     _rebaseFromQueue(snapshot);
     final shuffle = snapshot['shuffle'] == true;
     if (shuffle != (_status['shuffle'] == true)) {
@@ -3068,6 +3102,35 @@ class SendspinManager extends Manager {
       _watchSig = sig;
       if (!first && queueOpen) unawaited(refreshQueue());
     }
+  }
+
+  /// Whether Music Assistant says nothing is left to play while the
+  /// local stream is stopped with a track still on the card.
+  bool get _queueCleared =>
+      _remote == null &&
+      _watcher?.queueEmpty == true &&
+      !_playing &&
+      nowPlaying.value != null;
+
+  /// The queue cleared in Music Assistant: the stream merely ended, which
+  /// read as a pause, and the last track sat on the card and the view
+  /// with controls that had nothing left to act on. The track goes once
+  /// that has held for [clearedGraceTime]. A player also reads idle with
+  /// no queue for a moment while a stream starts or the source changes,
+  /// and dropping the track then took a playing track's title and cover
+  /// off the card until the next track (issue #1393).
+  void _syncClearedDrop() {
+    if (!_queueCleared) {
+      _clearedGrace?.cancel();
+      _clearedGrace = null;
+      return;
+    }
+    _clearedGrace ??= Timer(clearedGraceTime, () {
+      _clearedGrace = null;
+      if (!_queueCleared) return;
+      log.info(name, 'queue cleared in Music Assistant; track dropped');
+      _dropStoppedTrack();
+    });
   }
 
   /// Keep the queue poll running exactly while the local player plays

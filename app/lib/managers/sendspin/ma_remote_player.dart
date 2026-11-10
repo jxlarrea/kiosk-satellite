@@ -158,6 +158,13 @@ class MaRemotePlayer implements RemotePlayer {
   String _ownerId = '';
   Map? _owner;
 
+  /// The player a live source plays on while it is not this one or its
+  /// owner: the group or the sync leader this player plays with. Music
+  /// Assistant lists the source, and what it can do, on that player alone
+  /// (issue #1393).
+  String _sourceHolderId = '';
+  Map? _sourceHolder;
+
   /// The server's provider names by instance id, read once a connection
   /// is up, for the audio quality to name its source.
   Map<String, String> _providerNames = const {};
@@ -243,6 +250,7 @@ class MaRemotePlayer implements RemotePlayer {
         _readMembers(player);
         await _readGroup(session, player);
         await _readOwner(session, player);
+        await _readSourceHolder(session, player);
       }
     } catch (e) {
       log.warn(_name, '$label player lookup failed: $e');
@@ -275,6 +283,33 @@ class MaRemotePlayer implements RemotePlayer {
 
   @visibleForTesting
   set ownerId(String id) => _ownerId = id;
+
+  /// The id of the player holding the live source [player] plays, or
+  /// empty when it holds the source itself, its owner does or it plays
+  /// none. Music Assistant names it as the media's source.
+  String _sourceHolderOf(Map player) {
+    final media = player['current_media'];
+    if (media is! Map || media['media_type'] != 'audio_source') return '';
+    final id = '${media['source_id'] ?? ''}';
+    return id == playerId || id == _ownerId ? '' : id;
+  }
+
+  /// Follow the player that holds the live source [player] plays (see
+  /// [_sourceHolderId]), read again on every refresh.
+  Future<void> _readSourceHolder(MaSession session, Map player) async {
+    final id = _sourceHolderOf(player);
+    if (id != _sourceHolderId) {
+      _sourceHolderId = id;
+      _sourceHolder = null;
+    }
+    if (id.isEmpty) return;
+    try {
+      final holder = await session.send('players/get', {'player_id': id});
+      _sourceHolder = holder is Map ? holder : null;
+    } catch (e) {
+      log.warn(_name, '$label source holder lookup failed: $e');
+    }
+  }
 
   /// The id of the player in [players] that plays through [protocolId] as
   /// one of its output protocols, or empty when none does.
@@ -614,6 +649,8 @@ class MaRemotePlayer implements RemotePlayer {
     _player = null;
     _owner = null;
     _ownerId = '';
+    _sourceHolder = null;
+    _sourceHolderId = '';
     _queue = null;
     _queueId = '';
     _groupLeader = '';
@@ -627,6 +664,14 @@ class MaRemotePlayer implements RemotePlayer {
 
   @visibleForTesting
   void handleEvent(String event, String objectId, Object? data) {
+    // The holder of a live source can also be the group leader, so its
+    // update is kept here, ahead of the cases below.
+    final holderUpdate =
+        event == 'player_updated' &&
+        objectId == _sourceHolderId &&
+        _sourceHolderId.isNotEmpty &&
+        data is Map;
+    if (holderUpdate) _sourceHolder = data;
     switch (event) {
       case 'queue_updated' when objectId == _queueId && _queueId.isNotEmpty:
         // The event's payload is the full queue dict; no round trip.
@@ -695,6 +740,9 @@ class MaRemotePlayer implements RemotePlayer {
         _queue = null;
         _queueId = '';
         _emit(null);
+    }
+    if (holderUpdate && (_usingPlayerMedia || _hasExternalSource)) {
+      _publishSnapshot(preservePosition: true);
     }
   }
 
@@ -845,13 +893,19 @@ class MaRemotePlayer implements RemotePlayer {
       });
       return;
     }
-    if (player == null ||
-        input != null ||
-        player['available'] == false ||
-        media is! Map ||
-        title.isEmpty ||
-        !active) {
-      queueEmpty = player != null;
+    final shown =
+        player != null &&
+        input == null &&
+        player['available'] != false &&
+        media is Map &&
+        title.isNotEmpty;
+    if (!shown || !active) {
+      // A live source keeps the player while it is paused and between
+      // two streams, where the player reads idle with the source's media
+      // still on it. Nothing was cleared, so the local player's track
+      // stays (issue #1393).
+      final held = shown && media['media_type'] == 'audio_source';
+      queueEmpty = player != null && !held;
       _emit(null);
       return;
     }
@@ -869,9 +923,10 @@ class MaRemotePlayer implements RemotePlayer {
     final durationMs = duration is num ? (duration * 1000).round() : 0;
     position = max(0, durationMs > 0 ? min(position, durationMs) : position);
     // A protocol player lists no sources of its own: its owner's list
-    // says what the source can do.
+    // says what the source can do. A source playing on a group or a sync
+    // leader is listed there instead.
     Map? source;
-    for (final holder in [player, _owner]) {
+    for (final holder in [player, _owner, _sourceHolder]) {
       if (holder?['source_list'] case final List sources) {
         for (final item in sources) {
           if (item is Map && item['id'] == player['active_source']) {

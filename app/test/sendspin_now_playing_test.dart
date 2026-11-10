@@ -832,6 +832,70 @@ void main() {
       expect(pulls(), hasLength(3));
     });
 
+    test('a frame gone before it is read gives way (#1393)', () async {
+      await build(
+        extra: {
+          'ks.sendspin.player': '',
+          'ks.sendspin.player_source': '',
+          'ks.sendspin.enabled': true,
+        },
+      );
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      // The native side keeps only its newest frame.
+      var held = 0;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'artworkFrame') {
+          final seq = (call.arguments as Map)['seq'] as int;
+          return seq == held ? Uint8List.fromList([seq]) : null;
+        }
+        return true;
+      });
+      final asked = <String>[];
+      sendspin.artworkFetcher = (url) async {
+        if (url.startsWith(SendspinManager.artworkFrameScheme)) {
+          return sendspin.fetchArtwork(url);
+        }
+        asked.add(url);
+        return Uint8List.fromList([7]);
+      };
+      const codec = StandardMethodCodec();
+      Future<void> fromNative(String method, Map<String, Object?> args) =>
+          messenger.handlePlatformMessage(
+            channel.name,
+            codec.encodeMethodCall(MethodCall(method, args)),
+            (_) {},
+          );
+      String? shown() => sendspin.nowPlaying.value?['artworkUrl'] as String?;
+      Matcher frame(int seq) =>
+          matches(RegExp('^sendspin-artwork:[0-9a-z]+-$seq\$'));
+      await fromNative('playingChanged', {'playing': true});
+      // The server sends the cover twice and the second lands before the
+      // first is read: the second is shown.
+      held = 2;
+      await fromNative('metadataChanged', {
+        'title': 'A',
+        'artworkUrl': 'https://cdn/a.jpg',
+      });
+      final first = fromNative('artworkChanged', {'seq': 1});
+      final second = fromNative('artworkChanged', {'seq': 2});
+      await first;
+      await second;
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(shown(), frame(2));
+      expect(asked, isEmpty);
+      // A frame the native side no longer holds at all: the URL.
+      held = 0;
+      await fromNative('artworkChanged', {'seq': 3});
+      await fromNative('metadataChanged', {
+        'title': 'B',
+        'artworkUrl': 'https://cdn/b.jpg',
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(shown(), 'https://cdn/b.jpg');
+      expect(asked, ['https://cdn/b.jpg']);
+    });
+
     test('a server that sends no frames gets the URL after one wait', () async {
       await build(
         extra: {
@@ -1531,10 +1595,17 @@ void main() {
         // A connection blip is not a cleared queue.
         fake!.onSnapshot(null);
         expect(sendspin.nowPlaying.value, isNotNull);
-        // The stream ends and the server says the queue is empty.
+        // The stream ends and the server says the queue is empty. The
+        // track goes once that has held for the grace time.
+        SendspinManager.clearedGraceTime = const Duration(milliseconds: 60);
+        addTearDown(
+          () => SendspinManager.clearedGraceTime = const Duration(seconds: 2),
+        );
         await fromNative('playingChanged', {'playing': false});
         fake!.queueEmpty = true;
         fake!.onSnapshot(null);
+        expect(sendspin.nowPlaying.value, isNotNull);
+        await Future<void>.delayed(const Duration(milliseconds: 120));
         expect(sendspin.nowPlaying.value, isNull);
         expect(sendspin.fullscreenActive.value, isFalse);
         // The next native event does not conjure the old track back.
@@ -1542,6 +1613,51 @@ void main() {
         expect(sendspin.nowPlaying.value, isNull);
       },
     );
+
+    test('a player idle for a moment keeps its track (#1393)', () async {
+      // A stream starting or a source changing reads as an empty queue
+      // for a moment. The track stays when playback or a queue follows.
+      await build(
+        extra: {
+          'ks.sendspin.player': '',
+          'ks.sendspin.player_source': '',
+          'ks.sendspin.enabled': true,
+          'ks.sendspin.client_id': 'abc123',
+        },
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (call) async => true);
+      const codec = StandardMethodCodec();
+      Future<void> fromNative(String method, Map<String, Object?> args) =>
+          messenger.handlePlatformMessage(
+            channel.name,
+            codec.encodeMethodCall(MethodCall(method, args)),
+            (_) {},
+          );
+      SendspinManager.clearedGraceTime = const Duration(milliseconds: 60);
+      addTearDown(
+        () => SendspinManager.clearedGraceTime = const Duration(seconds: 2),
+      );
+      await fromNative('stateChanged', {'connected': true});
+      await fromNative('metadataChanged', {'title': 'Song'});
+      await fromNative('playingChanged', {'playing': true});
+      // Playback comes back inside the grace time.
+      await fromNative('playingChanged', {'playing': false});
+      fake!.queueEmpty = true;
+      fake!.onSnapshot(null);
+      await fromNative('playingChanged', {'playing': true});
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      expect(sendspin.nowPlaying.value?['title'], 'Song');
+      // The server finds the queue again inside the grace time.
+      await fromNative('playingChanged', {'playing': false});
+      fake!.onSnapshot(null);
+      fake!.queueEmpty = false;
+      fake!.onSnapshot({'title': 'Song', 'playing': false});
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      expect(sendspin.nowPlaying.value?['title'], 'Song');
+    });
 
     test('the menu entry brings a paused track up held', () async {
       // Paused with the dashboard up, then the kiosk menu's Now Playing:

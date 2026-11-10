@@ -313,6 +313,147 @@ void main() {
       },
     );
   }
+  group('a live source on a group (#1393)', () {
+    // A sync group member publishes the group's source and media, while
+    // Music Assistant lists the source on the group player alone.
+    const uri = 'spotify_connect://audio_source/main';
+    Map<String, Object?> member({String state = 'playing'}) {
+      final player = {
+        ..._player(state: state),
+        'type': 'protocol',
+        'active_source': uri,
+        'source_list': const [],
+      };
+      (player['current_media'] as Map)
+        ..['media_type'] = 'audio_source'
+        ..['source_id'] = 'syncgroup_1';
+      return player;
+    }
+
+    Map<String, Object?> groupPlayer({bool transport = true}) => {
+      'player_id': 'syncgroup_1',
+      'type': 'group',
+      'source_list': [
+        {
+          'id': 'syncgroup_1',
+          'can_play_pause': false,
+          'can_next_previous': false,
+          'can_seek': false,
+        },
+        {
+          'id': uri,
+          'can_play_pause': transport,
+          'can_next_previous': transport,
+          'can_seek': false,
+        },
+      ],
+    };
+
+    const full = ['stop', 'play', 'pause', 'next', 'previous', 'volume'];
+
+    Future<HttpServer> serve(
+      List<String> asked, {
+      required bool grouped,
+    }) async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      server.listen((request) async {
+        final socket = await WebSocketTransformer.upgrade(request);
+        socket.listen((message) {
+          final call = jsonDecode(message as String) as Map;
+          final command = '${call['command']}';
+          final id = (call['args'] as Map?)?['player_id'];
+          asked.add(id == null ? command : '$command $id');
+          final Object? result = switch (command) {
+            'players/get' when id == 'p1' =>
+              grouped ? member() : {..._player(), 'type': 'player'},
+            'players/get' when id == 'syncgroup_1' => groupPlayer(),
+            'players/all' => [member(), groupPlayer()],
+            _ => null,
+          };
+          socket.add(
+            jsonEncode({'message_id': call['message_id'], 'result': result}),
+          );
+        });
+      });
+      return server;
+    }
+
+    test('takes what the source can do from the group', () async {
+      final asked = <String>[];
+      final server = await serve(asked, grouped: true);
+      final ready = Completer<void>();
+      await remote.stop();
+      remote = MaRemotePlayer(
+        baseUrl: 'http://127.0.0.1:${server.port}',
+        token: 'test',
+        playerId: 'p1',
+        log: Logger(),
+        onSnapshot: (snap) {
+          emitted.add(snap);
+          if (snap != null && !ready.isCompleted) ready.complete();
+        },
+      );
+      try {
+        remote.start();
+        await ready.future.timeout(const Duration(seconds: 5));
+        expect(asked, contains('players/get syncgroup_1'));
+        expect(emitted.last!['title'], 'Hey Jude');
+        expect(emitted.last!['supportedCommands'], full);
+        // The group's own update changes what the source can do.
+        remote.handleEvent(
+          'player_updated',
+          'syncgroup_1',
+          groupPlayer(transport: false),
+        );
+        expect(emitted.last!['supportedCommands'], ['stop', 'volume']);
+        remote.handleEvent('player_updated', 'syncgroup_1', groupPlayer());
+        expect(emitted.last!['supportedCommands'], full);
+      } finally {
+        await remote.stop();
+        await server.close(force: true);
+      }
+    });
+
+    test('a player holding its own source asks nobody else', () async {
+      final asked = <String>[];
+      final server = await serve(asked, grouped: false);
+      final ready = Completer<void>();
+      await remote.stop();
+      remote = MaRemotePlayer(
+        baseUrl: 'http://127.0.0.1:${server.port}',
+        token: 'test',
+        playerId: 'p1',
+        log: Logger(),
+        onSnapshot: (snap) {
+          emitted.add(snap);
+          if (snap != null && !ready.isCompleted) ready.complete();
+        },
+      );
+      try {
+        remote.start();
+        await ready.future.timeout(const Duration(seconds: 5));
+        expect(asked, isNot(contains('players/get syncgroup_1')));
+      } finally {
+        await remote.stop();
+        await server.close(force: true);
+      }
+    });
+
+    test('idle between two streams is not a cleared queue', () {
+      remote.publishQueue(null);
+      update(member());
+      expect(emitted.last!['title'], 'Hey Jude');
+      // The stream ended while the source still holds the player.
+      update(member(state: 'idle'));
+      expect(emitted.last, isNull);
+      expect(remote.queueEmpty, isFalse);
+      // The source let go: the media is the player's own again.
+      update({...member(state: 'idle'), 'current_media': null});
+      expect(emitted.last, isNull);
+      expect(remote.queueEmpty, isTrue);
+    });
+  });
+
   group('a protocol player', () {
     // A Sendspin client under a universal player lists no sources: the
     // universal player that names it among its output protocols does.

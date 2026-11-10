@@ -238,6 +238,14 @@ public:
     std::vector<uint8_t> art_next;
     std::vector<uint8_t> art_frame;
     int32_t art_seq = 0;
+
+    // Frame numbers never repeat while the app runs: Dart keeps covers by
+    // number for as long, and a session that counted from 1 again got an
+    // earlier session's cover for its own (issue #1393).
+    static int32_t next_art_seq() {
+        static std::atomic<int32_t> counter{0};
+        return ++counter;
+    }
     int64_t paused_at_us = 0;  // steady clock, when the last paused report landed
 
     // How far a resume may land from the paused position and still be taken
@@ -461,9 +469,12 @@ public:
         int32_t seq;
         {
             std::lock_guard<std::mutex> lock(this->art_mutex);
+            // A display with no decode since the last one shows the frame
+            // already up. Swapping would empty it under its number.
+            if (this->art_next.empty()) return;
             this->art_frame = std::move(this->art_next);
             this->art_next = {};
-            seq = ++this->art_seq;
+            seq = this->art_seq = next_art_seq();
         }
         this->notify_artwork(seq);
     }
@@ -474,7 +485,7 @@ public:
             std::lock_guard<std::mutex> lock(this->art_mutex);
             this->art_frame = {};
             this->art_next = {};
-            ++this->art_seq;
+            this->art_seq = next_art_seq();
         }
         this->notify_artwork(0);
     }
