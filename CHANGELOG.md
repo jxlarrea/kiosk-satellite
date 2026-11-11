@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.16 - 2026-11-10
 
 ### Added
 - **Fuller sound on the Echo Dot.** On the Kiosk Satellite Edition image, the Echo Dot now starts with an equalizer preset for its speaker, which is weak from 300 to 500 Hz and loud around 3 kHz: 100 Hz at +1 dB, 300 Hz at +2 dB, 1 kHz at -3 dB, 3 kHz at -7 dB and 10 kHz at -1 dB, with Automatic preamp off. With the preset the media volume goes to 85% and the intercom volume to 100%, the levels recommended next to a master and assistant volume of 100%. A fresh install starts this way and a Dot that updates gets the preset and the volumes once, as long as its equalizer was never set. Any change made afterwards stays.
