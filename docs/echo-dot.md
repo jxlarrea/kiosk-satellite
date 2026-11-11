@@ -58,7 +58,11 @@ Each model also has its own stop word, so **Stop word interruption** works as it
 
 ## Volume
 
-The image removes the speaker's sound from the Dot's microphones while music plays, so the wake word works at any media volume, up to 100%. Keep the **Master volume** on the **Audio** page at 100%, which leaves the assistant, alarms and intercom at full strength, and set the media volume as you like.
+Keep the **Master volume** on the **Audio** page at 100%, the assistant and intercom volumes at 100% and the media volume at 85%. A fresh install starts at these levels and a Dot that updates moves to them once, together with the equalizer preset below. The image removes the speaker's sound from the Dot's microphones while music plays, so the wake word works at any media volume, up to 100%.
+
+## Equalizer
+
+The Dot's small speaker is weak from 300 to 500 Hz and loud around 3 kHz, which sounds thin. Kiosk Satellite turns the [Equalizer](equalizer.md) on for the Dot with a preset that corrects it: 100 Hz at +1 dB, 300 Hz at +2 dB, 1 kHz at -3 dB, 3 kHz at -7 dB and 10 kHz at -1 dB, with **Automatic preamp** off so the Dot keeps its volume. The preset and the volumes above are set once, on a fresh install or on the first start of a version that has them. Change the bands, the volumes or turn the equalizer off under **Audio > Equalizer** in the remote admin and your setting stays.
 
 ## The Buttons
 

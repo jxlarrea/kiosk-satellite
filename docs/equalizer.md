@@ -42,6 +42,10 @@ The equalizer does not affect [echo cancellation](microphone.md). It runs before
 
 Distortion in the device's own amplifier is the one thing that does hurt echo cancellation, because the canceller cannot see it. Automatic preamp prevents that as well.
 
+## Echo Dot
+
+On the [Echo Dot](echo-dot.md) image the equalizer starts on, with a preset for the Dot's speaker and Automatic preamp off. The bands are yours to change from there.
+
 ## Fleet Management
 
 The equalizer settings stay on each device. [Fleet Management](fleet.md) does not sync them, since they correct one device's speaker.

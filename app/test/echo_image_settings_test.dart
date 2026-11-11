@@ -129,6 +129,101 @@ void main() {
     });
   }
 
+  group('the Echo Dot\'s equalizer', () {
+    Map<String, Object> equalizer() => {
+      for (final def in [
+        defs.equalizerEnabled,
+        ...defs.equalizerBands,
+        defs.equalizerPreamp,
+      ])
+        def.key: settings.get(def),
+    };
+    const preset = {
+      'audio.equalizer_enabled': true,
+      'audio.equalizer_bass': 1,
+      'audio.equalizer_low_mid': 2,
+      'audio.equalizer_mid': -3,
+      'audio.equalizer_high_mid': -7,
+      'audio.equalizer_treble': -1,
+      'audio.equalizer_preamp': false,
+    };
+
+    test('starts with the preset and its volumes on a fresh install', () async {
+      await boot({}, 'biscuit', 'biscuit');
+      expect(equalizer(), preset);
+      expect(settings.get(defs.mediaVolume), 85);
+      expect(settings.get(defs.intercomVolume), 100);
+      expect(settings.get(defs.assistantVolume), 100);
+      expect(settings.internal(EchoImageSettings.equalizerMarker), 'biscuit');
+    });
+
+    test('an update moves a Dot to the preset and its volumes', () async {
+      await boot(
+        {'ks.audio.media_volume': 100, 'ks.audio.intercom_volume': 60},
+        'biscuit',
+        'biscuit',
+      );
+      expect(equalizer(), preset);
+      expect(settings.get(defs.mediaVolume), 85);
+      expect(settings.get(defs.intercomVolume), 100);
+    });
+
+    test('an equalizer set before stays as it was, volumes too', () async {
+      await boot(
+        {
+          'ks.audio.equalizer_enabled': true,
+          'ks.audio.equalizer_mid': 4,
+          'ks.audio.media_volume': 40,
+        },
+        'biscuit',
+        'biscuit',
+      );
+      expect(settings.get(defs.mediaVolume), 40);
+      expect(settings.get(defs.intercomVolume), 60);
+      expect(settings.get(defs.equalizerBand3), 4);
+      expect(settings.get(defs.equalizerBand4), 0);
+      expect(settings.get(defs.equalizerPreamp), isTrue);
+    });
+
+    test('turned off afterwards, it stays off on the next start', () async {
+      await boot({}, 'biscuit', 'biscuit');
+      await settings.set(defs.mediaVolume, 50);
+      await settings.set(defs.equalizerEnabled, false);
+      for (final band in defs.equalizerBands) {
+        await settings.set(band, 0);
+      }
+      await pins!.dispose();
+      pins = EchoImageSettings(
+        settings,
+        bus,
+        log,
+        updater: () async => 'biscuit',
+        codename: () async => 'biscuit',
+      );
+      await pins!.init();
+      expect(settings.get(defs.equalizerEnabled), isFalse);
+      expect(settings.get(defs.equalizerBand4), 0);
+      expect(settings.get(defs.mediaVolume), 50);
+    });
+
+    test('the Echo Shows and other devices stay flat and off', () async {
+      for (final (updater, codename) in [
+        ('echo', 'crown'),
+        ('echo', 'athena'),
+        ('echo', 'cronos'),
+        ('echo', 'checkers'),
+        (null, 'biscuit'),
+      ]) {
+        await boot({}, updater, codename);
+        expect(settings.get(defs.equalizerEnabled), isFalse, reason: codename);
+        expect(settings.get(defs.equalizerBand4), 0, reason: codename);
+        expect(settings.get(defs.mediaVolume), 100, reason: codename);
+        expect(settings.get(defs.intercomVolume), 60, reason: codename);
+        await pins!.dispose();
+      }
+    });
+  });
+
   test('any other device keeps a gain set before', () async {
     await boot({'ks.audio.mic_gain_db': 5}, null);
     expect(settings.get(defs.micGainDb), 5);
