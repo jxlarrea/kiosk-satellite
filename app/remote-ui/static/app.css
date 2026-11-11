@@ -1742,6 +1742,26 @@
 .dp-pick-row + .dp-pick-row, .dp-pick-row + .dp-add-row { border-top: 1px solid var(--divider); }
 .dp-pick-row { padding: 10px 0; }
 
+/* An orderable rotation row (a picked view or an external page). A mouse
+   drags it by any part, a finger by the handle: the handle takes the
+   touch for itself and the rest of the row still scrolls the page. The
+   handle's padding gives a finger a 40 px target without moving the row's
+   layout. While a row is dragged it floats over the others, which slide
+   out of its way. A phone drops the arrows, which would leave no room for
+   the row's own text, and reorders by the handle alone. A long address
+   wraps its own text there and the remove button stays on its line. */
+.order-row { cursor: grab; }
+.order-row.order-shift { transition: transform .15s ease; }
+.order-row.dragging { position: relative; z-index: 2; cursor: grabbing;
+  user-select: none; -webkit-user-select: none; background: var(--surface-high);
+  border-radius: 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, .22); }
+.order-handle { touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; box-sizing: content-box; padding: 8px; margin: -8px; }
+@media (max-width: 640px) {
+  .order-row .order-arrow { display: none; }
+  .row.rotation-url-row .info .name { flex-basis: 0; }
+}
+
 /* The rotation's external page field: the input and Add share one line. */
 .rotation-url-controls { flex: 1 1 auto; display: flex; gap: 8px; min-width: 0; }
 .row.rotation-url-add .rotation-url-controls input.field { flex: 1 1 0; width: auto;

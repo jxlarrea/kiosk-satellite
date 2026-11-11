@@ -727,11 +727,13 @@ export function dashboardViewRow({ name, desc, value, title = name, onPick }) {
 
 // One stored view as a list row (the rotation's picks): glyph, title, then
 // the dashboard and path. The bare path stands in until the dashboards
-// load, or when the view is gone.
-export function dashboardViewListRow(value, trailing) {
+// load, or when the view is gone. A leading element sits ahead of the
+// glyph: the drag handle of an orderable list.
+export function dashboardViewListRow(value, trailing, leading) {
   const row = el('div', 'dp-pick-row');
   const paint = () => {
     row.replaceChildren();
+    if (leading) row.appendChild(leading);
     const m = matchDashboard(catalog, value);
     if (m) {
       row.appendChild(square(m.dashboard, m.view));

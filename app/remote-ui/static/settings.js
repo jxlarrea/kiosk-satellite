@@ -10,7 +10,7 @@ import {
   toggleRow,
   updateMicChannelRow,
 } from './audio.js';
-import { MIC_GROUP_NOTE, cameraAction, exportFileName } from './cameras.js';
+import { MIC_GROUP_NOTE, cameraAction, cameraIcon, exportFileName } from './cameras.js';
 import { $, api, cacheSettings, cmd, depSatisfied, state, syncOffRows } from './core.js';
 import { readOnlyRow, renderAnalyticsIntro, renderUpdateHelper, renderUpdateSourceDocs } from './device.js';
 import { adbHint, permissionSpecs } from './permissions.js';
@@ -2331,9 +2331,133 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
             renderFadeSettings();
             rcard.appendChild(fadeSettings);
           }
-          // The picked views in rotation order, each with a remove button,
-          // then the row that opens the picker to add more. Saved in place:
-          // no full re-render, the page stays put.
+          // Both lists are in rotation order. With two or more rows, a row
+          // reorders by a drag or by its arrows. A lone row gets only its
+          // remove button. A mouse drags a row by any part of it. A finger
+          // drags it by the handle, so a touch anywhere else on the row
+          // still scrolls the page: the browser's own drag and drop never
+          // starts from a touch. The other rows slide out of the way and
+          // the drop saves the new order.
+          const moved = (list, from, to) => {
+            const next = list.slice();
+            next.splice(to, 0, next.splice(from, 1)[0]);
+            return next;
+          };
+          const scrollParent = (el) => {
+            for (let p = el.parentElement; p; p = p.parentElement) {
+              const flow = getComputedStyle(p).overflowY;
+              if ((flow === 'auto' || flow === 'scroll') && p.scrollHeight > p.clientHeight) return p;
+            }
+            return document.scrollingElement;
+          };
+          const orderable = (row, handle, index, move) => {
+            row.classList.add('order-row');
+            let drag = null;
+            // The dragged row follows the pointer. It takes the place of
+            // every row whose middle it has passed, and the rows between
+            // shift by its height.
+            const place = () => {
+              const dy = drag.y - drag.startY + drag.scroller.scrollTop - drag.startScroll;
+              row.style.transform = `translateY(${dy}px)`;
+              const center = drag.tops[index] + drag.heights[index] / 2 + dy;
+              let to = index;
+              drag.rows.forEach((_, i) => {
+                const middle = drag.tops[i] + drag.heights[i] / 2;
+                if (i < index && center < middle) to = Math.min(to, i);
+                if (i > index && center > middle) to = Math.max(to, i);
+              });
+              drag.to = to;
+              drag.rows.forEach((other, i) => {
+                if (i === index) return;
+                const shift = i >= to && i < index ? drag.heights[index]
+                  : i > index && i <= to ? -drag.heights[index] : 0;
+                other.style.transform = shift ? `translateY(${shift}px)` : '';
+              });
+            };
+            // A row held near the top or bottom edge scrolls a long list.
+            const edge = () => {
+              if (!drag) return;
+              const s = drag.scroller;
+              const box = s === document.scrollingElement
+                ? { top: 0, bottom: window.innerHeight } : s.getBoundingClientRect();
+              const step = drag.y < box.top + 56 ? -8 : drag.y > box.bottom - 56 ? 8 : 0;
+              if (step) { s.scrollTop += step; place(); }
+              drag.frame = requestAnimationFrame(edge);
+            };
+            const begin = () => {
+              drag.active = true;
+              row.classList.add('dragging');
+              drag.rows.forEach((other) => { if (other !== row) other.classList.add('order-shift'); });
+              window.getSelection()?.removeAllRanges();
+              drag.frame = requestAnimationFrame(edge);
+            };
+            const finish = (drop) => {
+              if (!drag) return;
+              const d = drag;
+              drag = null;
+              cancelAnimationFrame(d.frame);
+              row.classList.remove('dragging');
+              d.rows.forEach((other) => {
+                other.classList.remove('order-shift');
+                other.style.transform = '';
+              });
+              if (row.hasPointerCapture(d.id)) row.releasePointerCapture(d.id);
+              if (drop && d.active && d.to !== index) move(index, d.to);
+            };
+            row.addEventListener('pointerdown', (e) => {
+              if (drag || e.button !== 0) return;
+              const finger = e.pointerType !== 'mouse';
+              if (finger ? !handle.contains(e.target) : e.target.closest('button, input, a')) return;
+              const rows = [...row.parentElement.children]
+                .filter((el) => el.classList.contains('order-row'));
+              const boxes = rows.map((el) => el.getBoundingClientRect());
+              const scroller = scrollParent(row);
+              drag = { id: e.pointerId, rows, tops: boxes.map((b) => b.top),
+                heights: boxes.map((b) => b.height), startY: e.clientY, y: e.clientY,
+                scroller, startScroll: scroller.scrollTop, to: index, active: false };
+              row.setPointerCapture(e.pointerId);
+              // A finger on the handle means a drag. A mouse press becomes
+              // one once it moves, so a plain click stays a click.
+              if (finger) begin();
+            });
+            row.addEventListener('pointermove', (e) => {
+              if (!drag || e.pointerId !== drag.id) return;
+              drag.y = e.clientY;
+              if (!drag.active) {
+                if (Math.abs(drag.y - drag.startY) < 4) return;
+                begin();
+              }
+              place();
+            });
+            row.addEventListener('pointerup', (e) => { if (drag && e.pointerId === drag.id) finish(true); });
+            row.addEventListener('pointercancel', (e) => { if (drag && e.pointerId === drag.id) finish(false); });
+            row.addEventListener('selectstart', (e) => { if (drag) e.preventDefault(); });
+          };
+          const orderHandle = () => {
+            const handle = document.createElement('span');
+            handle.className = 'camera-row-icon order-handle';
+            handle.innerHTML = cameraIcon('drag');
+            return handle;
+          };
+          const orderActions = (index, count, move, remove) => {
+            const actions = document.createElement('div');
+            actions.className = 'camera-row-actions';
+            if (count > 1) {
+              const up = cameraAction(t('commonMoveUp'), () => move(index, index - 1), false, 'up',
+                index === 0);
+              const down = cameraAction(t('commonMoveDown'), () => move(index, index + 1), false,
+                'down', index === count - 1);
+              // A phone hides the arrows and keeps the handle (app.css).
+              up.classList.add('order-arrow');
+              down.classList.add('order-arrow');
+              actions.append(up, down);
+            }
+            actions.appendChild(cameraAction(haText('Remove'), remove, false, 'delete'));
+            return actions;
+          };
+
+          // The picked views, then the row that opens the picker to add
+          // more. Saved in place: no full re-render, the page stays put.
           let sel = [];
           try { sel = JSON.parse(byKey['ha.rotation_dashboards']?.value || '[]'); } catch (_) {}
           if (!Array.isArray(sel)) sel = [];
@@ -2344,12 +2468,22 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
           const vlist = section(rotDef?.title || haText('Views to rotate'));
           const renderSel = () => {
             vlist.replaceChildren();
-            sel.forEach((path) => {
-              const rm = cameraAction(haText('Remove'), async () => {
-                await saveSel(sel.filter((x) => x !== path));
+            // Drawn before the save lands, so a dropped row stays put.
+            const move = async (from, to) => {
+              const saving = saveSel(moved(sel, from, to));
+              renderSel();
+              await saving;
+            };
+            sel.forEach((path, index) => {
+              const several = sel.length > 1;
+              const actions = orderActions(index, sel.length, move, async () => {
+                await saveSel(sel.filter((_, i) => i !== index));
                 renderSel();
-              }, false, 'delete');
-              vlist.appendChild(dashboardViewListRow(path, rm));
+              });
+              const handle = several ? orderHandle() : null;
+              const row = dashboardViewListRow(path, actions, handle);
+              if (several) orderable(row, handle, index, move);
+              vlist.appendChild(row);
             });
             const add = document.createElement('button');
             add.className = 'dp-add-row';
@@ -2384,14 +2518,24 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
           ucard.appendChild(ulist);
           const renderUrls = () => {
             ulist.innerHTML = '';
-            urls.forEach((u) => {
+            const move = async (from, to) => {
+              const saving = saveUrls(moved(urls, from, to));
+              renderUrls();
+              await saving;
+            };
+            urls.forEach((u, index) => {
               const row = readOnlyRow(u, '', '', false);
+              row.classList.add('rotation-url-row');
               row.querySelector('span').remove();
-              const rm = cameraAction(haText('Remove'), async () => {
-                await saveUrls(urls.filter((x) => x !== u));
+              if (urls.length > 1) {
+                const handle = orderHandle();
+                row.prepend(handle);
+                orderable(row, handle, index, move);
+              }
+              row.appendChild(orderActions(index, urls.length, move, async () => {
+                await saveUrls(urls.filter((_, i) => i !== index));
                 renderUrls();
-              }, false, 'delete');
-              row.appendChild(rm);
+              }));
               ulist.appendChild(row);
             });
           };

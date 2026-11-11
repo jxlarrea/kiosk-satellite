@@ -9033,12 +9033,18 @@ class _RotationCardState extends State<_RotationCard> {
     }
   }
 
+  // The list as just changed, shown until its save lands, so a dropped
+  // row stays where it was dropped.
+  List<String>? _viewsNow;
+  List<String>? _urlsNow;
+
   Future<void> _save(List<String> selected) async {
+    setState(() => _viewsNow = selected);
     await c.settings.setFromJson(
       haRotationDashboards.key,
       jsonEncode(selected),
     );
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _viewsNow = null);
   }
 
   Future<void> _addViews() async {
@@ -9066,8 +9072,9 @@ class _RotationCardState extends State<_RotationCard> {
   }
 
   Future<void> _saveUrls(List<String> urls) async {
+    setState(() => _urlsNow = urls);
     await c.settings.setFromJson(haRotationUrls.key, jsonEncode(urls));
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _urlsNow = null);
   }
 
   Future<void> _addUrl() async {
@@ -9128,23 +9135,28 @@ class _RotationCardState extends State<_RotationCard> {
       ],
     );
     if (!enabled) return settings;
+    final views = _viewsNow ?? _selected();
+    final urls = _urlsNow ?? _urls();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         settings,
-        // The picked views in rotation order, each with a remove button,
-        // then the row that opens the picker to add more.
+        // The picked views in rotation order, each dragged by its handle
+        // or moved with the arrows, then the row that opens the picker to
+        // add more.
         SectionHeading(haRotationDashboards.localizedTitle(context)),
         SettingsCard(
           children: [
-            for (final path in _selected())
-              DashboardViewListRow(
-                value: path,
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: haText(context, 'Remove'),
-                  onPressed: () => _save(_selected()..remove(path)),
-                ),
+            if (views.isNotEmpty)
+              _OrderedRows(
+                items: views,
+                onChanged: _save,
+                rowBuilder: (context, path, handle, actions) =>
+                    DashboardViewListRow(
+                      value: path,
+                      leading: handle,
+                      trailing: actions,
+                    ),
               ),
             ListTile(
               leading: Icon(
@@ -9167,13 +9179,21 @@ class _RotationCardState extends State<_RotationCard> {
         SectionHeading(haText(context, 'External pages')),
         SettingsCard(
           children: [
-            for (final url in _urls())
-              ListTile(
-                title: Text(url, maxLines: 1, overflow: TextOverflow.ellipsis),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: haText(context, 'Remove'),
-                  onPressed: () => _saveUrls(_urls()..remove(url)),
+            if (urls.isNotEmpty)
+              _OrderedRows(
+                items: urls,
+                onChanged: _saveUrls,
+                rowBuilder: (context, url, handle, actions) => ListTile(
+                  // The view rows' insets, so the handles and the actions
+                  // of the two lists line up.
+                  contentPadding: const EdgeInsets.fromLTRB(Ks.inset, 0, 8, 0),
+                  leading: handle,
+                  title: Text(
+                    url,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: actions,
                 ),
               ),
             Padding(
@@ -9204,6 +9224,87 @@ class _RotationCardState extends State<_RotationCard> {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The rotation's rows in order inside their card. With two or more, each
+/// row gets a drag handle and the move up, move down and remove actions.
+/// A tight pane keeps the handle and drops the arrows, which would leave
+/// no room for the row's own text. A lone row gets only its remove button.
+/// Every change hands the whole new list to [onChanged].
+class _OrderedRows extends StatelessWidget {
+  const _OrderedRows({
+    required this.items,
+    required this.onChanged,
+    required this.rowBuilder,
+  });
+
+  final List<String> items;
+  final ValueChanged<List<String>> onChanged;
+  final Widget Function(
+    BuildContext context,
+    String item,
+    Widget? handle,
+    Widget actions,
+  )
+  rowBuilder;
+
+  void _move(int from, int to) {
+    final next = [...items];
+    next.insert(to, next.removeAt(from));
+    onChanged(next);
+  }
+
+  void _remove(int index) => onChanged([...items]..removeAt(index));
+
+  @override
+  Widget build(BuildContext context) {
+    final orderable = items.length > 1;
+    final arrows = orderable && !tightPane(context);
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      buildDefaultDragHandles: false,
+      itemCount: items.length,
+      // onReorderItem: newIndex is already adjusted for the removal.
+      onReorderItem: _move,
+      itemBuilder: (context, index) => Column(
+        // The index is part of the key: a list saved from elsewhere could
+        // name one view twice.
+        key: ValueKey('$index ${items[index]}'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (index > 0)
+            const Divider(height: 1, indent: Ks.inset, endIndent: Ks.inset),
+          rowBuilder(
+            context,
+            items[index],
+            orderable
+                ? ReorderableDragStartListener(
+                    index: index,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Icon(Icons.drag_handle),
+                    ),
+                  )
+                : null,
+            arrows
+                ? OrderActions(
+                    first: index == 0,
+                    last: index == items.length - 1,
+                    onUp: () => _move(index, index - 1),
+                    onDown: () => _move(index, index + 1),
+                    onRemove: () => _remove(index),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: l10n(context).commonRemove,
+                    onPressed: () => _remove(index),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

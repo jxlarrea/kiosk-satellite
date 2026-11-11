@@ -364,4 +364,152 @@ void main() {
     expect(find.text('Clock'), findsOneWidget);
     expect(find.text('Add views'), findsOneWidget);
   });
+
+  testWidgets('the rotation lists reorder by the arrows and by a drag', (
+    tester,
+  ) async {
+    final c = await _container();
+    await c.settings.set(defs.haRotationEnabled, true);
+    await c.settings.setFromJson(
+      defs.haRotationDashboards.key,
+      '["wall/clock","wall/weather","wall/laundry"]',
+    );
+    await c.settings.setFromJson(
+      defs.haRotationUrls.key,
+      '["https://a.example","https://b.example"]',
+    );
+    // Wide enough for the arrows: a tight pane keeps only the handle.
+    tester.view.physicalSize = const Size(1400, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SubpageSettingsScreen(
+          container: c,
+          category: 'Home Assistant',
+          subpage: 'Dashboard View Rotation',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    String views() => c.settings.get(defs.haRotationDashboards);
+    String urls() => c.settings.get(defs.haRotationUrls);
+    Finder inRow(String text, Type type) => find.descendant(
+      of: find.ancestor(
+        of: find.text(text),
+        matching: find.byType(DashboardViewListRow),
+      ),
+      matching: find.byType(type),
+    );
+    Finder action(String text, IconData icon) => find.descendant(
+      of: inRow(text, OrderActions),
+      matching: find.widgetWithIcon(IconButton, icon),
+    );
+
+    // The first row cannot move up, the last cannot move down.
+    expect(
+      tester.widget<IconButton>(action('Clock', Icons.arrow_upward)).onPressed,
+      isNull,
+    );
+    expect(
+      tester
+          .widget<IconButton>(action('Laundry', Icons.arrow_downward))
+          .onPressed,
+      isNull,
+    );
+
+    await tester.tap(action('Clock', Icons.arrow_downward));
+    await tester.pumpAndSettle();
+    expect(views(), '["wall/weather","wall/clock","wall/laundry"]');
+    await tester.tap(action('Laundry', Icons.arrow_upward));
+    await tester.pumpAndSettle();
+    expect(views(), '["wall/weather","wall/laundry","wall/clock"]');
+
+    // Dragging the last row by its handle to the top.
+    final handle = inRow('Clock', ReorderableDragStartListener);
+    final top = tester.getCenter(
+      inRow('Weather', ReorderableDragStartListener),
+    );
+    final drag = await tester.startGesture(tester.getCenter(handle));
+    await tester.pump(const Duration(milliseconds: 100));
+    final from = tester.getCenter(handle);
+    for (var step = 1; step <= 10; step++) {
+      await drag.moveTo(
+        Offset.lerp(from, top - const Offset(0, 20), step / 10)!,
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(views(), '["wall/clock","wall/weather","wall/laundry"]');
+    expect(
+      tester.getTopLeft(find.text('Clock')).dy,
+      lessThan(tester.getTopLeft(find.text('Weather')).dy),
+    );
+
+    await tester.tap(action('Weather', Icons.delete_outline));
+    await tester.pumpAndSettle();
+    expect(views(), '["wall/clock","wall/laundry"]');
+
+    // The external pages order the same way.
+    Finder urlAction(String url, IconData icon) => find.descendant(
+      of: find.ancestor(of: find.text(url), matching: find.byType(ListTile)),
+      matching: find.widgetWithIcon(IconButton, icon),
+    );
+    await tester.tap(urlAction('https://b.example', Icons.arrow_upward));
+    await tester.pumpAndSettle();
+    expect(urls(), '["https://b.example","https://a.example"]');
+    await tester.tap(urlAction('https://b.example', Icons.delete_outline));
+    await tester.pumpAndSettle();
+    expect(urls(), '["https://a.example"]');
+    // A lone row has nothing to reorder against: only its remove button.
+    expect(find.byType(OrderActions), findsNWidgets(2));
+    expect(urlAction('https://a.example', Icons.arrow_upward), findsNothing);
+    expect(
+      urlAction('https://a.example', Icons.delete_outline),
+      findsOneWidget,
+    );
+  });
+
+  for (final size in const [Size(360, 800), Size(960, 480)]) {
+    testWidgets('the rotation rows keep only the handle at $size', (
+      tester,
+    ) async {
+      final c = await _container();
+      await c.settings.set(defs.haRotationEnabled, true);
+      await c.settings.setFromJson(
+        defs.haRotationDashboards.key,
+        '["wall/clock","wall/weather"]',
+      );
+      await c.settings.setFromJson(
+        defs.haRotationUrls.key,
+        '["https://a.example/a/long/address/that/does/not/fit/the/row",'
+        '"https://b.example"]',
+      );
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SubpageSettingsScreen(
+            container: c,
+            category: 'Home Assistant',
+            subpage: 'Dashboard View Rotation',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // An overflowing row would have failed the pump.
+      await tester.scrollUntilVisible(
+        find.text('https://b.example'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      // A tight pane reorders by the handle alone: no arrows.
+      expect(find.byType(OrderActions), findsNothing);
+      expect(find.byType(ReorderableDragStartListener), findsNWidgets(4));
+      expect(find.byIcon(Icons.delete_outline), findsNWidgets(4));
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

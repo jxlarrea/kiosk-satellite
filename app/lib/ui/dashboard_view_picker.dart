@@ -1787,11 +1787,18 @@ class DashboardViewRow extends StatelessWidget {
 
 /// One stored view as a list row (the rotation's picks): glyph, title,
 /// then the dashboard and path. The bare path stands in until the
-/// dashboards load, or when the view is gone.
+/// dashboards load, or when the view is gone. [leading] sits ahead of the
+/// glyph: the drag handle of an orderable list.
 class DashboardViewListRow extends StatelessWidget {
-  const DashboardViewListRow({super.key, required this.value, this.trailing});
+  const DashboardViewListRow({
+    super.key,
+    required this.value,
+    this.leading,
+    this.trailing,
+  });
 
   final String value;
+  final Widget? leading;
   final Widget? trailing;
 
   @override
@@ -1867,6 +1874,7 @@ class DashboardViewListRow extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(Ks.inset, 10, 8, 10),
           child: Row(
             children: [
+              if (leading != null) ...[leading!, const SizedBox(width: 12)],
               lead,
               const SizedBox(width: 14),
               Expanded(child: text),
