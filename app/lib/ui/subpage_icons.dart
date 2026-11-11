@@ -39,6 +39,7 @@ const Map<String, Object> subpageIcons = {
   'Wake word diagnostics': Icons.troubleshoot_outlined,
   // Screen & Audio.
   'Microphone settings': Icons.mic_none_outlined,
+  'Equalizer': Icons.equalizer_outlined,
   'Adaptive brightness': Icons.brightness_auto_outlined,
   // Screensaver.
   'Weather Mood screensaver': Icons.cloud_outlined,

@@ -11208,6 +11208,60 @@ class UiStringsDe extends UiStrings {
   }
 
   @override
+  String get settingEqualizerEnabledTitle => 'Equalizer aktivieren';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      'Formt den Klang von Musik, Assistent, Tönen und Intercom. Der Ton von Videos und Dashboards wird nicht angepasst.';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Hz';
+
+  @override
+  String get settingEqualizerBand1Description =>
+      'Bässe. Kleine Lautsprecher verzerren hier schon bei geringer Anhebung.';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Hz';
+
+  @override
+  String get settingEqualizerBand2Description =>
+      'Untere Mitten. Eine Absenkung nimmt dumpfen oder dröhnenden Klang heraus.';
+
+  @override
+  String get settingEqualizerBand3Title => '1 kHz';
+
+  @override
+  String get settingEqualizerBand3Description =>
+      'Mitten, in denen der größte Teil einer Stimme liegt.';
+
+  @override
+  String get settingEqualizerBand4Title => '3 kHz';
+
+  @override
+  String get settingEqualizerBand4Description =>
+      'Obere Mitten. Eine Anhebung macht Sprache deutlicher.';
+
+  @override
+  String get settingEqualizerBand5Title => '10 kHz';
+
+  @override
+  String get settingEqualizerBand5Description => 'Höhen.';
+
+  @override
+  String get settingEqualizerPreampTitle => 'Automatischer Vorverstärker';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      'Senkt den Pegel um die größte Anhebung, damit der Lautsprecher nicht verzerrt und die Echounterdrückung weiter funktioniert.';
+
+  @override
+  String get screenAudioEqualizer => 'Equalizer';
+
+  @override
+  String get screenAudioEqualizerHint => 'Bässe, Mitten, Höhen, Vorverstärker';
+
+  @override
   String get settingMicCaptureModeTitle => 'Aufnahmemodus';
 
   @override

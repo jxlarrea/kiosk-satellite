@@ -1,0 +1,19 @@
+{
+  "@@locale": "nl",
+  "settingEqualizerEnabledTitle": "Equalizer inschakelen",
+  "settingEqualizerEnabledDescription": "Vormt de klank van muziek, de assistent, geluiden en de intercom. Geluid van video en dashboards wordt niet aangepast.",
+  "settingEqualizerBand1Title": "100 Hz",
+  "settingEqualizerBand1Description": "Bas. Kleine luidsprekers vervormen al snel als je hier versterkt.",
+  "settingEqualizerBand2Title": "300 Hz",
+  "settingEqualizerBand2Description": "Laagmidden. Verzwakken haalt een doffe of dreunende klank weg.",
+  "settingEqualizerBand3Title": "1 kHz",
+  "settingEqualizerBand3Description": "Midden, waar het grootste deel van een stem zit.",
+  "settingEqualizerBand4Title": "3 kHz",
+  "settingEqualizerBand4Description": "Hoogmidden. Versterken maakt spraak duidelijker.",
+  "settingEqualizerBand5Title": "10 kHz",
+  "settingEqualizerBand5Description": "Hoge tonen.",
+  "settingEqualizerPreampTitle": "Automatische voorversterker",
+  "settingEqualizerPreampDescription": "Verlaagt het niveau met de grootste versterking, zodat de luidspreker niet vervormt en de echo-onderdrukking blijft werken.",
+  "screenAudioEqualizer": "Equalizer",
+  "screenAudioEqualizerHint": "Bas, midden, hoog, voorversterker"
+}

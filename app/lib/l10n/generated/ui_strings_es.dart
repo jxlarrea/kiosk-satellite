@@ -11166,6 +11166,61 @@ class UiStringsEs extends UiStrings {
   }
 
   @override
+  String get settingEqualizerEnabledTitle => 'Activar ecualizador';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      'Ajusta el sonido de la música, el asistente, los sonidos y el intercomunicador. El sonido de los videos y del panel no se ecualiza.';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Hz';
+
+  @override
+  String get settingEqualizerBand1Description =>
+      'Graves. Los altavoces pequeños distorsionan pronto si se realzan.';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Hz';
+
+  @override
+  String get settingEqualizerBand2Description =>
+      'Medios graves. Atenúalos para quitar un sonido encajonado o retumbante.';
+
+  @override
+  String get settingEqualizerBand3Title => '1 kHz';
+
+  @override
+  String get settingEqualizerBand3Description =>
+      'Medios, donde está la mayor parte de la voz.';
+
+  @override
+  String get settingEqualizerBand4Title => '3 kHz';
+
+  @override
+  String get settingEqualizerBand4Description =>
+      'Medios agudos. Realzarlos hace la voz más clara.';
+
+  @override
+  String get settingEqualizerBand5Title => '10 kHz';
+
+  @override
+  String get settingEqualizerBand5Description => 'Agudos.';
+
+  @override
+  String get settingEqualizerPreampTitle => 'Preamplificador automático';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      'Baja el nivel tanto como el mayor realce para que el altavoz no distorsione y la cancelación de eco siga funcionando.';
+
+  @override
+  String get screenAudioEqualizer => 'Ecualizador';
+
+  @override
+  String get screenAudioEqualizerHint =>
+      'Graves, medios, agudos y preamplificador';
+
+  @override
   String get settingMicCaptureModeTitle => 'Modo de captura';
 
   @override

@@ -41523,6 +41523,214 @@
       }
     }
   },
+  "settingEqualizerEnabledTitle": "Включить эквалайзер",
+  "@settingEqualizerEnabledTitle": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerEnabledDescription": "Настраивает звучание музыки, ассистента, сигналов и интеркома. Звук видео и панелей не обрабатывается.",
+  "@settingEqualizerEnabledDescription": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand1Title": "100 Гц",
+  "@settingEqualizerBand1Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand1Description": "Низкие частоты. Маленькие динамики быстро начинают искажать звук при их усилении.",
+  "@settingEqualizerBand1Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand2Title": "300 Гц",
+  "@settingEqualizerBand2Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand2Description": "Нижняя середина. Ослабление убирает гулкое или бубнящее звучание.",
+  "@settingEqualizerBand2Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand3Title": "1 кГц",
+  "@settingEqualizerBand3Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand3Description": "Середина, где находится большая часть голоса.",
+  "@settingEqualizerBand3Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand4Title": "3 кГц",
+  "@settingEqualizerBand4Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand4Description": "Верхняя середина. Усиление делает речь разборчивее.",
+  "@settingEqualizerBand4Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand5Title": "10 кГц",
+  "@settingEqualizerBand5Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand5Description": "Высокие частоты.",
+  "@settingEqualizerBand5Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerPreampTitle": "Автоматический предусилитель",
+  "@settingEqualizerPreampTitle": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerPreampDescription": "Снижает уровень на величину наибольшего усиления, чтобы динамик не искажал звук и подавление эха продолжало работать.",
+  "@settingEqualizerPreampDescription": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "screenAudioEqualizer": "Эквалайзер",
+  "@screenAudioEqualizer": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "screenAudioEqualizerHint": "Низкие, средние, высокие частоты, предусилитель",
+  "@screenAudioEqualizerHint": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
   "settingMicCaptureModeTitle": "Режим захвата",
   "@settingMicCaptureModeTitle": {
     "context": "Settings:Screen & Audio:Microphone settings",

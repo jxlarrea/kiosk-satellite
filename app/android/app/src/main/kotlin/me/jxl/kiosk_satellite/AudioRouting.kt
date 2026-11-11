@@ -184,6 +184,15 @@ class AudioRoutingBridge(context: Context, messenger: BinaryMessenger) {
                     AudioFocus.hold(context, call.argument<Boolean>("active") == true)
                     result.success(true)
                 }
+                // The speaker equalizer's settings (Equalizer.kt).
+                "setEqualizer" -> {
+                    Equalizer.set(
+                        call.argument<Boolean>("enabled") == true,
+                        call.argument<List<Number>>("gains").orEmpty().map { it.toDouble() },
+                        call.argument<Boolean>("preamp") != false,
+                    )
+                    result.success(true)
+                }
                 // Which echo canceller actually ran, for usage analytics.
                 "echoState" -> result.success(SoftwareEcho.state())
                 else -> result.notImplemented()

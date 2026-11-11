@@ -283,6 +283,7 @@ const Map<String, String> subpageHints = {
       'Recent activations and near misses with audio clips',
   // Screen & Audio.
   'Microphone settings': 'Echo cancellation, noise, gain, format, live level',
+  'Equalizer': 'Bass, mids, treble, preamp',
   'Adaptive brightness': 'Follow the room light with the ambient light sensor',
   // Screensaver. The mode pages only exist while that mode is the
   // one selected, since every setting on them gates on it.
@@ -6909,6 +6910,141 @@ const micCaptureFormat = SettingDef<String>(
   category: 'Screen & Audio',
   section: 'Microphone settings',
   subpage: 'Microphone settings',
+  perDevice: true,
+);
+
+// The speaker equalizer (Equalizer.kt): five fixed bands and a preamp over
+// everything the kiosk plays from its own PCM, which is everything except
+// video, the dashboard's own sounds, touch sounds and the Bluetooth call
+// route. Each player equalizes its samples before it taps them for the echo
+// canceller, so the canceller's reference is the equalized sound and a band
+// moved while music plays costs it nothing. Per device: it corrects that
+// device's speaker.
+
+const equalizerEnabled = SettingDef<bool>(
+  key: 'audio.equalizer_enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable equalizer',
+  description:
+      'Shapes the sound of music, the assistant, chimes and the intercom. '
+      'Video and dashboard sounds are not equalized.',
+  category: 'Screen & Audio',
+  section: 'Equalizer',
+  subpage: 'Equalizer',
+  perDevice: true,
+);
+
+const equalizerBand1 = SettingDef<num>(
+  key: 'audio.equalizer_bass',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: -12,
+  max: 12,
+  step: 1,
+  unit: ' dB',
+  title: '100 Hz',
+  description: 'Bass. Small speakers distort early with a boost here.',
+  category: 'Screen & Audio',
+  section: 'Equalizer',
+  subpage: 'Equalizer',
+  dependsOn: 'audio.equalizer_enabled',
+  perDevice: true,
+);
+
+const equalizerBand2 = SettingDef<num>(
+  key: 'audio.equalizer_low_mid',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: -12,
+  max: 12,
+  step: 1,
+  unit: ' dB',
+  title: '300 Hz',
+  description: 'Low mids. A cut takes out a boxy or boomy sound.',
+  category: 'Screen & Audio',
+  section: 'Equalizer',
+  subpage: 'Equalizer',
+  dependsOn: 'audio.equalizer_enabled',
+  perDevice: true,
+);
+
+const equalizerBand3 = SettingDef<num>(
+  key: 'audio.equalizer_mid',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: -12,
+  max: 12,
+  step: 1,
+  unit: ' dB',
+  title: '1 kHz',
+  description: 'Mids, where most of a voice sits.',
+  category: 'Screen & Audio',
+  section: 'Equalizer',
+  subpage: 'Equalizer',
+  dependsOn: 'audio.equalizer_enabled',
+  perDevice: true,
+);
+
+const equalizerBand4 = SettingDef<num>(
+  key: 'audio.equalizer_high_mid',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: -12,
+  max: 12,
+  step: 1,
+  unit: ' dB',
+  title: '3 kHz',
+  description: 'High mids. A boost makes speech clearer.',
+  category: 'Screen & Audio',
+  section: 'Equalizer',
+  subpage: 'Equalizer',
+  dependsOn: 'audio.equalizer_enabled',
+  perDevice: true,
+);
+
+const equalizerBand5 = SettingDef<num>(
+  key: 'audio.equalizer_treble',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: -12,
+  max: 12,
+  step: 1,
+  unit: ' dB',
+  title: '10 kHz',
+  description: 'Treble.',
+  category: 'Screen & Audio',
+  section: 'Equalizer',
+  subpage: 'Equalizer',
+  dependsOn: 'audio.equalizer_enabled',
+  perDevice: true,
+);
+
+/// The bands in the order Equalizer.kt's frequencies run.
+const equalizerBands = [
+  equalizerBand1,
+  equalizerBand2,
+  equalizerBand3,
+  equalizerBand4,
+  equalizerBand5,
+];
+
+/// Lowers the whole signal by the most the bands raise any frequency. On by
+/// default on every device: a boost pushes the device's own amplifier or
+/// limiter harder, and what that does to the sound is past the canceller's
+/// reference, so it costs echo cancellation as well as sound quality.
+const equalizerPreamp = SettingDef<bool>(
+  key: 'audio.equalizer_preamp',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Automatic preamp',
+  description:
+      'Lowers the level by the largest boost so the speaker does not '
+      'distort and echo cancellation keeps working.',
+  category: 'Screen & Audio',
+  section: 'Equalizer',
+  subpage: 'Equalizer',
+  dependsOn: 'audio.equalizer_enabled',
   perDevice: true,
 );
 
@@ -13946,6 +14082,10 @@ const List<SettingDef<Object>> allSettings = [
   // Hand-built row: renders after the gain in both UIs, and only when the
   // selected microphone reports more than one channel.
   micChannel,
+  // A page of its own, its entry row under the Microphone settings one.
+  equalizerEnabled,
+  ...equalizerBands,
+  equalizerPreamp,
   screensaverEnabled,
   screensaverTimeoutSeconds,
   // The separate brightness applies to every content mode, so it lives with

@@ -41523,6 +41523,214 @@
       }
     }
   },
+  "settingEqualizerEnabledTitle": "Equalizer inschakelen",
+  "@settingEqualizerEnabledTitle": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerEnabledDescription": "Vormt de klank van muziek, de assistent, geluiden en de intercom. Geluid van video en dashboards wordt niet aangepast.",
+  "@settingEqualizerEnabledDescription": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand1Title": "100 Hz",
+  "@settingEqualizerBand1Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand1Description": "Bas. Kleine luidsprekers vervormen al snel als je hier versterkt.",
+  "@settingEqualizerBand1Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand2Title": "300 Hz",
+  "@settingEqualizerBand2Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand2Description": "Laagmidden. Verzwakken haalt een doffe of dreunende klank weg.",
+  "@settingEqualizerBand2Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand3Title": "1 kHz",
+  "@settingEqualizerBand3Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand3Description": "Midden, waar het grootste deel van een stem zit.",
+  "@settingEqualizerBand3Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand4Title": "3 kHz",
+  "@settingEqualizerBand4Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand4Description": "Hoogmidden. Versterken maakt spraak duidelijker.",
+  "@settingEqualizerBand4Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand5Title": "10 kHz",
+  "@settingEqualizerBand5Title": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerBand5Description": "Hoge tonen.",
+  "@settingEqualizerBand5Description": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerPreampTitle": "Automatische voorversterker",
+  "@settingEqualizerPreampTitle": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "settingEqualizerPreampDescription": "Verlaagt het niveau met de grootste versterking, zodat de luidspreker niet vervormt en de echo-onderdrukking blijft werken.",
+  "@settingEqualizerPreampDescription": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "screenAudioEqualizer": "Equalizer",
+  "@screenAudioEqualizer": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
+  "screenAudioEqualizerHint": "Bas, midden, hoog, voorversterker",
+  "@screenAudioEqualizerHint": {
+    "context": "Settings:Screen & Audio:Equalizer",
+    "description": "Heading, choice, status or guidance shown in this group.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Equalizer"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Equalizer"
+      ]
+    }
+  },
   "settingMicCaptureModeTitle": "Opnamemodus",
   "@settingMicCaptureModeTitle": {
     "context": "Settings:Screen & Audio:Microphone settings",

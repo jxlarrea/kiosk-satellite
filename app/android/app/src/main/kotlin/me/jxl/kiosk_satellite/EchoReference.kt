@@ -11,7 +11,9 @@ import java.util.concurrent.CopyOnWriteArrayList
  * What the kiosk is playing, for [SoftwareEcho]: every player that writes
  * its own PCM taps it here, and the canceller takes the mix of what each
  * one's speaker has presented since it last asked. Everything is kept as
- * 16 kHz mono, the rate the microphone runs at.
+ * 16 kHz mono, the rate the microphone runs at. A player equalizes its
+ * samples ([Equalizer]) before it taps them, so the speaker and the
+ * reference carry the same sound.
  *
  * Players Android decodes on its own (the dashboard's web pages, the DLNA
  * video player) cannot be tapped, so their sound is not cancelled.
@@ -573,7 +575,11 @@ class LeadInProcessor(private val settled: () -> Boolean) :
     }
 }
 
-/** A Media3 audio sink whose PCM and track both go to [tap], after a lead-in. */
+/**
+ * A Media3 audio sink whose PCM and track both go to [tap], after a lead-in
+ * and the [Equalizer], which sits ahead of the tee so the reference is the
+ * equalized sound.
+ */
 fun tappedSink(
     context: android.content.Context,
     tap: SinkTap,
@@ -584,6 +590,7 @@ fun tappedSink(
             arrayOf(
                 LeadInProcessor { tap.settled },
                 *before,
+                EqualizerProcessor(),
                 androidx.media3.exoplayer.audio.TeeAudioProcessor(tap),
             ),
         )

@@ -10469,6 +10469,56 @@ class UiStringsZh extends UiStrings {
   }
 
   @override
+  String get settingEqualizerEnabledTitle => '启用均衡器';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      '调整音乐、助手、提示音和对讲的音色。视频和仪表盘的声音不经过均衡器。';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Hz';
+
+  @override
+  String get settingEqualizerBand1Description => '低音。小型扬声器在此提升时容易失真。';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Hz';
+
+  @override
+  String get settingEqualizerBand2Description => '中低音。衰减可消除发闷或轰鸣的声音。';
+
+  @override
+  String get settingEqualizerBand3Title => '1 kHz';
+
+  @override
+  String get settingEqualizerBand3Description => '中音，人声的主要部分所在。';
+
+  @override
+  String get settingEqualizerBand4Title => '3 kHz';
+
+  @override
+  String get settingEqualizerBand4Description => '中高音。提升可让语音更清晰。';
+
+  @override
+  String get settingEqualizerBand5Title => '10 kHz';
+
+  @override
+  String get settingEqualizerBand5Description => '高音。';
+
+  @override
+  String get settingEqualizerPreampTitle => '自动前置增益';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      '按最大提升量降低整体电平，避免扬声器失真，并保证回声消除正常工作。';
+
+  @override
+  String get screenAudioEqualizer => '均衡器';
+
+  @override
+  String get screenAudioEqualizerHint => '低音、中音、高音、前置增益';
+
+  @override
   String get settingMicCaptureModeTitle => '采集模式';
 
   @override
@@ -25995,6 +26045,56 @@ class UiStringsZhCn extends UiStringsZh {
   String screenAudioDisconnected(String name) {
     return '$name（未连接）';
   }
+
+  @override
+  String get settingEqualizerEnabledTitle => '启用均衡器';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      '调整音乐、助手、提示音和对讲的音色。视频和仪表盘的声音不经过均衡器。';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Hz';
+
+  @override
+  String get settingEqualizerBand1Description => '低音。小型扬声器在此提升时容易失真。';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Hz';
+
+  @override
+  String get settingEqualizerBand2Description => '中低音。衰减可消除发闷或轰鸣的声音。';
+
+  @override
+  String get settingEqualizerBand3Title => '1 kHz';
+
+  @override
+  String get settingEqualizerBand3Description => '中音，人声的主要部分所在。';
+
+  @override
+  String get settingEqualizerBand4Title => '3 kHz';
+
+  @override
+  String get settingEqualizerBand4Description => '中高音。提升可让语音更清晰。';
+
+  @override
+  String get settingEqualizerBand5Title => '10 kHz';
+
+  @override
+  String get settingEqualizerBand5Description => '高音。';
+
+  @override
+  String get settingEqualizerPreampTitle => '自动前置增益';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      '按最大提升量降低整体电平，避免扬声器失真，并保证回声消除正常工作。';
+
+  @override
+  String get screenAudioEqualizer => '均衡器';
+
+  @override
+  String get screenAudioEqualizerHint => '低音、中音、高音、前置增益';
 
   @override
   String get settingMicCaptureModeTitle => '采集模式';

@@ -170,12 +170,13 @@ class RealtimeAudio(context: Context, messenger: BinaryMessenger) {
         track = newTrack
         output = target
         tap = TrackTap(newTrack, sampleRate, 1)
+        val equalizer = Equalizer.Stream(sampleRate, 1)
         SoftwareEcho.setMode(this, ResidualEchoGate.Mode.REALTIME)
         applyVolume()
         newTrack.play()
         synchronized(lock) { headOffset = head(newTrack) }
         val pending = queue
-        val thread = Thread({ feed(newTrack, pending) }, "ks-realtime")
+        val thread = Thread({ feed(newTrack, pending, equalizer) }, "ks-realtime")
         writer = thread
         thread.start()
         Log.i(TAG, "playback started at $sampleRate Hz (buffer=${bufferBytes}b)")
@@ -206,7 +207,7 @@ class RealtimeAudio(context: Context, messenger: BinaryMessenger) {
     }
 
     /** The writer thread: the model's voice as it arrives. */
-    private fun feed(t: AudioTrack, pending: PlaybackPcmQueue) {
+    private fun feed(t: AudioTrack, pending: PlaybackPcmQueue, equalizer: Equalizer.Stream) {
         // At normal priority, a device busy starting up (the app after a
         // restart, a reopened microphone) held this thread up long enough
         // for the track to run dry every second, with half a minute of the
@@ -221,6 +222,9 @@ class RealtimeAudio(context: Context, messenger: BinaryMessenger) {
             }
             if (track !== t) break
             if (chunk != null) {
+                // Equalized as a whole before any of it is written, so the
+                // tap below hands the canceller what the speaker plays.
+                equalizer.process(chunk.pcm, 0, chunk.pcm.size)
                 var offset = 0
                 while (offset < chunk.pcm.size && track === t) {
                     val n = try {

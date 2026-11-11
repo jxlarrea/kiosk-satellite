@@ -29901,5 +29901,101 @@
     "translation": "1a5a2b5c3c5b3875978799b6ecbecdab2ec5e9f73219f39ac9da7ae970a22668",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingEqualizerBand1Description": {
+    "source": "9a12fb249e03b7e330973d4c8ff34613fae506d0784af58e89092e162a14ab0a",
+    "translation": "2e77419dbcee7a8ce89cdab4f81206870d20b17aba3fba7b75d546d394b8f109",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerPreampTitle": {
+    "source": "5cc5c424b42bdde7f9631ee5863eac58baa4dc2080edd66d5444c05f377ad819",
+    "translation": "bc2e1d9b38b82d8ce287a060e345cf41bf9f374997b624cd8508a85157ae7295",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand5Title": {
+    "source": "a1661ba34ed8f27ee7ad8a0a6f19c4b6748cbe6be52a0817749c2986e301bc2d",
+    "translation": "34126788f5fd388b10eb9bac541759893a357163c0981691c9645ff9176d7f69",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "screenAudioEqualizerHint": {
+    "source": "e1f585e18e475c7bc74443901ad3863714f70577f3d7df1314ccb75d7bf7b08a",
+    "translation": "af9169846013e53afc4ca7de857c241cbfed6e8fc22c91b4fe32847b205a383f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerEnabledTitle": {
+    "source": "9a11a50d69500687c666bf87946e654fb0c346be57b7caf974661e230bc29e2f",
+    "translation": "c892e209285c1edceee2fbad044f76eafe9b81a574dc8ea7622dabd445efbf17",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand5Description": {
+    "source": "1bb54c9e3e9893dc86c61077e1cfdb752e2e2937207b032ae26e5acf93f51ea9",
+    "translation": "fa3991fe17f56c32d6a14d0a611c0abdf0e579bf5ea52b2e7aa9eda467c8186e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand3Title": {
+    "source": "78f32b6fc0b919738795600745788299813deb63135d710aed87d8d8a5a7bafa",
+    "translation": "f26a4db26a9442eb1f14146fac8786d332c6cb90248a885ead7b040457ccf275",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerEnabledDescription": {
+    "source": "76b72ec15650adefed811c20ad6ef258aba34d3ef332c679d3f3f850d0c1dc47",
+    "translation": "8527a64b62beb5b836494837e697e627962d85dec02a189923a48c2eb8e0c17c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand3Description": {
+    "source": "b0ba37a695085697088fd1919bae873441f6d40ab98ae0674410f0f810b2ac68",
+    "translation": "3c93c7a99c48117724d18997b35f160632f4b4672fbe6895fc7901ef3cc8701f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "screenAudioEqualizer": {
+    "source": "edf72b0271ece597fefe392fa63e6b3d50f3b05ebc9ab512538c449fd5ae20cd",
+    "translation": "352978e03ed7e9490433eef4498382f957d5aac48571d11a0fab6e03c8ada210",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand1Title": {
+    "source": "7617abcd987160951022238d31d901b8b62da0c604b29e2c17047b8e2a49ba04",
+    "translation": "87ddd80f8918f41750531235e9d49530e3fcf899a4e5d74a34acc1fd86de119d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerPreampDescription": {
+    "source": "651ca451428f21f71d2e5f9279a81a09fa66ad3c0e4568d989bc4d724e489d2e",
+    "translation": "b64d33be7c8000b7deb0be25642398d3edbd5f5ad0b4504f5511fea63d850263",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand2Description": {
+    "source": "00624d3af945b905f34aac7dde1ca807c71c96fd6a074810f31322642d262b0b",
+    "translation": "1b9fac727b41b5f2d94fd0b4b5cf85cf6d3d4cc828aa8c80cc28d43747992eae",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand4Description": {
+    "source": "c59c1f4a2e695fb97f47f43fddaeeede42c7b1e46755f04d0e491946ea21170c",
+    "translation": "1eb0f6b501002ac00aec3dbd50319a79b0014315021004a31c948f6d87591392",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand4Title": {
+    "source": "3adb81083abc5a94e0aa2d0696501db88b523608ae58e0b66729037186dc0347",
+    "translation": "55402060fceab41ea3d5fabc8ba2dc34da0cf7fd163d12bc03c2704d0fe5cc80",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingEqualizerBand2Title": {
+    "source": "a35004bed59e3ddd471b9661337010a157396fc2dec036634ce9d0ae431bd5c6",
+    "translation": "135b208a3a1e92a2ee3f9173536d19617e04aa4b6f3632902896911ad19042e7",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

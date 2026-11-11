@@ -1,0 +1,19 @@
+{
+  "@@locale": "zh_CN",
+  "settingEqualizerEnabledTitle": "启用均衡器",
+  "settingEqualizerEnabledDescription": "调整音乐、助手、提示音和对讲的音色。视频和仪表盘的声音不经过均衡器。",
+  "settingEqualizerBand1Title": "100 Hz",
+  "settingEqualizerBand1Description": "低音。小型扬声器在此提升时容易失真。",
+  "settingEqualizerBand2Title": "300 Hz",
+  "settingEqualizerBand2Description": "中低音。衰减可消除发闷或轰鸣的声音。",
+  "settingEqualizerBand3Title": "1 kHz",
+  "settingEqualizerBand3Description": "中音，人声的主要部分所在。",
+  "settingEqualizerBand4Title": "3 kHz",
+  "settingEqualizerBand4Description": "中高音。提升可让语音更清晰。",
+  "settingEqualizerBand5Title": "10 kHz",
+  "settingEqualizerBand5Description": "高音。",
+  "settingEqualizerPreampTitle": "自动前置增益",
+  "settingEqualizerPreampDescription": "按最大提升量降低整体电平，避免扬声器失真，并保证回声消除正常工作。",
+  "screenAudioEqualizer": "均衡器",
+  "screenAudioEqualizerHint": "低音、中音、高音、前置增益"
+}

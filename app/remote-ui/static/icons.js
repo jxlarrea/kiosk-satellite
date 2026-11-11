@@ -57,6 +57,9 @@ export const SUBPAGE_ICONS = {
   // Screen & Audio.
   'Microphone settings': svg('<rect x="9" y="3" width="6" height="11" rx="3"/>'
     + '<path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3M9 21h6"/>'),
+  'Equalizer': svg('<rect x="4" y="10" width="4" height="10" rx="1"/>'
+    + '<rect x="10" y="4" width="4" height="16" rx="1"/>'
+    + '<rect x="16" y="13" width="4" height="7" rx="1"/>'),
   'Adaptive brightness': svg('<circle cx="12" cy="12" r="5"/>'
     + '<path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2'
     + 'M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/>'

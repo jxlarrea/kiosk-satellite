@@ -11082,6 +11082,61 @@ class UiStringsUk extends UiStrings {
   }
 
   @override
+  String get settingEqualizerEnabledTitle => 'Увімкнути еквалайзер';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      'Налаштовує звучання музики, асистента, звукових сигналів і домофона. Звук відео та панелей не обробляється.';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Гц';
+
+  @override
+  String get settingEqualizerBand1Description =>
+      'Низькі частоти. Малі динаміки швидко починають спотворювати звук, якщо їх підсилити.';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Гц';
+
+  @override
+  String get settingEqualizerBand2Description =>
+      'Нижня середина. Послаблення прибирає гулке або бубняве звучання.';
+
+  @override
+  String get settingEqualizerBand3Title => '1 кГц';
+
+  @override
+  String get settingEqualizerBand3Description =>
+      'Середина, де міститься більша частина голосу.';
+
+  @override
+  String get settingEqualizerBand4Title => '3 кГц';
+
+  @override
+  String get settingEqualizerBand4Description =>
+      'Верхня середина. Підсилення робить мову розбірливішою.';
+
+  @override
+  String get settingEqualizerBand5Title => '10 кГц';
+
+  @override
+  String get settingEqualizerBand5Description => 'Високі частоти.';
+
+  @override
+  String get settingEqualizerPreampTitle => 'Автоматичний передпідсилювач';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      'Знижує рівень на величину найбільшого підсилення, щоб динамік не спотворював звук і ехопоглинання працювало далі.';
+
+  @override
+  String get screenAudioEqualizer => 'Еквалайзер';
+
+  @override
+  String get screenAudioEqualizerHint =>
+      'Низькі, середні, високі частоти, передпідсилювач';
+
+  @override
   String get settingMicCaptureModeTitle => 'Режим захоплення';
 
   @override

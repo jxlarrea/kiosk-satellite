@@ -19178,6 +19178,102 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Enable equalizer'**
+  String get settingEqualizerEnabledTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Shapes the sound of music, the assistant, chimes and the intercom. Video and dashboard sounds are not equalized.'**
+  String get settingEqualizerEnabledDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'100 Hz'**
+  String get settingEqualizerBand1Title;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass. Small speakers distort early with a boost here.'**
+  String get settingEqualizerBand1Description;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'300 Hz'**
+  String get settingEqualizerBand2Title;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Low mids. A cut takes out a boxy or boomy sound.'**
+  String get settingEqualizerBand2Description;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'1 kHz'**
+  String get settingEqualizerBand3Title;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Mids, where most of a voice sits.'**
+  String get settingEqualizerBand3Description;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'3 kHz'**
+  String get settingEqualizerBand4Title;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'High mids. A boost makes speech clearer.'**
+  String get settingEqualizerBand4Description;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'10 kHz'**
+  String get settingEqualizerBand5Title;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Treble.'**
+  String get settingEqualizerBand5Description;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic preamp'**
+  String get settingEqualizerPreampTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowers the level by the largest boost so the speaker does not distort and echo cancellation keeps working.'**
+  String get settingEqualizerPreampDescription;
+
+  /// Heading, choice, status or guidance shown in this group.
+  ///
+  /// In en, this message translates to:
+  /// **'Equalizer'**
+  String get screenAudioEqualizer;
+
+  /// Heading, choice, status or guidance shown in this group.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass, mids, treble, preamp'**
+  String get screenAudioEqualizerHint;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Capture mode'**
   String get settingMicCaptureModeTitle;
 

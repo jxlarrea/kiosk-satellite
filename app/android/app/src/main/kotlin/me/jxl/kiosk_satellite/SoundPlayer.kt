@@ -431,12 +431,21 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             // No lead-in for a chime (see LeadInProcessor): a chime is short,
             // what follows it places itself, and a chime that starts late
             // is what the user notices.
-            track.write(clip.pcm, 0, clip.pcm.size)
+            // Equalized into a copy, since the decoded clip is kept for
+            // the next time: the track and the tap get the same samples.
+            val channels = if (clip.channels >= 2) 2 else 1
+            val equalizer = Equalizer.Stream(clip.sampleRate, channels)
+            val pcm = if (equalizer.idle()) {
+                clip.pcm
+            } else {
+                clip.pcm.copyOf().also { equalizer.process(it, 0, it.size) }
+            }
+            track.write(pcm, 0, pcm.size)
             track.setVolume(effectiveVolume(id))
             clipTaps.remove(id)?.close()
-            clipTaps[id] = TrackTap(track, clip.sampleRate, if (clip.channels >= 2) 2 else 1).also {
+            clipTaps[id] = TrackTap(track, clip.sampleRate, channels).also {
                 it.gain = effectiveVolume(id)
-                it.wrote(clip.pcm, 0, clip.pcm.size)
+                it.wrote(pcm, 0, pcm.size)
             }
             synchronized(tracks) {
                 if (requests[id] !== request) {

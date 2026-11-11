@@ -11162,6 +11162,60 @@ class UiStringsFr extends UiStrings {
   }
 
   @override
+  String get settingEqualizerEnabledTitle => 'Activer l\'égaliseur';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      'Façonne le son de la musique, de l\'assistant, des carillons et de l\'interphone. Le son des vidéos et du tableau de bord n\'est pas égalisé.';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Hz';
+
+  @override
+  String get settingEqualizerBand1Description =>
+      'Graves. Les petits haut-parleurs saturent vite si on les renforce.';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Hz';
+
+  @override
+  String get settingEqualizerBand2Description =>
+      'Bas médiums. Les atténuer enlève un son de boîte ou trop sourd.';
+
+  @override
+  String get settingEqualizerBand3Title => '1 kHz';
+
+  @override
+  String get settingEqualizerBand3Description =>
+      'Médiums, où se trouve l\'essentiel d\'une voix.';
+
+  @override
+  String get settingEqualizerBand4Title => '3 kHz';
+
+  @override
+  String get settingEqualizerBand4Description =>
+      'Hauts médiums. Les renforcer rend la parole plus claire.';
+
+  @override
+  String get settingEqualizerBand5Title => '10 kHz';
+
+  @override
+  String get settingEqualizerBand5Description => 'Aigus.';
+
+  @override
+  String get settingEqualizerPreampTitle => 'Préampli automatique';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      'Baisse le niveau de la valeur du plus fort renforcement pour que le haut-parleur ne sature pas et que l\'annulation d\'écho continue de fonctionner.';
+
+  @override
+  String get screenAudioEqualizer => 'Égaliseur';
+
+  @override
+  String get screenAudioEqualizerHint => 'Graves, médiums, aigus, préampli';
+
+  @override
   String get settingMicCaptureModeTitle => 'Mode de capture';
 
   @override

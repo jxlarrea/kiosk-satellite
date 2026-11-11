@@ -3422,6 +3422,29 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingAudioSpeakerDeviceDescription,
       'screenAudioDevices' => strings.screenAudioDevices,
       'screenAudioSelectedDevice' => strings.screenAudioSelectedDevice,
+      'settingEqualizerEnabledTitle' => strings.settingEqualizerEnabledTitle,
+      'settingEqualizerEnabledDescription' =>
+        strings.settingEqualizerEnabledDescription,
+      'settingEqualizerBand1Title' => strings.settingEqualizerBand1Title,
+      'settingEqualizerBand1Description' =>
+        strings.settingEqualizerBand1Description,
+      'settingEqualizerBand2Title' => strings.settingEqualizerBand2Title,
+      'settingEqualizerBand2Description' =>
+        strings.settingEqualizerBand2Description,
+      'settingEqualizerBand3Title' => strings.settingEqualizerBand3Title,
+      'settingEqualizerBand3Description' =>
+        strings.settingEqualizerBand3Description,
+      'settingEqualizerBand4Title' => strings.settingEqualizerBand4Title,
+      'settingEqualizerBand4Description' =>
+        strings.settingEqualizerBand4Description,
+      'settingEqualizerBand5Title' => strings.settingEqualizerBand5Title,
+      'settingEqualizerBand5Description' =>
+        strings.settingEqualizerBand5Description,
+      'settingEqualizerPreampTitle' => strings.settingEqualizerPreampTitle,
+      'settingEqualizerPreampDescription' =>
+        strings.settingEqualizerPreampDescription,
+      'screenAudioEqualizer' => strings.screenAudioEqualizer,
+      'screenAudioEqualizerHint' => strings.screenAudioEqualizerHint,
       'settingMicCaptureModeTitle' => strings.settingMicCaptureModeTitle,
       'settingMicCaptureModeDescription' =>
         strings.settingMicCaptureModeDescription,

@@ -1,0 +1,19 @@
+{
+  "@@locale": "es",
+  "settingEqualizerEnabledTitle": "Activar ecualizador",
+  "settingEqualizerEnabledDescription": "Ajusta el sonido de la música, el asistente, los sonidos y el intercomunicador. El sonido de los videos y del panel no se ecualiza.",
+  "settingEqualizerBand1Title": "100 Hz",
+  "settingEqualizerBand1Description": "Graves. Los altavoces pequeños distorsionan pronto si se realzan.",
+  "settingEqualizerBand2Title": "300 Hz",
+  "settingEqualizerBand2Description": "Medios graves. Atenúalos para quitar un sonido encajonado o retumbante.",
+  "settingEqualizerBand3Title": "1 kHz",
+  "settingEqualizerBand3Description": "Medios, donde está la mayor parte de la voz.",
+  "settingEqualizerBand4Title": "3 kHz",
+  "settingEqualizerBand4Description": "Medios agudos. Realzarlos hace la voz más clara.",
+  "settingEqualizerBand5Title": "10 kHz",
+  "settingEqualizerBand5Description": "Agudos.",
+  "settingEqualizerPreampTitle": "Preamplificador automático",
+  "settingEqualizerPreampDescription": "Baja el nivel tanto como el mayor realce para que el altavoz no distorsione y la cancelación de eco siga funcionando.",
+  "screenAudioEqualizer": "Ecualizador",
+  "screenAudioEqualizerHint": "Graves, medios, agudos y preamplificador"
+}

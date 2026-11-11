@@ -1,0 +1,19 @@
+{
+  "@@locale": "fr",
+  "settingEqualizerEnabledTitle": "Activer l'égaliseur",
+  "settingEqualizerEnabledDescription": "Façonne le son de la musique, de l'assistant, des carillons et de l'interphone. Le son des vidéos et du tableau de bord n'est pas égalisé.",
+  "settingEqualizerBand1Title": "100 Hz",
+  "settingEqualizerBand1Description": "Graves. Les petits haut-parleurs saturent vite si on les renforce.",
+  "settingEqualizerBand2Title": "300 Hz",
+  "settingEqualizerBand2Description": "Bas médiums. Les atténuer enlève un son de boîte ou trop sourd.",
+  "settingEqualizerBand3Title": "1 kHz",
+  "settingEqualizerBand3Description": "Médiums, où se trouve l'essentiel d'une voix.",
+  "settingEqualizerBand4Title": "3 kHz",
+  "settingEqualizerBand4Description": "Hauts médiums. Les renforcer rend la parole plus claire.",
+  "settingEqualizerBand5Title": "10 kHz",
+  "settingEqualizerBand5Description": "Aigus.",
+  "settingEqualizerPreampTitle": "Préampli automatique",
+  "settingEqualizerPreampDescription": "Baisse le niveau de la valeur du plus fort renforcement pour que le haut-parleur ne sature pas et que l'annulation d'écho continue de fonctionner.",
+  "screenAudioEqualizer": "Égaliseur",
+  "screenAudioEqualizerHint": "Graves, médiums, aigus, préampli"
+}

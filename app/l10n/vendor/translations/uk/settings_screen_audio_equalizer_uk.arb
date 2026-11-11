@@ -1,0 +1,19 @@
+{
+  "@@locale": "uk",
+  "settingEqualizerEnabledTitle": "Увімкнути еквалайзер",
+  "settingEqualizerEnabledDescription": "Налаштовує звучання музики, асистента, звукових сигналів і домофона. Звук відео та панелей не обробляється.",
+  "settingEqualizerBand1Title": "100 Гц",
+  "settingEqualizerBand1Description": "Низькі частоти. Малі динаміки швидко починають спотворювати звук, якщо їх підсилити.",
+  "settingEqualizerBand2Title": "300 Гц",
+  "settingEqualizerBand2Description": "Нижня середина. Послаблення прибирає гулке або бубняве звучання.",
+  "settingEqualizerBand3Title": "1 кГц",
+  "settingEqualizerBand3Description": "Середина, де міститься більша частина голосу.",
+  "settingEqualizerBand4Title": "3 кГц",
+  "settingEqualizerBand4Description": "Верхня середина. Підсилення робить мову розбірливішою.",
+  "settingEqualizerBand5Title": "10 кГц",
+  "settingEqualizerBand5Description": "Високі частоти.",
+  "settingEqualizerPreampTitle": "Автоматичний передпідсилювач",
+  "settingEqualizerPreampDescription": "Знижує рівень на величину найбільшого підсилення, щоб динамік не спотворював звук і ехопоглинання працювало далі.",
+  "screenAudioEqualizer": "Еквалайзер",
+  "screenAudioEqualizerHint": "Низькі, середні, високі частоти, передпідсилювач"
+}

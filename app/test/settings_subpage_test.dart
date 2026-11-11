@@ -199,6 +199,39 @@ void main() {
     expect(defs.audioMicDevice.subpage, isNull);
   });
 
+  test('the equalizer is a page of its own under Microphone settings', () {
+    final keys = [for (final d in defs.allSettings) d.key];
+    final page = [
+      for (final d in defs.allSettings)
+        if (d.subpage == 'Equalizer') d.key,
+    ];
+    expect(page, [
+      defs.equalizerEnabled.key,
+      for (final band in defs.equalizerBands) band.key,
+      defs.equalizerPreamp.key,
+    ]);
+    expect(defs.subpageHints, contains('Equalizer'));
+    // The remote puts a page's entry row where its first setting sits.
+    expect(
+      keys.indexOf(defs.equalizerEnabled.key),
+      greaterThan(keys.indexOf(defs.micChannel.key)),
+    );
+    for (final d in defs.allSettings.where((d) => d.subpage == 'Equalizer')) {
+      // A speaker correction belongs to its device.
+      expect(d.perDevice, isTrue, reason: d.key);
+      expect(d.category, 'Screen & Audio');
+      if (d != defs.equalizerEnabled) {
+        expect(d.dependsOn, defs.equalizerEnabled.key, reason: d.key);
+      }
+    }
+    // Off and flat until someone sets it, with the preamp ready.
+    expect(defs.equalizerEnabled.defaultValue, isFalse);
+    expect(defs.equalizerPreamp.defaultValue, isTrue);
+    for (final band in defs.equalizerBands) {
+      expect(band.defaultValue, 0);
+    }
+  });
+
   test('the ESPHome Notifications page holds appearance and sound', () {
     final moved = [
       for (final d in defs.allSettings)

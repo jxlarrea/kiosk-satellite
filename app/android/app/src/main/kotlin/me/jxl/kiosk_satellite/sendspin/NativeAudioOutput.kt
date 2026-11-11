@@ -12,8 +12,10 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import me.jxl.kiosk_satellite.Equalizer
 import me.jxl.kiosk_satellite.TrackTap
 
 /**
@@ -42,6 +44,9 @@ class NativeAudioOutput {
 
         // Short gain ramp on every (re)start so a flush never pops.
         private const val SOFT_START_MS = 35L
+
+        /** How much the equalizer works on at a time, 85 ms at 48 kHz. */
+        private const val EQUALIZER_SLICE_FRAMES = 4096
     }
 
     private val lock = Any()
@@ -50,6 +55,13 @@ class NativeAudioOutput {
 
     /** What the track plays, for the software echo canceller. */
     @Volatile private var tap: TrackTap? = null
+
+    /**
+     * The speaker equalizer, run on what [write] sends ahead of the tap,
+     * and where its output waits for the track. Only the writer uses them.
+     */
+    @Volatile private var equalizer: Equalizer.Stream? = null
+    private var equalized: ByteBuffer = ByteBuffer.allocate(0)
     @Volatile private var started = false
 
     private var sampleRate = 48000
@@ -191,6 +203,7 @@ class NativeAudioOutput {
             tap = TrackTap(newTrack, sampleRate, channels, bitDepth / 8, clock = ::presentedFrames).also {
                 it.gain = mediaGain * duckGain
             }
+            equalizer = Equalizer.Stream(sampleRate, channels)
             started = true
             Log.i(
                 TAG,
@@ -218,10 +231,39 @@ class NativeAudioOutput {
 
         val deadline = SystemClock.elapsedRealtime() + timeoutMs.coerceIn(1, 2000)
         var zeroWrites = 0
+        // The equalizer works a slice at a time into a buffer of its own:
+        // the caller sends again whatever the track did not take, so its
+        // samples stay as they came. [pending] is the slice being written,
+        // the caller's bytes from [sliceStart].
+        val eq = equalizer?.takeUnless { it.idle() }
+        var pending: ByteBuffer? = null
+        var sliceStart = 0
         while (buffer.position() < end && started) {
             updateSoftStart(t)
+            if (eq != null && pending?.hasRemaining() != true) {
+                val sliceBytes = minOf(end - buffer.position(), EQUALIZER_SLICE_FRAMES * frameBytes)
+                    .let { it - it % frameBytes }
+                if (sliceBytes <= 0) break
+                if (equalized.capacity() < sliceBytes) {
+                    equalized = ByteBuffer.allocateDirect(EQUALIZER_SLICE_FRAMES * frameBytes)
+                        .order(ByteOrder.LITTLE_ENDIAN)
+                }
+                equalized.clear()
+                sliceStart = buffer.position()
+                eq.mark()
+                eq.process(
+                    buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN), sliceStart,
+                    equalized, 0, sliceBytes, bitDepth / 8,
+                )
+                equalized.position(0).limit(sliceBytes)
+                pending = equalized
+            }
             val n = try {
-                t.write(buffer, end - buffer.position(), AudioTrack.WRITE_NON_BLOCKING)
+                if (pending != null) {
+                    t.write(pending, pending.remaining(), AudioTrack.WRITE_NON_BLOCKING)
+                } else {
+                    t.write(buffer, end - buffer.position(), AudioTrack.WRITE_NON_BLOCKING)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "AudioTrack write failed", e)
                 markDead(t)
@@ -244,10 +286,25 @@ class NativeAudioOutput {
             }
             zeroWrites = 0
             framesWritten.addAndGet((n / frameBytes).toLong())
+            // The caller's buffer moves with what the track took.
+            if (pending != null) buffer.position(buffer.position() + n)
             tap?.let { tap ->
-                val written = buffer.duplicate()
-                written.position(buffer.position() - n)
+                val written = (pending ?: buffer).duplicate()
+                written.position((pending ?: buffer).position() - n)
                 tap.wrote(written, n)
+            }
+        }
+        // Part of a slice is still waiting and the caller will send it
+        // again: the equalizer goes back to the slice's start and runs
+        // over just the frames the track took.
+        if (eq != null && pending?.hasRemaining() == true) {
+            val taken = buffer.position() - sliceStart
+            eq.rewind()
+            if (taken > 0) {
+                eq.process(
+                    buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN), sliceStart,
+                    equalized.clear() as ByteBuffer, 0, taken, bitDepth / 8,
+                )
             }
         }
 

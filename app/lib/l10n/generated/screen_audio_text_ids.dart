@@ -75,6 +75,8 @@ const screenAudioTextMessageIds = <String, String>{
   "Selected device": "screenAudioSelectedDevice",
   "Microphone settings": "screenAudioMicrophoneSettings",
   "Echo cancellation, noise, gain, format, live level": "screenAudioMicrophoneHint",
+  "Equalizer": "screenAudioEqualizer",
+  "Bass, mids, treble, preamp": "screenAudioEqualizerHint",
   "Adjust capture for your microphone and room. Test wake words and voice interactions after changing these settings.": "screenAudioMicrophoneNote",
   "Automatic (default)": "screenAudioAutomaticDefault",
   "48 kHz stereo": "screenAudioStereo",

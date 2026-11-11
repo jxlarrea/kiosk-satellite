@@ -1,0 +1,19 @@
+{
+  "@@locale": "de",
+  "settingEqualizerEnabledTitle": "Equalizer aktivieren",
+  "settingEqualizerEnabledDescription": "Formt den Klang von Musik, Assistent, Tönen und Intercom. Der Ton von Videos und Dashboards wird nicht angepasst.",
+  "settingEqualizerBand1Title": "100 Hz",
+  "settingEqualizerBand1Description": "Bässe. Kleine Lautsprecher verzerren hier schon bei geringer Anhebung.",
+  "settingEqualizerBand2Title": "300 Hz",
+  "settingEqualizerBand2Description": "Untere Mitten. Eine Absenkung nimmt dumpfen oder dröhnenden Klang heraus.",
+  "settingEqualizerBand3Title": "1 kHz",
+  "settingEqualizerBand3Description": "Mitten, in denen der größte Teil einer Stimme liegt.",
+  "settingEqualizerBand4Title": "3 kHz",
+  "settingEqualizerBand4Description": "Obere Mitten. Eine Anhebung macht Sprache deutlicher.",
+  "settingEqualizerBand5Title": "10 kHz",
+  "settingEqualizerBand5Description": "Höhen.",
+  "settingEqualizerPreampTitle": "Automatischer Vorverstärker",
+  "settingEqualizerPreampDescription": "Senkt den Pegel um die größte Anhebung, damit der Lautsprecher nicht verzerrt und die Echounterdrückung weiter funktioniert.",
+  "screenAudioEqualizer": "Equalizer",
+  "screenAudioEqualizerHint": "Bässe, Mitten, Höhen, Vorverstärker"
+}

@@ -1086,6 +1086,58 @@ void main() {
       );
       expect(find.text(micSoftwareEchoCancellation.title), findsNothing);
     });
+
+    testWidgets('the equalizer page sits under Microphone settings', (
+      tester,
+    ) async {
+      await openScreenAudio(tester);
+
+      final entry = find.widgetWithText(ListTile, 'Equalizer');
+      await tester.scrollUntilVisible(
+        entry,
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(entry, findsOneWidget);
+      expect(find.text(subpageHints['Equalizer']!), findsOneWidget);
+      expect(
+        tester.getTopLeft(entry).dy,
+        greaterThan(
+          tester
+              .getTopLeft(find.widgetWithText(ListTile, 'Microphone settings'))
+              .dy,
+        ),
+      );
+      // Its rows are on the page, not here.
+      expect(find.text(equalizerEnabled.title), findsNothing);
+
+      await tester.tap(entry);
+      await settle(tester);
+      expect(find.widgetWithText(AppBar, 'Equalizer'), findsOneWidget);
+      expect(find.text(equalizerEnabled.title), findsOneWidget);
+      // The microphone page's rows and note stay on their own page.
+      expect(find.byType(GroupNote), findsNothing);
+      expect(find.text(micGainDb.title), findsNothing);
+      // The bands and the preamp show once the switch is on.
+      expect(find.text(equalizerBand1.title), findsNothing);
+      expect(find.text(equalizerPreamp.title), findsNothing);
+      await tester.tap(find.byType(Switch));
+      await settle(tester);
+      for (final band in equalizerBands) {
+        await tester.scrollUntilVisible(
+          find.text(band.title),
+          200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        expect(find.text(band.title), findsOneWidget);
+      }
+      await tester.scrollUntilVisible(
+        find.text(equalizerPreamp.title),
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text(equalizerPreamp.title), findsOneWidget);
+    });
   });
 
   group('Voice Satellite (live rows, not settings)', () {

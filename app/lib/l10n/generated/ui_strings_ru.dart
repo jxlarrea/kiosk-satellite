@@ -11057,6 +11057,61 @@ class UiStringsRu extends UiStrings {
   }
 
   @override
+  String get settingEqualizerEnabledTitle => 'Включить эквалайзер';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      'Настраивает звучание музыки, ассистента, сигналов и интеркома. Звук видео и панелей не обрабатывается.';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Гц';
+
+  @override
+  String get settingEqualizerBand1Description =>
+      'Низкие частоты. Маленькие динамики быстро начинают искажать звук при их усилении.';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Гц';
+
+  @override
+  String get settingEqualizerBand2Description =>
+      'Нижняя середина. Ослабление убирает гулкое или бубнящее звучание.';
+
+  @override
+  String get settingEqualizerBand3Title => '1 кГц';
+
+  @override
+  String get settingEqualizerBand3Description =>
+      'Середина, где находится большая часть голоса.';
+
+  @override
+  String get settingEqualizerBand4Title => '3 кГц';
+
+  @override
+  String get settingEqualizerBand4Description =>
+      'Верхняя середина. Усиление делает речь разборчивее.';
+
+  @override
+  String get settingEqualizerBand5Title => '10 кГц';
+
+  @override
+  String get settingEqualizerBand5Description => 'Высокие частоты.';
+
+  @override
+  String get settingEqualizerPreampTitle => 'Автоматический предусилитель';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      'Снижает уровень на величину наибольшего усиления, чтобы динамик не искажал звук и подавление эха продолжало работать.';
+
+  @override
+  String get screenAudioEqualizer => 'Эквалайзер';
+
+  @override
+  String get screenAudioEqualizerHint =>
+      'Низкие, средние, высокие частоты, предусилитель';
+
+  @override
   String get settingMicCaptureModeTitle => 'Режим захвата';
 
   @override

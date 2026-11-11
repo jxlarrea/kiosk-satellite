@@ -79,6 +79,9 @@ class IntercomAudio(context: Context, messenger: BinaryMessenger) {
     /** What the track plays, for the software echo canceller. */
 
     @Volatile private var tap: TrackTap? = null
+
+    /** The far voice's equalizer, run on the worker thread ahead of the tap. */
+    @Volatile private var equalizer: Equalizer.Stream? = null
     @Volatile private var output: AudioDeviceInfo? = null
     @Volatile private var baseVolume = 1f
 
@@ -211,6 +214,7 @@ class IntercomAudio(context: Context, messenger: BinaryMessenger) {
         output = target
         rate = sr
         tap = TrackTap(newTrack, sr, 1)
+        equalizer = Equalizer.Stream(sr, 1)
         applyVolume()
         // Prime a short silence so the first chunk lands on a running
         // track without an underrun at the very start.
@@ -230,6 +234,7 @@ class IntercomAudio(context: Context, messenger: BinaryMessenger) {
     private fun enqueue(bytes: ByteArray) {
         val t = track ?: return
         val reference = tap
+        val equalizer = equalizer
         if (queued.get() >= MAX_QUEUED) {
             // Behind by half a second: the network hiccuped, and playing
             // the backlog would keep the voice late for the whole call.
@@ -261,6 +266,8 @@ class IntercomAudio(context: Context, messenger: BinaryMessenger) {
                     // the buffer is full, and told after it the reference
                     // reached the canceller a chunk late and the far voice
                     // leaked through for that long.
+                    // Equalized first, so the reference is what the speaker plays.
+                    equalizer?.process(bytes, 0, bytes.size)
                     reference?.wrote(bytes, 0, bytes.size)
                     var offset = 0
                     while (offset < bytes.size && track === t) {

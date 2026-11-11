@@ -24533,5 +24533,85 @@
     "source": "f780af0384d32fe00ed7fcab095912fc38e27465806ce870bd1b54fcf07eb9dc",
     "translation": "719e568d5308eb85a8e62f949b5adfe9d5332323c3e48bb8a0be798ea18d4702",
     "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand4Title": {
+    "source": "3adb81083abc5a94e0aa2d0696501db88b523608ae58e0b66729037186dc0347",
+    "translation": "d11bb226c4092cf1954aeb444286c372e7b312cfa24ed62dfc47b549706a212c",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand3Title": {
+    "source": "78f32b6fc0b919738795600745788299813deb63135d710aed87d8d8a5a7bafa",
+    "translation": "75373a8b9477fa622fd3a0523e2309693ac42af204fae69200048bfe02492c58",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand2Description": {
+    "source": "00624d3af945b905f34aac7dde1ca807c71c96fd6a074810f31322642d262b0b",
+    "translation": "040831079d31533df61a5f1ec120572b673da5bfc151a0e24c074c33e80955ab",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand1Title": {
+    "source": "7617abcd987160951022238d31d901b8b62da0c604b29e2c17047b8e2a49ba04",
+    "translation": "ec248e93aff13bd306f80d80227c4a7dc1ee23af581e4821415e3e62b40f2965",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand1Description": {
+    "source": "9a12fb249e03b7e330973d4c8ff34613fae506d0784af58e89092e162a14ab0a",
+    "translation": "1d9a3cf7fcaa7066ecf88dda7d988ba1f89eadcf95e662feb090697d23949e13",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerEnabledDescription": {
+    "source": "76b72ec15650adefed811c20ad6ef258aba34d3ef332c679d3f3f850d0c1dc47",
+    "translation": "3f956513f5df2be610711da6631d46dc47c1aec9322c965e29213aca12f5b956",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand3Description": {
+    "source": "b0ba37a695085697088fd1919bae873441f6d40ab98ae0674410f0f810b2ac68",
+    "translation": "e0acdcd2e317684582829969dcbf66e13cf05549d5aa0e8792ce9df2fd9eb1d3",
+    "author": "Xavier Larrea"
+  },
+  "screenAudioEqualizerHint": {
+    "source": "e1f585e18e475c7bc74443901ad3863714f70577f3d7df1314ccb75d7bf7b08a",
+    "translation": "80b1fe6cee204f8ccd1a8b11e8a31369ca34ea34b5b4868cec76ae0437f0648d",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand2Title": {
+    "source": "a35004bed59e3ddd471b9661337010a157396fc2dec036634ce9d0ae431bd5c6",
+    "translation": "603f85cf561c15bdd3cfb0dfb4910c31792635857986b81ce51be68b12652fe9",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand4Description": {
+    "source": "c59c1f4a2e695fb97f47f43fddaeeede42c7b1e46755f04d0e491946ea21170c",
+    "translation": "2c9b27d3492e0ad31757c82ba853cae66f10a8c874776f05ec2063579c640690",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerEnabledTitle": {
+    "source": "9a11a50d69500687c666bf87946e654fb0c346be57b7caf974661e230bc29e2f",
+    "translation": "2faf294ee609df304e063071d7453e0a33f7d0282f3799e97901e1db4599b3e4",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerPreampTitle": {
+    "source": "5cc5c424b42bdde7f9631ee5863eac58baa4dc2080edd66d5444c05f377ad819",
+    "translation": "5211affdac63f9a361f5d78426e7917079de63c8a5fa1988d2fcf8a9a10da11c",
+    "author": "Xavier Larrea"
+  },
+  "screenAudioEqualizer": {
+    "source": "edf72b0271ece597fefe392fa63e6b3d50f3b05ebc9ab512538c449fd5ae20cd",
+    "translation": "8003797da6aec0bcc22abe25ef8321cb8e866fd1886b6b65fb95e01e92565b4b",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand5Description": {
+    "source": "1bb54c9e3e9893dc86c61077e1cfdb752e2e2937207b032ae26e5acf93f51ea9",
+    "translation": "375ebf2126ee67c24cad580a21857c982e4ce29e2380e0980decd35771fc0ad9",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerPreampDescription": {
+    "source": "651ca451428f21f71d2e5f9279a81a09fa66ad3c0e4568d989bc4d724e489d2e",
+    "translation": "f6500e82cc6a8b37ebd8d4dba7acce26de0cf9e8a79cde18f87e38937b4c15d9",
+    "author": "Xavier Larrea"
+  },
+  "settingEqualizerBand5Title": {
+    "source": "a1661ba34ed8f27ee7ad8a0a6f19c4b6748cbe6be52a0817749c2986e301bc2d",
+    "translation": "889814e46e770702b0e01dbf976376a5020470bdeda690ae20c4296bc98bda55",
+    "author": "Xavier Larrea"
   }
 }

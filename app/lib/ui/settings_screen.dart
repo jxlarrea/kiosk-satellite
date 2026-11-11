@@ -2632,6 +2632,8 @@ class _CategoryContentState extends State<_CategoryContent> {
           // it is there for devices whose audio stack misbehaves, and every
           // default is what the app has always done.
           _subpageEntryCard(container, 'Screen & Audio', 'Microphone settings'),
+          // The speaker equalizer, every row of it a declared setting.
+          _subpageEntryCard(container, 'Screen & Audio', 'Equalizer'),
         ] else ...[
           // What every source has in common, said once at the top: the
           // surfaces only show for a player with something to show.
@@ -4034,6 +4036,13 @@ class _CategoryContentState extends State<_CategoryContent> {
           adaptiveMinBrightness.key: editor,
         },
       );
+    }
+
+    if (widget.category == 'Screen & Audio' && subpage == 'Equalizer') {
+      return sectioned([
+        for (final def in _defsFor(widget.category))
+          if (def.subpage == subpage) def,
+      ]);
     }
 
     if (widget.category == 'Screen & Audio') {

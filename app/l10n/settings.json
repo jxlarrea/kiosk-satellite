@@ -323,6 +323,34 @@
     "title": "settingMicCaptureFormatTitle",
     "description": "settingMicCaptureFormatDescription"
   },
+  "audio.equalizer_enabled": {
+    "title": "settingEqualizerEnabledTitle",
+    "description": "settingEqualizerEnabledDescription"
+  },
+  "audio.equalizer_bass": {
+    "title": "settingEqualizerBand1Title",
+    "description": "settingEqualizerBand1Description"
+  },
+  "audio.equalizer_low_mid": {
+    "title": "settingEqualizerBand2Title",
+    "description": "settingEqualizerBand2Description"
+  },
+  "audio.equalizer_mid": {
+    "title": "settingEqualizerBand3Title",
+    "description": "settingEqualizerBand3Description"
+  },
+  "audio.equalizer_high_mid": {
+    "title": "settingEqualizerBand4Title",
+    "description": "settingEqualizerBand4Description"
+  },
+  "audio.equalizer_treble": {
+    "title": "settingEqualizerBand5Title",
+    "description": "settingEqualizerBand5Description"
+  },
+  "audio.equalizer_preamp": {
+    "title": "settingEqualizerPreampTitle",
+    "description": "settingEqualizerPreampDescription"
+  },
   "screensaver.enabled": {
     "title": "settingScreensaverEnabledTitle",
     "description": "settingScreensaverEnabledDescription"

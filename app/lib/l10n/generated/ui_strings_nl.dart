@@ -11093,6 +11093,60 @@ class UiStringsNl extends UiStrings {
   }
 
   @override
+  String get settingEqualizerEnabledTitle => 'Equalizer inschakelen';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      'Vormt de klank van muziek, de assistent, geluiden en de intercom. Geluid van video en dashboards wordt niet aangepast.';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Hz';
+
+  @override
+  String get settingEqualizerBand1Description =>
+      'Bas. Kleine luidsprekers vervormen al snel als je hier versterkt.';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Hz';
+
+  @override
+  String get settingEqualizerBand2Description =>
+      'Laagmidden. Verzwakken haalt een doffe of dreunende klank weg.';
+
+  @override
+  String get settingEqualizerBand3Title => '1 kHz';
+
+  @override
+  String get settingEqualizerBand3Description =>
+      'Midden, waar het grootste deel van een stem zit.';
+
+  @override
+  String get settingEqualizerBand4Title => '3 kHz';
+
+  @override
+  String get settingEqualizerBand4Description =>
+      'Hoogmidden. Versterken maakt spraak duidelijker.';
+
+  @override
+  String get settingEqualizerBand5Title => '10 kHz';
+
+  @override
+  String get settingEqualizerBand5Description => 'Hoge tonen.';
+
+  @override
+  String get settingEqualizerPreampTitle => 'Automatische voorversterker';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      'Verlaagt het niveau met de grootste versterking, zodat de luidspreker niet vervormt en de echo-onderdrukking blijft werken.';
+
+  @override
+  String get screenAudioEqualizer => 'Equalizer';
+
+  @override
+  String get screenAudioEqualizerHint => 'Bas, midden, hoog, voorversterker';
+
+  @override
   String get settingMicCaptureModeTitle => 'Opnamemodus';
 
   @override

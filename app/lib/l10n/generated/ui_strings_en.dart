@@ -10963,6 +10963,60 @@ class UiStringsEn extends UiStrings {
   }
 
   @override
+  String get settingEqualizerEnabledTitle => 'Enable equalizer';
+
+  @override
+  String get settingEqualizerEnabledDescription =>
+      'Shapes the sound of music, the assistant, chimes and the intercom. Video and dashboard sounds are not equalized.';
+
+  @override
+  String get settingEqualizerBand1Title => '100 Hz';
+
+  @override
+  String get settingEqualizerBand1Description =>
+      'Bass. Small speakers distort early with a boost here.';
+
+  @override
+  String get settingEqualizerBand2Title => '300 Hz';
+
+  @override
+  String get settingEqualizerBand2Description =>
+      'Low mids. A cut takes out a boxy or boomy sound.';
+
+  @override
+  String get settingEqualizerBand3Title => '1 kHz';
+
+  @override
+  String get settingEqualizerBand3Description =>
+      'Mids, where most of a voice sits.';
+
+  @override
+  String get settingEqualizerBand4Title => '3 kHz';
+
+  @override
+  String get settingEqualizerBand4Description =>
+      'High mids. A boost makes speech clearer.';
+
+  @override
+  String get settingEqualizerBand5Title => '10 kHz';
+
+  @override
+  String get settingEqualizerBand5Description => 'Treble.';
+
+  @override
+  String get settingEqualizerPreampTitle => 'Automatic preamp';
+
+  @override
+  String get settingEqualizerPreampDescription =>
+      'Lowers the level by the largest boost so the speaker does not distort and echo cancellation keeps working.';
+
+  @override
+  String get screenAudioEqualizer => 'Equalizer';
+
+  @override
+  String get screenAudioEqualizerHint => 'Bass, mids, treble, preamp';
+
+  @override
   String get settingMicCaptureModeTitle => 'Capture mode';
 
   @override
