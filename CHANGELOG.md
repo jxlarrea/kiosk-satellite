@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Thin line on the right and bottom edges of the Website screensaver (#1402).** On screens with a fractional pixel density, such as the Galaxy Tab A9, the Website and Home Assistant Media screensavers stopped one or two pixels short of the right and bottom edges and the dashboard showed through, a white border when the dashboard is light. The page now reaches every edge.
+
 ## v2026.11.16 - 2026-11-10
 
 ### Added

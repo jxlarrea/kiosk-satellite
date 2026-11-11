@@ -612,19 +612,32 @@ class _ScreensaverPlayerLayout extends StatelessWidget {
   final Widget screensaver;
   final Widget Function(bool shared)? player;
 
-  Widget _pane(BuildContext context, Rect rect, String name, Widget child) =>
-      Positioned.fromRect(
-        key: ValueKey(name),
-        rect: rect,
-        child: RepaintBoundary(
-          child: ClipRect(
-            child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(size: rect.size),
-              child: child,
-            ),
-          ),
+  /// [clip] is off for a pane that is the whole screen: the engine floors
+  /// the clip to whole logical pixels when it applies it to a WebView's
+  /// platform view, which on a fractional density (Galaxy Tab A9, Tab S8)
+  /// shaved the right and bottom edges and let the dashboard show there
+  /// (issue #1402). The window clips a full pane anyway. The ClipRect
+  /// stays in the tree either way, so the pane's child is never remounted
+  /// when the player comes and goes.
+  Widget _pane(
+    BuildContext context,
+    Rect rect,
+    String name,
+    Widget child, {
+    bool clip = true,
+  }) => Positioned.fromRect(
+    key: ValueKey(name),
+    rect: rect,
+    child: RepaintBoundary(
+      child: ClipRect(
+        clipBehavior: clip ? Clip.hardEdge : Clip.none,
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(size: rect.size),
+          child: child,
         ),
-      );
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -692,6 +705,7 @@ class _ScreensaverPlayerLayout extends StatelessWidget {
                   child: screensaver,
                 ),
               ),
+              clip: shared,
             ),
           if (player != null)
             _pane(context, playerRect, 'now-playing-pane', player!(shared)),
@@ -3914,6 +3928,37 @@ setInterval(function () {
     // An empty URL falls through to the bundled page, whose website mode
     // shows the same black screen it always has.
     final topLevel = website.isNotEmpty;
+    return LayoutBuilder(
+      builder: (context, box) => OverflowBox(
+        alignment: Alignment.topLeft,
+        minWidth: _coveringExtent(context, box.maxWidth),
+        maxWidth: _coveringExtent(context, box.maxWidth),
+        minHeight: _coveringExtent(context, box.maxHeight),
+        maxHeight: _coveringExtent(context, box.maxHeight),
+        child: _webViewWidget(website, topLevel),
+      ),
+    );
+  }
+
+  /// The WebView's extent for a slot of [extent] logical pixels: the next
+  /// whole one up plus one physical pixel. A page is laid out in whole CSS
+  /// pixels, rounded down from the view's size, and the engine floors that
+  /// size to physical pixels on its way to the platform view. On a screen
+  /// whose logical size is a fraction (Galaxy Tab A9: 600.94 x 1006.57) a
+  /// view of exactly the slot's size left the page a pixel or two short on
+  /// the right and bottom, with the dashboard showing there (issue #1402).
+  /// The overhang, under one CSS pixel plus one physical pixel, is off the
+  /// screen. The dashboard's plane does the same in kiosk_screen.dart.
+  ///
+  /// The real pixel ratio, not MediaQuery's: this sits inside a
+  /// UiScaleExempt, where the slot is in true logical pixels while
+  /// MediaQuery still carries the Scale UI factor.
+  static double _coveringExtent(BuildContext context, double extent) {
+    if (!extent.isFinite) return extent;
+    return extent.ceilToDouble() + 1 / View.of(context).devicePixelRatio;
+  }
+
+  Widget _webViewWidget(String website, bool topLevel) {
     return InAppWebView(
       key: ValueKey(_epoch),
       initialUrlRequest: topLevel ? URLRequest(url: WebUri(website)) : null,
