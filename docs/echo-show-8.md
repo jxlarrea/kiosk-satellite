@@ -1,6 +1,8 @@
-# Echo Show 8
+# Echo Show 8 (1st gen)
 
 This setup has been verified on a 1st generation Echo Show 8 (`crown`) running the [Kiosk Satellite Edition of LineageOS for the Echo Show 8](https://github.com/jxlarrea/lineageos-echo-kiosk-satellite/blob/main/docs/echo-show-8.md), a LineageOS 18.1 (Android 11) image tuned for Kiosk Satellite. It is the recommended way to run Kiosk Satellite on the Show. The image builds on [R0rt1z2](https://github.com/R0rt1z2)'s LineageOS 18.1 port, which brings the screen, camera and Bluetooth, and adds what a kiosk needs on top.
+
+The [Echo Show 8 (2nd gen)](echo-show-8-2nd-gen.md) from 2021 has its own image and guide.
 
 ## Why This Image
 
