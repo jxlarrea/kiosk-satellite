@@ -8,6 +8,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Reorder the views and external pages of the dashboard view rotation.** In **Settings > Home Assistant > Dashboard View Rotation**, every view and every external page now has a drag handle, on the device and in the remote admin. Drag a row by its handle to change the rotation order, so a new entry no longer means removing the others and adding them again. In the remote admin, the handle works with a finger on a phone or tablet and a mouse can drag a row by any part of it. Wide screens also show **Move up** and **Move down** buttons on each row. Phones and other narrow screens leave them out to keep the row readable. The views still rotate first and the external pages after them.
 
 ### Fixed
+- **Black screen after switching from Compass to Classic navigation.** Changing **Settings > Navigation** from Compass to Classic while on Quick Controls, the Music Library or the calendar left the screen black once Settings closed, until the app restarted. The dashboard now shows right away.
 - **Thin line on the right and bottom edges of the Website screensaver (#1402).** On screens with a fractional pixel density, such as the Galaxy Tab A9, the Website and Home Assistant Media screensavers stopped one or two pixels short of the right and bottom edges and the dashboard showed through, a white border when the dashboard is light. The page now reaches every edge.
 
 ## v2026.11.16 - 2026-11-10

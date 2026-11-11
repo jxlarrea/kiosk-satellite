@@ -153,6 +153,10 @@ class CompassController {
         menuUnlocked.value = false;
         current.value = CompassSlot.center;
         _clearShots();
+        // A swipe that landed on the Menu, the Music Library or the
+        // calendar left the dashboard out of the frame. Nothing in Classic
+        // brings it back, so the kiosk would show a black screen.
+        unawaited(coverPlane(false));
       } else if (e.key == defs.navStyle.key) {
         _syncViewFlags();
         unawaited(_bringUp(gentle: true));
