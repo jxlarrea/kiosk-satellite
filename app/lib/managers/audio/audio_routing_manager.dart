@@ -285,8 +285,8 @@ class AudioRoutingManager extends Manager {
     NativeMic.echoMethod = _settings.get(defs.micEchoCancellationMethod);
     NativeMic.noiseSuppression = _settings.get(defs.micNoiseSuppression);
     // On top of the Echo images' base gain for the raw microphone.
-    NativeMic.gainDb =
-        _settings.get(defs.micGainDb) + EchoImageSettings.micGainBaseDb;
+    NativeMic.gainDb = _settings.get(defs.micGainDb);
+    NativeMic.baseGainDb = EchoImageSettings.micGainBaseDb;
     NativeMic.channel = _settings.get(defs.micChannel);
     NativeMic.captureFormat = _settings.get(defs.micCaptureFormat);
   }

@@ -81,6 +81,21 @@ import kotlin.math.max
  */
 class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.StreamHandler {
     companion object {
+        /**
+         * The user's gain ([db]) plus the device's base gain ([baseDb], the
+         * Echo images' make-up for their raw microphone) as a linear factor.
+         * The user's gain is clamped to the range the settings slider offers
+         * so a bad value from an import cannot blow the signal apart. The
+         * base gain is clamped on its own, so a device whose base is above
+         * that range still gets all of it and the slider still moves from
+         * there. Negative values attenuate, for microphones that run too hot.
+         */
+        internal fun gainFactor(db: Double, baseDb: Double = 0.0): Double {
+            val total = db.coerceIn(-24.0, 24.0) + baseDb.coerceIn(0.0, 48.0)
+            if (total == 0.0) return 1.0
+            return Math.pow(10.0, total / 20.0)
+        }
+
         /** The input types a channel pick applies to. */
         private val USB_INPUT_TYPES = setOf(
             AudioDeviceInfo.TYPE_USB_DEVICE,
@@ -215,7 +230,10 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         val wantNs = args?.get("noiseSuppression") == true
         // A gain of 0 dB is the overwhelmingly common case, and a factor of
         // exactly 1 lets the read loop skip the sample walk entirely.
-        val gain = gainFactor((args?.get("gainDb") as? Number)?.toDouble() ?: 0.0)
+        val gain = gainFactor(
+            (args?.get("gainDb") as? Number)?.toDouble() ?: 0.0,
+            (args?.get("baseGainDb") as? Number)?.toDouble() ?: 0.0,
+        )
         val selector = args?.get("device") as? String
         inputSelector = selector
         // A channel pick is for a USB microphone array. A built-in mic
@@ -739,16 +757,6 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             buf[i + 1] = ((scaled shr 8) and 0xFF).toByte()
             i += 2
         }
-    }
-
-    /**
-     * Decibels to a linear factor, clamped to the range the settings slider
-     * offers so a bad value from an import cannot blow the signal apart.
-     * Negative values attenuate, for microphones that run too hot.
-     */
-    private fun gainFactor(db: Double): Double {
-        if (db == 0.0) return 1.0
-        return Math.pow(10.0, db.coerceIn(-24.0, 24.0) / 20.0)
     }
 
     private fun gainDbOf(factor: Double): Double =

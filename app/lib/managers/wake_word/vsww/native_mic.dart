@@ -19,6 +19,12 @@ class NativeMic {
   /// of it when the session opens, so changing any of them needs a restart.
   static num gainDb = 0;
 
+  /// The gain the device adds under [gainDb]: the Echo images' base gain
+  /// for the raw microphone (EchoImageSettings), 0 elsewhere. It goes to
+  /// the platform on its own, since the platform bounds [gainDb] to the
+  /// slider's range.
+  static num baseGainDb = 0;
+
   /// The Android capture source: 'mic' (the raw microphone) or
   /// 'voice_communication' (the call path).
   static String captureMode = 'mic';
@@ -72,6 +78,7 @@ class NativeMic {
         if (deviceSelector.isNotEmpty) 'device': deviceSelector,
         'source': captureMode,
         'gainDb': gainDb,
+        'baseGainDb': baseGainDb,
         'softwareAec': softwareEchoCancellation,
         'echoMethod': echoMethod,
         'noiseSuppression': noiseSuppression,
