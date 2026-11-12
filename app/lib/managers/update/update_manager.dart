@@ -108,6 +108,14 @@ class UpdateManager extends Manager {
       'https://api.github.com/repos/jxlarrea/kiosk-satellite/'
       'releases?per_page=30';
 
+  /// The page that redirects to the newest stable release, and the folder
+  /// the APKs of a release download from. What the check falls back to
+  /// when the API refuses the query.
+  static const _latestPageUrl =
+      'https://github.com/jxlarrea/kiosk-satellite/releases/latest';
+  static const _downloadsUrl =
+      'https://github.com/jxlarrea/kiosk-satellite/releases/download';
+
   /// The file a custom repository serves in place of the GitHub query:
   /// that query's response, saved as is. Same parser, same ABI selection,
   /// same notes; only the asset URLs are re-rooted at the folder.
@@ -508,6 +516,19 @@ class UpdateManager extends Manager {
         headers: const {'Accept': 'application/vnd.github+json'},
       );
       if (res.statusCode != 200) {
+        // GitHub's API allows 60 requests an hour for each public IP
+        // address without a login, a budget every device and program
+        // behind that address shares. The release page has no such limit.
+        if (source == null &&
+            (res.statusCode == 403 || res.statusCode == 429)) {
+          log.warn(
+            name,
+            'release check: HTTP ${res.statusCode} from ${uri.host}'
+            '${_rateLimitNote(res.headers)}, asking github.com instead',
+          );
+          final fromPage = await _fetchLatestFromPage(client);
+          if (fromPage != null) return fromPage;
+        }
         log.warn(
           name,
           'release check failed: HTTP ${res.statusCode} from ${uri.host}',
@@ -562,6 +583,98 @@ class UpdateManager extends Manager {
       return (reachable: false, info: null);
     } finally {
       client.close();
+    }
+  }
+
+  /// What GitHub's rate limit headers say about a refused request, for the
+  /// log: empty when the refusal was not the request limit.
+  static String _rateLimitNote(Map<String, String> headers) {
+    if (headers['x-ratelimit-remaining'] != '0') return '';
+    final reset = int.tryParse(headers['x-ratelimit-reset'] ?? '');
+    if (reset == null) return ' (request limit reached)';
+    final wait = DateTime.fromMillisecondsSinceEpoch(
+      reset * 1000,
+    ).difference(DateTime.now());
+    final minutes = wait.isNegative ? 0 : wait.inMinutes + 1;
+    return ' (request limit reached, resets in $minutes min)';
+  }
+
+  /// The latest release as github.com names it, for when the API refuses
+  /// the query (#1416). The release page redirects to the newest stable
+  /// release's tag, and a release's APKs sit under names made from that
+  /// tag, so the tag alone is enough to offer and install the update. Two
+  /// things the API carried are missing: the release notes, so the notice
+  /// shows none, and the APK size, so a finished download is not reused.
+  /// Null when the page gave no usable tag.
+  Future<({bool reachable, UpdateInfo? info})?> _fetchLatestFromPage(
+    http.Client client,
+  ) async {
+    try {
+      final page = Uri.parse(_latestPageUrl);
+      final res = await client.send(
+        http.Request('GET', page)..followRedirects = false,
+      );
+      await res.stream.listen((_) {}).cancel();
+      final location = res.headers['location'];
+      if (!const {301, 302, 303, 307, 308}.contains(res.statusCode) ||
+          location == null) {
+        log.warn(
+          name,
+          'release check failed: HTTP ${res.statusCode} from ${page.host}',
+        );
+        return null;
+      }
+      final target = page.resolve(location);
+      final segments = target.pathSegments;
+      // Without a stable release the page redirects to the releases list.
+      if (target.host != page.host ||
+          segments.length != 5 ||
+          segments.sublist(0, 4).join('/') !=
+              'jxlarrea/kiosk-satellite/releases/tag' ||
+          !RegExp(r'^v?[0-9][0-9A-Za-z.+-]*$').hasMatch(segments[4])) {
+        log.warn(name, 'release check failed: no release tag at $target');
+        return null;
+      }
+      final tag = segments[4].replaceFirst(RegExp('^v'), '');
+      final apk = selectReleaseApk(
+        [
+          for (final suffix in const [
+            '.arm64-v8a.apk',
+            '.armeabi-v7a.apk',
+            '.x86_64.apk',
+            '.apk',
+          ])
+            {
+              'name': 'kiosk-satellite-$tag$suffix',
+              'browser_download_url':
+                  '$_downloadsUrl/${segments[4]}/kiosk-satellite-$tag$suffix',
+            },
+        ],
+        tag,
+        supportedAbis,
+      );
+      if (apk == null) return null;
+      final newer = _isNewer(tag, _currentVersion);
+      if (newer) log.info(name, 'selected APK: ${apk['name']}');
+      log.info(
+        name,
+        'latest release $tag on GitHub, running $_currentVersion: '
+        '${newer ? 'update available' : 'up to date'}',
+      );
+      return (
+        reachable: true,
+        info: newer
+            ? UpdateInfo(
+                version: tag,
+                apkUrl: apk['browser_download_url'] as String,
+                notes: '',
+                releaseUrl: target.toString(),
+              )
+            : null,
+      );
+    } catch (e) {
+      log.warn(name, 'release check failed: $e');
+      return null;
     }
   }
 

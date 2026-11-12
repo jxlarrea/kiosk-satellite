@@ -15,6 +15,8 @@ A newly published release may take a few hours to appear on its own. To check fo
 * In the remote admin interface, tap the app version displayed on the Device page.
 * In Home Assistant, call the `homeassistant.update_entity` action on the kiosk's **Update** entity. This runs the same check as the remote admin and the entity refreshes as soon as the release source answers.
 
+GitHub's API answers 60 requests an hour for each public IP address, a budget shared with every other device and program on your network. When the API refuses the check, the app reads the latest version from the release page on github.com instead. The update installs as usual, but the notice shows no release notes.
+
 ## Installing
 
 Triggering an update from any interface starts the same local download on the device. Before downloading, the app queries GitHub to confirm the latest release, ensuring it always fetches the newest version available. Download progress displays on the device, in the remote admin, and via the Home Assistant update entity. You can cancel active downloads from either the device or the remote admin interface.

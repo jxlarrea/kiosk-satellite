@@ -320,6 +320,131 @@ void main() {
     expect(update.available.value?.version, '1.1.0');
   });
 
+  group('GitHub API refusal (#1416)', () {
+    const latestPage =
+        'https://github.com/jxlarrea/kiosk-satellite/releases/latest';
+
+    /// GitHub with its API out of requests: the releases query is refused
+    /// and the release page redirects to [location].
+    http.Client refused(
+      List<String> asked, {
+      int status = 403,
+      String? location,
+    }) => MockClient((request) async {
+      asked.add(request.url.toString());
+      if (isReleaseQuery(request)) {
+        return http.Response(
+          'rate limited',
+          status,
+          headers: {'x-ratelimit-remaining': '0'},
+        );
+      }
+      if (request.url.toString() == latestPage) {
+        expect(request.followRedirects, isFalse);
+        return location == null
+            ? http.Response('', 404)
+            : http.Response('', 302, headers: {'location': location});
+      }
+      return http.Response.bytes(List.filled(64, 7), 200);
+    });
+
+    for (final status in [403, 429]) {
+      test('a $status from the API reads the release page instead', () async {
+        final asked = <String>[];
+        update.clientFactory = () => refused(
+          asked,
+          status: status,
+          location:
+              'https://github.com/jxlarrea/kiosk-satellite/'
+              'releases/tag/1.1.0',
+        );
+        await update.init();
+        update.supportedAbis = const ['arm64-v8a', 'armeabi-v7a'];
+
+        expect(await update.check(), isTrue);
+
+        expect(asked, contains(latestPage));
+        final info = update.available.value!;
+        expect(info.version, '1.1.0');
+        expect(
+          info.apkUrl,
+          'https://github.com/jxlarrea/kiosk-satellite/releases/download/'
+          '1.1.0/kiosk-satellite-1.1.0.arm64-v8a.apk',
+        );
+        expect(
+          info.releaseUrl,
+          'https://github.com/jxlarrea/kiosk-satellite/releases/tag/1.1.0',
+        );
+        // The page carries neither the notes nor the APK size.
+        expect(info.notes, isEmpty);
+        expect(info.apkSize, isNull);
+      });
+    }
+
+    test('an unknown architecture gets the universal APK', () async {
+      update.clientFactory = () => refused(
+        [],
+        location: '/jxlarrea/kiosk-satellite/releases/tag/v1.1.0',
+      );
+      await update.init();
+      update.supportedAbis = const ['riscv64'];
+
+      expect(await update.check(), isTrue);
+
+      expect(update.available.value?.version, '1.1.0');
+      expect(
+        update.available.value?.apkUrl,
+        'https://github.com/jxlarrea/kiosk-satellite/releases/download/'
+        'v1.1.0/kiosk-satellite-1.1.0.apk',
+      );
+    });
+
+    test('the running version on the release page is up to date', () async {
+      update.clientFactory = () => refused(
+        [],
+        location:
+            'https://github.com/jxlarrea/kiosk-satellite/releases/tag/1.0.0',
+      );
+      await update.init();
+
+      expect(await update.check(), isTrue);
+      expect(update.available.value, isNull);
+    });
+
+    test('a release page without a tag leaves the check failed', () async {
+      for (final location in [
+        null,
+        'https://github.com/jxlarrea/kiosk-satellite/releases',
+        'https://example.invalid/jxlarrea/kiosk-satellite/releases/tag/1.1.0',
+        'https://github.com/someone/else/releases/tag/1.1.0',
+        'https://github.com/jxlarrea/kiosk-satellite/releases/tag/..%2Fx',
+      ]) {
+        update.clientFactory = () => refused([], location: location);
+        expect(await update.check(), isFalse, reason: '$location');
+        expect(update.available.value, isNull);
+      }
+    });
+
+    test('a custom repository never falls back to GitHub', () async {
+      final asked = <String>[];
+      await update.dispose();
+      update = UpdateManager(
+        EventBus(),
+        registry,
+        Logger(),
+        customSource: () => 'https://mirror.invalid/ks',
+      );
+      update.localClientFactory = () => MockClient((request) async {
+        asked.add(request.url.toString());
+        return http.Response('no', 403);
+      });
+      update.clientFactory = () => refused(asked, location: '/x');
+
+      expect(await update.check(), isFalse);
+      expect(asked, ['https://mirror.invalid/ks/releases.json']);
+    });
+  });
+
   test('a release pulled since the notice installs nothing', () async {
     await notice('1.1.0');
     final asked = <String>[];
