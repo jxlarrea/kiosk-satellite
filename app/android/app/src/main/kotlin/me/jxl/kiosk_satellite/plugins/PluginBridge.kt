@@ -1428,6 +1428,11 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             // The choices kept from the last session show until the plugin lists new ones.
             if (current.setup.hasChoices()) current.notifySetup()
             loadedIds.add(id)
+            // Android compiles a loaded plugin.jar in the background into an oat folder next to
+            // it, against the app's classes of that day. Android 10 keeps running that code
+            // after an app update moves those classes, which crashes the process (#1410). The
+            // folder goes before the first load of each run. A loader may still map it after that.
+            if (record.getString("hash") !in loadedHashes) dropCompiledCode(dir)
             loadedHashes.add(record.getString("hash"))
             if ("shizuku" in manifest.capabilities) shizuku.state()
             current.call {
@@ -1445,6 +1450,13 @@ class PluginBridge(private val context: Context, messenger: BinaryMessenger) {
             fail(id, error)
             throw error
         }
+    }
+
+    private fun dropCompiledCode(dir: File) {
+        val oat = File(dir, "oat")
+        if (!oat.exists()) return
+        oat.deleteRecursively()
+        check(!oat.exists()) { "Cannot remove the plugin's compiled code. Reinstall it." }
     }
 
     /**
