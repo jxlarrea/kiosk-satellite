@@ -101,6 +101,7 @@ void main() {
     ('echo', 'cronos', 20),
     ('echo', 'checkers', 20),
     ('biscuit', 'biscuit', 5),
+    ('biscuit', 'donut', 27),
   ]) {
     test('the $codename adds $gain dB under the user\'s gain', () async {
       await boot({}, updater, codename);

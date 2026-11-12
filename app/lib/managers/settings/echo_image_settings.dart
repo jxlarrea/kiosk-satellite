@@ -25,8 +25,10 @@ import 'settings_manager.dart';
 /// The raw microphone also comes in quieter than Amazon's processing used
 /// to deliver it, so each device has a base gain under Microphone gain
 /// ([micGainBaseDb]): 24 dB on both Echo Show 8 generations and 20 dB on
-/// both Echo Show 5 generations, the make-up gain of their old paths, and
-/// 5 dB on the Echo Dot. The slider stays the user's and moves from there, so
+/// both Echo Show 5 generations, the make-up gain of their old paths, 5 dB
+/// on the Echo Dot (2nd gen) and 27 dB on the Echo Dot (3rd gen), whose
+/// microphones read room noise 27 dB lower than the 2nd gen's (-72
+/// against -45 dBFS). The slider stays the user's and moves from there, so
 /// its 0 dB is the device's right level. An Echo whose speaker needs it also
 /// starts with an equalizer of its own and the volumes that go with it
 /// ([equalizerPresets]), set once and the user's from then on. A gain set for the old path would add on top, so
@@ -39,6 +41,8 @@ import 'settings_manager.dart';
 /// updater, so the base gain goes by the device's codename: `crown` is the
 /// 1st generation Echo Show 8 and `athena` the 2nd generation one, `cronos`
 /// the 2nd generation Echo Show 5 and `checkers` the 1st generation one.
+/// The Echo Dots share the `biscuit` updater: `biscuit` is the 2nd
+/// generation Echo Dot and `donut` the 3rd generation one.
 class EchoImageSettings {
   EchoImageSettings(
     this._settings,
@@ -82,6 +86,7 @@ class EchoImageSettings {
     'cronos': 20,
     'checkers': 20,
     'biscuit': 5,
+    'donut': 27,
   };
 
   /// The equalizer each Echo starts with, by codename, set by ear over our
