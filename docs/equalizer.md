@@ -44,7 +44,7 @@ Distortion in the device's own amplifier is the one thing that does hurt echo ca
 
 ## Echo Dot
 
-On the [Echo Dot](echo-dot.md) image the equalizer starts on, with a preset for the Dot's speaker and Automatic preamp off. The bands are yours to change from there.
+On the [Echo Dot (2nd gen)](echo-dot.md#equalizer) and [Echo Dot (3rd gen)](echo-dot-3rd-gen.md#equalizer) images the equalizer starts on, with a preset for each Dot's speaker and Automatic preamp off. The bands are yours to change from there.
 
 ## Fleet Management
 

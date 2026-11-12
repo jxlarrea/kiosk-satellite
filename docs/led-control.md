@@ -49,6 +49,7 @@ Turning **Enable LED Control** on or off reconnects ESPHome so Home Assistant ge
 
 | Device | Lights |
 | --- | --- |
-| [Echo Dot](echo-dot.md) (2nd generation) on its LineageOS build | 12-light ring |
+| [Echo Dot (2nd gen)](echo-dot.md) on its LineageOS build | 12-light ring |
+| [Echo Dot (3rd gen)](echo-dot-3rd-gen.md) on its Kiosk Satellite Edition image | 12-light ring |
 
 The device draws its own volume level on the ring when the volume changes. The kiosk's lights come back once it is done.

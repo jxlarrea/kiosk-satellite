@@ -1,6 +1,8 @@
-# Echo Dot
+# Echo Dot (2nd gen)
 
 This setup has been verified on a 2nd generation Echo Dot (`biscuit`) running the [Kiosk Satellite Edition of LineageOS for the Echo Dot](https://github.com/jxlarrea/lineageos-echo-kiosk-satellite/blob/main/docs/echo-dot.md), a LineageOS 18.1 (Android 11) image tuned for Kiosk Satellite. The Dot has no screen, so Kiosk Satellite runs headless on it: a voice satellite, intercom, alarm clock, timer and speaker for Home Assistant, set up and managed entirely from the remote admin.
+
+The [Echo Dot (3rd gen)](echo-dot-3rd-gen.md) from 2018 has its own image and guide.
 
 ## Headless Mode
 
@@ -44,7 +46,7 @@ Pick the engine with **Wake word engine** under **Voice Satellite > Wake Word**,
 | vsWakeWord | The default. Its models ship with the app. |
 | microWakeWord | The engine of Home Assistant's voice hardware. Its models ship with the app, and it also offers the custom models Home Assistant has. |
 | openWakeWord | Its models ship with the app. |
-| Amazon | The engine the Dot shipped with. It shows up only when you install Pryon's files in `/data/pryon` on image 2026.11.3 or newer. See [Amazon's wake word engine](https://github.com/jxlarrea/lineageos-echo-kiosk-satellite/blob/main/docs/echo-dot.md#amazons-wake-word-engine) in the image guide. The [Echo Show 5 (1st gen)](echo-show-5-1st-gen.md#wake-word), [Echo Show 5 (2nd gen)](echo-show-5.md#wake-word), [Echo Show 8 (1st gen)](echo-show-8.md#wake-word) and [Echo Show 8 (2nd gen)](echo-show-8-2nd-gen.md#wake-word) images offer it too. |
+| Amazon | The engine the Dot shipped with. It shows up only when you install Pryon's files in `/data/pryon` on image 2026.11.3 or newer. See [Amazon's wake word engine](https://github.com/jxlarrea/lineageos-echo-kiosk-satellite/blob/main/docs/echo-dot.md#amazons-wake-word-engine) in the image guide. The [Echo Dot (3rd gen)](echo-dot-3rd-gen.md#wake-word), [Echo Show 5 (1st gen)](echo-show-5-1st-gen.md#wake-word), [Echo Show 5 (2nd gen)](echo-show-5.md#wake-word), [Echo Show 8 (1st gen)](echo-show-8.md#wake-word) and [Echo Show 8 (2nd gen)](echo-show-8-2nd-gen.md#wake-word) images offer it too. |
 
 vsWakeWord, microWakeWord and openWakeWord also take your own models. See [Custom wake word models](custom-wake-words.md).
 
