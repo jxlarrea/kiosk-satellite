@@ -158,6 +158,23 @@ void main() {
       expect(settings.internal(EchoImageSettings.equalizerMarker), 'biscuit');
     });
 
+    test('the 3rd generation Dot starts with its own preset', () async {
+      await boot({}, 'biscuit', 'donut');
+      expect(equalizer(), {
+        'audio.equalizer_enabled': true,
+        'audio.equalizer_bass': 3,
+        'audio.equalizer_low_mid': 2,
+        'audio.equalizer_mid': -1,
+        'audio.equalizer_high_mid': -3,
+        'audio.equalizer_treble': 1,
+        'audio.equalizer_preamp': false,
+      });
+      expect(settings.get(defs.mediaVolume), 85);
+      expect(settings.get(defs.intercomVolume), 100);
+      expect(settings.get(defs.assistantVolume), 100);
+      expect(settings.internal(EchoImageSettings.equalizerMarker), 'donut');
+    });
+
     test('an update moves a Dot to the preset and its volumes', () async {
       await boot(
         {'ks.audio.media_volume': 100, 'ks.audio.intercom_volume': 60},

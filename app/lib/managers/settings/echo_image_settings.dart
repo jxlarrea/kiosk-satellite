@@ -96,7 +96,9 @@ class EchoImageSettings {
   /// Its preamp is off: the 3 kHz cut already takes more level out than the
   /// boosts add, and with the preamp on the Dot was too quiet. The preset
   /// carries the media and intercom volumes it was set at, so a Dot that
-  /// gets the equalizer on an update moves to those levels with it.
+  /// gets the equalizer on an update moves to those levels with it. The
+  /// Echo Dot (3rd gen)'s preset was set by ear on the device, at the same
+  /// volumes.
   static const equalizerPresets =
       <String, Map<defs.SettingDef<Object>, Object>>{
         'biscuit': {
@@ -109,6 +111,17 @@ class EchoImageSettings {
           defs.equalizerPreamp: false,
           // The levels that go with it, under a master and assistant
           // volume of 100%.
+          defs.mediaVolume: 85,
+          defs.intercomVolume: 100,
+        },
+        'donut': {
+          defs.equalizerEnabled: true,
+          defs.equalizerBand1: 3,
+          defs.equalizerBand2: 2,
+          defs.equalizerBand3: -1,
+          defs.equalizerBand4: -3,
+          defs.equalizerBand5: 1,
+          defs.equalizerPreamp: false,
           defs.mediaVolume: 85,
           defs.intercomVolume: 100,
         },
