@@ -8721,6 +8721,10 @@ class UiStringsUk extends UiStrings {
   }
 
   @override
+  String get haReturnCompass =>
+      'З навігацією Compass кожне подання панелі керування в розкладці повертається до вибраного для нього подання після завершення тайм-ауту.';
+
+  @override
   String get settingHaRotationEnabledTitle =>
       'Увімкнути ротацію видів панелі керування';
 
@@ -10766,8 +10770,8 @@ class UiStringsUk extends UiStrings {
   String get settingNavCompassLayoutTitle => 'Розкладка Compass';
 
   @override
-  String get settingNavCompassLayoutDescription =>
-      'До двох подань з кожного боку, по одному кожного типу.';
+  String get settingNavCompassLayoutViewsDescription =>
+      'До двох подань з кожного боку. Додайте кілька подань панелей керування Home Assistant і по одному кожного іншого типу.';
 
   @override
   String get settingNavCompassAnimationTitle => 'Анімація свайпу';
@@ -10818,8 +10822,8 @@ class UiStringsUk extends UiStrings {
       'Свайп між поданнями, розташованими хрестом.';
 
   @override
-  String get compassLayoutHint =>
-      'До двох подань з кожного боку, по одному кожного типу. Торкніться подання, щоб змінити його, зокрема центральне.';
+  String get compassLayoutViewsHint =>
+      'До двох подань з кожного боку. Додайте кілька подань панелей керування Home Assistant і по одному кожного іншого типу. Торкніться подання, щоб змінити його, зокрема центральне.';
 
   @override
   String get compassOffNote =>

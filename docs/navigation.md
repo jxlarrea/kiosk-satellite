@@ -20,7 +20,7 @@ While a swipe is in motion, the view shrinks to show the views around it, and th
 
 | View | Also needs |
 | --- | --- |
-| Home Assistant dashboard | Any view, a [Custom Page](custom-pages.md) or an app page, picked in the dashboard picker. |
+| Home Assistant dashboard | Any view, a [Custom Page](custom-pages.md) or an app page, picked in the dashboard picker. Add as many as the layout has room for. |
 | Quick Controls | Nothing. |
 | Music Library | A [Music Library](music-library.md) source set up. |
 | Calendar | Nothing. |
@@ -30,7 +30,17 @@ While a swipe is in motion, the view shrinks to show the views around it, and th
 | App Launcher | The App Launcher on with apps picked. |
 | Intercom | The [intercom](intercom.md) on. |
 
-Each kind of view goes in the layout once, so there is one dashboard view and one camera view at most. The center can be any of them. By default it is **Home Assistant**, the dashboard the kiosk starts on.
+Home Assistant dashboard views can go in the layout several times, each view once. Every other kind of view goes in once, so there is one camera view at most. The center can be any of them. By default it is **Home Assistant**, the dashboard the kiosk starts on.
+
+### Several dashboard views
+
+All dashboard views show in the same page, so adding more does not load Home Assistant again. A swipe from one dashboard view to another switches the view in that page, as a tap on a dashboard tab does.
+
+The swipe holds a picture of the view it lands on until the page has built that view. The first swipe to a view after a start takes longest, since Home Assistant builds its cards then. A view on another dashboard takes longer than a view on the same dashboard. After 2.5 seconds the page shows as it is.
+
+**Return to home dashboard view** goes back to the view picked for the place you are on, not to the default dashboard. Swipe to another dashboard view and that one is where the page returns.
+
+If the page moves to a dashboard view of the layout on its own, such as through a navigation card or the Dashboard view select in Home Assistant, the layout follows: that view is the one you swipe from next.
 
 ### Editing the layout
 

@@ -2662,7 +2662,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "nav.compass_layout": {
     "title": "settingNavCompassLayoutTitle",
-    "description": "settingNavCompassLayoutDescription",
+    "description": "settingNavCompassLayoutViewsDescription",
   },
   "nav.compass_animation": {
     "title": "settingNavCompassAnimationTitle",

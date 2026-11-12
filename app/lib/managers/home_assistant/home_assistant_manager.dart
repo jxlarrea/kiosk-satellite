@@ -1207,6 +1207,15 @@ class HomeAssistantManager extends Manager {
     return path.isEmpty ? null : path;
   }
 
+  /// Compass navigation's word on where the return lands: the dashboard
+  /// view of the place in hand, since a layout holds several and each is
+  /// home to its own place. Null, or no answer, leaves it to the start
+  /// URL.
+  String? Function()? returnHomeOverride;
+
+  /// Where Return to home dashboard view lands right now.
+  String? _returnHomePath() => returnHomeOverride?.call() ?? homeViewPath();
+
   /// (Re)start the idle countdown, or stop it while it cannot apply: every
   /// activity edge and every gate change lands here.
   void _configureReturnHome() {
@@ -1265,7 +1274,7 @@ class HomeAssistantManager extends Manager {
   /// behind-the-cover return must not wake the kiosk) and drops a
   /// forgotten link overlay on the way.
   Future<void> _returnHome({bool awaitSelfHeal = true}) async {
-    final path = homeViewPath();
+    final path = _returnHomePath();
     if (path == null) return;
     await navigateToViewPath(path, awaitSelfHeal: awaitSelfHeal);
   }
@@ -1462,7 +1471,7 @@ class HomeAssistantManager extends Manager {
     if (shown == null || previous == null) return;
     final back =
         to ??
-        (_returnHomeConfigured && !_holdActive ? homeViewPath() : null) ??
+        (_returnHomeConfigured && !_holdActive ? _returnHomePath() : null) ??
         previous;
     final base = await _pageBase();
     final still = await commands.execute('evalJs', {

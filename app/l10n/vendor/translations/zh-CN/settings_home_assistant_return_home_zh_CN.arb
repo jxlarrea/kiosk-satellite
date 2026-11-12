@@ -7,5 +7,6 @@
   "haReturnHint": "空闲时返回默认页面",
   "haReturnDisabled": "仪表盘页面轮播开启期间，此功能已关闭。",
   "haReturnNoPath": "配置的仪表盘没有可返回的页面路径。",
-  "haReturnPath": "超时后返回“{path}”。"
+  "haReturnPath": "超时后返回“{path}”。",
+  "haReturnCompass": "使用 Compass 导航时，布局中的每个仪表盘视图在超时后返回为它选择的视图。"
 }

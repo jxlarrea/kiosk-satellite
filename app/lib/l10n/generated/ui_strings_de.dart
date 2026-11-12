@@ -8835,6 +8835,10 @@ class UiStringsDe extends UiStrings {
   }
 
   @override
+  String get haReturnCompass =>
+      'Bei der Compass-Navigation kehrt jede Dashboard-Ansicht des Layouts nach Ablauf des Zeitlimits zu der für sie gewählten Ansicht zurück.';
+
+  @override
   String get settingHaRotationEnabledTitle =>
       'Dashboard-Ansichtsrotation aktivieren';
 
@@ -10894,8 +10898,8 @@ class UiStringsDe extends UiStrings {
   String get settingNavCompassLayoutTitle => 'Compass-Layout';
 
   @override
-  String get settingNavCompassLayoutDescription =>
-      'Bis zu zwei Ansichten pro Seite, jede Art nur einmal.';
+  String get settingNavCompassLayoutViewsDescription =>
+      'Bis zu zwei Ansichten pro Seite. Fügen Sie mehrere Ansichten von Home Assistant-Dashboards hinzu und jede andere Art nur einmal.';
 
   @override
   String get settingNavCompassAnimationTitle => 'Wischanimation';
@@ -10945,8 +10949,8 @@ class UiStringsDe extends UiStrings {
       'Zwischen Ansichten wischen, die in einem Kreuz angeordnet sind.';
 
   @override
-  String get compassLayoutHint =>
-      'Bis zu zwei Ansichten pro Seite, jede Art nur einmal. Tippen Sie auf eine Ansicht, um sie zu ändern, auch auf die mittlere.';
+  String get compassLayoutViewsHint =>
+      'Bis zu zwei Ansichten pro Seite. Fügen Sie mehrere Ansichten von Home Assistant-Dashboards hinzu und jede andere Art nur einmal. Tippen Sie auf eine Ansicht, um sie zu ändern, auch auf die mittlere.';
 
   @override
   String get compassOffNote =>

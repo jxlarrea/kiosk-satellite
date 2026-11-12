@@ -32703,6 +32703,19 @@
       }
     }
   },
+  "haReturnCompass": "Met Compass-navigatie keert elke dashboardweergave in de indeling na de time-out terug naar de weergave die ervoor is gekozen.",
+  "@haReturnCompass": {
+    "context": "Settings:Home Assistant Setup:Return to home dashboard view",
+    "description": "Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Home Assistant Setup > Return to home dashboard view"
+      ],
+      "remoteAdmin": [
+        "Home Assistant Setup > Return to home dashboard view"
+      ]
+    }
+  },
   "settingHaRotationEnabledTitle": "Dashboardrotatie inschakelen",
   "@settingHaRotationEnabledTitle": {
     "context": "Settings:Home Assistant Setup:Dashboard View Rotation",
@@ -40304,8 +40317,8 @@
       ]
     }
   },
-  "settingNavCompassLayoutDescription": "Maximaal twee weergaven per kant, één van elke soort.",
-  "@settingNavCompassLayoutDescription": {
+  "settingNavCompassLayoutViewsDescription": "Maximaal twee weergaven per kant. Voeg meerdere weergaven van Home Assistant-dashboards toe en één van elke andere soort.",
+  "@settingNavCompassLayoutViewsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40499,8 +40512,8 @@
       ]
     }
   },
-  "compassLayoutHint": "Maximaal twee weergaven per kant, één van elke soort. Tik op een weergave om die te wijzigen, ook de middelste.",
-  "@compassLayoutHint": {
+  "compassLayoutViewsHint": "Maximaal twee weergaven per kant. Voeg meerdere weergaven van Home Assistant-dashboards toe en één van elke andere soort. Tik op een weergave om die te wijzigen, ook de middelste.",
+  "@compassLayoutViewsHint": {
     "context": "Settings:Navigation",
     "description": "Hint above the layout map.",
     "x-locations": {

@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Several Home Assistant dashboard views in the Compass layout.** A Compass layout can now hold more than one Home Assistant dashboard view: add as many as the layout has room for, each view once. Every other kind of view still goes in once. All dashboard views show in the same page, so more views do not load Home Assistant again. A swipe from one dashboard view to another keeps its picture of the new view up until the page has built it, for up to 2.5 seconds. If the page moves to a dashboard view of the layout on its own, such as through a navigation card, the layout follows. **Return to home dashboard view** goes back to the view picked for the place on screen, not to the default dashboard. The line under that setting says so while Compass is on. See [Several dashboard views](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/navigation.md#several-dashboard-views).
+
+### Changed
+- **Compass keeps a snapshot of every view in the layout.** The swipe kept snapshots of 6 views, so in a larger layout the views visited longest ago went back to a card with their name. It now keeps one for each of the 9 views a full layout holds.
+
 ## v2026.11.17 - 2026-11-12
 
 ### Added

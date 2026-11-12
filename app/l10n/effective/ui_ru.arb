@@ -32703,6 +32703,19 @@
       }
     }
   },
+  "haReturnCompass": "При навигации Compass каждый вид панели в раскладке по тайм-ауту возвращается к выбранному для него виду.",
+  "@haReturnCompass": {
+    "context": "Settings:Home Assistant Setup:Return to home dashboard view",
+    "description": "Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Home Assistant Setup > Return to home dashboard view"
+      ],
+      "remoteAdmin": [
+        "Home Assistant Setup > Return to home dashboard view"
+      ]
+    }
+  },
   "settingHaRotationEnabledTitle": "Включить ротацию видов панели",
   "@settingHaRotationEnabledTitle": {
     "context": "Settings:Home Assistant Setup:Dashboard View Rotation",
@@ -40304,8 +40317,8 @@
       ]
     }
   },
-  "settingNavCompassLayoutDescription": "До двух видов с каждой стороны, по одному каждого типа.",
-  "@settingNavCompassLayoutDescription": {
+  "settingNavCompassLayoutViewsDescription": "До двух видов с каждой стороны. Добавьте несколько видов панелей Home Assistant и по одному каждого другого типа.",
+  "@settingNavCompassLayoutViewsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40499,8 +40512,8 @@
       ]
     }
   },
-  "compassLayoutHint": "До двух видов с каждой стороны, по одному каждого типа. Коснитесь вида, чтобы изменить его, в том числе центральный.",
-  "@compassLayoutHint": {
+  "compassLayoutViewsHint": "До двух видов с каждой стороны. Добавьте несколько видов панелей Home Assistant и по одному каждого другого типа. Коснитесь вида, чтобы изменить его, в том числе центральный.",
+  "@compassLayoutViewsHint": {
     "context": "Settings:Navigation",
     "description": "Hint above the layout map.",
     "x-locations": {

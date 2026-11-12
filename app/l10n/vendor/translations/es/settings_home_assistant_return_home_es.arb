@@ -7,5 +7,6 @@
   "haReturnHint": "Vuelve a la vista de inicio tras un periodo de inactividad",
   "haReturnDisabled": "Se desactiva mientras está activa la rotación de vistas del panel de control.",
   "haReturnNoPath": "El panel de control configurado no tiene una ruta de vista a la que volver.",
-  "haReturnPath": "Vuelve a \"{path}\" al cumplirse el tiempo de espera."
+  "haReturnPath": "Vuelve a \"{path}\" al cumplirse el tiempo de espera.",
+  "haReturnCompass": "Con la navegación Compass, cada vista de panel de control del diseño vuelve a la vista elegida para ella al cumplirse el tiempo de espera."
 }

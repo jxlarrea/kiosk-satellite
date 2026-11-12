@@ -32703,6 +32703,19 @@
       }
     }
   },
+  "haReturnCompass": "使用 Compass 导航时，布局中的每个仪表盘视图在超时后返回为它选择的视图。",
+  "@haReturnCompass": {
+    "context": "Settings:Home Assistant Setup:Return to home dashboard view",
+    "description": "Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Home Assistant Setup > Return to home dashboard view"
+      ],
+      "remoteAdmin": [
+        "Home Assistant Setup > Return to home dashboard view"
+      ]
+    }
+  },
   "settingHaRotationEnabledTitle": "启用仪表盘页面轮播",
   "@settingHaRotationEnabledTitle": {
     "context": "Settings:Home Assistant Setup:Dashboard View Rotation",
@@ -40304,8 +40317,8 @@
       ]
     }
   },
-  "settingNavCompassLayoutDescription": "每侧最多两个视图，每种类型只能放一个。",
-  "@settingNavCompassLayoutDescription": {
+  "settingNavCompassLayoutViewsDescription": "每侧最多两个视图。可以添加多个 Home Assistant 仪表盘视图，其他每种类型只能放一个。",
+  "@settingNavCompassLayoutViewsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40499,8 +40512,8 @@
       ]
     }
   },
-  "compassLayoutHint": "每侧最多两个视图，每种类型只能放一个。点按视图即可更改，中心视图也可以。",
-  "@compassLayoutHint": {
+  "compassLayoutViewsHint": "每侧最多两个视图。可以添加多个 Home Assistant 仪表盘视图，其他每种类型只能放一个。点按视图即可更改，中心视图也可以。",
+  "@compassLayoutViewsHint": {
     "context": "Settings:Navigation",
     "description": "Hint above the layout map.",
     "x-locations": {

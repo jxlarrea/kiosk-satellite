@@ -7,5 +7,6 @@
   "haReturnHint": "Revenir à la vue d'accueil en cas d'inactivité",
   "haReturnDisabled": "Désactivé tant que la rotation des vues du tableau de bord est activée.",
   "haReturnNoPath": "Le tableau de bord configuré n'a pas de chemin de vue vers lequel revenir.",
-  "haReturnPath": "Revient à « {path} » après le délai."
+  "haReturnPath": "Revient à « {path} » après le délai.",
+  "haReturnCompass": "Avec la navigation Compass, chaque vue de tableau de bord de la disposition revient à la vue choisie pour elle après le délai."
 }

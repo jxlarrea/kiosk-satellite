@@ -7,5 +7,6 @@
   "haReturnHint": "Na inactiviteit terugkeren naar de startweergave",
   "haReturnDisabled": "Uitgeschakeld zolang dashboardrotatie actief is.",
   "haReturnNoPath": "Het ingestelde dashboard heeft geen weergavepad om naar terug te keren.",
-  "haReturnPath": "Keert na de time-out terug naar \"{path}\"."
+  "haReturnPath": "Keert na de time-out terug naar \"{path}\".",
+  "haReturnCompass": "Met Compass-navigatie keert elke dashboardweergave in de indeling na de time-out terug naar de weergave die ervoor is gekozen."
 }

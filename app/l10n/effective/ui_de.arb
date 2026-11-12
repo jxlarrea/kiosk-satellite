@@ -32703,6 +32703,19 @@
       }
     }
   },
+  "haReturnCompass": "Bei der Compass-Navigation kehrt jede Dashboard-Ansicht des Layouts nach Ablauf des Zeitlimits zu der für sie gewählten Ansicht zurück.",
+  "@haReturnCompass": {
+    "context": "Settings:Home Assistant Setup:Return to home dashboard view",
+    "description": "Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Home Assistant Setup > Return to home dashboard view"
+      ],
+      "remoteAdmin": [
+        "Home Assistant Setup > Return to home dashboard view"
+      ]
+    }
+  },
   "settingHaRotationEnabledTitle": "Dashboard-Ansichtsrotation aktivieren",
   "@settingHaRotationEnabledTitle": {
     "context": "Settings:Home Assistant Setup:Dashboard View Rotation",
@@ -40304,8 +40317,8 @@
       ]
     }
   },
-  "settingNavCompassLayoutDescription": "Bis zu zwei Ansichten pro Seite, jede Art nur einmal.",
-  "@settingNavCompassLayoutDescription": {
+  "settingNavCompassLayoutViewsDescription": "Bis zu zwei Ansichten pro Seite. Fügen Sie mehrere Ansichten von Home Assistant-Dashboards hinzu und jede andere Art nur einmal.",
+  "@settingNavCompassLayoutViewsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40499,8 +40512,8 @@
       ]
     }
   },
-  "compassLayoutHint": "Bis zu zwei Ansichten pro Seite, jede Art nur einmal. Tippen Sie auf eine Ansicht, um sie zu ändern, auch auf die mittlere.",
-  "@compassLayoutHint": {
+  "compassLayoutViewsHint": "Bis zu zwei Ansichten pro Seite. Fügen Sie mehrere Ansichten von Home Assistant-Dashboards hinzu und jede andere Art nur einmal. Tippen Sie auf eine Ansicht, um sie zu ändern, auch auf die mittlere.",
+  "@compassLayoutViewsHint": {
     "context": "Settings:Navigation",
     "description": "Hint above the layout map.",
     "x-locations": {

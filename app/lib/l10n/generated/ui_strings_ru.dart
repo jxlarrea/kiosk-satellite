@@ -8701,6 +8701,10 @@ class UiStringsRu extends UiStrings {
   }
 
   @override
+  String get haReturnCompass =>
+      'При навигации Compass каждый вид панели в раскладке по тайм-ауту возвращается к выбранному для него виду.';
+
+  @override
   String get settingHaRotationEnabledTitle => 'Включить ротацию видов панели';
 
   @override
@@ -10743,8 +10747,8 @@ class UiStringsRu extends UiStrings {
   String get settingNavCompassLayoutTitle => 'Раскладка Compass';
 
   @override
-  String get settingNavCompassLayoutDescription =>
-      'До двух видов с каждой стороны, по одному каждого типа.';
+  String get settingNavCompassLayoutViewsDescription =>
+      'До двух видов с каждой стороны. Добавьте несколько видов панелей Home Assistant и по одному каждого другого типа.';
 
   @override
   String get settingNavCompassAnimationTitle => 'Анимация свайпа';
@@ -10795,8 +10799,8 @@ class UiStringsRu extends UiStrings {
       'Свайп между видами, расположенными крестом.';
 
   @override
-  String get compassLayoutHint =>
-      'До двух видов с каждой стороны, по одному каждого типа. Коснитесь вида, чтобы изменить его, в том числе центральный.';
+  String get compassLayoutViewsHint =>
+      'До двух видов с каждой стороны. Добавьте несколько видов панелей Home Assistant и по одному каждого другого типа. Коснитесь вида, чтобы изменить его, в том числе центральный.';
 
   @override
   String get compassOffNote =>

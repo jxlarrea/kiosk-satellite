@@ -117,8 +117,8 @@
       ]
     }
   },
-  "settingNavCompassLayoutDescription": "Up to two views on each side, one of each kind.",
-  "@settingNavCompassLayoutDescription": {
+  "settingNavCompassLayoutViewsDescription": "Up to two views on each side. Add several Home Assistant dashboard views and one of each other kind.",
+  "@settingNavCompassLayoutViewsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -312,8 +312,8 @@
       ]
     }
   },
-  "compassLayoutHint": "Up to two views on each side, one of each kind. Tap a view to change it, the center one too.",
-  "@compassLayoutHint": {
+  "compassLayoutViewsHint": "Up to two views on each side. Add several Home Assistant dashboard views and one of each other kind. Tap a view to change it, the center one too.",
+  "@compassLayoutViewsHint": {
     "context": "Settings:Navigation",
     "description": "Hint above the layout map.",
     "x-locations": {

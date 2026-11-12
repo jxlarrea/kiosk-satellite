@@ -2500,6 +2500,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'haReturnHint' => strings.haReturnHint,
       'haReturnDisabled' => strings.haReturnDisabled,
       'haReturnNoPath' => strings.haReturnNoPath,
+      'haReturnCompass' => strings.haReturnCompass,
       'settingHaRotationEnabledTitle' => strings.settingHaRotationEnabledTitle,
       'settingHaRotationEnabledDescription' =>
         strings.settingHaRotationEnabledDescription,
@@ -3318,8 +3319,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingNavStyleTitle' => strings.settingNavStyleTitle,
       'settingNavStyleDescription' => strings.settingNavStyleDescription,
       'settingNavCompassLayoutTitle' => strings.settingNavCompassLayoutTitle,
-      'settingNavCompassLayoutDescription' =>
-        strings.settingNavCompassLayoutDescription,
+      'settingNavCompassLayoutViewsDescription' =>
+        strings.settingNavCompassLayoutViewsDescription,
       'settingNavCompassAnimationTitle' =>
         strings.settingNavCompassAnimationTitle,
       'settingNavCompassAnimationDescription' =>
@@ -3342,7 +3343,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'navigationSlide' => strings.navigationSlide,
       'compassClassicViewHint' => strings.compassClassicViewHint,
       'compassCompassHint' => strings.compassCompassHint,
-      'compassLayoutHint' => strings.compassLayoutHint,
+      'compassLayoutViewsHint' => strings.compassLayoutViewsHint,
       'compassOffNote' => strings.compassOffNote,
       'settingOffUnderCompass' => strings.settingOffUnderCompass,
       'compassQuickControlsView' => strings.compassQuickControlsView,

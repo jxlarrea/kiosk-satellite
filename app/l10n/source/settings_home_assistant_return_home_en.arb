@@ -109,5 +109,18 @@
         "description": "Unchanged dashboard view path."
       }
     }
+  },
+  "haReturnCompass": "With Compass navigation, each dashboard view in the layout returns to the view picked for it after the timeout.",
+  "@haReturnCompass": {
+    "context": "Settings:Home Assistant Setup:Return to home dashboard view",
+    "description": "Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Home Assistant Setup > Return to home dashboard view"
+      ],
+      "remoteAdmin": [
+        "Home Assistant Setup > Return to home dashboard view"
+      ]
+    }
   }
 }

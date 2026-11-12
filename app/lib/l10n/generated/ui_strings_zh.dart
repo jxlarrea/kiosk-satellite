@@ -8279,6 +8279,9 @@ class UiStringsZh extends UiStrings {
   }
 
   @override
+  String get haReturnCompass => '使用 Compass 导航时，布局中的每个仪表盘视图在超时后返回为它选择的视图。';
+
+  @override
   String get settingHaRotationEnabledTitle => '启用仪表盘页面轮播';
 
   @override
@@ -10176,7 +10179,8 @@ class UiStringsZh extends UiStrings {
   String get settingNavCompassLayoutTitle => 'Compass 布局';
 
   @override
-  String get settingNavCompassLayoutDescription => '每侧最多两个视图，每种类型只能放一个。';
+  String get settingNavCompassLayoutViewsDescription =>
+      '每侧最多两个视图。可以添加多个 Home Assistant 仪表盘视图，其他每种类型只能放一个。';
 
   @override
   String get settingNavCompassAnimationTitle => '滑动动画';
@@ -10222,7 +10226,8 @@ class UiStringsZh extends UiStrings {
   String get compassCompassHint => '在排成十字形的视图之间滑动切换。';
 
   @override
-  String get compassLayoutHint => '每侧最多两个视图，每种类型只能放一个。点按视图即可更改，中心视图也可以。';
+  String get compassLayoutViewsHint =>
+      '每侧最多两个视图。可以添加多个 Home Assistant 仪表盘视图，其他每种类型只能放一个。点按视图即可更改，中心视图也可以。';
 
   @override
   String get compassOffNote => '启用 Compass 时，下拉刷新、仪表盘滑动切换以及从边缘滑动打开抽屉菜单的手势均会关闭。';
@@ -23857,6 +23862,9 @@ class UiStringsZhCn extends UiStringsZh {
   }
 
   @override
+  String get haReturnCompass => '使用 Compass 导航时，布局中的每个仪表盘视图在超时后返回为它选择的视图。';
+
+  @override
   String get settingHaRotationEnabledTitle => '启用仪表盘页面轮播';
 
   @override
@@ -25754,7 +25762,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingNavCompassLayoutTitle => 'Compass 布局';
 
   @override
-  String get settingNavCompassLayoutDescription => '每侧最多两个视图，每种类型只能放一个。';
+  String get settingNavCompassLayoutViewsDescription =>
+      '每侧最多两个视图。可以添加多个 Home Assistant 仪表盘视图，其他每种类型只能放一个。';
 
   @override
   String get settingNavCompassAnimationTitle => '滑动动画';
@@ -25800,7 +25809,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get compassCompassHint => '在排成十字形的视图之间滑动切换。';
 
   @override
-  String get compassLayoutHint => '每侧最多两个视图，每种类型只能放一个。点按视图即可更改，中心视图也可以。';
+  String get compassLayoutViewsHint =>
+      '每侧最多两个视图。可以添加多个 Home Assistant 仪表盘视图，其他每种类型只能放一个。点按视图即可更改，中心视图也可以。';
 
   @override
   String get compassOffNote => '启用 Compass 时，下拉刷新、仪表盘滑动切换以及从边缘滑动打开抽屉菜单的手势均会关闭。';

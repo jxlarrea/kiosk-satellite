@@ -164,8 +164,8 @@ void main() {
       // The Add above the center.
       await tester.tap(find.text('Add').first);
       await tester.pumpAndSettle();
-      // Home Assistant in the center, the calendar and the default Menu.
-      expect(find.text('Already placed'), findsNWidgets(3));
+      // The calendar and the default Menu. Dashboard views repeat.
+      expect(find.text('Already placed'), findsNWidgets(2));
       final calendar = tester.widget<RadioListTile<String>>(
         find.widgetWithText(RadioListTile<String>, 'Calendar'),
       );
@@ -173,12 +173,51 @@ void main() {
       final dashboard = tester.widget<RadioListTile<String>>(
         find.widgetWithText(RadioListTile<String>, 'Home Assistant dashboard'),
       );
-      // The home dashboard holds the center.
-      expect(dashboard.enabled, isFalse);
+      expect(dashboard.enabled, isTrue);
       final alarms = tester.widget<RadioListTile<String>>(
         find.widgetWithText(RadioListTile<String>, 'Alarms'),
       );
       expect(alarms.enabled, isTrue);
+
+      // The dashboard row starts on the home dashboard, which holds the
+      // center: that view cannot go in twice.
+      await tester.tap(
+        find.widgetWithText(RadioListTile<String>, 'Home Assistant dashboard'),
+      );
+      await tester.pump();
+      expect(find.text('Already placed'), findsNWidgets(3));
+      final add = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Add'),
+      );
+      expect(add.onPressed, isNull);
+    });
+
+    testWidgets('another dashboard view goes in next to the first', (
+      tester,
+    ) async {
+      final container = await boot(tester, const Size(1200, 1200));
+      await container.settings.setFromJson(
+        defs.navCompassLayout.key,
+        const CompassLayout(
+          right: [CompassView('dashboard', path: 'home/kitchen')],
+        ).encode(),
+      );
+      final layout = CompassLayout.decode(
+        container.settings.get(defs.navCompassLayout),
+      );
+      expect(layout.dashboards.map((v) => v.path), ['', 'home/kitchen']);
+      await tester.pumpWidget(
+        app(
+          SingleChildScrollView(
+            child: CompassLayoutEditor(container: container, onChanged: () {}),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      // The center and the view on its right, each under its own name.
+      expect(find.text('Home Assistant'), findsOneWidget);
+      expect(find.text('home/kitchen'), findsOneWidget);
     });
   });
 

@@ -8644,6 +8644,10 @@ class UiStringsEn extends UiStrings {
   }
 
   @override
+  String get haReturnCompass =>
+      'With Compass navigation, each dashboard view in the layout returns to the view picked for it after the timeout.';
+
+  @override
   String get settingHaRotationEnabledTitle => 'Enable dashboard view rotation';
 
   @override
@@ -10654,8 +10658,8 @@ class UiStringsEn extends UiStrings {
   String get settingNavCompassLayoutTitle => 'Compass layout';
 
   @override
-  String get settingNavCompassLayoutDescription =>
-      'Up to two views on each side, one of each kind.';
+  String get settingNavCompassLayoutViewsDescription =>
+      'Up to two views on each side. Add several Home Assistant dashboard views and one of each other kind.';
 
   @override
   String get settingNavCompassAnimationTitle => 'Swipe animation';
@@ -10704,8 +10708,8 @@ class UiStringsEn extends UiStrings {
   String get compassCompassHint => 'Swipe between views laid out in a cross.';
 
   @override
-  String get compassLayoutHint =>
-      'Up to two views on each side, one of each kind. Tap a view to change it, the center one too.';
+  String get compassLayoutViewsHint =>
+      'Up to two views on each side. Add several Home Assistant dashboard views and one of each other kind. Tap a view to change it, the center one too.';
 
   @override
   String get compassOffNote =>

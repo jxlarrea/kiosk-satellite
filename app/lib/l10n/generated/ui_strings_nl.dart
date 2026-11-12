@@ -8742,6 +8742,10 @@ class UiStringsNl extends UiStrings {
   }
 
   @override
+  String get haReturnCompass =>
+      'Met Compass-navigatie keert elke dashboardweergave in de indeling na de time-out terug naar de weergave die ervoor is gekozen.';
+
+  @override
   String get settingHaRotationEnabledTitle => 'Dashboardrotatie inschakelen';
 
   @override
@@ -10778,8 +10782,8 @@ class UiStringsNl extends UiStrings {
   String get settingNavCompassLayoutTitle => 'Compass-indeling';
 
   @override
-  String get settingNavCompassLayoutDescription =>
-      'Maximaal twee weergaven per kant, één van elke soort.';
+  String get settingNavCompassLayoutViewsDescription =>
+      'Maximaal twee weergaven per kant. Voeg meerdere weergaven van Home Assistant-dashboards toe en één van elke andere soort.';
 
   @override
   String get settingNavCompassAnimationTitle => 'Veeganimatie';
@@ -10830,8 +10834,8 @@ class UiStringsNl extends UiStrings {
       'Veeg tussen weergaven die in een kruis liggen.';
 
   @override
-  String get compassLayoutHint =>
-      'Maximaal twee weergaven per kant, één van elke soort. Tik op een weergave om die te wijzigen, ook de middelste.';
+  String get compassLayoutViewsHint =>
+      'Maximaal twee weergaven per kant. Voeg meerdere weergaven van Home Assistant-dashboards toe en één van elke andere soort. Tik op een weergave om die te wijzigen, ook de middelste.';
 
   @override
   String get compassOffNote =>

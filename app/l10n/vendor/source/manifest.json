@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "aeb9892773cac936eb8593cc6b3a634b84e2c490",
+  "revision": "c505f0c6109ab2451a497955dfdb21bac83cf466",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -113,7 +113,7 @@
     "settings_home_assistant_custom_pages_en.arb": "7ff2971d55e9fce55f50423c185d357ddd1c2f1af72a3ab09947713a03789bf7",
     "settings_home_assistant_hold_en.arb": "65c0336973aa9ced2a0ceff298a569b2a6d034c2016569727f3a84de2fe819b2",
     "settings_home_assistant_optimizations_en.arb": "6848f403e77ebbe6a51c201b09cbc75c385debfbce96168830772418b7afdcf7",
-    "settings_home_assistant_return_home_en.arb": "7ff2a4c54cf270b687747d34748ce8d965a690084ce78c3438ca6562f221992c",
+    "settings_home_assistant_return_home_en.arb": "5999471ec02d3ac3631072dcff0eac1533185c957e8e7c100c5e4861e2b2d944",
     "settings_home_assistant_rotation_en.arb": "476138db0ac7204417a816c79b4c3d53c989739b9d27ee44e82de764fa7920ca",
     "settings_home_assistant_setup_en.arb": "2d86446ff0daf15b8a77cb78763b531501da07d044d4f5eceee215d179cbbbc5",
     "settings_home_assistant_theme_en.arb": "08a84abbbe70038834683afbea2c21f0728139a9fb6bd362e3ab31365dc21a83",
@@ -142,7 +142,7 @@
     "settings_media_player_sendspin_en.arb": "bb179909cfd4142e937858ad633d282bf937dd0c33ab7e56c1138203ac5da73b",
     "settings_media_player_sonos_en.arb": "daf0a51ab1dc951f25e3091c6ce8125abb0f98b18787a659530e94a79f86b68c",
     "settings_menu_en.arb": "38edc050fb68458838d35967fcdfc5f7616522b8694e1e04d543b01d9f6f09d6",
-    "settings_navigation_en.arb": "84bad2c199e60ed442b4c03e4ad4cb061641d22c7a559f6304cff63a1ea7dd1f",
+    "settings_navigation_en.arb": "2dc95283c067830c52ceef9d0b603f98998d92a5ae37d2c3a761982056756bdf",
     "settings_screen_audio_adaptive_brightness_en.arb": "c1be19f7cef2d2c97e6be6c8eb0611201560b56fe22f99d5b1f941089ff012aa",
     "settings_screen_audio_devices_en.arb": "fe204a3ce97097a890e4c1d6f45de836c998aee747daa76f7e543b076c5ae1f6",
     "settings_screen_audio_equalizer_en.arb": "a84d5dc33bba536a0dfddb2bb01d191791f2bd1b9ae2147cd3dd2f8fb32e5a8c",

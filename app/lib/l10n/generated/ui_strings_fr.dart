@@ -8785,6 +8785,10 @@ class UiStringsFr extends UiStrings {
   }
 
   @override
+  String get haReturnCompass =>
+      'Avec la navigation Compass, chaque vue de tableau de bord de la disposition revient à la vue choisie pour elle après le délai.';
+
+  @override
   String get settingHaRotationEnabledTitle =>
       'Activer la rotation des vues du tableau de bord';
 
@@ -10848,8 +10852,8 @@ class UiStringsFr extends UiStrings {
   String get settingNavCompassLayoutTitle => 'Disposition de Compass';
 
   @override
-  String get settingNavCompassLayoutDescription =>
-      'Jusqu\'à deux vues de chaque côté, une de chaque type.';
+  String get settingNavCompassLayoutViewsDescription =>
+      'Jusqu\'à deux vues de chaque côté. Ajoutez plusieurs vues de tableaux de bord Home Assistant et une seule de chaque autre type.';
 
   @override
   String get settingNavCompassAnimationTitle => 'Animation de balayage';
@@ -10899,8 +10903,8 @@ class UiStringsFr extends UiStrings {
   String get compassCompassHint => 'Glissez entre des vues disposées en croix.';
 
   @override
-  String get compassLayoutHint =>
-      'Jusqu\'à deux vues de chaque côté, une de chaque type. Touchez une vue pour la modifier, y compris celle du centre.';
+  String get compassLayoutViewsHint =>
+      'Jusqu\'à deux vues de chaque côté. Ajoutez plusieurs vues de tableaux de bord Home Assistant et une seule de chaque autre type. Touchez une vue pour la modifier, y compris celle du centre.';
 
   @override
   String get compassOffNote =>

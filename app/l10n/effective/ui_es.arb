@@ -32703,6 +32703,19 @@
       }
     }
   },
+  "haReturnCompass": "Con la navegación Compass, cada vista de panel de control del diseño vuelve a la vista elegida para ella al cumplirse el tiempo de espera.",
+  "@haReturnCompass": {
+    "context": "Settings:Home Assistant Setup:Return to home dashboard view",
+    "description": "Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Home Assistant Setup > Return to home dashboard view"
+      ],
+      "remoteAdmin": [
+        "Home Assistant Setup > Return to home dashboard view"
+      ]
+    }
+  },
   "settingHaRotationEnabledTitle": "Activar la rotación de vistas del panel de control",
   "@settingHaRotationEnabledTitle": {
     "context": "Settings:Home Assistant Setup:Dashboard View Rotation",
@@ -40304,8 +40317,8 @@
       ]
     }
   },
-  "settingNavCompassLayoutDescription": "Hasta dos vistas por lado, una de cada tipo.",
-  "@settingNavCompassLayoutDescription": {
+  "settingNavCompassLayoutViewsDescription": "Hasta dos vistas por lado. Añade varias vistas de paneles de control de Home Assistant y una de cada uno de los demás tipos.",
+  "@settingNavCompassLayoutViewsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40499,8 +40512,8 @@
       ]
     }
   },
-  "compassLayoutHint": "Hasta dos vistas por lado, una de cada tipo. Toca una vista para cambiarla, también la del centro.",
-  "@compassLayoutHint": {
+  "compassLayoutViewsHint": "Hasta dos vistas por lado. Añade varias vistas de paneles de control de Home Assistant y una de cada uno de los demás tipos. Toca una vista para cambiarla, también la del centro.",
+  "@compassLayoutViewsHint": {
     "context": "Settings:Navigation",
     "description": "Hint above the layout map.",
     "x-locations": {

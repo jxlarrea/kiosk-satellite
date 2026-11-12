@@ -1,7 +1,8 @@
 // Settings > Navigation on the remote admin: the Classic and Compass cards
 // and the Compass layout map, mirroring the device's compass_settings.dart.
 // The layout is stored in nav.compass_layout (see compass_layout.dart):
-// a center view and up to two views on each side, one of each kind.
+// a center view and up to two views on each side. Dashboard views repeat,
+// each path once, and every other kind goes in once.
 import { t } from './localization.js';
 import { cmd, state, syncOffRows } from './core.js';
 import { modalShell } from './widgets.js';
@@ -48,8 +49,8 @@ function readView(json) {
   };
 }
 
-// The same rules as CompassLayout.decode: each kind once, the center
-// first, a side cut at the limit.
+// The same rules as CompassLayout.decode: each kind once and each
+// dashboard view once, the center first, a side cut at the limit.
 export function decodeLayout(raw) {
   const empty = { center: { kind: 'dashboard', path: '', id: '' }, up: [], right: [], down: [], left: [] };
   // Nothing stored yet: Home Assistant in the center and the Menu on its
@@ -62,18 +63,24 @@ export function decodeLayout(raw) {
   if (!map || typeof map !== 'object') return empty;
   const seen = new Set();
   const center = readView(map.center) || empty.center;
-  seen.add(center.kind);
+  seen.add(viewKey(center));
   const side = (list) => {
     const out = [];
     for (const item of Array.isArray(list) ? list : []) {
       const view = readView(item);
-      if (!view || seen.has(view.kind)) continue;
-      seen.add(view.kind);
+      if (!view || seen.has(viewKey(view))) continue;
+      seen.add(viewKey(view));
       if (out.length < SIDE_LIMIT) out.push(view);
     }
     return out;
   };
   return { center, up: side(map.up), right: side(map.right), down: side(map.down), left: side(map.left) };
+}
+
+// What makes two views the same view (CompassView.key): a dashboard view
+// is its path, every other kind the kind alone.
+function viewKey(v) {
+  return v.kind === 'dashboard' ? `dashboard:${v.path}` : v.kind;
 }
 
 function encodeView(v) {
@@ -88,8 +95,23 @@ function encodeLayout(l) {
   });
 }
 
+function allViews(l) {
+  return [l.center, ...l.up, ...l.right, ...l.down, ...l.left];
+}
+
+// Whether a kind is placed. Dashboard views never count: the layout holds
+// several.
 function holds(l, kind) {
-  return [l.center, ...l.up, ...l.right, ...l.down, ...l.left].some((v) => v.kind === kind);
+  return kind !== 'dashboard' && allViews(l).some((v) => v.kind === kind);
+}
+
+// Whether the dashboard view at `path` is placed, in another place than
+// the view being replaced. No path stands for the one the kiosk starts on.
+function pathTaken(l, path, replacing) {
+  const resolve = (p) => p || homePath();
+  return allViews(l).some((v) => v.kind === 'dashboard'
+    && !(replacing && replacing.kind === 'dashboard' && replacing.path === v.path)
+    && resolve(v.path) === resolve(path));
 }
 
 // ── Names ────────────────────────────────────────────────────────────
@@ -238,7 +260,7 @@ export function compassLayoutRow(row, s, save) {
 
   const hint = document.createElement('div');
   hint.className = 'compass-hint';
-  hint.textContent = t('compassLayoutHint', {}, 'Up to two views on each side, one of each kind. Tap a view to change it, the center one too.');
+  hint.textContent = t('compassLayoutViewsHint', {}, 'Up to two views on each side. Add several Home Assistant dashboard views and one of each other kind. Tap a view to change it, the center one too.');
   const map = document.createElement('div');
   map.className = 'compass-map';
   const bar = document.createElement('div');
@@ -382,7 +404,8 @@ export function compassLayoutRow(row, s, save) {
 // One row per kind, the dashboard field under the dashboard row and the
 // camera views under the camera row when there is a choice. A kind the
 // layout holds (other than the one being replaced) or one not set up on
-// the kiosk cannot be picked. Resolves to the view, or null.
+// the kiosk cannot be picked. Dashboard views are the exception: the
+// layout holds several, each one once. Resolves to the view, or null.
 function pickView({ title, confirm, layout, replacing = null }) {
   return new Promise((resolve) => {
     if (!cameraList) loadCameraViews().then(() => paint());
@@ -403,7 +426,7 @@ function pickView({ title, confirm, layout, replacing = null }) {
     shell.foot.append(cancel, ok);
     cancel.addEventListener('click', () => done(null));
     const result = () => {
-      if (kind === 'dashboard') return { kind, path, id: '' };
+      if (kind === 'dashboard') return pathTaken(layout, path, replacing) ? null : { kind, path, id: '' };
       if (kind === 'camera') return camera ? { kind, path: '', id: camera } : null;
       return kind ? { kind, path: '', id: '' } : null;
     };
@@ -425,7 +448,9 @@ function pickView({ title, confirm, layout, replacing = null }) {
         text.appendChild(n);
         const sub = taken ? t('compassKindTaken', {}, 'Already placed')
           : !ready ? t('compassKindUnavailable', {}, 'Not set up on this kiosk')
-            : k === 'dashboard' ? t('compassKindDashboardHint', {}, 'Any view, Custom Pages and app pages') : '';
+            : k === 'dashboard' ? (kind === 'dashboard' && pathTaken(layout, path, replacing)
+              ? t('compassKindTaken', {}, 'Already placed')
+              : t('compassKindDashboardHint', {}, 'Any view, Custom Pages and app pages')) : '';
         if (sub) { const d = document.createElement('span'); d.className = 'desc'; d.textContent = sub; text.appendChild(d); }
         label.append(icon(k, 20), text, input);
         list.appendChild(label);
@@ -435,7 +460,7 @@ function pickView({ title, confirm, layout, replacing = null }) {
           const field = dashboardField({
             value: path || homePath(),
             title: kindLabel('dashboard'),
-            onPick: (p) => { path = p; },
+            onPick: (p) => { path = p; paint(); },
           });
           holder.appendChild(field.el);
           list.appendChild(holder);

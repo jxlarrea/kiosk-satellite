@@ -7,5 +7,6 @@
   "haReturnHint": "Kehrt nach einer bestimmten Zeit ohne Aktivität zur Startansicht zurück",
   "haReturnDisabled": "Deaktiviert, solange die Dashboard-Ansichtsrotation aktiv ist.",
   "haReturnNoPath": "Das konfigurierte Dashboard besitzt keinen Ansichtspfad, zu dem zurückgekehrt werden kann.",
-  "haReturnPath": "Kehrt nach Ablauf des Zeitlimits zu „{path}“ zurück."
+  "haReturnPath": "Kehrt nach Ablauf des Zeitlimits zu „{path}“ zurück.",
+  "haReturnCompass": "Bei der Compass-Navigation kehrt jede Dashboard-Ansicht des Layouts nach Ablauf des Zeitlimits zu der für sie gewählten Ansicht zurück."
 }

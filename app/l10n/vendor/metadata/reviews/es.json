@@ -24613,5 +24613,20 @@
     "source": "a1661ba34ed8f27ee7ad8a0a6f19c4b6748cbe6be52a0817749c2986e301bc2d",
     "translation": "889814e46e770702b0e01dbf976376a5020470bdeda690ae20c4296bc98bda55",
     "author": "Xavier Larrea"
+  },
+  "compassLayoutViewsHint": {
+    "source": "8ce4a25784ad3d12bbf827e078afa4a22f9a9b2f6603f6adfe70d73c65eea5be",
+    "translation": "89cfa2e79188a47a6d6c5d7b4e7989ea61636c18c6a5deb848ca6a684f8af83b",
+    "author": "Xavier Larrea"
+  },
+  "haReturnCompass": {
+    "source": "61244f29037f7039f02e37a5207a30fa16ae7adeb28dcc157c18b6442435c5d1",
+    "translation": "e8f436f45ea1b9b699614f2e18fa4fbc81dfad7a1cb7167a6199c3a4d07fe3b1",
+    "author": "Xavier Larrea"
+  },
+  "settingNavCompassLayoutViewsDescription": {
+    "source": "8e13aded7b7c4c4c7be64625b4ade8cf354015dd374e1de2590ac1c273c0928c",
+    "translation": "04c59f6671ed070db64c4b29bfbede7062a596465043d8bece8299ab7295f0fb",
+    "author": "Xavier Larrea"
   }
 }

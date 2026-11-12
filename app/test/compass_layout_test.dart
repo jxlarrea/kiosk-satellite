@@ -26,15 +26,34 @@ void main() {
     test('each kind shows once, the center first', () {
       final layout = CompassLayout.decode(
         '{"center":{"kind":"calendar"},'
-        '"up":[{"kind":"calendar"},{"kind":"dashboard","path":"a/b"}],'
-        '"down":[{"kind":"dashboard","path":"c/d"}],'
+        '"up":[{"kind":"calendar"},{"kind":"alarms"}],'
+        '"down":[{"kind":"alarms"}],'
         '"left":[{"kind":"camera","id":"front"},{"kind":"camera","id":"back"}]}',
       );
       expect(layout.center.kind, 'calendar');
-      expect(layout.up.map((v) => v.key), ['dashboard']);
-      expect(layout.up.single.path, 'a/b');
+      expect(layout.up.map((v) => v.key), ['alarms']);
       expect(layout.down, isEmpty);
       expect(layout.left.single.id, 'front');
+    });
+
+    test('dashboard views repeat, each path once', () {
+      final layout = CompassLayout.decode(
+        '{"up":[{"kind":"dashboard","path":"a/b"},'
+        '{"kind":"dashboard","path":"a/b"}],'
+        '"down":[{"kind":"dashboard","path":"c/d"},{"kind":"dashboard"}],'
+        '"right":[{"kind":"dashboard","path":" a/b "}]}',
+      );
+      expect(layout.center, CompassView.home);
+      expect(layout.up.map((v) => v.path), ['a/b']);
+      // The home dashboard is the center already.
+      expect(layout.down.map((v) => v.path), ['c/d']);
+      expect(layout.right, isEmpty);
+      expect(layout.dashboards.map((v) => v.path), ['', 'a/b', 'c/d']);
+      expect(
+        layout.slotOf(const CompassView('dashboard', path: 'c/d')),
+        const CompassSlot(CompassArm.down),
+      );
+      expect(CompassLayout.decode(layout.encode()).encode(), layout.encode());
     });
 
     test('unknown kinds and a camera without a view are dropped', () {
@@ -91,8 +110,8 @@ void main() {
         '"down":[{"kind":"intercom"},{"kind":"app_launcher"}],'
         '"left":[{"kind":"camera","id":"a"},{"kind":"dashboard","path":"x"}]}',
       );
-      // Every side is full (the center is the default Home Assistant, so
-      // the dashboard on the left is a repeat and dropped): left has room.
+      // Every side is full: the left side's last view gives way.
+      expect(full.withMenu().left.last, CompassView.menu);
       expect(full.withMenu().holds(CompassView.menu), isTrue);
     });
   });
@@ -187,6 +206,8 @@ void main() {
     );
     expect(layout.holds(const CompassView('camera', id: 'other')), isTrue);
     expect(layout.holds(CompassView.home), isTrue);
+    // A dashboard view is held by its path.
+    expect(layout.holds(const CompassView('dashboard', path: 'a/b')), isFalse);
     expect(layout.holds(const CompassView('calendar')), isFalse);
   });
 }

@@ -32703,6 +32703,19 @@
       }
     }
   },
+  "haReturnCompass": "Avec la navigation Compass, chaque vue de tableau de bord de la disposition revient à la vue choisie pour elle après le délai.",
+  "@haReturnCompass": {
+    "context": "Settings:Home Assistant Setup:Return to home dashboard view",
+    "description": "Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Home Assistant Setup > Return to home dashboard view"
+      ],
+      "remoteAdmin": [
+        "Home Assistant Setup > Return to home dashboard view"
+      ]
+    }
+  },
   "settingHaRotationEnabledTitle": "Activer la rotation des vues du tableau de bord",
   "@settingHaRotationEnabledTitle": {
     "context": "Settings:Home Assistant Setup:Dashboard View Rotation",
@@ -40304,8 +40317,8 @@
       ]
     }
   },
-  "settingNavCompassLayoutDescription": "Jusqu'à deux vues de chaque côté, une de chaque type.",
-  "@settingNavCompassLayoutDescription": {
+  "settingNavCompassLayoutViewsDescription": "Jusqu'à deux vues de chaque côté. Ajoutez plusieurs vues de tableaux de bord Home Assistant et une seule de chaque autre type.",
+  "@settingNavCompassLayoutViewsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40499,8 +40512,8 @@
       ]
     }
   },
-  "compassLayoutHint": "Jusqu'à deux vues de chaque côté, une de chaque type. Touchez une vue pour la modifier, y compris celle du centre.",
-  "@compassLayoutHint": {
+  "compassLayoutViewsHint": "Jusqu'à deux vues de chaque côté. Ajoutez plusieurs vues de tableaux de bord Home Assistant et une seule de chaque autre type. Touchez une vue pour la modifier, y compris celle du centre.",
+  "@compassLayoutViewsHint": {
     "context": "Settings:Navigation",
     "description": "Hint above the layout map.",
     "x-locations": {

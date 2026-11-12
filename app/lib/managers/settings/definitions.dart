@@ -13446,7 +13446,9 @@ const navCompassLayout = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Compass layout',
-  description: 'Up to two views on each side, one of each kind.',
+  description:
+      'Up to two views on each side. Add several Home Assistant dashboard '
+      'views and one of each other kind.',
   category: 'Navigation',
   section: 'Compass layout',
   dependsOn: 'nav.style',

@@ -8794,6 +8794,10 @@ class UiStringsEs extends UiStrings {
   }
 
   @override
+  String get haReturnCompass =>
+      'Con la navegación Compass, cada vista de panel de control del diseño vuelve a la vista elegida para ella al cumplirse el tiempo de espera.';
+
+  @override
   String get settingHaRotationEnabledTitle =>
       'Activar la rotación de vistas del panel de control';
 
@@ -10852,8 +10856,8 @@ class UiStringsEs extends UiStrings {
   String get settingNavCompassLayoutTitle => 'Diseño de Compass';
 
   @override
-  String get settingNavCompassLayoutDescription =>
-      'Hasta dos vistas por lado, una de cada tipo.';
+  String get settingNavCompassLayoutViewsDescription =>
+      'Hasta dos vistas por lado. Añade varias vistas de paneles de control de Home Assistant y una de cada uno de los demás tipos.';
 
   @override
   String get settingNavCompassAnimationTitle => 'Animación al deslizar';
@@ -10904,8 +10908,8 @@ class UiStringsEs extends UiStrings {
   String get compassCompassHint => 'Desliza entre vistas dispuestas en cruz.';
 
   @override
-  String get compassLayoutHint =>
-      'Hasta dos vistas por lado, una de cada tipo. Toca una vista para cambiarla, también la del centro.';
+  String get compassLayoutViewsHint =>
+      'Hasta dos vistas por lado. Añade varias vistas de paneles de control de Home Assistant y una de cada uno de los demás tipos. Toca una vista para cambiarla, también la del centro.';
 
   @override
   String get compassOffNote =>

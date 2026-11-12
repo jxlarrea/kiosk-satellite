@@ -4325,6 +4325,10 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// view "the dashboard" means. Wording shared with the remote admin
   /// (which carries its own copy in the HTML).
   String _returnHomeTargetHint(AppContainer container) {
+    // Compass holds several dashboard views, each home to its own place.
+    if (container.settings.get(navStyle) == 'compass') {
+      return l10n(context).haReturnCompass;
+    }
     final path = container.homeAssistant.homeViewPath();
     return path == null
         ? haText(

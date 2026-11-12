@@ -10,6 +10,8 @@ import '../../managers/alarms/alarm_manager.dart';
 import '../../managers/browser/visibility_mask_script.dart';
 import '../../managers/camera/models.dart';
 import '../../managers/device/screen_capture.dart';
+import '../../managers/home_assistant/custom_pages.dart';
+import '../../managers/home_assistant/home_assistant_manager.dart';
 import '../../managers/navigation/compass_layout.dart';
 import '../../managers/settings/definitions.dart' as defs;
 import '../dashboard_view_picker.dart';
@@ -24,7 +26,8 @@ import 'compass_stage.dart';
 /// the same commands the drawer, the gestures and Home Assistant use: a
 /// dashboard view is the one WebView moved to its path, the others are
 /// the full-screen pages drawn over it. So the layout costs nothing until
-/// a view is swiped to, and the WebView never has a twin.
+/// a view is swiped to, and the WebView never has a twin, however many
+/// dashboard views the layout holds.
 class CompassController {
   CompassController(this.c);
 
@@ -96,12 +99,13 @@ class CompassController {
   final Map<String, ui.Image> _shots = {};
   final List<String> _shotOrder = [];
 
-  /// Snapshots kept at most: the views around the one on screen and a few
-  /// more. A full snapshot is a few MB on a tablet.
-  static const _shotLimit = 6;
+  /// Snapshots kept at most: one for every view a full layout holds, the
+  /// center and two on each side. A full snapshot is a few MB on a tablet.
+  static const _shotLimit = 1 + 4 * compassSideLimit;
 
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<ActivityDetected>? _activitySub;
+  StreamSubscription<UrlChanged>? _urlSub;
   Timer? _returnTimer;
   late final List<Listenable> _watched = [
     c.musicLibrary.visible,
@@ -174,6 +178,8 @@ class CompassController {
         .on<ActivityDetected>()
         .where((e) => e.source == 'touch')
         .listen((_) => _armReturn());
+    _urlSub = c.bus.on<UrlChanged>().listen((e) => _onPageMoved(e.url));
+    c.homeAssistant.returnHomeOverride = _returnHomePath;
     for (final l in _watched) {
       l.addListener(_onOverlayChanged);
     }
@@ -232,6 +238,10 @@ class CompassController {
     _verifyTimer?.cancel();
     _settingsSub?.cancel();
     _activitySub?.cancel();
+    _urlSub?.cancel();
+    if (c.homeAssistant.returnHomeOverride == _returnHomePath) {
+      c.homeAssistant.returnHomeOverride = null;
+    }
     _returnTimer?.cancel();
     _settleTimer?.cancel();
     for (final l in _watched) {
@@ -464,15 +474,134 @@ class CompassController {
       ) ??
       '';
 
+  /// Whether the last dashboard view shown moved the page, so there is a
+  /// new view to wait for ([dashboardLanded]).
+  bool _pageMoved = false;
+
   Future<void> _showDashboard(String path) async {
+    _pageMoved = false;
     final target = path.isEmpty ? homePath : path;
     if (target.isEmpty) {
       if (c.browser.currentUrl != c.browser.startUrl) {
+        await c.browser.runJs(_markViewJs);
         await c.commands.execute('loadUrl', {'url': c.browser.startUrl});
+        _pageMoved = true;
       }
       return;
     }
-    await c.homeAssistant.navigateToViewPath(target, awaitSelfHeal: false);
+    await c.browser.runJs(_markViewJs);
+    final moved = await c.homeAssistant.navigateToViewPath(
+      target,
+      awaitSelfHeal: false,
+    );
+    _pageMoved = moved == 'navigated';
+  }
+
+  /// How long a swipe keeps its snapshot up waiting for the page.
+  static const _landingLimit = Duration(milliseconds: 2500);
+
+  /// How long the last landing waited on the page, for the swipe's log
+  /// line. -1 when the page did not move.
+  int landingMs = -1;
+
+  /// Completes once the dashboard view the page was just moved to is the
+  /// one it shows, built and with content: the swipe holds its snapshot of
+  /// the target until then. Dashboard views share the one WebView, so a
+  /// swipe from one to another is a view swap in the page, and a first
+  /// visit builds the view's cards. Lifting the snapshot before that would
+  /// show the view left behind, or a half-built one.
+  ///
+  /// The wait is bounded: whatever the page shows after [_landingLimit],
+  /// the snapshot lifts. A page that is not a dashboard (a Custom Page, an
+  /// app page such as Energy) has no view to watch, so it lands once its
+  /// document has loaded and stayed that way for a few looks.
+  Future<void> dashboardLanded() async {
+    landingMs = -1;
+    if (!_pageMoved) return;
+    _pageMoved = false;
+    final clock = Stopwatch()..start();
+    var loaded = 0;
+    while (clock.elapsed < _landingLimit) {
+      var state = '';
+      try {
+        final result = await c.commands
+            .execute('evalJs', const {'code': _landedJs})
+            .timeout(_landingLimit - clock.elapsed);
+        if (result.ok) state = '${result.data}';
+      } catch (_) {
+        // The page did not answer in time, or is between two documents.
+      }
+      if (state == 'ready') break;
+      loaded = state == 'none:complete' ? loaded + 1 : 0;
+      if (loaded >= 5) break;
+      await Future<void>.delayed(const Duration(milliseconds: 70));
+    }
+    landingMs = clock.elapsedMilliseconds;
+  }
+
+  /// Where Return to home dashboard view takes the page while Compass is
+  /// on: the dashboard view picked for the place in hand, not the start
+  /// URL, which is only one of the layout's dashboard views. Null leaves
+  /// it to the start URL: Compass off, a view that is not a dashboard, or
+  /// the place that shows the start URL itself.
+  String? _returnHomePath() {
+    if (!enabled) return null;
+    final view = currentView;
+    return view.isDashboard && view.path.isNotEmpty ? view.path : null;
+  }
+
+  /// The page moved on its own, through a navigation card, Home Assistant
+  /// or the dashboard select, to a dashboard view the layout holds in
+  /// another place: that place is the one on screen now. A path the layout
+  /// does not hold changes nothing, the kiosk is still on the view it
+  /// swiped to.
+  void _onPageMoved(String url) {
+    if (!enabled || _switching || stage.value != null) return;
+    if (!currentView.isDashboard) return;
+    final path = _routeOfUrl(url);
+    if (path == null) return;
+    final here = _routeOf(currentView);
+    // The view in hand, or a bare dashboard opening on its first view.
+    if (here != null && (path == here || path.startsWith('$here/'))) return;
+    for (final slot in _layout.slots) {
+      final view = _layout.viewAt(slot);
+      if (view == null || !view.isDashboard || slot == current.value) continue;
+      if (_routeOf(view) != path) continue;
+      current.value = slot;
+      _armReturn();
+      return;
+    }
+  }
+
+  /// The route in Home Assistant a dashboard view shows, or null for one
+  /// that is a document of its own (a Custom Page) or has no path.
+  String? _routeOf(CompassView view) {
+    final target = view.path.isEmpty ? homePath : view.path;
+    if (target.isEmpty || isCustomPagePath(target)) return null;
+    return _plain(viewRoute(target));
+  }
+
+  /// The same for a URL the page is on, whatever origin serves it.
+  String? _routeOfUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+    final path = _plain(uri.path);
+    return path.isEmpty || isCustomPagePath(path) ? null : path;
+  }
+
+  static String _plain(String path) {
+    var out = path;
+    while (out.startsWith('/')) {
+      out = out.substring(1);
+    }
+    while (out.endsWith('/')) {
+      out = out.substring(0, out.length - 1);
+    }
+    try {
+      return Uri.decodeComponent(out);
+    } catch (_) {
+      return out;
+    }
   }
 
   /// Someone else opened or closed a page: a gesture, Home Assistant, the
@@ -682,6 +811,69 @@ class CompassController {
     _shotOrder.clear();
   }
 }
+
+/// The view element the dashboard on screen holds, for the two scripts
+/// below. Home Assistant keeps the default dashboard's panel in the page,
+/// hidden, while another panel shows, so the panel is the one not hidden.
+/// Nothing here reads layout.
+const _currentViewJs = '''
+  function ksView() {
+    var ha = document.querySelector('home-assistant');
+    if (!ha) return 'none';
+    var hass = ha.hass;
+    if (!hass || !hass.panels) return 'boot';
+    var info = hass.panels[hass.panelUrl];
+    if (!info || info.component_name !== 'lovelace') return 'none';
+    var main = ha.shadowRoot &&
+      ha.shadowRoot.querySelector('home-assistant-main');
+    var panels = main && main.shadowRoot
+      ? main.shadowRoot.querySelectorAll('ha-panel-lovelace') : [];
+    for (var i = 0; i < panels.length; i++) {
+      var p = panels[i];
+      if (p.style && p.style.display === 'none') continue;
+      var hr = p.shadowRoot && p.shadowRoot.querySelector('hui-root');
+      var box = hr && hr.shadowRoot &&
+        (hr.shadowRoot.querySelector('hui-view-container') ||
+         hr.shadowRoot.querySelector('#view'));
+      if (box && box.lastElementChild) return box.lastElementChild;
+    }
+    return 'boot';
+  }
+''';
+
+/// Run before a dashboard view is shown: remembers the view the page
+/// holds now. A new document starts without the mark.
+const _markViewJs =
+    '''
+(function () {
+  $_currentViewJs
+  try {
+    var el = ksView();
+    window.__ksCompassPrev = typeof el === 'string' ? null : el;
+  } catch (_) { window.__ksCompassPrev = null; }
+})();
+''';
+
+/// Where the page is after the move: 'ready' once the dashboard holds
+/// another view than the marked one and that view has content, 'wait'
+/// until then, and 'none:' with the document's state on a page with no
+/// dashboard view to watch.
+const _landedJs =
+    '''
+(function () {
+  $_currentViewJs
+  try {
+    var el = ksView();
+    if (el === 'none') return 'none:' + document.readyState;
+    if (el === 'boot' || el === window.__ksCompassPrev) return 'wait';
+    var built = el.childElementCount > 0 ||
+      (el.shadowRoot && el.shadowRoot.childElementCount > 0);
+    if (!built) return 'wait';
+    window.__ksCompassPrev = null;
+    return 'ready';
+  } catch (_) { return 'wait'; }
+})();
+''';
 
 /// What the swipe draws, frame by frame. The painter listens to it; the
 /// widgets never rebuild while it moves.

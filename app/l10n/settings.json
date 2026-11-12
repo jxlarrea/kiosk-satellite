@@ -2661,7 +2661,7 @@
   },
   "nav.compass_layout": {
     "title": "settingNavCompassLayoutTitle",
-    "description": "settingNavCompassLayoutDescription"
+    "description": "settingNavCompassLayoutViewsDescription"
   },
   "nav.compass_animation": {
     "title": "settingNavCompassAnimationTitle",

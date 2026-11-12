@@ -2612,7 +2612,7 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
           // on the switch), and on this tab that re-fetches every
           // dashboard — a full-page flash for one checkbox.
           const returnKeys = ['ha.return_home_enabled', 'ha.return_home_seconds',
-            'ha.rotation_enabled'];
+            'ha.rotation_enabled', 'nav.style'];
           const returnShown = () => JSON.stringify(returnKeys.map((k) => byKey[k]?.value));
           let shownReturn = '';
           const onReturnSettings = (e) => {
@@ -2654,9 +2654,13 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
             const note = document.createElement('div');
             note.className = 'row';
             note.style.cssText = 'font-size:12.5px; color:var(--muted);';
-            note.textContent = homePath
-              ? t('haReturnPath', {path: homePath})
-              : haText('The configured dashboard has no view path to return to.');
+            // Compass holds several dashboard views, each home to its own
+            // place.
+            note.textContent = byKey['nav.style']?.value === 'compass'
+              ? t('haReturnCompass', {}, 'With Compass navigation, each dashboard view in the layout returns to the view picked for it after the timeout.')
+              : homePath
+                ? t('haReturnPath', {path: homePath})
+                : haText('The configured dashboard has no view path to return to.');
             hcard.appendChild(note);
             if (rhEnabled.value === true && rhSeconds) {
               hcard.appendChild(settingRow(rhSeconds));

@@ -32703,6 +32703,19 @@
       }
     }
   },
+  "haReturnCompass": "З навігацією Compass кожне подання панелі керування в розкладці повертається до вибраного для нього подання після завершення тайм-ауту.",
+  "@haReturnCompass": {
+    "context": "Settings:Home Assistant Setup:Return to home dashboard view",
+    "description": "Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.",
+    "x-locations": {
+      "device": [
+        "Settings > Home Assistant Setup > Return to home dashboard view"
+      ],
+      "remoteAdmin": [
+        "Home Assistant Setup > Return to home dashboard view"
+      ]
+    }
+  },
   "settingHaRotationEnabledTitle": "Увімкнути ротацію видів панелі керування",
   "@settingHaRotationEnabledTitle": {
     "context": "Settings:Home Assistant Setup:Dashboard View Rotation",
@@ -40304,8 +40317,8 @@
       ]
     }
   },
-  "settingNavCompassLayoutDescription": "До двох подань з кожного боку, по одному кожного типу.",
-  "@settingNavCompassLayoutDescription": {
+  "settingNavCompassLayoutViewsDescription": "До двох подань з кожного боку. Додайте кілька подань панелей керування Home Assistant і по одному кожного іншого типу.",
+  "@settingNavCompassLayoutViewsDescription": {
     "context": "Settings:Navigation",
     "description": "Help below the setting.",
     "x-locations": {
@@ -40499,8 +40512,8 @@
       ]
     }
   },
-  "compassLayoutHint": "До двох подань з кожного боку, по одному кожного типу. Торкніться подання, щоб змінити його, зокрема центральне.",
-  "@compassLayoutHint": {
+  "compassLayoutViewsHint": "До двох подань з кожного боку. Додайте кілька подань панелей керування Home Assistant і по одному кожного іншого типу. Торкніться подання, щоб змінити його, зокрема центральне.",
+  "@compassLayoutViewsHint": {
     "context": "Settings:Navigation",
     "description": "Hint above the layout map.",
     "x-locations": {

@@ -15089,6 +15089,12 @@ abstract class UiStrings {
   /// **'Returns to \"{path}\" after the timeout.'**
   String haReturnPath(String path);
 
+  /// Return-to-home subpage destination while Compass navigation is on. Compass is the name of a navigation style and stays as is.
+  ///
+  /// In en, this message translates to:
+  /// **'With Compass navigation, each dashboard view in the layout returns to the view picked for it after the timeout.'**
+  String get haReturnCompass;
+
   /// Setting label.
   ///
   /// In en, this message translates to:
@@ -18638,8 +18644,8 @@ abstract class UiStrings {
   /// Help below the setting.
   ///
   /// In en, this message translates to:
-  /// **'Up to two views on each side, one of each kind.'**
-  String get settingNavCompassLayoutDescription;
+  /// **'Up to two views on each side. Add several Home Assistant dashboard views and one of each other kind.'**
+  String get settingNavCompassLayoutViewsDescription;
 
   /// Setting label.
   ///
@@ -18728,8 +18734,8 @@ abstract class UiStrings {
   /// Hint above the layout map.
   ///
   /// In en, this message translates to:
-  /// **'Up to two views on each side, one of each kind. Tap a view to change it, the center one too.'**
-  String get compassLayoutHint;
+  /// **'Up to two views on each side. Add several Home Assistant dashboard views and one of each other kind. Tap a view to change it, the center one too.'**
+  String get compassLayoutViewsHint;
 
   /// Note under the Compass options.
   ///

@@ -133,6 +133,10 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
   final Stopwatch _clock = Stopwatch();
   int _captureMs = -1;
 
+  /// How long the landing waited for the page to hold the target dashboard
+  /// view, -1 when it did not have to.
+  int _landingMs = -1;
+
   /// The engine clock (microseconds) when the stage started and stopped
   /// moving: frames between the two are the ones the eye follows.
   int _motionFrom = 0;
@@ -343,6 +347,7 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
       ..reset()
       ..start();
     _captureMs = -1;
+    _landingMs = -1;
     _timings.clear();
     SchedulerBinding.instance.addTimingsCallback(_onTimings);
     final ratio = MediaQuery.devicePixelRatioOf(context);
@@ -447,9 +452,14 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
     await ctrl
         .show(model.target)
         .timeout(const Duration(seconds: 2), onTimeout: () {});
+    final dashboard = ctrl.layout.viewAt(model.target)?.isDashboard == true;
+    // A dashboard view the page had to move to: the snapshot stays up
+    // until the page holds that view, built.
+    if (dashboard) await ctrl.dashboardLanded();
+    _landingMs = dashboard ? ctrl.landingMs : -1;
     await _uncoverPlane();
-    // A page move lands a beat after the navigation call returns.
-    if (ctrl.layout.viewAt(model.target)?.isDashboard == true) {
+    // The view's first paint lands a beat after it is built.
+    if (dashboard) {
       await Future<void>.delayed(const Duration(milliseconds: 120));
     }
     if (model.ready) {
@@ -544,6 +554,7 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
   void _report(CompassStageModel model) {
     final total = _clock.elapsedMilliseconds;
     final capture = _captureMs;
+    final page = _landingMs < 0 ? '' : ', page ${_landingMs}ms';
     Future<void>.delayed(const Duration(milliseconds: 400), () {
       SchedulerBinding.instance.removeTimingsCallback(_onTimings);
       final all = [..._timings];
@@ -576,7 +587,7 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
         'compass',
         'swipe ${model.from}->${model.target} '
             '${model.progress > 0.5 ? 'landed' : 'went back'} in ${total}ms, '
-            'snapshot ${capture}ms, moving ${motionMs}ms in ${frames.length} '
+            'snapshot ${capture}ms$page, moving ${motionMs}ms in ${frames.length} '
             'frames (${all.length} in all), '
             'build ${f1(avg(build))}/${f1(max(build))}ms, '
             'raster ${f1(avg(raster))}/${f1(max(raster))}ms, '

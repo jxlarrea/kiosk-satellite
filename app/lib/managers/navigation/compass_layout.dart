@@ -11,10 +11,10 @@
 /// }
 /// ```
 ///
-/// Each side holds up to [compassSideLimit] views and each kind of view
-/// shows up once in the whole layout: one dashboard view, one camera view,
-/// one Menu. An empty value is the default layout: Home Assistant in the
-/// center and the Menu on its left.
+/// Each side holds up to [compassSideLimit] views. A layout holds as many
+/// dashboard views as it has room for, each path once, and every other
+/// kind of view once: one camera view, one Menu. An empty value is the
+/// default layout: Home Assistant in the center and the Menu on its left.
 library;
 
 import 'dart:convert';
@@ -59,9 +59,10 @@ class CompassView {
   bool get isMenu => kind == 'menu';
   bool get isDashboard => kind == 'dashboard';
 
-  /// What makes two views the same view: the kind. The layout holds each
-  /// kind once, so one dashboard view and one camera view at most.
-  String get key => kind;
+  /// What makes two views the same view. A dashboard view is its path:
+  /// they all show in the one WebView, so a layout holds several. Every
+  /// other kind goes in once, so the kind alone tells them apart.
+  String get key => isDashboard ? 'dashboard:$path' : kind;
 
   static CompassView? fromJson(Object? json) {
     if (json is! Map) return null;
@@ -149,9 +150,9 @@ class CompassLayout {
   final List<CompassView> left;
 
   /// Anything unreadable is the default layout, which an empty value also
-  /// is. A side past [compassSideLimit] keeps its first views and a kind
-  /// placed twice keeps its first place, center first, then up, right,
-  /// down and left.
+  /// is. A side past [compassSideLimit] keeps its first views. A kind
+  /// placed twice, or the same dashboard view twice, keeps its first
+  /// place, center first, then up, right, down and left.
   factory CompassLayout.decode(String raw) {
     if (raw.trim().isEmpty) return const CompassLayout();
     try {
@@ -227,11 +228,17 @@ class CompassLayout {
       for (var i = 0; i < side(arm).length; i++) CompassSlot(arm, i),
   ];
 
-  /// Whether a view of [view]'s kind is placed somewhere, so the add
-  /// dialog leaves that kind out.
+  /// Whether [view] is placed somewhere: that dashboard view, or for any
+  /// other kind a view of that kind, so the add dialog leaves it out.
   bool holds(CompassView view) =>
       center.key == view.key ||
       [...up, ...right, ...down, ...left].any((v) => v.key == view.key);
+
+  /// Every dashboard view placed, the center first.
+  List<CompassView> get dashboards => [
+    for (final slot in slots)
+      if (viewAt(slot) case final view? when view.isDashboard) view,
+  ];
 
   /// The layout with a Menu somewhere, for a kiosk that would otherwise
   /// have no way back into Settings: at the end of the first side with

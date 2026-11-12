@@ -483,7 +483,7 @@ class _CompassLayoutEditorState extends State<CompassLayoutEditor> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            strings.compassLayoutHint,
+            strings.compassLayoutViewsHint,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -700,7 +700,7 @@ class _CompassLayoutEditorState extends State<CompassLayoutEditor> {
       Padding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
         child: Text(
-          strings.compassLayoutHint,
+          strings.compassLayoutViewsHint,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -787,7 +787,8 @@ class _CompassLayoutEditorState extends State<CompassLayoutEditor> {
 /// under the dashboard row and the camera views under the camera row
 /// when there is a choice. A kind the layout already holds, other than
 /// the one being [replacing], and a kind with nothing set up on this
-/// kiosk cannot be picked. Null when cancelled.
+/// kiosk cannot be picked. Dashboard views are the exception: the layout
+/// holds several, each one once. Null when cancelled.
 Future<CompassView?> showCompassViewDialog(
   BuildContext context, {
   required AppContainer container,
@@ -839,7 +840,30 @@ class _CompassViewDialogState extends State<_CompassViewDialog> {
             '');
 
   bool _taken(String kind) =>
-      kind != widget.replacing?.kind && widget.layout.holds(CompassView(kind));
+      kind != 'dashboard' &&
+      kind != widget.replacing?.kind &&
+      widget.layout.holds(CompassView(kind));
+
+  /// The path the kiosk starts on, which a dashboard view without a path
+  /// stands for.
+  String get _home =>
+      dashboardPathOfUrl(
+        c.browser.startUrl,
+        c.homeAssistant.baseUrl,
+        pages: c.homeAssistant.customPages,
+      ) ??
+      '';
+
+  /// Whether the dashboard view picked is in the layout already, in
+  /// another place than the one being replaced.
+  bool get _pathTaken {
+    String resolve(CompassView v) => v.path.isEmpty ? _home : v.path;
+    final picked = _path.isEmpty ? _home : _path;
+    final replacing = widget.replacing;
+    return widget.layout.dashboards.any(
+      (v) => v != replacing && resolve(v) == picked,
+    );
+  }
 
   @override
   void initState() {
@@ -859,7 +883,7 @@ class _CompassViewDialogState extends State<_CompassViewDialog> {
 
   CompassView? get _result => switch (_kind) {
     null => null,
-    'dashboard' => CompassView('dashboard', path: _path),
+    'dashboard' => _pathTaken ? null : CompassView('dashboard', path: _path),
     'camera' => _camera.isEmpty ? null : CompassView('camera', id: _camera),
     final kind => CompassView(kind),
   };
@@ -905,7 +929,11 @@ class _CompassViewDialogState extends State<_CompassViewDialog> {
               : !ready
               ? Text(strings.compassKindUnavailable)
               : kind == 'dashboard'
-              ? Text(strings.compassKindDashboardHint)
+              ? Text(
+                  _kind == 'dashboard' && _pathTaken
+                      ? strings.compassKindTaken
+                      : strings.compassKindDashboardHint,
+                )
               : null,
           // The dialog's own margin on the left. The icons sit further in,
           // clear of the edge and in line with the dashboard field's chevron.
