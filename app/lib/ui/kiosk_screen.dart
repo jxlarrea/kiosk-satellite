@@ -3556,6 +3556,10 @@ class _ScreensaverFadeState extends State<ScreensaverFade>
     vsync: this,
     duration: ScreensaverManager.fadeDuration,
     value: 1,
+    // Android's animation scales set to zero, as kiosk setup guides
+    // often leave them, would cut the fade to a twentieth. The manager
+    // decides if the fade follows them (ScreensaverManager.fadesView).
+    animationBehavior: AnimationBehavior.preserve,
   );
 
   /// The picture that fades out: the screensaver's last frame over the
@@ -3621,6 +3625,8 @@ class _ScreensaverFadeState extends State<ScreensaverFade>
         _dropLast();
         return;
       }
+      // A dismissal inside the fade in fades out from where that got to.
+      final from = shot == null && _last == null ? _fade.value : 1.0;
       final last =
           shot ?? (_screensaver.opacityFades(was) ? _lastFrame() : null);
       if (last == null) {
@@ -3628,7 +3634,7 @@ class _ScreensaverFadeState extends State<ScreensaverFade>
         _dropLast();
         return;
       }
-      _fadeOver(last, drawn);
+      _fadeOver(last, drawn, from: from);
     }
   }
 
@@ -3647,12 +3653,18 @@ class _ScreensaverFadeState extends State<ScreensaverFade>
 
   /// Holds [picture] over everything below until [ready] completes, then
   /// fades it out.
-  void _fadeOver(ui.Image picture, Future<void> ready, {VoidCallback? onFade}) {
-    _fade.value = 1;
+  void _fadeOver(
+    ui.Image picture,
+    Future<void> ready, {
+    VoidCallback? onFade,
+    double from = 1,
+  }) {
     setState(() {
       _last?.dispose();
       _last = picture;
     });
+    // At zero the picture goes at once (the status listener drops it).
+    _fade.value = from;
     unawaited(
       ready.whenComplete(() {
         if (!mounted || !identical(_last, picture)) return;

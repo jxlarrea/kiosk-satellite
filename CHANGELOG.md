@@ -6,10 +6,13 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Added
 - **Several Home Assistant dashboard views in the Compass layout.** A Compass layout can now hold more than one Home Assistant dashboard view: add as many as the layout has room for, each view once. Every other kind of view still goes in once. All dashboard views show in the same page, so more views do not load Home Assistant again. A swipe from one dashboard view to another keeps its picture of the new view up until the page has built it, for up to 2.5 seconds. If the page moves to a dashboard view of the layout on its own, such as through a navigation card, the layout follows. **Return to home dashboard view** goes back to the view picked for the place on screen, not to the default dashboard. The line under that setting says so while Compass is on. See [Several dashboard views](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/navigation.md#several-dashboard-views).
-- **Fade in and out for the screensaver.** A new **Fade in and out** switch in **Settings > Screensaver**, off by default, fades the screensaver in over the dashboard and fades it out when it is dismissed, instead of switching at once. The fade out waits until the dashboard is drawing again, so a dashboard paused under the screensaver never shows as a black frame. A screensaver that dims the screen does so once the fade in is over. Plugin screensavers fade on Android 8 and later. The Home Assistant Media, Website and Camera Streams screensavers still switch without a fade.
+- **Fade in and out for the screensaver.** A new **Fade in and out** switch in **Settings > Screensaver**, off by default, fades the screensaver in over the dashboard and fades it out when it is dismissed, instead of switching at once. The fade out waits until the dashboard is drawing again, so a dashboard paused under the screensaver never shows as a black frame. A screensaver that dims the screen does so once the fade in is over. Plugin screensavers fade on Android 8 and later. The Home Assistant Media, Website and Camera Streams screensavers still switch without a fade. The fade runs even when Android animations are off, unless **Follow Android animation settings** is on.
 
 ### Changed
 - **Compass keeps a snapshot of every view in the layout.** The swipe kept snapshots of 6 views, so in a larger layout the views visited longest ago went back to a card with their name. It now keeps one for each of the 9 views a full layout holds.
+
+### Fixed
+- **A screensaver that stayed on screen after it was dismissed.** If a touch or a command dismissed the screensaver in the instant it was starting, while it was still reading the screen brightness, the screensaver came up anyway and nothing could dismiss it until the app restarted. It now stays dismissed. This affected screensavers with their own brightness, Dim and Black.
 
 ## v2026.11.17 - 2026-11-12
 

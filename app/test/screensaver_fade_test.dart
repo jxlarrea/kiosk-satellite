@@ -20,6 +20,7 @@ void main() {
   late List<double> brightness;
   late List<String> order;
   late Future<void> Function() dashboardFrame;
+  var slowBrightnessRead = Duration.zero;
 
   Future<void> build([Map<String, Object> extra = const {}]) async {
     SharedPreferences.setMockInitialValues({
@@ -36,12 +37,18 @@ void main() {
     brightness = [];
     order = [];
     dashboardFrame = () async {};
+    slowBrightnessRead = Duration.zero;
     commands
       ..register(
         Command(
           name: 'getBrightness',
           description: 'Read brightness',
-          handler: (_) async => const CommandResult.ok(0.8),
+          handler: (_) async {
+            if (slowBrightnessRead > Duration.zero) {
+              await Future<void>.delayed(slowBrightnessRead);
+            }
+            return const CommandResult.ok(0.8);
+          },
         ),
       )
       ..register(
@@ -95,6 +102,62 @@ void main() {
     });
   });
 
+  test('Android animations off only stop the fade when the screensaver '
+      'follows them', () {
+    fakeAsync((async) {
+      build();
+      async.flushMicrotasks();
+      saver.androidAnimationsOff = () => true;
+      expect(saver.fadesView('clock'), isTrue);
+      expect(saver.fadesView('plugin:hello-world:dvd'), isTrue);
+      build({'ks.screensaver.follow_animation_scale': true});
+      async.flushMicrotasks();
+      saver.androidAnimationsOff = () => true;
+      expect(saver.fadesView('clock'), isFalse);
+      expect(saver.fadesView('plugin:hello-world:dvd'), isFalse);
+      saver.androidAnimationsOff = () => false;
+      expect(saver.fadesView('clock'), isTrue);
+    });
+  });
+
+  testWidgets('the fade runs its full length with Android animations off', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await tester.runAsync(build);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ScreensaverFade(
+          screensaver: saver,
+          child: const SizedBox.expand(key: Key('saver')),
+        ),
+      ),
+    );
+    await tester.runAsync(saver.start);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    final fade = tester.widget<FadeTransition>(
+      find
+          .ancestor(
+            of: find.byKey(const Key('saver')),
+            matching: find.byType(FadeTransition),
+          )
+          .first,
+    );
+    expect(fade.opacity.value, closeTo(0.5, 0.01));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.runAsync(saver.stop);
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 80)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump();
+  });
+
   test('the fade ends before the browser pauses the dashboard', () {
     // BrowserManager._scheduleFreezeSync waits one second.
     expect(
@@ -135,6 +198,32 @@ void main() {
       saver.stop();
       async.elapse(const Duration(seconds: 1));
       expect(brightness.where((level) => level == 0), isEmpty);
+    });
+  });
+
+  test('a dismissal while a start reads the brightness leaves no view up', () {
+    // The idle start and a touch 40 ms apart on a Portal Go left the clock
+    // on screen over a session that had ended.
+    fakeAsync((async) {
+      build({
+        'ks.screensaver.brightness_enabled': true,
+        'ks.screensaver.brightness_level': 0.5,
+      });
+      async.flushMicrotasks();
+      slowBrightnessRead = const Duration(milliseconds: 50);
+      saver.start();
+      async.elapse(const Duration(milliseconds: 10));
+      expect(saver.activeView.value, isNull);
+      saver.stop();
+      async.elapse(const Duration(seconds: 2));
+      expect(saver.activeView.value, isNull);
+      expect(brightness, isEmpty);
+      // The next session saves its own restore point and dims.
+      slowBrightnessRead = Duration.zero;
+      saver.start();
+      async.elapse(const Duration(seconds: 2));
+      expect(saver.activeView.value, 'clock');
+      expect(brightness, [0.5]);
     });
   });
 

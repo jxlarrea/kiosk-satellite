@@ -2147,8 +2147,22 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   bool fadesView(String? view) => opacityFades(view) || shotFades(view);
 
   /// Whether an opacity on the live view fades [view].
-  bool opacityFades(String? view) =>
-      _fadeViews.contains(view) && _settings.get(defs.screensaverFade);
+  bool opacityFades(String? view) => _fadeViews.contains(view) && _fadeOn;
+
+  /// Fade in and out is on. Android's animations being off leaves it
+  /// alone, as it leaves the animated screensavers, unless Follow Android
+  /// animation settings says otherwise.
+  bool get _fadeOn =>
+      _settings.get(defs.screensaverFade) &&
+      !(_settings.get(defs.screensaverFollowAnimationScale) &&
+          androidAnimationsOff());
+
+  /// Whether Android's transition animation scale is zero.
+  bool Function() androidAnimationsOff = () => WidgetsBinding
+      .instance
+      .platformDispatcher
+      .accessibilityFeatures
+      .disableAnimations;
 
   /// Whether [view] fades through a picture of the screen: the plugin
   /// screensavers, which Android draws in views of its own. Fading in, a
@@ -2156,9 +2170,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// drawn and fades out over it. Fading out, a picture of the screensaver
   /// does the same over the dashboard.
   bool shotFades(String? view) =>
-      view != null &&
-      defs.isPluginScreensaver(view) &&
-      _settings.get(defs.screensaverFade);
+      view != null && defs.isPluginScreensaver(view) && _fadeOn;
 
   /// Reads the screen for [shotFades]. Null when Android has no window to
   /// read or is older than 8, and the screensaver cuts.
@@ -2384,6 +2396,18 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // Modes that change brightness save their restore point first.
     if (mode == 'dim' || mode == 'black' || _contentDimEnabled(mode)) {
       await _ensureSavedBrightness();
+      // A dismissal can land while the brightness is read: the idle start
+      // and a touch a few milliseconds apart. stop() has then undone the
+      // session, and carrying on would put the view up over nothing, a
+      // screensaver no touch can dismiss. Nothing was dimmed yet, so the
+      // restore point goes too.
+      if (!_active) {
+        if (_savedBrightness != null) {
+          _savedBrightness = null;
+          await _settings.set(defs.screensaverSavedBrightness, -1);
+        }
+        return;
+      }
     }
     // The Home Assistant Dashboard mode moves the page to its view before
     // anything decides what covers it: under the Now Playing takeover the
