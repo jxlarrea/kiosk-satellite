@@ -45490,6 +45490,32 @@
       ]
     }
   },
+  "settingScreensaverFadeTitle": "Плавна поява та зникнення",
+  "@settingScreensaverFadeTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverFadeDescription": "Заставка плавно з'являється поверх панелі й плавно зникає після закриття. Не діє для заставок «Медіа Home Assistant», «Вебсайт» і «Потоки камер».",
+  "@settingScreensaverFadeDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverModeTitle": "Режим заставки",
   "@settingScreensaverModeTitle": {
     "context": "Settings:Screensaver",

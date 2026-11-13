@@ -12086,6 +12086,13 @@ class UiStringsEn extends UiStrings {
       'Inactivity period before the screensaver starts.';
 
   @override
+  String get settingScreensaverFadeTitle => 'Fade in and out';
+
+  @override
+  String get settingScreensaverFadeDescription =>
+      'The screensaver fades in over the dashboard and fades out when dismissed. Not for the Home Assistant Media, Website or Camera Streams screensavers.';
+
+  @override
   String get settingScreensaverModeTitle => 'Screensaver mode';
 
   @override

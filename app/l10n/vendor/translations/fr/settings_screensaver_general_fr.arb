@@ -4,6 +4,8 @@
   "settingScreensaverEnabledDescription": "Assombrir l'écran ou l'afficher en noir après une période d'inactivité.",
   "settingScreensaverTimeoutSecondsTitle": "Délai d'inactivité (secondes)",
   "settingScreensaverTimeoutSecondsDescription": "Période d'inactivité avant le démarrage de l'économiseur d'écran.",
+  "settingScreensaverFadeTitle": "Fondu à l'ouverture et à la fermeture",
+  "settingScreensaverFadeDescription": "L'économiseur d'écran apparaît en fondu sur le tableau de bord et disparaît en fondu à sa fermeture. Ne s'applique pas aux économiseurs d'écran Média Home Assistant, Site web et Flux de caméras.",
   "settingScreensaverModeTitle": "Mode de l'économiseur d'écran",
   "settingScreensaverModeDescription": "Ce que l'économiseur d'écran affiche après le délai d'inactivité. « Tamisé » se contente de baisser le rétroéclairage et laisse le tableau de bord à l'écran.",
   "settingScreensaverPixelShiftTitle": "Décalage de pixels",

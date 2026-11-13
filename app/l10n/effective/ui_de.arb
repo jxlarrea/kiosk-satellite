@@ -45490,6 +45490,32 @@
       ]
     }
   },
+  "settingScreensaverFadeTitle": "Ein- und ausblenden",
+  "@settingScreensaverFadeTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverFadeDescription": "Der Bildschirmschoner wird über dem Dashboard eingeblendet und beim Beenden ausgeblendet. Gilt nicht für die Bildschirmschoner Home-Assistant-Medien, Website und Kamerastreams.",
+  "@settingScreensaverFadeDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverModeTitle": "Bildschirmschoner-Modus",
   "@settingScreensaverModeTitle": {
     "context": "Settings:Screensaver",

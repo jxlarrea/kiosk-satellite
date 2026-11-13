@@ -12347,6 +12347,13 @@ class UiStringsDe extends UiStrings {
       'Dauer der Inaktivität, bevor der Bildschirmschoner aktiviert wird.';
 
   @override
+  String get settingScreensaverFadeTitle => 'Ein- und ausblenden';
+
+  @override
+  String get settingScreensaverFadeDescription =>
+      'Der Bildschirmschoner wird über dem Dashboard eingeblendet und beim Beenden ausgeblendet. Gilt nicht für die Bildschirmschoner Home-Assistant-Medien, Website und Kamerastreams.';
+
+  @override
   String get settingScreensaverModeTitle => 'Bildschirmschoner-Modus';
 
   @override

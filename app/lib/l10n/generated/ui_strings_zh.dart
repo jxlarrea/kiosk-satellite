@@ -11521,6 +11521,13 @@ class UiStringsZh extends UiStrings {
   String get settingScreensaverTimeoutSecondsDescription => '无操作多久后启动屏保。';
 
   @override
+  String get settingScreensaverFadeTitle => '淡入淡出';
+
+  @override
+  String get settingScreensaverFadeDescription =>
+      '屏保在仪表盘上淡入，关闭时淡出。不适用于 Home Assistant 媒体、网站和摄像头视频流屏保。';
+
+  @override
   String get settingScreensaverModeTitle => '屏保模式';
 
   @override
@@ -27102,6 +27109,13 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingScreensaverTimeoutSecondsDescription => '无操作多久后启动屏保。';
+
+  @override
+  String get settingScreensaverFadeTitle => '淡入淡出';
+
+  @override
+  String get settingScreensaverFadeDescription =>
+      '屏保在仪表盘上淡入，关闭时淡出。不适用于 Home Assistant 媒体、网站和摄像头视频流屏保。';
 
   @override
   String get settingScreensaverModeTitle => '屏保模式';

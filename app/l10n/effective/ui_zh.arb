@@ -45490,6 +45490,32 @@
       ]
     }
   },
+  "settingScreensaverFadeTitle": "淡入淡出",
+  "@settingScreensaverFadeTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverFadeDescription": "屏保在仪表盘上淡入，关闭时淡出。不适用于 Home Assistant 媒体、网站和摄像头视频流屏保。",
+  "@settingScreensaverFadeDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverModeTitle": "屏保模式",
   "@settingScreensaverModeTitle": {
     "context": "Settings:Screensaver",

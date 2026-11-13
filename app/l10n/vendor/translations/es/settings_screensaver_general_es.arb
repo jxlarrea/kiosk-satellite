@@ -4,6 +4,8 @@
   "settingScreensaverEnabledDescription": "Atenúa o deja en negro la pantalla tras un periodo de inactividad.",
   "settingScreensaverTimeoutSecondsTitle": "Tiempo de inactividad (segundos)",
   "settingScreensaverTimeoutSecondsDescription": "Periodo de inactividad antes de que se active el protector de pantalla.",
+  "settingScreensaverFadeTitle": "Aparecer y desaparecer gradualmente",
+  "settingScreensaverFadeDescription": "El protector de pantalla aparece gradualmente sobre el panel de control y se desvanece al cerrarlo. No se aplica a los protectores de pantalla Contenido multimedia de Home Assistant, Sitio web ni Transmisiones de cámara.",
   "settingScreensaverModeTitle": "Modo del protector de pantalla",
   "settingScreensaverModeDescription": "Qué muestra el protector de pantalla tras el tiempo de inactividad. Atenuar solo reduce la iluminación y mantiene visible el panel de control.",
   "settingScreensaverPixelShiftTitle": "Desplazamiento de píxeles",

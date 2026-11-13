@@ -360,6 +360,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingScreensaverTimeoutSecondsTitle",
     "description": "settingScreensaverTimeoutSecondsDescription",
   },
+  "screensaver.fade": {
+    "title": "settingScreensaverFadeTitle",
+    "description": "settingScreensaverFadeDescription",
+  },
   "screensaver.mode": {
     "title": "settingScreensaverModeTitle",
     "description": "settingScreensaverModeDescription",

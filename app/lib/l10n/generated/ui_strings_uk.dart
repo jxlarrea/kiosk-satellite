@@ -12222,6 +12222,13 @@ class UiStringsUk extends UiStrings {
       'Час бездіяльності до вмикання заставки.';
 
   @override
+  String get settingScreensaverFadeTitle => 'Плавна поява та зникнення';
+
+  @override
+  String get settingScreensaverFadeDescription =>
+      'Заставка плавно з\'являється поверх панелі й плавно зникає після закриття. Не діє для заставок «Медіа Home Assistant», «Вебсайт» і «Потоки камер».';
+
+  @override
   String get settingScreensaverModeTitle => 'Режим заставки';
 
   @override

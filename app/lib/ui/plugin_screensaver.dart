@@ -209,6 +209,8 @@ class _PluginScreensaverState extends State<PluginScreensaver> {
           key: ValueKey((widget.mode, shown.key)),
           container: widget.container,
           renderer: shown.renderer,
+          // The fade in waits for the first paint (Fade in and out).
+          onReady: widget.container.screensaver.viewDrawn,
         ),
       ],
     );
@@ -553,6 +555,9 @@ class _NativeScreensaverState extends State<_NativeScreensaver> {
                 'theme': theme,
               },
               creationParamsCodec: const StandardMessageCodec(),
+              // The fade in waits for the view (Fade in and out).
+              onPlatformViewCreated: (_) =>
+                  widget.container.screensaver.viewDrawn(),
               // Every touch on a touch renderer is the plugin's, as on
               // an overlay.
               gestureRecognizers: {

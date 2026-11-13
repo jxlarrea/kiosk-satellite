@@ -12307,6 +12307,14 @@ class UiStringsFr extends UiStrings {
       'Période d\'inactivité avant le démarrage de l\'économiseur d\'écran.';
 
   @override
+  String get settingScreensaverFadeTitle =>
+      'Fondu à l\'ouverture et à la fermeture';
+
+  @override
+  String get settingScreensaverFadeDescription =>
+      'L\'économiseur d\'écran apparaît en fondu sur le tableau de bord et disparaît en fondu à sa fermeture. Ne s\'applique pas aux économiseurs d\'écran Média Home Assistant, Site web et Flux de caméras.';
+
+  @override
   String get settingScreensaverModeTitle => 'Mode de l\'économiseur d\'écran';
 
   @override

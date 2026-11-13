@@ -21152,6 +21152,18 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Fade in and out'**
+  String get settingScreensaverFadeTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'The screensaver fades in over the dashboard and fades out when dismissed. Not for the Home Assistant Media, Website or Camera Streams screensavers.'**
+  String get settingScreensaverFadeDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Screensaver mode'**
   String get settingScreensaverModeTitle;
 

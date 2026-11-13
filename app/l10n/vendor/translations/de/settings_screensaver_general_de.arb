@@ -4,6 +4,8 @@
   "settingScreensaverEnabledDescription": "Dimmt den Bildschirm oder schaltet ihn nach einer Zeit der Inaktivität schwarz.",
   "settingScreensaverTimeoutSecondsTitle": "Leerlaufzeit (Sekunden)",
   "settingScreensaverTimeoutSecondsDescription": "Dauer der Inaktivität, bevor der Bildschirmschoner aktiviert wird.",
+  "settingScreensaverFadeTitle": "Ein- und ausblenden",
+  "settingScreensaverFadeDescription": "Der Bildschirmschoner wird über dem Dashboard eingeblendet und beim Beenden ausgeblendet. Gilt nicht für die Bildschirmschoner Home-Assistant-Medien, Website und Kamerastreams.",
   "settingScreensaverModeTitle": "Bildschirmschoner-Modus",
   "settingScreensaverModeDescription": "Legt fest, was der Bildschirmschoner nach Ablauf der Leerlaufzeit anzeigt. „Dimmen“ reduziert lediglich die Helligkeit und lässt das Dashboard sichtbar.",
   "settingScreensaverPixelShiftTitle": "Pixelverschiebung",

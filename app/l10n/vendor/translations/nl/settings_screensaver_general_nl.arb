@@ -4,6 +4,8 @@
   "settingScreensaverEnabledDescription": "Dim het scherm of maak het zwart na een periode van inactiviteit.",
   "settingScreensaverTimeoutSecondsTitle": "Time-out voor inactiviteit (seconden)",
   "settingScreensaverTimeoutSecondsDescription": "Hoe lang het apparaat inactief moet zijn voordat de schermbeveiliging start.",
+  "settingScreensaverFadeTitle": "In- en uitfaden",
+  "settingScreensaverFadeDescription": "De schermbeveiliging fadet in over het dashboard en fadet uit bij het sluiten. Geldt niet voor de schermbeveiligingen Home Assistant-media, Website en Camerastreams.",
   "settingScreensaverModeTitle": "Schermbeveiligingsmodus",
   "settingScreensaverModeDescription": "Wat de schermbeveiliging toont na de inactiviteitstime-out. Bij 'Dimmen' wordt alleen de achtergrondverlichting verlaagd en blijft het dashboard zichtbaar.",
   "settingScreensaverPixelShiftTitle": "Pixelverschuiving",

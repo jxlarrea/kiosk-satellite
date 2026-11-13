@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 
@@ -13,6 +14,7 @@ import '../../l10n/generated/message_lookup.dart';
 import '../../l10n/generated/setting_option_ids.dart';
 import '../../l10n/generated/ui_strings.dart';
 import '../camera/models.dart' show encodeCameraViewIds;
+import '../device/screen_capture.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'screensaver_widgets.dart';
@@ -1972,6 +1974,24 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       'start ($_effectiveMode)${_panelDark ? ', screen off' : ''}',
     );
     if (!_screenDark) _armScreenOffTimer();
+    // The backlight stays where it is while the screensaver fades in.
+    _dropShots();
+    final fadeMode = _effectiveMode;
+    if (!_screenDark && shotFades(fadeMode)) {
+      final shot = await _shot();
+      if (!_active) {
+        shot?.dispose();
+        return;
+      }
+      if (shot != null) {
+        fadeInShot = shot;
+        final drawn = _fadeInDrawn = Completer<void>();
+        fadeInAfter = drawn.future.timeout(fadeInLimit, onTimeout: () {});
+        _holdDimForFade(fadeInLimit + fadeDuration);
+      }
+    } else if (!_screenDark && opacityFades(fadeMode)) {
+      _holdDimForFade(fadeDuration);
+    }
     await _applyVisuals();
     if (!_active) return;
     bus.publish(
@@ -2094,6 +2114,184 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // Back to whatever this mode, schedule entry or takeover asks for.
       await _applyVisuals();
     }
+  }
+
+  // ── Fade in and out (screensaver.fade) ─────────────────────────────
+
+  /// How long the screensaver takes to fade in or out. Shorter than the
+  /// second the browser waits before it pauses the dashboard, which has
+  /// to keep drawing under a screensaver that is still fading in.
+  static const fadeDuration = Duration(milliseconds: 400);
+
+  /// How long a dismissal waits for the dashboard to draw again before the
+  /// screensaver fades out anyway.
+  static const fadePaintLimit = Duration(milliseconds: 400);
+
+  /// The views Flutter draws itself, which an opacity can fade. Android
+  /// ignores opacity on a platform view: the plugin modes fade through a
+  /// picture instead ([shotFades]) and the web and camera modes cut. The
+  /// views that show the page have nothing to fade.
+  static const _fadeViews = {
+    'clock',
+    'black',
+    'local',
+    'gallery',
+    'url',
+    'immich',
+    'weather_mood',
+    'celestial',
+    'calendar',
+  };
+
+  /// Whether [view] fades in and out.
+  bool fadesView(String? view) => opacityFades(view) || shotFades(view);
+
+  /// Whether an opacity on the live view fades [view].
+  bool opacityFades(String? view) =>
+      _fadeViews.contains(view) && _settings.get(defs.screensaverFade);
+
+  /// Whether [view] fades through a picture of the screen: the plugin
+  /// screensavers, which Android draws in views of its own. Fading in, a
+  /// picture of the dashboard stays over the screensaver until it has
+  /// drawn and fades out over it. Fading out, a picture of the screensaver
+  /// does the same over the dashboard.
+  bool shotFades(String? view) =>
+      view != null &&
+      defs.isPluginScreensaver(view) &&
+      _settings.get(defs.screensaverFade);
+
+  /// Reads the screen for [shotFades]. Null when Android has no window to
+  /// read or is older than 8, and the screensaver cuts.
+  Future<ui.Image?> Function() captureScreen = _readScreen;
+
+  static Future<ui.Image?> _readScreen() {
+    final size = ui.PlatformDispatcher.instance.implicitView?.physicalSize;
+    final width = size == null || size.width <= 0 ? 1280 : size.width.round();
+    return ScreenCapture.captureImage(width: width);
+  }
+
+  /// How long a start or a dismissal waits for the picture.
+  static const _shotLimit = Duration(milliseconds: 300);
+
+  Future<ui.Image?> _shot() async {
+    final clock = Stopwatch()..start();
+    final reading = captureScreen();
+    try {
+      final image = await reading.timeout(_shotLimit);
+      log.info(
+        name,
+        'fade: screen ${image == null ? 'not read' : 'read'} in '
+        '${clock.elapsedMilliseconds}ms',
+      );
+      return image;
+    } catch (_) {
+      // Too slow to wait for: the screensaver cuts and the picture goes
+      // when it arrives.
+      unawaited(reading.then((image) => image?.dispose(), onError: (_) {}));
+      log.info(name, 'fade: screen not read in ${_shotLimit.inMilliseconds}ms');
+      return null;
+    }
+  }
+
+  /// The dashboard as it was when a [shotFades] session started, for the
+  /// overlay to take and fade out once [fadeInAfter] completes.
+  ui.Image? fadeInShot;
+
+  /// Completes once the view under [fadeInShot] has drawn, or after
+  /// [fadeInLimit].
+  Future<void>? fadeInAfter;
+  Completer<void>? _fadeInDrawn;
+
+  /// How long the picture of the dashboard waits for a plugin screensaver
+  /// to draw before it fades out anyway.
+  static const fadeInLimit = Duration(milliseconds: 1500);
+
+  /// A plugin screensaver reports that its view has drawn.
+  void viewDrawn() {
+    final drawn = _fadeInDrawn;
+    if (drawn != null && !drawn.isCompleted) drawn.complete();
+  }
+
+  /// The overlay reports that the picture of the dashboard starts to fade
+  /// out, so the backlight can drop once it is gone.
+  void fadeInUnderway() {
+    if (_fadeDimHold != null) _holdDimForFade(fadeDuration, keep: true);
+  }
+
+  /// The screensaver as it was when a [shotFades] session ended, for the
+  /// overlay to take and fade out once [fadeOutAfter] completes.
+  ui.Image? fadeOutShot;
+
+  void _dropShots() {
+    fadeInShot?.dispose();
+    fadeInShot = null;
+    fadeOutShot?.dispose();
+    fadeOutShot = null;
+    fadeInAfter = null;
+    _fadeInDrawn = null;
+  }
+
+  /// Set by [stop] just before the view drops when the dismissal fades:
+  /// completes once the dashboard under the screensaver draws again. The
+  /// overlay keeps the screensaver's last frame up until then and fades
+  /// it out after.
+  Future<void>? fadeOutAfter;
+
+  /// The dimming a session's first frame asked for, held back until the
+  /// fade in is over: a backlight that drops at once hides the fade.
+  Timer? _fadeDimHold;
+  Object? _fadeDimLevel;
+
+  void _holdDimForFade(Duration hold, {bool keep = false}) {
+    _fadeDimHold?.cancel();
+    if (!keep) _fadeDimLevel = null;
+    _fadeDimHold = Timer(hold, () {
+      _fadeDimHold = null;
+      final level = _fadeDimLevel;
+      _fadeDimLevel = null;
+      if (!_active || level == null) return;
+      unawaited(
+        commands.execute('setBrightness', {'level': level, 'ceiling': true}),
+      );
+    });
+  }
+
+  void _endDimHold() {
+    _fadeDimHold?.cancel();
+    _fadeDimHold = null;
+    _fadeDimLevel = null;
+  }
+
+  /// The brightness of the view on screen, from [_applyVisuals].
+  Future<void> _setViewBrightness(Object? level) async {
+    if (_fadeDimHold != null) {
+      _fadeDimLevel = level;
+      return;
+    }
+    await commands.execute('setBrightness', {'level': level, 'ceiling': true});
+  }
+
+  /// Completes once the dashboard has drawn after its thaw, or after
+  /// [fadePaintLimit] on a page that does not answer.
+  Future<void> _dashboardDrawn() async {
+    final clock = Stopwatch()..start();
+    var drawn = false;
+    try {
+      final result = await commands
+          .execute('awaitDashboardFrame', const {})
+          .timeout(fadePaintLimit);
+      drawn = result.ok;
+      // The page has made its frames. Android puts them on screen with
+      // its next frame or two.
+      if (drawn) await Future<void>.delayed(const Duration(milliseconds: 50));
+    } catch (_) {
+      // The page did not answer in time.
+    }
+    log.info(
+      name,
+      'fade out: dashboard ${drawn ? 'drew' : 'did not answer'} after '
+      '${clock.elapsedMilliseconds}ms',
+    );
   }
 
   /// Set the overlay and tell the bus: the browser manager freezes the
@@ -2241,10 +2439,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         });
       case 'black' when liftForNotification:
         _setView('black');
-        await commands.execute('setBrightness', {
-          'level': _savedBrightness,
-          'ceiling': true,
-        });
+        await _setViewBrightness(_savedBrightness);
       case 'black':
         // Backlight to zero behind a black overlay — deliberately NOT the
         // screenOff command, which truly powers the panel off (device-admin
@@ -2252,7 +2447,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         // must stay alive: motion wake, the wake word UI and the admin's
         // live view all keep running behind the dark glass.
         _setView('black');
-        await commands.execute('setBrightness', {'level': 0, 'ceiling': true});
+        await _setViewBrightness(0);
       default:
         // clock / media / website: a lit overlay showing content, at normal
         // brightness unless the separate screensaver brightness — or the
@@ -2264,17 +2459,13 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           final level =
               _scheduleBrightness ??
               _settings.get(defs.screensaverBrightnessLevel).toDouble();
-          await commands.execute('setBrightness', {
-            'level': liftForNotification ? _savedBrightness : level,
-            'ceiling': true,
-          });
+          await _setViewBrightness(
+            liftForNotification ? _savedBrightness : level,
+          );
         } else if (_savedBrightness != null) {
           // A mid-session switch out of a dimmed mode (schedule boundary,
           // music starting) must lift the old mode's darkness with it.
-          await commands.execute('setBrightness', {
-            'level': _savedBrightness,
-            'ceiling': true,
-          });
+          await _setViewBrightness(_savedBrightness);
         }
     }
   }
@@ -2324,7 +2515,14 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _launchOnPlayPending = false;
     if (!_active) return;
     final nowPlaying = _nowPlayingSession;
+    // A dark panel has nothing to fade.
+    final fadeView = activeView.value;
+    final fades = !_screenDark && fadesView(fadeView);
     _active = false;
+    _endDimHold();
+    _dropShots();
+    // Read while the screensaver is still all there is on screen.
+    if (fades && shotFades(fadeView)) fadeOutShot = await _shot();
     _endTouchLift();
     holdSensorDismiss = false;
     _startedForNowPlaying = false;
@@ -2352,6 +2550,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // never shows a blank hole where the page is (a no-op unless the
     // rendering freeze optimization hid it).
     await commands.execute('unfreezeRendering', const {});
+    // The overlay holds the screensaver's last frame over the page until
+    // the page draws again, so the fade out never shows the hole a paused
+    // page leaves.
+    fadeOutAfter = fades ? _dashboardDrawn() : null;
     // Move the page to where the dismissal lands while the overlay still
     // covers it. Awaited, so a navigation commanded right after the
     // dismissal (the ESPHome Dashboard select, haNavigate) lands after

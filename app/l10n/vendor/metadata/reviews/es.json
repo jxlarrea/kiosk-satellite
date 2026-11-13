@@ -24628,5 +24628,15 @@
     "source": "8e13aded7b7c4c4c7be64625b4ade8cf354015dd374e1de2590ac1c273c0928c",
     "translation": "04c59f6671ed070db64c4b29bfbede7062a596465043d8bece8299ab7295f0fb",
     "author": "Xavier Larrea"
+  },
+  "settingScreensaverFadeTitle": {
+    "source": "57f52456aa683aef9329f9a4a6d5f873637de7e429618a6299c4ec7262ace05f",
+    "translation": "e5b751ef2e46881ba3f56c36bef20ef805cb1c124eb46b7e61db9389a3cfa2fe",
+    "author": "Xavier Larrea"
+  },
+  "settingScreensaverFadeDescription": {
+    "source": "8f5ac3f16a6ecc5be259637497bfbe92652366b1b85a26406fc5c73904f84fb2",
+    "translation": "fefc51fcf66aad3c5965bc00623765ac2ce73d1209f98864da0bdc82963d3aff",
+    "author": "Xavier Larrea"
   }
 }

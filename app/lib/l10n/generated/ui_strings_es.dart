@@ -12310,6 +12310,14 @@ class UiStringsEs extends UiStrings {
       'Periodo de inactividad antes de que se active el protector de pantalla.';
 
   @override
+  String get settingScreensaverFadeTitle =>
+      'Aparecer y desaparecer gradualmente';
+
+  @override
+  String get settingScreensaverFadeDescription =>
+      'El protector de pantalla aparece gradualmente sobre el panel de control y se desvanece al cerrarlo. No se aplica a los protectores de pantalla Contenido multimedia de Home Assistant, Sitio web ni Transmisiones de cámara.';
+
+  @override
   String get settingScreensaverModeTitle => 'Modo del protector de pantalla';
 
   @override

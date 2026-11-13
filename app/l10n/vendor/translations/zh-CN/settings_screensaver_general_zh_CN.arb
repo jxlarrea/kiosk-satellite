@@ -4,6 +4,8 @@
   "settingScreensaverEnabledDescription": "一段时间无操作后调暗屏幕或黑屏。",
   "settingScreensaverTimeoutSecondsTitle": "无操作等待时间（秒）",
   "settingScreensaverTimeoutSecondsDescription": "无操作多久后启动屏保。",
+  "settingScreensaverFadeTitle": "淡入淡出",
+  "settingScreensaverFadeDescription": "屏保在仪表盘上淡入，关闭时淡出。不适用于 Home Assistant 媒体、网站和摄像头视频流屏保。",
   "settingScreensaverModeTitle": "屏保模式",
   "settingScreensaverModeDescription": "无操作达到设定时间后，屏保显示的内容。“调暗”只降低背光，仍会显示仪表盘。",
   "settingScreensaverPixelShiftTitle": "像素偏移",

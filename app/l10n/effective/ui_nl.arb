@@ -45490,6 +45490,32 @@
       ]
     }
   },
+  "settingScreensaverFadeTitle": "In- en uitfaden",
+  "@settingScreensaverFadeTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverFadeDescription": "De schermbeveiliging fadet in over het dashboard en fadet uit bij het sluiten. Geldt niet voor de schermbeveiligingen Home Assistant-media, Website en Camerastreams.",
+  "@settingScreensaverFadeDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverModeTitle": "Schermbeveiligingsmodus",
   "@settingScreensaverModeTitle": {
     "context": "Settings:Screensaver",

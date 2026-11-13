@@ -4,6 +4,8 @@
   "settingScreensaverEnabledDescription": "Затемнять или гасить экран после периода бездействия.",
   "settingScreensaverTimeoutSecondsTitle": "Тайм-аут простоя (с)",
   "settingScreensaverTimeoutSecondsDescription": "Период бездействия до старта заставки.",
+  "settingScreensaverFadeTitle": "Плавное появление и исчезновение",
+  "settingScreensaverFadeDescription": "Заставка плавно появляется поверх панели и плавно исчезает при закрытии. Не действует для заставок «Медиа Home Assistant», «Веб-сайт» и «Потоки камер».",
   "settingScreensaverModeTitle": "Режим заставки",
   "settingScreensaverModeDescription": "Что показывает заставка после тайм-аута. «Затемнение» лишь снижает подсветку, оставляя панель на экране.",
   "settingScreensaverPixelShiftTitle": "Сдвиг пикселей",

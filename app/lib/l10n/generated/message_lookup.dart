@@ -3945,6 +3945,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverTimeoutSecondsTitle,
       'settingScreensaverTimeoutSecondsDescription' =>
         strings.settingScreensaverTimeoutSecondsDescription,
+      'settingScreensaverFadeTitle' => strings.settingScreensaverFadeTitle,
+      'settingScreensaverFadeDescription' =>
+        strings.settingScreensaverFadeDescription,
       'settingScreensaverModeTitle' => strings.settingScreensaverModeTitle,
       'settingScreensaverModeDescription' =>
         strings.settingScreensaverModeDescription,

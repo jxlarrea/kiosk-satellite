@@ -23,6 +23,7 @@ import '../l10n/gesture_messages.dart';
 import 'screensaver_view.dart';
 import '../core/events.dart';
 import '../managers/browser/carousel_script.dart';
+import '../managers/screensaver/screensaver_manager.dart';
 import '../managers/browser/color_scheme_script.dart';
 import '../managers/browser/disable_suspend_script.dart';
 import '../managers/browser/dashboard_camera_script.dart';
@@ -2026,9 +2027,12 @@ class _KioskScreenState extends State<KioskScreen>
                     // display, drawer open or not.
                     // Paused under the native voice overlay, which
                     // draws over it instead of dismissing it.
-                    PausedUnder(
-                      paused: c.screensaver.renderPaused,
-                      child: ScreensaverOverlay(container: c),
+                    ScreensaverFade(
+                      screensaver: c.screensaver,
+                      child: PausedUnder(
+                        paused: c.screensaver.renderPaused,
+                        child: ScreensaverOverlay(container: c),
+                      ),
                     ),
                     CameraViewOverlay(container: c),
                     // Plugin overlays of the views layer: over every page
@@ -3516,6 +3520,180 @@ class _PausedUnderState extends State<PausedUnder> {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Fades the screensaver in over the dashboard and out again (Settings >
+/// Screensaver > Fade in and out), for the views the screensaver manager
+/// says can fade.
+///
+/// The fade in is an opacity on the live screensaver, over a dashboard
+/// that still draws: the browser pauses it a second after the session
+/// starts. The fade out cannot keep the screensaver alive, since the
+/// session is over by the time its view drops, so it fades the last frame
+/// instead, held at full opacity until the dashboard under it has drawn
+/// again.
+class ScreensaverFade extends StatefulWidget {
+  const ScreensaverFade({
+    super.key,
+    required this.screensaver,
+    required this.child,
+  });
+
+  final ScreensaverManager screensaver;
+  final Widget child;
+
+  @override
+  State<ScreensaverFade> createState() => _ScreensaverFadeState();
+}
+
+class _ScreensaverFadeState extends State<ScreensaverFade>
+    with SingleTickerProviderStateMixin {
+  final _boundary = GlobalKey();
+  late final AnimationController _fade = AnimationController(
+    vsync: this,
+    duration: ScreensaverManager.fadeDuration,
+    value: 1,
+  );
+
+  /// The picture that fades out: the screensaver's last frame over the
+  /// dashboard, or the dashboard over a screensaver Flutter cannot fade.
+  ui.Image? _last;
+  String? _view;
+
+  ScreensaverManager get _screensaver => widget.screensaver;
+
+  @override
+  void initState() {
+    super.initState();
+    _view = _screensaver.activeView.value;
+    _screensaver.activeView.addListener(_viewChanged);
+    // The last frame goes once it has faded out.
+    _fade.addStatusListener((status) {
+      if (status == AnimationStatus.dismissed) _dropLast();
+    });
+  }
+
+  @override
+  void dispose() {
+    _screensaver.activeView.removeListener(_viewChanged);
+    _fade.dispose();
+    _last?.dispose();
+    super.dispose();
+  }
+
+  void _viewChanged() {
+    final view = _screensaver.activeView.value;
+    final was = _view;
+    _view = view;
+    if (!mounted) return;
+    if (was == null && view != null) {
+      // A screensaver comes up, over a fade out still running or not.
+      _dropLast();
+      final shot = _screensaver.fadeInShot;
+      _screensaver.fadeInShot = null;
+      if (shot != null) {
+        // A view Flutter cannot fade: it comes up under a picture of the
+        // dashboard, which fades out once the view has drawn. Android
+        // shows a view of its own a frame or two after it reports in.
+        final drawn = _screensaver.fadeInAfter ?? Future<void>.value();
+        _fadeOver(
+          shot,
+          drawn.then(
+            (_) => Future<void>.delayed(const Duration(milliseconds: 100)),
+          ),
+          onFade: _screensaver.fadeInUnderway,
+        );
+      } else if (_screensaver.opacityFades(view)) {
+        _fade.forward(from: 0);
+      } else {
+        _fade.value = 1;
+      }
+    } else if (was != null && view == null) {
+      final drawn = _screensaver.fadeOutAfter;
+      _screensaver.fadeOutAfter = null;
+      final shot = _screensaver.fadeOutShot;
+      _screensaver.fadeOutShot = null;
+      if (drawn == null) {
+        shot?.dispose();
+        _dropLast();
+        return;
+      }
+      final last =
+          shot ?? (_screensaver.opacityFades(was) ? _lastFrame() : null);
+      if (last == null) {
+        // No frame to fade: the screensaver cuts.
+        _dropLast();
+        return;
+      }
+      _fadeOver(last, drawn);
+    }
+  }
+
+  /// The frame on screen right now, taken before the view leaves the tree.
+  ui.Image? _lastFrame() {
+    final boundary =
+        _boundary.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    try {
+      return boundary?.toImageSync(
+        pixelRatio: MediaQuery.devicePixelRatioOf(context),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Holds [picture] over everything below until [ready] completes, then
+  /// fades it out.
+  void _fadeOver(ui.Image picture, Future<void> ready, {VoidCallback? onFade}) {
+    _fade.value = 1;
+    setState(() {
+      _last?.dispose();
+      _last = picture;
+    });
+    unawaited(
+      ready.whenComplete(() {
+        if (!mounted || !identical(_last, picture)) return;
+        onFade?.call();
+        _fade.reverse();
+      }),
+    );
+  }
+
+  void _dropLast() {
+    if (_last == null) return;
+    setState(() {
+      _last?.dispose();
+      _last = null;
+    });
+    // The picture's fade leaves the opacity at zero, and the live view
+    // under it takes that opacity back now.
+    _fade.value = 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final last = _last;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        FadeTransition(
+          // Nothing shows here while the last frame fades out.
+          opacity: last == null ? _fade : kAlwaysCompleteAnimation,
+          child: RepaintBoundary(
+            key: _boundary,
+            child: Stack(fit: StackFit.expand, children: [widget.child]),
+          ),
+        ),
+        if (last != null)
+          IgnorePointer(
+            child: FadeTransition(
+              opacity: _fade,
+              child: RawImage(image: last, fit: BoxFit.fill),
+            ),
+          ),
       ],
     );
   }

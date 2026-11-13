@@ -4,6 +4,8 @@ export const screensaverTextMessageIds = {
   "Dim or blank the screen after a period of inactivity.": "settingScreensaverEnabledDescription",
   "Idle timeout (seconds)": "settingScreensaverTimeoutSecondsTitle",
   "Inactivity period before the screensaver starts.": "settingScreensaverTimeoutSecondsDescription",
+  "Fade in and out": "settingScreensaverFadeTitle",
+  "The screensaver fades in over the dashboard and fades out when dismissed. Not for the Home Assistant Media, Website or Camera Streams screensavers.": "settingScreensaverFadeDescription",
   "Screensaver mode": "settingScreensaverModeTitle",
   "What the screensaver shows after the idle timeout. Dim only lowers the backlight and leaves the dashboard on screen.": "settingScreensaverModeDescription",
   "Hide all extras": "settingScreensaverBlackHideExtrasTitle",

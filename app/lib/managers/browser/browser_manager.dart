@@ -416,6 +416,32 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
       )
       ..register(
         Command(
+          name: 'awaitDashboardFrame',
+          description:
+              'Wait until the page has produced two frames (the screensaver '
+              'runs this after the thaw, before it fades out over the page)',
+          handler: (_) async {
+            const body =
+                'await new Promise(r => requestAnimationFrame('
+                '() => requestAnimationFrame(r)));';
+            final override = evalOverride;
+            if (override != null) {
+              await override(body);
+            } else {
+              final controller = _controller;
+              if (controller == null) {
+                return const CommandResult.fail('no webview');
+              }
+              await controller
+                  .callAsyncJavaScript(functionBody: body)
+                  .timeout(javaScriptTimeout);
+            }
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'saveUrlFilterRule',
           description:
               'Add a URL Filter rule or change one. Backs Save in the URL '

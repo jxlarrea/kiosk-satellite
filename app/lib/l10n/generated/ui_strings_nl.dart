@@ -12232,6 +12232,13 @@ class UiStringsNl extends UiStrings {
       'Hoe lang het apparaat inactief moet zijn voordat de schermbeveiliging start.';
 
   @override
+  String get settingScreensaverFadeTitle => 'In- en uitfaden';
+
+  @override
+  String get settingScreensaverFadeDescription =>
+      'De schermbeveiliging fadet in over het dashboard en fadet uit bij het sluiten. Geldt niet voor de schermbeveiligingen Home Assistant-media, Website en Camerastreams.';
+
+  @override
   String get settingScreensaverModeTitle => 'Schermbeveiligingsmodus';
 
   @override

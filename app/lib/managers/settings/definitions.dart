@@ -2024,6 +2024,23 @@ const screensaverTimeoutSeconds = SettingDef<num>(
   category: 'Screensaver',
 );
 
+// A crossfade between the dashboard and the screensaver at both ends of a
+// session. The modes Flutter draws fade with an opacity. Android ignores
+// opacity on a platform view, so the plugin modes fade through a picture
+// of the screen and the web and camera modes cut as before
+// (ScreensaverManager.fadesView).
+const screensaverFade = SettingDef<bool>(
+  key: 'screensaver.fade',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Fade in and out',
+  description:
+      'The screensaver fades in over the dashboard and fades out when '
+      'dismissed. Not for the Home Assistant Media, Website or Camera '
+      'Streams screensavers.',
+  category: 'Screensaver',
+);
+
 // The four corners an overlay can sit in, shared by the screensaver widgets
 // and the Immich metadata panel — one vocabulary, and their dropdowns stay
 // in step.
@@ -14110,6 +14127,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMiniClockColor,
   screensaverMiniClock24h,
   screensaverMiniClockDate,
+  screensaverFade,
   screensaverMode,
   screensaverWeatherEntity,
   screensaverWeatherLightning,

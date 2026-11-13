@@ -52,6 +52,32 @@
       ]
     }
   },
+  "settingScreensaverFadeTitle": "Fade in and out",
+  "@settingScreensaverFadeTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverFadeDescription": "The screensaver fades in over the dashboard and fades out when dismissed. Not for the Home Assistant Media, Website or Camera Streams screensavers.",
+  "@settingScreensaverFadeDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverModeTitle": "Screensaver mode",
   "@settingScreensaverModeTitle": {
     "context": "Settings:Screensaver",

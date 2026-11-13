@@ -45490,6 +45490,32 @@
       ]
     }
   },
+  "settingScreensaverFadeTitle": "Fondu à l'ouverture et à la fermeture",
+  "@settingScreensaverFadeTitle": {
+    "context": "Settings:Screensaver",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
+  "settingScreensaverFadeDescription": "L'économiseur d'écran apparaît en fondu sur le tableau de bord et disparaît en fondu à sa fermeture. Ne s'applique pas aux économiseurs d'écran Média Home Assistant, Site web et Flux de caméras.",
+  "@settingScreensaverFadeDescription": {
+    "context": "Settings:Screensaver",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver"
+      ],
+      "remoteAdmin": [
+        "Screensaver"
+      ]
+    }
+  },
   "settingScreensaverModeTitle": "Mode de l'économiseur d'écran",
   "@settingScreensaverModeTitle": {
     "context": "Settings:Screensaver",
