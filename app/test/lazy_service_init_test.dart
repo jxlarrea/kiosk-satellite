@@ -137,6 +137,8 @@ void main() {
           expect(devices.single.vendor, 'Saved vendor');
         }
         expect(settings.ouiReads, 1);
+        // The copy in the settings store is gone once it has been read.
+        expect(settings.internal('btproxy_oui_cache'), isEmpty);
         expect(versionReads, 0);
       } finally {
         await proxy.dispose();
@@ -199,9 +201,7 @@ void main() {
       // on the test runner's network.
       await IOOverrides.runZoned(
         () async {
-          await configure({
-            'ks.secret.dlna_uuid': ?existingUuid,
-          });
+          await configure({'ks.secret.dlna_uuid': ?existingUuid});
           final dlna = DlnaManager(bus, commands, log, settings);
           int failures() => log.recent
               .where(

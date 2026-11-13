@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Settings file rewritten every minute with Look up device manufacturers online turned on.** The Bluetooth Proxy kept every answer from the manufacturer lookup in the settings file, including the address prefixes the registry does not know. Phones, watches and trackers change their Bluetooth address every few minutes, so a new unknown prefix turned up about once a minute. Each one made the saved list longer and rewrote the whole settings file. After two months an Echo Show 8 held 18,465 prefixes, 251 of them with a name, in a 700 KB settings file and wrote about 1 GB a day to its storage. Manufacturer names now go to a small file of their own that is written only when a new name arrives. Unknown prefixes are kept in memory until the app restarts. The saved list leaves the settings file about a minute after the first start on this version and the names found so far are kept.
+- **Settings file rewritten on every change of the light level.** The last reading of the light sensor, or of the Home Assistant light entity used for adaptive brightness, was saved each time it changed so the next start could begin from it. In a room where the light keeps changing, that rewrote the settings file many times an hour. The reading is now saved once every 10 minutes at most.
+
 ## v2026.11.18 - 2026-11-12
 
 ### Added

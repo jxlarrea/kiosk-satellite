@@ -836,6 +836,9 @@ class SettingsManager extends Manager {
       _prefs.getString('${_prefix}internal.$key') ?? '';
 
   Future<void> setInternal(String key, String value) async {
+    // A save rewrites the whole settings file on disk, so one that changes
+    // nothing is skipped.
+    if (value == (_prefs.getString('${_prefix}internal.$key') ?? '')) return;
     if (value.isEmpty) {
       await _prefs.remove('${_prefix}internal.$key');
     } else {

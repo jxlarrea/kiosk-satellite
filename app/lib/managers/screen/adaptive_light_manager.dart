@@ -40,6 +40,9 @@ class AdaptiveLightManager extends Manager {
   /// Where the entity's last reading is kept, with the entity it came
   /// from: another entity's number means nothing for this one.
   static const _lastEntityLuxKey = 'adaptive_entity_last_lux';
+  static const _entityLuxSaveGap = Duration(minutes: 10);
+  DateTime? _entityLuxSavedAt;
+  String? _entityLuxSavedFor;
 
   bool _sensorPresent = false;
   double? _sensorLux;
@@ -277,7 +280,17 @@ class AdaptiveLightManager extends Manager {
     if (_entityLux == lux && _entityLive) return;
     _entityLux = lux;
     _entityLive = true;
-    unawaited(_settings.setInternal(_lastEntityLuxKey, '$entityId|$lux'));
+    // Only what the next session starts from: saved every ten minutes at
+    // most, since each save rewrites the settings file on flash.
+    final now = DateTime.now();
+    final savedAt = _entityLuxSavedAt;
+    if (savedAt == null ||
+        _entityLuxSavedFor != entityId ||
+        now.difference(savedAt) >= _entityLuxSaveGap) {
+      _entityLuxSavedAt = now;
+      _entityLuxSavedFor = entityId;
+      unawaited(_settings.setInternal(_lastEntityLuxKey, '$entityId|$lux'));
+    }
     _publish();
   }
 

@@ -90,6 +90,12 @@ class DeviceManager extends Manager {
   /// reads the same key for its own last-known fallback.
   static const _lastLuxKey = 'esphome_last_lux';
 
+  /// The reading is only what the next session starts from, and every
+  /// save rewrites the settings file on flash, so a room whose light
+  /// keeps changing saves it this often at most.
+  static const luxSaveGap = Duration(minutes: 10);
+  DateTime? _luxSavedAt;
+
   /// Whether the device has a default network right now.
   ///
   /// The bus event is a transition ("an outage just ended"); this is the
@@ -780,7 +786,12 @@ class DeviceManager extends Manager {
           lightLux = lux;
           lightLive = true;
           // Persisted so the next session starts from it (see lightLux).
-          unawaited(_settings.setInternal(_lastLuxKey, '${lux.round()}'));
+          final now = DateTime.now();
+          final savedAt = _luxSavedAt;
+          if (savedAt == null || now.difference(savedAt) >= luxSaveGap) {
+            _luxSavedAt = now;
+            unawaited(_settings.setInternal(_lastLuxKey, '${lux.round()}'));
+          }
           bus.publish(LightLevelChanged(lux: lux));
         },
         onError: (Object e) {
