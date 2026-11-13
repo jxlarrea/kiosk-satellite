@@ -145,6 +145,13 @@ class DeviceDetails(
     private val interfaceWorker = MethodWorker("ks-interfaces")
     private val bluetoothWorker = MethodWorker("ks-bluetooth")
 
+    // The sticky battery broadcast is read through a binder call to the
+    // system server, registerReceiver with no receiver. From the main
+    // thread, a system server that did not answer held it until the main
+    // thread watchdog restarted the process.
+    private val pluggedRead = SharedRead("ks-plugged") { plugged() }
+    private val batteryRead = SharedRead("ks-battery") { battery() }
+
     /**
      * When the current default network came up, on the elapsedRealtime clock,
      * or `null` while there is none. An app only learns about the network from
@@ -253,8 +260,8 @@ class DeviceDetails(
             when (call.method) {
                 "read" -> result.success(read())
                 "uptime" -> result.success(uptime())
-                "plugged" -> result.success(plugged())
-                "battery" -> result.success(battery())
+                "plugged" -> pluggedRead.read(result)
+                "battery" -> batteryRead.read(result)
                 // The Bluetooth links this device holds (issue #281). Binder
                 // calls into the Bluetooth stack, so off the main thread: a
                 // GATT service that never answered held it until the main
@@ -319,6 +326,8 @@ class DeviceDetails(
         linkWorker.shutdown()
         interfaceWorker.shutdown()
         bluetoothWorker.shutdown()
+        pluggedRead.shutdown()
+        batteryRead.shutdown()
         channel.setMethodCallHandler(null)
         try {
             context.unregisterReceiver(aclReceiver)

@@ -2220,6 +2220,8 @@ class EspEntitySurface {
     _poll?.cancel();
     _poll = null;
     _motionOff?.cancel();
+    _cameraOffTimer?.cancel();
+    _cameraOffTimer = null;
     _motionOff = null;
     _btNudge?.cancel();
     _btNudge = null;
@@ -2493,7 +2495,7 @@ class EspEntitySurface {
         // the image. Off, the "Camera off" frame answers instead, and the
         // frame owed when Home Assistant connects is black.
         if (!_settings.get(defs.cameraEnabled)) {
-          await _sendCameraOff();
+          _answerCameraOff();
         } else if (value == 'subscribed') {
           await _sendImage('device_camera', _blackFrame);
         } else {
@@ -2519,20 +2521,36 @@ class EspEntitySurface {
   /// button last captured", and a camera fetch,
   /// which Home Assistant issues on its own whenever a preview refreshes,
   /// must not move it.
+  ///
+  /// A camera fetch that arrives while another one waits for its capture
+  /// does nothing: the frame on its way answers both. Home Assistant's
+  /// frame request names no camera, so a live view of the Device camera
+  /// asks for a screenshot with every frame it fetches.
   Future<void> _takeScreenshot({required bool stamp}) async {
-    final size = PlatformDispatcher.instance.implicitView?.physicalSize;
-    final portrait = size != null && size.height > size.width;
-    final result = await commands.execute('screenshot', {
-      'width': portrait ? 1080 : 1920,
-    });
-    final jpeg = result.data;
-    if (result.ok && jpeg is String) {
-      _sendImage('screenshot', base64Decode(jpeg));
-      if (stamp) await _stamp('last_screenshot');
-    } else {
-      log.warn('esphome', 'screenshot failed: ${result.error}');
+    if (!stamp) {
+      if (_screenshotFetching) return;
+      _screenshotFetching = true;
+    }
+    try {
+      final size = PlatformDispatcher.instance.implicitView?.physicalSize;
+      final portrait = size != null && size.height > size.width;
+      final result = await commands.execute('screenshot', {
+        'width': portrait ? 1080 : 1920,
+      });
+      final jpeg = result.data;
+      if (result.ok && jpeg is String) {
+        _sendImage('screenshot', base64Decode(jpeg));
+        if (stamp) await _stamp('last_screenshot');
+      } else {
+        log.warn('esphome', 'screenshot failed: ${result.error}');
+      }
+    } finally {
+      if (!stamp) _screenshotFetching = false;
     }
   }
+
+  /// A camera fetch from Home Assistant is waiting for its screenshot.
+  bool _screenshotFetching = false;
 
   /// The Motion sensor reads a value only while both the camera and the
   /// setting are on; otherwise it is listed but unknown.
@@ -2545,6 +2563,34 @@ class EspEntitySurface {
     _motionOff?.cancel();
     await _send('motion', _motionActive ? false : null);
   }
+
+  /// Answers a frame request with the "Camera off" frame, once a second
+  /// at most. A live view in Home Assistant asks for the next frame the
+  /// moment one arrives, and this one is ready at once: unpaced, the view
+  /// fetched the same picture about 180 times a second for as long as it
+  /// stayed open.
+  void _answerCameraOff() {
+    if (_cameraOffTimer != null) return;
+    final sent = _cameraOffSentAt;
+    final wait = sent == null
+        ? Duration.zero
+        : const Duration(seconds: 1) - DateTime.now().difference(sent);
+    if (wait <= Duration.zero) {
+      _cameraOffSentAt = DateTime.now();
+      unawaited(_sendCameraOff());
+      return;
+    }
+    _cameraOffTimer = Timer(wait, () {
+      _cameraOffTimer = null;
+      _cameraOffSentAt = DateTime.now();
+      // The camera may have come on while the answer waited: the request
+      // is still owed a frame, and the next one gets a real picture.
+      unawaited(_sendCameraOff());
+    });
+  }
+
+  DateTime? _cameraOffSentAt;
+  Timer? _cameraOffTimer;
 
   Future<void> _sendCameraOff() async {
     try {

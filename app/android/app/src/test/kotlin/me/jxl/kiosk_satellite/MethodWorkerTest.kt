@@ -74,4 +74,56 @@ class MethodWorkerTest {
             worker.shutdown()
         }
     }
+
+    private fun idleUntil(condition: () -> Boolean) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3)
+        while (!condition() && System.nanoTime() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(5)
+        }
+        assertTrue(condition())
+    }
+
+    @Test fun sharedReadAnswersABurstWithOneLaterReadAndNeverRunsOnTheCaller() {
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val reads = java.util.concurrent.atomic.AtomicInteger()
+        val main = Thread.currentThread()
+        val shared = SharedRead("test-shared") {
+            assertNotSame(main, Thread.currentThread())
+            val read = reads.incrementAndGet()
+            if (read == 1) { entered.countDown(); release.await() }
+            if (read == 3) throw IllegalStateException("read failed")
+            read
+        }
+        try {
+            val first = Reply()
+            shared.read(first)
+            assertTrue(entered.await(3, TimeUnit.SECONDS))
+            // Asked while the first read is stuck: none is refused, and all
+            // of them share the one read that starts after it.
+            val burst = List(100) { Reply().also(shared::read) }
+            assertEquals(0, first.calls)
+            assertTrue(burst.all { it.calls == 0 })
+            release.countDown()
+            idleUntil { burst.all { it.calls == 1 } }
+            assertEquals(1, first.value)
+            assertEquals(1, first.calls)
+            assertTrue(burst.all { it.value == 2 && it.error == null })
+            assertEquals(2, reads.get())
+            // A read that throws answers null, and the next read still runs.
+            val failed = Reply()
+            shared.read(failed)
+            idleUntil { failed.calls == 1 }
+            assertNull(failed.value)
+            assertNull(failed.error)
+            val next = Reply()
+            shared.read(next)
+            idleUntil { next.calls == 1 }
+            assertEquals(4, next.value)
+        } finally {
+            release.countDown()
+            shared.shutdown()
+        }
+    }
 }

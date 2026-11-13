@@ -21,6 +21,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../analytics/usage_counters.dart';
 import '../device/device_details.dart';
+import '../../core/serial_shared.dart';
 import '../device/screen_capture.dart';
 import '../device/webview_freeze.dart';
 import '../device/webview_recovery.dart';
@@ -810,7 +811,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
             'quality': 'JPEG quality 1-100, default 80',
             'width': 'scale the capture to this width, default 1280',
           },
-          handler: (p) async {
+          handler: (p) {
             // Generous defaults: captures are one-shot (the dashboard has no
             // auto-refresh), so quality can win over bandwidth.
             final quality = ((p['quality'] as num?)?.toInt() ?? 80).clamp(
@@ -818,85 +819,108 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
               100,
             );
             final width = (p['width'] as num?)?.toInt() ?? 1280;
-            // A capture can race the panel: asked the instant a dismiss
-            // wakes the screen (the admin overview refreshes its preview on
-            // dismiss), the logical state already says on but the first
-            // composited frame is still a few hundred ms out, so both
-            // capture paths come up empty. Brief retries cover that
-            // transition; a panel that is (still) off short-circuits to the
-            // placeholder on the first check, paying nothing.
-            InAppWebViewController? controller;
-            const attempts = 4;
-            for (var attempt = 1; attempt <= attempts; attempt++) {
-              // A truly dark panel composites no frames, so there is
-              // nothing real to copy: PixelCopy fails or hands back a
-              // half-drawn page depending on the Android version. A
-              // generated "Screen off" card is the honest picture of the
-              // display.
-              final on = await commands.execute('isScreenOn', const {});
-              if (on.ok && on.data == false) {
-                return CommandResult.ok(
-                  base64Encode(await screenOffPlaceholder(width: width)),
-                );
-              }
-              // A panel that JUST woke reports on while the overlay
-              // teardown and the WebView's first redraw are still in
-              // flight, and PixelCopy happily returns that as an all-black
-              // frame. Black is also a legitimate capture (the Black
-              // screensaver), so no pixel-guessing: a fresh wake simply
-              // gets its transition waited out. A panel that has been on
-              // for a while pays nothing.
-              final onAt = _screenOnAt;
-              if (onAt != null) {
-                final settle =
-                    const Duration(milliseconds: 1500) -
-                    DateTime.now().difference(onAt);
-                if (settle > Duration.zero) {
-                  await Future<void>.delayed(settle);
-                }
-              }
-              // The window, via a GPU blit on a background thread (see
-              // ScreenCapture.kt). The WebView's own capture below draws
-              // the view into a bitmap on the UI thread — with the admin's
-              // auto-refresh ticked that was a visible stutter every few
-              // seconds — and it can only ever show the page, never the
-              // screensaver or menu actually on screen.
-              final native = await ScreenCapture.capture(
-                width: width,
-                quality: quality,
-              );
-              if (native != null) {
-                return CommandResult.ok(base64Encode(native));
-              }
-              // No Activity window (app backgrounded, or Android < 8): the
-              // WebView outlives the Activity, so its page capture still
-              // works.
-              controller = _controller;
-              if (controller != null) {
-                final view =
-                    WidgetsBinding.instance.platformDispatcher.implicitView;
-                final bytes = await controller.takeScreenshot(
-                  screenshotConfiguration: ScreenshotConfiguration(
-                    compressFormat: CompressFormat.JPEG,
-                    quality: quality,
-                    snapshotWidth: webViewSnapshotWidth(
+            // One capture at a time, shared by everyone waiting for the
+            // same size. Every capture in flight holds a full bitmap of the
+            // screen, and callers can ask far faster than a capture
+            // finishes: a Home Assistant live view of the Device camera
+            // entity while the camera is off asked about 180 times a
+            // second, each request also owed a 1920 pixel screenshot, and
+            // the native heap passed 2 GB within 3 seconds. On a 32-bit
+            // device that ended in an OutOfMemoryError.
+            return _screenshots
+                .run((width, quality), () async {
+                  // A capture can race the panel: asked the instant a dismiss
+                  // wakes the screen (the admin overview refreshes its preview on
+                  // dismiss), the logical state already says on but the first
+                  // composited frame is still a few hundred ms out, so both
+                  // capture paths come up empty. Brief retries cover that
+                  // transition; a panel that is (still) off short-circuits to the
+                  // placeholder on the first check, paying nothing.
+                  InAppWebViewController? controller;
+                  const attempts = 4;
+                  for (var attempt = 1; attempt <= attempts; attempt++) {
+                    // A truly dark panel composites no frames, so there is
+                    // nothing real to copy: PixelCopy fails or hands back a
+                    // half-drawn page depending on the Android version. A
+                    // generated "Screen off" card is the honest picture of the
+                    // display.
+                    final on = await commands.execute('isScreenOn', const {});
+                    if (on.ok && on.data == false) {
+                      return CommandResult.ok(
+                        base64Encode(await screenOffPlaceholder(width: width)),
+                      );
+                    }
+                    // A panel that JUST woke reports on while the overlay
+                    // teardown and the WebView's first redraw are still in
+                    // flight, and PixelCopy happily returns that as an all-black
+                    // frame. Black is also a legitimate capture (the Black
+                    // screensaver), so no pixel-guessing: a fresh wake simply
+                    // gets its transition waited out. A panel that has been on
+                    // for a while pays nothing.
+                    final onAt = _screenOnAt;
+                    if (onAt != null) {
+                      final settle =
+                          const Duration(milliseconds: 1500) -
+                          DateTime.now().difference(onAt);
+                      if (settle > Duration.zero) {
+                        await Future<void>.delayed(settle);
+                      }
+                    }
+                    // The window, via a GPU blit on a background thread (see
+                    // ScreenCapture.kt). The WebView's own capture below draws
+                    // the view into a bitmap on the UI thread — with the admin's
+                    // auto-refresh ticked that was a visible stutter every few
+                    // seconds — and it can only ever show the page, never the
+                    // screensaver or menu actually on screen.
+                    final native = await ScreenCapture.capture(
                       width: width,
-                      physicalWidth: view?.physicalSize.width ?? 0,
-                      devicePixelRatio: view?.devicePixelRatio ?? 0,
-                    ),
-                  ),
+                      quality: quality,
+                    );
+                    if (native != null) {
+                      return CommandResult.ok(base64Encode(native));
+                    }
+                    // No Activity window (app backgrounded, or Android < 8): the
+                    // WebView outlives the Activity, so its page capture still
+                    // works.
+                    controller = _controller;
+                    if (controller != null) {
+                      final view = WidgetsBinding
+                          .instance
+                          .platformDispatcher
+                          .implicitView;
+                      final bytes = await controller.takeScreenshot(
+                        screenshotConfiguration: ScreenshotConfiguration(
+                          compressFormat: CompressFormat.JPEG,
+                          quality: quality,
+                          snapshotWidth: webViewSnapshotWidth(
+                            width: width,
+                            physicalWidth: view?.physicalSize.width ?? 0,
+                            devicePixelRatio: view?.devicePixelRatio ?? 0,
+                          ),
+                        ),
+                      );
+                      if (bytes != null) {
+                        return CommandResult.ok(base64Encode(bytes));
+                      }
+                    }
+                    if (attempt < attempts) {
+                      await Future<void>.delayed(
+                        const Duration(milliseconds: 400),
+                      );
+                    }
+                  }
+                  return CommandResult.fail(
+                    controller == null
+                        ? 'no webview attached'
+                        : 'screenshot failed',
+                  );
+                })
+                .timeout(
+                  // A capture that never answers must not hold every later
+                  // one behind it.
+                  const Duration(seconds: 20),
+                  onTimeout: () => CommandResult.fail('screenshot timed out'),
                 );
-                if (bytes != null) {
-                  return CommandResult.ok(base64Encode(bytes));
-                }
-              }
-              if (attempt < attempts) {
-                await Future<void>.delayed(const Duration(milliseconds: 400));
-              }
-            }
-            return CommandResult.fail(
-              controller == null ? 'no webview attached' : 'screenshot failed',
-            );
           },
         ),
       );
@@ -1105,6 +1129,9 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// this process. The screenshot command waits out a fresh wake before
   /// capturing (a too-early PixelCopy returns an all-black frame).
   DateTime? _screenOnAt;
+
+  /// The screenshot command's captures, one at a time.
+  final _screenshots = SerialShared<CommandResult>();
 
   /// Whether the panel is lit, for the freeze gate in [_wantFrozen].
   bool _screenIsOn = true;

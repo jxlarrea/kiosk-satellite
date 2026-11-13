@@ -13,6 +13,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Fixed
 - **A screensaver that stayed on screen after it was dismissed.** If a touch or a command dismissed the screensaver in the instant it was starting, while it was still reading the screen brightness, the screensaver came up anyway and nothing could dismiss it until the app restarted. It now stays dismissed. This affected screensavers with their own brightness, Dim and Black.
+- **Out of memory crash while Home Assistant shows a live view of the Device camera.** A frame request from Home Assistant names no camera, so each one also took a screenshot for the Screenshot camera. With the device camera off, the "Camera off" picture answered at once and a live view asked again about 180 times a second. Screenshots piled up faster than they finished and each one held a full picture of the screen in memory: on a Galaxy Tab S8 the app passed 2 GB in 3 seconds. On 32-bit devices, such as the Echo Shows and older Samsung and Lenovo tablets, the app crashed. Screenshots are now taken one at a time and shared by every request waiting for one, in Home Assistant and in the remote admin. The "Camera off" picture is sent once a second at most.
+- **App restart when the network address lookup stalls.** The announcement that lets Home Assistant discover the device looked up the device's address on the main thread every 30 seconds. On some devices, the Echo Show 8 among them, that lookup can stall for a minute, and the app restarted. The lookup now runs in the background.
+- **App restart when Android stalls on a battery read.** The charging state and the battery level were read on the main thread. When Android took a minute to answer, the app restarted. Both are now read in the background.
 
 ## v2026.11.17 - 2026-11-12
 

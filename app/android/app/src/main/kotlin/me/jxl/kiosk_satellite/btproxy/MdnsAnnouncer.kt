@@ -57,7 +57,8 @@ internal class MdnsAnnouncer(
     // ring log holds 50 lines. Which address Home Assistant is told to
     // connect to is THE question when discovery finds a device that then
     // refuses to connect (issue #239): a multi-interface device announcing
-    // the wrong one is invisible without this line.
+    // the wrong one is invisible without this line. Read and written on the
+    // worker thread only.
     private var loggedAddress: String? = null
 
     private val announcer = object : Runnable {
@@ -130,25 +131,33 @@ internal class MdnsAnnouncer(
         if (running) sendAnnouncement(4500, 120)
     }
 
+    /**
+     * The address lookup runs on the worker with the send, never on the
+     * main thread: getifaddrs can sit in the kernel for a minute on some
+     * devices (Echo Show 8 among them), and from the main looper that got
+     * the process restarted by the main thread watchdog. A worker still
+     * stuck in a lookup drops the announcements behind it once its backlog
+     * is full, and the next one that fits goes out.
+     */
     private fun sendAnnouncement(ttl: Int, hostTtl: Int) {
-        val address = localIpv4() ?: run {
-            Log.w(TAG, "mDNS announce skipped: no IPv4 yet")
-            if (ttl != 0 && loggedAddress != "none") {
-                loggedAddress = "none"
-                onLog("mDNS announce skipped: no IPv4 address yet")
-            }
-            return
-        }
-        if (ttl != 0) { // the goodbye packet is not an announcement
-            val ip = address.hostAddress ?: address.toString()
-            if (ip != loggedAddress) {
-                loggedAddress = ip
-                onLog("announcing $ip:$port to Home Assistant (mDNS)")
-            }
-        }
-        val packet = buildPacket(address, ttl, hostTtl)
         val target = socket ?: return
         io.execute {
+            val address = localIpv4() ?: run {
+                Log.w(TAG, "mDNS announce skipped: no IPv4 yet")
+                if (ttl != 0 && loggedAddress != "none") {
+                    loggedAddress = "none"
+                    onLog("mDNS announce skipped: no IPv4 address yet")
+                }
+                return@execute
+            }
+            if (ttl != 0) { // the goodbye packet is not an announcement
+                val ip = address.hostAddress ?: address.toString()
+                if (ip != loggedAddress) {
+                    loggedAddress = ip
+                    onLog("announcing $ip:$port to Home Assistant (mDNS)")
+                }
+            }
+            val packet = buildPacket(address, ttl, hostTtl)
             try {
                 if (!target.isClosed) target.send(DatagramPacket(packet, packet.size, GROUP, MDNS_PORT))
             } catch (e: Exception) {
