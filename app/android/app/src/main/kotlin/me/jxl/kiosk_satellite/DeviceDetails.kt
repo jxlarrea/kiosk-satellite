@@ -721,20 +721,19 @@ class DeviceDetails(
         // artifact that had users (and us) chasing phantoms. MemAvailable is
         // the kernel's own estimate of what could be reclaimed without
         // swapping, which is what "available" should mean on a graph.
+        // A kernel without that line also leaves availMem at 0 and the low
+        // flag stuck on (issue #1429), so both come from the estimate there.
+        val available = memAvailable()
+        val free = available?.bytes ?: info.availMem
         return mapOf(
-            "free" to (memAvailable() ?: info.availMem),
+            "free" to free,
             "total" to info.totalMem,
-            "low" to info.lowMemory,
+            "low" to if (available?.estimated == true) free < info.threshold else info.lowMemory,
         )
     }
 
-    private fun memAvailable(): Long? = try {
-        File("/proc/meminfo").useLines { lines ->
-            lines.firstOrNull { it.startsWith("MemAvailable") }
-                ?.replace(Regex("[^0-9]"), "")
-                ?.toLongOrNull()
-                ?.times(1024)
-        }
+    private fun memAvailable(): MemAvailable.Reading? = try {
+        MemAvailable.parse(File("/proc/meminfo").readText())
     } catch (e: Exception) {
         null
     }

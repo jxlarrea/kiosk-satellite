@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **RAM shown as 0 free on devices with an old kernel.** A kernel older than 3.14 does not report available memory and Android then reports 0 as well. The RAM tile on the remote admin's Overview read "0.0 GB free" with a full bar, Device info showed 0 MB free with a low memory tag and the RAM available sensor in Home Assistant read 0. On these kernels the value is now estimated from the free memory, the file cache and the reclaimable kernel memory, and the low memory tag follows that estimate. Seen on a Galaxy View (SM-T670) running LineageOS 23.2.
+
 ## v2026.11.19 - 2026-11-13
 
 ### Fixed
