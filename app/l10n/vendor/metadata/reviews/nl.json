@@ -29840,5 +29840,29 @@
     "translation": "135cc4d303fb5a345704fed6d8ee682f0e9e17748a57764ee11aa9110a84b71c",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingTimersTtsEnginePlaceholder": {
+    "source": "e2ed8c9c9b20f0ed64ac417c87b9aac0fc5a6f2ce815dcac70fee7eb5bfdc448",
+    "translation": "20d613f8290be74b658a4a9008c526264af5791a56532af52ea978856ff1bf32",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersTtsVoiceDescription": {
+    "source": "b17e0b17036c316825e822839f8dfea4456d7ea32c1245ceef1cd47642b822c7",
+    "translation": "483bfc9c7fb6eaec3bf54b0d33aed1f481766d6a1ad50cbde212ff39ed1d14d7",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersTtsEngineDescription": {
+    "source": "c3af43d8f7dcf4f78fc82482fdf08fe956b9085d73f706de2cff9143b4bda9fc",
+    "translation": "8582e070af75647c06c16dcd231f4673e9578a3c4bf031044374002ea0c1f03b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersTtsLanguageDescription": {
+    "source": "2bcd4b1e25fc51b52ca9d229e4d2adad9c1311a4d293dcb1ec67e1d53b2c919d",
+    "translation": "46777641df7354b1fe56417d172adf2e1a0d01ed56f401643ad7874e0a731907",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

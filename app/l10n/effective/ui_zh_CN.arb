@@ -56070,6 +56070,45 @@
       ]
     }
   },
+  "settingTimersTtsEngineDescription": "用于播报计时器的 Home Assistant 文本转语音实体。",
+  "@settingTimersTtsEngineDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of Text to speech engine on the Timers page. Keep Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersTtsLanguageDescription": "计时器播报使用的语言。",
+  "@settingTimersTtsLanguageDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of Language on the Timers page.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersTtsVoiceDescription": "用于播报计时器的声音。",
+  "@settingTimersTtsVoiceDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of Voice on the Timers page.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "voiceWakePage": "唤醒词",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

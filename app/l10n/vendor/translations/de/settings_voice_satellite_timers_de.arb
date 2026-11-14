@@ -27,5 +27,8 @@
   "settingKioskAllowTimersTitle": "Timer",
   "settingKioskAllowTimersDescription": "Die Timer-Ansicht über das Kiosk-Menü öffnen.",
   "settingsMenuTimersSummary": "Vollbildansicht, Anzeigen, geteilte Timer",
-  "fleetTheKiosksPickedInShareWithTheTimerSound": "die unter Teilen mit ausgewählten Kiosks, der Timer-Ton"
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "die unter Teilen mit ausgewählten Kiosks, der Timer-Ton",
+  "settingTimersTtsEngineDescription": "Die Text-zu-Sprache-Entität von Home Assistant, die die Timer vorliest.",
+  "settingTimersTtsLanguageDescription": "Die Sprache, in der die Timer gesprochen werden.",
+  "settingTimersTtsVoiceDescription": "Die Stimme, die die Timer vorliest."
 }

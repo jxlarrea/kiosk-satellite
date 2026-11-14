@@ -14539,6 +14539,16 @@ class UiStringsZh extends UiStrings {
       '在“共享给”中选择的 Kiosk 设备、计时器提示音';
 
   @override
+  String get settingTimersTtsEngineDescription =>
+      '用于播报计时器的 Home Assistant 文本转语音实体。';
+
+  @override
+  String get settingTimersTtsLanguageDescription => '计时器播报使用的语言。';
+
+  @override
+  String get settingTimersTtsVoiceDescription => '用于播报计时器的声音。';
+
+  @override
   String get voiceWakePage => '唤醒词';
 
   @override
@@ -30235,6 +30245,16 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get fleetTheKiosksPickedInShareWithTheTimerSound =>
       '在“共享给”中选择的 Kiosk 设备、计时器提示音';
+
+  @override
+  String get settingTimersTtsEngineDescription =>
+      '用于播报计时器的 Home Assistant 文本转语音实体。';
+
+  @override
+  String get settingTimersTtsLanguageDescription => '计时器播报使用的语言。';
+
+  @override
+  String get settingTimersTtsVoiceDescription => '用于播报计时器的声音。';
 
   @override
   String get voiceWakePage => '唤醒词';

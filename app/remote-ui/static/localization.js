@@ -176,6 +176,7 @@ const ALARMS_PAGE_TEXT = {
 
 const TIMERS_PAGE_TEXT = {
   'Voice timers': 'timersVoiceSection',
+  'Text to Speech': 'alarmsTtsSection',
   'Manage timers': 'timersManage',
   'Set a timer': 'voiceTimerSetATimer',
   'Manage timers using Voice Satellite': 'timersVoiceManage',

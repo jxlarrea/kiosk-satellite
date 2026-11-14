@@ -2704,4 +2704,16 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingWebGeolocationTitle",
     "description": "settingWebGeolocationDescription",
   },
+  "timers.tts_engine": {
+    "title": "settingAlarmsTtsEngineTitle",
+    "description": "settingTimersTtsEngineDescription",
+  },
+  "timers.tts_language": {
+    "title": "settingAlarmsTtsLanguageTitle",
+    "description": "settingTimersTtsLanguageDescription",
+  },
+  "timers.tts_voice": {
+    "title": "settingAlarmsTtsVoiceTitle",
+    "description": "settingTimersTtsVoiceDescription",
+  },
 };

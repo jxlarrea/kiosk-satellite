@@ -5284,6 +5284,12 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingsMenuTimersSummary' => strings.settingsMenuTimersSummary,
       'fleetTheKiosksPickedInShareWithTheTimerSound' =>
         strings.fleetTheKiosksPickedInShareWithTheTimerSound,
+      'settingTimersTtsEngineDescription' =>
+        strings.settingTimersTtsEngineDescription,
+      'settingTimersTtsLanguageDescription' =>
+        strings.settingTimersTtsLanguageDescription,
+      'settingTimersTtsVoiceDescription' =>
+        strings.settingTimersTtsVoiceDescription,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,

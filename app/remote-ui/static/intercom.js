@@ -342,7 +342,9 @@ export function attachTtsPicker(key, languageKey, voiceKey) {
   // device's row: Clear is First available.
   const spec = entitySpec({ domains: ['tts'] });
   const field = pickField({
-    spec, value: ttsValue(key), placeholder: esphomeText('First available'),
+    // What the empty engine means: First available, or for timers the
+    // voice of Assistant 1.
+    spec, value: ttsValue(key), placeholder: byKey(key)?.placeholder || esphomeText('First available'),
     onClick: async () => {
       const current = ttsValue(key);
       const out = await pickItem({ title: esphomeText('Text to speech engine'), spec,
@@ -486,7 +488,7 @@ export function attachTtsPickers(prefix) {
 // get their pickers here.
 document.addEventListener('ks-settings', (e) => {
   const keys = Array.isArray(e.detail) ? e.detail : [];
-  for (const prefix of ['announcements', 'alarms']) {
+  for (const prefix of ['announcements', 'alarms', 'timers']) {
     if (keys.some((k) => k.startsWith(`${prefix}.tts_`))) attachTtsPickers(prefix);
   }
 });

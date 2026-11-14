@@ -27,5 +27,8 @@
   "settingKioskAllowTimersTitle": "Timers",
   "settingKioskAllowTimersDescription": "De timerweergave openen vanuit het kioskmenu.",
   "settingsMenuTimersSummary": "Schermvullende weergave, labels, gedeelde timers",
-  "fleetTheKiosksPickedInShareWithTheTimerSound": "de kiosken gekozen in Delen met, het timergeluid"
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "de kiosken gekozen in Delen met, het timergeluid",
+  "settingTimersTtsEngineDescription": "De tekst-naar-spraakentiteit van Home Assistant die timers uitspreekt.",
+  "settingTimersTtsLanguageDescription": "De taal waarin timers worden uitgesproken.",
+  "settingTimersTtsVoiceDescription": "De stem waarmee timers worden uitgesproken."
 }

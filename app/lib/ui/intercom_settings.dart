@@ -455,7 +455,11 @@ class _AnnouncementTtsEngineRowState extends State<AnnouncementTtsEngineRow> {
         dialogTitle: esphomeText(context, 'Text to speech engine'),
         spec: entitySpec(context, c.commands, domains: const ['tts']),
         value: c.settings.get(widget.def).trim(),
-        placeholder: esphomeText(context, 'First available'),
+        // What the empty engine means: First available, or for timers the
+        // voice of Assistant 1.
+        placeholder:
+            widget.def.localizedPlaceholder(context) ??
+            esphomeText(context, 'First available'),
         allowClear: true,
         onPick: _pick,
       ),

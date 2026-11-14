@@ -238,7 +238,7 @@ const runtimeStateSettings = new Set([
 // The Announcements and Alarms text to speech rows and Voice Satellite's
 // Play sounds on, each a picker that repaints itself (intercom.js,
 // vs_native.js).
-const ttsPickerSettings = new Set(['announcements', 'alarms']
+const ttsPickerSettings = new Set(['announcements', 'alarms', 'timers']
   .flatMap(prefix => ['engine', 'language', 'voice'].map(k => `${prefix}.tts_${k}`))
   .concat('voice.tts_output'));
 let liveSettingsTimer = null;

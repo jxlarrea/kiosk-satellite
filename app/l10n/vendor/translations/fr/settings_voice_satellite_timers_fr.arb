@@ -27,5 +27,8 @@
   "settingKioskAllowTimersTitle": "Minuteurs",
   "settingKioskAllowTimersDescription": "Ouvrir la vue des minuteurs depuis le menu du kiosque.",
   "settingsMenuTimersSummary": "Vue plein écran, pastilles, minuteurs partagés",
-  "fleetTheKiosksPickedInShareWithTheTimerSound": "les kiosques choisis dans Partager avec, le son du minuteur"
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "les kiosques choisis dans Partager avec, le son du minuteur",
+  "settingTimersTtsEngineDescription": "L'entité de synthèse vocale de Home Assistant qui prononce les minuteurs.",
+  "settingTimersTtsLanguageDescription": "La langue dans laquelle les minuteurs sont prononcés.",
+  "settingTimersTtsVoiceDescription": "La voix qui prononce les minuteurs."
 }

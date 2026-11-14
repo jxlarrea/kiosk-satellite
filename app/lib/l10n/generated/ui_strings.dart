@@ -26789,6 +26789,24 @@ abstract class UiStrings {
   /// **'the kiosks picked in Share with, the timer sound'**
   String get fleetTheKiosksPickedInShareWithTheTimerSound;
 
+  /// Description of Text to speech engine on the Timers page. Keep Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The Home Assistant text to speech entity that speaks timers.'**
+  String get settingTimersTtsEngineDescription;
+
+  /// Description of Language on the Timers page.
+  ///
+  /// In en, this message translates to:
+  /// **'The language timers are spoken in.'**
+  String get settingTimersTtsLanguageDescription;
+
+  /// Description of Voice on the Timers page.
+  ///
+  /// In en, this message translates to:
+  /// **'The voice that speaks timers.'**
+  String get settingTimersTtsVoiceDescription;
+
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///
   /// In en, this message translates to:

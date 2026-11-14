@@ -15332,6 +15332,18 @@ class UiStringsEn extends UiStrings {
       'the kiosks picked in Share with, the timer sound';
 
   @override
+  String get settingTimersTtsEngineDescription =>
+      'The Home Assistant text to speech entity that speaks timers.';
+
+  @override
+  String get settingTimersTtsLanguageDescription =>
+      'The language timers are spoken in.';
+
+  @override
+  String get settingTimersTtsVoiceDescription =>
+      'The voice that speaks timers.';
+
+  @override
   String get voiceWakePage => 'Wake Word';
 
   @override

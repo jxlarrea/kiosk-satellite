@@ -27,5 +27,8 @@
   "settingKioskAllowTimersTitle": "Temporizadores",
   "settingKioskAllowTimersDescription": "Abrir la vista de temporizadores desde el menú del kiosko.",
   "settingsMenuTimersSummary": "Vista a pantalla completa, indicadores, temporizadores compartidos",
-  "fleetTheKiosksPickedInShareWithTheTimerSound": "los kioskos elegidos en Compartir con, el sonido del temporizador"
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "los kioskos elegidos en Compartir con, el sonido del temporizador",
+  "settingTimersTtsEngineDescription": "La entidad de texto a voz de Home Assistant que lee los temporizadores.",
+  "settingTimersTtsLanguageDescription": "El idioma en el que se leen los temporizadores.",
+  "settingTimersTtsVoiceDescription": "La voz que lee los temporizadores."
 }

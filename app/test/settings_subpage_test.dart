@@ -54,7 +54,8 @@ void main() {
     expect(defs.voiceChimeTimer.perDevice, isTrue);
   });
 
-  test('the Timers groups run Shared timers, When a timer ends, Pills', () {
+  test('the Timers groups run Shared timers, When a timer ends, Text to '
+      'Speech, Pills', () {
     final sections = <String>[];
     for (final d in defs.allSettings) {
       if (d.hidden || d.category != 'Timers') continue;
@@ -62,7 +63,18 @@ void main() {
         sections.add(d.section!);
       }
     }
-    expect(sections, ['Shared timers', 'When a timer ends', 'Pills']);
+    expect(sections, [
+      'Shared timers',
+      'When a timer ends',
+      'Text to Speech',
+      'Pills',
+    ]);
+    // The engine shows with Speak when a timer ends, its language and
+    // voice once an engine is picked. Empty is First available, as on Alarms.
+    expect(defs.timersTtsEngine.dependsOn, defs.voiceTimerSpeak.key);
+    expect(defs.timersTtsEngine.defaultValue, '');
+    expect(defs.timersTtsLanguage.dependsOn, defs.timersTtsEngine.key);
+    expect(defs.timersTtsVoice.dependsOn, defs.timersTtsEngine.key);
     expect(defs.voiceTimerAlertPill.section, 'Pills');
   });
 

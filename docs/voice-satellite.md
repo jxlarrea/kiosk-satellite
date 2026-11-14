@@ -219,6 +219,7 @@ To get the floating pills back, turn on **Show timers as pills** under **Setting
 | Shared timers | Share timers, Share with, Show shared timers | Run this kiosk's timers on other kiosks too. See [Shared timers](#shared-timers). |
 | When a timer ends | Timer sound, Timer sound volume | The sound that repeats until the timer is dismissed, built in or from the sounds folder, and its volume under the assistant volume. |
 | | Mute timer alerts, Speak when a timer ends | Show the alert without the sound, or say a phrase between the alert sounds. |
+| Text to Speech | Text to speech engine, Language, Voice | Shown with **Speak when a timer ends** on. The Home Assistant text to speech entity that speaks the phrase, with its language and voice. With no engine picked, the first one Home Assistant has speaks it. |
 | Pills | Show timers as pills | Off by default. Timers float over the screen instead of opening the full screen view and can be dragged anywhere. The rows below show only with it on. |
 | | Show the timer name, Timer pill scale | The name beside the time and the size of the pills. |
 | | Show finished timer pills, Show the name on the alert | Whether a finished timer shows a pill and its name. Without the pill, the stop word still ends the alert. The full screen view always shows a finished timer with its name. |

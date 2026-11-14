@@ -27,5 +27,8 @@
   "settingKioskAllowTimersTitle": "Таймеры",
   "settingKioskAllowTimersDescription": "Открывать вид таймеров из меню киоска.",
   "settingsMenuTimersSummary": "Полноэкранный вид, плашки, общие таймеры",
-  "fleetTheKiosksPickedInShareWithTheTimerSound": "киоски, выбранные в «Делиться с», звук таймера"
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "киоски, выбранные в «Делиться с», звук таймера",
+  "settingTimersTtsEngineDescription": "Сущность синтеза речи Home Assistant, которая произносит таймеры.",
+  "settingTimersTtsLanguageDescription": "Язык, на котором произносятся таймеры.",
+  "settingTimersTtsVoiceDescription": "Голос, которым произносятся таймеры."
 }

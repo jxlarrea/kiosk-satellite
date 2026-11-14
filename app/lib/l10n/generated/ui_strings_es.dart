@@ -15634,6 +15634,18 @@ class UiStringsEs extends UiStrings {
       'los kioskos elegidos en Compartir con, el sonido del temporizador';
 
   @override
+  String get settingTimersTtsEngineDescription =>
+      'La entidad de texto a voz de Home Assistant que lee los temporizadores.';
+
+  @override
+  String get settingTimersTtsLanguageDescription =>
+      'El idioma en el que se leen los temporizadores.';
+
+  @override
+  String get settingTimersTtsVoiceDescription =>
+      'La voz que lee los temporizadores.';
+
+  @override
   String get voiceWakePage => 'Palabra de activación';
 
   @override

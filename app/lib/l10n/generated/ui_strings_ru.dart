@@ -15430,6 +15430,18 @@ class UiStringsRu extends UiStrings {
       'киоски, выбранные в «Делиться с», звук таймера';
 
   @override
+  String get settingTimersTtsEngineDescription =>
+      'Сущность синтеза речи Home Assistant, которая произносит таймеры.';
+
+  @override
+  String get settingTimersTtsLanguageDescription =>
+      'Язык, на котором произносятся таймеры.';
+
+  @override
+  String get settingTimersTtsVoiceDescription =>
+      'Голос, которым произносятся таймеры.';
+
+  @override
   String get voiceWakePage => 'Слово пробуждения';
 
   @override

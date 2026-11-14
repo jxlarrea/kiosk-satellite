@@ -563,5 +563,8 @@ const settingPlaceholderMessageIds = <String, String>{
   "alarms.tts_voice": "esphomeTtsDefault",
   "voice.realtime_openai_endpoint": "voiceRealtimeProviderDefault",
   "voice.realtime_xai_endpoint": "voiceRealtimeProviderDefault",
-  "voice.realtime_gemini_endpoint": "voiceRealtimeProviderDefault"
+  "voice.realtime_gemini_endpoint": "voiceRealtimeProviderDefault",
+  "timers.tts_engine": "esphomeTtsFirst",
+  "timers.tts_language": "esphomeTtsDefault",
+  "timers.tts_voice": "esphomeTtsDefault"
 };

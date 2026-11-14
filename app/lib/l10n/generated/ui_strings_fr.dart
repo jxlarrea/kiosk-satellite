@@ -15626,6 +15626,18 @@ class UiStringsFr extends UiStrings {
       'les kiosques choisis dans Partager avec, le son du minuteur';
 
   @override
+  String get settingTimersTtsEngineDescription =>
+      'L\'entité de synthèse vocale de Home Assistant qui prononce les minuteurs.';
+
+  @override
+  String get settingTimersTtsLanguageDescription =>
+      'La langue dans laquelle les minuteurs sont prononcés.';
+
+  @override
+  String get settingTimersTtsVoiceDescription =>
+      'La voix qui prononce les minuteurs.';
+
+  @override
   String get voiceWakePage => 'Mot de réveil';
 
   @override

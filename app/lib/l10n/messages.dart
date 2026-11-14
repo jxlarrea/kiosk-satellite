@@ -475,6 +475,7 @@ String settingsPageText(
   // Its groups came from Voice Satellite and kept its catalog.
   'Timers' => switch (english) {
     'Voice timers' => l10n(context).timersVoiceSection,
+    'Text to Speech' => l10n(context).alarmsTtsSection,
     'Manage timers' => l10n(context).timersManage,
     'Set a timer' => l10n(context).voiceTimerSetATimer,
     'Manage timers using Voice Satellite' => l10n(context).timersVoiceManage,

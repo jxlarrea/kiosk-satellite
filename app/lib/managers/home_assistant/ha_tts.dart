@@ -63,6 +63,48 @@ Future<Uint8List?> haSpeak({
   );
 }
 
+/// The address of [message] spoken by Home Assistant, for a player that
+/// fetches the audio itself and for the kiosks a timer is shared with. The
+/// same rules as [haSpeak], which downloads it.
+Future<String?> haSpeakUrl({
+  required String base,
+  required String token,
+  required String engine,
+  required String message,
+  String language = '',
+  String voice = '',
+  http.Client Function() client = http.Client.new,
+  Duration timeout = const Duration(seconds: 15),
+}) async {
+  Future<String?> ask(String language, String voice) async {
+    final c = client();
+    try {
+      return await _haSpeakUrl(
+        c,
+        base: base,
+        token: token,
+        engine: engine,
+        message: message,
+        language: language,
+        voice: voice,
+        timeout: timeout,
+      );
+    } catch (_) {
+      return null;
+    } finally {
+      c.close();
+    }
+  }
+
+  final url = await ask(language, voice);
+  if (url != null ||
+      engine.trim().isEmpty ||
+      (language.trim().isEmpty && voice.trim().isEmpty)) {
+    return url;
+  }
+  return ask('', '');
+}
+
 Future<Uint8List?> _haSpeak({
   required String base,
   required String token,
@@ -73,14 +115,54 @@ Future<Uint8List?> _haSpeak({
   required http.Client Function() client,
   required Duration timeout,
 }) async {
+  final c = client();
+  try {
+    final url = await _haSpeakUrl(
+      c,
+      base: base,
+      token: token,
+      engine: engine,
+      message: message,
+      language: language,
+      voice: voice,
+      timeout: timeout,
+    );
+    if (url == null) return null;
+    final root = base.trim().replaceAll(RegExp(r'/+$'), '');
+    final audio = await c
+        .get(
+          Uri.parse(url),
+          headers: url.startsWith(root)
+              ? {'Authorization': 'Bearer $token'}
+              : const {},
+        )
+        .timeout(timeout);
+    if (audio.statusCode != 200 || audio.bodyBytes.isEmpty) return null;
+    return audio.bodyBytes;
+  } catch (_) {
+    return null;
+  } finally {
+    c.close();
+  }
+}
+
+Future<String?> _haSpeakUrl(
+  http.Client c, {
+  required String base,
+  required String token,
+  required String engine,
+  required String message,
+  String language = '',
+  String voice = '',
+  required Duration timeout,
+}) async {
   base = base.trim().replaceAll(RegExp(r'/+$'), '');
   if (base.isEmpty || token.isEmpty || message.trim().isEmpty) return null;
   final headers = {
     'Authorization': 'Bearer $token',
     'Content-Type': 'application/json',
   };
-  final c = client();
-  try {
+  {
     var entity = engine.trim();
     if (entity.isEmpty) {
       final states = await c
@@ -115,15 +197,7 @@ Future<Uint8List?> _haSpeak({
     if (res.statusCode != 200) return null;
     final url = (jsonDecode(res.body) as Map?)?['url'];
     if (url is! String || url.isEmpty) return null;
-    final audio = await c
-        .get(Uri.parse(url), headers: url.startsWith(base) ? headers : const {})
-        .timeout(timeout);
-    if (audio.statusCode != 200 || audio.bodyBytes.isEmpty) return null;
-    return audio.bodyBytes;
-  } catch (_) {
-    return null;
-  } finally {
-    c.close();
+    return url;
   }
 }
 

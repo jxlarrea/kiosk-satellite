@@ -3303,6 +3303,22 @@ class _CategoryContentState extends State<_CategoryContent> {
         id: calendarWeatherEntity.key,
         child: CalendarWeatherRow(container: container),
       ),
+    if (widget.category == 'Timers') ...{
+      timersTtsEngine.key: AnnouncementTtsEngineRow(
+        container: container,
+        def: timersTtsEngine,
+        languageDef: timersTtsLanguage,
+        voiceDef: timersTtsVoice,
+      ),
+      for (final def in [timersTtsLanguage, timersTtsVoice])
+        def.key: TtsVoiceRow(
+          container: container,
+          def: def,
+          engineDef: timersTtsEngine,
+          languageDef: timersTtsLanguage,
+          voiceDef: timersTtsVoice,
+        ),
+    },
     if (widget.category == 'Alarms') ...{
       alarmsTtsEngine.key: AnnouncementTtsEngineRow(
         container: container,

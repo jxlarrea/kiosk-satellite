@@ -12,6 +12,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../btproxy/bt_proxy_manager.dart';
 import '../analytics/usage_counters.dart';
+import '../home_assistant/ha_tts.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../wake_word/engine.dart';
@@ -3329,8 +3330,8 @@ class VoiceManager extends Manager {
         .trim();
   }
 
-  /// Makes the alert's phrase with Home Assistant's text to speech, through
-  /// the pipeline that answers wake word 1, and adds it to the ring.
+  /// Makes the alert's phrase with Home Assistant's text to speech and adds
+  /// it to the ring.
   Future<void> _speakAlert() async {
     if (!_settings.get(defs.voiceTimerSpeak) ||
         _settings.get(defs.voiceMuteTimers) ||
@@ -3342,45 +3343,29 @@ class VoiceManager extends Manager {
       for (final id in _ringing) _ringingNames[id] ?? '',
     ]);
     if (text.isEmpty) return;
-    try {
-      final done = Completer<String>();
-      final unsubscribe = await _ha.subscribe(
-        {
-          'type': 'assist_pipeline/run',
-          'start_stage': 'tts',
-          'end_stage': 'tts',
-          'input': {'text': text},
-          if (await _pipelineId() case final String id) 'pipeline': id,
-        },
-        (event) {
-          final data = event['data'];
-          final fields = data is Map ? data : const {};
-          switch (event['type']) {
-            case 'tts-end':
-              final output = fields['tts_output'];
-              final url = output is Map ? '${output['url'] ?? ''}' : '';
-              if (!done.isCompleted) done.complete(url);
-            case 'error':
-              if (!done.isCompleted) {
-                done.completeError(
-                  StateError('${fields['message'] ?? 'error'}'),
-                );
-              }
-            case 'run-end':
-              if (!done.isCompleted) done.complete('');
-          }
-        },
-      );
-      final url = await done.future
-          .timeout(const Duration(seconds: 15))
-          .whenComplete(unsubscribe);
-      if (gen != _speechGen || _ringing.isEmpty || url.isEmpty) return;
-      _alertSpeech = _absolute(url);
-      _alertSpeechText = text;
-      _pushAlert();
-    } catch (e) {
-      log.warn(name, 'timer phrase not made: $e');
+    // The engine picked under Settings > Timers speaks it, with its
+    // language and voice, or the first one Home Assistant has: the Alarms
+    // rule.
+    final engine = _settings.get(defs.timersTtsEngine).trim();
+    final url = await haSpeakUrl(
+      base: _settings.get(defs.haUrl),
+      token: _settings.get(defs.haToken),
+      engine: engine,
+      // A language or voice only goes with an engine picked by name.
+      language: engine.isEmpty
+          ? ''
+          : _settings.get(defs.timersTtsLanguage).trim(),
+      voice: engine.isEmpty ? '' : _settings.get(defs.timersTtsVoice).trim(),
+      message: text,
+    );
+    if (gen != _speechGen || _ringing.isEmpty) return;
+    if (url == null) {
+      log.warn(name, 'Home Assistant did not speak the timer phrase');
+      return;
     }
+    _alertSpeech = _absolute(url);
+    _alertSpeechText = text;
+    _pushAlert();
   }
 
   /// Runs a vs_show prompt through Home Assistant from the intent stage,

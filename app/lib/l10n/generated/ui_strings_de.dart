@@ -15654,6 +15654,18 @@ class UiStringsDe extends UiStrings {
       'die unter Teilen mit ausgewählten Kiosks, der Timer-Ton';
 
   @override
+  String get settingTimersTtsEngineDescription =>
+      'Die Text-zu-Sprache-Entität von Home Assistant, die die Timer vorliest.';
+
+  @override
+  String get settingTimersTtsLanguageDescription =>
+      'Die Sprache, in der die Timer gesprochen werden.';
+
+  @override
+  String get settingTimersTtsVoiceDescription =>
+      'Die Stimme, die die Timer vorliest.';
+
+  @override
   String get voiceWakePage => 'Aktivierungswort';
 
   @override

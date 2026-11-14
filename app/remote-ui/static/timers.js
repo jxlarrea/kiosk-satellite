@@ -6,6 +6,7 @@ import { cmd, state } from './core.js';
 import { cachedList, pickItems } from './entity_picker.js';
 import { cameraAction, cameraListRow } from './cameras.js';
 import { hintRow, modalShell, showToast } from './widgets.js';
+import { attachTtsPickers } from './intercom.js';
 
 const SHARE_KEY = 'voice.timers_share_with';
 
@@ -309,6 +310,8 @@ export async function renderTimersPage({ fetch = true } = {}) {
   if (!tab) return;
   if (fetch || !status) await loadStatus();
   tab.querySelectorAll('.timers-built').forEach((n) => n.remove());
+  // The text to speech engine, language and voice as Alarms picks them.
+  attachTtsPickers('timers');
   timerCards(tab);
   const heading = document.createElement('h2');
   heading.className = 'card-title timers-built';

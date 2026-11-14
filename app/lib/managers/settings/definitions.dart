@@ -8510,6 +8510,49 @@ const voiceTimerNamedPhrase = SettingDef<String>(
   dependsOn: 'voice.timer_speak',
 );
 
+/// The Home Assistant text to speech entity that speaks the timer phrase;
+/// empty picks the first one Home Assistant has. Picked from the list,
+/// never typed, like the Alarms engine.
+const timersTtsEngine = SettingDef<String>(
+  key: 'timers.tts_engine',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Text to speech engine',
+  description: 'The Home Assistant text to speech entity that speaks timers.',
+  category: 'Timers',
+  section: 'Text to Speech',
+  dependsOn: 'voice.timer_speak',
+  placeholder: 'First available',
+);
+
+/// The language timers are spoken in, the Alarms language's twin.
+const timersTtsLanguage = SettingDef<String>(
+  key: 'timers.tts_language',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Language',
+  description: 'The language timers are spoken in.',
+  category: 'Timers',
+  section: 'Text to Speech',
+  dependsOn: 'timers.tts_engine',
+  dependsOnValue: {'ne': ''},
+  placeholder: 'Default',
+);
+
+/// The voice timers are spoken with, the Alarms voice's twin.
+const timersTtsVoice = SettingDef<String>(
+  key: 'timers.tts_voice',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Voice',
+  description: 'The voice that speaks timers.',
+  category: 'Timers',
+  section: 'Text to Speech',
+  dependsOn: 'timers.tts_engine',
+  dependsOnValue: {'ne': ''},
+  placeholder: 'Default',
+);
+
 /// Shared timers: this kiosk's timers also run on the kiosks it picks.
 const voiceTimersShare = SettingDef<bool>(
   key: 'voice.timers_share',
@@ -14533,6 +14576,9 @@ const List<SettingDef<Object>> allSettings = [
   voiceTimerSpeak,
   voiceTimerPhrase,
   voiceTimerNamedPhrase,
+  timersTtsEngine,
+  timersTtsLanguage,
+  timersTtsVoice,
   voiceTimerPills,
   voiceTimerNameInPill,
   voiceTimerPillScale,

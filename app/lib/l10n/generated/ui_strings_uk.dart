@@ -15494,6 +15494,17 @@ class UiStringsUk extends UiStrings {
       'кіоски, вибрані в «Ділитися з», звук таймера';
 
   @override
+  String get settingTimersTtsEngineDescription =>
+      'Сутність синтезу мовлення Home Assistant, яка озвучує таймери.';
+
+  @override
+  String get settingTimersTtsLanguageDescription =>
+      'Мова, якою озвучуються таймери.';
+
+  @override
+  String get settingTimersTtsVoiceDescription => 'Голос, який озвучує таймери.';
+
+  @override
   String get voiceWakePage => 'Слово активації';
 
   @override

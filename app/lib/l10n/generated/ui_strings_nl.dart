@@ -15511,6 +15511,18 @@ class UiStringsNl extends UiStrings {
       'de kiosken gekozen in Delen met, het timergeluid';
 
   @override
+  String get settingTimersTtsEngineDescription =>
+      'De tekst-naar-spraakentiteit van Home Assistant die timers uitspreekt.';
+
+  @override
+  String get settingTimersTtsLanguageDescription =>
+      'De taal waarin timers worden uitgesproken.';
+
+  @override
+  String get settingTimersTtsVoiceDescription =>
+      'De stem waarmee timers worden uitgesproken.';
+
+  @override
   String get voiceWakePage => 'Wekwoorden';
 
   @override
