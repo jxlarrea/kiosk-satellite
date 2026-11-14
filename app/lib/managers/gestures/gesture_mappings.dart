@@ -58,6 +58,7 @@
 ///  - alarm_snooze:     snooze the ringing alarm
 ///  - alarms:           open the alarm list
 ///  - alarm_next:       open the alarm that rings next, or the list
+///  - timers:           open the full screen timers view
 ///  - calendar:         open the calendar, on view? (day, week, month,
 ///                      schedule) when a ks:// link names one
 ///  - music_library:    open the Music Library
@@ -342,6 +343,8 @@ String describeGestureAction(Map<String, Object?> action) {
       return 'Open the alarm list';
     case 'alarm_next':
       return 'Open the next alarm';
+    case 'timers':
+      return 'Open the timers';
     case 'calendar':
       return 'Open the calendar';
     case 'music_library':

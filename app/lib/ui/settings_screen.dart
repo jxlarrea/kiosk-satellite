@@ -64,6 +64,7 @@ import 'camera_views_picker.dart';
 import 'dashboard_view_picker.dart';
 import 'import_options_dialog.dart';
 import 'intercom_settings.dart';
+import 'shared_timers_settings.dart';
 import '../managers/home_assistant/custom_pages.dart' show viewPathUrl;
 import 'custom_pages_settings.dart';
 import 'url_filter_settings.dart';
@@ -3076,6 +3077,13 @@ class _CategoryContentState extends State<_CategoryContent> {
       ),
     // Voice Satellite's TTS output: this kiosk or a Home Assistant media
     // player, from the live list, in the place of the text field.
+    // The kiosks to share timers with: names and a checkbox list, in the
+    // place of the text field. Mirrored on the remote (vs_native.js).
+    if (widget.category == 'Voice Satellite')
+      voiceTimersShareWith.key: SearchLandingTarget(
+        id: voiceTimersShareWith.key,
+        child: SharedTimersShareWithRow(container: container),
+      ),
     if (widget.category == 'Voice Satellite')
       voiceTtsOutput.key: SearchLandingTarget(
         id: voiceTtsOutput.key,

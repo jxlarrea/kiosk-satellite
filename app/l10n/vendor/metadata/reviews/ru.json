@@ -30027,5 +30027,137 @@
     "translation": "9480ed8b87e0703c9ab1c1ba61d4801a46ac4b3f8e58a180e696d0c855dea0e4",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingVoiceTimersShareTitle": {
+    "source": "53ef93c0ef768efc72dd3575fb0ba709f92dd82c8faac438d3087efd7d668913",
+    "translation": "b10f3c1c7ef781bca70c44dcf159bca8b452702f85aece70a14ed39b7f1ce09f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimerTimesUp": {
+    "source": "8b65c24381b49c36d27d5fbf67e7c147b9cfee31deb4dbcf843d4966f50935b3",
+    "translation": "85dc084e5bd12ccf500fdcb24443350a0939ea49614ef3af1b65cae411d9d9ff",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimersShareOffline": {
+    "source": "e514229ab0c8f1f5c7c10b21ec3cc427514548dabc9138effa460c2613d7f8e1",
+    "translation": "624ac1030b6e949f1670cf06b084fb68b0e77f0ef84bdcafa27988c4b53af672",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimerDismiss": {
+    "source": "cfcbb4f8c6e51c8d4e4217c99e8060ea90bc72049857c43edb064416729350b8",
+    "translation": "0a2a4b8377619b34d724fbbb4205adac00656b2687df5ca595f22cc2a5ed01bd",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimerResume": {
+    "source": "57bee9c6c72a32a2f61310ab301c2521a36ddb67b2626d8529b99f292849ca6e",
+    "translation": "a42aee58d60a7d2a2fa9c112cea5dd62ba3b4c6ea05610a8a671ccb0c4da558d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceTimersReceiveTitle": {
+    "source": "d2a64b48e7e710f21d4979cf43dba0a2ba96888da2b8a42ff8a7112033d35da6",
+    "translation": "232486bcc5396f76a9e2a48f269b2b07957dba80352f4aa98db2950a2101968d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimersViewTitle": {
+    "source": "0ede446a0a6a1b00f2a5421d9c08ad800b9422826db530bc01f94b939fac7f4a",
+    "translation": "46d928b9fd64067cbe7109d0719b95e580b3b8cf1ba37c9ee19bd07c109db52d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceTimersReceiveDescription": {
+    "source": "86465024d9e0cf49d5f2d008816ab75d5c1f46dd01126546b0bad4df0bca4fbf",
+    "translation": "bebc7c92a540f58082d1e4a75b3830bc892f3580a2f167176080c5fa89907d2d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimerPaused": {
+    "source": "19bf5bed5ecfaaae80e1b3ef7df8c1d284badd41fac00dc1cbcd3c392896feff",
+    "translation": "6fb053a9e613ee53dbae3799b0ea77c3d54775c2a8bd2be4dd7194313dd25242",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimerPause": {
+    "source": "345f18b25869dafee0e2e3e2f816e21787a36d88dfb884ff921c55b2b30fae71",
+    "translation": "65530fd463eac0becf9727c8f030412f254d9a82e682bedec78898149f1fb0e9",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimersEmpty": {
+    "source": "a54d80c85e9c2e935deb5fcaa496f9048d6de46a7dab4c8dc4bd47319c9c99f9",
+    "translation": "6e5361f2dabac5175b95624d8ddad14512a72576d9c30f677215d4fa36d8cb72",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceTimersShareWithTitle": {
+    "source": "4d41966b59c7bb2ddf99b4ee68515f0efcd33c3e7506b8e9d57ab4bd6e33ece1",
+    "translation": "c11e568b03cd0cea80a0044f80a026d7184481bb38285d89596cdadab7972f8d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimersShareEmpty": {
+    "source": "1c8f96fe1f42e100f82c9656e43b0d6d79a63bf54d8cc5b180a9f3f62cb495fc",
+    "translation": "1934d0de712ee9b396c137b32214c3f2fa39ef188f5815fa2f82e6a59c45ebeb",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceTimerPillsViewTitle": {
+    "source": "b24c01530b22af707e33534784ef21fa477668f7afe4eb541a2c69b92f1b3688",
+    "translation": "853b5fe207390948297611a8a7d2d16252cbaf9b4525073a345f3911923f9a5c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingKioskAllowTimersTitle": {
+    "source": "9313b5a8d34fccbc5c6b425f27f2b124f45362db399b2c960f24e6d04865e4e3",
+    "translation": "46d928b9fd64067cbe7109d0719b95e580b3b8cf1ba37c9ee19bd07c109db52d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "gestureOpenTimers": {
+    "source": "34e4f4cf5d57a418efe84b34cd613b8c3c337514142b3b543c6220d5ce49dfb5",
+    "translation": "2444f1bfd0732fded7433e161cdf103eeb4e67ced8b10739b3c1aae8a562541e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceTimersShareDescription": {
+    "source": "28dcc1388faf7dde3297bc0d9fdc1eaf19ecb5bc48a40b5fcf0e799f8068da5b",
+    "translation": "76cf60aa914459d940eecbb707ec997a8c911019c2f55dad4944aba967693a41",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceTimersShareWithDescription": {
+    "source": "dae0f5b91fe3cc7e72f27844274932c5f48b7dcc192f52a3fa03e5ab2dd375f9",
+    "translation": "4af360893eb0f06c7f85cb6cb3e5f5bf0c38b3db0f8e58bf1262f55666e7b00a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimersShareNone": {
+    "source": "9625dc7e21a9784896bdc45e2eaf77c9d666cf4980b96370f044b05f21788a95",
+    "translation": "711ac42a06e9e39b8d8bc16900b0eda6376772f32fc6751fb763d5681127d67d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceTimerPillsViewDescription": {
+    "source": "779e4a955d1e247cce12d1b2512364fcbcd64352001ed838bdad4c475b8ccf49",
+    "translation": "98b0bb8539e24ca3addbeea670d3ea1fad2c36d2f539a758ea8473c3ae2a1f2e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingKioskAllowTimersDescription": {
+    "source": "0fb835132c9c612590a1fa864fb36566836bbd696cb5632f52f4be14c2f9ccd3",
+    "translation": "6fe7027e58f2e815a1105371916512f579e1f1c5ac3942181f56c5ef37c07f9f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceSectionSharedTimers": {
+    "source": "4dfd6080c0caeda51ead9b5c54960235b1aee887110e60ac91064f62d861c1dd",
+    "translation": "b10f3c1c7ef781bca70c44dcf159bca8b452702f85aece70a14ed39b7f1ce09f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

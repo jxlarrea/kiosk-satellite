@@ -1,7 +1,5 @@
 {
   "@@locale": "nl",
-  "settingVoiceTimerPillsTitle": "Timerlabels tonen",
-  "settingVoiceTimerPillsDescription": "Actieve timers verschijnen als labels op het scherm. Sleep ze naar de gewenste plek.",
   "settingVoiceTimerNameInPillTitle": "De timernaam tonen",
   "settingVoiceTimerNameInPillDescription": "Toon de naam naast de tijd in het timerlabel.",
   "settingVoiceTimerPillScaleTitle": "Grootte van timerlabels",
@@ -17,5 +15,15 @@
   "settingVoiceTimerPhraseTitle": "Tekst",
   "settingVoiceTimerPhraseDescription": "Gesproken voor een timer zonder naam.",
   "settingVoiceTimerNamedPhraseTitle": "Zin voor timers met naam",
-  "settingVoiceTimerNamedPhraseDescription": "{name} wordt vervangen door de timernaam."
+  "settingVoiceTimerNamedPhraseDescription": "{name} wordt vervangen door de timernaam.",
+  "settingVoiceTimerPillsViewTitle": "Timers als labels tonen",
+  "settingVoiceTimerPillsViewDescription": "Timers verschijnen als labels op het scherm in plaats van de schermvullende weergave te openen.",
+  "settingVoiceTimersShareTitle": "Timers delen",
+  "settingVoiceTimersShareDescription": "Timers die op deze kiosk worden gestart, lopen ook op de kiosken die je kiest.",
+  "settingVoiceTimersShareWithTitle": "Delen met",
+  "settingVoiceTimersShareWithDescription": "De kiosken die de timers van deze kiosk tonen en laten afgaan.",
+  "settingVoiceTimersReceiveTitle": "Gedeelde timers tonen",
+  "settingVoiceTimersReceiveDescription": "Timers die andere kiosken delen, worden hier getoond en gaan hier af.",
+  "settingKioskAllowTimersTitle": "Timers",
+  "settingKioskAllowTimersDescription": "De timerweergave openen vanuit het kioskmenu."
 }

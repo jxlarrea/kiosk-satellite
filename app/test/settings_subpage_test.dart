@@ -418,7 +418,7 @@ void main() {
     // The menu's own switch leads, then the action it gates, one per row,
     // then the apps a locked launcher offers.
     expect(moved.first, defs.kioskAllowDrawer.key);
-    expect(moved, hasLength(16));
+    expect(moved, hasLength(17));
     expect(moved.last, defs.kioskAllowedApps.key);
     // The protections stay on the page above: they are what kiosk mode is.
     expect(defs.kioskExitGesture.subpage, isNull);

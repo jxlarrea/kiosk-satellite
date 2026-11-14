@@ -45,5 +45,6 @@
   "gestureVoiceStop": "Sprachassistenten stoppen",
   "gestureVoiceMute": "Voice Satellite stummschalten oder Stummschaltung aufheben",
   "gestureOpenAlarmList": "Weckerliste öffnen",
-  "gestureOpenNextAlarm": "Nächsten Wecker öffnen"
+  "gestureOpenNextAlarm": "Nächsten Wecker öffnen",
+  "gestureOpenTimers": "Timer öffnen"
 }

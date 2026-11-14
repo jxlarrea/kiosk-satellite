@@ -456,7 +456,8 @@ void main() {
     expect(u['vs_second_assistant'], isTrue);
     expect(u['vs_custom_chimes'], 1);
     expect(u['vs_reactive_bar'], isTrue);
-    expect(u['vs_timer_pills'], isTrue);
+    // The full screen timers view is the default.
+    expect(u['vs_timer_pills'], isFalse);
     expect(jsonEncode(u), isNot(contains('kitchen')));
     expect(jsonEncode(u), isNot(contains('Second brain')));
     expect(jsonEncode(u), isNot(contains('ding')));

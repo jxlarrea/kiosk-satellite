@@ -71,5 +71,6 @@
   "settingVoiceEnabledTitle": "启用 Voice Satellite",
   "settingVoiceEnabledDescription": "通过 ESPHome 服务器，将此 Kiosk 设为 Home Assistant 的语音助手。",
   "settingVoiceMuteTitle": "麦克风静音",
-  "settingVoiceMuteDescription": "停止监听唤醒词。"
+  "settingVoiceMuteDescription": "停止监听唤醒词。",
+  "voiceSectionSharedTimers": "共享的计时器"
 }

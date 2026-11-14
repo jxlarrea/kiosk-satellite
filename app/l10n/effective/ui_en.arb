@@ -8317,6 +8317,19 @@
       ]
     }
   },
+  "gestureOpenTimers": "Open the timers",
+  "@gestureOpenTimers": {
+    "context": "Settings > Gestures > Add gesture > Choose an action",
+    "description": "Gesture action that opens the full screen timers view.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Add gesture > Choose an action"
+      ],
+      "remoteAdmin": [
+        "Gestures > Add gesture > Choose an action"
+      ]
+    }
+  },
   "gestureOpenNextAlarm": "Open the next alarm",
   "@gestureOpenNextAlarm": {
     "context": "Settings > Gestures > Add gesture > Choose an action",
@@ -54702,6 +54715,11 @@
     "context": "Settings > Voice Satellite",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
+  "voiceSectionSharedTimers": "Shared timers",
+  "@voiceSectionSharedTimers": {
+    "context": "Settings > Voice Satellite",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
   "voiceStatusEsphomeOff": "The ESPHome server is off.",
   "@voiceStatusEsphomeOff": {
     "context": "Settings > Voice Satellite",
@@ -55896,13 +55914,13 @@
       "remoteAdmin": []
     }
   },
-  "settingVoiceTimerPillsTitle": "Show timer pills",
-  "@settingVoiceTimerPillsTitle": {
+  "settingVoiceTimerPillsViewTitle": "Show timers as pills",
+  "@settingVoiceTimerPillsViewTitle": {
     "context": "Settings > Voice Satellite > Timers",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
-  "settingVoiceTimerPillsDescription": "Running timers float over the screen. Drag them anywhere.",
-  "@settingVoiceTimerPillsDescription": {
+  "settingVoiceTimerPillsViewDescription": "Timers float over the screen instead of opening the full screen view.",
+  "@settingVoiceTimerPillsViewDescription": {
     "context": "Settings > Voice Satellite > Timers",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
@@ -55990,6 +56008,46 @@
         "type": "String"
       }
     }
+  },
+  "settingVoiceTimersShareTitle": "Share timers",
+  "@settingVoiceTimersShareTitle": {
+    "context": "Settings > Voice Satellite > Timers",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingVoiceTimersShareDescription": "Timers started on this kiosk also run on the kiosks you pick.",
+  "@settingVoiceTimersShareDescription": {
+    "context": "Settings > Voice Satellite > Timers",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingVoiceTimersShareWithTitle": "Share with",
+  "@settingVoiceTimersShareWithTitle": {
+    "context": "Settings > Voice Satellite > Timers",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingVoiceTimersShareWithDescription": "The kiosks that show and ring the timers of this one.",
+  "@settingVoiceTimersShareWithDescription": {
+    "context": "Settings > Voice Satellite > Timers",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingVoiceTimersReceiveTitle": "Show shared timers",
+  "@settingVoiceTimersReceiveTitle": {
+    "context": "Settings > Voice Satellite > Timers",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingVoiceTimersReceiveDescription": "Timers shared by other kiosks show and ring here.",
+  "@settingVoiceTimersReceiveDescription": {
+    "context": "Settings > Voice Satellite > Timers",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingKioskAllowTimersTitle": "Timers",
+  "@settingKioskAllowTimersTitle": {
+    "context": "Settings > Kiosk Mode > Allowed Actions",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingKioskAllowTimersDescription": "Open the timers view from the kiosk menu.",
+  "@settingKioskAllowTimersDescription": {
+    "context": "Settings > Kiosk Mode > Allowed Actions",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
   "voiceWakePage": "Wake Word",
   "@voiceWakePage": {
@@ -59240,6 +59298,115 @@
     "x-locations": {
       "device": [
         "Floating timer overlay"
+      ]
+    }
+  },
+  "voiceTimersViewTitle": "Timers",
+  "@voiceTimersViewTitle": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Name of the full screen timers view: its heading, its kiosk menu entry and its Compass view.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimersEmpty": "No timers",
+  "@voiceTimersEmpty": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Shown in the timers view when no timer runs.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerPause": "Pause",
+  "@voiceTimerPause": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Button that pauses a running timer.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerResume": "Resume",
+  "@voiceTimerResume": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Button that resumes a paused timer.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerDismiss": "Dismiss",
+  "@voiceTimerDismiss": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Button that stops a ringing timer.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerTimesUp": "Time's up",
+  "@voiceTimerTimesUp": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Label beside the name of a timer that finished and rings.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerPaused": "Paused",
+  "@voiceTimerPaused": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Label beside the name of a paused timer.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimersShareNone": "No kiosks picked",
+  "@voiceTimersShareNone": {
+    "context": "Settings > Voice Satellite > Timers > Share with",
+    "description": "Value of the Share with row when no kiosk is picked.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Timers > Share with"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Timers > Share with"
+      ]
+    }
+  },
+  "voiceTimersShareEmpty": "No other kiosks found. Turn on the remote admin and Find other kiosks on each one.",
+  "@voiceTimersShareEmpty": {
+    "context": "Settings > Voice Satellite > Timers > Share with",
+    "description": "Shown in the Share with picker when no other kiosk is on the network list.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Timers > Share with"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Timers > Share with"
+      ]
+    }
+  },
+  "voiceTimersShareOffline": "Offline",
+  "@voiceTimersShareOffline": {
+    "context": "Settings > Voice Satellite > Timers > Share with",
+    "description": "Beside a picked kiosk that is not on the network right now.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Timers > Share with"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Timers > Share with"
       ]
     }
   }

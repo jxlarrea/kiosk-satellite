@@ -71,5 +71,6 @@
   "settingVoiceEnabledTitle": "Увімкнути Voice Satellite",
   "settingVoiceEnabledDescription": "Перетворює цей кіоск на голосового асистента для Home Assistant через його сервер ESPHome.",
   "settingVoiceMuteTitle": "Вимкнути мікрофон",
-  "settingVoiceMuteDescription": "Припинити прослуховування слова активації."
+  "settingVoiceMuteDescription": "Припинити прослуховування слова активації.",
+  "voiceSectionSharedTimers": "Спільні таймери"
 }

@@ -1281,6 +1281,20 @@ class VoiceTimerAction extends AppEvent {
   };
 }
 
+/// Timers shared by other kiosks started or stopped ringing here. Native
+/// Voice Satellite arms the stop word and holds the screen for them as for
+/// its own.
+class SharedTimerAlertChanged extends AppEvent {
+  const SharedTimerAlertChanged(this.ringing);
+  final bool ringing;
+}
+
+/// The stop word, the action button or a cancel asked to end the ringing
+/// timers other kiosks shared.
+class SharedTimerDismissRequested extends AppEvent {
+  const SharedTimerDismissRequested();
+}
+
 /// The device certificate was replaced or renewed.
 class TlsIdentityChanged extends AppEvent {
   const TlsIdentityChanged();

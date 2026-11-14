@@ -26,6 +26,8 @@ void main() {
     pendingSound = null;
     actions = [];
     await c.settings.init();
+    // These tests are about the pills, which are opt in.
+    await c.settings.set(defs.voiceTimerPills, true);
     await c.voiceTimers.init();
     c.commands.register(
       Command(

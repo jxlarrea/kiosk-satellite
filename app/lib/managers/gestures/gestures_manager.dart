@@ -556,6 +556,8 @@ class GesturesManager extends Manager {
         // The alarm that rings next on its details page, or the list when
         // none is set.
         return _run('openAlarms', const {'alarm': 'next'});
+      case 'timers':
+        return _run('openTimers', const {});
       case 'calendar':
         // Opened by a ks://calendar link, on its view when the link names
         // one. Like the alarm list, not behind the kiosk menu's switches.

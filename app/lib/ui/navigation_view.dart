@@ -38,6 +38,7 @@ class NavigationViewTracker {
     c.musicLibrary.visible,
     c.calendar.visible,
     c.alarms.visible,
+    c.voiceTimers.visible,
     c.intercom.rosterVisible,
     c.launcher.visible,
     c.browser.overlayUrl,
@@ -86,6 +87,7 @@ class NavigationViewTracker {
     if (_nowPlayingUp) return at('now_playing');
     if (c.musicLibrary.visible.value) return at('music_library');
     if (c.calendar.visible.value) return at('calendar');
+    if (c.voiceTimers.visible.value) return at('timers');
     if (c.alarms.visible.value) return at('alarms');
     if (c.intercom.rosterVisible.value) return at('intercom');
     if (c.launcher.visible.value) return at('app_launcher');

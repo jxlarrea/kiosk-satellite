@@ -7,5 +7,15 @@
   "voiceTimerCancel": "Отменить таймер",
   "voiceTimerActionError": "Не удалось изменить таймер. Проверьте соединение и при необходимости обновите Voice Satellite.",
   "voiceTimerFinished": "Таймер завершён",
-  "voiceTimerDismissHint": "Коснитесь, чтобы скрыть оповещение таймера."
+  "voiceTimerDismissHint": "Коснитесь, чтобы скрыть оповещение таймера.",
+  "voiceTimersViewTitle": "Таймеры",
+  "voiceTimersEmpty": "Нет таймеров",
+  "voiceTimerPause": "Пауза",
+  "voiceTimerResume": "Продолжить",
+  "voiceTimerDismiss": "Скрыть",
+  "voiceTimerTimesUp": "Время вышло",
+  "voiceTimerPaused": "Приостановлено",
+  "voiceTimersShareNone": "Киоски не выбраны",
+  "voiceTimersShareEmpty": "Другие киоски не найдены. Включите на каждом «Удалённое управление» и «Поиск других киосков».",
+  "voiceTimersShareOffline": "Не в сети"
 }

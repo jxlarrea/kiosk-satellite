@@ -6,7 +6,7 @@ The drawer menu slides in from the left edge of the screen. It holds the shortcu
 
 Navigate to **Settings**, then **Device**. Tap **Drawer menu items** in the **User Interface** group. The same row is available in the remote admin. It opens a picker with every entry the menu can show:
 
-- Dashboard, Settings, HA Kiosk Mode, Camera View, Intercom, Alarms, Calendar, Music Library, Music Assistant, Floating Player, Now Playing, Start Screensaver, Lockdown Mode, Hold Mode, Apps, Clear web cache, Restart Device and Exit Application.
+- Dashboard, Settings, HA Kiosk Mode, Camera View, Intercom, Alarms, Timers, Calendar, Music Library, Music Assistant, Floating Player, Now Playing, Start Screensaver, Lockdown Mode, Hold Mode, Apps, Clear web cache, Restart Device and Exit Application.
 - Plugin actions set to **Show in kiosk drawer** on the [Plugins](plugins.md) page.
 - The theme switcher.
 

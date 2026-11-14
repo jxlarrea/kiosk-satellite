@@ -79,5 +79,114 @@
         "Floating timer overlay"
       ]
     }
+  },
+  "voiceTimersViewTitle": "Timers",
+  "@voiceTimersViewTitle": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Name of the full screen timers view: its heading, its kiosk menu entry and its Compass view.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimersEmpty": "No timers",
+  "@voiceTimersEmpty": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Shown in the timers view when no timer runs.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerPause": "Pause",
+  "@voiceTimerPause": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Button that pauses a running timer.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerResume": "Resume",
+  "@voiceTimerResume": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Button that resumes a paused timer.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerDismiss": "Dismiss",
+  "@voiceTimerDismiss": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Button that stops a ringing timer.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerTimesUp": "Time's up",
+  "@voiceTimerTimesUp": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Label beside the name of a timer that finished and rings.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimerPaused": "Paused",
+  "@voiceTimerPaused": {
+    "context": "Full screen timers view, over the dashboard and the screensaver",
+    "description": "Label beside the name of a paused timer.",
+    "x-locations": {
+      "device": [
+        "Full screen timers view"
+      ]
+    }
+  },
+  "voiceTimersShareNone": "No kiosks picked",
+  "@voiceTimersShareNone": {
+    "context": "Settings > Voice Satellite > Timers > Share with",
+    "description": "Value of the Share with row when no kiosk is picked.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Timers > Share with"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Timers > Share with"
+      ]
+    }
+  },
+  "voiceTimersShareEmpty": "No other kiosks found. Turn on the remote admin and Find other kiosks on each one.",
+  "@voiceTimersShareEmpty": {
+    "context": "Settings > Voice Satellite > Timers > Share with",
+    "description": "Shown in the Share with picker when no other kiosk is on the network list.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Timers > Share with"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Timers > Share with"
+      ]
+    }
+  },
+  "voiceTimersShareOffline": "Offline",
+  "@voiceTimersShareOffline": {
+    "context": "Settings > Voice Satellite > Timers > Share with",
+    "description": "Beside a picked kiosk that is not on the network right now.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Timers > Share with"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Timers > Share with"
+      ]
+    }
   }
 }

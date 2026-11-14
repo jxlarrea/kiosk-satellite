@@ -71,5 +71,6 @@
   "settingVoiceEnabledTitle": "Activer Voice Satellite",
   "settingVoiceEnabledDescription": "Transforme ce kiosque en assistant vocal pour Home Assistant via son serveur ESPHome.",
   "settingVoiceMuteTitle": "Couper le microphone",
-  "settingVoiceMuteDescription": "Arrêter d'écouter le mot de réveil."
+  "settingVoiceMuteDescription": "Arrêter d'écouter le mot de réveil.",
+  "voiceSectionSharedTimers": "Minuteurs partagés"
 }

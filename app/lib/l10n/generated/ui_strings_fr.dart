@@ -2176,6 +2176,9 @@ class UiStringsFr extends UiStrings {
   String get gestureOpenAlarmList => 'Ouvrir la liste des alarmes';
 
   @override
+  String get gestureOpenTimers => 'Ouvrir les minuteurs';
+
+  @override
   String get gestureOpenNextAlarm => 'Ouvrir la prochaine alarme';
 
   @override
@@ -14910,6 +14913,9 @@ class UiStringsFr extends UiStrings {
   String get voiceSectionTimerEnds => 'Quand un minuteur se termine';
 
   @override
+  String get voiceSectionSharedTimers => 'Minuteurs partagés';
+
+  @override
   String get voiceStatusEsphomeOff => 'Le serveur ESPHome est désactivé.';
 
   @override
@@ -15516,12 +15522,12 @@ class UiStringsFr extends UiStrings {
   String get voiceTesterPlayRecent => 'Écouter les 10 dernières secondes';
 
   @override
-  String get settingVoiceTimerPillsTitle =>
-      'Afficher les pastilles de minuteur';
+  String get settingVoiceTimerPillsViewTitle =>
+      'Afficher les minuteurs en pastilles';
 
   @override
-  String get settingVoiceTimerPillsDescription =>
-      'Les minuteurs en cours flottent au-dessus de l\'écran. Faites-les glisser n\'importe où.';
+  String get settingVoiceTimerPillsViewDescription =>
+      'Les minuteurs flottent au-dessus de l\'écran au lieu d\'ouvrir la vue plein écran.';
 
   @override
   String get settingVoiceTimerNameInPillTitle => 'Afficher le nom du minuteur';
@@ -15584,6 +15590,35 @@ class UiStringsFr extends UiStrings {
   String settingVoiceTimerNamedPhraseDescription(String name) {
     return '$name est remplacé par le nom du minuteur.';
   }
+
+  @override
+  String get settingVoiceTimersShareTitle => 'Partager les minuteurs';
+
+  @override
+  String get settingVoiceTimersShareDescription =>
+      'Les minuteurs lancés sur ce kiosque tournent aussi sur les kiosques que vous choisissez.';
+
+  @override
+  String get settingVoiceTimersShareWithTitle => 'Partager avec';
+
+  @override
+  String get settingVoiceTimersShareWithDescription =>
+      'Les kiosques qui affichent et font sonner les minuteurs de celui-ci.';
+
+  @override
+  String get settingVoiceTimersReceiveTitle =>
+      'Afficher les minuteurs partagés';
+
+  @override
+  String get settingVoiceTimersReceiveDescription =>
+      'Les minuteurs partagés par d\'autres kiosques s\'affichent et sonnent ici.';
+
+  @override
+  String get settingKioskAllowTimersTitle => 'Minuteurs';
+
+  @override
+  String get settingKioskAllowTimersDescription =>
+      'Ouvrir la vue des minuteurs depuis le menu du kiosque.';
 
   @override
   String get voiceWakePage => 'Mot de réveil';
@@ -16775,4 +16810,35 @@ class UiStringsFr extends UiStrings {
   @override
   String get voiceTimerDismissHint =>
       'Appuyez pour fermer l\'alerte du minuteur.';
+
+  @override
+  String get voiceTimersViewTitle => 'Minuteurs';
+
+  @override
+  String get voiceTimersEmpty => 'Aucun minuteur';
+
+  @override
+  String get voiceTimerPause => 'Pause';
+
+  @override
+  String get voiceTimerResume => 'Reprendre';
+
+  @override
+  String get voiceTimerDismiss => 'Ignorer';
+
+  @override
+  String get voiceTimerTimesUp => 'Temps écoulé';
+
+  @override
+  String get voiceTimerPaused => 'En pause';
+
+  @override
+  String get voiceTimersShareNone => 'Aucun kiosque choisi';
+
+  @override
+  String get voiceTimersShareEmpty =>
+      'Aucun autre kiosque trouvé. Activez Gestion à distance et Trouver d\'autres kiosques sur chacun.';
+
+  @override
+  String get voiceTimersShareOffline => 'Hors ligne';
 }

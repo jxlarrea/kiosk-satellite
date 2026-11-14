@@ -2100,6 +2100,9 @@ class UiStringsZh extends UiStrings {
   String get gestureOpenAlarmList => '打开闹钟列表';
 
   @override
+  String get gestureOpenTimers => '打开计时器';
+
+  @override
   String get gestureOpenNextAlarm => '打开下一个闹钟';
 
   @override
@@ -13877,6 +13880,9 @@ class UiStringsZh extends UiStrings {
   String get voiceSectionTimerEnds => '计时器结束时';
 
   @override
+  String get voiceSectionSharedTimers => '共享的计时器';
+
+  @override
   String get voiceStatusEsphomeOff => 'ESPHome 服务器已关闭。';
 
   @override
@@ -14446,10 +14452,10 @@ class UiStringsZh extends UiStrings {
   String get voiceTesterPlayRecent => '播放最近 10 秒';
 
   @override
-  String get settingVoiceTimerPillsTitle => '显示计时器浮条';
+  String get settingVoiceTimerPillsViewTitle => '以浮条显示计时器';
 
   @override
-  String get settingVoiceTimerPillsDescription => '运行中的计时器悬浮在屏幕上，可拖动至任意位置。';
+  String get settingVoiceTimerPillsViewDescription => '计时器悬浮在屏幕上，而不是打开全屏视图。';
 
   @override
   String get settingVoiceTimerNameInPillTitle => '显示计时器名称';
@@ -14500,6 +14506,33 @@ class UiStringsZh extends UiStrings {
   String settingVoiceTimerNamedPhraseDescription(String name) {
     return '$name 会替换为计时器名称。';
   }
+
+  @override
+  String get settingVoiceTimersShareTitle => '共享计时器';
+
+  @override
+  String get settingVoiceTimersShareDescription =>
+      '在此 Kiosk 上启动的计时器也会在你选择的 Kiosk 设备上运行。';
+
+  @override
+  String get settingVoiceTimersShareWithTitle => '共享给';
+
+  @override
+  String get settingVoiceTimersShareWithDescription =>
+      '显示此设备的计时器并一同响铃的 Kiosk 设备。';
+
+  @override
+  String get settingVoiceTimersReceiveTitle => '显示共享的计时器';
+
+  @override
+  String get settingVoiceTimersReceiveDescription =>
+      '其他 Kiosk 设备共享的计时器会在此显示并响铃。';
+
+  @override
+  String get settingKioskAllowTimersTitle => '计时器';
+
+  @override
+  String get settingKioskAllowTimersDescription => '从 Kiosk 菜单打开计时器视图。';
 
   @override
   String get voiceWakePage => '唤醒词';
@@ -15592,6 +15625,37 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get voiceTimerDismissHint => '点击关闭计时器提醒。';
+
+  @override
+  String get voiceTimersViewTitle => '计时器';
+
+  @override
+  String get voiceTimersEmpty => '没有计时器';
+
+  @override
+  String get voiceTimerPause => '暂停';
+
+  @override
+  String get voiceTimerResume => '继续';
+
+  @override
+  String get voiceTimerDismiss => '关闭';
+
+  @override
+  String get voiceTimerTimesUp => '时间到';
+
+  @override
+  String get voiceTimerPaused => '已暂停';
+
+  @override
+  String get voiceTimersShareNone => '未选择 Kiosk 设备';
+
+  @override
+  String get voiceTimersShareEmpty =>
+      '未找到其他 Kiosk 设备。请在每台设备上开启“远程管理”和“查找其他 Kiosk 设备”。';
+
+  @override
+  String get voiceTimersShareOffline => '离线';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -17690,6 +17754,9 @@ class UiStringsZhCn extends UiStringsZh {
   String get gestureOpenAlarmList => '打开闹钟列表';
 
   @override
+  String get gestureOpenTimers => '打开计时器';
+
+  @override
   String get gestureOpenNextAlarm => '打开下一个闹钟';
 
   @override
@@ -29467,6 +29534,9 @@ class UiStringsZhCn extends UiStringsZh {
   String get voiceSectionTimerEnds => '计时器结束时';
 
   @override
+  String get voiceSectionSharedTimers => '共享的计时器';
+
+  @override
   String get voiceStatusEsphomeOff => 'ESPHome 服务器已关闭。';
 
   @override
@@ -30036,10 +30106,10 @@ class UiStringsZhCn extends UiStringsZh {
   String get voiceTesterPlayRecent => '播放最近 10 秒';
 
   @override
-  String get settingVoiceTimerPillsTitle => '显示计时器浮条';
+  String get settingVoiceTimerPillsViewTitle => '以浮条显示计时器';
 
   @override
-  String get settingVoiceTimerPillsDescription => '运行中的计时器悬浮在屏幕上，可拖动至任意位置。';
+  String get settingVoiceTimerPillsViewDescription => '计时器悬浮在屏幕上，而不是打开全屏视图。';
 
   @override
   String get settingVoiceTimerNameInPillTitle => '显示计时器名称';
@@ -30090,6 +30160,33 @@ class UiStringsZhCn extends UiStringsZh {
   String settingVoiceTimerNamedPhraseDescription(String name) {
     return '$name 会替换为计时器名称。';
   }
+
+  @override
+  String get settingVoiceTimersShareTitle => '共享计时器';
+
+  @override
+  String get settingVoiceTimersShareDescription =>
+      '在此 Kiosk 上启动的计时器也会在你选择的 Kiosk 设备上运行。';
+
+  @override
+  String get settingVoiceTimersShareWithTitle => '共享给';
+
+  @override
+  String get settingVoiceTimersShareWithDescription =>
+      '显示此设备的计时器并一同响铃的 Kiosk 设备。';
+
+  @override
+  String get settingVoiceTimersReceiveTitle => '显示共享的计时器';
+
+  @override
+  String get settingVoiceTimersReceiveDescription =>
+      '其他 Kiosk 设备共享的计时器会在此显示并响铃。';
+
+  @override
+  String get settingKioskAllowTimersTitle => '计时器';
+
+  @override
+  String get settingKioskAllowTimersDescription => '从 Kiosk 菜单打开计时器视图。';
 
   @override
   String get voiceWakePage => '唤醒词';
@@ -31182,4 +31279,35 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get voiceTimerDismissHint => '点击关闭计时器提醒。';
+
+  @override
+  String get voiceTimersViewTitle => '计时器';
+
+  @override
+  String get voiceTimersEmpty => '没有计时器';
+
+  @override
+  String get voiceTimerPause => '暂停';
+
+  @override
+  String get voiceTimerResume => '继续';
+
+  @override
+  String get voiceTimerDismiss => '关闭';
+
+  @override
+  String get voiceTimerTimesUp => '时间到';
+
+  @override
+  String get voiceTimerPaused => '已暂停';
+
+  @override
+  String get voiceTimersShareNone => '未选择 Kiosk 设备';
+
+  @override
+  String get voiceTimersShareEmpty =>
+      '未找到其他 Kiosk 设备。请在每台设备上开启“远程管理”和“查找其他 Kiosk 设备”。';
+
+  @override
+  String get voiceTimersShareOffline => '离线';
 }

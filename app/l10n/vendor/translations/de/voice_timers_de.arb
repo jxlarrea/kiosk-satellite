@@ -7,5 +7,15 @@
   "voiceTimerCancel": "Timer abbrechen",
   "voiceTimerActionError": "Der Timer konnte nicht geändert werden. Bitte überprüfe die Verbindung und aktualisiere Voice Satellite bei Bedarf.",
   "voiceTimerFinished": "Timer beendet",
-  "voiceTimerDismissHint": "Tippen, um den Timer-Alarm zu schließen."
+  "voiceTimerDismissHint": "Tippen, um den Timer-Alarm zu schließen.",
+  "voiceTimersViewTitle": "Timer",
+  "voiceTimersEmpty": "Keine Timer",
+  "voiceTimerPause": "Pause",
+  "voiceTimerResume": "Fortsetzen",
+  "voiceTimerDismiss": "Schließen",
+  "voiceTimerTimesUp": "Zeit abgelaufen",
+  "voiceTimerPaused": "Pausiert",
+  "voiceTimersShareNone": "Keine Kiosks ausgewählt",
+  "voiceTimersShareEmpty": "Keine anderen Kiosks gefunden. Aktiviere auf jedem Kiosk die Fernverwaltung und „Andere Kiosks finden“.",
+  "voiceTimersShareOffline": "Offline"
 }

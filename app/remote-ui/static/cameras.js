@@ -130,6 +130,8 @@ export const CAMERA_ICONS = {
   alarmOff: '<circle cx="12" cy="13" r="8"/><path d="M5 3 2 6M19 3l3 3M4 5l16 16"/>',
   alarmOn: '<circle cx="12" cy="13" r="8"/><path d="M5 3 2 6M19 3l3 3M8.5 13l2.5 2.5 4.5-4.5"/>',
   snooze: '<circle cx="12" cy="13" r="8"/><path d="M5 3 2 6M19 3l3 3M9.5 10h5l-5 6h5"/>',
+  // A stopwatch: Open the timers.
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/>',
   // A page of a calendar: Open the calendar.
   calendar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>',
   // A list with a note: Open Music Library.

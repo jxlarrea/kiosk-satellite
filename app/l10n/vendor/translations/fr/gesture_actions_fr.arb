@@ -45,5 +45,6 @@
   "gestureVoiceStop": "Arrêter l'assistant vocal",
   "gestureVoiceMute": "Couper ou rétablir le son de Voice Satellite",
   "gestureOpenAlarmList": "Ouvrir la liste des alarmes",
-  "gestureOpenNextAlarm": "Ouvrir la prochaine alarme"
+  "gestureOpenNextAlarm": "Ouvrir la prochaine alarme",
+  "gestureOpenTimers": "Ouvrir les minuteurs"
 }

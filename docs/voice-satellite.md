@@ -81,8 +81,9 @@ When Home Assistant runs the integration, onboarding offers the same migration i
 | | Theme, Background, Text size, Reactive activity bar | Light or dark, how much of the dashboard shows through, the text size and the bar that follows your voice and the answer. |
 | Conversation | Show what you said, Show the answer, Show tool use, Hide sentiment tags | What the overlay shows. |
 | | Keep the answer on screen, Keep results on screen, Announcement time | How long each stays. Results at 0 stay until dismissed. |
-| Timers | Show timer pills, Show the timer name, Timer pill scale | Running timers float over the screen. Drag them anywhere. |
+| Timers | Show timers as pills, Show the timer name, Timer pill scale | Timers open the full screen timers view. With **Show timers as pills** on they float over the screen instead and can be dragged anywhere. See [Timers](#timers). |
 | | Show finished timer pills, Mute timer alerts, Show the name on the alert, Speak when a timer ends | What a finished timer does. Without its pill, the stop word still ends the alert. |
+| | Share timers, Share with, Show shared timers | Run this kiosk's timers on other kiosks too. See [Shared timers](#shared-timers). |
 | Chimes | Play chimes, per-event sounds and volumes | The wake, done, error, timer and announcement sounds, built in or from the sounds folder, each with its own volume under the assistant volume. |
 
 The **Wake Word Tester** and **Wake word diagnostics** are covered in [Microphone settings](microphone.md).
@@ -177,12 +178,48 @@ These come from Home Assistant through the kiosk's satellite entity, as they do 
 
 | Feature | How |
 | --- | --- |
-| Timers | Ask for one by voice. Pills show while it runs and an alert when it ends. Tap a pill to pause it, double tap to cancel. |
+| Timers | Ask for one by voice. The full screen timers view opens while it runs and when it ends. See [Timers](#timers). |
 | Announcements | `assist_satellite.announce` on the kiosk's satellite. |
 | Start a conversation | `assist_satellite.start_conversation`: the kiosk speaks, then listens for the reply. With a realtime provider on Assistant 1, the provider takes the conversation. See [Realtime conversations](#realtime-conversations). |
 | Ask a question | `assist_satellite.ask_question`: the kiosk speaks, listens and hands the reply to Home Assistant, as a Voice PE does. |
 
 Double tap the overlay to end a turn or close what lingers. With **Stop word interruption** on, "stop" does the same while an answer, alert, announcement or result panel is up.
+
+
+## Timers
+
+A timer started by voice opens the full screen timers view. It opens again when a timer finishes. The timer that ends first shows large at the top with its name, the time left as hours, minutes and seconds, a bar that runs down and **Pause** and **Cancel** buttons. The other timers are listed with the same time and bar, beside it on a wide and short screen such as an Echo Show 5 and under it everywhere else. With more than three, the list scrolls.
+
+A finished timer takes the top in its alert color with **Time's up** and a **Dismiss** button. The stop word dismisses it too.
+
+The X closes the view until the next timer starts or finishes. The view closes by itself once the last timer is gone. While a timer runs, the view stays over the screensaver.
+
+Open the view at any time with **Timers** in the [drawer menu](drawer-menu.md), the **Open the timers** [gesture action](gestures.md), a `ks://timers` [dashboard link](dashboard-links.md) or as a view of the [Compass layout](navigation.md). **Kiosk Mode > Allowed Actions > Timers** decides whether the locked kiosk's menu and Compass offer it.
+
+To get the floating pills back, turn on **Show timers as pills** under **Voice Satellite > Timers**. Tap a pill to pause it and double tap it to cancel. The full screen view then opens only from the menu, a gesture, a link or Compass.
+
+### Shared timers
+
+Home Assistant keeps a timer on the satellite it was started on. Shared timers show and ring it on other kiosks as well.
+
+1. On the kiosk where timers are started, open **Voice Satellite > Timers** and turn on **Share timers**.
+2. Tap **Share with** and pick the kiosks that should run its timers.
+
+Each kiosk has its own list. The bedroom kiosk can share with the office, the kitchen and the living room while the kitchen kiosk shares only with the living room.
+
+On the kiosks picked, the timer shows in the timers view, or as a pill, with the name of the kiosk it comes from. The countdown and the alert stay in step with the kiosk that owns the timer. Pause, Cancel and Dismiss work from any of them and apply everywhere. Mute timer alerts, Show finished timer pills and Speak when a timer ends are each kiosk's own.
+
+The timer stays in Home Assistant as before. Voice commands, the `vs_` actions, the timer sensors and the `esphome.kiosk_satellite_timer` event work only on the kiosk that owns it.
+
+Requirements:
+
+- **Remote admin** and **Find other kiosks** must be on for every kiosk involved. The requests between kiosks use the remote admin port.
+- **Show shared timers**, on by default, must be on for the kiosks picked. Shared timers are refused on a kiosk with it off.
+- The sharing kiosk runs Voice Satellite in the app. The kiosks picked do not need Voice Satellite.
+
+> **Note:** Shared timers need no password or key. Any device on the network can send a timer to a kiosk while **Show shared timers** is on. Turn it off for a kiosk on a network you do not trust.
+
+The timer list is sent again every 30 seconds while timers run, which covers an update that got lost. Timers from a kiosk that sends nothing for 100 seconds are dropped.
 
 ## Home Assistant entities and actions
 

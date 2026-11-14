@@ -455,6 +455,12 @@ class VoiceManager extends Manager {
       )
       ..add(bus.on<VoiceTimerAction>().listen(_onTimerAction))
       ..add(
+        bus.on<SharedTimerAlertChanged>().listen((e) {
+          _sharedRinging = e.ringing;
+          _syncTimerHold();
+        }),
+      )
+      ..add(
         bus.on<SettingChanged>().listen((e) {
           if (e.key == defs.voiceRuntime.key ||
               e.key == defs.voiceEnabled.key ||
@@ -2753,9 +2759,15 @@ class VoiceManager extends Manager {
   }
 
   void _onStopWord() {
+    if (_sharedRinging && _ringing.isEmpty) {
+      // A shared timer rings on a kiosk whether or not it runs Voice
+      // Satellite itself.
+      _dismissRinging();
+      return;
+    }
     if (!enabled) return;
     if (_ringing.isNotEmpty) {
-      _dismissAlert();
+      _dismissRinging();
       return;
     }
     if (_realtime.busy) {
@@ -2841,8 +2853,8 @@ class VoiceManager extends Manager {
   /// Double tap on the overlay, or the voiceCancel command: a ringing timer
   /// first, then the turn or the lingering answer.
   void dismiss() {
-    if (_ringing.isNotEmpty) {
-      _dismissAlert();
+    if (_ringing.isNotEmpty || _sharedRinging) {
+      _dismissRinging();
       return;
     }
     if (_realtime.busy) {
@@ -3228,6 +3240,11 @@ class VoiceManager extends Manager {
           id: id,
           name: timerName,
           createdSeconds: created,
+          totalSeconds: [
+            (fields['totalSeconds'] as num?)?.toInt() ?? 0,
+            created,
+            secondsLeft,
+          ].reduce((a, b) => a > b ? a : b),
           secondsLeft: secondsLeft,
           active: active,
           at: now,
@@ -3491,6 +3508,7 @@ class VoiceManager extends Manager {
             'timer_id': t.id,
             'name': t.name,
             'total_seconds': t.createdSeconds,
+            'duration_seconds': t.totalSeconds,
             'seconds_left': left,
             'is_active': t.active,
             'ends_at': t.active
@@ -3517,16 +3535,11 @@ class VoiceManager extends Manager {
   void _publishTimers() => bus.publish(VoiceTimersChanged(timerList()));
 
   void _pushTimers() {
-    if (!_settings.get(defs.voiceTimerPills)) {
-      unawaited(
-        commands.execute('setVoiceTimers', {
-          'entityId': timerEntity,
-          'timers': const <Object>[],
-        }),
-      );
-      return;
-    }
-    final showNames = _settings.get(defs.voiceTimerNameInPill);
+    // The full screen view always names its timers. The name setting is
+    // the pills' own.
+    final showNames =
+        !_settings.get(defs.voiceTimerPills) ||
+        _settings.get(defs.voiceTimerNameInPill);
     unawaited(
       commands.execute('setVoiceTimers', {
         'entityId': timerEntity,
@@ -3538,6 +3551,7 @@ class VoiceManager extends Manager {
               'totalSeconds': t.secondsLeft,
               'startedAt': t.at,
               'isActive': t.active,
+              'duration': t.totalSeconds,
             },
         ],
       }),
@@ -3566,7 +3580,16 @@ class VoiceManager extends Manager {
         ],
       }),
     );
-    if (_ringing.isNotEmpty) {
+    _syncTimerHold();
+  }
+
+  /// Timers other kiosks share are ringing here.
+  bool _sharedRinging = false;
+
+  /// While a timer rings, this kiosk's own or a shared one, the stop word
+  /// listens and the screen is held as for a voice turn.
+  void _syncTimerHold() {
+    if (_ringing.isNotEmpty || _sharedRinging) {
       _onBusy(true, 'timer');
       unawaited(_wakeWord.setStopWordArmed(true));
     } else {
@@ -3581,6 +3604,12 @@ class VoiceManager extends Manager {
         );
       }
     }
+  }
+
+  /// Ends every ringing timer, this kiosk's own and the shared ones.
+  void _dismissRinging() {
+    if (_ringing.isNotEmpty) _dismissAlert();
+    if (_sharedRinging) bus.publish(const SharedTimerDismissRequested());
   }
 
   void _dismissAlert() {
@@ -3896,6 +3925,7 @@ class _HaTimer {
     required this.id,
     required this.name,
     required this.createdSeconds,
+    required this.totalSeconds,
     required this.secondsLeft,
     required this.active,
     required this.at,
@@ -3906,6 +3936,10 @@ class _HaTimer {
 
   /// The duration it was started with, what the intents name it by.
   final int createdSeconds;
+
+  /// Its whole length as Home Assistant counts it now, added time
+  /// included: what a progress bar measures against.
+  final int totalSeconds;
   final int secondsLeft;
   final bool active;
 

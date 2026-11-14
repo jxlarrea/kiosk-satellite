@@ -1,7 +1,5 @@
 {
   "@@locale": "uk",
-  "settingVoiceTimerPillsTitle": "Показувати індикатори таймерів",
-  "settingVoiceTimerPillsDescription": "Активні таймери плавають над екраном. Перетягуйте їх будь-куди.",
   "settingVoiceTimerNameInPillTitle": "Показувати назву таймера",
   "settingVoiceTimerNameInPillDescription": "Назва поруч із часом в індикаторі.",
   "settingVoiceTimerPillScaleTitle": "Масштаб індикаторів таймерів",
@@ -17,5 +15,15 @@
   "settingVoiceTimerPhraseTitle": "Фраза",
   "settingVoiceTimerPhraseDescription": "Промовляється для таймера без назви.",
   "settingVoiceTimerNamedPhraseTitle": "Фраза для таймерів із назвою",
-  "settingVoiceTimerNamedPhraseDescription": "{name} замінюється на назву таймера."
+  "settingVoiceTimerNamedPhraseDescription": "{name} замінюється на назву таймера.",
+  "settingVoiceTimerPillsViewTitle": "Показувати таймери як індикатори",
+  "settingVoiceTimerPillsViewDescription": "Таймери плавають над екраном замість відкриття повноекранного вигляду.",
+  "settingVoiceTimersShareTitle": "Спільні таймери",
+  "settingVoiceTimersShareDescription": "Таймери, запущені на цьому кіоску, також працюють на вибраних вами кіосках.",
+  "settingVoiceTimersShareWithTitle": "Ділитися з",
+  "settingVoiceTimersShareWithDescription": "Кіоски, які показують таймери цього кіоска й сигналять разом із ним.",
+  "settingVoiceTimersReceiveTitle": "Показувати спільні таймери",
+  "settingVoiceTimersReceiveDescription": "Таймери, якими діляться інші кіоски, показуються й сигналять тут.",
+  "settingKioskAllowTimersTitle": "Таймери",
+  "settingKioskAllowTimersDescription": "Відкривати вигляд таймерів із меню кіоска."
 }

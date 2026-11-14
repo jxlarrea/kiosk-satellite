@@ -146,6 +146,7 @@ Certain settings remain unique to each kiosk regardless of the profile configura
 | Remote admin & fleet | `remote.enabled`, `remote.port`, `remote.tls`, `remote.password`, `remote.fleet_discovery`, `remote.admin_url`, `fleet.*` |
 | Intercom encryption, hang up button and camera on auto answer | `intercom.tls`, `intercom.hangup_key`, `intercom.hangup_key_ringing`, `intercom.auto_answer_camera` |
 | Alarms | `alarms.list`, `alarms.runtime` |
+| Shared timers | `voice.timers_share_with` |
 | Calendar | `calendar.hidden` |
 | Hardware picks | `camera.device`, `camera.scan_screen_light`, `camera.rtsp.tls`, `camera.rtsp.resolution`, `camera.rtsp.analysis`, `motion.camera`, `audio.mic_device`, `audio.speaker_device`, `audio.mic_channel`, `audio.mic_capture_mode`, `audio.software_echo_cancellation`, `audio.echo_cancellation_method`, `audio.mic_noise_suppression`, `audio.mic_gain_db`, `audio.mic_capture_format`, `audio.equalizer_enabled`, `audio.equalizer_bass`, `audio.equalizer_low_mid`, `audio.equalizer_mid`, `audio.equalizer_high_mid`, `audio.equalizer_treble`, `audio.equalizer_preamp`, `render.disable_impeller`, `render.legacy_webview`, `render.hybrid_plugin_overlays`, `ui.scale`, `screen.ambient_display` |
 | Followed player | `sendspin.player`, `sendspin.player_source`, `sendspin.player_name`, `sendspin.handoff`, `sendspin.speaker_pill_players`, `sendspin.kept_for` |

@@ -4,6 +4,13 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Shared timers.** A kiosk can now run its timers on other kiosks too. Turn on **Share timers** under **Voice Satellite > Timers** and pick the kiosks in **Share with**. Each kiosk has its own list. The timer shows and rings on every kiosk picked, with the name of the kiosk it comes from, and the countdown and the alert stay in step. Pause, Cancel and Dismiss work from any of them. The timer stays in Home Assistant on the kiosk that started it. Remote admin and Find other kiosks must be on. Turn off **Show shared timers**, on by default, to refuse timers from other kiosks.
+- **Full screen timers view.** Timers now open a full screen view when one starts or finishes. The timer that ends first shows large at the top with its time as hours, minutes and seconds, a bar that runs down and Pause and Cancel buttons. The other timers are listed beside or under it and the list scrolls with more than three. A finished timer shows **Time's up** with a Dismiss button. The view is also a **Timers** entry in the drawer menu, a view for the Compass layout, an **Open the timers** gesture action and a `ks://timers` dashboard link. **Kiosk Mode > Allowed Actions** has a **Timers** switch for it.
+
+### Changed
+- **Timer pills are opt in.** **Show timer pills** is now **Show timers as pills** and is off by default, so timers open the full screen view. Turn it on to get the floating pills back. A kiosk where the switch was never changed moves to the full screen view.
+
 ### Fixed
 - **RAM shown as 0 free on devices with an old kernel.** A kernel older than 3.14 does not report available memory and Android then reports 0 as well. The RAM tile on the remote admin's Overview read "0.0 GB free" with a full bar, Device info showed 0 MB free with a low memory tag and the RAM available sensor in Home Assistant read 0. On these kernels the value is now estimated from the free memory, the file cache and the reclaimable kernel memory, and the low memory tag follows that estimate. Seen on a Galaxy View (SM-T670) running LineageOS 23.2.
 

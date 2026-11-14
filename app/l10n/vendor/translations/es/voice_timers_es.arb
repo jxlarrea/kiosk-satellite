@@ -7,5 +7,15 @@
   "voiceTimerCancel": "Cancelar temporizador",
   "voiceTimerActionError": "No se pudo cambiar el temporizador. Comprueba la conexión y actualiza Voice Satellite si es necesario.",
   "voiceTimerFinished": "Finalizado",
-  "voiceTimerDismissHint": "Toca para cerrar la alerta del temporizador."
+  "voiceTimerDismissHint": "Toca para cerrar la alerta del temporizador.",
+  "voiceTimersViewTitle": "Temporizadores",
+  "voiceTimersEmpty": "No hay temporizadores",
+  "voiceTimerPause": "Pausar",
+  "voiceTimerResume": "Reanudar",
+  "voiceTimerDismiss": "Cerrar",
+  "voiceTimerTimesUp": "Tiempo cumplido",
+  "voiceTimerPaused": "En pausa",
+  "voiceTimersShareNone": "Ningún kiosko elegido",
+  "voiceTimersShareEmpty": "No se encontraron otros kioskos. Activa Administración remota y Buscar otros kioskos en cada uno.",
+  "voiceTimersShareOffline": "Sin conexión"
 }

@@ -7,5 +7,15 @@
   "voiceTimerCancel": "Timer annuleren",
   "voiceTimerActionError": "Kon de timer niet wijzigen. Controleer de verbinding en werk Voice Satellite zo nodig bij.",
   "voiceTimerFinished": "Timer afgelopen",
-  "voiceTimerDismissHint": "Tik om de timermelding te sluiten."
+  "voiceTimerDismissHint": "Tik om de timermelding te sluiten.",
+  "voiceTimersViewTitle": "Timers",
+  "voiceTimersEmpty": "Geen timers",
+  "voiceTimerPause": "Pauze",
+  "voiceTimerResume": "Hervatten",
+  "voiceTimerDismiss": "Sluiten",
+  "voiceTimerTimesUp": "Tijd is om",
+  "voiceTimerPaused": "Gepauzeerd",
+  "voiceTimersShareNone": "Geen kiosken gekozen",
+  "voiceTimersShareEmpty": "Geen andere kiosken gevonden. Schakel op elke kiosk Beheer op afstand en Andere kiosken zoeken in.",
+  "voiceTimersShareOffline": "Offline"
 }

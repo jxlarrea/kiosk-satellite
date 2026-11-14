@@ -24,6 +24,7 @@ const drawerItemOrder = [
   'camera',
   'intercom',
   'alarms',
+  'timers',
   'calendar',
   'music_library',
   'music_assistant',

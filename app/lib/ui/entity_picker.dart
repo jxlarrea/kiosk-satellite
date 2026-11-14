@@ -356,6 +356,7 @@ PickSpec drawerItemSpec(BuildContext context, AppContainer container) {
     'camera': (strings.drawerCameraView, 'mdi:video-outline'),
     'intercom': (strings.drawerIntercom, 'mdi:cellphone-sound'),
     'alarms': (strings.alarmsTitle, 'mdi:alarm'),
+    'timers': (strings.voiceTimersViewTitle, 'mdi:timer-outline'),
     'calendar': (strings.calendarTitle, 'mdi:calendar-month-outline'),
     'music_library': (strings.libraryTitle, 'mdi:music-box-multiple-outline'),
     'music_assistant': (strings.drawerMusicAssistant, 'mdi:music'),

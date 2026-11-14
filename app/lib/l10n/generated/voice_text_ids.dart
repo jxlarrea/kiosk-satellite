@@ -178,6 +178,7 @@ const voiceTextMessageIds = <String, String>{
   "Wake word and command": "voiceSectionWakeCommand",
   "Wake Word Arbitration": "voiceSectionWakeArbitration",
   "When a timer ends": "voiceSectionTimerEnds",
+  "Shared timers": "voiceSectionSharedTimers",
   "The ESPHome server is off.": "voiceStatusEsphomeOff",
   "This kiosk is not added to Home Assistant yet.": "voiceStatusNotAdded",
   "The microphone is muted.": "voiceStatusMuted",

@@ -2013,8 +2013,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "description": "settingVoiceAnnouncementLingerDescription",
   },
   "voice.timer_pills": {
-    "title": "settingVoiceTimerPillsTitle",
-    "description": "settingVoiceTimerPillsDescription",
+    "title": "settingVoiceTimerPillsViewTitle",
+    "description": "settingVoiceTimerPillsViewDescription",
   },
   "voice.timer_name_in_pill": {
     "title": "settingVoiceTimerNameInPillTitle",
@@ -2044,6 +2044,18 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingVoiceTimerPhraseTitle",
     "description": "settingVoiceTimerPhraseDescription",
   },
+  "voice.timers_share": {
+    "title": "settingVoiceTimersShareTitle",
+    "description": "settingVoiceTimersShareDescription",
+  },
+  "voice.timers_share_with": {
+    "title": "settingVoiceTimersShareWithTitle",
+    "description": "settingVoiceTimersShareWithDescription",
+  },
+  "voice.timers_receive": {
+    "title": "settingVoiceTimersReceiveTitle",
+    "description": "settingVoiceTimersReceiveDescription",
+  },
   "voice.wake_sound": {
     "title": "settingVoiceWakeSoundTitle",
     "description": "settingVoiceWakeSoundDescription",
@@ -2051,6 +2063,10 @@ const settingMessageIds = <String, Map<String, String>>{
   "kiosk.allow_alarms": {
     "title": "settingKioskAllowAlarmsTitle",
     "description": "settingKioskAllowAlarmsDescription",
+  },
+  "kiosk.allow_timers": {
+    "title": "settingKioskAllowTimersTitle",
+    "description": "settingKioskAllowTimersDescription",
   },
   "screensaver.clock_alarm_takeover": {
     "title": "settingScreensaverClockAlarmTakeoverTitle",

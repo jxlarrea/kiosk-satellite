@@ -111,6 +111,7 @@ class CompassController {
     c.musicLibrary.visible,
     c.calendar.visible,
     c.alarms.visible,
+    c.voiceTimers.visible,
     // Now Playing on screen is a screensaver session with its view.
     c.screensaver.activeView,
     c.screensaver.nowPlayingCovers,
@@ -203,6 +204,7 @@ class CompassController {
     c.musicLibrary.compassView.value = kind == 'music_library';
     c.calendar.compassView.value = kind == 'calendar';
     c.alarms.compassView.value = kind == 'alarms';
+    c.voiceTimers.compassView.value = kind == 'timers';
     c.launcher.compassView.value = kind == 'app_launcher';
     c.intercom.compassView.value = kind == 'intercom';
     c.camera.compassView.value = kind == 'camera';
@@ -282,6 +284,7 @@ class CompassController {
       'camera' => allowed(defs.kioskAllowCamera),
       'intercom' => allowed(defs.kioskAllowIntercom),
       'alarms' => allowed(defs.kioskAllowAlarms),
+      'timers' => allowed(defs.kioskAllowTimers),
       'calendar' => allowed(defs.kioskAllowCalendar),
       'music_library' => allowed(defs.kioskAllowMusicLibrary),
       'now_playing' => allowed(defs.kioskAllowSendspinPlayer),
@@ -339,6 +342,7 @@ class CompassController {
     return only(c.musicLibrary.visible.value, 'music_library') &&
         only(c.calendar.visible.value, 'calendar') &&
         only(c.alarms.visible.value, 'alarms') &&
+        only(c.voiceTimers.visible.value, 'timers') &&
         only(_nowPlayingUp, 'now_playing') &&
         only(c.launcher.visible.value, 'app_launcher') &&
         only(c.intercom.rosterVisible.value, 'intercom') &&
@@ -424,6 +428,8 @@ class CompassController {
         await c.commands.execute('openCalendar', const {});
       case 'alarms':
         await c.commands.execute('openAlarms', const {});
+      case 'timers':
+        await c.commands.execute('openTimers', const {});
       case 'now_playing':
         await c.sendspin.showFullscreen();
       case 'camera':
@@ -447,6 +453,9 @@ class CompassController {
     }
     if (view.kind != 'alarms' && c.alarms.visible.value) {
       await c.commands.execute('hideAlarms', const {});
+    }
+    if (view.kind != 'timers' && c.voiceTimers.visible.value) {
+      await c.commands.execute('hideTimers', const {});
     }
     if (view.kind != 'now_playing' && _nowPlayingUp) {
       await c.commands.execute('hideNowPlaying', const {});
@@ -704,6 +713,7 @@ class CompassController {
       c.musicLibrary.visible.value ||
       c.calendar.visible.value ||
       c.alarms.visible.value ||
+      c.voiceTimers.visible.value ||
       _nowPlayingUp ||
       c.camera.activeViewId.value != null ||
       c.launcher.visible.value ||
@@ -714,6 +724,7 @@ class CompassController {
     'music_library' => c.musicLibrary.visible.value,
     'calendar' => c.calendar.visible.value,
     'alarms' => c.alarms.visible.value,
+    'timers' => c.voiceTimers.visible.value,
     'now_playing' => _nowPlayingUp,
     'camera' => c.camera.activeViewId.value == view.id,
     'app_launcher' => c.launcher.visible.value,
@@ -952,7 +963,7 @@ class CompassTile {
 /// its view switched on, a camera a camera view, the App Launcher its
 /// apps and the intercom the intercom.
 bool compassKindConfigurable(AppContainer c, String kind) => switch (kind) {
-  'dashboard' || 'menu' || 'calendar' || 'alarms' => true,
+  'dashboard' || 'menu' || 'calendar' || 'alarms' || 'timers' => true,
   'music_library' => c.musicLibrary.available.isNotEmpty,
   'now_playing' =>
     c.settings.get(defs.sendspinPlayerActive) &&
@@ -978,6 +989,7 @@ IconData compassViewIcon(CompassView view) => switch (view.kind) {
   'music_library' => Icons.library_music_outlined,
   'calendar' => Icons.calendar_month_outlined,
   'alarms' => Icons.alarm,
+  'timers' => Icons.timer_outlined,
   'now_playing' => Icons.album_outlined,
   'camera' => Icons.videocam_outlined,
   'app_launcher' => Icons.apps_outlined,
@@ -1012,6 +1024,8 @@ String compassViewLabel(
       return strings.calendarTitle;
     case 'alarms':
       return strings.alarmsTitle;
+    case 'timers':
+      return strings.voiceTimersViewTitle;
     case 'now_playing':
       return strings.drawerNowPlaying;
     case 'camera':

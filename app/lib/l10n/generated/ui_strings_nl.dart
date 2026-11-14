@@ -2168,6 +2168,9 @@ class UiStringsNl extends UiStrings {
   String get gestureOpenAlarmList => 'Alarmlijst openen';
 
   @override
+  String get gestureOpenTimers => 'Timers openen';
+
+  @override
   String get gestureOpenNextAlarm => 'Volgende alarm openen';
 
   @override
@@ -14800,6 +14803,9 @@ class UiStringsNl extends UiStrings {
   String get voiceSectionTimerEnds => 'Wanneer een timer eindigt';
 
   @override
+  String get voiceSectionSharedTimers => 'Gedeelde timers';
+
+  @override
   String get voiceStatusEsphomeOff => 'De ESPHome-server is uitgeschakeld.';
 
   @override
@@ -15406,11 +15412,11 @@ class UiStringsNl extends UiStrings {
   String get voiceTesterPlayRecent => 'Laatste 10 seconden afspelen';
 
   @override
-  String get settingVoiceTimerPillsTitle => 'Timerlabels tonen';
+  String get settingVoiceTimerPillsViewTitle => 'Timers als labels tonen';
 
   @override
-  String get settingVoiceTimerPillsDescription =>
-      'Actieve timers verschijnen als labels op het scherm. Sleep ze naar de gewenste plek.';
+  String get settingVoiceTimerPillsViewDescription =>
+      'Timers verschijnen als labels op het scherm in plaats van de schermvullende weergave te openen.';
 
   @override
   String get settingVoiceTimerNameInPillTitle => 'De timernaam tonen';
@@ -15471,6 +15477,34 @@ class UiStringsNl extends UiStrings {
   String settingVoiceTimerNamedPhraseDescription(String name) {
     return '$name wordt vervangen door de timernaam.';
   }
+
+  @override
+  String get settingVoiceTimersShareTitle => 'Timers delen';
+
+  @override
+  String get settingVoiceTimersShareDescription =>
+      'Timers die op deze kiosk worden gestart, lopen ook op de kiosken die je kiest.';
+
+  @override
+  String get settingVoiceTimersShareWithTitle => 'Delen met';
+
+  @override
+  String get settingVoiceTimersShareWithDescription =>
+      'De kiosken die de timers van deze kiosk tonen en laten afgaan.';
+
+  @override
+  String get settingVoiceTimersReceiveTitle => 'Gedeelde timers tonen';
+
+  @override
+  String get settingVoiceTimersReceiveDescription =>
+      'Timers die andere kiosken delen, worden hier getoond en gaan hier af.';
+
+  @override
+  String get settingKioskAllowTimersTitle => 'Timers';
+
+  @override
+  String get settingKioskAllowTimersDescription =>
+      'De timerweergave openen vanuit het kioskmenu.';
 
   @override
   String get voiceWakePage => 'Wekwoorden';
@@ -16652,4 +16686,35 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get voiceTimerDismissHint => 'Tik om de timermelding te sluiten.';
+
+  @override
+  String get voiceTimersViewTitle => 'Timers';
+
+  @override
+  String get voiceTimersEmpty => 'Geen timers';
+
+  @override
+  String get voiceTimerPause => 'Pauze';
+
+  @override
+  String get voiceTimerResume => 'Hervatten';
+
+  @override
+  String get voiceTimerDismiss => 'Sluiten';
+
+  @override
+  String get voiceTimerTimesUp => 'Tijd is om';
+
+  @override
+  String get voiceTimerPaused => 'Gepauzeerd';
+
+  @override
+  String get voiceTimersShareNone => 'Geen kiosken gekozen';
+
+  @override
+  String get voiceTimersShareEmpty =>
+      'Geen andere kiosken gevonden. Schakel op elke kiosk Beheer op afstand en Andere kiosken zoeken in.';
+
+  @override
+  String get voiceTimersShareOffline => 'Offline';
 }

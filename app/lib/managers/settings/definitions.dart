@@ -1228,6 +1228,18 @@ const kioskAllowAlarms = SettingDef<bool>(
   dependsOn: 'kiosk.allow_drawer',
 );
 
+const kioskAllowTimers = SettingDef<bool>(
+  key: 'kiosk.allow_timers',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Timers',
+  description: 'Open the timers view from the kiosk menu.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
 const kioskAllowCalendar = SettingDef<bool>(
   key: 'kiosk.allow_calendar',
   type: SettingType.boolean,
@@ -8395,9 +8407,10 @@ const voiceAnnouncementLinger = SettingDef<num>(
 const voiceTimerPills = SettingDef<bool>(
   key: 'voice.timer_pills',
   type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Show timer pills',
-  description: 'Running timers float over the screen. Drag them anywhere.',
+  defaultValue: false,
+  title: 'Show timers as pills',
+  description:
+      'Timers float over the screen instead of opening the full screen view.',
   category: 'Voice Satellite',
   subpage: 'Timers',
   section: 'Pills',
@@ -8503,6 +8516,46 @@ const voiceTimerNamedPhrase = SettingDef<String>(
   subpage: 'Timers',
   section: 'When a timer ends',
   dependsOn: 'voice.timer_speak',
+);
+
+/// Shared timers: this kiosk's timers also run on the kiosks it picks.
+const voiceTimersShare = SettingDef<bool>(
+  key: 'voice.timers_share',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Share timers',
+  description: 'Timers started on this kiosk also run on the kiosks you pick.',
+  category: 'Voice Satellite',
+  subpage: 'Timers',
+  section: 'Shared timers',
+  dependsOn: 'voice.enabled',
+);
+
+/// The kiosks this one shares its timers with: a JSON list of
+/// `{id, name}`, the ids the discovery knows them by. Each kiosk picks its
+/// own, so it never travels with a fleet profile.
+const voiceTimersShareWith = SettingDef<String>(
+  key: 'voice.timers_share_with',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Share with',
+  description: 'The kiosks that show and ring the timers of this one.',
+  category: 'Voice Satellite',
+  subpage: 'Timers',
+  section: 'Shared timers',
+  dependsOn: 'voice.timers_share',
+  perDevice: true,
+);
+
+const voiceTimersReceive = SettingDef<bool>(
+  key: 'voice.timers_receive',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show shared timers',
+  description: 'Timers shared by other kiosks show and ring here.',
+  category: 'Voice Satellite',
+  subpage: 'Timers',
+  section: 'Shared timers',
 );
 
 const voiceWakeSound = SettingDef<bool>(
@@ -14037,6 +14090,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowCamera,
   kioskAllowIntercom,
   kioskAllowAlarms,
+  kioskAllowTimers,
   kioskAllowCalendar,
   kioskAllowMusicLibrary,
   kioskAllowMusic,
@@ -14487,6 +14541,9 @@ const List<SettingDef<Object>> allSettings = [
   voiceTimerSpeak,
   voiceTimerPhrase,
   voiceTimerNamedPhrase,
+  voiceTimersShare,
+  voiceTimersShareWith,
+  voiceTimersReceive,
   haUrl,
   haToken,
   haAutoLogin,

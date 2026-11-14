@@ -1,7 +1,5 @@
 {
   "@@locale": "zh_CN",
-  "settingVoiceTimerPillsTitle": "显示计时器浮条",
-  "settingVoiceTimerPillsDescription": "运行中的计时器悬浮在屏幕上，可拖动至任意位置。",
   "settingVoiceTimerNameInPillTitle": "显示计时器名称",
   "settingVoiceTimerNameInPillDescription": "浮条中时间旁的名称。",
   "settingVoiceTimerPillScaleTitle": "计时器浮条缩放",
@@ -17,5 +15,15 @@
   "settingVoiceTimerPhraseTitle": "播报内容",
   "settingVoiceTimerPhraseDescription": "用于未命名计时器的播报内容。",
   "settingVoiceTimerNamedPhraseTitle": "命名计时器的播报内容",
-  "settingVoiceTimerNamedPhraseDescription": "{name} 会替换为计时器名称。"
+  "settingVoiceTimerNamedPhraseDescription": "{name} 会替换为计时器名称。",
+  "settingVoiceTimerPillsViewTitle": "以浮条显示计时器",
+  "settingVoiceTimerPillsViewDescription": "计时器悬浮在屏幕上，而不是打开全屏视图。",
+  "settingVoiceTimersShareTitle": "共享计时器",
+  "settingVoiceTimersShareDescription": "在此 Kiosk 上启动的计时器也会在你选择的 Kiosk 设备上运行。",
+  "settingVoiceTimersShareWithTitle": "共享给",
+  "settingVoiceTimersShareWithDescription": "显示此设备的计时器并一同响铃的 Kiosk 设备。",
+  "settingVoiceTimersReceiveTitle": "显示共享的计时器",
+  "settingVoiceTimersReceiveDescription": "其他 Kiosk 设备共享的计时器会在此显示并响铃。",
+  "settingKioskAllowTimersTitle": "计时器",
+  "settingKioskAllowTimersDescription": "从 Kiosk 菜单打开计时器视图。"
 }

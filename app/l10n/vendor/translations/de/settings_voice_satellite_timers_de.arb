@@ -1,7 +1,5 @@
 {
   "@@locale": "de",
-  "settingVoiceTimerPillsTitle": "Timer-Anzeigen einblenden",
-  "settingVoiceTimerPillsDescription": "Laufende Timer schweben über dem Bildschirm. Zieh sie an eine beliebige Stelle.",
   "settingVoiceTimerNameInPillTitle": "Timer-Namen anzeigen",
   "settingVoiceTimerNameInPillDescription": "Der Name neben der Zeit in einer Anzeige.",
   "settingVoiceTimerPillScaleTitle": "Größe der Timer-Anzeigen",
@@ -17,5 +15,15 @@
   "settingVoiceTimerPhraseTitle": "Satz",
   "settingVoiceTimerPhraseDescription": "Wird bei einem Timer ohne Namen gesprochen.",
   "settingVoiceTimerNamedPhraseTitle": "Satz für benannte Timer",
-  "settingVoiceTimerNamedPhraseDescription": "{name} wird durch den Namen des Timers ersetzt."
+  "settingVoiceTimerNamedPhraseDescription": "{name} wird durch den Namen des Timers ersetzt.",
+  "settingVoiceTimerPillsViewTitle": "Timer als Anzeigen einblenden",
+  "settingVoiceTimerPillsViewDescription": "Timer schweben über dem Bildschirm, statt die Vollbildansicht zu öffnen.",
+  "settingVoiceTimersShareTitle": "Timer teilen",
+  "settingVoiceTimersShareDescription": "Auf diesem Kiosk gestartete Timer laufen auch auf den Kiosks, die du auswählst.",
+  "settingVoiceTimersShareWithTitle": "Teilen mit",
+  "settingVoiceTimersShareWithDescription": "Die Kiosks, die die Timer dieses Kiosks anzeigen und klingeln lassen.",
+  "settingVoiceTimersReceiveTitle": "Geteilte Timer anzeigen",
+  "settingVoiceTimersReceiveDescription": "Von anderen Kiosks geteilte Timer werden hier angezeigt und klingeln hier.",
+  "settingKioskAllowTimersTitle": "Timer",
+  "settingKioskAllowTimersDescription": "Die Timer-Ansicht über das Kiosk-Menü öffnen."
 }

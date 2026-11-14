@@ -101,6 +101,9 @@ void main() {
           tester.widget<KioskDrawer>(find.byType(KioskDrawer)).restricted,
           restricted,
         );
+        // The menu holds more rows than the test screen shows.
+        await tester.ensureVisible(find.text('Lockdown Mode'));
+        await tester.pumpAndSettle();
         expect(find.text('Lockdown Mode').hitTestable(), findsOneWidget);
 
         await container.settings.set(defs.kioskAllowLockdown, false);

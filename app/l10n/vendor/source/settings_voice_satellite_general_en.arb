@@ -481,6 +481,11 @@
     "context": "Settings > Voice Satellite",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
+  "voiceSectionSharedTimers": "Shared timers",
+  "@voiceSectionSharedTimers": {
+    "context": "Settings > Voice Satellite",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
   "voiceStatusEsphomeOff": "The ESPHome server is off.",
   "@voiceStatusEsphomeOff": {
     "context": "Settings > Voice Satellite",

@@ -13,6 +13,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'alarm_ring_overlay.dart';
 import 'alarms_overlay.dart';
+import 'timers_overlay.dart';
 import 'calendar_overlay.dart';
 import 'music_library_overlay.dart';
 import '../core/permissions.dart';
@@ -288,6 +289,7 @@ class _KioskScreenState extends State<KioskScreen>
         !c.launcher.visible.value &&
         !c.intercom.rosterVisible.value &&
         !c.alarms.visible.value &&
+        !c.voiceTimers.visible.value &&
         !c.calendar.visible.value &&
         !c.musicLibrary.visible.value &&
         c.camera.activeViewId.value == null &&
@@ -313,6 +315,7 @@ class _KioskScreenState extends State<KioskScreen>
           c.launcher.visible.value ||
           c.intercom.rosterVisible.value ||
           c.alarms.visible.value ||
+          c.voiceTimers.visible.value ||
           c.calendar.visible.value ||
           c.musicLibrary.visible.value,
       overlayUp: c.browser.overlayUrl.value != null,
@@ -346,6 +349,7 @@ class _KioskScreenState extends State<KioskScreen>
         c.launcher.visible.value = false;
         c.intercom.rosterVisible.value = false;
         c.alarms.visible.value = false;
+        c.voiceTimers.visible.value = false;
         c.calendar.visible.value = false;
         c.musicLibrary.visible.value = false;
       case BackAction.dismissOverlay:
@@ -732,6 +736,7 @@ class _KioskScreenState extends State<KioskScreen>
         c.launcher.visible.value = false;
         c.intercom.rosterVisible.value = false;
         c.alarms.visible.value = false;
+        c.voiceTimers.visible.value = false;
         c.calendar.visible.value = false;
         c.musicLibrary.visible.value = false;
       }
@@ -759,6 +764,7 @@ class _KioskScreenState extends State<KioskScreen>
         e.key == defs.intercomEnabled.key ||
         e.key == defs.kioskAllowIntercom.key ||
         e.key == defs.kioskAllowAlarms.key ||
+        e.key == defs.kioskAllowTimers.key ||
         e.key == defs.kioskAllowCalendar.key ||
         e.key == defs.kioskAllowMusicLibrary.key ||
         e.key == defs.remoteEnabled.key ||
@@ -967,6 +973,7 @@ class _KioskScreenState extends State<KioskScreen>
       c.launcher.visible.value = false;
       c.intercom.rosterVisible.value = false;
       c.alarms.visible.value = false;
+      c.voiceTimers.visible.value = false;
       c.calendar.visible.value = false;
       c.musicLibrary.visible.value = false;
       if (c.browser.overlayUrl.value != null) c.browser.dismissOverlay();
@@ -986,6 +993,7 @@ class _KioskScreenState extends State<KioskScreen>
     c.launcher.visible.addListener(_onOverlayChanged);
     c.intercom.rosterVisible.addListener(_onOverlayChanged);
     c.alarms.visible.addListener(_onOverlayChanged);
+    c.voiceTimers.visible.addListener(_onOverlayChanged);
     c.calendar.visible.addListener(_onOverlayChanged);
     c.musicLibrary.visible.addListener(_onOverlayChanged);
     c.plugins.windows.addListener(_onOverlayChanged);
@@ -1457,6 +1465,7 @@ class _KioskScreenState extends State<KioskScreen>
         c.launcher.visible.value ||
         c.intercom.rosterVisible.value ||
         c.alarms.visible.value ||
+        c.voiceTimers.visible.value ||
         c.calendar.visible.value ||
         c.musicLibrary.visible.value ||
         c.camera.activeViewId.value != null ||
@@ -1571,6 +1580,7 @@ class _KioskScreenState extends State<KioskScreen>
           c.launcher.visible.value ||
           c.intercom.rosterVisible.value ||
           c.alarms.visible.value ||
+          c.voiceTimers.visible.value ||
           c.calendar.visible.value ||
           c.musicLibrary.visible.value ||
           c.browser.overlayUrl.value != null ||
@@ -1753,6 +1763,7 @@ class _KioskScreenState extends State<KioskScreen>
     c.launcher.visible.removeListener(_onOverlayChanged);
     c.intercom.rosterVisible.removeListener(_onOverlayChanged);
     c.alarms.visible.removeListener(_onOverlayChanged);
+    c.voiceTimers.visible.removeListener(_onOverlayChanged);
     c.calendar.visible.removeListener(_onOverlayChanged);
     c.musicLibrary.visible.removeListener(_onOverlayChanged);
     c.plugins.windows.removeListener(_onOverlayChanged);
@@ -2126,7 +2137,15 @@ class _KioskScreenState extends State<KioskScreen>
                     AssistOverlay(container: c),
                     // The timer pills stay over the voice overlay, as Voice
                     // Satellite stacks them over its own.
-                    VoiceTimerOverlay(container: c),
+                    TimerPillsSetting(
+                      container: c,
+                      builder: (context, pills) => pills
+                          ? VoiceTimerOverlay(container: c)
+                          : const SizedBox.shrink(),
+                    ),
+                    // The full screen timers view, in the pills' place:
+                    // over the screensaver while a timer runs or rings.
+                    TimersOverlay(container: c),
                     ScreensaverBlankOverlay(container: c),
                     // Lockdown Mode's touch shield: topmost, above every
                     // overlay, so nothing on screen is tappable while it

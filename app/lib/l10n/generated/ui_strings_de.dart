@@ -2184,6 +2184,9 @@ class UiStringsDe extends UiStrings {
   String get gestureOpenAlarmList => 'Weckerliste öffnen';
 
   @override
+  String get gestureOpenTimers => 'Timer öffnen';
+
+  @override
   String get gestureOpenNextAlarm => 'Nächsten Wecker öffnen';
 
   @override
@@ -14943,6 +14946,9 @@ class UiStringsDe extends UiStrings {
   String get voiceSectionTimerEnds => 'Wenn ein Timer abläuft';
 
   @override
+  String get voiceSectionSharedTimers => 'Geteilte Timer';
+
+  @override
   String get voiceStatusEsphomeOff => 'Der ESPHome-Server ist aus.';
 
   @override
@@ -15551,11 +15557,11 @@ class UiStringsDe extends UiStrings {
   String get voiceTesterPlayRecent => 'Letzte 10 Sekunden abspielen';
 
   @override
-  String get settingVoiceTimerPillsTitle => 'Timer-Anzeigen einblenden';
+  String get settingVoiceTimerPillsViewTitle => 'Timer als Anzeigen einblenden';
 
   @override
-  String get settingVoiceTimerPillsDescription =>
-      'Laufende Timer schweben über dem Bildschirm. Zieh sie an eine beliebige Stelle.';
+  String get settingVoiceTimerPillsViewDescription =>
+      'Timer schweben über dem Bildschirm, statt die Vollbildansicht zu öffnen.';
 
   @override
   String get settingVoiceTimerNameInPillTitle => 'Timer-Namen anzeigen';
@@ -15613,6 +15619,34 @@ class UiStringsDe extends UiStrings {
   String settingVoiceTimerNamedPhraseDescription(String name) {
     return '$name wird durch den Namen des Timers ersetzt.';
   }
+
+  @override
+  String get settingVoiceTimersShareTitle => 'Timer teilen';
+
+  @override
+  String get settingVoiceTimersShareDescription =>
+      'Auf diesem Kiosk gestartete Timer laufen auch auf den Kiosks, die du auswählst.';
+
+  @override
+  String get settingVoiceTimersShareWithTitle => 'Teilen mit';
+
+  @override
+  String get settingVoiceTimersShareWithDescription =>
+      'Die Kiosks, die die Timer dieses Kiosks anzeigen und klingeln lassen.';
+
+  @override
+  String get settingVoiceTimersReceiveTitle => 'Geteilte Timer anzeigen';
+
+  @override
+  String get settingVoiceTimersReceiveDescription =>
+      'Von anderen Kiosks geteilte Timer werden hier angezeigt und klingeln hier.';
+
+  @override
+  String get settingKioskAllowTimersTitle => 'Timer';
+
+  @override
+  String get settingKioskAllowTimersDescription =>
+      'Die Timer-Ansicht über das Kiosk-Menü öffnen.';
 
   @override
   String get voiceWakePage => 'Aktivierungswort';
@@ -16806,4 +16840,35 @@ class UiStringsDe extends UiStrings {
   @override
   String get voiceTimerDismissHint =>
       'Tippen, um den Timer-Alarm zu schließen.';
+
+  @override
+  String get voiceTimersViewTitle => 'Timer';
+
+  @override
+  String get voiceTimersEmpty => 'Keine Timer';
+
+  @override
+  String get voiceTimerPause => 'Pause';
+
+  @override
+  String get voiceTimerResume => 'Fortsetzen';
+
+  @override
+  String get voiceTimerDismiss => 'Schließen';
+
+  @override
+  String get voiceTimerTimesUp => 'Zeit abgelaufen';
+
+  @override
+  String get voiceTimerPaused => 'Pausiert';
+
+  @override
+  String get voiceTimersShareNone => 'Keine Kiosks ausgewählt';
+
+  @override
+  String get voiceTimersShareEmpty =>
+      'Keine anderen Kiosks gefunden. Aktiviere auf jedem Kiosk die Fernverwaltung und „Andere Kiosks finden“.';
+
+  @override
+  String get voiceTimersShareOffline => 'Offline';
 }

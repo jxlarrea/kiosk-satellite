@@ -71,5 +71,6 @@
   "settingVoiceEnabledTitle": "Voice Satellite inschakelen",
   "settingVoiceEnabledDescription": "Maakt van deze kiosk via de ESPHome-server een spraakassistent voor Home Assistant.",
   "settingVoiceMuteTitle": "Microfoon dempen",
-  "settingVoiceMuteDescription": "Stop met luisteren naar het wekwoord."
+  "settingVoiceMuteDescription": "Stop met luisteren naar het wekwoord.",
+  "voiceSectionSharedTimers": "Gedeelde timers"
 }

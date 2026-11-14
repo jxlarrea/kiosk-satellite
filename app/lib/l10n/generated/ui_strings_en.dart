@@ -2158,6 +2158,9 @@ class UiStringsEn extends UiStrings {
   String get gestureOpenAlarmList => 'Open the alarm list';
 
   @override
+  String get gestureOpenTimers => 'Open the timers';
+
+  @override
   String get gestureOpenNextAlarm => 'Open the next alarm';
 
   @override
@@ -14629,6 +14632,9 @@ class UiStringsEn extends UiStrings {
   String get voiceSectionTimerEnds => 'When a timer ends';
 
   @override
+  String get voiceSectionSharedTimers => 'Shared timers';
+
+  @override
   String get voiceStatusEsphomeOff => 'The ESPHome server is off.';
 
   @override
@@ -15229,11 +15235,11 @@ class UiStringsEn extends UiStrings {
   String get voiceTesterPlayRecent => 'Play last 10 seconds';
 
   @override
-  String get settingVoiceTimerPillsTitle => 'Show timer pills';
+  String get settingVoiceTimerPillsViewTitle => 'Show timers as pills';
 
   @override
-  String get settingVoiceTimerPillsDescription =>
-      'Running timers float over the screen. Drag them anywhere.';
+  String get settingVoiceTimerPillsViewDescription =>
+      'Timers float over the screen instead of opening the full screen view.';
 
   @override
   String get settingVoiceTimerNameInPillTitle => 'Show the timer name';
@@ -15291,6 +15297,34 @@ class UiStringsEn extends UiStrings {
   String settingVoiceTimerNamedPhraseDescription(String name) {
     return '$name is replaced with the timer name.';
   }
+
+  @override
+  String get settingVoiceTimersShareTitle => 'Share timers';
+
+  @override
+  String get settingVoiceTimersShareDescription =>
+      'Timers started on this kiosk also run on the kiosks you pick.';
+
+  @override
+  String get settingVoiceTimersShareWithTitle => 'Share with';
+
+  @override
+  String get settingVoiceTimersShareWithDescription =>
+      'The kiosks that show and ring the timers of this one.';
+
+  @override
+  String get settingVoiceTimersReceiveTitle => 'Show shared timers';
+
+  @override
+  String get settingVoiceTimersReceiveDescription =>
+      'Timers shared by other kiosks show and ring here.';
+
+  @override
+  String get settingKioskAllowTimersTitle => 'Timers';
+
+  @override
+  String get settingKioskAllowTimersDescription =>
+      'Open the timers view from the kiosk menu.';
 
   @override
   String get voiceWakePage => 'Wake Word';
@@ -16455,4 +16489,35 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get voiceTimerDismissHint => 'Tap to dismiss the timer alert.';
+
+  @override
+  String get voiceTimersViewTitle => 'Timers';
+
+  @override
+  String get voiceTimersEmpty => 'No timers';
+
+  @override
+  String get voiceTimerPause => 'Pause';
+
+  @override
+  String get voiceTimerResume => 'Resume';
+
+  @override
+  String get voiceTimerDismiss => 'Dismiss';
+
+  @override
+  String get voiceTimerTimesUp => 'Time\'s up';
+
+  @override
+  String get voiceTimerPaused => 'Paused';
+
+  @override
+  String get voiceTimersShareNone => 'No kiosks picked';
+
+  @override
+  String get voiceTimersShareEmpty =>
+      'No other kiosks found. Turn on the remote admin and Find other kiosks on each one.';
+
+  @override
+  String get voiceTimersShareOffline => 'Offline';
 }

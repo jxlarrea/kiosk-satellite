@@ -25,6 +25,7 @@ While a swipe is in motion, the view shrinks to show the views around it, and th
 | Music Library | A [Music Library](music-library.md) source set up. |
 | Calendar | Nothing. |
 | Alarms | Nothing. |
+| Timers | Nothing. It shows the [timers](voice-satellite.md#timers), or No timers while none runs. |
 | Now Playing | The Sendspin player and the Now Playing view on. A swipe skips it while nothing is loaded. |
 | Camera View | A [camera view](cameras.md) with cameras in it. |
 | App Launcher | The App Launcher on with apps picked. |

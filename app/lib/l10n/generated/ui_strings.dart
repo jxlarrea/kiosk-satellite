@@ -3891,6 +3891,12 @@ abstract class UiStrings {
   /// **'Open the alarm list'**
   String get gestureOpenAlarmList;
 
+  /// Gesture action that opens the full screen timers view.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the timers'**
+  String get gestureOpenTimers;
+
   /// Gesture action that opens the alarm that rings next on its details page.
   ///
   /// In en, this message translates to:
@@ -25568,6 +25574,12 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///
   /// In en, this message translates to:
+  /// **'Shared timers'**
+  String get voiceSectionSharedTimers;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
   /// **'The ESPHome server is off.'**
   String get voiceStatusEsphomeOff;
 
@@ -26618,14 +26630,14 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Show timer pills'**
-  String get settingVoiceTimerPillsTitle;
+  /// **'Show timers as pills'**
+  String get settingVoiceTimerPillsViewTitle;
 
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Running timers float over the screen. Drag them anywhere.'**
-  String get settingVoiceTimerPillsDescription;
+  /// **'Timers float over the screen instead of opening the full screen view.'**
+  String get settingVoiceTimerPillsViewDescription;
 
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///
@@ -26722,6 +26734,54 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'{name} is replaced with the timer name.'**
   String settingVoiceTimerNamedPhraseDescription(String name);
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Share timers'**
+  String get settingVoiceTimersShareTitle;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Timers started on this kiosk also run on the kiosks you pick.'**
+  String get settingVoiceTimersShareDescription;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Share with'**
+  String get settingVoiceTimersShareWithTitle;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The kiosks that show and ring the timers of this one.'**
+  String get settingVoiceTimersShareWithDescription;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Show shared timers'**
+  String get settingVoiceTimersReceiveTitle;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Timers shared by other kiosks show and ring here.'**
+  String get settingVoiceTimersReceiveDescription;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Timers'**
+  String get settingKioskAllowTimersTitle;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the timers view from the kiosk menu.'**
+  String get settingKioskAllowTimersDescription;
 
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///
@@ -28690,6 +28750,66 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Tap to dismiss the timer alert.'**
   String get voiceTimerDismissHint;
+
+  /// Name of the full screen timers view: its heading, its kiosk menu entry and its Compass view.
+  ///
+  /// In en, this message translates to:
+  /// **'Timers'**
+  String get voiceTimersViewTitle;
+
+  /// Shown in the timers view when no timer runs.
+  ///
+  /// In en, this message translates to:
+  /// **'No timers'**
+  String get voiceTimersEmpty;
+
+  /// Button that pauses a running timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get voiceTimerPause;
+
+  /// Button that resumes a paused timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get voiceTimerResume;
+
+  /// Button that stops a ringing timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get voiceTimerDismiss;
+
+  /// Label beside the name of a timer that finished and rings.
+  ///
+  /// In en, this message translates to:
+  /// **'Time\'s up'**
+  String get voiceTimerTimesUp;
+
+  /// Label beside the name of a paused timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get voiceTimerPaused;
+
+  /// Value of the Share with row when no kiosk is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'No kiosks picked'**
+  String get voiceTimersShareNone;
+
+  /// Shown in the Share with picker when no other kiosk is on the network list.
+  ///
+  /// In en, this message translates to:
+  /// **'No other kiosks found. Turn on the remote admin and Find other kiosks on each one.'**
+  String get voiceTimersShareEmpty;
+
+  /// Beside a picked kiosk that is not on the network right now.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get voiceTimersShareOffline;
 }
 
 class _UiStringsDelegate extends LocalizationsDelegate<UiStrings> {

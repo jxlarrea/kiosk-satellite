@@ -8,7 +8,7 @@ import { cmd, state, syncOffRows } from './core.js';
 import { modalShell } from './widgets.js';
 import { dashboardField, loadDashboards, cachedDashboards, matchDashboard } from './dashboard_picker.js';
 
-const KINDS = ['dashboard', 'menu', 'music_library', 'calendar', 'alarms',
+const KINDS = ['dashboard', 'menu', 'music_library', 'calendar', 'alarms', 'timers',
   'now_playing', 'camera', 'app_launcher', 'intercom'];
 const SIDE_LIMIT = 2;
 
@@ -19,6 +19,7 @@ const ICONS = {
   music_library: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   alarms: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6M19 3l3 3"/>',
+  timers: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/>',
   now_playing: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>',
   camera: '<path d="M3 7h12v10H3zM15 10l6-3v10l-6-3"/>',
   app_launcher: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
@@ -153,6 +154,7 @@ function viewLabel(v) {
     case 'music_library': return t('libraryTitle', {}, 'Music Library');
     case 'calendar': return t('calendarTitle', {}, 'Calendar');
     case 'alarms': return t('alarmsTitle', {}, 'Alarms');
+    case 'timers': return t('voiceTimersViewTitle', {}, 'Timers');
     case 'now_playing': return t('drawerNowPlaying', {}, 'Now Playing');
     case 'camera': return cameraViews().find((c) => c.id === v.id)?.name || t('drawerCameraView', {}, 'Camera View');
     case 'app_launcher': return t('compassAppLauncher', {}, 'App Launcher');

@@ -71,5 +71,6 @@
   "settingVoiceEnabledTitle": "Voice Satellite aktivieren",
   "settingVoiceEnabledDescription": "Macht diesen Kiosk über seinen ESPHome-Server zu einem Sprachassistenten für Home Assistant.",
   "settingVoiceMuteTitle": "Mikrofon stummschalten",
-  "settingVoiceMuteDescription": "Nicht mehr auf das Aktivierungswort hören."
+  "settingVoiceMuteDescription": "Nicht mehr auf das Aktivierungswort hören.",
+  "voiceSectionSharedTimers": "Geteilte Timer"
 }

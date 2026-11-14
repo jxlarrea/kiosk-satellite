@@ -2165,6 +2165,9 @@ class UiStringsRu extends UiStrings {
   String get gestureOpenAlarmList => 'Открыть список будильников';
 
   @override
+  String get gestureOpenTimers => 'Открыть таймеры';
+
+  @override
   String get gestureOpenNextAlarm => 'Открыть следующий будильник';
 
   @override
@@ -14724,6 +14727,9 @@ class UiStringsRu extends UiStrings {
   String get voiceSectionTimerEnds => 'Когда таймер завершается';
 
   @override
+  String get voiceSectionSharedTimers => 'Общие таймеры';
+
+  @override
   String get voiceStatusEsphomeOff => 'Сервер ESPHome выключен.';
 
   @override
@@ -15324,11 +15330,11 @@ class UiStringsRu extends UiStrings {
   String get voiceTesterPlayRecent => 'Проиграть последние 10 с';
 
   @override
-  String get settingVoiceTimerPillsTitle => 'Показывать плашки таймеров';
+  String get settingVoiceTimerPillsViewTitle => 'Показывать таймеры плашками';
 
   @override
-  String get settingVoiceTimerPillsDescription =>
-      'Работающие таймеры плавают по экрану. Перетащите их куда угодно.';
+  String get settingVoiceTimerPillsViewDescription =>
+      'Таймеры плавают по экрану вместо открытия полноэкранного вида.';
 
   @override
   String get settingVoiceTimerNameInPillTitle => 'Показывать название таймера';
@@ -15389,6 +15395,34 @@ class UiStringsRu extends UiStrings {
   String settingVoiceTimerNamedPhraseDescription(String name) {
     return '$name заменяется названием таймера.';
   }
+
+  @override
+  String get settingVoiceTimersShareTitle => 'Общие таймеры';
+
+  @override
+  String get settingVoiceTimersShareDescription =>
+      'Таймеры, запущенные на этом киоске, также работают на выбранных вами киосках.';
+
+  @override
+  String get settingVoiceTimersShareWithTitle => 'Делиться с';
+
+  @override
+  String get settingVoiceTimersShareWithDescription =>
+      'Киоски, которые показывают таймеры этого киоска и звонят вместе с ним.';
+
+  @override
+  String get settingVoiceTimersReceiveTitle => 'Показывать общие таймеры';
+
+  @override
+  String get settingVoiceTimersReceiveDescription =>
+      'Таймеры, которыми делятся другие киоски, показываются и звонят здесь.';
+
+  @override
+  String get settingKioskAllowTimersTitle => 'Таймеры';
+
+  @override
+  String get settingKioskAllowTimersDescription =>
+      'Открывать вид таймеров из меню киоска.';
 
   @override
   String get voiceWakePage => 'Слово пробуждения';
@@ -16562,4 +16596,35 @@ class UiStringsRu extends UiStrings {
   @override
   String get voiceTimerDismissHint =>
       'Коснитесь, чтобы скрыть оповещение таймера.';
+
+  @override
+  String get voiceTimersViewTitle => 'Таймеры';
+
+  @override
+  String get voiceTimersEmpty => 'Нет таймеров';
+
+  @override
+  String get voiceTimerPause => 'Пауза';
+
+  @override
+  String get voiceTimerResume => 'Продолжить';
+
+  @override
+  String get voiceTimerDismiss => 'Скрыть';
+
+  @override
+  String get voiceTimerTimesUp => 'Время вышло';
+
+  @override
+  String get voiceTimerPaused => 'Приостановлено';
+
+  @override
+  String get voiceTimersShareNone => 'Киоски не выбраны';
+
+  @override
+  String get voiceTimersShareEmpty =>
+      'Другие киоски не найдены. Включите на каждом «Удалённое управление» и «Поиск других киосков».';
+
+  @override
+  String get voiceTimersShareOffline => 'Не в сети';
 }

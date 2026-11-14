@@ -45,5 +45,6 @@
   "gestureVoiceStop": "De spraakassistent stoppen",
   "gestureVoiceMute": "Voice Satellite dempen of het dempen opheffen",
   "gestureOpenAlarmList": "Alarmlijst openen",
-  "gestureOpenNextAlarm": "Volgende alarm openen"
+  "gestureOpenNextAlarm": "Volgende alarm openen",
+  "gestureOpenTimers": "Timers openen"
 }

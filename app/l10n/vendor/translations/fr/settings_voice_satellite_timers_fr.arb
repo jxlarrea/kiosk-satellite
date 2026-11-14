@@ -1,7 +1,5 @@
 {
   "@@locale": "fr",
-  "settingVoiceTimerPillsTitle": "Afficher les pastilles de minuteur",
-  "settingVoiceTimerPillsDescription": "Les minuteurs en cours flottent au-dessus de l'écran. Faites-les glisser n'importe où.",
   "settingVoiceTimerNameInPillTitle": "Afficher le nom du minuteur",
   "settingVoiceTimerNameInPillDescription": "Le nom à côté du temps dans une pastille.",
   "settingVoiceTimerPillScaleTitle": "Taille des pastilles de minuteur",
@@ -17,5 +15,15 @@
   "settingVoiceTimerPhraseTitle": "Phrase",
   "settingVoiceTimerPhraseDescription": "Prononcée pour un minuteur sans nom.",
   "settingVoiceTimerNamedPhraseTitle": "Phrase pour les minuteurs nommés",
-  "settingVoiceTimerNamedPhraseDescription": "{name} est remplacé par le nom du minuteur."
+  "settingVoiceTimerNamedPhraseDescription": "{name} est remplacé par le nom du minuteur.",
+  "settingVoiceTimerPillsViewTitle": "Afficher les minuteurs en pastilles",
+  "settingVoiceTimerPillsViewDescription": "Les minuteurs flottent au-dessus de l'écran au lieu d'ouvrir la vue plein écran.",
+  "settingVoiceTimersShareTitle": "Partager les minuteurs",
+  "settingVoiceTimersShareDescription": "Les minuteurs lancés sur ce kiosque tournent aussi sur les kiosques que vous choisissez.",
+  "settingVoiceTimersShareWithTitle": "Partager avec",
+  "settingVoiceTimersShareWithDescription": "Les kiosques qui affichent et font sonner les minuteurs de celui-ci.",
+  "settingVoiceTimersReceiveTitle": "Afficher les minuteurs partagés",
+  "settingVoiceTimersReceiveDescription": "Les minuteurs partagés par d'autres kiosques s'affichent et sonnent ici.",
+  "settingKioskAllowTimersTitle": "Minuteurs",
+  "settingKioskAllowTimersDescription": "Ouvrir la vue des minuteurs depuis le menu du kiosque."
 }

@@ -1,7 +1,5 @@
 {
   "@@locale": "ru",
-  "settingVoiceTimerPillsTitle": "Показывать плашки таймеров",
-  "settingVoiceTimerPillsDescription": "Работающие таймеры плавают по экрану. Перетащите их куда угодно.",
   "settingVoiceTimerNameInPillTitle": "Показывать название таймера",
   "settingVoiceTimerNameInPillDescription": "Название рядом со временем на плашке.",
   "settingVoiceTimerPillScaleTitle": "Масштаб плашек таймеров",
@@ -17,5 +15,15 @@
   "settingVoiceTimerPhraseTitle": "Фраза",
   "settingVoiceTimerPhraseDescription": "Произносится для таймера без названия.",
   "settingVoiceTimerNamedPhraseTitle": "Фраза для именованных таймеров",
-  "settingVoiceTimerNamedPhraseDescription": "{name} заменяется названием таймера."
+  "settingVoiceTimerNamedPhraseDescription": "{name} заменяется названием таймера.",
+  "settingVoiceTimerPillsViewTitle": "Показывать таймеры плашками",
+  "settingVoiceTimerPillsViewDescription": "Таймеры плавают по экрану вместо открытия полноэкранного вида.",
+  "settingVoiceTimersShareTitle": "Общие таймеры",
+  "settingVoiceTimersShareDescription": "Таймеры, запущенные на этом киоске, также работают на выбранных вами киосках.",
+  "settingVoiceTimersShareWithTitle": "Делиться с",
+  "settingVoiceTimersShareWithDescription": "Киоски, которые показывают таймеры этого киоска и звонят вместе с ним.",
+  "settingVoiceTimersReceiveTitle": "Показывать общие таймеры",
+  "settingVoiceTimersReceiveDescription": "Таймеры, которыми делятся другие киоски, показываются и звонят здесь.",
+  "settingKioskAllowTimersTitle": "Таймеры",
+  "settingKioskAllowTimersDescription": "Открывать вид таймеров из меню киоска."
 }

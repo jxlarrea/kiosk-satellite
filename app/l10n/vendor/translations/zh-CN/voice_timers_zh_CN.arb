@@ -7,5 +7,15 @@
   "voiceTimerCancel": "取消计时器",
   "voiceTimerActionError": "无法更改计时器。请检查连接，必要时更新 Voice Satellite。",
   "voiceTimerFinished": "计时器已结束",
-  "voiceTimerDismissHint": "点击关闭计时器提醒。"
+  "voiceTimerDismissHint": "点击关闭计时器提醒。",
+  "voiceTimersViewTitle": "计时器",
+  "voiceTimersEmpty": "没有计时器",
+  "voiceTimerPause": "暂停",
+  "voiceTimerResume": "继续",
+  "voiceTimerDismiss": "关闭",
+  "voiceTimerTimesUp": "时间到",
+  "voiceTimerPaused": "已暂停",
+  "voiceTimersShareNone": "未选择 Kiosk 设备",
+  "voiceTimersShareEmpty": "未找到其他 Kiosk 设备。请在每台设备上开启“远程管理”和“查找其他 Kiosk 设备”。",
+  "voiceTimersShareOffline": "离线"
 }

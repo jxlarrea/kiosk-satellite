@@ -120,6 +120,7 @@ void main() {
       'timer_id': 't1',
       'name': 'pizza',
       'total_seconds': 300,
+      'duration_seconds': 360,
       'seconds_left': 200,
       'is_active': false,
       'ends_at': null,

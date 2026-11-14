@@ -30,6 +30,7 @@ const compassViewKinds = [
   'music_library',
   'calendar',
   'alarms',
+  'timers',
   'now_playing',
   'camera',
   'app_launcher',

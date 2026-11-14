@@ -2177,6 +2177,9 @@ class UiStringsEs extends UiStrings {
   String get gestureOpenAlarmList => 'Abrir la lista de alarmas';
 
   @override
+  String get gestureOpenTimers => 'Abrir los temporizadores';
+
+  @override
   String get gestureOpenNextAlarm => 'Abrir la próxima alarma';
 
   @override
@@ -14913,6 +14916,9 @@ class UiStringsEs extends UiStrings {
   String get voiceSectionTimerEnds => 'Cuando termina un temporizador';
 
   @override
+  String get voiceSectionSharedTimers => 'Temporizadores compartidos';
+
+  @override
   String get voiceStatusEsphomeOff => 'El servidor ESPHome está apagado.';
 
   @override
@@ -15522,12 +15528,12 @@ class UiStringsEs extends UiStrings {
   String get voiceTesterPlayRecent => 'Reproducir los últimos 10 segundos';
 
   @override
-  String get settingVoiceTimerPillsTitle =>
-      'Mostrar indicadores de temporizador';
+  String get settingVoiceTimerPillsViewTitle =>
+      'Mostrar los temporizadores como indicadores';
 
   @override
-  String get settingVoiceTimerPillsDescription =>
-      'Los temporizadores activos flotan sobre la pantalla. Arrástralos a cualquier lugar.';
+  String get settingVoiceTimerPillsViewDescription =>
+      'Los temporizadores flotan sobre la pantalla en lugar de abrir la vista a pantalla completa.';
 
   @override
   String get settingVoiceTimerNameInPillTitle =>
@@ -15592,6 +15598,35 @@ class UiStringsEs extends UiStrings {
   String settingVoiceTimerNamedPhraseDescription(String name) {
     return '$name se sustituye por el nombre del temporizador.';
   }
+
+  @override
+  String get settingVoiceTimersShareTitle => 'Compartir temporizadores';
+
+  @override
+  String get settingVoiceTimersShareDescription =>
+      'Los temporizadores iniciados en este kiosko también corren en los kioskos que elijas.';
+
+  @override
+  String get settingVoiceTimersShareWithTitle => 'Compartir con';
+
+  @override
+  String get settingVoiceTimersShareWithDescription =>
+      'Los kioskos que muestran y hacen sonar los temporizadores de este.';
+
+  @override
+  String get settingVoiceTimersReceiveTitle =>
+      'Mostrar temporizadores compartidos';
+
+  @override
+  String get settingVoiceTimersReceiveDescription =>
+      'Los temporizadores compartidos por otros kioskos se muestran y suenan aquí.';
+
+  @override
+  String get settingKioskAllowTimersTitle => 'Temporizadores';
+
+  @override
+  String get settingKioskAllowTimersDescription =>
+      'Abrir la vista de temporizadores desde el menú del kiosko.';
 
   @override
   String get voiceWakePage => 'Palabra de activación';
@@ -16787,4 +16822,35 @@ class UiStringsEs extends UiStrings {
   @override
   String get voiceTimerDismissHint =>
       'Toca para cerrar la alerta del temporizador.';
+
+  @override
+  String get voiceTimersViewTitle => 'Temporizadores';
+
+  @override
+  String get voiceTimersEmpty => 'No hay temporizadores';
+
+  @override
+  String get voiceTimerPause => 'Pausar';
+
+  @override
+  String get voiceTimerResume => 'Reanudar';
+
+  @override
+  String get voiceTimerDismiss => 'Cerrar';
+
+  @override
+  String get voiceTimerTimesUp => 'Tiempo cumplido';
+
+  @override
+  String get voiceTimerPaused => 'En pausa';
+
+  @override
+  String get voiceTimersShareNone => 'Ningún kiosko elegido';
+
+  @override
+  String get voiceTimersShareEmpty =>
+      'No se encontraron otros kioskos. Activa Administración remota y Buscar otros kioskos en cada uno.';
+
+  @override
+  String get voiceTimersShareOffline => 'Sin conexión';
 }

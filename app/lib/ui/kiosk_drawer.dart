@@ -85,6 +85,7 @@ class KioskDrawer extends StatelessWidget {
             c.intercom.enabled &&
             c.intercom.available,
       'alarms' => allowed(defs.kioskAllowAlarms),
+      'timers' => allowed(defs.kioskAllowTimers),
       'calendar' => allowed(defs.kioskAllowCalendar),
       // Once some source is set up to browse.
       'music_library' =>
@@ -505,6 +506,13 @@ class KioskDrawer extends StatelessWidget {
       // The kiosk's own alarms: the full screen list.
       case 'alarms':
         return item(Icons.alarm, strings.alarmsTitle, () => run('openAlarms'));
+      // The timers, this kiosk's and the shared ones, full screen.
+      case 'timers':
+        return item(
+          Icons.timer_outlined,
+          strings.voiceTimersViewTitle,
+          () => run('openTimers'),
+        );
       // The family calendar, the same way.
       case 'calendar':
         return item(
@@ -1329,6 +1337,7 @@ const _menuOpens = [
   'camera',
   'intercom',
   'alarms',
+  'timers',
   'calendar',
   'music_library',
   'music_assistant',

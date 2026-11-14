@@ -45,5 +45,6 @@
   "gestureVoiceStop": "Detener el asistente de voz",
   "gestureVoiceMute": "Silenciar o reactivar Voice Satellite",
   "gestureOpenAlarmList": "Abrir la lista de alarmas",
-  "gestureOpenNextAlarm": "Abrir la próxima alarma"
+  "gestureOpenNextAlarm": "Abrir la próxima alarma",
+  "gestureOpenTimers": "Abrir los temporizadores"
 }

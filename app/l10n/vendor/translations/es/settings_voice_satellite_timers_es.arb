@@ -1,7 +1,5 @@
 {
   "@@locale": "es",
-  "settingVoiceTimerPillsTitle": "Mostrar indicadores de temporizador",
-  "settingVoiceTimerPillsDescription": "Los temporizadores activos flotan sobre la pantalla. Arrástralos a cualquier lugar.",
   "settingVoiceTimerNameInPillTitle": "Mostrar el nombre del temporizador",
   "settingVoiceTimerNameInPillDescription": "El nombre junto al tiempo en un indicador.",
   "settingVoiceTimerPillScaleTitle": "Escala de los indicadores de temporizador",
@@ -17,5 +15,15 @@
   "settingVoiceTimerPhraseTitle": "Frase",
   "settingVoiceTimerPhraseDescription": "Se dice para un temporizador sin nombre.",
   "settingVoiceTimerNamedPhraseTitle": "Frase para temporizadores con nombre",
-  "settingVoiceTimerNamedPhraseDescription": "{name} se sustituye por el nombre del temporizador."
+  "settingVoiceTimerNamedPhraseDescription": "{name} se sustituye por el nombre del temporizador.",
+  "settingVoiceTimerPillsViewTitle": "Mostrar los temporizadores como indicadores",
+  "settingVoiceTimerPillsViewDescription": "Los temporizadores flotan sobre la pantalla en lugar de abrir la vista a pantalla completa.",
+  "settingVoiceTimersShareTitle": "Compartir temporizadores",
+  "settingVoiceTimersShareDescription": "Los temporizadores iniciados en este kiosko también corren en los kioskos que elijas.",
+  "settingVoiceTimersShareWithTitle": "Compartir con",
+  "settingVoiceTimersShareWithDescription": "Los kioskos que muestran y hacen sonar los temporizadores de este.",
+  "settingVoiceTimersReceiveTitle": "Mostrar temporizadores compartidos",
+  "settingVoiceTimersReceiveDescription": "Los temporizadores compartidos por otros kioskos se muestran y suenan aquí.",
+  "settingKioskAllowTimersTitle": "Temporizadores",
+  "settingKioskAllowTimersDescription": "Abrir la vista de temporizadores desde el menú del kiosko."
 }

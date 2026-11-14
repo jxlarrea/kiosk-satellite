@@ -592,6 +592,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'gestureVoiceStop' => strings.gestureVoiceStop,
       'gestureVoiceMute' => strings.gestureVoiceMute,
       'gestureOpenAlarmList' => strings.gestureOpenAlarmList,
+      'gestureOpenTimers' => strings.gestureOpenTimers,
       'gestureOpenNextAlarm' => strings.gestureOpenNextAlarm,
       'gestureDescribeOpenHand' => strings.gestureDescribeOpenHand,
       'gestureTopLeft' => strings.gestureTopLeft,
@@ -5027,6 +5028,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceSectionSpeaker' => strings.voiceSectionSpeaker,
       'voiceSectionWakeCommand' => strings.voiceSectionWakeCommand,
       'voiceSectionTimerEnds' => strings.voiceSectionTimerEnds,
+      'voiceSectionSharedTimers' => strings.voiceSectionSharedTimers,
       'voiceStatusEsphomeOff' => strings.voiceStatusEsphomeOff,
       'voiceStatusNotAdded' => strings.voiceStatusNotAdded,
       'voiceStatusMuted' => strings.voiceStatusMuted,
@@ -5235,9 +5237,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceLogDistance' => strings.voiceLogDistance,
       'voiceLogConfidence' => strings.voiceLogConfidence,
       'voiceTesterPlayRecent' => strings.voiceTesterPlayRecent,
-      'settingVoiceTimerPillsTitle' => strings.settingVoiceTimerPillsTitle,
-      'settingVoiceTimerPillsDescription' =>
-        strings.settingVoiceTimerPillsDescription,
+      'settingVoiceTimerPillsViewTitle' =>
+        strings.settingVoiceTimerPillsViewTitle,
+      'settingVoiceTimerPillsViewDescription' =>
+        strings.settingVoiceTimerPillsViewDescription,
       'settingVoiceTimerNameInPillTitle' =>
         strings.settingVoiceTimerNameInPillTitle,
       'settingVoiceTimerNameInPillDescription' =>
@@ -5265,6 +5268,20 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingVoiceTimerPhraseDescription,
       'settingVoiceTimerNamedPhraseTitle' =>
         strings.settingVoiceTimerNamedPhraseTitle,
+      'settingVoiceTimersShareTitle' => strings.settingVoiceTimersShareTitle,
+      'settingVoiceTimersShareDescription' =>
+        strings.settingVoiceTimersShareDescription,
+      'settingVoiceTimersShareWithTitle' =>
+        strings.settingVoiceTimersShareWithTitle,
+      'settingVoiceTimersShareWithDescription' =>
+        strings.settingVoiceTimersShareWithDescription,
+      'settingVoiceTimersReceiveTitle' =>
+        strings.settingVoiceTimersReceiveTitle,
+      'settingVoiceTimersReceiveDescription' =>
+        strings.settingVoiceTimersReceiveDescription,
+      'settingKioskAllowTimersTitle' => strings.settingKioskAllowTimersTitle,
+      'settingKioskAllowTimersDescription' =>
+        strings.settingKioskAllowTimersDescription,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,
@@ -5601,5 +5618,15 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceTimerActionError' => strings.voiceTimerActionError,
       'voiceTimerFinished' => strings.voiceTimerFinished,
       'voiceTimerDismissHint' => strings.voiceTimerDismissHint,
+      'voiceTimersViewTitle' => strings.voiceTimersViewTitle,
+      'voiceTimersEmpty' => strings.voiceTimersEmpty,
+      'voiceTimerPause' => strings.voiceTimerPause,
+      'voiceTimerResume' => strings.voiceTimerResume,
+      'voiceTimerDismiss' => strings.voiceTimerDismiss,
+      'voiceTimerTimesUp' => strings.voiceTimerTimesUp,
+      'voiceTimerPaused' => strings.voiceTimerPaused,
+      'voiceTimersShareNone' => strings.voiceTimersShareNone,
+      'voiceTimersShareEmpty' => strings.voiceTimersShareEmpty,
+      'voiceTimersShareOffline' => strings.voiceTimersShareOffline,
       _ => fallback,
     };

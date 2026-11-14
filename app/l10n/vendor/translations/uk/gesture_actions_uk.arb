@@ -45,5 +45,6 @@
   "gestureVoiceStop": "Зупинити голосового асистента",
   "gestureVoiceMute": "Вимкнути або ввімкнути звук Voice Satellite",
   "gestureOpenAlarmList": "Відкрити список будильників",
-  "gestureOpenNextAlarm": "Відкрити наступний будильник"
+  "gestureOpenNextAlarm": "Відкрити наступний будильник",
+  "gestureOpenTimers": "Відкрити таймери"
 }

@@ -7,5 +7,15 @@
   "voiceTimerCancel": "Annuler le minuteur",
   "voiceTimerActionError": "Impossible de modifier le minuteur. Vérifiez la connexion et mettez à jour Voice Satellite si nécessaire.",
   "voiceTimerFinished": "Minuteur terminé",
-  "voiceTimerDismissHint": "Appuyez pour fermer l'alerte du minuteur."
+  "voiceTimerDismissHint": "Appuyez pour fermer l'alerte du minuteur.",
+  "voiceTimersViewTitle": "Minuteurs",
+  "voiceTimersEmpty": "Aucun minuteur",
+  "voiceTimerPause": "Pause",
+  "voiceTimerResume": "Reprendre",
+  "voiceTimerDismiss": "Ignorer",
+  "voiceTimerTimesUp": "Temps écoulé",
+  "voiceTimerPaused": "En pause",
+  "voiceTimersShareNone": "Aucun kiosque choisi",
+  "voiceTimersShareEmpty": "Aucun autre kiosque trouvé. Activez Gestion à distance et Trouver d'autres kiosques sur chacun.",
+  "voiceTimersShareOffline": "Hors ligne"
 }

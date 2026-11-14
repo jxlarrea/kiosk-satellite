@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "37e0ba2aea423de26d125f71311e84803de65ddf",
+  "revision": "ed51998f689cd77bbfca0ffa660bb141abdb0759",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -30,7 +30,7 @@
     "fleet_switcher_en.arb": "5991593bdda40d6869f6e2c3402a626b4b2ed8846c3c74135a0b7608cdd374d0",
     "fleet_sync_selection_en.arb": "bfb150594173903db5607071469d14391e5c1e657f84fb25a01a658e904e071b",
     "fleet_updates_en.arb": "3b5463bf3e7e96ff4554b313bcfdf836e38df61b1a0a848dc8d386a55615c954",
-    "gesture_actions_en.arb": "75c213cd0623e3c815f2cc96c4f0e85f91fc8df5cf6f0dfa645e95f0a57ab3ba",
+    "gesture_actions_en.arb": "15367f367895474adbd0261c5c71dafdd15a6376971570af5ea4ab205937c118",
     "gesture_descriptions_en.arb": "0da7338e10d59d50296ae35af8efd9e71aa7da3dc8b349c355f60cd398e9610d",
     "gesture_ha_actions_en.arb": "818613d55f55ab71c1743c7029cdf5e670effc0ecff6a6b274411e45fb400730",
     "gesture_hand_tester_en.arb": "fe0cd4b66d32658f05ca0f2eb0e1fe3ccadecdd9b277407ee317c4aa4e2aab27",
@@ -185,13 +185,13 @@
     "settings_voice_satellite_assistant_en.arb": "cb1c1e7e7eb13106a2a01ed17f63067b7f6bb38610280c84c6b117f1c7fb2b0b",
     "settings_voice_satellite_chimes_en.arb": "f04813a1c02ffac473a297cc3a09f300b5eaf6c0c01499bcfeaca6e7ee9fdb6d",
     "settings_voice_satellite_conversation_en.arb": "073792044375e483c56ecbf8246042bff4bdea4c20a851eee63264d0a9500f68",
-    "settings_voice_satellite_general_en.arb": "0ed04b549ae538b498f40c5674b0cc78a3ca0743b9696661d42414d802fe54f5",
+    "settings_voice_satellite_general_en.arb": "588c1e72ccee7a86dd5108fe42a44370e57979426fcad5cbc754d93e3f15e19c",
     "settings_voice_satellite_migration_en.arb": "c4975bfc10dc321a5c6f4af6493bb0839ebf14e33181c045809295d33d7493a7",
     "settings_voice_satellite_permissions_en.arb": "96fc7cab269a286bfa12be9adc861941c3548cc41b45195d828d739610441f5e",
     "settings_voice_satellite_realtime_en.arb": "87b9ff70fe6a03cf3a9fc68a1f0e4ce7877fe1ebcaa5078c64b38c56750e623c",
     "settings_voice_satellite_setup_en.arb": "5d6e328bc7d48614c3b6af3e3ee2ecd16c9e36b38991a5f2e9477b2ac0584874",
     "settings_voice_satellite_tester_en.arb": "fe39cf6c05dec11c5bde90939f5098ecf79a6457e407dfee3a0a4a3d3cf13f12",
-    "settings_voice_satellite_timers_en.arb": "78b531cd8177665bf1278546c31852f551748bc33926a966205acedfa27b087e",
+    "settings_voice_satellite_timers_en.arb": "df42ab9d3c8729deb374c596733b4e8151f37ef31f5d8d154e8c3b2d7dfa0e0e",
     "settings_voice_satellite_wake_word_en.arb": "d2279eb005162a31742b111ff460db6cc9b57a6d2f5a8606dcef9abe8a27d541",
     "settings_web_browsing_cache_security_en.arb": "6136fcc4a7f680970e7bb18657ebf219af541c04ad11028e58e574f6bf17aa3e",
     "settings_web_browsing_navigation_en.arb": "ce4e29dcf1800a203436a4aad1575976dea606df52b005d088f6932886c6495a",
@@ -210,7 +210,7 @@
     "sound_picker_en.arb": "3287a30c9f51f864354862d1208ec5b79e87026b6a5521939f71c944b02bb626",
     "voice_notices_en.arb": "6f7246b1e310900388131a547cfe7045d8e34e8260318e6e62c1bc1808f08abc",
     "voice_results_en.arb": "cf33c193dc7a294f22c5858ca1d19d74436ac0a41737cd5b3723b7bd54e8bb7f",
-    "voice_timers_en.arb": "fa73895ba659a16453e17103ea93e933b025fe296cff067a6191e0a7b52ebab4"
+    "voice_timers_en.arb": "1400535938a6456a04f7e63e389b19824015340043f785420b3b494ecfd9275a"
   },
   "scope": "setup-settings-navigation-and-device-drawer"
 }

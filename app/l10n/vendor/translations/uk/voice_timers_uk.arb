@@ -7,5 +7,15 @@
   "voiceTimerCancel": "Скасувати таймер",
   "voiceTimerActionError": "Не вдалося змінити таймер. Перевірте підключення та за потреби оновіть Voice Satellite.",
   "voiceTimerFinished": "Таймер завершено",
-  "voiceTimerDismissHint": "Торкніться, щоб закрити сповіщення таймера."
+  "voiceTimerDismissHint": "Торкніться, щоб закрити сповіщення таймера.",
+  "voiceTimersViewTitle": "Таймери",
+  "voiceTimersEmpty": "Немає таймерів",
+  "voiceTimerPause": "Пауза",
+  "voiceTimerResume": "Продовжити",
+  "voiceTimerDismiss": "Закрити",
+  "voiceTimerTimesUp": "Час вийшов",
+  "voiceTimerPaused": "Призупинено",
+  "voiceTimersShareNone": "Кіоски не вибрано",
+  "voiceTimersShareEmpty": "Інших кіосків не знайдено. Увімкніть на кожному «Віддалене керування» та «Пошук інших кіосків».",
+  "voiceTimersShareOffline": "Не в мережі"
 }

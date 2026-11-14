@@ -45,5 +45,6 @@
   "gestureVoiceStop": "停止语音助手",
   "gestureVoiceMute": "将 Voice Satellite 静音或取消静音",
   "gestureOpenAlarmList": "打开闹钟列表",
-  "gestureOpenNextAlarm": "打开下一个闹钟"
+  "gestureOpenNextAlarm": "打开下一个闹钟",
+  "gestureOpenTimers": "打开计时器"
 }
