@@ -57203,6 +57203,32 @@
       ]
     }
   },
+  "settingBrowserUserAgentTitle": "自定义浏览器标识（User-Agent）",
+  "@settingBrowserUserAgentTitle": {
+    "context": "Settings > Web Browsing > Custom user agent",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Custom user agent"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Custom user agent"
+      ]
+    }
+  },
+  "settingBrowserUserAgentDescription": "代替默认浏览器标识发送给网站。留空则使用默认值。",
+  "@settingBrowserUserAgentDescription": {
+    "context": "Settings > Web Browsing > Custom user agent",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Custom user agent"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Custom user agent"
+      ]
+    }
+  },
   "webGeolocationSection": "HTML5 地理位置",
   "@webGeolocationSection": {
     "context": "Settings > Web Browsing > HTML5 Geolocation",

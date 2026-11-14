@@ -15932,6 +15932,13 @@ class UiStringsNl extends UiStrings {
       'Accepteer niet-vertrouwde of zelfondertekende certificaten. Gebruik dit alleen op je eigen netwerk, omdat certificaatcontrole hiermee wordt uitgeschakeld.';
 
   @override
+  String get settingBrowserUserAgentTitle => 'Aangepaste useragent';
+
+  @override
+  String get settingBrowserUserAgentDescription =>
+      'Wordt naar websites gestuurd in plaats van de standaard useragent. Laat leeg om de standaard te gebruiken.';
+
+  @override
   String get webGeolocationSection => 'HTML5-geolocatie';
 
   @override

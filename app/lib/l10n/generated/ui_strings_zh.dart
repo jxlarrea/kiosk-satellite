@@ -14927,6 +14927,12 @@ class UiStringsZh extends UiStrings {
       '接受不受信任或自签名证书。此项会禁用证书验证，请仅在自己的网络中使用。';
 
   @override
+  String get settingBrowserUserAgentTitle => '自定义浏览器标识（User-Agent）';
+
+  @override
+  String get settingBrowserUserAgentDescription => '代替默认浏览器标识发送给网站。留空则使用默认值。';
+
+  @override
   String get webGeolocationSection => 'HTML5 地理位置';
 
   @override
@@ -30655,6 +30661,12 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingIgnoreSslErrorsDescription =>
       '接受不受信任或自签名证书。此项会禁用证书验证，请仅在自己的网络中使用。';
+
+  @override
+  String get settingBrowserUserAgentTitle => '自定义浏览器标识（User-Agent）';
+
+  @override
+  String get settingBrowserUserAgentDescription => '代替默认浏览器标识发送给网站。留空则使用默认值。';
 
   @override
   String get webGeolocationSection => 'HTML5 地理位置';

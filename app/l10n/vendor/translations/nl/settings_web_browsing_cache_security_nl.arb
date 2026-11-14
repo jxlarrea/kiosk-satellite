@@ -6,6 +6,8 @@
   "settingAllowMixedContentDescription": "Laat HTTPS-pagina's onveilige HTTP-bronnen laden. Dit helpt wanneer Home Assistant inhoud via http:// in een dashboard via https:// gebruikt.",
   "settingIgnoreSslErrorsTitle": "SSL-fouten negeren",
   "settingIgnoreSslErrorsDescription": "Accepteer niet-vertrouwde of zelfondertekende certificaten. Gebruik dit alleen op je eigen netwerk, omdat certificaatcontrole hiermee wordt uitgeschakeld.",
+  "settingBrowserUserAgentTitle": "Aangepaste useragent",
+  "settingBrowserUserAgentDescription": "Wordt naar websites gestuurd in plaats van de standaard useragent. Laat leeg om de standaard te gebruiken.",
   "webGeolocationSection": "HTML5-geolocatie",
   "settingWebGeolocationTitle": "Toegang tot geolocatie inschakelen",
   "settingWebGeolocationDescription": "Laat pagina's de locatie van het apparaat lezen, bijvoorbeeld voor een weerradar of een kaart. Alleen pagina's die via HTTPS zijn geladen, kunnen erom vragen.",

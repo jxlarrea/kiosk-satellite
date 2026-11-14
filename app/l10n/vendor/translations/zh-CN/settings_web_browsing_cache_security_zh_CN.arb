@@ -6,6 +6,8 @@
   "settingAllowMixedContentDescription": "允许 HTTPS 页面加载不安全的 HTTP 资源，适用于 Home Assistant 在 https:// 仪表盘中混用 http:// 内容的情况。",
   "settingIgnoreSslErrorsTitle": "忽略 SSL 错误",
   "settingIgnoreSslErrorsDescription": "接受不受信任或自签名证书。此项会禁用证书验证，请仅在自己的网络中使用。",
+  "settingBrowserUserAgentTitle": "自定义浏览器标识（User-Agent）",
+  "settingBrowserUserAgentDescription": "代替默认浏览器标识发送给网站。留空则使用默认值。",
   "webGeolocationSection": "HTML5 地理位置",
   "settingWebGeolocationTitle": "启用地理位置访问",
   "settingWebGeolocationDescription": "允许页面读取设备位置，例如天气雷达或地图。只有通过 HTTPS 加载的页面才能请求位置。",

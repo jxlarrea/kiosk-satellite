@@ -1116,6 +1116,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingIgnoreSslErrorsTitle",
     "description": "settingIgnoreSslErrorsDescription",
   },
+  "browser.user_agent": {
+    "title": "settingBrowserUserAgentTitle",
+    "description": "settingBrowserUserAgentDescription",
+  },
   "sendspin.player_source": {
     "title": "settingSendspinPlayerSourceTitle",
     "description": "settingSendspinPlayerSourceDescription",

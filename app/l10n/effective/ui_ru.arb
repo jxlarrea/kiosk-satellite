@@ -57203,6 +57203,32 @@
       ]
     }
   },
+  "settingBrowserUserAgentTitle": "Пользовательский User agent",
+  "@settingBrowserUserAgentTitle": {
+    "context": "Settings > Web Browsing > Custom user agent",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Custom user agent"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Custom user agent"
+      ]
+    }
+  },
+  "settingBrowserUserAgentDescription": "Отправляется сайтам вместо стандартного User agent. Оставьте пустым, чтобы использовать стандартный.",
+  "@settingBrowserUserAgentDescription": {
+    "context": "Settings > Web Browsing > Custom user agent",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Custom user agent"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Custom user agent"
+      ]
+    }
+  },
   "webGeolocationSection": "Геолокация HTML5",
   "@webGeolocationSection": {
     "context": "Settings > Web Browsing > HTML5 Geolocation",

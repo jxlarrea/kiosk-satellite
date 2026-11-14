@@ -16060,6 +16060,13 @@ class UiStringsEs extends UiStrings {
       'Acepta certificados no confiables o autofirmados. Úsalo solo en tu propia red, ya que desactiva la verificación de certificados.';
 
   @override
+  String get settingBrowserUserAgentTitle => 'Agente de usuario personalizado';
+
+  @override
+  String get settingBrowserUserAgentDescription =>
+      'Se envía a los sitios web en lugar del agente de usuario predeterminado. Déjalo vacío para usar el predeterminado.';
+
+  @override
   String get webGeolocationSection => 'Geolocalización HTML5';
 
   @override

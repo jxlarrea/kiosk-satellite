@@ -15852,6 +15852,13 @@ class UiStringsRu extends UiStrings {
       'Принимать недоверенные или самоподписанные сертификаты. Используйте только в собственной сети: это отключает проверку сертификатов.';
 
   @override
+  String get settingBrowserUserAgentTitle => 'Пользовательский User agent';
+
+  @override
+  String get settingBrowserUserAgentDescription =>
+      'Отправляется сайтам вместо стандартного User agent. Оставьте пустым, чтобы использовать стандартный.';
+
+  @override
   String get webGeolocationSection => 'Геолокация HTML5';
 
   @override

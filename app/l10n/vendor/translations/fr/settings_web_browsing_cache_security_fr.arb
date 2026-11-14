@@ -6,6 +6,8 @@
   "settingAllowMixedContentDescription": "Laisser les pages HTTPS charger des ressources HTTP non sécurisées. Utile quand un tableau de bord https:// affiché par Home Assistant contient du contenu http:// non sécurisé.",
   "settingIgnoreSslErrorsTitle": "Ignorer les erreurs SSL",
   "settingIgnoreSslErrorsDescription": "Accepter les certificats non fiables ou auto-signés. À n'utiliser que sur votre propre réseau, car cela désactive la vérification des certificats.",
+  "settingBrowserUserAgentTitle": "Agent utilisateur personnalisé",
+  "settingBrowserUserAgentDescription": "Envoyé aux sites web à la place de l'agent utilisateur par défaut. Laissez vide pour utiliser celui par défaut.",
   "webGeolocationSection": "Géolocalisation HTML5",
   "settingWebGeolocationTitle": "Activer l'accès à la géolocalisation",
   "settingWebGeolocationDescription": "Permet aux pages de lire la position de l'appareil, par exemple pour un radar météo ou une carte. Seules les pages chargées en HTTPS peuvent la demander.",

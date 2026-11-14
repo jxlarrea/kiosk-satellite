@@ -27473,6 +27473,18 @@ abstract class UiStrings {
   /// **'Accept untrusted or self-signed certificates. Use only on your own network, since it disables certificate verification.'**
   String get settingIgnoreSslErrorsDescription;
 
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom user agent'**
+  String get settingBrowserUserAgentTitle;
+
+  /// Help below this setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to websites in place of the default user agent. Leave empty to use the default.'**
+  String get settingBrowserUserAgentDescription;
+
   /// Heading of the group with the switch that lets web pages read the device location through the browser's Geolocation API. HTML5 Geolocation is the name of that browser feature.
   ///
   /// In en, this message translates to:

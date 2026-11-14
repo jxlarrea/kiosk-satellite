@@ -843,6 +843,40 @@ const ignoreSslErrors = SettingDef<bool>(
   category: 'Browser',
 );
 
+/// A user agent header value: one line, no control characters. The field
+/// is a multiline editor, and a line break typed or pasted there is not
+/// valid in a header, so each run of them becomes one space.
+String normalizeUserAgent(String value) => value
+    .replaceAll(RegExp(r'[\x00-\x1F\x7F]+'), ' ')
+    .replaceAll(RegExp(' {2,}'), ' ')
+    .trim();
+
+/// [SettingDef.normalizer] adapter for [normalizeUserAgent].
+Object normalizeUserAgentSetting(Object value) =>
+    value is String ? normalizeUserAgent(value) : value;
+
+/// The user agent the web views send in place of the WebView's own, for a
+/// site that turns away the default one (issue #1425: a firewall that
+/// refuses any user agent with the word Echo, which the Echo images carry
+/// in their model name). Empty keeps the default. It covers the dashboard,
+/// external pages and the Website screensaver. The app's own requests keep
+/// [AppIdentity.userAgent].
+const browserUserAgent = SettingDef<String>(
+  key: 'browser.user_agent',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Custom user agent',
+  description:
+      'Sent to websites in place of the default user agent. Leave empty '
+      'to use the default.',
+  category: 'Browser',
+  // A user agent runs well past a one-line field, so it gets the editor
+  // with several lines. The normalizer folds any line break typed or
+  // pasted there into a space.
+  multiline: true,
+  normalizer: normalizeUserAgentSetting,
+);
+
 // Hidden: the URL Filter page in both settings surfaces owns this value,
 // a JSON array of {name, pattern, type, scope, action} rules for the
 // addresses the web views block, or the only ones they open (see
@@ -14157,6 +14191,7 @@ const List<SettingDef<Object>> allSettings = [
   browserInjectJsExternal,
   allowMixedContent,
   ignoreSslErrors,
+  browserUserAgent,
   browserUrlFilter,
   browserUrlFilterNotice,
   webMicrophone,

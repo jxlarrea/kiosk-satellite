@@ -6,6 +6,8 @@
   "settingAllowMixedContentDescription": "Дозволити сторінкам HTTPS завантажувати незахищені ресурси HTTP. Корисно, коли Home Assistant включає вміст з http:// у панель керування через https:// для підключення.",
   "settingIgnoreSslErrorsTitle": "Ігнорувати помилки SSL",
   "settingIgnoreSslErrorsDescription": "Приймати ненадійні або самопідписані сертифікати. Використовуйте лише у власній мережі, оскільки це вимикає перевірку сертифікатів.",
+  "settingBrowserUserAgentTitle": "Власний агент користувача",
+  "settingBrowserUserAgentDescription": "Надсилається вебсайтам замість стандартного агента користувача. Залиште порожнім, щоб використовувати стандартний.",
   "webGeolocationSection": "Геолокація HTML5",
   "settingWebGeolocationTitle": "Увімкнути доступ до геолокації",
   "settingWebGeolocationDescription": "Дозволяє сторінкам зчитувати місцезнаходження пристрою, наприклад для погодного радара чи карти. Запитувати його можуть лише сторінки, завантажені через HTTPS.",

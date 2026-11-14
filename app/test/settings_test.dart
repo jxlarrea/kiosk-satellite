@@ -105,6 +105,59 @@ void main() {
     });
   });
 
+  group('Custom user agent', () {
+    const agent =
+        'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 '
+        '(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+
+    test('empty by default, which keeps the WebView user agent', () async {
+      await build({});
+      expect(settings.get(defs.browserUserAgent), '');
+    });
+
+    test('sits right after Ignore SSL errors on Web Browsing', () {
+      final keys = [for (final def in defs.allSettings) def.key];
+      expect(
+        keys.indexOf(defs.browserUserAgent.key),
+        keys.indexOf(defs.ignoreSslErrors.key) + 1,
+      );
+      expect(defs.browserUserAgent.category, defs.ignoreSslErrors.category);
+      expect(defs.browserUserAgent.section, defs.ignoreSslErrors.section);
+      expect(defs.browserUserAgent.hidden, isFalse);
+    });
+
+    test('a pasted value is stored as one clean line', () async {
+      await build({});
+      expect(
+        await settings.setFromJson(
+          'browser.user_agent',
+          '  Mozilla/5.0 (Linux; Android 10; K)\r\n\tAppleWebKit/537.36 '
+              '(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36\n',
+        ),
+        isTrue,
+      );
+      expect(settings.get(defs.browserUserAgent), agent);
+    });
+
+    test('line breaks typed in the editor become spaces', () async {
+      await build({});
+      await settings.set(
+        defs.browserUserAgent,
+        'Mozilla/5.0 (Linux; Android 10; K)\nAppleWebKit/537.36 \n\n'
+        '(KHTML, like Gecko)\r\nChrome/130.0.0.0 Safari/537.36',
+      );
+      expect(settings.get(defs.browserUserAgent), agent);
+      expect(defs.browserUserAgent.multiline, isTrue);
+    });
+
+    test('clearing the field goes back to the default', () async {
+      await build({'ks.browser.user_agent': agent});
+      expect(settings.get(defs.browserUserAgent), agent);
+      expect(await settings.setFromJson('browser.user_agent', '  '), isTrue);
+      expect(settings.get(defs.browserUserAgent), '');
+    });
+  });
+
   group('Fill the screen, switch to choice', () {
     test('a stored switch carries over to the matching choice', () async {
       await build({

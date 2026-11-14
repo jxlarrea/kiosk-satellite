@@ -649,6 +649,7 @@ class _KioskScreenState extends State<KioskScreen>
     }
     if (e.key == defs.allowMixedContent.key ||
         e.key == defs.ignoreSslErrors.key ||
+        e.key == defs.browserUserAgent.key ||
         e.key == defs.disableCache.key ||
         e.key == defs.pinchToZoom.key ||
         e.key == defs.wsFilter.key ||
@@ -2224,6 +2225,8 @@ class _KioskScreenState extends State<KioskScreen>
       // moment the dashboard appears (issue #302), and those devices draw
       // through the texture instead.
       useHybridComposition: !c.settings.get(defs.legacyWebView),
+      // Empty keeps the WebView's own user agent.
+      userAgent: c.settings.get(defs.browserUserAgent),
       // The plugin maps false to LAYER_TYPE_NONE, which keeps the Activity's
       // hardware acceleration without caching the live page in another GPU
       // texture. A forced hardware layer adds work to every scrolling frame.
@@ -3227,6 +3230,8 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
           hardwareAcceleration: false,
           transparentBackground: false,
           supportZoom: false,
+          // Empty keeps the WebView's own user agent.
+          userAgent: widget.container.settings.get(defs.browserUserAgent),
           // A call or camera page opened here gets the dashboard's media
           // policy (issue #700): autoplay with sound and mic/camera access
           // follow the same Web Content settings.

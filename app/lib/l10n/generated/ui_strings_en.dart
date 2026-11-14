@@ -15746,6 +15746,13 @@ class UiStringsEn extends UiStrings {
       'Accept untrusted or self-signed certificates. Use only on your own network, since it disables certificate verification.';
 
   @override
+  String get settingBrowserUserAgentTitle => 'Custom user agent';
+
+  @override
+  String get settingBrowserUserAgentDescription =>
+      'Sent to websites in place of the default user agent. Leave empty to use the default.';
+
+  @override
   String get webGeolocationSection => 'HTML5 Geolocation';
 
   @override

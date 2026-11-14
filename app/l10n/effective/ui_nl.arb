@@ -57203,6 +57203,32 @@
       ]
     }
   },
+  "settingBrowserUserAgentTitle": "Aangepaste useragent",
+  "@settingBrowserUserAgentTitle": {
+    "context": "Settings > Web Browsing > Custom user agent",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Custom user agent"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Custom user agent"
+      ]
+    }
+  },
+  "settingBrowserUserAgentDescription": "Wordt naar websites gestuurd in plaats van de standaard useragent. Laat leeg om de standaard te gebruiken.",
+  "@settingBrowserUserAgentDescription": {
+    "context": "Settings > Web Browsing > Custom user agent",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Web Browsing > Custom user agent"
+      ],
+      "remoteAdmin": [
+        "Web Browsing > Custom user agent"
+      ]
+    }
+  },
   "webGeolocationSection": "HTML5-geolocatie",
   "@webGeolocationSection": {
     "context": "Settings > Web Browsing > HTML5 Geolocation",

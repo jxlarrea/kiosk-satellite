@@ -5412,6 +5412,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingIgnoreSslErrorsTitle' => strings.settingIgnoreSslErrorsTitle,
       'settingIgnoreSslErrorsDescription' =>
         strings.settingIgnoreSslErrorsDescription,
+      'settingBrowserUserAgentTitle' => strings.settingBrowserUserAgentTitle,
+      'settingBrowserUserAgentDescription' =>
+        strings.settingBrowserUserAgentDescription,
       'webGeolocationSection' => strings.webGeolocationSection,
       'settingWebGeolocationTitle' => strings.settingWebGeolocationTitle,
       'settingWebGeolocationDescription' =>

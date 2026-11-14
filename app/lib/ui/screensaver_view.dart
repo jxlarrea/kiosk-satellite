@@ -4002,6 +4002,8 @@ setInterval(function () {
         // navigate the app anywhere.
         mediaPlaybackRequiresUserGesture: false,
         allowsInlineMediaPlayback: true,
+        // Empty keeps the WebView's own user agent.
+        userAgent: widget.container.settings.get(defs.browserUserAgent),
       ),
       // Same policy as the kiosk WebView: the media screensaver talks to
       // the same self-signed Home Assistant.

@@ -16050,6 +16050,13 @@ class UiStringsFr extends UiStrings {
       'Accepter les certificats non fiables ou auto-signés. À n\'utiliser que sur votre propre réseau, car cela désactive la vérification des certificats.';
 
   @override
+  String get settingBrowserUserAgentTitle => 'Agent utilisateur personnalisé';
+
+  @override
+  String get settingBrowserUserAgentDescription =>
+      'Envoyé aux sites web à la place de l\'agent utilisateur par défaut. Laissez vide pour utiliser celui par défaut.';
+
+  @override
   String get webGeolocationSection => 'Géolocalisation HTML5';
 
   @override

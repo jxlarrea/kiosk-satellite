@@ -16079,6 +16079,13 @@ class UiStringsDe extends UiStrings {
       'Akzeptiert nicht vertrauenswürdige oder selbst signierte Zertifikate. Nur im eigenen Netzwerk verwenden, da dadurch die Zertifikatsprüfung deaktiviert wird.';
 
   @override
+  String get settingBrowserUserAgentTitle => 'Benutzerdefinierter User Agent';
+
+  @override
+  String get settingBrowserUserAgentDescription =>
+      'Wird anstelle des Standard-User-Agents an Websites gesendet. Leer lassen, um den Standard zu verwenden.';
+
+  @override
   String get webGeolocationSection => 'HTML5-Geolokalisierung';
 
   @override

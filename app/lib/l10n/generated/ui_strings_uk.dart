@@ -15914,6 +15914,13 @@ class UiStringsUk extends UiStrings {
       'Приймати ненадійні або самопідписані сертифікати. Використовуйте лише у власній мережі, оскільки це вимикає перевірку сертифікатів.';
 
   @override
+  String get settingBrowserUserAgentTitle => 'Власний агент користувача';
+
+  @override
+  String get settingBrowserUserAgentDescription =>
+      'Надсилається вебсайтам замість стандартного агента користувача. Залиште порожнім, щоб використовувати стандартний.';
+
+  @override
   String get webGeolocationSection => 'Геолокація HTML5';
 
   @override
