@@ -83,7 +83,7 @@ When Home Assistant runs the integration, onboarding offers the same migration i
 | | Keep the answer on screen, Keep results on screen, Announcement time | How long each stays. Results at 0 stay until dismissed. |
 | Chimes | Play chimes, per-event sounds and volumes | The wake, done, error and announcement sounds, built in or from the sounds folder, each with its own volume under the assistant volume. The timer sound is under **Settings > Timers**. |
 
-The timer settings have their own page, **Settings > Timers**. See [Timers](#timers).
+The timer settings have their own page, **Settings > Timers**. See [Timer settings](timers.md#timer-settings).
 
 The **Wake Word Tester** and **Wake word diagnostics** are covered in [Microphone settings](microphone.md).
 
@@ -177,7 +177,7 @@ These come from Home Assistant through the kiosk's satellite entity, as they do 
 
 | Feature | How |
 | --- | --- |
-| Timers | Ask for one by voice. The full screen timers view opens while it runs and when it ends. See [Timers](#timers). |
+| Timers | Ask for one by voice. The full screen Timers view opens when it starts, nears its end and finishes. See [Timers](timers.md). |
 | Announcements | `assist_satellite.announce` on the kiosk's satellite. |
 | Start a conversation | `assist_satellite.start_conversation`: the kiosk speaks, then listens for the reply. With a realtime provider on Assistant 1, the provider takes the conversation. See [Realtime conversations](#realtime-conversations). |
 | Ask a question | `assist_satellite.ask_question`: the kiosk speaks, listens and hands the reply to Home Assistant, as a Voice PE does. |
@@ -187,74 +187,7 @@ Double tap the overlay to end a turn or close what lingers. With **Stop word int
 
 ## Timers
 
-A timer started by voice opens the full screen timers view. It opens again when a timer finishes. The timer that ends first shows large at the top with its name, the time left as hours, minutes and seconds, a bar that runs down and **Pause** and **Cancel** buttons. The other timers are listed with the same time and bar, beside it on a wide and short screen such as an Echo Show 5 and under it everywhere else. With more than three, the list scrolls.
-
-A finished timer takes the top in its alert color with **Time's up** and a **Dismiss** button. The stop word dismisses it too.
-
-The X closes the view until the next timer starts or finishes. The view closes by itself once the last timer is gone.
-
-The view sits under the screensaver, like the alarm list. A timer that starts dismisses the screensaver so the view shows, with **Show Timers view when a timer starts** on. A timer that only runs does not keep the screensaver away, so it comes back on its idle timer, unless **Pause screensaver while a timer runs** is on. Once a timer reaches the **Show Timers view when near completion** mark, and when one finishes, the screensaver is dismissed and held back so the view shows at full brightness. Closing the view, or the last such timer going, lets the screensaver start again.
-
-Open the view at any time with **Timers** in the [drawer menu](drawer-menu.md), the **Open the timers** [gesture action](gestures.md), a `ks://timers` [dashboard link](dashboard-links.md) or as a view of the [Compass layout](navigation.md). **Kiosk Mode > Allowed Actions > Timers** decides whether the locked kiosk's menu and Compass offer it.
-
-### Setting and changing timers by hand
-
-Timers can also be set from the timers view and from the remote admin, with native Voice Satellite enabled on the kiosk. Home Assistant holds them like the ones set by voice.
-
-- **Set a timer:** tap **Set a timer** in the timers view, beside the view's name while a timer runs. Pick hours, minutes and seconds on the wheels, give it a name if you want one and tap **Start**.
-- **Change the time left:** tap a timer's time, move the wheels and tap **Set**. Home Assistant has no way to rename a timer, so the name stays.
-- **Delete:** tap a timer's time and then **Delete**, or use its **Cancel** button.
-
-In the remote admin, the **Timers** page lists the kiosk's timers with their time left. **Set a timer** starts one, a row opens its time left and the bin cancels it. **Settings > Timers > Manage timers** on the kiosk opens the timers view.
-
-A timer another kiosk shares can be changed and cancelled the same way. The change is made on the kiosk that owns it.
-
-To get the floating pills back, turn on **Show timers as pills** under **Settings > Timers**. Tap a pill to pause it and double tap it to cancel. The full screen view then opens only from the menu, a gesture, a link or Compass.
-
-### Timer settings
-
-**Settings > Timers** holds everything about timers:
-
-| Group | Setting | What it does |
-|---|---|---|
-| | Show Timers view when a timer starts | On by default. Off, starting a timer leaves the screen as it is and the view waits for the near completion mark or the finish. Not shown with **Show timers as pills** on. |
-| | Show Timers view when near completion | From 30 seconds to 5 minutes, 1 minute by default. The timers view opens again once a running timer has that long left, if it was closed or another view was opened after the timer started, and the screensaver is dismissed and held. Each timer does it once. Not shown with **Show timers as pills** on. |
-| | Pause screensaver while a timer runs | Off by default. Keeps the screensaver from starting while the Timers view is open with a running timer on it. A paused timer does not count, and the screensaver starts as usual once the view is closed or another view is in front. Not shown with **Show timers as pills** on. |
-| | Show in the kiosk menu | Opens **Drawer menu items**, where the **Timers** row is turned on or off. |
-| Timers | Manage timers | Opens the timers view. In the remote admin, the list of timers itself. |
-| Shared timers | Share timers, Share with, Show shared timers | Run this kiosk's timers on other kiosks too. See [Shared timers](#shared-timers). |
-| When a timer ends | Timer sound, Timer sound volume | The sound that repeats until the timer is dismissed, built in or from the sounds folder, and its volume under the assistant volume. |
-| | Mute timer alerts, Speak when a timer ends | Show the alert without the sound, or say a phrase between the alert sounds. |
-| Text to Speech | Text to speech engine, Language, Voice | Shown with **Speak when a timer ends** on. The Home Assistant text to speech entity that speaks the phrase, with its language and voice. With no engine picked, the first one Home Assistant has speaks it. |
-| Pills | Show timers as pills | Off by default. Timers float over the screen instead of opening the full screen view and can be dragged anywhere. The rows below show only with it on. |
-| | Show the timer name, Timer pill scale | The name beside the time and the size of the pills. |
-| | Show finished timer pills, Show the name on the alert | Whether a finished timer shows a pill and its name. Without the pill, the stop word still ends the alert. The full screen view always shows a finished timer with its name. |
-| Voice timers | Manage timers using Voice Satellite | Opens this guide. |
-
-Most rows show only with Voice Satellite enabled on the kiosk. Fleet profiles sync these settings with the **Timers** category. **Share with** and the timer sound stay on each kiosk.
-
-### Shared timers
-
-Home Assistant keeps a timer on the satellite it was started on. Shared timers show and ring it on other kiosks as well.
-
-1. On the kiosk where timers are started, open **Settings > Timers** and turn on **Share timers**.
-2. Tap **Share with** and pick the kiosks that should run its timers.
-
-Each kiosk has its own list. The bedroom kiosk can share with the office, the kitchen and the living room while the kitchen kiosk shares only with the living room.
-
-On the kiosks picked, the timer shows in the timers view, or as a pill, with the name of the kiosk it comes from. The countdown and the alert stay in step with the kiosk that owns the timer. Pause, Cancel and Dismiss work from any of them and apply everywhere. Mute timer alerts, Speak when a timer ends and the pill settings are each kiosk's own.
-
-The timer stays in Home Assistant as before. Voice commands, the `vs_` actions, the timer sensors and the `esphome.kiosk_satellite_timer` event work only on the kiosk that owns it.
-
-Requirements:
-
-- **Remote admin** and **Find other kiosks** must be on for every kiosk involved. The requests between kiosks use the remote admin port.
-- **Show shared timers**, on by default, must be on for the kiosks picked. Shared timers are refused on a kiosk with it off.
-- The sharing kiosk runs Voice Satellite in the app. The kiosks picked do not need Voice Satellite.
-
-> **Note:** Shared timers need no password or key. Any device on the network can send a timer to a kiosk while **Show shared timers** is on. Turn it off for a kiosk on a network you do not trust.
-
-The timer list is sent again every 30 seconds while timers run, which covers an update that got lost. Timers from a kiosk that sends nothing for 100 seconds are dropped.
+Timers have their own guide: [Timers](timers.md). It covers the full screen Timers view, setting timers by voice and by hand, shared timers and the timer settings.
 
 ## Home Assistant entities and actions
 

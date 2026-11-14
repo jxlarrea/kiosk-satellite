@@ -56,7 +56,7 @@ The action chooser groups options into three categories: Kiosk Satellite, Androi
 | Snooze the alarm | Snoozes the ringing [alarm](alarms.md) for the snooze length, the same as the Snooze button. Does nothing unless an alarm is ringing. |
 | Open the alarm list | Opens the full screen [alarm](alarms.md) list. Like the other actions, it works even with Alarms unchecked in [Drawer menu items](drawer-menu.md). |
 | Open the next alarm | Opens the alarm that rings next, snoozed alarms included, on its details page. Opens the alarm list when no alarm is set. |
-| Open the timers | Opens the full screen [timers](voice-satellite.md#timers) view. |
+| Open the timers | Opens the full screen [timers](timers.md) view. |
 | Open the calendar | Opens the full screen [calendar](calendar.md) on its default view. Like the other actions, it works even with Calendar unchecked in [Drawer menu items](drawer-menu.md). |
 | Open Music Library | Opens the [Music Library](music-library.md). It works even with Music Library unchecked in [Drawer menu items](drawer-menu.md), once a source is set up. |
 | Start a voice command | Starts listening for a command, as if the wake word had been heard. Requires the native [Voice Satellite](voice-satellite.md). |

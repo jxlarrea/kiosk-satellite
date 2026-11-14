@@ -171,7 +171,7 @@ The Alarms category carries the alarm defaults (the volume, the tone, snooze, Si
 
 The Calendar category carries the [calendars](calendar.md) with their names, colors and people, and the Display and Kiosk settings. The calendars hidden with their chips stay on each kiosk.
 
-The Timers category carries the [timer settings](voice-satellite.md#timer-settings): the pills, what a finished timer does, Share timers and Show shared timers. The kiosks picked in Share with and the timer sound stay on each kiosk. These settings used to sync with Voice Satellite, so add Timers to a profile that should keep pushing them.
+The Timers category carries the [timer settings](timers.md#timer-settings): the pills, what a finished timer does, Share timers and Show shared timers. The kiosks picked in Share with and the timer sound stay on each kiosk. These settings used to sync with Voice Satellite, so add Timers to a profile that should keep pushing them.
 
 The Navigation category carries the navigation style, the [Compass](navigation.md) layout and its options. A camera view in the layout only shows on a follower that has it, so sync Camera Streams too if the layout holds one.
 

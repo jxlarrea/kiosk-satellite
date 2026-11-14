@@ -33,7 +33,7 @@ A `ks://` link runs the same action a [gesture](gestures.md) can, with the same 
 | `ks://screensaver/stop` | Stops it. |
 | `ks://alarms` | Opens the full screen [alarm](alarms.md) list. |
 | `ks://alarms/next` | Opens the alarm that rings next, snoozed alarms included, on its details page. Opens the list when no alarm is set. |
-| `ks://timers` | Opens the full screen [timers](voice-satellite.md#timers) view. |
+| `ks://timers` | Opens the full screen [timers](timers.md) view. |
 | `ks://calendar` | Opens the [calendar](calendar.md) on its default view. |
 | `ks://calendar/<view>` | Opens the calendar on `day`, `week`, `month` or `schedule`. |
 | `ks://music-library` | Opens the [Music Library](music-library.md). It does nothing until a source is set up. |

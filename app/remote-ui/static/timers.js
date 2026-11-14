@@ -84,7 +84,7 @@ export async function openShareWithPicker(title) {
 
 // Timers by voice are Home Assistant's own, so this group only points at
 // the guide. Last on the page, as on the device.
-const VOICE_DOCS_URL = 'https://kiosksatellite.com/docs/voice-satellite/#timers';
+const VOICE_DOCS_URL = 'https://kiosksatellite.com/docs/timers/#setting-timers-by-voice';
 
 /* ---- The timers ----
    The list the device's timers view shows, read from timersStatus and

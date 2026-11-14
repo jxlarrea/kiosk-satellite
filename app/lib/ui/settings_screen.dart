@@ -225,7 +225,7 @@ const _voiceAlarmsDocsUrl =
 const _voiceCalendarDocsUrl =
     'https://kiosksatellite.com/docs/calendar/#managing-the-calendar-by-voice';
 const _voiceTimersDocsUrl =
-    'https://kiosksatellite.com/docs/voice-satellite/#timers';
+    'https://kiosksatellite.com/docs/timers/#setting-timers-by-voice';
 const _voiceMusicDocsUrl =
     'https://kiosksatellite.com/docs/music-library/#playing-music-by-voice';
 

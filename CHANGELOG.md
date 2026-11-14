@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **Timers guide.** Timers have their own page in the documentation, with the Timers view, setting timers by voice and by hand, shared timers and the settings. **Manage timers using Voice Satellite** under **Settings > Timers** opens it. The Voice Satellite guide keeps a pointer to it.
+
 ## v2026.11.20 - 2026-11-14
 
 ### Added
