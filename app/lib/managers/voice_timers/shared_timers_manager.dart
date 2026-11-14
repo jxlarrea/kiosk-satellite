@@ -7,6 +7,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/kiosk_http_client.dart';
 import '../../core/manager.dart';
+import '../analytics/usage_counters.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'voice_timer_manager.dart';
@@ -607,6 +608,18 @@ class SharedTimersManager extends Manager {
         ),
       );
     }
+    // Usage analytics: each shared timer counts once, when it first shows
+    // here. The heartbeat sends the same timers again every 30 seconds.
+    final known = _counted[id] ?? const <String>{};
+    final ids = {for (final t in running) t.id};
+    unawaited(
+      UsageCounters.bump(
+        _settings,
+        'timers_shared_received',
+        by: ids.difference(known).length,
+      ),
+    );
+    _counted[id] = ids;
     final ringAt = (p['ring_at'] as num?)?.toInt();
     final speech = p['speech'];
     _timers.setShared(
@@ -640,9 +653,14 @@ class SharedTimersManager extends Manager {
     }
   }
 
+  /// The shared timers already counted for usage analytics, by the kiosk
+  /// they come from.
+  final _counted = <String, Set<String>>{};
+
   void _drop(String id) {
     final origin = _origins.remove(id);
     _last.remove(id);
+    _counted.remove(id);
     if (origin == null) return;
     _timers.setShared(
       id,

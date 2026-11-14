@@ -21,6 +21,7 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../update/update_http_client.dart';
 import '../voice/wake_catalog.dart';
+import '../voice_timers/shared_timers_manager.dart';
 import '../wake_word/engine.dart';
 import 'analytics_scrub.dart';
 import 'crash_journal.dart';
@@ -586,6 +587,42 @@ class AnalyticsManager extends Manager {
       if (arbitration)
         for (final k in ['vs_arbitration_won', 'vs_arbitration_lost'])
           k: counts[k] ?? 0,
+      if (nativeOn)
+        for (final k in ['timers_started', 'timers_by_hand']) k: counts[k] ?? 0,
+      if (s.get(defs.voiceTimersReceive))
+        'timers_shared_received': counts['timers_shared_received'] ?? 0,
+    };
+    // Timers: the switches of Settings > Timers, how many kiosks the timers
+    // are shared with and roughly how often timers start, are set by hand
+    // or arrive from another kiosk. Never the names of the timers or of the
+    // kiosks.
+    final timerPills = s.get(defs.voiceTimerPills);
+    final timerShare = nativeOn && s.get(defs.voiceTimersShare);
+    final timers = <String, Object?>{
+      'timers_menu': drawer.shows('timers'),
+      if (!timerPills) ...{
+        'timers_show_on_start': s.get(defs.timersShowOnStart),
+        'timers_show_before_end': s.get(defs.timersShowBeforeEnd).toInt(),
+        'timers_pause_screensaver': s.get(defs.timersPauseScreensaver),
+      },
+      'timers_receive': s.get(defs.voiceTimersReceive),
+      if (s.get(defs.voiceTimersReceive))
+        'timers_shared_received': UsageCounters.bucket(
+          _reportedCounts['timers_shared_received'] ?? 0,
+        ),
+      if (nativeOn) ...{
+        'timers_share': timerShare,
+        if (timerShare)
+          'timers_share_kiosks': SharedTimerTarget.parse(
+            s.get(defs.voiceTimersShareWith),
+          ).length,
+        if (s.get(defs.voiceTimerSpeak))
+          'timers_tts': s.get(defs.timersTtsEngine).trim().isEmpty
+              ? 'first_available'
+              : 'picked',
+        for (final k in ['timers_started', 'timers_by_hand'])
+          k: UsageCounters.bucket(_reportedCounts[k] ?? 0),
+      },
     };
     String pick(String v) => v.trim().isEmpty ? 'default' : v;
     final nativeVoice = <String, Object?>{
@@ -717,6 +754,7 @@ class AnalyticsManager extends Manager {
       'wake_word_2': wakeWord2,
       'vs_skin': vs.skin,
       ...nativeVoice,
+      ...timers,
       // The kiosk's own echo canceller, for everything that listens: the
       // switch, and the engine it actually ran with and why, which can
       // differ from the method picked (Automatic's verdict, or GTCRN

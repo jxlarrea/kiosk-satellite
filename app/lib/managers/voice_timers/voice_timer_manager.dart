@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../analytics/usage_counters.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -436,7 +437,10 @@ class VoiceTimerManager extends Manager {
       'seconds': total % 60,
       if (name.trim().isNotEmpty) 'name': name.trim(),
     });
-    return r.ok ? null : (r.error ?? 'failed');
+    if (!r.ok) return r.error ?? 'failed';
+    // Usage analytics: timers set from the view or the remote admin.
+    unawaited(UsageCounters.bump(settings!, 'timers_by_hand'));
+    return null;
   }
 
   /// Sets the time [id] has left to [seconds], by adding or taking away the

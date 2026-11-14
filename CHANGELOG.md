@@ -10,6 +10,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Changed
 - **Timers guide.** Timers have their own page in the documentation, with the Timers view, setting timers by voice and by hand, shared timers and the settings. **Manage timers using Voice Satellite** under **Settings > Timers** opens it. The Voice Satellite guide keeps a pointer to it.
+- **Timers in Usage analytics.** With **Usage** on under **Kiosk Satellite Analytics**, the daily report now carries the switches of **Settings > Timers**, how many kiosks the timers are shared with and a range for how often timers started, were set by hand or arrived from another kiosk. The names of the timers and of the kiosks are never sent.
 - **Brightness range in the log and in Basic analytics.** The `brightness scale` line in the app log now also shows the maximum Android reports and the maximum it converts the setting with. Basic analytics sends the same numbers and the highest brightness value written by something other than Kiosk Satellite. Together they show which tablet models report a range that Android does not use.
 
 ### Fixed

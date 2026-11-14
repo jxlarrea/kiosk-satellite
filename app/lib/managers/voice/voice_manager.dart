@@ -3236,6 +3236,10 @@ class VoiceManager extends Manager {
         _ringingTotals[id] ??
         (fields['totalSeconds'] as num?)?.toInt() ??
         0;
+    // Usage analytics: how often timers start, never their names.
+    if (type == 0) {
+      unawaited(UsageCounters.bump(_settings, 'timers_started'));
+    }
     switch (type) {
       case 0: // started
       case 1: // updated

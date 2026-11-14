@@ -8,6 +8,7 @@ import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/analytics/usage_counters.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/managers/voice_timers/shared_timers_manager.dart';
@@ -183,9 +184,9 @@ void main() {
     current = tester;
     SharedPreferences.setMockInitialValues({
       'ks.${defs.voiceTimersShare.key}': true,
-      'ks.${defs.voiceTimersShareWith.key}': SharedTimerTarget.encode(
-        const [SharedTimerTarget('bedroom', 'Bedroom')],
-      ),
+      'ks.${defs.voiceTimersShareWith.key}': SharedTimerTarget.encode(const [
+        SharedTimerTarget('bedroom', 'Bedroom'),
+      ]),
     });
     kitchen = _Kiosk('kitchen', 'Kitchen', Duration.zero);
     bedroom = _Kiosk('bedroom', 'Bedroom', const Duration(seconds: 5));
@@ -378,6 +379,27 @@ void main() {
       ((kitchen.shared.describe()['targets']! as List).single as Map)['status'],
       'off',
     );
+    await stop();
+  });
+
+  testWidgets('usage analytics counts a shared timer once, not on every '
+      'heartbeat', (tester) async {
+    await pair(tester);
+    int received() =>
+        UsageCounters.read(bedroom.settings)['timers_shared_received'] ?? 0;
+    await kitchen.setTimers([kitchen.running('t1', 'Pasta', 6000)]);
+    await settle(tester);
+    expect(received(), 1);
+    // The owner sends its list again every 30 seconds.
+    await tester.pump(SharedTimersManager.heartbeat * 2);
+    await settle(tester);
+    expect(received(), 1);
+    await kitchen.setTimers([
+      kitchen.running('t1', 'Pasta', 6000),
+      kitchen.running('t2', 'Bread', 6000),
+    ]);
+    await settle(tester);
+    expect(received(), 2);
     await stop();
   });
 

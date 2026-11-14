@@ -12,11 +12,16 @@ class UsageCounters {
 
   static const _key = 'analytics_usage_counters';
 
-  /// Count one [name], while Usage analytics is on.
-  static Future<void> bump(SettingsManager settings, String name) async {
-    if (!settings.get(defs.analyticsUsage)) return;
+  /// Count one [name], or [by] of them at once, while Usage analytics is
+  /// on.
+  static Future<void> bump(
+    SettingsManager settings,
+    String name, {
+    int by = 1,
+  }) async {
+    if (by <= 0 || !settings.get(defs.analyticsUsage)) return;
     final counts = read(settings);
-    counts[name] = (counts[name] ?? 0) + 1;
+    counts[name] = (counts[name] ?? 0) + by;
     await settings.setInternal(_key, jsonEncode(counts));
   }
 

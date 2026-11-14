@@ -494,6 +494,47 @@ void main() {
     expect(u['vs_reactive_bar'], isTrue);
     // The full screen timers view is the default.
     expect(u['vs_timer_pills'], isFalse);
+    // Timers: the switches of Settings > Timers, with nothing shared yet.
+    expect(u['timers_show_on_start'], isTrue);
+    expect(u['timers_show_before_end'], 60);
+    expect(u['timers_pause_screensaver'], isFalse);
+    expect(u['timers_receive'], isTrue);
+    expect(u['timers_shared_received'], '0');
+    expect(u['timers_share'], isFalse);
+    expect(u.containsKey('timers_share_kiosks'), isFalse);
+    expect(u['timers_started'], '0');
+    expect(u['timers_by_hand'], '0');
+    // Shared with two kiosks: the count goes out, their names and ids stay.
+    await settings.set(defs.voiceTimersShare, true);
+    await settings.set(
+      defs.voiceTimersShareWith,
+      '[{"id":"aaaa1111","name":"Bedroom tablet"},'
+      '{"id":"bbbb2222","name":"Office tablet"}]',
+    );
+    await settings.set(defs.voiceTimerSpeak, true);
+    await settings.set(defs.timersTtsEngine, 'tts.piper');
+    for (var i = 0; i < 3; i++) {
+      await UsageCounters.bump(settings, 'timers_started');
+    }
+    await UsageCounters.bump(settings, 'timers_by_hand');
+    await UsageCounters.bump(settings, 'timers_shared_received', by: 7);
+    u = await usage();
+    expect(u['timers_share'], isTrue);
+    expect(u['timers_share_kiosks'], 2);
+    expect(u['timers_tts'], 'picked');
+    expect(u['timers_started'], '1-5');
+    expect(u['timers_by_hand'], '1-5');
+    expect(u['timers_shared_received'], '6-20');
+    expect(jsonEncode(u), isNot(contains('Bedroom')));
+    expect(jsonEncode(u), isNot(contains('aaaa1111')));
+    expect(jsonEncode(u), isNot(contains('piper')));
+    // The pills take the view's three rows away, in settings and here.
+    await settings.set(defs.voiceTimerPills, true);
+    u = await usage();
+    expect(u.containsKey('timers_show_on_start'), isFalse);
+    expect(u.containsKey('timers_pause_screensaver'), isFalse);
+    await settings.set(defs.voiceTimerPills, false);
+    u = await usage();
     expect(jsonEncode(u), isNot(contains('kitchen')));
     expect(jsonEncode(u), isNot(contains('Second brain')));
     expect(jsonEncode(u), isNot(contains('ding')));
