@@ -127,6 +127,55 @@ void main() {
     },
   );
 
+  test('the review carries the notes of the release it already read', () async {
+    release['body'] = '\r\n### Fixed\r\n- The clock no longer drifts.\r\n';
+    final preview = await repository.preview(url);
+    expect(preview['releaseNotes'], '### Fixed\n- The clock no longer drifts.');
+    // The notes come with the release, so the review still costs one
+    // GitHub API request.
+    expect(requests.where((u) => u.host == 'api.github.com'), hasLength(1));
+    // The notes are not kept with the installed plugin.
+    final args = await repository.installArguments(
+      preview['previewId'] as String,
+      trusted: true,
+    );
+    expect(
+      (jsonDecode(args['source'] as String) as Map).containsKey('releaseNotes'),
+      isFalse,
+    );
+  });
+
+  test('a release without notes of its own has none to show', () async {
+    for (final body in [
+      null,
+      '',
+      '  \r\n',
+      'v1.0.0',
+      '1.0.0',
+      ' v1.0.0\n',
+      7,
+    ]) {
+      release['body'] = body;
+      expect(
+        (await repository.preview(url))['releaseNotes'],
+        '',
+        reason: '$body',
+      );
+    }
+    expect(
+      PluginRepository.releaseNotes('1.0.3', tag: '1.0.3', version: '1.0.3'),
+      '',
+    );
+    expect(
+      PluginRepository.releaseNotes(
+        'v1.0.0 fixes the clock',
+        tag: 'v1.0.0',
+        version: '1.0.0',
+      ),
+      'v1.0.0 fixes the clock',
+    );
+  });
+
   test(
     'manual release uploads and missing or mismatched GitHub digests are rejected',
     () async {
@@ -190,6 +239,7 @@ void main() {
       expect(requests.any((u) => u.path.contains('/main/')), isFalse);
       expect(preview['readme'], readme);
       expect(preview['releaseTag'], 'v1.0.0');
+      expect(preview['releaseNotes'], '');
       (preview['manifest'] as Map)['version'] = '9.9.9';
       release['tag_name'] = 'v9.9.9';
       manifest['version'] = '9.9.9';

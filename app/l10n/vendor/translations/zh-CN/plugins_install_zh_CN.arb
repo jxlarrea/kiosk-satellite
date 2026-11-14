@@ -46,5 +46,6 @@
   "pluginCountPerPage": "每页 {count} 个",
   "pluginByAuthor": "作者：{author}",
   "pluginListedChip": "已收录于社区插件",
-  "pluginNotListedChip": "未收录于社区插件"
+  "pluginNotListedChip": "未收录于社区插件",
+  "pluginReleaseNotes": "更新说明"
 }

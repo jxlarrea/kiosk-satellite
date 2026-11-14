@@ -161,7 +161,8 @@ function reviewNotice(icon, text, tone) {
 
 // The review before an install or update: who made the plugin and what it is
 // on a header band, the README under it and the trust notice on a footer
-// band above the buttons. Mirrors the device (plugin_settings.dart,
+// band above the buttons. An update shows the release notes of the new
+// version above the README. Mirrors the device (plugin_settings.dart,
 // showPluginPreview).
 function confirmPreview(preview) {
   return new Promise((resolve) => {
@@ -198,6 +199,13 @@ function confirmPreview(preview) {
     modal.card.insertBefore(header, modal.body);
 
     modal.body.classList.add('plugin-review-body');
+    // What changed, as the author wrote it on the release. Only an update
+    // shows it: a first install has the README to go by.
+    if (preview.installedVersion && preview.releaseNotes) {
+      const notes = pluginReadme({ readme: preview.releaseNotes, readmeBaseUrl: preview.readmeBaseUrl });
+      notes.classList.add('plugin-release-notes');
+      modal.body.append(element('div', pluginText('Release notes'), 'plugin-review-eyebrow plugin-review-eyebrow-caps'), notes);
+    }
     modal.body.append(element('div', 'README', 'plugin-review-eyebrow'), pluginReadme(preview));
 
     const footer = element('div', undefined, 'plugin-review-foot');

@@ -107,8 +107,9 @@ class PluginReadme extends StatelessWidget {
 
 /// The review before an install or update: who made the plugin and what it
 /// is on a header band, the README under it and the trust notice on a
-/// footer band above the buttons. True once the person chooses to trust
-/// and install. Mirrors the remote admin (plugins.js, confirmPreview).
+/// footer band above the buttons. An update shows the release notes of the
+/// new version above the README. True once the person chooses to trust and
+/// install. Mirrors the remote admin (plugins.js, confirmPreview).
 Future<bool> showPluginPreview(
   BuildContext context,
   Map<String, Object?> preview,
@@ -131,6 +132,14 @@ class _PluginReviewDialog extends StatelessWidget {
     final manifest = preview['manifest'] as Map;
     final isUpdate = preview.containsKey('installedVersion');
     final compatible = preview['compatible'] == true;
+    // What changed, as the author wrote it on the release. Only an update
+    // shows it: a first install has the README to go by.
+    final notes = isUpdate ? '${preview['releaseNotes'] ?? ''}' : '';
+    final eyebrow = theme.textTheme.labelSmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+      letterSpacing: 1.2,
+      fontWeight: FontWeight.w600,
+    );
     final muted = theme.textTheme.bodyMedium?.copyWith(
       color: scheme.onSurfaceVariant,
     );
@@ -225,14 +234,25 @@ class _PluginReviewDialog extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'README',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                              letterSpacing: 1.2,
-                              fontWeight: FontWeight.w600,
+                          if (notes.isNotEmpty) ...[
+                            Text(
+                              pluginText(
+                                context,
+                                'Release notes',
+                              ).toUpperCase(),
+                              style: eyebrow,
                             ),
-                          ),
+                            const SizedBox(height: 10),
+                            PluginReadme(
+                              key: const ValueKey('plugin-release-notes'),
+                              source: {
+                                'readme': notes,
+                                'readmeBaseUrl': preview['readmeBaseUrl'],
+                              },
+                            ),
+                            const Divider(height: 36),
+                          ],
+                          Text('README', style: eyebrow),
                           const SizedBox(height: 10),
                           PluginReadme(source: preview),
                         ],

@@ -46,5 +46,6 @@
   "pluginCountPerPage": "{count} на сторінці",
   "pluginByAuthor": "від {author}",
   "pluginListedChip": "Є в Плагінах спільноти",
-  "pluginNotListedChip": "Немає в Плагінах спільноти"
+  "pluginNotListedChip": "Немає в Плагінах спільноти",
+  "pluginReleaseNotes": "Примітки до випуску"
 }

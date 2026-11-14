@@ -4063,6 +4063,9 @@ class UiStringsUk extends UiStrings {
   String get pluginNotListedChip => 'Немає в Плагінах спільноти';
 
   @override
+  String get pluginReleaseNotes => 'Примітки до випуску';
+
+  @override
   String get pluginCharts => 'Графіки';
 
   @override

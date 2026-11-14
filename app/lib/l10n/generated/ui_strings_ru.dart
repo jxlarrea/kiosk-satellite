@@ -4065,6 +4065,9 @@ class UiStringsRu extends UiStrings {
   String get pluginNotListedChip => 'Нет в Плагинах сообщества';
 
   @override
+  String get pluginReleaseNotes => 'Примечания к выпуску';
+
+  @override
   String get pluginCharts => 'Графики';
 
   @override

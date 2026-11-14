@@ -21,6 +21,7 @@ plugin = dict(id='hello-world', name='<b>Hello World</b>', version='1.0.0', desc
               updateVersion='1.2.0')
 preview = dict(previewId='token', repository='https://github.com/example/hello', installedVersion='1.0.0',
                updateAvailable=True, releaseTag='v1.2.0', readme='# Hello', readmeBaseUrl='https://example.com/',
+               releaseNotes='### Fixed\n- The clock no longer drifts. [Guide](docs/guide.md)<script>window.pwned = 1</script>',
                sha256='0' * 64, listed=True, compatible=True,
                manifest=dict(id='hello-world', name='Hello World', version='1.2.0', capabilities=[]))
 
@@ -74,6 +75,15 @@ try:
         expect(review).to_be_visible()
         assert 'checkPluginUpdate' in commands
         assert 'installPluginRepository' not in commands
+        # The notes of the new version sit above the README, as sanitized markdown.
+        notes = review.locator('.plugin-release-notes')
+        expect(notes.locator('h3')).to_have_text('Fixed')
+        expect(notes.locator('li')).to_contain_text('The clock no longer drifts.')
+        expect(notes.locator('a')).to_have_attribute('href', 'https://example.com/docs/guide.md')
+        assert notes.locator('script').count() == 0 and not page.evaluate('window.pwned')
+        expect(review.locator('.plugin-review-eyebrow')).to_have_text(['Release notes', 'README'])
+        assert review.locator('.plugin-review-eyebrow').first.evaluate(
+            'e => getComputedStyle(e).textTransform') == 'uppercase'
         review.get_by_role('button', name='Trust and update').click()
         expect(review).to_have_count(0)
         assert 'installPluginRepository' in commands
@@ -88,6 +98,18 @@ try:
         }""")
         expect(page.locator('#tab-plugins [data-subpage-entry], #tab-plugins .row', has_text='example/hello').first
                ).to_contain_text('example/hello · 1.0.0 · New version: 1.2.0')
+
+        # A release without notes and a first install show the README alone.
+        for change in [dict(releaseNotes=''), dict(releaseNotes='### Fixed', installedVersion=None)]:
+            preview.update(change)
+            page.evaluate("""async () => {
+              (await import('/static/plugins.js')).reviewPluginUpdate({ id: 'hello-world', name: 'Hello World' });
+            }""")
+            expect(review).to_be_visible()
+            expect(review.locator('.plugin-review-eyebrow')).to_have_text(['README'])
+            assert review.locator('.plugin-release-notes').count() == 0
+            review.get_by_role('button', name='Cancel').click()
+            expect(review).to_have_count(0)
         assert not errors, errors
         browser.close()
     print('plugin update rows passed')

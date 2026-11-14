@@ -631,5 +631,18 @@
         "Plugin Manager > Add plugin"
       ]
     }
+  },
+  "pluginReleaseNotes": "Release notes",
+  "@pluginReleaseNotes": {
+    "context": "Settings > Plugin Manager > a plugin's check for updates button",
+    "description": "Heading in the update review above the notes the plugin's author wrote for the new version. Shown in capitals.",
+    "x-locations": {
+      "device": [
+        "Settings > Plugin Manager > a plugin's check for updates button"
+      ],
+      "remoteAdmin": [
+        "Plugin Manager > a plugin's check for updates button"
+      ]
+    }
   }
 }

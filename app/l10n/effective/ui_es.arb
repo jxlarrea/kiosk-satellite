@@ -15410,6 +15410,19 @@
       ]
     }
   },
+  "pluginReleaseNotes": "Notas de la versión",
+  "@pluginReleaseNotes": {
+    "context": "Settings > Plugin Manager > a plugin's check for updates button",
+    "description": "Heading in the update review above the notes the plugin's author wrote for the new version. Shown in capitals.",
+    "x-locations": {
+      "device": [
+        "Settings > Plugin Manager > a plugin's check for updates button"
+      ],
+      "remoteAdmin": [
+        "Plugin Manager > a plugin's check for updates button"
+      ]
+    }
+  },
   "pluginCharts": "Gráficas",
   "@pluginCharts": {
     "context": "Settings > Plugin Manager > a plugin > Charts and Readings",

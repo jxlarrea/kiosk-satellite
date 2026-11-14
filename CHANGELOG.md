@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Release notes in the plugin update review (#1440).** A plugin update only showed the version change and the README, so finding out what changed meant opening GitHub. The review now shows the release notes the author wrote for the new version above the README, as formatted text. They come with the release the review already reads, so no extra GitHub request is made. Only the notes of the newest release are shown, and a release without notes shows the README alone. Mirrored in the remote admin.
 - **Use the device MAC address for Bluetooth (#1442).** The Bluetooth proxy reports a Bluetooth address that is unrelated to the MAC address of its ESPHome device. Bermuda cannot link such a scanner to its device, and Bermuda 0.8.7 then creates no **Distance to** sensors for any proxy. A new switch under **ESPHome > Bluetooth Proxy** reports the device MAC address as the Bluetooth address too, which is how Home Assistant treats a proxy that sends no Bluetooth address. It is off by default because the scanner's address changes in Home Assistant, so signal offsets stored per scanner in Bermuda have to be entered again. Mirrored in the remote admin.
 
 ### Changed

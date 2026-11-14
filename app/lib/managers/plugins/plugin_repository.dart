@@ -261,7 +261,27 @@ class PluginRepository {
         ).hasMatch(version)) {
       throw const FormatException('Invalid plugin ID or version');
     }
-    return _Release(tag, assets, manifest, assetUrl);
+    return _Release(
+      tag,
+      assets,
+      manifest,
+      assetUrl,
+      releaseNotes(release['body'], tag: tag, version: version),
+    );
+  }
+
+  /// The notes the author wrote on a release, for the update review. Empty
+  /// without any, and for a body that only repeats the tag or the version.
+  static String releaseNotes(
+    Object? body, {
+    required String tag,
+    required String version,
+  }) {
+    if (body is! String) return '';
+    final notes = body.replaceAll('\r\n', '\n').trim();
+    return notes == tag || notes == version || notes == 'v$version'
+        ? ''
+        : notes;
   }
 
   /// The manifest and package digest of the latest release of [url], for
@@ -335,6 +355,7 @@ class PluginRepository {
       'releaseTag': tag,
       'readme': readme,
       'readmeBaseUrl': base.toString(),
+      'releaseNotes': release.notes,
       'sha256': digest,
       'downloadUrl': downloadUrl.toString(),
     };
@@ -423,10 +444,19 @@ class PluginRepository {
 }
 
 class _Release {
-  const _Release(this.tag, this.assets, this.manifest, this.assetUrl);
+  const _Release(
+    this.tag,
+    this.assets,
+    this.manifest,
+    this.assetUrl,
+    this.notes,
+  );
   final String tag;
   final List assets;
   final Map manifest;
+
+  /// The release's notes, empty without any.
+  final String notes;
 
   /// A checked download URL for the named asset, up to a size limit.
   final Uri Function(String name, int limit) assetUrl;

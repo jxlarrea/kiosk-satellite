@@ -1110,6 +1110,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'pluginPluginsPerPage' => strings.pluginPluginsPerPage,
       'pluginListedChip' => strings.pluginListedChip,
       'pluginNotListedChip' => strings.pluginNotListedChip,
+      'pluginReleaseNotes' => strings.pluginReleaseNotes,
       'pluginCharts' => strings.pluginCharts,
       'pluginReadings' => strings.pluginReadings,
       'pluginWaitingForSamples' => strings.pluginWaitingForSamples,

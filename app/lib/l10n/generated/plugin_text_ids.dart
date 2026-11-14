@@ -230,6 +230,7 @@ const pluginTextMessageIds = <String, String>{
   "Plugins per page": "pluginPluginsPerPage",
   "Listed in Community Plugins": "pluginListedChip",
   "Not listed in Community Plugins": "pluginNotListedChip",
+  "Release notes": "pluginReleaseNotes",
   "Dashboard link": "pluginDashboardLink",
   "Point a dashboard button's tap action at this link.": "pluginDashboardLinkHint"
 };

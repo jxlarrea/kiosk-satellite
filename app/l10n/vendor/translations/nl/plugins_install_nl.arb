@@ -46,5 +46,6 @@
   "pluginCountPerPage": "{count} per pagina",
   "pluginByAuthor": "door {author}",
   "pluginListedChip": "Staat in Communityplug-ins",
-  "pluginNotListedChip": "Staat niet in Communityplug-ins"
+  "pluginNotListedChip": "Staat niet in Communityplug-ins",
+  "pluginReleaseNotes": "Releaseopmerkingen"
 }

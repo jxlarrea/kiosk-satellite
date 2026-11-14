@@ -3946,6 +3946,9 @@ class UiStringsZh extends UiStrings {
   String get pluginNotListedChip => '未收录于社区插件';
 
   @override
+  String get pluginReleaseNotes => '更新说明';
+
+  @override
   String get pluginCharts => '图表';
 
   @override
@@ -19687,6 +19690,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get pluginNotListedChip => '未收录于社区插件';
+
+  @override
+  String get pluginReleaseNotes => '更新说明';
 
   @override
   String get pluginCharts => '图表';

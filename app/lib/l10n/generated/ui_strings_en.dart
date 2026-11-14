@@ -4050,6 +4050,9 @@ class UiStringsEn extends UiStrings {
   String get pluginNotListedChip => 'Not listed in Community Plugins';
 
   @override
+  String get pluginReleaseNotes => 'Release notes';
+
+  @override
   String get pluginCharts => 'Charts';
 
   @override

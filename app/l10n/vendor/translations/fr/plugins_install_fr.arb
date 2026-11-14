@@ -46,5 +46,6 @@
   "pluginCountPerPage": "{count} par page",
   "pluginByAuthor": "par {author}",
   "pluginListedChip": "Répertorié dans Plugins de la communauté",
-  "pluginNotListedChip": "Absent de Plugins de la communauté"
+  "pluginNotListedChip": "Absent de Plugins de la communauté",
+  "pluginReleaseNotes": "Notes de version"
 }

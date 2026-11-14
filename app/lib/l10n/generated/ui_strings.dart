@@ -7228,6 +7228,12 @@ abstract class UiStrings {
   /// **'Not listed in Community Plugins'**
   String get pluginNotListedChip;
 
+  /// Heading in the update review above the notes the plugin's author wrote for the new version. Shown in capitals.
+  ///
+  /// In en, this message translates to:
+  /// **'Release notes'**
+  String get pluginReleaseNotes;
+
   /// Visible label, help or status in this section.
   ///
   /// In en, this message translates to:

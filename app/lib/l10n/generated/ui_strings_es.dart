@@ -4081,6 +4081,9 @@ class UiStringsEs extends UiStrings {
   String get pluginNotListedChip => 'No está en Plugins de la comunidad';
 
   @override
+  String get pluginReleaseNotes => 'Notas de la versión';
+
+  @override
   String get pluginCharts => 'Gráficas';
 
   @override

@@ -4104,6 +4104,9 @@ class UiStringsDe extends UiStrings {
   String get pluginNotListedChip => 'Nicht in Community-Plugins gelistet';
 
   @override
+  String get pluginReleaseNotes => 'Versionshinweise';
+
+  @override
   String get pluginCharts => 'Diagramme';
 
   @override

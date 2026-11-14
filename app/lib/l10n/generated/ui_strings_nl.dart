@@ -4076,6 +4076,9 @@ class UiStringsNl extends UiStrings {
   String get pluginNotListedChip => 'Staat niet in Communityplug-ins';
 
   @override
+  String get pluginReleaseNotes => 'Releaseopmerkingen';
+
+  @override
   String get pluginCharts => 'Grafieken';
 
   @override

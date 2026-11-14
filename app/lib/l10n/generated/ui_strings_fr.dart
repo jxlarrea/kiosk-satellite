@@ -4085,6 +4085,9 @@ class UiStringsFr extends UiStrings {
   String get pluginNotListedChip => 'Absent de Plugins de la communauté';
 
   @override
+  String get pluginReleaseNotes => 'Notes de version';
+
+  @override
   String get pluginCharts => 'Graphiques';
 
   @override

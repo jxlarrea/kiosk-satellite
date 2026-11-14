@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "7308be9f2f03dc3a9531d653b4faa9797c559103",
+  "revision": "bd6284e4216e875e1f37a34f6869e379598afed6",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -52,7 +52,7 @@
     "plugin_windows_en.arb": "eb2b36bf76190943bd227c2de0348e0a69329951183130ee94ce88c443d9fa22",
     "plugins_actions_en.arb": "37d92b2a737a07be3d73fde3a8ed94ae2069230accc36c06a1aed76b2039fcc8",
     "plugins_general_en.arb": "15268e4179a707ce75b9d9b8074def1783f4bebfce8e6b85a7f8f4fd8fd02847",
-    "plugins_install_en.arb": "297c167ea3dcb4b66c2d0d8963a95923e679592daecc13d0d4223f5fc33cbd85",
+    "plugins_install_en.arb": "04ecb9e3fad8076b8795fa5aeb1c7a2ae9699c0840c690066b8c2ecaa2cd6146",
     "plugins_output_en.arb": "fa74c2b8021e30b18fabb8b4de82228d59c1685751bd72573e395c8584a45009",
     "plugins_package_errors_en.arb": "1a06ffa480aca3187961c649b84bb6eced8d7323ea3e44e506de55db100c144f",
     "plugins_repository_errors_en.arb": "ae00df8581aa941287245bbfc5d3c1105fd0d96ca43070245b369bf569a251a4",

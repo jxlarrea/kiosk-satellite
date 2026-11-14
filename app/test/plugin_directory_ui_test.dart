@@ -317,4 +317,71 @@ void main() {
       expect(install.onPressed, isNull);
     });
   }
+
+  testWidgets('an update review shows the release notes above the README', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    late BuildContext context;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (c) {
+            context = c;
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    Map<String, Object?> preview({String? installed, String notes = ''}) => {
+      'manifest': {
+        'name': 'Hello World',
+        'author': 'Example',
+        'version': '1.2.0',
+        'license': 'MIT',
+      },
+      'installedVersion': ?installed,
+      'releaseNotes': notes,
+      'readme': 'The README text.',
+      'readmeBaseUrl': 'https://raw.githubusercontent.com/a/b/c/',
+      'compatible': true,
+      'listed': true,
+    };
+    const notes = '### Fixed\n- The clock no longer drifts.';
+    final section = find.byKey(const ValueKey('plugin-release-notes'));
+
+    unawaited(
+      showPluginPreview(context, preview(installed: '1.1.0', notes: notes)),
+    );
+    await settle(tester);
+    expect(find.text('RELEASE NOTES'), findsOneWidget);
+    expect(
+      find.descendant(of: section, matching: find.text('Fixed')),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.text('RELEASE NOTES')).dy,
+      lessThan(tester.getTopLeft(find.text('README')).dy),
+    );
+    expect(
+      tester.getBottomLeft(section).dy,
+      lessThan(tester.getTopLeft(find.text('README')).dy),
+    );
+    await tester.tap(find.text('Cancel'));
+    await settle(tester);
+
+    // A release without notes and a first install show the README alone.
+    for (final data in [preview(installed: '1.1.0'), preview(notes: notes)]) {
+      unawaited(showPluginPreview(context, data));
+      await settle(tester);
+      expect(find.text('README'), findsOneWidget);
+      expect(find.text('The README text.'), findsOneWidget);
+      expect(find.text('RELEASE NOTES'), findsNothing);
+      expect(section, findsNothing);
+      await tester.tap(find.text('Cancel'));
+      await settle(tester);
+    }
+  });
 }
