@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.20 - 2026-11-14
 
 ### Added
 - **Shared timers.** A kiosk can now run its timers on other kiosks too. Turn on **Share timers** under **Settings > Timers** and pick the kiosks in **Share with**. Each kiosk has its own list. The timer shows and rings on every kiosk picked, with the name of the kiosk it comes from, and the countdown and the alert stay in step. Pause, Cancel and Dismiss work from any of them. The timer stays in Home Assistant on the kiosk that started it. Remote admin and Find other kiosks must be on. Turn off **Show shared timers**, on by default, to refuse timers from other kiosks.
