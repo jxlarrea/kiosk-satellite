@@ -30291,5 +30291,17 @@
     "translation": "76f7b6d1cbbf224d2e60c094d44c22bc026e314908e9c1c3c1390938232e6136",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingTimersShowOnStartTitle": {
+    "source": "b4e824a6f0ef0d31bcc54bd0a9bd05d8181b18000f6fe6bd353c46fd0ef7ca2e",
+    "translation": "59b6f8fb479cb6727d139b6018a32442ede2729050edf70faba547d7c993a939",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersShowOnStartDescription": {
+    "source": "2e8f1d497b939e2ddd1dd04bc2aa172394e445c8013f9cde6270c2dd8077d4de",
+    "translation": "a8e92dfb6437feb171f39a6f63e43fdec4e8b82e72d3b7b4faaae6d4a0338069",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

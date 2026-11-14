@@ -56135,6 +56135,32 @@
       ]
     }
   },
+  "settingTimersShowOnStartTitle": "Timerweergave tonen wanneer een timer start",
+  "@settingTimersShowOnStartTitle": {
+    "context": "Settings > Timers",
+    "description": "Switch: whether starting a timer opens the full screen timers view.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersShowOnStartDescription": "Opent de timerweergave telkens wanneer een timer wordt gestart.",
+  "@settingTimersShowOnStartDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that switch.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "voiceWakePage": "Wekwoorden",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

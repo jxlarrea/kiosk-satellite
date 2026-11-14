@@ -19,8 +19,9 @@ import 'toast.dart';
 /// top, the others listed beside or under it, each with its time as hours,
 /// minutes and seconds over a bar that runs down. It opens by itself when a
 /// timer starts or finishes, from the kiosk menu, a gesture or Compass, and
-/// sits over the screensaver the way the timer pills do. Timers another
-/// kiosk shares show with that kiosk's name.
+/// sits under the screensaver like the alarm list. A timer near its end or
+/// finished dismisses the screensaver and holds it. Timers another kiosk
+/// shares show with that kiosk's name.
 class TimersOverlay extends StatelessWidget {
   const TimersOverlay({super.key, required this.container});
 
@@ -177,9 +178,6 @@ class _TimersScreenState extends State<_TimersScreen> {
     final s = l10n(context);
     final now = DateTime.now();
     final all = _ordered(now);
-    // With nothing on it, as Compass holds it between timers, the view
-    // leaves the screen to the screensaver.
-    if (all.isEmpty && c.screensaver.isActive) return const SizedBox.shrink();
     // The timer the wheels change, while it still runs. One that finished
     // or went meanwhile closes them.
     final edited = _editing == null
@@ -188,9 +186,6 @@ class _TimersScreenState extends State<_TimersScreen> {
     final editor = _editor && (_editing == null || edited != null);
     final canStart = c.voiceTimers.canStart;
     return Listener(
-      // Over the screensaver: a touch here is a touch on a control, not a
-      // tap that dismisses it.
-      onPointerDown: (_) => c.screensaver.markControlTouch(),
       child: GestureDetector(
         // The ground only shields what is underneath.
         behavior: HitTestBehavior.opaque,

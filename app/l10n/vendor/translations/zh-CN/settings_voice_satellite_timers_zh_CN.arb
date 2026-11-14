@@ -32,5 +32,7 @@
   "settingTimersTtsLanguageDescription": "计时器播报使用的语言。",
   "settingTimersTtsVoiceDescription": "用于播报计时器的声音。",
   "settingTimersShowBeforeEndTitle": "计时器即将结束时显示计时器视图",
-  "settingTimersShowBeforeEndDescription": "计时器结束前多久打开计时器视图。"
+  "settingTimersShowBeforeEndDescription": "计时器结束前多久打开计时器视图。",
+  "settingTimersShowOnStartTitle": "计时器开始时显示计时器视图",
+  "settingTimersShowOnStartDescription": "每次启动计时器时打开计时器视图。"
 }

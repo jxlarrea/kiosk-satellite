@@ -2019,6 +2019,11 @@ class _KioskScreenState extends State<KioskScreen>
                     // The alarm list, the launcher's twin again: full
                     // screen, below the screensaver.
                     AlarmsOverlay(container: c),
+                    // The timers view, the alarm list's twin: full screen,
+                    // below the screensaver. A timer near its end or
+                    // finished dismisses the screensaver and holds it
+                    // instead of showing over it (VoiceTimerManager).
+                    TimersOverlay(container: c),
                     // The family calendar, the launcher's twin as well:
                     // full screen, below the screensaver.
                     _HiddenUnder(
@@ -2046,13 +2051,6 @@ class _KioskScreenState extends State<KioskScreen>
                       ),
                     ),
                     CameraViewOverlay(container: c),
-                    // The full screen timers view: over the screensaver and
-                    // a camera view while a timer runs or rings. Under the
-                    // Compass stage, whose swipe draws over the views it
-                    // moves between, and under the voice overlay, a plugin
-                    // skin's turn, a notification and a call, which all
-                    // have to show over it.
-                    TimersOverlay(container: c),
                     // Plugin overlays of the views layer: over every page
                     // and view above, camera views included, so a plugin's
                     // bar stays up wherever the kiosk goes. Hidden under the

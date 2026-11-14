@@ -15352,6 +15352,14 @@ class UiStringsEn extends UiStrings {
       'How long before a timer ends the Timers view opens.';
 
   @override
+  String get settingTimersShowOnStartTitle =>
+      'Show Timers view when a timer starts';
+
+  @override
+  String get settingTimersShowOnStartDescription =>
+      'Open the Timers view each time a timer is started.';
+
+  @override
   String get voiceWakePage => 'Wake Word';
 
   @override

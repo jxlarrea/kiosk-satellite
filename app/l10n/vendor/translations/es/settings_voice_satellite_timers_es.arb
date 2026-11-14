@@ -32,5 +32,7 @@
   "settingTimersTtsLanguageDescription": "El idioma en el que se leen los temporizadores.",
   "settingTimersTtsVoiceDescription": "La voz que lee los temporizadores.",
   "settingTimersShowBeforeEndTitle": "Mostrar la vista de temporizadores cerca del final",
-  "settingTimersShowBeforeEndDescription": "Cuánto antes de que termine un temporizador se abre la vista de temporizadores."
+  "settingTimersShowBeforeEndDescription": "Cuánto antes de que termine un temporizador se abre la vista de temporizadores.",
+  "settingTimersShowOnStartTitle": "Mostrar la vista de temporizadores al iniciar un temporizador",
+  "settingTimersShowOnStartDescription": "Abre la vista de temporizadores cada vez que se inicia un temporizador."
 }

@@ -15,6 +15,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late AppContainer c;
   late List<VoiceTimerAction> actions;
+
+  /// What the screensaver was told: stop, hold, release.
+  late List<String> saver;
   late StreamSubscription<VoiceTimerAction> subscription;
 
   setUp(() async {
@@ -25,18 +28,27 @@ void main() {
     actions = [];
     await c.settings.init();
     await c.voiceTimers.init();
+    saver = [];
     for (final name in [
       'voiceChime',
       'voiceStopSpeech',
       'voiceSpeakerDone',
       'screenOn',
       'bringToFront',
+      'stopScreensaver',
+      'holdScreensaver',
     ]) {
       c.commands.register(
         Command(
           name: name,
           description: '',
-          handler: (_) async => const CommandResult.ok({'id': 'sound'}),
+          handler: (p) async {
+            if (name == 'stopScreensaver') saver.add('stop');
+            if (name == 'holdScreensaver') {
+              saver.add(p['held'] == true ? 'hold' : 'release');
+            }
+            return const CommandResult.ok({'id': 'sound'});
+          },
         ),
       );
     }
@@ -122,16 +134,55 @@ void main() {
     c.voiceTimers.visible.value = false;
     await tester.pump(const Duration(seconds: 10));
     expect(c.voiceTimers.visible.value, isFalse);
-    // 30 seconds before the end it is back.
+    expect(saver, isEmpty);
+    // 30 seconds before the end it is back, with the screensaver dismissed
+    // and held.
     await tester.pump(const Duration(seconds: 6));
     expect(c.voiceTimers.visible.value, isTrue);
-    // Closed again, it stays closed for this timer.
+    expect(saver, ['stop', 'hold']);
+    // Closed again, it stays closed for this timer and the screensaver is
+    // let go.
     c.voiceTimers.visible.value = false;
+    expect(saver, ['stop', 'hold', 'release']);
     await snapshot([timer('one', 28)]);
     await tester.pump(const Duration(seconds: 5));
     expect(c.voiceTimers.visible.value, isFalse);
     await tester.pumpWidget(const SizedBox());
     await snapshot([]);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('a finished timer dismisses the screensaver and holds it until '
+      'it is dismissed', (tester) async {
+    await tester.pumpWidget(app());
+    await snapshot([timer('one', 600)]);
+    await tester.pump();
+    // A timer that only runs holds nothing.
+    expect(saver, isEmpty);
+    await snapshot([]);
+    await alert([timer('one', 0)]);
+    await tester.pump();
+    expect(saver, ['stop', 'hold']);
+    c.voiceTimers.control('one', 'dismiss');
+    await tester.pump();
+    expect(saver, ['stop', 'hold', 'release']);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('with Show Timers view when a timer starts off, a start opens '
+      'nothing and the finish still does', (tester) async {
+    await c.settings.set(defs.timersShowOnStart, false);
+    await tester.pumpWidget(app());
+    await snapshot([timer('one', 600)]);
+    await tester.pump();
+    expect(c.voiceTimers.visible.value, isFalse);
+    await snapshot([]);
+    await alert([timer('one', 0)]);
+    await tester.pump();
+    expect(c.voiceTimers.visible.value, isTrue);
+    c.voiceTimers.control('one', 'dismiss');
+    await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 3));
   });
 

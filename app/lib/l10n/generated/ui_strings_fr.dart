@@ -15646,6 +15646,14 @@ class UiStringsFr extends UiStrings {
       'Combien de temps avant la fin d\'un minuteur la vue des minuteurs s\'ouvre.';
 
   @override
+  String get settingTimersShowOnStartTitle =>
+      'Afficher la vue des minuteurs au démarrage d\'un minuteur';
+
+  @override
+  String get settingTimersShowOnStartDescription =>
+      'Ouvre la vue des minuteurs à chaque démarrage d\'un minuteur.';
+
+  @override
   String get voiceWakePage => 'Mot de réveil';
 
   @override

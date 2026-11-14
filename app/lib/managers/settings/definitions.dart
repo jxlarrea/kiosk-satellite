@@ -8510,6 +8510,20 @@ const voiceTimerNamedPhrase = SettingDef<String>(
   dependsOn: 'voice.timer_speak',
 );
 
+/// Whether a timer that starts opens the full screen timers view. Off, the
+/// view waits for the near completion mark or the finish. The pills never
+/// leave the screen, so the row goes with them on.
+const timersShowOnStart = SettingDef<bool>(
+  key: 'timers.show_on_start',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show Timers view when a timer starts',
+  description: 'Open the Timers view each time a timer is started.',
+  category: 'Timers',
+  dependsOn: 'voice.timer_pills',
+  dependsOnValue: false,
+);
+
 /// Show Timers view when near completion: how long before a running timer
 /// ends the full screen timers view comes back, for someone who closed it
 /// or moved to another view after the timer started. The pills never leave
@@ -14598,6 +14612,7 @@ const List<SettingDef<Object>> allSettings = [
   voiceAnnouncementLinger,
   // The Timers page, in its groups' order: the untitled card, Shared
   // timers, When a timer ends, Text to Speech, Pills.
+  timersShowOnStart,
   timersShowBeforeEnd,
   timersMenu,
   voiceTimersShare,

@@ -26819,6 +26819,18 @@ abstract class UiStrings {
   /// **'How long before a timer ends the Timers view opens.'**
   String get settingTimersShowBeforeEndDescription;
 
+  /// Switch: whether starting a timer opens the full screen timers view.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Timers view when a timer starts'**
+  String get settingTimersShowOnStartTitle;
+
+  /// Description of that switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Timers view each time a timer is started.'**
+  String get settingTimersShowOnStartDescription;
+
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///
   /// In en, this message translates to:

@@ -217,6 +217,8 @@ class VoiceTimerManager extends Manager {
         visible.value = false;
       }
     });
+    // Closing the view lets the screensaver go.
+    visible.addListener(_syncHold);
     // A new lead time, or the view taking over from the pills, counts for
     // the timers already running.
     _settingSub = bus.on<SettingChanged>().listen((e) {
@@ -698,15 +700,24 @@ class VoiceTimerManager extends Manager {
       if (!alertHidden.value)
         for (final t in alerts.value) 'alert:${t.id}',
     };
-    final fresh = ids.difference(_knownIds).isNotEmpty;
+    final added = ids.difference(_knownIds);
+    // A finished timer always brings the view up. One that starts does
+    // with Show Timers view when a timer starts on.
+    final fresh =
+        added.any((id) => id.startsWith('alert:')) ||
+        (added.isNotEmpty && _showOnStart);
     _knownIds = ids;
     _scheduleNear();
-    if (!_fullScreen) return;
+    if (!_fullScreen) {
+      _syncHold();
+      return;
+    }
     if (fresh) {
       _closeTimer?.cancel();
-      // A ringing timer needs its Dismiss button on a lit screen.
+      // A finished timer needs its Dismiss button on a lit screen with
+      // nothing over it: the screensaver goes, as for a ringing alarm.
       if (alerts.value.isNotEmpty && !alertHidden.value) {
-        unawaited(commands.execute('screenOn', const {}));
+        unawaited(commands.execute('stopScreensaver', const {}));
       }
       if (!visible.value) {
         _autoOpened = true;
@@ -723,11 +734,41 @@ class VoiceTimerManager extends Manager {
         }
       });
     }
+    _syncHold();
+  }
+
+  bool _held = false;
+
+  bool get _showOnStart =>
+      settings == null || settings!.get(defs.timersShowOnStart);
+
+  /// The screensaver stays away while the view shows a timer that asks for
+  /// attention: one that finished, or one inside the near completion
+  /// window that brought the view up. Closing the view lets it go, and so
+  /// does the last such timer going. A timer that merely runs holds
+  /// nothing: the screensaver covers the view on its idle timer.
+  void _syncHold() {
+    final settings = this.settings;
+    var held = false;
+    if (settings != null && _fullScreen && visible.value) {
+      held =
+          (alerts.value.isNotEmpty && !alertHidden.value) ||
+          // Inside the window since the view came up for it. Time added
+          // since then takes it out again (see [_scheduleNear]).
+          timers.value.any((t) => t.active && _nearShown.containsKey(t.id));
+    }
+    if (held == _held) return;
+    _held = held;
+    unawaited(
+      commands.execute('holdScreensaver', {'holder': 'timers', 'held': held}),
+    );
   }
 
   /// The timers the view was already brought back for, so closing it again
   /// keeps it closed for them.
-  final _nearShown = <String>{};
+  /// With when each was to end then: one given more time since is out of
+  /// the window again and brings the view back once more.
+  final _nearShown = <String, int>{};
   Timer? _nearTimer;
 
   /// Off in widget tests that leave a timer running: the wait would outlive
@@ -748,19 +789,29 @@ class VoiceTimerManager extends Manager {
     if (settings == null || !nearEnabled || !_fullScreen) return;
     final lead = settings.get(defs.timersShowBeforeEnd).toInt() * 1000;
     final now = _clock().millisecondsSinceEpoch;
-    _nearShown.removeWhere((id) => !timers.value.any((t) => t.id == id));
+    _nearShown.removeWhere((id, end) {
+      final t = timers.value.where((t) => t.id == id).firstOrNull;
+      if (t == null) return true;
+      // Paused, it keeps its place. Given more time, it left the window.
+      return t.active && t.startedAt + t.totalSeconds * 1000 > end + 2000;
+    });
     int? wait;
     var next = <String>{};
     var due = false;
     for (final t in timers.value) {
-      if (!t.active || t.finished || _nearShown.contains(t.id)) continue;
+      if (!t.active || t.finished || _nearShown.containsKey(t.id)) continue;
       final at = t.startedAt + t.totalSeconds * 1000 - lead;
       // [reached]: the wait set for this timer ran out, whatever the clock
       // reads to the millisecond.
       if (at <= now || reached.contains(t.id)) {
-        _nearShown.add(t.id);
-        // Started inside the window: its start opened the view.
-        if (reached.contains(t.id) || now - t.startedAt > 1500) due = true;
+        _nearShown[t.id] = t.startedAt + t.totalSeconds * 1000;
+        // Started inside the window: its start opened the view, unless
+        // starting opens nothing.
+        if (reached.contains(t.id) ||
+            now - t.startedAt > 1500 ||
+            !_showOnStart) {
+          due = true;
+        }
       } else if (wait == null || at - now < wait - 250) {
         wait = at - now;
         next = {t.id};
@@ -768,11 +819,17 @@ class VoiceTimerManager extends Manager {
         next.add(t.id);
       }
     }
-    if (due && _fullScreen && !visible.value) {
-      _closeTimer?.cancel();
-      _autoOpened = true;
-      visible.value = true;
+    if (due && _fullScreen) {
+      // The view is under the screensaver, so the screensaver goes and
+      // stays away until the timer is dealt with (see [_syncHold]).
+      unawaited(commands.execute('stopScreensaver', const {}));
+      if (!visible.value) {
+        _closeTimer?.cancel();
+        _autoOpened = true;
+        visible.value = true;
+      }
     }
+    _syncHold();
     if (wait != null) {
       final ids = next;
       _nearTimer = Timer(

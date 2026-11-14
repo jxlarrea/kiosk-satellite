@@ -32,5 +32,7 @@
   "settingTimersTtsLanguageDescription": "Мова, якою озвучуються таймери.",
   "settingTimersTtsVoiceDescription": "Голос, який озвучує таймери.",
   "settingTimersShowBeforeEndTitle": "Показувати вигляд таймерів перед завершенням",
-  "settingTimersShowBeforeEndDescription": "За скільки до завершення таймера відкривається вигляд таймерів."
+  "settingTimersShowBeforeEndDescription": "За скільки до завершення таймера відкривається вигляд таймерів.",
+  "settingTimersShowOnStartTitle": "Показувати вигляд таймерів під час запуску таймера",
+  "settingTimersShowOnStartDescription": "Відкриває вигляд таймерів щоразу, коли запускається таймер."
 }

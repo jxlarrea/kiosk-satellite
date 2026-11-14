@@ -56135,6 +56135,32 @@
       ]
     }
   },
+  "settingTimersShowOnStartTitle": "Показувати вигляд таймерів під час запуску таймера",
+  "@settingTimersShowOnStartTitle": {
+    "context": "Settings > Timers",
+    "description": "Switch: whether starting a timer opens the full screen timers view.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersShowOnStartDescription": "Відкриває вигляд таймерів щоразу, коли запускається таймер.",
+  "@settingTimersShowOnStartDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that switch.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "voiceWakePage": "Слово активації",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

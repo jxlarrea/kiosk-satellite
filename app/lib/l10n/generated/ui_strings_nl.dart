@@ -15531,6 +15531,14 @@ class UiStringsNl extends UiStrings {
       'Hoe lang voor het einde van een timer de timerweergave opent.';
 
   @override
+  String get settingTimersShowOnStartTitle =>
+      'Timerweergave tonen wanneer een timer start';
+
+  @override
+  String get settingTimersShowOnStartDescription =>
+      'Opent de timerweergave telkens wanneer een timer wordt gestart.';
+
+  @override
   String get voiceWakePage => 'Wekwoorden';
 
   @override

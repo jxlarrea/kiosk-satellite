@@ -15513,6 +15513,14 @@ class UiStringsUk extends UiStrings {
       'За скільки до завершення таймера відкривається вигляд таймерів.';
 
   @override
+  String get settingTimersShowOnStartTitle =>
+      'Показувати вигляд таймерів під час запуску таймера';
+
+  @override
+  String get settingTimersShowOnStartDescription =>
+      'Відкриває вигляд таймерів щоразу, коли запускається таймер.';
+
+  @override
   String get voiceWakePage => 'Слово активації';
 
   @override

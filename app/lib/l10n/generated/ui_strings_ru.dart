@@ -15450,6 +15450,14 @@ class UiStringsRu extends UiStrings {
       'За сколько до завершения таймера открывается вид таймеров.';
 
   @override
+  String get settingTimersShowOnStartTitle =>
+      'Показывать вид таймеров при запуске таймера';
+
+  @override
+  String get settingTimersShowOnStartDescription =>
+      'Открывает вид таймеров при каждом запуске таймера.';
+
+  @override
   String get voiceWakePage => 'Слово пробуждения';
 
   @override

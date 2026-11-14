@@ -15674,6 +15674,14 @@ class UiStringsDe extends UiStrings {
       'Wie lange vor dem Ablauf eines Timers die Timer-Ansicht geöffnet wird.';
 
   @override
+  String get settingTimersShowOnStartTitle =>
+      'Timer-Ansicht beim Start eines Timers anzeigen';
+
+  @override
+  String get settingTimersShowOnStartDescription =>
+      'Öffnet die Timer-Ansicht bei jedem Start eines Timers.';
+
+  @override
   String get voiceWakePage => 'Aktivierungswort';
 
   @override
