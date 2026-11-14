@@ -190,6 +190,9 @@ class KioskApplication : Application(), CameraXConfig.Provider {
             me.jxl.kiosk_satellite.plugins.PluginOverlayViews.VIEW_TYPE,
             plugins.overlayViews,
         )
+        // A process Android started with no Activity, on a kiosk that was
+        // on screen when its last process ended, gets its screen back.
+        if (!headless) CrashSelfHeal.watchStart(this)
         // Headless, no Activity ever arms the keep-alive service, so the
         // process does it as it starts, however it was started.
         if (headless) KioskSatelliteService.ensureRunning(this)

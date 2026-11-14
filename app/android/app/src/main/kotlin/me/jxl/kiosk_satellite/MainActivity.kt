@@ -225,8 +225,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun setWasForeground(value: Boolean) {
-        getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            .edit().putBoolean("flutter.ks.crash.was_foreground", value).apply()
+        CrashSelfHeal.noteForeground(this, value)
     }
 
     // The engine belongs to the process, not this Activity.

@@ -207,6 +207,10 @@ class QueueArtworkCache {
   static Future<Uint8List?> thumbnail(Uint8List bytes) async {
     final cpu = await cpuPngThumbnail(bytes, 256);
     if (cpu != null) return cpu;
+    // Flutter's resize and its PNG encode both go through a framebuffer
+    // on the GPU, which is what aborts the app on some OpenGL ES drivers
+    // (GpuResize). No thumbnail is the smaller loss.
+    if (GpuResize.risky) return null;
     final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
     try {
       final descriptor = await ui.ImageDescriptor.encoded(buffer);

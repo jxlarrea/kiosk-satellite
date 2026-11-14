@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 
@@ -47,6 +49,82 @@ object CrashSelfHeal {
     /// stretch it to ten minutes or so, which still beats a wall of ads
     /// until a human walks past.
     private const val HEARTBEAT_MS = 3 * 60_000L
+
+    /** How long after the process starts [watchStart] looks for the
+     *  kiosk screen. A launch that started the process, and the relaunch
+     *  after a crash, both attach well inside it. */
+    private const val START_CHECK_MS = 5_000L
+
+    private const val PREFS = "FlutterSharedPreferences"
+    private const val WAS_FOREGROUND = "flutter.ks.crash.was_foreground"
+    private const val FOREGROUND_BOOT = "flutter.ks.crash.foreground_boot"
+
+    /** Android's count of boots, which tells this boot from the last. */
+    private fun bootCount(context: Context): Long = try {
+        Settings.Global.getInt(
+            context.contentResolver, Settings.Global.BOOT_COUNT, 0).toLong()
+    } catch (_: Exception) {
+        0L
+    }
+
+    /** The kiosk is on screen, or has just left it ([MainActivity]). */
+    fun noteForeground(context: Context, value: Boolean) {
+        val edit = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(WAS_FOREGROUND, value)
+        if (value) edit.putLong(FOREGROUND_BOOT, bootCount(context))
+        edit.apply()
+    }
+
+    /**
+     * Called as the process starts: a little later, bring the kiosk screen
+     * back if the process came up without it (issue #1433).
+     *
+     * The sticky restart after a crash is one way the process starts with
+     * no Activity, and [KioskSatelliteService] answers that one. Android
+     * has others that reach no hook here: a system service that binds one
+     * of ours again after a force stop (the notification listener), which
+     * also clears the sticky restart and the heartbeat, a vendor's own
+     * keep-alive, or a crash relaunch that the two minute throttle turned
+     * away. The process then runs with Home Assistant connected and
+     * nothing on screen, and nothing the Activity owns (the camera, RTSP)
+     * works, until a person opens the app.
+     *
+     * Only for a kiosk that was on screen in this boot when its last
+     * process ended. After a reboot the flag is stale and Start on boot
+     * decides. The heartbeat is armed too, so a relaunch the throttle
+     * turns away here is tried again.
+     */
+    fun watchStart(context: Context) {
+        val app = context.applicationContext
+        Handler(Looper.getMainLooper()).postDelayed({
+            val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val bringBack = startedWithoutScreen(
+                activityUp = ActivityState.attached || ActivityState.resumed,
+                exiting = KioskSatelliteService.exiting,
+                autoReload = autoReloadEnabled(app),
+                wasForeground = prefs.getBoolean(WAS_FOREGROUND, false),
+                foregroundBoot = prefs.getLong(FOREGROUND_BOOT, -1L),
+                boot = bootCount(app),
+            )
+            if (!bringBack) return@postDelayed
+            android.util.Log.w(TAG,
+                "the process started without the kiosk screen; bringing it back")
+            scheduleHeartbeat(app)
+            maybeRelaunch(app)
+        }, START_CHECK_MS)
+    }
+
+    /** Whether [watchStart] should bring the kiosk screen back. */
+    internal fun startedWithoutScreen(
+        activityUp: Boolean,
+        exiting: Boolean,
+        autoReload: Boolean,
+        wasForeground: Boolean,
+        foregroundBoot: Long,
+        boot: Long,
+    ): Boolean =
+        !activityUp && !exiting && autoReload && wasForeground &&
+            foregroundBoot == boot
 
     /**
      * Make sure the service is up and arm the heartbeat, or stand the

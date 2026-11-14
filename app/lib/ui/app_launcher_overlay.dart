@@ -407,6 +407,10 @@ Future<Color?> _dominantColor(String package, Uint8List bytes) async {
     final ByteData? data;
     if (cpu != null) {
       data = ByteData.sublistView(cpu);
+    } else if (GpuResize.risky) {
+      // Flutter's resize and read back both go through a framebuffer on
+      // the GPU (GpuResize). The icon keeps the default backdrop.
+      data = null;
     } else {
       final codec = await ui.instantiateImageCodec(
         bytes,

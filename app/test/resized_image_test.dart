@@ -206,7 +206,7 @@ void main() {
     });
   });
 
-  testWidgets('with the risk a declined downscale falls back to Flutter', (
+  testWidgets('with the risk a declined downscale decodes at the stored size', (
     tester,
   ) async {
     await tester.runAsync(() async {
@@ -215,14 +215,35 @@ void main() {
           .setMockMethodCallHandler(_channel, (call) async => null);
       GpuResize.risky = true;
       expect(await _decodedSize(resizedMemoryImage(bytes, width: 100)), (
-        100,
-        50,
+        400,
+        200,
       ));
       final codec = await instantiateResizedCodec(bytes, targetWidth: 40);
       final frame = await codec.getNextFrame();
-      expect((frame.image.width, frame.image.height), (40, 20));
+      expect((frame.image.width, frame.image.height), (400, 200));
       frame.image.dispose();
       codec.dispose();
+    });
+  });
+
+  testWidgets('with the risk a target above the stored size is not upscaled', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      final bytes = await _png(80, 40);
+      var called = false;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_channel, (call) async {
+            called = true;
+            return null;
+          });
+      GpuResize.risky = true;
+      final codec = await instantiateResizedCodec(bytes, targetWidth: 160);
+      final frame = await codec.getNextFrame();
+      expect((frame.image.width, frame.image.height), (80, 40));
+      frame.image.dispose();
+      codec.dispose();
+      expect(called, isFalse);
     });
   });
 

@@ -269,8 +269,13 @@ bool _isJpeg(Uint8List bytes) =>
 
 /// Decodes [bytes] at the size [target] picks from the upright intrinsic
 /// size: as is when that is the stored size, at the JPEG decoder's own
-/// scale when one covers it, through Android otherwise, and through
-/// Flutter's own resize only when Android declines.
+/// scale when one covers it and through Android otherwise. When Android
+/// declines (an animated image, a format it cannot read, a size larger
+/// than the stored one), the image is decoded at its stored size and the
+/// widget scales it when it draws. A target size is never handed to
+/// Flutter here: that is the GPU resize this file exists to avoid, and a
+/// Now Playing cover smaller than the backdrop's 160 pixels or an animated
+/// one still reached it (issue #1433).
 Future<ui.Codec> _decode(
   Uint8List bytes,
   (int?, int?) Function(int width, int height) target,
@@ -319,12 +324,7 @@ Future<ui.Codec> _decode(
         )
       : null;
   final pixels = scaled?['pixels'];
-  if (pixels is! Uint8List) {
-    return descriptor.instantiateCodec(
-      targetWidth: width,
-      targetHeight: height,
-    );
-  }
+  if (pixels is! Uint8List) return descriptor.instantiateCodec();
   descriptor.dispose();
   final rawBuffer = await ui.ImmutableBuffer.fromUint8List(pixels);
   try {
