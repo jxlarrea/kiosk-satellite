@@ -56161,6 +56161,32 @@
       ]
     }
   },
+  "settingTimersPauseScreensaverTitle": "计时器运行时暂停屏保",
+  "@settingTimersPauseScreensaverTitle": {
+    "context": "Settings > Timers",
+    "description": "Switch: the screensaver does not start while the timers view is open with a running timer. The screensaver is held back, not stopped for good.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersPauseScreensaverDescription": "计时器视图显示运行中的计时器时，不启动屏保。",
+  "@settingTimersPauseScreensaverDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that switch.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "voiceWakePage": "唤醒词",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

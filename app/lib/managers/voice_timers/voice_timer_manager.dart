@@ -225,6 +225,8 @@ class VoiceTimerManager extends Manager {
       if (e.key == defs.timersShowBeforeEnd.key ||
           e.key == defs.voiceTimerPills.key) {
         _scheduleNear();
+      } else if (e.key == defs.timersPauseScreensaver.key) {
+        _syncHold();
       }
     });
     commands
@@ -714,11 +716,12 @@ class VoiceTimerManager extends Manager {
     }
     if (fresh) {
       _closeTimer?.cancel();
-      // A finished timer needs its Dismiss button on a lit screen with
-      // nothing over it: the screensaver goes, as for a ringing alarm.
-      if (alerts.value.isNotEmpty && !alertHidden.value) {
-        unawaited(commands.execute('stopScreensaver', const {}));
-      }
+      // The view is under the screensaver, so the screensaver goes: for a
+      // finished timer, whose Dismiss button needs a lit screen with
+      // nothing over it, and for a timer that starts and is to be shown.
+      // Only the finished one holds it away (see [_syncHold]). The started
+      // one leaves the screensaver to its idle timer.
+      unawaited(commands.execute('stopScreensaver', const {}));
       if (!visible.value) {
         _autoOpened = true;
         visible.value = true;
@@ -746,7 +749,8 @@ class VoiceTimerManager extends Manager {
   /// attention: one that finished, or one inside the near completion
   /// window that brought the view up. Closing the view lets it go, and so
   /// does the last such timer going. A timer that merely runs holds
-  /// nothing: the screensaver covers the view on its idle timer.
+  /// nothing, and the screensaver covers the view on its idle timer, unless
+  /// Pause screensaver while a timer runs is on.
   void _syncHold() {
     final settings = this.settings;
     var held = false;
@@ -755,7 +759,12 @@ class VoiceTimerManager extends Manager {
           (alerts.value.isNotEmpty && !alertHidden.value) ||
           // Inside the window since the view came up for it. Time added
           // since then takes it out again (see [_scheduleNear]).
-          timers.value.any((t) => t.active && _nearShown.containsKey(t.id));
+          timers.value.any((t) => t.active && _nearShown.containsKey(t.id)) ||
+          // Pause screensaver while a timer runs: any running timer,
+          // while the view is the one on screen. A paused one does not
+          // count.
+          (settings.get(defs.timersPauseScreensaver) &&
+              timers.value.any((t) => t.active && !t.finished));
     }
     if (held == _held) return;
     _held = held;

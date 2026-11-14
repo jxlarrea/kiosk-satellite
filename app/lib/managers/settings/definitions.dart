@@ -8543,6 +8543,23 @@ const timersShowBeforeEnd = SettingDef<num>(
   dependsOnValue: false,
 );
 
+/// Keeps the screensaver from starting while the timers view is open with
+/// a running timer on it. Off, only a timer near its end or finished holds
+/// the screensaver. The pills never leave the screen, so the row goes with
+/// them on.
+const timersPauseScreensaver = SettingDef<bool>(
+  key: 'timers.pause_screensaver',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Pause screensaver while a timer runs',
+  description:
+      'Keep the screensaver from starting while the Timers view shows a '
+      'running timer.',
+  category: 'Timers',
+  dependsOn: 'voice.timer_pills',
+  dependsOnValue: false,
+);
+
 /// The kiosk menu's Timers row: a link to Drawer menu items, which decides
 /// every row, as on the Alarms page.
 const timersMenu = SettingDef<bool>(
@@ -14614,6 +14631,7 @@ const List<SettingDef<Object>> allSettings = [
   // timers, When a timer ends, Text to Speech, Pills.
   timersShowOnStart,
   timersShowBeforeEnd,
+  timersPauseScreensaver,
   timersMenu,
   voiceTimersShare,
   voiceTimersShareWith,

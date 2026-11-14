@@ -15662,6 +15662,14 @@ class UiStringsEs extends UiStrings {
       'Abre la vista de temporizadores cada vez que se inicia un temporizador.';
 
   @override
+  String get settingTimersPauseScreensaverTitle =>
+      'Pausar el protector de pantalla mientras hay un temporizador en marcha';
+
+  @override
+  String get settingTimersPauseScreensaverDescription =>
+      'Evita que el protector de pantalla se inicie mientras la vista de temporizadores muestra un temporizador en marcha.';
+
+  @override
   String get voiceWakePage => 'Palabra de activación';
 
   @override

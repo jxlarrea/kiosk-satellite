@@ -134,16 +134,16 @@ void main() {
     c.voiceTimers.visible.value = false;
     await tester.pump(const Duration(seconds: 10));
     expect(c.voiceTimers.visible.value, isFalse);
-    expect(saver, isEmpty);
+    expect(saver, ['stop']);
     // 30 seconds before the end it is back, with the screensaver dismissed
     // and held.
     await tester.pump(const Duration(seconds: 6));
     expect(c.voiceTimers.visible.value, isTrue);
-    expect(saver, ['stop', 'hold']);
+    expect(saver, ['stop', 'stop', 'hold']);
     // Closed again, it stays closed for this timer and the screensaver is
     // let go.
     c.voiceTimers.visible.value = false;
-    expect(saver, ['stop', 'hold', 'release']);
+    expect(saver, ['stop', 'stop', 'hold', 'release']);
     await snapshot([timer('one', 28)]);
     await tester.pump(const Duration(seconds: 5));
     expect(c.voiceTimers.visible.value, isFalse);
@@ -157,15 +157,16 @@ void main() {
     await tester.pumpWidget(app());
     await snapshot([timer('one', 600)]);
     await tester.pump();
-    // A timer that only runs holds nothing.
-    expect(saver, isEmpty);
+    // Starting dismisses the screensaver so the view shows. A timer that
+    // only runs holds nothing.
+    expect(saver, ['stop']);
     await snapshot([]);
     await alert([timer('one', 0)]);
     await tester.pump();
-    expect(saver, ['stop', 'hold']);
+    expect(saver, ['stop', 'stop', 'hold']);
     c.voiceTimers.control('one', 'dismiss');
     await tester.pump();
-    expect(saver, ['stop', 'hold', 'release']);
+    expect(saver, ['stop', 'stop', 'hold', 'release']);
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 3));
   });
@@ -177,12 +178,36 @@ void main() {
     await snapshot([timer('one', 600)]);
     await tester.pump();
     expect(c.voiceTimers.visible.value, isFalse);
+    // Nor is the screensaver touched.
+    expect(saver, isEmpty);
     await snapshot([]);
     await alert([timer('one', 0)]);
     await tester.pump();
     expect(c.voiceTimers.visible.value, isTrue);
     c.voiceTimers.control('one', 'dismiss');
     await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('Pause screensaver while a timer runs holds it while the '
+      'view shows a running timer', (tester) async {
+    await c.settings.set(defs.timersPauseScreensaver, true);
+    await tester.pumpWidget(app());
+    await snapshot([timer('one', 600)]);
+    await tester.pump();
+    expect(saver, ['stop', 'hold']);
+    // Paused, it does not count.
+    await snapshot([timer('one', 600, active: false)]);
+    await tester.pump();
+    expect(saver, ['stop', 'hold', 'release']);
+    await snapshot([timer('one', 600)]);
+    await tester.pump();
+    expect(saver.last, 'hold');
+    // Closing the view lets the screensaver go.
+    c.voiceTimers.visible.value = false;
+    expect(saver.last, 'release');
+    await tester.pumpWidget(const SizedBox());
+    await snapshot([]);
     await tester.pump(const Duration(seconds: 3));
   });
 

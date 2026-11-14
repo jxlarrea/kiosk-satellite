@@ -67,10 +67,12 @@ void main() {
       [
         defs.timersShowOnStart.key,
         defs.timersShowBeforeEnd.key,
+        defs.timersPauseScreensaver.key,
         defs.timersMenu.key,
       ],
     );
     expect(defs.timersShowOnStart.defaultValue, isTrue);
+    expect(defs.timersPauseScreensaver.defaultValue, isFalse);
     expect(defs.timersShowBeforeEnd.min, 30);
     expect(defs.timersShowBeforeEnd.max, 300);
     expect(defs.timersShowBeforeEnd.step, 30);

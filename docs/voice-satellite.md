@@ -193,7 +193,7 @@ A finished timer takes the top in its alert color with **Time's up** and a **Dis
 
 The X closes the view until the next timer starts or finishes. The view closes by itself once the last timer is gone.
 
-The view sits under the screensaver, like the alarm list. A timer that only runs does not keep the screensaver away. Once a timer reaches the **Show Timers view when near completion** mark, and when one finishes, the screensaver is dismissed and held back so the view shows at full brightness. Closing the view, or the last such timer going, lets the screensaver start again.
+The view sits under the screensaver, like the alarm list. A timer that starts dismisses the screensaver so the view shows, with **Show Timers view when a timer starts** on. A timer that only runs does not keep the screensaver away, so it comes back on its idle timer, unless **Pause screensaver while a timer runs** is on. Once a timer reaches the **Show Timers view when near completion** mark, and when one finishes, the screensaver is dismissed and held back so the view shows at full brightness. Closing the view, or the last such timer going, lets the screensaver start again.
 
 Open the view at any time with **Timers** in the [drawer menu](drawer-menu.md), the **Open the timers** [gesture action](gestures.md), a `ks://timers` [dashboard link](dashboard-links.md) or as a view of the [Compass layout](navigation.md). **Kiosk Mode > Allowed Actions > Timers** decides whether the locked kiosk's menu and Compass offer it.
 
@@ -219,6 +219,7 @@ To get the floating pills back, turn on **Show timers as pills** under **Setting
 |---|---|---|
 | | Show Timers view when a timer starts | On by default. Off, starting a timer leaves the screen as it is and the view waits for the near completion mark or the finish. Not shown with **Show timers as pills** on. |
 | | Show Timers view when near completion | From 30 seconds to 5 minutes, 1 minute by default. The timers view opens again once a running timer has that long left, if it was closed or another view was opened after the timer started, and the screensaver is dismissed and held. Each timer does it once. Not shown with **Show timers as pills** on. |
+| | Pause screensaver while a timer runs | Off by default. Keeps the screensaver from starting while the Timers view is open with a running timer on it. A paused timer does not count, and the screensaver starts as usual once the view is closed or another view is in front. Not shown with **Show timers as pills** on. |
 | | Show in the kiosk menu | Opens **Drawer menu items**, where the **Timers** row is turned on or off. |
 | Timers | Manage timers | Opens the timers view. In the remote admin, the list of timers itself. |
 | Shared timers | Share timers, Share with, Show shared timers | Run this kiosk's timers on other kiosks too. See [Shared timers](#shared-timers). |

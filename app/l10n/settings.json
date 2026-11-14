@@ -2726,5 +2726,9 @@
   "timers.show_on_start": {
     "title": "settingTimersShowOnStartTitle",
     "description": "settingTimersShowOnStartDescription"
+  },
+  "timers.pause_screensaver": {
+    "title": "settingTimersPauseScreensaverTitle",
+    "description": "settingTimersPauseScreensaverDescription"
   }
 }

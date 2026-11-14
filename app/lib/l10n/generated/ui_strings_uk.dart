@@ -15521,6 +15521,14 @@ class UiStringsUk extends UiStrings {
       'Відкриває вигляд таймерів щоразу, коли запускається таймер.';
 
   @override
+  String get settingTimersPauseScreensaverTitle =>
+      'Призупиняти заставку, поки працює таймер';
+
+  @override
+  String get settingTimersPauseScreensaverDescription =>
+      'Заставка не запускається, поки вигляд таймерів показує активний таймер.';
+
+  @override
   String get voiceWakePage => 'Слово активації';
 
   @override

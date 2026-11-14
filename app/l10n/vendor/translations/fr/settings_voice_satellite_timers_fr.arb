@@ -34,5 +34,7 @@
   "settingTimersShowBeforeEndTitle": "Afficher la vue des minuteurs peu avant la fin",
   "settingTimersShowBeforeEndDescription": "Combien de temps avant la fin d'un minuteur la vue des minuteurs s'ouvre.",
   "settingTimersShowOnStartTitle": "Afficher la vue des minuteurs au démarrage d'un minuteur",
-  "settingTimersShowOnStartDescription": "Ouvre la vue des minuteurs à chaque démarrage d'un minuteur."
+  "settingTimersShowOnStartDescription": "Ouvre la vue des minuteurs à chaque démarrage d'un minuteur.",
+  "settingTimersPauseScreensaverTitle": "Mettre en pause l'économiseur d'écran tant qu'un minuteur est en cours",
+  "settingTimersPauseScreensaverDescription": "Empêche l'économiseur d'écran de démarrer tant que la vue des minuteurs affiche un minuteur en cours."
 }

@@ -2728,4 +2728,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingTimersShowOnStartTitle",
     "description": "settingTimersShowOnStartDescription",
   },
+  "timers.pause_screensaver": {
+    "title": "settingTimersPauseScreensaverTitle",
+    "description": "settingTimersPauseScreensaverDescription",
+  },
 };

@@ -15360,6 +15360,14 @@ class UiStringsEn extends UiStrings {
       'Open the Timers view each time a timer is started.';
 
   @override
+  String get settingTimersPauseScreensaverTitle =>
+      'Pause screensaver while a timer runs';
+
+  @override
+  String get settingTimersPauseScreensaverDescription =>
+      'Keep the screensaver from starting while the Timers view shows a running timer.';
+
+  @override
   String get voiceWakePage => 'Wake Word';
 
   @override

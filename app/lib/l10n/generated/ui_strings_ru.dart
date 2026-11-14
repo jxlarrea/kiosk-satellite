@@ -15458,6 +15458,14 @@ class UiStringsRu extends UiStrings {
       'Открывает вид таймеров при каждом запуске таймера.';
 
   @override
+  String get settingTimersPauseScreensaverTitle =>
+      'Приостанавливать заставку, пока идёт таймер';
+
+  @override
+  String get settingTimersPauseScreensaverDescription =>
+      'Заставка не запускается, пока вид таймеров показывает идущий таймер.';
+
+  @override
   String get voiceWakePage => 'Слово пробуждения';
 
   @override

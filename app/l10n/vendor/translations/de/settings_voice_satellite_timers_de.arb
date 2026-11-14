@@ -34,5 +34,7 @@
   "settingTimersShowBeforeEndTitle": "Timer-Ansicht kurz vor Ablauf anzeigen",
   "settingTimersShowBeforeEndDescription": "Wie lange vor dem Ablauf eines Timers die Timer-Ansicht geöffnet wird.",
   "settingTimersShowOnStartTitle": "Timer-Ansicht beim Start eines Timers anzeigen",
-  "settingTimersShowOnStartDescription": "Öffnet die Timer-Ansicht bei jedem Start eines Timers."
+  "settingTimersShowOnStartDescription": "Öffnet die Timer-Ansicht bei jedem Start eines Timers.",
+  "settingTimersPauseScreensaverTitle": "Bildschirmschoner pausieren, solange ein Timer läuft",
+  "settingTimersPauseScreensaverDescription": "Verhindert den Start des Bildschirmschoners, solange die Timer-Ansicht einen laufenden Timer zeigt."
 }

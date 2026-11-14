@@ -5297,6 +5297,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingTimersShowOnStartTitle' => strings.settingTimersShowOnStartTitle,
       'settingTimersShowOnStartDescription' =>
         strings.settingTimersShowOnStartDescription,
+      'settingTimersPauseScreensaverTitle' =>
+        strings.settingTimersPauseScreensaverTitle,
+      'settingTimersPauseScreensaverDescription' =>
+        strings.settingTimersPauseScreensaverDescription,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,

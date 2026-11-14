@@ -30303,5 +30303,29 @@
     "translation": "a8e92dfb6437feb171f39a6f63e43fdec4e8b82e72d3b7b4faaae6d4a0338069",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingTimersPostponeScreensaverDescription": {
+    "source": "ea64d518d71650df3308f56fc6d6c67502f65203d09952d8fee0d13510e3fa8b",
+    "translation": "7e341571ea102242fdfcb9d340bfc906faccec6a459f518647f5ec94ded682ec",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersPostponeScreensaverTitle": {
+    "source": "9c6e2b805de6827eab53f116b078b1142dc7a61a7537cb53241a1a766dfea53b",
+    "translation": "655f130d1f1f0aba1e240938b58f9a91c5e0308c486429c21498717908d5807a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersPauseScreensaverDescription": {
+    "source": "ea64d518d71650df3308f56fc6d6c67502f65203d09952d8fee0d13510e3fa8b",
+    "translation": "7e341571ea102242fdfcb9d340bfc906faccec6a459f518647f5ec94ded682ec",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersPauseScreensaverTitle": {
+    "source": "65665105e8f18e2f6f809accde732da5161eb20d1df88d9cd520dab99768e9bf",
+    "translation": "bef12d804342f126d87f6b74f1f21a3ad0be5089de63ca81c48d19653fd51018",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

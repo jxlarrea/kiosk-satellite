@@ -15539,6 +15539,14 @@ class UiStringsNl extends UiStrings {
       'Opent de timerweergave telkens wanneer een timer wordt gestart.';
 
   @override
+  String get settingTimersPauseScreensaverTitle =>
+      'Schermbeveiliging pauzeren terwijl een timer loopt';
+
+  @override
+  String get settingTimersPauseScreensaverDescription =>
+      'Voorkomt dat de schermbeveiliging start terwijl de timerweergave een lopende timer toont.';
+
+  @override
   String get voiceWakePage => 'Wekwoorden';
 
   @override

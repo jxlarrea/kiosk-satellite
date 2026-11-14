@@ -26831,6 +26831,18 @@ abstract class UiStrings {
   /// **'Open the Timers view each time a timer is started.'**
   String get settingTimersShowOnStartDescription;
 
+  /// Switch: the screensaver does not start while the timers view is open with a running timer. The screensaver is held back, not stopped for good.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause screensaver while a timer runs'**
+  String get settingTimersPauseScreensaverTitle;
+
+  /// Description of that switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the screensaver from starting while the Timers view shows a running timer.'**
+  String get settingTimersPauseScreensaverDescription;
+
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///
   /// In en, this message translates to:

@@ -15682,6 +15682,14 @@ class UiStringsDe extends UiStrings {
       'Öffnet die Timer-Ansicht bei jedem Start eines Timers.';
 
   @override
+  String get settingTimersPauseScreensaverTitle =>
+      'Bildschirmschoner pausieren, solange ein Timer läuft';
+
+  @override
+  String get settingTimersPauseScreensaverDescription =>
+      'Verhindert den Start des Bildschirmschoners, solange die Timer-Ansicht einen laufenden Timer zeigt.';
+
+  @override
   String get voiceWakePage => 'Aktivierungswort';
 
   @override

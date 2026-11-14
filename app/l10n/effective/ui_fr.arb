@@ -56161,6 +56161,32 @@
       ]
     }
   },
+  "settingTimersPauseScreensaverTitle": "Mettre en pause l'économiseur d'écran tant qu'un minuteur est en cours",
+  "@settingTimersPauseScreensaverTitle": {
+    "context": "Settings > Timers",
+    "description": "Switch: the screensaver does not start while the timers view is open with a running timer. The screensaver is held back, not stopped for good.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersPauseScreensaverDescription": "Empêche l'économiseur d'écran de démarrer tant que la vue des minuteurs affiche un minuteur en cours.",
+  "@settingTimersPauseScreensaverDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that switch.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "voiceWakePage": "Mot de réveil",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

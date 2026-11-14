@@ -56161,6 +56161,32 @@
       ]
     }
   },
+  "settingTimersPauseScreensaverTitle": "Призупиняти заставку, поки працює таймер",
+  "@settingTimersPauseScreensaverTitle": {
+    "context": "Settings > Timers",
+    "description": "Switch: the screensaver does not start while the timers view is open with a running timer. The screensaver is held back, not stopped for good.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersPauseScreensaverDescription": "Заставка не запускається, поки вигляд таймерів показує активний таймер.",
+  "@settingTimersPauseScreensaverDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that switch.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "voiceWakePage": "Слово активації",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

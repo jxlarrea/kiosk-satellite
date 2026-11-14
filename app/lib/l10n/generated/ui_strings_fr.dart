@@ -15654,6 +15654,14 @@ class UiStringsFr extends UiStrings {
       'Ouvre la vue des minuteurs à chaque démarrage d\'un minuteur.';
 
   @override
+  String get settingTimersPauseScreensaverTitle =>
+      'Mettre en pause l\'économiseur d\'écran tant qu\'un minuteur est en cours';
+
+  @override
+  String get settingTimersPauseScreensaverDescription =>
+      'Empêche l\'économiseur d\'écran de démarrer tant que la vue des minuteurs affiche un minuteur en cours.';
+
+  @override
   String get voiceWakePage => 'Mot de réveil';
 
   @override
