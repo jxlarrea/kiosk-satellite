@@ -123,6 +123,7 @@ class PickSpec {
     this.grid = false,
     this.limit,
     this.emptyText,
+    this.ordered = true,
   });
 
   final String key;
@@ -154,6 +155,11 @@ class PickSpec {
   /// failing, such as a plugin's choices before it lists any. Nothing
   /// matches otherwise.
   final String Function(BuildContext context)? emptyText;
+
+  /// False for picks whose order means nothing (the kiosks to share timers
+  /// with): the picks column lists them without the drag handle, the
+  /// arrows and the hint about them.
+  final bool ordered;
 }
 
 /// Home Assistant's entities, all of them, filtered on the device per
@@ -1044,33 +1050,54 @@ class _ItemPickerState extends State<ItemPicker> {
               ),
             ),
           ),
-          Flexible(
-            child: ReorderableListView(
-              shrinkWrap: true,
-              buildDefaultDragHandles: false,
-              onReorderItem: (from, to) => setState(() {
-                _picked.insert(to, _picked.removeAt(from));
-              }),
-              children: [
-                for (final (i, id) in _picked.indexed)
-                  _ShowingRow(
-                    key: ValueKey(id),
-                    index: i,
-                    item: list?.find(id),
-                    id: id,
-                    first: i == 0,
-                    last: i == _picked.length - 1,
-                    onUp: () => setState(() {
-                      _picked.insert(i - 1, _picked.removeAt(i));
-                    }),
-                    onDown: () => setState(() {
-                      _picked.insert(i + 1, _picked.removeAt(i));
-                    }),
-                  ),
-              ],
+          if (!widget.spec.ordered)
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final (i, id) in _picked.indexed)
+                    _ShowingRow(
+                      key: ValueKey(id),
+                      index: i,
+                      item: list?.find(id),
+                      id: id,
+                      first: true,
+                      last: true,
+                      ordered: false,
+                      onUp: () {},
+                      onDown: () {},
+                    ),
+                ],
+              ),
+            )
+          else
+            Flexible(
+              child: ReorderableListView(
+                shrinkWrap: true,
+                buildDefaultDragHandles: false,
+                onReorderItem: (from, to) => setState(() {
+                  _picked.insert(to, _picked.removeAt(from));
+                }),
+                children: [
+                  for (final (i, id) in _picked.indexed)
+                    _ShowingRow(
+                      key: ValueKey(id),
+                      index: i,
+                      item: list?.find(id),
+                      id: id,
+                      first: i == 0,
+                      last: i == _picked.length - 1,
+                      onUp: () => setState(() {
+                        _picked.insert(i - 1, _picked.removeAt(i));
+                      }),
+                      onDown: () => setState(() {
+                        _picked.insert(i + 1, _picked.removeAt(i));
+                      }),
+                    ),
+                ],
+              ),
             ),
-          ),
-          if (_picked.length > 1)
+          if (widget.spec.ordered && _picked.length > 1)
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Text(
@@ -1547,8 +1574,11 @@ class _ShowingRow extends StatelessWidget {
     required this.last,
     required this.onUp,
     required this.onDown,
+    this.ordered = true,
   });
 
+  /// False leaves out the drag handle and the arrows.
+  final bool ordered;
   final int index;
   final PickItem? item;
   final String id;
@@ -1564,11 +1594,17 @@ class _ShowingRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          ReorderableDragStartListener(
-            index: index,
-            child: Icon(Icons.drag_indicator, size: 20, color: scheme.outline),
-          ),
-          const SizedBox(width: 6),
+          if (ordered) ...[
+            ReorderableDragStartListener(
+              index: index,
+              child: Icon(
+                Icons.drag_indicator,
+                size: 20,
+                color: scheme.outline,
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
           Container(
             width: 32,
             height: 32,
@@ -1592,18 +1628,20 @@ class _ShowingRow extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: l10n(context).commonMoveUp,
-            icon: const Icon(Icons.arrow_upward, size: 18),
-            onPressed: first ? null : onUp,
-          ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: l10n(context).commonMoveDown,
-            icon: const Icon(Icons.arrow_downward, size: 18),
-            onPressed: last ? null : onDown,
-          ),
+          if (ordered) ...[
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: l10n(context).commonMoveUp,
+              icon: const Icon(Icons.arrow_upward, size: 18),
+              onPressed: first ? null : onUp,
+            ),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: l10n(context).commonMoveDown,
+              icon: const Icon(Icons.arrow_downward, size: 18),
+              onPressed: last ? null : onDown,
+            ),
+          ],
         ],
       ),
     );

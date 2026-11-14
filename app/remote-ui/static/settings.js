@@ -46,6 +46,7 @@ import { applyManagedBanners, renderFleetPage } from './fleetsync.js';
 import { decorateAnnouncementsPage, renderIntercomPage } from './intercom.js';
 import { renderAlarmsPage } from './alarms.js';
 import { renderCalendarPage } from './calendar.js';
+import { renderTimersPage } from './timers.js';
 import { renderCustomPagesPage } from './custom_pages.js';
 import { renderUrlFilterPage } from './url_filter.js';
 import { renderPluginScreensaverEntry } from './plugins.js';
@@ -287,7 +288,9 @@ async function flushSettingsUpdates() {
     // Background listening, wake word arbitration and the stop word each
     // gate one row in their own card. Their live update can use the same
     // dependency placement as a local save.
-    if (!shapeChanged && ['wake_word.background', 'voice.wake_arbitration', 'voice.stop_word'].includes(setting.key) && rows.length
+    if (!shapeChanged && ['wake_word.background', 'voice.wake_arbitration', 'voice.stop_word',
+      // The Timers page's switches, each gating rows of its own card.
+      'voice.timers_share', 'voice.timer_pills', 'voice.timer_alert_pill', 'voice.timer_speak'].includes(setting.key) && rows.length
         && rows.every(row => row.updateSetting?.() && syncGatedRows(setting.key, row))) {
       continue;
     }
@@ -1689,6 +1692,8 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
   // The Calendar tab: Open on the kiosk and the Calendars card over the
   // Display and Kiosk rows.
   renderCalendarPage();
+  // The Timers tab: the Voice timers group under the definition rows.
+  renderTimersPage();
 
   const tlsPanel = document.querySelector('#tab-device .subpage[data-subpage="TLS"]');
   if (tlsPanel) renderTlsSettings(tlsPanel);
@@ -1862,13 +1867,15 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
     const root = document.getElementById('tab-voicesatellite');
     root.innerHTML = '';
     // The chime rows' sound pickers, uploads and previews, on either
-    // runtime's Chimes page.
+    // runtime's Chimes page and, for the timer sound, on the Timers page.
+    // A row is mounted once: the Timers page is drawn whatever this page
+    // shows, so its row is mounted first and skipped after.
+    const soundSelectors = [];
     const mountChimeRows = () => {
-      const soundSelectors = [];
       for (const kind of ['wake', 'done', 'error', 'alert', 'announce']) {
         const key = `voice_chimes.${kind}`;
         const row = document.querySelector(`[data-key="${key}"]`);
-        if (!row || !byKey[key]) continue;
+        if (!row || !byKey[key] || row.classList.contains('chime-row')) continue;
         row.classList.add('chime-row');
         const sound = attachSoundSelect(row, byKey[key]);
         soundSelectors.push(sound);
@@ -1906,6 +1913,7 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
         }, {inline: true});
       }
     };
+    mountChimeRows();
     let status = {};
     try {
       status = (await (await api('/api/commands/haStatus', { method: 'POST', body: '{}' })).json()).data || {};
@@ -1966,12 +1974,10 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
       // renderVsControls then puts into both panels.
       render(root, ['Voice Satellite'].filter((c) => (byCat[c] || []).length),
         { extra: ['Appearance'] });
-      // Match the kiosk's page order: Wake Word, Appearance, Timers, Chimes.
+      // Match the kiosk's page order: Wake Word, Appearance, Chimes.
       const appearanceEntry = root.querySelector('[data-subpage-entry="Appearance"]')?.closest('.card');
-      const timersEntry = root.querySelector('[data-subpage-entry="Timers"]')?.closest('.card');
       const chimesEntry = root.querySelector('[data-subpage-entry="Chimes"]')?.closest('.card');
       if (appearanceEntry && chimesEntry) appearanceEntry.after(chimesEntry);
-      if (appearanceEntry && timersEntry) appearanceEntry.after(timersEntry);
       // Wake word diagnostics stays where render() puts it, right under Wake
       // Word: its setting follows the Wake Word ones in the schema. (The
       // kiosk opens it from the tester's group, which is kiosk-only.)

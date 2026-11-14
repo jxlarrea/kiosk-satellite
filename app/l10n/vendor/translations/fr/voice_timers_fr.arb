@@ -17,5 +17,9 @@
   "voiceTimerPaused": "En pause",
   "voiceTimersShareNone": "Aucun kiosque choisi",
   "voiceTimersShareEmpty": "Aucun autre kiosque trouvé. Activez Gestion à distance et Trouver d'autres kiosques sur chacun.",
-  "voiceTimersShareOffline": "Hors ligne"
+  "voiceTimersShareOffline": "Hors ligne",
+  "timersVoiceSection": "Minuteurs vocaux",
+  "timersVoiceManage": "Gérer les minuteurs avec Voice Satellite",
+  "timersVoiceHint": "Fonctionne sans blueprint ni agent de conversation LLM.",
+  "voiceTimersShareSearch": "Rechercher des kiosques"
 }

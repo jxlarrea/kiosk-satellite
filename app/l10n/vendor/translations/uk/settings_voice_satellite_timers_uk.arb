@@ -25,5 +25,7 @@
   "settingVoiceTimersReceiveTitle": "Показувати спільні таймери",
   "settingVoiceTimersReceiveDescription": "Таймери, якими діляться інші кіоски, показуються й сигналять тут.",
   "settingKioskAllowTimersTitle": "Таймери",
-  "settingKioskAllowTimersDescription": "Відкривати вигляд таймерів із меню кіоска."
+  "settingKioskAllowTimersDescription": "Відкривати вигляд таймерів із меню кіоска.",
+  "settingsMenuTimersSummary": "Повноекранний вигляд, індикатори, спільні таймери",
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "кіоски, вибрані в «Ділитися з», звук таймера"
 }

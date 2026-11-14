@@ -13,19 +13,6 @@
       ]
     }
   },
-  "voiceChimesHint": "Wake, done, error, timer and announcement sounds",
-  "@voiceChimesHint": {
-    "context": "Settings > Voice Satellite > Chimes",
-    "description": "Chime selection, playback or help shown on the device and in Remote Admin.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Chimes"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Chimes"
-      ]
-    }
-  },
   "voiceChimesPreview": "Preview on kiosk",
   "@voiceChimesPreview": {
     "context": "Settings > Voice Satellite > Chimes",
@@ -280,6 +267,19 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Chimes"
+      ]
+    }
+  },
+  "voiceChimesSoundsHint": "Wake, done, error and announcement sounds",
+  "@voiceChimesSoundsHint": {
+    "context": "Settings > Voice Satellite",
+    "description": "Summary under Chimes: the sounds the page holds.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite"
       ]
     }
   }

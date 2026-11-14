@@ -32,7 +32,7 @@ def api(route):
     path = route.request.url.split('/api/', 1)[1]
     if path == 'settings':
         if route.request.method == 'GET':
-            return route.fulfill(json=dict(settings=settings, subpageHints={'Chimes': english['voiceChimesHint']}))
+            return route.fulfill(json=dict(settings=settings, subpageHints={'Chimes': english['voiceChimesSoundsHint']}))
         values = route.request.post_data_json
         writes.append(values)
         for key, value in values.items():

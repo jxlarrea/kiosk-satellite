@@ -53894,19 +53894,6 @@
       ]
     }
   },
-  "voiceChimesHint": "Wek-, gereed-, fout-, timer- en aankondigingsgeluiden",
-  "@voiceChimesHint": {
-    "context": "Settings > Voice Satellite > Chimes",
-    "description": "Chime selection, playback or help shown on the device and in Remote Admin.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Chimes"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Chimes"
-      ]
-    }
-  },
   "voiceChimesPreview": "Voorbeeld op kiosk",
   "@voiceChimesPreview": {
     "context": "Settings > Voice Satellite > Chimes",
@@ -54161,6 +54148,19 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Chimes"
+      ]
+    }
+  },
+  "voiceChimesSoundsHint": "Wek-, gereed-, fout- en aankondigingsgeluiden",
+  "@voiceChimesSoundsHint": {
+    "context": "Settings > Voice Satellite",
+    "description": "Summary under Chimes: the sounds the page holds.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite"
       ]
     }
   },
@@ -54672,11 +54672,6 @@
   },
   "voiceConversationHint": "Wat de overlay laat zien en voor hoe lang",
   "@voiceConversationHint": {
-    "context": "Settings > Voice Satellite",
-    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
-  },
-  "voiceTimersHint": "Labels, waarschuwingen en gesproken herinneringen",
-  "@voiceTimersHint": {
     "context": "Settings > Voice Satellite",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
@@ -56048,6 +56043,32 @@
   "@settingKioskAllowTimersDescription": {
     "context": "Settings > Kiosk Mode > Allowed Actions",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingsMenuTimersSummary": "Schermvullende weergave, labels, gedeelde timers",
+  "@settingsMenuTimersSummary": {
+    "context": "Settings",
+    "description": "Summary under Timers in the settings menu: what the page holds.",
+    "x-locations": {
+      "device": [
+        "Settings"
+      ],
+      "remoteAdmin": [
+        "Sidebar"
+      ]
+    }
+  },
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "de kiosken gekozen in Delen met, het timergeluid",
+  "@fleetTheKiosksPickedInShareWithTheTimerSound": {
+    "context": "Fleet Management > Sync",
+    "description": "What stays per kiosk when the Timers category syncs. Share with and Timer sound are setting names.",
+    "x-locations": {
+      "device": [
+        "Settings > Fleet Management"
+      ],
+      "remoteAdmin": [
+        "Fleet Management"
+      ]
+    }
   },
   "voiceWakePage": "Wekwoorden",
   "@voiceWakePage": {
@@ -59407,6 +59428,58 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Timers > Share with"
+      ]
+    }
+  },
+  "timersVoiceSection": "Spraaktimers",
+  "@timersVoiceSection": {
+    "context": "Settings > Timers",
+    "description": "Heading of the group about setting timers by voice.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "timersVoiceManage": "Timers beheren met Voice Satellite",
+  "@timersVoiceManage": {
+    "context": "Settings > Timers",
+    "description": "Row that opens the guide about timers by voice. Keep Voice Satellite unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "timersVoiceHint": "Werkt zonder blauwdruk of LLM-gespreksagent.",
+  "@timersVoiceHint": {
+    "context": "Settings > Timers",
+    "description": "Description under that row. A blueprint is a Home Assistant template for a script.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimersShareSearch": "Kiosken zoeken",
+  "@voiceTimersShareSearch": {
+    "context": "Settings > Timers > Share with",
+    "description": "Hint in the search box of the kiosk picker.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers > Share with"
+      ],
+      "remoteAdmin": [
+        "Timers > Share with"
       ]
     }
   }

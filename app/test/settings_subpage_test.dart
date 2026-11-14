@@ -22,6 +22,88 @@ void main() {
     await settings.init();
   }
 
+  test('the timer settings are on the Timers page, the sound included', () {
+    final timers = [
+      for (final d in defs.allSettings)
+        if (!d.hidden && d.category == 'Timers') d.key,
+    ];
+    expect(timers, contains(defs.voiceTimerPills.key));
+    expect(timers, contains(defs.voiceTimersShareWith.key));
+    expect(timers, contains(defs.voiceChimeTimer.key));
+    expect(timers, contains(defs.voiceChimeTimerVolume.key));
+    expect(
+      defs.allSettings.where(
+        (d) => d.category == 'Voice Satellite' && d.subpage == 'Timers',
+      ),
+      isEmpty,
+    );
+    // The page has no pages of its own.
+    expect(
+      defs.allSettings.where(
+        (d) => d.category == 'Timers' && d.subpage != null,
+      ),
+      isEmpty,
+    );
+    // The pills switch shows for both voice runtimes.
+    expect(defs.voiceTimerPills.dependsOn, isNull);
+    // Timers is a fleet category of its own. Share with and the sound
+    // stay on each kiosk.
+    expect(defs.fleetCategoryOf(defs.voiceTimerPills), 'Timers');
+    expect(defs.fleetSyncCategories.map((c) => c.$1), contains('Timers'));
+    expect(defs.voiceTimersShareWith.perDevice, isTrue);
+    expect(defs.voiceChimeTimer.perDevice, isTrue);
+  });
+
+  test('the Timers groups run Shared timers, When a timer ends, Pills', () {
+    final sections = <String>[];
+    for (final d in defs.allSettings) {
+      if (d.hidden || d.category != 'Timers') continue;
+      if (sections.isEmpty || sections.last != d.section) {
+        sections.add(d.section!);
+      }
+    }
+    expect(sections, ['Shared timers', 'When a timer ends', 'Pills']);
+    expect(defs.voiceTimerAlertPill.section, 'Pills');
+  });
+
+  test('the pill rows show only with Show timers as pills on', () async {
+    SharedPreferences.setMockInitialValues({'ks.voice.enabled': true});
+    final bus = EventBus();
+    final log = Logger();
+    final s = SettingsManager(bus, CommandRegistry(log), log);
+    await s.init();
+    final rows = [
+      defs.voiceTimerNameInPill,
+      defs.voiceTimerPillScale,
+      defs.voiceTimerAlertPill,
+      defs.voiceTimerNameOnAlert,
+    ];
+    for (final d in rows) {
+      expect(s.visible(d), isFalse, reason: d.key);
+    }
+    await s.set(defs.voiceTimerPills, true);
+    for (final d in rows) {
+      expect(s.visible(d), isTrue, reason: d.key);
+    }
+  });
+
+  test(
+    'an install with pills stored moves to the full screen view once',
+    () async {
+      SharedPreferences.setMockInitialValues({'ks.voice.timer_pills': true});
+      final bus = EventBus();
+      final log = Logger();
+      var s = SettingsManager(bus, CommandRegistry(log), log);
+      await s.init();
+      expect(s.get(defs.voiceTimerPills), isFalse);
+      // Turned back on by hand, it stays on.
+      await s.set(defs.voiceTimerPills, true);
+      s = SettingsManager(bus, CommandRegistry(log), log);
+      await s.init();
+      expect(s.get(defs.voiceTimerPills), isTrue);
+    },
+  );
+
   test('the Home Assistant User Interface page holds both groups', () {
     final moved = [
       for (final d in defs.allSettings)

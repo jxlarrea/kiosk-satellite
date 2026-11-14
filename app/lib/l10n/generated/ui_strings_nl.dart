@@ -14526,10 +14526,6 @@ class UiStringsNl extends UiStrings {
   String get voiceChimesPage => 'Geluiden';
 
   @override
-  String get voiceChimesHint =>
-      'Wek-, gereed-, fout-, timer- en aankondigingsgeluiden';
-
-  @override
   String get voiceChimesPreview => 'Voorbeeld op kiosk';
 
   @override
@@ -14600,6 +14596,10 @@ class UiStringsNl extends UiStrings {
   @override
   String get voiceChimeVolumeDescription =>
       'Een aandeel van het assistentvolume.';
+
+  @override
+  String get voiceChimesSoundsHint =>
+      'Wek-, gereed-, fout- en aankondigingsgeluiden';
 
   @override
   String get settingVoiceShowCommandTitle => 'Tonen wat je hebt gezegd';
@@ -14776,10 +14776,6 @@ class UiStringsNl extends UiStrings {
   @override
   String get voiceConversationHint =>
       'Wat de overlay laat zien en voor hoe lang';
-
-  @override
-  String get voiceTimersHint =>
-      'Labels, waarschuwingen en gesproken herinneringen';
 
   @override
   String get voiceSectionFollowUp => 'Vervolgvraag';
@@ -15505,6 +15501,14 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingKioskAllowTimersDescription =>
       'De timerweergave openen vanuit het kioskmenu.';
+
+  @override
+  String get settingsMenuTimersSummary =>
+      'Schermvullende weergave, labels, gedeelde timers';
+
+  @override
+  String get fleetTheKiosksPickedInShareWithTheTimerSound =>
+      'de kiosken gekozen in Delen met, het timergeluid';
 
   @override
   String get voiceWakePage => 'Wekwoorden';
@@ -16717,4 +16721,16 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get voiceTimersShareOffline => 'Offline';
+
+  @override
+  String get timersVoiceSection => 'Spraaktimers';
+
+  @override
+  String get timersVoiceManage => 'Timers beheren met Voice Satellite';
+
+  @override
+  String get timersVoiceHint => 'Werkt zonder blauwdruk of LLM-gespreksagent.';
+
+  @override
+  String get voiceTimersShareSearch => 'Kiosken zoeken';
 }

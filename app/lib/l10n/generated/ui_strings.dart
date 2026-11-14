@@ -25088,12 +25088,6 @@ abstract class UiStrings {
   /// Chime selection, playback or help shown on the device and in Remote Admin.
   ///
   /// In en, this message translates to:
-  /// **'Wake, done, error, timer and announcement sounds'**
-  String get voiceChimesHint;
-
-  /// Chime selection, playback or help shown on the device and in Remote Admin.
-  ///
-  /// In en, this message translates to:
   /// **'Preview on kiosk'**
   String get voiceChimesPreview;
 
@@ -25216,6 +25210,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'A share of the assistant volume.'**
   String get voiceChimeVolumeDescription;
+
+  /// Summary under Chimes: the sounds the page holds.
+  ///
+  /// In en, this message translates to:
+  /// **'Wake, done, error and announcement sounds'**
+  String get voiceChimesSoundsHint;
 
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///
@@ -25522,12 +25522,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'What the overlay shows and for how long'**
   String get voiceConversationHint;
-
-  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Pills, alerts, spoken reminders'**
-  String get voiceTimersHint;
 
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///
@@ -26782,6 +26776,18 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Open the timers view from the kiosk menu.'**
   String get settingKioskAllowTimersDescription;
+
+  /// Summary under Timers in the settings menu: what the page holds.
+  ///
+  /// In en, this message translates to:
+  /// **'Full screen view, pills, shared timers'**
+  String get settingsMenuTimersSummary;
+
+  /// What stays per kiosk when the Timers category syncs. Share with and Timer sound are setting names.
+  ///
+  /// In en, this message translates to:
+  /// **'the kiosks picked in Share with, the timer sound'**
+  String get fleetTheKiosksPickedInShareWithTheTimerSound;
 
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///
@@ -28810,6 +28816,30 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Offline'**
   String get voiceTimersShareOffline;
+
+  /// Heading of the group about setting timers by voice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice timers'**
+  String get timersVoiceSection;
+
+  /// Row that opens the guide about timers by voice. Keep Voice Satellite unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage timers using Voice Satellite'**
+  String get timersVoiceManage;
+
+  /// Description under that row. A blueprint is a Home Assistant template for a script.
+  ///
+  /// In en, this message translates to:
+  /// **'Works without a blueprint or an LLM conversation agent.'**
+  String get timersVoiceHint;
+
+  /// Hint in the search box of the kiosk picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Search kiosks'**
+  String get voiceTimersShareSearch;
 }
 
 class _UiStringsDelegate extends LocalizationsDelegate<UiStrings> {

@@ -194,6 +194,7 @@ class SharedTimersManager extends Manager {
               _drop(id);
             }
           } else if (e.key == defs.voiceMuteTimers.key ||
+              e.key == defs.voiceTimerPills.key ||
               e.key == defs.voiceTimerAlertPill.key ||
               e.key == defs.voiceTimerSpeak.key) {
             _replay();
@@ -615,7 +616,11 @@ class SharedTimersManager extends Manager {
       alerts: alerts,
       ringAt: ringAt == null ? null : ringAt + shift,
       muted: _settings.get(defs.voiceMuteTimers),
-      hidden: !_settings.get(defs.voiceTimerAlertPill),
+      // Show finished timer pills is the pills' own: the full screen view
+      // always shows a finished timer.
+      hidden:
+          _settings.get(defs.voiceTimerPills) &&
+          !_settings.get(defs.voiceTimerAlertPill),
       speech:
           _settings.get(defs.voiceTimerSpeak) &&
               speech is String &&

@@ -79,7 +79,7 @@ Settings that scale the UI, control screen brightness, or manage volume often de
 | `audio.media_volume` Media volume, `audio.assistant_volume` Assistant volume | Screen & Audio |
 | `notifications.volume` Notification volume | Notifications |
 | `ha.tap_sound_volume` Tap sound volume | Home Assistant, User Interface |
-| `voice_chimes.wake_volume`, `voice_chimes.done_volume`, `voice_chimes.error_volume`, `voice_chimes.alert_volume`, `voice_chimes.announce_volume` Chime volumes | Voice Satellite, Chimes |
+| `voice_chimes.wake_volume`, `voice_chimes.done_volume`, `voice_chimes.error_volume`, `voice_chimes.alert_volume`, `voice_chimes.announce_volume` Chime volumes | Voice Satellite, Chimes and Timers |
 | `screensaver.gallery_items` Photo Gallery selection | Photo Gallery screensaver |
 | `screensaver.local_folder` Local media folder | Local Media screensaver |
 | `screensaver.clock_background` Clock background photo | Clock screensaver |
@@ -170,6 +170,8 @@ The Voice Satellite selects Home Assistant keeps for each kiosk travel with the 
 The Alarms category carries the alarm defaults (the volume, the tone, snooze, Silence after and sunrise lengths). The [alarms](alarms.md) themselves, and a ring or snooze in progress, stay on each kiosk.
 
 The Calendar category carries the [calendars](calendar.md) with their names, colors and people, and the Display and Kiosk settings. The calendars hidden with their chips stay on each kiosk.
+
+The Timers category carries the [timer settings](voice-satellite.md#timer-settings): the pills, what a finished timer does, Share timers and Show shared timers. The kiosks picked in Share with and the timer sound stay on each kiosk. These settings used to sync with Voice Satellite, so add Timers to a profile that should keep pushing them.
 
 The Navigation category carries the navigation style, the [Compass](navigation.md) layout and its options. A camera view in the layout only shows on a follower that has it, so sync Camera Streams too if the layout holds one.
 

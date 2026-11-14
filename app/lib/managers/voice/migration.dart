@@ -254,8 +254,8 @@ class VoiceMigration {
     }
 
     final timers = <String, Object>{};
-    final hidePills = pick<bool>('hide_timer_pills');
-    if (hidePills != null) timers[defs.voiceTimerPills.key] = !hidePills;
+    // The integration's pills switch is not carried over: timers open the
+    // full screen view here and pills are opt in.
     final nameInPill = pick<bool>('show_timer_name_in_pill');
     if (nameInPill != null) timers[defs.voiceTimerNameInPill.key] = nameInPill;
     final hideName = pick<bool>('hide_timer_name_on_alert');
@@ -362,8 +362,6 @@ class VoiceMigration {
     ].join(', ');
     final timers = mapped['timers'] ?? const {};
     out['timers'] = [
-      if (timers[defs.voiceTimerPills.key] != null)
-        'pills ${onOff(timers[defs.voiceTimerPills.key])}',
       if (timers[defs.voiceTimerSpeak.key] != null)
         'spoken alerts ${onOff(timers[defs.voiceTimerSpeak.key])}',
     ].join(', ');

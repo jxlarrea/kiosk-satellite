@@ -134,7 +134,6 @@
   "On Device": "voiceOnDevice",
   "Microphone and the other grants wake word detection needs.": "voicePermissionsSearch",
   "Chimes": "voiceChimesPage",
-  "Wake, done, error, timer and announcement sounds": "voiceChimesHint",
   "Preview on kiosk": "voiceChimesPreview",
   "Could not play the sound.": "voiceChimesPreviewFailed",
   "Choose sounds for this kiosk. Upload custom files here. Sounds stored in Home Assistant are not used for local chimes.": "voiceChimesHelp",
@@ -168,7 +167,6 @@
   "Timers": "voiceTimers",
   "Pipelines, follow-ups": "voiceAssistantHint",
   "What the overlay shows and for how long": "voiceConversationHint",
-  "Pills, alerts, spoken reminders": "voiceTimersHint",
   "Follow-up": "voiceSectionFollowUp",
   "How long it stays": "voiceSectionLinger",
   "On screen": "voiceSectionOnScreen",
@@ -317,5 +315,6 @@
   "Save & Validate": "voiceRealtimeSaveValidate",
   "Not configured": "voiceRealtimeNotConfigured",
   "Not validated": "voiceRealtimeNotValidated",
-  "Connection validated": "voiceRealtimeValidated"
+  "Connection validated": "voiceRealtimeValidated",
+  "Wake, done, error and announcement sounds": "voiceChimesSoundsHint"
 }

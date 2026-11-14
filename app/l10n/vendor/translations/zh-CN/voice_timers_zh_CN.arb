@@ -17,5 +17,9 @@
   "voiceTimerPaused": "已暂停",
   "voiceTimersShareNone": "未选择 Kiosk 设备",
   "voiceTimersShareEmpty": "未找到其他 Kiosk 设备。请在每台设备上开启“远程管理”和“查找其他 Kiosk 设备”。",
-  "voiceTimersShareOffline": "离线"
+  "voiceTimersShareOffline": "离线",
+  "timersVoiceSection": "语音计时器",
+  "timersVoiceManage": "通过 Voice Satellite 管理计时器",
+  "timersVoiceHint": "无需蓝图（脚本模板）或大语言模型（LLM）对话代理。",
+  "voiceTimersShareSearch": "搜索 Kiosk 设备"
 }

@@ -1,7 +1,6 @@
 {
   "@@locale": "uk",
   "voiceChimesPage": "Звукові сигнали",
-  "voiceChimesHint": "Звуки активації, завершення, помилки, таймера та оголошень",
   "voiceChimesPreview": "Прослухати на кіоску",
   "voiceChimesPreviewFailed": "Не вдалося відтворити звук.",
   "voiceChimesHelp": "Виберіть звуки для цього кіоска. Тут можна завантажити власні файли. Звуки, збережені в Home Assistant, не використовуються для локальних сигналів.",
@@ -22,5 +21,6 @@
   "voiceChimeErrorVolumeTitle": "Гучність звуку помилки",
   "voiceChimeTimerVolumeTitle": "Гучність звуку таймера",
   "voiceChimeAnnounceVolumeTitle": "Гучність звуку оголошення",
-  "voiceChimeVolumeDescription": "Частка гучності асистента."
+  "voiceChimeVolumeDescription": "Частка гучності асистента.",
+  "voiceChimesSoundsHint": "Звуки активації, завершення, помилки та оголошень"
 }

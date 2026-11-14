@@ -14668,10 +14668,6 @@ class UiStringsDe extends UiStrings {
   String get voiceChimesPage => 'Töne';
 
   @override
-  String get voiceChimesHint =>
-      'Aktivierungs-, Abschluss-, Fehler-, Timer- und Ansagetöne';
-
-  @override
   String get voiceChimesPreview => 'Auf dem Kiosk abspielen';
 
   @override
@@ -14742,6 +14738,10 @@ class UiStringsDe extends UiStrings {
   @override
   String get voiceChimeVolumeDescription =>
       'Ein Anteil der Assistentenlautstärke.';
+
+  @override
+  String get voiceChimesSoundsHint =>
+      'Aktivierungs-, Abschluss-, Fehler- und Ansagetöne';
 
   @override
   String get settingVoiceShowCommandTitle => 'Zeigen, was du gesagt hast';
@@ -14920,9 +14920,6 @@ class UiStringsDe extends UiStrings {
   @override
   String get voiceConversationHint =>
       'Was der Assistent auf dem Bildschirm zeigt und wie lange';
-
-  @override
-  String get voiceTimersHint => 'Anzeigen, Alarme, gesprochene Hinweise';
 
   @override
   String get voiceSectionFollowUp => 'Folgefrage';
@@ -15647,6 +15644,14 @@ class UiStringsDe extends UiStrings {
   @override
   String get settingKioskAllowTimersDescription =>
       'Die Timer-Ansicht über das Kiosk-Menü öffnen.';
+
+  @override
+  String get settingsMenuTimersSummary =>
+      'Vollbildansicht, Anzeigen, geteilte Timer';
+
+  @override
+  String get fleetTheKiosksPickedInShareWithTheTimerSound =>
+      'die unter Teilen mit ausgewählten Kiosks, der Timer-Ton';
 
   @override
   String get voiceWakePage => 'Aktivierungswort';
@@ -16871,4 +16876,17 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get voiceTimersShareOffline => 'Offline';
+
+  @override
+  String get timersVoiceSection => 'Timer per Sprache';
+
+  @override
+  String get timersVoiceManage => 'Timer mit Voice Satellite verwalten';
+
+  @override
+  String get timersVoiceHint =>
+      'Funktioniert ohne Blueprint und ohne LLM-Konversationsagenten.';
+
+  @override
+  String get voiceTimersShareSearch => 'Kiosks suchen';
 }

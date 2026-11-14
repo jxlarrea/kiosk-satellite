@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets('Chimes page and all five selectors use shipped catalogs', (
+  testWidgets('Chimes page and its four selectors use shipped catalogs', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -62,14 +62,12 @@ void main() {
                     'Wake sound',
                     'Done sound',
                     'Error sound',
-                    'Timer sound',
                     'Announcement sound',
                   ]
                 : [
                     'Sonido de activación',
                     'Sonido de finalización',
                     'Sonido de error',
-                    'Sonido del temporizador',
                     'Sonido de anuncio',
                   ]) {
           expect(find.text(title), findsOneWidget);
@@ -77,7 +75,7 @@ void main() {
         final preview = find.byTooltip(
           language == 'en' ? 'Preview on kiosk' : 'Reproducir en el kiosco',
         );
-        expect(preview, findsNWidgets(5));
+        expect(preview, findsNWidgets(4));
         await tester.tap(preview.first);
         await tester.pump();
         expect(calls.last, 'previewVoiceChime:wake');
@@ -88,12 +86,12 @@ void main() {
         await tester.tap(find.byTooltip(language == 'en' ? 'Stop' : 'Detener'));
         await tester.pump();
         expect(calls.last, 'stopSound:voice-preview');
-        expect(preview, findsNWidgets(5));
+        expect(preview, findsNWidgets(4));
         await tester.tap(preview.first);
         await tester.pump();
         c.bus.publish(const SoundEnded(id: 'voice-preview'));
         await tester.pump();
-        expect(preview, findsNWidgets(5));
+        expect(preview, findsNWidgets(4));
         expect(
           find.text(language == 'en' ? 'Add a sound' : 'Añadir un sonido'),
           findsNothing,

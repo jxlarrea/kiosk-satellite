@@ -941,6 +941,7 @@ export const CATEGORY_TABS = [
   ['tab-intercom', ['Intercom']],
   ['tab-alarms', ['Alarms']],
   ['tab-calendar', ['Calendar']],
+  ['tab-timers', ['Timers']],
   ['tab-esphome', ['ESPHome']],
   ['tab-leds', ['LED Control']],
   ['device-settings', ['Device'],

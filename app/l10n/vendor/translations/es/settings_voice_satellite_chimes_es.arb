@@ -1,7 +1,6 @@
 {
   "@@locale": "es",
   "voiceChimesPage": "Sonidos",
-  "voiceChimesHint": "Sonidos de activación, finalización, error, temporizadores y anuncios",
   "voiceChimesPreview": "Reproducir en el kiosco",
   "voiceChimesPreviewFailed": "No se pudo reproducir el sonido.",
   "voiceChimesHelp": "Elige los sonidos de este kiosco. Sube aquí tus archivos personalizados. Los sonidos guardados en Home Assistant no se usan para los avisos locales.",
@@ -22,5 +21,6 @@
   "voiceChimeErrorVolumeTitle": "Volumen del sonido de error",
   "voiceChimeTimerVolumeTitle": "Volumen del sonido del temporizador",
   "voiceChimeAnnounceVolumeTitle": "Volumen del sonido de anuncio",
-  "voiceChimeVolumeDescription": "Una proporción del volumen del asistente."
+  "voiceChimeVolumeDescription": "Una proporción del volumen del asistente.",
+  "voiceChimesSoundsHint": "Sonidos de activación, finalización, error y anuncios"
 }

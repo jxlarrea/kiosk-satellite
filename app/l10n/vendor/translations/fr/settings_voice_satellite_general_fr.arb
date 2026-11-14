@@ -37,7 +37,6 @@
   "voiceTimers": "Minuteurs",
   "voiceAssistantHint": "Pipelines, suivis",
   "voiceConversationHint": "Ce que la superposition affiche et pendant combien de temps",
-  "voiceTimersHint": "Pastilles, alertes, rappels vocaux",
   "voiceSectionFollowUp": "Suivi",
   "voiceSectionLinger": "Durée d'affichage",
   "voiceSectionOnScreen": "À l'écran",

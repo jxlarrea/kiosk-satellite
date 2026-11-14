@@ -37,7 +37,6 @@
   "voiceTimers": "Timer",
   "voiceAssistantHint": "Pipelines, Folgefragen",
   "voiceConversationHint": "Was der Assistent auf dem Bildschirm zeigt und wie lange",
-  "voiceTimersHint": "Anzeigen, Alarme, gesprochene Hinweise",
   "voiceSectionFollowUp": "Folgefrage",
   "voiceSectionLinger": "Wie lange es bleibt",
   "voiceSectionOnScreen": "Auf dem Bildschirm",

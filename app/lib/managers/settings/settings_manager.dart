@@ -767,6 +767,18 @@ class SettingsManager extends Manager {
       }
       await setInternal(skin2Migration, '1');
     }
+    // Timers open the full screen view now and pills are opt in. A value
+    // stored while pills were the only way to show a timer (a settings
+    // import, a fleet sync or the Voice Satellite migration wrote it) is
+    // dropped once, so every install starts on the full screen view.
+    const timerPillsMigration = 'voice.timer_pills_off.migrated';
+    if (internal(timerPillsMigration).isEmpty) {
+      if (_prefs.get(_prefix + voiceTimerPills.key) != null) {
+        await _prefs.remove(_prefix + voiceTimerPills.key);
+        log.info(name, 'moved timers to the full screen view on upgrade');
+      }
+      await setInternal(timerPillsMigration, '1');
+    }
   }
 
   T get<T>(SettingDef<T> def) {

@@ -14363,10 +14363,6 @@ class UiStringsEn extends UiStrings {
   String get voiceChimesPage => 'Chimes';
 
   @override
-  String get voiceChimesHint =>
-      'Wake, done, error, timer and announcement sounds';
-
-  @override
   String get voiceChimesPreview => 'Preview on kiosk';
 
   @override
@@ -14435,6 +14431,10 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get voiceChimeVolumeDescription => 'A share of the assistant volume.';
+
+  @override
+  String get voiceChimesSoundsHint =>
+      'Wake, done, error and announcement sounds';
 
   @override
   String get settingVoiceShowCommandTitle => 'Show what you said';
@@ -14606,9 +14606,6 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get voiceConversationHint => 'What the overlay shows and for how long';
-
-  @override
-  String get voiceTimersHint => 'Pills, alerts, spoken reminders';
 
   @override
   String get voiceSectionFollowUp => 'Follow-up';
@@ -15325,6 +15322,14 @@ class UiStringsEn extends UiStrings {
   @override
   String get settingKioskAllowTimersDescription =>
       'Open the timers view from the kiosk menu.';
+
+  @override
+  String get settingsMenuTimersSummary =>
+      'Full screen view, pills, shared timers';
+
+  @override
+  String get fleetTheKiosksPickedInShareWithTheTimerSound =>
+      'the kiosks picked in Share with, the timer sound';
 
   @override
   String get voiceWakePage => 'Wake Word';
@@ -16520,4 +16525,17 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get voiceTimersShareOffline => 'Offline';
+
+  @override
+  String get timersVoiceSection => 'Voice timers';
+
+  @override
+  String get timersVoiceManage => 'Manage timers using Voice Satellite';
+
+  @override
+  String get timersVoiceHint =>
+      'Works without a blueprint or an LLM conversation agent.';
+
+  @override
+  String get voiceTimersShareSearch => 'Search kiosks';
 }

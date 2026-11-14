@@ -24748,5 +24748,40 @@
     "source": "1c8f96fe1f42e100f82c9656e43b0d6d79a63bf54d8cc5b180a9f3f62cb495fc",
     "translation": "cdde7ddeebabae581c2b9c1b87aeddaff8c2f56f8f075b9b99bd1775a6cb5921",
     "author": "Xavier Larrea"
+  },
+  "timersVoiceHint": {
+    "source": "9504bcf68b05d598592a4d507b7a3f01715a58f3ec7afbd980eb629c1c8f4b00",
+    "translation": "ef5d4e703f935350af2d82ee4dc969dd722791adc1b1d2c6c1b243835d16dd4b",
+    "author": "Xavier Larrea"
+  },
+  "timersVoiceManage": {
+    "source": "bdf1fd79e97c5a9403a53ceef052b77ae13f0a0f1b7557625eb1b642f07ddc97",
+    "translation": "c9b9640cff9433e9e6d4b8e040200a21f87601069ad4a480580aa2bdabf419bb",
+    "author": "Xavier Larrea"
+  },
+  "settingsMenuTimersSummary": {
+    "source": "f7476606f1ea32c770b2980bcb90649a4a002c490879adc0dfac750205d197c1",
+    "translation": "cf8ffa3e0c2dc19e2ca2bb192fb3f0187a99ce3cbbb39dbc5456064ac67ed2bd",
+    "author": "Xavier Larrea"
+  },
+  "timersVoiceSection": {
+    "source": "38e648716e2b2bbdbf0679943673795722558e4be58fe18e6be7cde6dacbe9e7",
+    "translation": "2e9b85bb47b5692fda93f62019161ad1634eaa7b3eaa67e665c665f6bf7d2166",
+    "author": "Xavier Larrea"
+  },
+  "voiceChimesSoundsHint": {
+    "source": "9de5f62b287301565deb3467461ee40d2e5aa96b2212d6ece8f6d0fb6d0d0401",
+    "translation": "89281bb15bbbd3f0afcd13d27df6569cd8167448c25fbb5ddbec95423f9519ea",
+    "author": "Xavier Larrea"
+  },
+  "fleetTheKiosksPickedInShareWithTheTimerSound": {
+    "source": "cfec975faccc9fc33525741346111f6db891973d7a3c7b52c8503cfef52704dd",
+    "translation": "617d5cda1794e35664146e5eaffc72678cb33c69700ec6bda32da46e180f6115",
+    "author": "Xavier Larrea"
+  },
+  "voiceTimersShareSearch": {
+    "source": "84d3a1c24be100c11fd19c7dc35e27387e398d5893866e5d4d0c215c04cd0b47",
+    "translation": "3c65a93151f452df87d300fb877f19be702386316367cfd7cc8ce12c193f1168",
+    "author": "Xavier Larrea"
   }
 }

@@ -14513,10 +14513,6 @@ class UiStringsUk extends UiStrings {
   String get voiceChimesPage => 'Звукові сигнали';
 
   @override
-  String get voiceChimesHint =>
-      'Звуки активації, завершення, помилки, таймера та оголошень';
-
-  @override
   String get voiceChimesPreview => 'Прослухати на кіоску';
 
   @override
@@ -14585,6 +14581,10 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get voiceChimeVolumeDescription => 'Частка гучності асистента.';
+
+  @override
+  String get voiceChimesSoundsHint =>
+      'Звуки активації, завершення, помилки та оголошень';
 
   @override
   String get settingVoiceShowCommandTitle => 'Показувати, що ви сказали';
@@ -14759,9 +14759,6 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get voiceConversationHint => 'Що показує накладення і як довго';
-
-  @override
-  String get voiceTimersHint => 'Індикатори, сповіщення, голосові нагадування';
 
   @override
   String get voiceSectionFollowUp => 'Уточнення';
@@ -15487,6 +15484,14 @@ class UiStringsUk extends UiStrings {
   @override
   String get settingKioskAllowTimersDescription =>
       'Відкривати вигляд таймерів із меню кіоска.';
+
+  @override
+  String get settingsMenuTimersSummary =>
+      'Повноекранний вигляд, індикатори, спільні таймери';
+
+  @override
+  String get fleetTheKiosksPickedInShareWithTheTimerSound =>
+      'кіоски, вибрані в «Ділитися з», звук таймера';
 
   @override
   String get voiceWakePage => 'Слово активації';
@@ -16696,4 +16701,16 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get voiceTimersShareOffline => 'Не в мережі';
+
+  @override
+  String get timersVoiceSection => 'Голосові таймери';
+
+  @override
+  String get timersVoiceManage => 'Керувати таймерами через Voice Satellite';
+
+  @override
+  String get timersVoiceHint => 'Працює без blueprint і агента розмови LLM.';
+
+  @override
+  String get voiceTimersShareSearch => 'Пошук кіосків';
 }

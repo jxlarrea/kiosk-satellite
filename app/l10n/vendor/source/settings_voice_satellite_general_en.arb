@@ -441,11 +441,6 @@
     "context": "Settings > Voice Satellite",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
-  "voiceTimersHint": "Pills, alerts, spoken reminders",
-  "@voiceTimersHint": {
-    "context": "Settings > Voice Satellite",
-    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
-  },
   "voiceSectionFollowUp": "Follow-up",
   "@voiceSectionFollowUp": {
     "context": "Settings > Voice Satellite",

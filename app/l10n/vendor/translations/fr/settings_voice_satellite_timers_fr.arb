@@ -25,5 +25,7 @@
   "settingVoiceTimersReceiveTitle": "Afficher les minuteurs partagés",
   "settingVoiceTimersReceiveDescription": "Les minuteurs partagés par d'autres kiosques s'affichent et sonnent ici.",
   "settingKioskAllowTimersTitle": "Minuteurs",
-  "settingKioskAllowTimersDescription": "Ouvrir la vue des minuteurs depuis le menu du kiosque."
+  "settingKioskAllowTimersDescription": "Ouvrir la vue des minuteurs depuis le menu du kiosque.",
+  "settingsMenuTimersSummary": "Vue plein écran, pastilles, minuteurs partagés",
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "les kiosques choisis dans Partager avec, le son du minuteur"
 }

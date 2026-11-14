@@ -2046,6 +2046,13 @@ class _KioskScreenState extends State<KioskScreen>
                       ),
                     ),
                     CameraViewOverlay(container: c),
+                    // The full screen timers view: over the screensaver and
+                    // a camera view while a timer runs or rings. Under the
+                    // Compass stage, whose swipe draws over the views it
+                    // moves between, and under the voice overlay, a plugin
+                    // skin's turn, a notification and a call, which all
+                    // have to show over it.
+                    TimersOverlay(container: c),
                     // Plugin overlays of the views layer: over every page
                     // and view above, camera views included, so a plugin's
                     // bar stays up wherever the kiosk goes. Hidden under the
@@ -2143,9 +2150,6 @@ class _KioskScreenState extends State<KioskScreen>
                           ? VoiceTimerOverlay(container: c)
                           : const SizedBox.shrink(),
                     ),
-                    // The full screen timers view, in the pills' place:
-                    // over the screensaver while a timer runs or rings.
-                    TimersOverlay(container: c),
                     ScreensaverBlankOverlay(container: c),
                     // Lockdown Mode's touch shield: topmost, above every
                     // overlay, so nothing on screen is tappable while it

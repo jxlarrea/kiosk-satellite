@@ -1,7 +1,6 @@
 {
   "@@locale": "de",
   "voiceChimesPage": "Töne",
-  "voiceChimesHint": "Aktivierungs-, Abschluss-, Fehler-, Timer- und Ansagetöne",
   "voiceChimesPreview": "Auf dem Kiosk abspielen",
   "voiceChimesPreviewFailed": "Der Ton konnte nicht abgespielt werden.",
   "voiceChimesHelp": "Wähle die Töne für diesen Kiosk aus. Lade hier eigene Audiodateien hoch. In Home Assistant gespeicherte Töne werden für lokale Hinweise nicht verwendet.",
@@ -22,5 +21,6 @@
   "voiceChimeErrorVolumeTitle": "Lautstärke des Fehlertons",
   "voiceChimeTimerVolumeTitle": "Lautstärke des Timer-Tons",
   "voiceChimeAnnounceVolumeTitle": "Lautstärke des Ansagetons",
-  "voiceChimeVolumeDescription": "Ein Anteil der Assistentenlautstärke."
+  "voiceChimeVolumeDescription": "Ein Anteil der Assistentenlautstärke.",
+  "voiceChimesSoundsHint": "Aktivierungs-, Abschluss-, Fehler- und Ansagetöne"
 }

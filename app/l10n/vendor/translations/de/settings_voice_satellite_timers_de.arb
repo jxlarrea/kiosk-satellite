@@ -25,5 +25,7 @@
   "settingVoiceTimersReceiveTitle": "Geteilte Timer anzeigen",
   "settingVoiceTimersReceiveDescription": "Von anderen Kiosks geteilte Timer werden hier angezeigt und klingeln hier.",
   "settingKioskAllowTimersTitle": "Timer",
-  "settingKioskAllowTimersDescription": "Die Timer-Ansicht über das Kiosk-Menü öffnen."
+  "settingKioskAllowTimersDescription": "Die Timer-Ansicht über das Kiosk-Menü öffnen.",
+  "settingsMenuTimersSummary": "Vollbildansicht, Anzeigen, geteilte Timer",
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "die unter Teilen mit ausgewählten Kiosks, der Timer-Ton"
 }

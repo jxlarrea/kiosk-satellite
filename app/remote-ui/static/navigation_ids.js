@@ -75,5 +75,6 @@ export const navigationMessageIds = {
   "Classic or Compass": "settingsMenuNavigationSummary",
   "Navigation style": "navigationStyleSection",
   "Compass layout": "navigationLayoutSection",
-  "Compass options": "navigationOptionsSection"
+  "Compass options": "navigationOptionsSection",
+  "Full screen view, pills, shared timers": "settingsMenuTimersSummary"
 };

@@ -967,7 +967,7 @@ void main() {
             'categories': [],
             'credentials': ['ha.token', 'bogus'],
           })!.describe(),
-          'Categories: 0 of 20. Credentials: 1 of 9. Excluded: 44.',
+          'Categories: 0 of 21. Credentials: 1 of 9. Excluded: 44.',
         );
         expect(
           withCreds['browser.start_url'],

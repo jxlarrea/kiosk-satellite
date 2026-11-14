@@ -317,6 +317,53 @@ void main() {
     expect(picked, ['light.living_room_lamp', 'weather.forecast_home']);
   });
 
+  testWidgets('picks whose order means nothing show no handle or arrows', (
+    tester,
+  ) async {
+    List<String>? picked;
+    final spec = PickSpec(
+      key: 'kiosks:test',
+      loader: () async => const PickList([
+        PickItem(id: 'a', name: 'Bedroom'),
+        PickItem(id: 'b', name: 'Kitchen'),
+        PickItem(id: 'c', name: 'Office'),
+      ]),
+      searchHint: 'Search kiosks',
+      noGroup: '',
+      chips: false,
+      headings: false,
+      ordered: false,
+    );
+    await _pump(
+      tester,
+      const Size(1200, 800),
+      (context) => TextButton(
+        onPressed: () async => picked = await showItemMultiPicker(
+          context,
+          title: 'Share with',
+          spec: spec,
+          selected: const ['a', 'b'],
+        ),
+        child: const Text('open'),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 selected'), findsWidgets);
+    expect(find.byIcon(Icons.drag_indicator), findsNothing);
+    expect(find.byTooltip('Move up'), findsNothing);
+    expect(find.byTooltip('Move down'), findsNothing);
+    expect(
+      find.text('Drag or use the arrows to change the order.'),
+      findsNothing,
+    );
+    await tester.tap(find.text('Office'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(picked, ['a', 'b', 'c']);
+  });
+
   testWidgets('one source of players, offline dimmed and its note shown', (
     tester,
   ) async {

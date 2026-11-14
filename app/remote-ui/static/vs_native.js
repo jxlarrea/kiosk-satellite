@@ -32,7 +32,7 @@ const WAKE_ROWS = [
   ['wake_word', 'Wake word 1', 'The word that starts a voice command.'],
   ['wake_word_2', 'Wake word 2', 'A second wake word, answered by Assistant 2.'],
 ];
-const PAGES = ['Wake Word', 'Assistant', 'Realtime', 'Appearance', 'Conversation', 'Timers', 'Chimes'];
+const PAGES = ['Wake Word', 'Assistant', 'Realtime', 'Appearance', 'Conversation', 'Chimes'];
 
 
 function voiceRow(name, desc, value = '') {
@@ -141,114 +141,6 @@ async function ttsOutputRow(row, current) {
     return true;
   };
   row.replaceWith(picker.el);
-}
-
-/* Share with: the kiosks this one shares its timers with, by name, in
-   the place of the text field. A click opens the kiosks on the network
-   with a checkbox each, as the device's row does. A picked kiosk that is
-   off the network stays in the list, marked, so the pick is not lost. */
-function sharedTargets() {
-  try {
-    const list = JSON.parse(`${settingValue('voice.timers_share_with') || '[]'}`);
-    return Array.isArray(list) ? list.filter((k) => k && typeof k.id === 'string' && k.id) : [];
-  } catch (_) {
-    return [];
-  }
-}
-
-async function shareWithRow(row) {
-  const title = row.querySelector('.name')?.textContent || 'Share with';
-  const desc = row.querySelector('.desc')?.textContent || '';
-  const el = readOnlyRow(title, desc, '', false);
-  el.dataset.key = 'voice.timers_share_with';
-  el.style.cursor = 'pointer';
-  el.setAttribute('role', 'button');
-  el.tabIndex = 0;
-  let kiosks = [];
-  const paint = () => {
-    const names = Object.fromEntries(kiosks.map((k) => [k.id, k.name]));
-    const picked = sharedTargets().map((k) => names[k.id] || k.name || k.id);
-    el.lastElementChild.textContent = picked.length
-      ? picked.join(', ') : t('voiceTimersShareNone', {}, 'No kiosks picked');
-  };
-  const load = async () => {
-    const r = await cmd('sharedTimers', {}).catch(() => null);
-    kiosks = (r?.ok && Array.isArray(r.data?.kiosks) ? r.data.kiosks : [])
-      .filter((k) => k && k.id)
-      .sort((a, b) => `${a.name}`.localeCompare(`${b.name}`, undefined, { sensitivity: 'base' }));
-    if (el.isConnected) paint();
-  };
-  const open = async () => {
-    await load();
-    const ids = new Set(kiosks.map((k) => k.id));
-    const choices = [
-      ...kiosks.map((k) => ({ id: k.id, name: k.name || k.id, online: true })),
-      ...sharedTargets().filter((k) => !ids.has(k.id))
-        .map((k) => ({ id: k.id, name: k.name || k.id, online: false })),
-    ];
-    const chosen = new Set(sharedTargets().map((k) => k.id));
-    const shell = modalShell({ title, width: 480, onDismiss: () => shell.close() });
-    if (!choices.length) {
-      const p = document.createElement('p');
-      p.style.cssText = 'margin:0; color:var(--muted); font-size:15px; line-height:1.5;';
-      p.textContent = t('voiceTimersShareEmpty', {},
-        'No other kiosks found. Turn on the remote admin and Find other kiosks on each one.');
-      shell.body.appendChild(p);
-    }
-    for (const kiosk of choices) {
-      const label = document.createElement('label');
-      label.style.cssText = 'display:flex; align-items:center; gap:14px; padding:10px 0; cursor:pointer;';
-      const box = document.createElement('input');
-      box.type = 'checkbox';
-      box.checked = chosen.has(kiosk.id);
-      box.addEventListener('change', () => {
-        if (box.checked) chosen.add(kiosk.id); else chosen.delete(kiosk.id);
-      });
-      const text = document.createElement('span');
-      text.style.cssText = 'display:flex; flex-direction:column; min-width:0;';
-      const name = document.createElement('span');
-      name.textContent = kiosk.name;
-      text.appendChild(name);
-      if (!kiosk.online) {
-        const off = document.createElement('span');
-        off.style.cssText = 'font-size:13px; color:var(--muted);';
-        off.textContent = t('voiceTimersShareOffline', {}, 'Offline');
-        text.appendChild(off);
-      }
-      label.append(box, text);
-      shell.body.appendChild(label);
-    }
-    const cancel = document.createElement('button');
-    cancel.className = 'btn-text';
-    cancel.textContent = t('commonCancel', {}, 'Cancel');
-    cancel.addEventListener('click', () => shell.close());
-    shell.foot.appendChild(cancel);
-    if (choices.length) {
-      const save = document.createElement('button');
-      save.className = 'btn-primary';
-      save.textContent = t('commonSave', {}, 'Save');
-      save.addEventListener('click', async () => {
-        const value = JSON.stringify(choices.filter((k) => chosen.has(k.id))
-          .map((k) => ({ id: k.id, name: k.name })));
-        shell.close();
-        const setting = (state.settings || []).find((x) => x.key === 'voice.timers_share_with');
-        if (setting) setting.value = value;
-        paint();
-        await api('/api/settings', { method: 'PATCH',
-          body: JSON.stringify({ 'voice.timers_share_with': value }) }).catch(() => null);
-      });
-      shell.foot.appendChild(save);
-    }
-  };
-  el.addEventListener('click', open);
-  el.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
-  });
-  // An echo of the save, or a pick made on the device, lands in place.
-  el.updateSetting = () => { paint(); return true; };
-  row.replaceWith(el);
-  paint();
-  load();
 }
 
 function settingValue(key) {
@@ -698,8 +590,6 @@ export async function renderNativeVs(root, byKey) {
     }
     const ttsRow = assistant?.querySelector('[data-key="voice.tts_output"]');
     if (ttsRow) ttsOutputRow(ttsRow, byKey['voice.tts_output']?.value || '');
-    const shareRow = panel('Timers')?.querySelector('[data-key="voice.timers_share_with"]');
-    if (shareRow) shareWithRow(shareRow);
     const wake = panel('Wake Word');
     if (wake) {
       // Engine, the language of Amazon's engine, Home Assistant's wake

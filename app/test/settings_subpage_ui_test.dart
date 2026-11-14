@@ -1393,7 +1393,6 @@ void main() {
         'Wake Word',
         'Appearance',
         'Conversation',
-        'Timers',
         'Chimes',
       ]) {
         expect(
@@ -1477,6 +1476,50 @@ void main() {
             .length,
         1,
       );
+    });
+  });
+
+  group('Timers', () {
+    testWidgets('the page holds the timer sound and the Voice timers row', (
+      tester,
+    ) async {
+      await boot(runtime: 'native');
+      await container.settings.set(voiceEnabled, true);
+      tester.view.physicalSize = const Size(500, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(home: SettingsScreen(container: container)),
+      );
+      await settle(tester);
+      await tester.scrollUntilVisible(
+        find.text('Timers'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Timers'));
+      await settle(tester);
+
+      for (final heading in [
+        'Pills',
+        'When a timer ends',
+        'Shared timers',
+        'Voice timers',
+      ]) {
+        expect(find.text(heading), findsOneWidget, reason: heading);
+      }
+      for (final def in [
+        voiceTimerPills,
+        voiceChimeTimer,
+        voiceChimeTimerVolume,
+        voiceTimersShare,
+        voiceTimersReceive,
+      ]) {
+        expect(find.text(def.title), findsOneWidget, reason: def.key);
+      }
+      expect(find.text('Manage timers using Voice Satellite'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await drain(tester);
     });
   });
 }

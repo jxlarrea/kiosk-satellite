@@ -191,6 +191,12 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     anchorId: "x:alarms_voice",
   ),
   SettingsSearchEntry(
+    category: "Timers",
+    title: "Manage timers using Voice Satellite",
+    description: "Works without a blueprint or an LLM conversation agent.",
+    anchorId: "x:timers_voice",
+  ),
+  SettingsSearchEntry(
     category: "Sendspin",
     title: "Manage music using Voice Satellite",
     description:
@@ -735,6 +741,7 @@ List<SettingsSearchEntry> buildSettingsSearchIndex(
   String Function(String)? pluginTextFor,
   String Function(String)? intercomTextFor,
   String Function(String)? alarmsTextFor,
+  String Function(String)? timersTextFor,
   String Function(String)? calendarTextFor,
   String Function(String)? mediaTextFor,
   String Function(String)? cameraStreamsTextFor,
@@ -825,6 +832,8 @@ List<SettingsSearchEntry> buildSettingsSearchIndex(
         ? intercomTextFor
         : entry.category == 'Alarms'
         ? alarmsTextFor
+        : entry.category == 'Timers'
+        ? timersTextFor
         : entry.category == 'Calendar'
         ? calendarTextFor
         : entry.category == 'Sendspin'

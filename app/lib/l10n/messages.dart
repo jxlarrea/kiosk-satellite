@@ -472,6 +472,15 @@ String settingsPageText(
       l10n(context).calendarVoiceHint,
     _ => english,
   },
+  // Its groups came from Voice Satellite and kept its catalog.
+  'Timers' => switch (english) {
+    'Voice timers' => l10n(context).timersVoiceSection,
+    'Manage timers using Voice Satellite' => l10n(context).timersVoiceManage,
+    'Works without a blueprint or an LLM conversation agent.' => l10n(
+      context,
+    ).timersVoiceHint,
+    _ => voiceText(context, english),
+  },
   'Alarms' => switch (english) {
     'Defaults' => l10n(context).alarmsDefaultsSection,
     'Text to Speech' => l10n(context).alarmsTtsSection,

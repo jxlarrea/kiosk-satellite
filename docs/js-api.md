@@ -303,7 +303,8 @@ Document replacement clears native timer presentation and stops alert audio. The
 ### Local Voice Satellite chimes
 
 The five canonical `/voice_satellite/sounds/` MP3 URLs passed to `playSound`
-and `prefetchSound` resolve to the selections under Voice Satellite > Chimes.
+and `prefetchSound` resolve to the selections under Voice Satellite > Chimes
+and the timer sound under Timers.
 Kiosk uses its bundled defaults when no custom file is selected. Other URLs,
 including custom preannouncement media, keep their normal playback behavior.
 Use `getVoiceChimeDurations()` before starting voice interactions and listen

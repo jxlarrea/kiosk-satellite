@@ -188,5 +188,57 @@
         "Voice Satellite > Timers > Share with"
       ]
     }
+  },
+  "timersVoiceSection": "Voice timers",
+  "@timersVoiceSection": {
+    "context": "Settings > Timers",
+    "description": "Heading of the group about setting timers by voice.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "timersVoiceManage": "Manage timers using Voice Satellite",
+  "@timersVoiceManage": {
+    "context": "Settings > Timers",
+    "description": "Row that opens the guide about timers by voice. Keep Voice Satellite unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "timersVoiceHint": "Works without a blueprint or an LLM conversation agent.",
+  "@timersVoiceHint": {
+    "context": "Settings > Timers",
+    "description": "Description under that row. A blueprint is a Home Assistant template for a script.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimersShareSearch": "Search kiosks",
+  "@voiceTimersShareSearch": {
+    "context": "Settings > Timers > Share with",
+    "description": "Hint in the search box of the kiosk picker.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers > Share with"
+      ],
+      "remoteAdmin": [
+        "Timers > Share with"
+      ]
+    }
   }
 }

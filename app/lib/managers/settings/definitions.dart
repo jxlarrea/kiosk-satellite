@@ -270,14 +270,13 @@ const Map<String, String> subpageHints = {
   // Voice Satellite. Both pages are mostly live rows from the
   // integration rather than settings, so the pages themselves are
   // placed by the Voice Satellite page; only their names live here.
-  'Chimes': 'Wake, done, error, timer and announcement sounds',
+  'Chimes': 'Wake, done, error and announcement sounds',
   'Wake Word': 'Engine, wake words, sensitivity, cached models',
   'Appearance': 'Overlay skin, theme, activity bar, text size',
   // Native Voice Satellite's own pages.
   'Assistant': 'Pipelines, follow-ups',
   'Realtime': 'OpenAI, xAI Grok, Gemini, tools, talk over answers',
   'Conversation': 'What the overlay shows and for how long',
-  'Timers': 'Pills, alerts, spoken reminders',
   // Its entry row sits under the tester, not with the three pages above.
   'Wake word diagnostics':
       'Recent activations and near misses with audio clips',
@@ -8411,10 +8410,8 @@ const voiceTimerPills = SettingDef<bool>(
   title: 'Show timers as pills',
   description:
       'Timers float over the screen instead of opening the full screen view.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'Pills',
-  dependsOn: 'voice.enabled',
 );
 
 const voiceTimerNameInPill = SettingDef<bool>(
@@ -8423,10 +8420,10 @@ const voiceTimerNameInPill = SettingDef<bool>(
   defaultValue: true,
   title: 'Show the timer name',
   description: 'The name beside the time in a pill.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'Pills',
-  dependsOn: 'voice.enabled',
+  dependsOn: 'voice.timer_pills',
+  alsoDependsOn: 'voice.enabled',
 );
 
 /// The pills draw for both runtimes (the dashboard's integration pushes
@@ -8437,13 +8434,13 @@ const voiceTimerPillScale = SettingDef<num>(
   defaultValue: 100,
   title: 'Timer pill scale',
   description: 'The size of the timer pills.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'Pills',
   min: 50,
   max: 300,
   step: 5,
   unit: '%',
+  dependsOn: 'voice.timer_pills',
 );
 
 const voiceTimerAlertPill = SettingDef<bool>(
@@ -8452,10 +8449,10 @@ const voiceTimerAlertPill = SettingDef<bool>(
   defaultValue: true,
   title: 'Show finished timer pills',
   description: 'Tap the pill to stop the alert.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
-  section: 'When a timer ends',
-  dependsOn: 'voice.enabled',
+  category: 'Timers',
+  section: 'Pills',
+  dependsOn: 'voice.timer_pills',
+  alsoDependsOn: 'voice.enabled',
 );
 
 const voiceMuteTimers = SettingDef<bool>(
@@ -8464,8 +8461,7 @@ const voiceMuteTimers = SettingDef<bool>(
   defaultValue: false,
   title: 'Mute timer alerts',
   description: 'Show the alert without the sound.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'When a timer ends',
   dependsOn: 'voice.enabled',
 );
@@ -8476,9 +8472,8 @@ const voiceTimerNameOnAlert = SettingDef<bool>(
   defaultValue: true,
   title: 'Show the name on the alert',
   description: 'The timer name under the alert.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
-  section: 'When a timer ends',
+  category: 'Timers',
+  section: 'Pills',
   dependsOn: 'voice.timer_alert_pill',
 );
 
@@ -8488,8 +8483,7 @@ const voiceTimerSpeak = SettingDef<bool>(
   defaultValue: false,
   title: 'Speak when a timer ends',
   description: 'Say a phrase between the alert sounds.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'When a timer ends',
   dependsOn: 'voice.enabled',
 );
@@ -8500,8 +8494,7 @@ const voiceTimerPhrase = SettingDef<String>(
   defaultValue: 'Your timer is up.',
   title: 'Phrase',
   description: 'Spoken for a timer without a name.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'When a timer ends',
   dependsOn: 'voice.timer_speak',
 );
@@ -8512,8 +8505,7 @@ const voiceTimerNamedPhrase = SettingDef<String>(
   defaultValue: 'Your {name} timer is up.',
   title: 'Phrase for named timers',
   description: '{name} is replaced with the timer name.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'When a timer ends',
   dependsOn: 'voice.timer_speak',
 );
@@ -8525,8 +8517,7 @@ const voiceTimersShare = SettingDef<bool>(
   defaultValue: false,
   title: 'Share timers',
   description: 'Timers started on this kiosk also run on the kiosks you pick.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'Shared timers',
   dependsOn: 'voice.enabled',
 );
@@ -8540,8 +8531,7 @@ const voiceTimersShareWith = SettingDef<String>(
   defaultValue: '[]',
   title: 'Share with',
   description: 'The kiosks that show and ring the timers of this one.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'Shared timers',
   dependsOn: 'voice.timers_share',
   perDevice: true,
@@ -8553,8 +8543,7 @@ const voiceTimersReceive = SettingDef<bool>(
   defaultValue: true,
   title: 'Show shared timers',
   description: 'Timers shared by other kiosks show and ring here.',
-  category: 'Voice Satellite',
-  subpage: 'Timers',
+  category: 'Timers',
   section: 'Shared timers',
 );
 
@@ -8612,8 +8601,8 @@ const voiceChimeTimer = SettingDef<String>(
   defaultValue: '',
   title: 'Timer sound',
   description: 'Repeats when a timer finishes until you dismiss it.',
-  category: 'Voice Satellite',
-  subpage: 'Chimes',
+  category: 'Timers',
+  section: 'When a timer ends',
   perDevice: true,
   validator: validateNotificationSound,
 );
@@ -8693,8 +8682,8 @@ const voiceChimeTimerVolume = SettingDef<num>(
   unit: '%',
   title: 'Timer sound volume',
   description: 'A share of the assistant volume.',
-  category: 'Voice Satellite',
-  subpage: 'Chimes',
+  category: 'Timers',
+  section: 'When a timer ends',
 );
 
 const voiceChimeAnnounceVolume = SettingDef<num>(
@@ -12591,6 +12580,7 @@ const fleetSyncCategories = <(String, String, String)>[
   ('Intercom', 'Intercom', 'the key, unless synced as a credential'),
   ('Alarms', 'Alarms', 'the alarms themselves'),
   ('Calendar', 'Calendar', 'the calendars hidden with their chips'),
+  ('Timers', 'Timers', 'the kiosks picked in Share with, the timer sound'),
   (
     'Device',
     'Device',
@@ -14532,18 +14522,22 @@ const List<SettingDef<Object>> allSettings = [
   voiceAnswerLinger,
   voiceResultsLinger,
   voiceAnnouncementLinger,
+  // The Timers page, in its groups' order: Shared timers, When a timer
+  // ends, Pills.
+  voiceTimersShare,
+  voiceTimersShareWith,
+  voiceTimersReceive,
+  voiceChimeTimer,
+  voiceChimeTimerVolume,
+  voiceMuteTimers,
+  voiceTimerSpeak,
+  voiceTimerPhrase,
+  voiceTimerNamedPhrase,
   voiceTimerPills,
   voiceTimerNameInPill,
   voiceTimerPillScale,
   voiceTimerAlertPill,
-  voiceMuteTimers,
   voiceTimerNameOnAlert,
-  voiceTimerSpeak,
-  voiceTimerPhrase,
-  voiceTimerNamedPhrase,
-  voiceTimersShare,
-  voiceTimersShareWith,
-  voiceTimersReceive,
   haUrl,
   haToken,
   haAutoLogin,
@@ -14689,8 +14683,6 @@ const List<SettingDef<Object>> allSettings = [
   voiceChimeDoneVolume,
   voiceChimeError,
   voiceChimeErrorVolume,
-  voiceChimeTimer,
-  voiceChimeTimerVolume,
   voiceChimeAnnounce,
   voiceChimeAnnounceVolume,
   notificationsChimeFile,

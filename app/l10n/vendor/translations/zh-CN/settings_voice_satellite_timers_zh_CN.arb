@@ -25,5 +25,7 @@
   "settingVoiceTimersReceiveTitle": "显示共享的计时器",
   "settingVoiceTimersReceiveDescription": "其他 Kiosk 设备共享的计时器会在此显示并响铃。",
   "settingKioskAllowTimersTitle": "计时器",
-  "settingKioskAllowTimersDescription": "从 Kiosk 菜单打开计时器视图。"
+  "settingKioskAllowTimersDescription": "从 Kiosk 菜单打开计时器视图。",
+  "settingsMenuTimersSummary": "全屏视图、浮条、共享的计时器",
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "在“共享给”中选择的 Kiosk 设备、计时器提示音"
 }

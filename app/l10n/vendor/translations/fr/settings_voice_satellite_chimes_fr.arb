@@ -1,7 +1,6 @@
 {
   "@@locale": "fr",
   "voiceChimesPage": "Carillons",
-  "voiceChimesHint": "Sons de réveil, de fin, d'erreur, de minuteur et d'annonce",
   "voiceChimesPreview": "Écouter sur le kiosque",
   "voiceChimesPreviewFailed": "Impossible de lire le son.",
   "voiceChimesHelp": "Choisissez les sons de ce kiosque. Envoyez ici vos fichiers personnalisés. Les sons enregistrés dans Home Assistant ne sont pas utilisés pour les carillons locaux.",
@@ -22,5 +21,6 @@
   "voiceChimeErrorVolumeTitle": "Volume du son d'erreur",
   "voiceChimeTimerVolumeTitle": "Volume du son du minuteur",
   "voiceChimeAnnounceVolumeTitle": "Volume du son d'annonce",
-  "voiceChimeVolumeDescription": "Une proportion du volume de l'assistant."
+  "voiceChimeVolumeDescription": "Une proportion du volume de l'assistant.",
+  "voiceChimesSoundsHint": "Sons de réveil, de fin, d'erreur et d'annonce"
 }

@@ -518,6 +518,15 @@ function buildPicker({ title, spec, selected = [], multiple = false, max = null,
     st.picked.forEach((id, i) => {
       const item = findIn(st.list, id);
       const row = el('div', 'ep-showing-row');
+      // Picks whose order means nothing (spec.ordered false, the kiosks to
+      // share timers with) are listed without the grip and the arrows.
+      if (spec.ordered === false) {
+        row.style.cursor = 'default';
+        row.appendChild(disc(item, 'ep-disc small'));
+        row.appendChild(el('span', 'ep-showing-name', item?.name || id));
+        showing.appendChild(row);
+        return;
+      }
       row.draggable = true;
       row.dataset.index = String(i);
       const grip = el('span', 'ep-grip');
@@ -551,7 +560,7 @@ function buildPicker({ title, spec, selected = [], multiple = false, max = null,
       });
       showing.appendChild(row);
     });
-    if (st.picked.length > 1) {
+    if (spec.ordered !== false && st.picked.length > 1) {
       showing.appendChild(el('div', 'ep-hint', haText('Drag or use the arrows to change the order.')));
     }
   }
@@ -908,14 +917,26 @@ export function pickListRow({ specKey = 'entities', value, name = null, detail =
 }
 
 // A plain choice in the control box: the Displayed value.
-export function choiceBox(text, onClick) {
+// With [iconPath] an icon leads it, as a pick field's does: muted while
+// nothing is picked, the primary color once setIcon(true) says something is.
+export function choiceBox(text, onClick, { iconPath = null } = {}) {
   const box = el('button', 'dp-field ep-field');
   box.type = 'button';
   const label = el('span', 'dp-field-text', text);
   const chev = el('span', 'dp-field-chev');
   chev.appendChild(svgPath(ICONS.chevron, 20));
+  let lead = null;
+  if (iconPath) {
+    lead = el('span', 'dp-field-icon');
+    lead.appendChild(svgPath(iconPath, 20));
+    box.appendChild(lead);
+  }
   box.append(label, chev);
   box.disabled = !onClick;
   if (onClick) box.addEventListener('click', onClick);
-  return { el: box, setText: (v) => { label.textContent = v; } };
+  return {
+    el: box,
+    setText: (v) => { label.textContent = v; },
+    setIcon: (picked) => { lead?.classList.toggle('primary', !!picked); },
+  };
 }

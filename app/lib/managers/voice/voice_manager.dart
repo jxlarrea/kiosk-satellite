@@ -495,6 +495,8 @@ class VoiceManager extends Manager {
             if (_settings.importing) unawaited(_applySelect(entry.key, value));
           }
           if ((e.key == defs.voiceMuteTimers.key ||
+                  e.key == defs.voiceTimerPills.key ||
+                  e.key == defs.voiceTimerNameOnAlert.key ||
                   e.key == defs.voiceTimerAlertPill.key) &&
               _ringing.isNotEmpty) {
             _pushAlert();
@@ -3559,14 +3561,17 @@ class VoiceManager extends Manager {
   }
 
   void _pushAlert() {
-    final showNames = _settings.get(defs.voiceTimerNameOnAlert);
+    // The finished pill and its name are the pills' own settings: the
+    // full screen view always shows a finished timer and names it.
+    final pills = _settings.get(defs.voiceTimerPills);
+    final showNames = !pills || _settings.get(defs.voiceTimerNameOnAlert);
     unawaited(
       commands.execute('setVoiceTimerAlert', {
         'entityId': timerEntity,
         'muted': _settings.get(defs.voiceMuteTimers),
         // Without its pill the alert still rings and the stop word still
         // takes it down.
-        'hidden': !_settings.get(defs.voiceTimerAlertPill),
+        'hidden': pills && !_settings.get(defs.voiceTimerAlertPill),
         'speech': ?(_ringing.isEmpty ? null : _alertSpeech),
         'speechText': _alertSpeechText,
         'timers': [

@@ -13629,9 +13629,6 @@ class UiStringsZh extends UiStrings {
   String get voiceChimesPage => '提示音';
 
   @override
-  String get voiceChimesHint => '唤醒、完成、错误、计时器和播报声音';
-
-  @override
   String get voiceChimesPreview => '在 Kiosk 上预览';
 
   @override
@@ -13695,6 +13692,9 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get voiceChimeVolumeDescription => '占助手音量的百分比。';
+
+  @override
+  String get voiceChimesSoundsHint => '唤醒、完成、错误和播报声音';
 
   @override
   String get settingVoiceShowCommandTitle => '显示你说的内容';
@@ -13854,9 +13854,6 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get voiceConversationHint => '浮层显示的内容及保留时长';
-
-  @override
-  String get voiceTimersHint => '浮条、提醒和语音播报';
 
   @override
   String get voiceSectionFollowUp => '追问';
@@ -14533,6 +14530,13 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingKioskAllowTimersDescription => '从 Kiosk 菜单打开计时器视图。';
+
+  @override
+  String get settingsMenuTimersSummary => '全屏视图、浮条、共享的计时器';
+
+  @override
+  String get fleetTheKiosksPickedInShareWithTheTimerSound =>
+      '在“共享给”中选择的 Kiosk 设备、计时器提示音';
 
   @override
   String get voiceWakePage => '唤醒词';
@@ -15656,6 +15660,18 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get voiceTimersShareOffline => '离线';
+
+  @override
+  String get timersVoiceSection => '语音计时器';
+
+  @override
+  String get timersVoiceManage => '通过 Voice Satellite 管理计时器';
+
+  @override
+  String get timersVoiceHint => '无需蓝图（脚本模板）或大语言模型（LLM）对话代理。';
+
+  @override
+  String get voiceTimersShareSearch => '搜索 Kiosk 设备';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -29283,9 +29299,6 @@ class UiStringsZhCn extends UiStringsZh {
   String get voiceChimesPage => '提示音';
 
   @override
-  String get voiceChimesHint => '唤醒、完成、错误、计时器和播报声音';
-
-  @override
   String get voiceChimesPreview => '在 Kiosk 上预览';
 
   @override
@@ -29349,6 +29362,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get voiceChimeVolumeDescription => '占助手音量的百分比。';
+
+  @override
+  String get voiceChimesSoundsHint => '唤醒、完成、错误和播报声音';
 
   @override
   String get settingVoiceShowCommandTitle => '显示你说的内容';
@@ -29508,9 +29524,6 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get voiceConversationHint => '浮层显示的内容及保留时长';
-
-  @override
-  String get voiceTimersHint => '浮条、提醒和语音播报';
 
   @override
   String get voiceSectionFollowUp => '追问';
@@ -30187,6 +30200,13 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingKioskAllowTimersDescription => '从 Kiosk 菜单打开计时器视图。';
+
+  @override
+  String get settingsMenuTimersSummary => '全屏视图、浮条、共享的计时器';
+
+  @override
+  String get fleetTheKiosksPickedInShareWithTheTimerSound =>
+      '在“共享给”中选择的 Kiosk 设备、计时器提示音';
 
   @override
   String get voiceWakePage => '唤醒词';
@@ -31310,4 +31330,16 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get voiceTimersShareOffline => '离线';
+
+  @override
+  String get timersVoiceSection => '语音计时器';
+
+  @override
+  String get timersVoiceManage => '通过 Voice Satellite 管理计时器';
+
+  @override
+  String get timersVoiceHint => '无需蓝图（脚本模板）或大语言模型（LLM）对话代理。';
+
+  @override
+  String get voiceTimersShareSearch => '搜索 Kiosk 设备';
 }

@@ -30159,5 +30159,47 @@
     "translation": "b10f3c1c7ef781bca70c44dcf159bca8b452702f85aece70a14ed39b7f1ce09f",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "timersVoiceSection": {
+    "source": "38e648716e2b2bbdbf0679943673795722558e4be58fe18e6be7cde6dacbe9e7",
+    "translation": "f2c0d11ba463a7bdfda5ba5a02e357ecb10008696622f39a4e81b6f031424c82",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceChimesSoundsHint": {
+    "source": "9de5f62b287301565deb3467461ee40d2e5aa96b2212d6ece8f6d0fb6d0d0401",
+    "translation": "9a565991e52e9304551604f39aa9e0128ef9d78618b1cd9dec2eb49afa62cc1e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingsMenuTimersSummary": {
+    "source": "f7476606f1ea32c770b2980bcb90649a4a002c490879adc0dfac750205d197c1",
+    "translation": "2309e883e00a1537c375f63be734694bdfa3f3d907697de79072004a4c9f593a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "timersVoiceManage": {
+    "source": "bdf1fd79e97c5a9403a53ceef052b77ae13f0a0f1b7557625eb1b642f07ddc97",
+    "translation": "ecde75f23f5ed435ffa69980663d7197de97df1a3835abc27078ebc7cefde007",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "timersVoiceHint": {
+    "source": "9504bcf68b05d598592a4d507b7a3f01715a58f3ec7afbd980eb629c1c8f4b00",
+    "translation": "a7d6d74daa0ec17c135a2591fa79dab50f9be889615e818fd2e9ea2d08babff4",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "fleetTheKiosksPickedInShareWithTheTimerSound": {
+    "source": "cfec975faccc9fc33525741346111f6db891973d7a3c7b52c8503cfef52704dd",
+    "translation": "892c669641367263784f2c5d8afca74df0a1ac5946df9a595b25758eaaceea0a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "voiceTimersShareSearch": {
+    "source": "84d3a1c24be100c11fd19c7dc35e27387e398d5893866e5d4d0c215c04cd0b47",
+    "translation": "14d86fa11afeda05db3e1cb7811db5f71c977d516d6e722f26bec29b9368a177",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

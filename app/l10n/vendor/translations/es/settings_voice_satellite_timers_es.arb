@@ -25,5 +25,7 @@
   "settingVoiceTimersReceiveTitle": "Mostrar temporizadores compartidos",
   "settingVoiceTimersReceiveDescription": "Los temporizadores compartidos por otros kioskos se muestran y suenan aquí.",
   "settingKioskAllowTimersTitle": "Temporizadores",
-  "settingKioskAllowTimersDescription": "Abrir la vista de temporizadores desde el menú del kiosko."
+  "settingKioskAllowTimersDescription": "Abrir la vista de temporizadores desde el menú del kiosko.",
+  "settingsMenuTimersSummary": "Vista a pantalla completa, indicadores, temporizadores compartidos",
+  "fleetTheKiosksPickedInShareWithTheTimerSound": "los kioskos elegidos en Compartir con, el sonido del temporizador"
 }

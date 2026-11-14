@@ -53,7 +53,6 @@ export const SUBPAGE_ICONS = {
   'Assistant': svg('<path d="M4 5h11v8H8l-4 3z"/><path d="M9 16v1h7l4 3V9h-5"/>'),
   'Realtime': svg('<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>'),
   'Conversation': svg('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
-  'Timers': svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2h5M12 2v3"/>'),
   // Screen & Audio.
   'Microphone settings': svg('<rect x="9" y="3" width="6" height="11" rx="3"/>'
     + '<path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3M9 21h6"/>'),

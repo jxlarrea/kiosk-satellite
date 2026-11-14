@@ -182,6 +182,7 @@ List<Widget> _sectionedCards(
                   def.category == 'Screen & Audio' ||
                   def.category == 'Screensaver' ||
                   def.category == 'Voice Satellite' ||
+                  def.category == 'Timers' ||
                   def.category == 'Browser' ||
                   def.category == 'LED Control')
               ? Builder(
@@ -222,6 +223,8 @@ const _voiceAlarmsDocsUrl =
     'https://kiosksatellite.com/docs/alarms/#setting-alarms-by-voice';
 const _voiceCalendarDocsUrl =
     'https://kiosksatellite.com/docs/calendar/#managing-the-calendar-by-voice';
+const _voiceTimersDocsUrl =
+    'https://kiosksatellite.com/docs/voice-satellite/#timers';
 const _voiceMusicDocsUrl =
     'https://kiosksatellite.com/docs/music-library/#playing-music-by-voice';
 
@@ -306,6 +309,12 @@ const _categories = <(String, String, Object, String)>[
     'Family calendars from Home Assistant',
   ),
   (
+    'Timers',
+    'Timers',
+    Icons.timer_outlined,
+    'Full screen view, pills, shared timers',
+  ),
+  (
     'Kiosk',
     'Kiosk Mode',
     Icons.lock_outline,
@@ -366,12 +375,14 @@ const _railGroups = <String, String>{
   'Device': 'System',
 };
 
-/// The Chimes page: each sound with its volume under it.
+/// The Chimes page: each sound with its volume under it. The timer sound
+/// is on the Timers page.
 final List<SettingDef<Object>> _chimeRows = [
-  for (final kind in voiceChimeSettings.keys) ...[
-    voiceChimeSettings[kind]!,
-    voiceChimeVolumes[kind]!,
-  ],
+  for (final kind in voiceChimeSettings.keys)
+    if (voiceChimeSettings[kind]!.subpage == 'Chimes') ...[
+      voiceChimeSettings[kind]!,
+      voiceChimeVolumes[kind]!,
+    ],
 ];
 
 /// Whether a category's page is listed. LED Control only exists on a
@@ -550,6 +561,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         pluginTextFor: (text) => pluginText(context, text),
         intercomTextFor: (text) => intercomText(context, text),
         alarmsTextFor: (text) => settingsPageText(context, 'Alarms', text),
+        timersTextFor: (text) => settingsPageText(context, 'Timers', text),
         calendarTextFor: (text) => settingsPageText(context, 'Calendar', text),
         mediaTextFor: (text) => mediaText(context, text),
         cameraStreamsTextFor: (text) => cameraStreamsText(context, text),
@@ -2514,6 +2526,38 @@ class _CategoryContentState extends State<_CategoryContent> {
               ),
             ],
           ),
+        ] else if (widget.category == 'Timers') ...[
+          // The definitions, then Voice timers. Mirrored on the remote's
+          // Timers page (timers.js).
+          ..._sectionedCards(
+            container,
+            _inlineDefsFor('Timers'),
+            () => setState(() {}),
+            replace: _rowReplacements(container),
+            after: _rowExtras(container),
+          ),
+          // Timers by voice are Home Assistant's own, so this group only
+          // points at the guide.
+          SectionHeading(l10n(context).timersVoiceSection),
+          SettingsCard(
+            children: [
+              SearchLandingTarget(
+                id: 'x:timers_voice',
+                child: SettingsRow(
+                  leading: const Icon(Icons.record_voice_over_outlined),
+                  title: Text(l10n(context).timersVoiceManage),
+                  subtitle: Text(l10n(context).timersVoiceHint),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: () {
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    container.commands.execute('showLinkPage', {
+                      'url': _voiceTimersDocsUrl,
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
         ] else if (widget.category == 'Alarms') ...[
           // The Drawer menu items link on its own untitled card, then the list
           // itself (the full screen overlay, opened from here), then the
@@ -3078,8 +3122,8 @@ class _CategoryContentState extends State<_CategoryContent> {
     // Voice Satellite's TTS output: this kiosk or a Home Assistant media
     // player, from the live list, in the place of the text field.
     // The kiosks to share timers with: names and a checkbox list, in the
-    // place of the text field. Mirrored on the remote (vs_native.js).
-    if (widget.category == 'Voice Satellite')
+    // place of the text field. Mirrored on the remote (rows.js).
+    if (widget.category == 'Timers')
       voiceTimersShareWith.key: SearchLandingTarget(
         id: voiceTimersShareWith.key,
         child: SharedTimersShareWithRow(container: container),
@@ -4198,15 +4242,6 @@ class _CategoryContentState extends State<_CategoryContent> {
       return [...sectioned(_chimeRows)];
     }
 
-    // The dashboard runtime's Timers page holds only what the kiosk draws
-    // itself: the pills.
-    if (widget.category == 'Voice Satellite' && subpage == 'Timers') {
-      return sectioned([
-        for (final def in _defsFor(widget.category))
-          if (def.subpage == subpage) def,
-      ]);
-    }
-
     // Voice Satellite's two pages are almost entirely live rows from the
     // integration, so they render through the same section that draws them
     // on the page above rather than from the definitions.
@@ -4614,7 +4649,6 @@ extension on _CategoryContentState {
           'Realtime',
           'Appearance',
           'Conversation',
-          'Timers',
           'Chimes',
         ])
           _subpageEntryCard(container, 'Voice Satellite', page),
@@ -13073,7 +13107,7 @@ class _VsControlsSectionState extends State<VsControlsSection> {
 
   /// Entries for the Voice Satellite settings groups.
   List<Widget> _vsPageEntries() => [
-    for (final page in const ['Wake Word', 'Appearance', 'Timers', 'Chimes'])
+    for (final page in const ['Wake Word', 'Appearance', 'Chimes'])
       _subpageEntryCard(widget.container, 'Voice Satellite', page),
   ];
 }

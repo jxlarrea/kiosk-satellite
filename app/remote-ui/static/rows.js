@@ -45,6 +45,7 @@ import { loadSettings, refreshRealMacNote, syncSubpages, updateCelestialLocation
 import { dashboardField } from './dashboard_picker.js';
 import { drawerItemsText, openDrawerItemsPicker } from './drawer_items.js';
 import { compassLayoutRow, compassStyleRow } from './compass.js';
+import { KIOSK_ICON, openShareWithPicker, shareKiosksSpec, shareWithPicked, shareWithText } from './timers.js';
 import { SEARCH_CATEGORY_TABS, jumpToResult } from './search.js';
 import { updatePlayerRow } from './panels.js';
 import {
@@ -612,6 +613,28 @@ export function settingRow(s) {
       field.setText(toastsShownText(decodeToastsHidden(current())));
     });
     bindUpdate(field.el, () => field.setText(toastsShownText(decodeToastsHidden(current()))));
+    row.classList.add('dp-field-row');
+    row.appendChild(field.el);
+    return row;
+  }
+
+  // Share with on the Timers page, mirroring the device's row: the picked
+  // kiosks by name in a dropdown-style box that opens a checkbox dialog
+  // over the kiosks on the network. Stored as a JSON list of {id, name}.
+  if (s.key === 'voice.timers_share_with') {
+    const paint = () => { field.setText(shareWithText()); field.setIcon(shareWithPicked()); };
+    const field = choiceBox(shareWithText(), async () => {
+      const value = await openShareWithPicker(s.title);
+      if (value == null) return;
+      await save(value);
+      paint();
+    }, { iconPath: KIOSK_ICON });
+    // The names the kiosks have now, once the network answers.
+    const spec = shareKiosksSpec();
+    onListLoaded(spec.key, field.el, paint);
+    loadList(spec);
+    bindUpdate(field.el, paint);
+    paint();
     row.classList.add('dp-field-row');
     row.appendChild(field.el);
     return row;

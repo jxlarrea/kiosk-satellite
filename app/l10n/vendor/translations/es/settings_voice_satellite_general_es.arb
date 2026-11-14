@@ -37,7 +37,6 @@
   "voiceTimers": "Temporizadores",
   "voiceAssistantHint": "Canales, seguimientos",
   "voiceConversationHint": "Qué muestra el asistente en pantalla y durante cuánto tiempo",
-  "voiceTimersHint": "Indicadores, alertas, avisos hablados",
   "voiceSectionFollowUp": "Seguimiento",
   "voiceSectionLinger": "Cuánto tiempo permanece",
   "voiceSectionOnScreen": "En pantalla",

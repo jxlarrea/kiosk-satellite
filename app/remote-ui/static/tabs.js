@@ -26,7 +26,7 @@ import { clearSearchReturnTab, searchReturnTab } from './search.js';
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 export const TABS = ['dashboard', 'navigation', 'homeassistant', 'esphome', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'home', 'launcher', 'screenaudio', 'screensaver',
-  'camera', 'sendspin', 'cameras', 'dlna', 'intercom', 'alarms', 'calendar', 'files', 'gestures', 'leds', 'device', 'fleet', 'plugins', 'about', 'logs'];
+  'camera', 'sendspin', 'cameras', 'dlna', 'intercom', 'alarms', 'calendar', 'timers', 'files', 'gestures', 'leds', 'device', 'fleet', 'plugins', 'about', 'logs'];
 // A page's title, by what is left on it on a device without a screen.
 export function tabTitle(tab) {
   return isHeadless() && tab === 'screenaudio' ? 'Audio' : TAB_TITLES[tab];
@@ -42,7 +42,7 @@ export const TAB_TITLES = {
   voicesatellite: 'Voice Satellite',
   cameras: 'Camera Streams',
   sendspin: 'Media Player',
-  dlna: 'DLNA Renderer', intercom: 'Intercom', alarms: 'Alarms', calendar: 'Calendar', esphome: 'ESPHome',
+  dlna: 'DLNA Renderer', intercom: 'Intercom', alarms: 'Alarms', calendar: 'Calendar', timers: 'Timers', esphome: 'ESPHome',
   files: 'File Manager', gestures: 'Gestures', leds: 'LED Control',
   device: 'Device', fleet: 'Fleet Management', plugins: 'Plugin Manager', about: 'About', logs: 'Logs',
 };

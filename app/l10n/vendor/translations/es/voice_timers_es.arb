@@ -17,5 +17,9 @@
   "voiceTimerPaused": "En pausa",
   "voiceTimersShareNone": "Ningún kiosko elegido",
   "voiceTimersShareEmpty": "No se encontraron otros kioskos. Activa Administración remota y Buscar otros kioskos en cada uno.",
-  "voiceTimersShareOffline": "Sin conexión"
+  "voiceTimersShareOffline": "Sin conexión",
+  "timersVoiceSection": "Temporizadores por voz",
+  "timersVoiceManage": "Gestionar temporizadores con Voice Satellite",
+  "timersVoiceHint": "Funciona sin blueprint ni agente de conversación LLM.",
+  "voiceTimersShareSearch": "Buscar kioskos"
 }

@@ -17,5 +17,9 @@
   "voiceTimerPaused": "Призупинено",
   "voiceTimersShareNone": "Кіоски не вибрано",
   "voiceTimersShareEmpty": "Інших кіосків не знайдено. Увімкніть на кожному «Віддалене керування» та «Пошук інших кіосків».",
-  "voiceTimersShareOffline": "Не в мережі"
+  "voiceTimersShareOffline": "Не в мережі",
+  "timersVoiceSection": "Голосові таймери",
+  "timersVoiceManage": "Керувати таймерами через Voice Satellite",
+  "timersVoiceHint": "Працює без blueprint і агента розмови LLM.",
+  "voiceTimersShareSearch": "Пошук кіосків"
 }

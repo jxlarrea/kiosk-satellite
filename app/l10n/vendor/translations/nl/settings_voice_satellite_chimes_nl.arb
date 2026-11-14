@@ -1,7 +1,6 @@
 {
   "@@locale": "nl",
   "voiceChimesPage": "Geluiden",
-  "voiceChimesHint": "Wek-, gereed-, fout-, timer- en aankondigingsgeluiden",
   "voiceChimesPreview": "Voorbeeld op kiosk",
   "voiceChimesPreviewFailed": "Kon het geluid niet afspelen.",
   "voiceChimesHelp": "Kies geluiden voor deze kiosk en upload hier aangepaste bestanden. Geluiden die in Home Assistant zijn opgeslagen, worden niet gebruikt voor lokale meldingsgeluiden.",
@@ -22,5 +21,6 @@
   "voiceChimeErrorVolumeTitle": "Volume van het foutgeluid",
   "voiceChimeTimerVolumeTitle": "Volume van het timergeluid",
   "voiceChimeAnnounceVolumeTitle": "Volume van het aankondigingsgeluid",
-  "voiceChimeVolumeDescription": "Een aandeel van het assistentvolume."
+  "voiceChimeVolumeDescription": "Een aandeel van het assistentvolume.",
+  "voiceChimesSoundsHint": "Wek-, gereed-, fout- en aankondigingsgeluiden"
 }

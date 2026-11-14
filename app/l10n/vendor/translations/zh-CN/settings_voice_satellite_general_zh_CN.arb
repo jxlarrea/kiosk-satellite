@@ -37,7 +37,6 @@
   "voiceTimers": "计时器",
   "voiceAssistantHint": "管线和追问",
   "voiceConversationHint": "浮层显示的内容及保留时长",
-  "voiceTimersHint": "浮条、提醒和语音播报",
   "voiceSectionFollowUp": "追问",
   "voiceSectionLinger": "保留时长",
   "voiceSectionOnScreen": "屏幕显示",

@@ -115,6 +115,8 @@ export function settingsPageText(category, english) {
     : ['Kiosk', 'kiosk', 'Home', 'home', 'Lockdown', 'lockdown'].includes(category) ? kioskText(english)
     : category === 'Intercom' || category === 'intercom' ? (english === 'Answer' ? t('intercomAnswerSection') : english === 'Talk' ? t('intercomTalkSection') : intercomText(english))
     : category === 'Alarms' || category === 'alarms' ? alarmsPageText(english)
+    // Its groups came from Voice Satellite and kept its catalog.
+    : category === 'Timers' || category === 'timers' ? timersPageText(english)
     // Its groups reuse the sidebar's group names.
     : category === 'Calendar' || category === 'calendar' ? calendarPageText(english)
     : category === 'Browser' || category === 'browser' ? browserPageText(english)
@@ -171,6 +173,17 @@ const ALARMS_PAGE_TEXT = {
   'Manage alarms using Voice Satellite': 'alarmsVoiceManage',
   'Needs the Kiosk Satellite alarms blueprint and an LLM conversation agent in Home Assistant.': 'alarmsVoiceHint',
 };
+
+const TIMERS_PAGE_TEXT = {
+  'Voice timers': 'timersVoiceSection',
+  'Manage timers using Voice Satellite': 'timersVoiceManage',
+  'Works without a blueprint or an LLM conversation agent.': 'timersVoiceHint',
+};
+
+function timersPageText(english) {
+  const id = TIMERS_PAGE_TEXT[english];
+  return id ? t(id, {}, english) : voiceText(english);
+}
 
 function alarmsPageText(english) {
   const id = ALARMS_PAGE_TEXT[english];

@@ -4932,7 +4932,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceOptionAnnouncement' => strings.voiceOptionAnnouncement,
       'voiceOptionNormalPlayback' => strings.voiceOptionNormalPlayback,
       'voiceChimesPage' => strings.voiceChimesPage,
-      'voiceChimesHint' => strings.voiceChimesHint,
       'voiceChimesPreview' => strings.voiceChimesPreview,
       'voiceChimesPreviewFailed' => strings.voiceChimesPreviewFailed,
       'voiceChimesHelp' => strings.voiceChimesHelp,
@@ -4955,6 +4954,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceChimeTimerVolumeTitle' => strings.voiceChimeTimerVolumeTitle,
       'voiceChimeAnnounceVolumeTitle' => strings.voiceChimeAnnounceVolumeTitle,
       'voiceChimeVolumeDescription' => strings.voiceChimeVolumeDescription,
+      'voiceChimesSoundsHint' => strings.voiceChimesSoundsHint,
       'settingVoiceShowCommandTitle' => strings.settingVoiceShowCommandTitle,
       'settingVoiceShowCommandDescription' =>
         strings.settingVoiceShowCommandDescription,
@@ -5020,7 +5020,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceTimers' => strings.voiceTimers,
       'voiceAssistantHint' => strings.voiceAssistantHint,
       'voiceConversationHint' => strings.voiceConversationHint,
-      'voiceTimersHint' => strings.voiceTimersHint,
       'voiceSectionFollowUp' => strings.voiceSectionFollowUp,
       'voiceSectionLinger' => strings.voiceSectionLinger,
       'voiceSectionOnScreen' => strings.voiceSectionOnScreen,
@@ -5282,6 +5281,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingKioskAllowTimersTitle' => strings.settingKioskAllowTimersTitle,
       'settingKioskAllowTimersDescription' =>
         strings.settingKioskAllowTimersDescription,
+      'settingsMenuTimersSummary' => strings.settingsMenuTimersSummary,
+      'fleetTheKiosksPickedInShareWithTheTimerSound' =>
+        strings.fleetTheKiosksPickedInShareWithTheTimerSound,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,
@@ -5628,5 +5630,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceTimersShareNone' => strings.voiceTimersShareNone,
       'voiceTimersShareEmpty' => strings.voiceTimersShareEmpty,
       'voiceTimersShareOffline' => strings.voiceTimersShareOffline,
+      'timersVoiceSection' => strings.timersVoiceSection,
+      'timersVoiceManage' => strings.timersVoiceManage,
+      'timersVoiceHint' => strings.timersVoiceHint,
+      'voiceTimersShareSearch' => strings.voiceTimersShareSearch,
       _ => fallback,
     };

@@ -1,7 +1,6 @@
 {
   "@@locale": "zh_CN",
   "voiceChimesPage": "提示音",
-  "voiceChimesHint": "唤醒、完成、错误、计时器和播报声音",
   "voiceChimesPreview": "在 Kiosk 上预览",
   "voiceChimesPreviewFailed": "无法播放声音。",
   "voiceChimesHelp": "为此 Kiosk 选择声音，可在此上传自定义文件。Home Assistant 中存储的声音不用于本地提示音。",
@@ -22,5 +21,6 @@
   "voiceChimeErrorVolumeTitle": "错误提示音音量",
   "voiceChimeTimerVolumeTitle": "计时器提示音音量",
   "voiceChimeAnnounceVolumeTitle": "播报提示音音量",
-  "voiceChimeVolumeDescription": "占助手音量的百分比。"
+  "voiceChimeVolumeDescription": "占助手音量的百分比。",
+  "voiceChimesSoundsHint": "唤醒、完成、错误和播报声音"
 }

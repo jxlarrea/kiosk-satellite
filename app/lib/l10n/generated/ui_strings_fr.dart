@@ -14636,10 +14636,6 @@ class UiStringsFr extends UiStrings {
   String get voiceChimesPage => 'Carillons';
 
   @override
-  String get voiceChimesHint =>
-      'Sons de réveil, de fin, d\'erreur, de minuteur et d\'annonce';
-
-  @override
   String get voiceChimesPreview => 'Écouter sur le kiosque';
 
   @override
@@ -14709,6 +14705,10 @@ class UiStringsFr extends UiStrings {
   @override
   String get voiceChimeVolumeDescription =>
       'Une proportion du volume de l\'assistant.';
+
+  @override
+  String get voiceChimesSoundsHint =>
+      'Sons de réveil, de fin, d\'erreur et d\'annonce';
 
   @override
   String get settingVoiceShowCommandTitle => 'Afficher ce que vous avez dit';
@@ -14887,9 +14887,6 @@ class UiStringsFr extends UiStrings {
   @override
   String get voiceConversationHint =>
       'Ce que la superposition affiche et pendant combien de temps';
-
-  @override
-  String get voiceTimersHint => 'Pastilles, alertes, rappels vocaux';
 
   @override
   String get voiceSectionFollowUp => 'Suivi';
@@ -15619,6 +15616,14 @@ class UiStringsFr extends UiStrings {
   @override
   String get settingKioskAllowTimersDescription =>
       'Ouvrir la vue des minuteurs depuis le menu du kiosque.';
+
+  @override
+  String get settingsMenuTimersSummary =>
+      'Vue plein écran, pastilles, minuteurs partagés';
+
+  @override
+  String get fleetTheKiosksPickedInShareWithTheTimerSound =>
+      'les kiosques choisis dans Partager avec, le son du minuteur';
 
   @override
   String get voiceWakePage => 'Mot de réveil';
@@ -16841,4 +16846,17 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get voiceTimersShareOffline => 'Hors ligne';
+
+  @override
+  String get timersVoiceSection => 'Minuteurs vocaux';
+
+  @override
+  String get timersVoiceManage => 'Gérer les minuteurs avec Voice Satellite';
+
+  @override
+  String get timersVoiceHint =>
+      'Fonctionne sans blueprint ni agent de conversation LLM.';
+
+  @override
+  String get voiceTimersShareSearch => 'Rechercher des kiosques';
 }

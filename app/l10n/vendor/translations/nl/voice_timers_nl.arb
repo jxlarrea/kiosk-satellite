@@ -17,5 +17,9 @@
   "voiceTimerPaused": "Gepauzeerd",
   "voiceTimersShareNone": "Geen kiosken gekozen",
   "voiceTimersShareEmpty": "Geen andere kiosken gevonden. Schakel op elke kiosk Beheer op afstand en Andere kiosken zoeken in.",
-  "voiceTimersShareOffline": "Offline"
+  "voiceTimersShareOffline": "Offline",
+  "timersVoiceSection": "Spraaktimers",
+  "timersVoiceManage": "Timers beheren met Voice Satellite",
+  "timersVoiceHint": "Werkt zonder blauwdruk of LLM-gespreksagent.",
+  "voiceTimersShareSearch": "Kiosken zoeken"
 }

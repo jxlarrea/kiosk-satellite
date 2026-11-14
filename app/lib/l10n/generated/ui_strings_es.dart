@@ -14639,10 +14639,6 @@ class UiStringsEs extends UiStrings {
   String get voiceChimesPage => 'Sonidos';
 
   @override
-  String get voiceChimesHint =>
-      'Sonidos de activación, finalización, error, temporizadores y anuncios';
-
-  @override
   String get voiceChimesPreview => 'Reproducir en el kiosco';
 
   @override
@@ -14713,6 +14709,10 @@ class UiStringsEs extends UiStrings {
   @override
   String get voiceChimeVolumeDescription =>
       'Una proporción del volumen del asistente.';
+
+  @override
+  String get voiceChimesSoundsHint =>
+      'Sonidos de activación, finalización, error y anuncios';
 
   @override
   String get settingVoiceShowCommandTitle => 'Mostrar lo que dijiste';
@@ -14890,9 +14890,6 @@ class UiStringsEs extends UiStrings {
   @override
   String get voiceConversationHint =>
       'Qué muestra el asistente en pantalla y durante cuánto tiempo';
-
-  @override
-  String get voiceTimersHint => 'Indicadores, alertas, avisos hablados';
 
   @override
   String get voiceSectionFollowUp => 'Seguimiento';
@@ -15627,6 +15624,14 @@ class UiStringsEs extends UiStrings {
   @override
   String get settingKioskAllowTimersDescription =>
       'Abrir la vista de temporizadores desde el menú del kiosko.';
+
+  @override
+  String get settingsMenuTimersSummary =>
+      'Vista a pantalla completa, indicadores, temporizadores compartidos';
+
+  @override
+  String get fleetTheKiosksPickedInShareWithTheTimerSound =>
+      'los kioskos elegidos en Compartir con, el sonido del temporizador';
 
   @override
   String get voiceWakePage => 'Palabra de activación';
@@ -16853,4 +16858,18 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get voiceTimersShareOffline => 'Sin conexión';
+
+  @override
+  String get timersVoiceSection => 'Temporizadores por voz';
+
+  @override
+  String get timersVoiceManage =>
+      'Gestionar temporizadores con Voice Satellite';
+
+  @override
+  String get timersVoiceHint =>
+      'Funciona sin blueprint ni agente de conversación LLM.';
+
+  @override
+  String get voiceTimersShareSearch => 'Buscar kioskos';
 }

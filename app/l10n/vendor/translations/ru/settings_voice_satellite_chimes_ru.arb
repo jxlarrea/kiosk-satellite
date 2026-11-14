@@ -1,7 +1,6 @@
 {
   "@@locale": "ru",
   "voiceChimesPage": "Сигналы",
-  "voiceChimesHint": "Звуки пробуждения, готовности, ошибки, таймера и объявлений",
   "voiceChimesPreview": "Предпросмотр на киоске",
   "voiceChimesPreviewFailed": "Не удалось проиграть звук.",
   "voiceChimesHelp": "Выберите звуки для этого киоска. Загрузите свои файлы здесь. Звуки из Home Assistant не используются для локальных сигналов.",
@@ -22,5 +21,6 @@
   "voiceChimeErrorVolumeTitle": "Громкость звука ошибки",
   "voiceChimeTimerVolumeTitle": "Громкость звука таймера",
   "voiceChimeAnnounceVolumeTitle": "Громкость звука объявления",
-  "voiceChimeVolumeDescription": "Доля громкости ассистента."
+  "voiceChimeVolumeDescription": "Доля громкости ассистента.",
+  "voiceChimesSoundsHint": "Звуки пробуждения, готовности, ошибки и объявлений"
 }
