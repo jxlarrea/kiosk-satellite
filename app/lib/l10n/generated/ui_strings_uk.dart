@@ -3136,6 +3136,9 @@ class UiStringsUk extends UiStrings {
   String get libraryTracks => 'Треки';
 
   @override
+  String get libraryGenres => 'Жанри';
+
+  @override
   String get libraryPlaylists => 'Плейлисти';
 
   @override

@@ -10,7 +10,7 @@ The source picker sits at the top of the sidebar on a tablet, at the top of the 
 
 | Source | What it lists | Needs |
 | --- | --- | --- |
-| Music Assistant | Discover, Search, the library's artists, albums, tracks, playlists, radio stations, podcasts and audiobooks, and Browse, which walks each music provider such as Spotify or a music folder. | The server address and token under **Media Player > Music Assistant**. |
+| Music Assistant | Discover, Search, the library's artists, albums, tracks, genres, playlists, radio stations, podcasts and audiobooks, and Browse, which walks each music provider such as Spotify or a music folder. | The server address and token under **Media Player > Music Assistant**. |
 | Home Assistant | The media the picked speaker's integration offers, such as a Sonos speaker's favorites, a Spotify account, Radio Browser and My media. Search shows when the speaker's integration supports it. | A Home Assistant speaker picked as the speaker. The list changes with the speaker. |
 | Sonos | My Sonos favorites, Sonos playlists and the music library the speakers index from a shared folder. Lists with nothing in them stay hidden. | A Sonos speaker found or added under **Media Player > Sonos**. |
 | A plugin's player | What the plugin offers: Discover, Search and Browse, each when the plugin has it. It plays only on that plugin's own player, so Speakers lists that one player. See [Plugin players](sendspin.md#plugin-players). | A running plugin that offers a library. |
@@ -18,6 +18,8 @@ The source picker sits at the top of the sidebar on a tablet, at the top of the 
 Discover shows the rows Music Assistant's own Discover page shows, in the same order. To hide, show or reorder them, edit the Discover page in Music Assistant and the library follows. Music Assistant saves that layout for each of its users, so the library uses the layout of the user the token belongs to. When Music Assistant recommends nothing, Discover shows what was played recently, your playlists, recently added tracks and radio stations instead. A row that mixes kinds, such as Recently played, says under each entry whether it is a track, an album, an artist or a playlist.
 
 **Browse by genre** comes last on Discover, as on Music Assistant's page, with the eight genres that have the most music in your library. Each genre gets an icon picked from its name. Tap one to open the rows Music Assistant shows for that genre, such as its artists and albums.
+
+**Genres**, under **Tracks** in the library's lists, shows every genre that has music in your library. It sorts like the other lists and shows only when the library has genres with music in them.
 
 Browse shows each music provider with its logo, as Music Assistant does.
 

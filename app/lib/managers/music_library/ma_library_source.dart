@@ -43,6 +43,7 @@ class MaLibrarySource extends LibrarySource {
     'artists': LibraryKind.artist,
     'albums': LibraryKind.album,
     'tracks': LibraryKind.track,
+    'genres': LibraryKind.genre,
     'playlists': LibraryKind.playlist,
     'radios': LibraryKind.radio,
     'podcasts': LibraryKind.podcast,
@@ -77,6 +78,33 @@ class MaLibrarySource extends LibrarySource {
   List<LibraryCategory> get categories => [
     for (final e in _lists.entries) LibraryCategory(e.key, e.value),
   ];
+
+  /// Genres only where the library has music under one: a server from
+  /// before genres has no such list.
+  @override
+  Future<List<LibraryCategory>> availableCategories() async {
+    final genres = await (_hasGenres ??= _probeGenres());
+    return [
+      for (final c in categories)
+        if (genres || c.kind != LibraryKind.genre) c,
+    ];
+  }
+
+  Future<bool>? _hasGenres;
+
+  Future<bool> _probeGenres() async {
+    try {
+      final one = await _list('music/genres/library_items', {
+        'hide_empty': true,
+        'limit': 1,
+      });
+      return one.isNotEmpty;
+    } on Object {
+      // Asked again on the next open, once the server answers.
+      _hasGenres = null;
+      return false;
+    }
+  }
 
   /// This device's own player is a Music Assistant player too.
   @override
@@ -356,6 +384,8 @@ class MaLibrarySource extends LibrarySource {
       },
       if (favorites) 'favorite': true,
       if (albumArtists && category.key == 'artists') 'album_artists_only': true,
+      // The genres with music under them, as Browse by genre lists them.
+      if (category.key == 'genres') 'hide_empty': true,
     });
     return LibraryPage(items: _items(rows), more: rows.length >= pageSize);
   }

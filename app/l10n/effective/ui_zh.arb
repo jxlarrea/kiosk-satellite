@@ -11999,6 +11999,16 @@
       ]
     }
   },
+  "libraryGenres": "流派",
+  "@libraryGenres": {
+    "context": "Music Library",
+    "description": "Library list of a Music Assistant library's genres, under Tracks.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Music Library"
+      ]
+    }
+  },
   "libraryPlaylists": "播放列表",
   "@libraryPlaylists": {
     "context": "Music Library",

@@ -3122,6 +3122,9 @@ class UiStringsEn extends UiStrings {
   String get libraryTracks => 'Tracks';
 
   @override
+  String get libraryGenres => 'Genres';
+
+  @override
   String get libraryPlaylists => 'Playlists';
 
   @override

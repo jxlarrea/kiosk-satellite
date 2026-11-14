@@ -269,7 +269,7 @@ class _MusicPickerViewState extends State<MusicPickerView> {
       cats = src.categories;
     }
     if (!mounted || gen != _gen) return;
-    _cats = cats;
+    _cats = MusicLibraryManager.pickerCategories(cats);
     _randoms = [
       for (final r in MusicLibraryManager.randomPicks(src))
         if (cats.any(

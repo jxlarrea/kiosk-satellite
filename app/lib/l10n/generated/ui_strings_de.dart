@@ -3165,6 +3165,9 @@ class UiStringsDe extends UiStrings {
   String get libraryTracks => 'Titel';
 
   @override
+  String get libraryGenres => 'Genres';
+
+  @override
   String get libraryPlaylists => 'Playlists';
 
   @override

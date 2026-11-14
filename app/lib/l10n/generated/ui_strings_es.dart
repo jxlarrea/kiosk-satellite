@@ -3151,6 +3151,9 @@ class UiStringsEs extends UiStrings {
   String get libraryTracks => 'Canciones';
 
   @override
+  String get libraryGenres => 'Géneros';
+
+  @override
   String get libraryPlaylists => 'Listas de reproducción';
 
   @override

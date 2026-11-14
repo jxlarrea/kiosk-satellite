@@ -567,6 +567,13 @@ class MusicLibraryManager extends Manager {
 
   LibrarySource? _pickerHa;
 
+  /// The lists the music picker offers out of [all]. Genres stay in the
+  /// library: a genre opens on shelves, which the picker does not draw.
+  static List<LibraryCategory> pickerCategories(List<LibraryCategory> all) => [
+    for (final c in all)
+      if (c.kind != LibraryKind.genre) c,
+  ];
+
   /// The list a random pick draws from in [src], null where it has none.
   static LibraryCategory? randomCategory(LibrarySource src, RandomPick r) {
     final keys = switch (r) {
@@ -1058,7 +1065,7 @@ class MusicLibraryManager extends Manager {
             final (speakers, note) = await this.speakers(key);
             final src = pickerSource(key, '${p['speaker'] ?? ''}');
             if (src == null) return const CommandResult.fail('no_source');
-            final cats = await src.availableCategories();
+            final cats = pickerCategories(await src.availableCategories());
             return CommandResult.ok({
               'sources': have,
               // The names of the sources plugin players offer, which the

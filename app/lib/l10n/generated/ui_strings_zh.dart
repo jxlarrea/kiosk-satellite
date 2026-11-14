@@ -3051,6 +3051,9 @@ class UiStringsZh extends UiStrings {
   String get libraryTracks => '曲目';
 
   @override
+  String get libraryGenres => '流派';
+
+  @override
   String get libraryPlaylists => '播放列表';
 
   @override
@@ -18776,6 +18779,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get libraryTracks => '曲目';
+
+  @override
+  String get libraryGenres => '流派';
 
   @override
   String get libraryPlaylists => '播放列表';

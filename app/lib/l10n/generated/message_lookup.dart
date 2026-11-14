@@ -820,6 +820,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'libraryArtists' => strings.libraryArtists,
       'libraryAlbums' => strings.libraryAlbums,
       'libraryTracks' => strings.libraryTracks,
+      'libraryGenres' => strings.libraryGenres,
       'libraryPlaylists' => strings.libraryPlaylists,
       'libraryRadio' => strings.libraryRadio,
       'libraryPodcasts' => strings.libraryPodcasts,

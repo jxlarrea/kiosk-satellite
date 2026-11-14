@@ -607,6 +607,7 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
     'artists' => s.libraryArtists,
     'albums' => s.libraryAlbums,
     'tracks' => s.libraryTracks,
+    'genres' => s.libraryGenres,
     'playlists' => s.libraryPlaylists,
     'radios' || 'radio' => s.libraryRadio,
     'podcasts' => s.libraryPodcasts,
@@ -615,7 +616,6 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
     'sonos_playlists' => s.librarySonosPlaylists,
     'recent' => s.libraryRecentlyPlayed,
     'added' => s.libraryRecentlyAdded,
-    'genres' => s.libraryBrowseByGenre,
     'more' => s.libraryMoreResults,
     _ => key,
   };
@@ -624,6 +624,7 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
     'artists' => Icons.person_outline_rounded,
     'albums' => Icons.album_outlined,
     'tracks' => Icons.music_note_outlined,
+    'genres' => Icons.sell_outlined,
     'playlists' || 'sonos_playlists' => Icons.queue_music_rounded,
     'radios' => Icons.radio_outlined,
     'podcasts' => Icons.podcasts_rounded,
@@ -1711,8 +1712,13 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
     if (mounted) setState(() {});
   }
 
-  String _shelfTitle(UiStrings s, LibraryShelf shelf) =>
-      shelf.key == null ? shelf.title : _categoryName(s, shelf.key!);
+  /// A shelf's title. The genres shelf shares its key with the Genres
+  /// list and keeps Discover's own name.
+  String _shelfTitle(UiStrings s, LibraryShelf shelf) => switch (shelf.key) {
+    null => shelf.title,
+    'genres' => s.libraryBrowseByGenre,
+    final key => _categoryName(s, key),
+  };
 
   // ── Content ───────────────────────────────────────────────────────
 

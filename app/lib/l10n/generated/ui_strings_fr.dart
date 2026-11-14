@@ -3151,6 +3151,9 @@ class UiStringsFr extends UiStrings {
   String get libraryTracks => 'Titres';
 
   @override
+  String get libraryGenres => 'Genres';
+
+  @override
   String get libraryPlaylists => 'Playlists';
 
   @override

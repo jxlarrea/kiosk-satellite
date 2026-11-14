@@ -5571,6 +5571,12 @@ abstract class UiStrings {
   /// **'Tracks'**
   String get libraryTracks;
 
+  /// Library list of a Music Assistant library's genres, under Tracks.
+  ///
+  /// In en, this message translates to:
+  /// **'Genres'**
+  String get libraryGenres;
+
   /// Library list and search filter.
   ///
   /// In en, this message translates to:

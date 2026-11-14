@@ -11999,6 +11999,16 @@
       ]
     }
   },
+  "libraryGenres": "Жанры",
+  "@libraryGenres": {
+    "context": "Music Library",
+    "description": "Library list of a Music Assistant library's genres, under Tracks.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Music Library"
+      ]
+    }
+  },
   "libraryPlaylists": "Плейлисты",
   "@libraryPlaylists": {
     "context": "Music Library",

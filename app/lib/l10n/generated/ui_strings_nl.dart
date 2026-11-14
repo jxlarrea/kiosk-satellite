@@ -3141,6 +3141,9 @@ class UiStringsNl extends UiStrings {
   String get libraryTracks => 'Nummers';
 
   @override
+  String get libraryGenres => 'Genres';
+
+  @override
   String get libraryPlaylists => 'Afspeellijsten';
 
   @override
