@@ -199,7 +199,7 @@ Open the view at any time with **Timers** in the [drawer menu](drawer-menu.md), 
 
 Timers can also be set from the timers view and from the remote admin, with native Voice Satellite enabled on the kiosk. Home Assistant holds them like the ones set by voice.
 
-- **Set a timer:** tap **+** in the timers view, or **Set a timer** while no timer runs. Pick hours, minutes and seconds on the wheels, give it a name if you want one and tap **Start**.
+- **Set a timer:** tap **Set a timer** in the timers view, beside the view's name while a timer runs. Pick hours, minutes and seconds on the wheels, give it a name if you want one and tap **Start**.
 - **Change the time left:** tap a timer's time, move the wheels and tap **Set**. Home Assistant has no way to rename a timer, so the name stays.
 - **Delete:** tap a timer's time and then **Delete**, or use its **Cancel** button.
 

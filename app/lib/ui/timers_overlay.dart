@@ -257,14 +257,50 @@ class _TimersScreenState extends State<_TimersScreen> {
                       Positioned(
                         top: compact ? 12 : 20,
                         left: compact ? 16 : 28,
-                        child: KsEyebrow(
-                          label: s.voiceTimersViewTitle,
-                          trail: !editor
-                              ? null
-                              : edited == null
-                              ? s.voiceTimerSetATimer
-                              : s.voiceTimerEditTimer,
-                          compact: compact,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            KsEyebrow(
+                              label: s.voiceTimersViewTitle,
+                              trail: !editor
+                                  ? null
+                                  : edited == null
+                                  ? s.voiceTimerSetATimer
+                                  : s.voiceTimerEditTimer,
+                              compact: compact,
+                            ),
+                            // Set a timer beside the name of the view, at
+                            // the eyebrow's scale: the timers keep the
+                            // whole screen and the top right corner stays
+                            // the close button's. With no timer running the
+                            // large button under No timers does this.
+                            if (!editor && canStart && all.isNotEmpty) ...[
+                              SizedBox(width: compact ? 12 : 16),
+                              FilledButton.icon(
+                                key: const ValueKey('timers-add'),
+                                onPressed: _newTimer,
+                                icon: Icon(Icons.add, size: compact ? 16 : 18),
+                                label: Text(s.voiceTimerSetATimer),
+                                style: FilledButton.styleFrom(
+                                  minimumSize: Size(0, compact ? 30 : 34),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.fromLTRB(
+                                    compact ? 10 : 12,
+                                    0,
+                                    compact ? 14 : 16,
+                                    0,
+                                  ),
+                                  textStyle: TextStyle(
+                                    fontFamily: Ks.displayFont,
+                                    fontSize: compact ? 13 : 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                       if (!editor)
@@ -274,27 +310,17 @@ class _TimersScreenState extends State<_TimersScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (canStart && all.isNotEmpty)
-                                IconButton(
-                                  key: const ValueKey('timers-add'),
-                                  icon: const Icon(Icons.add),
-                                  tooltip: s.voiceTimerSetATimer,
-                                  iconSize: 28,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  onPressed: _newTimer,
-                                ),
-                              // Compass moves between its views by swipes:
-                              // the one in hand has no close of its own.
-                              if (!c.voiceTimers.compassView.value)
-                                IconButton(
-                                  key: const ValueKey('timers-close'),
-                                  icon: const Icon(Icons.close),
-                                  tooltip: s.commonClose,
-                                  iconSize: 28,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  onPressed: () =>
-                                      c.voiceTimers.visible.value = false,
-                                ),
+                              // Always there, as on the alarm list: under
+                              // Compass it goes back to the center.
+                              IconButton(
+                                key: const ValueKey('timers-close'),
+                                icon: const Icon(Icons.close),
+                                tooltip: s.commonClose,
+                                iconSize: 28,
+                                color: theme.colorScheme.onSurfaceVariant,
+                                onPressed: () =>
+                                    c.voiceTimers.visible.value = false,
+                              ),
                             ],
                           ),
                         ),
@@ -741,15 +767,15 @@ class _Hero extends StatelessWidget {
     Widget fit(Widget button) => narrow ? Expanded(child: button) : button;
     final buttonStyle = ButtonStyle(
       minimumSize: WidgetStatePropertyAll(
-        Size(narrow ? 0 : (tablet ? 132 : 112), tablet ? 52 : 46),
+        Size(narrow ? 0 : (tablet ? 148 : 124), tablet ? 60 : 52),
       ),
       padding: WidgetStatePropertyAll(
-        EdgeInsets.symmetric(horizontal: narrow ? 12 : (tablet ? 28 : 22)),
+        EdgeInsets.symmetric(horizontal: narrow ? 12 : (tablet ? 32 : 24)),
       ),
       textStyle: WidgetStatePropertyAll(
         TextStyle(
           fontFamily: Ks.displayFont,
-          fontSize: tablet ? 16 : 14.5,
+          fontSize: tablet ? 18 : 16,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -760,7 +786,7 @@ class _Hero extends StatelessWidget {
         // and no more than its width allows.
         final nameSize = tablet ? (alone ? 32.0 : 28.0) : 21.0;
         final barHeight = tablet ? 12.0 : 8.0;
-        final buttons = tablet ? 52.0 : 46.0;
+        final buttons = tablet ? 60.0 : 52.0;
         final gaps = tablet ? 84.0 : 56.0;
         final free =
             box.maxHeight - nameSize * 1.3 - barHeight - buttons - gaps;

@@ -143,6 +143,36 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('with a timer running Set a timer stays on screen, by name, on '
+      'every screen size', (tester) async {
+    await c.settings.set(defs.voiceEnabled, true);
+    for (final screen in const [
+      Size(1280, 800),
+      Size(960, 480),
+      Size(390, 844),
+    ]) {
+      await size(tester, screen);
+      await tester.pumpWidget(app());
+      await snapshot([timer('one', 600), timer('two', 900)]);
+      await tester.pump();
+      final add = find.byKey(const ValueKey('timers-add'));
+      expect(add, findsOneWidget, reason: '$screen');
+      expect(
+        find.descendant(of: add, matching: find.text('Set a timer')),
+        findsOneWidget,
+        reason: '$screen',
+      );
+      expect(tester.takeException(), isNull, reason: '$screen');
+      await tester.tap(add);
+      await tester.pump();
+      expect(find.text('Hours'), findsOneWidget, reason: '$screen');
+      await tester.pumpWidget(const SizedBox());
+      await snapshot([]);
+      // The view's own close, two seconds after the last timer goes.
+      await tester.pump(const Duration(seconds: 3));
+    }
+  });
+
   testWidgets('no Set a timer without native Voice Satellite', (tester) async {
     await size(tester, const Size(1280, 800));
     await tester.pumpWidget(app());
