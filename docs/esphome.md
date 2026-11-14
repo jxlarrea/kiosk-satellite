@@ -389,7 +389,9 @@ The followed player's buttons and sensors (see [Controls](#controls)) have remot
 
 ## Announcements
 
-Home Assistant can speak on the kiosk. `esphome.<node name>_announce` plays a `message` through Home Assistant's text to speech, or an audio `url` (MP3, WAV, OGG or AAC), on this kiosk with a chime first. Each kiosk is addressed through its own ESPHome device, so an announcement to several kiosks is one action per kiosk, and no other kiosk is involved. The kiosk asks Home Assistant for the audio, decodes it and plays it at the media volume, or at the `volume` the action names, holding the screensaver and ducking the music the way a voice turn does, with a card that shows the spoken text while it plays. Listed with **Expose kiosk entities**.
+Home Assistant can speak on the kiosk. `esphome.<node name>_announce` plays a `message` through Home Assistant's text to speech, or an audio `url` (MP3, WAV, OGG or AAC), on this kiosk with a chime first. Each kiosk is addressed through its own ESPHome device, so an announcement to several kiosks is one action per kiosk, and no other kiosk is involved. The kiosk asks Home Assistant for the audio, decodes it and plays it at the media volume, or at the `volume` the action names, ducking the music the way a voice turn does, with a card that shows the spoken text while it plays. Listed with **Expose kiosk entities**.
+
+An announcement does not dismiss the screensaver. The card shows over it, like a notification. A dimmed screensaver goes back to the regular brightness while the card is up, and a screen that **Turn screen off after** made dark lights up to show it. With `audio_only` set to `true` nothing on screen changes.
 
 The **Announcements** page under Settings, ESPHome holds:
 
@@ -437,7 +439,7 @@ Each announcement can override these options without changing the kiosk's settin
 | `tts_engine` | A Home Assistant text to speech entity, such as `tts.piper`. Empty uses **Text to speech engine** from the UI. Ignored when playing a `url`. |
 | `tts_language` | A language the engine speaks, spelled exactly as the engine lists it, such as `en_US` for Piper or `en-US` for Home Assistant Cloud. The **Language** picker shows each one under its name. Empty uses **Language** from the UI when the announcement uses that engine, or the engine's default otherwise. Ignored when playing a `url`. |
 | `tts_voice` | The ID of a voice the engine has, such as `en_US-amy-medium` for Piper, not its name. The **Voice** picker shows each ID under the voice's name. Empty uses **Voice** from the UI when the announcement uses that engine, or the engine's default otherwise. When Home Assistant cannot speak with the language or voice, the kiosk speaks the message with the engine's defaults instead. Ignored when playing a `url`. |
-| `audio_only` | `true` plays the audio without the on-device announcement modal or bringing the kiosk to the front. `false` shows the modal as usual. The chime still follows `chime`, so set it to `false` to hear only the speech. |
+| `audio_only` | `true` plays the audio without the on-device announcement modal, waking the screen or bringing the kiosk to the front. `false` shows the modal as usual. The chime still follows `chime`, so set it to `false` to hear only the speech. |
 
 ## Intercom actions
 

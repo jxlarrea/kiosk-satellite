@@ -489,9 +489,16 @@ class VoiceInteractionChanged extends AppEvent {
   final bool active;
   final InteractionSource source;
 
+  /// The reason an announcement from Home Assistant (the ESPHome announce
+  /// action) holds with. It ducks the music and pauses wake word detection
+  /// like a call, but the screensaver stays up under it (issue #1441).
+  static const announcementReason = 'intercom_announcement';
+
   /// What kind of interaction, as reported by the page: 'voice',
   /// 'announcement', 'ask_question', 'start_conversation', 'timer', 'media',
   /// or '' when the page did not say (the legacy pauseScreensaver fallback).
+  /// The intercom holds with 'intercom' for a call and with
+  /// [announcementReason] for an announcement from Home Assistant.
   /// Consumers may specialize on it; absence must always behave like the
   /// plain event.
   final String reason;
@@ -576,6 +583,19 @@ class IntercomCameraDemand extends AppEvent {
 class IntercomStateChanged extends AppEvent {
   const IntercomStateChanged(this.status);
   final Map<String, Object?> status;
+
+  /// Whether [status] has the card of an announcement from Home Assistant
+  /// on screen: while it plays and through its last words, never for one
+  /// that is audio only.
+  static bool announcementCard(Map<String, Object?> status) {
+    final call = status['call'];
+    final state = status['state'];
+    return call is Map &&
+        call['automated'] == true &&
+        call['audioOnly'] != true &&
+        call['outgoing'] != true &&
+        (state == 'listening' || state == 'ended');
+  }
 
   @override
   String get wireName => 'intercom';

@@ -435,6 +435,13 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// is not a message (issue #278).
   bool _notificationShowing = false;
 
+  /// Whether the card of an announcement from Home Assistant is on screen.
+  /// The screensaver stays up under it (issue #1441), lit so the card can
+  /// be read: a dimmed one lifts to the brightness it saved and a blanked
+  /// one lights up again. An audio only announcement has no card and
+  /// changes nothing here.
+  bool _announcementShowing = false;
+
   /// Lifted for a touch the screensaver kept, until [_touchLiftTimer]
   /// runs out, Brighten for touch interactions seconds after the last one.
   bool _touchLifted = false;
@@ -609,6 +616,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // Local music can play behind any screensaver. Other managers can
       // still observe its playback interaction.
       if (e.source == InteractionSource.sendspin && e.reason == 'media') return;
+      // An announcement from Home Assistant plays over whatever is on
+      // screen, its card included: it neither dismisses the screensaver
+      // nor keeps it from starting (issue #1441).
+      if (e.reason == VoiceInteractionChanged.announcementReason) return;
       _paused = _interactions.update(e);
       // The native satellite's overlay draws over the screensaver, full
       // screen or docked.
@@ -747,6 +758,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _reviewNight();
     bus.on<NotificationsChanged>().listen((e) {
       unawaited(_onNotificationsChanged(e.showing));
+    });
+    bus.on<IntercomStateChanged>().listen((e) {
+      unawaited(
+        _onAnnouncementCard(IntercomStateChanged.announcementCard(e.status)),
+      );
     });
     // The player handed back after an alarm's music: Now Playing may show
     // again if the player it follows plays.
@@ -2116,6 +2132,24 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     }
   }
 
+  /// The card of an announcement from Home Assistant came up over the
+  /// screensaver, or went. The session stays: a blanked screen lights up
+  /// to show the card, the way a wake to the screensaver does, and a
+  /// dimmed one borrows its brightness back until the card goes.
+  Future<void> _onAnnouncementCard(bool showing) async {
+    if (_announcementShowing == showing) return;
+    _announcementShowing = showing;
+    if (!_active) return;
+    if (showing && _blanked) {
+      log.info(name, 'woken by an announcement; screensaver stays');
+      return _wakeFromBlank();
+    }
+    // A fresh countdown, so Turn screen off after does not take the card
+    // dark halfway through.
+    if (showing && !_screenDark) _armScreenOffTimer();
+    await _applyVisuals();
+  }
+
   // ── Fade in and out (screensaver.fade) ─────────────────────────────
 
   /// How long the screensaver takes to fade in or out. Shorter than the
@@ -2379,9 +2413,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     scheduleGlance.value = entry?['glance'] as bool?;
     _syncScreenOffTimer();
     // The voice overlay over the screensaver reads at the saved level,
-    // whatever the mode dims to, and so does an alarm ringing on it: a
-    // screensaver at 0% must not ring in the dark.
-    final lift = _assistOverlay || alarmTakeover.value == 'ringing';
+    // whatever the mode dims to, and so do an announcement's card and an
+    // alarm ringing on it: a screensaver at 0% must not ring in the dark.
+    final lift =
+        _assistOverlay ||
+        _announcementShowing ||
+        alarmTakeover.value == 'ringing';
     final liftForVoice = lift && _savedBrightness != null;
     if (_blanked) {
       await _ensureSavedBrightness();

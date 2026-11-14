@@ -2173,9 +2173,11 @@ void main() {
         };
         answers['GET /a.mp3'] = (_) => http.Response.bytes([9], 200);
         final interactions = <bool>[];
-        bus.on<VoiceInteractionChanged>().listen(
-          (e) => interactions.add(e.active),
-        );
+        final reasons = <String>{};
+        bus.on<VoiceInteractionChanged>().listen((e) {
+          interactions.add(e.active);
+          reasons.add(e.reason);
+        });
         expect(
           await surface.handleService('announce', {
             'message': 'Dinner is ready',
@@ -2197,6 +2199,9 @@ void main() {
         expect(audioCalls, contains('stop'));
         expect(intercom.state, 'idle');
         expect(interactions, [true, false]);
+        // A reason of its own, which the screensaver stays up under
+        // (issue #1441).
+        expect(reasons, {VoiceInteractionChanged.announcementReason});
       },
     );
 

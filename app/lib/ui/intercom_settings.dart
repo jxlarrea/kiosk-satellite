@@ -2647,11 +2647,7 @@ class _AnnouncementOverlayState extends State<AnnouncementOverlay> {
   Widget build(BuildContext context) {
     final state = '${_status['state']}';
     final call = (_status['call'] as Map?)?.cast<String, Object?>();
-    if (call == null ||
-        call['automated'] != true ||
-        call['audioOnly'] == true ||
-        call['outgoing'] == true ||
-        (state != 'listening' && state != 'ended')) {
+    if (call == null || !IntercomStateChanged.announcementCard(_status)) {
       return const SizedBox.shrink();
     }
     final scheme = Theme.of(context).colorScheme;

@@ -916,14 +916,13 @@ class WakeWordManager extends Manager
       }
     });
     bus.on<VoiceInteractionChanged>().listen((e) {
-      if (e.reason != 'intercom' || e.active == _intercomHold) return;
+      final announcement =
+          e.reason == VoiceInteractionChanged.announcementReason;
+      if (e.reason != 'intercom' && !announcement) return;
+      if (e.active == _intercomHold) return;
       _intercomHold = e.active;
-      log.info(
-        name,
-        e.active
-            ? 'paused for an intercom call'
-            : 'resumed after the intercom call',
-      );
+      final what = announcement ? 'an announcement' : 'an intercom call';
+      log.info(name, e.active ? 'paused for $what' : 'resumed after $what');
       _sync();
     });
     bus.on<SettingChanged>().listen((e) {
