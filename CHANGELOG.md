@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.21 - 2026-11-14
 
 ### Added
 - **Release notes in the plugin update review (#1440).** A plugin update only showed the version change and the README, so finding out what changed meant opening GitHub. The review now shows the release notes the author wrote for the new version above the README, as formatted text. They come with the release the review already reads, so no extra GitHub request is made. Only the notes of the newest release are shown, and a release without notes shows the README alone. Mirrored in the remote admin.
