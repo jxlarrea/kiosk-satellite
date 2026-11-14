@@ -225,6 +225,5 @@
     "stream_buffer_ms": 2500,
     "stream_lag_frames": 20
   },
-  "stop_classifier": true,
-  "deployed_from": "/app/data/runs/ok_stop_v3_ctc_mid/checkpoints/ok_stop-ctc-bestwakerecall-ep056.pt"
+  "stop_classifier": true
 }
