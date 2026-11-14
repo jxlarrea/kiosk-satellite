@@ -3644,7 +3644,13 @@ class VoiceManager extends Manager {
       return;
     }
     if (_timers[action.id] == null) return;
-    final error = await controlTimer(action.id, action.action);
+    final error = await controlTimer(
+      action.id,
+      action.action,
+      hours: action.seconds ~/ 3600,
+      minutes: action.seconds % 3600 ~/ 60,
+      seconds: action.seconds % 60,
+    );
     if (error != null) {
       log.warn(name, 'timer ${action.action} failed: $error');
       await commands.execute('voiceTimerActionFailed', {

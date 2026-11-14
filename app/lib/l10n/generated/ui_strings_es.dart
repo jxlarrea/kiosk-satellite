@@ -16872,4 +16872,32 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get voiceTimersShareSearch => 'Buscar kioskos';
+
+  @override
+  String get voiceTimerSetATimer => 'Poner un temporizador';
+
+  @override
+  String get voiceTimerEditTimer => 'Editar temporizador';
+
+  @override
+  String get voiceTimerName => 'Nombre';
+
+  @override
+  String get voiceTimerHours => 'Horas';
+
+  @override
+  String get voiceTimerMinutes => 'Minutos';
+
+  @override
+  String get voiceTimerSeconds => 'Segundos';
+
+  @override
+  String get voiceTimerStartFailed => 'No se pudo iniciar el temporizador.';
+
+  @override
+  String get timersManage => 'Gestionar temporizadores';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      'Activa Voice Satellite en este kiosko para poner temporizadores aquí.';
 }

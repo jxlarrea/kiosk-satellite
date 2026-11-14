@@ -21,5 +21,14 @@
   "timersVoiceSection": "Minuteurs vocaux",
   "timersVoiceManage": "Gérer les minuteurs avec Voice Satellite",
   "timersVoiceHint": "Fonctionne sans blueprint ni agent de conversation LLM.",
-  "voiceTimersShareSearch": "Rechercher des kiosques"
+  "voiceTimersShareSearch": "Rechercher des kiosques",
+  "voiceTimerSetATimer": "Régler un minuteur",
+  "voiceTimerEditTimer": "Modifier le minuteur",
+  "voiceTimerName": "Nom",
+  "voiceTimerHours": "Heures",
+  "voiceTimerMinutes": "Minutes",
+  "voiceTimerSeconds": "Secondes",
+  "voiceTimerStartFailed": "Impossible de démarrer le minuteur.",
+  "timersManage": "Gérer les minuteurs",
+  "voiceTimerStartUnavailable": "Activez Voice Satellite sur ce kiosque pour régler des minuteurs ici."
 }

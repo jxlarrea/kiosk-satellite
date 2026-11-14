@@ -16859,4 +16859,32 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get voiceTimersShareSearch => 'Rechercher des kiosques';
+
+  @override
+  String get voiceTimerSetATimer => 'Régler un minuteur';
+
+  @override
+  String get voiceTimerEditTimer => 'Modifier le minuteur';
+
+  @override
+  String get voiceTimerName => 'Nom';
+
+  @override
+  String get voiceTimerHours => 'Heures';
+
+  @override
+  String get voiceTimerMinutes => 'Minutes';
+
+  @override
+  String get voiceTimerSeconds => 'Secondes';
+
+  @override
+  String get voiceTimerStartFailed => 'Impossible de démarrer le minuteur.';
+
+  @override
+  String get timersManage => 'Gérer les minuteurs';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      'Activez Voice Satellite sur ce kiosque pour régler des minuteurs ici.';
 }

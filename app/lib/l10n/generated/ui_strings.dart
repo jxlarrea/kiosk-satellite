@@ -28840,6 +28840,60 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Search kiosks'**
   String get voiceTimersShareSearch;
+
+  /// Button that opens the wheels for a new timer, and the title over them.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a timer'**
+  String get voiceTimerSetATimer;
+
+  /// Title over the wheels that change the time a running timer has left.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit timer'**
+  String get voiceTimerEditTimer;
+
+  /// Label of the optional name of a new timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get voiceTimerName;
+
+  /// Caption over the hours wheel of a timer's length.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours'**
+  String get voiceTimerHours;
+
+  /// Caption over the minutes wheel of a timer's length.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes'**
+  String get voiceTimerMinutes;
+
+  /// Caption over the seconds wheel of a timer's length.
+  ///
+  /// In en, this message translates to:
+  /// **'Seconds'**
+  String get voiceTimerSeconds;
+
+  /// Shown when Home Assistant did not take a timer set by hand.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start the timer.'**
+  String get voiceTimerStartFailed;
+
+  /// Row that opens the timers view from the settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage timers'**
+  String get timersManage;
+
+  /// Shown in place of the Set a timer button while the kiosk cannot start timers. Keep Voice Satellite unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on Voice Satellite on this kiosk to set timers here.'**
+  String get voiceTimerStartUnavailable;
 }
 
 class _UiStringsDelegate extends LocalizationsDelegate<UiStrings> {

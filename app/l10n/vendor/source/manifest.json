@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "f31157fb265ab912bcf2128e8bda791ca714bd59",
+  "revision": "a9f8202cdeb748fe70e59310e638781983308045",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -210,7 +210,7 @@
     "sound_picker_en.arb": "3287a30c9f51f864354862d1208ec5b79e87026b6a5521939f71c944b02bb626",
     "voice_notices_en.arb": "6f7246b1e310900388131a547cfe7045d8e34e8260318e6e62c1bc1808f08abc",
     "voice_results_en.arb": "cf33c193dc7a294f22c5858ca1d19d74436ac0a41737cd5b3723b7bd54e8bb7f",
-    "voice_timers_en.arb": "6a5a65ee688632de59df69ca7a45d204949b0806a9279430e56fe3d3c6ec2069"
+    "voice_timers_en.arb": "3e162e9bfe30c1046c471fb3e3b479ede659bf4cf62f66be9589c0cbcdf32eda"
   },
   "scope": "setup-settings-navigation-and-device-drawer"
 }

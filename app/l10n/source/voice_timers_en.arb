@@ -240,5 +240,122 @@
         "Timers > Share with"
       ]
     }
+  },
+  "voiceTimerSetATimer": "Set a timer",
+  "@voiceTimerSetATimer": {
+    "context": "Timers view",
+    "description": "Button that opens the wheels for a new timer, and the title over them.",
+    "x-locations": {
+      "device": [
+        "Timers view"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimerEditTimer": "Edit timer",
+  "@voiceTimerEditTimer": {
+    "context": "Timers view",
+    "description": "Title over the wheels that change the time a running timer has left.",
+    "x-locations": {
+      "device": [
+        "Timers view"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimerName": "Name",
+  "@voiceTimerName": {
+    "context": "Timers view",
+    "description": "Label of the optional name of a new timer.",
+    "x-locations": {
+      "device": [
+        "Timers view"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimerHours": "Hours",
+  "@voiceTimerHours": {
+    "context": "Timers view",
+    "description": "Caption over the hours wheel of a timer's length.",
+    "x-locations": {
+      "device": [
+        "Timers view"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimerMinutes": "Minutes",
+  "@voiceTimerMinutes": {
+    "context": "Timers view",
+    "description": "Caption over the minutes wheel of a timer's length.",
+    "x-locations": {
+      "device": [
+        "Timers view"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimerSeconds": "Seconds",
+  "@voiceTimerSeconds": {
+    "context": "Timers view",
+    "description": "Caption over the seconds wheel of a timer's length.",
+    "x-locations": {
+      "device": [
+        "Timers view"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimerStartFailed": "Could not start the timer.",
+  "@voiceTimerStartFailed": {
+    "context": "Timers view",
+    "description": "Shown when Home Assistant did not take a timer set by hand.",
+    "x-locations": {
+      "device": [
+        "Timers view"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "timersManage": "Manage timers",
+  "@timersManage": {
+    "context": "Settings > Timers",
+    "description": "Row that opens the timers view from the settings page.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "voiceTimerStartUnavailable": "Turn on Voice Satellite on this kiosk to set timers here.",
+  "@voiceTimerStartUnavailable": {
+    "context": "Timers",
+    "description": "Shown in place of the Set a timer button while the kiosk cannot start timers. Keep Voice Satellite unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
   }
 }

@@ -4786,7 +4786,16 @@ export const catalogs = {
     "timersVoiceSection": "Voice timers",
     "timersVoiceManage": "Manage timers using Voice Satellite",
     "timersVoiceHint": "Works without a blueprint or an LLM conversation agent.",
-    "voiceTimersShareSearch": "Search kiosks"
+    "voiceTimersShareSearch": "Search kiosks",
+    "voiceTimerSetATimer": "Set a timer",
+    "voiceTimerEditTimer": "Edit timer",
+    "voiceTimerName": "Name",
+    "voiceTimerHours": "Hours",
+    "voiceTimerMinutes": "Minutes",
+    "voiceTimerSeconds": "Seconds",
+    "voiceTimerStartFailed": "Could not start the timer.",
+    "timersManage": "Manage timers",
+    "voiceTimerStartUnavailable": "Turn on Voice Satellite on this kiosk to set timers here."
   },
   "de": {
     "aboutApp": "Anwendung",
@@ -9574,7 +9583,16 @@ export const catalogs = {
     "timersVoiceSection": "Timer per Sprache",
     "timersVoiceManage": "Timer mit Voice Satellite verwalten",
     "timersVoiceHint": "Funktioniert ohne Blueprint und ohne LLM-Konversationsagenten.",
-    "voiceTimersShareSearch": "Kiosks suchen"
+    "voiceTimersShareSearch": "Kiosks suchen",
+    "voiceTimerSetATimer": "Timer stellen",
+    "voiceTimerEditTimer": "Timer bearbeiten",
+    "voiceTimerName": "Name",
+    "voiceTimerHours": "Stunden",
+    "voiceTimerMinutes": "Minuten",
+    "voiceTimerSeconds": "Sekunden",
+    "voiceTimerStartFailed": "Der Timer konnte nicht gestartet werden.",
+    "timersManage": "Timer verwalten",
+    "voiceTimerStartUnavailable": "Aktiviere Voice Satellite auf diesem Kiosk, um hier Timer zu stellen."
   },
   "es": {
     "aboutApp": "Aplicación",
@@ -14362,7 +14380,16 @@ export const catalogs = {
     "timersVoiceSection": "Temporizadores por voz",
     "timersVoiceManage": "Gestionar temporizadores con Voice Satellite",
     "timersVoiceHint": "Funciona sin blueprint ni agente de conversación LLM.",
-    "voiceTimersShareSearch": "Buscar kioskos"
+    "voiceTimersShareSearch": "Buscar kioskos",
+    "voiceTimerSetATimer": "Poner un temporizador",
+    "voiceTimerEditTimer": "Editar temporizador",
+    "voiceTimerName": "Nombre",
+    "voiceTimerHours": "Horas",
+    "voiceTimerMinutes": "Minutos",
+    "voiceTimerSeconds": "Segundos",
+    "voiceTimerStartFailed": "No se pudo iniciar el temporizador.",
+    "timersManage": "Gestionar temporizadores",
+    "voiceTimerStartUnavailable": "Activa Voice Satellite en este kiosko para poner temporizadores aquí."
   },
   "fr": {
     "aboutApp": "Application",
@@ -19150,7 +19177,16 @@ export const catalogs = {
     "timersVoiceSection": "Minuteurs vocaux",
     "timersVoiceManage": "Gérer les minuteurs avec Voice Satellite",
     "timersVoiceHint": "Fonctionne sans blueprint ni agent de conversation LLM.",
-    "voiceTimersShareSearch": "Rechercher des kiosques"
+    "voiceTimersShareSearch": "Rechercher des kiosques",
+    "voiceTimerSetATimer": "Régler un minuteur",
+    "voiceTimerEditTimer": "Modifier le minuteur",
+    "voiceTimerName": "Nom",
+    "voiceTimerHours": "Heures",
+    "voiceTimerMinutes": "Minutes",
+    "voiceTimerSeconds": "Secondes",
+    "voiceTimerStartFailed": "Impossible de démarrer le minuteur.",
+    "timersManage": "Gérer les minuteurs",
+    "voiceTimerStartUnavailable": "Activez Voice Satellite sur ce kiosque pour régler des minuteurs ici."
   },
   "nl": {
     "aboutApp": "App",
@@ -23938,7 +23974,16 @@ export const catalogs = {
     "timersVoiceSection": "Spraaktimers",
     "timersVoiceManage": "Timers beheren met Voice Satellite",
     "timersVoiceHint": "Werkt zonder blauwdruk of LLM-gespreksagent.",
-    "voiceTimersShareSearch": "Kiosken zoeken"
+    "voiceTimersShareSearch": "Kiosken zoeken",
+    "voiceTimerSetATimer": "Timer instellen",
+    "voiceTimerEditTimer": "Timer bewerken",
+    "voiceTimerName": "Naam",
+    "voiceTimerHours": "Uren",
+    "voiceTimerMinutes": "Minuten",
+    "voiceTimerSeconds": "Seconden",
+    "voiceTimerStartFailed": "De timer kon niet worden gestart.",
+    "timersManage": "Timers beheren",
+    "voiceTimerStartUnavailable": "Schakel Voice Satellite op deze kiosk in om hier timers in te stellen."
   },
   "ru": {
     "aboutApp": "Приложение",
@@ -28726,7 +28771,16 @@ export const catalogs = {
     "timersVoiceSection": "Голосовые таймеры",
     "timersVoiceManage": "Управление таймерами через Voice Satellite",
     "timersVoiceHint": "Работает без Blueprint и диалогового LLM-агента.",
-    "voiceTimersShareSearch": "Поиск киосков"
+    "voiceTimersShareSearch": "Поиск киосков",
+    "voiceTimerSetATimer": "Установить таймер",
+    "voiceTimerEditTimer": "Изменить таймер",
+    "voiceTimerName": "Название",
+    "voiceTimerHours": "Часы",
+    "voiceTimerMinutes": "Минуты",
+    "voiceTimerSeconds": "Секунды",
+    "voiceTimerStartFailed": "Не удалось запустить таймер.",
+    "timersManage": "Управление таймерами",
+    "voiceTimerStartUnavailable": "Включите Voice Satellite на этом киоске, чтобы устанавливать таймеры здесь."
   },
   "uk": {
     "aboutApp": "Застосунок",
@@ -33514,7 +33568,16 @@ export const catalogs = {
     "timersVoiceSection": "Голосові таймери",
     "timersVoiceManage": "Керувати таймерами через Voice Satellite",
     "timersVoiceHint": "Працює без blueprint і агента розмови LLM.",
-    "voiceTimersShareSearch": "Пошук кіосків"
+    "voiceTimersShareSearch": "Пошук кіосків",
+    "voiceTimerSetATimer": "Встановити таймер",
+    "voiceTimerEditTimer": "Редагувати таймер",
+    "voiceTimerName": "Назва",
+    "voiceTimerHours": "Години",
+    "voiceTimerMinutes": "Хвилини",
+    "voiceTimerSeconds": "Секунди",
+    "voiceTimerStartFailed": "Не вдалося запустити таймер.",
+    "timersManage": "Керувати таймерами",
+    "voiceTimerStartUnavailable": "Увімкніть Voice Satellite на цьому кіоску, щоб встановлювати таймери тут."
   },
   "zh-CN": {
     "aboutApp": "应用",
@@ -38302,6 +38365,15 @@ export const catalogs = {
     "timersVoiceSection": "语音计时器",
     "timersVoiceManage": "通过 Voice Satellite 管理计时器",
     "timersVoiceHint": "无需蓝图（脚本模板）或大语言模型（LLM）对话代理。",
-    "voiceTimersShareSearch": "搜索 Kiosk 设备"
+    "voiceTimersShareSearch": "搜索 Kiosk 设备",
+    "voiceTimerSetATimer": "设置计时器",
+    "voiceTimerEditTimer": "编辑计时器",
+    "voiceTimerName": "名称",
+    "voiceTimerHours": "小时",
+    "voiceTimerMinutes": "分钟",
+    "voiceTimerSeconds": "秒",
+    "voiceTimerStartFailed": "无法启动计时器。",
+    "timersManage": "管理计时器",
+    "voiceTimerStartUnavailable": "在此 Kiosk 设备上启用 Voice Satellite 后即可在这里设置计时器。"
   }
 };

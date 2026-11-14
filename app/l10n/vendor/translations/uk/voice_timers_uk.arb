@@ -21,5 +21,14 @@
   "timersVoiceSection": "Голосові таймери",
   "timersVoiceManage": "Керувати таймерами через Voice Satellite",
   "timersVoiceHint": "Працює без blueprint і агента розмови LLM.",
-  "voiceTimersShareSearch": "Пошук кіосків"
+  "voiceTimersShareSearch": "Пошук кіосків",
+  "voiceTimerSetATimer": "Встановити таймер",
+  "voiceTimerEditTimer": "Редагувати таймер",
+  "voiceTimerName": "Назва",
+  "voiceTimerHours": "Години",
+  "voiceTimerMinutes": "Хвилини",
+  "voiceTimerSeconds": "Секунди",
+  "voiceTimerStartFailed": "Не вдалося запустити таймер.",
+  "timersManage": "Керувати таймерами",
+  "voiceTimerStartUnavailable": "Увімкніть Voice Satellite на цьому кіоску, щоб встановлювати таймери тут."
 }

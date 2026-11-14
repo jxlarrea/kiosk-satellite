@@ -16733,4 +16733,32 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get voiceTimersShareSearch => 'Kiosken zoeken';
+
+  @override
+  String get voiceTimerSetATimer => 'Timer instellen';
+
+  @override
+  String get voiceTimerEditTimer => 'Timer bewerken';
+
+  @override
+  String get voiceTimerName => 'Naam';
+
+  @override
+  String get voiceTimerHours => 'Uren';
+
+  @override
+  String get voiceTimerMinutes => 'Minuten';
+
+  @override
+  String get voiceTimerSeconds => 'Seconden';
+
+  @override
+  String get voiceTimerStartFailed => 'De timer kon niet worden gestart.';
+
+  @override
+  String get timersManage => 'Timers beheren';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      'Schakel Voice Satellite op deze kiosk in om hier timers in te stellen.';
 }

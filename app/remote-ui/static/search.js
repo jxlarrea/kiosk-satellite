@@ -58,6 +58,7 @@ export const SEARCH_EXTRAS = [
     desc: 'Add the Home Assistant calendars to show in Settings > Calendar.', anchor: 'x:calendar_add' },
   { tab: 'calendar', title: 'Manage the calendar using Voice Satellite',
     desc: 'Needs the Kiosk Satellite calendar blueprint and an LLM conversation agent in Home Assistant.', anchor: 'x:calendar_voice' },
+  { tab: 'timers', title: 'Manage timers', desc: 'Set a timer', anchor: 'x:timers_manage' },
   { tab: 'timers', title: 'Manage timers using Voice Satellite',
     desc: 'Works without a blueprint or an LLM conversation agent.', anchor: 'x:timers_voice' },
   { tab: 'alarms', title: 'Manage alarms using Voice Satellite',

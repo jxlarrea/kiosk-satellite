@@ -15672,6 +15672,34 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get voiceTimersShareSearch => '搜索 Kiosk 设备';
+
+  @override
+  String get voiceTimerSetATimer => '设置计时器';
+
+  @override
+  String get voiceTimerEditTimer => '编辑计时器';
+
+  @override
+  String get voiceTimerName => '名称';
+
+  @override
+  String get voiceTimerHours => '小时';
+
+  @override
+  String get voiceTimerMinutes => '分钟';
+
+  @override
+  String get voiceTimerSeconds => '秒';
+
+  @override
+  String get voiceTimerStartFailed => '无法启动计时器。';
+
+  @override
+  String get timersManage => '管理计时器';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      '在此 Kiosk 设备上启用 Voice Satellite 后即可在这里设置计时器。';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -31342,4 +31370,32 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get voiceTimersShareSearch => '搜索 Kiosk 设备';
+
+  @override
+  String get voiceTimerSetATimer => '设置计时器';
+
+  @override
+  String get voiceTimerEditTimer => '编辑计时器';
+
+  @override
+  String get voiceTimerName => '名称';
+
+  @override
+  String get voiceTimerHours => '小时';
+
+  @override
+  String get voiceTimerMinutes => '分钟';
+
+  @override
+  String get voiceTimerSeconds => '秒';
+
+  @override
+  String get voiceTimerStartFailed => '无法启动计时器。';
+
+  @override
+  String get timersManage => '管理计时器';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      '在此 Kiosk 设备上启用 Voice Satellite 后即可在这里设置计时器。';
 }

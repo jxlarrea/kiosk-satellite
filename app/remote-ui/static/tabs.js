@@ -9,6 +9,7 @@ import { fleetShown } from './fleetsync.js';
 import { intercomShown } from './intercom.js';
 import { alarmsShown } from './alarms.js';
 import { calendarShown } from './calendar.js';
+import { timersShown } from './timers.js';
 import { loadGestures } from './gestures.js';
 import { subpageIcon } from './icons.js';
 import { loadLogs } from './logs.js';
@@ -215,6 +216,7 @@ export function showTab(name, { push = true, refresh = true } = {}) {
   // The alarms move on the kiosk too (a ring, a snooze): re-read on a visit.
   if (tab === 'alarms') alarmsShown();
   if (tab === 'calendar') calendarShown();
+  if (tab === 'timers') timersShown();
   if (tab === 'plugins' && refresh && !sameTab) loadPlugins();
 
   if (tab === 'about') loadAboutInfo();

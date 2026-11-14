@@ -16889,4 +16889,33 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get voiceTimersShareSearch => 'Kiosks suchen';
+
+  @override
+  String get voiceTimerSetATimer => 'Timer stellen';
+
+  @override
+  String get voiceTimerEditTimer => 'Timer bearbeiten';
+
+  @override
+  String get voiceTimerName => 'Name';
+
+  @override
+  String get voiceTimerHours => 'Stunden';
+
+  @override
+  String get voiceTimerMinutes => 'Minuten';
+
+  @override
+  String get voiceTimerSeconds => 'Sekunden';
+
+  @override
+  String get voiceTimerStartFailed =>
+      'Der Timer konnte nicht gestartet werden.';
+
+  @override
+  String get timersManage => 'Timer verwalten';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      'Aktiviere Voice Satellite auf diesem Kiosk, um hier Timer zu stellen.';
 }

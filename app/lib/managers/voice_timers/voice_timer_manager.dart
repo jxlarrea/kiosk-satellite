@@ -240,6 +240,81 @@ class VoiceTimerManager extends Manager {
             return const CommandResult.ok();
           },
         ),
+      )
+      ..register(
+        Command(
+          name: 'timersStatus',
+          description:
+              'The timers this kiosk shows, its own and the ones other '
+              'kiosks share, with the time each has left and whether a '
+              'timer can be started from here.',
+          quiet: true,
+          handler: (_) async => CommandResult.ok(status()),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'timerStart',
+          description:
+              'Start a timer on this kiosk through Home Assistant, as the '
+              'timers view does.',
+          params: const {
+            'seconds': 'how long it runs, 1 to 86399',
+            'name': 'optional name',
+          },
+          handler: (p) async {
+            final seconds = (p['seconds'] as num?)?.toInt() ?? 0;
+            if (seconds <= 0) {
+              return const CommandResult.fail('the timer needs a duration');
+            }
+            final error = await start(
+              seconds: seconds,
+              name: '${p['name'] ?? ''}',
+            );
+            return error == null
+                ? const CommandResult.ok()
+                : CommandResult.fail(error);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'timerControl',
+          description:
+              'Pause, resume, cancel or dismiss a timer this kiosk shows, or '
+              'set the time it has left. A timer another kiosk shares is '
+              'changed on the kiosk that owns it.',
+          params: const {
+            'id': 'the timer, from timersStatus',
+            'action': 'pause, resume, cancel, dismiss or set',
+            'seconds': 'for set: the time left, 1 to 86399',
+          },
+          handler: (p) async {
+            final id = '${p['id'] ?? ''}';
+            final action = '${p['action'] ?? ''}';
+            final known =
+                timers.value.any((t) => t.id == id) ||
+                alerts.value.any((t) => t.id == id);
+            if (!known) return const CommandResult.fail('no such timer');
+            if (action == 'set') {
+              final seconds = (p['seconds'] as num?)?.toInt() ?? 0;
+              if (seconds <= 0) {
+                return const CommandResult.fail('the timer needs a duration');
+              }
+              final timer = timers.value.where((t) => t.id == id).firstOrNull;
+              if (timer == null || !canEdit(timer)) {
+                return const CommandResult.fail('this timer cannot be changed');
+              }
+              setRemaining(id, seconds);
+              return const CommandResult.ok();
+            }
+            if (!{'pause', 'resume', 'cancel', 'dismiss'}.contains(action)) {
+              return const CommandResult.fail('unknown action');
+            }
+            control(id, action);
+            return const CommandResult.ok();
+          },
+        ),
       );
     commands.register(
       Command(
@@ -318,6 +393,95 @@ class VoiceTimerManager extends Manager {
         },
       ),
     );
+  }
+
+  /// Whether a timer can be started from this kiosk's screen or its remote
+  /// admin: native Voice Satellite starts it through Home Assistant. With
+  /// the integration in the dashboard, timers are started by voice only.
+  bool get canStart =>
+      settings != null &&
+      settings!.get(defs.voiceRuntime) == 'native' &&
+      settings!.get(defs.voiceEnabled);
+
+  /// Whether [timer]'s time can be changed from here: a shared one is
+  /// changed on the kiosk that owns it, this kiosk's own needs [canStart].
+  bool canEdit(VoiceTimer timer) =>
+      !timer.finished && (timer.shared || canStart);
+
+  /// The longest a timer set by hand runs: a day less a second, what the
+  /// wheels reach.
+  static const maxSeconds = 86399;
+
+  /// Starts a timer of [seconds] with an optional [name]. Answers the
+  /// error, or null once Home Assistant took it.
+  Future<String?> start({required int seconds, String name = ''}) async {
+    if (!canStart) return 'Voice Satellite is off';
+    final total = seconds.clamp(1, maxSeconds);
+    final r = await commands.execute('voiceStartTimer', {
+      'hours': total ~/ 3600,
+      'minutes': total % 3600 ~/ 60,
+      'seconds': total % 60,
+      if (name.trim().isNotEmpty) 'name': name.trim(),
+    });
+    return r.ok ? null : (r.error ?? 'failed');
+  }
+
+  /// Sets the time [id] has left to [seconds], by adding or taking away the
+  /// difference: Home Assistant has no way to set a timer's time outright.
+  void setRemaining(String id, int seconds) {
+    final timer = timers.value.where((t) => t.id == id).firstOrNull;
+    if (timer == null || !canEdit(timer)) return;
+    final delta = seconds.clamp(1, maxSeconds) - timer.remaining(_clock());
+    if (delta == 0) return;
+    bus.publish(
+      VoiceTimerAction(
+        entityId: timer.shared ? timer.source : _entity,
+        id: timer.shared ? timer.sourceId : id,
+        action: delta > 0 ? 'add' : 'remove',
+        seconds: delta.abs(),
+      ),
+    );
+  }
+
+  /// Adds ([action] `add`) or takes away (`remove`) [seconds] on one of
+  /// this kiosk's own timers, for a kiosk it shares with.
+  void adjustLocal(String id, String action, int seconds) {
+    if (seconds <= 0 || !{'add', 'remove'}.contains(action)) return;
+    if (!_localTimers.any((t) => t.id == id)) return;
+    bus.publish(
+      VoiceTimerAction(
+        entityId: _entity,
+        id: id,
+        action: action,
+        seconds: seconds,
+      ),
+    );
+  }
+
+  /// What the remote admin's Timers page draws: every timer this kiosk
+  /// shows, the ringing ones first, with the time left as of now.
+  Map<String, Object?> status() {
+    final now = _clock();
+    Map<String, Object?> row(VoiceTimer t) => {
+      'id': t.id,
+      'name': t.name,
+      'remaining': t.finished ? 0 : t.remaining(now),
+      'duration': t.duration > 0 ? t.duration : t.totalSeconds,
+      'active': t.active,
+      'finished': t.finished,
+      'origin': t.origin,
+      'canEdit': canEdit(t),
+    };
+    final ringing = {for (final t in alerts.value) t.id};
+    return {
+      'canStart': canStart,
+      'now': now.millisecondsSinceEpoch,
+      'timers': [
+        for (final t in alerts.value) row(t),
+        for (final t in timers.value)
+          if (!ringing.contains(t.id)) row(t),
+      ],
+    };
   }
 
   void control(String id, String action) {
@@ -470,6 +634,7 @@ class VoiceTimerManager extends Manager {
       for (final s in _shared.values) ...s.timers,
     ];
     _syncView();
+    bus.publish(TimersStateChanged(status()));
   }
 
   /// Starts the ring at [at], or keeps the one already going. A kiosk that

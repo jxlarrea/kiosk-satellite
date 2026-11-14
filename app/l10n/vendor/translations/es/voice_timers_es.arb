@@ -21,5 +21,14 @@
   "timersVoiceSection": "Temporizadores por voz",
   "timersVoiceManage": "Gestionar temporizadores con Voice Satellite",
   "timersVoiceHint": "Funciona sin blueprint ni agente de conversación LLM.",
-  "voiceTimersShareSearch": "Buscar kioskos"
+  "voiceTimersShareSearch": "Buscar kioskos",
+  "voiceTimerSetATimer": "Poner un temporizador",
+  "voiceTimerEditTimer": "Editar temporizador",
+  "voiceTimerName": "Nombre",
+  "voiceTimerHours": "Horas",
+  "voiceTimerMinutes": "Minutos",
+  "voiceTimerSeconds": "Segundos",
+  "voiceTimerStartFailed": "No se pudo iniciar el temporizador.",
+  "timersManage": "Gestionar temporizadores",
+  "voiceTimerStartUnavailable": "Activa Voice Satellite en este kiosko para poner temporizadores aquí."
 }

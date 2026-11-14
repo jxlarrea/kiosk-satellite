@@ -195,6 +195,18 @@ The X closes the view until the next timer starts or finishes. The view closes b
 
 Open the view at any time with **Timers** in the [drawer menu](drawer-menu.md), the **Open the timers** [gesture action](gestures.md), a `ks://timers` [dashboard link](dashboard-links.md) or as a view of the [Compass layout](navigation.md). **Kiosk Mode > Allowed Actions > Timers** decides whether the locked kiosk's menu and Compass offer it.
 
+### Setting and changing timers by hand
+
+Timers can also be set from the timers view and from the remote admin, with native Voice Satellite enabled on the kiosk. Home Assistant holds them like the ones set by voice.
+
+- **Set a timer:** tap **+** in the timers view, or **Set a timer** while no timer runs. Pick hours, minutes and seconds on the wheels, give it a name if you want one and tap **Start**.
+- **Change the time left:** tap a timer's time, move the wheels and tap **Set**. Home Assistant has no way to rename a timer, so the name stays.
+- **Delete:** tap a timer's time and then **Delete**, or use its **Cancel** button.
+
+In the remote admin, the **Timers** page lists the kiosk's timers with their time left. **Set a timer** starts one, a row opens its time left and the bin cancels it. **Settings > Timers > Manage timers** on the kiosk opens the timers view.
+
+A timer another kiosk shares can be changed and cancelled the same way. The change is made on the kiosk that owns it.
+
 To get the floating pills back, turn on **Show timers as pills** under **Settings > Timers**. Tap a pill to pause it and double tap it to cancel. The full screen view then opens only from the menu, a gesture, a link or Compass.
 
 ### Timer settings
@@ -203,6 +215,7 @@ To get the floating pills back, turn on **Show timers as pills** under **Setting
 
 | Group | Setting | What it does |
 |---|---|---|
+| Timers | Manage timers | Opens the timers view. In the remote admin, the list of timers itself. |
 | Shared timers | Share timers, Share with, Show shared timers | Run this kiosk's timers on other kiosks too. See [Shared timers](#shared-timers). |
 | When a timer ends | Timer sound, Timer sound volume | The sound that repeats until the timer is dismissed, built in or from the sounds folder, and its volume under the assistant volume. |
 | | Mute timer alerts, Speak when a timer ends | Show the alert without the sound, or say a phrase between the alert sounds. |

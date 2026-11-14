@@ -21,5 +21,14 @@
   "timersVoiceSection": "Timer per Sprache",
   "timersVoiceManage": "Timer mit Voice Satellite verwalten",
   "timersVoiceHint": "Funktioniert ohne Blueprint und ohne LLM-Konversationsagenten.",
-  "voiceTimersShareSearch": "Kiosks suchen"
+  "voiceTimersShareSearch": "Kiosks suchen",
+  "voiceTimerSetATimer": "Timer stellen",
+  "voiceTimerEditTimer": "Timer bearbeiten",
+  "voiceTimerName": "Name",
+  "voiceTimerHours": "Stunden",
+  "voiceTimerMinutes": "Minuten",
+  "voiceTimerSeconds": "Sekunden",
+  "voiceTimerStartFailed": "Der Timer konnte nicht gestartet werden.",
+  "timersManage": "Timer verwalten",
+  "voiceTimerStartUnavailable": "Aktiviere Voice Satellite auf diesem Kiosk, um hier Timer zu stellen."
 }

@@ -689,6 +689,7 @@ class SharedTimersManager extends Manager {
                 'from': '${_self['id'] ?? ''}',
                 'id': action.id,
                 'action': action.action,
+                if (action.seconds > 0) 'seconds': action.seconds,
               }),
             )
             .timeout(_requestTimeout);
@@ -713,12 +714,23 @@ class SharedTimersManager extends Manager {
       _timers.dismissLocal();
       return const CommandResult.ok({'code': 200});
     }
-    if (!const {'pause', 'resume', 'cancel'}.contains(action)) {
+    const actions = {'pause', 'resume', 'cancel', 'add', 'remove'};
+    if (!actions.contains(action)) {
       return const CommandResult.fail('unknown action');
     }
     final id = '${p['id'] ?? ''}';
     if (!_timers.timers.value.any((t) => t.id == id && !t.shared)) {
       return const CommandResult.ok({'code': 404, 'error': 'no such timer'});
+    }
+    if (action == 'add' || action == 'remove') {
+      // A change of the time left, from the timers view of that kiosk.
+      final seconds = ((p['seconds'] as num?)?.toInt() ?? 0).clamp(
+        0,
+        VoiceTimerManager.maxSeconds,
+      );
+      if (seconds <= 0) return const CommandResult.fail('no duration');
+      _timers.adjustLocal(id, action, seconds);
+      return const CommandResult.ok({'code': 200});
     }
     _timers.control(id, action);
     return const CommandResult.ok({'code': 200});

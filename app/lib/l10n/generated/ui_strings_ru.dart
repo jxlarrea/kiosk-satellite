@@ -16645,4 +16645,32 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get voiceTimersShareSearch => 'Поиск киосков';
+
+  @override
+  String get voiceTimerSetATimer => 'Установить таймер';
+
+  @override
+  String get voiceTimerEditTimer => 'Изменить таймер';
+
+  @override
+  String get voiceTimerName => 'Название';
+
+  @override
+  String get voiceTimerHours => 'Часы';
+
+  @override
+  String get voiceTimerMinutes => 'Минуты';
+
+  @override
+  String get voiceTimerSeconds => 'Секунды';
+
+  @override
+  String get voiceTimerStartFailed => 'Не удалось запустить таймер.';
+
+  @override
+  String get timersManage => 'Управление таймерами';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      'Включите Voice Satellite на этом киоске, чтобы устанавливать таймеры здесь.';
 }

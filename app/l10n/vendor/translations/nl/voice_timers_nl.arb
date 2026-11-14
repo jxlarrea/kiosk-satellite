@@ -21,5 +21,14 @@
   "timersVoiceSection": "Spraaktimers",
   "timersVoiceManage": "Timers beheren met Voice Satellite",
   "timersVoiceHint": "Werkt zonder blauwdruk of LLM-gespreksagent.",
-  "voiceTimersShareSearch": "Kiosken zoeken"
+  "voiceTimersShareSearch": "Kiosken zoeken",
+  "voiceTimerSetATimer": "Timer instellen",
+  "voiceTimerEditTimer": "Timer bewerken",
+  "voiceTimerName": "Naam",
+  "voiceTimerHours": "Uren",
+  "voiceTimerMinutes": "Minuten",
+  "voiceTimerSeconds": "Seconden",
+  "voiceTimerStartFailed": "De timer kon niet worden gestart.",
+  "timersManage": "Timers beheren",
+  "voiceTimerStartUnavailable": "Schakel Voice Satellite op deze kiosk in om hier timers in te stellen."
 }

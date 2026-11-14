@@ -21,5 +21,14 @@
   "timersVoiceSection": "Голосовые таймеры",
   "timersVoiceManage": "Управление таймерами через Voice Satellite",
   "timersVoiceHint": "Работает без Blueprint и диалогового LLM-агента.",
-  "voiceTimersShareSearch": "Поиск киосков"
+  "voiceTimersShareSearch": "Поиск киосков",
+  "voiceTimerSetATimer": "Установить таймер",
+  "voiceTimerEditTimer": "Изменить таймер",
+  "voiceTimerName": "Название",
+  "voiceTimerHours": "Часы",
+  "voiceTimerMinutes": "Минуты",
+  "voiceTimerSeconds": "Секунды",
+  "voiceTimerStartFailed": "Не удалось запустить таймер.",
+  "timersManage": "Управление таймерами",
+  "voiceTimerStartUnavailable": "Включите Voice Satellite на этом киоске, чтобы устанавливать таймеры здесь."
 }

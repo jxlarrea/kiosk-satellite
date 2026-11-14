@@ -16538,4 +16538,32 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get voiceTimersShareSearch => 'Search kiosks';
+
+  @override
+  String get voiceTimerSetATimer => 'Set a timer';
+
+  @override
+  String get voiceTimerEditTimer => 'Edit timer';
+
+  @override
+  String get voiceTimerName => 'Name';
+
+  @override
+  String get voiceTimerHours => 'Hours';
+
+  @override
+  String get voiceTimerMinutes => 'Minutes';
+
+  @override
+  String get voiceTimerSeconds => 'Seconds';
+
+  @override
+  String get voiceTimerStartFailed => 'Could not start the timer.';
+
+  @override
+  String get timersManage => 'Manage timers';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      'Turn on Voice Satellite on this kiosk to set timers here.';
 }

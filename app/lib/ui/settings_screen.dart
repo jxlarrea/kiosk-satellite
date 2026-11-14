@@ -65,6 +65,7 @@ import 'dashboard_view_picker.dart';
 import 'import_options_dialog.dart';
 import 'intercom_settings.dart';
 import 'shared_timers_settings.dart';
+import 'timers_overlay.dart';
 import '../managers/home_assistant/custom_pages.dart' show viewPathUrl;
 import 'custom_pages_settings.dart';
 import 'url_filter_settings.dart';
@@ -2527,8 +2528,14 @@ class _CategoryContentState extends State<_CategoryContent> {
             ],
           ),
         ] else if (widget.category == 'Timers') ...[
-          // The definitions, then Voice timers. Mirrored on the remote's
-          // Timers page (timers.js).
+          // The timers themselves (the full screen view, opened from
+          // here), then the definitions, then Voice timers. Mirrored on the
+          // remote's Timers page (timers.js).
+          SectionHeading(l10n(context).voiceTimersViewTitle),
+          SearchLandingTarget(
+            id: 'x:timers_manage',
+            child: TimersManageCard(container: container),
+          ),
           ..._sectionedCards(
             container,
             _inlineDefsFor('Timers'),

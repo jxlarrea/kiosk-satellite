@@ -176,6 +176,8 @@ const ALARMS_PAGE_TEXT = {
 
 const TIMERS_PAGE_TEXT = {
   'Voice timers': 'timersVoiceSection',
+  'Manage timers': 'timersManage',
+  'Set a timer': 'voiceTimerSetATimer',
   'Manage timers using Voice Satellite': 'timersVoiceManage',
   'Works without a blueprint or an LLM conversation agent.': 'timersVoiceHint',
 };

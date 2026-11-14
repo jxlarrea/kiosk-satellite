@@ -21,5 +21,14 @@
   "timersVoiceSection": "语音计时器",
   "timersVoiceManage": "通过 Voice Satellite 管理计时器",
   "timersVoiceHint": "无需蓝图（脚本模板）或大语言模型（LLM）对话代理。",
-  "voiceTimersShareSearch": "搜索 Kiosk 设备"
+  "voiceTimersShareSearch": "搜索 Kiosk 设备",
+  "voiceTimerSetATimer": "设置计时器",
+  "voiceTimerEditTimer": "编辑计时器",
+  "voiceTimerName": "名称",
+  "voiceTimerHours": "小时",
+  "voiceTimerMinutes": "分钟",
+  "voiceTimerSeconds": "秒",
+  "voiceTimerStartFailed": "无法启动计时器。",
+  "timersManage": "管理计时器",
+  "voiceTimerStartUnavailable": "在此 Kiosk 设备上启用 Voice Satellite 后即可在这里设置计时器。"
 }

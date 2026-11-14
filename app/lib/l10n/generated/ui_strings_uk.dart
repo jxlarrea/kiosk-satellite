@@ -16713,4 +16713,32 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get voiceTimersShareSearch => 'Пошук кіосків';
+
+  @override
+  String get voiceTimerSetATimer => 'Встановити таймер';
+
+  @override
+  String get voiceTimerEditTimer => 'Редагувати таймер';
+
+  @override
+  String get voiceTimerName => 'Назва';
+
+  @override
+  String get voiceTimerHours => 'Години';
+
+  @override
+  String get voiceTimerMinutes => 'Хвилини';
+
+  @override
+  String get voiceTimerSeconds => 'Секунди';
+
+  @override
+  String get voiceTimerStartFailed => 'Не вдалося запустити таймер.';
+
+  @override
+  String get timersManage => 'Керувати таймерами';
+
+  @override
+  String get voiceTimerStartUnavailable =>
+      'Увімкніть Voice Satellite на цьому кіоску, щоб встановлювати таймери тут.';
 }

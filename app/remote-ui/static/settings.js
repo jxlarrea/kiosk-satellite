@@ -1692,8 +1692,9 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
   // The Calendar tab: Open on the kiosk and the Calendars card over the
   // Display and Kiosk rows.
   renderCalendarPage();
-  // The Timers tab: the Voice timers group under the definition rows.
-  renderTimersPage();
+  // The Timers tab: the timers themselves over the definition rows and
+  // the Voice timers group under them.
+  await renderTimersPage();
 
   const tlsPanel = document.querySelector('#tab-device .subpage[data-subpage="TLS"]');
   if (tlsPanel) renderTlsSettings(tlsPanel);

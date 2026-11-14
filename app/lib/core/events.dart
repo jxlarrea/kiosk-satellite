@@ -524,6 +524,20 @@ class VoiceTimersChanged extends AppEvent {
   Map<String, Object?> toJson() => {'timers': timers};
 }
 
+/// The timers this kiosk shows changed, its own or the ones another kiosk
+/// shares: one started, changed, finished or went. Carries the whole
+/// `timersStatus` shape so the remote admin redraws from the event alone.
+class TimersStateChanged extends AppEvent {
+  const TimersStateChanged(this.status);
+  final Map<String, Object?> status;
+
+  @override
+  String get wireName => 'timers';
+
+  @override
+  Map<String, Object?> toJson() => status;
+}
+
 // ── Alarms ─────────────────────────────────────────────────────────────
 
 /// The alarms or their ringing state changed: an alarm added, edited or
@@ -1265,10 +1279,14 @@ class VoiceTimerAction extends AppEvent {
     required this.entityId,
     required this.id,
     required this.action,
+    this.seconds = 0,
   });
   final String entityId;
   final String id;
   final String action;
+
+  /// The time an `add` or `remove` adds or takes away.
+  final int seconds;
 
   @override
   String get wireName => 'timer-action';
@@ -1278,6 +1296,7 @@ class VoiceTimerAction extends AppEvent {
     'entityId': entityId,
     'id': id,
     'action': action,
+    if (seconds > 0) 'seconds': seconds,
   };
 }
 

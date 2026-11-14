@@ -10,7 +10,9 @@ import '../l10n/messages.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/voice_timers/voice_timer_manager.dart';
 import 'kit.dart';
+import 'alarms_overlay.dart' show alarmButtonStyle;
 import 'theme.dart';
+import 'timer_editor.dart';
 import 'toast.dart';
 
 /// The timers as a full screen view: the one that ends first large at the
@@ -63,6 +65,52 @@ class _TimersScreenState extends State<_TimersScreen> {
   }
 
   StreamSubscription<ScreensaverStateChanged>? _saver;
+
+  /// The wheels are up: for a new timer, or for [_editing]'s time left.
+  bool _editor = false;
+  String? _editing;
+
+  void _newTimer() => setState(() {
+    _editor = true;
+    _editing = null;
+  });
+
+  void _edit(VoiceTimer timer) {
+    if (!c.voiceTimers.canEdit(timer)) return;
+    setState(() {
+      _editor = true;
+      _editing = timer.id;
+    });
+  }
+
+  void _closeEditor() => setState(() {
+    _editor = false;
+    _editing = null;
+  });
+
+  Future<void> _set(int seconds, String name) async {
+    final id = _editing;
+    _closeEditor();
+    if (id != null) {
+      c.voiceTimers.setRemaining(id, seconds);
+      return;
+    }
+    final error = await c.voiceTimers.start(seconds: seconds, name: name);
+    if (error != null && mounted) {
+      showToast(
+        context,
+        source: 'timers',
+        title: l10n(context).voiceTimerStartFailed,
+        kind: ToastKind.error,
+      );
+    }
+  }
+
+  void _delete() {
+    final id = _editing;
+    _closeEditor();
+    if (id != null) c.voiceTimers.control(id, 'cancel');
+  }
 
   @override
   void dispose() {
@@ -132,6 +180,13 @@ class _TimersScreenState extends State<_TimersScreen> {
     // With nothing on it, as Compass holds it between timers, the view
     // leaves the screen to the screensaver.
     if (all.isEmpty && c.screensaver.isActive) return const SizedBox.shrink();
+    // The timer the wheels change, while it still runs. One that finished
+    // or went meanwhile closes them.
+    final edited = _editing == null
+        ? null
+        : all.where((t) => t.id == _editing && !t.finished).firstOrNull;
+    final editor = _editor && (_editing == null || edited != null);
+    final canStart = c.voiceTimers.canStart;
     return Listener(
       // Over the screensaver: a touch here is a touch on a control, not a
       // tap that dismisses it.
@@ -158,7 +213,10 @@ class _TimersScreenState extends State<_TimersScreen> {
                         child: Padding(
                           padding: EdgeInsets.only(top: compact ? 48 : 60),
                           child: all.isEmpty
-                              ? _Empty(text: s.voiceTimersEmpty)
+                              ? _Empty(
+                                  text: s.voiceTimersEmpty,
+                                  onNew: canStart ? _newTimer : null,
+                                )
                               : _Body(
                                   container: c,
                                   timers: all,
@@ -167,31 +225,77 @@ class _TimersScreenState extends State<_TimersScreen> {
                                     box.maxWidth,
                                     box.maxHeight - (compact ? 48 : 60),
                                   ),
+                                  onEdit: _edit,
                                 ),
                         ),
                       ),
+                      // The wheels, over the list: it keeps counting under
+                      // them and is there again on Cancel.
+                      if (editor)
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: ksGroundGradient(
+                                theme.colorScheme.surface,
+                                theme.brightness,
+                              ),
+                            ),
+                            child: TimerEditorStep(
+                              key: ValueKey('timer-editor-${_editing ?? ''}'),
+                              compact: compact,
+                              isNew: edited == null,
+                              seconds: edited?.remaining(now) ?? 300,
+                              name: edited == null
+                                  ? ''
+                                  : _nameOf(context, edited),
+                              onCancel: _closeEditor,
+                              onSet: _set,
+                              onDelete: edited == null ? null : _delete,
+                            ),
+                          ),
+                        ),
                       Positioned(
                         top: compact ? 12 : 20,
                         left: compact ? 16 : 28,
                         child: KsEyebrow(
                           label: s.voiceTimersViewTitle,
+                          trail: !editor
+                              ? null
+                              : edited == null
+                              ? s.voiceTimerSetATimer
+                              : s.voiceTimerEditTimer,
                           compact: compact,
                         ),
                       ),
-                      // Compass moves between its views by swipes: the one
-                      // in hand has no close of its own.
-                      if (!c.voiceTimers.compassView.value)
+                      if (!editor)
                         Positioned(
                           top: 8,
                           right: 8,
-                          child: IconButton(
-                            key: const ValueKey('timers-close'),
-                            icon: const Icon(Icons.close),
-                            tooltip: s.commonClose,
-                            iconSize: 28,
-                            color: theme.colorScheme.onSurfaceVariant,
-                            onPressed: () =>
-                                c.voiceTimers.visible.value = false,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (canStart && all.isNotEmpty)
+                                IconButton(
+                                  key: const ValueKey('timers-add'),
+                                  icon: const Icon(Icons.add),
+                                  tooltip: s.voiceTimerSetATimer,
+                                  iconSize: 28,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  onPressed: _newTimer,
+                                ),
+                              // Compass moves between its views by swipes:
+                              // the one in hand has no close of its own.
+                              if (!c.voiceTimers.compassView.value)
+                                IconButton(
+                                  key: const ValueKey('timers-close'),
+                                  icon: const Icon(Icons.close),
+                                  tooltip: s.commonClose,
+                                  iconSize: 28,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  onPressed: () =>
+                                      c.voiceTimers.visible.value = false,
+                                ),
+                            ],
                           ),
                         ),
                     ],
@@ -207,9 +311,12 @@ class _TimersScreenState extends State<_TimersScreen> {
 }
 
 class _Empty extends StatelessWidget {
-  const _Empty({required this.text});
+  const _Empty({required this.text, this.onNew});
 
   final String text;
+
+  /// Opens the wheels for a new timer. Null where none can be started.
+  final VoidCallback? onNew;
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +331,16 @@ class _Empty extends StatelessWidget {
             text,
             style: TextStyle(fontSize: 18, color: scheme.onSurfaceVariant),
           ),
+          if (onNew != null) ...[
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              key: const ValueKey('timers-add'),
+              onPressed: onNew,
+              icon: const Icon(Icons.add),
+              label: Text(l10n(context).voiceTimerSetATimer),
+              style: alarmButtonStyle(context),
+            ),
+          ],
         ],
       ),
     );
@@ -248,12 +365,16 @@ class _Body extends StatelessWidget {
     required this.timers,
     required this.now,
     required this.size,
+    required this.onEdit,
   });
 
   final AppContainer container;
   final List<VoiceTimer> timers;
   final DateTime now;
   final Size size;
+
+  /// A tap on a timer's time: the wheels open on it.
+  final ValueChanged<VoiceTimer> onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -275,6 +396,7 @@ class _Body extends StatelessWidget {
       now: now,
       layout: layout,
       alone: rest.isEmpty,
+      onEdit: container.voiceTimers.canEdit(first) ? () => onEdit(first) : null,
     );
     if (rest.isEmpty) {
       return Padding(
@@ -289,6 +411,7 @@ class _Body extends StatelessWidget {
       now: now,
       roomy: layout == _Layout.under,
       width: width,
+      onEdit: container.voiceTimers.canEdit(t) ? () => onEdit(t) : null,
     );
     switch (layout) {
       case _Layout.under:
@@ -592,6 +715,7 @@ class _Hero extends StatelessWidget {
     required this.now,
     required this.layout,
     required this.alone,
+    this.onEdit,
   });
 
   final AppContainer container;
@@ -599,6 +723,9 @@ class _Hero extends StatelessWidget {
   final DateTime now;
   final _Layout layout;
   final bool alone;
+
+  /// A tap on the time opens the wheels. Null where it cannot be changed.
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -654,20 +781,30 @@ class _Hero extends StatelessWidget {
                   centered: true,
                 ),
                 SizedBox(height: tablet ? 10 : 6),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    voiceTimerClock(timer.remaining(now)),
-                    key: const ValueKey('timers-hero-time'),
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontFamily: Ks.displayFont,
-                      fontSize: timeSize,
-                      height: 1,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: -timeSize * .012,
-                      fontFeatures: _digits,
-                      color: tone == _Tone.running ? scheme.onSurface : color,
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onEdit,
+                  child: Semantics(
+                    button: onEdit != null,
+                    hint: onEdit == null ? null : s.voiceTimerEditTimer,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        voiceTimerClock(timer.remaining(now)),
+                        key: const ValueKey('timers-hero-time'),
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontFamily: Ks.displayFont,
+                          fontSize: timeSize,
+                          height: 1,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: -timeSize * .012,
+                          fontFeatures: _digits,
+                          color: tone == _Tone.running
+                              ? scheme.onSurface
+                              : color,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -761,11 +898,16 @@ class _TimerCard extends StatelessWidget {
     required this.now,
     required this.roomy,
     this.width,
+    this.onEdit,
   });
 
   final AppContainer container;
   final VoiceTimer timer;
   final DateTime now;
+
+  /// A tap on the name and time opens the wheels. Null where the timer
+  /// cannot be changed.
+  final VoidCallback? onEdit;
 
   /// The tablet's card: larger type and more air.
   final bool roomy;
@@ -807,31 +949,35 @@ class _TimerCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _NameLine(timer: timer, fontSize: roomy ? 17 : 14),
-                    // A large text scale shrinks the time before it clips.
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Text(
-                        voiceTimerClock(timer.remaining(now)),
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontFamily: Ks.displayFont,
-                          fontSize: roomy ? 42 : 30,
-                          height: 1.15,
-                          fontWeight: FontWeight.w500,
-                          fontFeatures: _digits,
-                          color: tone == _Tone.running
-                              ? scheme.onSurface
-                              : color,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onEdit,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _NameLine(timer: timer, fontSize: roomy ? 17 : 14),
+                      // A large text scale shrinks the time before it clips.
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          voiceTimerClock(timer.remaining(now)),
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontFamily: Ks.displayFont,
+                            fontSize: roomy ? 42 : 30,
+                            height: 1.15,
+                            fontWeight: FontWeight.w500,
+                            fontFeatures: _digits,
+                            color: tone == _Tone.running
+                                ? scheme.onSurface
+                                : color,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -899,4 +1045,42 @@ class _TimerPillsSettingState extends State<TimerPillsSetting> {
   @override
   Widget build(BuildContext context) =>
       widget.builder(context, timerPillsOn(widget.container));
+}
+
+/// Settings > Timers: the row that opens the timers view, where timers are
+/// set, changed and cancelled. Under it, the timers that are running.
+/// Mirrored on the remote admin by the list itself (timers.js).
+class TimersManageCard extends StatelessWidget {
+  const TimersManageCard({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<List<VoiceTimer>>(
+        valueListenable: container.voiceTimers.timers,
+        builder: (context, timers, _) {
+          final s = l10n(context);
+          return SettingsCard(
+            children: [
+              SettingsRow(
+                leading: const Icon(Icons.timer_outlined),
+                title: Text(s.timersManage),
+                subtitle: Text(
+                  timers.isEmpty
+                      ? s.voiceTimersEmpty
+                      : [
+                          for (final t in timers) _nameOf(context, t),
+                        ].join(', '),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  unawaited(container.commands.execute('openTimers', const {}));
+                },
+              ),
+            ],
+          );
+        },
+      );
 }

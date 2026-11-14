@@ -192,6 +192,12 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: "Timers",
+    title: "Manage timers",
+    description: "Set a timer",
+    anchorId: "x:timers_manage",
+  ),
+  SettingsSearchEntry(
+    category: "Timers",
     title: "Manage timers using Voice Satellite",
     description: "Works without a blueprint or an LLM conversation agent.",
     anchorId: "x:timers_voice",

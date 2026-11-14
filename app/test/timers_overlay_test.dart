@@ -107,6 +107,120 @@ void main() {
     expect(t.progress(at.add(const Duration(hours: 1))), 0);
   });
 
+  testWidgets('Set a timer starts one through Home Assistant', (tester) async {
+    await size(tester, const Size(1280, 800));
+    await c.settings.set(defs.voiceEnabled, true);
+    final started = <Map<String, Object?>>[];
+    c.commands.register(
+      Command(
+        name: 'voiceStartTimer',
+        description: '',
+        handler: (p) async {
+          started.add(p);
+          return const CommandResult.ok();
+        },
+      ),
+    );
+    await tester.pumpWidget(app());
+    await c.commands.execute('openTimers', const {});
+    await tester.pump();
+    expect(find.text('No timers'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('timers-add')));
+    await tester.pump();
+    expect(find.text('Hours'), findsOneWidget);
+    expect(find.text('Delete'), findsNothing);
+    await tester.enterText(find.byKey(const ValueKey('timer-name')), 'Pasta');
+    await tester.tap(find.byKey(const ValueKey('timer-set')));
+    await tester.pump();
+    // The wheels open on five minutes.
+    expect(started.single, {
+      'hours': 0,
+      'minutes': 5,
+      'seconds': 0,
+      'name': 'Pasta',
+    });
+    expect(find.text('Hours'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('no Set a timer without native Voice Satellite', (tester) async {
+    await size(tester, const Size(1280, 800));
+    await tester.pumpWidget(app());
+    await c.commands.execute('openTimers', const {});
+    await tester.pump();
+    expect(find.byKey(const ValueKey('timers-add')), findsNothing);
+    await snapshot([timer('one', 600)]);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('timers-add')), findsNothing);
+    // Nor do the wheels open on a timer of the dashboard's integration.
+    await tester.tap(find.byKey(const ValueKey('timers-hero-time')));
+    await tester.pump();
+    expect(find.text('Hours'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a tap on the time opens the wheels: Set changes the time left '
+      'and Delete cancels', (tester) async {
+    await size(tester, const Size(1280, 800));
+    await c.settings.set(defs.voiceEnabled, true);
+    await tester.pumpWidget(app());
+    await snapshot([timer('one', 600, name: 'Bread')]);
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('timers-hero-time')));
+    await tester.pump();
+    expect(find.text('EDIT TIMER'), findsOneWidget);
+    expect(find.byKey(const ValueKey('timer-name')), findsNothing);
+    // Ten minutes left, set to twelve: two minutes are added.
+    await tester.drag(
+      find.byKey(const ValueKey('timer-wheel-minutes')),
+      const Offset(0, -144),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('timer-set')));
+    await tester.pump();
+    expect(actions.single.action, 'add');
+    expect(actions.single.id, 'one');
+    expect(actions.single.seconds, inInclusiveRange(119, 121));
+    actions.clear();
+    await tester.tap(find.byKey(const ValueKey('timers-hero-time')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('timer-delete')));
+    await tester.pump();
+    expect(actions.single.action, 'cancel');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  test(
+    'timerControl sets the time left and timersStatus lists the timers',
+    () async {
+      await c.settings.set(defs.voiceEnabled, true);
+      await snapshot([timer('one', 600, name: 'Bread')]);
+      final status =
+          (await c.commands.execute('timersStatus', const {})).data as Map;
+      expect(status['canStart'], isTrue);
+      final row = (status['timers'] as List).single as Map;
+      expect(row['name'], 'Bread');
+      expect(row['canEdit'], isTrue);
+      expect(row['remaining'], inInclusiveRange(599, 600));
+      final r = await c.commands.execute('timerControl', {
+        'id': 'one',
+        'action': 'set',
+        'seconds': 300,
+      });
+      expect(r.ok, isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(actions.single.action, 'remove');
+      expect(actions.single.seconds, inInclusiveRange(299, 301));
+      expect(
+        (await c.commands.execute('timerControl', {
+          'id': 'nope',
+          'action': 'cancel',
+        })).ok,
+        isFalse,
+      );
+    },
+  );
+
   testWidgets(
     'a timer starting opens the view, the last one ending closes it',
     (tester) async {
