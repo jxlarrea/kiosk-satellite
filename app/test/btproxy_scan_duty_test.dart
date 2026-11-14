@@ -112,6 +112,35 @@ void main() {
     expect(defs.btproxyScreenOffScan.dependsOn, 'btproxy.enabled');
   });
 
+  test(
+    'the server start keeps the separate Bluetooth address by default',
+    () async {
+      await boot();
+      expect(
+        (starts().single.arguments as Map)['deviceMacForBluetooth'],
+        isFalse,
+      );
+    },
+  );
+
+  test('Use the device MAC address for Bluetooth restarts the server, since '
+      'Home Assistant reads the address at connect', () async {
+    final (settings, _) = await boot();
+    await settings.set(defs.btproxyDeviceMac, true);
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    expect(starts(), hasLength(2));
+    expect((starts().last.arguments as Map)['deviceMacForBluetooth'], isTrue);
+  });
+
+  test(
+    'Use the device MAC address for Bluetooth is opt-in under the proxy',
+    () {
+      expect(defs.btproxyDeviceMac.defaultValue, isFalse);
+      expect(defs.btproxyDeviceMac.subpage, 'Bluetooth Proxy');
+      expect(defs.btproxyDeviceMac.dependsOn, 'btproxy.enabled');
+    },
+  );
+
   test('the definition offers the three Android scan modes', () {
     expect(defs.btproxyScanDuty.options, [
       'low_latency',

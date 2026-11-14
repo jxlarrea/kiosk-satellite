@@ -7607,6 +7607,13 @@ class UiStringsZh extends UiStrings {
       '若屏幕关闭后代理停止转发，请开启此项。会增加 CPU 使用率。';
 
   @override
+  String get settingBtproxyDeviceMacTitle => '蓝牙使用设备 MAC 地址';
+
+  @override
+  String get settingBtproxyDeviceMacDescription =>
+      '让 Bermuda 等集成能将此代理与其设备关联。会更改代理在 Home Assistant 中的地址。';
+
+  @override
   String get settingBtproxyConnectionsTitle => '允许连接设备';
 
   @override
@@ -23341,6 +23348,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingBtproxyScreenOffScanDescription =>
       '若屏幕关闭后代理停止转发，请开启此项。会增加 CPU 使用率。';
+
+  @override
+  String get settingBtproxyDeviceMacTitle => '蓝牙使用设备 MAC 地址';
+
+  @override
+  String get settingBtproxyDeviceMacDescription =>
+      '让 Bermuda 等集成能将此代理与其设备关联。会更改代理在 Home Assistant 中的地址。';
 
   @override
   String get settingBtproxyConnectionsTitle => '允许连接设备';

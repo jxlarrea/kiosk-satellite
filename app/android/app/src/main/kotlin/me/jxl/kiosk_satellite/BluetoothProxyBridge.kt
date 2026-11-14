@@ -63,6 +63,9 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                     ?: "balanced",
                                 screenOffScan =
                                     call.argument<Boolean>("screenOffScan") ?: false,
+                                deviceMacForBluetooth =
+                                    call.argument<Boolean>("deviceMacForBluetooth")
+                                        ?: false,
                                 entities = entities,
                                 services = services,
                                 macOverride = call.argument<String>("macOverride"),

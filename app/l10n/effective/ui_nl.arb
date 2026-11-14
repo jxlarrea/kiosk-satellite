@@ -29940,6 +29940,32 @@
       ]
     }
   },
+  "settingBtproxyDeviceMacTitle": "MAC-adres van het apparaat gebruiken voor Bluetooth",
+  "@settingBtproxyDeviceMacTitle": {
+    "context": "Settings > ESPHome > Bluetooth Proxy",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > ESPHome > Bluetooth Proxy"
+      ],
+      "remoteAdmin": [
+        "ESPHome > Bluetooth Proxy"
+      ]
+    }
+  },
+  "settingBtproxyDeviceMacDescription": "Hiermee kunnen integraties zoals Bermuda deze proxy aan het apparaat koppelen. Wijzigt het adres van de proxy in Home Assistant.",
+  "@settingBtproxyDeviceMacDescription": {
+    "context": "Settings > ESPHome > Bluetooth Proxy",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > ESPHome > Bluetooth Proxy"
+      ],
+      "remoteAdmin": [
+        "ESPHome > Bluetooth Proxy"
+      ]
+    }
+  },
   "settingBtproxyConnectionsTitle": "Apparaatverbindingen toestaan",
   "@settingBtproxyConnectionsTitle": {
     "context": "Settings > ESPHome > Bluetooth Proxy",

@@ -8019,6 +8019,14 @@ class UiStringsNl extends UiStrings {
       'Schakel in als de proxy niets meer doorgeeft terwijl het scherm uit is. Belast de CPU meer.';
 
   @override
+  String get settingBtproxyDeviceMacTitle =>
+      'MAC-adres van het apparaat gebruiken voor Bluetooth';
+
+  @override
+  String get settingBtproxyDeviceMacDescription =>
+      'Hiermee kunnen integraties zoals Bermuda deze proxy aan het apparaat koppelen. Wijzigt het adres van de proxy in Home Assistant.';
+
+  @override
   String get settingBtproxyConnectionsTitle => 'Apparaatverbindingen toestaan';
 
   @override

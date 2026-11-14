@@ -1660,6 +1660,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingBtproxyScreenOffScanTitle",
     "description": "settingBtproxyScreenOffScanDescription",
   },
+  "btproxy.device_mac": {
+    "title": "settingBtproxyDeviceMacTitle",
+    "description": "settingBtproxyDeviceMacDescription",
+  },
   "btproxy.connections": {
     "title": "settingBtproxyConnectionsTitle",
     "description": "settingBtproxyConnectionsDescription",

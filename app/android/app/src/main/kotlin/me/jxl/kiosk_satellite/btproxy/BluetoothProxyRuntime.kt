@@ -31,6 +31,12 @@ internal object BluetoothProxyRuntime {
         val scanDuty: String = ScanDuty.BALANCED.key,
         /** Use the filter list that keeps scanning with the screen off. */
         val screenOffScan: Boolean = false,
+        /** Report the API identity's MAC as the Bluetooth address too, the
+         *  way Home Assistant reads a proxy that sends none, instead of a
+         *  second unrelated one. Bermuda only links a scanner to its
+         *  ESPHome device when the two are within a few of each other
+         *  (issue #1442). Off keeps the address existing installs have. */
+        val deviceMacForBluetooth: Boolean = false,
         /** The ESPHome node name to answer as: the mDNS instance, the
          *  <name>.local host, and what Home Assistant builds this
          *  device's action names from. Empty keeps the generated
@@ -132,7 +138,8 @@ internal object BluetoothProxyRuntime {
         }
         val apiServer = ApiServer(
             identity = identity,
-            bluetoothMac = syntheticMac(appContext, salt = "bt"),
+            bluetoothMac = if (config.deviceMacForBluetooth) identity.macAddress
+                else syntheticMac(appContext, salt = "bt"),
             port = config.port,
             psk = config.psk,
             backend = object : ScannerBackend {

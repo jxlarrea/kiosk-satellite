@@ -7995,6 +7995,14 @@ class UiStringsUk extends UiStrings {
       'Увімкніть, якщо проксі перестає транслювати, коли екран вимкнено. Збільшує навантаження на процесор.';
 
   @override
+  String get settingBtproxyDeviceMacTitle =>
+      'Використовувати MAC-адресу пристрою для Bluetooth';
+
+  @override
+  String get settingBtproxyDeviceMacDescription =>
+      'Дає змогу інтеграціям на кшталт Bermuda пов\'язати цей проксі з його пристроєм. Змінює адресу проксі в Home Assistant.';
+
+  @override
   String get settingBtproxyConnectionsTitle =>
       'Дозволити підключення пристроїв';
 

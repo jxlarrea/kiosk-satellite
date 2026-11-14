@@ -11576,6 +11576,31 @@ const btproxyScreenOffScan = SettingDef<bool>(
   dependsOn: 'btproxy.enabled',
 );
 
+/// The proxy tells Home Assistant two addresses: the ESPHome device's MAC
+/// and a Bluetooth one, which names the scanner. Ours were two unrelated
+/// generated values, while an ESP32's sit two apart, and Bermuda links a
+/// scanner to its ESPHome device only when they are within a few of each
+/// other. One unlinked scanner costs Bermuda 0.8.7 the per-proxy distance
+/// sensors of every scanner (issue #1442). On, both are the device's MAC,
+/// which is how Home Assistant reads a proxy that sends no Bluetooth
+/// address. Opt-in because the scanner's address changes in Home
+/// Assistant, and whatever is stored per scanner there (Bermuda's signal
+/// offsets) has to be entered again. Read at connect, so a change
+/// restarts the server.
+const btproxyDeviceMac = SettingDef<bool>(
+  key: 'btproxy.device_mac',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Use the device MAC address for Bluetooth',
+  description:
+      'Lets integrations like Bermuda link this proxy to its device. '
+      'Changes the proxy\'s address in Home Assistant.',
+  category: 'ESPHome',
+  section: 'Bluetooth Proxy',
+  subpage: 'Bluetooth Proxy',
+  dependsOn: 'btproxy.enabled',
+);
+
 const btproxyConnections = SettingDef<bool>(
   key: 'btproxy.connections',
   type: SettingType.boolean,
@@ -14843,6 +14868,7 @@ const List<SettingDef<Object>> allSettings = [
   btproxyEnabled,
   btproxyScanDuty,
   btproxyScreenOffScan,
+  btproxyDeviceMac,
   btproxyConnections,
   btproxyMinConnectRssi,
   btproxyMacLookup,

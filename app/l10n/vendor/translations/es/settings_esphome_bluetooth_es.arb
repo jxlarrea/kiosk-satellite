@@ -6,6 +6,8 @@
   "settingBtproxyScanDutyDescription": "Cuánto tiempo escucha la radio. Una intensidad menor reduce el uso de CPU. Los dispositivos que transmiten con poca frecuencia tardan más en aparecer.",
   "settingBtproxyScreenOffScanTitle": "Seguir escaneando con la pantalla apagada",
   "settingBtproxyScreenOffScanDescription": "Actívalo si el proxy deja de retransmitir con la pantalla apagada. Usa más CPU.",
+  "settingBtproxyDeviceMacTitle": "Usar la dirección MAC del dispositivo para Bluetooth",
+  "settingBtproxyDeviceMacDescription": "Permite que integraciones como Bermuda vinculen este proxy con su dispositivo. Cambia la dirección del proxy en Home Assistant.",
   "settingBtproxyConnectionsTitle": "Permitir conexiones a dispositivos",
   "settingBtproxyConnectionsDescription": "Home Assistant puede conectarse a dispositivos Bluetooth a través de este proxy.",
   "settingBtproxyMacLookupTitle": "Consultar fabricantes de dispositivos en línea",

@@ -6,6 +6,8 @@
   "settingBtproxyScanDutyDescription": "Legt fest, wie lange das Funkmodul lauscht. Eine geringere Intensität reduziert die CPU-Auslastung. Geräte, die selten senden, benötigen länger, bis sie erscheinen.",
   "settingBtproxyScreenOffScanTitle": "Bei ausgeschaltetem Bildschirm weiter scannen",
   "settingBtproxyScreenOffScanDescription": "Einschalten, wenn der Proxy bei ausgeschaltetem Bildschirm nichts mehr weiterleitet. Erhöht die CPU-Auslastung.",
+  "settingBtproxyDeviceMacTitle": "Geräte-MAC-Adresse für Bluetooth verwenden",
+  "settingBtproxyDeviceMacDescription": "Damit können Integrationen wie Bermuda diesen Proxy seinem Gerät zuordnen. Ändert die Adresse des Proxys in Home Assistant.",
   "settingBtproxyConnectionsTitle": "Verbindungen zu Geräten zulassen",
   "settingBtproxyConnectionsDescription": "Home Assistant kann über diesen Proxy Verbindungen zu Bluetooth-Geräten herstellen.",
   "settingBtproxyMacLookupTitle": "Gerätehersteller online ermitteln",

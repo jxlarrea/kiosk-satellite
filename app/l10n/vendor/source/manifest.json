@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "7c84b4c591fdc05e0e721be1cb74cbb62c679b19",
+  "revision": "7308be9f2f03dc3a9531d653b4faa9797c559103",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -101,7 +101,7 @@
     "settings_dlna_en.arb": "f9d6e9fb2ad0c96ed584d8fd07d555a7f57ac348943847128a0d8054f95f20f4",
     "settings_esphome_advanced_en.arb": "251f43eed162c28a37ac8378d8818dfbe256d508a68a47b0ae787dd2be6f2d9a",
     "settings_esphome_announcements_en.arb": "e6043b5c2b380cb12717c241e47441662d717d8fe450b0594944e00e5bd54267",
-    "settings_esphome_bluetooth_en.arb": "3e9c3fb8cdffa5ccb0c5834467d174ba3511be8557a996ca6b824c5c7819dea0",
+    "settings_esphome_bluetooth_en.arb": "d6ba5d2c70c9a3020cf1b6756ab2b99e22b41a0282a0c72910725aaec5723565",
     "settings_esphome_bluetooth_identity_en.arb": "01134d5a532334e831e1039c10ec2c82c35d04501b6ec0e6c363143bcc4884e6",
     "settings_esphome_bluetooth_status_en.arb": "966547e9b9382d1ffc17e74142b9de4ebb99cf66ef85f79bcdd2aa328c6a199f",
     "settings_esphome_gps_en.arb": "0f6a8ee5ad6497c93e107988b39eb90b88e985ecd6a3d2a2173cd98d73a8743d",

@@ -6,6 +6,8 @@
   "settingBtproxyScanDutyDescription": "Частка часу, протягом якої радіомодуль прослуховує ефір. Менше значення знижує навантаження на процесор; пристрої, які рідко передають сигнали, з'являтимуться довше.",
   "settingBtproxyScreenOffScanTitle": "Сканувати з вимкненим екраном",
   "settingBtproxyScreenOffScanDescription": "Увімкніть, якщо проксі перестає транслювати, коли екран вимкнено. Збільшує навантаження на процесор.",
+  "settingBtproxyDeviceMacTitle": "Використовувати MAC-адресу пристрою для Bluetooth",
+  "settingBtproxyDeviceMacDescription": "Дає змогу інтеграціям на кшталт Bermuda пов'язати цей проксі з його пристроєм. Змінює адресу проксі в Home Assistant.",
   "settingBtproxyConnectionsTitle": "Дозволити підключення пристроїв",
   "settingBtproxyConnectionsDescription": "Home Assistant може підключатися до пристроїв Bluetooth через цей проксі.",
   "settingBtproxyMacLookupTitle": "Шукати виробників пристроїв в інтернеті",

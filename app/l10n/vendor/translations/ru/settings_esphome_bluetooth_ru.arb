@@ -6,6 +6,8 @@
   "settingBtproxyScanDutyDescription": "Какую долю времени радио слушает. Ниже: меньше нагрузки на ЦП; редко вещающие устройства появляются дольше.",
   "settingBtproxyScreenOffScanTitle": "Сканировать при выключенном экране",
   "settingBtproxyScreenOffScanDescription": "Включите, если прокси перестаёт передавать при выключенном экране. Больше нагрузки на ЦП.",
+  "settingBtproxyDeviceMacTitle": "Использовать MAC-адрес устройства для Bluetooth",
+  "settingBtproxyDeviceMacDescription": "Позволяет интеграциям вроде Bermuda связать этот прокси с его устройством. Меняет адрес прокси в Home Assistant.",
   "settingBtproxyConnectionsTitle": "Разрешить подключения устройств",
   "settingBtproxyConnectionsDescription": "Home Assistant может подключаться к устройствам Bluetooth через этот прокси.",
   "settingBtproxyMacLookupTitle": "Искать производителей онлайн",

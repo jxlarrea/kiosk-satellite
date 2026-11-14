@@ -1659,6 +1659,10 @@
     "title": "settingBtproxyScreenOffScanTitle",
     "description": "settingBtproxyScreenOffScanDescription"
   },
+  "btproxy.device_mac": {
+    "title": "settingBtproxyDeviceMacTitle",
+    "description": "settingBtproxyDeviceMacDescription"
+  },
   "btproxy.connections": {
     "title": "settingBtproxyConnectionsTitle",
     "description": "settingBtproxyConnectionsDescription"

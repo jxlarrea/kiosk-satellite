@@ -78,6 +78,8 @@ const esphomeTextMessageIds = <String, String>{
   "How much of the time the radio listens. Lower cuts CPU; devices that advertise rarely take longer to appear.": "settingBtproxyScanDutyDescription",
   "Keep scanning with the screen off": "settingBtproxyScreenOffScanTitle",
   "Turn on if the proxy stops relaying while the screen is off. Uses more CPU.": "settingBtproxyScreenOffScanDescription",
+  "Use the device MAC address for Bluetooth": "settingBtproxyDeviceMacTitle",
+  "Lets integrations like Bermuda link this proxy to its device. Changes the proxy's address in Home Assistant.": "settingBtproxyDeviceMacDescription",
   "Allow device connections": "settingBtproxyConnectionsTitle",
   "Home Assistant can connect to Bluetooth devices through this proxy.": "settingBtproxyConnectionsDescription",
   "Look up device manufacturers online": "settingBtproxyMacLookupTitle",

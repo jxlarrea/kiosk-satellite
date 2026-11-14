@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Use the device MAC address for Bluetooth (#1442).** The Bluetooth proxy reports a Bluetooth address that is unrelated to the MAC address of its ESPHome device. Bermuda cannot link such a scanner to its device, and Bermuda 0.8.7 then creates no **Distance to** sensors for any proxy. A new switch under **ESPHome > Bluetooth Proxy** reports the device MAC address as the Bluetooth address too, which is how Home Assistant treats a proxy that sends no Bluetooth address. It is off by default because the scanner's address changes in Home Assistant, so signal offsets stored per scanner in Bermuda have to be entered again. Mirrored in the remote admin.
+
 ### Changed
 - **Timers guide.** Timers have their own page in the documentation, with the Timers view, setting timers by voice and by hand, shared timers and the settings. **Manage timers using Voice Satellite** under **Settings > Timers** opens it. The Voice Satellite guide keeps a pointer to it.
 - **Brightness range in the log and in Basic analytics.** The `brightness scale` line in the app log now also shows the maximum Android reports and the maximum it converts the setting with. Basic analytics sends the same numbers and the highest brightness value written by something other than Kiosk Satellite. Together they show which tablet models report a range that Android does not use.

@@ -510,6 +510,7 @@ void main() {
       defs.btproxyEnabled.key,
       defs.btproxyScanDuty.key,
       defs.btproxyScreenOffScan.key,
+      defs.btproxyDeviceMac.key,
       defs.btproxyConnections.key,
       defs.btproxyMinConnectRssi.key,
       defs.btproxyMacLookup.key,

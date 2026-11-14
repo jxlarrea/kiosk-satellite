@@ -13892,6 +13892,18 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Use the device MAC address for Bluetooth'**
+  String get settingBtproxyDeviceMacTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets integrations like Bermuda link this proxy to its device. Changes the proxy\'s address in Home Assistant.'**
+  String get settingBtproxyDeviceMacDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Allow device connections'**
   String get settingBtproxyConnectionsTitle;
 

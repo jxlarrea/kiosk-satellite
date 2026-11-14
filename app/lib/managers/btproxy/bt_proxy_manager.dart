@@ -789,6 +789,7 @@ class BtProxyManager extends Manager {
         'connections': _settings.get(defs.btproxyConnections),
         'scanDuty': _settings.get(defs.btproxyScanDuty),
         'screenOffScan': _settings.get(defs.btproxyScreenOffScan),
+        'deviceMacForBluetooth': _settings.get(defs.btproxyDeviceMac),
         'minConnectRssi':
             int.tryParse(_settings.get(defs.btproxyMinConnectRssi)) ?? 0,
         'entities': _settings.get(defs.esphomeEntities)

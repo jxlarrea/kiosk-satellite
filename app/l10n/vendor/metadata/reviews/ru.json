@@ -30345,5 +30345,17 @@
     "translation": "d0521c5da7298a99686a29b0bcf3df6b0d29565756f225d4921d71141989eab8",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingBtproxyDeviceMacTitle": {
+    "source": "aa06540e64297eecb3467ae6e2b34a5e7d11f0aa6e354b208234ac1e5ce90eaa",
+    "translation": "c4e54def3e235353b300261734e0a92e3235f0e7b87034437bc73f83b7d55c54",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingBtproxyDeviceMacDescription": {
+    "source": "add1b697737e2661495b7f4190aaafb746402684fa64a5c188a3c28d71adbabf",
+    "translation": "e5e40be7f6479fed24b2e6ecc8bff8b9a6ed9c2dbd9b473b3f2211a82f176b06",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

@@ -8063,6 +8063,14 @@ class UiStringsEs extends UiStrings {
       'Actívalo si el proxy deja de retransmitir con la pantalla apagada. Usa más CPU.';
 
   @override
+  String get settingBtproxyDeviceMacTitle =>
+      'Usar la dirección MAC del dispositivo para Bluetooth';
+
+  @override
+  String get settingBtproxyDeviceMacDescription =>
+      'Permite que integraciones como Bermuda vinculen este proxy con su dispositivo. Cambia la dirección del proxy en Home Assistant.';
+
+  @override
   String get settingBtproxyConnectionsTitle =>
       'Permitir conexiones a dispositivos';
 

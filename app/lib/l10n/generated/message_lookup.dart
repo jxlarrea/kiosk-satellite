@@ -2283,6 +2283,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingBtproxyScreenOffScanTitle,
       'settingBtproxyScreenOffScanDescription' =>
         strings.settingBtproxyScreenOffScanDescription,
+      'settingBtproxyDeviceMacTitle' => strings.settingBtproxyDeviceMacTitle,
+      'settingBtproxyDeviceMacDescription' =>
+        strings.settingBtproxyDeviceMacDescription,
       'settingBtproxyConnectionsTitle' =>
         strings.settingBtproxyConnectionsTitle,
       'settingBtproxyConnectionsDescription' =>

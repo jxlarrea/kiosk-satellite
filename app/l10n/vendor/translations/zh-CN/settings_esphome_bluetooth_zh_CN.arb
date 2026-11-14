@@ -6,6 +6,8 @@
   "settingBtproxyScanDutyDescription": "无线模块用于监听的时间比例。较低值可降低 CPU 使用率，但广播较少的设备需要更久才能被发现。",
   "settingBtproxyScreenOffScanTitle": "屏幕关闭时继续扫描",
   "settingBtproxyScreenOffScanDescription": "若屏幕关闭后代理停止转发，请开启此项。会增加 CPU 使用率。",
+  "settingBtproxyDeviceMacTitle": "蓝牙使用设备 MAC 地址",
+  "settingBtproxyDeviceMacDescription": "让 Bermuda 等集成能将此代理与其设备关联。会更改代理在 Home Assistant 中的地址。",
   "settingBtproxyConnectionsTitle": "允许连接设备",
   "settingBtproxyConnectionsDescription": "Home Assistant 可以通过此代理连接蓝牙设备。",
   "settingBtproxyMacLookupTitle": "在线查询设备制造商",
