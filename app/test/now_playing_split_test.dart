@@ -49,6 +49,8 @@ void main() {
     bool controls = true,
     Map<String, Object> prefs = const {},
     DateTime Function()? scheduleClock,
+    Widget? under,
+    bool mount = true,
   }) async {
     SharedPreferences.setMockInitialValues({
       'ks.screensaver.mode': mode,
@@ -98,6 +100,12 @@ void main() {
     c.bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
     await tester.pump();
     await c.screensaver.start();
+    if (!mount) {
+      // No view: the layout's report is made by hand.
+      c.screensaver.setNowPlayingShared(true);
+      await tester.pump();
+      return;
+    }
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -107,7 +115,12 @@ void main() {
           child: Listener(
             onPointerDown: (_) =>
                 c.bus.publish(const ActivityDetected(source: 'touch')),
-            child: Stack(children: [ScreensaverOverlay(container: c)]),
+            child: Stack(
+              children: [
+                ?under,
+                ScreensaverOverlay(container: c),
+              ],
+            ),
           ),
         ),
       ),
@@ -801,6 +814,160 @@ void main() {
       },
     );
   }
+
+  // Beside Now Playing a screensaver keeps the taps it takes by itself
+  // (issue #1446).
+  group('the screensaver keeps its own taps beside the player', () {
+    // One tap as the kiosk hears it: the pane's report, the kiosk screen's
+    // and the echo as the finger lifts.
+    Future<void> tapPane(WidgetTester tester, String echo) async {
+      c.screensaver.notifyActivity('pane_touch');
+      c.screensaver.notifyActivity('touch');
+      c.screensaver.notifyActivity(echo);
+      await tester.pump();
+    }
+
+    for (final doubleTap in [false, true]) {
+      testWidgets('the website with Double tap to dismiss $doubleTap', (
+        tester,
+      ) async {
+        await boot(
+          tester,
+          mode: 'website',
+          mount: false,
+          prefs: {'ks.screensaver.website_double_tap': doubleTap},
+        );
+        expect(c.screensaver.nowPlayingShared, isTrue);
+        await tapPane(tester, 'touch_page');
+        expect(c.screensaver.isActive, doubleTap);
+        if (doubleTap) {
+          await tester.pump(const Duration(milliseconds: 250));
+          await tapPane(tester, 'touch_page');
+          expect(c.screensaver.isActive, isFalse);
+        }
+        await c.screensaver.dispose();
+      });
+    }
+
+    testWidgets('a slow second tap on the website starts over', (tester) async {
+      await boot(
+        tester,
+        mode: 'website',
+        mount: false,
+        prefs: {'ks.screensaver.website_double_tap': true},
+      );
+      await tapPane(tester, 'touch_page');
+      await tester.pump(const Duration(seconds: 2));
+      await tapPane(tester, 'touch_page');
+      expect(c.screensaver.isActive, isTrue);
+      await c.screensaver.dispose();
+    });
+
+    for (final doubleTap in [false, true]) {
+      testWidgets('the dashboard with Double tap to dismiss $doubleTap', (
+        tester,
+      ) async {
+        var pressed = 0;
+        await boot(
+          tester,
+          mode: 'dashboard',
+          prefs: {'ks.screensaver.dashboard_double_tap': doubleTap},
+          under: Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => pressed++,
+            ),
+          ),
+        );
+        expect(c.screensaver.nowPlayingShared, isTrue);
+        final center = tester.getRect(saver).center;
+        await tester.tapAt(center);
+        await tester.pump();
+        // With the option the tap presses the card under the finger.
+        expect(pressed, doubleTap ? 1 : 0);
+        expect(c.screensaver.isActive, doubleTap);
+        if (doubleTap) {
+          // The player's side still belongs to the player.
+          await tester.pump(const Duration(seconds: 1));
+          await tester.tapAt(tester.getRect(player).center);
+          await tester.pump(const Duration(milliseconds: 200));
+          await tester.tapAt(tester.getRect(player).center);
+          await tester.pump();
+          expect(pressed, 1);
+          expect(c.screensaver.isActive, isTrue);
+          await tester.pump(const Duration(seconds: 1));
+          await tester.tapAt(center);
+          await tester.pump(const Duration(milliseconds: 200));
+          await tester.tapAt(center);
+          await tester.pump();
+          expect(c.screensaver.isActive, isFalse);
+        }
+        await tester.pumpWidget(const SizedBox());
+        await c.screensaver.dispose();
+      });
+    }
+
+    // Celestial and the calendar mark their touches as their own: a drag
+    // looks around the sky and a tap opens an event.
+    for (final mode in ['celestial', 'calendar']) {
+      testWidgets('$mode keeps its touches', (tester) async {
+        await boot(tester, mode: mode, mount: false);
+        expect(c.screensaver.nowPlayingShared, isTrue);
+        c.screensaver.markControlTouch();
+        await tapPane(tester, 'tap');
+        expect(c.screensaver.isActive, isTrue);
+        // The view's own way out still closes it.
+        c.screensaver.notifyActivity(
+          mode == 'celestial' ? 'screensaver_touch' : 'close',
+        );
+        await tester.pump();
+        expect(c.screensaver.isActive, isFalse);
+        await c.screensaver.dispose();
+      });
+    }
+
+    // The same through the views: their own report of a finger reaches
+    // the manager ahead of the pane's.
+    for (final mode in ['celestial', 'calendar']) {
+      testWidgets('a tap on the $mode pane leaves it up', (tester) async {
+        await boot(
+          tester,
+          mode: mode,
+          prefs: {
+            'ks.screensaver.celestial_location': 'manual',
+            'ks.screensaver.celestial_coordinates': '40.71, -74.01',
+          },
+        );
+        expect(c.screensaver.nowPlayingShared, isTrue);
+        final rect = tester.getRect(saver);
+        await tester.tapAt(rect.center);
+        await tester.pump(const Duration(seconds: 1));
+        expect(c.screensaver.isActive, isTrue);
+        await tester.pumpWidget(const SizedBox());
+        // The calendar's refresh timer runs out.
+        await tester.pump(const Duration(seconds: 61));
+        await c.screensaver.dispose();
+      });
+    }
+
+    testWidgets('a touch on the player never counts for the screensaver', (
+      tester,
+    ) async {
+      await boot(
+        tester,
+        mode: 'website',
+        mount: false,
+        prefs: {'ks.screensaver.website_double_tap': true},
+      );
+      for (var i = 0; i < 2; i++) {
+        c.screensaver.notifyActivity('touch');
+        c.screensaver.notifyActivity('tap');
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      expect(c.screensaver.isActive, isTrue);
+      await c.screensaver.dispose();
+    });
+  });
 
   for (final doubleTap in [false, true]) {
     testWidgets(

@@ -555,10 +555,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// Assistant Dashboard screensavers offer the option (their pages are
   /// the only things a single tap could talk to, discussion #1069), a
   /// plugin renderer published with touch always takes it (issue #1282),
-  /// and never while the Sendspin now-playing view has taken the slot
-  /// over. That view is ours, not a page.
+  /// and never while the Sendspin now-playing view has taken the whole
+  /// slot over. That view is ours, not a page. Beside the screensaver it
+  /// leaves the screensaver's pane its own taps (issue #1446).
   bool get _doubleTapToDismiss =>
-      (!_nowPlayingTakeover &&
+      ((!_nowPlayingTakeover || nowPlayingShared) &&
           switch (activeView.value) {
             'website' => _settings.get(defs.screensaverWebsiteDoubleTap),
             'dashboard' => _settings.get(defs.screensaverDashboardDoubleTap),
@@ -1334,9 +1335,16 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   static bool _isTouch(String source) =>
       source == 'touch' ||
+      source == 'pane_touch' ||
       source == 'touch_page' ||
       source == 'tap' ||
       source == 'screensaver_touch';
+
+  /// A finger coming down. Beside Now Playing the screensaver's pane
+  /// reports its own ('pane_touch'), ahead of the kiosk screen's report
+  /// of the same finger ('touch'), which covers the player's buttons too.
+  static bool _isFingerDown(String source) =>
+      source == 'touch' || source == 'pane_touch';
 
   void notifyActivity(String source) {
     final lit = _active && !_blanked;
@@ -1382,7 +1390,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     if (_isTouch(source)) {
       final woke = _touchWokeAt;
       if (woke != null) {
-        if (source != 'touch' || clock().difference(woke) < _tapDebounce) {
+        if (!_isFingerDown(source) || clock().difference(woke) < _tapDebounce) {
           return;
         }
         _touchWokeAt = null;
@@ -1401,13 +1409,22 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // Overlay controls consume their touch without dismissing the view.
     // Off the screensaver the touch is still activity.
     if (_touchOnControl &&
-        (source == 'touch' || source == 'touch_page' || source == 'tap')) {
+        (source == 'touch' ||
+            source == 'pane_touch' ||
+            source == 'touch_page' ||
+            source == 'tap')) {
       if (!_active) _resetIdleTimer();
       return;
     }
     // Shared layouts dismiss through the screensaver panel. Generic touch
     // reports include player buttons and must leave the combined view up.
-    if (nowPlayingShared &&
+    // The panel's own report stands in for them and gets what a touch
+    // gets without the player: the edge zones, the double-tap chain and
+    // the controls' pass above (issue #1446). Out of the shared layout
+    // the kiosk screen's report of that finger does the work.
+    if (source == 'pane_touch') {
+      if (!nowPlayingShared) return;
+    } else if (nowPlayingShared &&
         (source == 'touch' || source == 'touch_page' || source == 'tap')) {
       return;
     }
@@ -1435,14 +1452,17 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     if (_active &&
         _touchOnSlideEdge &&
         (source == 'touch' ||
+            source == 'pane_touch' ||
             source == 'touch_page' ||
-            source == 'tap' ||
-            source == 'screensaver_touch')) {
+            source == 'tap')) {
       return;
     }
     if (_active &&
         _doubleTapToDismiss &&
-        (source == 'touch' || source == 'touch_page' || source == 'tap')) {
+        (source == 'touch' ||
+            source == 'pane_touch' ||
+            source == 'touch_page' ||
+            source == 'tap')) {
       // The bridge and the gesture detector echo taps the Listener
       // already delivered.
       if (source == 'touch_page' || source == 'tap') return;

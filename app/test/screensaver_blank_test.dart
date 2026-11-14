@@ -136,6 +136,49 @@ void main() {
     });
   });
 
+  // The same beside Now Playing (issue #1446), where the screensaver's
+  // pane reports each finger ahead of the kiosk screen.
+  test('touch wakes a black screen beside Now Playing the same way', () {
+    fakeAsync((async) {
+      final start = DateTime(2026, 11, 14, 12);
+      build({
+        'ks.screensaver.screen_off_wake_to_screensaver': '["touch"]',
+        'ks.sendspin.fullscreen': true,
+        'ks.sendspin.fullscreen_split': true,
+      });
+      async.flushMicrotasks();
+      saver.clock = () => start.add(async.elapsed);
+      bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+      async.flushMicrotasks();
+      saver.setNowPlayingShared(true);
+      async.flushMicrotasks();
+      expect(saver.nowPlayingShared, isTrue);
+      async.elapse(const Duration(minutes: 1));
+      expect(saver.activeView.value, 'blank');
+
+      // Blanked, the view has no pane to report from: the kiosk screen
+      // hears the waking finger alone.
+      saver.notifyActivity('touch');
+      async.elapse(const Duration(milliseconds: 100));
+      saver.notifyActivity('tap');
+      async.flushMicrotasks();
+      expect(saver.isActive, isTrue);
+      expect(saver.activeView.value, 'clock');
+      // The layout comes back and reports itself again.
+      saver.setNowPlayingShared(true);
+      async.flushMicrotasks();
+      expect(saver.nowPlayingShared, isTrue);
+
+      // A second touch opens the dashboard.
+      async.elapse(const Duration(seconds: 2));
+      saver.notifyActivity('pane_touch');
+      saver.notifyActivity('touch');
+      async.flushMicrotasks();
+      expect(saver.isActive, isFalse);
+      saver.dispose();
+    });
+  });
+
   test('the old switch on still lets touch open the dashboard', () {
     fakeAsync((async) {
       build({'ks.screensaver.screen_off_wake_to_screensaver': true});

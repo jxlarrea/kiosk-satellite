@@ -235,7 +235,7 @@ The Large card format adds touch-friendly previous, play/pause, and next control
 
 Card behavior:
 * **Paused State**: Remains on screen with a play button until the configured pause timeout expires.
-* **Dismissal**: On the standalone Now Playing view with media controls enabled, tap the close button or enable **Double tap to dismiss** and double tap the background. Turn on **Always show close button** to offer both. The physical back button also dismisses the view. When shown alongside a screensaver, tap the screensaver panel instead.
+* **Dismissal**: On the standalone Now Playing view with media controls enabled, tap the close button or enable **Double tap to dismiss** and double tap the background. Turn on **Always show close button** to offer both. The physical back button also dismisses the view. When shown alongside a screensaver, use the screensaver panel instead. It takes the same tap or double tap that closes that screensaver without Now Playing.
 * **Voice Interactions**: The card hides automatically during active voice interactions and reappears when the interaction ends.
 * **Track Transitions**: Retains the previous track artwork briefly during stream buffering to eliminate visual flickering.
 

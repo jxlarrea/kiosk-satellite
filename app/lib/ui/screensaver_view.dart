@@ -690,17 +690,19 @@ class _ScreensaverPlayerLayout extends StatelessWidget {
               'screensaver-pane',
               PhotoFillOverride(
                 fill: shared && photoFill != 'default' ? photoFill : null,
-                // Opaque when shared: a clear pane (the dashboard with
-                // Double tap to dismiss) still takes the touch that
-                // dismisses, as every shared pane does.
+                // Beside the player the pane reports every finger that
+                // lands on it, since the kiosk screen's report covers the
+                // player's buttons too. Translucent: the report is made
+                // over a clear pane as well (the dashboard with Double
+                // tap to dismiss) and the touch still reaches the card
+                // under it (issue #1446).
                 child: Listener(
                   behavior: shared
-                      ? HitTestBehavior.opaque
+                      ? HitTestBehavior.translucent
                       : HitTestBehavior.deferToChild,
                   onPointerDown: shared
-                      ? (_) => container.screensaver.notifyActivity(
-                          'screensaver_touch',
-                        )
+                      ? (_) =>
+                            container.screensaver.notifyActivity('pane_touch')
                       : null,
                   child: screensaver,
                 ),
@@ -4073,12 +4075,9 @@ setInterval(function () {
             // Listener reports the same taps, and under the double-tap
             // option (discussion #248) the manager must count each tap
             // once, so the bridge's reports carry their own name for it
-            // to drop while that gate holds.
-            widget.container.screensaver.notifyActivity(
-              widget.container.screensaver.nowPlayingShared
-                  ? 'screensaver_touch'
-                  : 'touch_page',
-            );
+            // to drop while that gate holds. Beside Now Playing the pane
+            // reports the tap and this echo is dropped.
+            widget.container.screensaver.notifyActivity('touch_page');
             return null;
           },
         );
