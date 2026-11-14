@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
     show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
@@ -515,7 +516,22 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
 
   void _logBrightnessScale(Map<Object?, Object?>? range) {
     if (range == null) return;
-    log.info(name, 'brightness scale ${range['min']}..${range['max']}');
+    log.info(name, brightnessScaleLine(range));
+  }
+
+  /// The scale in use, then the two things the device says about it: the
+  /// maximum its framework constant reports and the one Android converts
+  /// the setting with. A tablet whose constant says 4095 while Android
+  /// converts on 255 is at full brightness from a few percent of the
+  /// slider up, and these three numbers side by side are how that shows
+  /// in a log (issue #1430).
+  @visibleForTesting
+  static String brightnessScaleLine(Map<Object?, Object?> range) {
+    final reported = range['reportedMax'];
+    final framework = range['frameworkMax'];
+    return 'brightness scale ${range['min']}..${range['max']}'
+        '${reported == null ? '' : ', reported $reported'}'
+        '${framework == null ? '' : ', framework $framework'}';
   }
 
   // ── Adaptive brightness ────────────────────────────────────────────────

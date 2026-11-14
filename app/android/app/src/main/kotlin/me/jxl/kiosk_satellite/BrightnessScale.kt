@@ -60,5 +60,21 @@ internal data class BrightnessScale(val min: Int, val max: Int) {
             val floor = min?.takeIf { it in 0..(top / 4) } ?: 0
             return BrightnessScale(floor, top)
         }
+
+        private const val TIRAMISU = 33
+
+        /**
+         * Whether [max], the maximum a device reports, is one its own
+         * Android does not use. Xiaomi tablets on Android 13 and newer
+         * report 2047 or 4095 and convert the setting on 0..255 all the
+         * same: a Redmi Pad 2 was at full brightness from 2% of the slider
+         * up (issue #1430), and a Xiaomi Pad 5 had every write above 255
+         * put back to 255. A Redmi Pad SE reports 255, so this goes by the
+         * reported value and not by the model. Older Xiaomi builds, and
+         * the realme of issue #270, report a wide maximum and mean it.
+         */
+        fun overstates(max: Int?, manufacturer: String?, sdk: Int): Boolean =
+            max != null && max > default.max && sdk >= TIRAMISU &&
+                manufacturer.equals("Xiaomi", ignoreCase = true)
     }
 }

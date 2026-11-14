@@ -5,8 +5,11 @@ import android.content.Intent
 import android.content.res.Resources
 import android.database.ContentObserver
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -43,6 +46,56 @@ class BrightnessBridge(
     // if the panel ever shows us a value the scale calls impossible.
     private var scale = BrightnessScale.default
 
+    // What the device says about itself, kept beside the scale in use so a
+    // log or an analytics snapshot shows where the two part ways.
+    // [reportedMax] is the framework constant as read. [frameworkMax] is
+    // PowerManager.BRIGHTNESS_ON, the value Android's own conversion of the
+    // setting takes for full brightness: 255 in stock Android and wider on
+    // builds that widened the setting in the framework itself.
+    private var reportedMax: Int? = null
+    private var frameworkMax: Int? = null
+
+    // The reported maximum is one this Android does not use, see
+    // [BrightnessScale.overstates]. The scale stops at 255 and does not
+    // grow: the setting can still hold a value this app wrote with the
+    // wide scale before an update, and that is not the panel talking.
+    private var overstated = false
+
+    private val prefs =
+        context.getSharedPreferences("brightness_bridge", Context.MODE_PRIVATE)
+
+    // The highest value something other than this app left in the setting:
+    // Android's slider, its adaptive brightness, or its answer to a write.
+    // Those are in the units the device really uses, which nothing else
+    // here can vouch for. Kept across restarts and saved only when it grows.
+    private var seenMax = prefs.getInt(SEEN_MAX, -1)
+
+    // The values this app wrote in the last few seconds, to tell its own
+    // writes from everyone else's when the observer fires.
+    private val ownWrites = ArrayDeque<Pair<Int, Long>>()
+
+    private fun noteOwnWrite(raw: Int) {
+        ownWrites.addLast(raw to SystemClock.elapsedRealtime())
+        while (ownWrites.size > OWN_WRITES) ownWrites.removeFirst()
+    }
+
+    private fun isOwnWrite(raw: Int): Boolean {
+        val since = SystemClock.elapsedRealtime() - OWN_WRITE_MS
+        return ownWrites.any { (value, at) -> at >= since && abs(value - raw) <= 1 }
+    }
+
+    private fun noteSeen(raw: Int) {
+        if (raw <= seenMax || isOwnWrite(raw)) return
+        seenMax = raw
+        prefs.edit().putInt(SEEN_MAX, raw).apply()
+    }
+
+    private fun frameworkInt(name: String): Int? = try {
+        PowerManager::class.java.getField(name).getInt(null)
+    } catch (_: Throwable) {
+        null
+    }
+
     private fun configInt(name: String): Int? {
         val res = Resources.getSystem()
         val id = res.getIdentifier(name, "integer", "android")
@@ -54,17 +107,25 @@ class BrightnessBridge(
         }
     }
 
-    private fun pushScale() = channel.invokeMethod(
-        "brightnessRange", mapOf("min" to scale.min, "max" to scale.max),
+    private fun range(): Map<String, Any?> = mapOf(
+        "min" to scale.min,
+        "max" to scale.max,
+        "reportedMax" to reportedMax,
+        "frameworkMax" to frameworkMax,
+        "seenMax" to seenMax.takeIf { it >= 0 },
     )
+
+    private fun pushScale() = channel.invokeMethod("brightnessRange", range())
 
     private fun read(): Double = try {
         val raw = Settings.System.getInt(
             context.contentResolver, Settings.System.SCREEN_BRIGHTNESS,
         )
-        scale.widenedTo(raw)?.let {
-            scale = it
-            pushScale()
+        if (!overstated) {
+            scale.widenedTo(raw)?.let {
+                scale = it
+                pushScale()
+            }
         }
         scale.toLevel(raw)
     } catch (_: Exception) {
@@ -73,15 +134,28 @@ class BrightnessBridge(
 
     private val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean) {
+            try {
+                noteSeen(
+                    Settings.System.getInt(
+                        context.contentResolver, Settings.System.SCREEN_BRIGHTNESS,
+                    ),
+                )
+            } catch (_: Exception) {
+            }
             val level = read()
             if (level >= 0) channel.invokeMethod("brightnessChanged", level)
         }
     }
 
     init {
+        reportedMax = configInt("config_screenBrightnessSettingMaximum")
+        frameworkMax = frameworkInt("BRIGHTNESS_ON")
+        overstated = BrightnessScale.overstates(
+            reportedMax, Build.MANUFACTURER, Build.VERSION.SDK_INT,
+        )
         scale = BrightnessScale.of(
             configInt("config_screenBrightnessSettingMinimum"),
-            configInt("config_screenBrightnessSettingMaximum"),
+            if (overstated) BrightnessScale.default.max else reportedMax,
         )
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -90,8 +164,7 @@ class BrightnessBridge(
                     val level = (call.argument<Number>("level"))?.toDouble()
                     result.success(level != null && write(level))
                 }
-                "range" ->
-                    result.success(mapOf("min" to scale.min, "max" to scale.max))
+                "range" -> result.success(range())
                 "canWrite" -> result.success(canWrite())
                 "requestWrite" -> {
                     context.startActivity(
@@ -131,6 +204,7 @@ class BrightnessBridge(
                 Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
             )
             val target = scale.toRaw(level)
+            noteOwnWrite(target)
             Settings.System.putInt(
                 context.contentResolver,
                 Settings.System.SCREEN_BRIGHTNESS,
@@ -187,6 +261,7 @@ class BrightnessBridge(
                 Settings.System.SCREEN_BRIGHTNESS_MODE,
                 Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
             )
+            noteOwnWrite(target)
             Settings.System.putInt(
                 context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, target,
             )
@@ -199,6 +274,9 @@ class BrightnessBridge(
 
     private companion object {
         const val VERIFY_MS = 600L
+        const val SEEN_MAX = "seen_max"
+        const val OWN_WRITES = 8
+        const val OWN_WRITE_MS = 3000L
     }
 
     fun dispose() {

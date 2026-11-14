@@ -6,6 +6,10 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Changed
 - **Timers guide.** Timers have their own page in the documentation, with the Timers view, setting timers by voice and by hand, shared timers and the settings. **Manage timers using Voice Satellite** under **Settings > Timers** opens it. The Voice Satellite guide keeps a pointer to it.
+- **Brightness range in the log and in Basic analytics.** The `brightness scale` line in the app log now also shows the maximum Android reports and the maximum it converts the setting with. Basic analytics sends the same numbers and the highest brightness value written by something other than Kiosk Satellite. Together they show which tablet models report a range that Android does not use.
+
+### Fixed
+- **Full brightness from a few percent up on some Xiaomi tablets.** Some Xiaomi tablets on Android 13 or newer report a brightness range up to 2047 or 4095 while Android uses 0 to 255 on them. Any level above a few percent put the screen at full brightness, so the brightness slider, the screensaver brightness and adaptive brightness only worked at the very bottom of the range. The 0 to 255 range is now used on these tablets. Seen on a Redmi Pad 2 running Android 16.
 
 ## v2026.11.20 - 2026-11-14
 

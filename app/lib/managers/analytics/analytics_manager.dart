@@ -90,6 +90,7 @@ class AnalyticsManager extends Manager {
   /// the candidate window.
   static const _rememberedCrashes = 200;
   static const _background = MethodChannel('kiosk_satellite/background');
+  static const _brightness = MethodChannel('kiosk_satellite/brightness');
 
   final SettingsManager _settings;
   final String endpoint;
@@ -382,7 +383,30 @@ class AnalyticsManager extends Manager {
       // Home Assistant frontend meets on this device.
       'webview': d['webviewPackage'] ?? '',
       'webview_version': d['webviewVersion'] ?? '',
+      ...await _brightnessScale(),
     };
+  }
+
+  /// The screen brightness range: the one in use, the maximum Android's
+  /// constant reports, the one its own conversion takes for full
+  /// brightness and the highest value something other than this app wrote.
+  /// Some tablets report a maximum their Android does not use, and no
+  /// call says which ones, so the models where these disagree are found
+  /// here. Left out on a device that does not answer.
+  Future<Map<String, Object?>> _brightnessScale() async {
+    try {
+      final r = await _brightness.invokeMethod<Map<Object?, Object?>>('range');
+      if (r == null) return const {};
+      return {
+        'brightness_min': r['min'],
+        'brightness_max': r['max'],
+        'brightness_reported_max': r['reportedMax'],
+        'brightness_framework_max': r['frameworkMax'],
+        'brightness_seen_max': r['seenMax'],
+      }..removeWhere((_, v) => v == null);
+    } catch (_) {
+      return const {};
+    }
   }
 
   /// Usage: which features are on. Booleans, picks, counts and short

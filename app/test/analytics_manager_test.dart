@@ -42,11 +42,19 @@ void main() {
   };
 
   String crash = '';
+  // What the native brightness bridge answers; null is a device that does
+  // not answer.
+  Map<String, Object?>? brightnessRange;
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('kiosk_satellite/background'),
           (call) async => call.method == 'getLastCrash' ? crash : null,
+        );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('kiosk_satellite/brightness'),
+          (call) async => call.method == 'range' ? brightnessRange : null,
         );
   });
 
@@ -384,6 +392,34 @@ void main() {
       expect((await usage())['voice_satellite'], 'off');
     },
   );
+
+  test('basic carries the brightness range the device reports', () async {
+    // A Redmi Pad 2: the constant says 4095, Android converts on 255 and
+    // nothing has written the setting but this app yet.
+    brightnessRange = {
+      'min': 10,
+      'max': 255,
+      'reportedMax': 4095,
+      'frameworkMax': 255,
+      'seenMax': null,
+    };
+    await build({});
+    await pump();
+    final basic = bodyOf(sent.single)['basic'] as Map;
+    expect(basic['brightness_min'], 10);
+    expect(basic['brightness_max'], 255);
+    expect(basic['brightness_reported_max'], 4095);
+    expect(basic['brightness_framework_max'], 255);
+    expect(basic.containsKey('brightness_seen_max'), isFalse);
+  });
+
+  test('basic leaves the brightness range out when the device does not '
+      'answer', () async {
+    await build({});
+    await pump();
+    final basic = bodyOf(sent.single)['basic'] as Map;
+    expect(basic.keys.where((k) => '$k'.startsWith('brightness_')), isEmpty);
+  });
 
   test('the calendar reports counts and picks, never its calendars', () async {
     await build({
@@ -1323,5 +1359,8 @@ java.lang.IllegalStateException: WebView gone
     expect(sent, isEmpty);
   });
 
-  tearDown(() => crash = '');
+  tearDown(() {
+    crash = '';
+    brightnessRange = null;
+  });
 }

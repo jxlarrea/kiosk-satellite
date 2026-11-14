@@ -2,7 +2,9 @@ package me.jxl.kiosk_satellite
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class BrightnessScaleTest {
     @Test
@@ -79,5 +81,32 @@ class BrightnessScaleTest {
         )
         assertNull(BrightnessScale.default.widenedTo(255))
         assertNull(BrightnessScale(0, 2047).widenedTo(1024))
+    }
+
+    @Test
+    fun aXiaomiTabletOnAndroid13OrNewerOverstatesAWideMaximum() {
+        // Redmi Pad 2 on Android 16 (issue #1430) and Xiaomi Pad 5 on
+        // Android 13: the constant is wide and Android converts on 255.
+        assertTrue(BrightnessScale.overstates(4095, "Xiaomi", 36))
+        assertTrue(BrightnessScale.overstates(2047, "Xiaomi", 33))
+        assertTrue(BrightnessScale.overstates(4095, "xiaomi", 34))
+    }
+
+    @Test
+    fun aMaximumOf255IsNotOverstated() {
+        // Redmi Pad SE on Android 15 reports 255.
+        assertFalse(BrightnessScale.overstates(255, "Xiaomi", 35))
+        assertFalse(BrightnessScale.overstates(null, "Xiaomi", 35))
+    }
+
+    @Test
+    fun otherVendorsAndOlderXiaomiBuildsKeepTheirWideMaximum() {
+        // The realme of issue #270 means its 3604, and Xiaomi builds up to
+        // Android 12 widened the setting in the framework itself.
+        assertFalse(BrightnessScale.overstates(3604, "realme", 30))
+        assertFalse(BrightnessScale.overstates(3604, "realme", 36))
+        assertFalse(BrightnessScale.overstates(2047, "Xiaomi", 29))
+        assertFalse(BrightnessScale.overstates(2047, "Xiaomi", 32))
+        assertFalse(BrightnessScale.overstates(4095, null, 36))
     }
 }
