@@ -2531,6 +2531,17 @@ class _CategoryContentState extends State<_CategoryContent> {
           // The timers themselves (the full screen view, opened from
           // here), then the definitions, then Voice timers. Mirrored on the
           // remote's Timers page (timers.js).
+          // The untitled card first, as on the Alarms page.
+          ..._sectionedCards(
+            container,
+            [
+              for (final def in _inlineDefsFor('Timers'))
+                if (def.section == null) def,
+            ],
+            () => setState(() {}),
+            replace: _rowReplacements(container),
+            after: _rowExtras(container),
+          ),
           SectionHeading(l10n(context).voiceTimersViewTitle),
           SearchLandingTarget(
             id: 'x:timers_manage',
@@ -2538,7 +2549,10 @@ class _CategoryContentState extends State<_CategoryContent> {
           ),
           ..._sectionedCards(
             container,
-            _inlineDefsFor('Timers'),
+            [
+              for (final def in _inlineDefsFor('Timers'))
+                if (def.section != null) def,
+            ],
             () => setState(() {}),
             replace: _rowReplacements(container),
             after: _rowExtras(container),

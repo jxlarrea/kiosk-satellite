@@ -30,5 +30,7 @@
   "fleetTheKiosksPickedInShareWithTheTimerSound": "de kiosken gekozen in Delen met, het timergeluid",
   "settingTimersTtsEngineDescription": "De tekst-naar-spraakentiteit van Home Assistant die timers uitspreekt.",
   "settingTimersTtsLanguageDescription": "De taal waarin timers worden uitgesproken.",
-  "settingTimersTtsVoiceDescription": "De stem waarmee timers worden uitgesproken."
+  "settingTimersTtsVoiceDescription": "De stem waarmee timers worden uitgesproken.",
+  "settingTimersShowBeforeEndTitle": "Timerweergave tonen vlak voor het einde",
+  "settingTimersShowBeforeEndDescription": "Hoe lang voor het einde van een timer de timerweergave opent."
 }

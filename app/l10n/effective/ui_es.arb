@@ -56109,6 +56109,32 @@
       ]
     }
   },
+  "settingTimersShowBeforeEndTitle": "Mostrar la vista de temporizadores cerca del final",
+  "@settingTimersShowBeforeEndTitle": {
+    "context": "Settings > Timers",
+    "description": "Slider from 30 seconds to 5 minutes: how long before a timer ends the full screen timers view opens again.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersShowBeforeEndDescription": "Cuánto antes de que termine un temporizador se abre la vista de temporizadores.",
+  "@settingTimersShowBeforeEndDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that slider.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "voiceWakePage": "Palabra de activación",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

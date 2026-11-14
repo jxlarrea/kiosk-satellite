@@ -8510,6 +8510,37 @@ const voiceTimerNamedPhrase = SettingDef<String>(
   dependsOn: 'voice.timer_speak',
 );
 
+/// Show Timers view when near completion: how long before a running timer
+/// ends the full screen timers view comes back, for someone who closed it
+/// or moved to another view after the timer started. The pills never leave
+/// the screen, so the row goes with them on.
+const timersShowBeforeEnd = SettingDef<num>(
+  key: 'timers.show_before_end',
+  type: SettingType.number,
+  defaultValue: 60,
+  title: 'Show Timers view when near completion',
+  description: 'How long before a timer ends the Timers view opens.',
+  category: 'Timers',
+  min: 30,
+  max: 300,
+  step: 30,
+  unit: 's',
+  dependsOn: 'voice.timer_pills',
+  dependsOnValue: false,
+);
+
+/// The kiosk menu's Timers row: a link to Drawer menu items, which decides
+/// every row, as on the Alarms page.
+const timersMenu = SettingDef<bool>(
+  key: 'timers.menu',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show in the kiosk menu',
+  description: 'Choose the items the drawer menu shows and their order.',
+  category: 'Timers',
+  linksTo: 'ui.drawer_items',
+);
+
 /// The Home Assistant text to speech entity that speaks the timer phrase;
 /// empty picks the first one Home Assistant has. Picked from the list,
 /// never typed, like the Alarms engine.
@@ -14565,8 +14596,10 @@ const List<SettingDef<Object>> allSettings = [
   voiceAnswerLinger,
   voiceResultsLinger,
   voiceAnnouncementLinger,
-  // The Timers page, in its groups' order: Shared timers, When a timer
-  // ends, Pills.
+  // The Timers page, in its groups' order: the untitled card, Shared
+  // timers, When a timer ends, Text to Speech, Pills.
+  timersShowBeforeEnd,
+  timersMenu,
   voiceTimersShare,
   voiceTimersShareWith,
   voiceTimersReceive,

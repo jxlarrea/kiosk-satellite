@@ -215,6 +215,8 @@ To get the floating pills back, turn on **Show timers as pills** under **Setting
 
 | Group | Setting | What it does |
 |---|---|---|
+| | Show Timers view when near completion | From 30 seconds to 5 minutes, 1 minute by default. The timers view opens again once a running timer has that long left, if it was closed or another view was opened after the timer started. Each timer does it once. Not shown with **Show timers as pills** on. |
+| | Show in the kiosk menu | Opens **Drawer menu items**, where the **Timers** row is turned on or off. |
 | Timers | Manage timers | Opens the timers view. In the remote admin, the list of timers itself. |
 | Shared timers | Share timers, Share with, Show shared timers | Run this kiosk's timers on other kiosks too. See [Shared timers](#shared-timers). |
 | When a timer ends | Timer sound, Timer sound volume | The sound that repeats until the timer is dismissed, built in or from the sounds folder, and its volume under the assistant volume. |

@@ -15505,6 +15505,14 @@ class UiStringsUk extends UiStrings {
   String get settingTimersTtsVoiceDescription => 'Голос, який озвучує таймери.';
 
   @override
+  String get settingTimersShowBeforeEndTitle =>
+      'Показувати вигляд таймерів перед завершенням';
+
+  @override
+  String get settingTimersShowBeforeEndDescription =>
+      'За скільки до завершення таймера відкривається вигляд таймерів.';
+
+  @override
   String get voiceWakePage => 'Слово активації';
 
   @override

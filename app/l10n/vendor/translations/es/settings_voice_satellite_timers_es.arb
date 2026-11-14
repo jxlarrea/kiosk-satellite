@@ -30,5 +30,7 @@
   "fleetTheKiosksPickedInShareWithTheTimerSound": "los kioskos elegidos en Compartir con, el sonido del temporizador",
   "settingTimersTtsEngineDescription": "La entidad de texto a voz de Home Assistant que lee los temporizadores.",
   "settingTimersTtsLanguageDescription": "El idioma en el que se leen los temporizadores.",
-  "settingTimersTtsVoiceDescription": "La voz que lee los temporizadores."
+  "settingTimersTtsVoiceDescription": "La voz que lee los temporizadores.",
+  "settingTimersShowBeforeEndTitle": "Mostrar la vista de temporizadores cerca del final",
+  "settingTimersShowBeforeEndDescription": "Cuánto antes de que termine un temporizador se abre la vista de temporizadores."
 }

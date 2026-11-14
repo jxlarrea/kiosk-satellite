@@ -15638,6 +15638,14 @@ class UiStringsFr extends UiStrings {
       'La voix qui prononce les minuteurs.';
 
   @override
+  String get settingTimersShowBeforeEndTitle =>
+      'Afficher la vue des minuteurs peu avant la fin';
+
+  @override
+  String get settingTimersShowBeforeEndDescription =>
+      'Combien de temps avant la fin d\'un minuteur la vue des minuteurs s\'ouvre.';
+
+  @override
   String get voiceWakePage => 'Mot de réveil';
 
   @override

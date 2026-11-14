@@ -173,6 +173,7 @@ class VoiceTimerManager extends Manager {
   Set<String> _knownIds = const {};
   StreamSubscription<SharedTimerDismissRequested>? _dismissSub;
   StreamSubscription<ScreensaverStateChanged>? _saverSub;
+  StreamSubscription<SettingChanged>? _settingSub;
 
   /// The alert rings and is dismissed as usual but shows no pill (native
   /// Voice Satellite with Show finished timer pills off).
@@ -214,6 +215,14 @@ class VoiceTimerManager extends Manager {
           timers.value.isEmpty &&
           alerts.value.isEmpty) {
         visible.value = false;
+      }
+    });
+    // A new lead time, or the view taking over from the pills, counts for
+    // the timers already running.
+    _settingSub = bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.timersShowBeforeEnd.key ||
+          e.key == defs.voiceTimerPills.key) {
+        _scheduleNear();
       }
     });
     commands
@@ -691,6 +700,7 @@ class VoiceTimerManager extends Manager {
     };
     final fresh = ids.difference(_knownIds).isNotEmpty;
     _knownIds = ids;
+    _scheduleNear();
     if (!_fullScreen) return;
     if (fresh) {
       _closeTimer?.cancel();
@@ -712,6 +722,63 @@ class VoiceTimerManager extends Manager {
           visible.value = false;
         }
       });
+    }
+  }
+
+  /// The timers the view was already brought back for, so closing it again
+  /// keeps it closed for them.
+  final _nearShown = <String>{};
+  Timer? _nearTimer;
+
+  /// Off in widget tests that leave a timer running: the wait would outlive
+  /// the test.
+  @visibleForTesting
+  static bool nearEnabled = true;
+
+  /// Show Timers view when near completion: brings the full screen view
+  /// back once a running timer has that long left, for someone who closed
+  /// it or moved to another view after the timer started. Each timer does
+  /// it once. One that starts with less than that left opened the view by
+  /// starting.
+  void _scheduleNear([Set<String> reached = const {}]) {
+    _nearTimer?.cancel();
+    _nearTimer = null;
+    final settings = this.settings;
+    // The pills never leave the screen: nothing to bring back.
+    if (settings == null || !nearEnabled || !_fullScreen) return;
+    final lead = settings.get(defs.timersShowBeforeEnd).toInt() * 1000;
+    final now = _clock().millisecondsSinceEpoch;
+    _nearShown.removeWhere((id) => !timers.value.any((t) => t.id == id));
+    int? wait;
+    var next = <String>{};
+    var due = false;
+    for (final t in timers.value) {
+      if (!t.active || t.finished || _nearShown.contains(t.id)) continue;
+      final at = t.startedAt + t.totalSeconds * 1000 - lead;
+      // [reached]: the wait set for this timer ran out, whatever the clock
+      // reads to the millisecond.
+      if (at <= now || reached.contains(t.id)) {
+        _nearShown.add(t.id);
+        // Started inside the window: its start opened the view.
+        if (reached.contains(t.id) || now - t.startedAt > 1500) due = true;
+      } else if (wait == null || at - now < wait - 250) {
+        wait = at - now;
+        next = {t.id};
+      } else if (at - now <= wait + 250) {
+        next.add(t.id);
+      }
+    }
+    if (due && _fullScreen && !visible.value) {
+      _closeTimer?.cancel();
+      _autoOpened = true;
+      visible.value = true;
+    }
+    if (wait != null) {
+      final ids = next;
+      _nearTimer = Timer(
+        Duration(milliseconds: wait + 20),
+        () => _scheduleNear(ids),
+      );
     }
   }
 
@@ -790,6 +857,7 @@ class VoiceTimerManager extends Manager {
   Future<void> dispose() async {
     _ringStart?.cancel();
     _closeTimer?.cancel();
+    _nearTimer?.cancel();
     _ring?.cancel();
     _ring = null;
     _stopSound();
@@ -801,6 +869,7 @@ class VoiceTimerManager extends Manager {
     await _clearSub?.cancel();
     await _dismissSub?.cancel();
     await _saverSub?.cancel();
+    await _settingSub?.cancel();
     timers.dispose();
     error.dispose();
   }

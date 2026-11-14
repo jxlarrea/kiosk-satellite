@@ -56109,6 +56109,32 @@
       ]
     }
   },
+  "settingTimersShowBeforeEndTitle": "Afficher la vue des minuteurs peu avant la fin",
+  "@settingTimersShowBeforeEndTitle": {
+    "context": "Settings > Timers",
+    "description": "Slider from 30 seconds to 5 minutes: how long before a timer ends the full screen timers view opens again.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersShowBeforeEndDescription": "Combien de temps avant la fin d'un minuteur la vue des minuteurs s'ouvre.",
+  "@settingTimersShowBeforeEndDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that slider.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "voiceWakePage": "Mot de réveil",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

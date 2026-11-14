@@ -30,5 +30,7 @@
   "fleetTheKiosksPickedInShareWithTheTimerSound": "les kiosques choisis dans Partager avec, le son du minuteur",
   "settingTimersTtsEngineDescription": "L'entité de synthèse vocale de Home Assistant qui prononce les minuteurs.",
   "settingTimersTtsLanguageDescription": "La langue dans laquelle les minuteurs sont prononcés.",
-  "settingTimersTtsVoiceDescription": "La voix qui prononce les minuteurs."
+  "settingTimersTtsVoiceDescription": "La voix qui prononce les minuteurs.",
+  "settingTimersShowBeforeEndTitle": "Afficher la vue des minuteurs peu avant la fin",
+  "settingTimersShowBeforeEndDescription": "Combien de temps avant la fin d'un minuteur la vue des minuteurs s'ouvre."
 }

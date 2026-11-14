@@ -18,6 +18,8 @@ void main() {
   late StreamSubscription<VoiceTimerAction> subscription;
 
   setUp(() async {
+    // Only the tests about the view coming back near the end wait for it.
+    VoiceTimerManager.nearEnabled = false;
     SharedPreferences.setMockInitialValues({});
     c = AppContainer();
     actions = [];
@@ -42,6 +44,7 @@ void main() {
   });
 
   tearDown(() async {
+    VoiceTimerManager.nearEnabled = true;
     await subscription.cancel();
     await c.voiceTimers.dispose();
     await c.settings.dispose();
@@ -105,6 +108,48 @@ void main() {
       closeTo(.25, .001),
     );
     expect(t.progress(at.add(const Duration(hours: 1))), 0);
+  });
+
+  testWidgets('a timer near its end brings the view back once', (tester) async {
+    VoiceTimerManager.nearEnabled = true;
+    addTearDown(() => VoiceTimerManager.nearEnabled = true);
+    await c.settings.set(defs.timersShowBeforeEnd, 30);
+    await tester.pumpWidget(app());
+    await snapshot([timer('one', 45)]);
+    await tester.pump();
+    expect(c.voiceTimers.visible.value, isTrue);
+    // Closed by hand with 45 seconds to go.
+    c.voiceTimers.visible.value = false;
+    await tester.pump(const Duration(seconds: 10));
+    expect(c.voiceTimers.visible.value, isFalse);
+    // 30 seconds before the end it is back.
+    await tester.pump(const Duration(seconds: 6));
+    expect(c.voiceTimers.visible.value, isTrue);
+    // Closed again, it stays closed for this timer.
+    c.voiceTimers.visible.value = false;
+    await snapshot([timer('one', 28)]);
+    await tester.pump(const Duration(seconds: 5));
+    expect(c.voiceTimers.visible.value, isFalse);
+    await tester.pumpWidget(const SizedBox());
+    await snapshot([]);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('with the pills on a timer near its end opens nothing', (
+    tester,
+  ) async {
+    VoiceTimerManager.nearEnabled = true;
+    addTearDown(() => VoiceTimerManager.nearEnabled = true);
+    await c.settings.set(defs.voiceTimerPills, true);
+    await c.settings.set(defs.timersShowBeforeEnd, 30);
+    expect(c.settings.visible(defs.timersShowBeforeEnd), isFalse);
+    await tester.pumpWidget(app());
+    await snapshot([timer('one', 40)]);
+    await tester.pump(const Duration(seconds: 15));
+    expect(c.voiceTimers.visible.value, isFalse);
+    await tester.pumpWidget(const SizedBox());
+    await snapshot([]);
+    await tester.pump(const Duration(seconds: 3));
   });
 
   testWidgets('Set a timer starts one through Home Assistant', (tester) async {

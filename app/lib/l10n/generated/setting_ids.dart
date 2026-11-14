@@ -2716,4 +2716,12 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingAlarmsTtsVoiceTitle",
     "description": "settingTimersTtsVoiceDescription",
   },
+  "timers.show_before_end": {
+    "title": "settingTimersShowBeforeEndTitle",
+    "description": "settingTimersShowBeforeEndDescription",
+  },
+  "timers.menu": {
+    "title": "settingShowInKioskMenuTitle",
+    "description": "settingUiDrawerItemsDescription",
+  },
 };

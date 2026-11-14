@@ -15666,6 +15666,14 @@ class UiStringsDe extends UiStrings {
       'Die Stimme, die die Timer vorliest.';
 
   @override
+  String get settingTimersShowBeforeEndTitle =>
+      'Timer-Ansicht kurz vor Ablauf anzeigen';
+
+  @override
+  String get settingTimersShowBeforeEndDescription =>
+      'Wie lange vor dem Ablauf eines Timers die Timer-Ansicht geöffnet wird.';
+
+  @override
   String get voiceWakePage => 'Aktivierungswort';
 
   @override

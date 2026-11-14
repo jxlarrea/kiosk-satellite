@@ -2714,5 +2714,13 @@
   "timers.tts_voice": {
     "title": "settingAlarmsTtsVoiceTitle",
     "description": "settingTimersTtsVoiceDescription"
+  },
+  "timers.show_before_end": {
+    "title": "settingTimersShowBeforeEndTitle",
+    "description": "settingTimersShowBeforeEndDescription"
+  },
+  "timers.menu": {
+    "title": "settingShowInKioskMenuTitle",
+    "description": "settingUiDrawerItemsDescription"
   }
 }

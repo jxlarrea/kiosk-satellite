@@ -15523,6 +15523,14 @@ class UiStringsNl extends UiStrings {
       'De stem waarmee timers worden uitgesproken.';
 
   @override
+  String get settingTimersShowBeforeEndTitle =>
+      'Timerweergave tonen vlak voor het einde';
+
+  @override
+  String get settingTimersShowBeforeEndDescription =>
+      'Hoe lang voor het einde van een timer de timerweergave opent.';
+
+  @override
   String get voiceWakePage => 'Wekwoorden';
 
   @override

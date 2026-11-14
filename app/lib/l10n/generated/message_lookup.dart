@@ -5290,6 +5290,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingTimersTtsLanguageDescription,
       'settingTimersTtsVoiceDescription' =>
         strings.settingTimersTtsVoiceDescription,
+      'settingTimersShowBeforeEndTitle' =>
+        strings.settingTimersShowBeforeEndTitle,
+      'settingTimersShowBeforeEndDescription' =>
+        strings.settingTimersShowBeforeEndDescription,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,

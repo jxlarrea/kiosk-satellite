@@ -14549,6 +14549,12 @@ class UiStringsZh extends UiStrings {
   String get settingTimersTtsVoiceDescription => '用于播报计时器的声音。';
 
   @override
+  String get settingTimersShowBeforeEndTitle => '计时器即将结束时显示计时器视图';
+
+  @override
+  String get settingTimersShowBeforeEndDescription => '计时器结束前多久打开计时器视图。';
+
+  @override
   String get voiceWakePage => '唤醒词';
 
   @override
@@ -30255,6 +30261,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingTimersTtsVoiceDescription => '用于播报计时器的声音。';
+
+  @override
+  String get settingTimersShowBeforeEndTitle => '计时器即将结束时显示计时器视图';
+
+  @override
+  String get settingTimersShowBeforeEndDescription => '计时器结束前多久打开计时器视图。';
 
   @override
   String get voiceWakePage => '唤醒词';

@@ -15442,6 +15442,14 @@ class UiStringsRu extends UiStrings {
       'Голос, которым произносятся таймеры.';
 
   @override
+  String get settingTimersShowBeforeEndTitle =>
+      'Показывать вид таймеров перед завершением';
+
+  @override
+  String get settingTimersShowBeforeEndDescription =>
+      'За сколько до завершения таймера открывается вид таймеров.';
+
+  @override
   String get voiceWakePage => 'Слово пробуждения';
 
   @override

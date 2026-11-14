@@ -292,10 +292,12 @@ function timerCards(tab) {
   } else {
     add.appendChild(hintRow(t('voiceTimerStartUnavailable')));
   }
-  // After the fleet banner when a leader pushes this category, so the
-  // banner keeps the top of the tab.
+  // Under the untitled card, the device's order, or after the fleet banner
+  // when a leader pushes this category, so the banner keeps the top of the
+  // tab.
+  const top = tab.querySelector('[data-key="timers.menu"], [data-key="timers.show_before_end"]')?.closest('.card');
   const banners = tab.querySelectorAll(':scope > .fleet-banner');
-  const after = banners.length ? banners[banners.length - 1] : null;
+  const after = top || (banners.length ? banners[banners.length - 1] : null);
   if (after) after.after(heading, card, add); else tab.prepend(heading, card, add);
   // The times count down between the device's updates.
   clearInterval(ticker);

@@ -59,6 +59,7 @@ const drawerItemLinks = {
   'lockdown.menu': 'lockdown',
   'intercom.menu': 'intercom',
   'alarms.menu': 'alarms',
+  'timers.menu': 'timers',
   'calendar.menu': 'calendar',
   'library.menu': 'music_library',
   'sendspin.ma_shortcut': 'music_assistant',

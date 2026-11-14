@@ -15344,6 +15344,14 @@ class UiStringsEn extends UiStrings {
       'The voice that speaks timers.';
 
   @override
+  String get settingTimersShowBeforeEndTitle =>
+      'Show Timers view when near completion';
+
+  @override
+  String get settingTimersShowBeforeEndDescription =>
+      'How long before a timer ends the Timers view opens.';
+
+  @override
   String get voiceWakePage => 'Wake Word';
 
   @override

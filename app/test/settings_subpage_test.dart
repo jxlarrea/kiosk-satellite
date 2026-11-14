@@ -57,8 +57,21 @@ void main() {
   test('the Timers groups run Shared timers, When a timer ends, Text to '
       'Speech, Pills', () {
     final sections = <String>[];
+    // The untitled card on top: the near completion slider, then the link
+    // to Drawer menu items.
+    expect(
+      [
+        for (final d in defs.allSettings)
+          if (d.category == 'Timers' && d.section == null && !d.hidden) d.key,
+      ],
+      [defs.timersShowBeforeEnd.key, defs.timersMenu.key],
+    );
+    expect(defs.timersShowBeforeEnd.min, 30);
+    expect(defs.timersShowBeforeEnd.max, 300);
+    expect(defs.timersShowBeforeEnd.step, 30);
+    expect(defs.timersMenu.linksTo, defs.uiDrawerItems.key);
     for (final d in defs.allSettings) {
-      if (d.hidden || d.category != 'Timers') continue;
+      if (d.hidden || d.category != 'Timers' || d.section == null) continue;
       if (sections.isEmpty || sections.last != d.section) {
         sections.add(d.section!);
       }

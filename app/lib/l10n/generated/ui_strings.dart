@@ -26807,6 +26807,18 @@ abstract class UiStrings {
   /// **'The voice that speaks timers.'**
   String get settingTimersTtsVoiceDescription;
 
+  /// Slider from 30 seconds to 5 minutes: how long before a timer ends the full screen timers view opens again.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Timers view when near completion'**
+  String get settingTimersShowBeforeEndTitle;
+
+  /// Description of that slider.
+  ///
+  /// In en, this message translates to:
+  /// **'How long before a timer ends the Timers view opens.'**
+  String get settingTimersShowBeforeEndDescription;
+
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///
   /// In en, this message translates to:

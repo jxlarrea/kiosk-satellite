@@ -15646,6 +15646,14 @@ class UiStringsEs extends UiStrings {
       'La voz que lee los temporizadores.';
 
   @override
+  String get settingTimersShowBeforeEndTitle =>
+      'Mostrar la vista de temporizadores cerca del final';
+
+  @override
+  String get settingTimersShowBeforeEndDescription =>
+      'Cuánto antes de que termine un temporizador se abre la vista de temporizadores.';
+
+  @override
   String get voiceWakePage => 'Palabra de activación';
 
   @override
