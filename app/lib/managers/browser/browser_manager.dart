@@ -94,7 +94,10 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// The WebView left on purpose, [pageNeeded] gone false. Nothing reaches
   /// the page anymore, so every call into it returns early.
   void detach() {
-    if (_controller == null) return;
+    // Also with no controller yet: a WebView built a moment ago, before
+    // the page was dropped again, attaches or loads late, and those
+    // calls are turned away below.
+    final had = _controller != null || _currentUrl.isNotEmpty;
     _controller = null;
     _webViewGeneration++;
     _freezeDelay?.cancel();
@@ -103,6 +106,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     _frozen = false;
     _wantedFrozen = false;
     _currentUrl = '';
+    if (!had) return;
     bus.publish(const UrlChanged(url: ''));
     log.info(name, 'no dashboard view in use: the dashboard page is closed');
   }
@@ -325,6 +329,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
       // Dim, the page IS the display, so it is neither frozen nor stripped
       // of its camera streams. So is Dim's own beside a shared player.
       final covers = e.view != null && e.view != 'dashboard' && e.view != 'dim';
+      _saverShowsPage = e.view == 'dashboard';
       _screensaverHasOverlay = covers;
       _dashboardCovered = covers && !_screensaverIsOwnOrigin(e.view);
       _scheduleFreezeSync();
@@ -678,11 +683,28 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
         Command(
           name: 'getLocalStorage',
           description:
-              "The page's localStorage as a JSON string (current origin).",
+              "The page's localStorage as a JSON string (current origin), "
+              'read from storage when no page is loaded.',
           handler: (_) async {
             final controller = _controller;
             if (controller == null) {
-              return const CommandResult.fail('no page loaded');
+              if (pageNeeded.value) {
+                return const CommandResult.fail('no page loaded');
+              }
+              // No page at all: the storage is still there, read through a
+              // page of its own. An import waiting for a page goes in
+              // first, so it is part of what is read.
+              final pending = _settings.internal('pending_local_storage');
+              final stored = await _runOnPageOrigin(
+                _storageJs(pending.isEmpty ? null : pending),
+              );
+              if (stored is! String) {
+                return const CommandResult.fail('localStorage unavailable');
+              }
+              if (pending.isNotEmpty) {
+                await _settings.setInternal('pending_local_storage', '');
+              }
+              return CommandResult.ok(stored);
             }
             final result = await controller.evaluateJavascript(
               source: 'JSON.stringify(localStorage)',
@@ -698,8 +720,9 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
         Command(
           name: 'setLocalStorage',
           description:
-              'Write entries into the page\'s localStorage (applied on the '
-              'next page load if none is up yet), then reload.',
+              'Write entries into the page\'s localStorage, then reload. '
+              'Applied on the next page load while one is coming, and '
+              'straight into storage when no page is loaded.',
           params: const {'data': 'JSON object string of key/value pairs'},
           handler: (p) async {
             final data = p['data'];
@@ -707,7 +730,20 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
               return const CommandResult.fail('data must be a JSON string');
             }
             await _settings.setInternal('pending_local_storage', data);
-            if (_currentUrl.isNotEmpty) await _applyPendingLocalStorage();
+            if (_currentUrl.isNotEmpty) {
+              await _applyPendingLocalStorage();
+            } else if (!pageNeeded.value) {
+              // No page to wait for: straight into the page's storage,
+              // where a page finds it whenever one loads.
+              final stored = await _runOnPageOrigin(_storageJs(data));
+              if (stored is String) {
+                await _settings.setInternal('pending_local_storage', '');
+                log.info(
+                  name,
+                  "imported localStorage written to the page's storage",
+                );
+              }
+            }
             return const CommandResult.ok();
           },
         ),
@@ -717,6 +753,10 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
           name: 'reload',
           description: 'Reload the current page',
           handler: (_) async {
+            if (!pageNeeded.value) {
+              log.info(name, 'not reloading: no dashboard view in use');
+              return const CommandResult.fail('no dashboard page');
+            }
             // A custom page reloads its edited files too, not the copies
             // Home Assistant's service worker kept.
             if (isCustomPage(_currentUrl)) await _dropCustomPageCopies();
@@ -962,6 +1002,8 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   }
 
   void attach(InAppWebViewController controller, {bool freshLoads = false}) {
+    // A WebView whose widget left before it was created.
+    if (!pageNeeded.value) return;
     _freshLoads = freshLoads;
     // The WebView took its own cache mode at creation; the service worker's
     // follows it here (no view matches yet, so only that part applies).
@@ -1191,7 +1233,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
       ((_screensaverActive &&
               _dashboardCovered &&
               _settings.get(defs.freezeOnScreensaver)) ||
-          _coveredBy.isNotEmpty);
+          _coveredBy.any(_covers));
 
   /// An opaque full-screen surface reporting that it covers the dashboard
   /// (or stopped covering it). Freezing waits _scheduleFreezeSync's beat so
@@ -1199,6 +1241,90 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// blanking the dashboard while it still shows is a visible black flash);
   /// thawing applies immediately, on the same synchronous edge that starts
   /// the reveal, so the page is compositing again within a frame.
+  /// The Home Assistant Dashboard screensaver is up: it shows the page,
+  /// and the full-screen pages step aside under it (kiosk_screen.dart).
+  bool _saverShowsPage = false;
+
+  /// The pages the kiosk screen takes offstage under the Home Assistant
+  /// Dashboard screensaver. Their covers do not hold while it shows.
+  static const _pagesUnderDashboardSaver = {
+    'calendar',
+    'music library',
+    'compass menu',
+  };
+
+  bool _covers(String reason) =>
+      !_saverShowsPage || !_pagesUnderDashboardSaver.contains(reason);
+
+  /// The origin the dashboard page runs on, the secure context proxy's
+  /// while that is on: its localStorage is the page's.
+  String? get _pageOrigin {
+    if (startUrl.isEmpty) return null;
+    final uri = Uri.tryParse(urlMapper?.call(startUrl) ?? startUrl);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) return null;
+    return uri.origin;
+  }
+
+  /// Script that writes the JSON object [write] into localStorage, when
+  /// given, and evaluates to all of localStorage as JSON.
+  static String _storageJs(String? write) => write == null
+      ? 'JSON.stringify(localStorage)'
+      : '''
+(function () {
+  try {
+    var entries = JSON.parse(${jsonEncode(write)});
+    Object.keys(entries).forEach(function (k) {
+      localStorage.setItem(k, entries[k]);
+    });
+  } catch (e) {}
+  return JSON.stringify(localStorage);
+})()''';
+
+  /// Stands in for the page of its own in tests: (origin, script) to the
+  /// script's result.
+  @visibleForTesting
+  Future<Object?> Function(String origin, String js)? pageOriginOverride;
+
+  /// Runs [js] in an empty page of its own on the dashboard page's origin
+  /// and returns what it evaluates to, or null when it could not run. The
+  /// page's localStorage stays in the WebView's storage while no page is
+  /// loaded (a Compass layout without a dashboard view), and this is how
+  /// it is read and written then. The page lives for the one script.
+  Future<Object?> _runOnPageOrigin(String js) async {
+    final origin = _pageOrigin;
+    if (origin == null) return null;
+    final override = pageOriginOverride;
+    if (override != null) return override(origin, js);
+    final loaded = Completer<InAppWebViewController>();
+    final headless = HeadlessInAppWebView(
+      initialData: InAppWebViewInitialData(
+        data: '<!doctype html><title></title>',
+        baseUrl: WebUri('$origin/'),
+      ),
+      initialSettings: InAppWebViewSettings(
+        javaScriptEnabled: true,
+        domStorageEnabled: true,
+      ),
+      onLoadStop: (controller, _) {
+        if (!loaded.isCompleted) loaded.complete(controller);
+      },
+    );
+    try {
+      await headless.run();
+      final controller = await loaded.future.timeout(
+        const Duration(seconds: 10),
+      );
+      return await controller
+          .evaluateJavascript(source: js)
+          .timeout(javaScriptTimeout);
+    } catch (e) {
+      log.warn(name, "the page's storage could not be reached: $e");
+      return null;
+    } finally {
+      await headless.dispose();
+    }
+  }
+
   void setCovered(String reason, {required bool covered}) {
     final changed = covered
         ? _coveredBy.add(reason)
@@ -1440,6 +1566,8 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// which fires on SPA navigations (pushState) that never reach
   /// onLoadStop. Deduped: a pushState with an unchanged URL says nothing.
   void onUrlChanged(String url) {
+    // Late news from a page already closed (see [detach]).
+    if (!pageNeeded.value) return;
     if (url == _currentUrl) return;
     _currentUrl = url;
     bus.publish(UrlChanged(url: url));
@@ -1447,6 +1575,8 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
 
   /// Called by the UI layer from the WebView's onLoadStop.
   void onPageLoaded(String url) {
+    // Late news from a page already closed (see [detach]).
+    if (!pageNeeded.value) return;
     _lastLoadHadHttpError = _httpErrorThisLoad;
     // The error page Chromium commits for a failed load reaches here too,
     // announced by the onReceivedError that always precedes it — so a load

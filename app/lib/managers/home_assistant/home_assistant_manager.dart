@@ -488,6 +488,15 @@ class HomeAssistantManager extends Manager {
             if (!configured) {
               return const CommandResult.fail('Home Assistant not configured');
             }
+            // No page to show the view in: the kiosk is left as it is,
+            // screensaver and all.
+            if (!pageInUse()) {
+              log.info(
+                name,
+                'not navigating to $path: no dashboard view in use',
+              );
+              return const CommandResult.fail('no dashboard page');
+            }
             await commands.execute('stopScreensaver', const {});
             await commands.execute('hideCameraView', const {});
             // A commanded view should not instantly rotate away: give it the
@@ -713,7 +722,7 @@ class HomeAssistantManager extends Manager {
                 'JSON.stringify(window.__vsExternalSettings '
                 '? window.__vsExternalSettings.apply(${jsonEncode(settings)}) '
                 ': null)';
-            final result = await commands.execute('evalJs', {'code': code});
+            final result = await _evalJs({'code': code});
             final data = result.ok ? result.data : null;
             if (data is String && data.isNotEmpty && data != 'null') {
               return CommandResult.ok(jsonDecode(data));
@@ -736,7 +745,7 @@ class HomeAssistantManager extends Manager {
               'One evaluation in the page, where vsControls also walks the '
               'Home Assistant registry.',
           handler: (_) async {
-            final result = await commands.execute('evalJs', {
+            final result = await _evalJs({
               'code':
                   'JSON.stringify(window.__vsExternalSettings '
                   '? window.__vsExternalSettings.get() : null)',
@@ -776,7 +785,7 @@ class HomeAssistantManager extends Manager {
             final code =
                 'JSON.stringify(window.__vsExternalSettings '
                 '? window.__vsExternalSettings.$fn() : null)';
-            final result = await commands.execute('evalJs', {'code': code});
+            final result = await _evalJs({'code': code});
             final data = result.ok ? result.data : null;
             if (data is String && data.isNotEmpty && data != 'null') {
               return CommandResult.ok(jsonDecode(data));
@@ -809,7 +818,7 @@ class HomeAssistantManager extends Manager {
               // Clearing must hit both halves of the page binding: the
               // dedicated key and the panel-config copy resolveEntity
               // falls back to, which would otherwise revive it.
-              await commands.execute('evalJs', {
+              await _evalJs({
                 'code': '''
 (function () {
   localStorage.removeItem('vs-satellite-entity');
@@ -824,7 +833,7 @@ class HomeAssistantManager extends Manager {
 })()''',
               });
             } else {
-              await commands.execute('evalJs', {
+              await _evalJs({
                 'code':
                     "localStorage.setItem('vs-satellite-entity', "
                     '${jsonEncode(entity)})',
@@ -1144,6 +1153,9 @@ class HomeAssistantManager extends Manager {
   /// external page shows in the overlay WebView instead, leaving the
   /// dashboard untouched below.
   Future<void> _rotationTick() async {
+    // No page to rotate (a Compass layout without a dashboard view), and
+    // its external pages would cover the views.
+    if (!pageInUse()) return;
     // Nobody is looking: the screensaver is up, or the app is not on
     // screen. Skip WITHOUT advancing, so the ring freezes in place (and a
     // strategy view's hard load never churns the page while it is hidden).
@@ -1221,7 +1233,8 @@ class HomeAssistantManager extends Manager {
   void _configureReturnHome() {
     _returnHomeTimer?.cancel();
     _returnHomeTimer = null;
-    if (!_returnHomeConfigured) return;
+    // No page, nothing to return.
+    if (!_returnHomeConfigured || !pageInUse()) return;
     if (_screensaverActive ||
         _voiceInteracting ||
         _cameraViewActive ||
@@ -1416,7 +1429,7 @@ class HomeAssistantManager extends Manager {
   Future<String?> _currentViewPath() async {
     if (!configured || baseUrl.isEmpty) return null;
     final base = await _pageBase();
-    final where = await commands.execute('evalJs', {
+    final where = await _evalJs({
       'code':
           '''
 (function () {
@@ -1474,7 +1487,7 @@ class HomeAssistantManager extends Manager {
         (_returnHomeConfigured && !_holdActive ? _returnHomePath() : null) ??
         previous;
     final base = await _pageBase();
-    final still = await commands.execute('evalJs', {
+    final still = await _evalJs({
       'code':
           '''
 (function () {
@@ -1505,6 +1518,13 @@ class HomeAssistantManager extends Manager {
   /// Whether the dashboard page exists (BrowserManager.pageNeeded). Without
   /// it no navigation is tried. Wired at the composition root.
   bool Function() pageInUse = () => true;
+
+  /// evalJs in the dashboard page, or a failure without running anything
+  /// while there is no page.
+  Future<CommandResult> _evalJs(Map<String, Object?> params) async =>
+      pageInUse()
+      ? commands.execute('evalJs', params)
+      : const CommandResult.fail('no dashboard page');
 
   /// Navigate the on-screen HA frontend to [viewPath] ("url_path" or
   /// "url_path/view-route"): a soft SPA navigation so nothing reloads,
@@ -1541,7 +1561,7 @@ class HomeAssistantManager extends Manager {
     // origin, not baseUrl — guard against what is actually on screen.
     final effectiveBase = await _pageBase();
     if (crossfade) {
-      final fade = await commands.execute('evalJs', {
+      final fade = await _evalJs({
         'code': rotationCrossfadeJs(
           base: effectiveBase,
           viewPath: viewPath,
@@ -1587,7 +1607,7 @@ class HomeAssistantManager extends Manager {
   return 'navigated';
 })();
 ''';
-    final nav = await commands.execute('evalJs', {'code': js});
+    final nav = await _evalJs({'code': js});
     await commands.execute('hideOverlayPage', const {});
     final outcome = nav.ok ? '${nav.data}' : 'failed';
     if (outcome == 'load') {
@@ -1615,7 +1635,7 @@ class HomeAssistantManager extends Manager {
   /// Anything else is a full load of the page.
   Future<String> _navigateToCustomPage(String viewPath) async {
     final base = await _pageBase();
-    final hop = await commands.execute('evalJs', {
+    final hop = await _evalJs({
       'code':
           '''
 (function () {
@@ -1651,7 +1671,7 @@ class HomeAssistantManager extends Manager {
   Future<void> _selfHeal(String viewPath, int seq) async {
     await Future<void>.delayed(const Duration(milliseconds: 2500));
     if (_navSeq != seq) return;
-    final check = await commands.execute('evalJs', {
+    final check = await _evalJs({
       'code':
           '''
 (function () {
@@ -1724,7 +1744,7 @@ class HomeAssistantManager extends Manager {
       }
       if (!force && pinned == dashboardDark.value) return;
       dashboardDark.value = pinned;
-      await commands.execute('evalJs', {'code': _themeJs(pinned)});
+      await _evalJs({'code': _themeJs(pinned)});
       return;
     }
     if (_settings.get(defs.themeAuto)) {
@@ -1743,7 +1763,7 @@ class HomeAssistantManager extends Manager {
       if (!matchApp) {
         if (!force && dark == dashboardDark.value) return;
         dashboardDark.value = dark;
-        await commands.execute('evalJs', {'code': _themeJs(dark)});
+        await _evalJs({'code': _themeJs(dark)});
         return;
       }
     }
@@ -1754,7 +1774,7 @@ class HomeAssistantManager extends Manager {
       final dark = _effectiveAppDark();
       if (!force && dark == dashboardDark.value) return;
       dashboardDark.value = dark;
-      await commands.execute('evalJs', {'code': _themeJs(dark)});
+      await _evalJs({'code': _themeJs(dark)});
       return;
     }
     dashboardDark.value = null;
@@ -2359,7 +2379,7 @@ class HomeAssistantManager extends Manager {
   /// Home Assistant's language, from the page; English when it has none.
   Future<String> _pageLanguage() async {
     try {
-      final res = await commands.execute('evalJs', {
+      final res = await _evalJs({
         'code':
             "(function () { var el = document.querySelector('home-assistant');"
             " return (el && el.hass && el.hass.language) || 'en'; })()",
@@ -2438,7 +2458,7 @@ class HomeAssistantManager extends Manager {
 })()
 ''';
     try {
-      final res = await commands.execute('evalJs', {'code': js});
+      final res = await _evalJs({'code': js});
       if (!res.ok) return null;
       final decoded = jsonDecode(res.data as String);
       if (decoded is! Map || decoded['entities'] is! List) return null;
@@ -2708,7 +2728,7 @@ class HomeAssistantManager extends Manager {
     // The page's own binding wins (localStorage, changeable in the Voice
     // Satellite panel); the wizard's stored pick is the fallback.
     var satellite = '';
-    final stored = await commands.execute('evalJs', {
+    final stored = await _evalJs({
       'code': "localStorage.getItem('vs-satellite-entity')",
     });
     final storedData = stored.ok ? stored.data : null;
@@ -2860,7 +2880,7 @@ class HomeAssistantManager extends Manager {
     // no engine at all is a page that is not the dashboard.
     Object? browser;
     var browserState = 'unavailable';
-    final hook = await commands.execute('evalJs', {
+    final hook = await _evalJs({
       'code':
           'JSON.stringify(window.__vsExternalSettings '
           '? {state: "ok", data: window.__vsExternalSettings.get()} '
@@ -3093,7 +3113,7 @@ class HomeAssistantManager extends Manager {
 })()
 ''';
     try {
-      final res = await commands.execute('evalJs', {'code': js});
+      final res = await _evalJs({'code': js});
       if (!res.ok) return null;
       final decoded = jsonDecode(res.data as String);
       if (decoded is! List || decoded.isEmpty) return null;

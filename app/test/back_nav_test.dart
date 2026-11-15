@@ -10,6 +10,7 @@ void main() {
     bool armed = false,
     bool launcherVisible = false,
     bool overlayUp = false,
+    bool overlayOnTop = false,
     bool cameraViewUp = false,
     bool cameraFocused = false,
     bool screensaverActive = false,
@@ -21,6 +22,7 @@ void main() {
     armed: armed,
     launcherVisible: launcherVisible,
     overlayUp: overlayUp,
+    overlayOnTop: overlayOnTop,
     cameraViewUp: cameraViewUp,
     cameraFocused: cameraFocused,
     screensaverActive: screensaverActive,
@@ -30,6 +32,19 @@ void main() {
   );
 
   group('decideBack', () {
+    test('a page floating over the pages goes first, one under them last', () {
+      // Compass: the page opened by open_url floats over the alarm list.
+      expect(
+        decide(launcherVisible: true, overlayUp: true, overlayOnTop: true),
+        BackAction.dismissOverlay,
+      );
+      // Classic: it lies on the dashboard, under the alarm list.
+      expect(
+        decide(launcherVisible: true, overlayUp: true),
+        BackAction.hideLauncher,
+      );
+    });
+
     test('first press over the bare kiosk opens the menu', () {
       expect(decide(), BackAction.openDrawer);
     });

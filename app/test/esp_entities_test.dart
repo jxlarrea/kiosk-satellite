@@ -257,6 +257,7 @@ void main() {
       ),
     );
     stub('evalJs', '"https://ha.local/lovelace/home"');
+    stub('getDashboardState', {'currentUrl': 'https://ha.local/lovelace/home'});
     stub('screenshot', base64Encode([1, 2, 3]));
     for (final name in [
       'screenOn',
@@ -1647,6 +1648,15 @@ void main() {
     expect(entity['unit'], '°C');
     expect(entity['category'], 2);
     expect(entity['accuracyDecimals'], 1);
+  });
+
+  test('a closed page clears the current page and dashboard view', () async {
+    await surface.build();
+    await attach();
+    pushed.clear();
+    bus.publish(const UrlChanged(url: ''));
+    await pumpEventQueue();
+    expect(pushed, containsAll([('url', null), ('dashboard_view', null)]));
   });
 
   test('attach pushes an initial snapshot from the live sources', () async {

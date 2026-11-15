@@ -4,6 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/managers/browser/dashboard_page.dart';
+import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/browser/browser_manager.dart';
+import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 // page, so the kiosk never loads it.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  group('page storage', storageTests);
 
   late AppContainer c;
   setUp(() async {
@@ -131,5 +136,109 @@ void main() {
     await set(defs.navStyle.key, 'compass');
     expect(await c.homeAssistant.navigateToViewPath('lovelace/0'), 'failed');
     expect(ran, isEmpty);
+  });
+
+  test('late news from a closed page is turned away', () async {
+    // Classic built the page; Compass dropped it before it reported in.
+    c.browser.onPageLoaded('https://ha.local/lovelace/0');
+    expect(c.browser.currentUrl, 'https://ha.local/lovelace/0');
+    await set(defs.navCompassLayout.key, noDashboard);
+    await set(defs.navStyle.key, 'compass');
+    c.browser.detach();
+    expect(c.browser.currentUrl, isEmpty);
+    c.browser.onPageLoaded('https://ha.local/lovelace/0');
+    c.browser.onUrlChanged('https://ha.local/lovelace/1');
+    expect(c.browser.currentUrl, isEmpty);
+
+    // Back to Classic: the page reports in again.
+    await set(defs.navStyle.key, 'classic');
+    c.browser.onPageLoaded('https://ha.local/lovelace/0');
+    expect(c.browser.currentUrl, 'https://ha.local/lovelace/0');
+  });
+}
+
+// The page's localStorage outlives the page: with none loaded it is read
+// and written in a page of its own on the same origin, so a backup keeps
+// it and a restore lands in it.
+void storageTests() {
+  late EventBus bus;
+  late SettingsManager settings;
+  late BrowserManager browser;
+  late CommandRegistry commands;
+  late Map<String, String> storage;
+  late List<String> origins;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    bus = EventBus();
+    final log = Logger();
+    commands = CommandRegistry(log);
+    settings = SettingsManager(bus, commands, log);
+    await settings.init();
+    browser = BrowserManager(bus, commands, log, settings);
+    await browser.init();
+    await settings.setFromJson(
+      defs.startUrl.key,
+      'https://ha.local/lovelace/0',
+    );
+    storage = {'hassTokens': '{"access_token":"a"}'};
+    origins = [];
+    // The page of its own: runs the write the script carries, answers
+    // with all of the storage.
+    browser.pageOriginOverride = (origin, js) async {
+      origins.add(origin);
+      final write = RegExp(r'JSON\.parse\((".*")\)').firstMatch(js);
+      if (write != null) {
+        final entries = jsonDecode(jsonDecode(write.group(1)!) as String);
+        (entries as Map).forEach((k, v) => storage['$k'] = '$v');
+      }
+      return jsonEncode(storage);
+    };
+    browser.pageNeeded.value = false;
+  });
+
+  test('read with no page loaded', () async {
+    final r = await commands.execute('getLocalStorage', const {});
+    expect(r.ok, isTrue);
+    expect(jsonDecode(r.data! as String), {
+      'hassTokens': '{"access_token":"a"}',
+    });
+    expect(origins, ['https://ha.local']);
+  });
+
+  test('a backup carries it with no page loaded', () async {
+    final r = await commands.execute('exportConfig', const {});
+    final config = r.data! as Map;
+    expect(jsonDecode(config['localStorage'] as String), {
+      'hassTokens': '{"access_token":"a"}',
+    });
+  });
+
+  test('a restore with no page loaded goes straight into it', () async {
+    final r = await commands.execute('setLocalStorage', {
+      'data': jsonEncode({'vs-satellite-entity': 'assist_satellite.x'}),
+    });
+    expect(r.ok, isTrue);
+    expect(storage['vs-satellite-entity'], 'assist_satellite.x');
+    expect(settings.internal('pending_local_storage'), isEmpty);
+  });
+
+  test('a restore left waiting for a page is written before a read', () async {
+    await settings.setInternal(
+      'pending_local_storage',
+      jsonEncode({'selectedTheme': 'dark'}),
+    );
+    final r = await commands.execute('getLocalStorage', const {});
+    expect(jsonDecode(r.data! as String)['selectedTheme'], 'dark');
+    expect(settings.internal('pending_local_storage'), isEmpty);
+  });
+
+  test('with a page coming, a restore waits for it', () async {
+    browser.pageNeeded.value = true;
+    await commands.execute('setLocalStorage', {
+      'data': jsonEncode({'k': 'v'}),
+    });
+    expect(origins, isEmpty);
+    expect(settings.internal('pending_local_storage'), isNotEmpty);
   });
 }

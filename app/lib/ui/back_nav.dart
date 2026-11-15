@@ -55,7 +55,8 @@ enum BackAction {
 ///
 /// [armed] is a still-live double-back window: the previous press opened
 /// the menu (or stepped the history) recently enough that this one means
-/// "really go back". [quickMenuAvailable] mirrors the edge swipe's gate
+/// "really go back". [overlayOnTop] says the overlay page floats over the
+/// full-screen pages, as under Compass. [quickMenuAvailable] mirrors the edge swipe's gate
 /// while kiosk mode is locked: the owner opted into the quick menu and it
 /// would actually show something. Lockdown never opens the menu on back —
 /// its shield answers to the exit gesture alone — and keeps the old
@@ -66,6 +67,7 @@ BackAction decideBack({
   required bool armed,
   required bool launcherVisible,
   required bool overlayUp,
+  bool overlayOnTop = false,
   required bool cameraViewUp,
   required bool cameraFocused,
   required bool screensaverActive,
@@ -77,6 +79,9 @@ BackAction decideBack({
   if (drawerOpen) {
     return armed ? BackAction.closeDrawerAndBack : BackAction.closeDrawer;
   }
+  // Under Compass the page floats over the full-screen pages: it goes
+  // first. In Classic it lies under them, on the dashboard.
+  if (overlayUp && overlayOnTop) return BackAction.dismissOverlay;
   if (launcherVisible) return BackAction.hideLauncher;
   if (overlayUp) return BackAction.dismissOverlay;
   if (cameraViewUp) {

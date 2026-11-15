@@ -182,6 +182,7 @@ class CompassController {
     _urlSub = c.bus.on<UrlChanged>().listen((e) => _onPageMoved(e.url));
     c.homeAssistant.returnHomeOverride = _returnHomePath;
     c.compassCloseToCenter = closeToCenter;
+    c.compassCloseOverlays = closeOverlays;
     for (final l in _watched) {
       l.addListener(_onOverlayChanged);
     }
@@ -241,6 +242,7 @@ class CompassController {
     current.removeListener(_syncViewFlags);
     c.compassCenter.value = '';
     if (c.compassCloseToCenter == closeToCenter) c.compassCloseToCenter = null;
+    if (c.compassCloseOverlays == closeOverlays) c.compassCloseOverlays = null;
     _startTimer?.cancel();
     _verifyTimer?.cancel();
     _settingsSub?.cancel();
@@ -423,6 +425,18 @@ class CompassController {
     if (view.kind != kind || !_isUp(view)) return false;
     if (_anythingUpBut(view)) return false;
     unawaited(goCenter());
+    return true;
+  }
+
+  /// Close overlays from Home Assistant: the page floating over the views
+  /// goes, and the kiosk lands on the center with everything else closed
+  /// under it, the way back does. Closing each page in turn would close
+  /// the center too, and Compass would open it again a moment later over
+  /// an empty screen. False in Classic.
+  Future<bool> closeOverlays() async {
+    if (!enabled) return false;
+    c.browser.dismissOverlay();
+    await goCenter();
     return true;
   }
 

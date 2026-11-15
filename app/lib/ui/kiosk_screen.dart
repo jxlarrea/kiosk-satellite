@@ -146,6 +146,7 @@ class _KioskScreenState extends State<KioskScreen>
     c.sendspin.fullscreenActive,
     _compass.menuVisible,
     _compass.planeCovered,
+    c.screensaver.dashboardShowing,
   ]);
 
   /// The kiosk plane leaves the frame under something that hides the whole
@@ -156,6 +157,8 @@ class _KioskScreenState extends State<KioskScreen>
   /// through an image view, which on an Echo Show costs a bitmap and a
   /// garbage collection every few frames.
   bool get _planeHidden {
+    // The Home Assistant Dashboard screensaver shows the page itself.
+    if (c.screensaver.dashboardShowing.value) return false;
     // A Compass swipe's stage covers everything while it moves.
     if (_compass.planeCovered.value) return true;
     if (!c.browser.renderingFrozenState.value) return false;
@@ -175,13 +178,20 @@ class _KioskScreenState extends State<KioskScreen>
     c.voice.covers,
     c.screensaver.nowPlayingCovers,
     c.sendspin.fullscreenActive,
+    c.screensaver.dashboardShowing,
   ]);
 
   /// The calendar and the music library are drawn under a voice turn whose
   /// backdrop hides the screen, and the library under Now Playing, which
   /// it stays open beneath. Impeller keeps no raster cache, so each frame
   /// would draw them again for nothing.
-  bool _pagesHidden() => c.voice.covers.value || _nowPlayingCovers;
+  bool _pagesHidden() =>
+      c.voice.covers.value || _nowPlayingCovers || _underDashboardSaver();
+
+  /// The Home Assistant Dashboard screensaver is a clear layer over the
+  /// page: the full-screen pages over the page step aside while it shows,
+  /// or it would show them instead, such as the Compass center.
+  bool _underDashboardSaver() => c.screensaver.dashboardShowing.value;
 
   bool _consoleOpen = false;
 
@@ -320,6 +330,7 @@ class _KioskScreenState extends State<KioskScreen>
           c.calendar.visible.value ||
           c.musicLibrary.visible.value,
       overlayUp: c.browser.overlayUrl.value != null,
+      overlayOnTop: _compass.enabled,
       cameraViewUp: c.camera.activeViewId.value != null,
       cameraFocused: c.camera.focusedCameraId.value != null,
       screensaverActive: c.screensaver.isActive,
@@ -1854,7 +1865,9 @@ class _KioskScreenState extends State<KioskScreen>
         // dashboard (and the Voice Satellite session with it) never
         // unloads. A wake detection hides this instantly, revealing the
         // live dashboard underneath (see initState).
-        _OverlayHost(container: c),
+        // In Classic it sits on the dashboard and slides with the drawer.
+        // Under Compass it floats over the views instead (below).
+        if (!_compass.enabled) _OverlayHost(container: c),
         PluginOverlay(
           plugins: c.plugins,
           hybrid: c.settings.get(defs.hybridPluginOverlays),
@@ -2020,26 +2033,46 @@ class _KioskScreenState extends State<KioskScreen>
                     DlnaMediaOverlay(container: c),
                     // Compass's Menu view, in the drawer's place: under every
                     // page it opens, so they come up over it.
-                    _CompassMenu(
-                      compass: _compass,
-                      onSettings: _openSettings,
-                      onUnlock: _unlockMenu,
+                    _HiddenUnder(
+                      listenable: c.screensaver.dashboardShowing,
+                      hidden: _underDashboardSaver,
+                      child: _CompassMenu(
+                        compass: _compass,
+                        onSettings: _openSettings,
+                        onUnlock: _unlockMenu,
+                      ),
                     ),
                     // Below the screensaver: an abandoned launcher gives way
                     // to it (the manager also closes on screensaver start).
-                    AppLauncherOverlay(container: c),
+                    _HiddenUnder(
+                      listenable: c.screensaver.dashboardShowing,
+                      hidden: _underDashboardSaver,
+                      child: AppLauncherOverlay(container: c),
+                    ),
                     // The intercom's Call a kiosk screen, the launcher's
                     // twin: full screen, below the screensaver, closed by
                     // the manager when a call starts.
-                    IntercomRosterOverlay(container: c),
+                    _HiddenUnder(
+                      listenable: c.screensaver.dashboardShowing,
+                      hidden: _underDashboardSaver,
+                      child: IntercomRosterOverlay(container: c),
+                    ),
                     // The alarm list, the launcher's twin again: full
                     // screen, below the screensaver.
-                    AlarmsOverlay(container: c),
+                    _HiddenUnder(
+                      listenable: c.screensaver.dashboardShowing,
+                      hidden: _underDashboardSaver,
+                      child: AlarmsOverlay(container: c),
+                    ),
                     // The timers view, the alarm list's twin: full screen,
                     // below the screensaver. A timer near its end or
                     // finished dismisses the screensaver and holds it
                     // instead of showing over it (VoiceTimerManager).
-                    TimersOverlay(container: c),
+                    _HiddenUnder(
+                      listenable: c.screensaver.dashboardShowing,
+                      hidden: _underDashboardSaver,
+                      child: TimersOverlay(container: c),
+                    ),
                     // The family calendar, the launcher's twin as well:
                     // full screen, below the screensaver.
                     _HiddenUnder(
@@ -2055,6 +2088,11 @@ class _KioskScreenState extends State<KioskScreen>
                       hidden: _pagesHidden,
                       child: MusicLibraryOverlay(container: c),
                     ),
+                    // Under Compass, a page opened by a link, open_url or
+                    // Show Music Assistant belongs to no place of the
+                    // layout: it floats over whatever view is up, the pages
+                    // above included, until it is closed.
+                    if (_compass.enabled) _OverlayHost(container: c),
                     // The screensaver covers both planes — it owns the whole
                     // display, drawer open or not.
                     // Paused under the native voice overlay, which

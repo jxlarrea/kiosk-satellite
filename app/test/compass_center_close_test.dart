@@ -170,6 +170,73 @@ void main() {
     expect(compass.closeToCenter('alarms'), isFalse);
   });
 
+  // Close overlays from Home Assistant under Compass: the floating page
+  // goes and the kiosk lands on the center, which stays up.
+  test('close overlays keeps the center and drops the rest', () async {
+    SharedPreferences.setMockInitialValues({});
+    final c = AppContainer();
+    await c.settings.init();
+    c.device.appVersion = 'test';
+    void stand(String name, ValueNotifier<bool> page, bool up) {
+      c.commands.register(
+        Command(
+          name: name,
+          description: name,
+          handler: (_) async {
+            page.value = up;
+            return const CommandResult.ok();
+          },
+        ),
+      );
+    }
+
+    stand('openAlarms', c.alarms.visible, true);
+    stand('hideAlarms', c.alarms.visible, false);
+    stand('openCalendar', c.calendar.visible, true);
+    stand('hideCalendar', c.calendar.visible, false);
+    var downs = 0;
+    c.alarms.visible.addListener(() {
+      if (!c.alarms.visible.value) downs++;
+    });
+    final compass = CompassController(c)..start();
+    addTearDown(() async {
+      compass.dispose();
+      await c.settings.dispose();
+      await c.bus.dispose();
+      await c.log.dispose();
+    });
+    await c.settings.setFromJson(
+      defs.navCompassLayout.key,
+      jsonEncode({
+        'center': {'kind': 'alarms'},
+        'up': [
+          {'kind': 'calendar'},
+        ],
+        'left': [
+          {'kind': 'menu'},
+        ],
+      }),
+    );
+    expect(await c.compassCloseOverlays!(), isFalse);
+    await c.settings.setFromJson(defs.navStyle.key, 'compass');
+    await Future<void>.delayed(Duration.zero);
+    await compass.show(const CompassSlot(CompassArm.up));
+    c.browser.showLinkOverlay('https://example.com');
+    expect(c.browser.overlayUrl.value, isNotNull);
+
+    expect(await c.compassCloseOverlays!(), isTrue);
+    expect(c.browser.overlayUrl.value, isNull);
+    expect(compass.current.value, CompassSlot.center);
+    expect(c.alarms.visible.value, isTrue);
+    expect(c.calendar.visible.value, isFalse);
+
+    // At the center already: the center never closes.
+    downs = 0;
+    expect(await c.compassCloseOverlays!(), isTrue);
+    expect(c.alarms.visible.value, isTrue);
+    expect(downs, 0);
+  });
+
   testWidgets('the timers view drops its button at the center', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final c = AppContainer();

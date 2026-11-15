@@ -2055,6 +2055,13 @@ class EspEntitySurface {
     _subs.add(bus.on<VolumeChanged>().listen((_) => _sendVolume()));
     _subs.add(
       bus.on<UrlChanged>().listen((e) {
+        // The page closed (no dashboard view in a Compass layout): no page
+        // and no view, rather than the last ones it showed.
+        if (e.url.isEmpty) {
+          _send('url', null);
+          _send('dashboard_view', null);
+          return;
+        }
         _send('url', e.url);
         final match = matchDashboardView(e.url, _dashboardViews);
         if (match != null) _send('dashboard_view', match);
@@ -2241,14 +2248,20 @@ class EspEntitySurface {
   /// screensaver is stopped only when it is up, since stopping it lights
   /// the screen.
   Future<void> _closeOverlays() async {
-    for (final name in const [
-      'hideCameraView',
-      'hideCalendar',
-      'hideMusicLibrary',
-      'hideAlarms',
-      'hideAppLauncher',
-      'hideOverlayPage',
-    ]) {
+    // Under Compass the views of the layout stay: the kiosk goes to the
+    // center instead (CompassController.closeOverlays).
+    final compass = await commands.execute('compassCloseOverlays', const {});
+    for (final name
+        in compass.ok
+            ? const <String>[]
+            : const [
+                'hideCameraView',
+                'hideCalendar',
+                'hideMusicLibrary',
+                'hideAlarms',
+                'hideAppLauncher',
+                'hideOverlayPage',
+              ]) {
       await commands.execute(name, const {});
     }
     final screensaver = await commands.execute('isScreensaverActive', const {});
@@ -2838,7 +2851,16 @@ class EspEntitySurface {
       final kept = _settings.internal('esphome_$stamp');
       if (kept.isNotEmpty) await _send(stamp, kept);
     }
-    final href = await commands.execute('evalJs', {'code': 'location.href'});
+    // No dashboard page (a Compass layout without a dashboard view): no
+    // page to ask for its address.
+    final state = await commands.execute('getDashboardState', const {});
+    final loaded =
+        state.ok &&
+        state.data is Map &&
+        (state.data as Map)['currentUrl'] != null;
+    final href = loaded
+        ? await commands.execute('evalJs', {'code': 'location.href'})
+        : const CommandResult.fail('no dashboard page');
     // WebView eval results come back JSON-encoded; a string wears quotes.
     var url = href.ok ? '${href.data ?? ''}' : '';
     if (url.length >= 2 && url.startsWith('"') && url.endsWith('"')) {

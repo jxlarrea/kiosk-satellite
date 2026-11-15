@@ -45,7 +45,7 @@ If the page moves to a dashboard view of the layout on its own, such as through 
 
 ### A layout without dashboard views
 
-With no dashboard view in the layout, Home Assistant's page is not loaded at all, so it takes no memory or processing. Commands that move the page, such as the Dashboard view select in Home Assistant, do nothing then. The page still loads when the screensaver is **Home Assistant Dashboard**, also on the schedule, and when Voice Satellite runs in the dashboard. Add a dashboard view and the page loads on it. Removing the last one at run time frees most of the page's memory, and the rest is freed when the app next starts.
+With no dashboard view in the layout, Home Assistant's page is not loaded at all, so it takes no memory or processing. Commands that move the page, such as the Dashboard view select in Home Assistant, do nothing then and leave the screensaver up. The Current page sensor and the Dashboard view select show unknown. The page still loads when the screensaver is **Home Assistant Dashboard**, also on the schedule, and when Voice Satellite runs in the dashboard. Add a dashboard view and the page loads on it. Removing the last one at run time frees most of the page's memory, and the rest is freed when the app next starts. The page's saved data, such as its Home Assistant login, stays on the device either way. A backup includes it and a restore writes it back, with or without a dashboard view in the layout.
 
 ### Editing the layout
 
@@ -65,9 +65,13 @@ A swipe that starts on a plugin overlay, such as a navigation bar, stays with th
 
 ### The screensaver
 
-The screensaver starts over any view after the idle timeout, as it does over the dashboard, and the view is still there when it ends. A camera view is the exception: live cameras hold the screensaver off, as they do everywhere else. If Return to center comes due while the screensaver runs, the kiosk lands on the center when it ends.
+The screensaver starts over any view after the idle timeout, as it does over the dashboard, and the view is still there when it ends. The **Home Assistant Dashboard** screensaver shows the dashboard over any view. A camera view is the exception: live cameras hold the screensaver off, as they do everywhere else. If Return to center comes due while the screensaver runs, the kiosk lands on the center when it ends.
 
 Views in the layout skip their own **Close when idle** and the camera view's **Auto-dismiss after**. **Return to center** decides when they go instead. Opened outside the layout, such as a camera view a doorbell opens, they keep their own setting.
+
+### Pages opened from Home Assistant
+
+A page opened by a dashboard link, the **Open URL** action or **Show Music Assistant** is not part of the layout. It shows over whatever view is on screen until you close it with its X or back, and swipes wait until then. **Close overlays** in Home Assistant closes it and goes back to the center view.
 
 ### Back and the exit gesture
 

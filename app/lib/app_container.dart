@@ -354,6 +354,10 @@ class AppContainer {
   /// layout hands its close to it (compassClose in compass_center.dart).
   bool Function(String kind)? compassCloseToCenter;
 
+  /// Set by Compass while it runs: Close overlays from Home Assistant
+  /// goes through it (CompassController.closeOverlays).
+  Future<bool> Function()? compassCloseOverlays;
+
   late final SettingsManager settings;
   late final DeviceManager device;
   late final AdaptiveLightManager adaptiveLight;
@@ -530,6 +534,17 @@ class AppContainer {
     });
     // The dashboard page exists only while something uses it.
     followDashboardPage(settings, bus, browser.pageNeeded);
+    commands.register(
+      Command(
+        name: 'compassCloseOverlays',
+        description:
+            'Under Compass navigation: close the page floating over the '
+            'views and go to the center view. Fails in Classic.',
+        handler: (_) async => (await compassCloseOverlays?.call() ?? false)
+            ? const CommandResult.ok()
+            : const CommandResult.fail('Compass is off'),
+      ),
+    );
     // An Echo image's first start: before the provisioning below, which
     // may override it, and before any manager reads its settings.
     await EchoDefaults(settings, log).apply();

@@ -251,6 +251,35 @@ void main() {
       expect(calls.last.arguments['hidden'], isFalse);
     });
 
+    test('the Home Assistant Dashboard screensaver thaws the page under a '
+        'Compass page, not under a camera view', () async {
+      await build({'ks.browser.freeze_on_screensaver': true});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      browser.setCovered('calendar', covered: true);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+
+      // The calendar steps aside under it, so its cover no longer holds.
+      bus.publish(const ScreensaverViewChanged(view: 'dashboard'));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pumpEventQueue();
+      expect(browser.renderingFrozen, isFalse);
+
+      // A camera view still draws over the page.
+      browser.setCovered('camera view', covered: true);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+      browser.setCovered('camera view', covered: false);
+      await pumpEventQueue();
+      expect(browser.renderingFrozen, isFalse);
+
+      // Over again: the calendar's cover holds once more.
+      bus.publish(const ScreensaverStateChanged(active: false));
+      bus.publish(const ScreensaverViewChanged(view: null));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+    });
+
     test('a Home Assistant page as the website screensaver is never frozen '
         'over', () async {
       // The native side hides by URL prefix, so it cannot tell the
