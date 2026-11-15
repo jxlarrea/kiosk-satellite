@@ -19,6 +19,7 @@ import { renderShizukuPage } from './shizuku.js';
 import { CATEGORY_TABS } from './gestures.js';
 import {
   updateAdaptiveBrightnessRows,
+  updateAdaptiveVolumeRows,
   updateCameraFacingsRow,
   updateCameraGrantNotice,
   updateCameraSnapshotPanel,
@@ -1671,6 +1672,7 @@ kioskText('Lockdown Mode makes the dashboard non-interactive, arms every ' +
   updateProximityRows();
   updateDimModeNotice();
   updateAdaptiveBrightnessRows();
+  updateAdaptiveVolumeRows();
   updateClockNightRows();
   updateScreenOffAdminNotice();
   updateAutoReloadOverlayNotice();

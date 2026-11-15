@@ -77,6 +77,7 @@ Settings that scale the UI, control screen brightness, or manage volume often de
 | `motion.use_entity` Use Home Assistant entity, `motion.entity` Motion sensor entity | Screensaver, Motion Detection |
 | `screensaver.brightness_level`, `screensaver.dim_level` | Screensaver |
 | `audio.media_volume` Media volume, `audio.assistant_volume` Assistant volume | Screen & Audio |
+| `audio.adaptive_volume_assistant` Assistant, `audio.adaptive_volume_media` Media, `audio.adaptive_volume_intercom` Intercom, `audio.adaptive_volume_curve` Volume curve | Adaptive volume |
 | `notifications.volume` Notification volume | Notifications |
 | `ha.tap_sound_volume` Tap sound volume | Home Assistant, User Interface |
 | `voice_chimes.wake_volume`, `voice_chimes.done_volume`, `voice_chimes.error_volume`, `voice_chimes.alert_volume`, `voice_chimes.announce_volume` Chime volumes | Voice Satellite, Chimes and Timers |

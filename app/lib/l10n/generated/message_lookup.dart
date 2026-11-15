@@ -3420,6 +3420,40 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'screenAudioCurveHint' => strings.screenAudioCurveHint,
       'screenAudioCurveLightLevel' => strings.screenAudioCurveLightLevel,
       'screenAudioCurveBrightness' => strings.screenAudioCurveBrightness,
+      'settingAdaptiveVolumeTitle' => strings.settingAdaptiveVolumeTitle,
+      'settingAdaptiveVolumeDescription' =>
+        strings.settingAdaptiveVolumeDescription,
+      'settingAdaptiveVolumeAssistantTitle' =>
+        strings.settingAdaptiveVolumeAssistantTitle,
+      'settingAdaptiveVolumeAssistantDescription' =>
+        strings.settingAdaptiveVolumeAssistantDescription,
+      'settingAdaptiveVolumeMediaTitle' =>
+        strings.settingAdaptiveVolumeMediaTitle,
+      'settingAdaptiveVolumeMediaDescription' =>
+        strings.settingAdaptiveVolumeMediaDescription,
+      'settingAdaptiveVolumeIntercomTitle' =>
+        strings.settingAdaptiveVolumeIntercomTitle,
+      'settingAdaptiveVolumeIntercomDescription' =>
+        strings.settingAdaptiveVolumeIntercomDescription,
+      'settingAdaptiveVolumeCurveTitle' =>
+        strings.settingAdaptiveVolumeCurveTitle,
+      'settingAdaptiveVolumeCurveSliderDescription' =>
+        strings.settingAdaptiveVolumeCurveSliderDescription,
+      'screenAudioAdaptiveVolume' => strings.screenAudioAdaptiveVolume,
+      'screenAudioAdaptiveVolumeHint' => strings.screenAudioAdaptiveVolumeHint,
+      'screenAudioAdaptiveVolumes' => strings.screenAudioAdaptiveVolumes,
+      'screenAudioRoomNoise' => strings.screenAudioRoomNoise,
+      'screenAudioRoomNoiseNote' => strings.screenAudioRoomNoiseNote,
+      'screenAudioRoomNoiseHolds' => strings.screenAudioRoomNoiseHolds,
+      'screenAudioRoomNoiseNoReading' => strings.screenAudioRoomNoiseNoReading,
+      'screenAudioVolumeCurveSliderHint' =>
+        strings.screenAudioVolumeCurveSliderHint,
+      'screenAudioVolumeCurveNoise' => strings.screenAudioVolumeCurveNoise,
+      'screenAudioVolumeCurveAssistant' =>
+        strings.screenAudioVolumeCurveAssistant,
+      'screenAudioVolumeCurveMedia' => strings.screenAudioVolumeCurveMedia,
+      'screenAudioVolumeCurveIntercom' =>
+        strings.screenAudioVolumeCurveIntercom,
       'settingAudioMicDeviceTitle' => strings.settingAudioMicDeviceTitle,
       'settingAudioMicDeviceDescription' =>
         strings.settingAudioMicDeviceDescription,

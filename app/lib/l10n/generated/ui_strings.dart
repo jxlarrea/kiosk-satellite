@@ -19172,6 +19172,156 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Enable adaptive volume'**
+  String get settingAdaptiveVolumeTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower the volume as the room gets quieter, using the microphone.'**
+  String get settingAdaptiveVolumeDescription;
+
+  /// Setting label. The switch that makes the Assistant volume follow the room noise. Also the label of its line on the volume curve.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get settingAdaptiveVolumeAssistantTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice responses and chimes.'**
+  String get settingAdaptiveVolumeAssistantDescription;
+
+  /// Setting label. The switch that makes the Media volume follow the room noise. Also the label of its line on the volume curve.
+  ///
+  /// In en, this message translates to:
+  /// **'Media'**
+  String get settingAdaptiveVolumeMediaTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Music and video. Set when playback starts.'**
+  String get settingAdaptiveVolumeMediaDescription;
+
+  /// Setting label. The switch that makes the Intercom volume follow the room noise. Also the label of its line on the volume curve.
+  ///
+  /// In en, this message translates to:
+  /// **'Intercom'**
+  String get settingAdaptiveVolumeIntercomTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls. Set when a call starts.'**
+  String get settingAdaptiveVolumeIntercomDescription;
+
+  /// Setting label and the heading above the curve editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Volume curve'**
+  String get settingAdaptiveVolumeCurveTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'The volume at each room noise level, as a percentage of that volume\'s slider under Screen & Audio.'**
+  String get settingAdaptiveVolumeCurveSliderDescription;
+
+  /// Name of the settings page.
+  ///
+  /// In en, this message translates to:
+  /// **'Adaptive volume'**
+  String get screenAudioAdaptiveVolume;
+
+  /// Hint under the row that opens the Adaptive volume page.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the room noise with the microphone'**
+  String get screenAudioAdaptiveVolumeHint;
+
+  /// Heading above the switches that pick which volumes follow the room noise.
+  ///
+  /// In en, this message translates to:
+  /// **'Volumes'**
+  String get screenAudioAdaptiveVolumes;
+
+  /// Label of the live room noise reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Room noise'**
+  String get screenAudioRoomNoise;
+
+  /// Help below the live room noise reading.
+  ///
+  /// In en, this message translates to:
+  /// **'What the microphone reads while this device is silent.'**
+  String get screenAudioRoomNoiseNote;
+
+  /// Note under the live room noise reading.
+  ///
+  /// In en, this message translates to:
+  /// **'The reading holds while this device plays. Changes in the room during playback are not used.'**
+  String get screenAudioRoomNoiseHolds;
+
+  /// Note under the room noise reading while there is none: what a reading needs.
+  ///
+  /// In en, this message translates to:
+  /// **'If there is no reading, turn on adaptive volume or wake word detection and check that the microphone is not muted.'**
+  String get screenAudioRoomNoiseNoReading;
+
+  /// A room noise level. dBFS is a unit and stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'{level} dBFS'**
+  String screenAudioDbfs(String level);
+
+  /// Hint under the volume curve editor.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a point, or tap it to type exact values. The percentages apply to the Assistant, Media and Intercom volume sliders under Screen & Audio: 100% plays at the slider\'s level and 50% plays like the slider set to half.'**
+  String get screenAudioVolumeCurveSliderHint;
+
+  /// Field label in the dialog that edits one point of the volume curve.
+  ///
+  /// In en, this message translates to:
+  /// **'Room noise (dBFS)'**
+  String get screenAudioVolumeCurveNoise;
+
+  /// Field label in the dialog that edits one point of the volume curve.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant (%)'**
+  String get screenAudioVolumeCurveAssistant;
+
+  /// Field label in the dialog that edits one point of the volume curve.
+  ///
+  /// In en, this message translates to:
+  /// **'Media (%)'**
+  String get screenAudioVolumeCurveMedia;
+
+  /// Field label in the dialog that edits one point of the volume curve.
+  ///
+  /// In en, this message translates to:
+  /// **'Intercom (%)'**
+  String get screenAudioVolumeCurveIntercom;
+
+  /// Error under the room noise field when the value is out of range.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a room noise level between {low} and {high} dBFS'**
+  String screenAudioVolumeCurveNoiseRange(String low, String high);
+
+  /// Error under a volume field when the value is out of range.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a volume from {low}% to {high}%'**
+  String screenAudioVolumeCurveLevelRange(String low, String high);
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Microphone'**
   String get settingAudioMicDeviceTitle;
 

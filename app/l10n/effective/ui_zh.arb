@@ -41501,6 +41501,357 @@
       }
     }
   },
+  "settingAdaptiveVolumeTitle": "启用自适应音量",
+  "@settingAdaptiveVolumeTitle": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeDescription": "房间变安静时，通过麦克风自动降低音量。",
+  "@settingAdaptiveVolumeDescription": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeAssistantTitle": "助手",
+  "@settingAdaptiveVolumeAssistantTitle": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Setting label. The switch that makes the Assistant volume follow the room noise. Also the label of its line on the volume curve.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeAssistantDescription": "语音回复和提示音。",
+  "@settingAdaptiveVolumeAssistantDescription": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeMediaTitle": "媒体",
+  "@settingAdaptiveVolumeMediaTitle": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Setting label. The switch that makes the Media volume follow the room noise. Also the label of its line on the volume curve.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeMediaDescription": "音乐和视频。在开始播放时设定。",
+  "@settingAdaptiveVolumeMediaDescription": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeIntercomTitle": "对讲",
+  "@settingAdaptiveVolumeIntercomTitle": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Setting label. The switch that makes the Intercom volume follow the room noise. Also the label of its line on the volume curve.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeIntercomDescription": "通话。在通话开始时设定。",
+  "@settingAdaptiveVolumeIntercomDescription": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeCurveTitle": "音量曲线",
+  "@settingAdaptiveVolumeCurveTitle": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Setting label and the heading above the curve editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "settingAdaptiveVolumeCurveSliderDescription": "各房间噪声水平对应的音量，以“屏幕与音频”中该音量滑块的百分比表示。",
+  "@settingAdaptiveVolumeCurveSliderDescription": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioAdaptiveVolume": "自适应音量",
+  "@screenAudioAdaptiveVolume": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Name of the settings page.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioAdaptiveVolumeHint": "通过麦克风根据房间噪声自动调整音量",
+  "@screenAudioAdaptiveVolumeHint": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Hint under the row that opens the Adaptive volume page.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioAdaptiveVolumes": "音量",
+  "@screenAudioAdaptiveVolumes": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Heading above the switches that pick which volumes follow the room noise.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioRoomNoise": "房间噪声",
+  "@screenAudioRoomNoise": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Label of the live room noise reading.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioRoomNoiseNote": "本设备未播放声音时麦克风测得的读数。",
+  "@screenAudioRoomNoiseNote": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the live room noise reading.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioRoomNoiseHolds": "本设备播放声音时读数保持不变。播放期间房间的变化不会被采用。",
+  "@screenAudioRoomNoiseHolds": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Note under the live room noise reading.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioRoomNoiseNoReading": "如果没有读数，请开启自适应音量或唤醒词检测，并确认麦克风未静音。",
+  "@screenAudioRoomNoiseNoReading": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Note under the room noise reading while there is none: what a reading needs.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioDbfs": "{level} dBFS",
+  "@screenAudioDbfs": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "A room noise level. dBFS is a unit and stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    },
+    "placeholders": {
+      "level": {
+        "type": "String",
+        "description": "Noise level in decibels relative to full scale, a negative number."
+      }
+    }
+  },
+  "screenAudioVolumeCurveSliderHint": "拖动曲线上的点可调整，也可点击点输入数值。百分比作用于“屏幕与音频”中的助手音量、媒体音量和对讲音量滑块：100% 表示按滑块的音量播放，50% 相当于滑块调到一半。",
+  "@screenAudioVolumeCurveSliderHint": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Hint under the volume curve editor.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeCurveNoise": "房间噪声（dBFS）",
+  "@screenAudioVolumeCurveNoise": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Field label in the dialog that edits one point of the volume curve.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeCurveAssistant": "助手（%）",
+  "@screenAudioVolumeCurveAssistant": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Field label in the dialog that edits one point of the volume curve.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeCurveMedia": "媒体（%）",
+  "@screenAudioVolumeCurveMedia": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Field label in the dialog that edits one point of the volume curve.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeCurveIntercom": "对讲（%）",
+  "@screenAudioVolumeCurveIntercom": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Field label in the dialog that edits one point of the volume curve.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeCurveNoiseRange": "请输入 {low} 至 {high} dBFS 之间的噪声水平",
+  "@screenAudioVolumeCurveNoiseRange": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Error under the room noise field when the value is out of range.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    },
+    "placeholders": {
+      "low": {
+        "type": "String",
+        "description": "Lowest noise level allowed, in dBFS."
+      },
+      "high": {
+        "type": "String",
+        "description": "Highest noise level allowed, in dBFS."
+      }
+    }
+  },
+  "screenAudioVolumeCurveLevelRange": "请输入 {low}% 至 {high}% 之间的音量",
+  "@screenAudioVolumeCurveLevelRange": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Error under a volume field when the value is out of range.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    },
+    "placeholders": {
+      "low": {
+        "type": "String",
+        "description": "Lowest volume allowed, in percent."
+      },
+      "high": {
+        "type": "String",
+        "description": "Highest volume allowed, in percent."
+      }
+    }
+  },
   "settingAudioMicDeviceTitle": "麦克风",
   "@settingAudioMicDeviceTitle": {
     "context": "Settings:Screen & Audio:Audio Devices",

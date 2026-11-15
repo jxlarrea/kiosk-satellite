@@ -10959,6 +10959,97 @@ class UiStringsEn extends UiStrings {
   }
 
   @override
+  String get settingAdaptiveVolumeTitle => 'Enable adaptive volume';
+
+  @override
+  String get settingAdaptiveVolumeDescription =>
+      'Lower the volume as the room gets quieter, using the microphone.';
+
+  @override
+  String get settingAdaptiveVolumeAssistantTitle => 'Assistant';
+
+  @override
+  String get settingAdaptiveVolumeAssistantDescription =>
+      'Voice responses and chimes.';
+
+  @override
+  String get settingAdaptiveVolumeMediaTitle => 'Media';
+
+  @override
+  String get settingAdaptiveVolumeMediaDescription =>
+      'Music and video. Set when playback starts.';
+
+  @override
+  String get settingAdaptiveVolumeIntercomTitle => 'Intercom';
+
+  @override
+  String get settingAdaptiveVolumeIntercomDescription =>
+      'Calls. Set when a call starts.';
+
+  @override
+  String get settingAdaptiveVolumeCurveTitle => 'Volume curve';
+
+  @override
+  String get settingAdaptiveVolumeCurveSliderDescription =>
+      'The volume at each room noise level, as a percentage of that volume\'s slider under Screen & Audio.';
+
+  @override
+  String get screenAudioAdaptiveVolume => 'Adaptive volume';
+
+  @override
+  String get screenAudioAdaptiveVolumeHint =>
+      'Follow the room noise with the microphone';
+
+  @override
+  String get screenAudioAdaptiveVolumes => 'Volumes';
+
+  @override
+  String get screenAudioRoomNoise => 'Room noise';
+
+  @override
+  String get screenAudioRoomNoiseNote =>
+      'What the microphone reads while this device is silent.';
+
+  @override
+  String get screenAudioRoomNoiseHolds =>
+      'The reading holds while this device plays. Changes in the room during playback are not used.';
+
+  @override
+  String get screenAudioRoomNoiseNoReading =>
+      'If there is no reading, turn on adaptive volume or wake word detection and check that the microphone is not muted.';
+
+  @override
+  String screenAudioDbfs(String level) {
+    return '$level dBFS';
+  }
+
+  @override
+  String get screenAudioVolumeCurveSliderHint =>
+      'Drag a point, or tap it to type exact values. The percentages apply to the Assistant, Media and Intercom volume sliders under Screen & Audio: 100% plays at the slider\'s level and 50% plays like the slider set to half.';
+
+  @override
+  String get screenAudioVolumeCurveNoise => 'Room noise (dBFS)';
+
+  @override
+  String get screenAudioVolumeCurveAssistant => 'Assistant (%)';
+
+  @override
+  String get screenAudioVolumeCurveMedia => 'Media (%)';
+
+  @override
+  String get screenAudioVolumeCurveIntercom => 'Intercom (%)';
+
+  @override
+  String screenAudioVolumeCurveNoiseRange(String low, String high) {
+    return 'Enter a room noise level between $low and $high dBFS';
+  }
+
+  @override
+  String screenAudioVolumeCurveLevelRange(String low, String high) {
+    return 'Enter a volume from $low% to $high%';
+  }
+
+  @override
   String get settingAudioMicDeviceTitle => 'Microphone';
 
   @override

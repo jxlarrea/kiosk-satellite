@@ -11158,6 +11158,97 @@ class UiStringsFr extends UiStrings {
   }
 
   @override
+  String get settingAdaptiveVolumeTitle => 'Activer le volume adaptatif';
+
+  @override
+  String get settingAdaptiveVolumeDescription =>
+      'Baisser le volume à mesure que la pièce devient plus silencieuse, à l\'aide du microphone.';
+
+  @override
+  String get settingAdaptiveVolumeAssistantTitle => 'Assistant';
+
+  @override
+  String get settingAdaptiveVolumeAssistantDescription =>
+      'Réponses vocales et carillons.';
+
+  @override
+  String get settingAdaptiveVolumeMediaTitle => 'Multimédia';
+
+  @override
+  String get settingAdaptiveVolumeMediaDescription =>
+      'Musique et vidéo. Réglé au démarrage de la lecture.';
+
+  @override
+  String get settingAdaptiveVolumeIntercomTitle => 'Interphone';
+
+  @override
+  String get settingAdaptiveVolumeIntercomDescription =>
+      'Appels. Réglé au début d\'un appel.';
+
+  @override
+  String get settingAdaptiveVolumeCurveTitle => 'Courbe de volume';
+
+  @override
+  String get settingAdaptiveVolumeCurveSliderDescription =>
+      'Le volume à chaque niveau de bruit de la pièce, en pourcentage du curseur de ce volume sous Écran et audio.';
+
+  @override
+  String get screenAudioAdaptiveVolume => 'Volume adaptatif';
+
+  @override
+  String get screenAudioAdaptiveVolumeHint =>
+      'Suivre le bruit de la pièce avec le microphone';
+
+  @override
+  String get screenAudioAdaptiveVolumes => 'Volumes';
+
+  @override
+  String get screenAudioRoomNoise => 'Bruit de la pièce';
+
+  @override
+  String get screenAudioRoomNoiseNote =>
+      'Ce que mesure le microphone quand cet appareil est silencieux.';
+
+  @override
+  String get screenAudioRoomNoiseHolds =>
+      'La mesure est conservée pendant que cet appareil diffuse du son. Les changements dans la pièce pendant la lecture ne sont pas pris en compte.';
+
+  @override
+  String get screenAudioRoomNoiseNoReading =>
+      'S\'il n\'y a pas de mesure, activez le volume adaptatif ou la détection du mot de réveil et vérifiez que le microphone n\'est pas coupé.';
+
+  @override
+  String screenAudioDbfs(String level) {
+    return '$level dBFS';
+  }
+
+  @override
+  String get screenAudioVolumeCurveSliderHint =>
+      'Faites glisser un point ou touchez-le pour saisir des valeurs exactes. Les pourcentages s\'appliquent aux curseurs de volume de l\'assistant, multimédia et de l\'interphone sous Écran et audio : à 100 %, le son est au niveau du curseur, et à 50 %, comme avec le curseur à moitié.';
+
+  @override
+  String get screenAudioVolumeCurveNoise => 'Bruit de la pièce (dBFS)';
+
+  @override
+  String get screenAudioVolumeCurveAssistant => 'Assistant (%)';
+
+  @override
+  String get screenAudioVolumeCurveMedia => 'Multimédia (%)';
+
+  @override
+  String get screenAudioVolumeCurveIntercom => 'Interphone (%)';
+
+  @override
+  String screenAudioVolumeCurveNoiseRange(String low, String high) {
+    return 'Saisissez un niveau de bruit entre $low et $high dBFS';
+  }
+
+  @override
+  String screenAudioVolumeCurveLevelRange(String low, String high) {
+    return 'Saisissez un volume de $low % à $high %';
+  }
+
+  @override
   String get settingAudioMicDeviceTitle => 'Microphone';
 
   @override

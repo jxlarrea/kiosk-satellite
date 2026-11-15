@@ -51,6 +51,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import 'color_picker.dart';
 import 'celestial_settings.dart';
+import 'volume_curve_editor.dart';
 import 'weather_mood_settings.dart';
 import 'date_picker.dart';
 import 'gesture_settings.dart';
@@ -2668,6 +2669,10 @@ class _CategoryContentState extends State<_CategoryContent> {
                   ),
             ],
           ),
+          // The room's noise as a volume source, a page of its own
+          // (issue #1450): a switch, the room's level, a switch per volume
+          // and the curve.
+          _subpageEntryCard(container, 'Screen & Audio', 'Adaptive volume'),
           // Device pickers are hand-built (their options are live hardware);
           // the remote UI mirrors both rows. The mic one only while detection
           // is on — with it off this app never opens the microphone, the
@@ -3471,6 +3476,11 @@ class _CategoryContentState extends State<_CategoryContent> {
       adaptiveBrightness.key: container.device.hasLightSensor
           ? _AmbientLightRow(container: container)
           : HintRow(screenAudioText(context, _noLightSensorNote)),
+    // The room's noise level as adaptive volume follows it, live, under
+    // the switch (issue #1450): the curve's noise levels are typed against
+    // it. Mirrored on the remote (notices.js, updateAdaptiveVolumeRows).
+    if (widget.category == 'Screen & Audio')
+      adaptiveVolume.key: _RoomNoiseRows(container: container),
     // Under the screensaver's brightness sliders while adaptive brightness
     // is on: the slider is the bright-room level the room's light dims
     // from, which is not what a slider called "brightness" says on its own.
@@ -4123,6 +4133,24 @@ class _CategoryContentState extends State<_CategoryContent> {
         replace: {
           ..._rowReplacements(container),
           adaptiveMinBrightness.key: editor,
+        },
+      );
+    }
+
+    // The curve draws as one editor in its setting's place (issue #1450).
+    // Mirrored on the remote (volume_curve.js).
+    if (widget.category == 'Screen & Audio' && subpage == 'Adaptive volume') {
+      return sectioned(
+        [
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage) def,
+        ],
+        replace: {
+          ..._rowReplacements(container),
+          adaptiveVolumeCurve.key: SearchLandingTarget(
+            id: adaptiveVolumeCurve.key,
+            child: VolumeCurveEditor(container: container),
+          ),
         },
       );
     }
@@ -6865,6 +6893,70 @@ const _adaptiveNote =
 const _adaptiveOwnsNote = 'Adaptive brightness is on.';
 const _noLightSensorNote = 'No ambient light sensor on this device.';
 const _ambientLightNote = 'What the ambient light sensor reads right now.';
+
+const _roomNoiseNote = 'What the microphone reads while this device is silent.';
+const _roomNoiseHoldsNote =
+    'The reading holds while this device plays. Changes in the room during '
+    'playback are not used.';
+const _roomNoiseNoReadingNote =
+    'If there is no reading, turn on adaptive volume or wake word detection '
+    'and check that the microphone is not muted.';
+
+/// The room's noise level as adaptive volume follows it (issue #1450),
+/// live, with the rule that makes it trustworthy under it: the room is
+/// only measured while the kiosk is silent. With no reading a second note
+/// says what one needs: the microphone opens for it while adaptive volume
+/// or wake word detection is on, and not while the satellite is muted.
+class _RoomNoiseRows extends StatefulWidget {
+  const _RoomNoiseRows({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_RoomNoiseRows> createState() => _RoomNoiseRowsState();
+}
+
+class _RoomNoiseRowsState extends State<_RoomNoiseRows> {
+  StreamSubscription<AdaptiveVolumeChanged>? _sub;
+  double? _noise;
+
+  @override
+  void initState() {
+    super.initState();
+    _noise = widget.container.adaptiveVolume.noise;
+    _sub = widget.container.bus.on<AdaptiveVolumeChanged>().listen((e) {
+      if (mounted && e.noise != _noise) setState(() => _noise = e.noise);
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final noise = _noise;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SettingsRow(
+          title: Text(screenAudioText(context, 'Room noise')),
+          subtitle: Text(screenAudioText(context, _roomNoiseNote)),
+          trailing: Text(
+            noise == null
+                ? screenAudioText(context, 'No reading yet')
+                : l10n(context).screenAudioDbfs('${noise.round()}'),
+          ),
+        ),
+        HintRow(screenAudioText(context, _roomNoiseHoldsNote)),
+        if (noise == null)
+          HintRow(screenAudioText(context, _roomNoiseNoReadingNote)),
+      ],
+    );
+  }
+}
 
 /// The ambient light sensor's reading, live off the sensor stream.
 class _AmbientLightRow extends StatefulWidget {

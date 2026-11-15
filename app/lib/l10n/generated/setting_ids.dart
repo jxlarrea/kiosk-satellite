@@ -296,6 +296,26 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingAssistantVolumeTitle",
     "description": "settingAssistantVolumeDescription",
   },
+  "audio.adaptive_volume": {
+    "title": "settingAdaptiveVolumeTitle",
+    "description": "settingAdaptiveVolumeDescription",
+  },
+  "audio.adaptive_volume_assistant": {
+    "title": "settingAdaptiveVolumeAssistantTitle",
+    "description": "settingAdaptiveVolumeAssistantDescription",
+  },
+  "audio.adaptive_volume_media": {
+    "title": "settingAdaptiveVolumeMediaTitle",
+    "description": "settingAdaptiveVolumeMediaDescription",
+  },
+  "audio.adaptive_volume_intercom": {
+    "title": "settingAdaptiveVolumeIntercomTitle",
+    "description": "settingAdaptiveVolumeIntercomDescription",
+  },
+  "audio.adaptive_volume_curve": {
+    "title": "settingAdaptiveVolumeCurveTitle",
+    "description": "settingAdaptiveVolumeCurveSliderDescription",
+  },
   "intercom.volume": {
     "title": "settingIntercomVolumeTitle",
     "description": "settingIntercomVolumeDescription",

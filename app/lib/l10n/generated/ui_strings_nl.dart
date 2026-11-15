@@ -11089,6 +11089,97 @@ class UiStringsNl extends UiStrings {
   }
 
   @override
+  String get settingAdaptiveVolumeTitle => 'Adaptief volume inschakelen';
+
+  @override
+  String get settingAdaptiveVolumeDescription =>
+      'Verlaag het volume als de kamer stiller wordt, met behulp van de microfoon.';
+
+  @override
+  String get settingAdaptiveVolumeAssistantTitle => 'Assistent';
+
+  @override
+  String get settingAdaptiveVolumeAssistantDescription =>
+      'Spraakreacties en geluidssignalen.';
+
+  @override
+  String get settingAdaptiveVolumeMediaTitle => 'Media';
+
+  @override
+  String get settingAdaptiveVolumeMediaDescription =>
+      'Muziek en video. Wordt ingesteld wanneer het afspelen begint.';
+
+  @override
+  String get settingAdaptiveVolumeIntercomTitle => 'Intercom';
+
+  @override
+  String get settingAdaptiveVolumeIntercomDescription =>
+      'Gesprekken. Wordt ingesteld wanneer een gesprek begint.';
+
+  @override
+  String get settingAdaptiveVolumeCurveTitle => 'Volumecurve';
+
+  @override
+  String get settingAdaptiveVolumeCurveSliderDescription =>
+      'Het volume bij elk geluidsniveau in de kamer, als percentage van de schuifregelaar van dat volume onder Scherm & audio.';
+
+  @override
+  String get screenAudioAdaptiveVolume => 'Adaptief volume';
+
+  @override
+  String get screenAudioAdaptiveVolumeHint =>
+      'Volg het kamergeluid met de microfoon';
+
+  @override
+  String get screenAudioAdaptiveVolumes => 'Volumes';
+
+  @override
+  String get screenAudioRoomNoise => 'Kamergeluid';
+
+  @override
+  String get screenAudioRoomNoiseNote =>
+      'Wat de microfoon meet terwijl dit apparaat stil is.';
+
+  @override
+  String get screenAudioRoomNoiseHolds =>
+      'De meting blijft staan terwijl dit apparaat geluid afspeelt. Veranderingen in de kamer tijdens het afspelen worden niet gebruikt.';
+
+  @override
+  String get screenAudioRoomNoiseNoReading =>
+      'Als er geen meting is, schakel dan adaptief volume of wekwoorddetectie in en controleer of de microfoon niet gedempt is.';
+
+  @override
+  String screenAudioDbfs(String level) {
+    return '$level dBFS';
+  }
+
+  @override
+  String get screenAudioVolumeCurveSliderHint =>
+      'Versleep een punt of tik erop om exacte waarden in te voeren. De percentages gelden voor de schuifregelaars Assistentvolume, Mediavolume en Intercomvolume onder Scherm & audio: bij 100% klinkt het op het niveau van de schuifregelaar en bij 50% alsof de schuifregelaar op de helft staat.';
+
+  @override
+  String get screenAudioVolumeCurveNoise => 'Kamergeluid (dBFS)';
+
+  @override
+  String get screenAudioVolumeCurveAssistant => 'Assistent (%)';
+
+  @override
+  String get screenAudioVolumeCurveMedia => 'Media (%)';
+
+  @override
+  String get screenAudioVolumeCurveIntercom => 'Intercom (%)';
+
+  @override
+  String screenAudioVolumeCurveNoiseRange(String low, String high) {
+    return 'Voer een geluidsniveau in tussen $low en $high dBFS';
+  }
+
+  @override
+  String screenAudioVolumeCurveLevelRange(String low, String high) {
+    return 'Voer een volume tussen $low% en $high% in';
+  }
+
+  @override
   String get settingAudioMicDeviceTitle => 'Microfoon';
 
   @override

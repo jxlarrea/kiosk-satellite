@@ -468,7 +468,7 @@ class IntercomAudio(context: Context, messenger: BinaryMessenger) {
             return
         }
         Log.i(TAG, "ring ${if (short) "short" else "double"} at ${"%.2f".format(volume)}")
-        runCatching { track.setVolume(volume * VolumeController.assistGain.coerceAtLeast(0f).let { if (VolumeController.isFixed) it else 1f }) }
+        runCatching { track.setVolume(volume * VolumeController.assistFaderGain.coerceAtLeast(0f).let { if (VolumeController.isFixed) it else 1f }) }
         ringTrack = track
         track.play()
         // Release once it has played out, unless stopped first.

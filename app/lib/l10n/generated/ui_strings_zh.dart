@@ -10466,6 +10466,90 @@ class UiStringsZh extends UiStrings {
   }
 
   @override
+  String get settingAdaptiveVolumeTitle => '启用自适应音量';
+
+  @override
+  String get settingAdaptiveVolumeDescription => '房间变安静时，通过麦克风自动降低音量。';
+
+  @override
+  String get settingAdaptiveVolumeAssistantTitle => '助手';
+
+  @override
+  String get settingAdaptiveVolumeAssistantDescription => '语音回复和提示音。';
+
+  @override
+  String get settingAdaptiveVolumeMediaTitle => '媒体';
+
+  @override
+  String get settingAdaptiveVolumeMediaDescription => '音乐和视频。在开始播放时设定。';
+
+  @override
+  String get settingAdaptiveVolumeIntercomTitle => '对讲';
+
+  @override
+  String get settingAdaptiveVolumeIntercomDescription => '通话。在通话开始时设定。';
+
+  @override
+  String get settingAdaptiveVolumeCurveTitle => '音量曲线';
+
+  @override
+  String get settingAdaptiveVolumeCurveSliderDescription =>
+      '各房间噪声水平对应的音量，以“屏幕与音频”中该音量滑块的百分比表示。';
+
+  @override
+  String get screenAudioAdaptiveVolume => '自适应音量';
+
+  @override
+  String get screenAudioAdaptiveVolumeHint => '通过麦克风根据房间噪声自动调整音量';
+
+  @override
+  String get screenAudioAdaptiveVolumes => '音量';
+
+  @override
+  String get screenAudioRoomNoise => '房间噪声';
+
+  @override
+  String get screenAudioRoomNoiseNote => '本设备未播放声音时麦克风测得的读数。';
+
+  @override
+  String get screenAudioRoomNoiseHolds => '本设备播放声音时读数保持不变。播放期间房间的变化不会被采用。';
+
+  @override
+  String get screenAudioRoomNoiseNoReading =>
+      '如果没有读数，请开启自适应音量或唤醒词检测，并确认麦克风未静音。';
+
+  @override
+  String screenAudioDbfs(String level) {
+    return '$level dBFS';
+  }
+
+  @override
+  String get screenAudioVolumeCurveSliderHint =>
+      '拖动曲线上的点可调整，也可点击点输入数值。百分比作用于“屏幕与音频”中的助手音量、媒体音量和对讲音量滑块：100% 表示按滑块的音量播放，50% 相当于滑块调到一半。';
+
+  @override
+  String get screenAudioVolumeCurveNoise => '房间噪声（dBFS）';
+
+  @override
+  String get screenAudioVolumeCurveAssistant => '助手（%）';
+
+  @override
+  String get screenAudioVolumeCurveMedia => '媒体（%）';
+
+  @override
+  String get screenAudioVolumeCurveIntercom => '对讲（%）';
+
+  @override
+  String screenAudioVolumeCurveNoiseRange(String low, String high) {
+    return '请输入 $low 至 $high dBFS 之间的噪声水平';
+  }
+
+  @override
+  String screenAudioVolumeCurveLevelRange(String low, String high) {
+    return '请输入 $low% 至 $high% 之间的音量';
+  }
+
+  @override
   String get settingAudioMicDeviceTitle => '麦克风';
 
   @override
@@ -26209,6 +26293,90 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String screenAudioCurveLevelRange(String low, String high) {
     return '请输入 $low% 至 $high% 之间的亮度';
+  }
+
+  @override
+  String get settingAdaptiveVolumeTitle => '启用自适应音量';
+
+  @override
+  String get settingAdaptiveVolumeDescription => '房间变安静时，通过麦克风自动降低音量。';
+
+  @override
+  String get settingAdaptiveVolumeAssistantTitle => '助手';
+
+  @override
+  String get settingAdaptiveVolumeAssistantDescription => '语音回复和提示音。';
+
+  @override
+  String get settingAdaptiveVolumeMediaTitle => '媒体';
+
+  @override
+  String get settingAdaptiveVolumeMediaDescription => '音乐和视频。在开始播放时设定。';
+
+  @override
+  String get settingAdaptiveVolumeIntercomTitle => '对讲';
+
+  @override
+  String get settingAdaptiveVolumeIntercomDescription => '通话。在通话开始时设定。';
+
+  @override
+  String get settingAdaptiveVolumeCurveTitle => '音量曲线';
+
+  @override
+  String get settingAdaptiveVolumeCurveSliderDescription =>
+      '各房间噪声水平对应的音量，以“屏幕与音频”中该音量滑块的百分比表示。';
+
+  @override
+  String get screenAudioAdaptiveVolume => '自适应音量';
+
+  @override
+  String get screenAudioAdaptiveVolumeHint => '通过麦克风根据房间噪声自动调整音量';
+
+  @override
+  String get screenAudioAdaptiveVolumes => '音量';
+
+  @override
+  String get screenAudioRoomNoise => '房间噪声';
+
+  @override
+  String get screenAudioRoomNoiseNote => '本设备未播放声音时麦克风测得的读数。';
+
+  @override
+  String get screenAudioRoomNoiseHolds => '本设备播放声音时读数保持不变。播放期间房间的变化不会被采用。';
+
+  @override
+  String get screenAudioRoomNoiseNoReading =>
+      '如果没有读数，请开启自适应音量或唤醒词检测，并确认麦克风未静音。';
+
+  @override
+  String screenAudioDbfs(String level) {
+    return '$level dBFS';
+  }
+
+  @override
+  String get screenAudioVolumeCurveSliderHint =>
+      '拖动曲线上的点可调整，也可点击点输入数值。百分比作用于“屏幕与音频”中的助手音量、媒体音量和对讲音量滑块：100% 表示按滑块的音量播放，50% 相当于滑块调到一半。';
+
+  @override
+  String get screenAudioVolumeCurveNoise => '房间噪声（dBFS）';
+
+  @override
+  String get screenAudioVolumeCurveAssistant => '助手（%）';
+
+  @override
+  String get screenAudioVolumeCurveMedia => '媒体（%）';
+
+  @override
+  String get screenAudioVolumeCurveIntercom => '对讲（%）';
+
+  @override
+  String screenAudioVolumeCurveNoiseRange(String low, String high) {
+    return '请输入 $low 至 $high dBFS 之间的噪声水平';
+  }
+
+  @override
+  String screenAudioVolumeCurveLevelRange(String low, String high) {
+    return '请输入 $low% 至 $high% 之间的音量';
   }
 
   @override

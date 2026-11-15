@@ -724,8 +724,22 @@
     font-size: 14.5px; font-weight: 600; line-height: 1.3; }
   .curve-level { font-size: 12.5px; color: var(--muted); line-height: 1.3; }
   .curve-row .hint-row { padding-top: 12px; }
+  /* The adaptive volume curve (issue #1450): a line per volume in one
+     color, told apart by their stroke, with a key above the chart. */
+  .row.curve-row.volume-curve { padding-top: 14px; }
+  .curve-line.media { stroke-dasharray: 9 6; stroke-linecap: butt; }
+  .curve-line.intercom { stroke-dasharray: .1 6; }
+  .curve-key { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-bottom: 6px; }
+  .curve-key > span { display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .curve-key svg { flex: none; width: 26px; height: 10px; overflow: visible; }
+  .curve-fields { display: flex; gap: 10px; }
+  .curve-fields .form-field { flex: 1 1 0; min-width: 0; }
   @media (max-width: 640px) {
     .curve-chart { height: 210px; }
+    /* Two rows of two, so three volumes still fit a line under their
+       noise level. */
+    .volume-curve .curve-points { grid-template-columns: repeat(2, 1fr); }
   }
   /* In a row a field carries no label, the name is the label. Text caps
      at 220 on the wide pane; numbers are 90 wide, right aligned, tabular. */

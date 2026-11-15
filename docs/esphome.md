@@ -78,7 +78,7 @@ Use **Settings > ESPHome > Excluded entities** to pick entities that should stay
 | **Take camera snapshot** | button | Requires physical camera hardware. |
 | **Last camera snapshot** | timestamp | Requires physical camera hardware. The value is saved across restarts. |
 | **Ambient light** | sensor | Reports light levels in Lux. Requires a physical light sensor. A real change reaches Home Assistant at once. A sensor that keeps flapping between values is held to one update every 30 seconds so it cannot flood the recorder. |
-| **Ambient noise** | sensor | Reports how loud the room is in dBFS, averaged over 5 seconds. Reads unknown while wake word detection is off or muted. A real change reaches Home Assistant at once. A level that keeps moving is held to one update every 30 seconds, the same as Ambient light. See the [Ambient Noise](#ambient-noise) section. |
+| **Ambient noise** | sensor | Reports how loud the room is in dBFS, averaged over 5 seconds. Reads unknown while wake word detection is off or muted, unless Adaptive volume is on. A real change reaches Home Assistant at once. A level that keeps moving is held to one update every 30 seconds, the same as Ambient light. See the [Ambient Noise](#ambient-noise) section. |
 | **GPS latitude**, **GPS longitude** | sensor | Reports coordinates in degrees, precise to six decimals. Requires **Report location** to be on and a physical GPS receiver. See the [GPS Sensor](#gps-sensor) section. |
 | **GPS accuracy**, **Altitude** | sensor | Reports accuracy and altitude in meters. Requires **Report location** to be on and a physical GPS receiver. |
 | **Speed** | sensor | Reports speed in meters per second (Home Assistant will automatically convert this to your preferred unit system). Requires **Report location** to be on and a physical GPS receiver. |
@@ -487,12 +487,12 @@ Anyone who can run actions on this device in Home Assistant can run commands on 
 
 ## Ambient Noise
 
-The **Ambient noise** sensor reports how loud the room is as one number in dBFS. A typical use is an automation that lowers the assistant's volume when the house is quiet at night and raises it when the TV is on. Plugins that declare the `noise` capability read the same level.
+The **Ambient noise** sensor reports how loud the room is as one number in dBFS. A typical use is an automation that reacts to a loud or quiet room. To lower the assistant's volume when the house is quiet at night and raise it when the TV is on, use [Adaptive volume](adaptive-volume.md), which does it on the device with no automation. Plugins that declare the `noise` capability read the same level.
 
 Only the level leaves the microphone, never audio:
 
 * The figure is the average over 5 seconds, rounded to a whole dB. Home Assistant hears about it when it moves by 2 dB or more.
-* It comes from the capture the wake word engine already has open, so it never opens the microphone. With wake word detection off or the satellite muted there is no level and the sensor reads unknown.
+* It comes from the capture the wake word engine already has open, so the sensor never opens the microphone. With wake word detection off or the satellite muted there is no level and the sensor reads unknown. The exception is [Adaptive volume](adaptive-volume.md): while it is on, the microphone is open for the level even with wake word detection off, and the sensor reads it too.
 * It holds its last value through voice turns, announcements, timers, alarms, media playback and intercom calls, so speech never shows up in it. Any 5 seconds in which the kiosk played a sound of its own are dropped as well. The value stays held until a clean reading replaces it.
 
 dBFS is relative to the loudest sound the microphone can record, which reads 0. It is not a calibrated sound level. Quieter rooms read lower. **Microphone gain** shifts the reading by the same number of dB, so set the gain first and then watch the sensor for a day to find your room's quiet and loud levels. Sound from the dashboard's web pages and the DLNA video player can't be told apart from the room, so it counts as noise.

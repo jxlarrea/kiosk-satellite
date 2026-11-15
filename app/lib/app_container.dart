@@ -13,6 +13,7 @@ import 'managers/plugins/plugin_host_api.dart';
 import 'managers/shizuku/shizuku_manager.dart';
 import 'managers/assist_pipeline/assist_pipeline_manager.dart';
 import 'managers/audio/audio_routing_manager.dart';
+import 'managers/audio/adaptive_volume_manager.dart';
 import 'managers/audio/noise_level_manager.dart';
 import 'managers/browser/browser_manager.dart';
 import 'managers/camera/camera_manager.dart';
@@ -159,7 +160,8 @@ class AppContainer {
     // restart re-opens capture.
     audio = AudioRoutingManager(bus, commands, log, settings);
     wakeWord = WakeWordManager(bus, commands, log, settings);
-    noiseLevel = NoiseLevelManager(bus, commands, log);
+    noiseLevel = NoiseLevelManager(bus, commands, log, settings: settings);
+    adaptiveVolume = AdaptiveVolumeManager(bus, commands, log, settings);
     // After wakeWord: the native pipeline transport consumes the engine's
     // in-process audio stream through it (issue-free: one consumer per
     // turn, negotiated by Voice Satellite).
@@ -363,6 +365,7 @@ class AppContainer {
   late final EventBroadcastManager broadcasts;
   late final WakeWordManager wakeWord;
   late final NoiseLevelManager noiseLevel;
+  late final AdaptiveVolumeManager adaptiveVolume;
   late final AssistPipelineManager pipeline;
   late final SendspinManager sendspin;
   late final DlnaManager dlna;
@@ -441,6 +444,8 @@ class AppContainer {
     // After wakeWord: it seeds from the engine's state. Before btProxy,
     // whose first refresh reads the level.
     noiseLevel,
+    // After noiseLevel, whose windows it counts.
+    adaptiveVolume,
     pipeline,
     sendspin,
     dlna,

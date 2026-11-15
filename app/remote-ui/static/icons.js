@@ -63,6 +63,8 @@ export const SUBPAGE_ICONS = {
     + '<path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2'
     + 'M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/>'
     + '<path d="m10.2 14.5 1.8-5 1.8 5m-3-1.6h2.4" stroke-width="1.6"/>'),
+  'Adaptive volume': svg('<path d="M4 9v6h4l5 4V5L8 9H4z"/>'
+    + '<path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>'),
   // Screensaver.
   'Weather Mood screensaver': svg('<path d="M7 18a5 5 0 1 1 1-10 6 6 0 0 1 11 3 3.5 3.5 0 0 1-1 7Z"/>'),
   'Celestial screensaver': svg('<path d="m10 3 1.6 4.4L16 9l-4.4 1.6L10 15l-1.6-4.4L4 9l4.4-1.6Z"/><path d="m18 14 .8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8Z"/>'),

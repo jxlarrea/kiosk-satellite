@@ -403,6 +403,42 @@ class NoiseLevelChanged extends AppEvent {
   final bool held;
 }
 
+/// One clean window of room noise closed (issue #1450): the mean power of
+/// five seconds the kiosk did not play into, in dBFS, before the sensor's
+/// rounding and its 2 dB steps. Internal: adaptive volume counts windows,
+/// which [NoiseLevelChanged] leaves out when the level barely moved.
+class NoiseWindowMeasured extends AppEvent {
+  const NoiseWindowMeasured(this.dbfs);
+  final double dbfs;
+}
+
+/// A media player the echo canceller has no tap on started or stopped
+/// (DLNA). Internal: the room's noise level holds while one plays, the way
+/// it does for the players that are tapped.
+class UntappedPlaybackChanged extends AppEvent {
+  const UntappedPlaybackChanged({required this.source, required this.playing});
+  final String source;
+  final bool playing;
+}
+
+/// Adaptive volume's state moved (issue #1450): the room estimate it
+/// follows, in dBFS, and the share of its own slider each volume plays at,
+/// 0 to 1. A volume that does not follow the room is at 1. [noise] is null
+/// with no reading, and every share is then 1. Internal: the device and
+/// intercom managers apply the shares, both settings UIs draw the marker.
+class AdaptiveVolumeChanged extends AppEvent {
+  const AdaptiveVolumeChanged({
+    required this.noise,
+    required this.assistant,
+    required this.media,
+    required this.intercom,
+  });
+  final double? noise;
+  final double assistant;
+  final double media;
+  final double intercom;
+}
+
 /// A playback level sample from a native sound (mean |amplitude|, 0..1, at
 /// most ~20/s). Wire event: the page's reactive bar animates to audio it
 /// never touches.

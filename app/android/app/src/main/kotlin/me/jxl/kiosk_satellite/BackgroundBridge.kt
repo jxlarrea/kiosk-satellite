@@ -345,6 +345,15 @@ class BackgroundBridge(
                     )
                     result.success(true)
                 }
+                // Adaptive volume's shares of the two faders, as linear
+                // gains (issue #1450).
+                "setVolumeTrim" -> {
+                    VolumeController.setTrim(
+                        (call.argument<Number>("media"))?.toFloat() ?: 1f,
+                        (call.argument<Number>("assistant"))?.toFloat() ?: 1f,
+                    )
+                    result.success(true)
+                }
                 // Kill and relaunch the whole process. The recovery of last
                 // resort for a wedged renderer (see the Dart frame watchdog):
                 // an Activity relaunch and a WebView rebuild both leave a

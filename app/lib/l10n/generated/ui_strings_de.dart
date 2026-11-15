@@ -11204,6 +11204,97 @@ class UiStringsDe extends UiStrings {
   }
 
   @override
+  String get settingAdaptiveVolumeTitle => 'Adaptive Lautstärke aktivieren';
+
+  @override
+  String get settingAdaptiveVolumeDescription =>
+      'Senkt die Lautstärke mithilfe des Mikrofons, wenn es im Raum leiser wird.';
+
+  @override
+  String get settingAdaptiveVolumeAssistantTitle => 'Assistent';
+
+  @override
+  String get settingAdaptiveVolumeAssistantDescription =>
+      'Sprachantworten und Signaltöne.';
+
+  @override
+  String get settingAdaptiveVolumeMediaTitle => 'Medien';
+
+  @override
+  String get settingAdaptiveVolumeMediaDescription =>
+      'Musik und Videos. Wird beim Start der Wiedergabe festgelegt.';
+
+  @override
+  String get settingAdaptiveVolumeIntercomTitle => 'Intercom';
+
+  @override
+  String get settingAdaptiveVolumeIntercomDescription =>
+      'Anrufe. Wird beim Start eines Anrufs festgelegt.';
+
+  @override
+  String get settingAdaptiveVolumeCurveTitle => 'Lautstärkekurve';
+
+  @override
+  String get settingAdaptiveVolumeCurveSliderDescription =>
+      'Die Lautstärke bei jedem Geräuschpegel im Raum, als Prozentwert des Reglers dieser Lautstärke unter Bildschirm und Audio.';
+
+  @override
+  String get screenAudioAdaptiveVolume => 'Adaptive Lautstärke';
+
+  @override
+  String get screenAudioAdaptiveVolumeHint =>
+      'Passt die Lautstärke mithilfe des Mikrofons an die Raumgeräusche an';
+
+  @override
+  String get screenAudioAdaptiveVolumes => 'Lautstärken';
+
+  @override
+  String get screenAudioRoomNoise => 'Raumgeräusch';
+
+  @override
+  String get screenAudioRoomNoiseNote =>
+      'Was das Mikrofon misst, während dieses Gerät still ist.';
+
+  @override
+  String get screenAudioRoomNoiseHolds =>
+      'Der Messwert bleibt stehen, solange dieses Gerät etwas wiedergibt. Änderungen im Raum während der Wiedergabe werden nicht verwendet.';
+
+  @override
+  String get screenAudioRoomNoiseNoReading =>
+      'Wenn es keinen Messwert gibt, aktiviere die adaptive Lautstärke oder die Aktivierungswort-Erkennung und prüfe, dass das Mikrofon nicht stummgeschaltet ist.';
+
+  @override
+  String screenAudioDbfs(String level) {
+    return '$level dBFS';
+  }
+
+  @override
+  String get screenAudioVolumeCurveSliderHint =>
+      'Ziehe einen Punkt oder tippe darauf, um genaue Werte einzugeben. Die Prozentwerte gelten für die Regler Assistentenlautstärke, Medienlautstärke und Intercom-Lautstärke unter Bildschirm und Audio: Bei 100 % gilt der Pegel des Reglers, bei 50 % klingt es wie mit dem Regler auf der Hälfte.';
+
+  @override
+  String get screenAudioVolumeCurveNoise => 'Raumgeräusch (dBFS)';
+
+  @override
+  String get screenAudioVolumeCurveAssistant => 'Assistent (%)';
+
+  @override
+  String get screenAudioVolumeCurveMedia => 'Medien (%)';
+
+  @override
+  String get screenAudioVolumeCurveIntercom => 'Intercom (%)';
+
+  @override
+  String screenAudioVolumeCurveNoiseRange(String low, String high) {
+    return 'Gib einen Geräuschpegel zwischen $low und $high dBFS ein';
+  }
+
+  @override
+  String screenAudioVolumeCurveLevelRange(String low, String high) {
+    return 'Gib eine Lautstärke von $low % bis $high % ein';
+  }
+
+  @override
   String get settingAudioMicDeviceTitle => 'Mikrofon';
 
   @override

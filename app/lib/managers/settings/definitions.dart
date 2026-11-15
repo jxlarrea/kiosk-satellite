@@ -11,6 +11,7 @@ import '../../l10n/generated/language_codes.dart';
 import '../../l10n/generated/setting_ids.dart';
 import '../../l10n/generated/setting_option_ids.dart';
 
+import '../audio/adaptive_volume_curve.dart';
 import '../btproxy/node_name.dart';
 import '../music_library/music_pick.dart';
 import '../navigation/compass_layout.dart';
@@ -284,6 +285,7 @@ const Map<String, String> subpageHints = {
   'Microphone settings': 'Echo cancellation, noise, gain, format, live level',
   'Equalizer': 'Bass, mids, treble, preamp',
   'Adaptive brightness': 'Follow the room light with the ambient light sensor',
+  'Adaptive volume': 'Follow the room noise with the microphone',
   // Screensaver. The mode pages only exist while that mode is the
   // one selected, since every setting on them gates on it.
   'Clock screensaver':
@@ -2047,6 +2049,82 @@ const assistantVolume = SettingDef<num>(
       'volume, independent of the media volume.',
   category: 'Screen & Audio',
   section: 'Audio Volume',
+);
+
+// Adaptive volume (issue #1450): the room's noise sets how loud the kiosk
+// plays, the way its light sets the screen brightness. Its own page: the
+// switch, the room's level as the curve follows it, a switch per volume
+// and the curve, four points both UIs draw as one editor. A point holds a
+// noise level and the share of its own slider each volume plays at there,
+// so the sliders, the Home Assistant volume entities and the Music
+// Assistant player volume keep their meaning as the level in a loud room.
+// The room is only measured while the kiosk is silent: a volume is picked
+// before a sound starts and holds until it ends.
+const adaptiveVolume = SettingDef<bool>(
+  key: 'audio.adaptive_volume',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable adaptive volume',
+  description:
+      'Lower the volume as the room gets quieter, using the microphone.',
+  category: 'Screen & Audio',
+  subpage: 'Adaptive volume',
+  section: 'Adaptive volume',
+);
+
+const adaptiveVolumeAssistant = SettingDef<bool>(
+  key: 'audio.adaptive_volume_assistant',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Assistant',
+  description: 'Voice responses and chimes.',
+  category: 'Screen & Audio',
+  subpage: 'Adaptive volume',
+  section: 'Volumes',
+  dependsOn: 'audio.adaptive_volume',
+);
+
+const adaptiveVolumeMedia = SettingDef<bool>(
+  key: 'audio.adaptive_volume_media',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Media',
+  description: 'Music and video. Set when playback starts.',
+  category: 'Screen & Audio',
+  subpage: 'Adaptive volume',
+  section: 'Volumes',
+  dependsOn: 'audio.adaptive_volume',
+);
+
+const adaptiveVolumeIntercom = SettingDef<bool>(
+  key: 'audio.adaptive_volume_intercom',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Intercom',
+  description: 'Calls. Set when a call starts.',
+  category: 'Screen & Audio',
+  subpage: 'Adaptive volume',
+  section: 'Volumes',
+  dependsOn: 'audio.adaptive_volume',
+  alsoDependsOn: 'intercom.enabled',
+);
+
+// The curve's four points as one value (AdaptiveVolumeCurve): a JSON list
+// of [noise in dBFS, assistant, media, intercom in percent] rows. Both UIs
+// draw the editor in this row's place and write a whole curve at a time.
+const adaptiveVolumeCurve = SettingDef<String>(
+  key: 'audio.adaptive_volume_curve',
+  type: SettingType.string,
+  defaultValue: AdaptiveVolumeCurve.defaultJson,
+  title: 'Volume curve',
+  description:
+      'The volume at each room noise level, as a percentage of that '
+      "volume's slider under Screen & Audio.",
+  category: 'Screen & Audio',
+  subpage: 'Adaptive volume',
+  section: 'Volume curve',
+  dependsOn: 'audio.adaptive_volume',
+  validator: AdaptiveVolumeCurve.check,
 );
 
 // ── Screensaver ────────────────────────────────────────────────────────
@@ -12859,6 +12937,13 @@ const fleetDefaultExcluded = {
   'voice_chimes.error_volume',
   'voice_chimes.alert_volume',
   'voice_chimes.announce_volume',
+  // Adaptive volume: which volumes follow the room is the room's to say,
+  // and the curve's noise levels are what this device's microphone reads
+  // there. The main switch travels, like adaptive brightness's.
+  'audio.adaptive_volume_assistant',
+  'audio.adaptive_volume_media',
+  'audio.adaptive_volume_intercom',
+  'audio.adaptive_volume_curve',
   // Files and picks that only resolve on the device that made them.
   'screensaver.gallery_items',
   'screensaver.local_folder',
@@ -13216,6 +13301,53 @@ const fleetFormerDefaultExcluded = <Set<String>>[
     'browser.cutout_mode',
     'screen.orientation',
     'intercom.volume',
+    'intercom.answer_mode',
+    'voice.mute',
+    'voice.tts_output',
+  },
+  // Before adaptive volume joined (issue #1450).
+  {
+    'browser.zoom',
+    'screensaver.website_zoom',
+    'screensaver.clock_scale',
+    'screensaver.widget_scale',
+    'screensaver.immich_metadata_scale',
+    'screensaver.glance_scale',
+    'face.preview_scale',
+    'sendspin.player_size',
+    'screen.default_brightness',
+    'screen.adaptive_min_brightness',
+    'screen.adaptive_max_brightness',
+    'screen.adaptive_dark_lux',
+    'screen.adaptive_bright_lux',
+    'screen.adaptive_use_entity',
+    'screen.adaptive_light_entity',
+    'screensaver.brightness_level',
+    'screensaver.dim_level',
+    'audio.media_volume',
+    'audio.assistant_volume',
+    'notifications.volume',
+    'ha.tap_sound_volume',
+    'voice_chimes.wake_volume',
+    'voice_chimes.done_volume',
+    'voice_chimes.error_volume',
+    'voice_chimes.alert_volume',
+    'voice_chimes.announce_volume',
+    'screensaver.gallery_items',
+    'screensaver.local_folder',
+    'screensaver.clock_background',
+    'notifications.chime_file',
+    'launcher.apps',
+    'motion.sensitivity',
+    'motion.fps',
+    'face.sensitivity',
+    'camera.snapshot_resolution',
+    'motion.use_entity',
+    'motion.entity',
+    'browser.cutout_mode',
+    'screen.orientation',
+    'intercom.volume',
+    'intercom.ring_volume',
     'intercom.answer_mode',
     'voice.mute',
     'voice.tts_output',
@@ -14299,6 +14431,13 @@ const List<SettingDef<Object>> allSettings = [
   mediaVolume,
   intercomVolume,
   assistantVolume,
+  // After the mixer: the page's entry row sits under the Audio Volume
+  // card on both UIs.
+  adaptiveVolume,
+  adaptiveVolumeAssistant,
+  adaptiveVolumeMedia,
+  adaptiveVolumeIntercom,
+  adaptiveVolumeCurve,
   audioMicDevice,
   audioSpeakerDevice,
   micCaptureMode,

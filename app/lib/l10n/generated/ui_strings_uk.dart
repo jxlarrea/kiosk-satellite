@@ -11078,6 +11078,97 @@ class UiStringsUk extends UiStrings {
   }
 
   @override
+  String get settingAdaptiveVolumeTitle => 'Увімкнути адаптивну гучність';
+
+  @override
+  String get settingAdaptiveVolumeDescription =>
+      'Зменшує гучність, коли в кімнаті стає тихіше, використовуючи мікрофон.';
+
+  @override
+  String get settingAdaptiveVolumeAssistantTitle => 'Асистент';
+
+  @override
+  String get settingAdaptiveVolumeAssistantDescription =>
+      'Голосові відповіді та сигнали.';
+
+  @override
+  String get settingAdaptiveVolumeMediaTitle => 'Медіа';
+
+  @override
+  String get settingAdaptiveVolumeMediaDescription =>
+      'Музика та відео. Встановлюється на початку відтворення.';
+
+  @override
+  String get settingAdaptiveVolumeIntercomTitle => 'Домофон';
+
+  @override
+  String get settingAdaptiveVolumeIntercomDescription =>
+      'Виклики. Встановлюється на початку виклику.';
+
+  @override
+  String get settingAdaptiveVolumeCurveTitle => 'Крива гучності';
+
+  @override
+  String get settingAdaptiveVolumeCurveSliderDescription =>
+      'Гучність для кожного рівня шуму в кімнаті, у відсотках від повзунка цієї гучності в розділі «Екран та звук».';
+
+  @override
+  String get screenAudioAdaptiveVolume => 'Адаптивна гучність';
+
+  @override
+  String get screenAudioAdaptiveVolumeHint =>
+      'Слідувати за шумом кімнати за допомогою мікрофона';
+
+  @override
+  String get screenAudioAdaptiveVolumes => 'Гучності';
+
+  @override
+  String get screenAudioRoomNoise => 'Шум у кімнаті';
+
+  @override
+  String get screenAudioRoomNoiseNote =>
+      'Що вимірює мікрофон, поки цей пристрій мовчить.';
+
+  @override
+  String get screenAudioRoomNoiseHolds =>
+      'Показник утримується, поки цей пристрій щось відтворює. Зміни в кімнаті під час відтворення не враховуються.';
+
+  @override
+  String get screenAudioRoomNoiseNoReading =>
+      'Якщо показників немає, увімкніть адаптивну гучність або розпізнавання слова активації та перевірте, що мікрофон не вимкнено.';
+
+  @override
+  String screenAudioDbfs(String level) {
+    return '$level dBFS';
+  }
+
+  @override
+  String get screenAudioVolumeCurveSliderHint =>
+      'Перетягніть точку або торкніться її, щоб ввести точні значення. Відсотки застосовуються до повзунків гучності асистента, медіа та домофона в розділі «Екран та звук»: за 100% звук відтворюється на рівні повзунка, а за 50% так, ніби повзунок на половині.';
+
+  @override
+  String get screenAudioVolumeCurveNoise => 'Шум у кімнаті (dBFS)';
+
+  @override
+  String get screenAudioVolumeCurveAssistant => 'Асистент (%)';
+
+  @override
+  String get screenAudioVolumeCurveMedia => 'Медіа (%)';
+
+  @override
+  String get screenAudioVolumeCurveIntercom => 'Домофон (%)';
+
+  @override
+  String screenAudioVolumeCurveNoiseRange(String low, String high) {
+    return 'Введіть рівень шуму від $low до $high dBFS';
+  }
+
+  @override
+  String screenAudioVolumeCurveLevelRange(String low, String high) {
+    return 'Введіть гучність від $low% до $high%';
+  }
+
+  @override
   String get settingAudioMicDeviceTitle => 'Мікрофон';
 
   @override

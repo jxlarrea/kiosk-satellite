@@ -111,6 +111,7 @@ class DeviceManager extends Manager {
   final mediaGain = ValueNotifier<double>(1.0);
   StreamSubscription<VolumeChanged>? _volumeSub;
   StreamSubscription<SettingChanged>? _mixSub;
+  StreamSubscription<AdaptiveVolumeChanged>? _adaptiveVolumeSub;
 
   String get os => Platform.isAndroid ? 'android' : 'ios';
 
@@ -412,6 +413,13 @@ class DeviceManager extends Manager {
       await _pushVolumeMix();
       await _refreshMediaGain();
     }());
+    // Adaptive volume's shares of the two faders (issue #1450), applied
+    // on the platform side under them. They only move while the kiosk is
+    // silent, so no sink hears a step.
+    _adaptiveVolumeSub = bus.on<AdaptiveVolumeChanged>().listen((e) async {
+      await _pushVolumeTrim(media: e.media, assistant: e.assistant);
+      await _refreshMediaGain();
+    });
     commands.register(
       Command(
         name: 'getVolume',
@@ -828,6 +836,21 @@ class DeviceManager extends Manager {
     } catch (_) {}
   }
 
+  /// The shares as linear gains on the faders' squared taper, so half a
+  /// share sounds like the slider at half.
+  Future<void> _pushVolumeTrim({
+    required double media,
+    required double assistant,
+  }) async {
+    try {
+      const background = MethodChannel('kiosk_satellite/background');
+      await background.invokeMethod<void>('setVolumeTrim', {
+        'media': media * media,
+        'assistant': assistant * assistant,
+      });
+    } catch (_) {}
+  }
+
   Future<void> _pushVolumeMix() async {
     try {
       const background = MethodChannel('kiosk_satellite/background');
@@ -846,6 +869,7 @@ class DeviceManager extends Manager {
     _lightMethods.setMethodCallHandler(null);
     await _volumeSub?.cancel();
     await _mixSub?.cancel();
+    await _adaptiveVolumeSub?.cancel();
   }
 
   Future<Map<String, Object?>> info() async {

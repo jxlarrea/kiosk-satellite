@@ -271,6 +271,22 @@ class RemoteManager extends Manager {
       }),
     );
 
+    // The room's noise level as adaptive volume follows it and each
+    // volume's share of its slider (issue #1450), for the Room noise row
+    // and the curve's marker.
+    _subscriptions.add(
+      bus.on<AdaptiveVolumeChanged>().listen((e) {
+        if (_wsClients.isEmpty) return;
+        _broadcast({
+          'type': 'adaptivevolume',
+          'noise': e.noise,
+          'assistant': e.assistant,
+          'media': e.media,
+          'intercom': e.intercom,
+        });
+      }),
+    );
+
     // What the Home Assistant motion entity reads (issue #973), for its
     // row on the Motion Sensor page.
     _subscriptions.add(

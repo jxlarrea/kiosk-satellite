@@ -631,6 +631,9 @@ class IntercomManager extends Manager {
     rosterVisible.addListener(_syncScreenShown);
     _subs.add(bus.on<FleetChanged>().listen((_) => _readFleet()));
     _subs.add(
+      bus.on<AdaptiveVolumeChanged>().listen((e) => _roomShare = e.intercom),
+    );
+    _subs.add(
       bus.on<SoundEnded>().listen((e) {
         if (e.id == _ringSoundId) _ringSoundPlaying = false;
       }),
@@ -2926,10 +2929,16 @@ class IntercomManager extends Manager {
     if (!ok) log.warn(name, 'playback could not open');
   }
 
-  /// The intercom fader on the app's squared taper.
+  /// The share of the intercom fader adaptive volume leaves (issue #1450),
+  /// 1 while the intercom does not follow the room. Read when playback
+  /// opens: the room is not measured during a call, so it holds for it.
+  double _roomShare = 1;
+
+  /// The intercom fader on the app's squared taper, under the room's share
+  /// of it.
   double _playbackGain() {
     final pct = _settings.get(defs.intercomVolume).toDouble().clamp(0, 100);
-    final f = pct / 100;
+    final f = pct / 100 * _roomShare;
     return f * f;
   }
 

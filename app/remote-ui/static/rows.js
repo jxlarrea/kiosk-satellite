@@ -1,5 +1,6 @@
 import { confirmRemoteProtocol } from './tls.js';
 import { brightnessCurveRow } from './brightness_curve.js';
+import { volumeCurveRow } from './volume_curve.js';
 import { esphomeText, kioskText, launcherText, messageLanguage, voiceText } from './localization.js';
 import { intercomError, mediaText, cameraText, cameraError, deviceText, haText, screensaverText, screensaverError, t } from './localization.js';
 import { watchUpdates } from './live.js';
@@ -24,6 +25,7 @@ import {
   externalMotionReading,
   probeExternalMotion,
   updateAdaptiveBrightnessRows,
+  updateAdaptiveVolumeRows,
   updateFaceRows,
   updateMotionCameraRows,
   syncScreenOffAdminNotice,
@@ -362,6 +364,13 @@ export function settingRow(s) {
     // adaptive brightness switch (issue #343). After the gated sync, so
     // the curve rows the switch reveals are in place first.
     if (s.key === 'screen.adaptive_brightness') updateAdaptiveBrightnessRows();
+    // The room's level under the adaptive volume switch (issue #1450), and
+    // the curve's lines, which come and go with the volumes that follow
+    // the room.
+    if (s.key === 'audio.adaptive_volume') updateAdaptiveVolumeRows();
+    if (s.key.startsWith('audio.adaptive_volume_') || s.key === 'intercom.enabled') {
+      document.dispatchEvent(new CustomEvent('ks-adaptivevolume'));
+    }
     // The Celestial location status follows its source and entity, and
     // the GPS source brings its Location grant.
     if (s.key === 'screensaver.celestial_location' || s.key === 'screensaver.celestial_entity') {
@@ -384,6 +393,14 @@ export function settingRow(s) {
     }
   };
 
+  // The adaptive volume curve (issue #1450): one editor in its setting's
+  // row, as on the device.
+  if (s.key === 'audio.adaptive_volume_curve') {
+    return volumeCurveRow(row, {
+      showError: (message) => showRowError(row, message),
+      clearError: () => clearRowError(row),
+    });
+  }
   // The adaptive brightness curve (issue #742): one editor for its
   // settings, in Minimum brightness's row, as on the device. The other
   // three ends draw no row of their own; the editor's chips carry their

@@ -7,7 +7,9 @@ import { setDeviceName } from './fleet.js';
 import { renderMicLevel } from './audio.js';
 import { $, api, apiUrl, logout, state } from './core.js';
 import { appendLine, logView, updateConsoleMeta } from './logs.js';
-import { showAdaptiveLight, showExternalMotion, showLightLevel } from './notices.js';
+import {
+  showAdaptiveLight, showAdaptiveVolume, showExternalMotion, showLightLevel,
+} from './notices.js';
 import { applyFullscreenView, applyQuickEvent, applyQuickState, loadScreenshot, quickStateOf } from './panels.js';
 import { loadVsPermissions, renderVsControls } from './vs.js';
 import { modalShell, paintRange } from './widgets.js';
@@ -179,6 +181,7 @@ export function connectWs() {
     else if (msg.type === 'brightness') showBrightness(msg.level);
     else if (msg.type === 'lightlevel') showLightLevel(msg.lux);
     else if (msg.type === 'adaptivelight') showAdaptiveLight(msg);
+    else if (msg.type === 'adaptivevolume') showAdaptiveVolume(msg);
     else if (msg.type === 'externalmotion') showExternalMotion(msg);
     else if (msg.type === 'micLevel') renderMicLevel(msg.rms);
   };

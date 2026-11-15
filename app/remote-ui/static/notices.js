@@ -468,6 +468,74 @@ export async function updateClockNightRows() {
     hintRow(screenAudioText(NO_LIGHT_SENSOR_NOTE), { className: 'clock-night-note' }));
 }
 
+/* The adaptive volume rows (issue #1450), mirroring the device: under the
+   switch, the room's noise level as adaptive volume follows it, live off
+   the adaptivevolume messages, and the rule that makes it trustworthy:
+   the room is only measured while the kiosk is silent. With no reading a
+   second note says what one needs. The curve editor marks
+   the same level. Idempotent, so the save path re-runs it when the switch
+   flips. */
+const ROOM_NOISE_NOTE = 'What the microphone reads while this device is silent.';
+const ROOM_NOISE_HOLDS_NOTE = 'The reading holds while this device plays. Changes in the room '
+  + 'during playback are not used.';
+const ROOM_NOISE_NO_READING_NOTE = 'If there is no reading, turn on adaptive volume or wake word '
+  + 'detection and check that the microphone is not muted.';
+
+const hasRoomNoise = () => typeof state.adaptiveVolume?.noise === 'number';
+const roomNoiseText = () => (hasRoomNoise()
+  ? t('screenAudioDbfs', { level: String(Math.round(state.adaptiveVolume.noise)) })
+  : screenAudioText('No reading yet'));
+
+export async function updateAdaptiveVolumeRows() {
+  await probeAdaptiveVolume();
+  for (const stale of document.querySelectorAll('.adaptive-volume-note')) stale.remove();
+  // The curve editor may have been built before the probe answered.
+  document.dispatchEvent(new CustomEvent('ks-adaptivevolume'));
+  const row = document.querySelector('[data-key="audio.adaptive_volume"]');
+  if (!row) return;
+  const reading = readOnlyRow(screenAudioText('Room noise'), screenAudioText(ROOM_NOISE_NOTE),
+    roomNoiseText());
+  reading.classList.add('adaptive-volume-note');
+  reading.lastElementChild.classList.add('room-noise-value');
+  const holds = hintRow(screenAudioText(ROOM_NOISE_HOLDS_NOTE), { className: 'adaptive-volume-note' });
+  const needsWake = hintRow(screenAudioText(ROOM_NOISE_NO_READING_NOTE),
+    { className: 'adaptive-volume-note room-noise-needs-wake' });
+  needsWake.style.display = hasRoomNoise() ? 'none' : '';
+  row.after(reading, holds, needsWake);
+}
+
+/* Adaptive volume's state, asked about once per page load; the
+   adaptivevolume messages keep it current after that. */
+let adaptiveVolumeProbe;
+function probeAdaptiveVolume() {
+  adaptiveVolumeProbe ??= (async () => {
+    try {
+      const res = await (await api('/api/commands/getAdaptiveVolume',
+        { method: 'POST', body: '{}' })).json();
+      const data = res.data && typeof res.data === 'object' ? res.data : null;
+      // A message that beat the answer is the newer of the two.
+      if (data && state.adaptiveVolume === undefined) showAdaptiveVolume(data, false);
+    } catch (_) {}
+  })();
+  return adaptiveVolumeProbe;
+}
+
+/* The room's level and each volume's share of its slider, from the
+   WebSocket: the Room noise row and the curve's marker repaint off it. */
+export function showAdaptiveVolume(msg, notify = true) {
+  state.adaptiveVolume = {
+    noise: typeof msg.noise === 'number' ? msg.noise : null,
+    assistant: msg.assistant,
+    media: msg.media,
+    intercom: msg.intercom,
+  };
+  for (const el of document.querySelectorAll('.room-noise-value')) el.textContent = roomNoiseText();
+  for (const el of document.querySelectorAll('.room-noise-needs-wake')) {
+    el.style.display = hasRoomNoise() ? 'none' : '';
+  }
+  if (notify) document.dispatchEvent(new CustomEvent('ks-adaptivevolume'));
+}
+
 /* The light level adaptive brightness follows, asked about once per page
    load and again when its source changes; the adaptivelight messages
    keep it current in between. */

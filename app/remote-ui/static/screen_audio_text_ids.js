@@ -89,5 +89,21 @@ export const screenAudioTextMessageIds = {
   "Brightness curve": "screenAudioBrightnessCurve",
   "Drag a point, or tap it to type exact values. The Screen light in Home Assistant moves the top point and the curve follows.": "screenAudioCurveHint",
   "Light level (lx)": "screenAudioCurveLightLevel",
-  "Brightness (%)": "screenAudioCurveBrightness"
+  "Brightness (%)": "screenAudioCurveBrightness",
+  "Adaptive volume": "screenAudioAdaptiveVolume",
+  "Follow the room noise with the microphone": "screenAudioAdaptiveVolumeHint",
+  "Volumes": "screenAudioAdaptiveVolumes",
+  "Volume curve": "settingAdaptiveVolumeCurveTitle",
+  "Assistant": "settingAdaptiveVolumeAssistantTitle",
+  "Media": "settingAdaptiveVolumeMediaTitle",
+  "Intercom": "settingAdaptiveVolumeIntercomTitle",
+  "Room noise": "screenAudioRoomNoise",
+  "What the microphone reads while this device is silent.": "screenAudioRoomNoiseNote",
+  "The reading holds while this device plays. Changes in the room during playback are not used.": "screenAudioRoomNoiseHolds",
+  "If there is no reading, turn on adaptive volume or wake word detection and check that the microphone is not muted.": "screenAudioRoomNoiseNoReading",
+  "Drag a point, or tap it to type exact values. The percentages apply to the Assistant, Media and Intercom volume sliders under Screen & Audio: 100% plays at the slider's level and 50% plays like the slider set to half.": "screenAudioVolumeCurveSliderHint",
+  "Room noise (dBFS)": "screenAudioVolumeCurveNoise",
+  "Assistant (%)": "screenAudioVolumeCurveAssistant",
+  "Media (%)": "screenAudioVolumeCurveMedia",
+  "Intercom (%)": "screenAudioVolumeCurveIntercom"
 };

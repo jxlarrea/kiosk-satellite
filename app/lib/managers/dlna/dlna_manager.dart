@@ -102,6 +102,7 @@ class DlnaManager extends Manager {
   DlnaManager(super.bus, super.commands, super.log, this._settings) {
     transportState.addListener(_syncScreensaverHold);
     media.addListener(_syncScreensaverHold);
+    transportState.addListener(_announcePlayback);
   }
 
   final SettingsManager _settings;
@@ -287,6 +288,7 @@ class DlnaManager extends Manager {
     await _stop();
     transportState.removeListener(_syncScreensaverHold);
     media.removeListener(_syncScreensaverHold);
+    transportState.removeListener(_announcePlayback);
   }
 
   Future<void> _restart() async {
@@ -1004,6 +1006,18 @@ class DlnaManager extends Manager {
     if (!audioInBackground) {
       bus.publish(const ActivityDetected(source: 'dlna'));
     }
+  }
+
+  bool _playbackAnnounced = false;
+
+  /// Says on the bus when the renderer plays and stops. Its player is not
+  /// one the echo canceller taps, so the room's noise level would measure
+  /// the music as the room (issue #1450).
+  void _announcePlayback() {
+    final playing = transportState.value == 'PLAYING';
+    if (playing == _playbackAnnounced) return;
+    _playbackAnnounced = playing;
+    bus.publish(UntappedPlaybackChanged(source: 'dlna', playing: playing));
   }
 
   bool _screensaverHeld = false;

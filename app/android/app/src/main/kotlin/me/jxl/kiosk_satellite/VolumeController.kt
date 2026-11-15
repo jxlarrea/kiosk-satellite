@@ -25,6 +25,9 @@ import kotlin.math.roundToInt
  *    ceiling, independent of MEDIA, so music can roam quiet or loud
  *    without the assistant whispering or shouting along with it.
  *
+ * Adaptive volume (issue #1450) adds a share under the media and assistant
+ * faders: the room's noise picks how much of each fader plays ([setTrim]).
+ *
  * Media and assistant live in Dart settings (persisted, exported,
  * rendered by both settings UIs); Dart pushes them here so the values are
  * available synchronously on the audio paths and to SendSpin's native
@@ -62,6 +65,12 @@ object VolumeController {
     @Volatile private var mediaPct = 100
     @Volatile private var assistPct = 100
     @Volatile private var mediaMutedFlag = false
+
+    // Adaptive volume's shares of the two faders (issue #1450), as linear
+    // gains: 1 while the volume does not follow the room. Not persisted,
+    // Dart pushes them again as the room is measured.
+    @Volatile private var mediaTrim = 1f
+    @Volatile private var assistTrim = 1f
 
     fun init(context: Context) {
         audioManager =
@@ -189,6 +198,20 @@ object VolumeController {
         notifyChanged()
     }
 
+    /**
+     * Adaptive volume's shares arriving. They scale what the sinks play
+     * and nothing else: [mediaPercent], which SendSpin reports to its
+     * server, stays the fader's.
+     */
+    fun setTrim(media: Float, assistant: Float) {
+        val m = if (media.isFinite()) media.coerceIn(0f, 1f) else 1f
+        val a = if (assistant.isFinite()) assistant.coerceIn(0f, 1f) else 1f
+        if (m == mediaTrim && a == assistTrim) return
+        mediaTrim = m
+        assistTrim = a
+        notifyChanged()
+    }
+
     /** SendSpin's server-commanded media volume, applied natively for
      *  snappiness; Dart persists it into the setting on the echo. */
     fun setMediaPercent(percent: Int) {
@@ -215,11 +238,19 @@ object VolumeController {
     val mediaGain: Float
         get() {
             if (mediaMutedFlag) return 0f
-            return masterSoftGain() * curve(mediaPct)
+            return masterSoftGain() * curve(mediaPct) * mediaTrim
         }
 
     /** Linear amplitude for Voice Satellite sounds (SoundPlayer). */
     val assistGain: Float
+        get() = masterSoftGain() * curve(assistPct) * assistTrim
+
+    /**
+     * The assistant fader without adaptive volume's share, for the
+     * intercom's ring on fixed-volume devices: a ring is not a Voice
+     * Satellite sound and does not follow the room.
+     */
+    val assistFaderGain: Float
         get() = masterSoftGain() * curve(assistPct)
 
     /**

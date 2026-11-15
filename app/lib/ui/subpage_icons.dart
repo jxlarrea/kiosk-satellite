@@ -40,6 +40,7 @@ const Map<String, Object> subpageIcons = {
   'Microphone settings': Icons.mic_none_outlined,
   'Equalizer': Icons.equalizer_outlined,
   'Adaptive brightness': Icons.brightness_auto_outlined,
+  'Adaptive volume': Icons.volume_up_outlined,
   // Screensaver.
   'Weather Mood screensaver': Icons.cloud_outlined,
   'Celestial screensaver': Icons.auto_awesome_outlined,
