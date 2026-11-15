@@ -158,6 +158,10 @@ class CompassController {
         menuUnlocked.value = false;
         current.value = CompassSlot.center;
         _clearShots();
+        // The views Compass held open go with it: Classic starts on the
+        // dashboard. Left up, the center (Alarms, say) stayed over the
+        // dashboard, with a page opened by a link hidden under it.
+        unawaited(_closeLayoutViews());
         // A swipe that landed on the Menu, the Music Library or the
         // calendar left the dashboard out of the frame. Nothing in Classic
         // brings it back, so the kiosk would show a black screen.
@@ -522,6 +526,37 @@ class CompassController {
     }
     if (view.kind != 'intercom' && c.intercom.rosterVisible.value) {
       c.intercom.rosterVisible.value = false;
+    }
+  }
+
+  /// Closes every view of the layout that is up. A page the layout does
+  /// not hold, such as a camera view a doorbell opened, stays.
+  Future<void> _closeLayoutViews() async {
+    for (final slot in _layout.slots) {
+      final view = _layout.viewAt(slot);
+      if (view == null || view.isDashboard || view.isMenu) continue;
+      if (_isUp(view)) await _close(view);
+    }
+  }
+
+  Future<void> _close(CompassView view) async {
+    switch (view.kind) {
+      case 'music_library':
+        await c.commands.execute('hideMusicLibrary', const {});
+      case 'calendar':
+        await c.commands.execute('hideCalendar', const {});
+      case 'alarms':
+        await c.commands.execute('hideAlarms', const {});
+      case 'timers':
+        await c.commands.execute('hideTimers', const {});
+      case 'now_playing':
+        await c.commands.execute('hideNowPlaying', const {});
+      case 'camera':
+        c.camera.hideView(instant: true);
+      case 'app_launcher':
+        c.launcher.visible.value = false;
+      case 'intercom':
+        c.intercom.rosterVisible.value = false;
     }
   }
 

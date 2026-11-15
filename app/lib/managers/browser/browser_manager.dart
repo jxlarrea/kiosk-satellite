@@ -706,9 +706,19 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
               }
               return CommandResult.ok(stored);
             }
-            final result = await controller.evaluateJavascript(
-              source: 'JSON.stringify(localStorage)',
-            );
+            Object? result;
+            try {
+              result = await controller
+                  .evaluateJavascript(source: 'JSON.stringify(localStorage)')
+                  .timeout(javaScriptTimeout);
+            } catch (_) {
+              // Between two documents, a reload in flight, the page does
+              // not answer at all.
+            }
+            // The storage is the same with or without the page answering.
+            if (result is! String) {
+              result = await _runOnPageOrigin(_storageJs(null));
+            }
             if (result is! String) {
               return const CommandResult.fail('localStorage unavailable');
             }
