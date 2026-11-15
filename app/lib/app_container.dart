@@ -64,6 +64,7 @@ import 'managers/screen/adaptive_light_manager.dart';
 import 'managers/screen/screen_manager.dart';
 import 'managers/screensaver/immich_manager.dart';
 import 'managers/screensaver/screensaver_manager.dart';
+import 'managers/browser/dashboard_page.dart';
 import 'managers/sendspin/sendspin_manager.dart';
 import 'managers/service/service_manager.dart';
 import 'managers/sound/sound_manager.dart';
@@ -246,6 +247,8 @@ class AppContainer {
     screensaver.pluginTouch = plugins.screensaverTouch;
     screensaver.compassCenterIsNowPlaying = () =>
         compassCenter.value == 'now_playing';
+    screensaver.dashboardPageInUse = () => browser.pageNeeded.value;
+    homeAssistant.pageInUse = () => browser.pageNeeded.value;
     settings.pluginVoiceSkins = () => plugins.voiceSkinOptions;
     remote = RemoteManager(bus, commands, log, settings);
     fleet = FleetManager(bus, commands, log, settings);
@@ -525,6 +528,8 @@ class AppContainer {
         applyAppDateLanguage(settings.get(uiLanguage));
       }
     });
+    // The dashboard page exists only while something uses it.
+    followDashboardPage(settings, bus, browser.pageNeeded);
     // An Echo image's first start: before the provisioning below, which
     // may override it, and before any manager reads its settings.
     await EchoDefaults(settings, log).apply();

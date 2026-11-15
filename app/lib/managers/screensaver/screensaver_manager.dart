@@ -203,6 +203,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// composition root.
   bool Function() compassCenterIsNowPlaying = () => false;
 
+  /// Whether the dashboard page exists (BrowserManager.pageNeeded). Without
+  /// it there is nothing to thaw, wait on or move as the screensaver ends.
+  /// Wired at the composition root.
+  bool Function() dashboardPageInUse = () => true;
+
   final SettingsManager _settings;
 
   @override
@@ -2658,17 +2663,22 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // Thaw the dashboard while the overlay still covers it, so the wake
     // never shows a blank hole where the page is (a no-op unless the
     // rendering freeze optimization hid it).
-    await commands.execute('unfreezeRendering', const {});
+    final page = dashboardPageInUse();
+    if (page) await commands.execute('unfreezeRendering', const {});
     // The overlay holds the screensaver's last frame over the page until
     // the page draws again, so the fade out never shows the hole a paused
-    // page leaves.
-    fadeOutAfter = fades ? _dashboardDrawn() : null;
+    // page leaves. Without a page it fades at once.
+    fadeOutAfter = fades
+        ? (page ? _dashboardDrawn() : Future<void>.value())
+        : null;
     // Move the page to where the dismissal lands while the overlay still
     // covers it. Awaited, so a navigation commanded right after the
     // dismissal (the ESPHome Dashboard select, haNavigate) lands after
     // this return.
     _dashboardShown = null;
-    await commands.execute('leaveScreensaver', {'nowPlaying': nowPlaying});
+    if (page) {
+      await commands.execute('leaveScreensaver', {'nowPlaying': nowPlaying});
+    }
     dashboardShowing.value = false;
     _setView(null);
     await commands.execute('screenOn', const {});

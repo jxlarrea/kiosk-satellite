@@ -255,7 +255,10 @@ class FrameWatchdog {
   }
 
   Future<void> _checkOnce() async {
-    if (_container.settings.get(defs.startUrl).isEmpty) {
+    // No start page, or no use for the page: there is no WebView to wait
+    // for.
+    if (_container.settings.get(defs.startUrl).isEmpty ||
+        !_container.browser.pageNeeded.value) {
       _clear();
       return;
     }

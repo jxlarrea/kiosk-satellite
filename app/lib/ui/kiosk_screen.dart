@@ -46,6 +46,7 @@ import '../managers/kiosk/kiosk_link.dart';
 import '../managers/wake_word/background_listening.dart';
 import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/sendspin/music_assistant_api.dart';
+import '../managers/home_assistant/custom_pages.dart' show viewPathUrl;
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/gestures/gesture_mappings.dart';
 import '../managers/browser/browser_manager.dart';
@@ -910,6 +911,7 @@ class _KioskScreenState extends State<KioskScreen>
     _missingSub = c.bus.on<WebViewMissing>().listen((_) {
       if (mounted) setState(() {});
     });
+    c.browser.pageNeeded.addListener(_onPageNeeded);
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
     // A plugin's barcode scan opens over whatever is showing.
@@ -1758,6 +1760,7 @@ class _KioskScreenState extends State<KioskScreen>
     _consoleReqSub?.cancel();
     _rebuildSub?.cancel();
     _missingSub?.cancel();
+    c.browser.pageNeeded.removeListener(_onPageNeeded);
     _backSub?.cancel();
     _homeSub?.cancel();
     _wakeSub?.cancel();
@@ -1821,7 +1824,11 @@ class _KioskScreenState extends State<KioskScreen>
         // panel's side: the dashboard lays itself out in the room left
         // instead of under the panel. The plane's overdraw keeps its new
         // edge a pixel under the panel.
-        if (_activityAttached && !c.browser.webViewMissing)
+        // No use for the page (a Compass layout without a dashboard view):
+        // no WebView at all.
+        if (_activityAttached &&
+            !c.browser.webViewMissing &&
+            c.browser.pageNeeded.value)
           ValueListenableBuilder<EdgeInsets>(
             valueListenable: c.screensaver.pageReserve,
             child: UiScaleExempt(child: _webView()),
@@ -2192,7 +2199,36 @@ class _KioskScreenState extends State<KioskScreen>
     final fromStart =
         _rebuildFromStart || _webViewEpoch == 0 || c.browser.currentUrl.isEmpty;
     _rebuildFromStart = false;
+    // The page back for a Compass dashboard view on screen opens on it:
+    // Compass could not move a page that was not there yet.
+    final view = _compass.currentView;
+    final onView =
+        _pageReturning &&
+        _compass.enabled &&
+        view.isDashboard &&
+        view.path.isNotEmpty &&
+        c.homeAssistant.baseUrl.isNotEmpty;
+    _pageReturning = false;
+    if (onView) return viewPathUrl(c.homeAssistant.baseUrl, view.path);
     return fromStart ? _initialUrl : c.browser.currentUrl;
+  }
+
+  /// The page is being built again after [_onPageNeeded] closed it.
+  bool _pageReturning = false;
+
+  /// The dashboard page closed, or wanted again: then it opens on the
+  /// start page (BrowserManager.pageNeeded).
+  void _onPageNeeded() {
+    if (!mounted) return;
+    if (c.browser.pageNeeded.value) {
+      _rebuildFromStart = true;
+      _pageReturning = true;
+      _webViewEpoch++;
+    } else {
+      c.jsApi.detach();
+      c.browser.detach();
+    }
+    setState(() {});
   }
 
   Widget _webView() {

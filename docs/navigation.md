@@ -43,6 +43,10 @@ The swipe holds a picture of the view it lands on until the page has built that 
 
 If the page moves to a dashboard view of the layout on its own, such as through a navigation card or the Dashboard view select in Home Assistant, the layout follows: that view is the one you swipe from next.
 
+### A layout without dashboard views
+
+With no dashboard view in the layout, Home Assistant's page is not loaded at all, so it takes no memory or processing. Commands that move the page, such as the Dashboard view select in Home Assistant, do nothing then. The page still loads when the screensaver is **Home Assistant Dashboard**, also on the schedule, and when Voice Satellite runs in the dashboard. Add a dashboard view and the page loads on it. Removing the last one at run time frees most of the page's memory, and the rest is freed when the app next starts.
+
 ### Editing the layout
 
 On a tablet and in the remote admin, the layout shows as a map of the cross. Tap **Add** at the end of a side to place a view there. Tap a view to select it, then use **Move in**, **Move out**, **Replace** or **Remove** below the map. Tap the center view and **Replace** to pick another center.

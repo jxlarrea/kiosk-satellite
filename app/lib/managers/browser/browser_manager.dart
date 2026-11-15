@@ -84,6 +84,29 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// the wedged-renderer signal.
   bool get hasWebView => _controller != null;
 
+  /// Whether the kiosk has a use for the dashboard page. False while
+  /// Compass runs a layout with no dashboard view and nothing else shows
+  /// the page or runs in it (dashboardPageNeeded in app_container.dart):
+  /// the kiosk screen then builds no WebView at all, and the page costs
+  /// nothing.
+  final pageNeeded = ValueNotifier<bool>(true);
+
+  /// The WebView left on purpose, [pageNeeded] gone false. Nothing reaches
+  /// the page anymore, so every call into it returns early.
+  void detach() {
+    if (_controller == null) return;
+    _controller = null;
+    _webViewGeneration++;
+    _freezeDelay?.cancel();
+    _freezeKeepAlive?.cancel();
+    _freezeKeepAlive = null;
+    _frozen = false;
+    _wantedFrozen = false;
+    _currentUrl = '';
+    bus.publish(const UrlChanged(url: ''));
+    log.info(name, 'no dashboard view in use: the dashboard page is closed');
+  }
+
   /// Whether this device has no WebView provider at all. A ROM without
   /// Android System WebView (a repurposed smart display, a stripped
   /// tablet) can never show a dashboard, and the frame watchdog's answer
@@ -1242,6 +1265,10 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   /// few times; revealing a visible view is a no-op, so a healthy resume
   /// costs nothing.
   Future<void> _reassertFreeze() async {
+    // No dashboard page: matching on 'http' below would hide every other
+    // WebView instead, the camera view and the website screensaver among
+    // them.
+    if (!pageNeeded.value) return;
     for (final delay in const [0, 1, 2]) {
       if (delay > 0) await Future<void>.delayed(Duration(seconds: delay));
       final want = _wantFrozen;
@@ -1624,6 +1651,10 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   }
 
   Future<void> loadUrl(String url) async {
+    if (!pageNeeded.value) {
+      log.info(name, 'not loading $url: no dashboard view in use');
+      return;
+    }
     // An explicit navigation targets the main WebView; an overlay page
     // sitting above it would make the navigation invisible.
     dismissOverlay();

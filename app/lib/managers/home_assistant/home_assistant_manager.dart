@@ -1502,6 +1502,10 @@ class HomeAssistantManager extends Manager {
   /// [navigateToViewPath] only acts while no newer navigation has started.
   int _navSeq = 0;
 
+  /// Whether the dashboard page exists (BrowserManager.pageNeeded). Without
+  /// it no navigation is tried. Wired at the composition root.
+  bool Function() pageInUse = () => true;
+
   /// Navigate the on-screen HA frontend to [viewPath] ("url_path" or
   /// "url_path/view-route"): a soft SPA navigation so nothing reloads,
   /// with a learned hard-load fallback for paths the SPA cannot resolve.
@@ -1520,7 +1524,7 @@ class HomeAssistantManager extends Manager {
     bool crossfade = false,
     bool awaitSelfHeal = true,
   }) async {
-    if (baseUrl.isEmpty || viewPath.isEmpty) return 'failed';
+    if (!pageInUse() || baseUrl.isEmpty || viewPath.isEmpty) return 'failed';
     final seq = ++_navSeq;
     // A path a soft navigation cannot resolve goes straight to a full load
     // (loadUrl drops the overlay itself). One-time discovery below.
