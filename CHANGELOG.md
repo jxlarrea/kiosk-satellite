@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Compass brought the kiosk back over another app (#1453).** With Compass navigation, **Return to center** kept counting while an app opened from the kiosk was in front. Once it ran out, the center view opened and brought the kiosk back over that app, long before the App Launcher's **Return after**. Return to center now waits while another app is in front, and its countdown starts over once the kiosk is back.
+
 ## v2026.11.22 - 2026-11-14
 
 ### Added

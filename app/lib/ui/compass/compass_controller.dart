@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../app_container.dart';
 import '../../core/events.dart';
+import '../../core/lifecycle.dart';
 import '../../l10n/messages.dart';
 import '../../managers/alarms/alarm_manager.dart';
 import '../../managers/browser/visibility_mask_script.dart';
@@ -14,6 +15,7 @@ import '../../managers/home_assistant/custom_pages.dart';
 import '../../managers/home_assistant/home_assistant_manager.dart';
 import '../../managers/navigation/compass_layout.dart';
 import '../../managers/settings/definitions.dart' as defs;
+import '../../managers/wake_word/background_listening.dart';
 import '../dashboard_view_picker.dart';
 import '../kiosk_drawer.dart';
 import 'compass_stage.dart';
@@ -183,6 +185,7 @@ class CompassController {
         .on<ActivityDetected>()
         .where((e) => e.source == 'touch')
         .listen((_) => _armReturn());
+    _lifecycle = AppLifecycleListener(onStateChange: _onLifecycle);
     _urlSub = c.bus.on<UrlChanged>().listen((e) => _onPageMoved(e.url));
     c.homeAssistant.returnHomeOverride = _returnHomePath;
     c.compassCloseToCenter = closeToCenter;
@@ -256,6 +259,7 @@ class CompassController {
       c.homeAssistant.returnHomeOverride = null;
     }
     _returnTimer?.cancel();
+    _lifecycle?.dispose();
     _settleTimer?.cancel();
     for (final l in _watched) {
       l.removeListener(_onOverlayChanged);
@@ -827,9 +831,8 @@ class CompassController {
     _returnTimer?.cancel();
     final minutes = c.settings.get(defs.navCompassReturnMinutes).toInt();
     if (!enabled || minutes <= 0 || c.settings.get(defs.haHoldMode)) return;
-    _returnTimer = Timer(Duration(minutes: minutes), () {
-      if (current.value.isCenter || stage.value != null) return;
-      if (c.settings.get(defs.haHoldMode)) return;
+    _returnTimer = Timer(Duration(minutes: minutes), () async {
+      if (!_returnDue) return;
       // Opening the center now would end the screensaver: the kiosk goes
       // back to the center as the screensaver ends instead.
       if (_underScreensaver) {
@@ -839,8 +842,43 @@ class CompassController {
       // A ringing alarm or a call keeps its screen; the next touch arms
       // the timer again.
       if (!swipeReady) return;
+      // Another app is in front, opened from the Menu, say. Most views
+      // bring the kiosk forward as they open, so going to the center
+      // would pull it back over that app (issue #1453). The App
+      // Launcher's Return after decides when the kiosk comes back, and
+      // the countdown starts over then.
+      if (await behindAnotherApp()) return;
+      if (!_returnDue || _underScreensaver || !swipeReady) return;
       unawaited(goCenter());
     });
+  }
+
+  /// The return timer still has somewhere to go.
+  bool get _returnDue =>
+      enabled &&
+      !current.value.isCenter &&
+      stage.value == null &&
+      !c.settings.get(defs.haHoldMode);
+
+  /// Whether another app is in front of the kiosk, unless a test says
+  /// otherwise. A dark panel does not count: the kiosk is still the app
+  /// on screen.
+  @visibleForTesting
+  Future<bool> Function() behindAnotherApp = () async {
+    try {
+      return await BackgroundListening.isBehindAnotherApp();
+    } catch (_) {
+      return false;
+    }
+  };
+
+  AppLifecycleListener? _lifecycle;
+  final _returned = ReturnWatch();
+
+  /// Back on screen from another app or a dark panel: the time away was
+  /// not time on this view, so the countdown starts over.
+  void _onLifecycle(AppLifecycleState state) {
+    if (_returned.returned(state)) _armReturn();
   }
 
   // ── The page's word on a touch ──────────────────────────────────────
