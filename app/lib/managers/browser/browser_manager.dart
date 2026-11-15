@@ -10,6 +10,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'color_scheme_script.dart';
 import 'content_insets_script.dart';
 import 'no_cache_script.dart';
+import 'page_fullscreen_script.dart';
 import 'url_filter.dart';
 import 'dashboard_camera_script.dart';
 import 'dashboard_state.dart';
@@ -105,6 +106,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     _freezeKeepAlive = null;
     _frozen = false;
     _wantedFrozen = false;
+    pageFullscreen.value = false;
     _currentUrl = '';
     if (!had) return;
     bus.publish(const UrlChanged(url: ''));
@@ -312,6 +314,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
         log.info(name, 'screensaver takes over from the overlay page');
         dismissOverlay();
       }
+      if (e.active) exitPageFullscreen('the screensaver started');
       _scheduleFreezeSync();
     });
     // The native voice overlay draws over the dashboard, which shows
@@ -1025,6 +1028,7 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     _rendererDeadChecks = 0;
     _webViewGeneration++;
     _controller = controller;
+    pageFullscreen.value = false;
     // A rebuilt WebView is a fresh, visible native view. Its URL is not up
     // yet (the freeze matches by URL, so this sync usually finds nothing);
     // onPageLoaded retries once the page — and its URL — exist.
@@ -1340,7 +1344,48 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
         ? _coveredBy.add(reason)
         : _coveredBy.remove(reason);
     if (!changed) return;
+    if (covered) exitPageFullscreen('$reason covers the dashboard');
     _scheduleFreezeSync();
+  }
+
+  /// Whether an element of the dashboard is in fullscreen. The WebView
+  /// draws it in a view of its own above the FlutterView, so nothing Kiosk
+  /// Satellite shows can be seen while it holds (issue #1461). Whole-page
+  /// requests never get here (page_fullscreen_script.dart), so this is a
+  /// video, a camera or a card that asked for it.
+  final pageFullscreen = ValueNotifier<bool>(false);
+
+  /// The dashboard's onEnterFullscreen and onExitFullscreen.
+  void onPageFullscreen(
+    InAppWebViewController controller, {
+    required bool fullscreen,
+  }) {
+    if (!isAttached(controller)) return;
+    if (pageFullscreen.value == fullscreen) return;
+    pageFullscreen.value = fullscreen;
+    log.info(
+      name,
+      fullscreen
+          ? 'an element of the dashboard went fullscreen'
+          : 'the dashboard left fullscreen',
+    );
+    // Something of the kiosk's was already up: it stays visible.
+    if (fullscreen && (_screensaverActive || _coveredBy.isNotEmpty)) {
+      exitPageFullscreen(
+        _screensaverActive
+            ? 'the screensaver is up'
+            : '${_coveredBy.join(', ')} covers the dashboard',
+      );
+    }
+  }
+
+  /// Takes the dashboard out of fullscreen so the kiosk can show something
+  /// over it. Returns whether it was in fullscreen.
+  bool exitPageFullscreen(String reason) {
+    if (!pageFullscreen.value) return false;
+    log.info(name, 'leaving fullscreen: $reason');
+    unawaited(runJs(exitPageFullscreenJs));
+    return true;
   }
 
   /// Every freeze edge from the bus lands here: freezing waits a beat so the

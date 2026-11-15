@@ -34,6 +34,7 @@ import '../managers/browser/haptics_script.dart';
 import '../managers/device/haptics.dart';
 import '../managers/device/tap_sound.dart';
 import '../managers/browser/no_cache_script.dart';
+import '../managers/browser/page_fullscreen_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
 import '../managers/browser/dashboards_watch_script.dart';
 import '../managers/browser/socket_watch_script.dart';
@@ -285,6 +286,10 @@ class _KioskScreenState extends State<KioskScreen>
     final last = _lastBackAt;
     _lastBackAt = now;
     if (last != null && now.difference(last) < _backEcho) return;
+    // An element of the dashboard in fullscreen covers everything here,
+    // so back first takes it out, as Back does in a browser. Anything else
+    // would act on what cannot be seen (issue #1461).
+    if (c.browser.exitPageFullscreen('back')) return;
     // The views layer draws over every page and view, so one of its
     // overlays closes before the page under it.
     final overViews = _navView.viewsLayerHidden.value || c.kiosk.lockdownActive
@@ -1234,6 +1239,14 @@ class _KioskScreenState extends State<KioskScreen>
       source: visibilityMaskScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
+    // The kiosk already fills the screen: a request to put the whole page
+    // in fullscreen is skipped, since the WebView would draw it above every
+    // Kiosk Satellite surface (issue #1461).
+    UserScript(
+      source: pageFullscreenScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      forMainFrameOnly: false,
+    ),
     UserScript(
       source:
           dashboardCameraScript +
@@ -1799,6 +1812,18 @@ class _KioskScreenState extends State<KioskScreen>
   void _onOverlayChanged() {
     if (mounted) setState(() {});
     _syncNavCapture();
+    // A ringing alarm or a page opened from Home Assistant has to be seen,
+    // and an element of the dashboard in fullscreen is drawn above them all.
+    if (c.browser.overlayUrl.value != null ||
+        c.launcher.visible.value ||
+        c.intercom.rosterVisible.value ||
+        c.alarms.visible.value ||
+        c.voiceTimers.visible.value ||
+        c.calendar.visible.value ||
+        c.musicLibrary.visible.value ||
+        c.plugins.windows.value.isNotEmpty) {
+      c.browser.exitPageFullscreen('a kiosk page opened');
+    }
   }
 
   @override
@@ -2691,6 +2716,10 @@ class _KioskScreenState extends State<KioskScreen>
       if (c.browser.isAttached(controller)) c.browser.onRendererResponsive();
       return null;
     },
+    onEnterFullscreen: (controller) =>
+        c.browser.onPageFullscreen(controller, fullscreen: true),
+    onExitFullscreen: (controller) =>
+        c.browser.onPageFullscreen(controller, fullscreen: false),
     onConsoleMessage: (controller, message) {
       c.browser.onConsoleMessage(switch (message.messageLevel) {
         ConsoleMessageLevel.ERROR => 'error',

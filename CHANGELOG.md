@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- **Screensaver hidden after a tap on the dashboard (#1461).** A dashboard that asks for fullscreen on a tap, as Wallpanel does, was drawn by the WebView above everything in Kiosk Satellite. After the first touch the screensaver started under the dashboard and the drawer opened hidden under it until the app restarted. The kiosk already fills the screen, so a request to put the whole page in fullscreen is now skipped. A video or another element can still go fullscreen, and it leaves fullscreen when the screensaver starts, back is pressed or Kiosk Satellite opens something over the dashboard.
 - **Compass brought the kiosk back over another app (#1453).** With Compass navigation, **Return to center** kept counting while an app opened from the kiosk was in front. Once it ran out, the center view opened and brought the kiosk back over that app, long before the App Launcher's **Return after**. Return to center now waits while another app is in front, and its countdown starts over once the kiosk is back.
 
 ## v2026.11.22 - 2026-11-14
