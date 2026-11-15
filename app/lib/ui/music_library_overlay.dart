@@ -14,6 +14,7 @@ import '../managers/music_library/library_model.dart';
 import '../managers/music_library/plugin_library_source.dart';
 import '../managers/plugins/plugin_players.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'compass/compass_center.dart';
 import 'kit.dart';
 import 'music_library_queue.dart';
 import 'music_library_speakers.dart';
@@ -786,12 +787,16 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
 
   double _chromeScale([double rate = 0.7]) => libraryChromeScale(c, rate);
 
-  Widget _closeButton({double size = 26}) => IconButton(
-    icon: const Icon(Icons.close),
-    iconSize: size,
-    tooltip: l10n(context).commonClose,
-    color: Theme.of(context).colorScheme.onSurfaceVariant,
-    onPressed: _close,
+  Widget _closeButton({double size = 26}) => CompassCenterHides(
+    container: c,
+    kind: 'music_library',
+    child: IconButton(
+      icon: const Icon(Icons.close),
+      iconSize: size,
+      tooltip: l10n(context).commonClose,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      onPressed: _close,
+    ),
   );
 
   Widget _backButton() => IconButton(

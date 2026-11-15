@@ -11,6 +11,7 @@ import '../core/events.dart';
 import '../managers/device/device_details.dart';
 import '../managers/intercom/intercom_manager.dart' show IntercomManager;
 import '../managers/settings/definitions.dart' as defs;
+import 'compass/compass_center.dart';
 import 'entity_picker.dart';
 import 'kit.dart';
 import 'settings_search.dart';
@@ -942,12 +943,16 @@ class _RosterScreenState extends State<_RosterScreen> {
                         Positioned(
                           top: 8,
                           right: 8,
-                          child: IconButton(
-                            icon: const Icon(Icons.close),
-                            tooltip: l10n(context).commonClose,
-                            iconSize: 28,
-                            color: scheme.onSurfaceVariant,
-                            onPressed: _close,
+                          child: CompassCenterHides(
+                            container: c,
+                            kind: 'intercom',
+                            child: IconButton(
+                              icon: const Icon(Icons.close),
+                              tooltip: l10n(context).commonClose,
+                              iconSize: 28,
+                              color: scheme.onSurfaceVariant,
+                              onPressed: _close,
+                            ),
                           ),
                         ),
                       ],

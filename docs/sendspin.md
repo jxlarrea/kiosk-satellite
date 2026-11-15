@@ -269,6 +269,8 @@ When **Launch Now Playing when music starts playing** is enabled, the view opens
 
 Opening Now Playing yourself works like opening any other view. This covers the floating player, the kiosk menu, a [Compass](navigation.md) swipe, a gesture and the Show Now Playing command. The view opens while the dashboard plays media or holds off the screensaver and while Hold Mode is on. Hold Mode then keeps it on screen. A voice turn, a ringing timer or alarm and an intercom call still come first.
 
+As the center view of a [Compass](navigation.md) layout, Now Playing has no close button and a tap, a double tap or a key press does not close it, since the center would only open it again. Motion, face, person and proximity detection do not close it either, so **Dismiss "Now Playing" on motion** has no effect there. Back opens Quick Controls.
+
 ### Media Controls
 
 When **Show media controls** is enabled, transport buttons, a progress bar, and secondary toggles appear over the artwork:

@@ -198,6 +198,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// Wired at the composition root, like the settings' plugin lookups.
   bool Function(String mode) pluginTouch = (_) => false;
 
+  /// Whether Now Playing is the view Compass rests on, while the center
+  /// is the place on screen (AppContainer.compassCenter). Wired at the
+  /// composition root.
+  bool Function() compassCenterIsNowPlaying = () => false;
+
   final SettingsManager _settings;
 
   @override
@@ -1416,6 +1421,20 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (!_active) _resetIdleTimer();
       return;
     }
+    // Now Playing as the Compass center stays up under a tap, a double
+    // tap, a key press, motion, a face, a person and something close:
+    // closing it would only open it again.
+    if (nowPlayingIsCenter &&
+        (_isTouch(source) ||
+            const {
+              'key',
+              'motion',
+              'face',
+              'person',
+              'proximity',
+            }.contains(source))) {
+      return;
+    }
     // Shared layouts dismiss through the screensaver panel. Generic touch
     // reports include player buttons and must leave the combined view up.
     // The panel's own report stands in for them and gets what a touch
@@ -1668,6 +1687,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       activeView.value != null &&
       _nowPlayingTakeover &&
       _settings.get(defs.sendspinFullscreenControls);
+
+  /// Whether Now Playing is on screen as the Compass center, alone or
+  /// beside a screensaver. Closing it lands on the center, which opens it
+  /// again, so a touch, a key and the detection sensors leave it up and
+  /// back opens Quick Controls (issue #1452). A swipe and the exit
+  /// gesture leave it too. Not while the panel is off: a key press or
+  /// motion there is the wake.
+  bool get nowPlayingIsCenter =>
+      _active && !_panelDark && _nowPlayingShown && compassCenterIsNowPlaying();
 
   /// The schedule entry in force right now, or null when the schedule is
   /// off or empty.

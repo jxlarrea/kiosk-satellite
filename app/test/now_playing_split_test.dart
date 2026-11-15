@@ -849,6 +849,21 @@ void main() {
       });
     }
 
+    // The Compass center would only open again (issue #1452).
+    testWidgets('as the Compass center the pane keeps it up', (tester) async {
+      await boot(tester, mount: false);
+      expect(c.screensaver.nowPlayingShared, isTrue);
+      c.compassCenter.value = 'now_playing';
+      expect(c.screensaver.nowPlayingIsCenter, isTrue);
+      await tapPane(tester, 'tap');
+      expect(c.screensaver.isActive, isTrue);
+      // On a side of the layout the pane's tap closes it.
+      c.compassCenter.value = '';
+      await tapPane(tester, 'tap');
+      expect(c.screensaver.isActive, isFalse);
+      await c.screensaver.dispose();
+    });
+
     testWidgets('a slow second tap on the website starts over', (tester) async {
       await boot(
         tester,

@@ -331,6 +331,10 @@ class _KioskScreenState extends State<KioskScreen>
       'back: ${action.name} (armed=$armed, drawer=${_drawer.value > 0})',
     );
     switch (action) {
+      // Now Playing as the Compass center: stopping it would only open it
+      // again, so back opens the Menu as it does on any other center.
+      case BackAction.stopScreensaver when c.screensaver.nowPlayingIsCenter:
+        unawaited(_compass.goMenu());
       case BackAction.stopScreensaver:
         unawaited(c.commands.execute('stopScreensaver', const {}));
       case BackAction.closeDrawer:

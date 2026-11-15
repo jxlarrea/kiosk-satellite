@@ -198,7 +198,8 @@ class CompassController {
   Timer? _startTimer;
 
   /// Tells the views which one Compass holds: that one leaves its own idle
-  /// close and screensaver hold to Compass.
+  /// close and screensaver hold to Compass. The one in the center also
+  /// drops its close button, which would only open it again.
   void _syncViewFlags() {
     final kind = enabled ? currentView.kind : '';
     c.musicLibrary.compassView.value = kind == 'music_library';
@@ -208,6 +209,7 @@ class CompassController {
     c.launcher.compassView.value = kind == 'app_launcher';
     c.intercom.compassView.value = kind == 'intercom';
     c.camera.compassView.value = kind == 'camera';
+    c.compassCenter.value = current.value.isCenter ? kind : '';
   }
 
   /// True while a swipe moves: the plugin overlays drawn on top step aside,
@@ -236,6 +238,7 @@ class CompassController {
 
   void dispose() {
     current.removeListener(_syncViewFlags);
+    c.compassCenter.value = '';
     _startTimer?.cancel();
     _verifyTimer?.cancel();
     _settingsSub?.cancel();

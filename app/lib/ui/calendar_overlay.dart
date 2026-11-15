@@ -17,6 +17,7 @@ import '../core/events.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'calendar_editor.dart';
 import 'clock_setting.dart';
+import 'compass/compass_center.dart';
 import 'kit.dart';
 import 'theme.dart';
 import 'weather_readings.dart' show weatherConditionIcon;
@@ -381,6 +382,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Timer? _idle;
   Timer? _midnight;
   StreamSubscription<SettingChanged>? _settingsSub;
+  StreamSubscription<FullscreenViewChanged>? _nowPlayingSub;
   NavigatorState? _navigator;
 
   /// The event dialogs and forms open over the calendar.
@@ -405,9 +407,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
     if (widget.screensaver) {
       cal.screensaverShown.value = true;
+      // The close button follows Now Playing as the Compass center.
+      c.compassCenter.addListener(_onCenter);
+      _nowPlayingSub = c.bus.on<FullscreenViewChanged>().listen(
+        (_) => _onCenter(),
+      );
     } else {
       cal.reopened.addListener(_reopen);
     }
+  }
+
+  void _onCenter() {
+    if (mounted) setState(() {});
   }
 
   /// Start on the view and day [CalendarManager.open] asked for, or the
@@ -456,6 +467,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
     cal.calendars.removeListener(_watch);
     if (widget.screensaver) {
+      c.compassCenter.removeListener(_onCenter);
+      _nowPlayingSub?.cancel();
       cal.screensaverShown.value = false;
     } else {
       cal.reopened.removeListener(_reopen);
@@ -736,17 +749,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           label: Text(s.calendarNewEvent),
                         ),
                       ),
-                    Positioned(
-                      top: narrow ? 0 : 4,
-                      right: narrow ? 4 : 8,
-                      child: IconButton(
-                        icon: const Icon(Icons.close),
-                        tooltip: s.commonClose,
-                        iconSize: compactTop ? 26 : 28,
-                        color: theme.colorScheme.onSurfaceVariant,
-                        onPressed: _close,
+                    // The screensaver's calendar is not the layout's:
+                    // its button ends the screensaver. Beside Now Playing
+                    // as the Compass center that would only open both
+                    // again, so it has none there.
+                    if (!(widget.screensaver &&
+                        c.screensaver.nowPlayingIsCenter))
+                      Positioned(
+                        top: narrow ? 0 : 4,
+                        right: narrow ? 4 : 8,
+                        child: CompassCenterHides(
+                          container: c,
+                          kind: widget.screensaver ? null : 'calendar',
+                          child: IconButton(
+                            icon: const Icon(Icons.close),
+                            tooltip: s.commonClose,
+                            iconSize: compactTop ? 26 : 28,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            onPressed: _close,
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 );
               },

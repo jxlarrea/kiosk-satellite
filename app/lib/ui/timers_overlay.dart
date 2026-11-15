@@ -9,6 +9,7 @@ import '../l10n/generated/ui_strings.dart';
 import '../l10n/messages.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/voice_timers/voice_timer_manager.dart';
+import 'compass/compass_center.dart';
 import 'kit.dart';
 import 'alarms_overlay.dart' show alarmButtonStyle;
 import 'theme.dart';
@@ -305,16 +306,21 @@ class _TimersScreenState extends State<_TimersScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Always there, as on the alarm list: under
-                              // Compass it goes back to the center.
-                              IconButton(
-                                key: const ValueKey('timers-close'),
-                                icon: const Icon(Icons.close),
-                                tooltip: s.commonClose,
-                                iconSize: 28,
-                                color: theme.colorScheme.onSurfaceVariant,
-                                onPressed: () =>
-                                    c.voiceTimers.visible.value = false,
+                              // As on the alarm list: under Compass it
+                              // goes back to the center, and the center
+                              // itself has none.
+                              CompassCenterHides(
+                                container: c,
+                                kind: 'timers',
+                                child: IconButton(
+                                  key: const ValueKey('timers-close'),
+                                  icon: const Icon(Icons.close),
+                                  tooltip: s.commonClose,
+                                  iconSize: 28,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  onPressed: () =>
+                                      c.voiceTimers.visible.value = false,
+                                ),
                               ),
                             ],
                           ),

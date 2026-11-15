@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import 'core/command_registry.dart';
 import 'core/event_bus.dart';
 import 'core/events.dart';
@@ -242,6 +244,8 @@ class AppContainer {
     deviceCamera.scannerActive = () => motion.scannerHeld;
     settings.pluginScreensavers = () => plugins.screensaverOptions;
     screensaver.pluginTouch = plugins.screensaverTouch;
+    screensaver.compassCenterIsNowPlaying = () =>
+        compassCenter.value == 'now_playing';
     settings.pluginVoiceSkins = () => plugins.voiceSkinOptions;
     remote = RemoteManager(bus, commands, log, settings);
     fleet = FleetManager(bus, commands, log, settings);
@@ -336,6 +340,12 @@ class AppContainer {
   // The device's own UI executes through this handle; every manager
   // re-scopes it under its own name.
   late final commands = CommandRegistry(log).as('ui');
+
+  /// The kind of the view Compass rests on (compass_layout.dart), while
+  /// that view is the one on screen. Empty in Classic and on every other
+  /// view. Closing that view lands on the center, which is the view
+  /// itself, so it leaves its close button out (CompassCenterHides).
+  final compassCenter = ValueNotifier<String>('');
 
   late final SettingsManager settings;
   late final DeviceManager device;

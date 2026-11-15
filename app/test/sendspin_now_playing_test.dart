@@ -392,6 +392,101 @@ void main() {
       expect(saver.isActive, isFalse);
     });
 
+    // As the view Compass rests on, Now Playing would only open again
+    // (issue #1452).
+    test('as the Compass center a tap and a key leave it up', () async {
+      await build({'ks.sendspin.fullscreen_controls': false});
+      saver.compassCenterIsNowPlaying = () => true;
+      await showNowPlaying();
+      expect(saver.nowPlayingIsCenter, isTrue);
+      saver.notifyActivity('touch');
+      saver.notifyActivity('tap');
+      saver.notifyActivity('key');
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+      // Everything that is not a hand on the view still closes it.
+      saver.notifyActivity('screen on');
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
+    test('as the Compass center motion leaves it up', () async {
+      await build({
+        'ks.sendspin.fullscreen_motion': true,
+        'ks.screensaver.dismiss_on_motion': true,
+      });
+      var center = true;
+      saver.compassCenterIsNowPlaying = () => center;
+      await showNowPlaying();
+      for (final source in ['motion', 'face', 'person', 'proximity']) {
+        saver.notifyActivity(source);
+      }
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+      // On a side of the layout motion closes it, as the switch says.
+      center = false;
+      saver.notifyActivity('motion');
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
+    test('as the Compass center a double tap leaves it up', () async {
+      await build({'ks.sendspin.fullscreen_double_tap': true});
+      saver.compassCenterIsNowPlaying = () => true;
+      var now = DateTime(2026, 9, 2, 1);
+      saver.clock = () => now;
+      await showNowPlaying();
+      saver.notifyActivity('touch');
+      now = now.add(const Duration(milliseconds: 300));
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+    });
+
+    test('on a side of the layout a tap closes it', () async {
+      await build({'ks.sendspin.fullscreen_controls': false});
+      var center = true;
+      saver.compassCenterIsNowPlaying = () => center;
+      await showNowPlaying();
+      center = false;
+      expect(saver.nowPlayingIsCenter, isFalse);
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
+    test('the screensaver over a Now Playing center keeps its tap', () async {
+      // Music stopped: the slot shows the clock, which is not the center
+      // view and closes on a tap.
+      await build({});
+      saver.compassCenterIsNowPlaying = () => true;
+      // The screensaver first, then the music: a session that music
+      // opened would end with it.
+      await saver.start();
+      bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+      await pumpEventQueue();
+      expect(saver.nowPlayingIsCenter, isTrue);
+      bus.publish(const SendspinNowPlayingChanged(active: false));
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+      expect(saver.nowPlayingIsCenter, isFalse);
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
+    test('a key wakes a Now Playing center whose panel is off', () async {
+      await build({'ks.sendspin.fullscreen_controls': false});
+      saver.compassCenterIsNowPlaying = () => true;
+      await showNowPlaying();
+      bus.publish(const ScreenStateChanged(on: false, source: 'app'));
+      await pumpEventQueue();
+      expect(saver.nowPlayingIsCenter, isFalse);
+      saver.notifyActivity('key');
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
     test('the regular screensaver keeps its touch dismissal', () async {
       // Music stopped mid-session: the slot shows the clock again and a
       // tap must take it down, controls setting or not.

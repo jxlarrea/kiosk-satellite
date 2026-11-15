@@ -258,6 +258,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     // The entity list going from empty to populated (or back) changes the
     // whole layout, not just the row, so the view rebuilds with it.
     c.glance.entities.addListener(_onLayoutChanged);
+    c.compassCenter.addListener(_onLayoutChanged);
     _onNowPlaying();
   }
 
@@ -267,6 +268,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     c.sendspin.lyrics.removeListener(_onLayoutChanged);
     c.sendspin.lyricsPending.removeListener(_onLayoutChanged);
     c.glance.entities.removeListener(_onLayoutChanged);
+    c.compassCenter.removeListener(_onLayoutChanged);
     _settingsSub?.cancel();
     super.dispose();
   }
@@ -340,10 +342,13 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     // touches off the controls.
     final doubleTap =
         controls && c.settings.get(defs.sendspinFullscreenDoubleTap);
+    // As the Compass center it has none either: closing it lands on the
+    // center, which opens it again.
     final showClose =
         controls &&
         (!doubleTap || c.settings.get(defs.sendspinFullscreenCloseButton)) &&
-        !widget.alongsideScreensaver;
+        !widget.alongsideScreensaver &&
+        c.compassCenter.value != 'now_playing';
     final showPlayerChip =
         c.settings.get(defs.sendspinSpeakerPill) &&
         c.sendspin.playerChipName.isNotEmpty;

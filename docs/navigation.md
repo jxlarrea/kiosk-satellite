@@ -69,6 +69,10 @@ Views in the layout skip their own **Close when idle** and the camera view's **A
 
 Back goes to the center view. At the center, back opens Quick Controls when the layout has it. Without Quick Controls, the exit gesture opens Settings.
 
+The close button of a view goes to the center view too. The view in the center has no close button, since closing it would only open it again. This applies to the Music Library, Calendar, Alarms, Timers, App Launcher, Intercom and Now Playing.
+
+Now Playing in the center stays up when touched too. A tap, a double tap and a key press do not close it, alone or alongside a screensaver, and back opens Quick Controls. Motion, face, person and proximity detection do not close it either, whatever **Dismiss "Now Playing" on motion** and the screensaver's detection settings say. Alongside the Calendar screensaver, the calendar's X is hidden too. Swipe to another view to leave it.
+
 While [Kiosk Mode](kiosk.md) is on, **Kiosk Mode > Allowed Actions** decides what a swipe reaches. A view whose action is off is skipped: Apps for the App Launcher, Camera View, Intercom, Alarms, Calendar and Music Library for their views, and Floating Player for Now Playing. The center and a dashboard view always show. Quick Controls shows only with **Allow menu with quick actions** on, and then holds only the allowed actions, with Settings locked. Tap Settings, or use the exit gesture, and enter the PIN to get all of Quick Controls.
 
 ### Options

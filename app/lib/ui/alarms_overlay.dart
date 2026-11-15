@@ -14,6 +14,7 @@ import '../managers/music_library/music_pick.dart';
 import '../managers/notifications/notification_sounds.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'clock_setting.dart';
+import 'compass/compass_center.dart';
 import 'kit.dart';
 import 'music_picker.dart';
 import 'theme.dart';
@@ -437,12 +438,16 @@ class _AlarmsScreenState extends State<_AlarmsScreen> {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: IconButton(
-                      icon: const Icon(Icons.close),
-                      tooltip: s.commonClose,
-                      iconSize: 28,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      onPressed: _close,
+                    child: CompassCenterHides(
+                      container: c,
+                      kind: 'alarms',
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: s.commonClose,
+                        iconSize: 28,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        onPressed: _close,
+                      ),
                     ),
                   ),
               ],
