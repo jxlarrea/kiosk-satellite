@@ -181,6 +181,7 @@ class CompassController {
         .listen((_) => _armReturn());
     _urlSub = c.bus.on<UrlChanged>().listen((e) => _onPageMoved(e.url));
     c.homeAssistant.returnHomeOverride = _returnHomePath;
+    c.compassCloseToCenter = closeToCenter;
     for (final l in _watched) {
       l.addListener(_onOverlayChanged);
     }
@@ -239,6 +240,7 @@ class CompassController {
   void dispose() {
     current.removeListener(_syncViewFlags);
     c.compassCenter.value = '';
+    if (c.compassCloseToCenter == closeToCenter) c.compassCloseToCenter = null;
     _startTimer?.cancel();
     _verifyTimer?.cancel();
     _settingsSub?.cancel();
@@ -405,6 +407,40 @@ class CompassController {
   /// Straight to the center, no swipe drawn: back, the exit gesture's
   /// counterpart and the return timer.
   Future<void> goCenter() => show(CompassSlot.center);
+
+  /// The view in hand closed by hand, its close button or back, on a side
+  /// of the layout: the kiosk goes to the center instead. The center opens
+  /// first and the view closes under it. Closed first, the view would
+  /// leave nothing up for the moment [_settle] waits before it opens the
+  /// center: the dashboard flashed through, or black where the view had
+  /// the dashboard out of the frame. False leaves the close to the view:
+  /// Compass is off or moving, the view is the center, [kind] is not the
+  /// view in hand, or another page is up with it, such as a call or the
+  /// library Now Playing was opened from, which closing should uncover.
+  bool closeToCenter(String kind) {
+    if (_switching || current.value.isCenter || !swipeReady) return false;
+    final view = currentView;
+    if (view.kind != kind || !_isUp(view)) return false;
+    if (_anythingUpBut(view)) return false;
+    unawaited(goCenter());
+    return true;
+  }
+
+  /// Whether a page other than [view] is up, whether the layout holds it
+  /// or not.
+  bool _anythingUpBut(CompassView view) {
+    bool other(bool up, String kind) => up && view.kind != kind;
+    final camera = c.camera.activeViewId.value;
+    return other(c.musicLibrary.visible.value, 'music_library') ||
+        other(c.calendar.visible.value, 'calendar') ||
+        other(c.alarms.visible.value, 'alarms') ||
+        other(c.voiceTimers.visible.value, 'timers') ||
+        other(_nowPlayingUp, 'now_playing') ||
+        (camera != null && !(view.kind == 'camera' && view.id == camera)) ||
+        other(c.launcher.visible.value, 'app_launcher') ||
+        other(c.intercom.rosterVisible.value, 'intercom') ||
+        other(menuVisible.value, 'menu');
+  }
 
   /// Straight to the Menu, [unlocked] for the full one on a locked kiosk.
   Future<void> goMenu({bool unlocked = false}) async {

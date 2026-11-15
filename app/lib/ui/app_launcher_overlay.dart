@@ -220,7 +220,8 @@ class _LauncherScreenState extends State<_LauncherScreen> {
                           tooltip: l10n(context).commonClose,
                           iconSize: 28,
                           color: theme.colorScheme.onSurfaceVariant,
-                          onPressed: _close,
+                          onPressed: () =>
+                              compassClose(container, 'app_launcher', _close),
                         ),
                       ),
                     ),

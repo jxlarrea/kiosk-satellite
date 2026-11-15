@@ -95,6 +95,81 @@ void main() {
     expect(c.compassCenter.value, '');
   });
 
+  // The close button on a side goes to the center as back does: the center
+  // opens before the side view closes, so nothing flashes between them.
+  test('a side view closes to the center, the center first', () async {
+    SharedPreferences.setMockInitialValues({});
+    final c = AppContainer();
+    await c.settings.init();
+    c.device.appVersion = 'test';
+    final order = <String>[];
+    void stand(String name, ValueNotifier<bool> page, bool up) {
+      c.commands.register(
+        Command(
+          name: name,
+          description: name,
+          handler: (_) async {
+            page.value = up;
+            return const CommandResult.ok();
+          },
+        ),
+      );
+    }
+
+    stand('openAlarms', c.alarms.visible, true);
+    stand('hideAlarms', c.alarms.visible, false);
+    stand('openCalendar', c.calendar.visible, true);
+    stand('hideCalendar', c.calendar.visible, false);
+    void watch(String name, ValueNotifier<bool> page) => page.addListener(
+      () => order.add('$name ${page.value ? 'up' : 'down'}'),
+    );
+    watch('alarms', c.alarms.visible);
+    watch('calendar', c.calendar.visible);
+    final compass = CompassController(c)..start();
+    addTearDown(() async {
+      compass.dispose();
+      await c.settings.dispose();
+      await c.bus.dispose();
+      await c.log.dispose();
+    });
+    await c.settings.setFromJson(
+      defs.navCompassLayout.key,
+      jsonEncode({
+        'center': {'kind': 'alarms'},
+        'up': [
+          {'kind': 'calendar'},
+        ],
+        'left': [
+          {'kind': 'menu'},
+        ],
+      }),
+    );
+    // Classic leaves the close to the view.
+    expect(compass.closeToCenter('calendar'), isFalse);
+    await c.settings.setFromJson(defs.navStyle.key, 'compass');
+    await Future<void>.delayed(Duration.zero);
+
+    const up = CompassSlot(CompassArm.up);
+    await compass.show(up);
+    expect(c.calendar.visible.value, isTrue);
+    expect(c.alarms.visible.value, isFalse);
+
+    // Not the view in hand, or the center itself: the view closes itself.
+    expect(compass.closeToCenter('alarms'), isFalse);
+
+    // Another page up with it is left to uncover.
+    c.voiceTimers.visible.value = true;
+    expect(compass.closeToCenter('calendar'), isFalse);
+    c.voiceTimers.visible.value = false;
+
+    order.clear();
+    expect(compass.closeToCenter('calendar'), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(order, ['alarms up', 'calendar down']);
+    expect(compass.current.value, CompassSlot.center);
+    expect(compass.closeToCenter('alarms'), isFalse);
+  });
+
   testWidgets('the timers view drops its button at the center', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final c = AppContainer();

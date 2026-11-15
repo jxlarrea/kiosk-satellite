@@ -951,7 +951,8 @@ class _RosterScreenState extends State<_RosterScreen> {
                               tooltip: l10n(context).commonClose,
                               iconSize: 28,
                               color: scheme.onSurfaceVariant,
-                              onPressed: _close,
+                              onPressed: () =>
+                                  compassClose(c, 'intercom', _close),
                             ),
                           ),
                         ),

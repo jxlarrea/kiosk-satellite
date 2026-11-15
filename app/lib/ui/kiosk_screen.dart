@@ -350,6 +350,9 @@ class _KioskScreenState extends State<KioskScreen>
             (c.musicLibrary.backHandler?.call() ?? false)) {
           break;
         }
+        // The page is a Compass view on a side: back goes to the center
+        // without the page closing first.
+        if (_compass.closeToCenter(_compass.currentView.kind)) break;
         c.launcher.visible.value = false;
         c.intercom.rosterVisible.value = false;
         c.alarms.visible.value = false;
@@ -362,6 +365,7 @@ class _KioskScreenState extends State<KioskScreen>
       case BackAction.unfocusCamera:
         c.camera.focusCamera(null);
       case BackAction.hideCameraView:
+        if (_compass.closeToCenter('camera')) break;
         c.camera.hideView();
       case BackAction.openDrawer when _compass.enabled:
         // Compass has no drawer. Back walks home to the center, and from

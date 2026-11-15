@@ -14,6 +14,7 @@ import '../managers/camera/camera_manager.dart';
 import '../managers/camera/models.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'ui_scale.dart' show UiScaleExempt;
+import 'compass/compass_center.dart';
 
 class CameraViewOverlay extends StatelessWidget {
   const CameraViewOverlay({super.key, required this.container});
@@ -630,7 +631,11 @@ class _CameraPlayerState extends State<CameraPlayer> {
       controller.addJavaScriptHandler(
         handlerName: 'cameraClose',
         callback: (_) {
-          widget.container.camera.hideView();
+          compassClose(
+            widget.container,
+            'camera',
+            widget.container.camera.hideView,
+          );
           return null;
         },
       );

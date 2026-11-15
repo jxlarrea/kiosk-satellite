@@ -795,7 +795,7 @@ class _MusicLibraryScreenState extends State<MusicLibraryScreen> {
       iconSize: size,
       tooltip: l10n(context).commonClose,
       color: Theme.of(context).colorScheme.onSurfaceVariant,
-      onPressed: _close,
+      onPressed: () => compassClose(c, 'music_library', _close),
     ),
   );
 

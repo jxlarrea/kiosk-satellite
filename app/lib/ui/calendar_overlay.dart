@@ -766,7 +766,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             tooltip: s.commonClose,
                             iconSize: compactTop ? 26 : 28,
                             color: theme.colorScheme.onSurfaceVariant,
-                            onPressed: _close,
+                            onPressed: () => compassClose(
+                              c,
+                              widget.screensaver ? null : 'calendar',
+                              _close,
+                            ),
                           ),
                         ),
                       ),

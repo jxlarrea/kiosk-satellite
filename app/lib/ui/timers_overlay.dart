@@ -318,8 +318,11 @@ class _TimersScreenState extends State<_TimersScreen> {
                                   tooltip: s.commonClose,
                                   iconSize: 28,
                                   color: theme.colorScheme.onSurfaceVariant,
-                                  onPressed: () =>
-                                      c.voiceTimers.visible.value = false,
+                                  onPressed: () => compassClose(
+                                    c,
+                                    'timers',
+                                    () => c.voiceTimers.visible.value = false,
+                                  ),
                                 ),
                               ),
                             ],

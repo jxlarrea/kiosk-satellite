@@ -347,6 +347,10 @@ class AppContainer {
   /// itself, so it leaves its close button out (CompassCenterHides).
   final compassCenter = ValueNotifier<String>('');
 
+  /// Set by Compass while it runs: a view's close button on a side of the
+  /// layout hands its close to it (compassClose in compass_center.dart).
+  bool Function(String kind)? compassCloseToCenter;
+
   late final SettingsManager settings;
   late final DeviceManager device;
   late final AdaptiveLightManager adaptiveLight;

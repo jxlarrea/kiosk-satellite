@@ -446,7 +446,7 @@ class _AlarmsScreenState extends State<_AlarmsScreen> {
                         tooltip: s.commonClose,
                         iconSize: 28,
                         color: theme.colorScheme.onSurfaceVariant,
-                        onPressed: _close,
+                        onPressed: () => compassClose(c, 'alarms', _close),
                       ),
                     ),
                   ),

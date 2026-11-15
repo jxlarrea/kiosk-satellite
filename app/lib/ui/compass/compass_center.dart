@@ -30,3 +30,14 @@ class CompassCenterHides extends StatelessWidget {
     child: child,
   );
 }
+
+/// What a Compass view's close button does. On a side of the layout it
+/// goes to the center as back does: the center opens first and the view
+/// closes under it. Closing the view first would leave the screen with
+/// nothing over the dashboard until Compass caught up, a flash of the
+/// page, or of black where the view had the page out of the frame.
+/// Anywhere else, or with no [kind], it runs [close].
+void compassClose(AppContainer c, String? kind, VoidCallback close) {
+  if (kind != null && (c.compassCloseToCenter?.call(kind) ?? false)) return;
+  close();
+}

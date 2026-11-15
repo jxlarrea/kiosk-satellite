@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:intl/intl.dart' show NumberFormat;
+import 'compass/compass_center.dart';
 import 'glance_row.dart';
 import 'lyrics_view.dart';
 import 'resized_image.dart';
@@ -1010,7 +1011,11 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     focusColor: Colors.white24,
-                    onTap: () => c.screensaver.notifyActivity('close'),
+                    onTap: () => compassClose(
+                      c,
+                      'now_playing',
+                      () => c.screensaver.notifyActivity('close'),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(10),
                       child: Icon(
