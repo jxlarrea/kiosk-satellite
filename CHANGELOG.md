@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.23 - 2026-11-16
 
 ### Added
 - **Test volume on the Adaptive volume page.** Tuning the curve meant going to Home Assistant to send an announcement after every change. A new **Test volume** group under the curve has two buttons that play an announcement at the volume the room picks right now. **Test Assistant volume** plays a Voice Satellite announcement at the Assistant volume, and **Test Media volume** plays an ESPHome announcement at the Media volume. Each button needs its feature set up first: Voice Satellite in Home Assistant, or Announcements under ESPHome. Mirrored in the remote admin. See [Adaptive Volume](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/adaptive-volume.md#test-volume).
