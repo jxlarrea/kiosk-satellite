@@ -993,6 +993,30 @@ export async function loadCameras() {
       },
     },
   ));
+  // Every camera no view holds, cleared in one go (issue #1467).
+  // Mirrors CameraConfiguration.unusedCameras.
+  const used = new Set(config.views.flatMap((view) => view.cameraIds));
+  const unused = config.cameras.filter((camera) => !used.has(camera.id)).length;
+  if (unused) {
+    const unusedId = unused === 1 ? 'cameraStreamsOneUnusedCamera' : 'cameraStreamsManyUnusedCameras';
+    camerasCard.appendChild(cameraListRow(
+      cameraStreamsText('Delete unused cameras'),
+      t(unusedId, {count: String(unused)}),
+      [],
+      {
+        icon: 'delete',
+        onClick: async () => {
+          const choice = await localizedMessageBox({
+            titleId: 'cameraStreamsDeleteUnusedConfirm', messageId: unusedId, values: {count: String(unused)},
+            buttons: [{id:'commonCancel', value:'Cancel'}, {id:'commonDelete', value:'Delete'}],
+          });
+          if (choice !== 'Delete') return;
+          await cmd('cameraDeleteUnused');
+          refresh();
+        },
+      },
+    ));
+  }
 
   heading(cameraStreamsText('Views'));
   const viewsCard = card();

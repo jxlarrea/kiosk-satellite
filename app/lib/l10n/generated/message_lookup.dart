@@ -1742,6 +1742,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'cameraStreamsSaveCameraFailed' => strings.cameraStreamsSaveCameraFailed,
       'cameraStreamsDeleteCameraHelp' => strings.cameraStreamsDeleteCameraHelp,
       'cameraStreamsLoadFailed' => strings.cameraStreamsLoadFailed,
+      'cameraStreamsDeleteUnused' => strings.cameraStreamsDeleteUnused,
+      'cameraStreamsDeleteUnusedConfirm' =>
+        strings.cameraStreamsDeleteUnusedConfirm,
       'cameraStreamsViews' => strings.cameraStreamsViews,
       'cameraStreamsEmptyView' => strings.cameraStreamsEmptyView,
       'cameraStreamsNamesShown' => strings.cameraStreamsNamesShown,

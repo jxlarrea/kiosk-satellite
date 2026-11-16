@@ -5934,6 +5934,22 @@ class UiStringsZh extends UiStrings {
   String get cameraStreamsLoadFailed => '无法加载摄像头。';
 
   @override
+  String get cameraStreamsDeleteUnused => '删除未使用的摄像头';
+
+  @override
+  String get cameraStreamsDeleteUnusedConfirm => '要删除未使用的摄像头吗？';
+
+  @override
+  String cameraStreamsOneUnusedCamera(String count) {
+    return '$count 个摄像头不在任何画面中。';
+  }
+
+  @override
+  String cameraStreamsManyUnusedCameras(String count) {
+    return '$count 个摄像头不在任何画面中。';
+  }
+
+  @override
   String get cameraStreamsViews => '画面';
 
   @override
@@ -21782,6 +21798,22 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get cameraStreamsLoadFailed => '无法加载摄像头。';
+
+  @override
+  String get cameraStreamsDeleteUnused => '删除未使用的摄像头';
+
+  @override
+  String get cameraStreamsDeleteUnusedConfirm => '要删除未使用的摄像头吗？';
+
+  @override
+  String cameraStreamsOneUnusedCamera(String count) {
+    return '$count 个摄像头不在任何画面中。';
+  }
+
+  @override
+  String cameraStreamsManyUnusedCameras(String count) {
+    return '$count 个摄像头不在任何画面中。';
+  }
 
   @override
   String get cameraStreamsViews => '画面';

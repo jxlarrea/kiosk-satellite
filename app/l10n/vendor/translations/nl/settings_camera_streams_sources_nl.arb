@@ -25,5 +25,9 @@
   "cameraStreamsWhep": "WHEP-URL",
   "cameraStreamsSaveCameraFailed": "Kon de camera niet opslaan",
   "cameraStreamsDeleteCameraHelp": "De camera wordt uit elke weergave verwijderd.",
-  "cameraStreamsLoadFailed": "Kon geen camera's laden."
+  "cameraStreamsLoadFailed": "Kon geen camera's laden.",
+  "cameraStreamsDeleteUnused": "Ongebruikte camera's verwijderen",
+  "cameraStreamsDeleteUnusedConfirm": "Ongebruikte camera's verwijderen?",
+  "cameraStreamsOneUnusedCamera": "{count} camera staat in geen enkele weergave.",
+  "cameraStreamsManyUnusedCameras": "{count} camera's staan in geen enkele weergave."
 }

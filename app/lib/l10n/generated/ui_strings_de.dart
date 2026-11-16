@@ -6285,6 +6285,22 @@ class UiStringsDe extends UiStrings {
       'Die Kameras konnten nicht geladen werden.';
 
   @override
+  String get cameraStreamsDeleteUnused => 'Unbenutzte Kameras löschen';
+
+  @override
+  String get cameraStreamsDeleteUnusedConfirm => 'Unbenutzte Kameras löschen?';
+
+  @override
+  String cameraStreamsOneUnusedCamera(String count) {
+    return '$count Kamera ist in keiner Ansicht.';
+  }
+
+  @override
+  String cameraStreamsManyUnusedCameras(String count) {
+    return '$count Kameras sind in keiner Ansicht.';
+  }
+
+  @override
   String get cameraStreamsViews => 'Ansichten';
 
   @override

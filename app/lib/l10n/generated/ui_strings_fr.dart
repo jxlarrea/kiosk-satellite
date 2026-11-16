@@ -6243,6 +6243,23 @@ class UiStringsFr extends UiStrings {
   String get cameraStreamsLoadFailed => 'Impossible de charger les caméras.';
 
   @override
+  String get cameraStreamsDeleteUnused => 'Supprimer les caméras inutilisées';
+
+  @override
+  String get cameraStreamsDeleteUnusedConfirm =>
+      'Supprimer les caméras inutilisées ?';
+
+  @override
+  String cameraStreamsOneUnusedCamera(String count) {
+    return '$count caméra n\'est dans aucune vue.';
+  }
+
+  @override
+  String cameraStreamsManyUnusedCameras(String count) {
+    return '$count caméras ne sont dans aucune vue.';
+  }
+
+  @override
   String get cameraStreamsViews => 'Vues';
 
   @override

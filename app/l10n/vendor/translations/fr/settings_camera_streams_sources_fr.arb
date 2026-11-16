@@ -25,5 +25,9 @@
   "cameraStreamsWhep": "URL WHEP",
   "cameraStreamsSaveCameraFailed": "Impossible d'enregistrer la caméra",
   "cameraStreamsDeleteCameraHelp": "Elle sera retirée de toutes les vues.",
-  "cameraStreamsLoadFailed": "Impossible de charger les caméras."
+  "cameraStreamsLoadFailed": "Impossible de charger les caméras.",
+  "cameraStreamsDeleteUnused": "Supprimer les caméras inutilisées",
+  "cameraStreamsDeleteUnusedConfirm": "Supprimer les caméras inutilisées ?",
+  "cameraStreamsOneUnusedCamera": "{count} caméra n'est dans aucune vue.",
+  "cameraStreamsManyUnusedCameras": "{count} caméras ne sont dans aucune vue."
 }

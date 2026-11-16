@@ -226,6 +226,15 @@ class CameraManager extends Manager {
       )
       ..register(
         Command(
+          name: 'cameraDeleteUnused',
+          description:
+              'Delete every camera that is in no camera view (issue #1467). '
+              'Returns how many were deleted.',
+          handler: (_) => _deleteUnusedSources(),
+        ),
+      )
+      ..register(
+        Command(
           name: 'cameraPutView',
           description:
               'Create or update a camera view containing 1 to 12 cameras.',
@@ -652,6 +661,23 @@ class CameraManager extends Manager {
       ),
     );
     return const CommandResult.ok();
+  }
+
+  /// One save for the lot, so fifty imported cameras do not mean fifty
+  /// writes and fifty refreshes. Views keep what they hold.
+  Future<CommandResult> _deleteUnusedSources() async {
+    final unused = {for (final camera in _config.unusedCameras) camera.id};
+    if (unused.isNotEmpty) {
+      await _save(
+        _config.copyWith(
+          cameras: [
+            for (final camera in _config.cameras)
+              if (!unused.contains(camera.id)) camera,
+          ],
+        ),
+      );
+    }
+    return CommandResult.ok({'deleted': unused.length});
   }
 
   Future<CommandResult> _putViewCommand(Map<String, Object?> params) async {

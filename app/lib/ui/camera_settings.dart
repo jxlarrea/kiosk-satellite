@@ -177,6 +177,15 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
               ),
               onTap: _busy ? null : () => _editCamera(null),
             ),
+            if (config.unusedCameras.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.delete_sweep_outlined),
+                title: Text(
+                  cameraStreamsText(context, 'Delete unused cameras'),
+                ),
+                subtitle: Text(_unusedText(config.unusedCameras.length)),
+                onTap: _busy ? null : _deleteUnused,
+              ),
           ],
         ),
         SectionHeading(cameraStreamsText(context, 'Views')),
@@ -1146,6 +1155,26 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
       await widget.container.commands.execute('cameraDeleteSource', {
         'id': camera.id,
       });
+    });
+  }
+
+  String _unusedText(int count) => (count == 1
+      ? l10n(context).cameraStreamsOneUnusedCamera
+      : l10n(context).cameraStreamsManyUnusedCameras)('$count');
+
+  /// Clears what an import left behind in one go (issue #1467): every
+  /// camera no view holds.
+  Future<void> _deleteUnused() async {
+    final count = widget.container.camera.config.unusedCameras.length;
+    if (count == 0) return;
+    if (!await _confirm(
+      cameraStreamsText(context, 'Delete unused cameras?'),
+      _unusedText(count),
+    )) {
+      return;
+    }
+    await _run(() async {
+      await widget.container.commands.execute('cameraDeleteUnused', const {});
     });
   }
 

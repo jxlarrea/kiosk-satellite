@@ -38,6 +38,10 @@ If you prefer to add a camera manually, you can reference:
 
 Please note that raw RTSP URLs are not supported directly by the app player. To use an RTSP source, add it to Go2RTC first, and then reference that stream name in the app.
 
+## Delete Unused Cameras
+
+An import adds every camera it finds, including ones you never put in a view. To clear them, select **Delete unused cameras** at the bottom of the **Cameras** list, in on-device settings or Remote Admin. It deletes every camera that is not in any view and keeps the ones your views use. The row shows how many cameras it will delete and only appears while at least one camera is in no view. Running the import again brings a deleted camera back.
+
 For Go2RTC cameras, you can configure an optional full screen stream. This lets you use a lightweight, lower resolution substream for the grid view, but automatically switch to a high resolution stream when you tap to focus on it full screen.
 
 For Home Assistant cameras, the **Add camera** and **Edit camera** dialogs include **Preferred protocol** in both on-device settings and Remote Admin. Choose **Auto**, **WebRTC**, **HLS** or **MJPEG**. Auto follows the **Prefer HLS over WebRTC** playback setting. An explicit choice starts with that protocol when the camera supports it and keeps the other available protocols as fallbacks. The preference applies to every view and the screensaver. It survives re-importing cameras. Choose MJPEG to skip WebRTC and HLS startup attempts on devices that cannot play them. MJPEG has no audio.

@@ -25,5 +25,9 @@
   "cameraStreamsWhep": "WHEP 地址",
   "cameraStreamsSaveCameraFailed": "无法保存摄像头",
   "cameraStreamsDeleteCameraHelp": "它会从所有画面中移除。",
-  "cameraStreamsLoadFailed": "无法加载摄像头。"
+  "cameraStreamsLoadFailed": "无法加载摄像头。",
+  "cameraStreamsDeleteUnused": "删除未使用的摄像头",
+  "cameraStreamsDeleteUnusedConfirm": "要删除未使用的摄像头吗？",
+  "cameraStreamsOneUnusedCamera": "{count} 个摄像头不在任何画面中。",
+  "cameraStreamsManyUnusedCameras": "{count} 个摄像头不在任何画面中。"
 }

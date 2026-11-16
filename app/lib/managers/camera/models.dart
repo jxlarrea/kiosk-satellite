@@ -280,6 +280,16 @@ class CameraConfiguration {
     return null;
   }
 
+  /// The cameras no view holds (issue #1467). A camera only reaches the
+  /// screen through a view, so these are the ones an import left behind.
+  List<CameraSource> get unusedCameras {
+    final used = {for (final view in views) ...view.cameraIds};
+    return [
+      for (final camera in cameras)
+        if (!used.contains(camera.id)) camera,
+    ];
+  }
+
   /// The view [key] names: its id, or its name for a hand-written
   /// `ks://camera/<name>` link (issue #1058). An empty key is the default
   /// view. Names are unique ignoring case. Failing an exact name, spaces,

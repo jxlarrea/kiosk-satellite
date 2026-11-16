@@ -146,5 +146,7 @@ const cameraStreamsTextMessageIds = <String, String>{
   "view not found": "cameraStreamsViewNotFound",
   "the default view cannot be deleted; empty it instead": "cameraStreamsDefaultViewDelete",
   "view has no cameras": "cameraStreamsViewEmpty",
-  "Home Assistant is not configured or unreachable": "cameraStreamsHaUnavailable"
+  "Home Assistant is not configured or unreachable": "cameraStreamsHaUnavailable",
+  "Delete unused cameras": "cameraStreamsDeleteUnused",
+  "Delete unused cameras?": "cameraStreamsDeleteUnusedConfirm"
 };

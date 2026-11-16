@@ -10807,6 +10807,30 @@ abstract class UiStrings {
   /// Label or guidance in this section.
   ///
   /// In en, this message translates to:
+  /// **'Delete unused cameras'**
+  String get cameraStreamsDeleteUnused;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete unused cameras?'**
+  String get cameraStreamsDeleteUnusedConfirm;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} camera is not in any view.'**
+  String cameraStreamsOneUnusedCamera(String count);
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cameras are not in any view.'**
+  String cameraStreamsManyUnusedCameras(String count);
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
   /// **'Views'**
   String get cameraStreamsViews;
 

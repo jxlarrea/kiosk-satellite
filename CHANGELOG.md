@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Delete unused cameras in Camera Streams (#1467).** Clearing cameras after an import meant deleting them one at a time, which takes a while with 50 cameras. A new **Delete unused cameras** row at the bottom of the **Cameras** list deletes every camera that is not in any view, after a confirmation. Cameras in a view stay. The row shows how many cameras it will delete and only appears while there is at least one. Mirrored in the remote admin. See [Cameras](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/cameras.md#delete-unused-cameras).
+
 ### Fixed
 - **Crash on a color, date or time field.** After Android opened the kiosk screen again, such as on a Home press with Kiosk Satellite as the home app, tapping a color, date or time field on the dashboard closed the app. The picker now opens.
 - **Crash on a screenshot with little memory left.** On a device almost out of memory, a screenshot for the remote admin or the ESPHome **Screenshot** camera could close the app. The screenshot now fails and the app keeps running.

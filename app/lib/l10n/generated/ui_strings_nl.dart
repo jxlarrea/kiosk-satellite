@@ -6222,6 +6222,23 @@ class UiStringsNl extends UiStrings {
   String get cameraStreamsLoadFailed => 'Kon geen camera\'s laden.';
 
   @override
+  String get cameraStreamsDeleteUnused => 'Ongebruikte camera\'s verwijderen';
+
+  @override
+  String get cameraStreamsDeleteUnusedConfirm =>
+      'Ongebruikte camera\'s verwijderen?';
+
+  @override
+  String cameraStreamsOneUnusedCamera(String count) {
+    return '$count camera staat in geen enkele weergave.';
+  }
+
+  @override
+  String cameraStreamsManyUnusedCameras(String count) {
+    return '$count camera\'s staan in geen enkele weergave.';
+  }
+
+  @override
   String get cameraStreamsViews => 'Weergaven';
 
   @override

@@ -30087,5 +30087,29 @@
     "translation": "1bdafd3c5e00a11ad440e8fb0eaae16f2a2f7e99e7072392142a14a70abfbcb3",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "cameraStreamsManyUnusedCameras": {
+    "source": "0a461a306a8df7fdeacab4afc5e3b34949e11a68e1fd4c01d3bc44c780436963",
+    "translation": "869e246c46efc96c46ce39cfa127d2daed53e44f6a0a2edf7b2914da253480af",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "cameraStreamsDeleteUnused": {
+    "source": "4bcb026491fc4128d8ac17e10311bfe57cf97273a479580b44f088e254b04396",
+    "translation": "fe0c41f6f7c0092a896b1d835c611df59af364bcd4cf49812e9916e8043c7faf",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "cameraStreamsDeleteUnusedConfirm": {
+    "source": "e57b71d1a74d827dc6c5a66f99b872fff9d210a6004e4bb5d661740a16049328",
+    "translation": "500fe066c196730433b616ffe4241c0837be34e23d2e63fcfb1753e92b686bbc",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "cameraStreamsOneUnusedCamera": {
+    "source": "a1bf18a9f6e8352c7d5cca400bcb4a6d24d2836b2e30cba11e368049ddf84c8a",
+    "translation": "869e246c46efc96c46ce39cfa127d2daed53e44f6a0a2edf7b2914da253480af",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

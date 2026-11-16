@@ -146,6 +146,23 @@ try:
         page.locator('.modal-card').last.get_by_role('button', name='TEST Delete', exact=True).click()
         page.wait_for_function('() => !document.querySelector(".modal-card")')
         assert ('cameraDeleteServer', {'id': 'server-raw'}) in requests
+        # Delete unused cameras (issue #1467) shows only while a camera is
+        # in no view, counts them and clears them with one command.
+        expect(root.get_by_text('TEST Delete unused cameras', exact=True)).to_have_count(0)
+        config['cameras'] += [
+            dict(id='old-raw', name='Old doorbell', kind='ha', entityId='camera.old', missing=True),
+            dict(id='test-raw', name='Test pattern', kind='whep', whepUrl='https://example.test/whep'),
+        ]
+        page.evaluate('() => cameraEditors.loadCameras()')
+        expect(root.get_by_text('TEST 2 cameras are not in any view.', exact=True)).to_be_visible()
+        root.get_by_text('TEST Delete unused cameras', exact=True).click()
+        modal = page.locator('.modal-card').last
+        expect(modal.get_by_text('TEST Delete unused cameras?', exact=True)).to_be_visible()
+        expect(modal.get_by_text('TEST 2 cameras are not in any view.', exact=True)).to_be_visible()
+        modal.get_by_role('button', name='TEST Delete', exact=True).click()
+        page.wait_for_function('() => !document.querySelector(".modal-card")')
+        assert ('cameraDeleteUnused', {}) in requests
+        config['cameras'] = config['cameras'][:2]
         assert not any(name == 'unexpected-settings-read' for name, _ in requests), requests
         assert not errors, errors
         browser.close()
