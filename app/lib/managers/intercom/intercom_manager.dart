@@ -631,7 +631,10 @@ class IntercomManager extends Manager {
     rosterVisible.addListener(_syncScreenShown);
     _subs.add(bus.on<FleetChanged>().listen((_) => _readFleet()));
     _subs.add(
-      bus.on<AdaptiveVolumeChanged>().listen((e) => _roomShare = e.intercom),
+      bus.on<AdaptiveVolumeChanged>().listen((e) {
+        _roomShare = e.intercom;
+        _mediaRoomShare = e.media;
+      }),
     );
     _subs.add(
       bus.on<SoundEnded>().listen((e) {
@@ -1927,17 +1930,19 @@ class IntercomManager extends Manager {
     _call = c;
     if (!c.audioOnly) await _comeForward();
     _setState('listening');
-    // The media fader, unless the action names a volume of its own: a
-    // share of the master, 0..1, on the same squared taper the faders
-    // use. 0 or less (the action cannot leave a number out) means the
-    // fader.
+    // The media fader under adaptive volume's media share, unless the
+    // action names a volume of its own: a share of the master, 0..1, on
+    // the same squared taper the faders use, which the room leaves alone.
+    // 0 or less (the action cannot leave a number out) means the fader.
     final askedVolumeRaw = p['volume'];
     final askedVolume = askedVolumeRaw is num
         ? askedVolumeRaw.toDouble()
         : double.tryParse('$askedVolumeRaw') ?? 0;
     final share = askedVolume > 0
         ? askedVolume.clamp(0.0, 1.0)
-        : _settings.get(defs.mediaVolume).toDouble().clamp(0, 100) / 100;
+        : _settings.get(defs.mediaVolume).toDouble().clamp(0, 100) /
+              100 *
+              _mediaRoomShare;
     await _startPlayback(volume: share * share, rate: rate);
     c.since = DateTime.now();
     final ms = pcm.length * 1000 ~/ (rate * 2);
@@ -2933,6 +2938,11 @@ class IntercomManager extends Manager {
   /// 1 while the intercom does not follow the room. Read when playback
   /// opens: the room is not measured during a call, so it holds for it.
   double _roomShare = 1;
+
+  /// The share of the media fader adaptive volume leaves, for an
+  /// announcement from Home Assistant without a volume of its own. 1 while
+  /// media does not follow the room.
+  double _mediaRoomShare = 1;
 
   /// The intercom fader on the app's squared taper, under the room's share
   /// of it.

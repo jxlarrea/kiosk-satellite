@@ -22,8 +22,8 @@ With wake word detection on, the level comes from the capture that is already op
 | --- | --- | --- |
 | Enable adaptive volume | off | Lowers the volume as the room gets quieter. |
 | Room noise | | The room's level as the curve follows it, in dBFS. It holds while the device plays. |
-| Assistant | on | Voice responses, chimes, the timer sound and announcements follow the room. |
-| Media | off | Music and video follow the room. The volume is set when playback starts and holds until it stops. After about 10 seconds of pause the room is read again. |
+| Assistant | on | Voice responses, chimes, the timer sound and Voice Satellite announcements follow the room. |
+| Media | off | Music, video and ESPHome announcements follow the room. The volume is set when playback starts and holds until it stops. After about 10 seconds of pause the room is read again. |
 | Intercom | off | Calls follow the room. The volume is set when a call starts. The switch shows while the intercom is on. |
 
 ## Volume Curve
@@ -47,14 +47,15 @@ A change to the gain under **Microphone settings** moves the reading, so set the
 
 | Switch | What follows the room |
 | --- | --- |
-| Assistant | Text to speech, assistant answers, realtime conversations, chimes, the timer sound and announcements |
-| Media | Music from the Sendspin player, AirPlay and plugin players, and DLNA audio |
+| Assistant | Text to speech, assistant answers, realtime conversations, chimes, the timer sound and Voice Satellite announcements |
+| Media | Music from the Sendspin player, AirPlay and plugin players, DLNA audio and [ESPHome announcements](esphome.md#announcements) that play at the media volume |
 | Intercom | The other kiosk's voice during a call |
 
 These keep their own volume:
 
 - Alarms, which ring at the **Alarm volume**
 - The intercom's ring and the notification sound
+- ESPHome announcements with a `volume` set in the action
 - Sounds and video a dashboard page plays, touch sounds and audio from other apps
 
 Sound from the last group is not played by Kiosk Satellite's own players, so it counts as room noise. The **Master volume** is never changed.

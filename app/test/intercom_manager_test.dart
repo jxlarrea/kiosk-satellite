@@ -2327,6 +2327,43 @@ void main() {
     });
 
     test(
+      'the media share of adaptive volume lowers the media fader only',
+      () async {
+        await build(
+          prefs: {
+            'ks.ha.url': 'http://ha.local:8123',
+            'ks.ha.token': 'tkn',
+            'ks.audio.media_volume': 80,
+          },
+        );
+        answers['GET /a.mp3'] = (_) => http.Response.bytes([9], 200);
+        bus.publish(
+          const AdaptiveVolumeChanged(
+            noise: -55,
+            assistant: 1,
+            media: 0.5,
+            intercom: 1,
+          ),
+        );
+        await settle(0);
+        // The fader under the room's share, then the action's own volume,
+        // which the room leaves alone.
+        for (final (volume, gain) in [(0.0, 0.16), (0.6, 0.36)]) {
+          final r = await commands.execute('announce', {
+            'url': 'http://sounds.local/a.mp3',
+            'volume': volume,
+            'chime': false,
+          });
+          expect(r.ok, isTrue, reason: r.error);
+          final start = audioArgs.lastWhere((a) => a.$1 == 'start').$2 as Map;
+          expect((start['volume'] as num).toDouble(), closeTo(gain, 1e-9));
+          await commands.execute('intercomHangup', const {});
+          await commands.execute('intercomDismiss', const {});
+        }
+      },
+    );
+
+    test(
       'a voice Home Assistant cannot speak falls back to the engine',
       () async {
         await build(
