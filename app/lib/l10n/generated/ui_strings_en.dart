@@ -11050,6 +11050,27 @@ class UiStringsEn extends UiStrings {
   }
 
   @override
+  String get screenAudioVolumeTest => 'Test volume';
+
+  @override
+  String get screenAudioVolumeTestAssistant => 'Test Assistant volume';
+
+  @override
+  String get screenAudioVolumeTestAssistantHint =>
+      'Plays a Voice Satellite announcement at the Assistant volume. Needs Voice Satellite set up in Home Assistant.';
+
+  @override
+  String get screenAudioVolumeTestMedia => 'Test Media volume';
+
+  @override
+  String get screenAudioVolumeTestMediaHint =>
+      'Plays an ESPHome announcement at the Media volume. Needs Announcements turned on under ESPHome.';
+
+  @override
+  String get screenAudioVolumeTestMessage =>
+      'This is how loud an announcement plays right now.';
+
+  @override
   String get settingAudioMicDeviceTitle => 'Microphone';
 
   @override

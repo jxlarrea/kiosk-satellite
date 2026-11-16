@@ -25058,5 +25058,35 @@
     "source": "46a1450639d552b0de30c475e661d9f25dd0a87d8cb20a75ecb0c2e47bd28d1b",
     "translation": "8b2e87474ba3bb5b46c7116aada05b6474a08b0a3b31d242259717687675a7e8",
     "author": "Xavier Larrea"
+  },
+  "screenAudioVolumeTestMessage": {
+    "source": "460a9f0af9ebee59f03c37f378c76b26e7068359b705594091ecff2f09c94b99",
+    "translation": "6ca72d01d269426be4ee03a120397e5917019a732c53550f35d9f25910259f08",
+    "author": "Xavier Larrea"
+  },
+  "screenAudioVolumeTestAssistantHint": {
+    "source": "f05cbe6ce7eb0deb16d3a2a1d43ea32989c35374d5d1437390f3e92d72dc78f4",
+    "translation": "7cfc876b8b08e4c27d97a705ec1b36e4587754559cc5fc5e44b7f3d4aafacce0",
+    "author": "Xavier Larrea"
+  },
+  "screenAudioVolumeTest": {
+    "source": "72e052a5647ecbcd506ea0a08a03f15342562deaf541125e1ab2212ec19a2997",
+    "translation": "52c6f4b9ac3e49bbe2bcd7fa82d96a7ff10a740c453c95b66ada5c078933ef2d",
+    "author": "Xavier Larrea"
+  },
+  "screenAudioVolumeTestMedia": {
+    "source": "2193152f5d66012f44ab9d466edc65634f52fe27a8339646091871905c19f7bc",
+    "translation": "31cb0f0692ec3be6996c9b7a2cf6fa2a97a3201411c1f76e9b508854fe967d27",
+    "author": "Xavier Larrea"
+  },
+  "screenAudioVolumeTestMediaHint": {
+    "source": "8eaa86cbc7edf14b3d71546009d74113c22ea46840b949bf1a49ff945aa8ac89",
+    "translation": "ea815c5d37d84bcbd5df1a5e3e6faf9618fb022dee57978594669e80119688bb",
+    "author": "Xavier Larrea"
+  },
+  "screenAudioVolumeTestAssistant": {
+    "source": "1ba3ff39bff77aa48d25d0a448d32db6b0254b0444c00eb769f26a8272fc91ab",
+    "translation": "27633ef4c64f610d542ab72622fa38d6c3dc0bf5ef4d8771a0cb0d2d04873a04",
+    "author": "Xavier Larrea"
   }
 }

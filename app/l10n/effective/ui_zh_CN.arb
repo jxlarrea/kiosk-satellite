@@ -41852,6 +41852,84 @@
       }
     }
   },
+  "screenAudioVolumeTest": "测试音量",
+  "@screenAudioVolumeTest": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Heading above the rows that play a test announcement at the volume the room noise picks.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestAssistant": "测试助手音量",
+  "@screenAudioVolumeTestAssistant": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Label of the row whose button plays a test announcement at the Assistant volume.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestAssistantHint": "以助手音量播放一条 Voice Satellite 播报。需要先在 Home Assistant 中设置 Voice Satellite。",
+  "@screenAudioVolumeTestAssistantHint": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the Test Assistant volume row.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestMedia": "测试媒体音量",
+  "@screenAudioVolumeTestMedia": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Label of the row whose button plays a test announcement at the Media volume.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestMediaHint": "以媒体音量播放一条 ESPHome 播报。需要先在 ESPHome 下开启播报。",
+  "@screenAudioVolumeTestMediaHint": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the Test Media volume row. Announcements is the name of a settings page under ESPHome.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestMessage": "这是现在播报的音量。",
+  "@screenAudioVolumeTestMessage": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "The sentence Home Assistant speaks aloud when a volume test button is pressed.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
   "settingAudioMicDeviceTitle": "麦克风",
   "@settingAudioMicDeviceTitle": {
     "context": "Settings:Screen & Audio:Audio Devices",

@@ -10550,6 +10550,26 @@ class UiStringsZh extends UiStrings {
   }
 
   @override
+  String get screenAudioVolumeTest => '测试音量';
+
+  @override
+  String get screenAudioVolumeTestAssistant => '测试助手音量';
+
+  @override
+  String get screenAudioVolumeTestAssistantHint =>
+      '以助手音量播放一条 Voice Satellite 播报。需要先在 Home Assistant 中设置 Voice Satellite。';
+
+  @override
+  String get screenAudioVolumeTestMedia => '测试媒体音量';
+
+  @override
+  String get screenAudioVolumeTestMediaHint =>
+      '以媒体音量播放一条 ESPHome 播报。需要先在 ESPHome 下开启播报。';
+
+  @override
+  String get screenAudioVolumeTestMessage => '这是现在播报的音量。';
+
+  @override
   String get settingAudioMicDeviceTitle => '麦克风';
 
   @override
@@ -26378,6 +26398,26 @@ class UiStringsZhCn extends UiStringsZh {
   String screenAudioVolumeCurveLevelRange(String low, String high) {
     return '请输入 $low% 至 $high% 之间的音量';
   }
+
+  @override
+  String get screenAudioVolumeTest => '测试音量';
+
+  @override
+  String get screenAudioVolumeTestAssistant => '测试助手音量';
+
+  @override
+  String get screenAudioVolumeTestAssistantHint =>
+      '以助手音量播放一条 Voice Satellite 播报。需要先在 Home Assistant 中设置 Voice Satellite。';
+
+  @override
+  String get screenAudioVolumeTestMedia => '测试媒体音量';
+
+  @override
+  String get screenAudioVolumeTestMediaHint =>
+      '以媒体音量播放一条 ESPHome 播报。需要先在 ESPHome 下开启播报。';
+
+  @override
+  String get screenAudioVolumeTestMessage => '这是现在播报的音量。';
 
   @override
   String get settingAudioMicDeviceTitle => '麦克风';

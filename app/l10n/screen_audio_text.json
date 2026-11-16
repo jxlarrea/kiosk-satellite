@@ -104,5 +104,14 @@
   "Room noise (dBFS)": "screenAudioVolumeCurveNoise",
   "Assistant (%)": "screenAudioVolumeCurveAssistant",
   "Media (%)": "screenAudioVolumeCurveMedia",
-  "Intercom (%)": "screenAudioVolumeCurveIntercom"
+  "Intercom (%)": "screenAudioVolumeCurveIntercom",
+  "Test volume": "screenAudioVolumeTest",
+  "Test Assistant volume": "screenAudioVolumeTestAssistant",
+  "Plays a Voice Satellite announcement at the Assistant volume. Needs Voice Satellite set up in Home Assistant.": "screenAudioVolumeTestAssistantHint",
+  "Test Media volume": "screenAudioVolumeTestMedia",
+  "Plays an ESPHome announcement at the Media volume. Needs Announcements turned on under ESPHome.": "screenAudioVolumeTestMediaHint",
+  "This is how loud an announcement plays right now.": "screenAudioVolumeTestMessage",
+  "Test": "commonTest",
+  "Playing": "intercomPlaying",
+  "Failed": "gestureFailed"
 }

@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Test volume on the Adaptive volume page.** Tuning the curve meant going to Home Assistant to send an announcement after every change. A new **Test volume** group under the curve has two buttons that play an announcement at the volume the room picks right now. **Test Assistant volume** plays a Voice Satellite announcement at the Assistant volume, and **Test Media volume** plays an ESPHome announcement at the Media volume. Each button needs its feature set up first: Voice Satellite in Home Assistant, or Announcements under ESPHome. Mirrored in the remote admin. See [Adaptive Volume](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/adaptive-volume.md#test-volume).
+
 ### Fixed
 - **Screensaver hidden after a tap on the dashboard (#1461).** A dashboard that asks for fullscreen on a tap, as Wallpanel does, was drawn by the WebView above everything in Kiosk Satellite. After the first touch the screensaver started under the dashboard and the drawer opened hidden under it until the app restarted. The kiosk already fills the screen, so a request to put the whole page in fullscreen is now skipped. A video or another element can still go fullscreen, and it leaves fullscreen when the screensaver starts, back is pressed or Kiosk Satellite opens something over the dashboard.
 - **ESPHome announcements ignored Adaptive volume.** An announcement from the `announce` action plays at the media volume, but it played at the full slider level in a quiet room. With the **Media** switch of Adaptive volume on, it now follows the room like music does. An announcement with a `volume` set in the action keeps that volume. See [Adaptive Volume](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/adaptive-volume.md).

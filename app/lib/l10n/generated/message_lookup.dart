@@ -3454,6 +3454,15 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'screenAudioVolumeCurveMedia' => strings.screenAudioVolumeCurveMedia,
       'screenAudioVolumeCurveIntercom' =>
         strings.screenAudioVolumeCurveIntercom,
+      'screenAudioVolumeTest' => strings.screenAudioVolumeTest,
+      'screenAudioVolumeTestAssistant' =>
+        strings.screenAudioVolumeTestAssistant,
+      'screenAudioVolumeTestAssistantHint' =>
+        strings.screenAudioVolumeTestAssistantHint,
+      'screenAudioVolumeTestMedia' => strings.screenAudioVolumeTestMedia,
+      'screenAudioVolumeTestMediaHint' =>
+        strings.screenAudioVolumeTestMediaHint,
+      'screenAudioVolumeTestMessage' => strings.screenAudioVolumeTestMessage,
       'settingAudioMicDeviceTitle' => strings.settingAudioMicDeviceTitle,
       'settingAudioMicDeviceDescription' =>
         strings.settingAudioMicDeviceDescription,

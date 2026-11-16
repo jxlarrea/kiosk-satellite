@@ -24,5 +24,11 @@
   "screenAudioVolumeCurveMedia": "Multimedia (%)",
   "screenAudioVolumeCurveIntercom": "Intercomunicador (%)",
   "screenAudioVolumeCurveNoiseRange": "Introduce un nivel de ruido entre {low} y {high} dBFS",
-  "screenAudioVolumeCurveLevelRange": "Introduce un volumen entre {low}% y {high}%"
+  "screenAudioVolumeCurveLevelRange": "Introduce un volumen entre {low}% y {high}%",
+  "screenAudioVolumeTest": "Probar volumen",
+  "screenAudioVolumeTestAssistant": "Probar el volumen del asistente",
+  "screenAudioVolumeTestAssistantHint": "Reproduce un anuncio de Voice Satellite con el volumen del asistente. Requiere Voice Satellite configurado en Home Assistant.",
+  "screenAudioVolumeTestMedia": "Probar el volumen multimedia",
+  "screenAudioVolumeTestMediaHint": "Reproduce un anuncio de ESPHome con el volumen multimedia. Requiere activar Anuncios en ESPHome.",
+  "screenAudioVolumeTestMessage": "Así de alto suena un anuncio ahora mismo."
 }

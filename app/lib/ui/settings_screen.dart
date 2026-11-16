@@ -4137,22 +4137,29 @@ class _CategoryContentState extends State<_CategoryContent> {
       );
     }
 
-    // The curve draws as one editor in its setting's place (issue #1450).
-    // Mirrored on the remote (volume_curve.js).
+    // The curve draws as one editor in its setting's place (issue #1450),
+    // with a way to hear it under it. Mirrored on the remote
+    // (volume_curve.js, settings.js updateVolumeTestRows).
     if (widget.category == 'Screen & Audio' && subpage == 'Adaptive volume') {
-      return sectioned(
-        [
-          for (final def in _defsFor(widget.category))
-            if (def.subpage == subpage) def,
+      return [
+        ...sectioned(
+          [
+            for (final def in _defsFor(widget.category))
+              if (def.subpage == subpage) def,
+          ],
+          replace: {
+            ..._rowReplacements(container),
+            adaptiveVolumeCurve.key: SearchLandingTarget(
+              id: adaptiveVolumeCurve.key,
+              child: VolumeCurveEditor(container: container),
+            ),
+          },
+        ),
+        if (container.settings.get(adaptiveVolume)) ...[
+          SectionHeading(screenAudioText(context, 'Test volume')),
+          SettingsCard(children: [_VolumeTestRows(container: container)]),
         ],
-        replace: {
-          ..._rowReplacements(container),
-          adaptiveVolumeCurve.key: SearchLandingTarget(
-            id: adaptiveVolumeCurve.key,
-            child: VolumeCurveEditor(container: container),
-          ),
-        },
-      );
+      ];
     }
 
     if (widget.category == 'Screen & Audio' && subpage == 'Equalizer') {
@@ -6953,6 +6960,130 @@ class _RoomNoiseRowsState extends State<_RoomNoiseRows> {
         HintRow(screenAudioText(context, _roomNoiseHoldsNote)),
         if (noise == null)
           HintRow(screenAudioText(context, _roomNoiseNoReadingNote)),
+      ],
+    );
+  }
+}
+
+const _assistantTestHint =
+    'Plays a Voice Satellite announcement at the Assistant volume. Needs '
+    'Voice Satellite set up in Home Assistant.';
+const _mediaTestHint =
+    'Plays an ESPHome announcement at the Media volume. Needs Announcements '
+    'turned on under ESPHome.';
+const _volumeTestMessage = 'This is how loud an announcement plays right now.';
+
+/// Two buttons under the volume curve that play an announcement at the
+/// level the room picks now: one through Voice Satellite at the Assistant
+/// volume, one through the ESPHome announce action at the Media volume.
+/// Each waits for its feature to be set up. Settings stay on screen, so
+/// the curve can be changed and tried again. Mirrored on the remote
+/// (settings.js, updateVolumeTestRows).
+class _VolumeTestRows extends StatefulWidget {
+  const _VolumeTestRows({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_VolumeTestRows> createState() => _VolumeTestRowsState();
+}
+
+class _VolumeTestRowsState extends State<_VolumeTestRows> {
+  static final _keys = {
+    voiceEnabled.key,
+    esphomeEnabled.key,
+    announcementsEnabled.key,
+  };
+
+  StreamSubscription<SettingChanged>? _sub;
+
+  /// The row playing now, 'assistant' or 'media'.
+  String? _playing;
+
+  /// The row whose last test failed, shown for a moment.
+  String? _failed;
+  Timer? _failedTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = widget.container.bus.on<SettingChanged>().listen((e) {
+      if (mounted && _keys.contains(e.key)) setState(() {});
+    });
+    widget.container.voice.homeAssistant.addListener(_changed);
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    _failedTimer?.cancel();
+    widget.container.voice.homeAssistant.removeListener(_changed);
+    super.dispose();
+  }
+
+  bool get _mediaReady {
+    final settings = widget.container.settings;
+    return settings.get(esphomeEnabled) && settings.get(announcementsEnabled);
+  }
+
+  Future<void> _test(String which) async {
+    final message = screenAudioText(context, _volumeTestMessage);
+    setState(() {
+      _playing = which;
+      _failed = null;
+    });
+    final r = which == 'assistant'
+        ? await widget.container.commands.execute('voiceTestAnnouncement', {
+            'message': message,
+          })
+        : await widget.container.commands.execute('announce', {
+            'message': message,
+            'audio_only': true,
+          });
+    if (!mounted) return;
+    setState(() {
+      _playing = null;
+      if (!r.ok) _failed = which;
+    });
+    if (!r.ok) {
+      _failedTimer?.cancel();
+      _failedTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _failed = null);
+      });
+    }
+  }
+
+  Widget _button(String which, bool ready) {
+    final label = _failed == which
+        ? 'Failed'
+        : _playing == which
+        ? 'Playing'
+        : 'Test';
+    return FilledButton.tonal(
+      onPressed: ready && _playing == null ? () => _test(which) : null,
+      child: Text(screenAudioText(context, label)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SettingsRow(
+          title: Text(screenAudioText(context, 'Test Assistant volume')),
+          subtitle: Text(screenAudioText(context, _assistantTestHint)),
+          trailing: _button('assistant', widget.container.voice.canAnnounce),
+        ),
+        SettingsRow(
+          title: Text(screenAudioText(context, 'Test Media volume')),
+          subtitle: Text(screenAudioText(context, _mediaTestHint)),
+          trailing: _button('media', _mediaReady),
+        ),
       ],
     );
   }

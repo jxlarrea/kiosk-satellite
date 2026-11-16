@@ -24,5 +24,11 @@
   "screenAudioVolumeCurveMedia": "Media (%)",
   "screenAudioVolumeCurveIntercom": "Intercom (%)",
   "screenAudioVolumeCurveNoiseRange": "Voer een geluidsniveau in tussen {low} en {high} dBFS",
-  "screenAudioVolumeCurveLevelRange": "Voer een volume tussen {low}% en {high}% in"
+  "screenAudioVolumeCurveLevelRange": "Voer een volume tussen {low}% en {high}% in",
+  "screenAudioVolumeTest": "Volume testen",
+  "screenAudioVolumeTestAssistant": "Assistentvolume testen",
+  "screenAudioVolumeTestAssistantHint": "Speelt een Voice Satellite-aankondiging af op het assistentvolume. Voice Satellite moet in Home Assistant zijn ingesteld.",
+  "screenAudioVolumeTestMedia": "Mediavolume testen",
+  "screenAudioVolumeTestMediaHint": "Speelt een ESPHome-aankondiging af op het mediavolume. Aankondigingen moeten onder ESPHome zijn ingeschakeld.",
+  "screenAudioVolumeTestMessage": "Zo luid klinkt een aankondiging nu."
 }

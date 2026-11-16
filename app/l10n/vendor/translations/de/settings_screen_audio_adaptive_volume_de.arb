@@ -24,5 +24,11 @@
   "screenAudioVolumeCurveMedia": "Medien (%)",
   "screenAudioVolumeCurveIntercom": "Intercom (%)",
   "screenAudioVolumeCurveNoiseRange": "Gib einen Geräuschpegel zwischen {low} und {high} dBFS ein",
-  "screenAudioVolumeCurveLevelRange": "Gib eine Lautstärke von {low} % bis {high} % ein"
+  "screenAudioVolumeCurveLevelRange": "Gib eine Lautstärke von {low} % bis {high} % ein",
+  "screenAudioVolumeTest": "Lautstärke testen",
+  "screenAudioVolumeTestAssistant": "Assistentenlautstärke testen",
+  "screenAudioVolumeTestAssistantHint": "Spielt eine Voice Satellite-Durchsage mit der Assistentenlautstärke ab. Voice Satellite muss in Home Assistant eingerichtet sein.",
+  "screenAudioVolumeTestMedia": "Medienlautstärke testen",
+  "screenAudioVolumeTestMediaHint": "Spielt eine ESPHome-Durchsage mit der Medienlautstärke ab. Durchsagen müssen unter ESPHome aktiviert sein.",
+  "screenAudioVolumeTestMessage": "So laut wird eine Durchsage gerade abgespielt."
 }

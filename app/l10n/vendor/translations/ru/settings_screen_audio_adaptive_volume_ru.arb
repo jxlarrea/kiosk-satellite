@@ -24,5 +24,11 @@
   "screenAudioVolumeCurveMedia": "Медиа (%)",
   "screenAudioVolumeCurveIntercom": "Интерком (%)",
   "screenAudioVolumeCurveNoiseRange": "Введите уровень шума от {low} до {high} dBFS",
-  "screenAudioVolumeCurveLevelRange": "Введите громкость от {low}% до {high}%"
+  "screenAudioVolumeCurveLevelRange": "Введите громкость от {low}% до {high}%",
+  "screenAudioVolumeTest": "Проверка громкости",
+  "screenAudioVolumeTestAssistant": "Проверить громкость ассистента",
+  "screenAudioVolumeTestAssistantHint": "Воспроизводит объявление Voice Satellite с громкостью ассистента. Нужно настроить Voice Satellite в Home Assistant.",
+  "screenAudioVolumeTestMedia": "Проверить громкость медиа",
+  "screenAudioVolumeTestMediaHint": "Воспроизводит объявление ESPHome с громкостью медиа. Нужно включить Объявления в ESPHome.",
+  "screenAudioVolumeTestMessage": "Так громко сейчас звучит объявление."
 }

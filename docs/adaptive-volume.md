@@ -37,6 +37,17 @@ The percentages on the curve apply to the **Assistant volume**, **Media volume**
 - Tap a ring or the card under the chart to type the point's noise level and volumes. A noise level has to sit between the points before and after it, and a volume cannot be lower than on the point before or higher than on the point after.
 - A new curve starts at 50% in a room at -60 dBFS and reaches 100% at -30 dBFS.
 
+### Test Volume
+
+The **Test volume** group under the curve plays an announcement at the volume the room picks right now. The curve can be changed and tested again without leaving the page.
+
+| Row | What it plays |
+| --- | --- |
+| Test Assistant volume | A Voice Satellite announcement from Home Assistant at the **Assistant volume**. Needs Voice Satellite set up in Home Assistant. |
+| Test Media volume | An [ESPHome announcement](esphome.md#announcements) at the **Media volume**, with the chime set under ESPHome > Announcements. Needs **Enable announcements** turned on there. |
+
+Both are spoken by Home Assistant's text to speech, so they need the kiosk's Home Assistant connection. A button stays disabled until its feature is set up.
+
 ### Finding Your Noise Levels
 
 What a quiet room reads depends on the device and its microphone. Read the **Room noise** row while the room is quiet, and again with the TV on or people talking. Put the first point at the quiet reading and the last point at the loud one.

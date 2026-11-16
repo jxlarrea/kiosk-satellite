@@ -11169,6 +11169,27 @@ class UiStringsUk extends UiStrings {
   }
 
   @override
+  String get screenAudioVolumeTest => 'Перевірка гучності';
+
+  @override
+  String get screenAudioVolumeTestAssistant => 'Перевірити гучність асистента';
+
+  @override
+  String get screenAudioVolumeTestAssistantHint =>
+      'Відтворює оголошення Voice Satellite з гучністю асистента. Потрібно налаштувати Voice Satellite у Home Assistant.';
+
+  @override
+  String get screenAudioVolumeTestMedia => 'Перевірити гучність медіа';
+
+  @override
+  String get screenAudioVolumeTestMediaHint =>
+      'Відтворює оголошення ESPHome з гучністю медіа. Потрібно ввімкнути Оголошення в ESPHome.';
+
+  @override
+  String get screenAudioVolumeTestMessage =>
+      'Ось так гучно зараз звучить оголошення.';
+
+  @override
   String get settingAudioMicDeviceTitle => 'Мікрофон';
 
   @override

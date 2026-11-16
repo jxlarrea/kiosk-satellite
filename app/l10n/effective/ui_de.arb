@@ -41852,6 +41852,84 @@
       }
     }
   },
+  "screenAudioVolumeTest": "Lautstärke testen",
+  "@screenAudioVolumeTest": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Heading above the rows that play a test announcement at the volume the room noise picks.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestAssistant": "Assistentenlautstärke testen",
+  "@screenAudioVolumeTestAssistant": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Label of the row whose button plays a test announcement at the Assistant volume.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestAssistantHint": "Spielt eine Voice Satellite-Durchsage mit der Assistentenlautstärke ab. Voice Satellite muss in Home Assistant eingerichtet sein.",
+  "@screenAudioVolumeTestAssistantHint": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the Test Assistant volume row.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestMedia": "Medienlautstärke testen",
+  "@screenAudioVolumeTestMedia": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Label of the row whose button plays a test announcement at the Media volume.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestMediaHint": "Spielt eine ESPHome-Durchsage mit der Medienlautstärke ab. Durchsagen müssen unter ESPHome aktiviert sein.",
+  "@screenAudioVolumeTestMediaHint": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "Help below the Test Media volume row. Announcements is the name of a settings page under ESPHome.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
+  "screenAudioVolumeTestMessage": "So laut wird eine Durchsage gerade abgespielt.",
+  "@screenAudioVolumeTestMessage": {
+    "context": "Settings:Screen & Audio:Adaptive volume",
+    "description": "The sentence Home Assistant speaks aloud when a volume test button is pressed.",
+    "x-locations": {
+      "device": [
+        "Settings > Screen & Audio > Adaptive volume"
+      ],
+      "remoteAdmin": [
+        "Screen & Audio > Adaptive volume"
+      ]
+    }
+  },
   "settingAudioMicDeviceTitle": "Mikrofon",
   "@settingAudioMicDeviceTitle": {
     "context": "Settings:Screen & Audio:Audio Devices",

@@ -11180,6 +11180,27 @@ class UiStringsNl extends UiStrings {
   }
 
   @override
+  String get screenAudioVolumeTest => 'Volume testen';
+
+  @override
+  String get screenAudioVolumeTestAssistant => 'Assistentvolume testen';
+
+  @override
+  String get screenAudioVolumeTestAssistantHint =>
+      'Speelt een Voice Satellite-aankondiging af op het assistentvolume. Voice Satellite moet in Home Assistant zijn ingesteld.';
+
+  @override
+  String get screenAudioVolumeTestMedia => 'Mediavolume testen';
+
+  @override
+  String get screenAudioVolumeTestMediaHint =>
+      'Speelt een ESPHome-aankondiging af op het mediavolume. Aankondigingen moeten onder ESPHome zijn ingeschakeld.';
+
+  @override
+  String get screenAudioVolumeTestMessage =>
+      'Zo luid klinkt een aankondiging nu.';
+
+  @override
   String get settingAudioMicDeviceTitle => 'Microfoon';
 
   @override

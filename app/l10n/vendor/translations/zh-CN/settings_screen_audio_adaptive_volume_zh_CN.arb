@@ -24,5 +24,11 @@
   "screenAudioVolumeCurveMedia": "媒体（%）",
   "screenAudioVolumeCurveIntercom": "对讲（%）",
   "screenAudioVolumeCurveNoiseRange": "请输入 {low} 至 {high} dBFS 之间的噪声水平",
-  "screenAudioVolumeCurveLevelRange": "请输入 {low}% 至 {high}% 之间的音量"
+  "screenAudioVolumeCurveLevelRange": "请输入 {low}% 至 {high}% 之间的音量",
+  "screenAudioVolumeTest": "测试音量",
+  "screenAudioVolumeTestAssistant": "测试助手音量",
+  "screenAudioVolumeTestAssistantHint": "以助手音量播放一条 Voice Satellite 播报。需要先在 Home Assistant 中设置 Voice Satellite。",
+  "screenAudioVolumeTestMedia": "测试媒体音量",
+  "screenAudioVolumeTestMediaHint": "以媒体音量播放一条 ESPHome 播报。需要先在 ESPHome 下开启播报。",
+  "screenAudioVolumeTestMessage": "这是现在播报的音量。"
 }

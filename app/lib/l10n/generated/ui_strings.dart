@@ -19319,6 +19319,42 @@ abstract class UiStrings {
   /// **'Enter a volume from {low}% to {high}%'**
   String screenAudioVolumeCurveLevelRange(String low, String high);
 
+  /// Heading above the rows that play a test announcement at the volume the room noise picks.
+  ///
+  /// In en, this message translates to:
+  /// **'Test volume'**
+  String get screenAudioVolumeTest;
+
+  /// Label of the row whose button plays a test announcement at the Assistant volume.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Assistant volume'**
+  String get screenAudioVolumeTestAssistant;
+
+  /// Help below the Test Assistant volume row.
+  ///
+  /// In en, this message translates to:
+  /// **'Plays a Voice Satellite announcement at the Assistant volume. Needs Voice Satellite set up in Home Assistant.'**
+  String get screenAudioVolumeTestAssistantHint;
+
+  /// Label of the row whose button plays a test announcement at the Media volume.
+  ///
+  /// In en, this message translates to:
+  /// **'Test Media volume'**
+  String get screenAudioVolumeTestMedia;
+
+  /// Help below the Test Media volume row. Announcements is the name of a settings page under ESPHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Plays an ESPHome announcement at the Media volume. Needs Announcements turned on under ESPHome.'**
+  String get screenAudioVolumeTestMediaHint;
+
+  /// The sentence Home Assistant speaks aloud when a volume test button is pressed.
+  ///
+  /// In en, this message translates to:
+  /// **'This is how loud an announcement plays right now.'**
+  String get screenAudioVolumeTestMessage;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
+import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart';
+import 'package:kiosk_satellite/managers/voice/voice_manager.dart';
+import 'package:kiosk_satellite/ui/kit.dart';
 import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:kiosk_satellite/ui/volume_curve_editor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -312,5 +315,100 @@ void main() {
     await settle(tester);
     expect(find.text('-62 dBFS'), findsOneWidget);
     expect(find.text('30%'), findsOneWidget);
+  });
+
+  group('Test volume', () {
+    /// The commands the two buttons ran, with their parameters.
+    late List<(String, Map<String, Object?>)> ran;
+
+    void fakeCommands(AppContainer container, {bool ok = true}) {
+      ran = [];
+      for (final name in ['voiceTestAnnouncement', 'announce']) {
+        container.commands.register(
+          Command(
+            name: name,
+            description: 'test',
+            handler: (p) async {
+              ran.add((name, p));
+              return ok
+                  ? const CommandResult.ok()
+                  : const CommandResult.fail('no');
+            },
+          ),
+        );
+      }
+    }
+
+    FilledButton button(WidgetTester tester, String row) => tester.widget(
+      find.descendant(
+        of: find.ancestor(
+          of: find.text(row),
+          matching: find.byType(SettingsRow),
+        ),
+        matching: find.byType(FilledButton),
+      ),
+    );
+
+    testWidgets('off, there is no Test volume group', (tester) async {
+      await open(tester, {});
+      await page(tester);
+      expect(find.text('Test volume'), findsNothing);
+      expect(find.text('Test Assistant volume'), findsNothing);
+    });
+
+    testWidgets('a button waits for its feature to be set up', (tester) async {
+      await open(tester, {
+        'ks.audio.adaptive_volume': true,
+        'ks.voice.enabled': false,
+        'ks.esphome.enabled': false,
+      });
+      await page(tester);
+      expect(find.text('Test volume'), findsOneWidget);
+      expect(find.text('Test Assistant volume'), findsOneWidget);
+      expect(find.text('Test Media volume'), findsOneWidget);
+      expect(button(tester, 'Test Assistant volume').onPressed, isNull);
+      expect(button(tester, 'Test Media volume').onPressed, isNull);
+    });
+
+    testWidgets('set up, each button plays its announcement', (tester) async {
+      final container = await open(tester, {
+        'ks.audio.adaptive_volume': true,
+        'ks.voice.enabled': true,
+        'ks.esphome.enabled': true,
+        'ks.announcements.enabled': true,
+      });
+      fakeCommands(container);
+      container.voice.homeAssistant.value = const VoiceHaState(
+        subscribed: true,
+        satelliteEntity: 'assist_satellite.kitchen',
+      );
+      await page(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Test').first);
+      await settle(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Test').last);
+      await settle(tester);
+      const message = 'This is how loud an announcement plays right now.';
+      expect(ran.map((r) => r.$1), ['voiceTestAnnouncement', 'announce']);
+      expect(ran.first.$2, {'message': message});
+      // Audio only: Settings stay on screen for the next try.
+      expect(ran.last.$2, {'message': message, 'audio_only': true});
+    });
+
+    testWidgets('a failed test says so on its button for a moment', (
+      tester,
+    ) async {
+      final container = await open(tester, {
+        'ks.audio.adaptive_volume': true,
+        'ks.esphome.enabled': true,
+        'ks.announcements.enabled': true,
+      });
+      fakeCommands(container, ok: false);
+      await page(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Test').last);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.widgetWithText(FilledButton, 'Failed'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.widgetWithText(FilledButton, 'Failed'), findsNothing);
+    });
   });
 }

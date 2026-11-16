@@ -11253,6 +11253,28 @@ class UiStringsEs extends UiStrings {
   }
 
   @override
+  String get screenAudioVolumeTest => 'Probar volumen';
+
+  @override
+  String get screenAudioVolumeTestAssistant =>
+      'Probar el volumen del asistente';
+
+  @override
+  String get screenAudioVolumeTestAssistantHint =>
+      'Reproduce un anuncio de Voice Satellite con el volumen del asistente. Requiere Voice Satellite configurado en Home Assistant.';
+
+  @override
+  String get screenAudioVolumeTestMedia => 'Probar el volumen multimedia';
+
+  @override
+  String get screenAudioVolumeTestMediaHint =>
+      'Reproduce un anuncio de ESPHome con el volumen multimedia. Requiere activar Anuncios en ESPHome.';
+
+  @override
+  String get screenAudioVolumeTestMessage =>
+      'Así de alto suena un anuncio ahora mismo.';
+
+  @override
   String get settingAudioMicDeviceTitle => 'Micrófono';
 
   @override

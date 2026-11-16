@@ -11295,6 +11295,27 @@ class UiStringsDe extends UiStrings {
   }
 
   @override
+  String get screenAudioVolumeTest => 'Lautstärke testen';
+
+  @override
+  String get screenAudioVolumeTestAssistant => 'Assistentenlautstärke testen';
+
+  @override
+  String get screenAudioVolumeTestAssistantHint =>
+      'Spielt eine Voice Satellite-Durchsage mit der Assistentenlautstärke ab. Voice Satellite muss in Home Assistant eingerichtet sein.';
+
+  @override
+  String get screenAudioVolumeTestMedia => 'Medienlautstärke testen';
+
+  @override
+  String get screenAudioVolumeTestMediaHint =>
+      'Spielt eine ESPHome-Durchsage mit der Medienlautstärke ab. Durchsagen müssen unter ESPHome aktiviert sein.';
+
+  @override
+  String get screenAudioVolumeTestMessage =>
+      'So laut wird eine Durchsage gerade abgespielt.';
+
+  @override
   String get settingAudioMicDeviceTitle => 'Mikrofon';
 
   @override

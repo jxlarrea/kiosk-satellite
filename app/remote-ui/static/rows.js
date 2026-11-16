@@ -26,6 +26,7 @@ import {
   probeExternalMotion,
   updateAdaptiveBrightnessRows,
   updateAdaptiveVolumeRows,
+  updateVolumeTestRows,
   updateFaceRows,
   updateMotionCameraRows,
   syncScreenOffAdminNotice,
@@ -368,6 +369,10 @@ export function settingRow(s) {
     // the curve's lines, which come and go with the volumes that follow
     // the room.
     if (s.key === 'audio.adaptive_volume') updateAdaptiveVolumeRows();
+    // The Test volume buttons wait for Voice Satellite and announcements.
+    if (['voice.enabled', 'esphome.enabled', 'announcements.enabled'].includes(s.key)) {
+      updateVolumeTestRows();
+    }
     if (s.key.startsWith('audio.adaptive_volume_') || s.key === 'intercom.enabled') {
       document.dispatchEvent(new CustomEvent('ks-adaptivevolume'));
     }

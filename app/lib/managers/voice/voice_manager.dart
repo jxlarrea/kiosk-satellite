@@ -519,6 +519,18 @@ class VoiceManager extends Manager {
       )
       ..register(
         Command(
+          name: 'voiceTestAnnouncement',
+          description:
+              'Have Home Assistant announce a message on this kiosk through '
+              'its satellite (assist_satellite.announce), so it plays the '
+              'way announcements do, at the Assistant volume. Answers once '
+              'it has played.',
+          params: const {'message': 'what Home Assistant says'},
+          handler: (p) => testAnnouncement('${p['message'] ?? ''}'),
+        ),
+      )
+      ..register(
+        Command(
           name: 'voiceWake',
           description:
               'Start listening as if a wake word fired (slot 1 or 2), the '
@@ -1960,6 +1972,44 @@ class VoiceManager extends Manager {
     } catch (e) {
       log.warn(name, 'select $entity not set: $e');
       return false;
+    }
+  }
+
+  /// Whether Home Assistant can announce on this kiosk: the satellite runs
+  /// and Home Assistant has its entity. The Test Assistant volume row
+  /// under Adaptive volume waits for it.
+  bool get canAnnounce =>
+      enabled && homeAssistant.value.satelliteEntity.isNotEmpty;
+
+  /// An announcement through Home Assistant on this kiosk's own satellite,
+  /// the Test Assistant volume row's sound. It plays like any other
+  /// announcement, the preannounce chime first. Home Assistant answers once
+  /// the kiosk has played it, so the wait runs well past a long message.
+  Future<CommandResult> testAnnouncement(String message) async {
+    final text = message.trim();
+    if (text.isEmpty) return const CommandResult.fail('message required');
+    if (!enabled) return const CommandResult.fail('Voice Satellite is off');
+    if (homeAssistant.value.satelliteEntity.isEmpty) {
+      await refreshHomeAssistant();
+    }
+    final satellite = homeAssistant.value.satelliteEntity;
+    if (satellite.isEmpty) {
+      return const CommandResult.fail(
+        'Home Assistant has no satellite for this kiosk',
+      );
+    }
+    try {
+      await _ha.request({
+        'type': 'call_service',
+        'domain': 'assist_satellite',
+        'service': 'announce',
+        'service_data': {'message': text},
+        'target': {'entity_id': satellite},
+      }, timeout: const Duration(seconds: 60));
+      log.info(name, 'test announcement played on $satellite');
+      return const CommandResult.ok();
+    } catch (e) {
+      return CommandResult.fail('the announcement failed: $e');
     }
   }
 
