@@ -107,7 +107,16 @@ class ScreenCapture(
                 ),
             )
         }
-        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        // A frame needs a few MB at once. With native memory nearly gone
+        // (a 32-bit process near its address space limit) the allocation
+        // throws OutOfMemoryError, which would take the app down from this
+        // method channel handler. No picture is the better answer.
+        val bitmap = try {
+            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        } catch (_: OutOfMemoryError) {
+            result.success(null)
+            return
+        }
         val main = Handler(Looper.getMainLooper())
         // On the capture thread: encode here, answer on the platform thread
         // (MethodChannel results must come from there).
@@ -116,25 +125,31 @@ class ScreenCapture(
                 main.post { result.success(null) }
                 return
             }
-            if (raw) {
-                // ARGB_8888 is laid out R, G, B, A in memory: the order
-                // Flutter's rgba8888 decode expects.
-                val buffer = ByteBuffer.allocate(frame.byteCount)
-                frame.copyPixelsToBuffer(buffer)
-                val answer = mapOf(
-                    "width" to frame.width,
-                    "height" to frame.height,
-                    "rowBytes" to frame.rowBytes,
-                    "pixels" to buffer.array(),
-                )
+            // Out of memory here would end the capture thread and the app
+            // with it, so it answers null like any other failed copy.
+            val answer: Any? = try {
+                if (raw) {
+                    // ARGB_8888 is laid out R, G, B, A in memory: the order
+                    // Flutter's rgba8888 decode expects.
+                    val buffer = ByteBuffer.allocate(frame.byteCount)
+                    frame.copyPixelsToBuffer(buffer)
+                    mapOf(
+                        "width" to frame.width,
+                        "height" to frame.height,
+                        "rowBytes" to frame.rowBytes,
+                        "pixels" to buffer.array(),
+                    )
+                } else {
+                    val out = ByteArrayOutputStream()
+                    frame.compress(Bitmap.CompressFormat.JPEG, quality.coerceIn(1, 100), out)
+                    out.toByteArray()
+                }
+            } catch (_: OutOfMemoryError) {
+                null
+            } finally {
                 frame.recycle()
-                main.post { result.success(answer) }
-                return
             }
-            val out = ByteArrayOutputStream()
-            frame.compress(Bitmap.CompressFormat.JPEG, quality.coerceIn(1, 100), out)
-            frame.recycle()
-            main.post { result.success(out.toByteArray()) }
+            main.post { result.success(answer) }
         }
         try {
             PixelCopy.request(window, bitmap, { status ->
@@ -159,7 +174,14 @@ class ScreenCapture(
      * the whole picture.
      */
     private fun underlay(window: Bitmap, layers: List<SurfaceLayer>, finish: (Bitmap?) -> Unit) {
-        val frame = Bitmap.createBitmap(window.width, window.height, Bitmap.Config.ARGB_8888)
+        // Without memory for the surfaces, the window copy alone still
+        // shows everything but what lies under its transparent parts.
+        val frame = try {
+            Bitmap.createBitmap(window.width, window.height, Bitmap.Config.ARGB_8888)
+        } catch (_: OutOfMemoryError) {
+            finish(window)
+            return
+        }
         val canvas = Canvas(frame).apply { drawColor(Color.BLACK) }
         fun next(index: Int) {
             if (index == layers.size) {
@@ -169,11 +191,16 @@ class ScreenCapture(
                 return
             }
             val layer = layers[index]
-            val surface = Bitmap.createBitmap(
-                layer.bounds.width(),
-                layer.bounds.height(),
-                Bitmap.Config.ARGB_8888,
-            )
+            val surface = try {
+                Bitmap.createBitmap(
+                    layer.bounds.width(),
+                    layer.bounds.height(),
+                    Bitmap.Config.ARGB_8888,
+                )
+            } catch (_: OutOfMemoryError) {
+                next(index + 1)
+                return
+            }
             try {
                 PixelCopy.request(layer.surface, surface, { status ->
                     if (status == PixelCopy.SUCCESS) {

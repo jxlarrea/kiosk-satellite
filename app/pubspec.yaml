@@ -66,6 +66,9 @@ dependency_overrides:
   # Includes the failed-launch callback fix described in the package README.
   image_picker_android:
     path: packages/image_picker_android
+  # Keeps WebView pickers on the live Activity, see the package README.
+  flutter_inappwebview_android:
+    path: packages/flutter_inappwebview_android
 
 dev_dependencies:
   flutter_test:

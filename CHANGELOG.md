@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Crash on a color, date or time field.** After Android opened the kiosk screen again, such as on a Home press with Kiosk Satellite as the home app, tapping a color, date or time field on the dashboard closed the app. The picker now opens.
+- **Crash on a screenshot with little memory left.** On a device almost out of memory, a screenshot for the remote admin or the ESPHome **Screenshot** camera could close the app. The screenshot now fails and the app keeps running.
+
 ## v2026.11.23 - 2026-11-16
 
 ### Added
