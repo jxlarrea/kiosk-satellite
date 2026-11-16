@@ -330,9 +330,15 @@ class MaRemotePlayer implements RemotePlayer {
 
   void _readVolume(Object? player) {
     if (player is! Map) return;
-    final level = player['volume_level'];
+    // A group player, such as a sync group, reports no level of its own,
+    // only its group's (issue #1465). Music Assistant sends its volume
+    // and mute commands on to the group commands.
+    final group = player['type'] == 'group';
+    final level =
+        player['volume_level'] ?? (group ? player['group_volume'] : null);
     if (level is num) _volume = level.round().clamp(0, 100);
-    final muted = player['volume_muted'];
+    final muted =
+        player['volume_muted'] ?? (group ? player['group_volume_muted'] : null);
     if (muted is bool) _muted = muted;
   }
 

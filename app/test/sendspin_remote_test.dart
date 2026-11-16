@@ -403,6 +403,30 @@ void main() {
       expect(emitted.last!['groupMuted'], isTrue);
     });
 
+    test('a followed sync group takes its group volume (issue #1465)', () {
+      remote.publishQueue(_queue());
+      // As Music Assistant 2.10 reports a sync group: no level of its own.
+      Map<String, Object?> syncGroup(int level, {bool muted = false}) => {
+        'player_id': 'p1',
+        'type': 'group',
+        'provider': 'sync_group',
+        'volume_control': 'native',
+        'volume_level': null,
+        'volume_muted': null,
+        'group_volume': level,
+        'group_volume_muted': muted,
+        'supported_features': ['volume_mute', 'volume_set', 'set_members'],
+        'group_members': ['a', 'b', 'c'],
+      };
+      remote.handleEvent('player_updated', 'p1', syncGroup(43));
+      expect(emitted.last!['volume'], 43);
+      expect(emitted.last!['muted'], isFalse);
+      expect(emitted.last!['supportedCommands'], contains('volume'));
+      remote.handleEvent('player_updated', 'p1', syncGroup(60, muted: true));
+      expect(emitted.last!['volume'], 60);
+      expect(emitted.last!['muted'], isTrue);
+    });
+
     test('an idle queue at startup stays off screen', () {
       remote.publishQueue(_queue(state: 'idle'));
       expect(emitted, [null]);
