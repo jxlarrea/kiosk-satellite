@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -717,6 +718,48 @@ class _AlarmRow extends StatelessWidget {
 
 // ── The wheel ─────────────────────────────────────────────────────────────
 
+/// How a time wheel fills [room] (#1474). Five rows when they fit at 85%
+/// of their full size or more, which takes [extent] times five plus [extra]
+/// of height at full size. Otherwise three rows grown to the height, so the
+/// numbers stay big enough to drag on a small screen. [width] is the
+/// wheel's full size width, which the grown wheel must still fit in. A null
+/// [room] keeps five rows.
+({int rows, double scale}) wheelFit({
+  required Size? room,
+  required double extent,
+  required double width,
+  double extra = 0,
+}) {
+  if (room == null ||
+      !room.height.isFinite ||
+      room.height >= (extent * 5 + extra) * 0.85) {
+    return (rows: 5, scale: 1.0);
+  }
+  var scale = room.height / (extent * 3 + extra);
+  if (room.width.isFinite) scale = math.min(scale, room.width / width);
+  return (rows: 3, scale: scale);
+}
+
+/// The tinted band behind a wheel's middle row, [rows] rows of [extent]
+/// tall, starting [top] down.
+Widget wheelBand(
+  BuildContext context, {
+  required int rows,
+  required double extent,
+  double top = 0,
+}) => Positioned(
+  left: 0,
+  right: 0,
+  top: top + extent * (rows / 2 - 0.625),
+  height: extent * 1.25,
+  child: DecoratedBox(
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(24),
+    ),
+  ),
+);
+
 /// The Nest Hub's time picker: hour, minute and (in a 12 hour locale) AM
 /// or PM wheels on a tinted band. Only the alarm screens use it; a time
 /// setting row opens the KS time picker.
@@ -727,23 +770,44 @@ class AlarmWheel extends StatefulWidget {
     required this.minute,
     required this.onChanged,
     this.compact = false,
+    this.room,
   });
 
   final int hour, minute;
   final void Function(int hour, int minute) onChanged;
   final bool compact;
 
+  /// The space the wheel has. When five rows do not fit there it shows
+  /// three bigger ones, see [wheelFit].
+  final Size? room;
+
   @override
   State<AlarmWheel> createState() => _AlarmWheelState();
 }
 
 class _AlarmWheelState extends State<AlarmWheel> {
-  late FixedExtentScrollController _hours, _minutes, _period;
+  FixedExtentScrollController? _hours, _minutes, _period;
   late int _hour = widget.hour, _minute = widget.minute;
   bool? _h24;
+  double? _extent;
 
-  void _build(bool h24) {
+  /// New controllers when the clock or the row height changes. A wheel
+  /// handed a new controller keeps the old one's offset in pixels, so it
+  /// would land on another row. The wheels are keyed on both and rebuilt
+  /// with these.
+  void _sync(bool h24, double extent) {
+    if (_h24 == h24 && _extent == extent) return;
+    final old = [_hours, _minutes, _period];
+    if (old.first != null) {
+      // The old wheels still hold these until this build detaches them.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final c in old) {
+          c?.dispose();
+        }
+      });
+    }
     _h24 = h24;
+    _extent = extent;
     _hours = FixedExtentScrollController(
       initialItem: h24 ? _hour : (_hour % 12 == 0 ? 11 : _hour % 12 - 1),
     );
@@ -752,29 +816,10 @@ class _AlarmWheelState extends State<AlarmWheel> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final h24 = _use24h(context);
-    if (_h24 != h24) {
-      if (_h24 != null) {
-        // The wheels still hold the old controllers until this rebuild
-        // detaches them.
-        final old = [_hours, _minutes, _period];
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          for (final c in old) {
-            c.dispose();
-          }
-        });
-      }
-      _build(h24);
-    }
-  }
-
-  @override
   void dispose() {
-    _hours.dispose();
-    _minutes.dispose();
-    _period.dispose();
+    _hours?.dispose();
+    _minutes?.dispose();
+    _period?.dispose();
     super.dispose();
   }
 
@@ -828,40 +873,38 @@ class _AlarmWheelState extends State<AlarmWheel> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final h24 = _h24 ?? false;
+    final h24 = _use24h(context);
     final compact = widget.compact;
-    final extent = compact ? 60.0 : 72.0;
-    final font = compact ? 34.0 : 42.0;
-    final col = compact ? 96.0 : 140.0;
+    final baseExtent = compact ? 60.0 : 72.0;
+    final baseFont = compact ? 34.0 : 42.0;
+    final baseCol = compact ? 96.0 : 140.0;
+    // Two columns, the colon and the AM or PM column.
+    final fit = wheelFit(
+      room: widget.room,
+      extent: baseExtent,
+      width: baseCol * (h24 ? 2 : 2.8) + baseFont * 0.6,
+    );
+    final extent = baseExtent * fit.scale;
+    final font = baseFont * fit.scale;
+    final col = baseCol * fit.scale;
+    _sync(h24, extent);
     final am = DateFormat('a').format(DateTime(2000, 1, 1, 9));
     final pm = DateFormat('a').format(DateTime(2000, 1, 1, 21));
     return SizedBox(
-      height: extent * 5,
+      height: extent * fit.rows,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            top: extent * 1.875,
-            height: extent * 1.25,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(24),
-              ),
-            ),
-          ),
+          wheelBand(context, rows: fit.rows, extent: extent),
           Row(
             // New wheels when the clock changes (Settings > Alarms >
-            // 24-hour clock, possibly from the remote admin): a wheel
-            // handed a new controller keeps the old one's offset, so the
-            // hours would stay on the old row number.
-            key: ValueKey(h24),
+            // 24-hour clock, possibly from the remote admin) or the rows
+            // change height, with the controllers [_sync] made for them.
+            key: ValueKey((h24, extent)),
             mainAxisSize: MainAxisSize.min,
             children: [
               _column(
-                controller: _hours,
+                controller: _hours!,
                 count: h24 ? 24 : 12,
                 label: (i) => h24 ? '$i'.padLeft(2, '0') : '${i + 1}',
                 width: col,
@@ -887,7 +930,7 @@ class _AlarmWheelState extends State<AlarmWheel> {
                 ),
               ),
               _column(
-                controller: _minutes,
+                controller: _minutes!,
                 count: 60,
                 label: (i) => '$i'.padLeft(2, '0'),
                 width: col,
@@ -900,7 +943,7 @@ class _AlarmWheelState extends State<AlarmWheel> {
               ),
               if (!h24)
                 _column(
-                  controller: _period,
+                  controller: _period!,
                   count: 2,
                   looping: false,
                   label: (i) => i == 0 ? am : pm,
@@ -944,14 +987,17 @@ class _WheelStep extends StatelessWidget {
       children: [
         SizedBox(height: compact ? 56 : 64),
         Expanded(
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: AlarmWheel(
-                hour: hour,
-                minute: minute,
-                compact: compact,
-                onChanged: onChanged,
+          child: LayoutBuilder(
+            builder: (context, box) => Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: AlarmWheel(
+                  hour: hour,
+                  minute: minute,
+                  compact: compact,
+                  room: box.biggest,
+                  onChanged: onChanged,
+                ),
               ),
             ),
           ),

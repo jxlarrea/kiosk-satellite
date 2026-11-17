@@ -7,6 +7,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - **Delete unused cameras in Camera Streams (#1467).** Clearing cameras after an import meant deleting them one at a time, which takes a while with 50 cameras. A new **Delete unused cameras** row at the bottom of the **Cameras** list deletes every camera that is not in any view, after a confirmation. Cameras in a view stay. The row shows how many cameras it will delete and only appears while there is at least one. Mirrored in the remote admin. See [Cameras](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/cameras.md#delete-unused-cameras).
 
+### Changed
+- **Bigger alarm and timer wheels on very small screens (#1474).** On a screen as small as the Lenovo Smart Clock 2, the five rows of the alarm and timer wheels were shrunk to fit, which left numbers too small to drag with a finger. Where five rows do not fit, the wheels now show three bigger rows that fill the height: the time on the band and one row above and below it. When a new timer's name field would leave the wheel too short, the field moves next to **Cancel** and **Start**. Larger screens keep five rows.
+
 ### Fixed
 - **Stop word did not dismiss a ringing timer (#1478).** If an announcement played while a timer rang, such as one from an automation that says the timer is up, the stop word stopped listening when the announcement ended and the timer kept ringing until it timed out. A voice turn that ended during the ring did the same. The stop word now stays armed for as long as the timer rings.
 - **Crash on a color, date or time field.** After Android opened the kiosk screen again, such as on a Home press with Kiosk Satellite as the home app, tapping a color, date or time field on the dashboard closed the app. The picker now opens.
