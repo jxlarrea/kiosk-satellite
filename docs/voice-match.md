@@ -75,6 +75,8 @@ With **Show who is talking** on, the name of the person talking shows before the
 
 The **Speaker** sensor on the kiosk's [ESPHome](esphome.md) device holds the name of the person talking. It is set as soon as the voice is recognized, before the command is done, and it is empty when a command starts or the voice is not enrolled.
 
+Each recognized voice also fires an [`esphome.kiosk_satellite_speaker`](events.md#speaker) event with the person's name, their Home Assistant person and the score, for automations that react to who is talking.
+
 **In automations**, a sentence trigger gets `trigger.device_id`, the kiosk that heard the command. Read that kiosk's Speaker sensor to act for the person:
 
 ```yaml

@@ -124,6 +124,8 @@ class GroundControlManager extends Manager {
     _subs.add(
       bus.on<VoiceSpeakerChanged>().listen((e) {
         _speaking = e.name.isEmpty ? null : (id: e.id, name: e.name, by: e.by);
+        // A new turn clears the speaker: nothing was placed yet.
+        if (e.name.isNotEmpty || e.score != null) _speakerEvent(e);
       }),
     );
     commands.register(
@@ -169,6 +171,23 @@ class GroundControlManager extends Manager {
     'allowEnroll': _enrollAllowed,
     'enrollment': enrollment,
   };
+
+  /// Puts the voice Voice Match placed on Home Assistant's bus as
+  /// `esphome.kiosk_satellite_speaker`, for automations: who it is, their
+  /// Home Assistant person when Ground Control has one, the score and how
+  /// it was placed. A voice nobody enrolled comes with an empty name.
+  void _speakerEvent(VoiceSpeakerChanged e) {
+    final person = thingsOf(e.id, people)['person'];
+    bus.publish(
+      HaEventRequested('kiosk_satellite_speaker', {
+        'event_type': e.name.isEmpty ? 'unknown' : 'recognized',
+        'name': e.name,
+        'person': person ?? '',
+        'score': e.score,
+        'by': e.name.isEmpty ? '' : e.by ?? 'voice',
+      }),
+    );
+  }
 
   /// Tell the service when an enrollment it asked for did not start or
   /// ended on the kiosk's side, so the app is not left waiting.

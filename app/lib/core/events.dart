@@ -554,8 +554,21 @@ class GroundControlServiceChanged extends AppEvent {
 /// Who is talking on this kiosk, for the Speaker sensor and the lights.
 /// Empty when nobody is identified (a new turn, an unknown voice).
 class VoiceSpeakerChanged extends AppEvent {
-  const VoiceSpeakerChanged(this.name, {this.color, this.id, this.by});
+  const VoiceSpeakerChanged(
+    this.name, {
+    this.color,
+    this.id,
+    this.by,
+    this.score,
+  });
+
+  /// Empty when a turn starts and for a voice nobody enrolled. That one
+  /// has a [score], a new turn has none.
   final String name;
+
+  /// How close the voice was to the person's, 0 to 1. Null when a turn
+  /// starts and when the only person enrolled was taken without a check.
+  final double? score;
 
   /// Ground Control's person id, null for a voice nobody enrolled.
   final String? id;
