@@ -49,6 +49,7 @@ class RealtimeStart {
     this.language = '',
     this.context = '',
     this.history = const [],
+    this.manualTurns = false,
   });
 
   /// The wake word that started it, empty for a manual wake.
@@ -63,6 +64,11 @@ class RealtimeStart {
 
   /// Earlier exchanges still within the session duration, oldest first.
   final List<RealtimeTurn> history;
+
+  /// Ground Control follows the user: the provider hears only their speech
+  /// and the session ends each turn ([RealtimeBackend.endTurn]) instead of
+  /// the provider's own speech detection, which a TV keeps open.
+  final bool manualTurns;
 }
 
 /// One side of an earlier exchange: what the user said or the answer.
@@ -183,6 +189,20 @@ abstract class RealtimeBackend {
   /// was the user ([keep], and it gets a reply) or not (it is dropped from
   /// the conversation, unanswered).
   void userTurn({required bool keep});
+
+  /// With [RealtimeStart.manualTurns]: the user's turn is over, answer it.
+  /// OpenAI and xAI commit what was sent and ask for the answer. Gemini,
+  /// whose speech detection stays on, flushes it with the end of the audio
+  /// stream.
+  void endTurn();
+
+  /// Ground Control went away mid-conversation: the provider's own speech
+  /// detection takes the turns back from here.
+  void autoTurns();
+
+  /// Who is talking now, as Ground Control knows them, for the model to
+  /// address and to say "my" for. Empty when not known.
+  void speaker(String name);
 
   /// The model says [line] word for word, in its own voice, as its answer,
   /// and listens after it: Home Assistant's start_conversation, where the

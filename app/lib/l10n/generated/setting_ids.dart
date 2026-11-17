@@ -2777,8 +2777,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "description": "settingVoiceMatchRejectedDescription",
   },
   "voice_match.end_on_other_voice": {
-    "title": "settingVoiceMatchEndOnOtherVoiceTitle",
-    "description": "settingVoiceMatchEndOnOtherVoiceDescription",
+    "title": "settingVoiceMatchLeaveOutTitle",
+    "description": "settingVoiceMatchLeaveOutDescription",
   },
   "voice_match.speaker_sensor": {
     "title": "settingVoiceMatchSpeakerSensorTitle",

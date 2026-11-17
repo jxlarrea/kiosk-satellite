@@ -98,28 +98,51 @@ class _Player implements VoicePlayerPort {
 }
 
 class _MatchTurn implements VoiceMatchTurnPort {
-  _MatchTurn(this.onEvent);
+  _MatchTurn(this.onEvent, {this.onAudio, this.onLost, this.follow = false, this.followup = false});
   final void Function(Map<String, Object?> event) onEvent;
+  final void Function(Uint8List pcm)? onAudio;
+  final void Function()? onLost;
+  final bool follow;
+  final bool followup;
   int fed = 0;
   bool ended = false;
+
+  @override
+  bool ready = true;
 
   @override
   void feed(Uint8List pcm) => fed++;
 
   @override
   void end() => ended = true;
+
+  /// The service sending back the user's speech.
+  void user(int value) => onAudio?.call(Uint8List(2560)..fillRange(0, 2560, value));
 }
 
 class _Match implements VoiceMatchPort {
+  _Match({this.ready = true});
+  final bool ready;
   final turns = <_MatchTurn>[];
 
   @override
-  VoiceMatchTurnPort? begin(void Function(Map<String, Object?> event) onEvent) {
-    final t = _MatchTurn(onEvent);
+  VoiceMatchTurnPort? begin(
+    void Function(Map<String, Object?> event) onEvent, {
+    bool follow = false,
+    bool followup = false,
+    void Function(Uint8List pcm)? onAudio,
+    void Function()? onLost,
+  }) {
+    final t = _MatchTurn(onEvent, onAudio: onAudio, onLost: onLost, follow: follow, followup: followup)
+      ..ready = ready;
     turns.add(t);
     return t;
   }
 }
+
+/// Voice Match saying who is talking only, with the microphone going to
+/// Home Assistant as without it.
+const _live = VoiceSessionOptions(matchEndOnOtherVoice: false);
 
 class _Harness {
   _Harness({this.options = const VoiceSessionOptions(), FakeAsync? time, this.match}) {
@@ -716,7 +739,7 @@ void main() {
 
     test('hears what Home Assistant hears and ends with the turn', () {
       fakeAsync((async) {
-        final h = _Harness(match: _Match());
+        final h = _Harness(match: _Match(), options: _live);
         listening(h, async);
         final turn = h.match!.turns.single;
         // Not the pre-roll and the chime Home Assistant never gets: the
@@ -743,7 +766,7 @@ void main() {
       fakeAsync((async) {
         final h = _Harness(
           match: _Match(),
-          options: const VoiceSessionOptions(seamless: true),
+          options: const VoiceSessionOptions(seamless: true, matchEndOnOtherVoice: false),
         );
         listening(h, async);
         expect(h.match!.turns.single.fed, h.link.sent.length);
@@ -753,7 +776,7 @@ void main() {
 
     test('the speaker stopping ends the audio and keeps the turn', () {
       fakeAsync((async) {
-        final h = _Harness(match: _Match());
+        final h = _Harness(match: _Match(), options: _live);
         listening(h, async);
         h.match!.turns.single.onEvent({'type': 'end_of_speech', 'reason': 'silence'});
         async.flushMicrotasks();
@@ -764,22 +787,76 @@ void main() {
       });
     });
 
-    test('another voice ends the audio only with the switch on', () {
+    test('with the switch off, another voice does not end the audio', () {
       fakeAsync((async) {
-        final off = _Harness(
-          match: _Match(),
-          options: const VoiceSessionOptions(matchEndOnOtherVoice: false),
-        );
+        final off = _Harness(match: _Match(), options: _live);
         listening(off, async);
+        expect(off.match!.turns.single.follow, isFalse);
         off.match!.turns.single.onEvent({'type': 'end_of_speech', 'reason': 'other_voice'});
         async.flushMicrotasks();
         expect(off.link.audioEnds, 0);
+      });
+    });
 
-        final on = _Harness(match: _Match());
-        listening(on, async);
-        on.match!.turns.single.onEvent({'type': 'end_of_speech', 'reason': 'other_voice'});
+    test('follow mode: Home Assistant hears only what Voice Match sends back', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        listening(h, async);
+        final turn = h.match!.turns.single;
+        expect(turn.follow, isTrue);
+        expect(turn.followup, isFalse);
+        // The microphone went to Voice Match, not to Home Assistant.
+        expect(turn.fed, 1);
+        expect(h.link.sent, isEmpty);
+        turn.onEvent({'type': 'turn_start', 't': 0.5});
+        turn.user(7);
+        turn.user(8);
+        h.mic.speak(3);
         async.flushMicrotasks();
-        expect(on.link.audioEnds, 1);
+        expect(h.link.sent.map((p) => p.first), [7, 8]);
+        expect(turn.fed, 2);
+        turn.onEvent({'type': 'turn_end', 't': 2.0});
+        async.flushMicrotasks();
+        expect(h.link.audioEnds, 1);
+        expect(h.mic.closes, 1);
+        expect(h.session.busy, isTrue);
+      });
+    });
+
+    test('follow mode: Voice Match gone before the user talked, Home Assistant gets the microphone', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        listening(h, async);
+        final turn = h.match!.turns.single;
+        h.mic.speak(4);
+        async.flushMicrotasks();
+        expect(h.link.sent, isEmpty);
+        turn.onLost!();
+        async.flushMicrotasks();
+        // What it heard so far, then the live microphone.
+        expect(h.link.sent.map((p) => p.first), [2, 4]);
+        h.mic.speak(5);
+        async.flushMicrotasks();
+        expect(h.link.sent.map((p) => p.first), [2, 4, 5]);
+      });
+    });
+
+    test('follow mode: Voice Match not answering in time is as good as gone', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match(ready: false));
+        listening(h, async);
+        expect(h.link.sent, isEmpty);
+        async.elapse(VoiceSession.matchReadyWait);
+        expect(h.link.sent.map((p) => p.first), [2]);
+      });
+    });
+
+    test('follow mode: nobody talking ends the command like Home Assistant would', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        listening(h, async);
+        async.elapse(const Duration(seconds: 10));
+        expect(h.link.audioEnds, 1);
       });
     });
 
@@ -813,7 +890,7 @@ void main() {
         h.session.onEvent(VaEvent.sttEnd, {'text': 'hi'});
         h.session.onEvent(VaEvent.runEnd, {});
         async.flushMicrotasks();
-        first.onEvent({'type': 'end_of_speech', 'reason': 'silence'});
+        first.onEvent({'type': 'turn_end', 't': 1.0});
         async.flushMicrotasks();
         expect(h.link.audioEnds, 0);
       });

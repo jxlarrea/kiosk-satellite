@@ -20,6 +20,8 @@ class RealtimeOptions {
     this.talkOverLevel = RealtimeSession.bargeInLevel,
     this.language = '',
     this.historyHours = 0,
+    this.follow = true,
+    this.rejectChime = false,
   });
 
   /// The wake chime (Play chimes). Talk right after the wake word does not
@@ -47,6 +49,15 @@ class RealtimeOptions {
   /// How long earlier exchanges carry into the next conversation, in
   /// hours. 0 starts every conversation fresh.
   final double historyHours;
+
+  /// With Voice Match on Ground Control: the provider hears only the
+  /// user's speech and the session ends each turn when the user stops,
+  /// whatever a TV does (Leave other voices out).
+  final bool follow;
+
+  /// With Enrolled voices only: a voice that is not enrolled ends the
+  /// conversation with the error chime instead of quietly.
+  final bool rejectChime;
 }
 
 /// One realtime voice conversation: from the wake word until the user goes
@@ -77,6 +88,8 @@ class RealtimeSession {
     this.onIdle,
     this.onTrace,
     this.location,
+    this.voiceMatch,
+    this.onSpeaker,
     RealtimeHistory? history,
     DateTime Function()? now,
     this.tick = const Duration(milliseconds: 20),
@@ -103,6 +116,13 @@ class RealtimeSession {
   final void Function(String message)? onWarning;
   final void Function()? onIdle;
   final void Function(String step, {String? text})? onTrace;
+
+  /// Voice Match on Ground Control, null without it.
+  final VoiceMatchPort? voiceMatch;
+
+  /// Who is talking, as Voice Match says (`name`, `color`), or null when a
+  /// conversation starts.
+  final void Function(Map<String, Object?>? speaker)? onSpeaker;
 
   /// Where the kiosk is, for the instructions (see [RealtimeStart.context]).
   /// Waited on for at most [locationWait] while the wake chime plays.
@@ -250,6 +270,8 @@ class RealtimeSession {
     tools: tools ?? _view.tools,
     reactive: reactive ?? _view.reactive,
     docked: true,
+    speaker: _speakerName,
+    speakerColor: _speakerColor,
   );
 
   // ── start ───────────────────────────────────────────────────────────────
@@ -283,6 +305,7 @@ class RealtimeSession {
       onTrace?.call('realtime conversation, opening', text: _opening);
     }
     onBusy(true, 'voice');
+    _beginMatch(gen);
     // Listening shows with the wake chime, which holds its start until
     // its track has settled (see LeadInProcessor); without one, now. An
     // opening has nothing to listen to until it is said.
@@ -372,6 +395,7 @@ class RealtimeSession {
         history: minutes > 0
             ? history.recent(Duration(minutes: minutes))
             : const [],
+        manualTurns: _following,
       ),
     );
   }
@@ -413,6 +437,13 @@ class RealtimeSession {
         return;
       }
       _deafUntil = null;
+    }
+    if (_following) {
+      // Ground Control hears everything and sends back the user's speech
+      // (_onMatchAudio): the provider never gets the microphone itself.
+      _match?.feed(pcm);
+      if (!_playing) _micLevel(_levels.mic(pcm));
+      return;
     }
     final playing = _playing;
     final level = meanAbs(pcm);
@@ -798,6 +829,8 @@ class RealtimeSession {
         await _onReady(gen);
       case RealtimeSpeechStarted(:final audioMs):
         onTrace?.call('speech started${_speechAt(audioMs)}');
+        // Ground Control says when the user talks, the TV never does.
+        if (_following) return;
         // The conversation is over once the goodbye plays: Gemini taking
         // the room or the answer's echo for speech does not cut it.
         if (_goodbyeDone) return;
@@ -833,6 +866,7 @@ class RealtimeSession {
         );
       case RealtimeSpeechStopped(:final audioMs):
         onTrace?.call('speech stopped${_speechAt(audioMs)}');
+        if (_following) return;
         _userSpeaking = false;
         if (_suspect) {
           // It never got loud: not the user. The answer carries on and the
@@ -1214,6 +1248,126 @@ class RealtimeSession {
     );
   }
 
+  // ── Ground Control ──────────────────────────────────────────────────────
+
+  /// Voice Match's session for the whole conversation, in follow mode.
+  VoiceMatchTurnPort? _match;
+
+  /// Ground Control follows the user: the provider hears their speech only
+  /// and the turns are the session's. Off without it or once it is gone.
+  bool _following = false;
+  Timer? _matchReady;
+  String _speakerName = '';
+  String? _speakerColor;
+
+  /// How long Ground Control has to answer before the conversation goes on
+  /// with the microphone and the provider's own speech detection.
+  static const matchReadyWait = Duration(milliseconds: 1500);
+
+  void _beginMatch(int gen) {
+    final port = voiceMatch;
+    onSpeaker?.call(null);
+    if (port == null || !options().follow) return;
+    final match = port.begin(
+      (e) => unawaited(_onMatch(gen, e)),
+      follow: true,
+      onAudio: (pcm) => _onMatchAudio(gen, pcm),
+      onLost: () => _onMatchLost(gen),
+    );
+    if (match == null) return;
+    _match = match;
+    _following = true;
+    _matchReady = Timer(matchReadyWait, () {
+      if (gen == _gen && _following && !match.ready) _onMatchLost(gen);
+    });
+  }
+
+  void _endMatch() {
+    _matchReady?.cancel();
+    _matchReady = null;
+    _match?.end();
+    _match = null;
+    _following = false;
+  }
+
+  /// The user's speech, from Ground Control: to the provider in place of
+  /// the microphone.
+  void _onMatchAudio(int gen, Uint8List pcm) {
+    if (gen != _gen || !_following) return;
+    final converted = _resampler?.convert(pcm) ?? pcm;
+    if (!_ready) {
+      _held.add(converted);
+      _heldBytes += converted.length;
+      while (_heldBytes > _holdLimit && _held.isNotEmpty) {
+        _heldBytes -= _held.removeAt(0).length;
+      }
+      return;
+    }
+    _sendAudio(converted);
+  }
+
+  Future<void> _onMatch(int gen, Map<String, Object?> e) async {
+    if (gen != _gen) return;
+    switch (e['type']) {
+      case 'speaker':
+        final name = e['name'];
+        onTrace?.call(
+          'voice match: ${name ?? 'unknown voice'} (${e['score']})',
+        );
+        onSpeaker?.call(e);
+        if (name is String && name.isNotEmpty) {
+          _speakerName = name;
+          final color = e['color'];
+          _speakerColor = color is String ? color : null;
+          _backend?.speaker(name);
+          _show(_docked());
+        }
+      case 'turn_start' when _following:
+        onTrace?.call('voice match: the user started talking');
+        // The user talking over an answer stops it, the TV never does.
+        if (_playing || _responding || _staged.isNotEmpty) {
+          onTrace?.call('talked over the answer (voice match)');
+          await _bargeIn(gen);
+          if (gen != _gen) return;
+        }
+        _userSpeaking = true;
+        _heardUser = true;
+        _touch();
+        _newExchange = true;
+        _show(
+          _docked(
+            phase: AssistPhase.listening,
+            streaming: false,
+            reactive: true,
+          ),
+        );
+      case 'turn_end' when _following:
+        onTrace?.call('voice match: the user stopped');
+        _userSpeaking = false;
+        _backend?.endTurn();
+        _awaiting = true;
+        _awaitingSince = _now();
+        _touch();
+        _show(_docked(phase: AssistPhase.thinking, reactive: false));
+      case 'other_voice':
+        onTrace?.call('voice match: another voice left out');
+      case 'rejected':
+        onTrace?.call('voice match: not an enrolled voice');
+        await _end(gen, sound: options().rejectChime ? 'error' : null);
+    }
+  }
+
+  /// Ground Control went away: the microphone and the provider's own
+  /// speech detection carry the conversation from here, as without it.
+  void _onMatchLost(int gen) {
+    if (gen != _gen || !_following) return;
+    _following = false;
+    _matchReady?.cancel();
+    _matchReady = null;
+    onTrace?.call('voice match lost, back to the microphone');
+    _backend?.autoTurns();
+  }
+
   // ── ending ──────────────────────────────────────────────────────────────
 
   /// The stop word: stop the answer and keep listening.
@@ -1244,6 +1398,7 @@ class RealtimeSession {
     if (gen != _gen || !_busy) return;
     final ended = ++_gen;
     _busy = false;
+    _endMatch();
     _opened();
     _logEcho();
     history.dropUnanswered();
@@ -1280,6 +1435,9 @@ class RealtimeSession {
   }
 
   void _reset() {
+    _endMatch();
+    _speakerName = '';
+    _speakerColor = null;
     _heardUser = false;
     _opening = '';
     _onOpened = null;

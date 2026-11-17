@@ -7,8 +7,6 @@
   "settingVoiceMatchPolicyDescription": "Solo voces registradas ignora la TV y a las visitas.",
   "settingVoiceMatchRejectedTitle": "Voz no registrada",
   "settingVoiceMatchRejectedDescription": "Qué pasa cuando otra persona dice la palabra de activación.",
-  "settingVoiceMatchEndOnOtherVoiceTitle": "Terminar cuando habla otra persona",
-  "settingVoiceMatchEndOnOtherVoiceDescription": "Deja de escuchar en la última palabra cuando la TV u otra persona sigue hablando.",
   "settingVoiceMatchSpeakerSensorTitle": "Sensor de hablante",
   "settingVoiceMatchSpeakerSensorDescription": "Añade a este kiosko un sensor Speaker en Home Assistant, para automatizaciones e instrucciones de agentes.",
   "voiceMatchOptionAnyone": "Cualquiera",
@@ -27,5 +25,7 @@
   "voiceMatchAppHint": "Personas, registro de voz, sesiones y ajustes.",
   "voiceMatchOpen": "Abrir",
   "settingVoiceMatchEnabledDescriptionGroundControl": "Reconoce quién habla y deja de escuchar cuando otra persona toma la palabra. Necesita Ground Control.",
-  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permite que la app Ground Control grabe la voz de una persona con el micrófono de este kiosco. El kiosco muestra el texto a leer o el anillo de luz muestra el progreso."
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permite que la app Ground Control grabe la voz de una persona con el micrófono de este kiosco. El kiosco muestra el texto a leer o el anillo de luz muestra el progreso.",
+  "settingVoiceMatchLeaveOutTitle": "Dejar fuera otras voces",
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant y el asistente en tiempo real solo oyen a la persona que dijo la palabra de activación, y el comando termina cuando deja de hablar, aunque la tele esté encendida."
 }

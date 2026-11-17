@@ -27200,18 +27200,6 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
   /// In en, this message translates to:
-  /// **'End when someone else talks'**
-  String get settingVoiceMatchEndOnOtherVoiceTitle;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Stops listening at the last word when the TV or another person keeps talking.'**
-  String get settingVoiceMatchEndOnOtherVoiceDescription;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
   /// **'Speaker sensor'**
   String get settingVoiceMatchSpeakerSensorTitle;
 
@@ -27322,6 +27310,18 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Lets the Ground Control app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.'**
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave other voices out'**
+  String get settingVoiceMatchLeaveOutTitle;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Assistant and the realtime assistant hear only the person who said the wake word, and the command ends when they stop, even with the TV on.'**
+  String get settingVoiceMatchLeaveOutDescription;
 
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///

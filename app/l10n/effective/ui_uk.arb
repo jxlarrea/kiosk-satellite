@@ -56995,32 +56995,6 @@
       ]
     }
   },
-  "settingVoiceMatchEndOnOtherVoiceTitle": "Завершувати, коли говорить хтось інший",
-  "@settingVoiceMatchEndOnOtherVoiceTitle": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > End when someone else talks"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > End when someone else talks"
-      ]
-    }
-  },
-  "settingVoiceMatchEndOnOtherVoiceDescription": "Припиняє слухати на останньому слові, коли телевізор або інша людина продовжує говорити.",
-  "@settingVoiceMatchEndOnOtherVoiceDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > End when someone else talks"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > End when someone else talks"
-      ]
-    }
-  },
   "settingVoiceMatchSpeakerSensorTitle": "Датчик мовця",
   "@settingVoiceMatchSpeakerSensorTitle": {
     "context": "Settings > Voice Satellite > Voice Match",
@@ -57265,6 +57239,32 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "settingVoiceMatchLeaveOutTitle": "Не враховувати інші голоси",
+  "@settingVoiceMatchLeaveOutTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Leave other voices out"
+      ]
+    }
+  },
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant і асистент у реальному часі чують лише людину, яка сказала слово активації, і команда завершується, коли вона замовкає, навіть коли увімкнений телевізор.",
+  "@settingVoiceMatchLeaveOutDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Leave other voices out"
       ]
     }
   },

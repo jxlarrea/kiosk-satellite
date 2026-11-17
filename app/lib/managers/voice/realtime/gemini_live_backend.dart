@@ -320,6 +320,27 @@ class GeminiLiveBackend implements RealtimeBackend {
   @override
   void userTurn({required bool keep}) {}
 
+  /// Gemini's speech detection stays on: it only ever hears the user's
+  /// speech while Ground Control follows them, and the end of the audio
+  /// stream flushes the turn. Its client activity signals were reported
+  /// to answer too early on Gemini 3.1.
+  @override
+  void endTurn() {
+    if (!_ready) return;
+    _send({
+      'realtimeInput': {'audioStreamEnd': true},
+    });
+  }
+
+  /// Nothing to switch back: its speech detection never went off.
+  @override
+  void autoTurns() {}
+
+  /// Gemini has no system items mid-conversation and a typed turn would
+  /// get an answer: the speaker stays out of its context.
+  @override
+  void speaker(String name) {}
+
   /// A typed turn asking for the line. Gemini has no instructions per
   /// answer.
   @override

@@ -56995,32 +56995,6 @@
       ]
     }
   },
-  "settingVoiceMatchEndOnOtherVoiceTitle": "他人说话时结束",
-  "@settingVoiceMatchEndOnOtherVoiceTitle": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > End when someone else talks"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > End when someone else talks"
-      ]
-    }
-  },
-  "settingVoiceMatchEndOnOtherVoiceDescription": "电视或其他人继续说话时，在最后一个词处停止聆听。",
-  "@settingVoiceMatchEndOnOtherVoiceDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > End when someone else talks"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > End when someone else talks"
-      ]
-    }
-  },
   "settingVoiceMatchSpeakerSensorTitle": "说话人传感器",
   "@settingVoiceMatchSpeakerSensorTitle": {
     "context": "Settings > Voice Satellite > Voice Match",
@@ -57265,6 +57239,32 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "settingVoiceMatchLeaveOutTitle": "排除其他声音",
+  "@settingVoiceMatchLeaveOutTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Leave other voices out"
+      ]
+    }
+  },
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant 和实时助手只会听到说出唤醒词的人，并在此人停止说话时结束命令，即使电视开着也是如此。",
+  "@settingVoiceMatchLeaveOutDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Leave other voices out"
       ]
     }
   },

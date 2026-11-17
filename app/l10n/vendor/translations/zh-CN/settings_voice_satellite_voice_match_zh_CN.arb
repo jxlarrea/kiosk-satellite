@@ -7,8 +7,6 @@
   "settingVoiceMatchPolicyDescription": "“仅限已录入的声音”会忽略电视和访客。",
   "settingVoiceMatchRejectedTitle": "未录入的声音",
   "settingVoiceMatchRejectedDescription": "其他人说出唤醒词时的处理方式。",
-  "settingVoiceMatchEndOnOtherVoiceTitle": "他人说话时结束",
-  "settingVoiceMatchEndOnOtherVoiceDescription": "电视或其他人继续说话时，在最后一个词处停止聆听。",
   "settingVoiceMatchSpeakerSensorTitle": "说话人传感器",
   "settingVoiceMatchSpeakerSensorDescription": "在 Home Assistant 中为此 Kiosk 添加 Speaker 传感器，用于自动化和代理指令。",
   "voiceMatchOptionAnyone": "任何人",
@@ -27,5 +25,7 @@
   "voiceMatchAppHint": "人员、声纹录入、会话和设置。",
   "voiceMatchOpen": "打开",
   "settingVoiceMatchEnabledDescriptionGroundControl": "识别谁在说话，并在其他人接话时停止聆听。需要 Ground Control。",
-  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。"
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。",
+  "settingVoiceMatchLeaveOutTitle": "排除其他声音",
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant 和实时助手只会听到说出唤醒词的人，并在此人停止说话时结束命令，即使电视开着也是如此。"
 }

@@ -7,8 +7,6 @@
   "settingVoiceMatchPolicyDescription": "Voix enregistrées uniquement ignore la télé et les invités.",
   "settingVoiceMatchRejectedTitle": "Voix non enregistrée",
   "settingVoiceMatchRejectedDescription": "Ce qui se passe quand quelqu'un d'autre dit le mot de réveil.",
-  "settingVoiceMatchEndOnOtherVoiceTitle": "Arrêter quand quelqu'un d'autre parle",
-  "settingVoiceMatchEndOnOtherVoiceDescription": "Arrête l'écoute au dernier mot quand la télé ou une autre personne continue de parler.",
   "settingVoiceMatchSpeakerSensorTitle": "Capteur de locuteur",
   "settingVoiceMatchSpeakerSensorDescription": "Ajoute à ce kiosque un capteur Speaker dans Home Assistant, pour les automatisations et les instructions d'agent.",
   "voiceMatchOptionAnyone": "Tout le monde",
@@ -27,5 +25,7 @@
   "voiceMatchAppHint": "Personnes, enregistrement de la voix, sessions et réglages.",
   "voiceMatchOpen": "Ouvrir",
   "settingVoiceMatchEnabledDescriptionGroundControl": "Reconnaître qui parle et arrêter l'écoute quand quelqu'un d'autre prend la parole. Nécessite Ground Control.",
-  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permet à l'app Ground Control d'enregistrer la voix d'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l'anneau lumineux affiche la progression."
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permet à l'app Ground Control d'enregistrer la voix d'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l'anneau lumineux affiche la progression.",
+  "settingVoiceMatchLeaveOutTitle": "Écarter les autres voix",
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant et l'assistant en temps réel n'entendent que la personne qui a dit le mot d'activation, et la commande se termine quand elle s'arrête, même avec la télé allumée."
 }

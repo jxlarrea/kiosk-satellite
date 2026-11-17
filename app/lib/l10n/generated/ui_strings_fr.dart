@@ -15876,14 +15876,6 @@ class UiStringsFr extends UiStrings {
       'Ce qui se passe quand quelqu\'un d\'autre dit le mot de réveil.';
 
   @override
-  String get settingVoiceMatchEndOnOtherVoiceTitle =>
-      'Arrêter quand quelqu\'un d\'autre parle';
-
-  @override
-  String get settingVoiceMatchEndOnOtherVoiceDescription =>
-      'Arrête l\'écoute au dernier mot quand la télé ou une autre personne continue de parler.';
-
-  @override
   String get settingVoiceMatchSpeakerSensorTitle => 'Capteur de locuteur';
 
   @override
@@ -15946,6 +15938,13 @@ class UiStringsFr extends UiStrings {
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Permet à l\'app Ground Control d\'enregistrer la voix d\'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l\'anneau lumineux affiche la progression.';
+
+  @override
+  String get settingVoiceMatchLeaveOutTitle => 'Écarter les autres voix';
+
+  @override
+  String get settingVoiceMatchLeaveOutDescription =>
+      'Home Assistant et l\'assistant en temps réel n\'entendent que la personne qui a dit le mot d\'activation, et la commande se termine quand elle s\'arrête, même avec la télé allumée.';
 
   @override
   String get voiceWakePage => 'Mot de réveil';

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -253,6 +254,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   /// Allocated only while someone wants it: 10 seconds is 320 KB.
   PcmRing? _recent;
 
+  /// The last few seconds, always: the wake word for [wakeClip], which a
+  /// turn asks for a moment after the detection. 256 KB.
+  final _wakeRing = PcmRing(8 * 16000);
+
   @override
   set recordAudio(bool enabled) {
     if (!enabled) {
@@ -269,6 +274,18 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   @override
   Uint8List? recentAudio(Duration length) =>
       _recent?.last(length.inMilliseconds * 16);
+
+  @override
+  Uint8List? wakeClip(Duration length) {
+    final end = _wakeEndSample;
+    if (end == null) return null;
+    // The ring ends at the newest sample: count back to the wake end.
+    final after = _preRoll.absSamples - end;
+    final want = length.inMilliseconds * 16;
+    if (after < 0 || after >= _wakeRing.length) return null;
+    final pcm = _wakeRing.last(math.min(after + want, _wakeRing.length));
+    return Uint8List.sublistView(pcm, 0, pcm.length - after * 2);
+  }
 
   Map<String, Object?>? _lastDetection;
 
@@ -451,6 +468,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     // classifier keeps the audio flowing even with wake detection paused.
     if (!_detectionPaused || _stopArmed) _isolatePort?.send(bytes);
     _preRoll.add(bytes);
+    _wakeRing.add(bytes);
     _recent?.add(bytes);
     // Live stream to the page.
     _onAudioChunk?.call(bytes, false);
@@ -672,6 +690,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     _wakeEndSample = null;
     _lastDetection = null;
     _preRoll.reset();
+    _wakeRing.clear();
     _recent?.clear();
     // The page's audio stream too: left set, the next run would base64 every
     // mic chunk into the bridge for a listener that died with the old page.

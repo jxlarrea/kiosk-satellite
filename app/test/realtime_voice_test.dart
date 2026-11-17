@@ -148,6 +148,19 @@ class _Backend implements RealtimeBackend {
   void interrupted(String itemId, int playedMs) =>
       interruptions.add((itemId, playedMs));
 
+  int endTurns = 0;
+  int autoTurnsCalls = 0;
+  final speakers = <String>[];
+
+  @override
+  void endTurn() => endTurns++;
+
+  @override
+  void autoTurns() => autoTurnsCalls++;
+
+  @override
+  void speaker(String name) => speakers.add(name);
+
   @override
   Future<void> close() async {
     closed = true;
@@ -155,6 +168,47 @@ class _Backend implements RealtimeBackend {
   }
 
   void emit(RealtimeEvent event) => _events.add(event);
+}
+
+/// Voice Match on Ground Control, following one conversation.
+class _MatchTurn implements VoiceMatchTurnPort {
+  _MatchTurn(this.onEvent, this.onAudio, this.onLost);
+  final void Function(Map<String, Object?> event) onEvent;
+  final void Function(Uint8List pcm)? onAudio;
+  final void Function()? onLost;
+  int fed = 0;
+  bool ended = false;
+
+  @override
+  bool ready = true;
+
+  @override
+  void feed(Uint8List pcm) => fed++;
+
+  @override
+  void end() => ended = true;
+
+  /// The user's speech coming back, 80 ms at 16 kHz.
+  void user({int value = 500}) => onAudio?.call(_pcm(List.filled(1280, value)));
+}
+
+class _Match implements VoiceMatchPort {
+  final turns = <_MatchTurn>[];
+  bool follow = false;
+
+  @override
+  VoiceMatchTurnPort? begin(
+    void Function(Map<String, Object?> event) onEvent, {
+    bool follow = false,
+    bool followup = false,
+    void Function(Uint8List pcm)? onAudio,
+    void Function()? onLost,
+  }) {
+    this.follow = follow;
+    final t = _MatchTurn(onEvent, onAudio, onLost);
+    turns.add(t);
+    return t;
+  }
 }
 
 class _Mic implements VoiceMicPort {
@@ -234,9 +288,16 @@ class _Chimes implements VoicePlayerPort {
 }
 
 class _Harness {
-  _Harness(this.time, {this.options = const RealtimeOptions(), this.location}) {
+  _Harness(
+    this.time, {
+    this.options = const RealtimeOptions(),
+    this.location,
+    this.match,
+  }) {
     session = RealtimeSession(
       location: location,
+      voiceMatch: match,
+      onSpeaker: speakers.add,
       // A new backend once a conversation closed its own, as the app
       // makes one per conversation.
       backend: () => backend.closed
@@ -261,6 +322,8 @@ class _Harness {
   final FakeAsync time;
   RealtimeOptions options;
   final Future<String> Function()? location;
+  final _Match? match;
+  final speakers = <Map<String, Object?>?>[];
   late final RealtimeSession session;
   var backend = _Backend();
   final mic = _Mic();
@@ -1030,6 +1093,55 @@ void main() {
       },
     );
 
+    test('manual turns: no speech detection, the session commits and asks for the answer', () async {
+      for (final provider in [RealtimeProvider.openai, RealtimeProvider.xai]) {
+        final backend = make(RealtimeConfig(provider: provider, apiKey: 'k'));
+        await backend.start(const RealtimeStart(manualTurns: true));
+        final session = socket.sent.first['session'] as Map;
+        final turns = provider == RealtimeProvider.openai
+            ? ((session['audio'] as Map)['input'] as Map)['turn_detection']
+            : session['turn_detection'];
+        expect(turns, isNull, reason: '$provider');
+        socket.server({'type': 'session.updated'});
+        await pumpEventQueue();
+        socket.sent.clear();
+        backend.endTurn();
+        expect(socket.types, ['input_audio_buffer.commit', 'response.create']);
+
+        // Ground Control gone: the server's speech detection comes back.
+        socket.sent.clear();
+        backend.autoTurns();
+        expect(socket.types, ['session.update']);
+        final update = socket.sent.single['session'] as Map;
+        final back = provider == RealtimeProvider.openai
+            ? ((update['audio'] as Map)['input'] as Map)['turn_detection'] as Map
+            : update['turn_detection'] as Map;
+        expect(back['type'], 'server_vad');
+        // And only once: a second loss changes nothing.
+        socket.sent.clear();
+        backend.autoTurns();
+        backend.endTurn();
+        expect(socket.sent, isEmpty);
+        await backend.close();
+      }
+    });
+
+    test('the speaker goes in as a system item, without an answer', () async {
+      final backend = make(
+        const RealtimeConfig(provider: RealtimeProvider.openai, apiKey: 'k'),
+      );
+      await backend.start(const RealtimeStart());
+      socket.server({'type': 'session.updated'});
+      await pumpEventQueue();
+      socket.sent.clear();
+      backend.speaker('Ana');
+      expect(socket.types, ['conversation.item.create']);
+      final item = socket.sent.single['item'] as Map;
+      expect(item['role'], 'system');
+      expect('${(item['content'] as List).single}', contains('Ana'));
+      await backend.close();
+    });
+
     test('Azure: the key goes in the api-key header', () async {
       final backend = make(
         const RealtimeConfig(
@@ -1592,6 +1704,20 @@ void main() {
 
     String audio(List<int> samples) => base64Encode(_pcm(samples));
 
+    test('the end of a turn is the end of the audio stream, its speech detection stays on', () async {
+      final backend = await ready();
+      socket.sent.clear();
+      backend.endTurn();
+      expect(socket.sent.single, {
+        'realtimeInput': {'audioStreamEnd': true},
+      });
+      socket.sent.clear();
+      backend.autoTurns();
+      backend.speaker('Ana');
+      expect(socket.sent, isEmpty);
+      await backend.close();
+    });
+
     test('the key in a header, the model and voice in the setup', () async {
       final backend = make(
         const RealtimeConfig(
@@ -2134,6 +2260,147 @@ void main() {
       'area, use this one.',
     );
     expect(realtimeLocationLine(name: '', area: ''), '');
+  });
+
+  group('RealtimeSession with Voice Match', () {
+    _MatchTurn connect(_Harness h) {
+      h.wakeAndConnect();
+      return h.match!.turns.single;
+    }
+
+    test('the provider hears only what Ground Control sends back, and the session ends the turn', () {
+      fakeAsync((time) {
+        final h = _Harness(time, match: _Match());
+        final turn = connect(h);
+        expect(h.match!.follow, isTrue);
+        expect(h.backend.started?.manualTurns, isTrue);
+        h.mic.speak();
+        h.mic.speak();
+        time.flushMicrotasks();
+        // The microphone went to Ground Control, not the provider.
+        expect(turn.fed, 2);
+        expect(h.backend.audio, isEmpty);
+        turn.onEvent({'type': 'turn_start', 't': 1.0});
+        turn.user();
+        turn.user();
+        time.flushMicrotasks();
+        expect(h.backend.audio, hasLength(2));
+        // 16 kHz in, the provider's 24 kHz out (one sample carries over).
+        expect(h.backend.audio.first.length, closeTo(1920 * 2, 4));
+        expect(h.view.phase, AssistPhase.listening);
+        turn.onEvent({'type': 'turn_end', 't': 2.0});
+        time.flushMicrotasks();
+        expect(h.backend.endTurns, 1);
+        expect(h.view.phase, AssistPhase.thinking);
+        // Provider speech events mean nothing while Ground Control follows.
+        h.backend.emit(const RealtimeSpeechStarted());
+        time.flushMicrotasks();
+        expect(h.view.phase, AssistPhase.thinking);
+        h.session.cancel();
+        time.flushMicrotasks();
+        expect(turn.ended, isTrue);
+      });
+    });
+
+    test('the user talking over an answer stops it, the TV never does', () {
+      fakeAsync((time) {
+        final h = _Harness(time, match: _Match());
+        final turn = connect(h);
+        h.answer('a1');
+        time.elapse(const Duration(milliseconds: 400));
+        // Loud speech from the TV: Ground Control says nothing.
+        for (var i = 0; i < 6; i++) {
+          h.mic.speak(value: 9000);
+        }
+        time.flushMicrotasks();
+        expect(h.backend.interruptions, isEmpty);
+        expect(h.backend.audio, isEmpty);
+        turn.onEvent({'type': 'turn_start', 't': 3.0});
+        time.flushMicrotasks();
+        expect(h.backend.interruptions.single.$1, 'a1');
+        expect(h.player.flushes, 1);
+        h.session.cancel();
+        time.flushMicrotasks();
+      });
+    });
+
+    test('the speaker goes to the provider, the overlay and the sensor', () {
+      fakeAsync((time) {
+        final h = _Harness(time, match: _Match());
+        final turn = connect(h);
+        expect(h.speakers, [null]);
+        turn.onEvent({'type': 'speaker', 'name': 'Ana', 'color': '#56814F', 'score': 0.7});
+        time.flushMicrotasks();
+        expect(h.backend.speakers, ['Ana']);
+        expect(h.speakers.last?['name'], 'Ana');
+        expect(h.view.speaker, 'Ana');
+        expect(h.view.speakerColor, '#56814F');
+        h.session.cancel();
+        time.flushMicrotasks();
+      });
+    });
+
+    test('Ground Control going away hands the turns back to the provider', () {
+      fakeAsync((time) {
+        final h = _Harness(time, match: _Match());
+        final turn = connect(h);
+        turn.onLost!();
+        time.flushMicrotasks();
+        expect(h.backend.autoTurnsCalls, 1);
+        h.mic.speak();
+        time.flushMicrotasks();
+        expect(h.backend.audio, hasLength(1));
+        h.session.cancel();
+        time.flushMicrotasks();
+      });
+    });
+
+    test('Ground Control not answering in time: the conversation runs as without it', () {
+      fakeAsync((time) {
+        final match = _Match();
+        final h = _Harness(time, match: match);
+        unawaited(h.session.wake('Hey Jarvis'));
+        time.flushMicrotasks();
+        match.turns.single.ready = false;
+        time.elapse(RealtimeSession.matchReadyWait);
+        h.backend.emit(const RealtimeReady());
+        time.flushMicrotasks();
+        // The provider was asked for manual turns while the chime played,
+        // and gets its own speech detection back.
+        expect(h.backend.autoTurnsCalls, 1);
+        h.mic.speak();
+        time.flushMicrotasks();
+        expect(h.backend.audio, isNotEmpty);
+        h.session.cancel();
+        time.flushMicrotasks();
+      });
+    });
+
+    test('a voice that is not enrolled ends the conversation', () {
+      fakeAsync((time) {
+        final h = _Harness(time, match: _Match());
+        final turn = connect(h);
+        turn.onEvent({'type': 'rejected', 'score': 0.1});
+        time.flushMicrotasks();
+        expect(h.session.busy, isFalse);
+        expect(turn.ended, isTrue);
+      });
+    });
+
+    test('End when someone else talks off: no follow mode', () {
+      fakeAsync((time) {
+        final h = _Harness(
+          time,
+          match: _Match(),
+          options: const RealtimeOptions(follow: false),
+        );
+        h.wakeAndConnect();
+        expect(h.match!.turns, isEmpty);
+        expect(h.backend.started?.manualTurns, isFalse);
+        h.session.cancel();
+        time.flushMicrotasks();
+      });
+    });
   });
 
   group('RealtimeSession', () {

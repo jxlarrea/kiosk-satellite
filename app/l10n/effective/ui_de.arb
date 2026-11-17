@@ -56995,32 +56995,6 @@
       ]
     }
   },
-  "settingVoiceMatchEndOnOtherVoiceTitle": "Beenden, wenn jemand anderes spricht",
-  "@settingVoiceMatchEndOnOtherVoiceTitle": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > End when someone else talks"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > End when someone else talks"
-      ]
-    }
-  },
-  "settingVoiceMatchEndOnOtherVoiceDescription": "Beendet das Zuhören beim letzten Wort, wenn der Fernseher oder eine andere Person weiterspricht.",
-  "@settingVoiceMatchEndOnOtherVoiceDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > End when someone else talks"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > End when someone else talks"
-      ]
-    }
-  },
   "settingVoiceMatchSpeakerSensorTitle": "Sprecher-Sensor",
   "@settingVoiceMatchSpeakerSensorTitle": {
     "context": "Settings > Voice Satellite > Voice Match",
@@ -57265,6 +57239,32 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "settingVoiceMatchLeaveOutTitle": "Andere Stimmen weglassen",
+  "@settingVoiceMatchLeaveOutTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Leave other voices out"
+      ]
+    }
+  },
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant und der Echtzeit-Assistent hören nur die Person, die das Aktivierungswort gesagt hat, und der Befehl endet, wenn sie aufhört zu sprechen, auch wenn der Fernseher läuft.",
+  "@settingVoiceMatchLeaveOutDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Leave other voices out"
       ]
     }
   },

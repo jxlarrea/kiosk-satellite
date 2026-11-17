@@ -4,7 +4,14 @@ import 'dart:typed_data';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-/// One Voice Match session on Kiosk Satellite Ground Control for one voice turn.
+/// One Voice Match session on Kiosk Satellite Ground Control: one voice
+/// turn, or a whole realtime conversation.
+///
+/// Follow mode: the service gets everything the microphone hears, with the
+/// wake word as the anchor for who the user is, and sends back only the
+/// user's speech (onAudio) for the kiosk to forward in place of the
+/// microphone, with `turn_start` and `turn_end` around each turn. TV
+/// before, between and after the user's words never reaches the backend.
 ///
 /// Live mode: the kiosk keeps sending its own audio to Home Assistant and
 /// this copy goes to the service, which answers with events only:
@@ -12,14 +19,19 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 /// `end_of_speech` (the speaker stopped, or someone else took over) and
 /// `rejected` (only enrolled voices are answered and this is not one).
 ///
+/// onLost says the service is gone before [end]: the kiosk goes back to
+/// sending its own microphone.
+///
 /// It gets the audio Home Assistant gets, from the same point. Audio fed
 /// before the socket is ready waits in a queue, so the start of the
 /// command is never lost. Nothing here blocks the turn: a service that is
 /// slow or gone just sends no events.
 class VoiceMatchTurn {
-  VoiceMatchTurn._(this._onEvent, this._log);
+  VoiceMatchTurn._(this._onEvent, this._log, this._onAudio, this._onLost);
 
   final void Function(Map<String, Object?> event) _onEvent;
+  final void Function(Uint8List pcm)? _onAudio;
+  final void Function()? _onLost;
   final void Function(String line)? _log;
   WebSocketChannel? _socket;
   StreamSubscription<Object?>? _sub;
@@ -27,6 +39,10 @@ class VoiceMatchTurn {
   int _queued = 0;
   bool _ready = false;
   bool _ended = false;
+  bool _lostSaid = false;
+
+  /// The service answered the start: audio flows both ways.
+  bool get ready => _ready;
 
   /// At most this much audio waits for the socket (10 s at 16 kHz PCM16).
   static const _maxQueued = 320000;
@@ -41,8 +57,12 @@ class VoiceMatchTurn {
     required String policy,
     required void Function(Map<String, Object?> event) onEvent,
     void Function(String line)? log,
+    bool follow = false,
+    Uint8List? anchor,
+    void Function(Uint8List pcm)? onAudio,
+    void Function()? onLost,
   }) {
-    final turn = VoiceMatchTurn._(onEvent, log);
+    final turn = VoiceMatchTurn._(onEvent, log, onAudio, onLost);
     final base = Uri.parse(baseUrl);
     final uri = base.replace(
       scheme: base.scheme == 'https' ? 'wss' : 'ws',
@@ -54,8 +74,10 @@ class VoiceMatchTurn {
         'token': token,
         'device_id': deviceId,
         'device_name': deviceName,
-        'mode': 'live',
+        'mode': follow ? 'follow' : 'live',
         'policy': policy,
+        if (follow && anchor != null && anchor.isNotEmpty)
+          'anchor': base64Encode(anchor),
       }),
     );
     return turn;
@@ -84,6 +106,13 @@ class VoiceMatchTurn {
   }
 
   void _onMessage(Object? data) {
+    if (data is List<int>) {
+      // Follow mode: the user's speech, to forward.
+      if (!_ended) {
+        _onAudio?.call(data is Uint8List ? data : Uint8List.fromList(data));
+      }
+      return;
+    }
     if (data is! String) return;
     final Map<String, Object?> e;
     try {
@@ -138,6 +167,11 @@ class VoiceMatchTurn {
   }
 
   void _drop() {
+    // Gone before the turn was over: the kiosk takes its microphone back.
+    if (!_ended && !_lostSaid) {
+      _lostSaid = true;
+      _onLost?.call();
+    }
     _ready = false;
     unawaited(_sub?.cancel());
     _sub = null;

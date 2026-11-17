@@ -8182,10 +8182,11 @@ const voiceMatchEndOnOtherVoice = SettingDef<bool>(
   key: 'voice_match.end_on_other_voice',
   type: SettingType.boolean,
   defaultValue: true,
-  title: 'End when someone else talks',
+  title: 'Leave other voices out',
   description:
-      'Stops listening at the last word when the TV or another person keeps '
-      'talking.',
+      'Home Assistant and the realtime assistant hear only the person who '
+      'said the wake word, and the command ends when they stop, even with '
+      'the TV on.',
   category: 'Voice Satellite',
   subpage: 'Voice Match',
   section: 'Listening',

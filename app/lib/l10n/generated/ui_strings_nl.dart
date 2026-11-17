@@ -15758,14 +15758,6 @@ class UiStringsNl extends UiStrings {
       'Wat er gebeurt als iemand anders het wekwoord zegt.';
 
   @override
-  String get settingVoiceMatchEndOnOtherVoiceTitle =>
-      'Stoppen als iemand anders praat';
-
-  @override
-  String get settingVoiceMatchEndOnOtherVoiceDescription =>
-      'Stopt met luisteren bij het laatste woord als de tv of iemand anders blijft praten.';
-
-  @override
   String get settingVoiceMatchSpeakerSensorTitle => 'Sprekersensor';
 
   @override
@@ -15827,6 +15819,13 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Laat de Ground Control app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang.';
+
+  @override
+  String get settingVoiceMatchLeaveOutTitle => 'Andere stemmen weglaten';
+
+  @override
+  String get settingVoiceMatchLeaveOutDescription =>
+      'Home Assistant en de realtime assistent horen alleen de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten, ook met de tv aan.';
 
   @override
   String get voiceWakePage => 'Wekwoorden';

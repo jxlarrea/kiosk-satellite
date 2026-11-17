@@ -44,16 +44,31 @@ abstract class VoiceLinkPort {
 abstract class VoiceMatchPort {
   /// A session for a new turn, or null when Voice Match is off or not
   /// connected. [onEvent] gets the service's events (speaker, other_voice,
-  /// end_of_speech, rejected, stats) as maps with a `type`.
-  VoiceMatchTurnPort? begin(void Function(Map<String, Object?> event) onEvent);
+  /// end_of_speech, turn_start, turn_end, rejected, stats) as maps with a
+  /// `type`.
+  ///
+  /// [follow] asks for follow mode: only the user's speech comes back
+  /// ([onAudio]) to forward in place of the microphone. [followup] is a
+  /// later turn of the same conversation, with no wake word of its own.
+  /// [onLost] says the service went away before the turn was over.
+  VoiceMatchTurnPort? begin(
+    void Function(Map<String, Object?> event) onEvent, {
+    bool follow = false,
+    bool followup = false,
+    void Function(Uint8List pcm)? onAudio,
+    void Function()? onLost,
+  });
 }
 
 abstract class VoiceMatchTurnPort {
-  /// A chunk of the turn's microphone audio, pre-roll included.
+  /// A chunk of the turn's microphone audio.
   void feed(Uint8List pcm);
 
   /// The turn is over.
   void end();
+
+  /// The service answered the start.
+  bool get ready;
 }
 
 /// The microphone: the wake word engine's capture, pre-roll first.
@@ -100,6 +115,7 @@ class VoiceSessionOptions {
     this.stopWord = false,
     this.remoteSpeech = false,
     this.matchEndOnOtherVoice = true,
+    this.matchNoSpeech = const Duration(seconds: 10),
     this.matchRejectChime = false,
   });
 
@@ -117,7 +133,14 @@ class VoiceSessionOptions {
   final bool remoteSpeech;
 
   /// Voice Match: end the turn when someone else (the TV) takes over.
+  /// Leave other voices out: Home Assistant hears only the user's speech
+  /// (follow mode), and the command ends when the user stops, whatever a
+  /// TV does. Off, Voice Match only says who is talking.
   final bool matchEndOnOtherVoice;
+
+  /// In follow mode, how long to wait for the user to start talking before
+  /// the command ends with nothing said, as Home Assistant's own wait does.
+  final Duration matchNoSpeech;
 
   /// Voice Match: a voice that is not enrolled, on a kiosk that answers
   /// enrolled voices only, gets the error chime rather than silence.
@@ -324,8 +347,19 @@ class VoiceSession {
   }) async {
     _endMatch();
     onSpeaker?.call(null);
-    final match = voiceMatch?.begin((e) => _onMatch(gen, e));
+    final follow = options().matchEndOnOtherVoice;
+    final match = voiceMatch?.begin(
+      (e) => _onMatch(gen, e),
+      follow: follow,
+      followup: _phase == _Phase.followup,
+      onAudio: (pcm) => _onMatchAudio(gen, pcm),
+      onLost: () => _onMatchLost(gen),
+    );
     _match = match;
+    _following = match != null && follow;
+    _followSent = false;
+    _followMic.clear();
+    _followMicBytes = 0;
     final opened = await mic.open((pcm, preRoll) => _onChunk(gen, pcm));
     if (gen != _gen) {
       if (opened) await mic.close();
@@ -402,8 +436,7 @@ class VoiceSession {
     // at 0 through the wait.
     _micLevels(_sending ? _levels.micSlices(pcm) : const [0]);
     if (_sending) {
-      unawaited(link.audio(pcm));
-      _match?.feed(pcm);
+      _send(pcm);
       return;
     }
     _held.add(pcm);
@@ -419,13 +452,85 @@ class VoiceSession {
     // echo would read as speech and end the command before it starts.
     if (keepHeld) {
       for (final pcm in _held) {
-        unawaited(link.audio(pcm));
-        _match?.feed(pcm);
+        _send(pcm);
       }
     }
     _held.clear();
     _heldBytes = 0;
     _sending = true;
+  }
+
+  /// A chunk Home Assistant would hear. In follow mode it goes to Voice
+  /// Match only, and the user's speech comes back to forward; the kiosk
+  /// keeps it too, in case Voice Match goes away before any comes back.
+  void _send(Uint8List pcm) {
+    _match?.feed(pcm);
+    if (!_following) {
+      unawaited(link.audio(pcm));
+      return;
+    }
+    if (!_followSent) {
+      _followMic.add(pcm);
+      _followMicBytes += pcm.length;
+      while (_followMicBytes > 320000 && _followMic.isNotEmpty) {
+        _followMicBytes -= _followMic.removeAt(0).length;
+      }
+    }
+    // A service that does not answer in time is as good as gone.
+    final gen = _gen;
+    _readyTimer ??= Timer(matchReadyWait, () {
+      if (gen == _gen && _following && !(_match?.ready ?? false)) {
+        _onMatchLost(gen);
+      }
+    });
+    _noSpeechTimer ??= Timer(options().matchNoSpeech, () {
+      if (_following && !_followSent) {
+        onTrace?.call('voice match: nobody talked');
+        unawaited(endAudio());
+      }
+    });
+  }
+
+  /// Follow mode: following, the user's speech came back, and what the
+  /// microphone heard while it had not.
+  bool _following = false;
+  bool _followSent = false;
+  final _followMic = <Uint8List>[];
+  int _followMicBytes = 0;
+  Timer? _noSpeechTimer;
+  Timer? _readyTimer;
+
+  /// How long follow mode waits for Voice Match to answer before Home
+  /// Assistant gets the microphone instead.
+  static const matchReadyWait = Duration(milliseconds: 1500);
+
+  void _onMatchAudio(int gen, Uint8List pcm) {
+    if (gen != _gen || !_following || !_sending) return;
+    if (!_followSent) {
+      _followSent = true;
+      _followMic.clear();
+      _followMicBytes = 0;
+    }
+    unawaited(link.audio(pcm));
+  }
+
+  /// Voice Match went away mid-turn: Home Assistant gets the microphone
+  /// again, from the start of the command when nothing came back yet.
+  void _onMatchLost(int gen) {
+    if (gen != _gen || !_following) return;
+    _following = false;
+    _noSpeechTimer?.cancel();
+    _noSpeechTimer = null;
+    _readyTimer?.cancel();
+    _readyTimer = null;
+    onTrace?.call('voice match lost, back to the microphone');
+    if (!_followSent && _sending) {
+      for (final pcm in _followMic) {
+        unawaited(link.audio(pcm));
+      }
+    }
+    _followMic.clear();
+    _followMicBytes = 0;
   }
 
   Future<void> _closeMic() async {
@@ -940,6 +1045,11 @@ class VoiceSession {
   void _endMatch() {
     _match?.end();
     _match = null;
+    _following = false;
+    _noSpeechTimer?.cancel();
+    _noSpeechTimer = null;
+    _readyTimer?.cancel();
+    _readyTimer = null;
   }
 
   /// Voice Match's events for the turn of [gen].
@@ -963,6 +1073,15 @@ class VoiceSession {
             ),
           );
         }
+      case 'turn_start':
+        _noSpeechTimer?.cancel();
+        onTrace?.call('voice match: the user started talking');
+      case 'other_voice' when _following:
+        onTrace?.call('voice match: another voice left out');
+      case 'turn_end':
+        if (!_following) return;
+        onTrace?.call('voice match: the user stopped');
+        await endAudio();
       case 'end_of_speech':
         final reason = e['reason'];
         if (reason == 'other_voice' && !options().matchEndOnOtherVoice) return;

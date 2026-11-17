@@ -15881,14 +15881,6 @@ class UiStringsEs extends UiStrings {
       'Qué pasa cuando otra persona dice la palabra de activación.';
 
   @override
-  String get settingVoiceMatchEndOnOtherVoiceTitle =>
-      'Terminar cuando habla otra persona';
-
-  @override
-  String get settingVoiceMatchEndOnOtherVoiceDescription =>
-      'Deja de escuchar en la última palabra cuando la TV u otra persona sigue hablando.';
-
-  @override
   String get settingVoiceMatchSpeakerSensorTitle => 'Sensor de hablante';
 
   @override
@@ -15950,6 +15942,13 @@ class UiStringsEs extends UiStrings {
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Permite que la app Ground Control grabe la voz de una persona con el micrófono de este kiosco. El kiosco muestra el texto a leer o el anillo de luz muestra el progreso.';
+
+  @override
+  String get settingVoiceMatchLeaveOutTitle => 'Dejar fuera otras voces';
+
+  @override
+  String get settingVoiceMatchLeaveOutDescription =>
+      'Home Assistant y el asistente en tiempo real solo oyen a la persona que dijo la palabra de activación, y el comando termina cuando deja de hablar, aunque la tele esté encendida.';
 
   @override
   String get voiceWakePage => 'Palabra de activación';

@@ -282,6 +282,7 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
 
   @override
   Future<void> start(RealtimeStart start) async {
+    _manual = start.manualTurns;
     final url = config.url;
     log?.call('connecting to ${url.replace(query: '')}');
     List<RealtimeToolSpec> tools;
@@ -371,11 +372,7 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
       if (config.search) {'type': 'web_search'},
       if (config.xSearch) {'type': 'x_search'},
     ];
-    final turnDetection = {
-      'type': 'server_vad',
-      'silence_duration_ms': 500,
-      'prefix_padding_ms': 300,
-    };
+    final turnDetection = _manual ? null : _serverVad;
     final session = switch (config.provider) {
       RealtimeProvider.openai => {
         'type': 'realtime',
@@ -389,12 +386,7 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
               'model': transcribeModel,
               if (language.length == 2) 'language': language,
             },
-            'turn_detection': {
-              ...turnDetection,
-              // The session decides whether speech is the user (userTurn).
-              'create_response': false,
-              'interrupt_response': false,
-            },
+            'turn_detection': turnDetection == null ? null : _openAiTurns,
           },
           'output': {
             'format': format,
@@ -445,6 +437,80 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
   void sendAudio(Uint8List pcm) {
     if (!_ready || pcm.isEmpty) return;
     _send({'type': 'input_audio_buffer.append', 'audio': base64Encode(pcm)});
+  }
+
+  /// The server's speech detection, unless the session takes the turns
+  /// (manual, while Ground Control follows the user).
+  static const _serverVad = {
+    'type': 'server_vad',
+    'silence_duration_ms': 500,
+    'prefix_padding_ms': 300,
+  };
+
+  /// OpenAI's: the session decides whether speech is the user (userTurn).
+  static const _openAiTurns = {
+    ..._serverVad,
+    'create_response': false,
+    'interrupt_response': false,
+  };
+
+  bool _manual = false;
+
+  @override
+  void endTurn() {
+    if (!_manual) return;
+    // An empty buffer is refused with an error, which is harmless here.
+    _send({'type': 'input_audio_buffer.commit'});
+    if (_responding) {
+      // The user's turn wins over an answer still open on the server.
+      if (!_cancelled) _send({'type': 'response.cancel'});
+      _cancelled = true;
+      _turnWaiting = true;
+    } else {
+      _replyToTurn();
+    }
+  }
+
+  @override
+  void autoTurns() {
+    if (!_manual) return;
+    _manual = false;
+    log?.call('speech detection back to the server');
+    _send({
+      'type': 'session.update',
+      'session': switch (config.provider) {
+        RealtimeProvider.openai => {
+          'type': 'realtime',
+          'audio': {
+            'input': {'turn_detection': _openAiTurns},
+          },
+        },
+        _ => {'turn_detection': _serverVad},
+      },
+    });
+  }
+
+  /// A system item: the model reads it with the conversation, and it says
+  /// nothing back for it.
+  @override
+  void speaker(String name) {
+    if (!_ready) return;
+    _send({
+      'type': 'conversation.item.create',
+      'item': {
+        'type': 'message',
+        'role': 'system',
+        'content': [
+          {
+            'type': 'input_text',
+            'text': name.isEmpty
+                ? 'The person talking now is not enrolled in Voice Match.'
+                : 'The person talking now is $name. When they say "my" or '
+                      '"me", they mean $name.',
+          },
+        ],
+      },
+    });
   }
 
   @override

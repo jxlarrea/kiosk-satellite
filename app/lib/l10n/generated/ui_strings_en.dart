@@ -15579,14 +15579,6 @@ class UiStringsEn extends UiStrings {
       'What happens when someone else says the wake word.';
 
   @override
-  String get settingVoiceMatchEndOnOtherVoiceTitle =>
-      'End when someone else talks';
-
-  @override
-  String get settingVoiceMatchEndOnOtherVoiceDescription =>
-      'Stops listening at the last word when the TV or another person keeps talking.';
-
-  @override
   String get settingVoiceMatchSpeakerSensorTitle => 'Speaker sensor';
 
   @override
@@ -15647,6 +15639,13 @@ class UiStringsEn extends UiStrings {
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Lets the Ground Control app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.';
+
+  @override
+  String get settingVoiceMatchLeaveOutTitle => 'Leave other voices out';
+
+  @override
+  String get settingVoiceMatchLeaveOutDescription =>
+      'Home Assistant and the realtime assistant hear only the person who said the wake word, and the command ends when they stop, even with the TV on.';
 
   @override
   String get voiceWakePage => 'Wake Word';

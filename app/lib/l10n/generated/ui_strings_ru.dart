@@ -15677,14 +15677,6 @@ class UiStringsRu extends UiStrings {
       'Что происходит, когда слово пробуждения говорит кто-то другой.';
 
   @override
-  String get settingVoiceMatchEndOnOtherVoiceTitle =>
-      'Завершать, когда говорит кто-то другой';
-
-  @override
-  String get settingVoiceMatchEndOnOtherVoiceDescription =>
-      'Прекращает слушать на последнем слове, когда телевизор или другой человек продолжает говорить.';
-
-  @override
   String get settingVoiceMatchSpeakerSensorTitle => 'Датчик говорящего';
 
   @override
@@ -15746,6 +15738,13 @@ class UiStringsRu extends UiStrings {
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Разрешает приложению Ground Control записывать голос человека микрофоном этого киоска. Киоск показывает текст для чтения, или световое кольцо показывает прогресс.';
+
+  @override
+  String get settingVoiceMatchLeaveOutTitle => 'Не учитывать другие голоса';
+
+  @override
+  String get settingVoiceMatchLeaveOutDescription =>
+      'Home Assistant и ассистент в реальном времени слышат только того, кто сказал слово активации, и команда заканчивается, когда он замолкает, даже при включённом телевизоре.';
 
   @override
   String get voiceWakePage => 'Слово пробуждения';

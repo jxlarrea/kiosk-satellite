@@ -14,15 +14,30 @@ Voice Match runs on [Ground Control](ground-control.md), a Home Assistant app or
 
 Voice Match works with Voice Satellite's native runtime and Home Assistant Assist pipelines.
 
-## How a Command Ends
+## Only the User's Voice
 
-While the kiosk sends a command to Home Assistant, it sends the same audio to Ground Control:
+With **Leave other voices out** on, everything the microphone hears goes to Ground Control, and Home Assistant or the realtime assistant hears only the person who said the wake word:
 
+- **The user is whoever said the wake word.** The kiosk sends the wake word to Ground Control, so a TV talking right after it is never taken for the user. An enrolled person is recognized from it. Without a wake word, such as a conversation started from the screen, the user is whoever of the enrolled people talks.
+- **Other voices are left out.** With a TV going before, between and after the user's words, the assistant hears only the user's words, as if the room was quiet.
+- **The command ends when the user stops.** The kiosk ends it once the user has been quiet for 0.7 seconds, whatever the TV does, instead of waiting for Home Assistant's or the provider's own silence detection, which a TV keeps open.
 - **Who is talking** is known about a second into the command, while the person is still talking.
-- **When the speaker stops**, the kiosk ends the command right away instead of waiting for Home Assistant's own silence detection.
-- **When someone else keeps talking**, such as a TV, the command ends at the speaker's last word.
 
-If Ground Control is not reachable, commands work as they do without it.
+The assistant hears the user about a second late while they talk, the time Ground Control needs to tell voices apart. The end of the command is not delayed by it.
+
+Two voices at the same moment both reach the assistant: Ground Control can leave out a voice between the user's words, not under them. A guest who is not enrolled and sounds much like the TV voice is harder to tell apart than an enrolled person.
+
+If Ground Control is not reachable, or stops answering mid-command, commands work as they do without it.
+
+## Realtime Conversations
+
+With a [realtime assistant](voice-satellite.md), Leave other voices out works for the whole conversation:
+
+- **Each turn** is the user's speech only, and ends when they stop. OpenAI and xAI take the turns from the kiosk. Gemini keeps its own speech detection, but only ever hears the user.
+- **Talking over an answer** stops it only when it is the user. A TV or another voice never interrupts the assistant. The stop word still stops an answer whoever says it.
+- **The assistant knows who is talking.** OpenAI and xAI are told the speaker's name, so "my" means them. The conversation also ends after the idle time when only the TV is talking.
+
+If Ground Control goes away mid-conversation, the provider's own speech detection takes over and the conversation goes on.
 
 ## Settings
 
@@ -31,7 +46,7 @@ If Ground Control is not reachable, commands work as they do without it.
 | Enable Voice Match | off | Recognizes who is talking and stops listening when someone else takes over. Needs Ground Control. |
 | Answer | Anyone | **Enrolled voices only** ignores the TV and guests: a command from a voice that is not enrolled is dropped. |
 | Voice not enrolled | Stay quiet | With **Enrolled voices only**, what happens when someone else says the wake word: nothing, or the error chime. |
-| End when someone else talks | on | Ends the command at the speaker's last word when another voice keeps talking. |
+| Leave other voices out | on | Home Assistant and the realtime assistant hear only the person who said the wake word, and the command ends when they stop. Off, Voice Match only says who is talking. |
 | Speaker sensor | on | Adds a Speaker sensor to this kiosk in Home Assistant. |
 | Show who is talking | on | Puts the speaker's name before the command on the voice overlay, in their color. On a device with a light ring, the listening arc takes the color. |
 | Allow enrollment here | on | Lets the Ground Control app record a person's voice with this kiosk's microphone. |

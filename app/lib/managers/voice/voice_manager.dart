@@ -371,12 +371,7 @@ class VoiceManager extends Manager {
       onTrace: _trace,
       onIdle: _resumeWake,
       voiceMatch: _VoiceMatch(this),
-      onSpeaker: (e) => bus.publish(
-        VoiceSpeakerChanged(
-          '${e?['name'] ?? ''}',
-          color: e?['color'] is String ? e!['color'] as String : null,
-        ),
-      ),
+      onSpeaker: _publishSpeaker,
     );
     _subs.add(
       bus.on<GroundControlServiceChanged>().listen(
@@ -407,6 +402,8 @@ class VoiceManager extends Manager {
       },
       onIdle: _resumeWake,
       location: realtimeLocation,
+      voiceMatch: _VoiceMatch(this),
+      onSpeaker: _publishSpeaker,
     );
     _enroller = VoiceMatchEnroller(
       mic: _WakeMic(_wakeWord),
@@ -2328,6 +2325,8 @@ class VoiceManager extends Manager {
     ),
     language: _settings.get(defs.uiLanguage),
     historyHours: _settings.get(defs.voiceRealtimeHistoryHours).toDouble(),
+    follow: _settings.get(defs.voiceMatchEndOnOtherVoice),
+    rejectChime: _settings.get(defs.voiceMatchRejected) == 'chime',
   );
 
   String _location = '';
@@ -2971,6 +2970,14 @@ class VoiceManager extends Manager {
     }
     _session.dismiss();
   }
+
+  /// Who is talking, for the Speaker sensor and the lights.
+  void _publishSpeaker(Map<String, Object?>? e) => bus.publish(
+    VoiceSpeakerChanged(
+      '${e?['name'] ?? ''}',
+      color: e?['color'] is String ? e!['color'] as String : null,
+    ),
+  );
 
   // ── Voice Match enrollment ─────────────────────────────────────────────
 
@@ -4233,13 +4240,34 @@ class _VoiceMatch implements VoiceMatchPort {
   _VoiceMatch(this._voice);
   final VoiceManager _voice;
 
+  /// The wake word that started the conversation: later turns (a follow
+  /// up) have none of their own, and the same person answers.
+  Uint8List? _anchor;
+
   @override
-  VoiceMatchTurnPort? begin(void Function(Map<String, Object?> event) onEvent) {
+  VoiceMatchTurnPort? begin(
+    void Function(Map<String, Object?> event) onEvent, {
+    bool follow = false,
+    bool followup = false,
+    void Function(Uint8List pcm)? onAudio,
+    void Function()? onLost,
+  }) {
     final url = _voice._groundControlUrl;
     final s = _voice._settings;
     // The address is only known while Ground Control is connected.
     if (url == null || !s.get(defs.voiceMatchEnabled)) return null;
     final name = s.get(defs.deviceName).trim();
+    final clip = followup ? null : _voice._wakeWord.wakeClip();
+    if (!followup) {
+      _anchor = clip;
+      _voice.log.info(
+        _voice.name,
+        clip == null
+            ? 'voice match: no wake word to follow, the household is'
+            : 'voice match: following the wake word '
+                  '(${clip.length ~/ 32} ms)',
+      );
+    }
     final turn = VoiceMatchTurn.open(
       baseUrl: url,
       token: s.get(defs.haToken),
@@ -4248,6 +4276,10 @@ class _VoiceMatch implements VoiceMatchPort {
       policy: s.get(defs.voiceMatchPolicy),
       onEvent: onEvent,
       log: (line) => _voice.log.info(_voice.name, line),
+      follow: follow,
+      anchor: _anchor,
+      onAudio: onAudio,
+      onLost: onLost,
     );
     return _Turn(turn);
   }
@@ -4262,4 +4294,7 @@ class _Turn implements VoiceMatchTurnPort {
 
   @override
   void end() => _turn.end();
+
+  @override
+  bool get ready => _turn.ready;
 }

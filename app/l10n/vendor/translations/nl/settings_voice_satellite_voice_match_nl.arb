@@ -7,8 +7,6 @@
   "settingVoiceMatchPolicyDescription": "Alleen ingeschreven stemmen negeert de tv en gasten.",
   "settingVoiceMatchRejectedTitle": "Stem niet ingeschreven",
   "settingVoiceMatchRejectedDescription": "Wat er gebeurt als iemand anders het wekwoord zegt.",
-  "settingVoiceMatchEndOnOtherVoiceTitle": "Stoppen als iemand anders praat",
-  "settingVoiceMatchEndOnOtherVoiceDescription": "Stopt met luisteren bij het laatste woord als de tv of iemand anders blijft praten.",
   "settingVoiceMatchSpeakerSensorTitle": "Sprekersensor",
   "settingVoiceMatchSpeakerSensorDescription": "Voegt aan deze kiosk een Speaker-sensor toe in Home Assistant, voor automatiseringen en agentinstructies.",
   "voiceMatchOptionAnyone": "Iedereen",
@@ -27,5 +25,7 @@
   "voiceMatchAppHint": "Personen, inschrijven, sessies en instellingen.",
   "voiceMatchOpen": "Openen",
   "settingVoiceMatchEnabledDescriptionGroundControl": "Herken wie er praat en stop met luisteren als iemand anders het overneemt. Vereist Ground Control.",
-  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Laat de Ground Control app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang."
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Laat de Ground Control app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang.",
+  "settingVoiceMatchLeaveOutTitle": "Andere stemmen weglaten",
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant en de realtime assistent horen alleen de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten, ook met de tv aan."
 }

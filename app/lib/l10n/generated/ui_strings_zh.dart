@@ -14766,13 +14766,6 @@ class UiStringsZh extends UiStrings {
   String get settingVoiceMatchRejectedDescription => '其他人说出唤醒词时的处理方式。';
 
   @override
-  String get settingVoiceMatchEndOnOtherVoiceTitle => '他人说话时结束';
-
-  @override
-  String get settingVoiceMatchEndOnOtherVoiceDescription =>
-      '电视或其他人继续说话时，在最后一个词处停止聆听。';
-
-  @override
   String get settingVoiceMatchSpeakerSensorTitle => '说话人传感器';
 
   @override
@@ -14832,6 +14825,13 @@ class UiStringsZh extends UiStrings {
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       '允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
+
+  @override
+  String get settingVoiceMatchLeaveOutTitle => '排除其他声音';
+
+  @override
+  String get settingVoiceMatchLeaveOutDescription =>
+      'Home Assistant 和实时助手只会听到说出唤醒词的人，并在此人停止说话时结束命令，即使电视开着也是如此。';
 
   @override
   String get voiceWakePage => '唤醒词';
@@ -30866,13 +30866,6 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingVoiceMatchRejectedDescription => '其他人说出唤醒词时的处理方式。';
 
   @override
-  String get settingVoiceMatchEndOnOtherVoiceTitle => '他人说话时结束';
-
-  @override
-  String get settingVoiceMatchEndOnOtherVoiceDescription =>
-      '电视或其他人继续说话时，在最后一个词处停止聆听。';
-
-  @override
   String get settingVoiceMatchSpeakerSensorTitle => '说话人传感器';
 
   @override
@@ -30932,6 +30925,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       '允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
+
+  @override
+  String get settingVoiceMatchLeaveOutTitle => '排除其他声音';
+
+  @override
+  String get settingVoiceMatchLeaveOutDescription =>
+      'Home Assistant 和实时助手只会听到说出唤醒词的人，并在此人停止说话时结束命令，即使电视开着也是如此。';
 
   @override
   String get voiceWakePage => '唤醒词';

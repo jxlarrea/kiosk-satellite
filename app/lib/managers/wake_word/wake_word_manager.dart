@@ -467,6 +467,10 @@ class WakeWordManager extends Manager
   /// null when it is not recording (no tester open, diagnostics off).
   Uint8List? recentAudio(Duration length) => _engine.recentAudio(length);
 
+  /// The audio that held the last wake word (WakeWordEngine.wakeClip).
+  Uint8List? wakeClip([Duration length = const Duration(milliseconds: 1500)]) =>
+      _engine.wakeClip(length);
+
   /// Point the active engine's telemetry at our stream (or unhook it).
   /// Re-run whenever the running engine changes, so requesting a test
   /// before the engine is up — or across an engine switch — still lands on

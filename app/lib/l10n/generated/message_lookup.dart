@@ -5380,10 +5380,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingVoiceMatchRejectedTitle,
       'settingVoiceMatchRejectedDescription' =>
         strings.settingVoiceMatchRejectedDescription,
-      'settingVoiceMatchEndOnOtherVoiceTitle' =>
-        strings.settingVoiceMatchEndOnOtherVoiceTitle,
-      'settingVoiceMatchEndOnOtherVoiceDescription' =>
-        strings.settingVoiceMatchEndOnOtherVoiceDescription,
       'settingVoiceMatchSpeakerSensorTitle' =>
         strings.settingVoiceMatchSpeakerSensorTitle,
       'settingVoiceMatchSpeakerSensorDescription' =>
@@ -5410,6 +5406,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingVoiceMatchEnabledDescriptionGroundControl,
       'settingVoiceMatchAllowEnrollDescriptionGroundControl' =>
         strings.settingVoiceMatchAllowEnrollDescriptionGroundControl,
+      'settingVoiceMatchLeaveOutTitle' =>
+        strings.settingVoiceMatchLeaveOutTitle,
+      'settingVoiceMatchLeaveOutDescription' =>
+        strings.settingVoiceMatchLeaveOutDescription,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,
