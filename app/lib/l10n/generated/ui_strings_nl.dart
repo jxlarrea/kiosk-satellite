@@ -201,6 +201,11 @@ class UiStringsNl extends UiStrings {
   }
 
   @override
+  String alarmsSkipAlarm(String time) {
+    return 'Alarm om $time overslaan';
+  }
+
+  @override
   String get alarmsNextWidget => 'Volgend alarm';
 
   @override
@@ -5172,6 +5177,13 @@ class UiStringsNl extends UiStrings {
       'Hoelang het scherm vóór een zonsopgangsalarm nodig heeft om volledig helder te worden.';
 
   @override
+  String get settingAlarmsSkipMinutesTitle => 'Knop Overslaan';
+
+  @override
+  String get settingAlarmsSkipMinutesDescription =>
+      'Hoelang vóór een alarm de schermbeveiligingen Klok en Weerscène een knop tonen om het over te slaan.';
+
+  @override
   String get alarmsOption5Minutes => '5 minuten';
 
   @override
@@ -5188,6 +5200,12 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get alarmsOption30Minutes => '30 minuten';
+
+  @override
+  String get alarmsOption60Minutes => '60 minuten';
+
+  @override
+  String get alarmsOptionOff => 'Uit';
 
   @override
   String get settingsMenuAlarms => 'Alarmen';

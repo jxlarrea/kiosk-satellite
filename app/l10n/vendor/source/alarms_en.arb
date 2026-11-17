@@ -377,6 +377,23 @@
       }
     }
   },
+  "alarmsSkipAlarm": "Skip {time} alarm",
+  "@alarmsSkipAlarm": {
+    "context": "Clock and Weather Mood screensavers",
+    "description": "Button under the screensaver clock shortly before an alarm. Skips that one ring. {time} is a clock time.",
+    "x-locations": {
+      "device": [
+        "Clock screensaver before an alarm",
+        "Weather Mood screensaver before an alarm"
+      ]
+    },
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "description": "A clock time like 6:30 AM."
+      }
+    }
+  },
   "alarmsNextWidget": "Next alarm",
   "@alarmsNextWidget": {
     "context": "Screensaver widgets",

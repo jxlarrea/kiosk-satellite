@@ -49,6 +49,7 @@ class AlarmStatus {
     this.takeover,
     this.sunriseStart,
     this.next,
+    this.skip,
   });
 
   final AlarmPhase phase;
@@ -71,6 +72,12 @@ class AlarmStatus {
   /// alarm widget and the list.
   final ({String id, DateTime at})? next;
 
+  /// The ring the Clock and Weather Mood screensavers offer to skip: the
+  /// next one, inside the Skip button window, and the alarms set to it.
+  /// Null outside that window, while a ring or a snooze is going, and
+  /// with the window Off.
+  final ({List<String> ids, DateTime at})? skip;
+
   bool get active => phase != AlarmPhase.idle;
 
   /// The alarm's own view is up: a sunrise or a ring with no takeover.
@@ -89,6 +96,9 @@ class AlarmStatus {
     'next': next == null
         ? null
         : {'id': next!.id, 'at': next!.at.toUtc().toIso8601String()},
+    'skip': skip == null
+        ? null
+        : {'ids': skip!.ids, 'at': skip!.at.toUtc().toIso8601String()},
   };
 
   @override
@@ -102,7 +112,9 @@ class AlarmStatus {
       other.takeover == takeover &&
       other.sunriseStart == sunriseStart &&
       other.next?.id == next?.id &&
-      other.next?.at == next?.at;
+      other.next?.at == next?.at &&
+      listEquals(other.skip?.ids, skip?.ids) &&
+      other.skip?.at == skip?.at;
 
   @override
   int get hashCode => Object.hash(
@@ -114,6 +126,7 @@ class AlarmStatus {
     sunriseStart,
     next?.id,
     next?.at,
+    skip?.at,
   );
 }
 
@@ -207,6 +220,11 @@ class AlarmManager extends Manager {
     minutes: int.tryParse(_settings.get(defs.alarmsSunriseMinutes)) ?? 30,
   );
 
+  /// How long before a ring the screensavers offer Skip; zero is Off.
+  Duration get _skipWindow => Duration(
+    minutes: int.tryParse(_settings.get(defs.alarmsSkipMinutes)) ?? 10,
+  );
+
   @override
   Future<void> init() async {
     _readAlarms();
@@ -228,7 +246,8 @@ class AlarmManager extends Manager {
             _readAlarms();
             unawaited(_check());
           } else if (e.key == defs.alarmsSunriseMinutes.key ||
-              e.key == defs.alarmsSilenceAfterMinutes.key) {
+              e.key == defs.alarmsSilenceAfterMinutes.key ||
+              e.key == defs.alarmsSkipMinutes.key) {
             unawaited(_check());
           } else if (e.key == defs.kioskAllowAlarms.key && e.value != true) {
             visible.value = false;
@@ -545,6 +564,15 @@ class AlarmManager extends Manager {
         wakeAt = sunrise.at.subtract(_sunriseLength).millisecondsSinceEpoch;
       }
     }
+    // Skip shows on time rather than on the next tick. Only the Dart timer
+    // waits for it: the screensaver that shows it is already up.
+    int? skipAt;
+    final window = _skipWindow;
+    if (_s.phase == AlarmPhase.idle && window > Duration.zero) {
+      final ring = _nextOf(alarms.value, now);
+      final at = ring?.at.subtract(window);
+      if (at != null && at.isAfter(now)) skipAt = at.millisecondsSinceEpoch;
+    }
     if (_s.phase == AlarmPhase.ringing) {
       final silenceAt = _ringStarted?.add(_silenceAfter);
       _arm(silenceAt, now);
@@ -552,6 +580,7 @@ class AlarmManager extends Manager {
       final soonest = [
         ?ringAt,
         ?wakeAt,
+        ?skipAt,
       ].fold<int?>(null, (a, b) => a == null || b < a ? b : a);
       _arm(
         soonest == null ? null : DateTime.fromMillisecondsSinceEpoch(soonest),
@@ -1037,6 +1066,61 @@ class AlarmManager extends Manager {
     return true;
   }
 
+  /// Skip the next ring, and every alarm set to the same minute: a
+  /// repeating alarm rings again on its next day, a one time alarm turns
+  /// off. A sunrise going for that ring ends too. Nothing to skip while a
+  /// ring or a snooze is going, which Stop ends instead.
+  Future<bool> skip({String source = 'button'}) async {
+    final now = _clock();
+    final List<String> ids;
+    final DateTime at;
+    if (_s.phase == AlarmPhase.sunrise && _s.at != null) {
+      ids = _s.ids;
+      at = _s.at!;
+    } else if (_s.phase == AlarmPhase.idle) {
+      final next = _nextOf(alarms.value, now);
+      if (next == null) return false;
+      ids = _ringingAt(next.at, now);
+      at = next.at;
+    } else {
+      return false;
+    }
+    for (final id in ids) {
+      _handled[id] = at.millisecondsSinceEpoch;
+    }
+    await _spend(ids);
+    if (_s.phase == AlarmPhase.sunrise) {
+      await _finish('skipped ($source)', event: 'skipped');
+      return true;
+    }
+    log.info(name, '${_describe(ids)}: skipped the ${_hm(at)} ring ($source)');
+    _alarmEvent('skipped', ids);
+    _persist();
+    _publish();
+    await _schedule(_clock());
+    return true;
+  }
+
+  /// The alarms whose next ring is [at].
+  List<String> _ringingAt(DateTime at, DateTime now) => [
+    for (final a in alarms.value)
+      if (upcoming(a, now) == at) a.id,
+  ];
+
+  /// The ring Skip is offered for right now, see [AlarmStatus.skip].
+  ({List<String> ids, DateTime at})? _skippable(DateTime now) {
+    final window = _skipWindow;
+    if (window <= Duration.zero) return null;
+    final s = _s;
+    if (s.phase == AlarmPhase.sunrise && s.at != null) {
+      return s.at!.difference(now) <= window ? (ids: s.ids, at: s.at!) : null;
+    }
+    if (s.phase != AlarmPhase.idle) return null;
+    final next = _nextOf(alarms.value, now);
+    if (next == null || next.at.difference(now) > window) return null;
+    return (ids: _ringingAt(next.at, now), at: next.at);
+  }
+
   Future<void> _finish(String why, {String? event}) async {
     if (_s.active) {
       log.info(name, '${_describe(_s.ids)}: $why');
@@ -1228,6 +1312,7 @@ class AlarmManager extends Manager {
     takeover: takeover != null ? takeover() : _s.takeover,
     sunriseStart: _s.sunriseStart,
     next: _s.next,
+    skip: _s.skip,
   );
 
   List<String> _labels(List<String> ids) => [
@@ -1260,7 +1345,8 @@ class AlarmManager extends Manager {
   }
 
   void _publish() {
-    final next = _next(_clock());
+    final now = _clock();
+    final next = _next(now);
     final s = _s;
     final updated = AlarmStatus(
       phase: s.phase,
@@ -1273,6 +1359,7 @@ class AlarmManager extends Manager {
       takeover: s.takeover,
       sunriseStart: s.sunriseStart,
       next: next,
+      skip: _skippable(now),
     );
     status.value = updated;
     bus.publish(AlarmStateChanged(statusJson));
@@ -1383,7 +1470,8 @@ class AlarmManager extends Manager {
           description:
               'Every alarm with its next ring, and what is going on: '
               '{phase: idle|sunrise|ringing|snoozed, ids, labels, at, '
-              'snoozedUntil, takeover, next, alarms: [...]}.',
+              'snoozedUntil, takeover, next, skip: {ids, at} while the '
+              'screensavers offer Skip, alarms: [...]}.',
           quiet: true,
           handler: (_) async => CommandResult.ok(statusJson),
         ),
@@ -1473,6 +1561,20 @@ class AlarmManager extends Manager {
               await stop(source: '${p['source'] ?? 'command'}')
               ? const CommandResult.ok()
               : const CommandResult.fail('no alarm is going'),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'alarmSkip',
+          description:
+              'Skip the next ring, and every alarm set to the same minute: '
+              'a repeating alarm rings again on its next day, a one time '
+              'alarm turns off. Ends a sunrise going for that ring. Fails '
+              'while an alarm rings or is snoozed.',
+          handler: (p) async =>
+              await skip(source: '${p['source'] ?? 'command'}')
+              ? const CommandResult.ok()
+              : const CommandResult.fail('no alarm to skip'),
         ),
       )
       ..register(

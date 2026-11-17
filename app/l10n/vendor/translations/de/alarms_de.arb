@@ -28,6 +28,7 @@
   "alarmsDurationHours": "{hours} Std.",
   "alarmsDurationMinutes": "{minutes} Min.",
   "alarmsAt": "Wecker um {time}",
+  "alarmsSkipAlarm": "Wecker um {time} überspringen",
   "alarmsNextWidget": "Nächster Wecker",
   "alarmsManage": "Wecker verwalten",
   "alarmsNextAt": "Nächster: {day} um {time}",

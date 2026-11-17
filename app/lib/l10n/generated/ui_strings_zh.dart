@@ -196,6 +196,11 @@ class UiStringsZh extends UiStrings {
   }
 
   @override
+  String alarmsSkipAlarm(String time) {
+    return '跳过 $time 的闹钟';
+  }
+
+  @override
   String get alarmsNextWidget => '下一个闹钟';
 
   @override
@@ -4956,6 +4961,13 @@ class UiStringsZh extends UiStrings {
   String get settingAlarmsSunriseMinutesDescription => '模拟日出闹钟响铃前，屏幕逐渐变亮所需的时长。';
 
   @override
+  String get settingAlarmsSkipMinutesTitle => '“跳过”按钮';
+
+  @override
+  String get settingAlarmsSkipMinutesDescription =>
+      '闹钟响铃前多久，在时钟和天气氛围屏保上显示“跳过”按钮。';
+
+  @override
   String get alarmsOption5Minutes => '5 分钟';
 
   @override
@@ -4972,6 +4984,12 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get alarmsOption30Minutes => '30 分钟';
+
+  @override
+  String get alarmsOption60Minutes => '60 分钟';
+
+  @override
+  String get alarmsOptionOff => '关闭';
 
   @override
   String get settingsMenuAlarms => '闹钟';
@@ -16062,6 +16080,11 @@ class UiStringsZhCn extends UiStringsZh {
   }
 
   @override
+  String alarmsSkipAlarm(String time) {
+    return '跳过 $time 的闹钟';
+  }
+
+  @override
   String get alarmsNextWidget => '下一个闹钟';
 
   @override
@@ -20822,6 +20845,13 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingAlarmsSunriseMinutesDescription => '模拟日出闹钟响铃前，屏幕逐渐变亮所需的时长。';
 
   @override
+  String get settingAlarmsSkipMinutesTitle => '“跳过”按钮';
+
+  @override
+  String get settingAlarmsSkipMinutesDescription =>
+      '闹钟响铃前多久，在时钟和天气氛围屏保上显示“跳过”按钮。';
+
+  @override
   String get alarmsOption5Minutes => '5 分钟';
 
   @override
@@ -20838,6 +20868,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get alarmsOption30Minutes => '30 分钟';
+
+  @override
+  String get alarmsOption60Minutes => '60 分钟';
+
+  @override
+  String get alarmsOptionOff => '关闭';
 
   @override
   String get settingsMenuAlarms => '闹钟';

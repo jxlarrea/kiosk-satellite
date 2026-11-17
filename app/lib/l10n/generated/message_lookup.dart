@@ -1386,12 +1386,17 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingAlarmsSunriseMinutesTitle,
       'settingAlarmsSunriseMinutesDescription' =>
         strings.settingAlarmsSunriseMinutesDescription,
+      'settingAlarmsSkipMinutesTitle' => strings.settingAlarmsSkipMinutesTitle,
+      'settingAlarmsSkipMinutesDescription' =>
+        strings.settingAlarmsSkipMinutesDescription,
       'alarmsOption5Minutes' => strings.alarmsOption5Minutes,
       'alarmsOption10Minutes' => strings.alarmsOption10Minutes,
       'alarmsOption15Minutes' => strings.alarmsOption15Minutes,
       'alarmsOption20Minutes' => strings.alarmsOption20Minutes,
       'alarmsOption25Minutes' => strings.alarmsOption25Minutes,
       'alarmsOption30Minutes' => strings.alarmsOption30Minutes,
+      'alarmsOption60Minutes' => strings.alarmsOption60Minutes,
+      'alarmsOptionOff' => strings.alarmsOptionOff,
       'settingsMenuAlarms' => strings.settingsMenuAlarms,
       'settingsMenuAlarmsSummary' => strings.settingsMenuAlarmsSummary,
       'settingAlarmsEaseInTitle' => strings.settingAlarmsEaseInTitle,

@@ -41,6 +41,12 @@ An alarm rings on its own full screen view, with one exception: when the screens
 
 A kiosk that was switched off or restarted through the whole Silence after window skips the alarm rather than ring it late.
 
+## Skipping the next alarm
+
+If you wake up before your alarm, skip it from the screensaver. Shortly before an alarm, the **Clock** and **Weather Mood** screensavers show a **Skip** button with the alarm's time under the clock. Tap it and that one ring does not happen. A repeating alarm rings again on its next day and a one time alarm turns off. The screensaver stays up and the button goes away.
+
+**Skip button** under **Settings > Alarms** sets how early the button shows, 10 minutes before the alarm by default. Set it to Off to never show it. Two alarms set to the same minute are skipped together. During a sunrise, Skip also ends the sunrise. Editing a skipped alarm brings its next ring back.
+
 ## Waking up to music
 
 An alarm can ring with music from your library instead of its tone. Set **Alarm music** under **Settings, Alarms** for every alarm that follows the default, or tap **Music** on an alarm's details page and pick **Choose music** to give it music of its own. Both open the music picker:
@@ -104,6 +110,7 @@ Home Assistant makes the speech with the **Text to speech engine**, **Language**
 | Snooze length | 5 to 30 minutes. |
 | Silence after | How long an alarm rings when nobody stops it, 5 to 30 minutes. |
 | Sunrise length | How long the screen takes to brighten before a sunrise alarm, 10 to 30 minutes. |
+| Skip button | How long before an alarm the Clock and Weather Mood screensavers show a button to skip it, 5 to 60 minutes or Off. 10 minutes by default. See [Skipping the next alarm](#skipping-the-next-alarm). |
 | Phrase | The default phrase for alarms that speak. |
 | Text to speech engine | Under **Text to Speech**, the Home Assistant text to speech entity that speaks alarms. **First available** takes the first one Home Assistant has. |
 | Language | The language alarms are spoken in, picked from the ones the engine lists. **Default** leaves it to the engine. Shown once an engine is picked by name. |
@@ -210,6 +217,7 @@ data:
 | `ringing` | It rings, again after each snooze. |
 | `snoozed` | It was snoozed. `snoozed_until` holds when it rings again, in UTC. |
 | `stopped` | It was stopped during a ring, a snooze or a sunrise. |
+| `skipped` | Its next ring was skipped before it rang. |
 | `silenced` | Nobody stopped it before **Silence after** ran out. |
 
 `time` is the alarm's local time and `days` lists the days it repeats on, empty for a one time alarm. `device_id` is the kiosk's ESPHome device, added by Home Assistant.

@@ -9,6 +9,7 @@ import '../managers/alarms/alarm_manager.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'alarms_overlay.dart' show alarmTimeParts, alarmTimeText;
 import 'clock_setting.dart';
+import 'glass_chip.dart';
 import 'theme.dart';
 
 /// The alarm's own full screen view: the sunrise glow before a sunrise
@@ -390,6 +391,7 @@ class _Pill extends StatelessWidget {
     required this.onTap,
     this.edge,
     this.shadows = const [],
+    this.palette,
   });
 
   final String label;
@@ -400,40 +402,57 @@ class _Pill extends StatelessWidget {
   final List<Shadow> shadows;
   final VoidCallback onTap;
 
+  /// Frosted glass over the scene, the weather chips' own, in place of
+  /// the flat [background]. The flat one shows where the glass cannot.
+  final GlassPalette? palette;
+
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: width,
-    height: height,
-    child: Material(
-      color: background,
-      shape: StadiumBorder(
-        side: edge == null ? BorderSide.none : BorderSide(color: edge!),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: fontSize * 1.15,
+  Widget build(BuildContext context) {
+    final glass = palette;
+    final flat = _material(background);
+    return SizedBox(
+      width: width,
+      height: height,
+      child: glass == null
+          ? flat
+          : GlassChip(
+              palette: glass,
+              fallback: flat,
+              child: _material(Colors.transparent, rim: false),
+            ),
+    );
+  }
+
+  /// The glass draws its own rim, so [rim] is off over it.
+  Widget _material(Color color, {bool rim = true}) => Material(
+    color: color,
+    shape: StadiumBorder(
+      side: edge == null || !rim ? BorderSide.none : BorderSide(color: edge!),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: fontSize * 1.15,
+            color: foreground,
+            shadows: shadows,
+          ),
+          SizedBox(width: fontSize * 0.5),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: Ks.displayFont,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
               color: foreground,
               shadows: shadows,
             ),
-            SizedBox(width: fontSize * 0.5),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: Ks.displayFont,
-                fontSize: fontSize,
-                fontWeight: FontWeight.w600,
-                color: foreground,
-                shadows: shadows,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
@@ -456,9 +475,13 @@ class AlarmTakeoverControls extends StatelessWidget {
     this.labelWeight = FontWeight.w400,
     this.fontFamily,
     this.shadows = const [],
+    this.palette,
   });
 
   final AppContainer container;
+
+  /// Frosted glass for Snooze over a scene (Weather Mood), see [_Pill].
+  final GlassPalette? palette;
 
   /// The screensaver's text color: the label, Snooze's text and Stop's
   /// fill.
@@ -524,6 +547,7 @@ class AlarmTakeoverControls extends StatelessWidget {
                 foreground: color,
                 edge: edge,
                 shadows: shadows,
+                palette: palette,
                 onTap: () => container.alarms.snooze(source: 'screensaver'),
               ),
               SizedBox(width: 24 * b),
@@ -540,6 +564,101 @@ class AlarmTakeoverControls extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Skip for the next ring, under the Clock and Weather Mood screensavers'
+/// clock while [AlarmStatus.skip] offers one (issue #1479). In the
+/// screensaver's glass, like Snooze, and a control: its touch leaves the
+/// screensaver up.
+class AlarmSkipButton extends StatelessWidget {
+  const AlarmSkipButton({
+    super.key,
+    required this.container,
+    required this.at,
+    required this.color,
+    required this.glass,
+    required this.edge,
+    this.shadows = const [],
+    this.palette,
+  });
+
+  final AppContainer container;
+
+  /// The ring it skips.
+  final DateTime at;
+  final Color color, glass, edge;
+  final List<Shadow> shadows;
+
+  /// Frosted glass over a scene (Weather Mood), see [_Pill].
+  final GlassPalette? palette;
+
+  @override
+  Widget build(BuildContext context) {
+    // A touch bigger than Snooze and Stop: it is read from across the room
+    // by someone just awake. It shrinks only where it would not fit.
+    final b = alarmButtonScale(MediaQuery.sizeOf(context), rowWidth: 440);
+    final fontSize = 26 * b;
+    return Listener(
+      onPointerDown: (_) => container.screensaver.markControlTouch(),
+      child: ClockSetting(
+        container: container,
+        setting: defs.alarmsClock24h,
+        child: Builder(
+          builder: (context) {
+            Widget material(Color fill, {bool rim = true}) => Material(
+              color: fill,
+              shape: StadiumBorder(
+                side: rim ? BorderSide(color: edge) : BorderSide.none,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => container.alarms.skip(source: 'screensaver'),
+                child: Container(
+                  height: 72 * b,
+                  padding: EdgeInsets.symmetric(horizontal: 34 * b),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.alarm_off,
+                        size: fontSize * 1.15,
+                        color: color,
+                        shadows: shadows,
+                      ),
+                      SizedBox(width: fontSize * 0.5),
+                      Flexible(
+                        child: Text(
+                          l10n(
+                            context,
+                          ).alarmsSkipAlarm(alarmTimeText(context, at)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: Ks.displayFont,
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w600,
+                            color: color,
+                            shadows: shadows,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+            final pal = palette;
+            if (pal == null) return material(glass);
+            return GlassChip(
+              palette: pal,
+              fallback: material(glass),
+              child: material(Colors.transparent, rim: false),
+            );
+          },
+        ),
       ),
     );
   }

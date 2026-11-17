@@ -957,6 +957,7 @@ void main() {
     expect(u['alarms_snooze_minutes'], '5');
     expect(u['alarms_silence_after_minutes'], '10');
     expect(u['alarms_sunrise_minutes'], '30');
+    expect(u['alarms_skip_minutes'], '10');
     final text = jsonEncode(u);
     expect(text, isNot(contains('Work')));
     expect(text, isNot(contains('Dentist')));

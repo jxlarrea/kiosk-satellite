@@ -446,6 +446,12 @@ abstract class UiStrings {
   /// **'Alarm at {time}'**
   String alarmsAt(String time);
 
+  /// Button under the screensaver clock shortly before an alarm. Skips that one ring. {time} is a clock time.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip {time} alarm'**
+  String alarmsSkipAlarm(String time);
+
   /// Screensaver corner widget that shows the next alarm.
   ///
   /// In en, this message translates to:
@@ -9028,6 +9034,18 @@ abstract class UiStrings {
   /// **'How long the screen takes to brighten before a sunrise alarm.'**
   String get settingAlarmsSunriseMinutesDescription;
 
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip button'**
+  String get settingAlarmsSkipMinutesTitle;
+
+  /// Setting description.
+  ///
+  /// In en, this message translates to:
+  /// **'How long before an alarm the Clock and Weather Mood screensavers show a button to skip it.'**
+  String get settingAlarmsSkipMinutesDescription;
+
   /// Setting option: a length in minutes.
   ///
   /// In en, this message translates to:
@@ -9063,6 +9081,18 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'30 minutes'**
   String get alarmsOption30Minutes;
+
+  /// Setting option: a length in minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'60 minutes'**
+  String get alarmsOption60Minutes;
+
+  /// Setting option: the Skip button never shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get alarmsOptionOff;
 
   /// Settings category name.
   ///

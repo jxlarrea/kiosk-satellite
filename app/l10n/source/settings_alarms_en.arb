@@ -234,6 +234,32 @@
       ]
     }
   },
+  "settingAlarmsSkipMinutesTitle": "Skip button",
+  "@settingAlarmsSkipMinutesTitle": {
+    "context": "Settings > Alarms",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Skip button"
+      ],
+      "remoteAdmin": [
+        "Alarms > Skip button"
+      ]
+    }
+  },
+  "settingAlarmsSkipMinutesDescription": "How long before an alarm the Clock and Weather Mood screensavers show a button to skip it.",
+  "@settingAlarmsSkipMinutesDescription": {
+    "context": "Settings > Alarms",
+    "description": "Setting description.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Skip button"
+      ],
+      "remoteAdmin": [
+        "Alarms > Skip button"
+      ]
+    }
+  },
   "alarmsOption5Minutes": "5 minutes",
   "@alarmsOption5Minutes": {
     "context": "Settings > Alarms",
@@ -309,6 +335,32 @@
       ],
       "remoteAdmin": [
         "Alarms"
+      ]
+    }
+  },
+  "alarmsOption60Minutes": "60 minutes",
+  "@alarmsOption60Minutes": {
+    "context": "Settings > Alarms",
+    "description": "Setting option: a length in minutes.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms"
+      ],
+      "remoteAdmin": [
+        "Alarms"
+      ]
+    }
+  },
+  "alarmsOptionOff": "Off",
+  "@alarmsOptionOff": {
+    "context": "Settings > Alarms",
+    "description": "Setting option: the Skip button never shows.",
+    "x-locations": {
+      "device": [
+        "Settings > Alarms > Skip button"
+      ],
+      "remoteAdmin": [
+        "Alarms > Skip button"
       ]
     }
   },

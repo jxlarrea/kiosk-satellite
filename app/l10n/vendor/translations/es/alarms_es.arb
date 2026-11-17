@@ -28,6 +28,7 @@
   "alarmsDurationHours": "{hours} h",
   "alarmsDurationMinutes": "{minutes} min",
   "alarmsAt": "Alarma: {time}",
+  "alarmsSkipAlarm": "Omitir alarma {time}",
   "alarmsNextWidget": "Próxima alarma",
   "alarmsManage": "Gestionar alarmas",
   "alarmsNextAt": "Próxima: {day}, {time}",

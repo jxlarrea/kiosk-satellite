@@ -987,9 +987,21 @@ class _ClockScreensaverState extends State<ClockScreensaver>
     });
     _armBackgroundRefresh();
     widget.container.screensaver.alarmTakeover.addListener(_onTakeover);
+    _skipAt = widget.container.alarms.status.value.skip?.at;
+    widget.container.alarms.status.addListener(_onAlarmStatus);
   }
 
   void _onTakeover() {
+    if (mounted) setState(() {});
+  }
+
+  DateTime? _skipAt;
+
+  /// Skip comes and goes under the clock with the alarm's window.
+  void _onAlarmStatus() {
+    final at = widget.container.alarms.status.value.skip?.at;
+    if (at == _skipAt) return;
+    _skipAt = at;
     if (mounted) setState(() {});
   }
 
@@ -1087,6 +1099,7 @@ class _ClockScreensaverState extends State<ClockScreensaver>
   @override
   void dispose() {
     widget.container.screensaver.alarmTakeover.removeListener(_onTakeover);
+    widget.container.alarms.status.removeListener(_onAlarmStatus);
     _tick?.cancel();
     _shift?.cancel();
     _bgSub?.cancel();
@@ -1362,6 +1375,10 @@ class _ClockScreensaverState extends State<ClockScreensaver>
     // steps aside for them.
     final ringing =
         widget.container.screensaver.alarmTakeover.value == 'ringing';
+    // Before an alarm, Skip for its next ring sits under the clock.
+    final skipAt = ringing
+        ? null
+        : widget.container.alarms.status.value.skip?.at;
     // The At a Glance row sits under the clock and needs room for itself,
     // so the clock gives some back rather than pushing the row off a short
     // panel. Only when the row actually has something to show, and not
@@ -1481,7 +1498,30 @@ class _ClockScreensaverState extends State<ClockScreensaver>
             alignment: Alignment(0, glance ? _clockAnchorWithGlance : 0),
             child: Transform.translate(
               offset: _offset,
-              child: !ringing
+              child: skipAt != null
+                  ? Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: face,
+                            ),
+                          ),
+                          SizedBox(height: clockSize * .1),
+                          AlarmSkipButton(
+                            container: widget.container,
+                            at: skipAt,
+                            color: digitColor,
+                            glass: digitColor.withValues(alpha: .1),
+                            edge: digitColor.withValues(alpha: .22),
+                          ),
+                        ],
+                      ),
+                    )
+                  : !ringing
                   ? face
                   // The face gives way to the label and the buttons, which
                   // keep their full size: a flip or roller face fills the

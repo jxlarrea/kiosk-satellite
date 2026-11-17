@@ -5,9 +5,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Skip the next alarm from the screensaver (#1479).** If you woke up before your alarm, there was no way to skip it without opening the alarm list and turning it off. Shortly before an alarm, the **Clock** and **Weather Mood** screensavers now show a **Skip** button with the alarm's time under the clock. Tapping it skips only that ring: a repeating alarm rings again on its next day and a one time alarm turns off. During a sunrise it also ends the sunrise. The new **Skip button** setting under **Settings > Alarms** sets how early the button shows, 10 minutes by default, or turns it off. Home Assistant gets a `skipped` alarm event. See [Alarms](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/alarms.md#skipping-the-next-alarm).
 - **Delete unused cameras in Camera Streams (#1467).** Clearing cameras after an import meant deleting them one at a time, which takes a while with 50 cameras. A new **Delete unused cameras** row at the bottom of the **Cameras** list deletes every camera that is not in any view, after a confirmation. Cameras in a view stay. The row shows how many cameras it will delete and only appears while there is at least one. Mirrored in the remote admin. See [Cameras](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/cameras.md#delete-unused-cameras).
 
 ### Changed
+- **Snooze on Weather Mood is frosted glass.** When an alarm rang on the Weather Mood screensaver, Snooze was a flat grey pill next to the frosted weather chips. It is now the same frosted glass as the chips.
 - **Bigger alarm and timer wheels on very small screens (#1474).** On a screen as small as the Lenovo Smart Clock 2, the five rows of the alarm and timer wheels were shrunk to fit, which left numbers too small to drag with a finger. Where five rows do not fit, the wheels now show three bigger rows that fill the height: the time on the band and one row above and below it. When a new timer's name field would leave the wheel too short, the field moves next to **Cancel** and **Start**. Larger screens keep five rows.
 
 ### Fixed

@@ -67,8 +67,9 @@ class HeadlessSettings {
     defs.intercomVideo.key,
     defs.intercomAutoAnswerCamera.key,
     defs.intercomVideoQuality.key,
-    // Alarms: no panel to light.
+    // Alarms: no panel to light, and no screensaver to skip from.
     defs.alarmsSunriseMinutes.key,
+    defs.alarmsSkipMinutes.key,
     // Gestures: the hand hold needs the camera.
     defs.handGestureHoldSeconds.key,
     // DLNA: everything is background audio here.

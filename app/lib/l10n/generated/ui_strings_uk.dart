@@ -201,6 +201,11 @@ class UiStringsUk extends UiStrings {
   }
 
   @override
+  String alarmsSkipAlarm(String time) {
+    return 'Пропустити будильник о $time';
+  }
+
+  @override
   String get alarmsNextWidget => 'Наступний будильник';
 
   @override
@@ -5156,6 +5161,13 @@ class UiStringsUk extends UiStrings {
       'Скільки часу екран яскравішає перед будильником зі світанком.';
 
   @override
+  String get settingAlarmsSkipMinutesTitle => 'Кнопка «Пропустити»';
+
+  @override
+  String get settingAlarmsSkipMinutesDescription =>
+      'За скільки часу до будильника заставки «Годинник» і «Настрій погоди» показують кнопку, щоб його пропустити.';
+
+  @override
   String get alarmsOption5Minutes => '5 хвилин';
 
   @override
@@ -5172,6 +5184,12 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get alarmsOption30Minutes => '30 хвилин';
+
+  @override
+  String get alarmsOption60Minutes => '60 хвилин';
+
+  @override
+  String get alarmsOptionOff => 'Вимкнено';
 
   @override
   String get settingsMenuAlarms => 'Будильники';

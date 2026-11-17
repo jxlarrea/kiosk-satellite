@@ -202,6 +202,11 @@ class UiStringsDe extends UiStrings {
   }
 
   @override
+  String alarmsSkipAlarm(String time) {
+    return 'Wecker um $time überspringen';
+  }
+
+  @override
   String get alarmsNextWidget => 'Nächster Wecker';
 
   @override
@@ -5221,6 +5226,13 @@ class UiStringsDe extends UiStrings {
       'Wie lange der Bildschirm vor einem Sonnenaufgangswecker heller wird.';
 
   @override
+  String get settingAlarmsSkipMinutesTitle => 'Überspringen-Taste';
+
+  @override
+  String get settingAlarmsSkipMinutesDescription =>
+      'Wie lange vor einem Wecker die Bildschirmschoner Uhr und Wetterstimmung eine Taste zum Überspringen zeigen.';
+
+  @override
   String get alarmsOption5Minutes => '5 Minuten';
 
   @override
@@ -5237,6 +5249,12 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get alarmsOption30Minutes => '30 Minuten';
+
+  @override
+  String get alarmsOption60Minutes => '60 Minuten';
+
+  @override
+  String get alarmsOptionOff => 'Deaktiviert';
 
   @override
   String get settingsMenuAlarms => 'Wecker';

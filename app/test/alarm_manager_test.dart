@@ -304,6 +304,134 @@ void main() {
     expect(alarms.status.value.next, isNull);
   });
 
+  group('Skip before an alarm (#1479)', () {
+    test('shows inside the window only, and not with it Off', () async {
+      now = DateTime(2026, 10, 2, 6, 49);
+      await build([daily('07:00')]);
+      expect(alarms.status.value.skip, isNull);
+      now = DateTime(2026, 10, 2, 6, 50);
+      await alarms.check();
+      expect(alarms.status.value.skip?.at, DateTime(2026, 10, 2, 7));
+      expect(alarms.status.value.skip?.ids, ['a']);
+      await settings.set(defs.alarmsSkipMinutes, '0');
+      await pumpEventQueue();
+      expect(alarms.status.value.skip, isNull);
+      await settings.set(defs.alarmsSkipMinutes, '15');
+      now = DateTime(2026, 10, 2, 6, 46);
+      await alarms.check();
+      expect(alarms.status.value.skip?.at, DateTime(2026, 10, 2, 7));
+    });
+
+    test('skips one day of a repeating alarm and rings the next', () async {
+      now = DateTime(2026, 10, 2, 6, 55);
+      await build([daily('07:00')]);
+      expect(await alarms.skip(), isTrue);
+      expect(alarms.status.value.skip, isNull);
+      expect(alarms.status.value.next?.at, DateTime(2026, 10, 3, 7));
+      expect(decodeAlarms(settings.get(defs.alarmsList)).single.on, isTrue);
+      now = DateTime(2026, 10, 2, 7, 0, 1);
+      await alarms.check();
+      expect(alarms.status.value.phase, AlarmPhase.idle);
+      now = DateTime(2026, 10, 3, 7, 0, 1);
+      await alarms.check();
+      expect(alarms.status.value.phase, AlarmPhase.ringing);
+    });
+
+    test('turns a one time alarm off', () async {
+      now = DateTime(2026, 10, 2, 6, 55);
+      await build([
+        {'id': 'o', 'time': '07:00', 'date': '2026-10-02', 'on': true},
+      ]);
+      expect(await alarms.skip(), isTrue);
+      final stored = decodeAlarms(settings.get(defs.alarmsList)).single;
+      expect(stored.on, isFalse);
+      expect(alarms.status.value.next, isNull);
+    });
+
+    test('skips every alarm set to the same minute', () async {
+      now = DateTime(2026, 10, 2, 6, 55);
+      await build([
+        daily('07:00', id: 'a'),
+        {
+          'id': 'b',
+          'time': '07:00',
+          'days': [5],
+          'on': true,
+        },
+        daily('08:00', id: 'c'),
+      ]);
+      expect(alarms.status.value.skip?.ids, ['a', 'b']);
+      await alarms.skip();
+      now = DateTime(2026, 10, 2, 7, 0, 1);
+      await alarms.check();
+      expect(alarms.status.value.phase, AlarmPhase.idle);
+      expect(alarms.status.value.next?.id, 'c');
+    });
+
+    test('ends a sunrise and its ring', () async {
+      now = DateTime(2026, 10, 2, 6, 52);
+      await build([daily('07:00', sunrise: true)]);
+      expect(alarms.status.value.phase, AlarmPhase.sunrise);
+      expect(alarms.status.value.skip?.at, DateTime(2026, 10, 2, 7));
+      haEvents.clear();
+      expect(await alarms.skip(source: 'test'), isTrue);
+      expect(alarms.status.value.phase, AlarmPhase.idle);
+      expect(
+        calls.lastWhere((c) => c.$1 == 'alarmBrightness').$2['level'],
+        isNull,
+      );
+      expect(haEvents.map((e) => e.data['event_type']), ['skipped']);
+      now = DateTime(2026, 10, 2, 7, 0, 1);
+      await alarms.check();
+      expect(alarms.status.value.phase, AlarmPhase.idle);
+    });
+
+    test('a sunrise outside the window offers no Skip', () async {
+      now = DateTime(2026, 10, 2, 6, 40);
+      await build([daily('07:00', sunrise: true)]);
+      expect(alarms.status.value.phase, AlarmPhase.sunrise);
+      expect(alarms.status.value.skip, isNull);
+    });
+
+    test('nothing to skip while a ring or a snooze is going', () async {
+      now = DateTime(2026, 10, 2, 7, 0, 5);
+      await build([daily('07:00')]);
+      expect(alarms.status.value.skip, isNull);
+      expect(await alarms.skip(), isFalse);
+      await alarms.snooze();
+      expect(alarms.status.value.skip, isNull);
+      expect((await registry.execute('alarmSkip', const {})).ok, isFalse);
+    });
+
+    test('fires skipped and survives a restart', () async {
+      now = DateTime(2026, 10, 2, 6, 55);
+      await build([daily('07:00', label: 'Work')]);
+      haEvents.clear();
+      expect((await registry.execute('alarmSkip', const {})).ok, isTrue);
+      expect(haEvents.single.data['event_type'], 'skipped');
+      expect(haEvents.single.data['label'], 'Work');
+      await pumpEventQueue();
+      final runtime = settings.get(defs.alarmsRuntime);
+      await alarms.dispose();
+      now = DateTime(2026, 10, 2, 7, 0, 30);
+      await build(
+        [daily('07:00', label: 'Work')],
+        extra: {'ks.alarms.runtime': runtime},
+      );
+      expect(alarms.status.value.phase, AlarmPhase.idle);
+      expect(alarms.status.value.next?.at, DateTime(2026, 10, 3, 7));
+    });
+
+    test('editing a skipped alarm brings its ring back', () async {
+      now = DateTime(2026, 10, 2, 6, 55);
+      await build([daily('07:00')]);
+      await alarms.skip();
+      final alarm = alarms.alarms.value.single;
+      await alarms.save(alarm.copyWith(label: 'Gym'), allowDuplicate: true);
+      expect(alarms.status.value.next?.at, DateTime(2026, 10, 2, 7));
+    });
+  });
+
   test('a snooze survives a restart', () async {
     now = DateTime(2026, 10, 2, 7, 5);
     await build(

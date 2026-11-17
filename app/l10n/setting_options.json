@@ -398,6 +398,14 @@
     "25": "alarmsOption25Minutes",
     "30": "alarmsOption30Minutes"
   },
+  "alarms.skip_minutes": {
+    "0": "alarmsOptionOff",
+    "5": "alarmsOption5Minutes",
+    "10": "alarmsOption10Minutes",
+    "15": "alarmsOption15Minutes",
+    "30": "alarmsOption30Minutes",
+    "60": "alarmsOption60Minutes"
+  },
   "voice.realtime_openai_reasoning": {
     "": "voiceRealtimeReasoningDefault",
     "minimal": "voiceRealtimeReasoningMinimal",

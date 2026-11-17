@@ -201,6 +201,11 @@ class UiStringsEn extends UiStrings {
   }
 
   @override
+  String alarmsSkipAlarm(String time) {
+    return 'Skip $time alarm';
+  }
+
+  @override
   String get alarmsNextWidget => 'Next alarm';
 
   @override
@@ -5122,6 +5127,13 @@ class UiStringsEn extends UiStrings {
       'How long the screen takes to brighten before a sunrise alarm.';
 
   @override
+  String get settingAlarmsSkipMinutesTitle => 'Skip button';
+
+  @override
+  String get settingAlarmsSkipMinutesDescription =>
+      'How long before an alarm the Clock and Weather Mood screensavers show a button to skip it.';
+
+  @override
   String get alarmsOption5Minutes => '5 minutes';
 
   @override
@@ -5138,6 +5150,12 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get alarmsOption30Minutes => '30 minutes';
+
+  @override
+  String get alarmsOption60Minutes => '60 minutes';
+
+  @override
+  String get alarmsOptionOff => 'Off';
 
   @override
   String get settingsMenuAlarms => 'Alarms';

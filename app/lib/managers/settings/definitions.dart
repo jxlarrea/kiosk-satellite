@@ -12541,6 +12541,29 @@ const alarmsSunriseMinutes = SettingDef<String>(
   },
 );
 
+/// How long before an alarm the Clock and Weather Mood screensavers show a
+/// Skip button for its next ring (issue #1479). 0 is Off.
+const alarmsSkipMinutes = SettingDef<String>(
+  key: 'alarms.skip_minutes',
+  type: SettingType.select,
+  defaultValue: '10',
+  title: 'Skip button',
+  description:
+      'How long before an alarm the Clock and Weather Mood screensavers '
+      'show a button to skip it.',
+  category: 'Alarms',
+  section: 'Defaults',
+  options: ['0', '5', '10', '15', '30', '60'],
+  optionLabels: {
+    '0': 'Off',
+    '5': '5 minutes',
+    '10': '10 minutes',
+    '15': '15 minutes',
+    '30': '30 minutes',
+    '60': '60 minutes',
+  },
+);
+
 /// The Home Assistant text to speech entity an alarm speaks its phrase
 /// with; empty picks the first one Home Assistant has. Picked from the
 /// list, never typed, like the Announcements engine.
@@ -15089,6 +15112,7 @@ const List<SettingDef<Object>> allSettings = [
   alarmsSnoozeMinutes,
   alarmsSilenceAfterMinutes,
   alarmsSunriseMinutes,
+  alarmsSkipMinutes,
   alarmsPhrase,
   alarmsTtsEngine,
   alarmsTtsLanguage,

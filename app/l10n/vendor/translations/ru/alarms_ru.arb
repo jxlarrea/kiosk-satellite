@@ -28,6 +28,7 @@
   "alarmsDurationHours": "{hours} ч",
   "alarmsDurationMinutes": "{minutes} мин",
   "alarmsAt": "Будильник на {time}",
+  "alarmsSkipAlarm": "Пропустить будильник на {time}",
   "alarmsNextWidget": "Следующий будильник",
   "alarmsManage": "Управлять будильниками",
   "alarmsNextAt": "Следующий: {day} в {time}",

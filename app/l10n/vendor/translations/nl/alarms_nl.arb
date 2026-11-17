@@ -28,6 +28,7 @@
   "alarmsDurationHours": "{hours} h",
   "alarmsDurationMinutes": "{minutes} min",
   "alarmsAt": "Alarm om {time}",
+  "alarmsSkipAlarm": "Alarm om {time} overslaan",
   "alarmsNextWidget": "Volgend alarm",
   "alarmsManage": "Alarmen beheren",
   "alarmsNextAt": "Volgende: {day} om {time}",

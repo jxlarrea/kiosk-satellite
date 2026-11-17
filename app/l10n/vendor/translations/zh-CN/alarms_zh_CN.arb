@@ -28,6 +28,7 @@
   "alarmsDurationHours": "{hours} 小时",
   "alarmsDurationMinutes": "{minutes} 分钟",
   "alarmsAt": "{time} 的闹钟",
+  "alarmsSkipAlarm": "跳过 {time} 的闹钟",
   "alarmsNextWidget": "下一个闹钟",
   "alarmsManage": "管理闹钟",
   "alarmsNextAt": "下次：{day} {time}",

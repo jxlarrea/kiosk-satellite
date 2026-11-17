@@ -786,6 +786,7 @@ class AnalyticsManager extends Manager {
       'alarms_snooze_minutes': s.get(defs.alarmsSnoozeMinutes),
       'alarms_silence_after_minutes': s.get(defs.alarmsSilenceAfterMinutes),
       'alarms_sunrise_minutes': s.get(defs.alarmsSunriseMinutes),
+      'alarms_skip_minutes': s.get(defs.alarmsSkipMinutes),
       // Calendar: counts and picks only, never the calendars, their names
       // or the people.
       'calendars': calendars.where((c) => c.on).length,

@@ -2140,6 +2140,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingAlarmsSunriseMinutesTitle",
     "description": "settingAlarmsSunriseMinutesDescription",
   },
+  "alarms.skip_minutes": {
+    "title": "settingAlarmsSkipMinutesTitle",
+    "description": "settingAlarmsSkipMinutesDescription",
+  },
   "alarms.tts_engine": {
     "title": "settingAlarmsTtsEngineTitle",
     "description": "settingAlarmsTtsEngineDescription",
