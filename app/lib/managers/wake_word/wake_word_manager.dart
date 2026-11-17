@@ -1595,9 +1595,9 @@ class WakeWordManager extends Manager
     );
   }
 
-  /// Who wants the stop word listening: the voice turn (TTS, a ringing
-  /// timer) and a ringing alarm arm it apart, and it stays armed while
-  /// either still wants it.
+  /// Who wants the stop word listening: the voice turn (TTS), a ringing
+  /// timer and a ringing alarm arm it apart, and it stays armed while any
+  /// of them still wants it.
   final _stopWordHolders = <String>{};
 
   /// Arm or disarm the stop word classifier for [holder]; false when none

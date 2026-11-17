@@ -3631,13 +3631,15 @@ class VoiceManager extends Manager {
   bool _sharedRinging = false;
 
   /// While a timer rings, this kiosk's own or a shared one, the stop word
-  /// listens and the screen is held as for a voice turn.
+  /// listens and the screen is held as for a voice turn. The ring holds the
+  /// stop word under its own name: an announcement or a turn that ends
+  /// while it rings lets go of the voice holder only (issue #1478).
   void _syncTimerHold() {
     if (_ringing.isNotEmpty || _sharedRinging) {
       _onBusy(true, 'timer');
-      unawaited(_wakeWord.setStopWordArmed(true));
+      unawaited(_wakeWord.setStopWordArmed(true, holder: 'timer'));
     } else {
-      unawaited(_wakeWord.setStopWordArmed(false));
+      unawaited(_wakeWord.setStopWordArmed(false, holder: 'timer'));
       if (_busyReasons.remove('timer')) {
         bus.publish(
           const VoiceInteractionChanged(
