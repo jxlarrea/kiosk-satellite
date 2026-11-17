@@ -26,6 +26,14 @@ class _Link implements VoiceLinkPort {
     return true;
   }
 
+  int audioEnds = 0;
+
+  @override
+  Future<bool> audioEnd() async {
+    audioEnds++;
+    return true;
+  }
+
   @override
   Future<bool> finished() async {
     finishedCount++;
@@ -89,8 +97,32 @@ class _Player implements VoicePlayerPort {
   String get lastId => 'snd$_next';
 }
 
+class _MatchTurn implements VoiceMatchTurnPort {
+  _MatchTurn(this.onEvent);
+  final void Function(Map<String, Object?> event) onEvent;
+  int fed = 0;
+  bool ended = false;
+
+  @override
+  void feed(Uint8List pcm) => fed++;
+
+  @override
+  void end() => ended = true;
+}
+
+class _Match implements VoiceMatchPort {
+  final turns = <_MatchTurn>[];
+
+  @override
+  VoiceMatchTurnPort? begin(void Function(Map<String, Object?> event) onEvent) {
+    final t = _MatchTurn(onEvent);
+    turns.add(t);
+    return t;
+  }
+}
+
 class _Harness {
-  _Harness({this.options = const VoiceSessionOptions(), FakeAsync? time}) {
+  _Harness({this.options = const VoiceSessionOptions(), FakeAsync? time, this.match}) {
     session = VoiceSession(
       link: link,
       mic: mic,
@@ -103,9 +135,14 @@ class _Harness {
       onError: (code, message) => errors.add(code),
       onIdle: () => idles++,
       onTrace: (step, {text}) => traces.add((step, text)),
+      voiceMatch: match,
+      onSpeaker: speakers.add,
       now: time == null ? null : () => DateTime(2026).add(time.elapsed),
     );
   }
+
+  final _Match? match;
+  final speakers = <Map<String, Object?>?>[];
 
   VoiceSessionOptions options;
   late final VoiceSession session;
@@ -663,6 +700,102 @@ void main() {
         ),
         'idle',
       );
+    });
+  });
+
+  group('Voice Match', () {
+    void listening(_Harness h, FakeAsync async) {
+      h.session.wake('Okay Nabu');
+      async.flushMicrotasks();
+      h.mic.speak(1, preRoll: true);
+      async.elapse(const Duration(milliseconds: 900));
+      h.session.onEvent(VaEvent.sttStart, {});
+      h.mic.speak(2);
+      async.flushMicrotasks();
+    }
+
+    test('gets the whole turn, pre-roll included, and ends with it', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        listening(h, async);
+        final turn = h.match!.turns.single;
+        expect(turn.fed, 2);
+        expect(h.speakers, [null]);
+        turn.onEvent({'type': 'speaker', 'name': 'Ana', 'score': 0.8});
+        expect(h.speakers.last?['name'], 'Ana');
+        h.session.onEvent(VaEvent.sttEnd, {'text': 'hi'});
+        h.session.onEvent(VaEvent.runEnd, {});
+        async.flushMicrotasks();
+        expect(turn.ended, isTrue);
+      });
+    });
+
+    test('the speaker stopping ends the audio and keeps the turn', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        listening(h, async);
+        h.match!.turns.single.onEvent({'type': 'end_of_speech', 'reason': 'silence'});
+        async.flushMicrotasks();
+        expect(h.link.audioEnds, 1);
+        expect(h.mic.closes, 1);
+        expect(h.link.requests.where((r) => !r.$1), isEmpty);
+        expect(h.session.busy, isTrue);
+      });
+    });
+
+    test('another voice ends the audio only with the switch on', () {
+      fakeAsync((async) {
+        final off = _Harness(
+          match: _Match(),
+          options: const VoiceSessionOptions(matchEndOnOtherVoice: false),
+        );
+        listening(off, async);
+        off.match!.turns.single.onEvent({'type': 'end_of_speech', 'reason': 'other_voice'});
+        async.flushMicrotasks();
+        expect(off.link.audioEnds, 0);
+
+        final on = _Harness(match: _Match());
+        listening(on, async);
+        on.match!.turns.single.onEvent({'type': 'end_of_speech', 'reason': 'other_voice'});
+        async.flushMicrotasks();
+        expect(on.link.audioEnds, 1);
+      });
+    });
+
+    test('a voice that is not enrolled ends the turn, quietly or with a chime', () {
+      fakeAsync((async) {
+        final quiet = _Harness(match: _Match());
+        listening(quiet, async);
+        quiet.match!.turns.single.onEvent({'type': 'rejected', 'score': 0.2});
+        async.flushMicrotasks();
+        expect(quiet.link.requests.last, (false, ''));
+        expect(quiet.session.busy, isFalse);
+        expect(quiet.player.chimes, ['wake']);
+        expect(quiet.match!.turns.single.ended, isTrue);
+
+        final loud = _Harness(
+          match: _Match(),
+          options: const VoiceSessionOptions(matchRejectChime: true),
+        );
+        listening(loud, async);
+        loud.match!.turns.single.onEvent({'type': 'rejected', 'score': 0.2});
+        async.flushMicrotasks();
+        expect(loud.player.chimes, ['wake', 'error']);
+      });
+    });
+
+    test('events from a turn that is over are ignored', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        listening(h, async);
+        final first = h.match!.turns.single;
+        h.session.onEvent(VaEvent.sttEnd, {'text': 'hi'});
+        h.session.onEvent(VaEvent.runEnd, {});
+        async.flushMicrotasks();
+        first.onEvent({'type': 'end_of_speech', 'reason': 'silence'});
+        async.flushMicrotasks();
+        expect(h.link.audioEnds, 0);
+      });
     });
   });
 }

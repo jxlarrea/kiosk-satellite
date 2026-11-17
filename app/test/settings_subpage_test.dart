@@ -22,6 +22,42 @@ void main() {
     await settings.init();
   }
 
+  test('the Voice Match settings are on their page, right after Realtime', () {
+    final vm = [
+      for (final d in defs.allSettings)
+        if (d.key.startsWith('voice_match.')) d,
+    ];
+    expect(vm.map((d) => d.key), [
+      'voice_match.enabled',
+      'voice_match.address',
+      'voice_match.policy',
+      'voice_match.rejected',
+      'voice_match.end_on_other_voice',
+      'voice_match.speaker_sensor',
+    ]);
+    for (final d in vm) {
+      expect(d.category, 'Voice Satellite', reason: d.key);
+      expect(d.subpage, 'Voice Match', reason: d.key);
+    }
+    // The switch follows Voice Satellite, the rest follow the switch (or
+    // the policy, for what happens to a voice that is not enrolled).
+    expect(defs.voiceMatchEnabled.dependsOn, 'voice.enabled');
+    expect(defs.voiceMatchRejected.dependsOn, 'voice_match.policy');
+    expect(defs.voiceMatchRejected.dependsOnValue, 'enrolled');
+    for (final d in vm.where((d) => d != defs.voiceMatchEnabled && d != defs.voiceMatchRejected)) {
+      expect(d.dependsOn, 'voice_match.enabled', reason: d.key);
+    }
+    // Entry rows follow allSettings: Voice Match comes after Realtime.
+    final pages = <String>[];
+    for (final d in defs.allSettings) {
+      if (d.category == 'Voice Satellite' && d.subpage != null && !pages.contains(d.subpage)) {
+        pages.add(d.subpage!);
+      }
+    }
+    expect(pages.indexOf('Voice Match'), pages.indexOf('Realtime') + 1);
+    expect(defs.subpageHints['Voice Match'], isNotEmpty);
+  });
+
   test('the timer settings are on the Timers page, the sound included', () {
     final timers = [
       for (final d in defs.allSettings)

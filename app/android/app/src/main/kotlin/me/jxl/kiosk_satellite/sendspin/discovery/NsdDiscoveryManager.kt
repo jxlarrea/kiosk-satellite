@@ -23,7 +23,9 @@ import java.util.concurrent.Executors
  */
 class NsdDiscoveryManager(
     private val context: Context,
-    private val listener: DiscoveryListener
+    private val listener: DiscoveryListener,
+    // The mDNS type to browse. Sendspin's by default; Voice Match browses its own.
+    private val serviceType: String = SERVICE_TYPE
 ) {
     companion object {
         private const val TAG = "NsdDiscoveryManager"
@@ -170,10 +172,10 @@ class NsdDiscoveryManager(
         }
 
         // Start discovery
-        Log.d(TAG, "Starting NSD discovery for $SERVICE_TYPE")
+        Log.d(TAG, "Starting NSD discovery for $serviceType")
         try {
             nsdManager?.discoverServices(
-                SERVICE_TYPE,
+                serviceType,
                 NsdManager.PROTOCOL_DNS_SD,
                 discoveryListener
             )

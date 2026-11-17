@@ -77,6 +77,7 @@ import 'media_picker.dart';
 import 'theme.dart';
 import 'toast.dart';
 import 'voice_settings.dart';
+import 'voice_match_settings.dart';
 import 'mic_level_meter.dart';
 import 'settings_search.dart';
 import 'subpage_icons.dart';
@@ -3414,6 +3415,8 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// Extra widgets rendered directly under a setting: notices, validate
   /// rows, live telemetry. Keyed and forwarded the same way.
   Map<String, Widget> _rowExtras(AppContainer container) => {
+    // Voice Match: whether the service was found and who is enrolled.
+    voiceMatchEnabled.key: VoiceMatchStatusRow(container: container),
     if (widget.category == 'Sendspin')
       sendspinDuckPercent.key: AlbumArtCacheRow(container: container),
     // Under the key's copy box: paste one from another kiosk or make a
@@ -4719,6 +4722,7 @@ extension on _CategoryContentState {
           'Wake Word',
           'Assistant',
           'Realtime',
+          'Voice Match',
           'Appearance',
           'Conversation',
           'Chimes',

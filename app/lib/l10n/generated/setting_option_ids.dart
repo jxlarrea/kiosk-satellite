@@ -550,6 +550,14 @@ const settingOptionMessageIds = <String, Map<String, String>>{
   "nav.compass_animation": {
     "zoom": "navigationZoom",
     "slide": "navigationSlide"
+  },
+  "voice_match.policy": {
+    "anyone": "voiceMatchOptionAnyone",
+    "enrolled": "voiceMatchOptionEnrolled"
+  },
+  "voice_match.rejected": {
+    "quiet": "voiceMatchOptionQuiet",
+    "chime": "voiceMatchOptionChime"
   }
 };
 const settingPlaceholderMessageIds = <String, String>{

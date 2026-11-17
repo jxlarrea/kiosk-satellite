@@ -30,9 +30,30 @@ abstract class VoiceLinkPort {
 
   Future<bool> audio(Uint8List pcm);
 
+  /// The end of the command's audio (VoiceAssistantAudio end=true): Home
+  /// Assistant closes the audio stream and speech to text finishes. A
+  /// VoiceAssistantRequest with start=false aborts the run instead.
+  Future<bool> audioEnd();
+
   /// An announcement or spoken answer finished playing: the satellite goes
   /// back to idle in Home Assistant.
   Future<bool> finished();
+}
+
+/// Kiosk Satellite Voice Match, for one turn at a time.
+abstract class VoiceMatchPort {
+  /// A session for a new turn, or null when Voice Match is off or not
+  /// connected. [onEvent] gets the service's events (speaker, other_voice,
+  /// end_of_speech, rejected, stats) as maps with a `type`.
+  VoiceMatchTurnPort? begin(void Function(Map<String, Object?> event) onEvent);
+}
+
+abstract class VoiceMatchTurnPort {
+  /// A chunk of the turn's microphone audio, pre-roll included.
+  void feed(Uint8List pcm);
+
+  /// The turn is over.
+  void end();
 }
 
 /// The microphone: the wake word engine's capture, pre-roll first.
@@ -78,6 +99,8 @@ class VoiceSessionOptions {
     this.announcementLingerSeconds = 5,
     this.stopWord = false,
     this.remoteSpeech = false,
+    this.matchEndOnOtherVoice = true,
+    this.matchRejectChime = false,
   });
 
   final bool seamless;
@@ -92,6 +115,13 @@ class VoiceSessionOptions {
   /// The answers play on another speaker: nothing here to take the bar's
   /// level from, so it does not follow one.
   final bool remoteSpeech;
+
+  /// Voice Match: end the turn when someone else (the TV) takes over.
+  final bool matchEndOnOtherVoice;
+
+  /// Voice Match: a voice that is not enrolled, on a kiosk that answers
+  /// enrolled voices only, gets the error chime rather than silence.
+  final bool matchRejectChime;
 }
 
 /// An announcement from Home Assistant (assist_satellite.announce,
@@ -144,8 +174,18 @@ class VoiceSession {
     this.onIntentEnd,
     this.onIdle,
     this.onTrace,
+    this.voiceMatch,
+    this.onSpeaker,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now;
+
+  /// Kiosk Satellite Voice Match, when it is on.
+  final VoiceMatchPort? voiceMatch;
+
+  /// Who is talking (a speaker event), or null when a turn starts and
+  /// nobody is known yet.
+  final void Function(Map<String, Object?>? speaker)? onSpeaker;
+  VoiceMatchTurnPort? _match;
 
   final VoiceLinkPort link;
   final VoiceMicPort mic;
@@ -282,7 +322,14 @@ class VoiceSession {
     required bool chime,
     required bool keepPreRoll,
   }) async {
-    final opened = await mic.open((pcm, preRoll) => _onChunk(gen, pcm));
+    _endMatch();
+    onSpeaker?.call(null);
+    final match = voiceMatch?.begin((e) => _onMatch(gen, e));
+    _match = match;
+    final opened = await mic.open((pcm, preRoll) {
+      match?.feed(pcm);
+      _onChunk(gen, pcm);
+    });
     if (gen != _gen) {
       if (opened) await mic.close();
       return;
@@ -889,6 +936,43 @@ class VoiceSession {
     await _finish(gen, sound: 'error');
   }
 
+  void _endMatch() {
+    _match?.end();
+    _match = null;
+  }
+
+  /// Voice Match's events for the turn of [gen].
+  Future<void> _onMatch(int gen, Map<String, Object?> e) async {
+    if (gen != _gen) return;
+    switch (e['type']) {
+      case 'speaker':
+        onTrace?.call('voice match: ${e['name'] ?? 'unknown voice'} (${e['score']})');
+        onSpeaker?.call(e);
+      case 'end_of_speech':
+        final reason = e['reason'];
+        if (reason == 'other_voice' && !options().matchEndOnOtherVoice) return;
+        if (reason == 'rejected') return;
+        onTrace?.call('voice match: speech ended ($reason)');
+        await endAudio();
+      case 'rejected':
+        onTrace?.call('voice match: not an enrolled voice');
+        _kept = false;
+        final g = ++_gen;
+        await _abandon();
+        await _finish(g, sound: options().matchRejectChime ? 'error' : null);
+    }
+  }
+
+  /// End the command's audio from the kiosk side and keep the turn: Home
+  /// Assistant closes the audio stream and speech to text finishes.
+  Future<bool> endAudio() async {
+    if (!_runActive || _phase != _Phase.listening) return false;
+    onTrace?.call('audio ended by the kiosk');
+    await _closeMic();
+    unawaited(link.audioEnd());
+    return true;
+  }
+
   Future<void> cancel() async {
     if (!busy) return;
     onTrace?.call('turn cancelled');
@@ -902,6 +986,7 @@ class VoiceSession {
   /// already advanced the generation.
   Future<void> _abandon() async {
     final speaking = _phase == _Phase.speaking || _phase == _Phase.announcing;
+    _endMatch();
     if (_runActive) {
       _runActive = false;
       unawaited(link.request(start: false));
@@ -930,6 +1015,7 @@ class VoiceSession {
     if (gen != _gen) return;
     _cancelWatchdog();
     _runActive = false;
+    _endMatch();
     await _closeMic();
     if (gen != _gen) return;
     final opts = options();

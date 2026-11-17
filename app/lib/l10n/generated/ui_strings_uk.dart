@@ -15690,6 +15690,89 @@ class UiStringsUk extends UiStrings {
       'Заставка не запускається, поки вигляд таймерів показує активний таймер.';
 
   @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint => 'Хто говорить, інші голоси, реєстрація голосу';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => 'Увімкнути Voice Match';
+
+  @override
+  String get settingVoiceMatchEnabledDescription =>
+      'Розпізнавати, хто говорить, і припиняти слухати, коли говорить хтось інший.';
+
+  @override
+  String get settingVoiceMatchAddressTitle => 'Адреса';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      'Залиште порожнім, щоб знайти Voice Match у мережі. Введіть адресу для Voice Match в іншій мережі.';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => 'Відповідати';
+
+  @override
+  String get settingVoiceMatchPolicyDescription =>
+      '«Лише зареєстровані голоси» ігнорує телевізор і гостей.';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => 'Голос не зареєстровано';
+
+  @override
+  String get settingVoiceMatchRejectedDescription =>
+      'Що відбувається, коли слово активації каже хтось інший.';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle =>
+      'Завершувати, коли говорить хтось інший';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      'Припиняє слухати на останньому слові, коли телевізор або інша людина продовжує говорити.';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => 'Датчик мовця';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      'Додає цьому кіоску датчик Speaker у Home Assistant для автоматизацій та інструкцій агента.';
+
+  @override
+  String get voiceMatchOptionAnyone => 'Будь-кому';
+
+  @override
+  String get voiceMatchOptionEnrolled => 'Лише зареєстровані голоси';
+
+  @override
+  String get voiceMatchOptionQuiet => 'Мовчати';
+
+  @override
+  String get voiceMatchOptionChime => 'Відтворити звук помилки';
+
+  @override
+  String get voiceMatchConnecting => 'Підключення';
+
+  @override
+  String get voiceMatchSearching => 'Пошук';
+
+  @override
+  String get voiceMatchNotReachable => 'Недоступно';
+
+  @override
+  String get voiceMatchSignInRefused => 'Вхід відхилено';
+
+  @override
+  String get voiceMatchNobodyEnrolled => 'Ще ніхто не зареєстрований.';
+
+  @override
+  String get voiceMatchLooking => 'Пошук Voice Match у мережі.';
+
+  @override
+  String get voiceMatchTokenRefused =>
+      'Home Assistant відхилив токен цього кіоску.';
+
+  @override
   String get voiceWakePage => 'Слово активації';
 
   @override

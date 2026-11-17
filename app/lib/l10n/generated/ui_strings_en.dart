@@ -15528,6 +15528,89 @@ class UiStringsEn extends UiStrings {
       'Keep the screensaver from starting while the Timers view shows a running timer.';
 
   @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint => 'Who is talking, other voices, enrollment';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => 'Enable Voice Match';
+
+  @override
+  String get settingVoiceMatchEnabledDescription =>
+      'Recognize who is talking and stop listening when someone else takes over.';
+
+  @override
+  String get settingVoiceMatchAddressTitle => 'Address';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      'Leave empty to find Voice Match on the network. Enter one for Voice Match on another network.';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => 'Answer';
+
+  @override
+  String get settingVoiceMatchPolicyDescription =>
+      'Enrolled voices only ignores the TV and guests.';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => 'Voice not enrolled';
+
+  @override
+  String get settingVoiceMatchRejectedDescription =>
+      'What happens when someone else says the wake word.';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle =>
+      'End when someone else talks';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      'Stops listening at the last word when the TV or another person keeps talking.';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => 'Speaker sensor';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      'Adds a Speaker sensor to this kiosk in Home Assistant, for automations and agent instructions.';
+
+  @override
+  String get voiceMatchOptionAnyone => 'Anyone';
+
+  @override
+  String get voiceMatchOptionEnrolled => 'Enrolled voices only';
+
+  @override
+  String get voiceMatchOptionQuiet => 'Stay quiet';
+
+  @override
+  String get voiceMatchOptionChime => 'Play the error chime';
+
+  @override
+  String get voiceMatchConnecting => 'Connecting';
+
+  @override
+  String get voiceMatchSearching => 'Searching';
+
+  @override
+  String get voiceMatchNotReachable => 'Not reachable';
+
+  @override
+  String get voiceMatchSignInRefused => 'Sign-in refused';
+
+  @override
+  String get voiceMatchNobodyEnrolled => 'Nobody is enrolled yet.';
+
+  @override
+  String get voiceMatchLooking => 'Looking for Voice Match on the network.';
+
+  @override
+  String get voiceMatchTokenRefused =>
+      'Home Assistant refused this kiosk\'s token.';
+
+  @override
   String get voiceWakePage => 'Wake Word';
 
   @override

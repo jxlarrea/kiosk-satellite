@@ -277,6 +277,7 @@ const Map<String, String> subpageHints = {
   // Native Voice Satellite's own pages.
   'Assistant': 'Pipelines, follow-ups',
   'Realtime': 'OpenAI, xAI Grok, Gemini, tools, talk over answers',
+  'Voice Match': 'Who is talking, other voices, enrollment',
   'Conversation': 'What the overlay shows and for how long',
   // Its entry row sits under the tester, not with the three pages above.
   'Wake word diagnostics':
@@ -8099,6 +8100,99 @@ const voiceRealtimeMcpToken = SettingDef<String>(
   dependsOnValue: 'custom',
 );
 
+// Voice Match: Kiosk Satellite Voice Match, a Home Assistant app or Docker
+// container, tells who is talking and when someone else (a TV) starts, so a
+// turn ends at the speaker's last word. The kiosk signs in with its Home
+// Assistant token and finds the service by mDNS unless an address is set.
+
+const voiceMatchEnabled = SettingDef<bool>(
+  key: 'voice_match.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable Voice Match',
+  description:
+      'Recognize who is talking and stop listening when someone else takes '
+      'over.',
+  category: 'Voice Satellite',
+  subpage: 'Voice Match',
+  dependsOn: 'voice.enabled',
+);
+
+const voiceMatchAddress = SettingDef<String>(
+  key: 'voice_match.address',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Address',
+  description:
+      'Leave empty to find Voice Match on the network. Enter one for Voice '
+      'Match on another network.',
+  category: 'Voice Satellite',
+  subpage: 'Voice Match',
+  section: 'Connection',
+  placeholder: '192.168.1.10:10900',
+  dependsOn: 'voice_match.enabled',
+);
+
+/// Who this kiosk answers: anyone, or only voices enrolled in Voice Match.
+const voiceMatchPolicy = SettingDef<String>(
+  key: 'voice_match.policy',
+  type: SettingType.select,
+  defaultValue: 'anyone',
+  title: 'Answer',
+  description: 'Enrolled voices only ignores the TV and guests.',
+  category: 'Voice Satellite',
+  subpage: 'Voice Match',
+  section: 'Listening',
+  options: ['anyone', 'enrolled'],
+  optionLabels: {'anyone': 'Anyone', 'enrolled': 'Enrolled voices only'},
+  dependsOn: 'voice_match.enabled',
+);
+
+const voiceMatchRejected = SettingDef<String>(
+  key: 'voice_match.rejected',
+  type: SettingType.select,
+  defaultValue: 'quiet',
+  title: 'Voice not enrolled',
+  description: 'What happens when someone else says the wake word.',
+  category: 'Voice Satellite',
+  subpage: 'Voice Match',
+  section: 'Listening',
+  options: ['quiet', 'chime'],
+  optionLabels: {'quiet': 'Stay quiet', 'chime': 'Play the error chime'},
+  dependsOn: 'voice_match.policy',
+  dependsOnValue: 'enrolled',
+);
+
+const voiceMatchEndOnOtherVoice = SettingDef<bool>(
+  key: 'voice_match.end_on_other_voice',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'End when someone else talks',
+  description:
+      'Stops listening at the last word when the TV or another person keeps '
+      'talking.',
+  category: 'Voice Satellite',
+  subpage: 'Voice Match',
+  section: 'Listening',
+  dependsOn: 'voice_match.enabled',
+);
+
+/// A Speaker text sensor on this kiosk's ESPHome device, for automations
+/// and LLM agents (they read it with GetLiveContext on each turn).
+const voiceMatchSpeakerSensor = SettingDef<bool>(
+  key: 'voice_match.speaker_sensor',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Speaker sensor',
+  description:
+      'Adds a Speaker sensor to this kiosk in Home Assistant, for automations '
+      'and agent instructions.',
+  category: 'Voice Satellite',
+  subpage: 'Voice Match',
+  section: 'Speaker',
+  dependsOn: 'voice_match.enabled',
+);
+
 /// The mirrored selects by the key the kiosk's device gives each one.
 const voiceHaSelectSettings = <String, SettingDef<String>>{
   'pipeline': voiceHaPipeline,
@@ -14826,6 +14920,12 @@ const List<SettingDef<Object>> allSettings = [
   voiceRealtimeTools,
   voiceRealtimeMcpUrl,
   voiceRealtimeMcpToken,
+  voiceMatchEnabled,
+  voiceMatchAddress,
+  voiceMatchPolicy,
+  voiceMatchRejected,
+  voiceMatchEndOnOtherVoice,
+  voiceMatchSpeakerSensor,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,
   voiceNoiseGate,

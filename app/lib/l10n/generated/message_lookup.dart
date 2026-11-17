@@ -5357,6 +5357,40 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingTimersPauseScreensaverTitle,
       'settingTimersPauseScreensaverDescription' =>
         strings.settingTimersPauseScreensaverDescription,
+      'voiceMatch' => strings.voiceMatch,
+      'voiceMatchHint' => strings.voiceMatchHint,
+      'settingVoiceMatchEnabledTitle' => strings.settingVoiceMatchEnabledTitle,
+      'settingVoiceMatchEnabledDescription' =>
+        strings.settingVoiceMatchEnabledDescription,
+      'settingVoiceMatchAddressTitle' => strings.settingVoiceMatchAddressTitle,
+      'settingVoiceMatchAddressDescription' =>
+        strings.settingVoiceMatchAddressDescription,
+      'settingVoiceMatchPolicyTitle' => strings.settingVoiceMatchPolicyTitle,
+      'settingVoiceMatchPolicyDescription' =>
+        strings.settingVoiceMatchPolicyDescription,
+      'settingVoiceMatchRejectedTitle' =>
+        strings.settingVoiceMatchRejectedTitle,
+      'settingVoiceMatchRejectedDescription' =>
+        strings.settingVoiceMatchRejectedDescription,
+      'settingVoiceMatchEndOnOtherVoiceTitle' =>
+        strings.settingVoiceMatchEndOnOtherVoiceTitle,
+      'settingVoiceMatchEndOnOtherVoiceDescription' =>
+        strings.settingVoiceMatchEndOnOtherVoiceDescription,
+      'settingVoiceMatchSpeakerSensorTitle' =>
+        strings.settingVoiceMatchSpeakerSensorTitle,
+      'settingVoiceMatchSpeakerSensorDescription' =>
+        strings.settingVoiceMatchSpeakerSensorDescription,
+      'voiceMatchOptionAnyone' => strings.voiceMatchOptionAnyone,
+      'voiceMatchOptionEnrolled' => strings.voiceMatchOptionEnrolled,
+      'voiceMatchOptionQuiet' => strings.voiceMatchOptionQuiet,
+      'voiceMatchOptionChime' => strings.voiceMatchOptionChime,
+      'voiceMatchConnecting' => strings.voiceMatchConnecting,
+      'voiceMatchSearching' => strings.voiceMatchSearching,
+      'voiceMatchNotReachable' => strings.voiceMatchNotReachable,
+      'voiceMatchSignInRefused' => strings.voiceMatchSignInRefused,
+      'voiceMatchNobodyEnrolled' => strings.voiceMatchNobodyEnrolled,
+      'voiceMatchLooking' => strings.voiceMatchLooking,
+      'voiceMatchTokenRefused' => strings.voiceMatchTokenRefused,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,

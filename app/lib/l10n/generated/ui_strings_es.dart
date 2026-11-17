@@ -15831,6 +15831,89 @@ class UiStringsEs extends UiStrings {
       'Evita que el protector de pantalla se inicie mientras la vista de temporizadores muestra un temporizador en marcha.';
 
   @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint => 'Quién habla, otras voces, registro de voz';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => 'Activar Voice Match';
+
+  @override
+  String get settingVoiceMatchEnabledDescription =>
+      'Reconoce quién habla y deja de escuchar cuando otra persona toma la palabra.';
+
+  @override
+  String get settingVoiceMatchAddressTitle => 'Dirección';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      'Déjala vacía para encontrar Voice Match en la red. Escribe una para un Voice Match en otra red.';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => 'Responder a';
+
+  @override
+  String get settingVoiceMatchPolicyDescription =>
+      'Solo voces registradas ignora la TV y a las visitas.';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => 'Voz no registrada';
+
+  @override
+  String get settingVoiceMatchRejectedDescription =>
+      'Qué pasa cuando otra persona dice la palabra de activación.';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle =>
+      'Terminar cuando habla otra persona';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      'Deja de escuchar en la última palabra cuando la TV u otra persona sigue hablando.';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => 'Sensor de hablante';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      'Añade a este kiosko un sensor Speaker en Home Assistant, para automatizaciones e instrucciones de agentes.';
+
+  @override
+  String get voiceMatchOptionAnyone => 'Cualquiera';
+
+  @override
+  String get voiceMatchOptionEnrolled => 'Solo voces registradas';
+
+  @override
+  String get voiceMatchOptionQuiet => 'Quedarse en silencio';
+
+  @override
+  String get voiceMatchOptionChime => 'Reproducir el sonido de error';
+
+  @override
+  String get voiceMatchConnecting => 'Conectando';
+
+  @override
+  String get voiceMatchSearching => 'Buscando';
+
+  @override
+  String get voiceMatchNotReachable => 'No disponible';
+
+  @override
+  String get voiceMatchSignInRefused => 'Acceso rechazado';
+
+  @override
+  String get voiceMatchNobodyEnrolled => 'Todavía no hay nadie registrado.';
+
+  @override
+  String get voiceMatchLooking => 'Buscando Voice Match en la red.';
+
+  @override
+  String get voiceMatchTokenRefused =>
+      'Home Assistant rechazó el token de este kiosko.';
+
+  @override
   String get voiceWakePage => 'Palabra de activación';
 
   @override

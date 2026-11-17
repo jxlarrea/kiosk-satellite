@@ -2764,4 +2764,28 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingTimersPauseScreensaverTitle",
     "description": "settingTimersPauseScreensaverDescription",
   },
+  "voice_match.enabled": {
+    "title": "settingVoiceMatchEnabledTitle",
+    "description": "settingVoiceMatchEnabledDescription",
+  },
+  "voice_match.address": {
+    "title": "settingVoiceMatchAddressTitle",
+    "description": "settingVoiceMatchAddressDescription",
+  },
+  "voice_match.policy": {
+    "title": "settingVoiceMatchPolicyTitle",
+    "description": "settingVoiceMatchPolicyDescription",
+  },
+  "voice_match.rejected": {
+    "title": "settingVoiceMatchRejectedTitle",
+    "description": "settingVoiceMatchRejectedDescription",
+  },
+  "voice_match.end_on_other_voice": {
+    "title": "settingVoiceMatchEndOnOtherVoiceTitle",
+    "description": "settingVoiceMatchEndOnOtherVoiceDescription",
+  },
+  "voice_match.speaker_sensor": {
+    "title": "settingVoiceMatchSpeakerSensorTitle",
+    "description": "settingVoiceMatchSpeakerSensorDescription",
+  },
 };

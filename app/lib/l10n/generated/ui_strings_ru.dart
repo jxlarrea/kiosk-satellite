@@ -15627,6 +15627,89 @@ class UiStringsRu extends UiStrings {
       'Заставка не запускается, пока вид таймеров показывает идущий таймер.';
 
   @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint => 'Кто говорит, другие голоса, запись голоса';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => 'Включить Voice Match';
+
+  @override
+  String get settingVoiceMatchEnabledDescription =>
+      'Распознавать, кто говорит, и прекращать слушать, когда вступает кто-то другой.';
+
+  @override
+  String get settingVoiceMatchAddressTitle => 'Адрес';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      'Оставьте пустым, чтобы найти Voice Match в сети. Укажите адрес, если Voice Match в другой сети.';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => 'Отвечать';
+
+  @override
+  String get settingVoiceMatchPolicyDescription =>
+      '«Только записанные голоса» игнорирует телевизор и гостей.';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => 'Голос не записан';
+
+  @override
+  String get settingVoiceMatchRejectedDescription =>
+      'Что происходит, когда слово пробуждения говорит кто-то другой.';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle =>
+      'Завершать, когда говорит кто-то другой';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      'Прекращает слушать на последнем слове, когда телевизор или другой человек продолжает говорить.';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => 'Датчик говорящего';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      'Добавляет этому киоску датчик Speaker в Home Assistant для автоматизаций и инструкций агента.';
+
+  @override
+  String get voiceMatchOptionAnyone => 'Всем';
+
+  @override
+  String get voiceMatchOptionEnrolled => 'Только записанные голоса';
+
+  @override
+  String get voiceMatchOptionQuiet => 'Молчать';
+
+  @override
+  String get voiceMatchOptionChime => 'Воспроизвести звук ошибки';
+
+  @override
+  String get voiceMatchConnecting => 'Подключение';
+
+  @override
+  String get voiceMatchSearching => 'Поиск';
+
+  @override
+  String get voiceMatchNotReachable => 'Недоступно';
+
+  @override
+  String get voiceMatchSignInRefused => 'Вход отклонён';
+
+  @override
+  String get voiceMatchNobodyEnrolled => 'Пока никто не записан.';
+
+  @override
+  String get voiceMatchLooking => 'Поиск Voice Match в сети.';
+
+  @override
+  String get voiceMatchTokenRefused =>
+      'Home Assistant отклонил токен этого киоска.';
+
+  @override
   String get voiceWakePage => 'Слово пробуждения';
 
   @override

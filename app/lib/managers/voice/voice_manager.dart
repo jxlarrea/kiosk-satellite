@@ -31,6 +31,7 @@ import 'realtime/realtime_player.dart';
 import 'realtime/realtime_session.dart';
 import 'realtime/realtime_tools.dart';
 import 'remote_speaker.dart';
+import 'voice_match_client.dart';
 import 'voice_notice.dart';
 import 'voice_session.dart';
 import 'wake_catalog.dart';
@@ -330,7 +331,13 @@ class VoiceManager extends Manager {
         .toInt(),
     stopWord: _settings.get(defs.voiceStopWord) && _wakeWord.stopWordAvailable,
     remoteSpeech: _settings.get(defs.voiceTtsOutput).trim().isNotEmpty,
+    matchEndOnOtherVoice: _settings.get(defs.voiceMatchEndOnOtherVoice),
+    matchRejectChime: _settings.get(defs.voiceMatchRejected) == 'chime',
   );
+
+  /// Kiosk Satellite Voice Match's address while it is connected, from
+  /// VoiceMatchManager.
+  String? _voiceMatchUrl;
 
   @override
   Future<void> init() async {
@@ -356,6 +363,11 @@ class VoiceManager extends Manager {
       onIntentEnd: (conversation) => unawaited(_readChatLog(conversation)),
       onTrace: _trace,
       onIdle: _resumeWake,
+      voiceMatch: _VoiceMatch(this),
+      onSpeaker: (e) => bus.publish(VoiceSpeakerChanged('${e?['name'] ?? ''}')),
+    );
+    _subs.add(
+      bus.on<VoiceMatchServiceChanged>().listen((e) => _voiceMatchUrl = e.baseUrl),
     );
     _realtime = RealtimeSession(
       backend: _realtimeBackend,
@@ -4026,6 +4038,9 @@ class _EspLink implements VoiceLinkPort {
   }
 
   @override
+  Future<bool> audioEnd() => _esphome.voiceAudio(Uint8List(0), end: true);
+
+  @override
   Future<bool> finished() => _esphome.voiceAnnounceFinished();
 }
 
@@ -4096,4 +4111,41 @@ String realtimeLocationLine({required String name, required String area}) {
     "The device is in the $area area. When the user doesn't name an area, "
         'use this one.',
   ].join(' ');
+}
+
+
+/// Voice Match sessions for the Assist turns, in live mode: the kiosk's own
+/// audio keeps going to Home Assistant and a copy goes to the service.
+class _VoiceMatch implements VoiceMatchPort {
+  _VoiceMatch(this._voice);
+  final VoiceManager _voice;
+
+  @override
+  VoiceMatchTurnPort? begin(void Function(Map<String, Object?> event) onEvent) {
+    final url = _voice._voiceMatchUrl;
+    final s = _voice._settings;
+    if (url == null || !s.get(defs.voiceMatchEnabled)) return null;
+    final name = s.get(defs.deviceName).trim();
+    final turn = VoiceMatchTurn.open(
+      baseUrl: url,
+      token: s.get(defs.haToken),
+      deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), name),
+      deviceName: name,
+      policy: s.get(defs.voiceMatchPolicy),
+      onEvent: onEvent,
+      log: (line) => _voice.log.info(_voice.name, line),
+    );
+    return _Turn(turn);
+  }
+}
+
+class _Turn implements VoiceMatchTurnPort {
+  _Turn(this._turn);
+  final VoiceMatchTurn _turn;
+
+  @override
+  void feed(Uint8List pcm) => _turn.feed(pcm);
+
+  @override
+  void end() => _turn.end();
 }

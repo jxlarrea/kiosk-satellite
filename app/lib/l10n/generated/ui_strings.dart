@@ -27107,6 +27107,156 @@ abstract class UiStrings {
   /// **'Keep the screensaver from starting while the Timers view shows a running timer.'**
   String get settingTimersPauseScreensaverDescription;
 
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Match'**
+  String get voiceMatch;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Who is talking, other voices, enrollment'**
+  String get voiceMatchHint;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Voice Match'**
+  String get settingVoiceMatchEnabledTitle;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize who is talking and stop listening when someone else takes over.'**
+  String get settingVoiceMatchEnabledDescription;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get settingVoiceMatchAddressTitle;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to find Voice Match on the network. Enter one for Voice Match on another network.'**
+  String get settingVoiceMatchAddressDescription;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer'**
+  String get settingVoiceMatchPolicyTitle;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrolled voices only ignores the TV and guests.'**
+  String get settingVoiceMatchPolicyDescription;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice not enrolled'**
+  String get settingVoiceMatchRejectedTitle;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'What happens when someone else says the wake word.'**
+  String get settingVoiceMatchRejectedDescription;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'End when someone else talks'**
+  String get settingVoiceMatchEndOnOtherVoiceTitle;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops listening at the last word when the TV or another person keeps talking.'**
+  String get settingVoiceMatchEndOnOtherVoiceDescription;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker sensor'**
+  String get settingVoiceMatchSpeakerSensorTitle;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds a Speaker sensor to this kiosk in Home Assistant, for automations and agent instructions.'**
+  String get settingVoiceMatchSpeakerSensorDescription;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone'**
+  String get voiceMatchOptionAnyone;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrolled voices only'**
+  String get voiceMatchOptionEnrolled;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay quiet'**
+  String get voiceMatchOptionQuiet;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Play the error chime'**
+  String get voiceMatchOptionChime;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get voiceMatchConnecting;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching'**
+  String get voiceMatchSearching;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Not reachable'**
+  String get voiceMatchNotReachable;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in refused'**
+  String get voiceMatchSignInRefused;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is enrolled yet.'**
+  String get voiceMatchNobodyEnrolled;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for Voice Match on the network.'**
+  String get voiceMatchLooking;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Assistant refused this kiosk\'s token.'**
+  String get voiceMatchTokenRefused;
+
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///
   /// In en, this message translates to:

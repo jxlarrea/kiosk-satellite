@@ -56798,6 +56798,331 @@
       ]
     }
   },
+  "voiceMatch": "Voice Match",
+  "@voiceMatch": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match"
+      ]
+    }
+  },
+  "voiceMatchHint": "Wer spricht, andere Stimmen, Einlernen",
+  "@voiceMatchHint": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match"
+      ]
+    }
+  },
+  "settingVoiceMatchEnabledTitle": "Voice Match aktivieren",
+  "@settingVoiceMatchEnabledTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Enable Voice Match"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Enable Voice Match"
+      ]
+    }
+  },
+  "settingVoiceMatchEnabledDescription": "Erkennen, wer spricht, und das Zuhören beenden, wenn jemand anderes übernimmt.",
+  "@settingVoiceMatchEnabledDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Enable Voice Match"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Enable Voice Match"
+      ]
+    }
+  },
+  "settingVoiceMatchAddressTitle": "Adresse",
+  "@settingVoiceMatchAddressTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Address"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Address"
+      ]
+    }
+  },
+  "settingVoiceMatchAddressDescription": "Leer lassen, um Voice Match im Netzwerk zu finden. Für Voice Match in einem anderen Netzwerk eine Adresse eingeben.",
+  "@settingVoiceMatchAddressDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Address"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Address"
+      ]
+    }
+  },
+  "settingVoiceMatchPolicyTitle": "Antworten auf",
+  "@settingVoiceMatchPolicyTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Answer"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Answer"
+      ]
+    }
+  },
+  "settingVoiceMatchPolicyDescription": "Nur eingelernte Stimmen ignoriert den Fernseher und Gäste.",
+  "@settingVoiceMatchPolicyDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Answer"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Answer"
+      ]
+    }
+  },
+  "settingVoiceMatchRejectedTitle": "Stimme nicht eingelernt",
+  "@settingVoiceMatchRejectedTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice not enrolled"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice not enrolled"
+      ]
+    }
+  },
+  "settingVoiceMatchRejectedDescription": "Was passiert, wenn jemand anderes das Aktivierungswort sagt.",
+  "@settingVoiceMatchRejectedDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice not enrolled"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice not enrolled"
+      ]
+    }
+  },
+  "settingVoiceMatchEndOnOtherVoiceTitle": "Beenden, wenn jemand anderes spricht",
+  "@settingVoiceMatchEndOnOtherVoiceTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > End when someone else talks"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > End when someone else talks"
+      ]
+    }
+  },
+  "settingVoiceMatchEndOnOtherVoiceDescription": "Beendet das Zuhören beim letzten Wort, wenn der Fernseher oder eine andere Person weiterspricht.",
+  "@settingVoiceMatchEndOnOtherVoiceDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > End when someone else talks"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > End when someone else talks"
+      ]
+    }
+  },
+  "settingVoiceMatchSpeakerSensorTitle": "Sprecher-Sensor",
+  "@settingVoiceMatchSpeakerSensorTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Speaker sensor"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Speaker sensor"
+      ]
+    }
+  },
+  "settingVoiceMatchSpeakerSensorDescription": "Fügt diesem Kiosk in Home Assistant einen Speaker-Sensor hinzu, für Automationen und Agentenanweisungen.",
+  "@settingVoiceMatchSpeakerSensorDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Speaker sensor"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Speaker sensor"
+      ]
+    }
+  },
+  "voiceMatchOptionAnyone": "Alle",
+  "@voiceMatchOptionAnyone": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Answer"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Answer"
+      ]
+    }
+  },
+  "voiceMatchOptionEnrolled": "Nur eingelernte Stimmen",
+  "@voiceMatchOptionEnrolled": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Answer"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Answer"
+      ]
+    }
+  },
+  "voiceMatchOptionQuiet": "Still bleiben",
+  "@voiceMatchOptionQuiet": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice not enrolled"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice not enrolled"
+      ]
+    }
+  },
+  "voiceMatchOptionChime": "Fehlerton abspielen",
+  "@voiceMatchOptionChime": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice not enrolled"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice not enrolled"
+      ]
+    }
+  },
+  "voiceMatchConnecting": "Verbinde",
+  "@voiceMatchConnecting": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match status row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match status row"
+      ]
+    }
+  },
+  "voiceMatchSearching": "Suche läuft",
+  "@voiceMatchSearching": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match status row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match status row"
+      ]
+    }
+  },
+  "voiceMatchNotReachable": "Nicht erreichbar",
+  "@voiceMatchNotReachable": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match status row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match status row"
+      ]
+    }
+  },
+  "voiceMatchSignInRefused": "Anmeldung abgelehnt",
+  "@voiceMatchSignInRefused": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match status row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match status row"
+      ]
+    }
+  },
+  "voiceMatchNobodyEnrolled": "Noch niemand ist eingelernt.",
+  "@voiceMatchNobodyEnrolled": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match status row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match status row"
+      ]
+    }
+  },
+  "voiceMatchLooking": "Voice Match wird im Netzwerk gesucht.",
+  "@voiceMatchLooking": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match status row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match status row"
+      ]
+    }
+  },
+  "voiceMatchTokenRefused": "Home Assistant hat das Token dieses Kiosks abgelehnt.",
+  "@voiceMatchTokenRefused": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match status row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match status row"
+      ]
+    }
+  },
   "voiceWakePage": "Aktivierungswort",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",

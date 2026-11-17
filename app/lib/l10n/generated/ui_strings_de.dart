@@ -15850,6 +15850,89 @@ class UiStringsDe extends UiStrings {
       'Verhindert den Start des Bildschirmschoners, solange die Timer-Ansicht einen laufenden Timer zeigt.';
 
   @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint => 'Wer spricht, andere Stimmen, Einlernen';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => 'Voice Match aktivieren';
+
+  @override
+  String get settingVoiceMatchEnabledDescription =>
+      'Erkennen, wer spricht, und das Zuhören beenden, wenn jemand anderes übernimmt.';
+
+  @override
+  String get settingVoiceMatchAddressTitle => 'Adresse';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      'Leer lassen, um Voice Match im Netzwerk zu finden. Für Voice Match in einem anderen Netzwerk eine Adresse eingeben.';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => 'Antworten auf';
+
+  @override
+  String get settingVoiceMatchPolicyDescription =>
+      'Nur eingelernte Stimmen ignoriert den Fernseher und Gäste.';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => 'Stimme nicht eingelernt';
+
+  @override
+  String get settingVoiceMatchRejectedDescription =>
+      'Was passiert, wenn jemand anderes das Aktivierungswort sagt.';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle =>
+      'Beenden, wenn jemand anderes spricht';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      'Beendet das Zuhören beim letzten Wort, wenn der Fernseher oder eine andere Person weiterspricht.';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => 'Sprecher-Sensor';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      'Fügt diesem Kiosk in Home Assistant einen Speaker-Sensor hinzu, für Automationen und Agentenanweisungen.';
+
+  @override
+  String get voiceMatchOptionAnyone => 'Alle';
+
+  @override
+  String get voiceMatchOptionEnrolled => 'Nur eingelernte Stimmen';
+
+  @override
+  String get voiceMatchOptionQuiet => 'Still bleiben';
+
+  @override
+  String get voiceMatchOptionChime => 'Fehlerton abspielen';
+
+  @override
+  String get voiceMatchConnecting => 'Verbinde';
+
+  @override
+  String get voiceMatchSearching => 'Suche läuft';
+
+  @override
+  String get voiceMatchNotReachable => 'Nicht erreichbar';
+
+  @override
+  String get voiceMatchSignInRefused => 'Anmeldung abgelehnt';
+
+  @override
+  String get voiceMatchNobodyEnrolled => 'Noch niemand ist eingelernt.';
+
+  @override
+  String get voiceMatchLooking => 'Voice Match wird im Netzwerk gesucht.';
+
+  @override
+  String get voiceMatchTokenRefused =>
+      'Home Assistant hat das Token dieses Kiosks abgelehnt.';
+
+  @override
   String get voiceWakePage => 'Aktivierungswort';
 
   @override

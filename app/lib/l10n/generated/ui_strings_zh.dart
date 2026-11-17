@@ -14719,6 +14719,84 @@ class UiStringsZh extends UiStrings {
       '计时器视图显示运行中的计时器时，不启动屏保。';
 
   @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint => '谁在说话、其他声音、声纹录入';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => '启用 Voice Match';
+
+  @override
+  String get settingVoiceMatchEnabledDescription => '识别谁在说话，并在其他人接话时停止聆听。';
+
+  @override
+  String get settingVoiceMatchAddressTitle => '地址';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      '留空则在网络中查找 Voice Match。Voice Match 在其他网络时请填写地址。';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => '回应';
+
+  @override
+  String get settingVoiceMatchPolicyDescription => '“仅限已录入的声音”会忽略电视和访客。';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => '未录入的声音';
+
+  @override
+  String get settingVoiceMatchRejectedDescription => '其他人说出唤醒词时的处理方式。';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle => '他人说话时结束';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      '电视或其他人继续说话时，在最后一个词处停止聆听。';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => '说话人传感器';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      '在 Home Assistant 中为此 Kiosk 添加 Speaker 传感器，用于自动化和代理指令。';
+
+  @override
+  String get voiceMatchOptionAnyone => '任何人';
+
+  @override
+  String get voiceMatchOptionEnrolled => '仅限已录入的声音';
+
+  @override
+  String get voiceMatchOptionQuiet => '保持安静';
+
+  @override
+  String get voiceMatchOptionChime => '播放错误提示音';
+
+  @override
+  String get voiceMatchConnecting => '正在连接';
+
+  @override
+  String get voiceMatchSearching => '正在搜索';
+
+  @override
+  String get voiceMatchNotReachable => '无法访问';
+
+  @override
+  String get voiceMatchSignInRefused => '登录被拒绝';
+
+  @override
+  String get voiceMatchNobodyEnrolled => '尚未录入任何人。';
+
+  @override
+  String get voiceMatchLooking => '正在网络中查找 Voice Match。';
+
+  @override
+  String get voiceMatchTokenRefused => 'Home Assistant 拒绝了此 Kiosk 的令牌。';
+
+  @override
   String get voiceWakePage => '唤醒词';
 
   @override
@@ -30601,6 +30679,84 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingTimersPauseScreensaverDescription =>
       '计时器视图显示运行中的计时器时，不启动屏保。';
+
+  @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint => '谁在说话、其他声音、声纹录入';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => '启用 Voice Match';
+
+  @override
+  String get settingVoiceMatchEnabledDescription => '识别谁在说话，并在其他人接话时停止聆听。';
+
+  @override
+  String get settingVoiceMatchAddressTitle => '地址';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      '留空则在网络中查找 Voice Match。Voice Match 在其他网络时请填写地址。';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => '回应';
+
+  @override
+  String get settingVoiceMatchPolicyDescription => '“仅限已录入的声音”会忽略电视和访客。';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => '未录入的声音';
+
+  @override
+  String get settingVoiceMatchRejectedDescription => '其他人说出唤醒词时的处理方式。';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle => '他人说话时结束';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      '电视或其他人继续说话时，在最后一个词处停止聆听。';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => '说话人传感器';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      '在 Home Assistant 中为此 Kiosk 添加 Speaker 传感器，用于自动化和代理指令。';
+
+  @override
+  String get voiceMatchOptionAnyone => '任何人';
+
+  @override
+  String get voiceMatchOptionEnrolled => '仅限已录入的声音';
+
+  @override
+  String get voiceMatchOptionQuiet => '保持安静';
+
+  @override
+  String get voiceMatchOptionChime => '播放错误提示音';
+
+  @override
+  String get voiceMatchConnecting => '正在连接';
+
+  @override
+  String get voiceMatchSearching => '正在搜索';
+
+  @override
+  String get voiceMatchNotReachable => '无法访问';
+
+  @override
+  String get voiceMatchSignInRefused => '登录被拒绝';
+
+  @override
+  String get voiceMatchNobodyEnrolled => '尚未录入任何人。';
+
+  @override
+  String get voiceMatchLooking => '正在网络中查找 Voice Match。';
+
+  @override
+  String get voiceMatchTokenRefused => 'Home Assistant 拒绝了此 Kiosk 的令牌。';
 
   @override
   String get voiceWakePage => '唤醒词';

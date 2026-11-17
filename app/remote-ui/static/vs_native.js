@@ -32,7 +32,7 @@ const WAKE_ROWS = [
   ['wake_word', 'Wake word 1', 'The word that starts a voice command.'],
   ['wake_word_2', 'Wake word 2', 'A second wake word, answered by Assistant 2.'],
 ];
-const PAGES = ['Wake Word', 'Assistant', 'Realtime', 'Appearance', 'Conversation', 'Chimes'];
+const PAGES = ['Wake Word', 'Assistant', 'Realtime', 'Voice Match', 'Appearance', 'Conversation', 'Chimes'];
 
 
 function voiceRow(name, desc, value = '') {
@@ -49,6 +49,36 @@ function statusWord(row, text, color) {
   const span = row.lastElementChild;
   span.textContent = text;
   span.style.cssText = `white-space:nowrap; font-weight:500; color:${color}`;
+}
+
+/* Voice Match's status row under its switch, as on the device
+   (voice_match_settings.dart): found or not, signed in or not, and who is
+   enrolled. */
+async function paintVoiceMatch(panel) {
+  const gen = (panel._vmGen || 0) + 1;
+  panel._vmGen = gen;
+  const enabledRow = panel.querySelector('[data-key="voice_match.enabled"]');
+  let status = {};
+  try {
+    const r = await cmd('voiceMatchStatus', {});
+    if (r.ok) status = r.data || {};
+  } catch (_) {}
+  if (panel._vmGen !== gen) return;
+  panel.querySelectorAll('.vm-status').forEach((r) => r.remove());
+  if (!enabledRow || status.enabled !== true) return;
+  const names = (status.people || []).map((p) => `${p.name || ''}`).filter(Boolean);
+  const states = {
+    connected: ['Connected', 'var(--primary)', names.length ? names.join(', ') : voiceText('Nobody is enrolled yet.')],
+    connecting: ['Connecting', 'var(--muted)', status.baseUrl || ''],
+    unreachable: ['Not reachable', 'var(--warn)', status.baseUrl || ''],
+    refused: ['Sign-in refused', 'var(--warn)', voiceText("Home Assistant refused this kiosk's token.")],
+  };
+  const [word, color, detail] = states[status.status]
+    || ['Searching', 'var(--muted)', voiceText('Looking for Voice Match on the network.')];
+  const row = readOnlyRow(voiceText('Voice Match'), detail, '', false);
+  statusWord(row, voiceText(word), color);
+  row.classList.add('vm-status');
+  enabledRow.after(row);
 }
 
 /* The status and Home Assistant rows under the switch, read from the
@@ -587,6 +617,13 @@ export async function renderNativeVs(root, byKey) {
     const realtimePanel = panel('Realtime');
     if (realtimePanel) {
       for (const provider of Object.keys(REALTIME_PROVIDERS)) realtimeProviderRow(realtimePanel, provider);
+    }
+    const matchPanel = panel('Voice Match');
+    if (matchPanel) {
+      paintVoiceMatch(matchPanel);
+      if (!matchPanel._vmWatch) {
+        matchPanel._vmWatch = watchUpdates(['voice-match'], () => paintVoiceMatch(matchPanel), { owner: matchPanel });
+      }
     }
     const ttsRow = assistant?.querySelector('[data-key="voice.tts_output"]');
     if (ttsRow) ttsOutputRow(ttsRow, byKey['voice.tts_output']?.value || '');

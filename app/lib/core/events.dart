@@ -543,6 +543,21 @@ class VoiceInteractionChanged extends AppEvent {
 /// Native Voice Satellite moved between Home Assistant's assist_satellite
 /// states: idle, listening, processing or responding. Covers Assist turns
 /// and realtime conversations alike.
+/// Kiosk Satellite Voice Match became reachable, moved or went away.
+/// [baseUrl] is its http(s) address (no trailing slash), null when there
+/// is none to use: Voice Match off, not found, or the kiosk's token refused.
+class VoiceMatchServiceChanged extends AppEvent {
+  const VoiceMatchServiceChanged(this.baseUrl);
+  final String? baseUrl;
+}
+
+/// Who is talking on this kiosk, for the Speaker sensor. Empty when nobody
+/// is identified (a new turn, an unknown voice).
+class VoiceSpeakerChanged extends AppEvent {
+  const VoiceSpeakerChanged(this.name);
+  final String name;
+}
+
 class VoiceSatelliteStateChanged extends AppEvent {
   const VoiceSatelliteStateChanged(this.state, {this.announcement = false});
   final String state;

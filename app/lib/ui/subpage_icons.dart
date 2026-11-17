@@ -34,6 +34,7 @@ const Map<String, Object> subpageIcons = {
   'Appearance': Icons.brush_outlined,
   'Assistant': Icons.forum_outlined,
   'Realtime': Icons.graphic_eq_rounded,
+  'Voice Match': Icons.record_voice_over_outlined,
   'Conversation': Icons.chat_bubble_outline,
   'Wake word diagnostics': Icons.troubleshoot_outlined,
   // Screen & Audio.

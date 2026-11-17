@@ -177,6 +177,12 @@ class EspEntitySurface {
   /// start moment genuinely moved (a 5-second tolerance:
   /// second-to-second jitter in "now minus uptime" is not a restart).
   final Map<String, DateTime?> _lastAnchor = {};
+  String _speaker = '';
+
+  bool get _speakerSensor =>
+      _voiceNative &&
+      _settings.get(defs.voiceMatchEnabled) &&
+      _settings.get(defs.voiceMatchSpeakerSensor);
 
   /// The Last interaction sensor's stamp (issue #241). Persisted like the
   /// last lux reading: with no broker to retain it, the store is what keeps
@@ -732,6 +738,15 @@ class EspEntitySurface {
           'name': 'Voice Satellite',
           'icon': 'mdi:account-voice',
         },
+        // Who is talking, from Kiosk Satellite Voice Match: empty when
+        // nobody is identified. LLM agents read it with GetLiveContext.
+        if (_speakerSensor)
+          {
+            'type': 'text_sensor',
+            'objectId': 'speaker',
+            'name': 'Speaker',
+            'icon': 'mdi:account-voice',
+          },
         // The timers on the kiosk, running or paused, and when the next
         // running one ends. ESPHome has no attributes, so the list itself
         // is the vs_list_timers action's answer.
@@ -2174,6 +2189,12 @@ class EspEntitySurface {
       }),
     );
     _subs.add(
+      bus.on<VoiceSpeakerChanged>().listen((e) {
+        _speaker = e.name;
+        if (_speakerSensor) _send('speaker', e.name);
+      }),
+    );
+    _subs.add(
       bus.on<VoiceTimersChanged>().listen((e) {
         if (_voiceNative) unawaited(_sendTimers(e.timers));
       }),
@@ -2800,6 +2821,7 @@ class EspEntitySurface {
           ? (voice.data as Map)['state']
           : null;
       await _send('voice_satellite_state', '${state ?? 'idle'}');
+      if (_speakerSensor) await _send('speaker', _speaker);
       final timers = await commands.execute('voiceTimers', const {});
       await _sendTimers([
         if (timers.ok && timers.data is Map)

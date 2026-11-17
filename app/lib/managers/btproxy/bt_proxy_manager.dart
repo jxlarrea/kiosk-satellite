@@ -349,6 +349,10 @@ class BtProxyManager extends Manager {
       'voice.runtime',
       'voice.enabled',
       'voice.wake_word_engine',
+      // The Speaker sensor exists only while Voice Match and its Speaker
+      // sensor switch are on.
+      'voice_match.enabled',
+      'voice_match.speaker_sensor',
     };
     // The remote admin server's settings, which decide the web page port
     // reported to Home Assistant (the device page's Visit link).

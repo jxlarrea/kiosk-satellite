@@ -15824,6 +15824,90 @@ class UiStringsFr extends UiStrings {
       'Empêche l\'économiseur d\'écran de démarrer tant que la vue des minuteurs affiche un minuteur en cours.';
 
   @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint =>
+      'Qui parle, autres voix, enregistrement de la voix';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => 'Activer Voice Match';
+
+  @override
+  String get settingVoiceMatchEnabledDescription =>
+      'Reconnaître qui parle et arrêter l\'écoute quand quelqu\'un d\'autre prend la parole.';
+
+  @override
+  String get settingVoiceMatchAddressTitle => 'Adresse';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      'Laissez vide pour trouver Voice Match sur le réseau. Saisissez-en une pour un Voice Match sur un autre réseau.';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => 'Répondre à';
+
+  @override
+  String get settingVoiceMatchPolicyDescription =>
+      'Voix enregistrées uniquement ignore la télé et les invités.';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => 'Voix non enregistrée';
+
+  @override
+  String get settingVoiceMatchRejectedDescription =>
+      'Ce qui se passe quand quelqu\'un d\'autre dit le mot de réveil.';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle =>
+      'Arrêter quand quelqu\'un d\'autre parle';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      'Arrête l\'écoute au dernier mot quand la télé ou une autre personne continue de parler.';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => 'Capteur de locuteur';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      'Ajoute à ce kiosque un capteur Speaker dans Home Assistant, pour les automatisations et les instructions d\'agent.';
+
+  @override
+  String get voiceMatchOptionAnyone => 'Tout le monde';
+
+  @override
+  String get voiceMatchOptionEnrolled => 'Voix enregistrées uniquement';
+
+  @override
+  String get voiceMatchOptionQuiet => 'Rester silencieux';
+
+  @override
+  String get voiceMatchOptionChime => 'Jouer le son d\'erreur';
+
+  @override
+  String get voiceMatchConnecting => 'Connexion';
+
+  @override
+  String get voiceMatchSearching => 'Recherche';
+
+  @override
+  String get voiceMatchNotReachable => 'Injoignable';
+
+  @override
+  String get voiceMatchSignInRefused => 'Connexion refusée';
+
+  @override
+  String get voiceMatchNobodyEnrolled => 'Personne n\'est encore enregistré.';
+
+  @override
+  String get voiceMatchLooking => 'Recherche de Voice Match sur le réseau.';
+
+  @override
+  String get voiceMatchTokenRefused =>
+      'Home Assistant a refusé le jeton de ce kiosque.';
+
+  @override
   String get voiceWakePage => 'Mot de réveil';
 
   @override

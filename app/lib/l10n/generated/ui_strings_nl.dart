@@ -15708,6 +15708,89 @@ class UiStringsNl extends UiStrings {
       'Voorkomt dat de schermbeveiliging start terwijl de timerweergave een lopende timer toont.';
 
   @override
+  String get voiceMatch => 'Voice Match';
+
+  @override
+  String get voiceMatchHint => 'Wie er praat, andere stemmen, inschrijven';
+
+  @override
+  String get settingVoiceMatchEnabledTitle => 'Voice Match inschakelen';
+
+  @override
+  String get settingVoiceMatchEnabledDescription =>
+      'Herken wie er praat en stop met luisteren als iemand anders het overneemt.';
+
+  @override
+  String get settingVoiceMatchAddressTitle => 'Adres';
+
+  @override
+  String get settingVoiceMatchAddressDescription =>
+      'Laat leeg om Voice Match op het netwerk te vinden. Vul er een in voor Voice Match op een ander netwerk.';
+
+  @override
+  String get settingVoiceMatchPolicyTitle => 'Antwoorden op';
+
+  @override
+  String get settingVoiceMatchPolicyDescription =>
+      'Alleen ingeschreven stemmen negeert de tv en gasten.';
+
+  @override
+  String get settingVoiceMatchRejectedTitle => 'Stem niet ingeschreven';
+
+  @override
+  String get settingVoiceMatchRejectedDescription =>
+      'Wat er gebeurt als iemand anders het wekwoord zegt.';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceTitle =>
+      'Stoppen als iemand anders praat';
+
+  @override
+  String get settingVoiceMatchEndOnOtherVoiceDescription =>
+      'Stopt met luisteren bij het laatste woord als de tv of iemand anders blijft praten.';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorTitle => 'Sprekersensor';
+
+  @override
+  String get settingVoiceMatchSpeakerSensorDescription =>
+      'Voegt aan deze kiosk een Speaker-sensor toe in Home Assistant, voor automatiseringen en agentinstructies.';
+
+  @override
+  String get voiceMatchOptionAnyone => 'Iedereen';
+
+  @override
+  String get voiceMatchOptionEnrolled => 'Alleen ingeschreven stemmen';
+
+  @override
+  String get voiceMatchOptionQuiet => 'Stil blijven';
+
+  @override
+  String get voiceMatchOptionChime => 'Foutgeluid afspelen';
+
+  @override
+  String get voiceMatchConnecting => 'Verbinden';
+
+  @override
+  String get voiceMatchSearching => 'Zoeken';
+
+  @override
+  String get voiceMatchNotReachable => 'Niet bereikbaar';
+
+  @override
+  String get voiceMatchSignInRefused => 'Aanmelding geweigerd';
+
+  @override
+  String get voiceMatchNobodyEnrolled => 'Nog niemand is ingeschreven.';
+
+  @override
+  String get voiceMatchLooking => 'Voice Match wordt gezocht op het netwerk.';
+
+  @override
+  String get voiceMatchTokenRefused =>
+      'Home Assistant heeft het token van deze kiosk geweigerd.';
+
+  @override
   String get voiceWakePage => 'Wekwoorden';
 
   @override
