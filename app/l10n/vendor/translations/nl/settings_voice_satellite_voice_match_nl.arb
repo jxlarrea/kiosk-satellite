@@ -1,16 +1,12 @@
 {
   "@@locale": "nl",
-  "voiceMatch": "Voice Match",
   "voiceMatchHint": "Wie er praat, andere stemmen, inschrijven",
   "settingVoiceMatchEnabledTitle": "Voice Match inschakelen",
   "settingVoiceMatchPolicyTitle": "Antwoorden op",
-  "settingVoiceMatchPolicyDescription": "Alleen ingeschreven stemmen negeert de tv en gasten.",
-  "settingVoiceMatchRejectedTitle": "Stem niet ingeschreven",
   "settingVoiceMatchRejectedDescription": "Wat er gebeurt als iemand anders het wekwoord zegt.",
   "settingVoiceMatchSpeakerSensorTitle": "Sprekersensor",
   "settingVoiceMatchSpeakerSensorDescription": "Voegt aan deze kiosk een Speaker-sensor toe in Home Assistant, voor automatiseringen en agentinstructies.",
   "voiceMatchOptionAnyone": "Iedereen",
-  "voiceMatchOptionEnrolled": "Alleen ingeschreven stemmen",
   "voiceMatchOptionQuiet": "Stil blijven",
   "voiceMatchOptionChime": "Foutgeluid afspelen",
   "voiceMatchConnecting": "Verbinden",
@@ -27,5 +23,15 @@
   "settingVoiceMatchEnabledDescriptionGroundControl": "Herken wie er praat en stop met luisteren als iemand anders het overneemt. Vereist Ground Control.",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Laat de Ground Control app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang.",
   "settingVoiceMatchLeaveOutTitle": "Andere stemmen weglaten",
-  "settingVoiceMatchLeaveOutDescription": "Home Assistant en de realtime assistent horen alleen de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten, ook met de tv aan."
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant en de realtime assistent horen alleen de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten, ook met de tv aan.",
+  "voiceMatchGroundControlPage": "Ground Control Voice Match",
+  "settingVoiceMatchPolicyDescriptionChosen": "Met Gekozen personen worden de tv, gasten en alle anderen genegeerd.",
+  "voiceMatchOptionPeople": "Gekozen personen",
+  "settingVoiceMatchPeopleTitle": "Personen",
+  "settingVoiceMatchPeopleDescription": "Wie deze kiosk antwoordt. Als niemand gekozen is, antwoordt hij iedereen die is ingeschreven.",
+  "voiceMatchPeopleNone": "Iedereen die is ingeschreven",
+  "voiceMatchPeopleSearch": "Personen zoeken",
+  "voiceMatchPeopleEmpty": "Er is nog niemand ingeschreven in Ground Control.",
+  "voiceMatchPeopleGone": "Niet meer in Ground Control",
+  "settingVoiceMatchRejectedTitleChosen": "Stem niet gekozen"
 }

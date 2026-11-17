@@ -12,7 +12,7 @@ Ground Control is off by default.
 2. Turn on **Enable Ground Control**. Kiosks on the same network find it on their own. For Ground Control on another network, enter its address, such as `192.168.1.10:10900`.
 3. The kiosk signs in with the Home Assistant token it already has. The status row under the switch shows **Connected** and the people enrolled.
 4. Tap **Open** on the **Ground Control app** row to add people and enroll them. As a Home Assistant app, it opens the app's page in Home Assistant. A Docker container opens its own web page.
-5. Turn on the features you want, such as **Enable Voice Match** under **Settings > Voice Satellite > Voice Match**.
+5. Turn on the features you want, such as **Enable Voice Match** under **Settings > Voice Satellite > Ground Control Voice Match**.
 
 ## Settings
 

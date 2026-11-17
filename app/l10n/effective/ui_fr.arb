@@ -56904,16 +56904,133 @@
       ]
     }
   },
-  "voiceMatch": "Voice Match",
-  "@voiceMatch": {
-    "context": "Settings > Voice Satellite > Voice Match",
+  "voiceMatchGroundControlPage": "Ground Control Voice Match",
+  "@voiceMatchGroundControlPage": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
     "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match"
+        "Settings > Voice Satellite > Ground Control Voice Match"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match"
+        "Voice Satellite > Ground Control Voice Match"
+      ]
+    }
+  },
+  "settingVoiceMatchPolicyDescriptionChosen": "Avec Personnes choisies, la télé, les invités et tous les autres sont ignorés.",
+  "@settingVoiceMatchPolicyDescriptionChosen": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Answer"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Answer"
+      ]
+    }
+  },
+  "voiceMatchOptionPeople": "Personnes choisies",
+  "@voiceMatchOptionPeople": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Answer"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Answer"
+      ]
+    }
+  },
+  "settingVoiceMatchPeopleTitle": "Personnes",
+  "@settingVoiceMatchPeopleTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "settingVoiceMatchPeopleDescription": "À qui ce kiosque répond. Si personne n'est choisi, il répond à toute personne enregistrée.",
+  "@settingVoiceMatchPeopleDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "voiceMatchPeopleNone": "Toute personne enregistrée",
+  "@voiceMatchPeopleNone": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "voiceMatchPeopleSearch": "Rechercher des personnes",
+  "@voiceMatchPeopleSearch": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "voiceMatchPeopleEmpty": "Personne n'est encore enregistré dans Ground Control.",
+  "@voiceMatchPeopleEmpty": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "voiceMatchPeopleGone": "N'est plus dans Ground Control",
+  "@voiceMatchPeopleGone": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "settingVoiceMatchRejectedTitleChosen": "Voix non choisie",
+  "@settingVoiceMatchRejectedTitleChosen": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Voice not chosen"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Voice not chosen"
       ]
     }
   },
@@ -56953,32 +57070,6 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Voice Match > Answer"
-      ]
-    }
-  },
-  "settingVoiceMatchPolicyDescription": "Voix enregistrées uniquement ignore la télé et les invités.",
-  "@settingVoiceMatchPolicyDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Answer"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Answer"
-      ]
-    }
-  },
-  "settingVoiceMatchRejectedTitle": "Voix non enregistrée",
-  "@settingVoiceMatchRejectedTitle": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Voice not enrolled"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Voice not enrolled"
       ]
     }
   },
@@ -57023,19 +57114,6 @@
   },
   "voiceMatchOptionAnyone": "Tout le monde",
   "@voiceMatchOptionAnyone": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Answer"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Answer"
-      ]
-    }
-  },
-  "voiceMatchOptionEnrolled": "Voix enregistrées uniquement",
-  "@voiceMatchOptionEnrolled": {
     "context": "Settings > Voice Satellite > Voice Match",
     "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
     "x-locations": {

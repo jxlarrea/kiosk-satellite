@@ -14745,7 +14745,36 @@ class UiStringsZh extends UiStrings {
       '计时器视图显示运行中的计时器时，不启动屏保。';
 
   @override
-  String get voiceMatch => 'Voice Match';
+  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
+
+  @override
+  String get settingVoiceMatchPolicyDescriptionChosen =>
+      '选择“指定人员”时，会忽略电视、访客和其他所有人。';
+
+  @override
+  String get voiceMatchOptionPeople => '指定人员';
+
+  @override
+  String get settingVoiceMatchPeopleTitle => '人员';
+
+  @override
+  String get settingVoiceMatchPeopleDescription =>
+      '此信息亭回应的人。如果未选择任何人，则回应所有已录入的人。';
+
+  @override
+  String get voiceMatchPeopleNone => '所有已录入的人';
+
+  @override
+  String get voiceMatchPeopleSearch => '搜索人员';
+
+  @override
+  String get voiceMatchPeopleEmpty => 'Ground Control 中还没有录入任何人。';
+
+  @override
+  String get voiceMatchPeopleGone => '已不在 Ground Control 中';
+
+  @override
+  String get settingVoiceMatchRejectedTitleChosen => '未选择的声音';
 
   @override
   String get voiceMatchHint => '谁在说话、其他声音、声纹录入';
@@ -14755,12 +14784,6 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingVoiceMatchPolicyTitle => '回应';
-
-  @override
-  String get settingVoiceMatchPolicyDescription => '“仅限已录入的声音”会忽略电视和访客。';
-
-  @override
-  String get settingVoiceMatchRejectedTitle => '未录入的声音';
 
   @override
   String get settingVoiceMatchRejectedDescription => '其他人说出唤醒词时的处理方式。';
@@ -14774,9 +14797,6 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get voiceMatchOptionAnyone => '任何人';
-
-  @override
-  String get voiceMatchOptionEnrolled => '仅限已录入的声音';
 
   @override
   String get voiceMatchOptionQuiet => '保持安静';
@@ -30845,7 +30865,36 @@ class UiStringsZhCn extends UiStringsZh {
       '计时器视图显示运行中的计时器时，不启动屏保。';
 
   @override
-  String get voiceMatch => 'Voice Match';
+  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
+
+  @override
+  String get settingVoiceMatchPolicyDescriptionChosen =>
+      '选择“指定人员”时，会忽略电视、访客和其他所有人。';
+
+  @override
+  String get voiceMatchOptionPeople => '指定人员';
+
+  @override
+  String get settingVoiceMatchPeopleTitle => '人员';
+
+  @override
+  String get settingVoiceMatchPeopleDescription =>
+      '此信息亭回应的人。如果未选择任何人，则回应所有已录入的人。';
+
+  @override
+  String get voiceMatchPeopleNone => '所有已录入的人';
+
+  @override
+  String get voiceMatchPeopleSearch => '搜索人员';
+
+  @override
+  String get voiceMatchPeopleEmpty => 'Ground Control 中还没有录入任何人。';
+
+  @override
+  String get voiceMatchPeopleGone => '已不在 Ground Control 中';
+
+  @override
+  String get settingVoiceMatchRejectedTitleChosen => '未选择的声音';
 
   @override
   String get voiceMatchHint => '谁在说话、其他声音、声纹录入';
@@ -30855,12 +30904,6 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingVoiceMatchPolicyTitle => '回应';
-
-  @override
-  String get settingVoiceMatchPolicyDescription => '“仅限已录入的声音”会忽略电视和访客。';
-
-  @override
-  String get settingVoiceMatchRejectedTitle => '未录入的声音';
 
   @override
   String get settingVoiceMatchRejectedDescription => '其他人说出唤醒词时的处理方式。';
@@ -30874,9 +30917,6 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get voiceMatchOptionAnyone => '任何人';
-
-  @override
-  String get voiceMatchOptionEnrolled => '仅限已录入的声音';
 
   @override
   String get voiceMatchOptionQuiet => '保持安静';

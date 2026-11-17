@@ -27158,8 +27158,62 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Voice Match'**
-  String get voiceMatch;
+  /// **'Ground Control Voice Match'**
+  String get voiceMatchGroundControlPage;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Chosen people ignores the TV, guests and everyone else.'**
+  String get settingVoiceMatchPolicyDescriptionChosen;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Chosen people'**
+  String get voiceMatchOptionPeople;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get settingVoiceMatchPeopleTitle;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Who this kiosk answers. With nobody chosen, it answers anyone enrolled.'**
+  String get settingVoiceMatchPeopleDescription;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone enrolled'**
+  String get voiceMatchPeopleNone;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Search people'**
+  String get voiceMatchPeopleSearch;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is enrolled in Ground Control yet.'**
+  String get voiceMatchPeopleEmpty;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer in Ground Control'**
+  String get voiceMatchPeopleGone;
+
+  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice not chosen'**
+  String get settingVoiceMatchRejectedTitleChosen;
 
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
@@ -27178,18 +27232,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Answer'**
   String get settingVoiceMatchPolicyTitle;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Enrolled voices only ignores the TV and guests.'**
-  String get settingVoiceMatchPolicyDescription;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Voice not enrolled'**
-  String get settingVoiceMatchRejectedTitle;
 
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
@@ -27214,12 +27256,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Anyone'**
   String get voiceMatchOptionAnyone;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Enrolled voices only'**
-  String get voiceMatchOptionEnrolled;
 
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///

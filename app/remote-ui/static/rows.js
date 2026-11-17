@@ -49,6 +49,7 @@ import { dashboardField } from './dashboard_picker.js';
 import { drawerItemsText, openDrawerItemsPicker } from './drawer_items.js';
 import { compassLayoutRow, compassStyleRow } from './compass.js';
 import { KIOSK_ICON, openShareWithPicker, shareKiosksSpec, shareWithPicked, shareWithText } from './timers.js';
+import { PERSON_ICON, openPeoplePicker, peopleChosen, peopleText, voiceMatchPeopleSpec } from './ground_control.js';
 import { SEARCH_CATEGORY_TABS, jumpToResult } from './search.js';
 import { updatePlayerRow } from './panels.js';
 import {
@@ -635,6 +636,27 @@ export function settingRow(s) {
       field.setText(toastsShownText(decodeToastsHidden(current())));
     });
     bindUpdate(field.el, () => field.setText(toastsShownText(decodeToastsHidden(current()))));
+    row.classList.add('dp-field-row');
+    row.appendChild(field.el);
+    return row;
+  }
+
+  // People under Answer on the Ground Control Voice Match page, mirroring
+  // the device's row: the chosen people by name in a dropdown-style box that
+  // opens a checkbox dialog over everyone enrolled. A JSON list of {id, name}.
+  if (s.key === 'voice_match.people') {
+    const paint = () => { field.setText(peopleText()); field.setIcon(peopleChosen()); };
+    const field = choiceBox(peopleText(), async () => {
+      const value = await openPeoplePicker(s.title);
+      if (value == null) return;
+      await save(value);
+      paint();
+    }, { iconPath: PERSON_ICON });
+    const spec = voiceMatchPeopleSpec();
+    onListLoaded(spec.key, field.el, paint);
+    loadList(spec);
+    bindUpdate(field.el, paint);
+    paint();
     row.classList.add('dp-field-row');
     row.appendChild(field.el);
     return row;

@@ -1,16 +1,12 @@
 {
   "@@locale": "zh_CN",
-  "voiceMatch": "Voice Match",
   "voiceMatchHint": "谁在说话、其他声音、声纹录入",
   "settingVoiceMatchEnabledTitle": "启用 Voice Match",
   "settingVoiceMatchPolicyTitle": "回应",
-  "settingVoiceMatchPolicyDescription": "“仅限已录入的声音”会忽略电视和访客。",
-  "settingVoiceMatchRejectedTitle": "未录入的声音",
   "settingVoiceMatchRejectedDescription": "其他人说出唤醒词时的处理方式。",
   "settingVoiceMatchSpeakerSensorTitle": "说话人传感器",
   "settingVoiceMatchSpeakerSensorDescription": "在 Home Assistant 中为此 Kiosk 添加 Speaker 传感器，用于自动化和代理指令。",
   "voiceMatchOptionAnyone": "任何人",
-  "voiceMatchOptionEnrolled": "仅限已录入的声音",
   "voiceMatchOptionQuiet": "保持安静",
   "voiceMatchOptionChime": "播放错误提示音",
   "voiceMatchConnecting": "正在连接",
@@ -27,5 +23,15 @@
   "settingVoiceMatchEnabledDescriptionGroundControl": "识别谁在说话，并在其他人接话时停止聆听。需要 Ground Control。",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。",
   "settingVoiceMatchLeaveOutTitle": "排除其他声音",
-  "settingVoiceMatchLeaveOutDescription": "Home Assistant 和实时助手只会听到说出唤醒词的人，并在此人停止说话时结束命令，即使电视开着也是如此。"
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant 和实时助手只会听到说出唤醒词的人，并在此人停止说话时结束命令，即使电视开着也是如此。",
+  "voiceMatchGroundControlPage": "Ground Control Voice Match",
+  "settingVoiceMatchPolicyDescriptionChosen": "选择“指定人员”时，会忽略电视、访客和其他所有人。",
+  "voiceMatchOptionPeople": "指定人员",
+  "settingVoiceMatchPeopleTitle": "人员",
+  "settingVoiceMatchPeopleDescription": "此信息亭回应的人。如果未选择任何人，则回应所有已录入的人。",
+  "voiceMatchPeopleNone": "所有已录入的人",
+  "voiceMatchPeopleSearch": "搜索人员",
+  "voiceMatchPeopleEmpty": "Ground Control 中还没有录入任何人。",
+  "voiceMatchPeopleGone": "已不在 Ground Control 中",
+  "settingVoiceMatchRejectedTitleChosen": "未选择的声音"
 }

@@ -15556,7 +15556,37 @@ class UiStringsEn extends UiStrings {
       'Keep the screensaver from starting while the Timers view shows a running timer.';
 
   @override
-  String get voiceMatch => 'Voice Match';
+  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
+
+  @override
+  String get settingVoiceMatchPolicyDescriptionChosen =>
+      'Chosen people ignores the TV, guests and everyone else.';
+
+  @override
+  String get voiceMatchOptionPeople => 'Chosen people';
+
+  @override
+  String get settingVoiceMatchPeopleTitle => 'People';
+
+  @override
+  String get settingVoiceMatchPeopleDescription =>
+      'Who this kiosk answers. With nobody chosen, it answers anyone enrolled.';
+
+  @override
+  String get voiceMatchPeopleNone => 'Anyone enrolled';
+
+  @override
+  String get voiceMatchPeopleSearch => 'Search people';
+
+  @override
+  String get voiceMatchPeopleEmpty =>
+      'Nobody is enrolled in Ground Control yet.';
+
+  @override
+  String get voiceMatchPeopleGone => 'No longer in Ground Control';
+
+  @override
+  String get settingVoiceMatchRejectedTitleChosen => 'Voice not chosen';
 
   @override
   String get voiceMatchHint => 'Who is talking, other voices, enrollment';
@@ -15566,13 +15596,6 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingVoiceMatchPolicyTitle => 'Answer';
-
-  @override
-  String get settingVoiceMatchPolicyDescription =>
-      'Enrolled voices only ignores the TV and guests.';
-
-  @override
-  String get settingVoiceMatchRejectedTitle => 'Voice not enrolled';
 
   @override
   String get settingVoiceMatchRejectedDescription =>
@@ -15587,9 +15610,6 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get voiceMatchOptionAnyone => 'Anyone';
-
-  @override
-  String get voiceMatchOptionEnrolled => 'Enrolled voices only';
 
   @override
   String get voiceMatchOptionQuiet => 'Stay quiet';

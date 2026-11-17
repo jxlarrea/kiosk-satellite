@@ -4263,17 +4263,27 @@ class _VoiceMatch implements VoiceMatchPort {
       _voice.log.info(
         _voice.name,
         clip == null
-            ? 'voice match: no wake word to follow, the household is'
+            ? 'voice match: no wake word, following who talks'
             : 'voice match: following the wake word '
                   '(${clip.length ~/ 32} ms)',
       );
     }
+    // Chosen people with nobody chosen answers anyone enrolled.
+    final people = [
+      for (final p in defs.decodeVoiceMatchPeople(s.get(defs.voiceMatchPeople)))
+        p.id,
+    ];
+    final chosen = s.get(defs.voiceMatchPolicy) == 'people';
+    final policy = !chosen
+        ? 'anyone'
+        : (people.isEmpty ? 'enrolled' : 'people');
     final turn = VoiceMatchTurn.open(
       baseUrl: url,
       token: s.get(defs.haToken),
       deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), name),
       deviceName: name,
-      policy: s.get(defs.voiceMatchPolicy),
+      policy: policy,
+      people: people,
       onEvent: onEvent,
       log: (line) => _voice.log.info(_voice.name, line),
       follow: follow,

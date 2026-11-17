@@ -15735,7 +15735,37 @@ class UiStringsNl extends UiStrings {
       'Voorkomt dat de schermbeveiliging start terwijl de timerweergave een lopende timer toont.';
 
   @override
-  String get voiceMatch => 'Voice Match';
+  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
+
+  @override
+  String get settingVoiceMatchPolicyDescriptionChosen =>
+      'Met Gekozen personen worden de tv, gasten en alle anderen genegeerd.';
+
+  @override
+  String get voiceMatchOptionPeople => 'Gekozen personen';
+
+  @override
+  String get settingVoiceMatchPeopleTitle => 'Personen';
+
+  @override
+  String get settingVoiceMatchPeopleDescription =>
+      'Wie deze kiosk antwoordt. Als niemand gekozen is, antwoordt hij iedereen die is ingeschreven.';
+
+  @override
+  String get voiceMatchPeopleNone => 'Iedereen die is ingeschreven';
+
+  @override
+  String get voiceMatchPeopleSearch => 'Personen zoeken';
+
+  @override
+  String get voiceMatchPeopleEmpty =>
+      'Er is nog niemand ingeschreven in Ground Control.';
+
+  @override
+  String get voiceMatchPeopleGone => 'Niet meer in Ground Control';
+
+  @override
+  String get settingVoiceMatchRejectedTitleChosen => 'Stem niet gekozen';
 
   @override
   String get voiceMatchHint => 'Wie er praat, andere stemmen, inschrijven';
@@ -15745,13 +15775,6 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingVoiceMatchPolicyTitle => 'Antwoorden op';
-
-  @override
-  String get settingVoiceMatchPolicyDescription =>
-      'Alleen ingeschreven stemmen negeert de tv en gasten.';
-
-  @override
-  String get settingVoiceMatchRejectedTitle => 'Stem niet ingeschreven';
 
   @override
   String get settingVoiceMatchRejectedDescription =>
@@ -15766,9 +15789,6 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get voiceMatchOptionAnyone => 'Iedereen';
-
-  @override
-  String get voiceMatchOptionEnrolled => 'Alleen ingeschreven stemmen';
 
   @override
   String get voiceMatchOptionQuiet => 'Stil blijven';

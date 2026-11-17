@@ -55,6 +55,7 @@ class VoiceMatchTurn {
     required String deviceId,
     required String deviceName,
     required String policy,
+    List<String> people = const [],
     required void Function(Map<String, Object?> event) onEvent,
     void Function(String line)? log,
     bool follow = false,
@@ -76,6 +77,7 @@ class VoiceMatchTurn {
         'device_name': deviceName,
         'mode': follow ? 'follow' : 'live',
         'policy': policy,
+        if (policy == 'people') 'people': people,
         if (follow && anchor != null && anchor.isNotEmpty)
           'anchor': base64Encode(anchor),
       }),

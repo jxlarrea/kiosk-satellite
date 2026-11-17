@@ -318,7 +318,7 @@ const voiceTextMessageIds = <String, String>{
   "Not validated": "voiceRealtimeNotValidated",
   "Connection validated": "voiceRealtimeValidated",
   "Wake, done, error and announcement sounds": "voiceChimesSoundsHint",
-  "Voice Match": "voiceMatch",
+  "Ground Control Voice Match": "voiceMatchGroundControlPage",
   "Who is talking, other voices, enrollment": "voiceMatchHint",
   "Connecting": "voiceMatchConnecting",
   "Searching": "voiceMatchSearching",

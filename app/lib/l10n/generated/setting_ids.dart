@@ -2770,10 +2770,14 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "voice_match.policy": {
     "title": "settingVoiceMatchPolicyTitle",
-    "description": "settingVoiceMatchPolicyDescription",
+    "description": "settingVoiceMatchPolicyDescriptionChosen",
+  },
+  "voice_match.people": {
+    "title": "settingVoiceMatchPeopleTitle",
+    "description": "settingVoiceMatchPeopleDescription",
   },
   "voice_match.rejected": {
-    "title": "settingVoiceMatchRejectedTitle",
+    "title": "settingVoiceMatchRejectedTitleChosen",
     "description": "settingVoiceMatchRejectedDescription",
   },
   "voice_match.end_on_other_voice": {

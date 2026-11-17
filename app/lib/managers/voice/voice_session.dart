@@ -142,8 +142,8 @@ class VoiceSessionOptions {
   /// the command ends with nothing said, as Home Assistant's own wait does.
   final Duration matchNoSpeech;
 
-  /// Voice Match: a voice that is not enrolled, on a kiosk that answers
-  /// enrolled voices only, gets the error chime rather than silence.
+  /// Voice Match: a voice that is not chosen, on a kiosk that answers
+  /// chosen people only, gets the error chime rather than silence.
   final bool matchRejectChime;
 }
 

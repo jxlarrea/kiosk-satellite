@@ -1,6 +1,6 @@
 # Voice Match
 
-Navigate to **Settings > Voice Satellite > Voice Match**.
+Navigate to **Settings > Voice Satellite > Ground Control Voice Match**.
 
 With Voice Match, the kiosk knows who is talking and ends a voice command at the speaker's last word when the TV or another person keeps talking. Without it, a TV in the background can keep the assistant listening for many seconds after the command is over.
 
@@ -44,8 +44,9 @@ If Ground Control goes away mid-conversation, the provider's own speech detectio
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Enable Voice Match | off | Recognizes who is talking and stops listening when someone else takes over. Needs Ground Control. |
-| Answer | Anyone | **Enrolled voices only** ignores the TV and guests: a command from a voice that is not enrolled is dropped. |
-| Voice not enrolled | Stay quiet | With **Enrolled voices only**, what happens when someone else says the wake word: nothing, or the error chime. |
+| Answer | Anyone | **Chosen people** ignores the TV, guests and everyone else: a command from anyone not chosen is dropped. |
+| People | nobody | With **Chosen people**, who this kiosk answers, picked from everyone enrolled in Ground Control. With nobody chosen, it answers anyone enrolled. |
+| Voice not chosen | Stay quiet | With **Chosen people**, what happens when someone else says the wake word: nothing, or the error chime. |
 | Leave other voices out | on | Home Assistant and the realtime assistant hear only the person who said the wake word, and the command ends when they stop. Off, Voice Match only says who is talking. |
 | Speaker sensor | on | Adds a Speaker sensor to this kiosk in Home Assistant. |
 | Show who is talking | on | Puts the speaker's name before the command on the voice overlay, in their color. On a device with a light ring, the listening arc takes the color. |

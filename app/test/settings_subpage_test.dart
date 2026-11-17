@@ -22,43 +22,73 @@ void main() {
     await settings.init();
   }
 
-  test('the Voice Match settings are on their page, right after Realtime', () {
-    final vm = [
-      for (final d in defs.allSettings)
-        if (d.key.startsWith('voice_match.')) d,
-    ];
-    expect(vm.map((d) => d.key), [
-      'voice_match.enabled',
-      'voice_match.policy',
-      'voice_match.rejected',
-      'voice_match.end_on_other_voice',
-      'voice_match.speaker_sensor',
-      'voice_match.show_speaker',
-      'voice_match.allow_enroll',
-    ]);
-    for (final d in vm) {
-      expect(d.category, 'Voice Satellite', reason: d.key);
-      expect(d.subpage, 'Voice Match', reason: d.key);
-    }
-    // The switch follows Voice Satellite and Ground Control, the rest
-    // follow the switch (or the policy, for what happens to a voice that is
-    // not enrolled).
-    expect(defs.voiceMatchEnabled.dependsOn, 'voice.enabled');
-    expect(defs.voiceMatchEnabled.alsoDependsOn, 'ground_control.enabled');
-    expect(defs.voiceMatchRejected.dependsOn, 'voice_match.policy');
-    expect(defs.voiceMatchRejected.dependsOnValue, 'enrolled');
-    for (final d in vm.where((d) => d != defs.voiceMatchEnabled && d != defs.voiceMatchRejected)) {
-      expect(d.dependsOn, 'voice_match.enabled', reason: d.key);
-    }
-    // Entry rows follow allSettings: Voice Match comes after Realtime.
-    final pages = <String>[];
-    for (final d in defs.allSettings) {
-      if (d.category == 'Voice Satellite' && d.subpage != null && !pages.contains(d.subpage)) {
-        pages.add(d.subpage!);
+  test(
+    'the Voice Match settings are on the Ground Control Voice Match page, right after Realtime',
+    () {
+      final vm = [
+        for (final d in defs.allSettings)
+          if (d.key.startsWith('voice_match.')) d,
+      ];
+      expect(vm.map((d) => d.key), [
+        'voice_match.enabled',
+        'voice_match.policy',
+        'voice_match.people',
+        'voice_match.rejected',
+        'voice_match.end_on_other_voice',
+        'voice_match.speaker_sensor',
+        'voice_match.show_speaker',
+        'voice_match.allow_enroll',
+      ]);
+      for (final d in vm) {
+        expect(d.category, 'Voice Satellite', reason: d.key);
+        expect(d.subpage, 'Ground Control Voice Match', reason: d.key);
       }
-    }
-    expect(pages.indexOf('Voice Match'), pages.indexOf('Realtime') + 1);
-    expect(defs.subpageHints['Voice Match'], isNotEmpty);
+      // The switch follows Voice Satellite and Ground Control, the rest
+      // follow the switch (or the policy, for the chosen people and what
+      // happens to a voice that is not chosen).
+      expect(defs.voiceMatchEnabled.dependsOn, 'voice.enabled');
+      expect(defs.voiceMatchEnabled.alsoDependsOn, 'ground_control.enabled');
+      expect(defs.voiceMatchRejected.dependsOn, 'voice_match.policy');
+      expect(defs.voiceMatchRejected.dependsOnValue, 'people');
+      expect(defs.voiceMatchPeople.dependsOn, 'voice_match.policy');
+      expect(defs.voiceMatchPeople.dependsOnValue, 'people');
+      expect(defs.voiceMatchPolicy.options, ['anyone', 'people']);
+      expect(defs.voiceMatchPolicy.defaultValue, 'anyone');
+      final byPolicy = {defs.voiceMatchRejected, defs.voiceMatchPeople};
+      for (final d in vm.where(
+        (d) => d != defs.voiceMatchEnabled && !byPolicy.contains(d),
+      )) {
+        expect(d.dependsOn, 'voice_match.enabled', reason: d.key);
+      }
+      // Entry rows follow allSettings: Voice Match comes after Realtime.
+      final pages = <String>[];
+      for (final d in defs.allSettings) {
+        if (d.category == 'Voice Satellite' &&
+            d.subpage != null &&
+            !pages.contains(d.subpage)) {
+          pages.add(d.subpage!);
+        }
+      }
+      expect(
+        pages.indexOf('Ground Control Voice Match'),
+        pages.indexOf('Realtime') + 1,
+      );
+      expect(defs.subpageHints['Ground Control Voice Match'], isNotEmpty);
+    },
+  );
+
+  test('the chosen people are stored by id and name, each once', () {
+    expect(defs.decodeVoiceMatchPeople('[]'), isEmpty);
+    expect(defs.decodeVoiceMatchPeople('not json'), isEmpty);
+    expect(defs.decodeVoiceMatchPeople('{"id": "a"}'), isEmpty);
+    final picks = defs.decodeVoiceMatchPeople(
+      '[{"id": "a", "name": "Ana"}, {"id": "a", "name": "Ana"}, {"id": "b"}, {"name": "x"}, 3]',
+    );
+    expect(picks, [(id: 'a', name: 'Ana'), (id: 'b', name: '')]);
+    expect(
+      defs.normalizeVoiceMatchPeople('[{"id": "a", "name": "Ana"}, 3]'),
+      '[{"id":"a","name":"Ana"}]',
+    );
   });
 
   test('Ground Control has its own page, with the connection on it', () {
@@ -66,14 +96,20 @@ void main() {
       for (final d in defs.allSettings)
         if (d.key.startsWith('ground_control.')) d,
     ];
-    expect(gc.map((d) => d.key), ['ground_control.enabled', 'ground_control.address']);
+    expect(gc.map((d) => d.key), [
+      'ground_control.enabled',
+      'ground_control.address',
+    ]);
     for (final d in gc) {
       expect(d.category, 'Ground Control', reason: d.key);
       expect(d.subpage, isNull, reason: d.key);
     }
     expect(defs.groundControlAddress.dependsOn, 'ground_control.enabled');
     // Nothing on the Voice Match page still connects to the service.
-    expect(defs.allSettings.where((d) => d.key == 'voice_match.address'), isEmpty);
+    expect(
+      defs.allSettings.where((d) => d.key == 'voice_match.address'),
+      isEmpty,
+    );
   });
 
   test('the timer settings are on the Timers page, the sound included', () {

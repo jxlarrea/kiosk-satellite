@@ -15877,7 +15877,37 @@ class UiStringsDe extends UiStrings {
       'Verhindert den Start des Bildschirmschoners, solange die Timer-Ansicht einen laufenden Timer zeigt.';
 
   @override
-  String get voiceMatch => 'Voice Match';
+  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
+
+  @override
+  String get settingVoiceMatchPolicyDescriptionChosen =>
+      'Mit Ausgewählte Personen werden der Fernseher, Gäste und alle anderen ignoriert.';
+
+  @override
+  String get voiceMatchOptionPeople => 'Ausgewählte Personen';
+
+  @override
+  String get settingVoiceMatchPeopleTitle => 'Personen';
+
+  @override
+  String get settingVoiceMatchPeopleDescription =>
+      'Wem dieser Kiosk antwortet. Ist niemand ausgewählt, antwortet er allen eingelernten Personen.';
+
+  @override
+  String get voiceMatchPeopleNone => 'Alle eingelernten Personen';
+
+  @override
+  String get voiceMatchPeopleSearch => 'Personen suchen';
+
+  @override
+  String get voiceMatchPeopleEmpty =>
+      'In Ground Control ist noch niemand eingelernt.';
+
+  @override
+  String get voiceMatchPeopleGone => 'Nicht mehr in Ground Control';
+
+  @override
+  String get settingVoiceMatchRejectedTitleChosen => 'Stimme nicht ausgewählt';
 
   @override
   String get voiceMatchHint => 'Wer spricht, andere Stimmen, Einlernen';
@@ -15887,13 +15917,6 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingVoiceMatchPolicyTitle => 'Antworten auf';
-
-  @override
-  String get settingVoiceMatchPolicyDescription =>
-      'Nur eingelernte Stimmen ignoriert den Fernseher und Gäste.';
-
-  @override
-  String get settingVoiceMatchRejectedTitle => 'Stimme nicht eingelernt';
 
   @override
   String get settingVoiceMatchRejectedDescription =>
@@ -15908,9 +15931,6 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get voiceMatchOptionAnyone => 'Alle';
-
-  @override
-  String get voiceMatchOptionEnrolled => 'Nur eingelernte Stimmen';
 
   @override
   String get voiceMatchOptionQuiet => 'Still bleiben';

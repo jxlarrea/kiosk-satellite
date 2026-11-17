@@ -15654,7 +15654,37 @@ class UiStringsRu extends UiStrings {
       'Заставка не запускается, пока вид таймеров показывает идущий таймер.';
 
   @override
-  String get voiceMatch => 'Voice Match';
+  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
+
+  @override
+  String get settingVoiceMatchPolicyDescriptionChosen =>
+      'С выбранными людьми киоск игнорирует телевизор, гостей и всех остальных.';
+
+  @override
+  String get voiceMatchOptionPeople => 'Выбранные люди';
+
+  @override
+  String get settingVoiceMatchPeopleTitle => 'Люди';
+
+  @override
+  String get settingVoiceMatchPeopleDescription =>
+      'Кому отвечает этот киоск. Если никто не выбран, он отвечает любому, чей голос записан.';
+
+  @override
+  String get voiceMatchPeopleNone => 'Любой, чей голос записан';
+
+  @override
+  String get voiceMatchPeopleSearch => 'Поиск людей';
+
+  @override
+  String get voiceMatchPeopleEmpty =>
+      'В Ground Control пока ничьих голосов не записано.';
+
+  @override
+  String get voiceMatchPeopleGone => 'Больше нет в Ground Control';
+
+  @override
+  String get settingVoiceMatchRejectedTitleChosen => 'Голос не выбран';
 
   @override
   String get voiceMatchHint => 'Кто говорит, другие голоса, запись голоса';
@@ -15664,13 +15694,6 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingVoiceMatchPolicyTitle => 'Отвечать';
-
-  @override
-  String get settingVoiceMatchPolicyDescription =>
-      '«Только записанные голоса» игнорирует телевизор и гостей.';
-
-  @override
-  String get settingVoiceMatchRejectedTitle => 'Голос не записан';
 
   @override
   String get settingVoiceMatchRejectedDescription =>
@@ -15685,9 +15708,6 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get voiceMatchOptionAnyone => 'Всем';
-
-  @override
-  String get voiceMatchOptionEnrolled => 'Только записанные голоса';
 
   @override
   String get voiceMatchOptionQuiet => 'Молчать';

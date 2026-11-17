@@ -1,16 +1,12 @@
 {
   "@@locale": "de",
-  "voiceMatch": "Voice Match",
   "voiceMatchHint": "Wer spricht, andere Stimmen, Einlernen",
   "settingVoiceMatchEnabledTitle": "Voice Match aktivieren",
   "settingVoiceMatchPolicyTitle": "Antworten auf",
-  "settingVoiceMatchPolicyDescription": "Nur eingelernte Stimmen ignoriert den Fernseher und Gäste.",
-  "settingVoiceMatchRejectedTitle": "Stimme nicht eingelernt",
   "settingVoiceMatchRejectedDescription": "Was passiert, wenn jemand anderes das Aktivierungswort sagt.",
   "settingVoiceMatchSpeakerSensorTitle": "Sprecher-Sensor",
   "settingVoiceMatchSpeakerSensorDescription": "Fügt diesem Kiosk in Home Assistant einen Speaker-Sensor hinzu, für Automationen und Agentenanweisungen.",
   "voiceMatchOptionAnyone": "Alle",
-  "voiceMatchOptionEnrolled": "Nur eingelernte Stimmen",
   "voiceMatchOptionQuiet": "Still bleiben",
   "voiceMatchOptionChime": "Fehlerton abspielen",
   "voiceMatchConnecting": "Verbinde",
@@ -27,5 +23,15 @@
   "settingVoiceMatchEnabledDescriptionGroundControl": "Erkennen, wer spricht, und das Zuhören beenden, wenn jemand anderes übernimmt. Benötigt Ground Control.",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Erlaubt der Ground Control App, die Stimme einer Person mit dem Mikrofon dieses Kiosks aufzunehmen. Der Kiosk zeigt den Text zum Vorlesen oder der Lichtring zeigt den Fortschritt.",
   "settingVoiceMatchLeaveOutTitle": "Andere Stimmen weglassen",
-  "settingVoiceMatchLeaveOutDescription": "Home Assistant und der Echtzeit-Assistent hören nur die Person, die das Aktivierungswort gesagt hat, und der Befehl endet, wenn sie aufhört zu sprechen, auch wenn der Fernseher läuft."
+  "settingVoiceMatchLeaveOutDescription": "Home Assistant und der Echtzeit-Assistent hören nur die Person, die das Aktivierungswort gesagt hat, und der Befehl endet, wenn sie aufhört zu sprechen, auch wenn der Fernseher läuft.",
+  "voiceMatchGroundControlPage": "Ground Control Voice Match",
+  "settingVoiceMatchPolicyDescriptionChosen": "Mit Ausgewählte Personen werden der Fernseher, Gäste und alle anderen ignoriert.",
+  "voiceMatchOptionPeople": "Ausgewählte Personen",
+  "settingVoiceMatchPeopleTitle": "Personen",
+  "settingVoiceMatchPeopleDescription": "Wem dieser Kiosk antwortet. Ist niemand ausgewählt, antwortet er allen eingelernten Personen.",
+  "voiceMatchPeopleNone": "Alle eingelernten Personen",
+  "voiceMatchPeopleSearch": "Personen suchen",
+  "voiceMatchPeopleEmpty": "In Ground Control ist noch niemand eingelernt.",
+  "voiceMatchPeopleGone": "Nicht mehr in Ground Control",
+  "settingVoiceMatchRejectedTitleChosen": "Stimme nicht ausgewählt"
 }

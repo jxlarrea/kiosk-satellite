@@ -15852,7 +15852,37 @@ class UiStringsFr extends UiStrings {
       'Empêche l\'économiseur d\'écran de démarrer tant que la vue des minuteurs affiche un minuteur en cours.';
 
   @override
-  String get voiceMatch => 'Voice Match';
+  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
+
+  @override
+  String get settingVoiceMatchPolicyDescriptionChosen =>
+      'Avec Personnes choisies, la télé, les invités et tous les autres sont ignorés.';
+
+  @override
+  String get voiceMatchOptionPeople => 'Personnes choisies';
+
+  @override
+  String get settingVoiceMatchPeopleTitle => 'Personnes';
+
+  @override
+  String get settingVoiceMatchPeopleDescription =>
+      'À qui ce kiosque répond. Si personne n\'est choisi, il répond à toute personne enregistrée.';
+
+  @override
+  String get voiceMatchPeopleNone => 'Toute personne enregistrée';
+
+  @override
+  String get voiceMatchPeopleSearch => 'Rechercher des personnes';
+
+  @override
+  String get voiceMatchPeopleEmpty =>
+      'Personne n\'est encore enregistré dans Ground Control.';
+
+  @override
+  String get voiceMatchPeopleGone => 'N\'est plus dans Ground Control';
+
+  @override
+  String get settingVoiceMatchRejectedTitleChosen => 'Voix non choisie';
 
   @override
   String get voiceMatchHint =>
@@ -15863,13 +15893,6 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get settingVoiceMatchPolicyTitle => 'Répondre à';
-
-  @override
-  String get settingVoiceMatchPolicyDescription =>
-      'Voix enregistrées uniquement ignore la télé et les invités.';
-
-  @override
-  String get settingVoiceMatchRejectedTitle => 'Voix non enregistrée';
 
   @override
   String get settingVoiceMatchRejectedDescription =>
@@ -15884,9 +15907,6 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get voiceMatchOptionAnyone => 'Tout le monde';
-
-  @override
-  String get voiceMatchOptionEnrolled => 'Voix enregistrées uniquement';
 
   @override
   String get voiceMatchOptionQuiet => 'Rester silencieux';

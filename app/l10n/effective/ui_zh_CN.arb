@@ -56904,16 +56904,133 @@
       ]
     }
   },
-  "voiceMatch": "Voice Match",
-  "@voiceMatch": {
-    "context": "Settings > Voice Satellite > Voice Match",
+  "voiceMatchGroundControlPage": "Ground Control Voice Match",
+  "@voiceMatchGroundControlPage": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
     "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match"
+        "Settings > Voice Satellite > Ground Control Voice Match"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match"
+        "Voice Satellite > Ground Control Voice Match"
+      ]
+    }
+  },
+  "settingVoiceMatchPolicyDescriptionChosen": "选择“指定人员”时，会忽略电视、访客和其他所有人。",
+  "@settingVoiceMatchPolicyDescriptionChosen": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Answer"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Answer"
+      ]
+    }
+  },
+  "voiceMatchOptionPeople": "指定人员",
+  "@voiceMatchOptionPeople": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Answer"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Answer"
+      ]
+    }
+  },
+  "settingVoiceMatchPeopleTitle": "人员",
+  "@settingVoiceMatchPeopleTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "settingVoiceMatchPeopleDescription": "此信息亭回应的人。如果未选择任何人，则回应所有已录入的人。",
+  "@settingVoiceMatchPeopleDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "voiceMatchPeopleNone": "所有已录入的人",
+  "@voiceMatchPeopleNone": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "voiceMatchPeopleSearch": "搜索人员",
+  "@voiceMatchPeopleSearch": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "voiceMatchPeopleEmpty": "Ground Control 中还没有录入任何人。",
+  "@voiceMatchPeopleEmpty": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "voiceMatchPeopleGone": "已不在 Ground Control 中",
+  "@voiceMatchPeopleGone": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    }
+  },
+  "settingVoiceMatchRejectedTitleChosen": "未选择的声音",
+  "@settingVoiceMatchRejectedTitleChosen": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Voice not chosen"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Voice not chosen"
       ]
     }
   },
@@ -56953,32 +57070,6 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Voice Match > Answer"
-      ]
-    }
-  },
-  "settingVoiceMatchPolicyDescription": "“仅限已录入的声音”会忽略电视和访客。",
-  "@settingVoiceMatchPolicyDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Answer"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Answer"
-      ]
-    }
-  },
-  "settingVoiceMatchRejectedTitle": "未录入的声音",
-  "@settingVoiceMatchRejectedTitle": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Voice not enrolled"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Voice not enrolled"
       ]
     }
   },
@@ -57023,19 +57114,6 @@
   },
   "voiceMatchOptionAnyone": "任何人",
   "@voiceMatchOptionAnyone": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Answer"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Answer"
-      ]
-    }
-  },
-  "voiceMatchOptionEnrolled": "仅限已录入的声音",
-  "@voiceMatchOptionEnrolled": {
     "context": "Settings > Voice Satellite > Voice Match",
     "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
     "x-locations": {

@@ -15858,7 +15858,37 @@ class UiStringsEs extends UiStrings {
       'Evita que el protector de pantalla se inicie mientras la vista de temporizadores muestra un temporizador en marcha.';
 
   @override
-  String get voiceMatch => 'Voice Match';
+  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
+
+  @override
+  String get settingVoiceMatchPolicyDescriptionChosen =>
+      'Con Personas elegidas se ignoran la tele, los invitados y todos los demás.';
+
+  @override
+  String get voiceMatchOptionPeople => 'Personas elegidas';
+
+  @override
+  String get settingVoiceMatchPeopleTitle => 'Personas';
+
+  @override
+  String get settingVoiceMatchPeopleDescription =>
+      'A quién responde este kiosco. Si no eliges a nadie, responde a cualquier persona registrada.';
+
+  @override
+  String get voiceMatchPeopleNone => 'Cualquier persona registrada';
+
+  @override
+  String get voiceMatchPeopleSearch => 'Buscar personas';
+
+  @override
+  String get voiceMatchPeopleEmpty =>
+      'Todavía no hay nadie registrado en Ground Control.';
+
+  @override
+  String get voiceMatchPeopleGone => 'Ya no está en Ground Control';
+
+  @override
+  String get settingVoiceMatchRejectedTitleChosen => 'Voz no elegida';
 
   @override
   String get voiceMatchHint => 'Quién habla, otras voces, registro de voz';
@@ -15868,13 +15898,6 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingVoiceMatchPolicyTitle => 'Responder a';
-
-  @override
-  String get settingVoiceMatchPolicyDescription =>
-      'Solo voces registradas ignora la TV y a las visitas.';
-
-  @override
-  String get settingVoiceMatchRejectedTitle => 'Voz no registrada';
 
   @override
   String get settingVoiceMatchRejectedDescription =>
@@ -15889,9 +15912,6 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get voiceMatchOptionAnyone => 'Cualquiera';
-
-  @override
-  String get voiceMatchOptionEnrolled => 'Solo voces registradas';
 
   @override
   String get voiceMatchOptionQuiet => 'Quedarse en silencio';

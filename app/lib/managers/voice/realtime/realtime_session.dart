@@ -55,7 +55,7 @@ class RealtimeOptions {
   /// whatever a TV does (Leave other voices out).
   final bool follow;
 
-  /// With Enrolled voices only: a voice that is not enrolled ends the
+  /// With Chosen people: a voice that is not chosen ends the
   /// conversation with the error chime instead of quietly.
   final bool rejectChime;
 }

@@ -553,7 +553,7 @@ const settingOptionMessageIds = <String, Map<String, String>>{
   },
   "voice_match.policy": {
     "anyone": "voiceMatchOptionAnyone",
-    "enrolled": "voiceMatchOptionEnrolled"
+    "people": "voiceMatchOptionPeople"
   },
   "voice_match.rejected": {
     "quiet": "voiceMatchOptionQuiet",
