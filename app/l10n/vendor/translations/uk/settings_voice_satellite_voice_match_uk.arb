@@ -24,5 +24,12 @@
   "voiceMatchSignInRefused": "Вхід відхилено",
   "voiceMatchNobodyEnrolled": "Ще ніхто не зареєстрований.",
   "voiceMatchLooking": "Пошук Voice Match у мережі.",
-  "voiceMatchTokenRefused": "Home Assistant відхилив токен цього кіоску."
+  "voiceMatchTokenRefused": "Home Assistant відхилив токен цього кіоску.",
+  "settingVoiceMatchShowSpeakerTitle": "Показувати, хто говорить",
+  "settingVoiceMatchShowSpeakerDescription": "Ім'я мовця перед командою на голосовому оверлеї, його кольором. На пристрої зі світловим кільцем дуга прослуховування набуває цього кольору.",
+  "settingVoiceMatchAllowEnrollTitle": "Дозволити реєстрацію тут",
+  "settingVoiceMatchAllowEnrollDescription": "Дозволяє застосунку Voice Match записувати голос людини мікрофоном цього кіоску. Кіоск показує текст для читання, або світлове кільце показує прогрес.",
+  "voiceMatchApp": "Застосунок Voice Match",
+  "voiceMatchAppHint": "Люди, реєстрація голосу, сеанси та налаштування.",
+  "voiceMatchOpen": "Відкрити"
 }

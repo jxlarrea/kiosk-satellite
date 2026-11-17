@@ -714,19 +714,40 @@ void main() {
       async.flushMicrotasks();
     }
 
-    test('gets the whole turn, pre-roll included, and ends with it', () {
+    test('hears what Home Assistant hears and ends with the turn', () {
       fakeAsync((async) {
         final h = _Harness(match: _Match());
         listening(h, async);
         final turn = h.match!.turns.single;
-        expect(turn.fed, 2);
+        // Not the pre-roll and the chime Home Assistant never gets: the
+        // chime's echo would read as speech.
+        expect(turn.fed, h.link.sent.length);
+        expect(turn.fed, 1);
         expect(h.speakers, [null]);
-        turn.onEvent({'type': 'speaker', 'name': 'Ana', 'score': 0.8});
+        turn.onEvent({'type': 'speaker', 'name': 'Ana', 'color': '#56814F', 'score': 0.8});
         expect(h.speakers.last?['name'], 'Ana');
+        // The overlay names her from then on, the command line included.
+        expect(h.views.last.speaker, 'Ana');
+        expect(h.views.last.speakerColor, '#56814F');
         h.session.onEvent(VaEvent.sttEnd, {'text': 'hi'});
+        async.flushMicrotasks();
+        expect(h.views.last.command, 'hi');
+        expect(h.views.last.speaker, 'Ana');
         h.session.onEvent(VaEvent.runEnd, {});
         async.flushMicrotasks();
         expect(turn.ended, isTrue);
+      });
+    });
+
+    test('seamless: the pre-roll goes to Voice Match too', () {
+      fakeAsync((async) {
+        final h = _Harness(
+          match: _Match(),
+          options: const VoiceSessionOptions(seamless: true),
+        );
+        listening(h, async);
+        expect(h.match!.turns.single.fed, h.link.sent.length);
+        expect(h.match!.turns.single.fed, 2);
       });
     });
 

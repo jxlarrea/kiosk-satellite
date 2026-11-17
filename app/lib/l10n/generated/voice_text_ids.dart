@@ -326,5 +326,8 @@ const voiceTextMessageIds = <String, String>{
   "Sign-in refused": "voiceMatchSignInRefused",
   "Nobody is enrolled yet.": "voiceMatchNobodyEnrolled",
   "Looking for Voice Match on the network.": "voiceMatchLooking",
-  "Home Assistant refused this kiosk's token.": "voiceMatchTokenRefused"
+  "Home Assistant refused this kiosk's token.": "voiceMatchTokenRefused",
+  "Voice Match app": "voiceMatchApp",
+  "People, enrollment, sessions and settings.": "voiceMatchAppHint",
+  "Open": "voiceMatchOpen"
 };

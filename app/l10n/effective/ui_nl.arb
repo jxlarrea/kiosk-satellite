@@ -57123,6 +57123,97 @@
       ]
     }
   },
+  "settingVoiceMatchShowSpeakerTitle": "Tonen wie er praat",
+  "@settingVoiceMatchShowSpeakerTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Show who is talking"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Show who is talking"
+      ]
+    }
+  },
+  "settingVoiceMatchShowSpeakerDescription": "De naam van de spreker voor het commando op de spraakoverlay, in hun kleur. Op een apparaat met een lichtring krijgt de luisterboog die kleur.",
+  "@settingVoiceMatchShowSpeakerDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Show who is talking"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Show who is talking"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollTitle": "Inschrijven hier toestaan",
+  "@settingVoiceMatchAllowEnrollTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollDescription": "Laat de Voice Match app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang.",
+  "@settingVoiceMatchAllowEnrollDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "voiceMatchApp": "Voice Match app",
+  "@voiceMatchApp": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "voiceMatchAppHint": "Personen, inschrijven, sessies en instellingen.",
+  "@voiceMatchAppHint": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "voiceMatchOpen": "Openen",
+  "@voiceMatchOpen": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
   "voiceWakePage": "Wekwoorden",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",
@@ -60163,6 +60254,343 @@
         "Intercom > Answer > Ring sound",
         "ESPHome > Notifications > Notification sound",
         "ESPHome > Announcements > Chime sound"
+      ]
+    }
+  },
+  "voiceMatchEnrollTitle": "{name} inschrijven",
+  "@voiceMatchEnrollTitle": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollStarting": "Voorbereiden…",
+  "@voiceMatchEnrollStarting": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollReading": "Lees dit hardop voor",
+  "@voiceMatchEnrollReading": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollSeconds": "{seconds} van {target} s",
+  "@voiceMatchEnrollSeconds": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged. Seconds of speech recorded out of the seconds needed.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollOtherVoice": "Er praat een andere stem. Dat deel wordt weggelaten.",
+  "@voiceMatchEnrollOtherVoice": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollSaving": "Opslaan…",
+  "@voiceMatchEnrollSaving": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollStop": "Stoppen",
+  "@voiceMatchEnrollStop": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipWalk": "Loop langzaam door de kamer",
+  "@voiceMatchEnrollTipWalk": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipTurn": "Draai je af en toe van de kiosk weg",
+  "@voiceMatchEnrollTipTurn": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipTalk": "Praat zoals je commando's geeft",
+  "@voiceMatchEnrollTipTalk": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollDone": "{name} is ingeschreven",
+  "@voiceMatchEnrollDone": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollDoneDetail": "{seconds} s spraak toegevoegd.",
+  "@voiceMatchEnrollDoneDetail": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollFailed": "Er is niets opgeslagen",
+  "@voiceMatchEnrollFailed": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTooShort": "Te weinig spraak om op te slaan. Lees minstens 10 seconden.",
+  "@voiceMatchEnrollTooShort": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollLost": "De verbinding met Voice Match is verbroken.",
+  "@voiceMatchEnrollLost": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollNoMic": "De microfoon is niet beschikbaar.",
+  "@voiceMatchEnrollNoMic": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollStopped": "Gestopt voordat er iets is opgenomen.",
+  "@voiceMatchEnrollStopped": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage1": "Doe de lampen in de keuken aan.",
+  "@voiceMatchEnrollPassage1": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage2": "Zet een timer voor tien minuten.",
+  "@voiceMatchEnrollPassage2": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage3": "Wat voor weer wordt het morgen?",
+  "@voiceMatchEnrollPassage3": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage4": "Zet melk en eieren op de boodschappenlijst.",
+  "@voiceMatchEnrollPassage4": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage5": "Speel rustige muziek in de woonkamer.",
+  "@voiceMatchEnrollPassage5": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage6": "De ochtend was koud, dus bleven we binnen en bakten we pannenkoeken.",
+  "@voiceMatchEnrollPassage6": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage7": "Later liepen we naar het park en keken we hoe de honden elkaar over het gras achterna zaten.",
+  "@voiceMatchEnrollPassage7": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage8": "'s Avonds stak de wind op en maakten we een vuur.",
+  "@voiceMatchEnrollPassage8": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage9": "Doe beneden alle lampen uit.",
+  "@voiceMatchEnrollPassage9": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage10": "Hoe laat is het in Tokio?",
+  "@voiceMatchEnrollPassage10": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage11": "Herinner me eraan om maandag de tandarts te bellen.",
+  "@voiceMatchEnrollPassage11": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage12": "Hoe lang duurt het om naar het vliegveld te rijden?",
+  "@voiceMatchEnrollPassage12": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage13": "Pauzeer de muziek.",
+  "@voiceMatchEnrollPassage13": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage14": "Welterusten.",
+  "@voiceMatchEnrollPassage14": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
       ]
     }
   },

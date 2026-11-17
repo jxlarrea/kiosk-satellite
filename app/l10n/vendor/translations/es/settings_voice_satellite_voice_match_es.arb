@@ -24,5 +24,12 @@
   "voiceMatchSignInRefused": "Acceso rechazado",
   "voiceMatchNobodyEnrolled": "Todavía no hay nadie registrado.",
   "voiceMatchLooking": "Buscando Voice Match en la red.",
-  "voiceMatchTokenRefused": "Home Assistant rechazó el token de este kiosko."
+  "voiceMatchTokenRefused": "Home Assistant rechazó el token de este kiosko.",
+  "settingVoiceMatchShowSpeakerTitle": "Mostrar quién habla",
+  "settingVoiceMatchShowSpeakerDescription": "El nombre de quien habla antes del comando en la superposición de voz, en su color. En un dispositivo con anillo de luz, el arco de escucha toma ese color.",
+  "settingVoiceMatchAllowEnrollTitle": "Permitir el registro aquí",
+  "settingVoiceMatchAllowEnrollDescription": "Permite que la app Voice Match grabe la voz de una persona con el micrófono de este kiosco. El kiosco muestra el texto a leer o el anillo de luz muestra el progreso.",
+  "voiceMatchApp": "App Voice Match",
+  "voiceMatchAppHint": "Personas, registro de voz, sesiones y ajustes.",
+  "voiceMatchOpen": "Abrir"
 }

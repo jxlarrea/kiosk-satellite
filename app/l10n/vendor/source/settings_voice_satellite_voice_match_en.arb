@@ -324,5 +324,96 @@
         "Voice Satellite > Voice Match > Voice Match status row"
       ]
     }
+  },
+  "settingVoiceMatchShowSpeakerTitle": "Show who is talking",
+  "@settingVoiceMatchShowSpeakerTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Show who is talking"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Show who is talking"
+      ]
+    }
+  },
+  "settingVoiceMatchShowSpeakerDescription": "The speaker's name before the command on the voice overlay, in their color. On a device with a light ring, the listening arc takes the color.",
+  "@settingVoiceMatchShowSpeakerDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Show who is talking"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Show who is talking"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollTitle": "Allow enrollment here",
+  "@settingVoiceMatchAllowEnrollTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollDescription": "Lets the Voice Match app record a person's voice with this kiosk's microphone. The kiosk shows the text to read, or the light ring shows the progress.",
+  "@settingVoiceMatchAllowEnrollDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "voiceMatchApp": "Voice Match app",
+  "@voiceMatchApp": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "voiceMatchAppHint": "People, enrollment, sessions and settings.",
+  "@voiceMatchAppHint": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "voiceMatchOpen": "Open",
+  "@voiceMatchOpen": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
   }
 }

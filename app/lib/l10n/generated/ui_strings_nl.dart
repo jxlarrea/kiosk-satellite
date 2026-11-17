@@ -15791,6 +15791,30 @@ class UiStringsNl extends UiStrings {
       'Home Assistant heeft het token van deze kiosk geweigerd.';
 
   @override
+  String get settingVoiceMatchShowSpeakerTitle => 'Tonen wie er praat';
+
+  @override
+  String get settingVoiceMatchShowSpeakerDescription =>
+      'De naam van de spreker voor het commando op de spraakoverlay, in hun kleur. Op een apparaat met een lichtring krijgt de luisterboog die kleur.';
+
+  @override
+  String get settingVoiceMatchAllowEnrollTitle => 'Inschrijven hier toestaan';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescription =>
+      'Laat de Voice Match app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang.';
+
+  @override
+  String get voiceMatchApp => 'Voice Match app';
+
+  @override
+  String get voiceMatchAppHint =>
+      'Personen, inschrijven, sessies en instellingen.';
+
+  @override
+  String get voiceMatchOpen => 'Openen';
+
+  @override
   String get voiceWakePage => 'Wekwoorden';
 
   @override
@@ -16854,6 +16878,117 @@ class UiStringsNl extends UiStrings {
   @override
   String get intercomSoundFormats =>
       'Kies een MP3-, OGG-, WAV-, FLAC-, M4A- of AAC-bestand.';
+
+  @override
+  String voiceMatchEnrollTitle(String name) {
+    return '$name inschrijven';
+  }
+
+  @override
+  String get voiceMatchEnrollStarting => 'Voorbereiden…';
+
+  @override
+  String get voiceMatchEnrollReading => 'Lees dit hardop voor';
+
+  @override
+  String voiceMatchEnrollSeconds(String seconds, String target) {
+    return '$seconds van $target s';
+  }
+
+  @override
+  String get voiceMatchEnrollOtherVoice =>
+      'Er praat een andere stem. Dat deel wordt weggelaten.';
+
+  @override
+  String get voiceMatchEnrollSaving => 'Opslaan…';
+
+  @override
+  String get voiceMatchEnrollStop => 'Stoppen';
+
+  @override
+  String get voiceMatchEnrollTipWalk => 'Loop langzaam door de kamer';
+
+  @override
+  String get voiceMatchEnrollTipTurn => 'Draai je af en toe van de kiosk weg';
+
+  @override
+  String get voiceMatchEnrollTipTalk => 'Praat zoals je commando\'s geeft';
+
+  @override
+  String voiceMatchEnrollDone(String name) {
+    return '$name is ingeschreven';
+  }
+
+  @override
+  String voiceMatchEnrollDoneDetail(String seconds) {
+    return '$seconds s spraak toegevoegd.';
+  }
+
+  @override
+  String get voiceMatchEnrollFailed => 'Er is niets opgeslagen';
+
+  @override
+  String get voiceMatchEnrollTooShort =>
+      'Te weinig spraak om op te slaan. Lees minstens 10 seconden.';
+
+  @override
+  String get voiceMatchEnrollLost =>
+      'De verbinding met Voice Match is verbroken.';
+
+  @override
+  String get voiceMatchEnrollNoMic => 'De microfoon is niet beschikbaar.';
+
+  @override
+  String get voiceMatchEnrollStopped => 'Gestopt voordat er iets is opgenomen.';
+
+  @override
+  String get voiceMatchEnrollPassage1 => 'Doe de lampen in de keuken aan.';
+
+  @override
+  String get voiceMatchEnrollPassage2 => 'Zet een timer voor tien minuten.';
+
+  @override
+  String get voiceMatchEnrollPassage3 => 'Wat voor weer wordt het morgen?';
+
+  @override
+  String get voiceMatchEnrollPassage4 =>
+      'Zet melk en eieren op de boodschappenlijst.';
+
+  @override
+  String get voiceMatchEnrollPassage5 =>
+      'Speel rustige muziek in de woonkamer.';
+
+  @override
+  String get voiceMatchEnrollPassage6 =>
+      'De ochtend was koud, dus bleven we binnen en bakten we pannenkoeken.';
+
+  @override
+  String get voiceMatchEnrollPassage7 =>
+      'Later liepen we naar het park en keken we hoe de honden elkaar over het gras achterna zaten.';
+
+  @override
+  String get voiceMatchEnrollPassage8 =>
+      '\'s Avonds stak de wind op en maakten we een vuur.';
+
+  @override
+  String get voiceMatchEnrollPassage9 => 'Doe beneden alle lampen uit.';
+
+  @override
+  String get voiceMatchEnrollPassage10 => 'Hoe laat is het in Tokio?';
+
+  @override
+  String get voiceMatchEnrollPassage11 =>
+      'Herinner me eraan om maandag de tandarts te bellen.';
+
+  @override
+  String get voiceMatchEnrollPassage12 =>
+      'Hoe lang duurt het om naar het vliegveld te rijden?';
+
+  @override
+  String get voiceMatchEnrollPassage13 => 'Pauzeer de muziek.';
+
+  @override
+  String get voiceMatchEnrollPassage14 => 'Welterusten.';
 
   @override
   String get voiceNoticeError => 'Voice Satellite-fout';

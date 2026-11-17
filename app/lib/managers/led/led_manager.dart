@@ -63,6 +63,24 @@ class LedManager extends Manager {
   bool get available => _device != null;
 
   String _voiceState = 'idle';
+
+  /// The speaker's ring color from Voice Match, while their turn runs.
+  Rgb? _speakerColor;
+
+  /// A Voice Match enrollment on this kiosk (VoiceMatchEnrollment.toJson),
+  /// when its other voice flash ends and when it was saved.
+  Map<String, Object?>? _enroll;
+  DateTime? _enrollFlashUntil;
+  DateTime? _enrollSavedAt;
+  Timer? _enrollTimer;
+
+  /// Another voice during an enrollment: amber, like the app's warning.
+  static const _otherVoiceAmber = 0xFFB000;
+
+  static const _enrollFlash = Duration(milliseconds: 800);
+
+  /// Two pulses of the person's color when the voice is saved.
+  static const _enrollDone = Duration(milliseconds: 2400);
   String _intercomState = 'idle';
   String _alarmPhase = 'idle';
   int _notifications = 0;
@@ -103,6 +121,17 @@ class LedManager extends Manager {
       ..add(
         bus.on<VoiceSatelliteStateChanged>().listen((e) {
           _voiceState = e.state;
+          if (e.state == 'idle') _speakerColor = null;
+          _update();
+        }),
+      )
+      ..add(bus.on<VoiceMatchEnrollmentChanged>().listen(_onEnrollment))
+      ..add(
+        bus.on<VoiceSpeakerChanged>().listen((e) {
+          final hex = (e.color ?? '').replaceFirst('#', '');
+          _speakerColor = e.name.isEmpty || hex.length != 6
+              ? null
+              : int.tryParse(hex, radix: 16);
           _update();
         }),
       )
@@ -153,6 +182,92 @@ class LedManager extends Manager {
     _ticker?.cancel();
     _previewTimer?.cancel();
     _repaint?.cancel();
+    _enrollTimer?.cancel();
+  }
+
+  void _onEnrollment(VoiceMatchEnrollmentChanged e) {
+    final next = e.state;
+    if (next?['phase'] == 'refused') return;
+    final was = _enroll;
+    _enroll = next;
+    final now = DateTime.now();
+    int voices(Map<String, Object?>? m) =>
+        (m?['otherVoices'] as num?)?.toInt() ?? 0;
+    Duration? wake;
+    if (next != null && voices(next) > voices(was)) {
+      _enrollFlashUntil = now.add(_enrollFlash);
+      wake = _enrollFlash;
+    }
+    if (next?['phase'] == 'saved' && was?['phase'] != 'saved') {
+      _enrollSavedAt = now;
+      wake = _enrollDone;
+    }
+    if (wake != null) {
+      _enrollTimer?.cancel();
+      _enrollTimer = Timer(wake, _update);
+    }
+    _update();
+  }
+
+  /// The enrollment's look, or null when there is none to show.
+  LedScene? _enrollScene() {
+    final e = _enroll;
+    if (e == null || !_settings.get(defs.ledVoiceEnabled)) return null;
+    final hex = '${e['color'] ?? ''}'.replaceFirst('#', '');
+    final color =
+        int.tryParse(hex, radix: 16) ?? _color(defs.ledVoiceLightColor);
+    final brightness = _brightness(defs.ledVoiceBrightness);
+    final now = DateTime.now();
+    switch (e['phase']) {
+      case 'starting':
+        return LedScene(
+          name: 'enroll_starting',
+          effect: LedEffect.spin,
+          color: color,
+          accent: color,
+          brightness: brightness,
+        );
+      case 'recording':
+        final flash = _enrollFlashUntil;
+        if (flash != null && now.isBefore(flash)) {
+          return LedScene(
+            name: 'enroll_other_voice',
+            effect: LedEffect.solid,
+            color: _otherVoiceAmber,
+            brightness: brightness,
+          );
+        }
+        final speech = (e['speechS'] as num?)?.toDouble() ?? 0;
+        final target = (e['targetS'] as num?)?.toDouble() ?? 45;
+        final share = target <= 0 ? 0.0 : (speech / target).clamp(0.0, 1.0);
+        return LedScene(
+          name: 'enroll_recording',
+          effect: LedEffect.countdown,
+          color: color,
+          brightness: brightness,
+          // One light at a time, at least the first one lit.
+          fraction: _pixels == 0
+              ? share
+              : (share * _pixels).floor().clamp(1, _pixels) / _pixels,
+        );
+      case 'saving':
+        return LedScene(
+          name: 'enroll_saving',
+          effect: LedEffect.breathe,
+          color: color,
+          brightness: brightness,
+        );
+      case 'saved':
+        final at = _enrollSavedAt;
+        if (at == null || now.difference(at) >= _enrollDone) return null;
+        return LedScene(
+          name: 'enroll_saved',
+          effect: LedEffect.pulse,
+          color: color,
+          brightness: brightness,
+        );
+    }
+    return null;
   }
 
   void _onTimers(List<Map<String, Object?>> timers) {
@@ -250,6 +365,8 @@ class LedManager extends Manager {
         brightness: _brightness(defs.ledTimersBrightness),
       );
     }
+    final enrolling = _enrollScene();
+    if (enrolling != null) return enrolling;
     final intercomOn = s.get(defs.ledIntercomEnabled);
     LedScene intercom(LedEffect effect, String name) => LedScene(
       name: name,
@@ -264,6 +381,19 @@ class LedManager extends Manager {
     if (voiceOn) {
       switch (_voiceState) {
         case 'listening':
+          // Voice Match knows who is talking: the arc takes their color.
+          final speaker = _speakerColor;
+          if (speaker != null &&
+              s.get(defs.voiceMatchEnabled) &&
+              s.get(defs.voiceMatchShowSpeaker)) {
+            return LedScene(
+              name: 'voice_listening',
+              effect: LedEffect.orbit,
+              color: _color(defs.ledVoiceLightColor),
+              accent: speaker,
+              brightness: _brightness(defs.ledVoiceBrightness),
+            );
+          }
           return voice(LedEffect.orbit, 'voice_listening');
         case 'processing':
           return voice(LedEffect.chase, 'voice_thinking');

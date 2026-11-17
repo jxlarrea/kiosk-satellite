@@ -24,5 +24,12 @@
   "voiceMatchSignInRefused": "Aanmelding geweigerd",
   "voiceMatchNobodyEnrolled": "Nog niemand is ingeschreven.",
   "voiceMatchLooking": "Voice Match wordt gezocht op het netwerk.",
-  "voiceMatchTokenRefused": "Home Assistant heeft het token van deze kiosk geweigerd."
+  "voiceMatchTokenRefused": "Home Assistant heeft het token van deze kiosk geweigerd.",
+  "settingVoiceMatchShowSpeakerTitle": "Tonen wie er praat",
+  "settingVoiceMatchShowSpeakerDescription": "De naam van de spreker voor het commando op de spraakoverlay, in hun kleur. Op een apparaat met een lichtring krijgt de luisterboog die kleur.",
+  "settingVoiceMatchAllowEnrollTitle": "Inschrijven hier toestaan",
+  "settingVoiceMatchAllowEnrollDescription": "Laat de Voice Match app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang.",
+  "voiceMatchApp": "Voice Match app",
+  "voiceMatchAppHint": "Personen, inschrijven, sessies en instellingen.",
+  "voiceMatchOpen": "Openen"
 }

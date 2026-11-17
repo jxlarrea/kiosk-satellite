@@ -42,6 +42,28 @@ class VoiceMatchManager extends Manager {
   String model = '';
   List<Map<String, Object?>> people = const [];
 
+  /// The enrollment on this kiosk, as VoiceMatchEnrollment.toJson gives
+  /// it, while it runs and its result shows.
+  Map<String, Object?>? enrollment;
+
+  /// The app's page in Home Assistant (`/hassio/ingress/<slug>`) when the
+  /// service runs as a Home Assistant app.
+  String? appPath;
+
+  /// Where Open goes: the app's page in Home Assistant, or the Docker
+  /// container's own web page. Null until connected.
+  String? get appUrl {
+    final base = baseUrl;
+    if (status != 'connected' || base == null) return null;
+    final path = appPath;
+    final ha = _settings
+        .get(defs.haUrl)
+        .trim()
+        .replaceFirst(RegExp(r'/+$'), '');
+    if (path != null && ha.isNotEmpty) return '$ha$path';
+    return '$base/';
+  }
+
   final _subs = <StreamSubscription<Object?>>[];
   StreamSubscription<Object?>? _discovery;
   final _discovered = <String, String>{};
@@ -60,6 +82,10 @@ class VoiceMatchManager extends Manager {
   Future<void> init() async {
     _subs.add(
       bus.on<SettingChanged>().listen((e) {
+        if (e.key == defs.voiceMatchAllowEnroll.key) {
+          _sendSettings();
+          return;
+        }
         if (e.key == defs.voiceMatchEnabled.key ||
             e.key == defs.voiceMatchAddress.key ||
             e.key == defs.voiceEnabled.key ||
@@ -69,6 +95,7 @@ class VoiceMatchManager extends Manager {
         }
       }),
     );
+    _subs.add(bus.on<VoiceMatchEnrollmentChanged>().listen(_onEnrollment));
     commands.register(
       Command(
         name: 'voiceMatchStatus',
@@ -89,7 +116,33 @@ class VoiceMatchManager extends Manager {
     'version': version,
     'model': model,
     'people': people,
+    'appUrl': appUrl,
+    'allowEnroll': _settings.get(defs.voiceMatchAllowEnroll),
+    'enrollment': enrollment,
   };
+
+  /// Tell the service when an enrollment it asked for did not start or
+  /// ended on the kiosk's side, so the app is not left waiting.
+  void _onEnrollment(VoiceMatchEnrollmentChanged e) {
+    final state = e.state;
+    if (state?['phase'] != 'refused') {
+      enrollment = state;
+      bus.publish(const RemoteStatusChanged('voice-match'));
+    }
+    if (state == null) return;
+    final phase = state['phase'];
+    final code = state['code'];
+    if (phase == 'refused' ||
+        (phase == 'failed' &&
+            const {'no_mic', 'stopped', 'lost'}.contains(code))) {
+      _send({
+        'type': 'enroll_error',
+        'person_id': state['personId'],
+        'code': code,
+        'message': state['message'] ?? '',
+      });
+    }
+  }
 
   /// Starts over from the settings: stop what runs, then connect again.
   Future<void> _apply() async {
@@ -137,10 +190,14 @@ class VoiceMatchManager extends Manager {
         final host = '${e['host'] ?? ''}';
         final port = e['port'];
         if (host.isEmpty || port is! int) return;
-        final url = host.contains(':') ? 'http://[$host]:$port' : 'http://$host:$port';
+        final url = host.contains(':')
+            ? 'http://[$host]:$port'
+            : 'http://$host:$port';
         _discovered[name] = url;
         log.info(this.name, 'found Voice Match at $url');
-        if (_enabled && baseUrl == null && _settings.get(defs.voiceMatchAddress).trim().isEmpty) {
+        if (_enabled &&
+            baseUrl == null &&
+            _settings.get(defs.voiceMatchAddress).trim().isEmpty) {
           baseUrl = url;
           _connect(_generation);
         }
@@ -207,16 +264,38 @@ class VoiceMatchManager extends Manager {
 
   Future<Map<String, Object?>> _hello() async {
     final info = await commands.execute('getDeviceInfo', const {});
-    final data = info.ok && info.data is Map ? (info.data as Map).cast<String, Object?>() : const <String, Object?>{};
+    final data = info.ok && info.data is Map
+        ? (info.data as Map).cast<String, Object?>()
+        : const <String, Object?>{};
     final deviceName = _settings.get(defs.deviceName).trim();
     return {
       'type': 'hello',
       'token': _settings.get(defs.haToken),
-      'device_id': defs.effectiveHostname(_settings.get(defs.deviceHostname), deviceName),
+      'device_id': defs.effectiveHostname(
+        _settings.get(defs.deviceHostname),
+        deviceName,
+      ),
       'name': deviceName.isNotEmpty ? deviceName : '${data['name'] ?? ''}',
       'model': '${data['model'] ?? ''}',
       'version': '${data['appVersion'] ?? ''}',
+      'enroll': _settings.get(defs.voiceMatchAllowEnroll),
     };
+  }
+
+  /// Allow enrollment here changed: the service lists the kiosk to match.
+  void _sendSettings() {
+    _send({
+      'type': 'settings',
+      'enroll': _settings.get(defs.voiceMatchAllowEnroll),
+    });
+  }
+
+  void _send(Map<String, Object?> message) {
+    try {
+      _socket?.sink.add(jsonEncode(message));
+    } on Object {
+      // Gone: the next connection says hello with the current settings.
+    }
   }
 
   /// The id this kiosk goes by in Voice Match, for the session sockets too.
@@ -241,13 +320,37 @@ class VoiceMatchManager extends Manager {
         ];
         version = '${msg['version'] ?? version}';
         model = '${msg['model'] ?? model}';
+        final path = msg['app_path'];
+        appPath = path is String && path.startsWith('/') ? path : null;
         _attempt = 0;
         _setStatus('connected', baseUrl);
       case 'error':
         if (msg['code'] == 'unauthorized') _setStatus('refused', null);
       case 'enroll':
-        // On-device enrollment arrives with the enrollment screens.
-        log.info(name, 'enrollment asked for ${msg['name']}, not supported yet');
+        final personId = '${msg['person_id'] ?? ''}';
+        if (personId.isEmpty) return;
+        if (!_settings.get(defs.voiceMatchAllowEnroll)) {
+          log.info(
+            name,
+            'enrollment for ${msg['name']} refused: Allow enrollment here is off',
+          );
+          _send({
+            'type': 'enroll_error',
+            'person_id': personId,
+            'code': 'off',
+            'message': '',
+          });
+          return;
+        }
+        final target = msg['target_s'];
+        bus.publish(
+          VoiceMatchEnrollRequested(
+            personId: personId,
+            name: '${msg['name'] ?? ''}',
+            color: msg['color'] is String ? msg['color'] as String : null,
+            targetS: target is num ? target.toDouble().clamp(10.0, 300.0) : 45,
+          ),
+        );
       default:
         break;
     }
@@ -263,7 +366,8 @@ class VoiceMatchManager extends Manager {
       return;
     }
     _setStatus('unreachable', null);
-    if (_settings.get(defs.voiceMatchAddress).trim().isEmpty && _discovered.isEmpty) {
+    if (_settings.get(defs.voiceMatchAddress).trim().isEmpty &&
+        _discovered.isEmpty) {
       baseUrl = null;
       _setStatus('searching', null);
     }
@@ -273,7 +377,8 @@ class VoiceMatchManager extends Manager {
     _retry?.cancel();
     _retry = Timer(wait, () {
       if (gen != _generation || !_enabled) return;
-      if (baseUrl == null && _discovered.isNotEmpty) baseUrl = _discovered.values.first;
+      if (baseUrl == null && _discovered.isNotEmpty)
+        baseUrl = _discovered.values.first;
       _connect(gen);
     });
   }

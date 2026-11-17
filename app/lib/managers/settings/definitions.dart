@@ -8193,6 +8193,36 @@ const voiceMatchSpeakerSensor = SettingDef<bool>(
   dependsOn: 'voice_match.enabled',
 );
 
+const voiceMatchShowSpeaker = SettingDef<bool>(
+  key: 'voice_match.show_speaker',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show who is talking',
+  description:
+      "The speaker's name before the command on the voice overlay, in their "
+      'color. On a device with a light ring, the listening arc takes the '
+      'color.',
+  category: 'Voice Satellite',
+  subpage: 'Voice Match',
+  section: 'Speaker',
+  dependsOn: 'voice_match.enabled',
+);
+
+const voiceMatchAllowEnroll = SettingDef<bool>(
+  key: 'voice_match.allow_enroll',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Allow enrollment here',
+  description:
+      "Lets the Voice Match app record a person's voice with this kiosk's "
+      'microphone. The kiosk shows the text to read, or the light ring '
+      'shows the progress.',
+  category: 'Voice Satellite',
+  subpage: 'Voice Match',
+  section: 'Speaker',
+  dependsOn: 'voice_match.enabled',
+);
+
 /// The mirrored selects by the key the kiosk's device gives each one.
 const voiceHaSelectSettings = <String, SettingDef<String>>{
   'pipeline': voiceHaPipeline,
@@ -14926,6 +14956,8 @@ const List<SettingDef<Object>> allSettings = [
   voiceMatchRejected,
   voiceMatchEndOnOtherVoice,
   voiceMatchSpeakerSensor,
+  voiceMatchShowSpeaker,
+  voiceMatchAllowEnroll,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,
   voiceNoiseGate,

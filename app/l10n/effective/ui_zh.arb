@@ -57123,6 +57123,97 @@
       ]
     }
   },
+  "settingVoiceMatchShowSpeakerTitle": "显示谁在说话",
+  "@settingVoiceMatchShowSpeakerTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Show who is talking"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Show who is talking"
+      ]
+    }
+  },
+  "settingVoiceMatchShowSpeakerDescription": "在语音浮层的命令前以对应颜色显示说话人的名字。在带灯环的设备上，聆听弧会变成该颜色。",
+  "@settingVoiceMatchShowSpeakerDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Show who is talking"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Show who is talking"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollTitle": "允许在此录入",
+  "@settingVoiceMatchAllowEnrollTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollDescription": "允许 Voice Match 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。",
+  "@settingVoiceMatchAllowEnrollDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "voiceMatchApp": "Voice Match 应用",
+  "@voiceMatchApp": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "voiceMatchAppHint": "人员、声纹录入、会话和设置。",
+  "@voiceMatchAppHint": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "voiceMatchOpen": "打开",
+  "@voiceMatchOpen": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
   "voiceWakePage": "唤醒词",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",
@@ -60163,6 +60254,343 @@
         "Intercom > Answer > Ring sound",
         "ESPHome > Notifications > Notification sound",
         "ESPHome > Announcements > Chime sound"
+      ]
+    }
+  },
+  "voiceMatchEnrollTitle": "正在录入 {name}",
+  "@voiceMatchEnrollTitle": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollStarting": "正在准备…",
+  "@voiceMatchEnrollStarting": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollReading": "请大声朗读",
+  "@voiceMatchEnrollReading": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollSeconds": "{seconds} / {target} 秒",
+  "@voiceMatchEnrollSeconds": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged. Seconds of speech recorded out of the seconds needed.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollOtherVoice": "有其他声音在说话。这部分已被排除。",
+  "@voiceMatchEnrollOtherVoice": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollSaving": "正在保存…",
+  "@voiceMatchEnrollSaving": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollStop": "停止",
+  "@voiceMatchEnrollStop": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipWalk": "在房间里慢慢走动",
+  "@voiceMatchEnrollTipWalk": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipTurn": "不时背对信息亭",
+  "@voiceMatchEnrollTipTurn": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipTalk": "用平时下指令的语气说话",
+  "@voiceMatchEnrollTipTalk": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollDone": "{name} 已录入",
+  "@voiceMatchEnrollDone": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollDoneDetail": "已添加 {seconds} 秒语音。",
+  "@voiceMatchEnrollDoneDetail": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollFailed": "未保存任何内容",
+  "@voiceMatchEnrollFailed": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTooShort": "语音太少，无法保存。请至少朗读 10 秒。",
+  "@voiceMatchEnrollTooShort": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollLost": "与 Voice Match 的连接已断开。",
+  "@voiceMatchEnrollLost": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollNoMic": "麦克风不可用。",
+  "@voiceMatchEnrollNoMic": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollStopped": "在录制任何内容之前已停止。",
+  "@voiceMatchEnrollStopped": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage1": "打开厨房的灯。",
+  "@voiceMatchEnrollPassage1": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage2": "设一个十分钟的计时器。",
+  "@voiceMatchEnrollPassage2": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage3": "明天天气怎么样？",
+  "@voiceMatchEnrollPassage3": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage4": "把牛奶和鸡蛋加到购物清单里。",
+  "@voiceMatchEnrollPassage4": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage5": "在客厅放点轻音乐。",
+  "@voiceMatchEnrollPassage5": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage6": "早上很冷，所以我们待在家里做了煎饼。",
+  "@voiceMatchEnrollPassage6": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage7": "后来我们走到公园，看着狗狗们在草地上互相追逐。",
+  "@voiceMatchEnrollPassage7": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage8": "傍晚起风了，我们生起了火。",
+  "@voiceMatchEnrollPassage8": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage9": "关掉楼下所有的灯。",
+  "@voiceMatchEnrollPassage9": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage10": "东京现在几点？",
+  "@voiceMatchEnrollPassage10": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage11": "提醒我星期一给牙医打电话。",
+  "@voiceMatchEnrollPassage11": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage12": "开车去机场要多长时间？",
+  "@voiceMatchEnrollPassage12": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage13": "暂停音乐。",
+  "@voiceMatchEnrollPassage13": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage14": "晚安。",
+  "@voiceMatchEnrollPassage14": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
       ]
     }
   },

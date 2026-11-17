@@ -75,6 +75,7 @@ import 'sendspin_player_overlay.dart';
 import 'assist/assist_overlay.dart';
 import 'toast.dart';
 import 'settings_screen.dart';
+import 'voice_match_enroll_overlay.dart';
 import 'voice_timer_overlay.dart';
 import 'web_console_panel.dart';
 import 'webview_server_trust.dart';
@@ -2219,6 +2220,9 @@ class _KioskScreenState extends State<KioskScreen>
                     // Native Voice Satellite: the assist overlay, in the same
                     // slot, over the screensaver and the camera views.
                     AssistOverlay(container: c),
+                    // A Voice Match enrollment: the reading view while it
+                    // records, then its result card.
+                    VoiceMatchEnrollOverlay(container: c),
                     // The timer pills stay over the voice overlay, as Voice
                     // Satellite stacks them over its own.
                     TimerPillsSetting(

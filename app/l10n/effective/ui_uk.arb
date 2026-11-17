@@ -57123,6 +57123,97 @@
       ]
     }
   },
+  "settingVoiceMatchShowSpeakerTitle": "Показувати, хто говорить",
+  "@settingVoiceMatchShowSpeakerTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Show who is talking"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Show who is talking"
+      ]
+    }
+  },
+  "settingVoiceMatchShowSpeakerDescription": "Ім'я мовця перед командою на голосовому оверлеї, його кольором. На пристрої зі світловим кільцем дуга прослуховування набуває цього кольору.",
+  "@settingVoiceMatchShowSpeakerDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Show who is talking"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Show who is talking"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollTitle": "Дозволити реєстрацію тут",
+  "@settingVoiceMatchAllowEnrollTitle": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollDescription": "Дозволяє застосунку Voice Match записувати голос людини мікрофоном цього кіоску. Кіоск показує текст для читання, або світлове кільце показує прогрес.",
+  "@settingVoiceMatchAllowEnrollDescription": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
+      ]
+    }
+  },
+  "voiceMatchApp": "Застосунок Voice Match",
+  "@voiceMatchApp": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "voiceMatchAppHint": "Люди, реєстрація голосу, сеанси та налаштування.",
+  "@voiceMatchAppHint": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "voiceMatchOpen": "Відкрити",
+  "@voiceMatchOpen": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Voice Match app row"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
   "voiceWakePage": "Слово активації",
   "@voiceWakePage": {
     "context": "Settings > Voice Satellite > Wake Word",
@@ -60163,6 +60254,343 @@
         "Intercom > Answer > Ring sound",
         "ESPHome > Notifications > Notification sound",
         "ESPHome > Announcements > Chime sound"
+      ]
+    }
+  },
+  "voiceMatchEnrollTitle": "Реєстрація: {name}",
+  "@voiceMatchEnrollTitle": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollStarting": "Підготовка…",
+  "@voiceMatchEnrollStarting": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollReading": "Прочитайте це вголос",
+  "@voiceMatchEnrollReading": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollSeconds": "{seconds} з {target} с",
+  "@voiceMatchEnrollSeconds": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged. Seconds of speech recorded out of the seconds needed.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollOtherVoice": "Говорить інший голос. Цю частину пропущено.",
+  "@voiceMatchEnrollOtherVoice": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollSaving": "Збереження…",
+  "@voiceMatchEnrollSaving": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollStop": "Зупинити",
+  "@voiceMatchEnrollStop": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipWalk": "Повільно ходіть кімнатою",
+  "@voiceMatchEnrollTipWalk": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipTurn": "Час від часу відвертайтеся від кіоску",
+  "@voiceMatchEnrollTipTurn": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTipTalk": "Говоріть так, як віддаєте команди",
+  "@voiceMatchEnrollTipTalk": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollDone": "{name} зареєстровано",
+  "@voiceMatchEnrollDone": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollDoneDetail": "Додано {seconds} с мовлення.",
+  "@voiceMatchEnrollDoneDetail": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    },
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "voiceMatchEnrollFailed": "Нічого не збережено",
+  "@voiceMatchEnrollFailed": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollTooShort": "Замало мовлення для збереження. Читайте щонайменше 10 секунд.",
+  "@voiceMatchEnrollTooShort": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollLost": "Зв'язок із Voice Match втрачено.",
+  "@voiceMatchEnrollLost": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollNoMic": "Мікрофон недоступний.",
+  "@voiceMatchEnrollNoMic": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollStopped": "Зупинено до початку запису.",
+  "@voiceMatchEnrollStopped": {
+    "context": "Voice Match enrollment screen",
+    "description": "Shown full screen on the kiosk while a person reads aloud to enroll their voice in Voice Match. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage1": "Увімкни світло на кухні.",
+  "@voiceMatchEnrollPassage1": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage2": "Постав таймер на десять хвилин.",
+  "@voiceMatchEnrollPassage2": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage3": "Яка погода буде завтра?",
+  "@voiceMatchEnrollPassage3": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage4": "Додай молоко та яйця до списку покупок.",
+  "@voiceMatchEnrollPassage4": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage5": "Увімкни тиху музику у вітальні.",
+  "@voiceMatchEnrollPassage5": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage6": "Ранок був холодний, тож ми залишилися вдома й напекли млинців.",
+  "@voiceMatchEnrollPassage6": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage7": "Пізніше ми пішли до парку й дивилися, як собаки ганяються одне за одним по траві.",
+  "@voiceMatchEnrollPassage7": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage8": "Увечері здійнявся вітер, і ми розпалили камін.",
+  "@voiceMatchEnrollPassage8": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage9": "Вимкни все світло внизу.",
+  "@voiceMatchEnrollPassage9": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage10": "Котра година в Токіо?",
+  "@voiceMatchEnrollPassage10": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage11": "Нагадай мені зателефонувати стоматологу в понеділок.",
+  "@voiceMatchEnrollPassage11": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage12": "Скільки часу їхати автомобілем до аеропорту?",
+  "@voiceMatchEnrollPassage12": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage13": "Постав музику на паузу.",
+  "@voiceMatchEnrollPassage13": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
+      ]
+    }
+  },
+  "voiceMatchEnrollPassage14": "На добраніч.",
+  "@voiceMatchEnrollPassage14": {
+    "context": "Voice Match enrollment screen",
+    "description": "One sentence of the passage a person reads aloud to enroll their voice. Translate it as a natural sentence a person would say at home. It does not need to match the English word for word.",
+    "x-locations": {
+      "device": [
+        "Voice Match enrollment"
       ]
     }
   },

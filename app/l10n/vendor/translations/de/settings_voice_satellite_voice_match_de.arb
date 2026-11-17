@@ -24,5 +24,12 @@
   "voiceMatchSignInRefused": "Anmeldung abgelehnt",
   "voiceMatchNobodyEnrolled": "Noch niemand ist eingelernt.",
   "voiceMatchLooking": "Voice Match wird im Netzwerk gesucht.",
-  "voiceMatchTokenRefused": "Home Assistant hat das Token dieses Kiosks abgelehnt."
+  "voiceMatchTokenRefused": "Home Assistant hat das Token dieses Kiosks abgelehnt.",
+  "settingVoiceMatchShowSpeakerTitle": "Zeigen, wer spricht",
+  "settingVoiceMatchShowSpeakerDescription": "Der Name der sprechenden Person vor dem Befehl im Sprach-Overlay, in ihrer Farbe. Auf einem Gerät mit Lichtring nimmt der Zuhör-Bogen diese Farbe an.",
+  "settingVoiceMatchAllowEnrollTitle": "Einlernen hier erlauben",
+  "settingVoiceMatchAllowEnrollDescription": "Erlaubt der Voice Match App, die Stimme einer Person mit dem Mikrofon dieses Kiosks aufzunehmen. Der Kiosk zeigt den Text zum Vorlesen oder der Lichtring zeigt den Fortschritt.",
+  "voiceMatchApp": "Voice Match App",
+  "voiceMatchAppHint": "Personen, Einlernen, Sitzungen und Einstellungen.",
+  "voiceMatchOpen": "Öffnen"
 }

@@ -2788,4 +2788,12 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingVoiceMatchSpeakerSensorTitle",
     "description": "settingVoiceMatchSpeakerSensorDescription",
   },
+  "voice_match.show_speaker": {
+    "title": "settingVoiceMatchShowSpeakerTitle",
+    "description": "settingVoiceMatchShowSpeakerDescription",
+  },
+  "voice_match.allow_enroll": {
+    "title": "settingVoiceMatchAllowEnrollTitle",
+    "description": "settingVoiceMatchAllowEnrollDescription",
+  },
 };

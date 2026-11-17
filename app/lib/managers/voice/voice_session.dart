@@ -326,10 +326,7 @@ class VoiceSession {
     onSpeaker?.call(null);
     final match = voiceMatch?.begin((e) => _onMatch(gen, e));
     _match = match;
-    final opened = await mic.open((pcm, preRoll) {
-      match?.feed(pcm);
-      _onChunk(gen, pcm);
-    });
+    final opened = await mic.open((pcm, preRoll) => _onChunk(gen, pcm));
     if (gen != _gen) {
       if (opened) await mic.close();
       return;
@@ -406,6 +403,7 @@ class VoiceSession {
     _micLevels(_sending ? _levels.micSlices(pcm) : const [0]);
     if (_sending) {
       unawaited(link.audio(pcm));
+      _match?.feed(pcm);
       return;
     }
     _held.add(pcm);
@@ -417,9 +415,12 @@ class VoiceSession {
   }
 
   void _startSending({required bool keepHeld}) {
+    // Voice Match hears what Home Assistant hears: never the chime, whose
+    // echo would read as speech and end the command before it starts.
     if (keepHeld) {
       for (final pcm in _held) {
         unawaited(link.audio(pcm));
+        _match?.feed(pcm);
       }
     }
     _held.clear();
@@ -946,8 +947,22 @@ class VoiceSession {
     if (gen != _gen) return;
     switch (e['type']) {
       case 'speaker':
-        onTrace?.call('voice match: ${e['name'] ?? 'unknown voice'} (${e['score']})');
+        onTrace?.call(
+          'voice match: ${e['name'] ?? 'unknown voice'} (${e['score']})',
+        );
         onSpeaker?.call(e);
+        final name = e['name'];
+        // The same turn, even when the command ended before the voice was
+        // placed: the name goes with its line.
+        if (name is String && name.isNotEmpty && _phase != _Phase.idle) {
+          final color = e['color'];
+          _show(
+            _view.copyWith(
+              speaker: name,
+              speakerColor: color is String ? color : null,
+            ),
+          );
+        }
       case 'end_of_speech':
         final reason = e['reason'];
         if (reason == 'other_voice' && !options().matchEndOnOtherVoice) return;

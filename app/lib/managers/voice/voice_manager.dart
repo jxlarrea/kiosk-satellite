@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
+import '../../core/headless.dart';
 import '../../core/manager.dart';
 import '../btproxy/bt_proxy_manager.dart';
 import '../analytics/usage_counters.dart';
@@ -32,6 +33,7 @@ import 'realtime/realtime_session.dart';
 import 'realtime/realtime_tools.dart';
 import 'remote_speaker.dart';
 import 'voice_match_client.dart';
+import 'voice_match_enroll.dart';
 import 'voice_notice.dart';
 import 'voice_session.dart';
 import 'wake_catalog.dart';
@@ -91,6 +93,11 @@ class VoiceManager extends Manager {
 
   /// What the assist overlay draws.
   final view = ValueNotifier<AssistView>(AssistView.hidden);
+
+  /// A Voice Match enrollment on this kiosk: the reading screen while it
+  /// records, then its result card for a few seconds. Null otherwise.
+  final enrollment = ValueNotifier<VoiceMatchEnrollment?>(null);
+  late final VoiceMatchEnroller _enroller;
 
   /// Whether the overlay hides everything under it: a full screen turn
   /// with an opaque backdrop, or a see-through one once its blurred
@@ -364,7 +371,12 @@ class VoiceManager extends Manager {
       onTrace: _trace,
       onIdle: _resumeWake,
       voiceMatch: _VoiceMatch(this),
-      onSpeaker: (e) => bus.publish(VoiceSpeakerChanged('${e?['name'] ?? ''}')),
+      onSpeaker: (e) => bus.publish(
+        VoiceSpeakerChanged(
+          '${e?['name'] ?? ''}',
+          color: e?['color'] is String ? e!['color'] as String : null,
+        ),
+      ),
     );
     _subs.add(
       bus.on<VoiceMatchServiceChanged>().listen((e) => _voiceMatchUrl = e.baseUrl),
@@ -393,6 +405,35 @@ class VoiceManager extends Manager {
       },
       onIdle: _resumeWake,
       location: realtimeLocation,
+    );
+    _enroller = VoiceMatchEnroller(
+      mic: _WakeMic(_wakeWord),
+      openSocket: _openEnrollSocket,
+      chime: (kind) async {
+        final played = await _Player(commands).chime(kind);
+        if (played == null) return;
+        await Future<void>.delayed(
+          Duration(milliseconds: (played.$2 * 1000).round()),
+        );
+      },
+      onChanged: _onEnrollment,
+      pauseWake: () => _wakeWord.setActive(false),
+      resumeWake: _resumeWake,
+      log: (line) => log.info(name, 'voice match: $line'),
+    );
+    _subs.add(bus.on<VoiceMatchEnrollRequested>().listen(_onEnrollRequest));
+    commands.register(
+      Command(
+        name: 'voiceMatchEnrollStop',
+        description:
+            'Stop the Voice Match enrollment recording on this kiosk. What '
+            'was recorded is kept when it is at least 10 seconds of speech',
+        handler: (_) async {
+          if (!_enroller.active) return CommandResult.fail('not enrolling');
+          await _enroller.stop();
+          return CommandResult.ok();
+        },
+      ),
     );
     _esphome.onVoice = _onVoice;
     _esphome.onVoiceConfiguration = _configuration;
@@ -2929,7 +2970,77 @@ class VoiceManager extends Manager {
     _session.dismiss();
   }
 
+  // ── Voice Match enrollment ─────────────────────────────────────────────
+
+  void _onEnrollRequest(VoiceMatchEnrollRequested e) {
+    final request = EnrollRequest(
+      personId: e.personId,
+      name: e.name,
+      color: e.color,
+      targetS: e.targetS,
+    );
+    // The kiosk records with the wake word engine's microphone, the one
+    // the voice turns use.
+    final refuse = !enabled || _voiceMatchUrl == null
+        ? 'no_mic'
+        : _settings.get(defs.voiceMute)
+        ? 'muted'
+        : busy || _ringing.isNotEmpty || _sharedRinging
+        ? 'busy'
+        : null;
+    unawaited(_enroller.start(request, refuse: refuse));
+  }
+
+  EnrollSocketPort _openEnrollSocket(
+    EnrollRequest request,
+    void Function(Map<String, Object?> event) onEvent,
+  ) {
+    final s = _settings;
+    final deviceName = s.get(defs.deviceName).trim();
+    return EnrollSocket.open(
+      baseUrl: _voiceMatchUrl ?? '',
+      token: s.get(defs.haToken),
+      request: request,
+      deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), deviceName),
+      deviceName: deviceName,
+      model: '',
+      onEvent: onEvent,
+      log: (line) => log.info(name, line),
+    );
+  }
+
+  bool _enrollHeld = false;
+
+  void _onEnrollment(VoiceMatchEnrollment? state) {
+    bus.publish(VoiceMatchEnrollmentChanged(state?.toJson()));
+    if (state?.phase == EnrollPhase.refused) return;
+    final was = enrollment.value;
+    enrollment.value = state;
+    // While recording it is a voice interaction: music ducks and the
+    // screensaver waits, as for a voice turn.
+    final hold = state?.active ?? false;
+    if (hold != _enrollHeld) {
+      _enrollHeld = hold;
+      bus.publish(
+        VoiceInteractionChanged(
+          active: hold,
+          reason: 'voice_match_enroll',
+          source: InteractionSource.native,
+        ),
+      );
+    }
+    if (was == null && state != null && !Headless.active) {
+      unawaited(commands.execute('screenOn', const {}));
+      unawaited(
+        commands.execute('bringToFront', const {'voiceInteraction': true}),
+      );
+    }
+  }
+
   void _onBusy(bool busy, String reason) {
+    // A voice turn, an announcement or a ringing timer needs the kiosk:
+    // an enrollment stops and keeps what it has.
+    if (busy && _enroller.active) unawaited(_enroller.interrupt());
     // The remote admin's status rows say Busy for the whole turn: the wake
     // word's microphone stays open through it, so nothing else moves them.
     _announceStatus();
@@ -3958,6 +4069,7 @@ class VoiceManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    _enroller.dispose();
     _intents.setMethodCallHandler(null);
     homeAssistant.removeListener(_announceStatus);
     homeAssistant.removeListener(_watchSelects);

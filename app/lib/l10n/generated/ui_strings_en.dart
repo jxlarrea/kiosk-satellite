@@ -15611,6 +15611,29 @@ class UiStringsEn extends UiStrings {
       'Home Assistant refused this kiosk\'s token.';
 
   @override
+  String get settingVoiceMatchShowSpeakerTitle => 'Show who is talking';
+
+  @override
+  String get settingVoiceMatchShowSpeakerDescription =>
+      'The speaker\'s name before the command on the voice overlay, in their color. On a device with a light ring, the listening arc takes the color.';
+
+  @override
+  String get settingVoiceMatchAllowEnrollTitle => 'Allow enrollment here';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescription =>
+      'Lets the Voice Match app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.';
+
+  @override
+  String get voiceMatchApp => 'Voice Match app';
+
+  @override
+  String get voiceMatchAppHint => 'People, enrollment, sessions and settings.';
+
+  @override
+  String get voiceMatchOpen => 'Open';
+
+  @override
   String get voiceWakePage => 'Wake Word';
 
   @override
@@ -16660,6 +16683,116 @@ class UiStringsEn extends UiStrings {
   @override
   String get intercomSoundFormats =>
       'Pick an MP3, OGG, WAV, FLAC, M4A or AAC file.';
+
+  @override
+  String voiceMatchEnrollTitle(String name) {
+    return 'Enrolling $name';
+  }
+
+  @override
+  String get voiceMatchEnrollStarting => 'Getting ready…';
+
+  @override
+  String get voiceMatchEnrollReading => 'Read this aloud';
+
+  @override
+  String voiceMatchEnrollSeconds(String seconds, String target) {
+    return '$seconds of $target s';
+  }
+
+  @override
+  String get voiceMatchEnrollOtherVoice =>
+      'Another voice is talking. That part is left out.';
+
+  @override
+  String get voiceMatchEnrollSaving => 'Saving…';
+
+  @override
+  String get voiceMatchEnrollStop => 'Stop';
+
+  @override
+  String get voiceMatchEnrollTipWalk => 'Walk slowly around the room';
+
+  @override
+  String get voiceMatchEnrollTipTurn => 'Turn away from the kiosk now and then';
+
+  @override
+  String get voiceMatchEnrollTipTalk => 'Talk the way you give commands';
+
+  @override
+  String voiceMatchEnrollDone(String name) {
+    return '$name is enrolled';
+  }
+
+  @override
+  String voiceMatchEnrollDoneDetail(String seconds) {
+    return '$seconds s of speech added.';
+  }
+
+  @override
+  String get voiceMatchEnrollFailed => 'Nothing was saved';
+
+  @override
+  String get voiceMatchEnrollTooShort =>
+      'Too little speech to save. Read for at least 10 seconds.';
+
+  @override
+  String get voiceMatchEnrollLost => 'The connection to Voice Match was lost.';
+
+  @override
+  String get voiceMatchEnrollNoMic => 'The microphone is not available.';
+
+  @override
+  String get voiceMatchEnrollStopped => 'Stopped before anything was recorded.';
+
+  @override
+  String get voiceMatchEnrollPassage1 => 'Turn on the kitchen lights.';
+
+  @override
+  String get voiceMatchEnrollPassage2 => 'Set a timer for ten minutes.';
+
+  @override
+  String get voiceMatchEnrollPassage3 => 'What is the weather like tomorrow?';
+
+  @override
+  String get voiceMatchEnrollPassage4 =>
+      'Add milk and eggs to the shopping list.';
+
+  @override
+  String get voiceMatchEnrollPassage5 =>
+      'Play some quiet music in the living room.';
+
+  @override
+  String get voiceMatchEnrollPassage6 =>
+      'The morning was cold, so we stayed inside and made pancakes.';
+
+  @override
+  String get voiceMatchEnrollPassage7 =>
+      'Later we walked to the park and watched the dogs chase each other across the grass.';
+
+  @override
+  String get voiceMatchEnrollPassage8 =>
+      'In the evening the wind picked up and we lit a fire.';
+
+  @override
+  String get voiceMatchEnrollPassage9 => 'Turn off all the lights downstairs.';
+
+  @override
+  String get voiceMatchEnrollPassage10 => 'What time is it in Tokyo?';
+
+  @override
+  String get voiceMatchEnrollPassage11 =>
+      'Remind me to call the dentist on Monday.';
+
+  @override
+  String get voiceMatchEnrollPassage12 =>
+      'How long will it take to drive to the airport?';
+
+  @override
+  String get voiceMatchEnrollPassage13 => 'Pause the music.';
+
+  @override
+  String get voiceMatchEnrollPassage14 => 'Good night.';
 
   @override
   String get voiceNoticeError => 'Voice Satellite error';

@@ -34,6 +34,8 @@ void main() {
       'voice_match.rejected',
       'voice_match.end_on_other_voice',
       'voice_match.speaker_sensor',
+      'voice_match.show_speaker',
+      'voice_match.allow_enroll',
     ]);
     for (final d in vm) {
       expect(d.category, 'Voice Satellite', reason: d.key);

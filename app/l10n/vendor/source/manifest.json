@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "46bdac28613715fcc3d0dbcc947013799ee21064",
+  "revision": "c5d1f46b78f5f15ff7aa18b631ad6939859d1345",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -193,7 +193,7 @@
     "settings_voice_satellite_setup_en.arb": "5d6e328bc7d48614c3b6af3e3ee2ecd16c9e36b38991a5f2e9477b2ac0584874",
     "settings_voice_satellite_tester_en.arb": "fe39cf6c05dec11c5bde90939f5098ecf79a6457e407dfee3a0a4a3d3cf13f12",
     "settings_voice_satellite_timers_en.arb": "0cf5320aa84e3e17534e9099ed7e6430cdd670f4b160c6e4e12f400d68251756",
-    "settings_voice_satellite_voice_match_en.arb": "f659955e18afb5ca96085afa96105e77dc1578eecc854c89981a6a4cc535cb2e",
+    "settings_voice_satellite_voice_match_en.arb": "b770fecc3583528844f5eea618d13319bdeda359cca5b110513bff6edd2c82b8",
     "settings_voice_satellite_wake_word_en.arb": "d2279eb005162a31742b111ff460db6cc9b57a6d2f5a8606dcef9abe8a27d541",
     "settings_web_browsing_cache_security_en.arb": "8e0e89c934290b05090a2228ee8982201258bd05da9c7fd30cc4ef9bc6f54e1a",
     "settings_web_browsing_navigation_en.arb": "ce4e29dcf1800a203436a4aad1575976dea606df52b005d088f6932886c6495a",
@@ -210,6 +210,7 @@
     "setup_voice_satellite_en.arb": "20e2901b8e7b60e02da4b87a5c2989e3bed0fd674dfb8085bf079423f9221485",
     "setup_welcome_en.arb": "a26a34d1e8f30df984627884b880f4fda8f410e1ad3a21a9b3399499c4d7be50",
     "sound_picker_en.arb": "3287a30c9f51f864354862d1208ec5b79e87026b6a5521939f71c944b02bb626",
+    "voice_match_enrollment_en.arb": "ff2aa08754f8980780a51ea0e9abd2dd6b39bc89fc504795b93f6686c94e7848",
     "voice_notices_en.arb": "6f7246b1e310900388131a547cfe7045d8e34e8260318e6e62c1bc1808f08abc",
     "voice_results_en.arb": "cf33c193dc7a294f22c5858ca1d19d74436ac0a41737cd5b3723b7bd54e8bb7f",
     "voice_timers_en.arb": "3e162e9bfe30c1046c471fb3e3b479ede659bf4cf62f66be9589c0cbcdf32eda"

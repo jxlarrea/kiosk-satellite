@@ -36,11 +36,18 @@ class AssistTurn {
     this.command = '',
     this.tools = const [],
     this.answer = '',
+    this.speaker = '',
+    this.speakerColor,
   });
 
   final String command;
   final List<String> tools;
   final String answer;
+
+  /// Who said [command], from Voice Match, and their ring color
+  /// (`#RRGGBB`). Empty when not known.
+  final String speaker;
+  final String? speakerColor;
 
   bool get isEmpty => command.isEmpty && tools.isEmpty && answer.isEmpty;
 }
@@ -58,6 +65,8 @@ class AssistView {
     this.docked = false,
     this.lingering = false,
     this.assistant = 1,
+    this.speaker = '',
+    this.speakerColor,
   });
 
   static const hidden = AssistView();
@@ -98,11 +107,21 @@ class AssistView {
   /// vs_show on pipeline 2.
   final int assistant;
 
+  /// Who is talking in the turn in progress, from Voice Match, and their
+  /// ring color (`#RRGGBB`). Empty when not known.
+  final String speaker;
+  final String? speakerColor;
+
   bool get visible => phase != AssistPhase.hidden;
 
   /// The turn in progress, as it would be kept once the next one starts.
-  AssistTurn get turn =>
-      AssistTurn(command: command, tools: tools, answer: answer);
+  AssistTurn get turn => AssistTurn(
+    command: command,
+    tools: tools,
+    answer: answer,
+    speaker: speaker,
+    speakerColor: speakerColor,
+  );
 
   AssistView copyWith({
     AssistPhase? phase,
@@ -116,6 +135,8 @@ class AssistView {
     bool? docked,
     bool? lingering,
     int? assistant,
+    String? speaker,
+    String? speakerColor,
   }) => AssistView(
     phase: phase ?? this.phase,
     earlier: earlier ?? this.earlier,
@@ -128,6 +149,8 @@ class AssistView {
     docked: docked ?? this.docked,
     lingering: lingering ?? this.lingering,
     assistant: assistant ?? this.assistant,
+    speaker: speaker ?? this.speaker,
+    speakerColor: speaker != null ? speakerColor : this.speakerColor,
   );
 }
 

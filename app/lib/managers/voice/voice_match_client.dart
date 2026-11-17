@@ -12,9 +12,10 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 /// `end_of_speech` (the speaker stopped, or someone else took over) and
 /// `rejected` (only enrolled voices are answered and this is not one).
 ///
-/// Audio fed before the socket is ready waits in a queue, so the wake word
-/// pre-roll, which identifies the speaker best, is never lost. Nothing here
-/// blocks the turn: a service that is slow or gone just sends no events.
+/// It gets the audio Home Assistant gets, from the same point. Audio fed
+/// before the socket is ready waits in a queue, so the start of the
+/// command is never lost. Nothing here blocks the turn: a service that is
+/// slow or gone just sends no events.
 class VoiceMatchTurn {
   VoiceMatchTurn._(this._onEvent, this._log);
 

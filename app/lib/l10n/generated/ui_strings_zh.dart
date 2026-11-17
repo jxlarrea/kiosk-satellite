@@ -14797,6 +14797,29 @@ class UiStringsZh extends UiStrings {
   String get voiceMatchTokenRefused => 'Home Assistant 拒绝了此 Kiosk 的令牌。';
 
   @override
+  String get settingVoiceMatchShowSpeakerTitle => '显示谁在说话';
+
+  @override
+  String get settingVoiceMatchShowSpeakerDescription =>
+      '在语音浮层的命令前以对应颜色显示说话人的名字。在带灯环的设备上，聆听弧会变成该颜色。';
+
+  @override
+  String get settingVoiceMatchAllowEnrollTitle => '允许在此录入';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescription =>
+      '允许 Voice Match 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
+
+  @override
+  String get voiceMatchApp => 'Voice Match 应用';
+
+  @override
+  String get voiceMatchAppHint => '人员、声纹录入、会话和设置。';
+
+  @override
+  String get voiceMatchOpen => '打开';
+
+  @override
   String get voiceWakePage => '唤醒词';
 
   @override
@@ -15782,6 +15805,107 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get intercomSoundFormats => '请选择 MP3、OGG、WAV、FLAC、M4A 或 AAC 文件。';
+
+  @override
+  String voiceMatchEnrollTitle(String name) {
+    return '正在录入 $name';
+  }
+
+  @override
+  String get voiceMatchEnrollStarting => '正在准备…';
+
+  @override
+  String get voiceMatchEnrollReading => '请大声朗读';
+
+  @override
+  String voiceMatchEnrollSeconds(String seconds, String target) {
+    return '$seconds / $target 秒';
+  }
+
+  @override
+  String get voiceMatchEnrollOtherVoice => '有其他声音在说话。这部分已被排除。';
+
+  @override
+  String get voiceMatchEnrollSaving => '正在保存…';
+
+  @override
+  String get voiceMatchEnrollStop => '停止';
+
+  @override
+  String get voiceMatchEnrollTipWalk => '在房间里慢慢走动';
+
+  @override
+  String get voiceMatchEnrollTipTurn => '不时背对信息亭';
+
+  @override
+  String get voiceMatchEnrollTipTalk => '用平时下指令的语气说话';
+
+  @override
+  String voiceMatchEnrollDone(String name) {
+    return '$name 已录入';
+  }
+
+  @override
+  String voiceMatchEnrollDoneDetail(String seconds) {
+    return '已添加 $seconds 秒语音。';
+  }
+
+  @override
+  String get voiceMatchEnrollFailed => '未保存任何内容';
+
+  @override
+  String get voiceMatchEnrollTooShort => '语音太少，无法保存。请至少朗读 10 秒。';
+
+  @override
+  String get voiceMatchEnrollLost => '与 Voice Match 的连接已断开。';
+
+  @override
+  String get voiceMatchEnrollNoMic => '麦克风不可用。';
+
+  @override
+  String get voiceMatchEnrollStopped => '在录制任何内容之前已停止。';
+
+  @override
+  String get voiceMatchEnrollPassage1 => '打开厨房的灯。';
+
+  @override
+  String get voiceMatchEnrollPassage2 => '设一个十分钟的计时器。';
+
+  @override
+  String get voiceMatchEnrollPassage3 => '明天天气怎么样？';
+
+  @override
+  String get voiceMatchEnrollPassage4 => '把牛奶和鸡蛋加到购物清单里。';
+
+  @override
+  String get voiceMatchEnrollPassage5 => '在客厅放点轻音乐。';
+
+  @override
+  String get voiceMatchEnrollPassage6 => '早上很冷，所以我们待在家里做了煎饼。';
+
+  @override
+  String get voiceMatchEnrollPassage7 => '后来我们走到公园，看着狗狗们在草地上互相追逐。';
+
+  @override
+  String get voiceMatchEnrollPassage8 => '傍晚起风了，我们生起了火。';
+
+  @override
+  String get voiceMatchEnrollPassage9 => '关掉楼下所有的灯。';
+
+  @override
+  String get voiceMatchEnrollPassage10 => '东京现在几点？';
+
+  @override
+  String get voiceMatchEnrollPassage11 => '提醒我星期一给牙医打电话。';
+
+  @override
+  String get voiceMatchEnrollPassage12 => '开车去机场要多长时间？';
+
+  @override
+  String get voiceMatchEnrollPassage13 => '暂停音乐。';
+
+  @override
+  String get voiceMatchEnrollPassage14 => '晚安。';
 
   @override
   String get voiceNoticeError => 'Voice Satellite 错误';
@@ -30759,6 +30883,29 @@ class UiStringsZhCn extends UiStringsZh {
   String get voiceMatchTokenRefused => 'Home Assistant 拒绝了此 Kiosk 的令牌。';
 
   @override
+  String get settingVoiceMatchShowSpeakerTitle => '显示谁在说话';
+
+  @override
+  String get settingVoiceMatchShowSpeakerDescription =>
+      '在语音浮层的命令前以对应颜色显示说话人的名字。在带灯环的设备上，聆听弧会变成该颜色。';
+
+  @override
+  String get settingVoiceMatchAllowEnrollTitle => '允许在此录入';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescription =>
+      '允许 Voice Match 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
+
+  @override
+  String get voiceMatchApp => 'Voice Match 应用';
+
+  @override
+  String get voiceMatchAppHint => '人员、声纹录入、会话和设置。';
+
+  @override
+  String get voiceMatchOpen => '打开';
+
+  @override
   String get voiceWakePage => '唤醒词';
 
   @override
@@ -31744,6 +31891,107 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get intercomSoundFormats => '请选择 MP3、OGG、WAV、FLAC、M4A 或 AAC 文件。';
+
+  @override
+  String voiceMatchEnrollTitle(String name) {
+    return '正在录入 $name';
+  }
+
+  @override
+  String get voiceMatchEnrollStarting => '正在准备…';
+
+  @override
+  String get voiceMatchEnrollReading => '请大声朗读';
+
+  @override
+  String voiceMatchEnrollSeconds(String seconds, String target) {
+    return '$seconds / $target 秒';
+  }
+
+  @override
+  String get voiceMatchEnrollOtherVoice => '有其他声音在说话。这部分已被排除。';
+
+  @override
+  String get voiceMatchEnrollSaving => '正在保存…';
+
+  @override
+  String get voiceMatchEnrollStop => '停止';
+
+  @override
+  String get voiceMatchEnrollTipWalk => '在房间里慢慢走动';
+
+  @override
+  String get voiceMatchEnrollTipTurn => '不时背对信息亭';
+
+  @override
+  String get voiceMatchEnrollTipTalk => '用平时下指令的语气说话';
+
+  @override
+  String voiceMatchEnrollDone(String name) {
+    return '$name 已录入';
+  }
+
+  @override
+  String voiceMatchEnrollDoneDetail(String seconds) {
+    return '已添加 $seconds 秒语音。';
+  }
+
+  @override
+  String get voiceMatchEnrollFailed => '未保存任何内容';
+
+  @override
+  String get voiceMatchEnrollTooShort => '语音太少，无法保存。请至少朗读 10 秒。';
+
+  @override
+  String get voiceMatchEnrollLost => '与 Voice Match 的连接已断开。';
+
+  @override
+  String get voiceMatchEnrollNoMic => '麦克风不可用。';
+
+  @override
+  String get voiceMatchEnrollStopped => '在录制任何内容之前已停止。';
+
+  @override
+  String get voiceMatchEnrollPassage1 => '打开厨房的灯。';
+
+  @override
+  String get voiceMatchEnrollPassage2 => '设一个十分钟的计时器。';
+
+  @override
+  String get voiceMatchEnrollPassage3 => '明天天气怎么样？';
+
+  @override
+  String get voiceMatchEnrollPassage4 => '把牛奶和鸡蛋加到购物清单里。';
+
+  @override
+  String get voiceMatchEnrollPassage5 => '在客厅放点轻音乐。';
+
+  @override
+  String get voiceMatchEnrollPassage6 => '早上很冷，所以我们待在家里做了煎饼。';
+
+  @override
+  String get voiceMatchEnrollPassage7 => '后来我们走到公园，看着狗狗们在草地上互相追逐。';
+
+  @override
+  String get voiceMatchEnrollPassage8 => '傍晚起风了，我们生起了火。';
+
+  @override
+  String get voiceMatchEnrollPassage9 => '关掉楼下所有的灯。';
+
+  @override
+  String get voiceMatchEnrollPassage10 => '东京现在几点？';
+
+  @override
+  String get voiceMatchEnrollPassage11 => '提醒我星期一给牙医打电话。';
+
+  @override
+  String get voiceMatchEnrollPassage12 => '开车去机场要多长时间？';
+
+  @override
+  String get voiceMatchEnrollPassage13 => '暂停音乐。';
+
+  @override
+  String get voiceMatchEnrollPassage14 => '晚安。';
 
   @override
   String get voiceNoticeError => 'Voice Satellite 错误';

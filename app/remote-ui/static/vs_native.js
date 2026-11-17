@@ -79,6 +79,17 @@ async function paintVoiceMatch(panel) {
   statusWord(row, voiceText(word), color);
   row.classList.add('vm-status');
   enabledRow.after(row);
+  if (!status.appUrl) return;
+  const app = readOnlyRow(voiceText('Voice Match app'), voiceText('People, enrollment, sessions and settings.'), '', false);
+  app.classList.add('vm-status');
+  const open = document.createElement('button');
+  open.type = 'button';
+  open.className = 'btn-ghost';
+  open.textContent = voiceText('Open');
+  open.style.flexShrink = '0';
+  open.addEventListener('click', () => window.open(status.appUrl, '_blank', 'noopener'));
+  app.appendChild(open);
+  row.after(app);
 }
 
 /* The status and Home Assistant rows under the switch, read from the

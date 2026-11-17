@@ -15773,6 +15773,30 @@ class UiStringsUk extends UiStrings {
       'Home Assistant відхилив токен цього кіоску.';
 
   @override
+  String get settingVoiceMatchShowSpeakerTitle => 'Показувати, хто говорить';
+
+  @override
+  String get settingVoiceMatchShowSpeakerDescription =>
+      'Ім\'я мовця перед командою на голосовому оверлеї, його кольором. На пристрої зі світловим кільцем дуга прослуховування набуває цього кольору.';
+
+  @override
+  String get settingVoiceMatchAllowEnrollTitle => 'Дозволити реєстрацію тут';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescription =>
+      'Дозволяє застосунку Voice Match записувати голос людини мікрофоном цього кіоску. Кіоск показує текст для читання, або світлове кільце показує прогрес.';
+
+  @override
+  String get voiceMatchApp => 'Застосунок Voice Match';
+
+  @override
+  String get voiceMatchAppHint =>
+      'Люди, реєстрація голосу, сеанси та налаштування.';
+
+  @override
+  String get voiceMatchOpen => 'Відкрити';
+
+  @override
   String get voiceWakePage => 'Слово активації';
 
   @override
@@ -16834,6 +16858,115 @@ class UiStringsUk extends UiStrings {
   @override
   String get intercomSoundFormats =>
       'Виберіть файл MP3, OGG, WAV, FLAC, M4A або AAC.';
+
+  @override
+  String voiceMatchEnrollTitle(String name) {
+    return 'Реєстрація: $name';
+  }
+
+  @override
+  String get voiceMatchEnrollStarting => 'Підготовка…';
+
+  @override
+  String get voiceMatchEnrollReading => 'Прочитайте це вголос';
+
+  @override
+  String voiceMatchEnrollSeconds(String seconds, String target) {
+    return '$seconds з $target с';
+  }
+
+  @override
+  String get voiceMatchEnrollOtherVoice =>
+      'Говорить інший голос. Цю частину пропущено.';
+
+  @override
+  String get voiceMatchEnrollSaving => 'Збереження…';
+
+  @override
+  String get voiceMatchEnrollStop => 'Зупинити';
+
+  @override
+  String get voiceMatchEnrollTipWalk => 'Повільно ходіть кімнатою';
+
+  @override
+  String get voiceMatchEnrollTipTurn => 'Час від часу відвертайтеся від кіоску';
+
+  @override
+  String get voiceMatchEnrollTipTalk => 'Говоріть так, як віддаєте команди';
+
+  @override
+  String voiceMatchEnrollDone(String name) {
+    return '$name зареєстровано';
+  }
+
+  @override
+  String voiceMatchEnrollDoneDetail(String seconds) {
+    return 'Додано $seconds с мовлення.';
+  }
+
+  @override
+  String get voiceMatchEnrollFailed => 'Нічого не збережено';
+
+  @override
+  String get voiceMatchEnrollTooShort =>
+      'Замало мовлення для збереження. Читайте щонайменше 10 секунд.';
+
+  @override
+  String get voiceMatchEnrollLost => 'Зв\'язок із Voice Match втрачено.';
+
+  @override
+  String get voiceMatchEnrollNoMic => 'Мікрофон недоступний.';
+
+  @override
+  String get voiceMatchEnrollStopped => 'Зупинено до початку запису.';
+
+  @override
+  String get voiceMatchEnrollPassage1 => 'Увімкни світло на кухні.';
+
+  @override
+  String get voiceMatchEnrollPassage2 => 'Постав таймер на десять хвилин.';
+
+  @override
+  String get voiceMatchEnrollPassage3 => 'Яка погода буде завтра?';
+
+  @override
+  String get voiceMatchEnrollPassage4 =>
+      'Додай молоко та яйця до списку покупок.';
+
+  @override
+  String get voiceMatchEnrollPassage5 => 'Увімкни тиху музику у вітальні.';
+
+  @override
+  String get voiceMatchEnrollPassage6 =>
+      'Ранок був холодний, тож ми залишилися вдома й напекли млинців.';
+
+  @override
+  String get voiceMatchEnrollPassage7 =>
+      'Пізніше ми пішли до парку й дивилися, як собаки ганяються одне за одним по траві.';
+
+  @override
+  String get voiceMatchEnrollPassage8 =>
+      'Увечері здійнявся вітер, і ми розпалили камін.';
+
+  @override
+  String get voiceMatchEnrollPassage9 => 'Вимкни все світло внизу.';
+
+  @override
+  String get voiceMatchEnrollPassage10 => 'Котра година в Токіо?';
+
+  @override
+  String get voiceMatchEnrollPassage11 =>
+      'Нагадай мені зателефонувати стоматологу в понеділок.';
+
+  @override
+  String get voiceMatchEnrollPassage12 =>
+      'Скільки часу їхати автомобілем до аеропорту?';
+
+  @override
+  String get voiceMatchEnrollPassage13 => 'Постав музику на паузу.';
+
+  @override
+  String get voiceMatchEnrollPassage14 => 'На добраніч.';
 
   @override
   String get voiceNoticeError => 'Помилка Voice Satellite';
