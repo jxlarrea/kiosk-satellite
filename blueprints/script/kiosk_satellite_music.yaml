@@ -67,7 +67,8 @@ fields:
     name: Query
     description: >-
       What to play or search for: a song, album, artist, playlist or
-      station name, or a genre or mood. Required for play.
+      station name, or a genre or mood. Required for play. mine for the
+      playlist of the person talking, when they say my playlist.
     selector:
       text:
   kind:

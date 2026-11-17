@@ -1,0 +1,188 @@
+blueprint:
+  name: Kiosk Satellite to-do
+  author: Kiosk Satellite
+  description: >-
+    Lets an LLM conversation agent add to, read, check off and remove items
+    from a to-do or shopping list by voice, in any language the agent
+    speaks. Create a script from this blueprint and expose it to Assist.
+    With Ground Control's Voice Match, "my list" is the list of the person
+    talking, as set on Ground Control's People page, so the agent never
+    needs to know whose list is whose. Anyone without a list of their own,
+    and every request without Voice Match, uses the shared list picked
+    here. The kiosk needs its Home Assistant address and a token from an
+    administrator.
+  domain: script
+  homeassistant:
+    min_version: "2024.10.0"
+  source_url: https://github.com/jxlarrea/kiosk-satellite/blob/main/blueprints/script/kiosk_satellite_todo.yaml
+  input:
+    shared_list:
+      name: Shared list
+      description: >-
+        The household's list, used when the person talking has no list of
+        their own.
+      selector:
+        entity:
+          filter:
+            - domain: todo
+
+mode: parallel
+max: 10
+
+description: >-
+  Adds to, reads, checks off and removes items on the user's to-do or
+  shopping list. Use it for any request about "my list", "the list" or
+  "the shopping list". It already knows whose list to use, from the voice
+  of the person talking, so never ask whose list it is. The response says
+  what happened and which list was used. Tell the user in their language.
+  When it says nobody was recognized, say you don't know who is speaking.
+  When an item was not found, offer the items it lists.
+
+fields:
+  action:
+    name: Action
+    description: >-
+      add puts item on the list. list reads what is still to do. complete
+      checks item off. remove deletes item.
+    required: true
+    selector:
+      select:
+        options:
+          - add
+          - list
+          - complete
+          - remove
+  item:
+    name: Item
+    description: >-
+      For add, complete and remove, the item, short, as the user says it
+      (milk, call the plumber).
+    selector:
+      text:
+  kiosk:
+    name: Kiosk
+    description: >-
+      Leave empty. Only when the user names another kiosk, its name, like
+      Kitchen.
+    selector:
+      text:
+
+sequence:
+  - variables:
+      request: "{{ now().timestamp() }}-{{ range(10000) | random }}"
+      shared: !input shared_list
+      wanted: "{{ item | default('') | trim }}"
+  - event: kiosk_satellite_mine
+    event_data:
+      id: "{{ request }}"
+      thing: todo_list
+      kiosk: "{{ kiosk | default('') }}"
+  - wait_for_trigger:
+      - trigger: event
+        event_type: kiosk_satellite_mine_result
+        event_data:
+          id: "{{ request }}"
+    timeout: 2
+  # No kiosk answered: a request from outside a kiosk's voice turn, so the
+  # shared list.
+  - variables:
+      mine: "{{ wait.trigger.event.data if wait.trigger else {'status': 'none'} }}"
+      list: "{{ mine.entity if mine.status == 'own' else shared }}"
+      base:
+        list: "{{ state_attr(list, 'friendly_name') or list }}"
+        whose: "{{ mine.speaking if mine.status == 'own' else 'shared' }}"
+        speaking: "{{ mine.speaking }}"
+  - if:
+      - condition: template
+        value_template: "{{ mine.status == 'no_speaker' }}"
+    then:
+      - variables:
+          result:
+            ok: false
+            error: >-
+              nobody was recognized by voice, so it is not known whose list
+              to use
+      - stop: Nobody recognized
+        response_variable: result
+  - if:
+      - condition: template
+        value_template: "{{ action in ['add', 'complete', 'remove'] and not wanted }}"
+    then:
+      - variables:
+          result:
+            ok: false
+            error: item is required
+      - stop: No item
+        response_variable: result
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ action == 'add' }}"
+        sequence:
+          - action: todo.add_item
+            target:
+              entity_id: "{{ list }}"
+            data:
+              item: "{{ wanted }}"
+          - variables:
+              result: "{{ dict(base, ok=true, result='added', item=wanted) }}"
+          - stop: Done
+            response_variable: result
+    default:
+      - action: todo.get_items
+        target:
+          entity_id: "{{ list }}"
+        data:
+          status: needs_action
+        response_variable: found
+      - variables:
+          items: "{{ found[list]['items'] | map(attribute='summary') | list }}"
+          # The item named exactly, or else the first that contains the words.
+          match: >-
+            {%- set ns = namespace(exact=none, part=none) -%}
+            {%- for i in found[list]['items'] -%}
+            {%- if ns.exact is none and i.summary | lower == wanted | lower %}{% set ns.exact = i %}{% endif -%}
+            {%- if ns.part is none and wanted | lower in i.summary | lower %}{% set ns.part = i %}{% endif -%}
+            {%- endfor -%}
+            {{ (ns.exact or ns.part) if wanted else none }}
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ action == 'list' }}"
+            sequence:
+              - variables:
+                  result: "{{ dict(base, ok=true, result='listed', items=items) }}"
+              - stop: Done
+                response_variable: result
+          - conditions:
+              - condition: template
+                value_template: "{{ match is none }}"
+            sequence:
+              - variables:
+                  result: "{{ dict(base, ok=false, error='no matching item', items=items) }}"
+              - stop: Done
+                response_variable: result
+          - conditions:
+              - condition: template
+                value_template: "{{ action == 'complete' }}"
+            sequence:
+              - action: todo.update_item
+                target:
+                  entity_id: "{{ list }}"
+                data:
+                  item: "{{ match.uid }}"
+                  status: completed
+              - variables:
+                  result: "{{ dict(base, ok=true, result='completed', item=match.summary) }}"
+              - stop: Done
+                response_variable: result
+        default:
+          - action: todo.remove_item
+            target:
+              entity_id: "{{ list }}"
+            data:
+              item: "{{ match.uid }}"
+          - variables:
+              result: "{{ dict(base, ok=true, result='removed', item=match.summary) }}"
+          - stop: Done
+            response_variable: result

@@ -1,4 +1,5 @@
 import '../alarms/alarm_requests.dart' show parseAlarmTime;
+import '../ground_control/mine.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../voice/voice_requests_manager.dart' show normalizeKioskName;
@@ -217,12 +218,8 @@ class CalendarRequests {
       return _fail('start must be yyyy-MM-dd or yyyy-MM-dd HH:mm');
     }
     if (_past(start.at) case final past?) return past;
-    final people = _resolve(data['people']);
-    if (people.unknown.isNotEmpty) {
-      return _fail('no calendar for ${people.unknown.join(', ')}', {
-        'calendars': _calendarNames(),
-      });
-    }
+    final people = _resolve(data['people'], data['speaking']);
+    if (_peopleFailure(people) case final failure?) return failure;
     var targets = people.found;
     if (targets.isEmpty) {
       // Some agents leave the person in the title.
@@ -327,12 +324,8 @@ class CalendarRequests {
 
   Future<Map<String, Object?>> _find(Map<String, Object?> data) async {
     final title = '${data['title'] ?? ''}'.trim();
-    final people = _resolve(data['people']);
-    if (people.unknown.isNotEmpty) {
-      return _fail('no calendar for ${people.unknown.join(', ')}', {
-        'calendars': _calendarNames(),
-      });
-    }
+    final people = _resolve(data['people'], data['speaking']);
+    if (_peopleFailure(people) case final failure?) return failure;
     final today = dateOnly(_clock());
     final start = parseWhen(data['start']);
     final end = parseWhen(data['end'], base: start?.at);
@@ -488,15 +481,9 @@ class CalendarRequests {
         return (event: null, copies: none, failure: past);
       }
     }
-    final people = _resolve(data['people']);
-    if (people.unknown.isNotEmpty) {
-      return (
-        event: null,
-        copies: none,
-        failure: _fail('no calendar for ${people.unknown.join(', ')}', {
-          'calendars': _calendarNames(),
-        }),
-      );
+    final people = _resolve(data['people'], data['speaking']);
+    if (_peopleFailure(people) case final failure?) {
+      return (event: null, copies: none, failure: failure);
     }
     final today = dateOnly(_clock());
     final from = start == null ? today : dateOnly(start.at);
@@ -681,7 +668,12 @@ class CalendarRequests {
   /// The calendars a request names: by the calendar's name, its entity or
   /// its person. Everyone, all or family (with no calendar called that)
   /// is every calendar.
-  ({List<CalendarSource> found, List<String> unknown}) _resolve(Object? raw) {
+  /// The calendars [raw] names. "me" (or "my", "mine") is the calendar of
+  /// the person speaking, [speakingRaw] as the voice request carries it,
+  /// and `unidentified` says when nobody was placed by voice.
+  ({List<CalendarSource> found, List<String> unknown, bool unidentified})
+  _resolve(Object? raw, Object? speakingRaw) {
+    var unidentified = false;
     final names = <String>[
       if (raw is List)
         for (final item in raw) '$item'
@@ -694,6 +686,17 @@ class CalendarRequests {
       final plain = name.trim().replaceFirst(RegExp(r"['’]s$"), '');
       final word = normalizeKioskName(plain);
       if (word.isEmpty) continue;
+      if (meansSpeaker(word)) {
+        final speaking = Speaking.from(speakingRaw);
+        if (speaking == null) {
+          unidentified = true;
+        } else if (_calendarOf(speaking) case final c?) {
+          if (!found.contains(c)) found.add(c);
+        } else {
+          unknown.add(speaking.name);
+        }
+        continue;
+      }
       final matches = [
         for (final c in _store.enabled)
           if (_names(c).any((n) => _sameName(n, word))) c,
@@ -710,7 +713,43 @@ class CalendarRequests {
         if (!found.contains(c)) found.add(c);
       }
     }
-    return (found: found, unknown: unknown);
+    return (found: found, unknown: unknown, unidentified: unidentified);
+  }
+
+  /// The calendar of [speaking]: the one Ground Control has for them, the
+  /// one set for their Home Assistant person or the one with their name.
+  CalendarSource? _calendarOf(Speaking speaking) {
+    final entity = speaking.things['calendar'];
+    final person = speaking.things['person'];
+    final word = normalizeKioskName(speaking.name);
+    for (final match in <bool Function(CalendarSource)>[
+      (c) => entity != null && c.entity == entity,
+      (c) => person != null && c.person == person,
+      (c) => word.isNotEmpty && _names(c).any((n) => _sameName(n, word)),
+    ]) {
+      for (final c in _store.enabled) {
+        if (match(c)) return c;
+      }
+    }
+    return null;
+  }
+
+  /// Why [people] can't be used, or null when it can.
+  Map<String, Object?>? _peopleFailure(
+    ({List<CalendarSource> found, List<String> unknown, bool unidentified})
+    people,
+  ) {
+    if (people.unidentified) {
+      return _fail('nobody was recognized by voice: ask whose calendar', {
+        'calendars': _calendarNames(),
+      });
+    }
+    if (people.unknown.isNotEmpty) {
+      return _fail('no calendar for ${people.unknown.join(', ')}', {
+        'calendars': _calendarNames(),
+      });
+    }
+    return null;
   }
 
   static List<String> _names(CalendarSource c) => [
@@ -760,6 +799,8 @@ class CalendarRequests {
     return {
       'title': e.summary,
       'when': when,
+      // The start time alone, for a script that reads the events out.
+      if (!e.allDay) 'at': _time(e.start),
       'for': [for (final c in e.calendars) _nameOf(c)],
       if (e.location.isNotEmpty) 'location': e.location,
       if (repeats != null) 'repeats': repeats.toLowerCase(),

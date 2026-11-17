@@ -3,6 +3,7 @@ import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/ground_control/mine.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/managers/voice/ha_socket.dart';
 import 'package:kiosk_satellite/managers/voice/voice_requests_manager.dart';
@@ -153,6 +154,7 @@ void main() {
         'kiosk_satellite_alarm',
         'kiosk_satellite_calendar',
         'kiosk_satellite_intercom',
+        'kiosk_satellite_mine',
         'kiosk_satellite_music',
       });
     });
@@ -174,6 +176,48 @@ void main() {
         'ok': true,
         'result': 'alarmsVoiceRequest',
       });
+    });
+
+    test('a request in a voice turn carries who is speaking', () async {
+      final socket = await follow(admin: true);
+      requests.speaking = () => const Speaking(
+        id: 'p1',
+        name: 'Ana',
+        by: 'voice',
+        things: {'calendar': 'calendar.ana'},
+      );
+      turn('voice', active: true);
+      await pumpEventQueue();
+      socket.handlers['kiosk_satellite_alarm']!({
+        'data': {'id': 'r1', 'action': 'list', 'kiosk': ''},
+      });
+      await pumpEventQueue();
+      expect(executed.single.$2['speaking'], {
+        'id': 'p1',
+        'name': 'Ana',
+        'by': 'voice',
+        'things': {'calendar': 'calendar.ana'},
+      });
+      expect(socket.fired.single['event_data'], {
+        'id': 'r1',
+        'ok': true,
+        'result': 'alarmsVoiceRequest',
+        'speaking': 'Ana',
+      });
+    });
+
+    test('outside a voice turn nobody is speaking', () async {
+      final socket = await follow(admin: true);
+      requests.speaking = () => const Speaking(id: 'p1', name: 'Ana');
+      socket.handlers['kiosk_satellite_alarm']!({
+        'data': {'id': 'r1', 'action': 'list', 'kiosk': 'Bedroom'},
+      });
+      await pumpEventQueue();
+      expect(executed.single.$2['speaking'], isNull);
+      expect(
+        (socket.fired.single['event_data'] as Map).containsKey('speaking'),
+        isFalse,
+      );
     });
 
     test('a call goes by the kiosk named in caller', () async {

@@ -86,3 +86,39 @@ variables:
 ```
 
 **For LLM conversation agents**, expose each kiosk's Speaker sensor to Assist and add the instructions block from the Ground Control app's Settings page to the agent's instructions. The agent reads the sensor with GetLiveContext on each request, so it knows who is talking even when the conversation continues from an earlier command. The agent needs the Assist API.
+
+## Personal Commands
+
+"Add milk to my list" goes on Ana's list when Ana says it and on Leo's list when Leo does. Set each person's to-do list, calendar and playlist on the People page of the Ground Control app. The kiosk gets them with the voices, so "my" is known on the kiosk with no extra trip to Ground Control. Anyone without a list of their own uses the shared list.
+
+> **Info:** These use the same events as the calendar and music blueprints, so the long-lived token under **Settings, Home Assistant** must belong to a Home Assistant administrator.
+
+**For Home Assistant's own conversation agent**, the personal commands blueprint adds sentences in every language Kiosk Satellite supports. They also work with an LLM agent that has **Prefer handling commands locally** on.
+
+1. Import the blueprint:
+
+    [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fjxlarrea%2Fkiosk-satellite%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fkiosk_satellite_personal_commands.yaml)
+
+2. Create an automation from it and pick the shared list.
+
+| Ask | What happens |
+| --- | --- |
+| "Add milk to my shopping list" | Milk goes on the speaker's list, or on the shared list when they have none. |
+| "What's on my list?" | Reads what is still to do on that list. |
+| "What's on my calendar today?" or "What do I have tomorrow?" | Reads that day's events from the speaker's calendar on the kiosk. |
+| "Play my playlist" | Plays the speaker's playlist on the speaker this kiosk's Now Playing follows. |
+
+Add your own wording under the blueprint's **More sentences** fields. Those are answered in English.
+
+**For LLM conversation agents**, the to-do blueprint gives the agent "my list" without knowing whose list is whose:
+
+1. Import the blueprint:
+
+    [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fjxlarrea%2Fkiosk-satellite%2Fblob%2Fmain%2Fblueprints%2Fscript%2Fkiosk_satellite_todo.yaml)
+
+2. Create a script from it and pick the shared list.
+3. Expose the script to Assist under **Settings, Voice assistants, Expose**.
+
+The agent can then add to, read, check off and remove items. The [calendar](calendar.md#managing-the-calendar-by-voice) and [music](music-library.md#playing-music-by-voice) blueprints take "my calendar" and "my playlist" the same way. Every answer these blueprints get from the kiosk names the person talking in `speaking`.
+
+When someone in the home has a list of their own but the voice is not recognized, the kiosk says it doesn't know who is speaking, so an item never lands on the wrong list.

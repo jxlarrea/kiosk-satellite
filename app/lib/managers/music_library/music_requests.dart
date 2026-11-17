@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../core/command_registry.dart';
+import '../ground_control/mine.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../analytics/usage_counters.dart';
@@ -31,16 +32,30 @@ class MusicRequests {
       unawaited(UsageCounters.bump(_settings, 'library_voice_requests'));
     }
     String text(String key) => '${p[key] ?? ''}'.trim();
+    // "Play my playlist": the playlist Ground Control has for the person
+    // speaking.
+    var query = text('query');
+    var kind = text('kind');
+    if (meansSpeaker(query)) {
+      final speaking = Speaking.from(p['speaking']);
+      final own = speaking?.things['playlist'];
+      if (speaking == null) {
+        return _fail('nobody was recognized by voice: ask whose playlist');
+      }
+      if (own == null) return _fail('${speaking.name} has no playlist');
+      query = own;
+      kind = 'playlist';
+    }
     try {
       return switch (action) {
         'play' => await _play(
-          query: text('query'),
-          kind: text('kind'),
+          query: query,
+          kind: kind,
           artist: text('artist'),
           mode: text('mode'),
           speaker: text('speaker'),
         ),
-        'show' => await _show(text('query'), text('kind')),
+        'show' => await _show(query, kind),
         'now_playing' => await _nowPlaying(),
         'pause' || 'resume' || 'next' || 'previous' => await _control(action),
         'volume' ||

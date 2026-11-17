@@ -117,7 +117,7 @@ Then ask the kiosk:
 
 The kiosk you are talking to opens the calendar on the day the request is about, and an event it added, found or changed has a ring around it for a few seconds. Any touch clears the ring.
 
-The kiosk finds the people by the names of its calendars, their entities and their people, so "Leo" finds a calendar named Leo or one linked to `person.leo`. Everyone, all or family (with no calendar called that) means every calendar. An event added for no one in particular goes on the first calendar in the list. If the agent names someone with no calendar, it asks which one to use.
+The kiosk finds the people by the names of its calendars, their entities and their people, so "Leo" finds a calendar named Leo or one linked to `person.leo`. Everyone, all or family (with no calendar called that) means every calendar. An event added for no one in particular goes on the first calendar in the list. If the agent names someone with no calendar, it asks which one to use. With [Voice Match](voice-match.md#personal-commands), "my calendar" is the calendar of the person talking: the one set for them in Ground Control, the one linked to their Home Assistant person or the one with their name.
 
 When more than one event matches a change or a cancel, or the event repeats and you did not say which day, the agent asks which one. An event on several calendars changes or goes on all of them. Only calendars whose integration can take new events, change them or delete them can be changed by voice, such as Local Calendar, Google Calendar and CalDAV. A holiday calendar is read only. The agent says so when a calendar cannot do what you asked.
 

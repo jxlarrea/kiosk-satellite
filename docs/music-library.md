@@ -96,6 +96,7 @@ Then ask the kiosk:
 | "Turn the music up" or "Set the music volume to 30" | Steps the volume by 10, or sets it. |
 | "What's next in the queue?" or "Clear the queue" | Reads the playing track and the next ones, or empties the queue. |
 | "Which speakers can you play on?" | Lists the speakers of the library's source. |
+| "Play my playlist" | With [Voice Match](voice-match.md#personal-commands), plays the playlist set for the person talking in Ground Control. |
 
 The kiosk searches the source of the speaker it plays on, so where the music comes from follows the speaker:
 

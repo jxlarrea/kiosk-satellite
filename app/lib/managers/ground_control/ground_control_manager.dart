@@ -9,6 +9,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'mine.dart';
 
 /// Kiosk Satellite Ground Control: finds the service, keeps this kiosk's
 /// control connection to it and tells the rest of the app where it is.
@@ -42,6 +43,22 @@ class GroundControlManager extends Manager {
   String version = '';
   String model = '';
   List<Map<String, Object?>> people = const [];
+
+  ({String? id, String name, String? by})? _speaking;
+
+  /// Who Voice Match placed in this kiosk's last voice turn, with their
+  /// things as Ground Control has them now. Null before the voice is
+  /// placed, for a voice nobody enrolled and with Voice Match off.
+  Speaking? get speaking {
+    final s = _speaking;
+    if (s == null || s.id == null) return null;
+    return Speaking(
+      id: s.id,
+      name: s.name,
+      by: s.by,
+      things: thingsOf(s.id, people),
+    );
+  }
 
   /// The enrollment on this kiosk, as VoiceMatchEnrollment.toJson gives
   /// it, while it runs and its result shows.
@@ -104,6 +121,11 @@ class GroundControlManager extends Manager {
       }),
     );
     _subs.add(bus.on<VoiceMatchEnrollmentChanged>().listen(_onEnrollment));
+    _subs.add(
+      bus.on<VoiceSpeakerChanged>().listen((e) {
+        _speaking = e.name.isEmpty ? null : (id: e.id, name: e.name, by: e.by);
+      }),
+    );
     commands.register(
       Command(
         name: 'groundControlStatus',
@@ -112,6 +134,25 @@ class GroundControlManager extends Manager {
             'its address and version, and who is enrolled',
         quiet: true,
         handler: (_) async => CommandResult.ok(describe()),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'groundControlMine',
+        description:
+            'What "my" to-do list, calendar, playlist or person means for '
+            'the person speaking in this kiosk\'s voice turn, as the Kiosk '
+            'Satellite scripts ask for it',
+        params: const {'thing': 'todo_list, calendar, playlist or person'},
+        // The voice requests manager logs each one with its outcome.
+        quiet: true,
+        handler: (p) async => CommandResult.ok(
+          resolveMine(
+            '${p['thing'] ?? ''}'.trim(),
+            p.containsKey('speaking') ? Speaking.from(p['speaking']) : speaking,
+            people,
+          ),
+        ),
       ),
     );
     await _apply();

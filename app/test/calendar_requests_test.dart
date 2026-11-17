@@ -213,6 +213,39 @@ void main() {
       expect(store.created, isEmpty);
     });
 
+    test('me is the calendar of the person speaking', () async {
+      Future<Map<String, Object?>> add(Object? speaking) => requests.handle({
+        'action': 'add',
+        'title': 'Haircut',
+        'start': '2026-10-22 15:00',
+        'people': ['me'],
+        'speaking': speaking,
+      });
+      // By the calendar Ground Control has for them, then by their Home
+      // Assistant person, then by their name.
+      await add({
+        'name': 'Samantha',
+        'things': {'calendar': 'calendar.sam'},
+      });
+      await add({
+        'name': 'Leonardo',
+        'things': {'person': 'person.leo'},
+      });
+      await add({'name': 'Sam'});
+      expect(
+        [for (final (e, _) in store.created) e],
+        ['calendar.sam', 'calendar.leo_school', 'calendar.sam'],
+      );
+      store.created.clear();
+      final unknown = await add(null);
+      expect(unknown['ok'], isFalse);
+      expect(unknown['error'], contains('nobody was recognized'));
+      expect(unknown['calendars'], ['Family', 'Sam', 'Leo']);
+      final none = await add({'name': 'Maya'});
+      expect(none['error'], 'no calendar for Maya');
+      expect(store.created, isEmpty);
+    });
+
     test('a retry does not add it twice', () async {
       store.events['calendar.family'] = [
         _event(

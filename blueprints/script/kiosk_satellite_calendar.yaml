@@ -37,7 +37,9 @@ description: >-
   happened. Tell the user in their language. When it says several events
   match, or that an event repeats, ask which one. When it names no
   calendar for someone, ask whose calendar to use, from the calendars it
-  lists.
+  lists. With Voice Match, speaking names the person talking, and me in
+  people is their calendar. When it says nobody was recognized, ask whose
+  calendar to use.
 
 fields:
   action:
@@ -88,7 +90,8 @@ fields:
     name: People
     description: >-
       Whose calendars: the names of the people or calendars the user
-      mentions, like Leo or Sam, or everyone. For add, the event goes on
+      mentions, like Leo or Sam, or everyone. me for the person talking,
+      when they say my calendar or me. For add, the event goes on
       each of their calendars (leave empty for the family calendar). For
       find, change and cancel, it narrows the search.
     selector:

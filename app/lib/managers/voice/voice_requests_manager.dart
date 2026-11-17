@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../ground_control/mine.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'ha_socket.dart';
@@ -50,6 +51,9 @@ class VoiceRequestsManager extends Manager {
       command: 'musicLibraryVoiceRequest',
       kiosk: 'kiosk',
     ),
+    // "My" list, calendar, playlist or person: who is speaking and what
+    // they own, from Ground Control (kiosk_satellite_mine).
+    'kiosk_satellite_mine': (command: 'groundControlMine', kiosk: 'kiosk'),
     // The kiosk named in `kiosk` is the one to call, so the one placing
     // the call goes by `caller`.
     'kiosk_satellite_intercom': (
@@ -57,6 +61,12 @@ class VoiceRequestsManager extends Manager {
       kiosk: 'caller',
     ),
   };
+
+  /// Who is speaking in this kiosk's voice turn, set by the app container
+  /// from Ground Control. Each request in a voice turn carries it as
+  /// `speaking`, so the calendar and music can tell what "my" means, and
+  /// each answer names the person.
+  Speaking? Function()? speaking;
 
   final SettingsManager _settings;
   final VoiceTurns _turns;
@@ -177,19 +187,26 @@ class VoiceRequestsManager extends Manager {
     final data = raw.cast<String, Object?>();
     final named = '${data[route.kiosk] ?? ''}'.trim();
     if (!isForMe(named)) return;
+    // Only this kiosk's own voice turn has a speaker: a kiosk asked by
+    // name while idle knows nobody.
+    final who = _turns.activeOrRecent ? speaking?.call() : null;
     final r = await commands.execute(route.command, {
       ...data,
       // Picked for the conversation it is in, not by name: a call waits
       // for the answer to be spoken.
       'voiceTurn': named.isEmpty,
+      'speaking': who?.toJson(),
     });
-    final result = r.ok && r.data is Map
-        ? (r.data! as Map).cast<String, Object?>()
-        : <String, Object?>{'ok': false, 'error': r.error ?? 'failed'};
+    final result = {
+      ...(r.ok && r.data is Map
+          ? (r.data! as Map).cast<String, Object?>()
+          : <String, Object?>{'ok': false, 'error': r.error ?? 'failed'}),
+      'speaking': ?who?.name,
+    };
     log.info(
       name,
-      '$event ${data['action']}: '
-      '${result['ok'] == true ? result['result'] : result['error']}',
+      '$event ${data['action'] ?? data['thing']}: '
+      '${result['ok'] == true ? result['result'] ?? result['status'] : result['error']}',
     );
     try {
       await _socket.request({

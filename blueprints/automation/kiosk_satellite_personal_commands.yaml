@@ -1,0 +1,274 @@
+blueprint:
+  name: Kiosk Satellite personal commands
+  author: Kiosk Satellite
+  description: >-
+    "My" commands for Home Assistant's own conversation agent: add to and
+    read my list, what's on my calendar today or tomorrow and play my
+    playlist. With Ground Control's Voice Match, "my" is the person talking,
+    with the list, calendar and playlist set on Ground Control's People
+    page. Anyone without a list of their own uses the shared list picked
+    here. The sentences come in every language Kiosk Satellite speaks, and
+    you can add your own. They also work with an LLM agent that has
+    Prefer handling commands locally on. The kiosk needs its Home Assistant
+    address and a token from an administrator.
+  domain: automation
+  homeassistant:
+    min_version: "2024.10.0"
+  source_url: https://github.com/jxlarrea/kiosk-satellite/blob/main/blueprints/automation/kiosk_satellite_personal_commands.yaml
+  input:
+    shared_list:
+      name: Shared list
+      description: >-
+        The household's list, used when the person talking has no list of
+        their own.
+      selector:
+        entity:
+          filter:
+            - domain: todo
+    show_on_kiosk:
+      name: Show the calendar on the kiosk
+      description: Open the calendar on the kiosk on the day asked about.
+      default: false
+      selector:
+        boolean:
+    more_add:
+      name: More sentences to add to my list
+      description: >-
+        Your own wording, answered in English. Keep at least one sentence. Use {item} for the item.
+      default: ["put {item} on my [shopping|to-do|todo|grocery] list"]
+      selector:
+        text:
+          multiple: true
+    more_list:
+      name: More sentences to read my list
+      description: >-
+        Your own wording, answered in English. Keep at least one sentence.
+      default: ["tell me what's on my [shopping|to-do|todo|grocery] list"]
+      selector:
+        text:
+          multiple: true
+    more_today:
+      name: More sentences for my calendar today
+      description: >-
+        Your own wording, answered in English. Keep at least one sentence.
+      default: ["what's [on] my schedule [for] today"]
+      selector:
+        text:
+          multiple: true
+    more_tomorrow:
+      name: More sentences for my calendar tomorrow
+      description: >-
+        Your own wording, answered in English. Keep at least one sentence.
+      default: ["what's [on] my schedule [for] tomorrow"]
+      selector:
+        text:
+          multiple: true
+    more_playlist:
+      name: More sentences to play my playlist
+      description: >-
+        Your own wording, answered in English. Keep at least one sentence.
+      default: ["play my music"]
+      selector:
+        text:
+          multiple: true
+
+mode: parallel
+max: 10
+
+# Each trigger's id is the command and the language of its answer.
+triggers:
+  - { trigger: conversation, id: add.en, command: ["add {item} to my [shopping|to-do|todo|grocery] list"] }
+  - { trigger: conversation, id: list.en, command: ["(what's|what is) on my [shopping|to-do|todo|grocery] list", "read my [shopping|to-do|todo|grocery] list"] }
+  - { trigger: conversation, id: today.en, command: ["(what's|what is) on my calendar [today]", "what do I have [on] today"] }
+  - { trigger: conversation, id: tomorrow.en, command: ["(what's|what is) on my calendar tomorrow", "what do I have [on] tomorrow"] }
+  - { trigger: conversation, id: playlist.en, command: ["play my playlist"] }
+
+  - { trigger: conversation, id: add.es, command: ["(añade|agrega|pon) {item} (a|en) mi lista [de (la compra|compras|tareas)]"] }
+  - { trigger: conversation, id: list.es, command: ["(qué|que) hay en mi lista [de (la compra|compras|tareas)]", "lee mi lista [de (la compra|compras|tareas)]"] }
+  - { trigger: conversation, id: today.es, command: ["(qué|que) (tengo|hay en mi calendario) [hoy]"] }
+  - { trigger: conversation, id: tomorrow.es, command: ["(qué|que) (tengo|hay en mi calendario) mañana"] }
+  - { trigger: conversation, id: playlist.es, command: ["(pon|reproduce) mi (lista de reproducción|playlist)"] }
+
+  - { trigger: conversation, id: add.de, command: ["(füge|fuege) {item} [zu] meiner (liste|einkaufsliste|aufgabenliste) hinzu", "(setz|setze) {item} auf meine (liste|einkaufsliste|aufgabenliste)"] }
+  - { trigger: conversation, id: list.de, command: ["was steht auf meiner (liste|einkaufsliste|aufgabenliste)", "lies meine (liste|einkaufsliste|aufgabenliste) vor"] }
+  - { trigger: conversation, id: today.de, command: ["was steht [heute] in meinem kalender", "was habe ich heute [vor]"] }
+  - { trigger: conversation, id: tomorrow.de, command: ["was steht morgen in meinem kalender", "was habe ich morgen [vor]"] }
+  - { trigger: conversation, id: playlist.de, command: ["(spiel|spiele) meine playlist"] }
+
+  - { trigger: conversation, id: add.fr, command: ["ajoute {item} (à|a|sur) ma liste [de courses|de tâches]"] }
+  - { trigger: conversation, id: list.fr, command: ["qu'est-ce qu'il y a sur ma liste [de courses|de tâches]", "lis ma liste [de courses|de tâches]"] }
+  - { trigger: conversation, id: today.fr, command: ["qu'est-ce que j'ai aujourd'hui", "qu'est-ce qu'il y a dans mon agenda [aujourd'hui]"] }
+  - { trigger: conversation, id: tomorrow.fr, command: ["qu'est-ce que j'ai demain", "qu'est-ce qu'il y a dans mon agenda demain"] }
+  - { trigger: conversation, id: playlist.fr, command: ["(joue|mets) ma playlist"] }
+
+  - { trigger: conversation, id: add.nl, command: ["zet {item} op mijn (lijst|boodschappenlijst|takenlijst)", "voeg {item} toe aan mijn (lijst|boodschappenlijst|takenlijst)"] }
+  - { trigger: conversation, id: list.nl, command: ["wat staat er op mijn (lijst|boodschappenlijst|takenlijst)", "lees mijn (lijst|boodschappenlijst|takenlijst) voor"] }
+  - { trigger: conversation, id: today.nl, command: ["wat staat er [vandaag] in mijn agenda", "wat heb ik vandaag"] }
+  - { trigger: conversation, id: tomorrow.nl, command: ["wat staat er morgen in mijn agenda", "wat heb ik morgen"] }
+  - { trigger: conversation, id: playlist.nl, command: ["speel mijn (afspeellijst|playlist)"] }
+
+  - { trigger: conversation, id: add.ru, command: ["добавь {item} в мой список [покупок|дел]"] }
+  - { trigger: conversation, id: list.ru, command: ["что в (моём|моем) списке [покупок|дел]", "прочитай мой список [покупок|дел]"] }
+  - { trigger: conversation, id: today.ru, command: ["что у меня [сегодня] в календаре", "что у меня сегодня"] }
+  - { trigger: conversation, id: tomorrow.ru, command: ["что у меня завтра [в календаре]"] }
+  - { trigger: conversation, id: playlist.ru, command: ["включи мой плейлист"] }
+
+  - { trigger: conversation, id: add.uk, command: ["додай {item} до мого списку [покупок|справ]"] }
+  - { trigger: conversation, id: list.uk, command: ["що в моєму списку [покупок|справ]", "прочитай мій список [покупок|справ]"] }
+  - { trigger: conversation, id: today.uk, command: ["що в мене [сьогодні] в календарі", "що в мене сьогодні"] }
+  - { trigger: conversation, id: tomorrow.uk, command: ["що в мене завтра [в календарі]"] }
+  - { trigger: conversation, id: playlist.uk, command: ["увімкни мій плейлист"] }
+
+  - { trigger: conversation, id: add.zh, command: ["把{item}(加到|添加到|放到)我的[购物|待办]清单[里|上]", "在我的[购物|待办]清单[里|上](加|添加)[上]{item}"] }
+  - { trigger: conversation, id: list.zh, command: ["我的[购物|待办]清单[里|上]有什么", "读一下我的[购物|待办]清单"] }
+  - { trigger: conversation, id: today.zh, command: ["我今天有什么安排", "我的日历[今天]有什么"] }
+  - { trigger: conversation, id: tomorrow.zh, command: ["我明天有什么安排", "我的日历明天有什么"] }
+  - { trigger: conversation, id: playlist.zh, command: ["(播放|放)我的歌单"] }
+
+  - { trigger: conversation, id: add.more, command: !input more_add }
+  - { trigger: conversation, id: list.more, command: !input more_list }
+  - { trigger: conversation, id: today.more, command: !input more_today }
+  - { trigger: conversation, id: tomorrow.more, command: !input more_tomorrow }
+  - { trigger: conversation, id: playlist.more, command: !input more_playlist }
+
+variables:
+  shared: !input shared_list
+  show: !input show_on_kiosk
+  what: "{{ trigger.id.split('.')[0] }}"
+  lang: "{{ trigger.id.split('.')[1] | replace('more', 'en') }}"
+  request: "{{ now().timestamp() }}-{{ range(10000) | random }}"
+  # %i is the item, %l the list, %s the items or events, %p the playlist,
+  # %t an event's title and %h its time.
+  say:
+    en: { added: "Added %i to %l.", empty: "%l is empty.", items: "On %l: %s.", nobody: "Sorry, I don't know who is speaking.", today: "Today you have %s.", tomorrow: "Tomorrow you have %s.", free_today: "Nothing on your calendar today.", free_tomorrow: "Nothing on your calendar tomorrow.", event: "%t at %h", no_calendar: "I couldn't find your calendar.", playing: "Playing %p.", no_playlist: "You don't have a playlist yet.", failed: "Sorry, that didn't work.", and: " and " }
+    es: { added: "Añadí %i a %l.", empty: "No hay nada en %l.", items: "En %l: %s.", nobody: "Lo siento, no sé quién está hablando.", today: "Hoy tienes %s.", tomorrow: "Mañana tienes %s.", free_today: "Hoy no tienes nada en el calendario.", free_tomorrow: "Mañana no tienes nada en el calendario.", event: "%t a las %h", no_calendar: "No encontré tu calendario.", playing: "Reproduciendo %p.", no_playlist: "Todavía no tienes una lista de reproducción.", failed: "Lo siento, no funcionó.", and: " y " }
+    de: { added: "%i steht jetzt auf %l.", empty: "%l ist leer.", items: "Auf %l: %s.", nobody: "Ich weiß leider nicht, wer spricht.", today: "Heute hast du %s.", tomorrow: "Morgen hast du %s.", free_today: "Heute steht nichts in deinem Kalender.", free_tomorrow: "Morgen steht nichts in deinem Kalender.", event: "%t um %h", no_calendar: "Ich habe deinen Kalender nicht gefunden.", playing: "Ich spiele %p.", no_playlist: "Du hast noch keine Playlist.", failed: "Das hat leider nicht geklappt.", and: " und " }
+    fr: { added: "J'ai ajouté %i à %l.", empty: "Il n'y a rien sur %l.", items: "Sur %l : %s.", nobody: "Désolé, je ne sais pas qui parle.", today: "Aujourd'hui, tu as %s.", tomorrow: "Demain, tu as %s.", free_today: "Rien dans ton agenda aujourd'hui.", free_tomorrow: "Rien dans ton agenda demain.", event: "%t à %h", no_calendar: "Je n'ai pas trouvé ton agenda.", playing: "Je joue %p.", no_playlist: "Tu n'as pas encore de playlist.", failed: "Désolé, ça n'a pas marché.", and: " et " }
+    nl: { added: "%i staat op %l.", empty: "Er staat niets op %l.", items: "Op %l: %s.", nobody: "Sorry, ik weet niet wie er praat.", today: "Vandaag heb je %s.", tomorrow: "Morgen heb je %s.", free_today: "Er staat vandaag niets in je agenda.", free_tomorrow: "Er staat morgen niets in je agenda.", event: "%t om %h", no_calendar: "Ik kon je agenda niet vinden.", playing: "Ik speel %p.", no_playlist: "Je hebt nog geen afspeellijst.", failed: "Sorry, dat lukte niet.", and: " en " }
+    ru: { added: "Добавлено в %l: %i.", empty: "В %l ничего нет.", items: "В %l: %s.", nobody: "Извините, я не знаю, кто говорит.", today: "Сегодня у вас %s.", tomorrow: "Завтра у вас %s.", free_today: "Сегодня в календаре ничего нет.", free_tomorrow: "Завтра в календаре ничего нет.", event: "%t в %h", no_calendar: "Не удалось найти ваш календарь.", playing: "Включаю %p.", no_playlist: "У вас пока нет плейлиста.", failed: "Извините, не получилось.", and: " и " }
+    uk: { added: "Додано до %l: %i.", empty: "У %l нічого немає.", items: "У %l: %s.", nobody: "Вибачте, я не знаю, хто говорить.", today: "Сьогодні у вас %s.", tomorrow: "Завтра у вас %s.", free_today: "Сьогодні в календарі нічого немає.", free_tomorrow: "Завтра в календарі нічого немає.", event: "%t о %h", no_calendar: "Не вдалося знайти ваш календар.", playing: "Вмикаю %p.", no_playlist: "У вас поки немає плейлиста.", failed: "Вибачте, не вийшло.", and: " і " }
+    zh: { added: "已把%i加到%l。", empty: "%l里没有东西。", items: "%l里有：%s。", nobody: "抱歉，我不知道是谁在说话。", today: "你今天有%s。", tomorrow: "你明天有%s。", free_today: "你今天的日历上没有安排。", free_tomorrow: "你明天的日历上没有安排。", event: "%h的%t", no_calendar: "没有找到你的日历。", playing: "正在播放%p。", no_playlist: "你还没有歌单。", failed: "抱歉，没有成功。", and: "和" }
+  text: "{{ say[lang] }}"
+
+actions:
+  - choose:
+      # ── My list ─────────────────────────────────────────────────────
+      - conditions:
+          - condition: template
+            value_template: "{{ what in ['add', 'list'] }}"
+        sequence:
+          - event: kiosk_satellite_mine
+            event_data:
+              id: "{{ request }}"
+              thing: todo_list
+          - wait_for_trigger:
+              - trigger: event
+                event_type: kiosk_satellite_mine_result
+                event_data:
+                  id: "{{ request }}"
+            timeout: 2
+          - variables:
+              mine: "{{ wait.trigger.event.data if wait.trigger else {'status': 'none'} }}"
+              list: "{{ mine.entity if mine.status == 'own' else shared }}"
+              list_name: "{{ state_attr(list, 'friendly_name') or list }}"
+          - if:
+              - condition: template
+                value_template: "{{ mine.status == 'no_speaker' }}"
+            then:
+              - set_conversation_response: "{{ text.nobody }}"
+              - stop: Nobody recognized
+          - if:
+              - condition: template
+                value_template: "{{ what == 'add' }}"
+            then:
+              - action: todo.add_item
+                target:
+                  entity_id: "{{ list }}"
+                data:
+                  item: "{{ trigger.slots.item }}"
+              - set_conversation_response: "{{ text.added | replace('%i', trigger.slots.item) | replace('%l', list_name) }}"
+            else:
+              - action: todo.get_items
+                target:
+                  entity_id: "{{ list }}"
+                data:
+                  status: needs_action
+                response_variable: found
+              - set_conversation_response: >-
+                  {%- set items = found[list]['items'] | map(attribute='summary') | list -%}
+                  {% if items %}{{ text['items'] | replace('%l', list_name) | replace('%s', items | join(', ')) }}{% else %}{{ text.empty | replace('%l', list_name) }}{% endif %}
+
+      # ── My calendar ─────────────────────────────────────────────────
+      - conditions:
+          - condition: template
+            value_template: "{{ what in ['today', 'tomorrow'] }}"
+        sequence:
+          - event: kiosk_satellite_calendar
+            event_data:
+              id: "{{ request }}"
+              action: find
+              start: "{{ (now() + timedelta(days=1 if what == 'tomorrow' else 0)).strftime('%Y-%m-%d') }}"
+              people: ["me"]
+              show: "{{ show }}"
+          - wait_for_trigger:
+              - trigger: event
+                event_type: kiosk_satellite_calendar_result
+                event_data:
+                  id: "{{ request }}"
+            timeout: 10
+          - variables:
+              result: "{{ wait.trigger.event.data if wait.trigger else {'ok': false, 'error': 'no kiosk answered'} }}"
+          - variables:
+              error: "{{ result.error | default('') }}"
+              events: >-
+                {%- set ns = namespace(out=[]) -%}
+                {%- for e in result.events | default([]) -%}
+                {%- set ns.out = ns.out + [text.event | replace('%t', e.title) | replace('%h', e.at) if e.at is defined else e.title] -%}
+                {%- endfor -%}
+                {{ ns.out }}
+          - set_conversation_response: >-
+              {%- if not result.ok and 'nobody was recognized' in error -%}{{ text.nobody }}
+              {%- elif not result.ok and 'no calendar' in error -%}{{ text.no_calendar }}
+              {%- elif not result.ok -%}{{ text.failed }}
+              {%- elif not events -%}{{ text['free_' ~ what] }}
+              {%- elif events | length == 1 -%}{{ text[what] | replace('%s', events[0]) }}
+              {%- else -%}{{ text[what] | replace('%s', events[:-1] | join(', ') ~ text['and'] ~ events[-1]) }}
+              {%- endif -%}
+
+      # ── My playlist ─────────────────────────────────────────────────
+      - conditions:
+          - condition: template
+            value_template: "{{ what == 'playlist' }}"
+        sequence:
+          - event: kiosk_satellite_mine
+            event_data:
+              id: "{{ request }}"
+              thing: playlist
+          - wait_for_trigger:
+              - trigger: event
+                event_type: kiosk_satellite_mine_result
+                event_data:
+                  id: "{{ request }}"
+            timeout: 2
+          - variables:
+              mine: "{{ wait.trigger.event.data if wait.trigger else {'status': 'none'} }}"
+          - if:
+              - condition: template
+                value_template: "{{ mine.status != 'own' }}"
+            then:
+              - set_conversation_response: "{{ text.nobody if mine.status == 'no_speaker' else text.no_playlist }}"
+              - stop: No playlist
+          - event: kiosk_satellite_music
+            event_data:
+              id: "{{ request }}"
+              action: play
+              query: "{{ mine.query }}"
+              kind: playlist
+          - wait_for_trigger:
+              - trigger: event
+                event_type: kiosk_satellite_music_result
+                event_data:
+                  id: "{{ request }}"
+            timeout: 15
+          - set_conversation_response: >-
+              {{ text.playing | replace('%p', mine.query) if wait.trigger and wait.trigger.event.data.ok else text.failed }}

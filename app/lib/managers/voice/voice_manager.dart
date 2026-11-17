@@ -2982,6 +2982,8 @@ class VoiceManager extends Manager {
     VoiceSpeakerChanged(
       '${e?['name'] ?? ''}',
       color: e?['color'] is String ? e!['color'] as String : null,
+      id: e?['id'] is String ? e!['id'] as String : null,
+      by: e?['by'] is String ? e!['by'] as String : null,
     ),
   );
 

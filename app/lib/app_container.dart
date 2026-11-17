@@ -312,6 +312,7 @@ class AppContainer {
     );
     voiceRequests = VoiceRequestsManager(bus, commands, log, settings);
     groundControl = GroundControlManager(bus, commands, log, settings);
+    voiceRequests.speaking = () => groundControl.speaking;
     // It follows what the managers above are doing, through the bus and
     // the media players' own states.
     leds = LedManager(
