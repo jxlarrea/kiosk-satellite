@@ -712,6 +712,134 @@ void main() {
       expect(McpToolbox.safeName('weird name.v2'), 'weird_name_v2');
       expect(McpToolbox.safeName('x' * 80).length, 64);
     });
+
+    // Issue #1475: Gemini Live called HassStartTimer twice, half a second
+    // apart, and the kiosk got two timers nobody could cancel.
+    group('a repeated timer start', () {
+      late List<Map<String, Object?>> calls;
+      late bool fail;
+      late DateTime now;
+
+      McpToolbox toolbox() {
+        calls = [];
+        fail = false;
+        now = DateTime(2026, 11, 16, 17, 18, 22);
+        final client = MockClient((request) async {
+          final json = (jsonDecode(request.body) as Map)
+              .cast<String, Object?>();
+          final method = '${json['method']}';
+          if (method.startsWith('notifications/')) {
+            return http.Response('', 202);
+          }
+          final params = ((json['params'] ?? {}) as Map)
+              .cast<String, Object?>();
+          if (method == 'tools/call') calls.add(params);
+          final result = switch (method) {
+            'tools/list' => {
+              'tools': [
+                for (final name in ['intent__HassStartTimer', 'HassTurnOn'])
+                  {
+                    'name': name,
+                    'description': '',
+                    'inputSchema': {'type': 'object', 'properties': {}},
+                  },
+              ],
+            },
+            // What Home Assistant answers for a timer start.
+            'tools/call' => {
+              'isError': fail,
+              'content': [
+                {
+                  'type': 'text',
+                  'text': jsonEncode({
+                    'speech': {},
+                    'response_type': 'action_done',
+                    'data': {'targets': [], 'success': [], 'failed': []},
+                  }),
+                },
+              ],
+            },
+            _ => <String, Object?>{},
+          };
+          return http.Response(
+            jsonEncode({'jsonrpc': '2.0', 'id': json['id'], 'result': result}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        });
+        return McpToolbox(
+          McpClient(url: Uri.parse('http://ha/api/mcp'), client: client),
+          now: () => now,
+        );
+      }
+
+      test('reaches Home Assistant once', () async {
+        final box = toolbox();
+        await box.list();
+        final first = await box.call('intent__HassStartTimer', {'minutes': 5});
+        expect(first.error, isFalse);
+        expect(calls, hasLength(1));
+
+        now = now.add(const Duration(milliseconds: 500));
+        // Blank arguments are the same start.
+        final again = await box.call('intent__HassStartTimer', {
+          'minutes': 5,
+          'name': '',
+        });
+        expect(calls, hasLength(1));
+        expect(again.error, isFalse);
+        expect(again.text, McpToolbox.repeatedTimerStart);
+
+        // Every repeat holds it off again: a model calling once a second
+        // never gets through.
+        for (var i = 0; i < 20; i++) {
+          now = now.add(const Duration(seconds: 1));
+          await box.call('intent__HassStartTimer', {'minutes': 5});
+        }
+        expect(calls, hasLength(1));
+      });
+
+      test('starts in parallel reach Home Assistant once', () async {
+        final box = toolbox();
+        await box.list();
+        await Future.wait([
+          box.call('intent__HassStartTimer', {'minutes': 5}),
+          box.call('intent__HassStartTimer', {'minutes': 5}),
+        ]);
+        expect(calls, hasLength(1));
+      });
+
+      test('another timer, a later one and a retry still start', () async {
+        final box = toolbox();
+        await box.list();
+        await box.call('intent__HassStartTimer', {'minutes': 5});
+        await box.call('intent__HassStartTimer', {'minutes': 10});
+        await box.call('intent__HassStartTimer', {
+          'minutes': 5,
+          'name': 'pasta',
+        });
+        expect(calls, hasLength(3));
+
+        now = now.add(McpToolbox.repeatTimerStart);
+        await box.call('intent__HassStartTimer', {'minutes': 5});
+        expect(calls, hasLength(4));
+
+        // A start that failed is not a timer.
+        fail = true;
+        final failed = await box.call('intent__HassStartTimer', {
+          'seconds': 30,
+        });
+        expect(failed.error, isTrue);
+        fail = false;
+        await box.call('intent__HassStartTimer', {'seconds': 30});
+        expect(calls, hasLength(6));
+
+        // Other tools are not held back.
+        await box.call('HassTurnOn', {'name': 'Kitchen'});
+        await box.call('HassTurnOn', {'name': 'Kitchen'});
+        expect(calls, hasLength(8));
+      });
+    });
   });
 
   group('OpenAiRealtimeBackend', () {

@@ -97,7 +97,8 @@ class LocalToolbox implements RealtimeToolbox {
 /// Tools from an MCP server: Home Assistant's own MCP Server integration,
 /// or another one the user points at.
 class McpToolbox implements RealtimeToolbox {
-  McpToolbox(this._client, {this.notFound});
+  McpToolbox(this._client, {this.notFound, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   final McpClient _client;
 
@@ -105,8 +106,42 @@ class McpToolbox implements RealtimeToolbox {
   /// Assistant, that its MCP Server integration is not set up.
   final String? notFound;
 
+  final DateTime Function() _now;
+
   /// Model-safe name to the server's name.
   final _names = <String, String>{};
+
+  /// How long a timer start blocks the same start again (issue #1475).
+  /// Models repeat a start within a second of its answer. A user asking
+  /// again waits for the answer to play first, so takes longer than this.
+  static const repeatTimerStart = Duration(seconds: 5);
+
+  /// The timer starts in this conversation, by their arguments, and when
+  /// the model last asked for each.
+  final _timerStarts = <String, DateTime>{};
+
+  /// What the model gets for a repeated start. Home Assistant answers a
+  /// start with empty lists, which some models read as nothing done and
+  /// call again, so this says plainly that the timer is running.
+  static final repeatedTimerStart = jsonEncode({
+    'success': true,
+    'result':
+        'The timer is already running. It was started a moment ago. '
+        'Confirm it to the user and do not start it again.',
+  });
+
+  static bool _isTimerStart(String name) =>
+      name == 'HassStartTimer' || name.endsWith('__HassStartTimer');
+
+  /// The arguments of a start, without the blank ones Home Assistant
+  /// ignores, in a fixed order.
+  static String _startKey(Map<String, Object?> args) {
+    final keys = args.keys.where((k) {
+      final v = args[k];
+      return v != null && (v is! String || v.trim().isNotEmpty);
+    }).toList()..sort();
+    return jsonEncode({for (final k in keys) k: args[k]});
+  }
 
   /// A function name the model accepts: letters, digits, underscore and
   /// dash, 64 at most.
@@ -174,6 +209,31 @@ class McpToolbox implements RealtimeToolbox {
         error: true,
       );
     }
+    // Models such as Gemini Live sometimes call HassStartTimer again right
+    // after it answered, and every call is one more timer. Home Assistant
+    // timers have no id to tell them apart, so the copies cannot be
+    // cancelled either. The same start again within a short while is
+    // answered here and never reaches the server.
+    String? start;
+    if (_isTimerStart(original)) {
+      start = _startKey(args);
+      final now = _now();
+      final last = _timerStarts[start];
+      _timerStarts[start] = now;
+      if (last != null && now.difference(last) < repeatTimerStart) {
+        return RealtimeToolOutput(repeatedTimerStart);
+      }
+    }
+    final output = await _call(original, args);
+    // A start that failed can be tried again.
+    if (start != null && output.error) _timerStarts.remove(start);
+    return output;
+  }
+
+  Future<RealtimeToolOutput> _call(
+    String original,
+    Map<String, Object?> args,
+  ) async {
     try {
       final result = await _client.callTool(original, args);
       return RealtimeToolOutput(result.text, error: result.error);

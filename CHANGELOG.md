@@ -11,6 +11,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Crash on a color, date or time field.** After Android opened the kiosk screen again, such as on a Home press with Kiosk Satellite as the home app, tapping a color, date or time field on the dashboard closed the app. The picker now opens.
 - **Crash on a screenshot with little memory left.** On a device almost out of memory, a screenshot for the remote admin or the ESPHome **Screenshot** camera could close the app. The screenshot now fails and the app keeps running.
 - **No volume for a Music Assistant sync group (#1465).** With a sync group picked as the Media Player, the volume slider was greyed out and only mute worked. Music Assistant reports a sync group's level only as its group volume. The slider and mute now use the group volume and move every member the way the group slider in Music Assistant does.
+- **Duplicate timers from a realtime assistant (#1475).** Gemini Live sometimes started the same timer two or more times for one request. Home Assistant timers have no id, so the copies could not be cancelled either. If the assistant starts the same timer again within 5 seconds in one conversation, it now gets "already running" back and the start never reaches Home Assistant. A timer with another length or name still starts.
 
 ## v2026.11.23 - 2026-11-16
 
