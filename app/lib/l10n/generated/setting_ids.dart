@@ -2056,6 +2056,14 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingVoiceMuteTimersTitle",
     "description": "settingVoiceMuteTimersDescription",
   },
+  "timers.silence_after": {
+    "title": "settingTimersSilenceAfterTitle",
+    "description": "settingTimersSilenceAfterDescription",
+  },
+  "timers.dismiss_after": {
+    "title": "settingTimersDismissAfterTitle",
+    "description": "settingTimersDismissAfterDescription",
+  },
   "voice.timer_alert_pill": {
     "title": "settingVoiceTimerAlertPillTitle",
     "description": "settingVoiceTimerAlertPillDescription",

@@ -36,5 +36,9 @@
   "settingTimersShowOnStartTitle": "Показывать вид таймеров при запуске таймера",
   "settingTimersShowOnStartDescription": "Открывает вид таймеров при каждом запуске таймера.",
   "settingTimersPauseScreensaverTitle": "Приостанавливать заставку, пока идёт таймер",
-  "settingTimersPauseScreensaverDescription": "Заставка не запускается, пока вид таймеров показывает идущий таймер."
+  "settingTimersPauseScreensaverDescription": "Заставка не запускается, пока вид таймеров показывает идущий таймер.",
+  "settingTimersSilenceAfterTitle": "Замолкание через",
+  "settingTimersSilenceAfterDescription": "Завершённый таймер остаётся на экране, пока его не скроют.",
+  "settingTimersDismissAfterTitle": "Скрыть через",
+  "settingTimersDismissAfterDescription": "Скрывает завершённый таймер, как будто нажали «Скрыть»."
 }

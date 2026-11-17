@@ -48,6 +48,13 @@ A timer another kiosk shares can be changed and cancelled the same way. The chan
 
 The timer sound repeats until the timer is dismissed with **Dismiss** or the stop word. **Timer sound** picks the sound, built in or from the sounds folder. **Timer sound volume** sets its level under the assistant volume. **Mute timer alerts** shows the alert without the sound.
 
+If nobody is around to dismiss a timer, two settings put a limit on the alert. Both are **Never** by default and can be set from 30 seconds to 30 minutes:
+
+- **Silence after** stops the sound after that long. The finished timer stays on screen until it is dismissed, so you can still see that it ended when you come back. Music paused or lowered for the alert comes back, and the stop word still dismisses the timer.
+- **Dismiss after** dismisses the finished timer after that long, as a tap on **Dismiss** does. The sound stops, the alert closes and Home Assistant gets the `dismissed` timer event.
+
+They work together. With **Silence after** at 1 minute and **Dismiss after** at 10 minutes, the timer rings for a minute and stays on screen for ten. Both count from the last timer that finished, so a second timer that finishes while the first one is quiet rings again.
+
 With **Speak when a timer ends** on, Home Assistant says a phrase between the sounds: "Your timer is up." or, for a named timer, "Your pasta timer is up." Both phrases can be changed. The **Text to Speech** group picks the engine, the language and the voice. With no engine picked, the first one Home Assistant has speaks it.
 
 ## Pills
@@ -63,7 +70,7 @@ Home Assistant keeps a timer on the satellite it was started on. Shared timers s
 
 Each kiosk has its own list. The bedroom kiosk can share with the office, the kitchen and the living room while the kitchen kiosk shares only with the living room.
 
-On the kiosks picked, the timer shows in the Timers view or as a pill, with the name of the kiosk it comes from. The countdown and the alert stay in step with the kiosk that owns the timer. Pause, Cancel and Dismiss work from any of them and apply everywhere. Mute timer alerts, Speak when a timer ends and the pill settings are each kiosk's own.
+On the kiosks picked, the timer shows in the Timers view or as a pill, with the name of the kiosk it comes from. The countdown and the alert stay in step with the kiosk that owns the timer. Pause, Cancel and Dismiss work from any of them and apply everywhere. Mute timer alerts, Silence after, Speak when a timer ends and the pill settings are each kiosk's own. **Dismiss after** follows the kiosk that owns the timer: when it dismisses the timer, the alert closes on every kiosk.
 
 The timer stays in Home Assistant as before. Voice commands, the `vs_` actions, the timer sensors and the `esphome.kiosk_satellite_timer` event work only on the kiosk that owns it.
 
@@ -91,6 +98,7 @@ The timer list is sent again every 30 seconds while timers run, which covers an 
 | Shared timers | Share timers, Share with, Show shared timers | Run this kiosk's timers on other kiosks too. See [Shared timers](#shared-timers). |
 | When a timer ends | Timer sound, Timer sound volume | The sound that repeats until the timer is dismissed, built in or from the sounds folder. Its volume is set under the assistant volume. |
 | | Mute timer alerts, Speak when a timer ends | **Mute timer alerts** shows the alert without the sound. **Speak when a timer ends** says a phrase between the alert sounds. |
+| | Silence after, Dismiss after | **Never** by default, or from 30 seconds to 30 minutes. **Silence after** stops the sound and keeps the finished timer on screen. **Dismiss after** dismisses it as a tap on **Dismiss** does. See [When a timer finishes](#when-a-timer-finishes). |
 | Text to Speech | Text to speech engine, Language, Voice | Shown with **Speak when a timer ends** on. The Home Assistant text to speech entity that speaks the phrase, with its language and voice. With no engine picked, the first one Home Assistant has speaks it. |
 | Pills | Show timers as pills | Off by default. Timers float over the screen instead of opening the full screen view and can be dragged anywhere. The rows below show only with it on. |
 | | Show the timer name, Timer pill scale | The name beside the time and the size of the pills. |

@@ -15735,6 +15735,20 @@ class UiStringsNl extends UiStrings {
       'Voorkomt dat de schermbeveiliging start terwijl de timerweergave een lopende timer toont.';
 
   @override
+  String get settingTimersSilenceAfterTitle => 'Dempen na';
+
+  @override
+  String get settingTimersSilenceAfterDescription =>
+      'De afgelopen timer blijft op het scherm tot hij wordt gesloten.';
+
+  @override
+  String get settingTimersDismissAfterTitle => 'Sluiten na';
+
+  @override
+  String get settingTimersDismissAfterDescription =>
+      'Sluit een afgelopen timer alsof op Sluiten is getikt.';
+
+  @override
   String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override

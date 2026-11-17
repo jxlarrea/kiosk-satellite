@@ -56904,6 +56904,58 @@
       ]
     }
   },
+  "settingTimersSilenceAfterTitle": "Dempen na",
+  "@settingTimersSilenceAfterTitle": {
+    "context": "Settings > Timers",
+    "description": "Setting label: how long a finished timer rings before its sound stops. Its options are lengths of time or Never.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers > When a timer ends"
+      ],
+      "remoteAdmin": [
+        "Timers > When a timer ends"
+      ]
+    }
+  },
+  "settingTimersSilenceAfterDescription": "De afgelopen timer blijft op het scherm tot hij wordt gesloten.",
+  "@settingTimersSilenceAfterDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that setting: only the sound stops, the alert stays.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers > When a timer ends"
+      ],
+      "remoteAdmin": [
+        "Timers > When a timer ends"
+      ]
+    }
+  },
+  "settingTimersDismissAfterTitle": "Sluiten na",
+  "@settingTimersDismissAfterTitle": {
+    "context": "Settings > Timers",
+    "description": "Setting label: how long a finished timer stays before it is dismissed by itself. Its options are lengths of time or Never.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers > When a timer ends"
+      ],
+      "remoteAdmin": [
+        "Timers > When a timer ends"
+      ]
+    }
+  },
+  "settingTimersDismissAfterDescription": "Sluit een afgelopen timer alsof op Sluiten is getikt.",
+  "@settingTimersDismissAfterDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that setting. Dismiss is the button on a ringing timer: use the same word as that button.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers > When a timer ends"
+      ],
+      "remoteAdmin": [
+        "Timers > When a timer ends"
+      ]
+    }
+  },
   "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "@voiceMatchGroundControlPage": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",

@@ -36,5 +36,9 @@
   "settingTimersShowOnStartTitle": "计时器开始时显示计时器视图",
   "settingTimersShowOnStartDescription": "每次启动计时器时打开计时器视图。",
   "settingTimersPauseScreensaverTitle": "计时器运行时暂停屏保",
-  "settingTimersPauseScreensaverDescription": "计时器视图显示运行中的计时器时，不启动屏保。"
+  "settingTimersPauseScreensaverDescription": "计时器视图显示运行中的计时器时，不启动屏保。",
+  "settingTimersSilenceAfterTitle": "自动静音时间",
+  "settingTimersSilenceAfterDescription": "已结束的计时器会一直显示，直到被关闭。",
+  "settingTimersDismissAfterTitle": "自动关闭时间",
+  "settingTimersDismissAfterDescription": "像点击“关闭”一样清除已结束的计时器。"
 }

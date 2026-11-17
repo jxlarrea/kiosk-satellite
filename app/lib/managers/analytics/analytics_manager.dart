@@ -605,6 +605,9 @@ class AnalyticsManager extends Manager {
         'timers_show_before_end': s.get(defs.timersShowBeforeEnd).toInt(),
         'timers_pause_screensaver': s.get(defs.timersPauseScreensaver),
       },
+      // Seconds, 0 for Never.
+      'timers_silence_after': int.tryParse(s.get(defs.timersSilenceAfter)) ?? 0,
+      'timers_dismiss_after': int.tryParse(s.get(defs.timersDismissAfter)) ?? 0,
       'timers_receive': s.get(defs.voiceTimersReceive),
       if (s.get(defs.voiceTimersReceive))
         'timers_shared_received': UsageCounters.bucket(

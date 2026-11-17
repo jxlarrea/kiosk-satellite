@@ -5370,6 +5370,14 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingTimersPauseScreensaverTitle,
       'settingTimersPauseScreensaverDescription' =>
         strings.settingTimersPauseScreensaverDescription,
+      'settingTimersSilenceAfterTitle' =>
+        strings.settingTimersSilenceAfterTitle,
+      'settingTimersSilenceAfterDescription' =>
+        strings.settingTimersSilenceAfterDescription,
+      'settingTimersDismissAfterTitle' =>
+        strings.settingTimersDismissAfterTitle,
+      'settingTimersDismissAfterDescription' =>
+        strings.settingTimersDismissAfterDescription,
       'voiceMatchGroundControlPage' => strings.voiceMatchGroundControlPage,
       'settingVoiceMatchPolicyDescriptionChosen' =>
         strings.settingVoiceMatchPolicyDescriptionChosen,

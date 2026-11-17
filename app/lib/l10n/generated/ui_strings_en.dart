@@ -15556,6 +15556,20 @@ class UiStringsEn extends UiStrings {
       'Keep the screensaver from starting while the Timers view shows a running timer.';
 
   @override
+  String get settingTimersSilenceAfterTitle => 'Silence after';
+
+  @override
+  String get settingTimersSilenceAfterDescription =>
+      'The finished timer stays on screen until it is dismissed.';
+
+  @override
+  String get settingTimersDismissAfterTitle => 'Dismiss after';
+
+  @override
+  String get settingTimersDismissAfterDescription =>
+      'Clears a finished timer as if Dismiss was tapped.';
+
+  @override
   String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override

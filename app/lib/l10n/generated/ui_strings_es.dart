@@ -15858,6 +15858,20 @@ class UiStringsEs extends UiStrings {
       'Evita que el protector de pantalla se inicie mientras la vista de temporizadores muestra un temporizador en marcha.';
 
   @override
+  String get settingTimersSilenceAfterTitle => 'Silenciar después de';
+
+  @override
+  String get settingTimersSilenceAfterDescription =>
+      'El temporizador finalizado sigue en pantalla hasta que se cierre.';
+
+  @override
+  String get settingTimersDismissAfterTitle => 'Cerrar después de';
+
+  @override
+  String get settingTimersDismissAfterDescription =>
+      'Cierra un temporizador finalizado como si se tocara Cerrar.';
+
+  @override
   String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override

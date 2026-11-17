@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/btproxy/bt_proxy_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
@@ -35,6 +36,7 @@ void main() {
   late BtProxyManager esphome;
   late _HolderWakeWord wakeWord;
   late VoiceManager voice;
+  late EventBus bus;
 
   setUp(() async {
     support = await Directory.systemTemp.createTemp('ks_timer_stop_word');
@@ -44,7 +46,7 @@ void main() {
           (call) async => support.path,
         );
     SharedPreferences.setMockInitialValues({});
-    final bus = EventBus();
+    bus = EventBus();
     final log = Logger();
     final commands = CommandRegistry(log);
     final settings = SettingsManager(bus, commands, log);
@@ -99,5 +101,30 @@ void main() {
     await wakeWord.setStopWordArmed(true);
     timer(2);
     expect(wakeWord.holders, {'voice'});
+  });
+
+  // Issue #1480: once Silence after quiets the ring, the music comes back
+  // and the stop word still dismisses the alert.
+  test('a quiet ring keeps the stop word and lets the music go', () async {
+    final timerHolds = <bool>[];
+    final sub = bus.on<VoiceInteractionChanged>().listen((e) {
+      if (e.reason == 'timer') timerHolds.add(e.active);
+    });
+    timer(0);
+    timer(3);
+    await Future<void>.delayed(Duration.zero);
+    expect(timerHolds, [true]);
+    bus.publish(const TimerRingQuiet(true));
+    await Future<void>.delayed(Duration.zero);
+    expect(timerHolds, [true, false]);
+    expect(wakeWord.holders, {'timer'});
+    bus.publish(const TimerRingQuiet(false));
+    await Future<void>.delayed(Duration.zero);
+    expect(timerHolds, [true, false, true]);
+    timer(2);
+    await Future<void>.delayed(Duration.zero);
+    expect(timerHolds, [true, false, true, false]);
+    expect(wakeWord.holders, isEmpty);
+    await sub.cancel();
   });
 }

@@ -191,6 +191,21 @@ class VoiceTimerManager extends Manager {
   String? _speech;
   String _speechText = '';
   int _rings = 0;
+
+  /// Silence after: the ring went quiet, the alert still shows.
+  bool get quiet => _quiet;
+  bool _quiet = false;
+  Timer? _quietTimer;
+
+  /// When the last timer finished here, epoch milliseconds, for Silence
+  /// after, or null while none rings.
+  int? _alertAt;
+  Set<String> _alertIds = const {};
+
+  /// When the last of this kiosk's own timers finished, for Dismiss after.
+  int? _localAlertAt;
+  Set<String> _localAlertIds = const {};
+  Timer? _dismissTimer;
   final error = ValueNotifier<int>(0);
   String _entity = '';
   StreamSubscription<VoiceTimersCleared>? _clearSub;
@@ -228,6 +243,10 @@ class VoiceTimerManager extends Manager {
         _scheduleNear();
       } else if (e.key == defs.timersPauseScreensaver.key) {
         _syncHold();
+      } else if (e.key == defs.timersSilenceAfter.key) {
+        _scheduleQuiet();
+      } else if (e.key == defs.timersDismissAfter.key) {
+        _scheduleDismiss();
       }
     });
     commands
@@ -645,6 +664,7 @@ class VoiceTimerManager extends Manager {
           : _sharedSpeechText;
     }
     if (nextAlerts.isEmpty) alertHidden.value = false;
+    _trackAlerts(nextAlerts);
     alerts.value = nextAlerts;
     timers.value = [
       ..._localTimers,
@@ -652,6 +672,96 @@ class VoiceTimerManager extends Manager {
     ];
     _syncView();
     bus.publish(TimersStateChanged(status()));
+  }
+
+  /// Notes when a timer finished, for Silence after and Dismiss after. A
+  /// timer that finishes while the ring is quiet rings again.
+  void _trackAlerts(List<VoiceTimer> next) {
+    final now = _clock().millisecondsSinceEpoch;
+    final ids = {for (final t in next) t.id};
+    final localIds = {for (final t in _localAlerts) t.id};
+    final fresh = ids.difference(_alertIds).isNotEmpty;
+    final freshLocal = localIds.difference(_localAlertIds).isNotEmpty;
+    _alertIds = ids;
+    _localAlertIds = localIds;
+    if (ids.isEmpty) {
+      _alertAt = null;
+      _quietTimer?.cancel();
+      _quietTimer = null;
+      _setQuiet(false);
+    } else if (fresh) {
+      _alertAt = now;
+      _scheduleQuiet();
+    }
+    if (localIds.isEmpty) {
+      _localAlertAt = null;
+      _dismissTimer?.cancel();
+      _dismissTimer = null;
+    } else if (freshLocal) {
+      _localAlertAt = now;
+      _scheduleDismiss();
+    }
+  }
+
+  int _limit(defs.SettingDef<String> def) =>
+      int.tryParse(settings?.get(def) ?? '') ?? 0;
+
+  /// Silence after: the ring stops that long after the last timer
+  /// finished. 0 rings until the alert is dismissed.
+  void _scheduleQuiet() {
+    _quietTimer?.cancel();
+    _quietTimer = null;
+    final at = _alertAt;
+    if (at == null) return;
+    final after = _limit(defs.timersSilenceAfter);
+    if (after <= 0) {
+      _setQuiet(false);
+      return;
+    }
+    final wait = at + after * 1000 - _clock().millisecondsSinceEpoch;
+    if (wait <= 0) {
+      _setQuiet(true);
+      return;
+    }
+    _setQuiet(false);
+    _quietTimer = Timer(Duration(milliseconds: wait), () {
+      _quietTimer = null;
+      _setQuiet(true);
+    });
+  }
+
+  void _setQuiet(bool quiet) {
+    if (quiet == _quiet) return;
+    _quiet = quiet;
+    if (quiet) {
+      this.log.info(name, 'timer ring silenced, the alert stays');
+      _stopSound();
+      // A normal playback speaker gets back what it played before the alert.
+      unawaited(commands.execute('voiceSpeakerDone', const {}));
+    } else if (_ring != null) {
+      _rings = 0;
+      _tick();
+    }
+    bus.publish(TimerRingQuiet(quiet));
+  }
+
+  /// Dismiss after: this kiosk's own finished timers are dismissed that
+  /// long after the last one finished, as a tap on Dismiss does. 0 leaves
+  /// them until someone does.
+  void _scheduleDismiss() {
+    _dismissTimer?.cancel();
+    _dismissTimer = null;
+    final at = _localAlertAt;
+    if (at == null) return;
+    final after = _limit(defs.timersDismissAfter);
+    if (after <= 0) return;
+    final wait = at + after * 1000 - _clock().millisecondsSinceEpoch;
+    _dismissTimer = Timer(Duration(milliseconds: wait < 0 ? 0 : wait), () {
+      _dismissTimer = null;
+      if (_localAlerts.isEmpty) return;
+      this.log.info(name, 'finished timers dismissed after ${after}s');
+      dismissLocal();
+    });
   }
 
   /// Starts the ring at [at], or keeps the one already going. A kiosk that
@@ -875,7 +985,7 @@ class VoiceTimerManager extends Manager {
   }
 
   Future<void> _chime([Future<CommandResult> Function()? start]) async {
-    if (_muted || alerts.value.isEmpty || _playing) return;
+    if (_muted || _quiet || alerts.value.isEmpty || _playing) return;
     final generation = _soundGeneration;
     _playing = true;
     final done = Completer<void>();
@@ -894,7 +1004,10 @@ class VoiceTimerManager extends Manager {
       if (data is Map && data['id'] is String) {
         final id = data['id'] as String;
         playingId = id;
-        if (generation != _soundGeneration || _muted || alerts.value.isEmpty) {
+        if (generation != _soundGeneration ||
+            _muted ||
+            _quiet ||
+            alerts.value.isEmpty) {
           await commands.execute('voiceStopSpeech', {'id': id});
         } else {
           _soundId = id;
@@ -928,6 +1041,8 @@ class VoiceTimerManager extends Manager {
     _ringStart?.cancel();
     _closeTimer?.cancel();
     _nearTimer?.cancel();
+    _quietTimer?.cancel();
+    _dismissTimer?.cancel();
     _ring?.cancel();
     _ring = null;
     _stopSound();

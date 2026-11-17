@@ -15852,6 +15852,20 @@ class UiStringsFr extends UiStrings {
       'Empêche l\'économiseur d\'écran de démarrer tant que la vue des minuteurs affiche un minuteur en cours.';
 
   @override
+  String get settingTimersSilenceAfterTitle => 'Silence après';
+
+  @override
+  String get settingTimersSilenceAfterDescription =>
+      'Le minuteur terminé reste à l\'écran jusqu\'à ce qu\'il soit ignoré.';
+
+  @override
+  String get settingTimersDismissAfterTitle => 'Ignorer après';
+
+  @override
+  String get settingTimersDismissAfterDescription =>
+      'Ignore un minuteur terminé comme si vous aviez appuyé sur Ignorer.';
+
+  @override
   String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override

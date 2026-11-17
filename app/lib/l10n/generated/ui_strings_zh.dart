@@ -14745,6 +14745,18 @@ class UiStringsZh extends UiStrings {
       '计时器视图显示运行中的计时器时，不启动屏保。';
 
   @override
+  String get settingTimersSilenceAfterTitle => '自动静音时间';
+
+  @override
+  String get settingTimersSilenceAfterDescription => '已结束的计时器会一直显示，直到被关闭。';
+
+  @override
+  String get settingTimersDismissAfterTitle => '自动关闭时间';
+
+  @override
+  String get settingTimersDismissAfterDescription => '像点击“关闭”一样清除已结束的计时器。';
+
+  @override
   String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
@@ -30863,6 +30875,18 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingTimersPauseScreensaverDescription =>
       '计时器视图显示运行中的计时器时，不启动屏保。';
+
+  @override
+  String get settingTimersSilenceAfterTitle => '自动静音时间';
+
+  @override
+  String get settingTimersSilenceAfterDescription => '已结束的计时器会一直显示，直到被关闭。';
+
+  @override
+  String get settingTimersDismissAfterTitle => '自动关闭时间';
+
+  @override
+  String get settingTimersDismissAfterDescription => '像点击“关闭”一样清除已结束的计时器。';
 
   @override
   String get voiceMatchGroundControlPage => 'Ground Control Voice Match';

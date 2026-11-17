@@ -514,6 +514,12 @@ class VoiceManager extends Manager {
         }),
       )
       ..add(
+        bus.on<TimerRingQuiet>().listen((e) {
+          _ringQuiet = e.quiet;
+          _syncTimerHold();
+        }),
+      )
+      ..add(
         bus.on<SettingChanged>().listen((e) {
           if (e.key == defs.voiceRuntime.key ||
               e.key == defs.voiceEnabled.key ||
@@ -3762,16 +3768,21 @@ class VoiceManager extends Manager {
   /// Timers other kiosks share are ringing here.
   bool _sharedRinging = false;
 
+  /// The ring went quiet under Silence after while the alert still shows.
+  bool _ringQuiet = false;
+
   /// While a timer rings, this kiosk's own or a shared one, the stop word
   /// listens and the screen is held as for a voice turn. The ring holds the
   /// stop word under its own name: an announcement or a turn that ends
-  /// while it rings lets go of the voice holder only (issue #1478).
+  /// while it rings lets go of the voice holder only (issue #1478). Once
+  /// the ring goes quiet, the stop word still dismisses the alert but the
+  /// music comes back.
   void _syncTimerHold() {
-    if (_ringing.isNotEmpty || _sharedRinging) {
+    final ringing = _ringing.isNotEmpty || _sharedRinging;
+    unawaited(_wakeWord.setStopWordArmed(ringing, holder: 'timer'));
+    if (ringing && !_ringQuiet) {
       _onBusy(true, 'timer');
-      unawaited(_wakeWord.setStopWordArmed(true, holder: 'timer'));
     } else {
-      unawaited(_wakeWord.setStopWordArmed(false, holder: 'timer'));
       if (_busyReasons.remove('timer')) {
         bus.publish(
           const VoiceInteractionChanged(

@@ -15654,6 +15654,20 @@ class UiStringsRu extends UiStrings {
       'Заставка не запускается, пока вид таймеров показывает идущий таймер.';
 
   @override
+  String get settingTimersSilenceAfterTitle => 'Замолкание через';
+
+  @override
+  String get settingTimersSilenceAfterDescription =>
+      'Завершённый таймер остаётся на экране, пока его не скроют.';
+
+  @override
+  String get settingTimersDismissAfterTitle => 'Скрыть через';
+
+  @override
+  String get settingTimersDismissAfterDescription =>
+      'Скрывает завершённый таймер, как будто нажали «Скрыть».';
+
+  @override
   String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override

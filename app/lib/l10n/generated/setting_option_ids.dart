@@ -506,6 +506,26 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "5": "alarmsOption5Minutes",
     "10": "alarmsOption10Minutes"
   },
+  "timers.silence_after": {
+    "0": "calendarIdleNever",
+    "30": "intercomOptionAnswer30",
+    "60": "calendarIdle1Minute",
+    "120": "calendarIdle2Minutes",
+    "300": "alarmsOption5Minutes",
+    "600": "alarmsOption10Minutes",
+    "900": "alarmsOption15Minutes",
+    "1800": "alarmsOption30Minutes"
+  },
+  "timers.dismiss_after": {
+    "0": "calendarIdleNever",
+    "30": "intercomOptionAnswer30",
+    "60": "calendarIdle1Minute",
+    "120": "calendarIdle2Minutes",
+    "300": "alarmsOption5Minutes",
+    "600": "alarmsOption10Minutes",
+    "900": "alarmsOption15Minutes",
+    "1800": "alarmsOption30Minutes"
+  },
   "screensaver.celestial_terrain": {
     "hills": "screensaverCelestialTerrainHills",
     "mountains": "screensaverCelestialTerrainMountains",

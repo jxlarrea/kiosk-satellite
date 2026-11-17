@@ -36,5 +36,9 @@
   "settingTimersShowOnStartTitle": "Timerweergave tonen wanneer een timer start",
   "settingTimersShowOnStartDescription": "Opent de timerweergave telkens wanneer een timer wordt gestart.",
   "settingTimersPauseScreensaverTitle": "Schermbeveiliging pauzeren terwijl een timer loopt",
-  "settingTimersPauseScreensaverDescription": "Voorkomt dat de schermbeveiliging start terwijl de timerweergave een lopende timer toont."
+  "settingTimersPauseScreensaverDescription": "Voorkomt dat de schermbeveiliging start terwijl de timerweergave een lopende timer toont.",
+  "settingTimersSilenceAfterTitle": "Dempen na",
+  "settingTimersSilenceAfterDescription": "De afgelopen timer blijft op het scherm tot hij wordt gesloten.",
+  "settingTimersDismissAfterTitle": "Sluiten na",
+  "settingTimersDismissAfterDescription": "Sluit een afgelopen timer alsof op Sluiten is getikt."
 }

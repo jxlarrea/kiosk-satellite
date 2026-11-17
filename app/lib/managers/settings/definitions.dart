@@ -8772,6 +8772,50 @@ const voiceMuteTimers = SettingDef<bool>(
   dependsOn: 'voice.enabled',
 );
 
+/// The choices of Silence after and Dismiss after, in seconds. 0 never
+/// does it.
+const _timerAlertLimits = ['0', '30', '60', '120', '300', '600', '900', '1800'];
+const _timerAlertLimitLabels = {
+  '0': 'Never',
+  '30': '30 seconds',
+  '60': '1 minute',
+  '120': '2 minutes',
+  '300': '5 minutes',
+  '600': '10 minutes',
+  '900': '15 minutes',
+  '1800': '30 minutes',
+};
+
+/// How long a finished timer rings before the sound stops. The alert stays
+/// on screen until it is dismissed. It counts from the last timer that
+/// finished, and covers the timers other kiosks share too.
+const timersSilenceAfter = SettingDef<String>(
+  key: 'timers.silence_after',
+  type: SettingType.select,
+  defaultValue: '0',
+  title: 'Silence after',
+  description: 'The finished timer stays on screen until it is dismissed.',
+  category: 'Timers',
+  section: 'When a timer ends',
+  options: _timerAlertLimits,
+  optionLabels: _timerAlertLimitLabels,
+);
+
+/// How long this kiosk's own finished timers stay before they are
+/// dismissed as a tap on Dismiss does. A timer another kiosk shares
+/// follows the setting of the kiosk it came from.
+const timersDismissAfter = SettingDef<String>(
+  key: 'timers.dismiss_after',
+  type: SettingType.select,
+  defaultValue: '0',
+  title: 'Dismiss after',
+  description: 'Clears a finished timer as if Dismiss was tapped.',
+  category: 'Timers',
+  section: 'When a timer ends',
+  options: _timerAlertLimits,
+  optionLabels: _timerAlertLimitLabels,
+);
+
 const voiceTimerNameOnAlert = SettingDef<bool>(
   key: 'voice.timer_name_on_alert',
   type: SettingType.boolean,
@@ -15065,6 +15109,8 @@ const List<SettingDef<Object>> allSettings = [
   voiceChimeTimer,
   voiceChimeTimerVolume,
   voiceMuteTimers,
+  timersSilenceAfter,
+  timersDismissAfter,
   voiceTimerSpeak,
   voiceTimerPhrase,
   voiceTimerNamedPhrase,

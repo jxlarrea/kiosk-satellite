@@ -15877,6 +15877,20 @@ class UiStringsDe extends UiStrings {
       'Verhindert den Start des Bildschirmschoners, solange die Timer-Ansicht einen laufenden Timer zeigt.';
 
   @override
+  String get settingTimersSilenceAfterTitle => 'Stumm nach';
+
+  @override
+  String get settingTimersSilenceAfterDescription =>
+      'Der abgelaufene Timer bleibt auf dem Bildschirm, bis er geschlossen wird.';
+
+  @override
+  String get settingTimersDismissAfterTitle => 'Schließen nach';
+
+  @override
+  String get settingTimersDismissAfterDescription =>
+      'Schließt einen abgelaufenen Timer, als wäre Schließen getippt worden.';
+
+  @override
   String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override

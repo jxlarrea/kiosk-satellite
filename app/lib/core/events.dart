@@ -1405,6 +1405,15 @@ class SharedTimerAlertChanged extends AppEvent {
   final bool ringing;
 }
 
+/// The timer ring on this kiosk went quiet under Silence after, or rings
+/// again for a timer that finished since. The finished timers stay on
+/// screen while it is quiet, so native Voice Satellite keeps the stop word
+/// but lets the music back.
+class TimerRingQuiet extends AppEvent {
+  const TimerRingQuiet(this.quiet);
+  final bool quiet;
+}
+
 /// The stop word, the action button or a cancel asked to end the ringing
 /// timers other kiosks shared.
 class SharedTimerDismissRequested extends AppEvent {

@@ -27155,6 +27155,30 @@ abstract class UiStrings {
   /// **'Keep the screensaver from starting while the Timers view shows a running timer.'**
   String get settingTimersPauseScreensaverDescription;
 
+  /// Setting label: how long a finished timer rings before its sound stops. Its options are lengths of time or Never.
+  ///
+  /// In en, this message translates to:
+  /// **'Silence after'**
+  String get settingTimersSilenceAfterTitle;
+
+  /// Description of that setting: only the sound stops, the alert stays.
+  ///
+  /// In en, this message translates to:
+  /// **'The finished timer stays on screen until it is dismissed.'**
+  String get settingTimersSilenceAfterDescription;
+
+  /// Setting label: how long a finished timer stays before it is dismissed by itself. Its options are lengths of time or Never.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss after'**
+  String get settingTimersDismissAfterTitle;
+
+  /// Description of that setting. Dismiss is the button on a ringing timer: use the same word as that button.
+  ///
+  /// In en, this message translates to:
+  /// **'Clears a finished timer as if Dismiss was tapped.'**
+  String get settingTimersDismissAfterDescription;
+
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
   /// In en, this message translates to:
