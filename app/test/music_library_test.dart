@@ -283,6 +283,142 @@ void main() {
       expect(tracks.tracks.single.title, 'Four');
     });
 
+    Map<String, Object?> album(
+      String provider,
+      String id,
+      String name, {
+      List<Map<String, Object?>> mappings = const [],
+    }) => {
+      'media_type': 'album',
+      'item_id': id,
+      'provider': provider,
+      'uri': '$provider://album/$id',
+      'name': name,
+      'version': '',
+      'provider_mappings': mappings,
+    };
+
+    test(
+      'an artist in the library lists its saved albums, then the rest of its providers',
+      () async {
+        final ma = _FakeMa()
+          ..answers['music/artists/artist_tracks'] = <Object>[]
+          ..answers['music/artists/artist_albums'] = (args) => switch (args) {
+            {'provider_instance_id_or_domain': 'library'} => [
+              album(
+                'library',
+                '3',
+                'Glass Harbor',
+                mappings: [
+                  {'provider_instance': 'spotify--x', 'item_id': 'sp3'},
+                ],
+              ),
+            ],
+            {'provider_instance_id_or_domain': 'spotify--x'} => [
+              album('spotify--x', 'sp3', 'Glass Harbor (Deluxe)'),
+              album('spotify--x', 'sp4', 'Tidelines'),
+              album('spotify--x', 'sp5', 'glass harbor'),
+            ],
+            _ => throw StateError('unexpected $args'),
+          };
+        final item = LibraryItem(
+          id: 'library://artist/1',
+          kind: LibraryKind.artist,
+          title: 'Juniper Lane',
+          raw: {
+            'media_type': 'artist',
+            'item_id': '1',
+            'provider': 'library',
+            'provider_mappings': [
+              {'provider_instance': 'spotify--x', 'item_id': 'spa'},
+              {
+                'provider_instance': 'tidal--y',
+                'item_id': 'ta',
+                'available': false,
+              },
+            ],
+          },
+        );
+        final detail = await source(ma).open(item);
+        // The Spotify copy of the saved album and the same name again are
+        // left out.
+        expect(detail.shelves.single.items.map((a) => a.title), [
+          'Glass Harbor',
+          'Tidelines',
+        ]);
+        final asked = [
+          for (final (command, args) in ma.calls)
+            if (command == 'music/artists/artist_albums') args,
+        ];
+        expect(asked.last, {
+          'item_id': 'spa',
+          'provider_instance_id_or_domain': 'spotify--x',
+        });
+        expect(asked, hasLength(2));
+      },
+    );
+
+    test(
+      'an artist in the library keeps its saved albums when a provider fails',
+      () async {
+        final ma = _FakeMa()
+          ..answers['music/artists/artist_tracks'] = <Object>[]
+          ..answers['music/artists/get'] = {
+            'provider_mappings': [
+              {'provider_instance': 'spotify--x', 'item_id': 'spa'},
+            ],
+          }
+          ..answers['music/artists/artist_albums'] = (args) => switch (args) {
+            {'provider_instance_id_or_domain': 'library'} => [
+              album('library', '3', 'Glass Harbor'),
+            ],
+            _ => throw StateError('provider down'),
+          };
+        // A shelf's artist carries no mappings, so they are read first.
+        final item = LibraryItem(
+          id: 'library://artist/1',
+          kind: LibraryKind.artist,
+          title: 'Juniper Lane',
+          raw: {'media_type': 'artist', 'item_id': '1', 'provider': 'library'},
+        );
+        final detail = await source(ma).open(item);
+        expect(detail.shelves.single.items.map((a) => a.title), [
+          'Glass Harbor',
+        ]);
+        expect(ma.calls.map((c) => c.$1), contains('music/artists/get'));
+      },
+    );
+
+    test(
+      'an artist from a provider lists only that provider\'s albums',
+      () async {
+        final ma = _FakeMa()
+          ..answers['music/artists/artist_tracks'] = <Object>[]
+          ..answers['music/artists/artist_albums'] = [
+            album('spotify--x', 'sp4', 'Tidelines'),
+          ];
+        final item = LibraryItem(
+          id: 'spotify--x://artist/spa',
+          kind: LibraryKind.artist,
+          title: 'Juniper Lane',
+          raw: {
+            'media_type': 'artist',
+            'item_id': 'spa',
+            'provider': 'spotify--x',
+            'provider_mappings': [
+              {'provider_instance': 'spotify--x', 'item_id': 'spa'},
+            ],
+          },
+        );
+        final detail = await source(ma).open(item);
+        expect(detail.shelves.single.items.single.title, 'Tidelines');
+        expect(
+          ma.calls.where((c) => c.$1 == 'music/artists/artist_albums'),
+          hasLength(1),
+        );
+      },
+    );
+
     test('the Browse root shows each provider with its logo', () async {
       final ma = _FakeMa()
         ..answers['music/browse'] = [

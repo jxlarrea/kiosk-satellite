@@ -11,6 +11,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Changed
 - **Snooze on Weather Mood is frosted glass.** When an alarm rang on the Weather Mood screensaver, Snooze was a flat grey pill next to the frosted weather chips. It is now the same frosted glass as the chips.
+- **Full discography on a Music Library artist page (#1485).** With Music Assistant as the source, the page of an artist already in the library listed only the albums saved to the library, while an artist found through search showed everything from Spotify. Music Assistant returns only the saved albums for a library artist, so the page now also lists the albums from each music service the artist is on, after the saved ones.
 - **Bigger alarm and timer wheels on very small screens (#1474).** On a screen as small as the Lenovo Smart Clock 2, the five rows of the alarm and timer wheels were shrunk to fit, which left numbers too small to drag with a finger. Where five rows do not fit, the wheels now show three bigger rows that fill the height: the time on the band and one row above and below it. When a new timer's name field would leave the wheel too short, the field moves next to **Cancel** and **Start**. Larger screens keep five rows.
 
 ### Fixed

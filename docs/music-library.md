@@ -46,6 +46,8 @@ When a play needs a speaker of the source first, such as Home Assistant before a
 - Tap a radio station, a podcast episode or a track in a list to play it.
 - Tap the menu button on a row, or long press a card, for **Play now**, **Play next**, **Add to queue**, **Start radio**, **Go to artist** and **Add to favorites**. Start radio and favorites are Music Assistant only. Start radio keeps playing similar music after the track, album, artist or playlist ends.
 
+On Music Assistant, an artist page lists the artist's albums from every music service the artist is on, such as Spotify. If the artist is in your library, the albums you saved come first and the rest of the discography follows them.
+
 Play next and Add to queue show a message, and its **View** button opens the [queue](#the-queue). A play shows a spinner over the cover you tapped, and the player bar shows it with **Loading…** until the speaker starts it.
 
 The player bar at the bottom works like Music Assistant's. The track and its favorite heart sit on the left. Shuffle, previous, play or pause, next and repeat sit over the seek bar in the middle. The [queue](#the-queue), the volume and the button that opens Now Playing sit on the right. Each control shows only where the player supports it, as on Now Playing. With nothing playing, the bar shows the track the queue would resume from: play starts the queue there, and previous and next move through it. Tap the track to open the Now Playing view over the library, and close Now Playing to come back to the library. On a short screen the seek bar becomes a line along the top of the bar, and the volume button opens Speakers. On a phone the bar keeps the track, play or pause, next and the queue.
