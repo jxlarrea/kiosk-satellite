@@ -10,7 +10,8 @@ abstract class NativeAudioSource {
   /// `preRoll` marks replayed already-captured audio flushed at open.
   /// False when there is nothing to stream from (engine not running).
   Future<bool> openNativeAudioStream(
-      void Function(Uint8List pcm, bool preRoll) onChunk);
+    void Function(Uint8List pcm, bool preRoll) onChunk,
+  );
 
   Future<void> closeNativeAudioStream();
 }

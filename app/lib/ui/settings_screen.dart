@@ -77,7 +77,7 @@ import 'media_picker.dart';
 import 'theme.dart';
 import 'toast.dart';
 import 'voice_settings.dart';
-import 'voice_match_settings.dart';
+import 'ground_control_settings.dart';
 import 'mic_level_meter.dart';
 import 'settings_search.dart';
 import 'subpage_icons.dart';
@@ -245,6 +245,13 @@ const _updateDocsUrl =
 const _categories = <(String, String, Object, String)>[
   // How the kiosk is moved around: the drawer menu or Compass.
   ('Navigation', 'Navigation', Icons.explore_outlined, 'Classic or Compass'),
+  // Kiosk Satellite Ground Control: Voice Match on a capable machine.
+  (
+    'Ground Control',
+    'Ground Control',
+    Icons.satellite_alt_outlined,
+    'Voice Match on a capable machine',
+  ),
   (
     'Home Assistant',
     'Home Assistant',
@@ -3415,8 +3422,9 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// Extra widgets rendered directly under a setting: notices, validate
   /// rows, live telemetry. Keyed and forwarded the same way.
   Map<String, Widget> _rowExtras(AppContainer container) => {
-    // Voice Match: whether the service was found and who is enrolled.
-    voiceMatchEnabled.key: VoiceMatchStatusRow(container: container),
+    // Ground Control: whether the service was found, who is enrolled and
+    // Open for its app.
+    groundControlEnabled.key: GroundControlStatusRow(container: container),
     if (widget.category == 'Sendspin')
       sendspinDuckPercent.key: AlbumArtCacheRow(container: container),
     // Under the key's copy box: paste one from another kiosk or make a

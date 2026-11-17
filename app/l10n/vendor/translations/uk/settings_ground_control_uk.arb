@@ -1,0 +1,9 @@
+{
+  "@@locale": "uk",
+  "settingGroundControlEnabledTitle": "Увімкнути Ground Control",
+  "settingGroundControlEnabledDescription": "Підключитися до Kiosk Satellite Ground Control, який запускає Voice Match на потужному комп'ютері.",
+  "settingGroundControlAddressTitle": "Адреса",
+  "settingGroundControlAddressDescription": "Залиште порожнім, щоб знайти Ground Control у мережі. Введіть адресу для Ground Control в іншій мережі.",
+  "groundControlLooking": "Пошук Ground Control у мережі.",
+  "groundControlApp": "Застосунок Ground Control"
+}

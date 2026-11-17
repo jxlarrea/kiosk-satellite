@@ -807,13 +807,11 @@ class WeatherMoodParticles {
         // Each appearance drifts its own way, so the field as a whole never
         // slides toward one side.
         final x =
-            (i % columns + .15 + state.cellX * .7) *
-                cellWidth +
+            (i % columns + .15 + state.cellX * .7) * cellWidth +
             state.velocityX * seconds +
             math.sin(t * .19 + p.phase) * 9;
         final y =
-            (i ~/ columns + .15 + state.cellY * .7) *
-                cellHeight +
+            (i ~/ columns + .15 + state.cellY * .7) * cellHeight +
             state.velocityY * seconds +
             math.sin(t * .23 + p.phase) * 8;
         // The sun's glare outshines motes that drift close to it. Matches
@@ -890,14 +888,12 @@ class WeatherMoodParticles {
       final cycle = t + p.phase / (math.pi * 2) * period;
       final k = (cycle / period).floorToDouble();
       final age = cycle - k * period;
-      final state = _glassCycles[i]
-        ..update(i, k, period, _dropShapes.length);
+      final state = _glassCycles[i]..update(i, k, period, _dropShapes.length);
       final seed = state.seed;
       final x0 = state.x * (width + 40) - 20;
       final y0 = state.y * (height - 40) + 10;
       var radius = state.radius;
-      final slides =
-          radius > 7 && state.slideChance < .45 + .35 * downpour;
+      final slides = radius > 7 && state.slideChance < .45 + .35 * downpour;
       final slideStart = state.slideStart;
       final pop = math.min(1.0, age / .12);
       final life =

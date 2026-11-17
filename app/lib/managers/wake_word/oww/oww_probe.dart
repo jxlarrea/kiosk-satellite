@@ -134,10 +134,12 @@ Future<Map<String, Object?>> probeOww(String base, String wakeWord) async {
     final totalUs = melUs + embUs + clsUs;
     result['totalUs'] = totalUs;
     // One chunk is 80 ms of audio; the chain must finish inside that.
-    result['realtimeFactor'] =
-        (80000 / totalUs).toStringAsFixed(1); // >1 means faster than realtime
-    result['cpuPercentPerWakeWord'] =
-        (totalUs / 80000 * 100).toStringAsFixed(1);
+    result['realtimeFactor'] = (80000 / totalUs).toStringAsFixed(
+      1,
+    ); // >1 means faster than realtime
+    result['cpuPercentPerWakeWord'] = (totalUs / 80000 * 100).toStringAsFixed(
+      1,
+    );
     result['ok'] = true;
   } catch (e) {
     result['ok'] = false;

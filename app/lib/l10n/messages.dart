@@ -440,6 +440,8 @@ String settingsPageText(
   // Its groups are named in the settings rail's own catalog.
   'Navigation' => navigationText(context, english),
   'Voice Satellite' => voiceText(context, english),
+  // Its rows came from the Voice Match page and kept that catalog.
+  'Ground Control' => voiceText(context, english),
   'ESPHome' => esphomeText(context, english),
   'Device' => deviceText(context, english),
   'Home Assistant' => haText(context, english),

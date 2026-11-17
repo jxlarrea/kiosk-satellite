@@ -8640,6 +8640,26 @@ class UiStringsDe extends UiStrings {
   }
 
   @override
+  String get settingGroundControlEnabledTitle => 'Ground Control aktivieren';
+
+  @override
+  String get settingGroundControlEnabledDescription =>
+      'Mit Kiosk Satellite Ground Control verbinden, das Voice Match auf einem leistungsstarken Rechner ausführt.';
+
+  @override
+  String get settingGroundControlAddressTitle => 'Adresse';
+
+  @override
+  String get settingGroundControlAddressDescription =>
+      'Leer lassen, um Ground Control im Netzwerk zu finden. Für Ground Control in einem anderen Netzwerk eine Adresse eingeben.';
+
+  @override
+  String get groundControlLooking => 'Ground Control wird im Netzwerk gesucht.';
+
+  @override
+  String get groundControlApp => 'Ground Control App';
+
+  @override
   String get haCustomPages => 'Eigene Seiten';
 
   @override
@@ -11116,6 +11136,13 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get compassHoldMode => 'Pausenmodus';
+
+  @override
+  String get settingsMenuGroundControl => 'Ground Control';
+
+  @override
+  String get settingsMenuGroundControlSummary =>
+      'Voice Match auf einem leistungsstarken Rechner';
 
   @override
   String get settingAdaptiveBrightnessTitle => 'Adaptive Helligkeit';
@@ -15859,17 +15886,6 @@ class UiStringsDe extends UiStrings {
   String get settingVoiceMatchEnabledTitle => 'Voice Match aktivieren';
 
   @override
-  String get settingVoiceMatchEnabledDescription =>
-      'Erkennen, wer spricht, und das Zuhören beenden, wenn jemand anderes übernimmt.';
-
-  @override
-  String get settingVoiceMatchAddressTitle => 'Adresse';
-
-  @override
-  String get settingVoiceMatchAddressDescription =>
-      'Leer lassen, um Voice Match im Netzwerk zu finden. Für Voice Match in einem anderen Netzwerk eine Adresse eingeben.';
-
-  @override
   String get settingVoiceMatchPolicyTitle => 'Antworten auf';
 
   @override
@@ -15926,9 +15942,6 @@ class UiStringsDe extends UiStrings {
   String get voiceMatchNobodyEnrolled => 'Noch niemand ist eingelernt.';
 
   @override
-  String get voiceMatchLooking => 'Voice Match wird im Netzwerk gesucht.';
-
-  @override
   String get voiceMatchTokenRefused =>
       'Home Assistant hat das Token dieses Kiosks abgelehnt.';
 
@@ -15943,18 +15956,19 @@ class UiStringsDe extends UiStrings {
   String get settingVoiceMatchAllowEnrollTitle => 'Einlernen hier erlauben';
 
   @override
-  String get settingVoiceMatchAllowEnrollDescription =>
-      'Erlaubt der Voice Match App, die Stimme einer Person mit dem Mikrofon dieses Kiosks aufzunehmen. Der Kiosk zeigt den Text zum Vorlesen oder der Lichtring zeigt den Fortschritt.';
-
-  @override
-  String get voiceMatchApp => 'Voice Match App';
-
-  @override
   String get voiceMatchAppHint =>
       'Personen, Einlernen, Sitzungen und Einstellungen.';
 
   @override
   String get voiceMatchOpen => 'Öffnen';
+
+  @override
+  String get settingVoiceMatchEnabledDescriptionGroundControl =>
+      'Erkennen, wer spricht, und das Zuhören beenden, wenn jemand anderes übernimmt. Benötigt Ground Control.';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
+      'Erlaubt der Ground Control App, die Stimme einer Person mit dem Mikrofon dieses Kiosks aufzunehmen. Der Kiosk zeigt den Text zum Vorlesen oder der Lichtring zeigt den Fortschritt.';
 
   @override
   String get voiceWakePage => 'Aktivierungswort';

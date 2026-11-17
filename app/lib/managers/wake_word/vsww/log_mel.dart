@@ -23,11 +23,13 @@ import 'native_log_mel.dart';
 /// the JS Float64 power/mel math. Window and filter coefficients are quantized
 /// to float32 first (as JS stores them) before double accumulation.
 class LogMelExtractor {
-  LogMelExtractor(this.feature,
-      {bool useNative = true, DynamicLibrary? nativeLibrary})
-      : _fft = _Fft(feature.nFft),
-        _window = _makeHannWindow(feature.frameSamples),
-        _filters = _makeMelFilterbank(feature) {
+  LogMelExtractor(
+    this.feature, {
+    bool useNative = true,
+    DynamicLibrary? nativeLibrary,
+  }) : _fft = _Fft(feature.nFft),
+       _window = _makeHannWindow(feature.frameSamples),
+       _filters = _makeMelFilterbank(feature) {
     _halfBins = feature.nFft ~/ 2 + 1; // 257 for nFft 512
     _native = useNative ? _createNative(nativeLibrary) : null;
   }
@@ -217,7 +219,8 @@ class LogMelExtractor {
 
   // ── Mel filterbank ──────────────────────────────────────────────────
   static double _hzToMel(double hz) => 2595.0 * _log10(1 + hz / 700.0);
-  static double _melToHz(double mel) => 700.0 * (math.pow(10, mel / 2595.0) - 1);
+  static double _melToHz(double mel) =>
+      700.0 * (math.pow(10, mel / 2595.0) - 1);
   static double _log10(double x) => math.log(x) / math.ln10;
 
   static List<_MelFilter> _makeMelFilterbank(VswwFeatureConfig f) {
@@ -283,9 +286,9 @@ class _MelFilter {
 /// JS `FFT` class (no 1/N scaling). Size must be a power of two.
 class _Fft {
   _Fft(this.n)
-      : _cos = Float64List(n),
-        _sin = Float64List(n),
-        _rev = Uint32List(n) {
+    : _cos = Float64List(n),
+      _sin = Float64List(n),
+      _rev = Uint32List(n) {
     for (var i = 0; i < n; i++) {
       _cos[i] = math.cos(-2 * math.pi * i / n);
       _sin[i] = math.sin(-2 * math.pi * i / n);

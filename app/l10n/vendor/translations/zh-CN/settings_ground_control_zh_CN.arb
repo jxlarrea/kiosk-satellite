@@ -1,0 +1,9 @@
+{
+  "@@locale": "zh_CN",
+  "settingGroundControlEnabledTitle": "启用 Ground Control",
+  "settingGroundControlEnabledDescription": "连接到 Kiosk Satellite Ground Control，它在高性能设备上运行 Voice Match。",
+  "settingGroundControlAddressTitle": "地址",
+  "settingGroundControlAddressDescription": "留空以在网络中查找 Ground Control。如果 Ground Control 在其他网络中，请输入地址。",
+  "groundControlLooking": "正在网络中查找 Ground Control。",
+  "groundControlApp": "Ground Control 应用"
+}

@@ -17,6 +17,7 @@ import { adbHint, permissionSpecs } from './permissions.js';
 import { renderServicePage } from './service.js';
 import { renderShizukuPage } from './shizuku.js';
 import { CATEGORY_TABS } from './gestures.js';
+import { renderGroundControl } from './ground_control.js';
 import {
   updateAdaptiveBrightnessRows,
   updateAdaptiveVolumeRows,
@@ -746,6 +747,7 @@ async function renderSettings({ cached = false } = {}) {
     }
     if (helperPage) renderUpdateHelper(panels.get('Optional update helper'), helperStatus);
     if (tabId === 'tab-browser') renderUrlFilterPage(panels.get('URL Filter'));
+    if (tabId === 'tab-groundcontrol') renderGroundControl(document.getElementById(tabId));
     if (tabId === 'tab-screensaver') renderPluginScreensaverEntry(document.getElementById(tabId), byKey['screensaver.mode']?.value);
   }
 

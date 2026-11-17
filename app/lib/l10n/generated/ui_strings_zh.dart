@@ -8107,6 +8107,26 @@ class UiStringsZh extends UiStrings {
   }
 
   @override
+  String get settingGroundControlEnabledTitle => '启用 Ground Control';
+
+  @override
+  String get settingGroundControlEnabledDescription =>
+      '连接到 Kiosk Satellite Ground Control，它在高性能设备上运行 Voice Match。';
+
+  @override
+  String get settingGroundControlAddressTitle => '地址';
+
+  @override
+  String get settingGroundControlAddressDescription =>
+      '留空以在网络中查找 Ground Control。如果 Ground Control 在其他网络中，请输入地址。';
+
+  @override
+  String get groundControlLooking => '正在网络中查找 Ground Control。';
+
+  @override
+  String get groundControlApp => 'Ground Control 应用';
+
+  @override
   String get haCustomPages => '自定义网页';
 
   @override
@@ -10389,6 +10409,12 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get compassHoldMode => '页面保持模式';
+
+  @override
+  String get settingsMenuGroundControl => 'Ground Control';
+
+  @override
+  String get settingsMenuGroundControlSummary => '在高性能设备上运行 Voice Match';
 
   @override
   String get settingAdaptiveBrightnessTitle => '自适应亮度';
@@ -14728,16 +14754,6 @@ class UiStringsZh extends UiStrings {
   String get settingVoiceMatchEnabledTitle => '启用 Voice Match';
 
   @override
-  String get settingVoiceMatchEnabledDescription => '识别谁在说话，并在其他人接话时停止聆听。';
-
-  @override
-  String get settingVoiceMatchAddressTitle => '地址';
-
-  @override
-  String get settingVoiceMatchAddressDescription =>
-      '留空则在网络中查找 Voice Match。Voice Match 在其他网络时请填写地址。';
-
-  @override
   String get settingVoiceMatchPolicyTitle => '回应';
 
   @override
@@ -14791,9 +14807,6 @@ class UiStringsZh extends UiStrings {
   String get voiceMatchNobodyEnrolled => '尚未录入任何人。';
 
   @override
-  String get voiceMatchLooking => '正在网络中查找 Voice Match。';
-
-  @override
   String get voiceMatchTokenRefused => 'Home Assistant 拒绝了此 Kiosk 的令牌。';
 
   @override
@@ -14807,17 +14820,18 @@ class UiStringsZh extends UiStrings {
   String get settingVoiceMatchAllowEnrollTitle => '允许在此录入';
 
   @override
-  String get settingVoiceMatchAllowEnrollDescription =>
-      '允许 Voice Match 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
-
-  @override
-  String get voiceMatchApp => 'Voice Match 应用';
-
-  @override
   String get voiceMatchAppHint => '人员、声纹录入、会话和设置。';
 
   @override
   String get voiceMatchOpen => '打开';
+
+  @override
+  String get settingVoiceMatchEnabledDescriptionGroundControl =>
+      '识别谁在说话，并在其他人接话时停止聆听。需要 Ground Control。';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
+      '允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
 
   @override
   String get voiceWakePage => '唤醒词';
@@ -24193,6 +24207,26 @@ class UiStringsZhCn extends UiStringsZh {
   }
 
   @override
+  String get settingGroundControlEnabledTitle => '启用 Ground Control';
+
+  @override
+  String get settingGroundControlEnabledDescription =>
+      '连接到 Kiosk Satellite Ground Control，它在高性能设备上运行 Voice Match。';
+
+  @override
+  String get settingGroundControlAddressTitle => '地址';
+
+  @override
+  String get settingGroundControlAddressDescription =>
+      '留空以在网络中查找 Ground Control。如果 Ground Control 在其他网络中，请输入地址。';
+
+  @override
+  String get groundControlLooking => '正在网络中查找 Ground Control。';
+
+  @override
+  String get groundControlApp => 'Ground Control 应用';
+
+  @override
   String get haCustomPages => '自定义网页';
 
   @override
@@ -26475,6 +26509,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get compassHoldMode => '页面保持模式';
+
+  @override
+  String get settingsMenuGroundControl => 'Ground Control';
+
+  @override
+  String get settingsMenuGroundControlSummary => '在高性能设备上运行 Voice Match';
 
   @override
   String get settingAdaptiveBrightnessTitle => '自适应亮度';
@@ -30814,16 +30854,6 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingVoiceMatchEnabledTitle => '启用 Voice Match';
 
   @override
-  String get settingVoiceMatchEnabledDescription => '识别谁在说话，并在其他人接话时停止聆听。';
-
-  @override
-  String get settingVoiceMatchAddressTitle => '地址';
-
-  @override
-  String get settingVoiceMatchAddressDescription =>
-      '留空则在网络中查找 Voice Match。Voice Match 在其他网络时请填写地址。';
-
-  @override
   String get settingVoiceMatchPolicyTitle => '回应';
 
   @override
@@ -30877,9 +30907,6 @@ class UiStringsZhCn extends UiStringsZh {
   String get voiceMatchNobodyEnrolled => '尚未录入任何人。';
 
   @override
-  String get voiceMatchLooking => '正在网络中查找 Voice Match。';
-
-  @override
   String get voiceMatchTokenRefused => 'Home Assistant 拒绝了此 Kiosk 的令牌。';
 
   @override
@@ -30893,17 +30920,18 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingVoiceMatchAllowEnrollTitle => '允许在此录入';
 
   @override
-  String get settingVoiceMatchAllowEnrollDescription =>
-      '允许 Voice Match 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
-
-  @override
-  String get voiceMatchApp => 'Voice Match 应用';
-
-  @override
   String get voiceMatchAppHint => '人员、声纹录入、会话和设置。';
 
   @override
   String get voiceMatchOpen => '打开';
+
+  @override
+  String get settingVoiceMatchEnabledDescriptionGroundControl =>
+      '识别谁在说话，并在其他人接话时停止聆听。需要 Ground Control。';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
+      '允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
 
   @override
   String get voiceWakePage => '唤醒词';

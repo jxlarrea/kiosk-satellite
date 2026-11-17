@@ -55,134 +55,148 @@ class FilesManager extends Manager {
     }
 
     commands
-      ..register(Command(
-        name: 'fileRoots',
-        description:
-            'The file manager roots: shared storage (needs the "All files '
-            'access" grant) and the app folder, with availability',
-        handler: (_) async {
-          var sharedGranted = false;
-          try {
-            sharedGranted = await _background
-                    .invokeMethod<bool>('hasAllFilesAccess') ==
-                true;
-          } catch (_) {}
-          return CommandResult.ok({
-            'roots': [
-              {
-                'id': 'shared',
-                'label': 'Shared storage',
-                'available': sharedGranted,
-                'grantNeeded': !sharedGranted,
-              },
-              {
-                'id': 'app',
-                'label': 'App folder',
-                'available': _appRoot != null,
-                'grantNeeded': false,
-              },
-            ],
-          });
-        },
-      ))
-      ..register(Command(
-        name: 'fileList',
-        description:
-            'List a folder: entries with name, dir flag, size and modified '
-            'time (ms since epoch), folders first',
-        params: const {
-          'root': "'shared' or 'app'",
-          'path': 'folder path relative to the root, empty for the root',
-        },
-        handler: (p) async {
-          final dir = _resolve(p['root'] as String?, p['path'] as String?);
-          if (dir == null) return const CommandResult.fail('invalid path');
-          final d = Directory(dir.path);
-          if (!await d.exists()) {
-            return const CommandResult.fail('no such folder');
-          }
-          final entries = <Map<String, Object?>>[];
-          try {
-            await for (final e in d.list(followLinks: false)) {
-              final stat = await e.stat();
-              entries.add({
-                'name': e.uri.pathSegments.lastWhere((s) => s.isNotEmpty),
-                'dir': e is Directory,
-                'size': stat.size,
-                'modified': stat.modified.millisecondsSinceEpoch,
-              });
-            }
-          } on FileSystemException catch (e) {
-            return CommandResult.fail('cannot read folder: ${e.osError?.message ?? e.message}');
-          }
-          entries.sort((a, b) {
-            final byType = (b['dir'] == true ? 1 : 0) - (a['dir'] == true ? 1 : 0);
-            if (byType != 0) return byType;
-            return (a['name'] as String)
-                .toLowerCase()
-                .compareTo((b['name'] as String).toLowerCase());
-          });
-          return CommandResult.ok({'entries': entries});
-        },
-      ))
-      ..register(Command(
-        name: 'fileDelete',
-        description: 'Delete a file (never a folder)',
-        params: const {'root': "'shared' or 'app'", 'path': 'file path'},
-        handler: (p) async {
-          final f = _resolve(p['root'] as String?, p['path'] as String?);
-          if (f == null) return const CommandResult.fail('invalid path');
-          final file = File(f.path);
-          if (!await file.exists()) {
-            return const CommandResult.fail('no such file');
-          }
-          await file.delete();
-          log.info(name, 'deleted ${p['root']}:${p['path']}');
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'fileResolve',
-        description:
-            'Resolve a root plus relative path to an absolute device path, '
-            'refusing anything that escapes the root. Used by the remote '
-            "admin's file download and upload endpoints",
-        params: const {'root': "'shared' or 'app'", 'path': 'relative path'},
-        handler: (p) async {
-          final f = _resolve(p['root'] as String?, p['path'] as String?);
-          if (f == null) return const CommandResult.fail('invalid path');
-          return CommandResult.ok({'path': f.path});
-        },
-      ))
-      ..register(Command(
-        name: 'requestAllFilesAccess',
-        description:
-            'Ask for the grant behind the shared storage root: the "All '
-            'files access" settings screen on Android 11+, the storage '
-            'permission dialog before that',
-        handler: (_) async {
-          // Before Android 11 the settings screen does not exist; the same
-          // door is the legacy storage pair, a normal runtime dialog
-          // (issue #175).
-          if (await legacyStorage()) {
+      ..register(
+        Command(
+          name: 'fileRoots',
+          description:
+              'The file manager roots: shared storage (needs the "All files '
+              'access" grant) and the app folder, with availability',
+          handler: (_) async {
+            var sharedGranted = false;
             try {
-              final status = await Permission.storage.request();
-              return status.isGranted
-                  ? const CommandResult.ok()
-                  : const CommandResult.fail(
-                      'the storage permission was not granted');
-            } catch (e) {
-              return CommandResult.fail('could not ask for storage: $e');
+              sharedGranted =
+                  await _background.invokeMethod<bool>('hasAllFilesAccess') ==
+                  true;
+            } catch (_) {}
+            return CommandResult.ok({
+              'roots': [
+                {
+                  'id': 'shared',
+                  'label': 'Shared storage',
+                  'available': sharedGranted,
+                  'grantNeeded': !sharedGranted,
+                },
+                {
+                  'id': 'app',
+                  'label': 'App folder',
+                  'available': _appRoot != null,
+                  'grantNeeded': false,
+                },
+              ],
+            });
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'fileList',
+          description:
+              'List a folder: entries with name, dir flag, size and modified '
+              'time (ms since epoch), folders first',
+          params: const {
+            'root': "'shared' or 'app'",
+            'path': 'folder path relative to the root, empty for the root',
+          },
+          handler: (p) async {
+            final dir = _resolve(p['root'] as String?, p['path'] as String?);
+            if (dir == null) return const CommandResult.fail('invalid path');
+            final d = Directory(dir.path);
+            if (!await d.exists()) {
+              return const CommandResult.fail('no such folder');
             }
-          }
-          try {
-            await _background.invokeMethod('requestAllFilesAccess');
+            final entries = <Map<String, Object?>>[];
+            try {
+              await for (final e in d.list(followLinks: false)) {
+                final stat = await e.stat();
+                entries.add({
+                  'name': e.uri.pathSegments.lastWhere((s) => s.isNotEmpty),
+                  'dir': e is Directory,
+                  'size': stat.size,
+                  'modified': stat.modified.millisecondsSinceEpoch,
+                });
+              }
+            } on FileSystemException catch (e) {
+              return CommandResult.fail(
+                'cannot read folder: ${e.osError?.message ?? e.message}',
+              );
+            }
+            entries.sort((a, b) {
+              final byType =
+                  (b['dir'] == true ? 1 : 0) - (a['dir'] == true ? 1 : 0);
+              if (byType != 0) return byType;
+              return (a['name'] as String).toLowerCase().compareTo(
+                (b['name'] as String).toLowerCase(),
+              );
+            });
+            return CommandResult.ok({'entries': entries});
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'fileDelete',
+          description: 'Delete a file (never a folder)',
+          params: const {'root': "'shared' or 'app'", 'path': 'file path'},
+          handler: (p) async {
+            final f = _resolve(p['root'] as String?, p['path'] as String?);
+            if (f == null) return const CommandResult.fail('invalid path');
+            final file = File(f.path);
+            if (!await file.exists()) {
+              return const CommandResult.fail('no such file');
+            }
+            await file.delete();
+            log.info(name, 'deleted ${p['root']}:${p['path']}');
             return const CommandResult.ok();
-          } catch (e) {
-            return CommandResult.fail('could not open the grant screen: $e');
-          }
-        },
-      ));
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'fileResolve',
+          description:
+              'Resolve a root plus relative path to an absolute device path, '
+              'refusing anything that escapes the root. Used by the remote '
+              "admin's file download and upload endpoints",
+          params: const {'root': "'shared' or 'app'", 'path': 'relative path'},
+          handler: (p) async {
+            final f = _resolve(p['root'] as String?, p['path'] as String?);
+            if (f == null) return const CommandResult.fail('invalid path');
+            return CommandResult.ok({'path': f.path});
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'requestAllFilesAccess',
+          description:
+              'Ask for the grant behind the shared storage root: the "All '
+              'files access" settings screen on Android 11+, the storage '
+              'permission dialog before that',
+          handler: (_) async {
+            // Before Android 11 the settings screen does not exist; the same
+            // door is the legacy storage pair, a normal runtime dialog
+            // (issue #175).
+            if (await legacyStorage()) {
+              try {
+                final status = await Permission.storage.request();
+                return status.isGranted
+                    ? const CommandResult.ok()
+                    : const CommandResult.fail(
+                        'the storage permission was not granted',
+                      );
+              } catch (e) {
+                return CommandResult.fail('could not ask for storage: $e');
+              }
+            }
+            try {
+              await _background.invokeMethod('requestAllFilesAccess');
+              return const CommandResult.ok();
+            } catch (e) {
+              return CommandResult.fail('could not open the grant screen: $e');
+            }
+          },
+        ),
+      );
   }
 
   /// Root + relative path to an absolute location, or null when the root is

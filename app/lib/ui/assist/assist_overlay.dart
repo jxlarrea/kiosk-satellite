@@ -1158,6 +1158,7 @@ class _AssistOverlayState extends State<AssistOverlay>
 
   /// Whether the command lines name who is talking (Show who is talking).
   bool get _showSpeaker =>
+      c.settings.get(defs.groundControlEnabled) &&
       c.settings.get(defs.voiceMatchEnabled) &&
       c.settings.get(defs.voiceMatchShowSpeaker);
 

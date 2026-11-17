@@ -351,6 +351,7 @@ class BtProxyManager extends Manager {
       'voice.wake_word_engine',
       // The Speaker sensor exists only while Voice Match and its Speaker
       // sensor switch are on.
+      'ground_control.enabled',
       'voice_match.enabled',
       'voice_match.speaker_sensor',
     };

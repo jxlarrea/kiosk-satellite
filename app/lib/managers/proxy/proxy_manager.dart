@@ -108,7 +108,8 @@ class ProxyManager extends Manager {
       // connection card's row never shows an "on" it cannot honor.
       if (e.key == defs.haUrl.key && _settings.get(defs.secureProxy)) {
         final u = Uri.tryParse((e.value as String? ?? '').trim());
-        final isHttp = u != null &&
+        final isHttp =
+            u != null &&
             u.scheme == 'http' &&
             u.host != 'localhost' &&
             u.host != '127.0.0.1';
@@ -219,9 +220,12 @@ class ProxyManager extends Manager {
     // else; Dart's defaults (content-type, x-frame-options, nosniff) would be
     // merged into every one of them, including the 304s that must stay bare.
     _server!.defaultResponseHeaders.clear();
-    _server!.listen(_handle, onError: (Object e) {
-      log.warn(name, 'server error: $e');
-    });
+    _server!.listen(
+      _handle,
+      onError: (Object e) {
+        log.warn(name, 'server error: $e');
+      },
+    );
     _lastTargetOrigin = targetOrigin;
     _lastLoopbackOrigin = loopbackOrigin;
     log.info(
@@ -300,8 +304,9 @@ class ProxyManager extends Manager {
     // at -1 the response would go out chunked, and the terminating `0\r\n\r\n`
     // the page never reads stays in the socket: the next response on that
     // keep-alive connection is then parsed starting from that garbage.
-    res.contentLength =
-        _bodyless(upstream.statusCode) ? 0 : upstream.contentLength;
+    res.contentLength = _bodyless(upstream.statusCode)
+        ? 0
+        : upstream.contentLength;
     upstream.headers.forEach((k, values) {
       final lk = k.toLowerCase();
       if (_hopByHop.contains(lk) || lk == 'content-length') return;

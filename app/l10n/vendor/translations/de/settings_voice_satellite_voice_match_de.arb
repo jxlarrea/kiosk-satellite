@@ -3,9 +3,6 @@
   "voiceMatch": "Voice Match",
   "voiceMatchHint": "Wer spricht, andere Stimmen, Einlernen",
   "settingVoiceMatchEnabledTitle": "Voice Match aktivieren",
-  "settingVoiceMatchEnabledDescription": "Erkennen, wer spricht, und das Zuhören beenden, wenn jemand anderes übernimmt.",
-  "settingVoiceMatchAddressTitle": "Adresse",
-  "settingVoiceMatchAddressDescription": "Leer lassen, um Voice Match im Netzwerk zu finden. Für Voice Match in einem anderen Netzwerk eine Adresse eingeben.",
   "settingVoiceMatchPolicyTitle": "Antworten auf",
   "settingVoiceMatchPolicyDescription": "Nur eingelernte Stimmen ignoriert den Fernseher und Gäste.",
   "settingVoiceMatchRejectedTitle": "Stimme nicht eingelernt",
@@ -23,13 +20,12 @@
   "voiceMatchNotReachable": "Nicht erreichbar",
   "voiceMatchSignInRefused": "Anmeldung abgelehnt",
   "voiceMatchNobodyEnrolled": "Noch niemand ist eingelernt.",
-  "voiceMatchLooking": "Voice Match wird im Netzwerk gesucht.",
   "voiceMatchTokenRefused": "Home Assistant hat das Token dieses Kiosks abgelehnt.",
   "settingVoiceMatchShowSpeakerTitle": "Zeigen, wer spricht",
   "settingVoiceMatchShowSpeakerDescription": "Der Name der sprechenden Person vor dem Befehl im Sprach-Overlay, in ihrer Farbe. Auf einem Gerät mit Lichtring nimmt der Zuhör-Bogen diese Farbe an.",
   "settingVoiceMatchAllowEnrollTitle": "Einlernen hier erlauben",
-  "settingVoiceMatchAllowEnrollDescription": "Erlaubt der Voice Match App, die Stimme einer Person mit dem Mikrofon dieses Kiosks aufzunehmen. Der Kiosk zeigt den Text zum Vorlesen oder der Lichtring zeigt den Fortschritt.",
-  "voiceMatchApp": "Voice Match App",
   "voiceMatchAppHint": "Personen, Einlernen, Sitzungen und Einstellungen.",
-  "voiceMatchOpen": "Öffnen"
+  "voiceMatchOpen": "Öffnen",
+  "settingVoiceMatchEnabledDescriptionGroundControl": "Erkennen, wer spricht, und das Zuhören beenden, wenn jemand anderes übernimmt. Benötigt Ground Control.",
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Erlaubt der Ground Control App, die Stimme einer Person mit dem Mikrofon dieses Kiosks aufzunehmen. Der Kiosk zeigt den Text zum Vorlesen oder der Lichtring zeigt den Fortschritt."
 }

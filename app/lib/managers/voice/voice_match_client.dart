@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-/// One Kiosk Satellite Voice Match session for one voice turn.
+/// One Voice Match session on Kiosk Satellite Ground Control for one voice turn.
 ///
 /// Live mode: the kiosk keeps sending its own audio to Home Assistant and
 /// this copy goes to the service, which answers with events only:
@@ -44,15 +44,20 @@ class VoiceMatchTurn {
   }) {
     final turn = VoiceMatchTurn._(onEvent, log);
     final base = Uri.parse(baseUrl);
-    final uri = base.replace(scheme: base.scheme == 'https' ? 'wss' : 'ws', path: '/api/session');
-    unawaited(turn._connect(uri, {
-      'type': 'start',
-      'token': token,
-      'device_id': deviceId,
-      'device_name': deviceName,
-      'mode': 'live',
-      'policy': policy,
-    }));
+    final uri = base.replace(
+      scheme: base.scheme == 'https' ? 'wss' : 'ws',
+      path: '/api/session',
+    );
+    unawaited(
+      turn._connect(uri, {
+        'type': 'start',
+        'token': token,
+        'device_id': deviceId,
+        'device_name': deviceName,
+        'mode': 'live',
+        'policy': policy,
+      }),
+    );
     return turn;
   }
 
@@ -66,7 +71,12 @@ class VoiceMatchTurn {
       }
       _socket = socket;
       socket.sink.add(jsonEncode(start));
-      _sub = socket.stream.listen(_onMessage, onError: (Object _) => _drop(), onDone: _drop, cancelOnError: true);
+      _sub = socket.stream.listen(
+        _onMessage,
+        onError: (Object _) => _drop(),
+        onDone: _drop,
+        cancelOnError: true,
+      );
     } on Object catch (err) {
       _log?.call('voice match session did not open: $err');
       _drop();

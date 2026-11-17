@@ -3,9 +3,6 @@
   "voiceMatch": "Voice Match",
   "voiceMatchHint": "谁在说话、其他声音、声纹录入",
   "settingVoiceMatchEnabledTitle": "启用 Voice Match",
-  "settingVoiceMatchEnabledDescription": "识别谁在说话，并在其他人接话时停止聆听。",
-  "settingVoiceMatchAddressTitle": "地址",
-  "settingVoiceMatchAddressDescription": "留空则在网络中查找 Voice Match。Voice Match 在其他网络时请填写地址。",
   "settingVoiceMatchPolicyTitle": "回应",
   "settingVoiceMatchPolicyDescription": "“仅限已录入的声音”会忽略电视和访客。",
   "settingVoiceMatchRejectedTitle": "未录入的声音",
@@ -23,13 +20,12 @@
   "voiceMatchNotReachable": "无法访问",
   "voiceMatchSignInRefused": "登录被拒绝",
   "voiceMatchNobodyEnrolled": "尚未录入任何人。",
-  "voiceMatchLooking": "正在网络中查找 Voice Match。",
   "voiceMatchTokenRefused": "Home Assistant 拒绝了此 Kiosk 的令牌。",
   "settingVoiceMatchShowSpeakerTitle": "显示谁在说话",
   "settingVoiceMatchShowSpeakerDescription": "在语音浮层的命令前以对应颜色显示说话人的名字。在带灯环的设备上，聆听弧会变成该颜色。",
   "settingVoiceMatchAllowEnrollTitle": "允许在此录入",
-  "settingVoiceMatchAllowEnrollDescription": "允许 Voice Match 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。",
-  "voiceMatchApp": "Voice Match 应用",
   "voiceMatchAppHint": "人员、声纹录入、会话和设置。",
-  "voiceMatchOpen": "打开"
+  "voiceMatchOpen": "打开",
+  "settingVoiceMatchEnabledDescriptionGroundControl": "识别谁在说话，并在其他人接话时停止聆听。需要 Ground Control。",
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。"
 }

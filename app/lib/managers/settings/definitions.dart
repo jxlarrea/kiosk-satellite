@@ -8100,10 +8100,39 @@ const voiceRealtimeMcpToken = SettingDef<String>(
   dependsOnValue: 'custom',
 );
 
-// Voice Match: Kiosk Satellite Voice Match, a Home Assistant app or Docker
-// container, tells who is talking and when someone else (a TV) starts, so a
-// turn ends at the speaker's last word. The kiosk signs in with its Home
-// Assistant token and finds the service by mDNS unless an address is set.
+// Ground Control: Kiosk Satellite Ground Control, a Home Assistant app or
+// Docker container, runs what is too heavy for a kiosk on a capable machine.
+// The kiosk signs in with its Home Assistant token and finds it by mDNS
+// unless an address is set. Its features have their own pages: Voice Match
+// under Voice Satellite.
+
+const groundControlEnabled = SettingDef<bool>(
+  key: 'ground_control.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable Ground Control',
+  description:
+      'Connect to Kiosk Satellite Ground Control, which runs Voice Match on '
+      'a capable machine.',
+  category: 'Ground Control',
+);
+
+const groundControlAddress = SettingDef<String>(
+  key: 'ground_control.address',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Address',
+  description:
+      'Leave empty to find Ground Control on the network. Enter one for '
+      'Ground Control on another network.',
+  category: 'Ground Control',
+  section: 'Connection',
+  placeholder: '192.168.1.10:10900',
+  dependsOn: 'ground_control.enabled',
+);
+
+// Voice Match: Ground Control tells who is talking and when someone else (a
+// TV) starts, so a turn ends at the speaker's last word.
 
 const voiceMatchEnabled = SettingDef<bool>(
   key: 'voice_match.enabled',
@@ -8112,25 +8141,11 @@ const voiceMatchEnabled = SettingDef<bool>(
   title: 'Enable Voice Match',
   description:
       'Recognize who is talking and stop listening when someone else takes '
-      'over.',
+      'over. Needs Ground Control.',
   category: 'Voice Satellite',
   subpage: 'Voice Match',
   dependsOn: 'voice.enabled',
-);
-
-const voiceMatchAddress = SettingDef<String>(
-  key: 'voice_match.address',
-  type: SettingType.string,
-  defaultValue: '',
-  title: 'Address',
-  description:
-      'Leave empty to find Voice Match on the network. Enter one for Voice '
-      'Match on another network.',
-  category: 'Voice Satellite',
-  subpage: 'Voice Match',
-  section: 'Connection',
-  placeholder: '192.168.1.10:10900',
-  dependsOn: 'voice_match.enabled',
+  alsoDependsOn: 'ground_control.enabled',
 );
 
 /// Who this kiosk answers: anyone, or only voices enrolled in Voice Match.
@@ -8214,7 +8229,7 @@ const voiceMatchAllowEnroll = SettingDef<bool>(
   defaultValue: true,
   title: 'Allow enrollment here',
   description:
-      "Lets the Voice Match app record a person's voice with this kiosk's "
+      "Lets the Ground Control app record a person's voice with this kiosk's "
       'microphone. The kiosk shows the text to read, or the light ring '
       'shows the progress.',
   category: 'Voice Satellite',
@@ -14950,8 +14965,9 @@ const List<SettingDef<Object>> allSettings = [
   voiceRealtimeTools,
   voiceRealtimeMcpUrl,
   voiceRealtimeMcpToken,
+  groundControlEnabled,
+  groundControlAddress,
   voiceMatchEnabled,
-  voiceMatchAddress,
   voiceMatchPolicy,
   voiceMatchRejected,
   voiceMatchEndOnOtherVoice,

@@ -8,26 +8,27 @@ import '../l10n/messages.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kit.dart';
 
-/// The Voice Match page's status row, under Enable Voice Match: whether
-/// the kiosk found and signed in to Kiosk Satellite Voice Match, and who is
-/// enrolled there. Mirrored in the remote admin (vs_native.js).
-class VoiceMatchStatusRow extends StatefulWidget {
-  const VoiceMatchStatusRow({super.key, required this.container});
+/// The Ground Control page's status rows, under Enable Ground Control:
+/// whether the kiosk found and signed in to Kiosk Satellite Ground Control,
+/// who is enrolled there and Open for its app. Mirrored in the remote admin
+/// (ground_control.js).
+class GroundControlStatusRow extends StatefulWidget {
+  const GroundControlStatusRow({super.key, required this.container});
 
   final AppContainer container;
 
   @override
-  State<VoiceMatchStatusRow> createState() => _VoiceMatchStatusRowState();
+  State<GroundControlStatusRow> createState() => _GroundControlStatusRowState();
 }
 
-class _VoiceMatchStatusRowState extends State<VoiceMatchStatusRow> {
+class _GroundControlStatusRowState extends State<GroundControlStatusRow> {
   StreamSubscription<Object?>? _sub;
 
   @override
   void initState() {
     super.initState();
     _sub = widget.container.bus.on<RemoteStatusChanged>().listen((e) {
-      if (e.topic == 'voice-match' && mounted) setState(() {});
+      if (e.topic == 'ground-control' && mounted) setState(() {});
     });
   }
 
@@ -40,9 +41,11 @@ class _VoiceMatchStatusRowState extends State<VoiceMatchStatusRow> {
   @override
   Widget build(BuildContext context) {
     final c = widget.container;
-    if (!c.settings.get(defs.voiceMatchEnabled)) return const SizedBox.shrink();
+    if (!c.settings.get(defs.groundControlEnabled)) {
+      return const SizedBox.shrink();
+    }
     final scheme = Theme.of(context).colorScheme;
-    final m = c.voiceMatch;
+    final m = c.groundControl;
     final names = [
       for (final p in m.people) '${p['name'] ?? ''}',
     ].where((n) => n.isNotEmpty).toList();
@@ -72,11 +75,11 @@ class _VoiceMatchStatusRowState extends State<VoiceMatchStatusRow> {
       _ => (
         voiceText(context, 'Searching'),
         scheme.onSurfaceVariant,
-        voiceText(context, 'Looking for Voice Match on the network.'),
+        voiceText(context, 'Looking for Ground Control on the network.'),
       ),
     };
     final status = SettingsRow(
-      title: Text(voiceText(context, 'Voice Match')),
+      title: Text(voiceText(context, 'Ground Control')),
       subtitle: detail.isEmpty ? null : Text(detail),
       trailing: Text(
         word,
@@ -95,7 +98,7 @@ class _VoiceMatchStatusRowState extends State<VoiceMatchStatusRow> {
         // The app's page in Home Assistant, or the container's own page,
         // over the dashboard like a tapped dashboard link.
         SettingsRow(
-          title: Text(voiceText(context, 'Voice Match app')),
+          title: Text(voiceText(context, 'Ground Control app')),
           subtitle: Text(
             voiceText(context, 'People, enrollment, sessions and settings.'),
           ),

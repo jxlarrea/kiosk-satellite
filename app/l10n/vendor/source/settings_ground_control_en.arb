@@ -1,0 +1,81 @@
+{
+  "@@locale": "en",
+  "settingGroundControlEnabledTitle": "Enable Ground Control",
+  "@settingGroundControlEnabledTitle": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Enable Ground Control"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Enable Ground Control"
+      ]
+    }
+  },
+  "settingGroundControlEnabledDescription": "Connect to Kiosk Satellite Ground Control, which runs Voice Match on a capable machine.",
+  "@settingGroundControlEnabledDescription": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Enable Ground Control"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Enable Ground Control"
+      ]
+    }
+  },
+  "settingGroundControlAddressTitle": "Address",
+  "@settingGroundControlAddressTitle": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Address"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Address"
+      ]
+    }
+  },
+  "settingGroundControlAddressDescription": "Leave empty to find Ground Control on the network. Enter one for Ground Control on another network.",
+  "@settingGroundControlAddressDescription": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Address"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Address"
+      ]
+    }
+  },
+  "groundControlLooking": "Looking for Ground Control on the network.",
+  "@groundControlLooking": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Ground Control status row"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Ground Control status row"
+      ]
+    }
+  },
+  "groundControlApp": "Ground Control app",
+  "@groundControlApp": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Ground Control app row"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Ground Control app row"
+      ]
+    }
+  }
+}

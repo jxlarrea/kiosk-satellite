@@ -23,6 +23,5 @@ class EventBus {
 }
 
 extension _WhereType<T> on Stream<T> {
-  Stream<S> whereType<S>() =>
-      where((e) => e is S).map((e) => e as S);
+  Stream<S> whereType<S>() => where((e) => e is S).map((e) => e as S);
 }

@@ -8457,6 +8457,27 @@ class UiStringsEn extends UiStrings {
   }
 
   @override
+  String get settingGroundControlEnabledTitle => 'Enable Ground Control';
+
+  @override
+  String get settingGroundControlEnabledDescription =>
+      'Connect to Kiosk Satellite Ground Control, which runs Voice Match on a capable machine.';
+
+  @override
+  String get settingGroundControlAddressTitle => 'Address';
+
+  @override
+  String get settingGroundControlAddressDescription =>
+      'Leave empty to find Ground Control on the network. Enter one for Ground Control on another network.';
+
+  @override
+  String get groundControlLooking =>
+      'Looking for Ground Control on the network.';
+
+  @override
+  String get groundControlApp => 'Ground Control app';
+
+  @override
   String get haCustomPages => 'Custom Pages';
 
   @override
@@ -10873,6 +10894,13 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get compassHoldMode => 'Hold Mode';
+
+  @override
+  String get settingsMenuGroundControl => 'Ground Control';
+
+  @override
+  String get settingsMenuGroundControlSummary =>
+      'Voice Match on a capable machine';
 
   @override
   String get settingAdaptiveBrightnessTitle => 'Adaptive brightness';
@@ -15537,17 +15565,6 @@ class UiStringsEn extends UiStrings {
   String get settingVoiceMatchEnabledTitle => 'Enable Voice Match';
 
   @override
-  String get settingVoiceMatchEnabledDescription =>
-      'Recognize who is talking and stop listening when someone else takes over.';
-
-  @override
-  String get settingVoiceMatchAddressTitle => 'Address';
-
-  @override
-  String get settingVoiceMatchAddressDescription =>
-      'Leave empty to find Voice Match on the network. Enter one for Voice Match on another network.';
-
-  @override
   String get settingVoiceMatchPolicyTitle => 'Answer';
 
   @override
@@ -15604,9 +15621,6 @@ class UiStringsEn extends UiStrings {
   String get voiceMatchNobodyEnrolled => 'Nobody is enrolled yet.';
 
   @override
-  String get voiceMatchLooking => 'Looking for Voice Match on the network.';
-
-  @override
   String get voiceMatchTokenRefused =>
       'Home Assistant refused this kiosk\'s token.';
 
@@ -15621,17 +15635,18 @@ class UiStringsEn extends UiStrings {
   String get settingVoiceMatchAllowEnrollTitle => 'Allow enrollment here';
 
   @override
-  String get settingVoiceMatchAllowEnrollDescription =>
-      'Lets the Voice Match app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.';
-
-  @override
-  String get voiceMatchApp => 'Voice Match app';
-
-  @override
   String get voiceMatchAppHint => 'People, enrollment, sessions and settings.';
 
   @override
   String get voiceMatchOpen => 'Open';
+
+  @override
+  String get settingVoiceMatchEnabledDescriptionGroundControl =>
+      'Recognize who is talking and stop listening when someone else takes over. Needs Ground Control.';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
+      'Lets the Ground Control app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.';
 
   @override
   String get voiceWakePage => 'Wake Word';

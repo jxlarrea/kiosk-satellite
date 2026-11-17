@@ -325,9 +325,10 @@ export const voiceTextMessageIds = {
   "Not reachable": "voiceMatchNotReachable",
   "Sign-in refused": "voiceMatchSignInRefused",
   "Nobody is enrolled yet.": "voiceMatchNobodyEnrolled",
-  "Looking for Voice Match on the network.": "voiceMatchLooking",
   "Home Assistant refused this kiosk's token.": "voiceMatchTokenRefused",
-  "Voice Match app": "voiceMatchApp",
   "People, enrollment, sessions and settings.": "voiceMatchAppHint",
-  "Open": "voiceMatchOpen"
+  "Open": "voiceMatchOpen",
+  "Looking for Ground Control on the network.": "groundControlLooking",
+  "Ground Control app": "groundControlApp",
+  "Ground Control": "settingsMenuGroundControl"
 };

@@ -342,9 +342,9 @@ class VoiceManager extends Manager {
     matchRejectChime: _settings.get(defs.voiceMatchRejected) == 'chime',
   );
 
-  /// Kiosk Satellite Voice Match's address while it is connected, from
-  /// VoiceMatchManager.
-  String? _voiceMatchUrl;
+  /// Kiosk Satellite Ground Control's address while it is connected, from
+  /// GroundControlManager.
+  String? _groundControlUrl;
 
   @override
   Future<void> init() async {
@@ -379,7 +379,9 @@ class VoiceManager extends Manager {
       ),
     );
     _subs.add(
-      bus.on<VoiceMatchServiceChanged>().listen((e) => _voiceMatchUrl = e.baseUrl),
+      bus.on<GroundControlServiceChanged>().listen(
+        (e) => _groundControlUrl = e.baseUrl,
+      ),
     );
     _realtime = RealtimeSession(
       backend: _realtimeBackend,
@@ -2981,7 +2983,7 @@ class VoiceManager extends Manager {
     );
     // The kiosk records with the wake word engine's microphone, the one
     // the voice turns use.
-    final refuse = !enabled || _voiceMatchUrl == null
+    final refuse = !enabled || _groundControlUrl == null
         ? 'no_mic'
         : _settings.get(defs.voiceMute)
         ? 'muted'
@@ -2998,7 +3000,7 @@ class VoiceManager extends Manager {
     final s = _settings;
     final deviceName = s.get(defs.deviceName).trim();
     return EnrollSocket.open(
-      baseUrl: _voiceMatchUrl ?? '',
+      baseUrl: _groundControlUrl ?? '',
       token: s.get(defs.haToken),
       request: request,
       deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), deviceName),
@@ -4225,7 +4227,6 @@ String realtimeLocationLine({required String name, required String area}) {
   ].join(' ');
 }
 
-
 /// Voice Match sessions for the Assist turns, in live mode: the kiosk's own
 /// audio keeps going to Home Assistant and a copy goes to the service.
 class _VoiceMatch implements VoiceMatchPort {
@@ -4234,8 +4235,9 @@ class _VoiceMatch implements VoiceMatchPort {
 
   @override
   VoiceMatchTurnPort? begin(void Function(Map<String, Object?> event) onEvent) {
-    final url = _voice._voiceMatchUrl;
+    final url = _voice._groundControlUrl;
     final s = _voice._settings;
+    // The address is only known while Ground Control is connected.
     if (url == null || !s.get(defs.voiceMatchEnabled)) return null;
     final name = s.get(defs.deviceName).trim();
     final turn = VoiceMatchTurn.open(

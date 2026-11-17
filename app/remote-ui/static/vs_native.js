@@ -51,47 +51,6 @@ function statusWord(row, text, color) {
   span.style.cssText = `white-space:nowrap; font-weight:500; color:${color}`;
 }
 
-/* Voice Match's status row under its switch, as on the device
-   (voice_match_settings.dart): found or not, signed in or not, and who is
-   enrolled. */
-async function paintVoiceMatch(panel) {
-  const gen = (panel._vmGen || 0) + 1;
-  panel._vmGen = gen;
-  const enabledRow = panel.querySelector('[data-key="voice_match.enabled"]');
-  let status = {};
-  try {
-    const r = await cmd('voiceMatchStatus', {});
-    if (r.ok) status = r.data || {};
-  } catch (_) {}
-  if (panel._vmGen !== gen) return;
-  panel.querySelectorAll('.vm-status').forEach((r) => r.remove());
-  if (!enabledRow || status.enabled !== true) return;
-  const names = (status.people || []).map((p) => `${p.name || ''}`).filter(Boolean);
-  const states = {
-    connected: ['Connected', 'var(--primary)', names.length ? names.join(', ') : voiceText('Nobody is enrolled yet.')],
-    connecting: ['Connecting', 'var(--muted)', status.baseUrl || ''],
-    unreachable: ['Not reachable', 'var(--warn)', status.baseUrl || ''],
-    refused: ['Sign-in refused', 'var(--warn)', voiceText("Home Assistant refused this kiosk's token.")],
-  };
-  const [word, color, detail] = states[status.status]
-    || ['Searching', 'var(--muted)', voiceText('Looking for Voice Match on the network.')];
-  const row = readOnlyRow(voiceText('Voice Match'), detail, '', false);
-  statusWord(row, voiceText(word), color);
-  row.classList.add('vm-status');
-  enabledRow.after(row);
-  if (!status.appUrl) return;
-  const app = readOnlyRow(voiceText('Voice Match app'), voiceText('People, enrollment, sessions and settings.'), '', false);
-  app.classList.add('vm-status');
-  const open = document.createElement('button');
-  open.type = 'button';
-  open.className = 'btn-ghost';
-  open.textContent = voiceText('Open');
-  open.style.flexShrink = '0';
-  open.addEventListener('click', () => window.open(status.appUrl, '_blank', 'noopener'));
-  app.appendChild(open);
-  row.after(app);
-}
-
 /* The status and Home Assistant rows under the switch, read from the
    kiosk's voiceStatus and repainted on every settings render. */
 async function paintStatus(card, byKey) {
@@ -628,13 +587,6 @@ export async function renderNativeVs(root, byKey) {
     const realtimePanel = panel('Realtime');
     if (realtimePanel) {
       for (const provider of Object.keys(REALTIME_PROVIDERS)) realtimeProviderRow(realtimePanel, provider);
-    }
-    const matchPanel = panel('Voice Match');
-    if (matchPanel) {
-      paintVoiceMatch(matchPanel);
-      if (!matchPanel._vmWatch) {
-        matchPanel._vmWatch = watchUpdates(['voice-match'], () => paintVoiceMatch(matchPanel), { owner: matchPanel });
-      }
     }
     const ttsRow = assistant?.querySelector('[data-key="voice.tts_output"]');
     if (ttsRow) ttsOutputRow(ttsRow, byKey['voice.tts_output']?.value || '');

@@ -181,6 +181,7 @@ class EspEntitySurface {
 
   bool get _speakerSensor =>
       _voiceNative &&
+      _settings.get(defs.groundControlEnabled) &&
       _settings.get(defs.voiceMatchEnabled) &&
       _settings.get(defs.voiceMatchSpeakerSensor);
 
@@ -738,7 +739,7 @@ class EspEntitySurface {
           'name': 'Voice Satellite',
           'icon': 'mdi:account-voice',
         },
-        // Who is talking, from Kiosk Satellite Voice Match: empty when
+        // Who is talking, from Kiosk Satellite Ground Control: empty when
         // nobody is identified. LLM agents read it with GetLiveContext.
         if (_speakerSensor)
           {

@@ -24,23 +24,40 @@ import 'package:onnxruntime/src/bindings/onnxruntime_bindings_generated.dart'
 
 // Cached FFI trampolines (creating them per call is measurable overhead).
 // Lazy so they resolve after `ensureOrtInit` has loaded the ORT env.
-final _getTensorMutableData = OrtEnv.instance.ortApiPtr.ref
-    .GetTensorMutableData
+final _getTensorMutableData = OrtEnv.instance.ortApiPtr.ref.GetTensorMutableData
     .asFunction<
-        bg.OrtStatusPtr Function(
-            ffi.Pointer<bg.OrtValue>, ffi.Pointer<ffi.Pointer<ffi.Void>>)>();
-final _getTensorTypeAndShape = OrtEnv.instance.ortApiPtr.ref
+      bg.OrtStatusPtr Function(
+        ffi.Pointer<bg.OrtValue>,
+        ffi.Pointer<ffi.Pointer<ffi.Void>>,
+      )
+    >();
+final _getTensorTypeAndShape = OrtEnv
+    .instance
+    .ortApiPtr
+    .ref
     .GetTensorTypeAndShape
     .asFunction<
-        bg.OrtStatusPtr Function(ffi.Pointer<bg.OrtValue>,
-            ffi.Pointer<ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>>)>();
-final _getTensorShapeElementCount = OrtEnv.instance.ortApiPtr.ref
+      bg.OrtStatusPtr Function(
+        ffi.Pointer<bg.OrtValue>,
+        ffi.Pointer<ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>>,
+      )
+    >();
+final _getTensorShapeElementCount = OrtEnv
+    .instance
+    .ortApiPtr
+    .ref
     .GetTensorShapeElementCount
     .asFunction<
-        bg.OrtStatusPtr Function(ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>,
-            ffi.Pointer<ffi.Size>)>();
+      bg.OrtStatusPtr Function(
+        ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>,
+        ffi.Pointer<ffi.Size>,
+      )
+    >();
 final _releaseTensorTypeAndShapeInfo = OrtEnv
-    .instance.ortApiPtr.ref.ReleaseTensorTypeAndShapeInfo
+    .instance
+    .ortApiPtr
+    .ref
+    .ReleaseTensorTypeAndShapeInfo
     .asFunction<void Function(ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>)>();
 
 /// A float32 input tensor created once and written per inference.
@@ -71,28 +88,35 @@ class ReusableInputTensor {
     final valuePP = calloc<ffi.Pointer<bg.OrtValue>>();
     try {
       // Owned by the allocator — queried, not created, so never released here.
-      var status = OrtEnv.instance.ortApiPtr.ref.AllocatorGetInfo.asFunction<
-              bg.OrtStatusPtr Function(ffi.Pointer<bg.OrtAllocator>,
-                  ffi.Pointer<ffi.Pointer<bg.OrtMemoryInfo>>)>()(
-          OrtAllocator.instance.ptr, memInfoPP);
+      var status = OrtEnv.instance.ortApiPtr.ref.AllocatorGetInfo
+          .asFunction<
+            bg.OrtStatusPtr Function(
+              ffi.Pointer<bg.OrtAllocator>,
+              ffi.Pointer<ffi.Pointer<bg.OrtMemoryInfo>>,
+            )
+          >()(OrtAllocator.instance.ptr, memInfoPP);
       OrtStatus.checkOrtStatus(status);
-      status = OrtEnv.instance.ortApiPtr.ref.CreateTensorWithDataAsOrtValue
+      status =
+          OrtEnv.instance.ortApiPtr.ref.CreateTensorWithDataAsOrtValue
               .asFunction<
-                  bg.OrtStatusPtr Function(
-                      ffi.Pointer<bg.OrtMemoryInfo>,
-                      ffi.Pointer<ffi.Void>,
-                      int,
-                      ffi.Pointer<ffi.Int64>,
-                      int,
-                      int,
-                      ffi.Pointer<ffi.Pointer<bg.OrtValue>>)>()(
-          memInfoPP.value,
-          buf.cast(),
-          count * 4,
-          shapePtr,
-          shape.length,
-          ONNXTensorElementDataType.float.value,
-          valuePP);
+                bg.OrtStatusPtr Function(
+                  ffi.Pointer<bg.OrtMemoryInfo>,
+                  ffi.Pointer<ffi.Void>,
+                  int,
+                  ffi.Pointer<ffi.Int64>,
+                  int,
+                  int,
+                  ffi.Pointer<ffi.Pointer<bg.OrtValue>>,
+                )
+              >()(
+            memInfoPP.value,
+            buf.cast(),
+            count * 4,
+            shapePtr,
+            shape.length,
+            ONNXTensorElementDataType.float.value,
+            valuePP,
+          );
       OrtStatus.checkOrtStatus(status);
       // Handing buf as dataPtr makes tensor.release() free it too.
       final tensor = OrtValueTensor(valuePP.value, buf.cast());
@@ -100,7 +124,9 @@ class ReusableInputTensor {
     } catch (_) {
       if (valuePP.value != ffi.nullptr) {
         OrtEnv.instance.ortApiPtr.ref.ReleaseValue
-            .asFunction<void Function(ffi.Pointer<bg.OrtValue>)>()(valuePP.value);
+            .asFunction<void Function(ffi.Pointer<bg.OrtValue>)>()(
+          valuePP.value,
+        );
       }
       calloc.free(buf);
       rethrow;
@@ -134,7 +160,8 @@ int tensorElementCount(OrtValue value) {
     OrtStatus.checkOrtStatus(_getTensorTypeAndShape(value.ptr, infoPP));
     try {
       OrtStatus.checkOrtStatus(
-          _getTensorShapeElementCount(infoPP.value, countP));
+        _getTensorShapeElementCount(infoPP.value, countP),
+      );
       return countP.value;
     } finally {
       _releaseTensorTypeAndShapeInfo(infoPP.value);

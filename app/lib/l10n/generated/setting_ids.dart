@@ -2766,11 +2766,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "voice_match.enabled": {
     "title": "settingVoiceMatchEnabledTitle",
-    "description": "settingVoiceMatchEnabledDescription",
-  },
-  "voice_match.address": {
-    "title": "settingVoiceMatchAddressTitle",
-    "description": "settingVoiceMatchAddressDescription",
+    "description": "settingVoiceMatchEnabledDescriptionGroundControl",
   },
   "voice_match.policy": {
     "title": "settingVoiceMatchPolicyTitle",
@@ -2794,6 +2790,14 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "voice_match.allow_enroll": {
     "title": "settingVoiceMatchAllowEnrollTitle",
-    "description": "settingVoiceMatchAllowEnrollDescription",
+    "description": "settingVoiceMatchAllowEnrollDescriptionGroundControl",
+  },
+  "ground_control.enabled": {
+    "title": "settingGroundControlEnabledTitle",
+    "description": "settingGroundControlEnabledDescription",
+  },
+  "ground_control.address": {
+    "title": "settingGroundControlAddressTitle",
+    "description": "settingGroundControlAddressDescription",
   },
 };

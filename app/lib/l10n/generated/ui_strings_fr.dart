@@ -8593,6 +8593,27 @@ class UiStringsFr extends UiStrings {
   }
 
   @override
+  String get settingGroundControlEnabledTitle => 'Activer Ground Control';
+
+  @override
+  String get settingGroundControlEnabledDescription =>
+      'Se connecter à Kiosk Satellite Ground Control, qui exécute Voice Match sur une machine puissante.';
+
+  @override
+  String get settingGroundControlAddressTitle => 'Adresse';
+
+  @override
+  String get settingGroundControlAddressDescription =>
+      'Laissez vide pour trouver Ground Control sur le réseau. Saisissez-en une pour Ground Control sur un autre réseau.';
+
+  @override
+  String get groundControlLooking =>
+      'Recherche de Ground Control sur le réseau.';
+
+  @override
+  String get groundControlApp => 'App Ground Control';
+
+  @override
   String get haCustomPages => 'Pages personnalisées';
 
   @override
@@ -11071,6 +11092,13 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get compassHoldMode => 'Mode maintien';
+
+  @override
+  String get settingsMenuGroundControl => 'Ground Control';
+
+  @override
+  String get settingsMenuGroundControlSummary =>
+      'Voice Match sur une machine puissante';
 
   @override
   String get settingAdaptiveBrightnessTitle => 'Luminosité adaptative';
@@ -15834,17 +15862,6 @@ class UiStringsFr extends UiStrings {
   String get settingVoiceMatchEnabledTitle => 'Activer Voice Match';
 
   @override
-  String get settingVoiceMatchEnabledDescription =>
-      'Reconnaître qui parle et arrêter l\'écoute quand quelqu\'un d\'autre prend la parole.';
-
-  @override
-  String get settingVoiceMatchAddressTitle => 'Adresse';
-
-  @override
-  String get settingVoiceMatchAddressDescription =>
-      'Laissez vide pour trouver Voice Match sur le réseau. Saisissez-en une pour un Voice Match sur un autre réseau.';
-
-  @override
   String get settingVoiceMatchPolicyTitle => 'Répondre à';
 
   @override
@@ -15901,9 +15918,6 @@ class UiStringsFr extends UiStrings {
   String get voiceMatchNobodyEnrolled => 'Personne n\'est encore enregistré.';
 
   @override
-  String get voiceMatchLooking => 'Recherche de Voice Match sur le réseau.';
-
-  @override
   String get voiceMatchTokenRefused =>
       'Home Assistant a refusé le jeton de ce kiosque.';
 
@@ -15919,18 +15933,19 @@ class UiStringsFr extends UiStrings {
       'Autoriser l\'enregistrement ici';
 
   @override
-  String get settingVoiceMatchAllowEnrollDescription =>
-      'Permet à l\'app Voice Match d\'enregistrer la voix d\'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l\'anneau lumineux affiche la progression.';
-
-  @override
-  String get voiceMatchApp => 'App Voice Match';
-
-  @override
   String get voiceMatchAppHint =>
       'Personnes, enregistrement de la voix, sessions et réglages.';
 
   @override
   String get voiceMatchOpen => 'Ouvrir';
+
+  @override
+  String get settingVoiceMatchEnabledDescriptionGroundControl =>
+      'Reconnaître qui parle et arrêter l\'écoute quand quelqu\'un d\'autre prend la parole. Nécessite Ground Control.';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
+      'Permet à l\'app Ground Control d\'enregistrer la voix d\'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l\'anneau lumineux affiche la progression.';
 
   @override
   String get voiceWakePage => 'Mot de réveil';

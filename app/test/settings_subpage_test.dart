@@ -29,7 +29,6 @@ void main() {
     ];
     expect(vm.map((d) => d.key), [
       'voice_match.enabled',
-      'voice_match.address',
       'voice_match.policy',
       'voice_match.rejected',
       'voice_match.end_on_other_voice',
@@ -41,9 +40,11 @@ void main() {
       expect(d.category, 'Voice Satellite', reason: d.key);
       expect(d.subpage, 'Voice Match', reason: d.key);
     }
-    // The switch follows Voice Satellite, the rest follow the switch (or
-    // the policy, for what happens to a voice that is not enrolled).
+    // The switch follows Voice Satellite and Ground Control, the rest
+    // follow the switch (or the policy, for what happens to a voice that is
+    // not enrolled).
     expect(defs.voiceMatchEnabled.dependsOn, 'voice.enabled');
+    expect(defs.voiceMatchEnabled.alsoDependsOn, 'ground_control.enabled');
     expect(defs.voiceMatchRejected.dependsOn, 'voice_match.policy');
     expect(defs.voiceMatchRejected.dependsOnValue, 'enrolled');
     for (final d in vm.where((d) => d != defs.voiceMatchEnabled && d != defs.voiceMatchRejected)) {
@@ -58,6 +59,21 @@ void main() {
     }
     expect(pages.indexOf('Voice Match'), pages.indexOf('Realtime') + 1);
     expect(defs.subpageHints['Voice Match'], isNotEmpty);
+  });
+
+  test('Ground Control has its own page, with the connection on it', () {
+    final gc = [
+      for (final d in defs.allSettings)
+        if (d.key.startsWith('ground_control.')) d,
+    ];
+    expect(gc.map((d) => d.key), ['ground_control.enabled', 'ground_control.address']);
+    for (final d in gc) {
+      expect(d.category, 'Ground Control', reason: d.key);
+      expect(d.subpage, isNull, reason: d.key);
+    }
+    expect(defs.groundControlAddress.dependsOn, 'ground_control.enabled');
+    // Nothing on the Voice Match page still connects to the service.
+    expect(defs.allSettings.where((d) => d.key == 'voice_match.address'), isEmpty);
   });
 
   test('the timer settings are on the Timers page, the sound included', () {

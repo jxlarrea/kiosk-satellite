@@ -13,13 +13,16 @@ import 'manifest.dart';
 /// straddle a single 1.3 s window (e.g. "okay … nabu" with a pause).
 class StreamMatcher {
   StreamMatcher(this.manifest, this._decoder)
-      : _frameMs = manifest.windowMs / manifest.tOut,
-        _lag = _clamp(math.max(4, manifest.runtime.streamLagFrames),
-            manifest.tOut - 2),
-        _frameSamples =
-            (manifest.feature.windowSamples / manifest.tOut).round() {
-    _bufFrames = math.max(manifest.tOut,
-        (manifest.runtime.streamBufferMs / _frameMs).round());
+    : _frameMs = manifest.windowMs / manifest.tOut,
+      _lag = _clamp(
+        math.max(4, manifest.runtime.streamLagFrames),
+        manifest.tOut - 2,
+      ),
+      _frameSamples = (manifest.feature.windowSamples / manifest.tOut).round() {
+    _bufFrames = math.max(
+      manifest.tOut,
+      (manifest.runtime.streamBufferMs / _frameMs).round(),
+    );
   }
 
   final VswwManifest manifest;

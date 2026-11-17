@@ -3,9 +3,6 @@
   "voiceMatch": "Voice Match",
   "voiceMatchHint": "Qui parle, autres voix, enregistrement de la voix",
   "settingVoiceMatchEnabledTitle": "Activer Voice Match",
-  "settingVoiceMatchEnabledDescription": "Reconnaître qui parle et arrêter l'écoute quand quelqu'un d'autre prend la parole.",
-  "settingVoiceMatchAddressTitle": "Adresse",
-  "settingVoiceMatchAddressDescription": "Laissez vide pour trouver Voice Match sur le réseau. Saisissez-en une pour un Voice Match sur un autre réseau.",
   "settingVoiceMatchPolicyTitle": "Répondre à",
   "settingVoiceMatchPolicyDescription": "Voix enregistrées uniquement ignore la télé et les invités.",
   "settingVoiceMatchRejectedTitle": "Voix non enregistrée",
@@ -23,13 +20,12 @@
   "voiceMatchNotReachable": "Injoignable",
   "voiceMatchSignInRefused": "Connexion refusée",
   "voiceMatchNobodyEnrolled": "Personne n'est encore enregistré.",
-  "voiceMatchLooking": "Recherche de Voice Match sur le réseau.",
   "voiceMatchTokenRefused": "Home Assistant a refusé le jeton de ce kiosque.",
   "settingVoiceMatchShowSpeakerTitle": "Afficher qui parle",
   "settingVoiceMatchShowSpeakerDescription": "Le nom de la personne qui parle avant la commande sur la superposition vocale, dans sa couleur. Sur un appareil avec un anneau lumineux, l'arc d'écoute prend cette couleur.",
   "settingVoiceMatchAllowEnrollTitle": "Autoriser l'enregistrement ici",
-  "settingVoiceMatchAllowEnrollDescription": "Permet à l'app Voice Match d'enregistrer la voix d'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l'anneau lumineux affiche la progression.",
-  "voiceMatchApp": "App Voice Match",
   "voiceMatchAppHint": "Personnes, enregistrement de la voix, sessions et réglages.",
-  "voiceMatchOpen": "Ouvrir"
+  "voiceMatchOpen": "Ouvrir",
+  "settingVoiceMatchEnabledDescriptionGroundControl": "Reconnaître qui parle et arrêter l'écoute quand quelqu'un d'autre prend la parole. Nécessite Ground Control.",
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permet à l'app Ground Control d'enregistrer la voix d'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l'anneau lumineux affiche la progression."
 }

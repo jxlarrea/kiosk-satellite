@@ -2447,6 +2447,16 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingHandGestureHoldSecondsDescription' =>
         strings.settingHandGestureHoldSecondsDescription,
       'gestureHoldInstant' => strings.gestureHoldInstant,
+      'settingGroundControlEnabledTitle' =>
+        strings.settingGroundControlEnabledTitle,
+      'settingGroundControlEnabledDescription' =>
+        strings.settingGroundControlEnabledDescription,
+      'settingGroundControlAddressTitle' =>
+        strings.settingGroundControlAddressTitle,
+      'settingGroundControlAddressDescription' =>
+        strings.settingGroundControlAddressDescription,
+      'groundControlLooking' => strings.groundControlLooking,
+      'groundControlApp' => strings.groundControlApp,
       'haCustomPages' => strings.haCustomPages,
       'haCustomPagesHintDashboard' => strings.haCustomPagesHintDashboard,
       'settingHaCustomPagesSocketTitle' =>
@@ -3390,6 +3400,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'compassStateOn' => strings.compassStateOn,
       'compassStateOff' => strings.compassStateOff,
       'compassHoldMode' => strings.compassHoldMode,
+      'settingsMenuGroundControl' => strings.settingsMenuGroundControl,
+      'settingsMenuGroundControlSummary' =>
+        strings.settingsMenuGroundControlSummary,
       'settingAdaptiveBrightnessTitle' =>
         strings.settingAdaptiveBrightnessTitle,
       'settingAdaptiveBrightnessDescription' =>
@@ -5360,11 +5373,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceMatch' => strings.voiceMatch,
       'voiceMatchHint' => strings.voiceMatchHint,
       'settingVoiceMatchEnabledTitle' => strings.settingVoiceMatchEnabledTitle,
-      'settingVoiceMatchEnabledDescription' =>
-        strings.settingVoiceMatchEnabledDescription,
-      'settingVoiceMatchAddressTitle' => strings.settingVoiceMatchAddressTitle,
-      'settingVoiceMatchAddressDescription' =>
-        strings.settingVoiceMatchAddressDescription,
       'settingVoiceMatchPolicyTitle' => strings.settingVoiceMatchPolicyTitle,
       'settingVoiceMatchPolicyDescription' =>
         strings.settingVoiceMatchPolicyDescription,
@@ -5389,7 +5397,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceMatchNotReachable' => strings.voiceMatchNotReachable,
       'voiceMatchSignInRefused' => strings.voiceMatchSignInRefused,
       'voiceMatchNobodyEnrolled' => strings.voiceMatchNobodyEnrolled,
-      'voiceMatchLooking' => strings.voiceMatchLooking,
       'voiceMatchTokenRefused' => strings.voiceMatchTokenRefused,
       'settingVoiceMatchShowSpeakerTitle' =>
         strings.settingVoiceMatchShowSpeakerTitle,
@@ -5397,11 +5404,12 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingVoiceMatchShowSpeakerDescription,
       'settingVoiceMatchAllowEnrollTitle' =>
         strings.settingVoiceMatchAllowEnrollTitle,
-      'settingVoiceMatchAllowEnrollDescription' =>
-        strings.settingVoiceMatchAllowEnrollDescription,
-      'voiceMatchApp' => strings.voiceMatchApp,
       'voiceMatchAppHint' => strings.voiceMatchAppHint,
       'voiceMatchOpen' => strings.voiceMatchOpen,
+      'settingVoiceMatchEnabledDescriptionGroundControl' =>
+        strings.settingVoiceMatchEnabledDescriptionGroundControl,
+      'settingVoiceMatchAllowEnrollDescriptionGroundControl' =>
+        strings.settingVoiceMatchAllowEnrollDescriptionGroundControl,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,

@@ -173,7 +173,7 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         bluetoothProxy = BluetoothProxyBridge(applicationContext, messenger)
         TlsBridge(applicationContext, messenger)
         fleet = FleetBridge(applicationContext, messenger)
-        VoiceMatchBridge(applicationContext, messenger)
+        GroundControlBridge(applicationContext, messenger)
         intercomAudio = IntercomAudio(applicationContext, messenger)
         intercomVideo = IntercomVideo(messenger, engine.renderer)
         realtimeAudio = RealtimeAudio(applicationContext, messenger)

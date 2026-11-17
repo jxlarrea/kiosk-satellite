@@ -784,5 +784,33 @@
         "Compass navigation > Menu"
       ]
     }
+  },
+  "settingsMenuGroundControl": "Ground Control",
+  "@settingsMenuGroundControl": {
+    "context": "Settings:Menu",
+    "description": "Kiosk Satellite Ground Control, the companion app that runs Voice Match on a capable machine. A product name: keep Ground Control unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > menu",
+        "Settings > Ground Control"
+      ],
+      "remoteAdmin": [
+        "Sidebar menu",
+        "Ground Control"
+      ]
+    }
+  },
+  "settingsMenuGroundControlSummary": "Voice Match on a capable machine",
+  "@settingsMenuGroundControlSummary": {
+    "context": "Settings:Menu",
+    "description": "Summary under the Ground Control entry. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > menu"
+      ],
+      "remoteAdmin": [
+        "Sidebar menu"
+      ]
+    }
   }
 }

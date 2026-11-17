@@ -1,0 +1,9 @@
+{
+  "@@locale": "nl",
+  "settingGroundControlEnabledTitle": "Ground Control inschakelen",
+  "settingGroundControlEnabledDescription": "Verbind met Kiosk Satellite Ground Control, dat Voice Match op een krachtige computer draait.",
+  "settingGroundControlAddressTitle": "Adres",
+  "settingGroundControlAddressDescription": "Laat leeg om Ground Control op het netwerk te vinden. Vul er een in voor Ground Control op een ander netwerk.",
+  "groundControlLooking": "Ground Control zoeken op het netwerk.",
+  "groundControlApp": "Ground Control app"
+}

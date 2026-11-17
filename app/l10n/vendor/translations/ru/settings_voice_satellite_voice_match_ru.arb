@@ -3,9 +3,6 @@
   "voiceMatch": "Voice Match",
   "voiceMatchHint": "Кто говорит, другие голоса, запись голоса",
   "settingVoiceMatchEnabledTitle": "Включить Voice Match",
-  "settingVoiceMatchEnabledDescription": "Распознавать, кто говорит, и прекращать слушать, когда вступает кто-то другой.",
-  "settingVoiceMatchAddressTitle": "Адрес",
-  "settingVoiceMatchAddressDescription": "Оставьте пустым, чтобы найти Voice Match в сети. Укажите адрес, если Voice Match в другой сети.",
   "settingVoiceMatchPolicyTitle": "Отвечать",
   "settingVoiceMatchPolicyDescription": "«Только записанные голоса» игнорирует телевизор и гостей.",
   "settingVoiceMatchRejectedTitle": "Голос не записан",
@@ -23,13 +20,12 @@
   "voiceMatchNotReachable": "Недоступно",
   "voiceMatchSignInRefused": "Вход отклонён",
   "voiceMatchNobodyEnrolled": "Пока никто не записан.",
-  "voiceMatchLooking": "Поиск Voice Match в сети.",
   "voiceMatchTokenRefused": "Home Assistant отклонил токен этого киоска.",
   "settingVoiceMatchShowSpeakerTitle": "Показывать, кто говорит",
   "settingVoiceMatchShowSpeakerDescription": "Имя говорящего перед командой на голосовом оверлее, его цветом. На устройстве со световым кольцом дуга прослушивания принимает этот цвет.",
   "settingVoiceMatchAllowEnrollTitle": "Разрешить запись голоса здесь",
-  "settingVoiceMatchAllowEnrollDescription": "Разрешает приложению Voice Match записывать голос человека микрофоном этого киоска. Киоск показывает текст для чтения, или световое кольцо показывает прогресс.",
-  "voiceMatchApp": "Приложение Voice Match",
   "voiceMatchAppHint": "Люди, запись голоса, сеансы и настройки.",
-  "voiceMatchOpen": "Открыть"
+  "voiceMatchOpen": "Открыть",
+  "settingVoiceMatchEnabledDescriptionGroundControl": "Распознавать, кто говорит, и прекращать слушать, когда вступает кто-то другой. Нужен Ground Control.",
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Разрешает приложению Ground Control записывать голос человека микрофоном этого киоска. Киоск показывает текст для чтения, или световое кольцо показывает прогресс."
 }

@@ -78,7 +78,7 @@ import 'managers/update/system_update_manager.dart';
 import 'managers/update/update_manager.dart';
 import 'managers/voice/voice_manager.dart';
 import 'managers/voice/voice_requests_manager.dart';
-import 'managers/voice_match/voice_match_manager.dart';
+import 'managers/ground_control/ground_control_manager.dart';
 import 'managers/voice_timers/shared_timers_manager.dart';
 import 'managers/voice_timers/voice_timer_manager.dart';
 import 'managers/wake_word/wake_word_manager.dart';
@@ -311,7 +311,7 @@ class AppContainer {
       ),
     );
     voiceRequests = VoiceRequestsManager(bus, commands, log, settings);
-    voiceMatch = VoiceMatchManager(bus, commands, log, settings);
+    groundControl = GroundControlManager(bus, commands, log, settings);
     // It follows what the managers above are doing, through the bus and
     // the media players' own states.
     leds = LedManager(
@@ -414,7 +414,7 @@ class AppContainer {
   late final CalendarManager calendar;
   late final MusicLibraryManager musicLibrary;
   late final VoiceRequestsManager voiceRequests;
-  late final VoiceMatchManager voiceMatch;
+  late final GroundControlManager groundControl;
   late final LedManager leds;
   late final PageStateManager pageState;
 
@@ -521,7 +521,7 @@ class AppContainer {
     musicLibrary,
     // After intercom and alarms: it runs their commands.
     voiceRequests,
-    voiceMatch,
+    groundControl,
     // Last: it reads the state every manager above keeps.
     pageState,
   ];

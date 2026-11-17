@@ -56,8 +56,9 @@ class OwwGate {
   double get latestScore => _latestScore;
 
   /// The score at or above which a single frame fires without confirmation.
-  double get bypassThreshold =>
-      (cutoff + bypassMargin) > bypassMinScore ? cutoff + bypassMargin : bypassMinScore;
+  double get bypassThreshold => (cutoff + bypassMargin) > bypassMinScore
+      ? cutoff + bypassMargin
+      : bypassMinScore;
 
   /// Feed one inference result. [nowMs] is a monotonic clock.
   OwwTrigger? update(double probability, int nowMs) {

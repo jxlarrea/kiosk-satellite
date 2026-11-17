@@ -147,7 +147,7 @@ typedef OpenEnrollSocket =
 /// Records a person's voice with the kiosk's microphone for Voice Match.
 ///
 /// The service sends `enroll` over the control socket when someone starts
-/// an enrollment on this kiosk from the Voice Match app. The wake word
+/// an enrollment on this kiosk from the Ground Control app. The wake word
 /// stands down while the person reads, so the passage never starts a voice
 /// command, and the audio is the same the voice turns send: the wake word
 /// engine's stream, after echo cancellation.

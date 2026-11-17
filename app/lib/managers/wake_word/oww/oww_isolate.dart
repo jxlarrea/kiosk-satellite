@@ -415,17 +415,19 @@ class _OwwWorker {
       if (playback == null) continue;
       final from = k.gate.cutoff;
       k.gate.cutoff = active ? playback : k.cutoff;
-      moves.add('"${k.id}" cutoff ${from.toStringAsFixed(3)} -> '
-          '${k.gate.cutoff.toStringAsFixed(3)}');
+      moves.add(
+        '"${k.id}" cutoff ${from.toStringAsFixed(3)} -> '
+        '${k.gate.cutoff.toStringAsFixed(3)}',
+      );
     }
     if (moves.isEmpty) return;
     _log(
       'info',
       active
           ? 'kiosk playing audio, wake word sensitivity raised '
-              '(${moves.join(', ')})'
+                '(${moves.join(', ')})'
           : 'kiosk playback ended, wake word sensitivity restored '
-              '(${moves.join(', ')})',
+                '(${moves.join(', ')})',
     );
   }
 

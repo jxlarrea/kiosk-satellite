@@ -28,7 +28,6 @@ class AppIdentity {
   /// is a fingerprint they have no business collecting.
   static void configure({required String version, required String osVersion}) {
     final os = osVersion.trim();
-    userAgent =
-        '$product/$version (${os.isEmpty ? '' : '$os; '}+$homepage)';
+    userAgent = '$product/$version (${os.isEmpty ? '' : '$os; '}+$homepage)';
   }
 }

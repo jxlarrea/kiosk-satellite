@@ -50,12 +50,21 @@ void mwwIsolateEntry(SendPort mainPort) {
 }
 
 class _Kw {
-  _Kw(this.id, this.wakeWord, this.interpreter, this.gate, this.framesPerInfer,
-      this.inputScale, this.inputZeroPoint, int inputElements,
-      {this.isStop = false, this.delegate, this.playbackCutoff})
-      : cutoff = gate.cutoff,
-        accum = List.generate(framesPerInfer, (_) => Float32List(kFeatureSize)),
-        inputBuf = Int8List(inputElements);
+  _Kw(
+    this.id,
+    this.wakeWord,
+    this.interpreter,
+    this.gate,
+    this.framesPerInfer,
+    this.inputScale,
+    this.inputZeroPoint,
+    int inputElements, {
+    this.isStop = false,
+    this.delegate,
+    this.playbackCutoff,
+  }) : cutoff = gate.cutoff,
+       accum = List.generate(framesPerInfer, (_) => Float32List(kFeatureSize)),
+       inputBuf = Int8List(inputElements);
 
   final String id;
   final String wakeWord;
@@ -193,11 +202,12 @@ class _MwwWorker {
           ),
         );
         _log(
-            'info',
-            'loaded "${md['id']}"${md['stop'] == true ? ' (stop classifier)' : ''}'
-            ' (frames/infer $framesPerInfer, cutoff '
-            '${cutoff.toStringAsFixed(3)}, window $window, scale '
-            '${scale.toStringAsFixed(5)}, zp $zeroPoint)');
+          'info',
+          'loaded "${md['id']}"${md['stop'] == true ? ' (stop classifier)' : ''}'
+              ' (frames/infer $framesPerInfer, cutoff '
+              '${cutoff.toStringAsFixed(3)}, window $window, scale '
+              '${scale.toStringAsFixed(5)}, zp $zeroPoint)',
+        );
       }
       if (_kws.isEmpty) {
         _main.send({'type': WakeMsg.error, 'message': 'no models loaded'});
@@ -336,9 +346,10 @@ class _MwwWorker {
 
         if (k.isStop) {
           _log(
-              'info',
-              'stop word detected (${trigger.name}, mean '
-              '${k.gate.windowMean.toStringAsFixed(3)})');
+            'info',
+            'stop word detected (${trigger.name}, mean '
+                '${k.gate.windowMean.toStringAsFixed(3)})',
+          );
           // Report and keep listening: the card owns the stop state and
           // disarms us as it tears the interruptible state down. Deciding here
           // would fork that state (see the vsWakeWord isolate).
@@ -356,9 +367,10 @@ class _MwwWorker {
         }
 
         _log(
-            'info',
-            'detected "${k.id}" (${trigger.name}, mean '
-            '${k.gate.windowMean.toStringAsFixed(3)})');
+          'info',
+          'detected "${k.id}" (${trigger.name}, mean '
+              '${k.gate.windowMean.toStringAsFixed(3)})',
+        );
         _detected = true;
         _main.send({
           'type': WakeMsg.detection,
@@ -432,17 +444,20 @@ class _MwwWorker {
       if (playback == null) continue;
       final from = k.gate.cutoff;
       k.gate.cutoff = active ? playback : k.cutoff;
-      moves.add('"${k.id}" cutoff ${from.toStringAsFixed(3)} -> '
-          '${k.gate.cutoff.toStringAsFixed(3)}');
+      moves.add(
+        '"${k.id}" cutoff ${from.toStringAsFixed(3)} -> '
+        '${k.gate.cutoff.toStringAsFixed(3)}',
+      );
     }
     if (moves.isEmpty) return;
     _log(
-        'info',
-        active
-            ? 'kiosk playing audio, wake word sensitivity raised '
+      'info',
+      active
+          ? 'kiosk playing audio, wake word sensitivity raised '
                 '(${moves.join(', ')})'
-            : 'kiosk playback ended, wake word sensitivity restored '
-                '(${moves.join(', ')})');
+          : 'kiosk playback ended, wake word sensitivity restored '
+                '(${moves.join(', ')})',
+    );
   }
 
   /// Quantize the accumulated frames into the model's int8 input tensor,

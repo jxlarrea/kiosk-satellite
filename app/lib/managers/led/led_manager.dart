@@ -384,6 +384,7 @@ class LedManager extends Manager {
           // Voice Match knows who is talking: the arc takes their color.
           final speaker = _speakerColor;
           if (speaker != null &&
+              s.get(defs.groundControlEnabled) &&
               s.get(defs.voiceMatchEnabled) &&
               s.get(defs.voiceMatchShowSpeaker)) {
             return LedScene(

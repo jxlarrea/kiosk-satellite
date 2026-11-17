@@ -119,12 +119,18 @@ Future<PermissionOutcome> _requestMicPermission() =>
     requestOsPermission(Permission.microphone);
 
 /// Spawns the compute isolate; returns null if it did not really spawn one.
-typedef IsolateSpawner = Future<Isolate?> Function(
-    void Function(SendPort) entry, SendPort port, String debugName);
+typedef IsolateSpawner =
+    Future<Isolate?> Function(
+      void Function(SendPort) entry,
+      SendPort port,
+      String debugName,
+    );
 
 Future<Isolate?> _spawnIsolate(
-        void Function(SendPort) entry, SendPort port, String debugName) =>
-    Isolate.spawn(entry, port, onError: port, debugName: debugName);
+  void Function(SendPort) entry,
+  SendPort port,
+  String debugName,
+) => Isolate.spawn(entry, port, onError: port, debugName: debugName);
 
 /// A wake-word engine that owns the mic and runs its detector in a compute
 /// isolate. The shared half of vsWakeWord, microWakeWord and openWakeWord.
@@ -146,13 +152,17 @@ Future<Isolate?> _spawnIsolate(
 /// three copies of it drifted (see the sample-clock reset in
 /// [PreRollBuffer.reset]) before anyone noticed.
 abstract class IsolateWakeEngine extends WakeWordEngine {
-  IsolateWakeEngine(this.log,
-      {MicSource? mic, IsolateSpawner? spawner, MicPermission? micPermission})
-      // Through the hub, not NativeMic directly: the clap detector shares
-      // the capture, and MicRecorder only serves one native listener.
-      : _mic = mic ?? (() => MicHub.instance.stream()),
-        _spawn = spawner ?? _spawnIsolate,
-        _micPermission = micPermission ?? _requestMicPermission;
+  IsolateWakeEngine(
+    this.log, {
+    MicSource? mic,
+    IsolateSpawner? spawner,
+    MicPermission? micPermission,
+  })
+    // Through the hub, not NativeMic directly: the clap detector shares
+    // the capture, and MicRecorder only serves one native listener.
+    : _mic = mic ?? (() => MicHub.instance.stream()),
+       _spawn = spawner ?? _spawnIsolate,
+       _micPermission = micPermission ?? _requestMicPermission;
 
   @protected
   final Logger log;
@@ -271,8 +281,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     _onNearMiss = sink;
     final enabled = sink != null;
     _pendingInit?['nearMisses'] = enabled;
-    _isolatePort
-        ?.send({'type': WakeMsg.setNearMisses, 'enabled': enabled});
+    _isolatePort?.send({'type': WakeMsg.setNearMisses, 'enabled': enabled});
   }
 
   @override
@@ -327,14 +336,16 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     if (outcome != PermissionOutcome.granted) {
       final blocked = outcome == PermissionOutcome.blocked;
       log.error(
-          tag,
-          blocked
-              ? 'microphone blocked: Android will not ask again, so this needs '
+        tag,
+        blocked
+            ? 'microphone blocked: Android will not ask again, so this needs '
                   'the app settings screen'
-              : 'microphone declined; will ask again on the next config push');
+            : 'microphone declined; will ask again on the next config push',
+      );
       onFailure?.call(
-          blocked ? EngineFailure.micBlocked : EngineFailure.micDeclined,
-          'microphone ${blocked ? 'blocked' : 'declined'}');
+        blocked ? EngineFailure.micBlocked : EngineFailure.micDeclined,
+        'microphone ${blocked ? 'blocked' : 'declined'}',
+      );
       return;
     }
 
@@ -363,8 +374,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       ...payload.extraInit,
     };
 
-    final ready = await _ready!.future
-        .timeout(const Duration(seconds: 20), onTimeout: () => false);
+    final ready = await _ready!.future.timeout(
+      const Duration(seconds: 20),
+      onTimeout: () => false,
+    );
     if (!ready) {
       log.error(tag, 'isolate failed to become ready');
       await stop();
@@ -377,9 +390,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     _audioSub = _mic().listen(_onMicChunk, onError: _onMicError);
     _running = true;
     log.info(
-        tag,
-        'listening (${config.models.length} wake word(s)'
-        '${_hasStopModel ? ' + stop word' : ''}, isolate)');
+      tag,
+      'listening (${config.models.length} wake word(s)'
+      '${_hasStopModel ? ' + stop word' : ''}, isolate)',
+    );
   }
 
   /// The mic stream died. Fatal, and deliberately not a warning we shrug off.
@@ -398,7 +412,8 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     log.error(tag, 'microphone failed: $e');
     final report = _onFailure;
     stop().whenComplete(
-        () => report?.call(EngineFailure.micLost, 'microphone failed: $e'));
+      () => report?.call(EngineFailure.micLost, 'microphone failed: $e'),
+    );
   }
 
   /// Real mic chunks are dropped while [injectAudio] feeds its own.
@@ -413,8 +428,9 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       // 80 ms chunks, the size the mic delivers.
       const chunkBytes = 1280 * 2;
       for (var off = 0; off < pcm.length; off += chunkBytes) {
-        final end =
-            off + chunkBytes > pcm.length ? pcm.length : off + chunkBytes;
+        final end = off + chunkBytes > pcm.length
+            ? pcm.length
+            : off + chunkBytes;
         _feed(Uint8List.sublistView(pcm, off, end));
       }
     } finally {
@@ -453,8 +469,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     // Clear the isolate's audio window + detector state so speech from the turn
     // we just handled can't fire a stale detection, and re-sync its sample
     // clock: it stopped counting when we stopped feeding it.
-    _isolatePort
-        ?.send({'type': WakeMsg.resume, 'absSample': _preRoll.absSamples});
+    _isolatePort?.send({
+      'type': WakeMsg.resume,
+      'absSample': _preRoll.absSamples,
+    });
     _wakeEndSample = null;
     _detectionPaused = false;
     log.info(tag, 'detection re-armed');
@@ -462,7 +480,8 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
 
   @override
   Future<void> startAudioStream(
-      void Function(Uint8List pcm, bool preRoll) onChunk) async {
+    void Function(Uint8List pcm, bool preRoll) onChunk,
+  ) async {
     _onAudioChunk = onChunk;
     // Flush the pre-roll first so the caller gets the audio captured between
     // the wake word firing and this call, otherwise the start of the user's
@@ -479,10 +498,11 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       onChunk(pcm, true);
     }
     log.info(
-        tag,
-        'audio stream started (${(samples / 16).round()}ms pre-roll'
-        '${wakeEnd == null ? '' : ', trimmed to '
-            '${wakeEndIsAligned ? 'wake end' : 'detection'}'})');
+      tag,
+      'audio stream started (${(samples / 16).round()}ms pre-roll'
+      '${wakeEnd == null ? '' : ', trimmed to '
+                '${wakeEndIsAligned ? 'wake end' : 'detection'}'})',
+    );
   }
 
   @override
@@ -630,8 +650,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     if (_isolatePort != null) {
       _stopped = Completer<void>();
       _isolatePort!.send({'type': WakeMsg.stop});
-      await _stopped!.future
-          .timeout(const Duration(seconds: 2), onTimeout: () {});
+      await _stopped!.future.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {},
+      );
     }
     _isolate?.kill(priority: Isolate.beforeNextEvent);
     _isolate = null;

@@ -79,10 +79,12 @@ class VswwBenchmark {
       sw.stop();
       incSamples.add(sw.elapsedMicroseconds);
     }
-    results['featureExtractFullMs'] =
-        double.parse((median(fullSamples) / 1000.0).toStringAsFixed(2));
-    results['featureExtractIncrementalMs'] =
-        double.parse((median(incSamples) / 1000.0).toStringAsFixed(2));
+    results['featureExtractFullMs'] = double.parse(
+      (median(fullSamples) / 1000.0).toStringAsFixed(2),
+    );
+    results['featureExtractIncrementalMs'] = double.parse(
+      (median(incSamples) / 1000.0).toStringAsFixed(2),
+    );
     results['nativeLogMel'] = extractor.usesNative;
     extractor.dispose();
 
@@ -97,8 +99,10 @@ class VswwBenchmark {
       final inputName = session.inputNames.first;
       final runOpts = OrtRunOptions();
 
-      final boxedInput =
-          OrtValueTensor.createTensorWithDataList(features, shape);
+      final boxedInput = OrtValueTensor.createTensorWithDataList(
+        features,
+        shape,
+      );
       final boxedOut = session.run(runOpts, {inputName: boxedInput});
       final boxedVal = boxedOut[0]?.value as List; // [1][T][vocab]
       final tOut = (boxedVal[0] as List).length;
@@ -154,8 +158,7 @@ class VswwBenchmark {
         final session = OrtSession.fromBuffer(model.onnxBytes, opts);
         loadSw.stop();
         final inputName = session.inputNames.first;
-        final input =
-            OrtValueTensor.createTensorWithDataList(features, shape);
+        final input = OrtValueTensor.createTensorWithDataList(features, shape);
         final runOpts = OrtRunOptions();
 
         // warmup
@@ -184,17 +187,24 @@ class VswwBenchmark {
         final avg = samples.reduce((a, b) => a + b) / samples.length;
         final stats = {
           'available': true,
-          'loadMs': double.parse(ms(loadSw.elapsedMicroseconds).toStringAsFixed(1)),
+          'loadMs': double.parse(
+            ms(loadSw.elapsedMicroseconds).toStringAsFixed(1),
+          ),
           'avgMs': double.parse(ms(avg.round()).toStringAsFixed(2)),
           'minMs': double.parse(ms(samples.first).toStringAsFixed(2)),
-          'p50Ms': double.parse(ms(samples[samples.length ~/ 2]).toStringAsFixed(2)),
-          'p95Ms':
-              double.parse(ms(samples[(samples.length * 0.95).floor()]).toStringAsFixed(2)),
+          'p50Ms': double.parse(
+            ms(samples[samples.length ~/ 2]).toStringAsFixed(2),
+          ),
+          'p95Ms': double.parse(
+            ms(samples[(samples.length * 0.95).floor()]).toStringAsFixed(2),
+          ),
           'maxMs': double.parse(ms(samples.last).toStringAsFixed(2)),
         };
         (results['providers'] as Map)[name] = stats;
-        _log.info('vsww-bench',
-            '$name: avg ${stats['avgMs']}ms p95 ${stats['p95Ms']}ms load ${stats['loadMs']}ms');
+        _log.info(
+          'vsww-bench',
+          '$name: avg ${stats['avgMs']}ms p95 ${stats['p95Ms']}ms load ${stats['loadMs']}ms',
+        );
       } catch (e) {
         (results['providers'] as Map)[name] = {
           'available': false,

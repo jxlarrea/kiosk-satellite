@@ -30584,5 +30584,65 @@
     "translation": "297328ce06fbc67adc128071b9ad96f8c4a229327e08faad01f8f15673a3a7cb",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingGroundControlEnabledDescription": {
+    "source": "7a23b57f5d1b31624fc9f4abca984b0fc673d741b92a042d5710026ede053302",
+    "translation": "387fad8d80a7d504d0f51752b1cba218a7b5ac30bc480fbd703cc9832554419c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingGroundControlAddressDescription": {
+    "source": "acfbc4d9d2cc4d0874aaf33003bed3d57b28d9ededa6aea4a0a84b5ae18968f7",
+    "translation": "14a67307cd0338d8432447b5ab0365ed845dc9197adbc5e649cb38c8cab62335",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": {
+    "source": "264077bc36fc67d031c5053c9290f6c3c9ae2be18707c3f739a67b64e10bd64a",
+    "translation": "d998e1a73b4cb06009cc32eec6cb2436b282e3ff23ea18fd259b9eedb822b9f6",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingGroundControlEnabledTitle": {
+    "source": "741392623b556db76aa29bfdf0d35e507419778ab81b155511b77e0bbc691faa",
+    "translation": "4167c8c1b7ad5c9bcf569526a5e89a8ad5f97463b3402c1ee104f7da69ea4331",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlLooking": {
+    "source": "94002bc19cf9df8773888cfd4bb6ac80d1fbe366069bfe279b1424cb0b7dccfc",
+    "translation": "3c4c7abaf62c4273470cf834ec7df7cab929759b286fffb662a0cb29ab501265",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingsMenuGroundControlSummary": {
+    "source": "cb7962a4e0b08d085f4fe65cf035c2e8a5e170cf7f3b9d8287c85590a2fd2ae1",
+    "translation": "138718b30adba0c8b8e7cbd709e9f29df812507908c0e8239870a4c4d78712fb",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVoiceMatchEnabledDescriptionGroundControl": {
+    "source": "14642bb7e071851c17053b901ff4e95fad8aec3800d2cf027f3b537fedca8abb",
+    "translation": "36056a0af679856f736b51369ad35c92fd326e507fda07d97f98d59858dbd02c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingsMenuGroundControl": {
+    "source": "c7ca014e9a7101c6d16c390659421351b3910278c2ccf14d70435c09c04d095a",
+    "translation": "ce286b57f92dca64192ea3f655e2ff4dee310e4ff08342e5bba6ef2e38677497",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingGroundControlAddressTitle": {
+    "source": "757e9aafa19b6d3b8f1211dae6ef97257c917ab2988d4f5adf8c3a8cb043c130",
+    "translation": "32c6bebf1cb00776af32fe71dce4cdf4afb5955bfd9792011d5dcddc30c84755",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlApp": {
+    "source": "b17757c098dc33e50d6d829b846be3a87006ad807b730e86cb0bf7dea88325e0",
+    "translation": "42cb1aee2a83dab507f86f6f047ed487699800ead1f2f6e0b29a72512c7741c0",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

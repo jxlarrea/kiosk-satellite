@@ -51,8 +51,7 @@ const devicePermissionDescriptions = <String, ({String title, String description
   ),
   'notificationAccess': (
     title: 'Notification access',
-    description:
-        'Now Playing can follow the apps playing on this device.',
+    description: 'Now Playing can follow the apps playing on this device.',
   ),
   'location': (
     title: 'Location',

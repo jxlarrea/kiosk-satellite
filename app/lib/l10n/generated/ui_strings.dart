@@ -14789,6 +14789,42 @@ abstract class UiStrings {
   /// **'{seconds} s'**
   String gestureHoldSeconds(String seconds);
 
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Ground Control'**
+  String get settingGroundControlEnabledTitle;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to Kiosk Satellite Ground Control, which runs Voice Match on a capable machine.'**
+  String get settingGroundControlEnabledDescription;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get settingGroundControlAddressTitle;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to find Ground Control on the network. Enter one for Ground Control on another network.'**
+  String get settingGroundControlAddressDescription;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for Ground Control on the network.'**
+  String get groundControlLooking;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground Control app'**
+  String get groundControlApp;
+
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///
   /// In en, this message translates to:
@@ -19030,6 +19066,18 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Hold Mode'**
   String get compassHoldMode;
+
+  /// Kiosk Satellite Ground Control, the companion app that runs Voice Match on a capable machine. A product name: keep Ground Control unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground Control'**
+  String get settingsMenuGroundControl;
+
+  /// Summary under the Ground Control entry. Keep Voice Match unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Match on a capable machine'**
+  String get settingsMenuGroundControlSummary;
 
   /// Setting label.
   ///
@@ -27128,24 +27176,6 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Recognize who is talking and stop listening when someone else takes over.'**
-  String get settingVoiceMatchEnabledDescription;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Address'**
-  String get settingVoiceMatchAddressTitle;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave empty to find Voice Match on the network. Enter one for Voice Match on another network.'**
-  String get settingVoiceMatchAddressDescription;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
   /// **'Answer'**
   String get settingVoiceMatchPolicyTitle;
 
@@ -27248,12 +27278,6 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Looking for Voice Match on the network.'**
-  String get voiceMatchLooking;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
   /// **'Home Assistant refused this kiosk\'s token.'**
   String get voiceMatchTokenRefused;
 
@@ -27278,18 +27302,6 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Lets the Voice Match app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.'**
-  String get settingVoiceMatchAllowEnrollDescription;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Voice Match app'**
-  String get voiceMatchApp;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
   /// **'People, enrollment, sessions and settings.'**
   String get voiceMatchAppHint;
 
@@ -27298,6 +27310,18 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Open'**
   String get voiceMatchOpen;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize who is talking and stop listening when someone else takes over. Needs Ground Control.'**
+  String get settingVoiceMatchEnabledDescriptionGroundControl;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Lets the Ground Control app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.'**
+  String get settingVoiceMatchAllowEnrollDescriptionGroundControl;
 
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///

@@ -2,7 +2,7 @@
 
 Settings > Navigation picks how you move around the kiosk. **Classic** is the [drawer menu](drawer-menu.md) that slides in from the left edge, with pull to refresh and the dashboard carousel. **Compass** lays views out in a cross around a center view, and you swipe between them.
 
-Navigation is the first entry in Settings, under the **Kiosk Satellite** heading. In the remote admin it sits right after Overview.
+Navigation is the first entry in Settings, under the **Kiosk Satellite** heading, followed by [Ground Control](ground-control.md). In the remote admin it sits right after Overview.
 
 ## Compass
 

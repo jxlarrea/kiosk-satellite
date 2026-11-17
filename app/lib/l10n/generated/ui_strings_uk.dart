@@ -8528,6 +8528,26 @@ class UiStringsUk extends UiStrings {
   }
 
   @override
+  String get settingGroundControlEnabledTitle => 'Увімкнути Ground Control';
+
+  @override
+  String get settingGroundControlEnabledDescription =>
+      'Підключитися до Kiosk Satellite Ground Control, який запускає Voice Match на потужному комп\'ютері.';
+
+  @override
+  String get settingGroundControlAddressTitle => 'Адреса';
+
+  @override
+  String get settingGroundControlAddressDescription =>
+      'Залиште порожнім, щоб знайти Ground Control у мережі. Введіть адресу для Ground Control в іншій мережі.';
+
+  @override
+  String get groundControlLooking => 'Пошук Ground Control у мережі.';
+
+  @override
+  String get groundControlApp => 'Застосунок Ground Control';
+
+  @override
   String get haCustomPages => 'Власні сторінки';
 
   @override
@@ -10990,6 +11010,13 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get compassHoldMode => 'Утримання';
+
+  @override
+  String get settingsMenuGroundControl => 'Ground Control';
+
+  @override
+  String get settingsMenuGroundControlSummary =>
+      'Voice Match на потужному комп\'ютері';
 
   @override
   String get settingAdaptiveBrightnessTitle => 'Адаптивна яскравість';
@@ -15699,17 +15726,6 @@ class UiStringsUk extends UiStrings {
   String get settingVoiceMatchEnabledTitle => 'Увімкнути Voice Match';
 
   @override
-  String get settingVoiceMatchEnabledDescription =>
-      'Розпізнавати, хто говорить, і припиняти слухати, коли говорить хтось інший.';
-
-  @override
-  String get settingVoiceMatchAddressTitle => 'Адреса';
-
-  @override
-  String get settingVoiceMatchAddressDescription =>
-      'Залиште порожнім, щоб знайти Voice Match у мережі. Введіть адресу для Voice Match в іншій мережі.';
-
-  @override
   String get settingVoiceMatchPolicyTitle => 'Відповідати';
 
   @override
@@ -15766,9 +15782,6 @@ class UiStringsUk extends UiStrings {
   String get voiceMatchNobodyEnrolled => 'Ще ніхто не зареєстрований.';
 
   @override
-  String get voiceMatchLooking => 'Пошук Voice Match у мережі.';
-
-  @override
   String get voiceMatchTokenRefused =>
       'Home Assistant відхилив токен цього кіоску.';
 
@@ -15783,18 +15796,19 @@ class UiStringsUk extends UiStrings {
   String get settingVoiceMatchAllowEnrollTitle => 'Дозволити реєстрацію тут';
 
   @override
-  String get settingVoiceMatchAllowEnrollDescription =>
-      'Дозволяє застосунку Voice Match записувати голос людини мікрофоном цього кіоску. Кіоск показує текст для читання, або світлове кільце показує прогрес.';
-
-  @override
-  String get voiceMatchApp => 'Застосунок Voice Match';
-
-  @override
   String get voiceMatchAppHint =>
       'Люди, реєстрація голосу, сеанси та налаштування.';
 
   @override
   String get voiceMatchOpen => 'Відкрити';
+
+  @override
+  String get settingVoiceMatchEnabledDescriptionGroundControl =>
+      'Розпізнавати, хто говорить, і припиняти слухати, коли говорить хтось інший. Потрібен Ground Control.';
+
+  @override
+  String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
+      'Дозволяє застосунку Ground Control записувати голос людини мікрофоном цього кіоску. Кіоск показує текст для читання, або світлове кільце показує прогрес.';
 
   @override
   String get voiceWakePage => 'Слово активації';

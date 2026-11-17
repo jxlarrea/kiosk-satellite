@@ -3,9 +3,6 @@
   "voiceMatch": "Voice Match",
   "voiceMatchHint": "Хто говорить, інші голоси, реєстрація голосу",
   "settingVoiceMatchEnabledTitle": "Увімкнути Voice Match",
-  "settingVoiceMatchEnabledDescription": "Розпізнавати, хто говорить, і припиняти слухати, коли говорить хтось інший.",
-  "settingVoiceMatchAddressTitle": "Адреса",
-  "settingVoiceMatchAddressDescription": "Залиште порожнім, щоб знайти Voice Match у мережі. Введіть адресу для Voice Match в іншій мережі.",
   "settingVoiceMatchPolicyTitle": "Відповідати",
   "settingVoiceMatchPolicyDescription": "«Лише зареєстровані голоси» ігнорує телевізор і гостей.",
   "settingVoiceMatchRejectedTitle": "Голос не зареєстровано",
@@ -23,13 +20,12 @@
   "voiceMatchNotReachable": "Недоступно",
   "voiceMatchSignInRefused": "Вхід відхилено",
   "voiceMatchNobodyEnrolled": "Ще ніхто не зареєстрований.",
-  "voiceMatchLooking": "Пошук Voice Match у мережі.",
   "voiceMatchTokenRefused": "Home Assistant відхилив токен цього кіоску.",
   "settingVoiceMatchShowSpeakerTitle": "Показувати, хто говорить",
   "settingVoiceMatchShowSpeakerDescription": "Ім'я мовця перед командою на голосовому оверлеї, його кольором. На пристрої зі світловим кільцем дуга прослуховування набуває цього кольору.",
   "settingVoiceMatchAllowEnrollTitle": "Дозволити реєстрацію тут",
-  "settingVoiceMatchAllowEnrollDescription": "Дозволяє застосунку Voice Match записувати голос людини мікрофоном цього кіоску. Кіоск показує текст для читання, або світлове кільце показує прогрес.",
-  "voiceMatchApp": "Застосунок Voice Match",
   "voiceMatchAppHint": "Люди, реєстрація голосу, сеанси та налаштування.",
-  "voiceMatchOpen": "Відкрити"
+  "voiceMatchOpen": "Відкрити",
+  "settingVoiceMatchEnabledDescriptionGroundControl": "Розпізнавати, хто говорить, і припиняти слухати, коли говорить хтось інший. Потрібен Ground Control.",
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Дозволяє застосунку Ground Control записувати голос людини мікрофоном цього кіоску. Кіоск показує текст для читання, або світлове кільце показує прогрес."
 }

@@ -18,7 +18,7 @@ import 'mww_model_store.dart';
 /// (see WakeWordEngine.startAudioStream).
 class MwwEngine extends IsolateWakeEngine {
   MwwEngine(super.log, {MwwModelStore? store, super.mic, super.spawner})
-      : _store = store ?? MwwModelStore();
+    : _store = store ?? MwwModelStore();
 
   final MwwModelStore _store;
 
@@ -39,7 +39,9 @@ class MwwEngine extends IsolateWakeEngine {
         final model = await _store.fetch(ref.manifestUrl);
         models.add(_entry(ref, model));
         log.info(
-            tag, 'downloaded "${ref.id}" (${model.tfliteBytes.length} bytes)');
+          tag,
+          'downloaded "${ref.id}" (${model.tfliteBytes.length} bytes)',
+        );
       } catch (e) {
         log.error(tag, 'download "${ref.id}" failed: $e');
       }
@@ -56,8 +58,10 @@ class MwwEngine extends IsolateWakeEngine {
         final model = await _store.fetch(stopRef.manifestUrl);
         models.add({..._entry(stopRef, model), 'stop': true});
         hasStop = true;
-        log.info(tag,
-            'downloaded stop model "${stopRef.id}" (${model.tfliteBytes.length} bytes)');
+        log.info(
+          tag,
+          'downloaded stop model "${stopRef.id}" (${model.tfliteBytes.length} bytes)',
+        );
       } catch (e) {
         log.error(tag, 'download stop model "${stopRef.id}" failed: $e');
       }
@@ -67,21 +71,18 @@ class MwwEngine extends IsolateWakeEngine {
   }
 
   Map<String, Object> _entry(WakeWordModelRef ref, MwwModel model) => {
-        'id': ref.id,
-        'wakeWord': ref.wakeWord,
-        'tflite': model.tfliteBytes,
-        // The card resolved its Sensitivity setting into this multiplier; we
-        // only apply it. Raising the cutoff makes the model harder to trigger,
-        // which is what "Slightly sensitive" (x1.10) means.
-        'cutoff': mwwCutoffFor(
-          model.manifest.probabilityCutoff,
-          ref.confidenceScale,
-        ),
-        if (ref.playbackConfidenceScale case final scale?)
-          'playbackCutoff': mwwCutoffFor(
-            model.manifest.probabilityCutoff,
-            scale,
-          ),
-        'slidingWindowSize': model.manifest.slidingWindowSize,
-      };
+    'id': ref.id,
+    'wakeWord': ref.wakeWord,
+    'tflite': model.tfliteBytes,
+    // The card resolved its Sensitivity setting into this multiplier; we
+    // only apply it. Raising the cutoff makes the model harder to trigger,
+    // which is what "Slightly sensitive" (x1.10) means.
+    'cutoff': mwwCutoffFor(
+      model.manifest.probabilityCutoff,
+      ref.confidenceScale,
+    ),
+    if (ref.playbackConfidenceScale case final scale?)
+      'playbackCutoff': mwwCutoffFor(model.manifest.probabilityCutoff, scale),
+    'slidingWindowSize': model.manifest.slidingWindowSize,
+  };
 }

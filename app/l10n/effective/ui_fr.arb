@@ -31990,6 +31990,84 @@
       }
     }
   },
+  "settingGroundControlEnabledTitle": "Activer Ground Control",
+  "@settingGroundControlEnabledTitle": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Enable Ground Control"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Enable Ground Control"
+      ]
+    }
+  },
+  "settingGroundControlEnabledDescription": "Se connecter à Kiosk Satellite Ground Control, qui exécute Voice Match sur une machine puissante.",
+  "@settingGroundControlEnabledDescription": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Enable Ground Control"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Enable Ground Control"
+      ]
+    }
+  },
+  "settingGroundControlAddressTitle": "Adresse",
+  "@settingGroundControlAddressTitle": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Address"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Address"
+      ]
+    }
+  },
+  "settingGroundControlAddressDescription": "Laissez vide pour trouver Ground Control sur le réseau. Saisissez-en une pour Ground Control sur un autre réseau.",
+  "@settingGroundControlAddressDescription": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Address"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Address"
+      ]
+    }
+  },
+  "groundControlLooking": "Recherche de Ground Control sur le réseau.",
+  "@groundControlLooking": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Ground Control status row"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Ground Control status row"
+      ]
+    }
+  },
+  "groundControlApp": "App Ground Control",
+  "@groundControlApp": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Ground Control app row"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Ground Control app row"
+      ]
+    }
+  },
   "haCustomPages": "Pages personnalisées",
   "@haCustomPages": {
     "context": "Settings:Home Assistant:Custom Pages",
@@ -41177,6 +41255,34 @@
     "x-locations": {
       "device": [
         "Compass navigation > Menu"
+      ]
+    }
+  },
+  "settingsMenuGroundControl": "Ground Control",
+  "@settingsMenuGroundControl": {
+    "context": "Settings:Menu",
+    "description": "Kiosk Satellite Ground Control, the companion app that runs Voice Match on a capable machine. A product name: keep Ground Control unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > menu",
+        "Settings > Ground Control"
+      ],
+      "remoteAdmin": [
+        "Sidebar menu",
+        "Ground Control"
+      ]
+    }
+  },
+  "settingsMenuGroundControlSummary": "Voice Match sur une machine puissante",
+  "@settingsMenuGroundControlSummary": {
+    "context": "Settings:Menu",
+    "description": "Summary under the Ground Control entry. Keep Voice Match unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > menu"
+      ],
+      "remoteAdmin": [
+        "Sidebar menu"
       ]
     }
   },
@@ -56837,45 +56943,6 @@
       ]
     }
   },
-  "settingVoiceMatchEnabledDescription": "Reconnaître qui parle et arrêter l'écoute quand quelqu'un d'autre prend la parole.",
-  "@settingVoiceMatchEnabledDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Enable Voice Match"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Enable Voice Match"
-      ]
-    }
-  },
-  "settingVoiceMatchAddressTitle": "Adresse",
-  "@settingVoiceMatchAddressTitle": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Address"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Address"
-      ]
-    }
-  },
-  "settingVoiceMatchAddressDescription": "Laissez vide pour trouver Voice Match sur le réseau. Saisissez-en une pour un Voice Match sur un autre réseau.",
-  "@settingVoiceMatchAddressDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Address"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Address"
-      ]
-    }
-  },
   "settingVoiceMatchPolicyTitle": "Répondre à",
   "@settingVoiceMatchPolicyTitle": {
     "context": "Settings > Voice Satellite > Voice Match",
@@ -57097,19 +57164,6 @@
       ]
     }
   },
-  "voiceMatchLooking": "Recherche de Voice Match sur le réseau.",
-  "@voiceMatchLooking": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Voice Match status row"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Voice Match status row"
-      ]
-    }
-  },
   "voiceMatchTokenRefused": "Home Assistant a refusé le jeton de ce kiosque.",
   "@voiceMatchTokenRefused": {
     "context": "Settings > Voice Satellite > Voice Match",
@@ -57162,32 +57216,6 @@
       ]
     }
   },
-  "settingVoiceMatchAllowEnrollDescription": "Permet à l'app Voice Match d'enregistrer la voix d'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l'anneau lumineux affiche la progression.",
-  "@settingVoiceMatchAllowEnrollDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Allow enrollment here"
-      ]
-    }
-  },
-  "voiceMatchApp": "App Voice Match",
-  "@voiceMatchApp": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Voice Match > Voice Match app row"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Voice Match > Voice Match app row"
-      ]
-    }
-  },
   "voiceMatchAppHint": "Personnes, enregistrement de la voix, sessions et réglages.",
   "@voiceMatchAppHint": {
     "context": "Settings > Voice Satellite > Voice Match",
@@ -57211,6 +57239,32 @@
       ],
       "remoteAdmin": [
         "Voice Satellite > Voice Match > Voice Match app row"
+      ]
+    }
+  },
+  "settingVoiceMatchEnabledDescriptionGroundControl": "Reconnaître qui parle et arrêter l'écoute quand quelqu'un d'autre prend la parole. Nécessite Ground Control.",
+  "@settingVoiceMatchEnabledDescriptionGroundControl": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Enable Voice Match"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Enable Voice Match"
+      ]
+    }
+  },
+  "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permet à l'app Ground Control d'enregistrer la voix d'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l'anneau lumineux affiche la progression.",
+  "@settingVoiceMatchAllowEnrollDescriptionGroundControl": {
+    "context": "Settings > Voice Satellite > Voice Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Voice Match > Allow enrollment here"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Voice Match > Allow enrollment here"
       ]
     }
   },

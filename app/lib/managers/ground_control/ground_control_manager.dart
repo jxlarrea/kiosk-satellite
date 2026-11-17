@@ -10,12 +10,13 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
-/// Kiosk Satellite Voice Match: finds the service, keeps this kiosk's
+/// Kiosk Satellite Ground Control: finds the service, keeps this kiosk's
 /// control connection to it and tells the rest of the app where it is.
 ///
-/// The service is a Home Assistant app or a Docker container that tells
-/// who is talking and when someone else starts. It advertises
-/// `_ks-voice-match._tcp` over mDNS, unless the Address setting names it.
+/// The service is a Home Assistant app or a Docker container that runs
+/// what is too heavy for a kiosk on a capable machine. Its first feature is
+/// Voice Match: who is talking, and when someone else starts. It advertises
+/// `_ks-groundctl._tcp` over mDNS, unless the Address setting names it.
 /// The kiosk signs in with its Home Assistant token.
 ///
 /// The control connection (`/api/kiosk`) says hello with this kiosk's
@@ -23,17 +24,17 @@ import '../settings/settings_manager.dart';
 /// came from, and carries everyone's names and colors back. The voice
 /// turns open their own session sockets (voice_match_client.dart); this
 /// manager only publishes the address they use, as
-/// [VoiceMatchServiceChanged].
-class VoiceMatchManager extends Manager {
-  VoiceMatchManager(super.bus, super.commands, super.log, this._settings);
+/// [GroundControlServiceChanged].
+class GroundControlManager extends Manager {
+  GroundControlManager(super.bus, super.commands, super.log, this._settings);
 
   final SettingsManager _settings;
 
   @override
-  String get name => 'voice_match';
+  String get name => 'ground_control';
 
-  static const _methods = MethodChannel('kiosk_satellite/voice_match');
-  static const _found = EventChannel('kiosk_satellite/voice_match_stream');
+  static const _methods = MethodChannel('kiosk_satellite/ground_control');
+  static const _found = EventChannel('kiosk_satellite/ground_control_stream');
 
   /// off, searching, connecting, connected, unreachable or refused.
   String status = 'off';
@@ -75,20 +76,27 @@ class VoiceMatchManager extends Manager {
   int _generation = 0;
   String? _published;
 
-  bool get _enabled =>
-      _settings.get(defs.voiceEnabled) && _settings.get(defs.voiceMatchEnabled);
+  bool get _enabled => _settings.get(defs.groundControlEnabled);
+
+  /// Whether the Ground Control app can record a voice here: Allow
+  /// enrollment here, on a kiosk that runs Voice Match.
+  bool get _enrollAllowed =>
+      _settings.get(defs.voiceEnabled) &&
+      _settings.get(defs.voiceMatchEnabled) &&
+      _settings.get(defs.voiceMatchAllowEnroll);
 
   @override
   Future<void> init() async {
     _subs.add(
       bus.on<SettingChanged>().listen((e) {
-        if (e.key == defs.voiceMatchAllowEnroll.key) {
+        if (e.key == defs.voiceMatchAllowEnroll.key ||
+            e.key == defs.voiceMatchEnabled.key ||
+            e.key == defs.voiceEnabled.key) {
           _sendSettings();
           return;
         }
-        if (e.key == defs.voiceMatchEnabled.key ||
-            e.key == defs.voiceMatchAddress.key ||
-            e.key == defs.voiceEnabled.key ||
+        if (e.key == defs.groundControlEnabled.key ||
+            e.key == defs.groundControlAddress.key ||
             e.key == defs.haToken.key ||
             e.key == defs.deviceName.key) {
           unawaited(_apply());
@@ -98,9 +106,9 @@ class VoiceMatchManager extends Manager {
     _subs.add(bus.on<VoiceMatchEnrollmentChanged>().listen(_onEnrollment));
     commands.register(
       Command(
-        name: 'voiceMatchStatus',
+        name: 'groundControlStatus',
         description:
-            'Kiosk Satellite Voice Match: whether it is on and connected, '
+            'Kiosk Satellite Ground Control: whether it is on and connected, '
             'its address and version, and who is enrolled',
         quiet: true,
         handler: (_) async => CommandResult.ok(describe()),
@@ -117,7 +125,7 @@ class VoiceMatchManager extends Manager {
     'model': model,
     'people': people,
     'appUrl': appUrl,
-    'allowEnroll': _settings.get(defs.voiceMatchAllowEnroll),
+    'allowEnroll': _enrollAllowed,
     'enrollment': enrollment,
   };
 
@@ -127,7 +135,7 @@ class VoiceMatchManager extends Manager {
     final state = e.state;
     if (state?['phase'] != 'refused') {
       enrollment = state;
-      bus.publish(const RemoteStatusChanged('voice-match'));
+      bus.publish(const RemoteStatusChanged('ground-control'));
     }
     if (state == null) return;
     final phase = state['phase'];
@@ -155,7 +163,7 @@ class VoiceMatchManager extends Manager {
       _setStatus('off', null);
       return;
     }
-    final typed = _settings.get(defs.voiceMatchAddress).trim();
+    final typed = _settings.get(defs.groundControlAddress).trim();
     if (typed.isNotEmpty) {
       await _stopDiscovery();
       baseUrl = _normalize(typed);
@@ -194,10 +202,10 @@ class VoiceMatchManager extends Manager {
             ? 'http://[$host]:$port'
             : 'http://$host:$port';
         _discovered[name] = url;
-        log.info(this.name, 'found Voice Match at $url');
+        log.info(this.name, 'found Ground Control at $url');
         if (_enabled &&
             baseUrl == null &&
-            _settings.get(defs.voiceMatchAddress).trim().isEmpty) {
+            _settings.get(defs.groundControlAddress).trim().isEmpty) {
           baseUrl = url;
           _connect(_generation);
         }
@@ -256,7 +264,7 @@ class VoiceMatchManager extends Manager {
           cancelOnError: true,
         );
       } on Object catch (err) {
-        log.info(name, 'Voice Match not reachable at $base: $err');
+        log.info(name, 'Ground Control not reachable at $base: $err');
         _lost(gen, null);
       }
     }());
@@ -278,16 +286,13 @@ class VoiceMatchManager extends Manager {
       'name': deviceName.isNotEmpty ? deviceName : '${data['name'] ?? ''}',
       'model': '${data['model'] ?? ''}',
       'version': '${data['appVersion'] ?? ''}',
-      'enroll': _settings.get(defs.voiceMatchAllowEnroll),
+      'enroll': _enrollAllowed,
     };
   }
 
   /// Allow enrollment here changed: the service lists the kiosk to match.
   void _sendSettings() {
-    _send({
-      'type': 'settings',
-      'enroll': _settings.get(defs.voiceMatchAllowEnroll),
-    });
+    _send({'type': 'settings', 'enroll': _enrollAllowed});
   }
 
   void _send(Map<String, Object?> message) {
@@ -298,7 +303,7 @@ class VoiceMatchManager extends Manager {
     }
   }
 
-  /// The id this kiosk goes by in Voice Match, for the session sockets too.
+  /// The id this kiosk goes by in Ground Control, for the session sockets too.
   String get deviceId => defs.effectiveHostname(
     _settings.get(defs.deviceHostname),
     _settings.get(defs.deviceName).trim(),
@@ -329,7 +334,7 @@ class VoiceMatchManager extends Manager {
       case 'enroll':
         final personId = '${msg['person_id'] ?? ''}';
         if (personId.isEmpty) return;
-        if (!_settings.get(defs.voiceMatchAllowEnroll)) {
+        if (!_enrollAllowed) {
           log.info(
             name,
             'enrollment for ${msg['name']} refused: Allow enrollment here is off',
@@ -366,7 +371,7 @@ class VoiceMatchManager extends Manager {
       return;
     }
     _setStatus('unreachable', null);
-    if (_settings.get(defs.voiceMatchAddress).trim().isEmpty &&
+    if (_settings.get(defs.groundControlAddress).trim().isEmpty &&
         _discovered.isEmpty) {
       baseUrl = null;
       _setStatus('searching', null);
@@ -402,10 +407,10 @@ class VoiceMatchManager extends Manager {
     final usable = next == 'connected' ? url : null;
     if (usable != _published) {
       _published = usable;
-      bus.publish(VoiceMatchServiceChanged(usable));
+      bus.publish(GroundControlServiceChanged(usable));
     }
     // The status row on both settings surfaces.
-    bus.publish(const RemoteStatusChanged('voice-match'));
+    bus.publish(const RemoteStatusChanged('ground-control'));
   }
 
   @override

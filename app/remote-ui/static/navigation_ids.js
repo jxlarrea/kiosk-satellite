@@ -76,5 +76,7 @@ export const navigationMessageIds = {
   "Navigation style": "navigationStyleSection",
   "Compass layout": "navigationLayoutSection",
   "Compass options": "navigationOptionsSection",
-  "Full screen view, pills, shared timers": "settingsMenuTimersSummary"
+  "Full screen view, pills, shared timers": "settingsMenuTimersSummary",
+  "Ground Control": "settingsMenuGroundControl",
+  "Voice Match on a capable machine": "settingsMenuGroundControlSummary"
 };

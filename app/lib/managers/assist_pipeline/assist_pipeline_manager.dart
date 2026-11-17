@@ -122,135 +122,157 @@ class AssistPipelineManager extends Manager {
     });
 
     commands
-      ..register(Command(
-        name: 'pipelineOpenMic',
-        description:
-            'Open the delegated microphone for a native pipeline run: mic '
-            'chunks flow into the app-side buffer (pre-roll first) instead '
-            'of the page, and per-chunk levels are dispatched for the '
-            'reactive bar. Fails when the native pipeline is disabled or '
-            'the wake-word engine is not running.',
-        handler: (_) async {
-          if (!_enabled) return const CommandResult.fail('native pipeline off');
-          final ok = await _mic.openNativeAudioStream(_onChunk);
-          if (!ok) return const CommandResult.fail('engine not running');
-          _micOpen = true;
-          return const CommandResult.ok({'sampleRate': 16000});
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineCloseMic',
-        description: 'Close the delegated microphone and drop buffered audio',
-        handler: (_) async {
-          await _closeMic();
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineSetMuted',
-        description:
-            'Mute the delegated capture: chunks are dropped on arrival, '
-            'never buffered — the wake chime must not reach STT. The page '
-            'brackets its chime window with this.',
-        params: const {'muted': 'true to drop mic chunks'},
-        handler: (p) async {
-          _muted = p['muted'] == true;
-          if (_muted) _publishLevel(0, force: true);
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineStartBuffering',
-        description:
-            'Capture mic chunks into the buffer before sending starts (the '
-            'seamless one-shot window between wake word and STT stream)',
-        params: const {'reset': 'true to clear the buffer first'},
-        handler: (p) async {
-          if (p['reset'] == true) _buffer.clear();
-          _buffering = true;
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineStopBuffering',
-        description: 'Stop capturing into the buffer',
-        params: const {'clear': 'true to drop what was buffered'},
-        handler: (p) async {
-          _buffering = false;
-          if (p['clear'] == true) _buffer.clear();
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineClearBuffer',
-        description:
-            'Drop buffered audio (the page clears stale audio before '
-            'resuming the stream after its chime)',
-        handler: (_) async {
-          _buffer.clear();
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineRun',
-        description:
-            'Subscribe a voice_satellite/run_pipeline run on the app\'s own '
-            'Home Assistant websocket. Every subscription event (init, '
-            'run-start, stt partials, tts-end, errors) is forwarded into '
-            'the page as kiosksatellite:pipeline events; the binary STT '
-            'audio upload happens natively and never touches the page.',
-        params: const {
-          'entity_id': 'satellite entity the run belongs to',
-          'start_stage': 'wake_word | stt | intent',
-          'end_stage': 'usually tts',
-          'sample_rate': 'STT sample rate (16000)',
-        },
-        handler: (p) async {
-          if (!_enabled) return const CommandResult.fail('native pipeline off');
-          try {
-            final runId = await _startRun(p);
-            return CommandResult.ok({'runId': runId});
-          } catch (e) {
-            log.warn(name, 'run failed to start: $e');
-            return CommandResult.fail('$e');
-          }
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineStop',
-        description: 'Unsubscribe the delegated run and stop its audio',
-        params: const {'runId': 'the run to stop'},
-        handler: (p) async {
-          await _stopRun(p['runId'] as String?);
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineStartSending',
-        description:
-            'Start uploading audio into the active run: buffered chunks '
-            'first, then live. Waits out the init event internally — frames '
-            'sent before the handler ID exists would be dropped anyway.',
-        params: const {'runId': 'the run the audio belongs to'},
-        handler: (p) async {
-          final runId = p['runId'] as String?;
-          if (runId != null && runId != _runId) {
-            return const CommandResult.fail('stale run');
-          }
-          _sending = true;
-          _startPump();
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'pipelineStopSending',
-        description: 'Pause the audio upload (the chime window does this)',
-        handler: (_) async {
-          _sending = false;
-          _stopPump();
-          return const CommandResult.ok();
-        },
-      ));
+      ..register(
+        Command(
+          name: 'pipelineOpenMic',
+          description:
+              'Open the delegated microphone for a native pipeline run: mic '
+              'chunks flow into the app-side buffer (pre-roll first) instead '
+              'of the page, and per-chunk levels are dispatched for the '
+              'reactive bar. Fails when the native pipeline is disabled or '
+              'the wake-word engine is not running.',
+          handler: (_) async {
+            if (!_enabled)
+              return const CommandResult.fail('native pipeline off');
+            final ok = await _mic.openNativeAudioStream(_onChunk);
+            if (!ok) return const CommandResult.fail('engine not running');
+            _micOpen = true;
+            return const CommandResult.ok({'sampleRate': 16000});
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineCloseMic',
+          description: 'Close the delegated microphone and drop buffered audio',
+          handler: (_) async {
+            await _closeMic();
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineSetMuted',
+          description:
+              'Mute the delegated capture: chunks are dropped on arrival, '
+              'never buffered — the wake chime must not reach STT. The page '
+              'brackets its chime window with this.',
+          params: const {'muted': 'true to drop mic chunks'},
+          handler: (p) async {
+            _muted = p['muted'] == true;
+            if (_muted) _publishLevel(0, force: true);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineStartBuffering',
+          description:
+              'Capture mic chunks into the buffer before sending starts (the '
+              'seamless one-shot window between wake word and STT stream)',
+          params: const {'reset': 'true to clear the buffer first'},
+          handler: (p) async {
+            if (p['reset'] == true) _buffer.clear();
+            _buffering = true;
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineStopBuffering',
+          description: 'Stop capturing into the buffer',
+          params: const {'clear': 'true to drop what was buffered'},
+          handler: (p) async {
+            _buffering = false;
+            if (p['clear'] == true) _buffer.clear();
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineClearBuffer',
+          description:
+              'Drop buffered audio (the page clears stale audio before '
+              'resuming the stream after its chime)',
+          handler: (_) async {
+            _buffer.clear();
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineRun',
+          description:
+              'Subscribe a voice_satellite/run_pipeline run on the app\'s own '
+              'Home Assistant websocket. Every subscription event (init, '
+              'run-start, stt partials, tts-end, errors) is forwarded into '
+              'the page as kiosksatellite:pipeline events; the binary STT '
+              'audio upload happens natively and never touches the page.',
+          params: const {
+            'entity_id': 'satellite entity the run belongs to',
+            'start_stage': 'wake_word | stt | intent',
+            'end_stage': 'usually tts',
+            'sample_rate': 'STT sample rate (16000)',
+          },
+          handler: (p) async {
+            if (!_enabled)
+              return const CommandResult.fail('native pipeline off');
+            try {
+              final runId = await _startRun(p);
+              return CommandResult.ok({'runId': runId});
+            } catch (e) {
+              log.warn(name, 'run failed to start: $e');
+              return CommandResult.fail('$e');
+            }
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineStop',
+          description: 'Unsubscribe the delegated run and stop its audio',
+          params: const {'runId': 'the run to stop'},
+          handler: (p) async {
+            await _stopRun(p['runId'] as String?);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineStartSending',
+          description:
+              'Start uploading audio into the active run: buffered chunks '
+              'first, then live. Waits out the init event internally — frames '
+              'sent before the handler ID exists would be dropped anyway.',
+          params: const {'runId': 'the run the audio belongs to'},
+          handler: (p) async {
+            final runId = p['runId'] as String?;
+            if (runId != null && runId != _runId) {
+              return const CommandResult.fail('stale run');
+            }
+            _sending = true;
+            _startPump();
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'pipelineStopSending',
+          description: 'Pause the audio upload (the chime window does this)',
+          handler: (_) async {
+            _sending = false;
+            _stopPump();
+            return const CommandResult.ok();
+          },
+        ),
+      );
   }
 
   // ── Audio path ───────────────────────────────────────────────────────
@@ -281,7 +303,10 @@ class AssistPipelineManager extends Manager {
   }
 
   void _startPump() {
-    _pump ??= Timer.periodic(const Duration(milliseconds: 100), (_) => _drain());
+    _pump ??= Timer.periodic(
+      const Duration(milliseconds: 100),
+      (_) => _drain(),
+    );
     _drain();
   }
 
@@ -403,8 +428,11 @@ class AssistPipelineManager extends Manager {
       _runId = null;
       rethrow;
     }
-    log.info(name, 'run $runId subscribed (${subscribe['start_stage']} → '
-        '${subscribe['end_stage']})');
+    log.info(
+      name,
+      'run $runId subscribed (${subscribe['start_stage']} → '
+      '${subscribe['end_stage']})',
+    );
     return runId;
   }
 
@@ -418,7 +446,10 @@ class AssistPipelineManager extends Manager {
     _stopPump();
     if (subId != null && _channel != null && _authed) {
       try {
-        await _send(_nextId++, {'type': 'unsubscribe_events', 'subscription': subId});
+        await _send(_nextId++, {
+          'type': 'unsubscribe_events',
+          'subscription': subId,
+        });
       } catch (e) {
         log.debug(name, 'unsubscribe failed (socket likely gone): $e');
       }
@@ -459,8 +490,10 @@ class AssistPipelineManager extends Manager {
       log.warn(name, 'connect failed: $e');
       return false;
     }
-    final ok = await authed.future
-        .timeout(const Duration(seconds: 10), onTimeout: () => false);
+    final ok = await authed.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => false,
+    );
     if (!ok) _closeSocket('auth failed', quiet: true);
     return ok;
   }
@@ -476,10 +509,12 @@ class AssistPipelineManager extends Manager {
     }
     switch (msg['type']) {
       case 'auth_required':
-        channel.sink.add(jsonEncode({
-          'type': 'auth',
-          'access_token': _settings.get(defs.haToken),
-        }));
+        channel.sink.add(
+          jsonEncode({
+            'type': 'auth',
+            'access_token': _settings.get(defs.haToken),
+          }),
+        );
       case 'auth_ok':
         _authed = true;
         log.info(name, 'websocket authenticated');
@@ -522,10 +557,13 @@ class AssistPipelineManager extends Manager {
     final completer = Completer<Object?>();
     _pending[id] = completer;
     channel.sink.add(jsonEncode({'id': id, ...command}));
-    return completer.future.timeout(const Duration(seconds: 10), onTimeout: () {
-      _pending.remove(id);
-      throw TimeoutException('command $id timed out');
-    });
+    return completer.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        _pending.remove(id);
+        throw TimeoutException('command $id timed out');
+      },
+    );
   }
 
   /// The socket died underneath us. A run in flight cannot be resumed

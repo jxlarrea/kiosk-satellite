@@ -45,17 +45,25 @@ class OwwPipeline {
   final Float32List _melInput = Float32List(chunkSamples + melPrefixSamples);
   final Float32List _melBuffer = Float32List(_melBufferMax * melBins);
   int _melBufferLen = 0;
-  final Float32List _classifierInput = Float32List(embeddingWindow * embeddingDim);
+  final Float32List _classifierInput = Float32List(
+    embeddingWindow * embeddingDim,
+  );
   final Float32List _scaled = Float32List(chunkSamples);
 
   // Persistent native input tensors and one run-options handle, following the
   // vsww isolate: the plugin's per-run tensor create/box/release cycle (and
   // the OrtRunOptions it never released) dominates a chain this cheap. See
   // ort_tensor_io.dart.
-  final ReusableInputTensor _melTensor =
-      ReusableInputTensor.create([1, chunkSamples + melPrefixSamples]);
-  final ReusableInputTensor _embTensor =
-      ReusableInputTensor.create([1, melWindow, melBins, 1]);
+  final ReusableInputTensor _melTensor = ReusableInputTensor.create([
+    1,
+    chunkSamples + melPrefixSamples,
+  ]);
+  final ReusableInputTensor _embTensor = ReusableInputTensor.create([
+    1,
+    melWindow,
+    melBins,
+    1,
+  ]);
   final OrtRunOptions _runOptions = OrtRunOptions();
 
   OrtFloatRunner? _melRunner;
@@ -94,7 +102,10 @@ class OwwPipeline {
 
     for (var c = 0; c < warmupChunks; c++) {
       final chunk = Float32List.sublistView(
-          audio, c * chunkSamples, (c + 1) * chunkSamples);
+        audio,
+        c * chunkSamples,
+        (c + 1) * chunkSamples,
+      );
       _appendEmbedding(_runFrontend(chunk));
     }
     _warmClassifierInput = Float32List.fromList(_classifierInput);
@@ -116,17 +127,24 @@ class OwwPipeline {
   Float32List? _runFrontend(Float32List scaledChunk) {
     // 480 samples of history + this chunk, matching the card's mel call.
     _melInput.setRange(0, melPrefixSamples, _audioHistory);
-    _melInput.setRange(melPrefixSamples, melPrefixSamples + chunkSamples, scaledChunk);
+    _melInput.setRange(
+      melPrefixSamples,
+      melPrefixSamples + chunkSamples,
+      scaledChunk,
+    );
     _audioHistory.setRange(
-        0, melPrefixSamples, scaledChunk, chunkSamples - melPrefixSamples);
+      0,
+      melPrefixSamples,
+      scaledChunk,
+      chunkSamples - melPrefixSamples,
+    );
 
     _melTensor.write(_melInput);
     final mel = (_melRunner ??= OrtFloatRunner(
       melSession,
       _runOptions,
       _melTensor,
-    ))
-        .run();
+    )).run();
     _appendMel(mel);
 
     if (_melBufferLen < melWindow) return null;
@@ -142,8 +160,7 @@ class OwwPipeline {
       _runOptions,
       _embTensor,
       expectedElements: embeddingDim,
-    ))
-        .run();
+    )).run();
   }
 
   /// Apply `x / 10 + 2` and append each frame to the rolling mel buffer.
@@ -154,7 +171,12 @@ class OwwPipeline {
     if (len + numFrames > _melBufferMax) {
       // Slide the newest melWindow frames to the front and continue.
       final keep = melWindow;
-      _melBuffer.setRange(0, keep * melBins, _melBuffer, (len - keep) * melBins);
+      _melBuffer.setRange(
+        0,
+        keep * melBins,
+        _melBuffer,
+        (len - keep) * melBins,
+      );
       len = keep;
     }
     final writeOff = len * melBins;
@@ -167,7 +189,11 @@ class OwwPipeline {
   void _appendEmbedding(Float32List? emb) {
     if (emb == null) return;
     _classifierInput.setRange(
-        0, (embeddingWindow - 1) * embeddingDim, _classifierInput, embeddingDim);
+      0,
+      (embeddingWindow - 1) * embeddingDim,
+      _classifierInput,
+      embeddingDim,
+    );
     _classifierInput.setRange(
       (embeddingWindow - 1) * embeddingDim,
       embeddingWindow * embeddingDim,

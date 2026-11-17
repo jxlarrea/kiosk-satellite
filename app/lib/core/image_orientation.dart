@@ -26,8 +26,9 @@ int jpegOrientation(Uint8List bytes) {
       final marker = bytes[offset + 1];
       // Standalone markers carry no length; start of scan means the
       // metadata is behind us.
-      if (marker == 0xD8 || marker == 0x01 || (marker >= 0xD0 &&
-          marker <= 0xD7)) {
+      if (marker == 0xD8 ||
+          marker == 0x01 ||
+          (marker >= 0xD0 && marker <= 0xD7)) {
         offset += 2;
         continue;
       }
@@ -79,5 +80,5 @@ int _orientationInTiff(ByteData data, int start, int end) {
 
 /// Whether [orientation] turns the photo a quarter circle, so its stored
 /// width and height swap places on screen.
-bool orientationSwapsAxes(int orientation) => orientation >= 5 &&
-    orientation <= 8;
+bool orientationSwapsAxes(int orientation) =>
+    orientation >= 5 && orientation <= 8;

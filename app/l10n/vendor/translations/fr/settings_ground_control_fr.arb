@@ -1,0 +1,9 @@
+{
+  "@@locale": "fr",
+  "settingGroundControlEnabledTitle": "Activer Ground Control",
+  "settingGroundControlEnabledDescription": "Se connecter à Kiosk Satellite Ground Control, qui exécute Voice Match sur une machine puissante.",
+  "settingGroundControlAddressTitle": "Adresse",
+  "settingGroundControlAddressDescription": "Laissez vide pour trouver Ground Control sur le réseau. Saisissez-en une pour Ground Control sur un autre réseau.",
+  "groundControlLooking": "Recherche de Ground Control sur le réseau.",
+  "groundControlApp": "App Ground Control"
+}

@@ -51,7 +51,9 @@ String fleetStatusText(BuildContext context, String value) {
   if (match != null) {
     return l10n(context).fleetCouldNotInstallNameReason(match[1]!, match[2]!);
   }
-  match = RegExp(r'^Reinstall (.+) on this kiosk to sync it$').firstMatch(value);
+  match = RegExp(
+    r'^Reinstall (.+) on this kiosk to sync it$',
+  ).firstMatch(value);
   if (match != null) {
     return l10n(context).fleetReinstallNameOnThisKioskToSyncIt(match[1]!);
   }

@@ -926,6 +926,7 @@ export async function loadGestures() {
 // device.
 export const CATEGORY_TABS = [
   ['tab-navigation', ['Navigation']],
+  ['tab-groundcontrol', ['Ground Control']],
   // The URL Filter page, which no setting draws (url_filter.js).
   ['tab-browser', ['Browser'], { extra: ['URL Filter'] }],
   ['tab-kiosk', ['Kiosk']],

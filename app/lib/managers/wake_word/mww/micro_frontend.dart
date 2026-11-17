@@ -41,9 +41,12 @@ const int kNoiseReductionSmoothingBits = 10;
 
 /// C casts float to int directly (truncation), not round-to-nearest:
 /// 0.025 * 16384 = 409.6 stores as 409.
-final int kNoiseReductionEvenSmoothing = (0.025 * (1 << kNoiseReductionBits)).truncate();
-final int kNoiseReductionOddSmoothing = (0.06 * (1 << kNoiseReductionBits)).truncate();
-final int kNoiseReductionMinSignal = (0.05 * (1 << kNoiseReductionBits)).truncate();
+final int kNoiseReductionEvenSmoothing = (0.025 * (1 << kNoiseReductionBits))
+    .truncate();
+final int kNoiseReductionOddSmoothing = (0.06 * (1 << kNoiseReductionBits))
+    .truncate();
+final int kNoiseReductionMinSignal = (0.05 * (1 << kNoiseReductionBits))
+    .truncate();
 
 const int kPcanSnrBits = 12;
 const int kPcanOutputBits = 6;
@@ -169,8 +172,19 @@ int _cFixdiv4(int x) => _sround(x * 8191);
 // ── Derived tables (built once) ────────────────────────────────────────
 
 class FftPlan {
-  FftPlan(this.nfftReal, this.ncfft, this.twCos, this.twSin, this.stCos,
-      this.stSin, this.factors, this.tmpR, this.tmpI, this.srcR, this.srcI);
+  FftPlan(
+    this.nfftReal,
+    this.ncfft,
+    this.twCos,
+    this.twSin,
+    this.stCos,
+    this.stSin,
+    this.factors,
+    this.tmpR,
+    this.tmpI,
+    this.srcR,
+    this.srcI,
+  );
 
   final int nfftReal;
   final int ncfft;
@@ -186,8 +200,15 @@ class FftPlan {
 }
 
 class FilterbankState {
-  FilterbankState(this.startIndex, this.endIndex, this.channelFrequencyStarts,
-      this.channelWeightStarts, this.channelWidths, this.weights, this.unweights);
+  FilterbankState(
+    this.startIndex,
+    this.endIndex,
+    this.channelFrequencyStarts,
+    this.channelWeightStarts,
+    this.channelWidths,
+    this.weights,
+    this.unweights,
+  );
 
   final int startIndex;
   final int endIndex;
@@ -199,8 +220,12 @@ class FilterbankState {
 }
 
 class MicroFrontendTables {
-  MicroFrontendTables(this.windowCoefficients, this.filterbank, this.fftPlan,
-      this.gainLut);
+  MicroFrontendTables(
+    this.windowCoefficients,
+    this.filterbank,
+    this.fftPlan,
+    this.gainLut,
+  );
 
   final Int16List windowCoefficients;
   final FilterbankState filterbank;
@@ -211,11 +236,11 @@ class MicroFrontendTables {
 MicroFrontendTables? _shared;
 
 MicroFrontendTables sharedTables() => _shared ??= MicroFrontendTables(
-      _buildWindowCoefficients(),
-      _buildFilterbankState(),
-      _buildFftPlan(kFftSize),
-      _buildGainLut(),
-    );
+  _buildWindowCoefficients(),
+  _buildFilterbankState(),
+  _buildFftPlan(kFftSize),
+  _buildGainLut(),
+);
 
 Int16List _buildWindowCoefficients() {
   final coefficients = Int16List(kWindowSize);
@@ -279,7 +304,8 @@ FilterbankState _buildFilterbankState() {
         weightIndexStart += 4;
       }
     } else {
-      final alignedStart = (channelFreqIndexStart / indexAlignment).floor() * indexAlignment;
+      final alignedStart =
+          (channelFreqIndexStart / indexAlignment).floor() * indexAlignment;
       final alignedWidth = channelFreqIndexStart - alignedStart + width;
       final paddedWidth = (((alignedWidth - 1) / 4).floor() + 1) * 4;
       channelFrequencyStarts[chan] = alignedStart;
@@ -318,8 +344,15 @@ FilterbankState _buildFilterbankState() {
     if (frequency > endIndex) endIndex = frequency;
   }
 
-  return FilterbankState(startIndex, endIndex, channelFrequencyStarts,
-      channelWeightStarts, channelWidths, weights, unweights);
+  return FilterbankState(
+    startIndex,
+    endIndex,
+    channelFrequencyStarts,
+    channelWeightStarts,
+    channelWidths,
+    weights,
+    unweights,
+  );
 }
 
 FftPlan _buildFftPlan(int nfftReal) {
@@ -362,8 +395,19 @@ FftPlan _buildFftPlan(int nfftReal) {
     factors.addAll([p, n]);
   }
 
-  return FftPlan(nfftReal, ncfft, twCos, twSin, stCos, stSin, factors,
-      Int16List(ncfft), Int16List(ncfft), Int16List(ncfft), Int16List(ncfft));
+  return FftPlan(
+    nfftReal,
+    ncfft,
+    twCos,
+    twSin,
+    stCos,
+    stSin,
+    factors,
+    Int16List(ncfft),
+    Int16List(ncfft),
+    Int16List(ncfft),
+    Int16List(ncfft),
+  );
 }
 
 Int16List _buildGainLut() {
@@ -415,8 +459,11 @@ int _wideDynamicFunction(int x, Int16List lut) {
   final interval = _mostSignificantBit32(_u32(x));
   final offset = (4 * interval) - 6;
   final frac = _u32(
-      ((interval < 11) ? _i32(x << (11 - interval)) : (_u32(x) >> (interval - 11))) &
-          0x3ff);
+    ((interval < 11)
+            ? _i32(x << (11 - interval))
+            : (_u32(x) >> (interval - 11))) &
+        0x3ff,
+  );
 
   var result = _floorDiv(lut[offset + 2] * frac, 32);
   result += _i32(lut[offset + 1] << 5);
@@ -430,7 +477,8 @@ int _pcanShrink(int x) {
   if (x < (2 << kPcanSnrBits)) {
     return _floorDiv(x * x, 1 << (2 + (2 * kPcanSnrBits) - kPcanOutputBits));
   }
-  return _floorDiv(x, 1 << (kPcanSnrBits - kPcanOutputBits)) - (1 << kPcanOutputBits);
+  return _floorDiv(x, 1 << (kPcanSnrBits - kPcanOutputBits)) -
+      (1 << kPcanOutputBits);
 }
 
 int _log2FractionPart(int x, int log2x) {
@@ -462,14 +510,42 @@ int _logScale(int x) {
 // ── KissFFT (int16 fixed point) ────────────────────────────────────────
 
 void _kissFftComplex(
-    Int16List srcR, Int16List srcI, Int16List dstR, Int16List dstI, FftPlan plan) {
-  _kfWork(dstR, dstI, 0, srcR, srcI, 0, 1, 1, plan.factors, 0, plan.twCos,
-      plan.twSin);
+  Int16List srcR,
+  Int16List srcI,
+  Int16List dstR,
+  Int16List dstI,
+  FftPlan plan,
+) {
+  _kfWork(
+    dstR,
+    dstI,
+    0,
+    srcR,
+    srcI,
+    0,
+    1,
+    1,
+    plan.factors,
+    0,
+    plan.twCos,
+    plan.twSin,
+  );
 }
 
-void _kfWork(Int16List dR, Int16List dI, int dof, Int16List sR, Int16List sI,
-    int sof, int fstride, int inStride, List<int> factors, int fi,
-    Int16List twCos, Int16List twSin) {
+void _kfWork(
+  Int16List dR,
+  Int16List dI,
+  int dof,
+  Int16List sR,
+  Int16List sI,
+  int sof,
+  int fstride,
+  int inStride,
+  List<int> factors,
+  int fi,
+  Int16List twCos,
+  Int16List twSin,
+) {
   final p = factors[fi];
   final m = factors[fi + 1];
   final foutBeg = dof;
@@ -482,8 +558,20 @@ void _kfWork(Int16List dR, Int16List dI, int dof, Int16List sR, Int16List sI,
     var s = sof;
     var d = dof;
     for (var k = 0; k < p; k++) {
-      _kfWork(dR, dI, d, sR, sI, s, fstride * p, inStride, factors, fi + 2,
-          twCos, twSin);
+      _kfWork(
+        dR,
+        dI,
+        d,
+        sR,
+        sI,
+        s,
+        fstride * p,
+        inStride,
+        factors,
+        fi + 2,
+        twCos,
+        twSin,
+      );
       s += fstride * inStride;
       d += m;
     }
@@ -496,8 +584,15 @@ void _kfWork(Int16List dR, Int16List dI, int dof, Int16List sR, Int16List sI,
   // Radix-3/5 unused for N=512.
 }
 
-void _kfBfly2(Int16List R, Int16List I, int fout, int fstride, int m,
-    Int16List twCos, Int16List twSin) {
+void _kfBfly2(
+  Int16List R,
+  Int16List I,
+  int fout,
+  int fstride,
+  int m,
+  Int16List twCos,
+  Int16List twSin,
+) {
   for (var k = 0; k < m; k++) {
     final a = fout + k;
     final b = a + m;
@@ -519,8 +614,15 @@ void _kfBfly2(Int16List R, Int16List I, int fout, int fstride, int m,
   }
 }
 
-void _kfBfly4(Int16List R, Int16List I, int fout, int fstride, int m,
-    Int16List twCos, Int16List twSin) {
+void _kfBfly4(
+  Int16List R,
+  Int16List I,
+  int fout,
+  int fstride,
+  int m,
+  Int16List twCos,
+  Int16List twSin,
+) {
   final m2 = 2 * m;
   final m3 = 3 * m;
   for (var k = 0; k < m; k++) {
@@ -568,7 +670,12 @@ void _kfBfly4(Int16List R, Int16List I, int fout, int fstride, int m,
   }
 }
 
-void _kissFftr(Int16List timedata, Int16List outR, Int16List outI, FftPlan plan) {
+void _kissFftr(
+  Int16List timedata,
+  Int16List outR,
+  Int16List outI,
+  FftPlan plan,
+) {
   final ncfft = plan.ncfft;
   final tmpR = plan.tmpR;
   final tmpI = plan.tmpI;
@@ -622,7 +729,7 @@ void _kissFftr(Int16List timedata, Int16List outR, Int16List outI, FftPlan plan)
 /// across calls, exactly like the C frontend. One per audio stream.
 class MicroFrontend {
   MicroFrontend({bool useNative = true, DynamicLibrary? nativeLibrary})
-      : _tables = sharedTables() {
+    : _tables = sharedTables() {
     _native = useNative ? _createNative(nativeLibrary) : null;
   }
 
@@ -761,7 +868,8 @@ class MicroFrontend {
 
     var maxAbs = 0;
     for (var i = 0; i < kWindowSize; i++) {
-      final value = _i32(_input[i] * windowCoefficients[i]) >> kFrontendWindowBits;
+      final value =
+          _i32(_input[i] * windowCoefficients[i]) >> kFrontendWindowBits;
       _windowed[i] = value;
       final absValue = value < 0 ? -value : value;
       if (absValue > maxAbs) maxAbs = absValue;
@@ -801,7 +909,8 @@ class MicroFrontend {
         // wrapping on overflow.
         final magnitude = _u32(real * real + imag * imag);
         weightAccumulator += filterbank.weights[weightStart + j] * magnitude;
-        unweightAccumulator += filterbank.unweights[weightStart + j] * magnitude;
+        unweightAccumulator +=
+            filterbank.unweights[weightStart + j] * magnitude;
       }
 
       _filterbankWork[channel] = weightAccumulator;
@@ -850,9 +959,12 @@ class MicroFrontend {
       final estimate = _u32(_floorDiv(estSum, nrBitsPow));
       _noiseEstimate[i] = estimate;
       final estClamped = estimate > signalScaledUp ? signalScaledUp : estimate;
-      final floorVal =
-          _u32(_floorDiv(_signal[i] * kNoiseReductionMinSignal, nrBitsPow));
-      final subtracted = _u32(_floorDiv(signalScaledUp - estClamped, smBitsPow));
+      final floorVal = _u32(
+        _floorDiv(_signal[i] * kNoiseReductionMinSignal, nrBitsPow),
+      );
+      final subtracted = _u32(
+        _floorDiv(signalScaledUp - estClamped, smBitsPow),
+      );
       _signal[i] = (subtracted > floorVal ? subtracted : floorVal).toDouble();
     }
   }
@@ -868,14 +980,134 @@ class MicroFrontend {
 
 /// TFLite Micro's log lookup table (`log_lut.c`).
 const List<int> kLogLut = <int>[
-  0, 224, 442, 654, 861, 1063, 1259, 1450, 1636, 1817, 1992, 2163, 2329, 2490,
-  2646, 2797, 2944, 3087, 3224, 3358, 3487, 3611, 3732, 3848, 3960, 4068, 4172,
-  4272, 4368, 4460, 4549, 4633, 4714, 4791, 4864, 4934, 5001, 5063, 5123, 5178,
-  5231, 5280, 5326, 5368, 5408, 5444, 5477, 5507, 5533, 5557, 5578, 5595, 5610,
-  5622, 5631, 5637, 5640, 5641, 5638, 5633, 5626, 5615, 5602, 5586, 5568, 5547,
-  5524, 5498, 5470, 5439, 5406, 5370, 5332, 5291, 5249, 5203, 5156, 5106, 5054,
-  5000, 4944, 4885, 4825, 4762, 4697, 4630, 4561, 4490, 4416, 4341, 4264, 4184,
-  4103, 4020, 3935, 3848, 3759, 3668, 3575, 3481, 3384, 3286, 3186, 3084, 2981,
-  2875, 2768, 2659, 2549, 2437, 2323, 2207, 2090, 1971, 1851, 1729, 1605, 1480,
-  1353, 1224, 1094, 963, 830, 695, 559, 421, 282, 142, 0, 0,
+  0,
+  224,
+  442,
+  654,
+  861,
+  1063,
+  1259,
+  1450,
+  1636,
+  1817,
+  1992,
+  2163,
+  2329,
+  2490,
+  2646,
+  2797,
+  2944,
+  3087,
+  3224,
+  3358,
+  3487,
+  3611,
+  3732,
+  3848,
+  3960,
+  4068,
+  4172,
+  4272,
+  4368,
+  4460,
+  4549,
+  4633,
+  4714,
+  4791,
+  4864,
+  4934,
+  5001,
+  5063,
+  5123,
+  5178,
+  5231,
+  5280,
+  5326,
+  5368,
+  5408,
+  5444,
+  5477,
+  5507,
+  5533,
+  5557,
+  5578,
+  5595,
+  5610,
+  5622,
+  5631,
+  5637,
+  5640,
+  5641,
+  5638,
+  5633,
+  5626,
+  5615,
+  5602,
+  5586,
+  5568,
+  5547,
+  5524,
+  5498,
+  5470,
+  5439,
+  5406,
+  5370,
+  5332,
+  5291,
+  5249,
+  5203,
+  5156,
+  5106,
+  5054,
+  5000,
+  4944,
+  4885,
+  4825,
+  4762,
+  4697,
+  4630,
+  4561,
+  4490,
+  4416,
+  4341,
+  4264,
+  4184,
+  4103,
+  4020,
+  3935,
+  3848,
+  3759,
+  3668,
+  3575,
+  3481,
+  3384,
+  3286,
+  3186,
+  3084,
+  2981,
+  2875,
+  2768,
+  2659,
+  2549,
+  2437,
+  2323,
+  2207,
+  2090,
+  1971,
+  1851,
+  1729,
+  1605,
+  1480,
+  1353,
+  1224,
+  1094,
+  963,
+  830,
+  695,
+  559,
+  421,
+  282,
+  142,
+  0,
+  0,
 ];

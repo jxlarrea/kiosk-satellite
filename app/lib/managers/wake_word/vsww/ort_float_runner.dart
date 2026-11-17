@@ -9,24 +9,28 @@ import 'package:onnxruntime/src/bindings/onnxruntime_bindings_generated.dart'
 
 import 'ort_tensor_io.dart';
 
-final _run = OrtEnv.instance.ortApiPtr.ref.Run.asFunction<
-    bg.OrtStatusPtr Function(
-      ffi.Pointer<bg.OrtSession>,
-      ffi.Pointer<bg.OrtRunOptions>,
-      ffi.Pointer<ffi.Pointer<ffi.Char>>,
-      ffi.Pointer<ffi.Pointer<bg.OrtValue>>,
-      int,
-      ffi.Pointer<ffi.Pointer<ffi.Char>>,
-      int,
-      ffi.Pointer<ffi.Pointer<bg.OrtValue>>,
-    )>();
+final _run = OrtEnv.instance.ortApiPtr.ref.Run
+    .asFunction<
+      bg.OrtStatusPtr Function(
+        ffi.Pointer<bg.OrtSession>,
+        ffi.Pointer<bg.OrtRunOptions>,
+        ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        ffi.Pointer<ffi.Pointer<bg.OrtValue>>,
+        int,
+        ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        int,
+        ffi.Pointer<ffi.Pointer<bg.OrtValue>>,
+      )
+    >();
 final _releaseValue = OrtEnv.instance.ortApiPtr.ref.ReleaseValue
     .asFunction<void Function(ffi.Pointer<bg.OrtValue>)>();
-final _getData = OrtEnv.instance.ortApiPtr.ref.GetTensorMutableData.asFunction<
-    bg.OrtStatusPtr Function(
-      ffi.Pointer<bg.OrtValue>,
-      ffi.Pointer<ffi.Pointer<ffi.Void>>,
-    )>();
+final _getData = OrtEnv.instance.ortApiPtr.ref.GetTensorMutableData
+    .asFunction<
+      bg.OrtStatusPtr Function(
+        ffi.Pointer<bg.OrtValue>,
+        ffi.Pointer<ffi.Pointer<ffi.Void>>,
+      )
+    >();
 
 /// Synchronous CPU inference with one fixed float input and one float output.
 ///
@@ -44,8 +48,8 @@ class OrtFloatRunner {
     OrtRunOptions options,
     ReusableInputTensor input, {
     this.expectedElements,
-  })  : _session = ffi.Pointer.fromAddress(session.address),
-        _options = ffi.Pointer.fromAddress(options.address) {
+  }) : _session = ffi.Pointer.fromAddress(session.address),
+       _options = ffi.Pointer.fromAddress(options.address) {
     try {
       _inputNames.value = session.inputNames.first.toNativeUtf8().cast();
       _outputNames.value = session.outputNames.first.toNativeUtf8().cast();
@@ -100,24 +104,27 @@ class OrtFloatRunner {
     try {
       OrtStatus.checkOrtStatus(
         api.GetTensorTypeAndShape.asFunction<
-            bg.OrtStatusPtr Function(
-              ffi.Pointer<bg.OrtValue>,
-              ffi.Pointer<ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>>,
-            )>()(_outputs.value, info),
+          bg.OrtStatusPtr Function(
+            ffi.Pointer<bg.OrtValue>,
+            ffi.Pointer<ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>>,
+          )
+        >()(_outputs.value, info),
       );
       OrtStatus.checkOrtStatus(
         api.GetTensorElementType.asFunction<
-            bg.OrtStatusPtr Function(
-              ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>,
-              ffi.Pointer<ffi.Int32>,
-            )>()(info.value, type),
+          bg.OrtStatusPtr Function(
+            ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>,
+            ffi.Pointer<ffi.Int32>,
+          )
+        >()(info.value, type),
       );
       OrtStatus.checkOrtStatus(
         api.GetTensorShapeElementCount.asFunction<
-            bg.OrtStatusPtr Function(
-              ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>,
-              ffi.Pointer<ffi.Size>,
-            )>()(info.value, count),
+          bg.OrtStatusPtr Function(
+            ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>,
+            ffi.Pointer<ffi.Size>,
+          )
+        >()(info.value, count),
       );
       if (type.value != ONNXTensorElementDataType.float.value ||
           count.value < 1 ||
@@ -133,8 +140,8 @@ class OrtFloatRunner {
     } finally {
       if (info.value != ffi.nullptr) {
         api.ReleaseTensorTypeAndShapeInfo.asFunction<
-            void Function(
-                ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>)>()(info.value);
+          void Function(ffi.Pointer<bg.OrtTensorTypeAndShapeInfo>)
+        >()(info.value);
       }
       calloc.free(data);
       calloc.free(count);

@@ -9,8 +9,8 @@ import io.flutter.plugin.common.MethodChannel
 import me.jxl.kiosk_satellite.sendspin.discovery.NsdDiscoveryManager
 
 /**
- * Finds Kiosk Satellite Voice Match on the network: the service advertises
- * `_ks-voice-match._tcp` over mDNS (its TXT record carries the version,
+ * Finds Kiosk Satellite Ground Control on the network: the service advertises
+ * `_ks-groundctl._tcp` over mDNS (its TXT record carries the version,
  * the speaker model and the API path).
  *
  * Methods: start, stop. Both idempotent.
@@ -18,9 +18,9 @@ import me.jxl.kiosk_satellite.sendspin.discovery.NsdDiscoveryManager
  * manager picks a service and owns the connection; this bridge only looks.
  * Registered in KioskApplication so it runs with no Activity attached.
  */
-class VoiceMatchBridge(context: Context, messenger: BinaryMessenger) {
-    private val methods = MethodChannel(messenger, "kiosk_satellite/voice_match")
-    private val events = EventChannel(messenger, "kiosk_satellite/voice_match_stream")
+class GroundControlBridge(context: Context, messenger: BinaryMessenger) {
+    private val methods = MethodChannel(messenger, "kiosk_satellite/ground_control")
+    private val events = EventChannel(messenger, "kiosk_satellite/ground_control_stream")
     private val mainHandler = Handler(Looper.getMainLooper())
     private var sink: EventChannel.EventSink? = null
     private var running = false
@@ -77,6 +77,6 @@ class VoiceMatchBridge(context: Context, messenger: BinaryMessenger) {
     }
 
     companion object {
-        const val SERVICE_TYPE = "_ks-voice-match._tcp."
+        const val SERVICE_TYPE = "_ks-groundctl._tcp."
     }
 }

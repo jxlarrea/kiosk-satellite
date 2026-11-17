@@ -6,8 +6,13 @@ import 'manifest.dart';
 /// Result of greedy CTC decoding: the collapsed phoneme ids and a per-phoneme
 /// confidence (mean raw logit of the frame-run that emitted it).
 class CtcDecode {
-  CtcDecode(this.ids, this.confidence,
-      [this.endFrames = const [], this.frameIds, this.frameLogits]);
+  CtcDecode(
+    this.ids,
+    this.confidence, [
+    this.endFrames = const [],
+    this.frameIds,
+    this.frameLogits,
+  ]);
   final List<int> ids;
   final List<double> confidence;
 
