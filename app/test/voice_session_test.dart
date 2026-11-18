@@ -98,7 +98,13 @@ class _Player implements VoicePlayerPort {
 }
 
 class _MatchTurn implements VoiceMatchTurnPort {
-  _MatchTurn(this.onEvent, {this.onAudio, this.onLost, this.follow = false, this.followup = false});
+  _MatchTurn(
+    this.onEvent, {
+    this.onAudio,
+    this.onLost,
+    this.follow = false,
+    this.followup = false,
+  });
   final void Function(Map<String, Object?> event) onEvent;
   final void Function(Uint8List pcm)? onAudio;
   final void Function()? onLost;
@@ -117,7 +123,8 @@ class _MatchTurn implements VoiceMatchTurnPort {
   void end() => ended = true;
 
   /// The service sending back the user's speech.
-  void user(int value) => onAudio?.call(Uint8List(2560)..fillRange(0, 2560, value));
+  void user(int value) =>
+      onAudio?.call(Uint8List(2560)..fillRange(0, 2560, value));
 }
 
 class _Match implements VoiceMatchPort {
@@ -133,8 +140,13 @@ class _Match implements VoiceMatchPort {
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   }) {
-    final t = _MatchTurn(onEvent, onAudio: onAudio, onLost: onLost, follow: follow, followup: followup)
-      ..ready = ready;
+    final t = _MatchTurn(
+      onEvent,
+      onAudio: onAudio,
+      onLost: onLost,
+      follow: follow,
+      followup: followup,
+    )..ready = ready;
     turns.add(t);
     return t;
   }
@@ -145,7 +157,11 @@ class _Match implements VoiceMatchPort {
 const _live = VoiceSessionOptions(matchEndOnOtherVoice: false);
 
 class _Harness {
-  _Harness({this.options = const VoiceSessionOptions(), FakeAsync? time, this.match}) {
+  _Harness({
+    this.options = const VoiceSessionOptions(),
+    FakeAsync? time,
+    this.match,
+  }) {
     session = VoiceSession(
       link: link,
       mic: mic,
@@ -747,7 +763,12 @@ void main() {
         expect(turn.fed, h.link.sent.length);
         expect(turn.fed, 1);
         expect(h.speakers, [null]);
-        turn.onEvent({'type': 'speaker', 'name': 'Ana', 'color': '#56814F', 'score': 0.8});
+        turn.onEvent({
+          'type': 'speaker',
+          'name': 'Ana',
+          'color': '#56814F',
+          'score': 0.8,
+        });
         expect(h.speakers.last?['name'], 'Ana');
         // The overlay names her from then on, the command line included.
         expect(h.views.last.speaker, 'Ana');
@@ -766,7 +787,10 @@ void main() {
       fakeAsync((async) {
         final h = _Harness(
           match: _Match(),
-          options: const VoiceSessionOptions(seamless: true, matchEndOnOtherVoice: false),
+          options: const VoiceSessionOptions(
+            seamless: true,
+            matchEndOnOtherVoice: false,
+          ),
         );
         listening(h, async);
         expect(h.match!.turns.single.fed, h.link.sent.length);
@@ -778,7 +802,10 @@ void main() {
       fakeAsync((async) {
         final h = _Harness(match: _Match(), options: _live);
         listening(h, async);
-        h.match!.turns.single.onEvent({'type': 'end_of_speech', 'reason': 'silence'});
+        h.match!.turns.single.onEvent({
+          'type': 'end_of_speech',
+          'reason': 'silence',
+        });
         async.flushMicrotasks();
         expect(h.link.audioEnds, 1);
         expect(h.mic.closes, 1);
@@ -792,95 +819,120 @@ void main() {
         final off = _Harness(match: _Match(), options: _live);
         listening(off, async);
         expect(off.match!.turns.single.follow, isFalse);
-        off.match!.turns.single.onEvent({'type': 'end_of_speech', 'reason': 'other_voice'});
+        off.match!.turns.single.onEvent({
+          'type': 'end_of_speech',
+          'reason': 'other_voice',
+        });
         async.flushMicrotasks();
         expect(off.link.audioEnds, 0);
       });
     });
 
-    test('follow mode: Home Assistant hears only what Voice Match sends back', () {
-      fakeAsync((async) {
-        final h = _Harness(match: _Match());
-        listening(h, async);
-        final turn = h.match!.turns.single;
-        expect(turn.follow, isTrue);
-        expect(turn.followup, isFalse);
-        // The microphone went to Voice Match, not to Home Assistant.
-        expect(turn.fed, 1);
-        expect(h.link.sent, isEmpty);
-        turn.onEvent({'type': 'turn_start', 't': 0.5});
-        turn.user(7);
-        turn.user(8);
-        h.mic.speak(3);
-        async.flushMicrotasks();
-        expect(h.link.sent.map((p) => p.first), [7, 8]);
-        expect(turn.fed, 2);
-        turn.onEvent({'type': 'turn_end', 't': 2.0});
-        async.flushMicrotasks();
-        expect(h.link.audioEnds, 1);
-        expect(h.mic.closes, 1);
-        expect(h.session.busy, isTrue);
-      });
-    });
+    test(
+      'follow mode: Home Assistant hears only what Voice Match sends back',
+      () {
+        fakeAsync((async) {
+          final h = _Harness(match: _Match());
+          listening(h, async);
+          final turn = h.match!.turns.single;
+          expect(turn.follow, isTrue);
+          expect(turn.followup, isFalse);
+          // The microphone went to Voice Match, not to Home Assistant.
+          expect(turn.fed, 1);
+          expect(h.link.sent, isEmpty);
+          turn.onEvent({'type': 'turn_start', 't': 0.5});
+          turn.user(7);
+          turn.user(8);
+          h.mic.speak(3);
+          async.flushMicrotasks();
+          expect(h.link.sent.map((p) => p.first), [7, 8]);
+          expect(turn.fed, 2);
+          turn.onEvent({'type': 'turn_end', 't': 2.0});
+          async.flushMicrotasks();
+          expect(h.link.audioEnds, 1);
+          expect(h.mic.closes, 1);
+          expect(h.session.busy, isTrue);
+        });
+      },
+    );
 
-    test('follow mode: Voice Match gone before the user talked, Home Assistant gets the microphone', () {
-      fakeAsync((async) {
-        final h = _Harness(match: _Match());
-        listening(h, async);
-        final turn = h.match!.turns.single;
-        h.mic.speak(4);
-        async.flushMicrotasks();
-        expect(h.link.sent, isEmpty);
-        turn.onLost!();
-        async.flushMicrotasks();
-        // What it heard so far, then the live microphone.
-        expect(h.link.sent.map((p) => p.first), [2, 4]);
-        h.mic.speak(5);
-        async.flushMicrotasks();
-        expect(h.link.sent.map((p) => p.first), [2, 4, 5]);
-      });
-    });
+    test(
+      'follow mode: Voice Match gone before the user talked, Home Assistant gets the microphone',
+      () {
+        fakeAsync((async) {
+          final h = _Harness(match: _Match());
+          listening(h, async);
+          final turn = h.match!.turns.single;
+          h.mic.speak(4);
+          async.flushMicrotasks();
+          expect(h.link.sent, isEmpty);
+          turn.onLost!();
+          async.flushMicrotasks();
+          // What it heard so far, then the live microphone.
+          expect(h.link.sent.map((p) => p.first), [2, 4]);
+          h.mic.speak(5);
+          async.flushMicrotasks();
+          expect(h.link.sent.map((p) => p.first), [2, 4, 5]);
+        });
+      },
+    );
 
-    test('follow mode: Voice Match not answering in time is as good as gone', () {
-      fakeAsync((async) {
-        final h = _Harness(match: _Match(ready: false));
-        listening(h, async);
-        expect(h.link.sent, isEmpty);
-        async.elapse(VoiceSession.matchReadyWait);
-        expect(h.link.sent.map((p) => p.first), [2]);
-      });
-    });
+    test(
+      'follow mode: Voice Match not answering in time is as good as gone',
+      () {
+        fakeAsync((async) {
+          final h = _Harness(match: _Match(ready: false));
+          listening(h, async);
+          expect(h.link.sent, isEmpty);
+          async.elapse(VoiceSession.matchReadyWait);
+          expect(h.link.sent.map((p) => p.first), [2]);
+        });
+      },
+    );
 
-    test('follow mode: nobody talking ends the command like Home Assistant would', () {
-      fakeAsync((async) {
-        final h = _Harness(match: _Match());
-        listening(h, async);
-        async.elapse(const Duration(seconds: 10));
-        expect(h.link.audioEnds, 1);
-      });
-    });
+    test(
+      'follow mode: nobody talking cancels the run, and a late event is ignored',
+      () {
+        fakeAsync((async) {
+          final h = _Harness(match: _Match());
+          listening(h, async);
+          async.elapse(const Duration(seconds: 10));
+          async.flushMicrotasks();
+          // Home Assistant never had audio: ending it would leave it waiting.
+          expect(h.link.audioEnds, 0);
+          expect(h.link.requests.last, (false, ''));
+          expect(h.session.busy, isFalse);
+          h.match!.turns.single.onEvent({'type': 'turn_start', 't': 9.2});
+          async.flushMicrotasks();
+          expect(h.session.busy, isFalse);
+        });
+      },
+    );
 
-    test('a voice that is not enrolled ends the turn, quietly or with a chime', () {
-      fakeAsync((async) {
-        final quiet = _Harness(match: _Match());
-        listening(quiet, async);
-        quiet.match!.turns.single.onEvent({'type': 'rejected', 'score': 0.2});
-        async.flushMicrotasks();
-        expect(quiet.link.requests.last, (false, ''));
-        expect(quiet.session.busy, isFalse);
-        expect(quiet.player.chimes, ['wake']);
-        expect(quiet.match!.turns.single.ended, isTrue);
+    test(
+      'a voice that is not enrolled ends the turn, quietly or with a chime',
+      () {
+        fakeAsync((async) {
+          final quiet = _Harness(match: _Match());
+          listening(quiet, async);
+          quiet.match!.turns.single.onEvent({'type': 'rejected', 'score': 0.2});
+          async.flushMicrotasks();
+          expect(quiet.link.requests.last, (false, ''));
+          expect(quiet.session.busy, isFalse);
+          expect(quiet.player.chimes, ['wake']);
+          expect(quiet.match!.turns.single.ended, isTrue);
 
-        final loud = _Harness(
-          match: _Match(),
-          options: const VoiceSessionOptions(matchRejectChime: true),
-        );
-        listening(loud, async);
-        loud.match!.turns.single.onEvent({'type': 'rejected', 'score': 0.2});
-        async.flushMicrotasks();
-        expect(loud.player.chimes, ['wake', 'error']);
-      });
-    });
+          final loud = _Harness(
+            match: _Match(),
+            options: const VoiceSessionOptions(matchRejectChime: true),
+          );
+          listening(loud, async);
+          loud.match!.turns.single.onEvent({'type': 'rejected', 'score': 0.2});
+          async.flushMicrotasks();
+          expect(loud.player.chimes, ['wake', 'error']);
+        });
+      },
+    );
 
     test('events from a turn that is over are ignored', () {
       fakeAsync((async) {

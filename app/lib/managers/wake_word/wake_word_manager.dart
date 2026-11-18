@@ -468,7 +468,7 @@ class WakeWordManager extends Manager
   Uint8List? recentAudio(Duration length) => _engine.recentAudio(length);
 
   /// The audio that held the last wake word (WakeWordEngine.wakeClip).
-  Uint8List? wakeClip([Duration length = const Duration(milliseconds: 1500)]) =>
+  Uint8List? wakeClip([Duration length = const Duration(milliseconds: 2000)]) =>
       _engine.wakeClip(length);
 
   /// Point the active engine's telemetry at our stream (or unhook it).

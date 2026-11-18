@@ -485,8 +485,11 @@ class VoiceSession {
     });
     _noSpeechTimer ??= Timer(options().matchNoSpeech, () {
       if (_following && !_followSent) {
+        // Home Assistant has had no audio at all, so ending its audio leaves
+        // it waiting: cancel the run instead. A late event from Voice Match
+        // belongs to the cancelled turn and is ignored.
         onTrace?.call('voice match: nobody talked');
-        unawaited(endAudio());
+        unawaited(cancel());
       }
     });
   }

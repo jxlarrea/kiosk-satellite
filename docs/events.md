@@ -79,7 +79,7 @@ data:
 | `name` | The person's name in Ground Control. Empty for `unknown`. |
 | `person` | The Home Assistant person set for them on Ground Control's People page, or empty. |
 | `score` | How close the voice was to theirs, from 0 to 1. Empty when the only person enrolled was taken without a check. |
-| `by` | `voice` from their speech, `wake_word` from the wake word or `only_person` when only one person is enrolled. Empty for `unknown`. |
+| `by` | `voice` from their speech, `wake_word` from the wake word, `conversation` on a follow-up when an earlier turn of the conversation recognized them or `only_person` when only one person is enrolled. Empty for `unknown`. |
 
 ```yaml
 # Turn on the reading light in the kids' room when Leo talks to its kiosk.

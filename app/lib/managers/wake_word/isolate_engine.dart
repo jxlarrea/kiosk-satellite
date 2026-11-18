@@ -275,16 +275,22 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   Uint8List? recentAudio(Duration length) =>
       _recent?.last(length.inMilliseconds * 16);
 
+  /// How far past the detection a wake clip runs. A detector fires before
+  /// the last syllable is over ("Hey Jarv"), so the clip waits for the rest.
+  static const wakeTail = Duration(milliseconds: 400);
+
   @override
   Uint8List? wakeClip(Duration length) {
     final end = _wakeEndSample;
     if (end == null) return null;
-    // The ring ends at the newest sample: count back to the wake end.
+    // The ring ends at the newest sample: count back to the wake end, then
+    // keep what came after it, up to the tail.
     final after = _preRoll.absSamples - end;
     final want = length.inMilliseconds * 16;
     if (after < 0 || after >= _wakeRing.length) return null;
+    final tail = math.min(after, wakeTail.inMilliseconds * 16);
     final pcm = _wakeRing.last(math.min(after + want, _wakeRing.length));
-    return Uint8List.sublistView(pcm, 0, pcm.length - after * 2);
+    return Uint8List.sublistView(pcm, 0, pcm.length - (after - tail) * 2);
   }
 
   Map<String, Object?>? _lastDetection;

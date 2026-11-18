@@ -27,7 +27,16 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 /// command is never lost. Nothing here blocks the turn: a service that is
 /// slow or gone just sends no events.
 class VoiceMatchTurn {
-  VoiceMatchTurn._(this._onEvent, this._log, this._onAudio, this._onLost);
+  VoiceMatchTurn._(
+    this._onEvent,
+    this._log,
+    this._onAudio,
+    this._onLost,
+    this._onReady,
+  );
+
+  /// The service's id for the session, once it answered the start.
+  final void Function(String session)? _onReady;
 
   final void Function(Map<String, Object?> event) _onEvent;
   final void Function(Uint8List pcm)? _onAudio;
@@ -60,10 +69,13 @@ class VoiceMatchTurn {
     void Function(String line)? log,
     bool follow = false,
     Uint8List? anchor,
+    String? speaker,
+    String? continues,
+    void Function(String session)? onReady,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   }) {
-    final turn = VoiceMatchTurn._(onEvent, log, onAudio, onLost);
+    final turn = VoiceMatchTurn._(onEvent, log, onAudio, onLost, onReady);
     final base = Uri.parse(baseUrl);
     final uri = base.replace(
       scheme: base.scheme == 'https' ? 'wss' : 'ws',
@@ -80,6 +92,10 @@ class VoiceMatchTurn {
         if (policy == 'people') 'people': people,
         if (follow && anchor != null && anchor.isNotEmpty)
           'anchor': base64Encode(anchor),
+        // A follow-up: the person an earlier turn of the conversation was,
+        // and its session, so the conversation is saved as one.
+        if (follow && speaker != null) 'speaker': speaker,
+        if (follow && continues != null) 'continues': continues,
       }),
     );
     return turn;
@@ -124,6 +140,8 @@ class VoiceMatchTurn {
     }
     if (e['type'] == 'ready') {
       _ready = true;
+      final session = e['session'];
+      if (session is String) _onReady?.call(session);
       for (final pcm in _queue) {
         _socket?.sink.add(pcm);
       }

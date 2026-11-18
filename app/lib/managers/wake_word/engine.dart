@@ -371,9 +371,10 @@ abstract class WakeWordEngine {
   /// PCM16, or null when nothing is being recorded.
   Uint8List? recentAudio(Duration length) => null;
 
-  /// The [length] of audio that ended where the last wake word did, as 16
-  /// kHz mono PCM16: the wake word itself, which tells Ground Control who
-  /// is talking. Null without a detection since detection last resumed.
+  /// The [length] of audio up to where the last wake word ended, and a
+  /// little past it, as 16 kHz mono PCM16: the wake word itself, which tells
+  /// Ground Control who is talking. Null without a detection since
+  /// detection last resumed.
   Uint8List? wakeClip(Duration length) => null;
 
   /// Near misses as the detector spots them: a wake word, or the armed stop
