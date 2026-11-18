@@ -61,6 +61,14 @@ class RemoteSpeaker {
   /// Voice Satellite's timings.
   static const safety = Duration(seconds: 30);
   static const durationPad = Duration(seconds: 2);
+
+  /// Music Assistant plays its own chime before an announcement and fetches
+  /// the sound first, which the measured length does not count. Its answer
+  /// to play_media ends the sound, and this much more is allowed for it.
+  static const announcerPad = Duration(seconds: 10);
+
+  /// How long Music Assistant's answer to an announcement is waited for.
+  static const announcerAnswer = Duration(minutes: 5);
   static const timerPad = Duration(milliseconds: 750);
   static const timerFallbackSeconds = 2.5;
   static const timerMeasureTimeout = Duration(seconds: 3);
@@ -111,12 +119,23 @@ class RemoteSpeaker {
     final state = watch?.state;
     play.initialState = state?.state;
     play.initialContent = state?.content;
+    play.answersAtEnd =
+        !normal && state?.attributes['mass_player_type'] != null;
     if (normal) _ensureSnapshot(entity, state);
     final media = await _forSpeaker(entity, url, state: state);
     if (!identical(_current, play)) return id;
     watch?.onChange = () {
       if (!identical(_current, play)) return;
-      play.evaluate(watch.state, log);
+      final started = play.startedAt;
+      final length = play.length;
+      play.evaluate(
+        watch.state,
+        log,
+        lengthPlayed:
+            started != null &&
+            length != null &&
+            _now().difference(started) >= length,
+      );
       if (play.done) _finish(play);
     };
     log(
@@ -125,13 +144,23 @@ class RemoteSpeaker {
     );
     // Not waited for, as Voice Satellite: Music Assistant answers an
     // announcement only once it has played, and the caller needs the id
-    // before the end it follows. A refused call ends the sound as if it
-    // had played, the turn carries on.
+    // before the end it follows. That answer is the end of the sound, as
+    // its player may report nothing while it plays. A refused call ends the
+    // sound as if it had played, the turn carries on.
     unawaited(
-      _playMedia(entity, media, announce: !normal).then((sent) {
-        if (sent || play.finished) return;
-        log('play_media refused, completing');
-        _finish(play);
+      _playMedia(
+        entity,
+        media,
+        announce: !normal,
+        timeout: play.answersAtEnd ? announcerAnswer : null,
+      ).then((sent) {
+        if (play.finished) return;
+        if (!sent) {
+          log('play_media refused, completing');
+          _finish(play);
+          return;
+        }
+        if (play.answersAtEnd) _answered(play);
       }),
     );
     play.startedAt = _now();
@@ -249,6 +278,23 @@ class RemoteSpeaker {
     onEnded(play.id);
   }
 
+  /// Music Assistant answered the announcement. Before the sound's length
+  /// has gone by the answer cannot be its end: the length decides.
+  void _answered(_Play play) {
+    final started = play.startedAt;
+    final length = play.length;
+    if (started != null &&
+        length != null &&
+        _now().difference(started) >= length) {
+      log('Music Assistant finished the ${play.kind.name}');
+      _finish(play);
+      return;
+    }
+    play.answersAtEnd = false;
+    log('Music Assistant answered early, following the length');
+    if (length != null) _armLength(play, length);
+  }
+
   Future<void> _measure(_Play play, String url) async {
     final started = play.startedAt;
     if (measure == null || started == null) return;
@@ -257,12 +303,19 @@ class RemoteSpeaker {
     final length = Duration(milliseconds: (seconds * 1000).round());
     log('${play.kind.name} measured at ${seconds.toStringAsFixed(2)}s');
     play.measured = true;
-    final elapsed = _now().difference(started);
-    onProgress?.call(play.id, elapsed, length);
-    // Counted from when the sound was sent, not from when its length came
-    // back: a streamed answer is measured only once Home Assistant has all
-    // of it, seconds into its playback.
-    final left = length + durationPad - elapsed;
+    play.length = length;
+    onProgress?.call(play.id, _now().difference(started), length);
+    _armLength(play, length);
+  }
+
+  /// Ends [play] by its [length], counted from when it was sent, not from
+  /// when its length came back: a streamed answer is measured only once
+  /// Home Assistant has all of it, seconds into its playback. A sound
+  /// Music Assistant answers for is given more, its answer ends it.
+  void _armLength(_Play play, Duration length) {
+    final started = play.startedAt!;
+    final pad = play.answersAtEnd ? durationPad + announcerPad : durationPad;
+    final left = length + pad - _now().difference(started);
     play.deadline?.cancel();
     play.deadline = Timer(left.isNegative ? Duration.zero : left, () {
       log('${play.kind.name} over by its length');
@@ -342,6 +395,7 @@ class RemoteSpeaker {
     String entity,
     String media, {
     required bool announce,
+    Duration? timeout,
   }) {
     _sent
       ..add(Uri.tryParse(media)?.path ?? media)
@@ -351,7 +405,7 @@ class RemoteSpeaker {
       'media_content_id': media,
       'media_content_type': 'music',
       'announce': announce,
-    });
+    }, timeout: timeout);
   }
 
   Future<void> _stopPlayer(String entity) =>
@@ -361,14 +415,20 @@ class RemoteSpeaker {
     String service,
     Map<String, Object?> data, {
     bool quiet = false,
+    Duration? timeout,
   }) async {
     try {
-      await ha.request({
+      final command = {
         'type': 'call_service',
         'domain': 'media_player',
         'service': service,
         'service_data': data,
-      });
+      };
+      if (timeout == null) {
+        await ha.request(command);
+      } else {
+        await ha.request(command, timeout: timeout);
+      }
       return true;
     } catch (e) {
       if (!quiet) log('$service on ${data['entity_id']} failed: $e');
@@ -581,34 +641,52 @@ class _Play {
   bool sawPlaying = false;
   bool sawOurs = false;
   bool measured = false;
+  Duration? length;
+
+  /// Music Assistant's answer to the announcement is its end.
+  bool answersAtEnd = false;
   bool finished = false;
   bool done = false;
   Timer? deadline;
 
   /// Judges the player's latest state against the one from before.
-  void evaluate(_State now, void Function(String) log) {
+  /// [lengthPlayed]: the sound's measured length has gone by since it was
+  /// sent.
+  void evaluate(
+    _State now,
+    void Function(String) log, {
+    bool lengthPlayed = false,
+  }) {
     final active = now.active;
     final id = now.content;
     if (active && id != null && path.isNotEmpty && id.contains(path)) {
       sawOurs = true;
     }
+    // A player that was already playing is on our sound only once what it
+    // plays changes, and done once it is back on what it played. One that
+    // was not playing has nothing to go back to: Music Assistant keeps the
+    // last track's id while it announces, and an update in the middle of
+    // the announcement would look like the music coming back.
+    final wasActive = initialState == 'playing' || initialState == 'buffering';
     // Once the answer's length is known it decides, since players with
     // other media blip through paused or resume the same content early.
-    // The one signal that outranks it: the player showed our sound, then
-    // stopped. Nothing else looks like that.
+    // What outranks it: the player showed our sound, then stopped, or a
+    // player that was not playing played and stopped once the length went
+    // by. Nothing else looks like that.
     if (kind == RemoteSound.speech && measured) {
-      if (sawOurs && !active) {
+      if (active && !wasActive) sawPlaying = true;
+      if (active) return;
+      if (sawOurs) {
         log('the player finished our sound (${now.state}), completing');
+        done = true;
+      } else if (sawPlaying && !wasActive && lengthPlayed) {
+        log('the player stopped (${now.state}), completing');
         done = true;
       }
       return;
     }
     if (!sawPlaying) {
       if (!active) return;
-      // A player that was already playing is on our sound only once what
-      // it plays changes.
-      final wasActive =
-          initialState == 'playing' || initialState == 'buffering';
       if (wasActive && id == initialContent) return;
       sawPlaying = true;
       return;
@@ -618,7 +696,7 @@ class _Play {
       done = true;
       return;
     }
-    if (initialContent != null && id == initialContent) {
+    if (wasActive && initialContent != null && id == initialContent) {
       log('the player resumed what it played before, completing');
       done = true;
     }
