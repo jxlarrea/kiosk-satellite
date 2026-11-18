@@ -32,6 +32,7 @@ import 'remote_player.dart';
 import 'session_player.dart';
 import 'sonos_client.dart';
 import 'sonos_player.dart';
+import 'svg_artwork.dart';
 import 'volume_ducker.dart';
 
 /// The device as a synchronized Sendspin audio player.
@@ -525,7 +526,10 @@ class SendspinManager extends Manager {
         await for (final part in response) {
           bytes.add(part);
         }
-        return bytes.takeBytes();
+        final data = bytes.takeBytes();
+        // A station logo is often an SVG, which no cover surface can
+        // decode, so it is drawn into a PNG once here (issue #1496).
+        return isSvgArtwork(data) ? await svgArtworkToPng(data) : data;
       }
 
       // Bound the whole transfer, including a proxy that trickles bytes.
