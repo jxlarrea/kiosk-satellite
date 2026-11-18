@@ -148,6 +148,27 @@ String stripSentimentTags(String text, {bool streaming = false}) {
   return out.replaceAll(RegExp(r'[ \t]{2,}'), ' ').trim();
 }
 
+/// [view] as the overlay shows it with the sentiment tags left out: the
+/// answer in progress and the answers of the earlier turns, which keep
+/// their command, tools and speaker.
+AssistView withoutSentimentTags(AssistView view) => view.copyWith(
+  answer: view.answer.isEmpty
+      ? view.answer
+      : stripSentimentTags(view.answer, streaming: view.streaming),
+  earlier: [
+    for (final t in view.earlier)
+      t.answer.isEmpty
+          ? t
+          : AssistTurn(
+              command: t.command,
+              tools: t.tools,
+              answer: stripSentimentTags(t.answer),
+              speaker: t.speaker,
+              speakerColor: t.speakerColor,
+            ),
+  ],
+);
+
 const _htmlNames =
     'a|abbr|b|big|blockquote|br|center|cite|code|dd|del|div|dl|dt|em|font|'
     'h[1-6]|hr|i|img|ins|kbd|li|mark|ol|p|pre|q|s|samp|small|span|strike|'

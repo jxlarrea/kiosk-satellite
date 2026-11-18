@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kiosk_satellite/managers/voice/assist_view.dart';
 import 'package:kiosk_satellite/managers/voice/chat_log.dart';
 import 'package:kiosk_satellite/managers/voice/wake_catalog.dart';
 import 'package:kiosk_satellite/managers/wake_word/engine.dart';
@@ -271,6 +272,39 @@ void main() {
     expect(stripSentimentTags('<a little pause> <s>'), '<a little pause> <s>');
     // Starts like an HTML name but is not one.
     expect(stripSentimentTags('<sigh> <bold> Okay.'), 'Okay.');
+  });
+
+  test('earlier turns lose their sentiment tags too (#1491)', () {
+    final view = withoutSentimentTags(
+      const AssistView(
+        phase: AssistPhase.listening,
+        earlier: [
+          AssistTurn(answer: '[soft tone] Display check, nothing to do.'),
+          AssistTurn(
+            command: 'We are going on a trip',
+            tools: ['Get weather forecast'],
+            answer: '[curious] That sounds lovely, where are you going?',
+            speaker: 'Ana',
+            speakerColor: '#FF8800',
+          ),
+          AssistTurn(command: 'Lights off'),
+        ],
+        answer: 'Sure <chuck',
+        streaming: true,
+      ),
+    );
+    expect(view.answer, 'Sure');
+    expect(view.earlier.map((t) => t.answer), [
+      'Display check, nothing to do.',
+      'That sounds lovely, where are you going?',
+      '',
+    ]);
+    final kept = view.earlier[1];
+    expect(kept.command, 'We are going on a trip');
+    expect(kept.tools, ['Get weather forecast']);
+    expect(kept.speaker, 'Ana');
+    expect(kept.speakerColor, '#FF8800');
+    expect(view.earlier[2].command, 'Lights off');
   });
 
   group('custom models on the kiosk', () {
