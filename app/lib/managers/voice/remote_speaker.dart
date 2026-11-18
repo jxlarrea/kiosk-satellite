@@ -38,7 +38,8 @@ class RemoteSpeaker {
     required this.log,
     this.onProgress,
     this.measure,
-  });
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
 
   final HaSocket ha;
 
@@ -53,6 +54,9 @@ class RemoteSpeaker {
   /// How long the audio at a URL plays, in seconds, or null. Home Assistant
   /// measured it for the dashboard integration (tts-audio-duration).
   final Future<double?> Function(String url, Duration timeout)? measure;
+
+  /// The time, for tests to run on fake time.
+  final DateTime Function() _now;
 
   /// Voice Satellite's timings.
   static const safety = Duration(seconds: 30);
@@ -130,7 +134,7 @@ class RemoteSpeaker {
         _finish(play);
       }),
     );
-    play.startedAt = DateTime.now();
+    play.startedAt = _now();
     // A player that never says it finished is let go after this, or after
     // the sound's length once it is measured. The answer's words stand in
     // for a length the kiosk cannot measure, when they say it runs longer.
@@ -253,9 +257,14 @@ class RemoteSpeaker {
     final length = Duration(milliseconds: (seconds * 1000).round());
     log('${play.kind.name} measured at ${seconds.toStringAsFixed(2)}s');
     play.measured = true;
-    onProgress?.call(play.id, DateTime.now().difference(started), length);
+    final elapsed = _now().difference(started);
+    onProgress?.call(play.id, elapsed, length);
+    // Counted from when the sound was sent, not from when its length came
+    // back: a streamed answer is measured only once Home Assistant has all
+    // of it, seconds into its playback.
+    final left = length + durationPad - elapsed;
     play.deadline?.cancel();
-    play.deadline = Timer(length + durationPad, () {
+    play.deadline = Timer(left.isNegative ? Duration.zero : left, () {
       log('${play.kind.name} over by its length');
       _finish(play);
     });
