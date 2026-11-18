@@ -108,9 +108,12 @@ class _ReadingState extends State<_Reading> {
             final small = box.maxHeight < 440;
             final portrait = box.maxHeight > box.maxWidth * 1.1;
             final pad = small ? 16.0 : 28.0;
+            // Text and ring grow with the screen, so a tablet read from
+            // across the room isn't set in phone sizes.
+            final unit = math.min(box.maxWidth, box.maxHeight);
             final ringSize = math.min(
               portrait ? box.maxWidth * 0.42 : box.maxHeight * 0.38,
-              small ? 120.0 : 200.0,
+              small ? 120.0 : (unit * 0.36).clamp(200.0, 300.0),
             );
             final progress = _Progress(
               state: s,
@@ -123,6 +126,7 @@ class _ReadingState extends State<_Reading> {
               at: at,
               phase: s.phase,
               small: small,
+              unit: unit,
             );
             return Padding(
               padding: EdgeInsets.fromLTRB(pad, pad * 0.75, pad, pad * 0.75),
@@ -147,7 +151,12 @@ class _ReadingState extends State<_Reading> {
                               (small
                                       ? theme.textTheme.titleMedium
                                       : theme.textTheme.titleLarge)
-                                  ?.copyWith(fontWeight: FontWeight.w500),
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: small
+                                        ? null
+                                        : (unit * 0.032).clamp(22.0, 30.0),
+                                  ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -179,7 +188,7 @@ class _ReadingState extends State<_Reading> {
                   Expanded(
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1000),
+                        constraints: const BoxConstraints(maxWidth: 1200),
                         child: portrait
                             ? Column(
                                 children: [
@@ -199,7 +208,7 @@ class _ReadingState extends State<_Reading> {
                       ),
                     ),
                   ),
-                  if (!small) _Tips(t: t),
+                  if (!small) _Tips(t: t, unit: unit),
                 ],
               ),
             );
@@ -264,6 +273,7 @@ class _Progress extends StatelessWidget {
                       '${state.targetS.round()}',
                     ),
                     style: theme.textTheme.titleMedium?.copyWith(
+                      fontSize: math.max(16, size * 0.12),
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
@@ -326,6 +336,7 @@ class _Passage extends StatelessWidget {
     required this.at,
     required this.phase,
     required this.small,
+    required this.unit,
   });
 
   final List<String> passage;
@@ -333,18 +344,25 @@ class _Passage extends StatelessWidget {
   final EnrollPhase phase;
   final bool small;
 
+  /// The screen's shorter side, which the text sizes follow.
+  final double unit;
+
   @override
   Widget build(BuildContext context) {
     final t = l10n(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final size = small ? 24.0 : (unit * 0.06).clamp(28.0, 56.0);
     final muted = theme.textTheme.titleMedium?.copyWith(
       color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+      fontSize: small ? null : size * 0.58,
       height: 1.3,
     );
-    final big =
-        (small ? theme.textTheme.headlineSmall : theme.textTheme.headlineMedium)
-            ?.copyWith(fontWeight: FontWeight.w500, height: 1.25);
+    final big = theme.textTheme.headlineMedium?.copyWith(
+      fontWeight: FontWeight.w500,
+      fontSize: size,
+      height: 1.25,
+    );
     final waiting = switch (phase) {
       EnrollPhase.starting => t.voiceMatchEnrollStarting,
       EnrollPhase.saving => t.voiceMatchEnrollSaving,
@@ -360,6 +378,7 @@ class _Passage extends StatelessWidget {
           t.voiceMatchEnrollReading.toUpperCase(),
           style: theme.textTheme.labelMedium?.copyWith(
             color: scheme.primary,
+            fontSize: small ? null : size * 0.32,
             letterSpacing: 1.2,
           ),
         ),
@@ -387,7 +406,7 @@ class _Passage extends StatelessWidget {
             waiting ?? passage[at],
             key: ValueKey(waiting ?? 'line$at'),
             style: big,
-            maxLines: 3,
+            maxLines: 4,
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -433,24 +452,27 @@ class _OtherVoiceBanner extends StatelessWidget {
 }
 
 class _Tips extends StatelessWidget {
-  const _Tips({required this.t});
+  const _Tips({required this.t, required this.unit});
 
   final UiStrings t;
+  final double unit;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final size = (unit * 0.024).clamp(14.0, 22.0);
     Widget tip(IconData icon, String text) => Expanded(
       child: Row(
         children: [
-          Icon(icon, size: 22, color: scheme.onSurfaceVariant),
+          Icon(icon, size: size * 1.5, color: scheme.onSurfaceVariant),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               text,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
+                fontSize: size,
               ),
             ),
           ),
