@@ -1,10 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/managers/voice/voice_match_enroll.dart';
 import 'package:kiosk_satellite/managers/voice/voice_session.dart';
-import 'package:kiosk_satellite/ui/voice_match_enroll_overlay.dart';
 
 class _Mic implements VoiceMicPort {
   _Mic({this.works = true});
@@ -74,7 +76,12 @@ class _Harness {
   VoiceMatchEnrollment? get last => states.last;
 }
 
-const _ana = EnrollRequest(personId: 'p1', name: 'Ana', color: '#56814F', targetS: 20);
+const _ana = EnrollRequest(
+  personId: 'p1',
+  name: 'Ana',
+  color: '#56814F',
+  targetS: 20,
+);
 
 void main() {
   test('records with the wake word paused and saves', () {
@@ -105,7 +112,12 @@ void main() {
       async.flushMicrotasks();
       expect(h.last?.phase, EnrollPhase.saving);
       expect(h.mic.closes, 1);
-      h.socket.onEvent({'type': 'saved', 'added_s': 20.1, 'speech_s': 40.0, 'dropped_s': 2.0});
+      h.socket.onEvent({
+        'type': 'saved',
+        'added_s': 20.1,
+        'speech_s': 40.0,
+        'dropped_s': 2.0,
+      });
       async.flushMicrotasks();
       expect(h.last?.phase, EnrollPhase.saved);
       expect(h.last?.addedS, 20.1);
@@ -158,7 +170,11 @@ void main() {
       expect(h.socket.ended, isTrue);
       expect(h.mic.closes, 1);
       expect(h.last?.phase, EnrollPhase.saving);
-      h.socket.onEvent({'type': 'error', 'code': 'too_short', 'message': 'only 9 s'});
+      h.socket.onEvent({
+        'type': 'error',
+        'code': 'too_short',
+        'message': 'only 9 s',
+      });
       async.flushMicrotasks();
       expect(h.last?.phase, EnrollPhase.failed);
       expect(h.last?.code, 'too_short');
@@ -200,5 +216,34 @@ void main() {
     expect(sentenceAt(passage, 30.1, 30), 0);
     // Chinese reads slower per character than letters.
     expect(readingSeconds('打开厨房的灯。'), greaterThan(readingSeconds('Lights.')));
+  });
+
+  test('the start message carries the passage the kiosk shows', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final first = Completer<Map<String, Object?>>();
+    server.listen((req) async {
+      final ws = await WebSocketTransformer.upgrade(req);
+      ws.listen((m) {
+        if (!first.isCompleted) {
+          first.complete(jsonDecode(m as String) as Map<String, Object?>);
+        }
+      });
+    });
+    final socket = EnrollSocket.open(
+      baseUrl: 'http://127.0.0.1:${server.port}',
+      token: 't',
+      request: const EnrollRequest(personId: 'ana', name: 'Ana'),
+      deviceId: 'k1',
+      deviceName: 'Kitchen',
+      model: '',
+      passage: const ['Uno.', 'Dos.'],
+      onEvent: (_) {},
+    );
+    final start = await first.future.timeout(const Duration(seconds: 5));
+    expect(start['type'], 'start');
+    expect(start['person_id'], 'ana');
+    expect(start['passage'], ['Uno.', 'Dos.']);
+    socket.close();
+    await server.close(force: true);
   });
 }

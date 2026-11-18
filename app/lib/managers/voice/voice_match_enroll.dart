@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../l10n/generated/ui_strings.dart';
 import 'voice_session.dart' show VoiceMicPort;
 
 /// Where an enrollment is: getting ready, recording, saving what was
@@ -111,6 +113,54 @@ class VoiceMatchEnrollment {
     'code': code,
     'message': message,
   };
+}
+
+/// The passage, one sentence at a time, in this kiosk's language.
+List<String> enrollPassage(UiStrings t) => [
+  t.voiceMatchEnrollPassage1,
+  t.voiceMatchEnrollPassage2,
+  t.voiceMatchEnrollPassage3,
+  t.voiceMatchEnrollPassage4,
+  t.voiceMatchEnrollPassage5,
+  t.voiceMatchEnrollPassage6,
+  t.voiceMatchEnrollPassage7,
+  t.voiceMatchEnrollPassage8,
+  t.voiceMatchEnrollPassage9,
+  t.voiceMatchEnrollPassage10,
+  t.voiceMatchEnrollPassage11,
+  t.voiceMatchEnrollPassage12,
+  t.voiceMatchEnrollPassage13,
+  t.voiceMatchEnrollPassage14,
+];
+
+/// About how long [sentence] takes to read aloud, in seconds of speech:
+/// 14 letters a second, or 4.5 for Chinese characters, 1.5 s at least.
+double readingSeconds(String sentence) {
+  var latin = 0;
+  var wide = 0;
+  for (final rune in sentence.runes) {
+    if (rune >= 0x2E80) {
+      wide++;
+    } else if (rune > 0x20) {
+      latin++;
+    }
+  }
+  return math.max(1.5, latin / 14 + wide / 4.5);
+}
+
+/// Which sentence to show after [speechS] of [targetS] seconds of speech.
+/// The passage is spread over the target, so it ends as the enrollment
+/// does. It starts over when someone reads past it.
+int sentenceAt(List<String> passage, double speechS, double targetS) {
+  final lengths = [for (final s in passage) readingSeconds(s)];
+  final total = lengths.fold<double>(0, (a, b) => a + b);
+  if (total <= 0 || targetS <= 0) return 0;
+  var at = (speechS / targetS * total) % total;
+  for (var i = 0; i < lengths.length; i++) {
+    if (at < lengths[i]) return i;
+    at -= lengths[i];
+  }
+  return lengths.length - 1;
 }
 
 /// What starts an enrollment: the person and how much speech to collect.
@@ -411,6 +461,7 @@ class EnrollSocket implements EnrollSocketPort {
     required String deviceId,
     required String deviceName,
     required String model,
+    List<String> passage = const [],
     required void Function(Map<String, Object?> event) onEvent,
     void Function(String line)? log,
   }) {
@@ -429,6 +480,8 @@ class EnrollSocket implements EnrollSocketPort {
         'device_name': deviceName,
         'model': model,
         'target_s': request.targetS,
+        // The text this kiosk shows, so the Ground Control app shows the same.
+        if (passage.isNotEmpty) 'passage': passage,
       }),
     );
     return socket;

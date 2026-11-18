@@ -7,10 +7,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
+import '../../core/app_locales.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/headless.dart';
 import '../../core/manager.dart';
+import '../../l10n/generated/ui_strings.dart';
 import '../btproxy/bt_proxy_manager.dart';
 import '../analytics/usage_counters.dart';
 import '../home_assistant/ha_tts.dart';
@@ -3022,6 +3024,9 @@ class VoiceManager extends Manager {
       deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), deviceName),
       deviceName: deviceName,
       model: '',
+      passage: enrollPassage(
+        lookupUiStrings(appLocaleForLanguage(s.get(defs.uiLanguage))),
+      ),
       onEvent: onEvent,
       log: (line) => log.info(name, line),
     );
