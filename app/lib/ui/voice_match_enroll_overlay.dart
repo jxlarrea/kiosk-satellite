@@ -97,7 +97,11 @@ class _ReadingState extends State<_Reading> {
     final s = widget.state;
     final color = personColor(s.color, scheme.primary);
     final passage = enrollPassage(t);
-    final at = sentenceAt(passage, s.speechS, s.targetS);
+    // Ground Control says which sentence to read and how much of it was
+    // spoken. An older one doesn't, and the kiosk paces it by speech.
+    final at = s.sentence != null
+        ? s.sentence! % passage.length
+        : sentenceAt(passage, s.speechS, s.targetS);
     final reading = s.phase == EnrollPhase.recording;
 
     return Material(
@@ -124,6 +128,8 @@ class _ReadingState extends State<_Reading> {
             final text = _Passage(
               passage: passage,
               at: at,
+              fill: s.sentence != null ? s.sentenceFill : null,
+              color: color,
               phase: s.phase,
               small: small,
               unit: unit,
@@ -329,11 +335,14 @@ class _LevelMeter extends StatelessWidget {
   }
 }
 
-/// The sentence to read large, with the one before and the one after it.
+/// The sentence to read large, with the one before and the one after it,
+/// and under it a bar that fills in the person's color as it is spoken.
 class _Passage extends StatelessWidget {
   const _Passage({
     required this.passage,
     required this.at,
+    required this.fill,
+    required this.color,
     required this.phase,
     required this.small,
     required this.unit,
@@ -341,6 +350,10 @@ class _Passage extends StatelessWidget {
 
   final List<String> passage;
   final int at;
+
+  /// How much of the sentence was spoken, 0 to 1. Null without pacing.
+  final double? fill;
+  final Color color;
   final EnrollPhase phase;
   final bool small;
 
@@ -410,6 +423,24 @@ class _Passage extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (fill != null && waiting == null) ...[
+          SizedBox(height: small ? 8 : 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: TweenAnimationBuilder<double>(
+              // A new sentence starts its bar empty.
+              key: ValueKey('fill$at'),
+              tween: Tween(begin: 0, end: fill!.clamp(0.0, 1.0)),
+              duration: const Duration(milliseconds: 250),
+              builder: (context, value, _) => LinearProgressIndicator(
+                value: value,
+                minHeight: small ? 5 : (size * 0.16).clamp(6.0, 10.0),
+                color: color,
+                backgroundColor: scheme.surfaceContainerHighest,
+              ),
+            ),
+          ),
+        ],
         SizedBox(height: small ? 8 : 12),
         if (waiting == null)
           Text(after, style: muted, maxLines: 2, overflow: TextOverflow.fade),

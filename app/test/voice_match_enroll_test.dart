@@ -104,6 +104,16 @@ void main() {
       h.socket.onEvent({'type': 'progress', 'speech_s': 8.5, 'level': -24.0});
       expect(h.last?.speechS, 8.5);
       expect(h.last?.progress, closeTo(0.425, 1e-9));
+      // An older Ground Control doesn't pace the passage.
+      expect(h.last?.sentence, isNull);
+      h.socket.onEvent({
+        'type': 'progress',
+        'speech_s': 9.0,
+        'sentence': 3,
+        'sentence_fill': 0.4,
+      });
+      expect(h.last?.sentence, 3);
+      expect(h.last?.sentenceFill, 0.4);
       h.socket.onEvent({'type': 'other_voice', 'score': 0.1});
       expect(h.last?.otherVoices, 1);
       expect(h.last?.otherVoiceAt, isNotNull);

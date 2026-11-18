@@ -23,6 +23,8 @@ class VoiceMatchEnrollment {
     required this.targetS,
     this.phase = EnrollPhase.starting,
     this.speechS = 0,
+    this.sentence,
+    this.sentenceFill = 0,
     this.level = -90,
     this.otherVoices = 0,
     this.otherVoiceAt,
@@ -43,6 +45,12 @@ class VoiceMatchEnrollment {
 
   /// Speech counted toward [targetS] so far.
   final double speechS;
+
+  /// The sentence of the passage to read and how much of it was spoken,
+  /// as Ground Control paces it. Null from a Ground Control that doesn't
+  /// pace the passage.
+  final int? sentence;
+  final double sentenceFill;
 
   /// The last half second's level, dBFS, for the meter.
   final double level;
@@ -74,6 +82,8 @@ class VoiceMatchEnrollment {
   VoiceMatchEnrollment copyWith({
     EnrollPhase? phase,
     double? speechS,
+    int? sentence,
+    double? sentenceFill,
     double? level,
     int? otherVoices,
     DateTime? otherVoiceAt,
@@ -89,6 +99,8 @@ class VoiceMatchEnrollment {
     targetS: targetS,
     phase: phase ?? this.phase,
     speechS: speechS ?? this.speechS,
+    sentence: sentence ?? this.sentence,
+    sentenceFill: sentenceFill ?? this.sentenceFill,
     level: level ?? this.level,
     otherVoices: otherVoices ?? this.otherVoices,
     otherVoiceAt: otherVoiceAt ?? this.otherVoiceAt,
@@ -105,6 +117,8 @@ class VoiceMatchEnrollment {
     'color': color,
     'phase': phase.name,
     'speechS': speechS,
+    'sentence': sentence,
+    'sentenceFill': sentenceFill,
     'targetS': targetS,
     'otherVoices': otherVoices,
     'addedS': addedS,
@@ -326,6 +340,8 @@ class VoiceMatchEnroller {
                 ? EnrollPhase.recording
                 : null,
             speechS: read('speech_s', s.speechS),
+            sentence: e['sentence'] is int ? e['sentence'] as int : null,
+            sentenceFill: read('sentence_fill', s.sentenceFill),
             level: read('level', s.level),
           ),
         );
