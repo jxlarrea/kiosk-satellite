@@ -8571,6 +8571,26 @@ class UiStringsNl extends UiStrings {
   String get groundControlApp => 'Ground Control app';
 
   @override
+  String get groundControlFeatures => 'Functies';
+
+  @override
+  String get settingGroundControlVoiceMatchTitle => 'Voice Match';
+
+  @override
+  String get settingGroundControlVoiceMatchDescription =>
+      'Sprekerherkenning, verwijderen van andere stemmen en inschrijven.';
+
+  @override
+  String get groundControlVisionMatch => 'Vision Match';
+
+  @override
+  String get groundControlVisionMatchDescription =>
+      'Gezichtsherkenning met de camera van dit apparaat.';
+
+  @override
+  String get groundControlComingSoon => 'Binnenkort';
+
+  @override
   String get haCustomPages => 'Eigen pagina\'s';
 
   @override

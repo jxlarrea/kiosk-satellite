@@ -8660,6 +8660,26 @@ class UiStringsDe extends UiStrings {
   String get groundControlApp => 'Ground Control App';
 
   @override
+  String get groundControlFeatures => 'Funktionen';
+
+  @override
+  String get settingGroundControlVoiceMatchTitle => 'Voice Match';
+
+  @override
+  String get settingGroundControlVoiceMatchDescription =>
+      'Sprechererkennung, Entfernen anderer Stimmen und Einlernen.';
+
+  @override
+  String get groundControlVisionMatch => 'Vision Match';
+
+  @override
+  String get groundControlVisionMatchDescription =>
+      'Gesichtserkennung mit der Kamera dieses Geräts.';
+
+  @override
+  String get groundControlComingSoon => 'Demnächst';
+
+  @override
   String get haCustomPages => 'Eigene Seiten';
 
   @override

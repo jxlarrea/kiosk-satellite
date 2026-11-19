@@ -5,5 +5,11 @@
   "settingGroundControlAddressTitle": "Адреса",
   "settingGroundControlAddressDescription": "Залиште порожнім, щоб знайти Ground Control у мережі. Введіть адресу для Ground Control в іншій мережі.",
   "groundControlLooking": "Пошук Ground Control у мережі.",
-  "groundControlApp": "Застосунок Ground Control"
+  "groundControlApp": "Застосунок Ground Control",
+  "groundControlFeatures": "Функції",
+  "settingGroundControlVoiceMatchTitle": "Voice Match",
+  "settingGroundControlVoiceMatchDescription": "Розпізнавання мовця, вилучення інших голосів і реєстрація.",
+  "groundControlVisionMatch": "Vision Match",
+  "groundControlVisionMatchDescription": "Розпізнавання облич за допомогою камери цього пристрою.",
+  "groundControlComingSoon": "Незабаром"
 }

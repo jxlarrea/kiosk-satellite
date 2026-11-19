@@ -21,6 +21,15 @@ Ground Control is off by default.
 | Enable Ground Control | off | Connects the kiosk to Kiosk Satellite Ground Control. |
 | Address | empty | Empty finds Ground Control on the network. Enter `host:port` for Ground Control on another network. |
 
+## Features
+
+Each feature Ground Control runs has a row under **Features**, after Connection.
+
+| Feature | Where its settings are |
+| --- | --- |
+| Voice Match | Its row opens **Settings > Voice Satellite > Ground Control Voice Match**. See [Voice Match](voice-match.md). |
+| Vision Match | Coming soon. Facial recognition using the device's camera. |
+
 ## Status
 
 | Status | Meaning |

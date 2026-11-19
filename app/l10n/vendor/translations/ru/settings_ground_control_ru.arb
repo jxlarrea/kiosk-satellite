@@ -5,5 +5,11 @@
   "settingGroundControlAddressTitle": "Адрес",
   "settingGroundControlAddressDescription": "Оставьте пустым, чтобы найти Ground Control в сети. Укажите адрес для Ground Control в другой сети.",
   "groundControlLooking": "Поиск Ground Control в сети.",
-  "groundControlApp": "Приложение Ground Control"
+  "groundControlApp": "Приложение Ground Control",
+  "groundControlFeatures": "Функции",
+  "settingGroundControlVoiceMatchTitle": "Voice Match",
+  "settingGroundControlVoiceMatchDescription": "Распознавание говорящего, удаление других голосов и запись голоса.",
+  "groundControlVisionMatch": "Vision Match",
+  "groundControlVisionMatchDescription": "Распознавание лиц с помощью камеры этого устройства.",
+  "groundControlComingSoon": "Скоро"
 }

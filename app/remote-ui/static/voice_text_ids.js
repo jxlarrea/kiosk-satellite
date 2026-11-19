@@ -330,5 +330,9 @@ export const voiceTextMessageIds = {
   "Open": "voiceMatchOpen",
   "Looking for Ground Control on the network.": "groundControlLooking",
   "Ground Control app": "groundControlApp",
+  "Features": "groundControlFeatures",
+  "Vision Match": "groundControlVisionMatch",
+  "Facial recognition using this device's camera.": "groundControlVisionMatchDescription",
+  "Coming soon": "groundControlComingSoon",
   "Ground Control": "settingsMenuGroundControl"
 };

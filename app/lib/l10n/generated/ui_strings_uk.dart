@@ -8548,6 +8548,26 @@ class UiStringsUk extends UiStrings {
   String get groundControlApp => 'Застосунок Ground Control';
 
   @override
+  String get groundControlFeatures => 'Функції';
+
+  @override
+  String get settingGroundControlVoiceMatchTitle => 'Voice Match';
+
+  @override
+  String get settingGroundControlVoiceMatchDescription =>
+      'Розпізнавання мовця, вилучення інших голосів і реєстрація.';
+
+  @override
+  String get groundControlVisionMatch => 'Vision Match';
+
+  @override
+  String get groundControlVisionMatchDescription =>
+      'Розпізнавання облич за допомогою камери цього пристрою.';
+
+  @override
+  String get groundControlComingSoon => 'Незабаром';
+
+  @override
   String get haCustomPages => 'Власні сторінки';
 
   @override

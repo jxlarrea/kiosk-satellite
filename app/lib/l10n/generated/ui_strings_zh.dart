@@ -8127,6 +8127,24 @@ class UiStringsZh extends UiStrings {
   String get groundControlApp => 'Ground Control 应用';
 
   @override
+  String get groundControlFeatures => '功能';
+
+  @override
+  String get settingGroundControlVoiceMatchTitle => 'Voice Match';
+
+  @override
+  String get settingGroundControlVoiceMatchDescription => '说话人识别、其他声音移除和录入。';
+
+  @override
+  String get groundControlVisionMatch => 'Vision Match';
+
+  @override
+  String get groundControlVisionMatchDescription => '使用此设备的摄像头进行人脸识别。';
+
+  @override
+  String get groundControlComingSoon => '即将推出';
+
+  @override
   String get haCustomPages => '自定义网页';
 
   @override
@@ -24270,6 +24288,24 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get groundControlApp => 'Ground Control 应用';
+
+  @override
+  String get groundControlFeatures => '功能';
+
+  @override
+  String get settingGroundControlVoiceMatchTitle => 'Voice Match';
+
+  @override
+  String get settingGroundControlVoiceMatchDescription => '说话人识别、其他声音移除和录入。';
+
+  @override
+  String get groundControlVisionMatch => 'Vision Match';
+
+  @override
+  String get groundControlVisionMatchDescription => '使用此设备的摄像头进行人脸识别。';
+
+  @override
+  String get groundControlComingSoon => '即将推出';
 
   @override
   String get haCustomPages => '自定义网页';

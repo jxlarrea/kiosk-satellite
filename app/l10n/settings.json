@@ -2814,5 +2814,9 @@
   "ground_control.address": {
     "title": "settingGroundControlAddressTitle",
     "description": "settingGroundControlAddressDescription"
+  },
+  "ground_control.voice_match": {
+    "title": "settingGroundControlVoiceMatchTitle",
+    "description": "settingGroundControlVoiceMatchDescription"
   }
 }

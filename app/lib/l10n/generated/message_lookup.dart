@@ -2457,6 +2457,15 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingGroundControlAddressDescription,
       'groundControlLooking' => strings.groundControlLooking,
       'groundControlApp' => strings.groundControlApp,
+      'groundControlFeatures' => strings.groundControlFeatures,
+      'settingGroundControlVoiceMatchTitle' =>
+        strings.settingGroundControlVoiceMatchTitle,
+      'settingGroundControlVoiceMatchDescription' =>
+        strings.settingGroundControlVoiceMatchDescription,
+      'groundControlVisionMatch' => strings.groundControlVisionMatch,
+      'groundControlVisionMatchDescription' =>
+        strings.groundControlVisionMatchDescription,
+      'groundControlComingSoon' => strings.groundControlComingSoon,
       'haCustomPages' => strings.haCustomPages,
       'haCustomPagesHintDashboard' => strings.haCustomPagesHintDashboard,
       'settingHaCustomPagesSocketTitle' =>

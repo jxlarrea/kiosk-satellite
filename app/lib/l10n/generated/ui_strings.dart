@@ -14825,6 +14825,42 @@ abstract class UiStrings {
   /// **'Ground Control app'**
   String get groundControlApp;
 
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Features'**
+  String get groundControlFeatures;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Voice Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Match'**
+  String get settingGroundControlVoiceMatchTitle;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker recognition, other voices removal and enrollment.'**
+  String get settingGroundControlVoiceMatchDescription;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Vision Match'**
+  String get groundControlVisionMatch;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Facial recognition using this device\'s camera.'**
+  String get groundControlVisionMatchDescription;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Shown in place of a value: the feature isn't available yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get groundControlComingSoon;
+
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///
   /// In en, this message translates to:

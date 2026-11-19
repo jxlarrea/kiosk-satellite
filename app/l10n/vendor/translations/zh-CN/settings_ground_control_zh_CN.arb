@@ -5,5 +5,11 @@
   "settingGroundControlAddressTitle": "地址",
   "settingGroundControlAddressDescription": "留空以在网络中查找 Ground Control。如果 Ground Control 在其他网络中，请输入地址。",
   "groundControlLooking": "正在网络中查找 Ground Control。",
-  "groundControlApp": "Ground Control 应用"
+  "groundControlApp": "Ground Control 应用",
+  "groundControlFeatures": "功能",
+  "settingGroundControlVoiceMatchTitle": "Voice Match",
+  "settingGroundControlVoiceMatchDescription": "说话人识别、其他声音移除和录入。",
+  "groundControlVisionMatch": "Vision Match",
+  "groundControlVisionMatchDescription": "使用此设备的摄像头进行人脸识别。",
+  "groundControlComingSoon": "即将推出"
 }

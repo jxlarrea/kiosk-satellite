@@ -99,12 +99,19 @@ void main() {
     expect(gc.map((d) => d.key), [
       'ground_control.enabled',
       'ground_control.address',
+      'ground_control.voice_match',
     ]);
     for (final d in gc) {
       expect(d.category, 'Ground Control', reason: d.key);
       expect(d.subpage, isNull, reason: d.key);
     }
     expect(defs.groundControlAddress.dependsOn, 'ground_control.enabled');
+    // Features, after Connection: Voice Match opens its page under Voice
+    // Satellite, at its switch.
+    expect(defs.groundControlAddress.section, 'Connection');
+    expect(defs.groundControlVoiceMatch.section, 'Features');
+    expect(defs.groundControlVoiceMatch.linksTo, defs.voiceMatchEnabled.key);
+    expect(defs.voiceMatchEnabled.subpage, 'Ground Control Voice Match');
     // Nothing on the Voice Match page still connects to the service.
     expect(
       defs.allSettings.where((d) => d.key == 'voice_match.address'),

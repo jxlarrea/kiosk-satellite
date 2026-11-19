@@ -8131,6 +8131,21 @@ const groundControlAddress = SettingDef<String>(
   dependsOn: 'ground_control.enabled',
 );
 
+/// Ground Control's features, each a row under Features that opens its page:
+/// Voice Match lives under Voice Satellite. Vision Match, coming soon,
+/// is a row of its own under this one (GroundControlComingSoonRow, and
+/// ground_control.js on the remote).
+const groundControlVoiceMatch = SettingDef<bool>(
+  key: 'ground_control.voice_match',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Voice Match',
+  description: 'Speaker recognition, other voices removal and enrollment.',
+  category: 'Ground Control',
+  section: 'Features',
+  linksTo: 'voice_match.enabled',
+);
+
 // Voice Match: Ground Control tells who is talking and when someone else (a
 // TV) starts, so a turn ends at the speaker's last word.
 
@@ -15086,6 +15101,7 @@ const List<SettingDef<Object>> allSettings = [
   voiceRealtimeMcpToken,
   groundControlEnabled,
   groundControlAddress,
+  groundControlVoiceMatch,
   voiceMatchEnabled,
   voiceMatchPolicy,
   voiceMatchPeople,

@@ -116,6 +116,31 @@ class _GroundControlStatusRowState extends State<GroundControlStatusRow> {
   }
 }
 
+/// A Ground Control feature that isn't here yet, under Features after the
+/// ones that are: Vision Match, coming soon. Mirrored in the remote
+/// admin (ground_control.js).
+class GroundControlComingSoonRow extends StatelessWidget {
+  const GroundControlComingSoonRow({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SettingsRow(
+      title: Text(voiceText(context, 'Vision Match')),
+      subtitle: Text(
+        voiceText(context, "Facial recognition using this device's camera."),
+      ),
+      trailing: Text(
+        voiceText(context, 'Coming soon'),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
 /// The people Answer can choose: everyone enrolled in Ground Control, then
 /// the chosen ones it no longer has, dimmed, so a pick is never lost while
 /// Ground Control is away. Mirrored on the remote admin (ground_control.js).

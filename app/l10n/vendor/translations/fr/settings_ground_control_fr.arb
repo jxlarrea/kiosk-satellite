@@ -5,5 +5,11 @@
   "settingGroundControlAddressTitle": "Adresse",
   "settingGroundControlAddressDescription": "Laissez vide pour trouver Ground Control sur le réseau. Saisissez-en une pour Ground Control sur un autre réseau.",
   "groundControlLooking": "Recherche de Ground Control sur le réseau.",
-  "groundControlApp": "App Ground Control"
+  "groundControlApp": "App Ground Control",
+  "groundControlFeatures": "Fonctionnalités",
+  "settingGroundControlVoiceMatchTitle": "Voice Match",
+  "settingGroundControlVoiceMatchDescription": "Reconnaissance du locuteur, suppression des autres voix et enregistrement.",
+  "groundControlVisionMatch": "Vision Match",
+  "groundControlVisionMatchDescription": "Reconnaissance faciale avec la caméra de cet appareil.",
+  "groundControlComingSoon": "Bientôt disponible"
 }

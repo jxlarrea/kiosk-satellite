@@ -3440,6 +3440,8 @@ class _CategoryContentState extends State<_CategoryContent> {
     // Ground Control: whether the service was found, who is enrolled and
     // Open for its app.
     groundControlEnabled.key: GroundControlStatusRow(container: container),
+    // Under Features: what Ground Control will do next.
+    groundControlVoiceMatch.key: const GroundControlComingSoonRow(),
     if (widget.category == 'Sendspin')
       sendspinDuckPercent.key: AlbumArtCacheRow(container: container),
     // Under the key's copy box: paste one from another kiosk or make a

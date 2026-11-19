@@ -52,9 +52,23 @@ async function paint(tab) {
   row.after(app);
 }
 
+/* Under Features, after Voice Match: Vision Match, coming soon, as on
+   the device (GroundControlComingSoonRow). */
+function comingSoon(tab) {
+  tab.querySelectorAll('.gc-soon').forEach((r) => r.remove());
+  const link = tab.querySelector('[data-key="ground_control.voice_match"]');
+  if (!link) return;
+  const row = readOnlyRow(voiceText('Vision Match'),
+    voiceText("Facial recognition using this device's camera."), '', false);
+  statusWord(row, voiceText('Coming soon'), 'var(--muted)');
+  row.classList.add('gc-soon');
+  link.after(row);
+}
+
 /* Called after every render of the Ground Control tab. */
 export function renderGroundControl(tab) {
   if (!tab) return;
+  comingSoon(tab);
   paint(tab);
   if (!tab._gcWatch) {
     tab._gcWatch = watchUpdates(['ground-control'], () => paint(tab), { owner: tab });

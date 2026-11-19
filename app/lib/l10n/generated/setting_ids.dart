@@ -2816,4 +2816,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingGroundControlAddressTitle",
     "description": "settingGroundControlAddressDescription",
   },
+  "ground_control.voice_match": {
+    "title": "settingGroundControlVoiceMatchTitle",
+    "description": "settingGroundControlVoiceMatchDescription",
+  },
 };

@@ -30699,5 +30699,41 @@
     "translation": "adfb5a7a68e900a6d1450853f7c19a976e03ff426760f6b023e927801f1b2bef",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "groundControlFeatures": {
+    "source": "0b80393a1b8394d62ea56ea8383443c0b16559cd15aaca27d88575795e8c1a7b",
+    "translation": "25f5ce57a1909740c1f26740d3f32767c9ac8f7122bf01b0845629716fb496eb",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingGroundControlVoiceMatchTitle": {
+    "source": "25715f3fa857b538c64572b44f028bb8dec1e0767800d6816ec0b47c6dddb742",
+    "translation": "1ed06b3c2d4298c3d67359d7f4699a44a8529a0ad2b604b9b5252e42f349fc9b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingGroundControlVoiceMatchDescription": {
+    "source": "f3c6911133f18d42d1d3616770b519f49c8be059be83393553fa1401c1f14cbf",
+    "translation": "6e383d8b376762d782ce6fef7e048cc873e82518ff4999ac6c1aedf1841584f9",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlComingSoon": {
+    "source": "dc6ea06583e7c2c604d32c4990380d47e03a33f84202f80d19d46f399375134d",
+    "translation": "18722bdc7cc31407e0046d71d70c3bf0bc8f49f9c7d40e6294e18aa286eb9b99",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlVisionMatchDescription": {
+    "source": "ac9e4df6009d891f83040da537a14db6d19cba731b62d605616b73fc133857d7",
+    "translation": "9bf2ef14e5e2572bf9ab35d4f5ab837627654ceef9686240acc61d2f1021037f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlVisionMatch": {
+    "source": "69f7b77bc568ba02cbf746e0f58e39421a02ee00111d5d1be86c79573680783a",
+    "translation": "5099079d59b13346238cae88bb0f243dad383c58ca966987158c98fd2d3d77ba",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }
