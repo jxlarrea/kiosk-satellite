@@ -256,12 +256,27 @@ object ImpellerBackend {
         return backend != "vulkan"
     }
 
-    /** Reads the engine's backend line once the first frame is up. */
+    /**
+     * Reads the engine's backend line once the first frame is up, only on
+     * the first start after an install or system update. Reading logcat
+     * makes Android 13 and later ask the user for log access when READ_LOGS
+     * is declared but not granted, so later starts reuse the saved answer.
+     */
     fun noteFirstFrame(context: Context) {
         if (!RendererGuard.impellerOn || thisProcess != null) return
         val app = context.applicationContext
+        val prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val saved = prefs.takeIf { it.getString(STAMP, null) == stamp(app) }
+            ?.getString(BACKEND, null)
+        if (saved != null) {
+            thisProcess = saved
+            return
+        }
         Thread {
-            val backend = read() ?: return@Thread
+            // No line, as when the user declines log access, is kept too, so
+            // the dialog shows at most once per install or system update.
+            // Anything but Vulkan keeps the CPU resize, the safe side.
+            val backend = read() ?: "unknown"
             thisProcess = backend
             app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putString(BACKEND, backend)
