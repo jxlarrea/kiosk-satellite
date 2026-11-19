@@ -9350,6 +9350,19 @@ class UiStringsRu extends UiStrings {
   String get intercomOptionHangupRingingIgnore => 'Игнорировать';
 
   @override
+  String get settingIntercomCallButtonsTitle => 'Кнопки вызова';
+
+  @override
+  String get settingIntercomCallButtonsDescription =>
+      'Кнопки на экране киоска, которому вы звоните. Нажатие выполняет действие на этом киоске.';
+
+  @override
+  String get intercomCallButtonsAdd => 'Добавить кнопку';
+
+  @override
+  String get intercomCallButtonIcon => 'Значок';
+
+  @override
   String get intercomTalkSection => 'Разговор';
 
   @override

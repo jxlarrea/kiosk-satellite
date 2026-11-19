@@ -9450,6 +9450,19 @@ class UiStringsEs extends UiStrings {
   String get intercomOptionHangupRingingIgnore => 'Ignorar';
 
   @override
+  String get settingIntercomCallButtonsTitle => 'Botones de llamada';
+
+  @override
+  String get settingIntercomCallButtonsDescription =>
+      'Botones en la pantalla del kiosko al que llamas. Al tocar uno se ejecuta la acción en este kiosko.';
+
+  @override
+  String get intercomCallButtonsAdd => 'Añadir un botón';
+
+  @override
+  String get intercomCallButtonIcon => 'Icono';
+
+  @override
   String get intercomTalkSection => 'Conversación';
 
   @override

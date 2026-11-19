@@ -953,6 +953,86 @@ void main() {
       expect(intercom.call, isNull);
     });
 
+    test('the caller\'s buttons are kept, three at most', () {
+      final actions = IntercomManager.callActions([
+        {'id': 'gate', 'label': 'Open gate', 'icon': 'mdi:gate-open'},
+        {'id': '', 'label': 'No id'},
+        {'id': 'nolabel', 'label': ' '},
+        {'id': 'gate', 'label': 'Same id'},
+        'not a map',
+        {'id': 'door', 'label': 'x' * 60},
+        {'id': 'light', 'label': 'Porch light'},
+        {'id': 'fourth', 'label': 'One too many'},
+      ]);
+      expect(actions.map((a) => a['id']), ['gate', 'door', 'light']);
+      expect(actions.first['icon'], 'mdi:gate-open');
+      expect(actions.first['state'], 'idle');
+      expect((actions[1]['label'] as String).length, 40);
+      expect(actions[2].containsKey('icon'), isFalse);
+      expect(IntercomManager.callActions('nope'), isEmpty);
+    });
+
+    test('a tap on a caller\'s button goes back to the caller', () async {
+      IntercomManager.actionResultFor = const Duration(milliseconds: 60);
+      addTearDown(
+        () => IntercomManager.actionResultFor = const Duration(seconds: 3),
+      );
+      await build();
+      answers['POST /api/intercom/call/c1'] = (_) => {'ok': true};
+      await commands.execute('intercomIncoming', {
+        'call': 'c1',
+        'kind': 'call',
+        'from': {'id': 'door', 'name': 'Front door', 'port': 2324},
+        'address': '192.168.1.70',
+        'token': tokenFor('c1'),
+        'actions': [
+          {'id': 'gate', 'label': 'Open gate', 'icon': 'mdi:gate-open'},
+        ],
+      });
+      List actions() => (intercom.status()['call'] as Map)['actions'] as List;
+      expect(actions().single['label'], 'Open gate');
+
+      // While it rings.
+      final r = await commands.execute('intercomAction', {'id': 'gate'});
+      expect(r.ok, isTrue, reason: r.error);
+      final told = sent.lastWhere((r) => r.url.path.endsWith('/call/c1'));
+      expect(jsonDecode(told.body), {'action': 'custom', 'id': 'gate'});
+      expect(told.headers['Authorization'], startsWith('Bearer '));
+      expect(intercom.state, 'ringing');
+      expect(actions().single['state'], 'done');
+      await settle(100);
+      expect(actions().single['state'], 'idle');
+
+      // Through the call, and a caller that refuses it.
+      await commands.execute('intercomAnswer', const {});
+      expect(intercom.state, 'in_call');
+      answers.remove('POST /api/intercom/call/c1');
+      final refused = await commands.execute('intercomAction', {'id': 'gate'});
+      expect(refused.ok, isFalse);
+      expect(actions().single['state'], 'failed');
+      expect(intercom.state, 'in_call');
+
+      final unknown = await commands.execute('intercomAction', {'id': 'nope'});
+      expect(unknown.ok, isFalse);
+    });
+
+    test('a broadcast and a kiosk calling out carry no buttons', () async {
+      await build();
+      await commands.execute('intercomIncoming', {
+        'call': 'b1',
+        'kind': 'broadcast',
+        'from': {'id': 'kitchen', 'name': 'Kitchen', 'port': 2324},
+        'address': '192.168.1.70',
+        'token': tokenFor('b1'),
+        'actions': [
+          {'id': 'gate', 'label': 'Open gate'},
+        ],
+      });
+      expect((intercom.status()['call'] as Map).containsKey('actions'), false);
+      final r = await commands.execute('intercomAction', {'id': 'gate'});
+      expect(r.ok, isFalse);
+    });
+
     test('the roster and the call card report the screen they fill', () async {
       await build();
       final views = <bool>[];
@@ -1379,6 +1459,87 @@ void main() {
         expect(intercom.call?.reason, 'cancelled');
       },
     );
+
+    test('the Call buttons go with the call and a tap runs here', () async {
+      await build();
+      await settle();
+      final ran = <Map<String, Object?>>[];
+      intercom.runAction = (action) async {
+        ran.add(action);
+        return action['type'] == 'refresh'
+            ? const CommandResult.fail('nothing to refresh')
+            : const CommandResult.ok();
+      };
+      await settings.set(
+        defs.intercomCallButtons,
+        jsonEncode([
+          {
+            'label': 'Open gate',
+            'icon': 'mdi:gate-open',
+            'action': {
+              'type': 'ha_service',
+              'domain': 'lock',
+              'service': 'unlock',
+              'entityId': 'lock.gate',
+            },
+          },
+          {
+            'label': '',
+            'action': {'type': 'refresh'},
+          },
+          {'label': 'No action', 'action': <String, Object?>{}},
+          {
+            'label': 'Refresh',
+            'action': {'type': 'refresh'},
+          },
+        ]),
+      );
+      answers['POST /api/intercom/call'] = (_) => {'status': 'ringing'};
+      await commands.execute('intercomCall', {'id': 'kitchen'});
+      final req = sent.lastWhere((r) => r.url.path == '/api/intercom/call');
+      final body = jsonDecode(req.body) as Map;
+      expect(body['actions'], [
+        {'id': '0', 'label': 'Open gate', 'icon': 'mdi:gate-open'},
+        {'id': '3', 'label': 'Refresh'},
+      ]);
+      final callId = '${body['call']}';
+      // An edit while the call rings leaves this call's buttons alone.
+      await settings.set(defs.intercomCallButtons, '[]');
+
+      final tap = await commands.execute('intercomSignal', {
+        'call': callId,
+        'action': 'custom',
+        'id': '0',
+        'token': tokenFor(callId),
+      });
+      expect(tap.ok, isTrue, reason: tap.error);
+      expect(ran.single['entityId'], 'lock.gate');
+      final failed = await commands.execute('intercomSignal', {
+        'call': callId,
+        'action': 'custom',
+        'id': '3',
+        'token': tokenFor(callId),
+      });
+      expect(failed.ok, isFalse);
+      final unknown = await commands.execute('intercomSignal', {
+        'call': callId,
+        'action': 'custom',
+        'id': '1',
+        'token': tokenFor(callId),
+      });
+      expect(unknown.ok, isFalse);
+      expect(ran, hasLength(2));
+      expect(intercom.state, 'calling');
+    });
+
+    test('a call without Call buttons sends no actions', () async {
+      await build();
+      await settle();
+      answers['POST /api/intercom/call'] = (_) => {'status': 'ringing'};
+      await commands.execute('intercomCall', {'id': 'kitchen'});
+      final req = sent.lastWhere((r) => r.url.path == '/api/intercom/call');
+      expect((jsonDecode(req.body) as Map).containsKey('actions'), isFalse);
+    });
 
     test('busy, do not disturb and off end the call with the reason', () async {
       await build();

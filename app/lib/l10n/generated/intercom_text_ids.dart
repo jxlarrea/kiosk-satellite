@@ -181,5 +181,11 @@ const intercomTextMessageIds = <String, String>{
   "Switch camera": "intercomSwitchCamera",
   "Your camera is off": "intercomYourCameraOff",
   "Video reconnecting…": "intercomVideoReconnecting",
-  "The camera is off. This kiosk can show video but not send it.": "intercomCameraOffNotice"
+  "The camera is off. This kiosk can show video but not send it.": "intercomCameraOffNotice",
+  "Call buttons": "settingIntercomCallButtonsTitle",
+  "Buttons on the screen of the kiosk you call. A tap runs the action on this kiosk.": "settingIntercomCallButtonsDescription",
+  "Add a button": "intercomCallButtonsAdd",
+  "Icon": "intercomCallButtonIcon",
+  "Label": "alarmsLabel",
+  "Action": "gestureAction"
 };

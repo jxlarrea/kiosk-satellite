@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/events.dart';
+import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/ui/intercom_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -110,6 +113,171 @@ void main() {
       });
     }
   }
+
+  for (final size in [
+    const Size(320, 480),
+    const Size(640, 360),
+    const Size(1280, 800),
+  ]) {
+    for (final state in ['ringing', 'in_call']) {
+      testWidgets('the caller\'s buttons fit and answer a tap at $size '
+          '($state)', (tester) async {
+        await tester.binding.setSurfaceSize(size);
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        SharedPreferences.setMockInitialValues({});
+        final container = AppContainer();
+        await container.settings.init();
+        addTearDown(container.settings.dispose);
+        final commands = <(String, Map<String, Object?>)>[];
+        container.commands.register(
+          Command(
+            name: 'intercomAction',
+            description: 'Record overlay actions',
+            handler: (params) async {
+              commands.add(('intercomAction', Map.of(params)));
+              return const CommandResult.ok();
+            },
+          ),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: IntercomCallOverlay(container: container)),
+          ),
+        );
+        container.bus.publish(
+          IntercomStateChanged({
+            'state': state,
+            'talkMode': 'handsfree',
+            'micGranted': true,
+            'call': {
+              'kind': 'call',
+              'outgoing': false,
+              'peer': {'id': 'door', 'name': 'Front door'},
+              'since': DateTime.now().millisecondsSinceEpoch,
+              'actions': [
+                {'id': 'gate', 'label': 'Open gate', 'state': 'idle'},
+                {'id': 'light', 'label': 'Porch light', 'state': 'done'},
+              ],
+            },
+          }),
+        );
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        final screen = Offset.zero & size;
+        for (final label in ['Open gate', 'Porch light']) {
+          final rect = tester.getRect(find.text(label));
+          expect(screen.contains(rect.topLeft), isTrue, reason: label);
+          expect(screen.contains(rect.bottomRight), isTrue, reason: label);
+        }
+        expect(find.byIcon(Icons.check_circle), findsOneWidget);
+        final end = find.byIcon(Icons.call_end);
+        expect(end.hitTestable(), findsOneWidget);
+        await tester.tap(find.text('Open gate'));
+        await tester.pump();
+        expect(commands.single.$2, {'id': 'gate'});
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+  }
+
+  testWidgets('a call this kiosk placed shows no caller buttons', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final container = AppContainer();
+    await container.settings.init();
+    addTearDown(container.settings.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: IntercomCallOverlay(container: container)),
+      ),
+    );
+    container.bus.publish(
+      IntercomStateChanged({
+        'state': 'in_call',
+        'talkMode': 'handsfree',
+        'micGranted': true,
+        'call': {
+          'kind': 'call',
+          'outgoing': true,
+          'peer': {'id': 'door', 'name': 'Front door'},
+          'actions': [
+            {'id': 'gate', 'label': 'Open gate', 'state': 'idle'},
+          ],
+        },
+      }),
+    );
+    await tester.pump();
+    expect(find.text('Open gate'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Call buttons lists the rows and adds one up to three', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final container = AppContainer();
+    await container.settings.init();
+    addTearDown(container.settings.dispose);
+    await container.settings.set(defs.intercomEnabled, true);
+    await container.settings.set(
+      defs.intercomCallButtons,
+      jsonEncode([
+        {
+          'label': 'Open gate',
+          'icon': '',
+          'action': {'type': 'refresh'},
+        },
+      ]),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [IntercomCallButtonsRow(container: container)],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Open gate'), findsOneWidget);
+    expect(find.text('Add a button'), findsOneWidget);
+    await tester.tap(find.text('Add a button'));
+    await tester.pumpAndSettle();
+    for (final label in ['Label', 'Icon', 'Action']) {
+      expect(
+        find.textContaining(label, findRichText: true),
+        findsWidgets,
+        reason: label,
+      );
+    }
+    await tester.pumpWidget(const SizedBox.shrink());
+
+    // Three rows fill the list: no more to add.
+    await container.settings.set(
+      defs.intercomCallButtons,
+      jsonEncode([
+        for (final label in ['One', 'Two', 'Three'])
+          {
+            'label': label,
+            'action': {'type': 'refresh'},
+          },
+      ]),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [IntercomCallButtonsRow(container: container)],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Three'), findsOneWidget);
+    expect(find.text('Add a button'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   group('a call with a picture', () {
     Map<String, Object?> status({

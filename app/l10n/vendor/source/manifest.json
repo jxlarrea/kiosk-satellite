@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "df94af52ccf124508787f935548f4da9836ff851",
+  "revision": "e1206539fa7520c11944c0013c8f2c34edb1608e",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -124,7 +124,7 @@
     "settings_intercom_answer_en.arb": "59118996cc16690318a3b0a59c3c6455808f7b405606c1ece8491b6b049a8c7d",
     "settings_intercom_general_en.arb": "3a1d3535b855b5658be40b64a8e04c759bb6a1690a28d3283befaeda2c829d29",
     "settings_intercom_kiosks_en.arb": "135b6b4da593ab57a523e70d84494c604d036d6da47d869407d3c03a20ba072e",
-    "settings_intercom_talk_en.arb": "2802b9745497417a7d9a8c3cedd3432429745151232cc1a054c4b24f3e14b33a",
+    "settings_intercom_talk_en.arb": "8217c2816880d610609554ef8be56e8bbd4d34b3be65fb1ea5397c70d21ff582",
     "settings_kiosk_allowed_actions_en.arb": "5a6cc45d7cab99b61e7c59f475fadcc6b78fea740916d0f14c81e459116a35cc",
     "settings_kiosk_general_en.arb": "a45e0a0510b43f5a2f6f0deb5a508ddd31e2fb9ce5a69a1af9f2e4f1a4fe11a3",
     "settings_kiosk_permissions_en.arb": "686c9c49e03d50ec06070dbbf9717bccf2916fc68464d2ac12c4de3cd7f2e337",

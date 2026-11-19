@@ -31155,5 +31155,29 @@
     "translation": "9e7425424d351d848943ce527e5a8c9ab30427235fe586f9596e8e8666ba1817",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "intercomCallButtonIcon": {
+    "source": "0da14a1deaed3b3cbfb003d132794df42854100a562ec4347d50fea56bb29a0d",
+    "translation": "5a3d139a3992fde9ce622f8b9f3d9c76c8a7f4374154b24eed43cac8033abef1",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingIntercomCallButtonsDescription": {
+    "source": "f4f9355b0886853fd3b8f1a1b805bed3c456125d1f5821137e6ec744051344e7",
+    "translation": "6f5660ea3eb6394da9a24be00ab4d02b29a710cab5e17152bc456d1a790ebd4c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingIntercomCallButtonsTitle": {
+    "source": "5dddfe512e3ecff659ad6b792a3e69054142cb666a49d9a70bd8392f75c9460a",
+    "translation": "a519e54ec6ee5e2865cde3e39ae9b4c29b290709dd5428d6894005913ffae657",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "intercomCallButtonsAdd": {
+    "source": "7f3a4a3dc22434fd65c6f87695821f76aff5eb64c0a922811d069eef17c20c93",
+    "translation": "104dcb504a3b6b9045e77061a7b5d29468deba46a7699a5eb95d71ec405c13c5",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

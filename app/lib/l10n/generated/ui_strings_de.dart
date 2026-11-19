@@ -9491,6 +9491,19 @@ class UiStringsDe extends UiStrings {
   String get intercomOptionHangupRingingIgnore => 'Ignorieren';
 
   @override
+  String get settingIntercomCallButtonsTitle => 'Anruftasten';
+
+  @override
+  String get settingIntercomCallButtonsDescription =>
+      'Tasten auf dem Bildschirm des angerufenen Kiosks. Ein Tippen führt die Aktion auf diesem Kiosk aus.';
+
+  @override
+  String get intercomCallButtonsAdd => 'Taste hinzufügen';
+
+  @override
+  String get intercomCallButtonIcon => 'Symbol';
+
+  @override
   String get intercomTalkSection => 'Gespräch';
 
   @override

@@ -9292,6 +9292,19 @@ class UiStringsEn extends UiStrings {
   String get intercomOptionHangupRingingIgnore => 'Ignore';
 
   @override
+  String get settingIntercomCallButtonsTitle => 'Call buttons';
+
+  @override
+  String get settingIntercomCallButtonsDescription =>
+      'Buttons on the screen of the kiosk you call. A tap runs the action on this kiosk.';
+
+  @override
+  String get intercomCallButtonsAdd => 'Add a button';
+
+  @override
+  String get intercomCallButtonIcon => 'Icon';
+
+  @override
   String get intercomTalkSection => 'Talk';
 
   @override

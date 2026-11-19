@@ -268,7 +268,10 @@ class AppContainer {
         unawaited(settings.set(uiDrawerItems, pruned.encode()));
       }
     };
-    intercom = IntercomManager(bus, commands, log, settings);
+    // A Call button tapped on the kiosk this one called runs here, as a
+    // gesture action.
+    intercom = IntercomManager(bus, commands, log, settings)
+      ..runAction = gestures.runGestureAction;
     sharedTimers = SharedTimersManager(
       bus,
       commands,

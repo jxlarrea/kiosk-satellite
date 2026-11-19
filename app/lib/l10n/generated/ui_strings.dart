@@ -16229,6 +16229,30 @@ abstract class UiStrings {
   /// **'Ignore'**
   String get intercomOptionHangupRingingIgnore;
 
+  /// Setting label and section heading. Buttons this kiosk adds to the screen of the kiosk it calls, such as Open gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Call buttons'**
+  String get settingIntercomCallButtonsTitle;
+
+  /// Help below the list of call buttons.
+  ///
+  /// In en, this message translates to:
+  /// **'Buttons on the screen of the kiosk you call. A tap runs the action on this kiosk.'**
+  String get settingIntercomCallButtonsDescription;
+
+  /// Row that adds a call button to the list.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a button'**
+  String get intercomCallButtonsAdd;
+
+  /// Field label in the call button editor: the icon the button shows.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get intercomCallButtonIcon;
+
   /// Section heading.
   ///
   /// In en, this message translates to:

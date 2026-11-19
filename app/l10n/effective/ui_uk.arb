@@ -35149,6 +35149,58 @@
       ]
     }
   },
+  "settingIntercomCallButtonsTitle": "Кнопки виклику",
+  "@settingIntercomCallButtonsTitle": {
+    "context": "Settings > Intercom > Call buttons",
+    "description": "Setting label and section heading. Buttons this kiosk adds to the screen of the kiosk it calls, such as Open gate.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Call buttons"
+      ],
+      "remoteAdmin": [
+        "Intercom > Call buttons"
+      ]
+    }
+  },
+  "settingIntercomCallButtonsDescription": "Кнопки на екрані кіоску, якому ви телефонуєте. Натискання виконує дію на цьому кіоску.",
+  "@settingIntercomCallButtonsDescription": {
+    "context": "Settings > Intercom > Call buttons",
+    "description": "Help below the list of call buttons.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Call buttons"
+      ],
+      "remoteAdmin": [
+        "Intercom > Call buttons"
+      ]
+    }
+  },
+  "intercomCallButtonsAdd": "Додати кнопку",
+  "@intercomCallButtonsAdd": {
+    "context": "Settings > Intercom > Call buttons",
+    "description": "Row that adds a call button to the list.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Call buttons"
+      ],
+      "remoteAdmin": [
+        "Intercom > Call buttons"
+      ]
+    }
+  },
+  "intercomCallButtonIcon": "Значок",
+  "@intercomCallButtonIcon": {
+    "context": "Settings > Intercom > Call buttons",
+    "description": "Field label in the call button editor: the icon the button shows.",
+    "x-locations": {
+      "device": [
+        "Settings > Intercom > Call buttons"
+      ],
+      "remoteAdmin": [
+        "Intercom > Call buttons"
+      ]
+    }
+  },
   "intercomTalkSection": "Розмова",
   "@intercomTalkSection": {
     "context": "Settings > Intercom > Talk",

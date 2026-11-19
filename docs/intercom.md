@@ -61,6 +61,12 @@ During a call the kiosk holds the screensaver, the dashboard rotation and the re
 
 Voice is raw 16 kHz audio over one WebSocket per call, about 256 kbit/s each way on the local network, and reaches the other kiosk in roughly a quarter of a second.
 
+## Call buttons
+
+**Call buttons** puts up to 3 buttons of this kiosk's own on the screen of the kiosk it calls, such as **Open gate** on a kiosk by the gate. Each button has a label, an optional icon and an action picked from the same list as the [gesture actions](gestures.md), such as a Home Assistant service, script or event. The buttons show above the call controls on the other kiosk while the call rings and during the call. A tap there runs the action on this kiosk, the one that placed the call, and the button shows a check once the action ran or an error mark if it failed. A call coming in never shows this kiosk's own buttons, and a broadcast carries none.
+
+The buttons belong to the kiosk they are set up on, so Fleet Management never syncs them. A kiosk on an older version takes the call without the buttons.
+
 ## Video calls
 
 **Video calls** under **Settings > Intercom > Video** is on by default. To send video a kiosk also needs **Enable camera** on. A kiosk with that off, or without a camera, still shows video from others but sends none. Turn off **Video calls** to keep a kiosk to voice only. A device without a screen never takes video.
@@ -164,12 +170,22 @@ The intercom's routes sit in front of the admin login. Every one of them except 
 | Endpoint | Method | Description |
 | --- | --- | --- |
 | `/api/intercom/identity` | GET | `{id, name, version, enabled, key, dnd, video, endpoint: {port, tls}}`. `key` is the first eight hex digits of the key's SHA-256, what the status words compare. Public, one probe a second per client. |
-| `/api/intercom/call` | POST | `{call, kind: call or broadcast, from: {id, name, address, port, version, tls}, video: {camera}}` answers `{status, video}`: `ringing`, `auto`, `listening`, `busy`, `dnd`, `off`, 409 with `status: tls` for incompatible encryption or 403 for another key. Plaintext requests are refused with 426 when encryption is required. |
-| `/api/intercom/call/<id>` | POST | `{action}`: `answer`, `decline`, `missed` from the callee, `cancel` and `hangup` from the caller. |
+| `/api/intercom/call` | POST | `{call, kind: call or broadcast, from: {id, name, address, port, version, tls}, video: {camera}, actions}` answers `{status, video}`: `ringing`, `auto`, `listening`, `busy`, `dnd`, `off`, 409 with `status: tls` for incompatible encryption or 403 for another key. Plaintext requests are refused with 426 when encryption is required. |
+| `/api/intercom/call/<id>` | POST | `{action}`: `answer`, `decline`, `missed` from the callee, `cancel` and `hangup` from the caller. A tap on one of the caller's buttons sends `{action: custom, id}` from the callee. |
 | `/api/intercom/audio/<id>` | WebSocket | `?token=` as above. Binary frames are 80 ms of PCM16 mono 16 kHz from the sender's microphone. Text frames: `{"type": "talk", "on": true}` and `{"type": "end"}`. |
 | `/api/intercom/video/<id>` | WebSocket | `?token=` as above. Opened by the caller as soon as the call rings, when both kiosks take video. Binary frames carry one H.264 frame in Annex B form after a 9 byte header: flags (bit 0 marks a key frame, which carries its SPS and PPS), width and height as 16 bit values and the capture time in milliseconds as a 32 bit value, all big endian. Text frames: `{"type": "camera", "on": true}`, `{"type": "ack", "n": 12}` for each frame received and `{"type": "key"}` to ask for a key frame. A sender with six frames unacknowledged drops frames until the next key frame. |
 
-Both pages use the commands `intercomStatus`, `intercomKiosks`, `intercomCall {id}` or `{kiosk}` (a name or address), `intercomBroadcast`, `intercomHangup`, `intercomTalk {on}`, `intercomMute {on}`, `intercomSwitchCamera`, `intercomOpen`, `intercomSetDnd {on}`, `intercomSetKey {key}` or `{regenerate: true}` and `intercomDismiss`. `intercomAnswer`, `intercomDecline`, `intercomVideoCall {id}` and `intercomCamera {on}` are refused over the remote API: only the kiosk screen answers or turns the camera on. The WebSocket feed carries an `intercom` event with the whole status on every change.
+### Caller buttons
+
+A kiosk sends its [Call buttons](#call-buttons) this way. A caller that bridges something else into the intercom, such as a plugin that turns a door station's SIP call into an intercom call, can put up to 3 buttons of its own on the call screen with `actions` on `/api/intercom/call`:
+
+```json
+"actions": [{"id": "gate", "label": "Open gate", "icon": "mdi:gate-open"}]
+```
+
+`id` and `label` are required. `label` is cut to 40 characters and `icon` is any Material Design Icons name, a touch icon without one. The buttons show above the call controls while the call rings and during the call, on a call coming in only. A tap sends `POST /api/intercom/call/<id>` `{"action": "custom", "id": "gate"}` to the caller's `from.address` and `from.port`, with a bearer token like the other signals. A kiosk caller runs the button's action and answers 200 if it ran. The button shows a check when the caller answers 200 and an error mark otherwise, then returns to normal after 3 seconds. The buttons are in the call's `actions` in `intercomStatus`, each with its `state` (`idle`, `sending`, `done` or `failed`), and the remote admin shows them beside **End call**.
+
+Both pages use the commands `intercomStatus`, `intercomKiosks`, `intercomCall {id}` or `{kiosk}` (a name or address), `intercomBroadcast`, `intercomHangup`, `intercomTalk {on}`, `intercomMute {on}`, `intercomSwitchCamera`, `intercomOpen`, `intercomSetDnd {on}`, `intercomSetKey {key}` or `{regenerate: true}`, `intercomAction {id}` and `intercomDismiss`. `intercomAnswer`, `intercomDecline`, `intercomVideoCall {id}` and `intercomCamera {on}` are refused over the remote API: only the kiosk screen answers or turns the camera on. The WebSocket feed carries an `intercom` event with the whole status on every change.
 
 ## Notes
 

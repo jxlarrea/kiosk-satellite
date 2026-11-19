@@ -2736,6 +2736,12 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.intercomOptionHangupRingingDecline,
       'intercomOptionHangupRingingIgnore' =>
         strings.intercomOptionHangupRingingIgnore,
+      'settingIntercomCallButtonsTitle' =>
+        strings.settingIntercomCallButtonsTitle,
+      'settingIntercomCallButtonsDescription' =>
+        strings.settingIntercomCallButtonsDescription,
+      'intercomCallButtonsAdd' => strings.intercomCallButtonsAdd,
+      'intercomCallButtonIcon' => strings.intercomCallButtonIcon,
       'intercomTalkSection' => strings.intercomTalkSection,
       'settingIntercomVideoTitle' => strings.settingIntercomVideoTitle,
       'settingIntercomVideoDescription' =>

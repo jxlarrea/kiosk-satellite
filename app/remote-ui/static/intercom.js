@@ -7,6 +7,7 @@ import { radioRow } from './views.js';
 import { entitySpec, pickField, pickItem } from './entity_picker.js';
 import { currentPath, showTab } from './tabs.js';
 import { copyBox, hintRow, modalShell, showToast } from './widgets.js';
+import { listSetting } from './plugin_lists.js';
 
 /* ---- Intercom ----
    Kiosks on the same network talk to each other. The generic renderer
@@ -15,8 +16,8 @@ import { copyBox, hintRow, modalShell, showToast } from './widgets.js';
    the same shape the device's own page draws, and redraws on the intercom
    event the device pushes over the socket. Nothing here can talk or take
    a call: a browser opens the microphone only on a secure origin and the
-   remote admin is plain http, and a call is answered on the kiosk. The
-   one thing it can do to a call is end it. */
+   remote admin is plain http, and a call is answered on the kiosk. What
+   it can do to a call is end it or tap one of the caller's buttons. */
 
 let status = null;
 let tickTimer = null;
@@ -182,12 +183,63 @@ function decorateRows(tab) {
     keyRow.insertAdjacentElement('afterend', change);
   }
 
+  // Call buttons in the plugin list editor, as on the device page.
+  const buttonsRow = tab.querySelector('[data-key="intercom.call_buttons"]');
+  if (buttonsRow && !buttonsRow.classList.contains('plugin-list')) drawCallButtons(buttonsRow);
+
   const soundRow = tab.querySelector('[data-key="intercom.ring_sound"]');
   const soundDef = byKey('intercom.ring_sound');
   if (soundRow && soundDef && !soundRow.querySelector('select')) {
     attachSoundUpload(soundRow, attachSoundSelect(soundRow, soundDef));
   }
 
+}
+
+/* ---- call buttons ---- */
+
+// The buttons this kiosk puts on the screen of the kiosk it calls: a
+// label, an icon and the action a tap there runs here. The device's
+// intercomCallButtonsSpec.
+const callButtonsSpec = () => ({
+  key: 'intercom.call_buttons',
+  title: intercomText("Call buttons"),
+  description: intercomText("Buttons on the screen of the kiosk you call. A tap runs the action on this kiosk."),
+  addTitle: intercomText("Add a button"),
+  maxItems: 3,
+  row: { title: 'label', icon: 'icon', subtitle: 'action' },
+  fields: [
+    { key: 'label', type: 'string', title: intercomText("Label"), required: true },
+    { key: 'icon', type: 'icon', title: intercomText("Icon") },
+    { key: 'action', type: 'action', title: intercomText("Action"), required: true },
+  ],
+});
+
+function readCallButtons() {
+  try {
+    const list = JSON.parse(byKey('intercom.call_buttons')?.value ?? '[]');
+    return Array.isArray(list) ? list.filter((row) => row && typeof row === 'object') : [];
+  } catch (_) { return []; }
+}
+
+function drawCallButtons(row) {
+  const block = listSetting({
+    setting: callButtonsSpec(), rows: readCallButtons(), showTitle: false,
+    onChange: async (rows) => {
+      const json = JSON.stringify(rows);
+      const cached = byKey('intercom.call_buttons');
+      if (cached) cached.value = json;
+      let saved = false;
+      try {
+        const response = await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ 'intercom.call_buttons': json }) });
+        saved = response.ok;
+      } catch (_) { /* reported below */ }
+      if (!saved) showToast({ title: intercomText("Intercom"), message: intercomText("The device did not answer."), kind: 'error' });
+      drawCallButtons(block);
+    },
+  });
+  block.dataset.key = 'intercom.call_buttons';
+  block.dataset.searchId = row.dataset.searchId || 'intercom.call_buttons';
+  row.replaceWith(block);
 }
 
 /* ---- the live call ---- */
@@ -217,6 +269,15 @@ function liveCard() {
     tags.push(clock);
   }
   const row = kioskRow({ name: title, address: peer.address, tags });
+  // The caller's own buttons (an Open gate for a door station).
+  if (!call.outgoing && (status.state === 'ringing' || status.state === 'in_call')) {
+    for (const a of call.actions || []) {
+      const mark = { sending: '…', done: ' ✓', failed: ' ✕' }[a.state] || '';
+      const b = button(a.label + mark, 'btn-ghost', () => run('intercomAction', { id: a.id }));
+      b.disabled = a.state === 'sending';
+      row.appendChild(b);
+    }
+  }
   row.appendChild(button(intercomText("End call"), 'btn-ghost', () => run('intercomHangup')));
   card.appendChild(row);
   if (clock) {

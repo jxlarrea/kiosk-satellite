@@ -9395,6 +9395,19 @@ class UiStringsNl extends UiStrings {
   String get intercomOptionHangupRingingIgnore => 'Negeren';
 
   @override
+  String get settingIntercomCallButtonsTitle => 'Belknoppen';
+
+  @override
+  String get settingIntercomCallButtonsDescription =>
+      'Knoppen op het scherm van de kiosk die je belt. Een tik voert de actie uit op deze kiosk.';
+
+  @override
+  String get intercomCallButtonsAdd => 'Knop toevoegen';
+
+  @override
+  String get intercomCallButtonIcon => 'Pictogram';
+
+  @override
   String get intercomTalkSection => 'Praten';
 
   @override

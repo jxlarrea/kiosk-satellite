@@ -145,7 +145,7 @@ Certain settings remain unique to each kiosk regardless of the profile configura
 | Shizuku | `shizuku.install_updates` |
 | Interface language | `ui.language` |
 | Remote admin & fleet | `remote.enabled`, `remote.port`, `remote.tls`, `remote.password`, `remote.fleet_discovery`, `remote.admin_url`, `fleet.*` |
-| Intercom encryption, hang up button and camera on auto answer | `intercom.tls`, `intercom.hangup_key`, `intercom.hangup_key_ringing`, `intercom.auto_answer_camera` |
+| Intercom encryption, hang up button, call buttons and camera on auto answer | `intercom.tls`, `intercom.hangup_key`, `intercom.hangup_key_ringing`, `intercom.call_buttons`, `intercom.auto_answer_camera` |
 | Alarms | `alarms.list`, `alarms.runtime` |
 | Shared timers | `voice.timers_share_with` |
 | Calendar | `calendar.hidden` |

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,8 @@ import '../managers/settings/definitions.dart' as defs;
 import 'compass/compass_center.dart';
 import 'entity_picker.dart';
 import 'kit.dart';
+import 'mdi_icon.dart';
+import 'plugin_list_setting.dart';
 import 'settings_search.dart';
 import 'theme.dart';
 import 'toast.dart';
@@ -210,6 +213,76 @@ class _IntercomSettingsPanelState extends State<IntercomSettingsPanel> {
           ),
         ),
     ];
+  }
+}
+
+/// The list editor of the Call buttons setting spec: a label, an icon
+/// and the action a tap on the other kiosk runs here. Shared by the
+/// device row and its test. The remote admin has its copy in intercom.js.
+Map<String, Object?> intercomCallButtonsSpec(BuildContext context) => {
+  'key': defs.intercomCallButtons.key,
+  'title': intercomText(context, 'Call buttons'),
+  'description': intercomText(
+    context,
+    'Buttons on the screen of the kiosk you call. A tap runs the action on '
+    'this kiosk.',
+  ),
+  'addTitle': intercomText(context, 'Add a button'),
+  'maxItems': IntercomManager.maxCallActions,
+  'row': {'title': 'label', 'icon': 'icon', 'subtitle': 'action'},
+  'fields': [
+    {
+      'key': 'label',
+      'type': 'string',
+      'title': intercomText(context, 'Label'),
+      'required': true,
+    },
+    {'key': 'icon', 'type': 'icon', 'title': intercomText(context, 'Icon')},
+    {
+      'key': 'action',
+      'type': 'action',
+      'title': intercomText(context, 'Action'),
+      'required': true,
+    },
+  ],
+};
+
+/// Call buttons on the Intercom page: the rows inline, each opening the
+/// row editor, saved whole on every change.
+class IntercomCallButtonsRow extends StatefulWidget {
+  const IntercomCallButtonsRow({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<IntercomCallButtonsRow> createState() => _IntercomCallButtonsRowState();
+}
+
+class _IntercomCallButtonsRowState extends State<IntercomCallButtonsRow> {
+  AppContainer get c => widget.container;
+
+  List<Map> get _rows {
+    try {
+      final list = jsonDecode(c.settings.get(defs.intercomCallButtons));
+      return list is List ? list.whereType<Map>().toList() : const [];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PluginListSetting(
+      setting: intercomCallButtonsSpec(context),
+      rows: _rows,
+      services: PluginFieldServices(commands: c.commands, container: c),
+      enabled: c.settings.get(defs.intercomEnabled),
+      showTitle: false,
+      onChanged: (rows) async {
+        await c.settings.set(defs.intercomCallButtons, jsonEncode(rows));
+        if (mounted) setState(() {});
+      },
+    );
   }
 }
 
@@ -1809,6 +1882,31 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
         );
     }
 
+    // The caller's own buttons (an Open gate for a door station), over
+    // the call controls while it rings and through the call.
+    final actions = !outgoing && (state == 'ringing' || state == 'in_call')
+        ? [
+            for (final a
+                in (call['actions'] as List? ?? const []).whereType<Map>())
+              _ActionPill(
+                label: '${a['label'] ?? ''}',
+                icon: a['icon'] is String ? a['icon'] as String : null,
+                state: '${a['state'] ?? 'idle'}',
+                compact: compact,
+                overVideo: overVideo,
+                onTap: () => _run('intercomAction', {'id': '${a['id']}'}),
+              ),
+          ]
+        : const <Widget>[];
+    Widget? actionRow() => actions.isEmpty
+        ? null
+        : Wrap(
+            spacing: compact ? 12 : 16,
+            runSpacing: compact ? 10 : 12,
+            alignment: WrapAlignment.center,
+            children: actions,
+          );
+
     // A short landscape with room across (a phone on its side) keeps the
     // full rhythm and a mid-size name; only a tiny screen packs tight.
     final roomy = width >= 600;
@@ -1974,6 +2072,10 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
         controls: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (actionRow() case final row?) ...[
+              row,
+              SizedBox(height: compact ? 16 : 24),
+            ],
             Wrap(
               spacing: compact ? 28 : 56,
               runSpacing: 16,
@@ -2026,6 +2128,10 @@ class _IntercomCallOverlayState extends State<IntercomCallOverlay> {
                     ),
                   ),
                   SizedBox(height: gap),
+                  if (actionRow() case final row?) ...[
+                    row,
+                    SizedBox(height: compact ? 16 : 28),
+                  ],
                   Wrap(
                     spacing: compact ? 28 : 56,
                     runSpacing: 16,
@@ -2491,6 +2597,96 @@ class _Disc extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One of the caller's buttons on the call screen. A tap shows a spinner
+/// until the caller takes it, then a check or an error mark for a moment.
+class _ActionPill extends StatelessWidget {
+  const _ActionPill({
+    required this.label,
+    required this.icon,
+    required this.state,
+    required this.compact,
+    required this.overVideo,
+    required this.onTap,
+  });
+
+  final String label;
+  final String? icon;
+
+  /// `idle`, `sending`, `done` or `failed`.
+  final String state;
+  final bool compact;
+  final bool overVideo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final bg = overVideo
+        ? const Color(0xC7202124)
+        : scheme.surfaceContainerHighest;
+    final fg = overVideo ? const Color(0xFFE8EAED) : scheme.onSurface;
+    final size = compact ? 20.0 : 26.0;
+    final name = icon;
+    final Widget glyph = switch (state) {
+      'sending' => SizedBox.square(
+        dimension: size,
+        child: Padding(
+          padding: EdgeInsets.all(size / 8),
+          child: CircularProgressIndicator(strokeWidth: 2.5, color: fg),
+        ),
+      ),
+      'done' => Icon(
+        Icons.check_circle,
+        size: size,
+        color: overVideo || Theme.of(context).brightness == Brightness.dark
+            ? ksSage
+            : ksSageOnLight,
+      ),
+      'failed' => Icon(Icons.error, size: size, color: scheme.error),
+      _ when name != null && MdiIcons.looksLikeIcon(name) => MdiIcon(
+        name: name,
+        size: size,
+        color: fg,
+        fallback: Icons.touch_app,
+      ),
+      _ => Icon(Icons.touch_app, size: size, color: fg),
+    };
+    return Material(
+      color: bg,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: state == 'sending' ? null : onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 18 : 28,
+            vertical: compact ? 12 : 16,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              glyph,
+              SizedBox(width: compact ? 8 : 12),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: compact ? 15 : 19,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

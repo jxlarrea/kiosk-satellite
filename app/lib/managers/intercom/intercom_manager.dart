@@ -5,7 +5,7 @@ import 'dart:math' show Random, sqrt;
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' show sha256;
-import 'package:flutter/foundation.dart' show ValueNotifier;
+import 'package:flutter/foundation.dart' show ValueNotifier, visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:permission_handler/permission_handler.dart';
@@ -193,6 +193,17 @@ class IntercomCall {
   /// `off`, `unreachable`, `key`.
   final targets = <String, Map<String, Object?>>{};
 
+  /// Buttons the caller asked for on the call screen (an Open gate for a
+  /// door station), each `{id, label, icon, state}`. A tap goes back to
+  /// the caller as `{action: custom, id}`. `state` is `idle`, `sending`,
+  /// `done` or `failed`.
+  List<Map<String, Object?>> actions = const [];
+
+  /// On a call this kiosk places: the Call buttons it sent, by id, each
+  /// the action a tap on the other kiosk runs here. Taken when the call
+  /// starts, so an edit to the list mid-call leaves this call alone.
+  Map<String, Map<String, Object?>> offered = const {};
+
   int get durationSeconds {
     final s = since;
     if (s == null) return 0;
@@ -217,6 +228,7 @@ class IntercomCall {
     'audioOnly': audioOnly,
     'message': message,
     if (kind == 'broadcast') 'targets': targets.values.toList(),
+    if (actions.isNotEmpty) 'actions': [for (final a in actions) Map.of(a)],
     'video': {
       'peer': peerVideo,
       'camera': cameraOn,
@@ -1236,6 +1248,18 @@ class IntercomManager extends Manager {
       )
       ..register(
         Command(
+          name: 'intercomAction',
+          description:
+              'Tap one of the buttons the caller put on the call screen.',
+          params: {
+            'id':
+                'the button\'s id, from the call\'s actions in intercomStatus',
+          },
+          handler: (p) async => _callAction('${p['id'] ?? ''}'),
+        ),
+      )
+      ..register(
+        Command(
           name: 'intercomHangup',
           description:
               'End the call, cancel one being placed, or close a broadcast.',
@@ -1635,6 +1659,7 @@ class IntercomManager extends Manager {
       outgoing: true,
       peer: _peerOf(k),
     );
+    c.offered = _callButtons();
     _call = c;
     _setState('calling');
     log.info(name, 'calling ${k.name}');
@@ -1647,6 +1672,15 @@ class IntercomManager extends Manager {
         'kind': 'call',
         'from': _selfInfo(),
         if (videoEnabled) 'video': {'camera': withCamera},
+        if (c.offered.isNotEmpty)
+          'actions': [
+            for (final MapEntry(key: id, value: b) in c.offered.entries)
+              {
+                'id': id,
+                'label': b['label'],
+                if ('${b['icon'] ?? ''}'.isNotEmpty) 'icon': b['icon'],
+              },
+          ],
       },
       token: _tokens.issueToken(
         ttl: const Duration(seconds: 60),
@@ -2559,6 +2593,7 @@ class IntercomManager extends Manager {
       outgoing: false,
       peer: peer,
     );
+    if (c.kind == 'call') c.actions = callActions(p['actions']);
     final offer = p['video'];
     c.peerVideo = c.kind == 'call' && videoEnabled && offer is Map;
     c.farCamera = c.peerVideo && (offer as Map)['camera'] == true;
@@ -2698,6 +2733,8 @@ class IntercomManager extends Manager {
       case 'missed':
         await _finish('no_answer');
         return const CommandResult.ok();
+      case 'custom':
+        return _runOffered(c, '${p['id'] ?? ''}');
       case 'cancel':
       case 'hangup':
         await _finish(_state == 'ringing' ? 'cancelled' : 'ended');
@@ -2706,9 +2743,123 @@ class IntercomManager extends Manager {
     return const CommandResult.fail('unknown action');
   }
 
+  /// The caller's buttons from a call coming in: at most [maxCallActions],
+  /// each with an id and a label, the rest dropped.
+  @visibleForTesting
+  static List<Map<String, Object?>> callActions(Object? raw) {
+    if (raw is! List) return const [];
+    final out = <Map<String, Object?>>[];
+    final seen = <String>{};
+    for (final a in raw) {
+      if (out.length == maxCallActions) break;
+      if (a is! Map) continue;
+      final id = '${a['id'] ?? ''}'.trim();
+      final label = '${a['label'] ?? ''}'.trim();
+      if (id.isEmpty || id.length > 64 || label.isEmpty || !seen.add(id)) {
+        continue;
+      }
+      final icon = a['icon'];
+      out.add({
+        'id': id,
+        'label': label.length > 40 ? label.substring(0, 40) : label,
+        if (icon is String && icon.trim().isNotEmpty && icon.length <= 64)
+          'icon': icon.trim(),
+        'state': 'idle',
+      });
+    }
+    return out;
+  }
+
+  static const maxCallActions = 3;
+
+  /// Runs one of the Call buttons a tap on the other kiosk sent back,
+  /// through the gesture actions. Wired by the app container.
+  Future<CommandResult> Function(Map<String, Object?> action)? runAction;
+
+  /// The Call buttons setting as this call sends them: complete rows only,
+  /// at most [maxCallActions], keyed by their place in the list.
+  Map<String, Map<String, Object?>> _callButtons() {
+    Object? list;
+    try {
+      list = jsonDecode(_settings.get(defs.intercomCallButtons));
+    } catch (_) {
+      return const {};
+    }
+    if (list is! List) return const {};
+    final out = <String, Map<String, Object?>>{};
+    for (final (i, row) in list.indexed) {
+      if (out.length == maxCallActions) break;
+      if (row is! Map) continue;
+      final label = '${row['label'] ?? ''}'.trim();
+      final action = row['action'];
+      if (label.isEmpty || action is! Map || action['type'] == null) continue;
+      out['$i'] = {
+        'label': label,
+        'icon': '${row['icon'] ?? ''}'.trim(),
+        'action': action.cast<String, Object?>(),
+      };
+    }
+    return out;
+  }
+
+  /// The kiosk this one called tapped one of its Call buttons: run the
+  /// button's action here. A refusal or a failed action answers 403, which
+  /// the other kiosk shows as the error mark.
+  Future<CommandResult> _runOffered(IntercomCall c, String id) async {
+    if (!c.outgoing || (_state != 'calling' && _state != 'in_call')) {
+      return const CommandResult.fail('not calling');
+    }
+    final button = c.offered[id];
+    final run = runAction;
+    if (button == null || run == null) {
+      return const CommandResult.fail('unknown action');
+    }
+    log.info(name, '${c.peer['name']} tapped ${button['label']}');
+    return run(button['action']! as Map<String, Object?>);
+  }
+
+  /// How long a button shows its result before it can be tapped again.
+  @visibleForTesting
+  static Duration actionResultFor = const Duration(seconds: 3);
+
+  /// A tap on one of the caller's buttons: tells the caller, then shows
+  /// whether it took it.
+  Future<CommandResult> _callAction(String id) async {
+    final c = _call;
+    if (c == null ||
+        c.outgoing ||
+        (_state != 'ringing' && _state != 'in_call')) {
+      return const CommandResult.fail('no call');
+    }
+    final action = c.actions.where((a) => a['id'] == id).firstOrNull;
+    if (action == null) return const CommandResult.fail('unknown action');
+    if (action['state'] == 'sending') return const CommandResult.ok();
+    action['state'] = 'sending';
+    _changed();
+    final ok = await _signalPeer('custom', extra: {'id': id});
+    if (_call != c) return const CommandResult.ok();
+    action['state'] = ok ? 'done' : 'failed';
+    log.info(
+      name,
+      '${action['label']}: ${ok ? 'sent' : 'the caller refused it'}',
+    );
+    _changed();
+    Timer(actionResultFor, () {
+      if (_call != c || action['state'] == 'sending') return;
+      action['state'] = 'idle';
+      _changed();
+    });
+    return ok
+        ? const CommandResult.ok()
+        : const CommandResult.fail('did not answer');
+  }
+
   /// Tells the other side of the current call something. True when it
   /// took it.
-  Future<bool> _signalPeer(String action) async {
+  Future<bool> _signalPeer(
+    String action, {
+    Map<String, Object?> extra = const {},
+  }) async {
     final c = _call;
     if (c == null) return false;
     final url = Uri(
@@ -2719,7 +2870,7 @@ class IntercomManager extends Manager {
     ).toString();
     final res = await _post(
       url,
-      {'action': action},
+      {'action': action, ...extra},
       token: _tokens.issueToken(
         ttl: const Duration(seconds: 60),
         claims: {'intercom': c.id, 'from': _selfId, 'n': _nonce()},

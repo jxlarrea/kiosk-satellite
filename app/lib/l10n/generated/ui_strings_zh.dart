@@ -8891,6 +8891,19 @@ class UiStringsZh extends UiStrings {
   String get intercomOptionHangupRingingIgnore => '忽略';
 
   @override
+  String get settingIntercomCallButtonsTitle => '通话按钮';
+
+  @override
+  String get settingIntercomCallButtonsDescription =>
+      '显示在被呼叫 Kiosk 设备屏幕上的按钮。点击后在此 Kiosk 设备上执行操作。';
+
+  @override
+  String get intercomCallButtonsAdd => '添加按钮';
+
+  @override
+  String get intercomCallButtonIcon => '图标';
+
+  @override
   String get intercomTalkSection => '讲话';
 
   @override
@@ -25021,6 +25034,19 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get intercomOptionHangupRingingIgnore => '忽略';
+
+  @override
+  String get settingIntercomCallButtonsTitle => '通话按钮';
+
+  @override
+  String get settingIntercomCallButtonsDescription =>
+      '显示在被呼叫 Kiosk 设备屏幕上的按钮。点击后在此 Kiosk 设备上执行操作。';
+
+  @override
+  String get intercomCallButtonsAdd => '添加按钮';
+
+  @override
+  String get intercomCallButtonIcon => '图标';
 
   @override
   String get intercomTalkSection => '讲话';

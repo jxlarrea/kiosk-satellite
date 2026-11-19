@@ -12551,6 +12551,26 @@ const intercomHangupKeyRinging = SettingDef<String>(
   perDevice: true,
 );
 
+/// Buttons this kiosk puts on the screen of the kiosk it calls (issue
+/// #1504), such as Open gate on a kiosk by the gate. A JSON list of
+/// `{label, icon, action}`, the action a gesture action object. A tap on
+/// the other kiosk comes back here and runs the action on this kiosk. Kept
+/// on the kiosk it belongs to: an Open gate pushed to every kiosk in a
+/// fleet would show on every call.
+const intercomCallButtons = SettingDef<String>(
+  key: 'intercom.call_buttons',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Call buttons',
+  description:
+      'Buttons on the screen of the kiosk you call. A tap runs the action '
+      'on this kiosk.',
+  category: 'Intercom',
+  section: 'Call buttons',
+  dependsOn: 'intercom.enabled',
+  perDevice: true,
+);
+
 /// Android KeyEvent codes for [intercomHangupKey]'s options.
 const intercomHangupKeyCodes = {
   'volume_up': 24,
@@ -15347,6 +15367,7 @@ const List<SettingDef<Object>> allSettings = [
   intercomMaxCallMinutes,
   intercomHangupKey,
   intercomHangupKeyRinging,
+  intercomCallButtons,
   intercomVideo,
   intercomVideoQuality,
   intercomTls,

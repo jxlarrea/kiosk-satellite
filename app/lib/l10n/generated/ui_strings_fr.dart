@@ -9440,6 +9440,19 @@ class UiStringsFr extends UiStrings {
   String get intercomOptionHangupRingingIgnore => 'Ignorer';
 
   @override
+  String get settingIntercomCallButtonsTitle => 'Boutons d\'appel';
+
+  @override
+  String get settingIntercomCallButtonsDescription =>
+      'Boutons sur l\'écran du kiosque appelé. Un appui exécute l\'action sur ce kiosque.';
+
+  @override
+  String get intercomCallButtonsAdd => 'Ajouter un bouton';
+
+  @override
+  String get intercomCallButtonIcon => 'Icône';
+
+  @override
   String get intercomTalkSection => 'Conversation';
 
   @override
