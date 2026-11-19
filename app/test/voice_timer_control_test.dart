@@ -173,6 +173,52 @@ void main() {
       expect(requests, hasLength(1));
     });
 
+    void finish(String id, {String name = ''}) => esphome.onVoice!('timer', {
+      'type': 3,
+      'id': id,
+      'name': name,
+      'totalSeconds': 600,
+      'secondsLeft': 0,
+      'isActive': false,
+    });
+
+    test('cancelling a ringing timer silences it', () async {
+      start('t1', name: 'pasta');
+      finish('t1', name: 'pasta');
+      expect(await voice.controlTimer('t1', 'cancel'), isNull);
+      expect(voice.timerList(), isEmpty);
+      expect(requests, isEmpty);
+    });
+
+    test('an empty id silences the only ringing timer', () async {
+      start('t1');
+      finish('t1');
+      expect(await voice.controlTimer('', 'cancel'), isNull);
+      expect(voice.timerList(), isEmpty);
+    });
+
+    test('silences one ringing timer and leaves the other', () async {
+      start('t1', name: 'pasta');
+      start('t2', name: 'rice');
+      finish('t1', name: 'pasta');
+      finish('t2', name: 'rice');
+      expect(await voice.controlTimer('', 'cancel'), contains('timer_id'));
+      expect(await voice.controlTimer('t1', 'cancel'), isNull);
+      expect([for (final t in voice.timerList()) t['timer_id']], ['t2']);
+    });
+
+    test('a ringing timer only takes a cancel', () async {
+      start('t1');
+      finish('t1');
+      expect(await voice.controlTimer('t1', 'pause'), isNotNull);
+      expect(voice.timerList(), hasLength(1));
+    });
+
+    test('an empty id with no timer says so', () async {
+      expect(await voice.controlTimer('', 'cancel'), contains('no timer'));
+      expect(requests, isEmpty);
+    });
+
     test('an unknown id is refused', () async {
       expect(await voice.controlTimer('nope', 'cancel'), isNotNull);
       expect(requests, isEmpty);

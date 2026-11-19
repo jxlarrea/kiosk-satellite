@@ -3807,24 +3807,30 @@ class VoiceManager extends Manager {
     if (_sharedRinging) bus.publish(const SharedTimerDismissRequested());
   }
 
-  void _dismissAlert() {
-    for (final id in _ringing) {
+  /// Silences every ringing timer, or only the one with [id].
+  void _dismissAlert([String? id]) {
+    for (final ringing in id == null ? [..._ringing] : [id]) {
+      if (!_ringing.remove(ringing)) continue;
       _timerEvent(
         'dismissed',
-        id: id,
-        name: _ringingNames[id] ?? '',
-        totalSeconds: _ringingTotals[id] ?? 0,
+        id: ringing,
+        name: _ringingNames.remove(ringing) ?? '',
+        totalSeconds: _ringingTotals.remove(ringing) ?? 0,
         secondsLeft: 0,
         active: false,
       );
     }
-    _ringing.clear();
-    _ringingNames.clear();
-    _ringingTotals.clear();
+    if (_ringing.isEmpty) {
+      _ringingNames.clear();
+      _ringingTotals.clear();
+    }
     _alertSpeech = null;
     _speechGen++;
     _pushAlert();
     _publishTimers();
+    // The spoken phrase names the ringing timers, so the ones left get a
+    // new one.
+    if (_ringing.isNotEmpty) unawaited(_speakAlert());
   }
 
   Future<void> _onTimerAction(VoiceTimerAction action) async {
@@ -3850,9 +3856,9 @@ class VoiceManager extends Manager {
   }
 
   /// Pauses, resumes, cancels or adds or removes time from the timer with
-  /// [id], or the kiosk's only timer when [id] is empty. Answers null when
-  /// it worked, else why not. Pausing a paused timer or resuming a running
-  /// one is a no-op.
+  /// [id], or the kiosk's only timer when [id] is empty. Cancelling a
+  /// ringing timer silences it. Answers null when it worked, else why not.
+  /// Pausing a paused timer or resuming a running one is a no-op.
   Future<String?> controlTimer(
     String id,
     String action, {
@@ -3860,15 +3866,20 @@ class VoiceManager extends Manager {
     int minutes = 0,
     int seconds = 0,
   }) async {
-    final _HaTimer? timer;
-    if (id.isNotEmpty) {
-      timer = _timers[id];
-    } else if (_timers.length > 1) {
-      return 'several timers are running, pass a timer_id';
-    } else {
-      timer = _timers.values.firstOrNull;
+    if (id.isEmpty) {
+      final all = [..._timers.keys, ..._ringing];
+      if (all.isEmpty) return 'no timer is running, paused or ringing';
+      if (all.length > 1) return 'several timers are running, pass a timer_id';
+      id = all.single;
     }
-    if (timer == null) return 'no running or paused timer with that id';
+    // A finished timer is gone from Home Assistant and only rings here.
+    if (_ringing.contains(id)) {
+      if (action != 'cancel') return 'that timer has finished';
+      _dismissAlert(id);
+      return null;
+    }
+    final timer = _timers[id];
+    if (timer == null) return 'no timer with that id';
     final amount = <String, Object?>{
       if (hours > 0) 'hours': hours,
       if (minutes > 0) 'minutes': minutes,
@@ -3902,7 +3913,7 @@ class VoiceManager extends Manager {
     if (error == null) return null;
     final twin = _timers.values.any(
       (t) =>
-          t.id != timer!.id &&
+          t.id != timer.id &&
           (timer.name.isNotEmpty
               ? t.name.trim().toLowerCase() == timer.name.trim().toLowerCase()
               : t.name.isEmpty && t.createdSeconds == timer.createdSeconds),
