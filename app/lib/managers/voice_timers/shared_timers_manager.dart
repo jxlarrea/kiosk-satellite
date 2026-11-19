@@ -134,7 +134,14 @@ class SharedTimersManager extends Manager {
 
   int get _now => _clock().millisecondsSinceEpoch;
 
-  bool get sharing => _settings.get(defs.voiceTimersShare);
+  /// Both need Enable timers: off, this kiosk neither shares nor shows
+  /// shared timers, and its switches keep their values for when it is back.
+  bool get sharing =>
+      _settings.get(defs.timersEnabled) && _settings.get(defs.voiceTimersShare);
+
+  bool get _receiving =>
+      _settings.get(defs.timersEnabled) &&
+      _settings.get(defs.voiceTimersReceive);
 
   List<SharedTimerTarget> get targets =>
       SharedTimerTarget.parse(_settings.get(defs.voiceTimersShareWith));
@@ -186,7 +193,15 @@ class SharedTimersManager extends Manager {
       )
       ..add(
         bus.on<SettingChanged>().listen((e) {
-          if (e.key == defs.voiceTimersShare.key ||
+          if (e.key == defs.timersEnabled.key) {
+            _syncLead();
+            _schedulePush();
+            if (!_receiving) {
+              for (final id in _origins.keys.toList()) {
+                _drop(id);
+              }
+            }
+          } else if (e.key == defs.voiceTimersShare.key ||
               e.key == defs.voiceTimersShareWith.key) {
             _syncLead();
             _schedulePush();
@@ -244,7 +259,7 @@ class SharedTimersManager extends Manager {
     return {
       'available': _fleetEnabled,
       'sharing': sharing,
-      'receiving': _settings.get(defs.voiceTimersReceive),
+      'receiving': _receiving,
       'targets': [
         for (final t in picked)
           {
@@ -502,7 +517,7 @@ class SharedTimersManager extends Manager {
   final _last = <String, Map<String, Object?>>{};
 
   CommandResult _receive(Map<String, Object?> p) {
-    if (!_settings.get(defs.voiceTimersReceive)) {
+    if (!_receiving) {
       return const CommandResult.ok({'code': 403, 'error': 'off'});
     }
     final from = p['from'];

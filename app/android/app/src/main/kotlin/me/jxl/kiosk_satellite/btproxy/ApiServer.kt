@@ -88,8 +88,19 @@ internal class ApiServer(
      * no Assist satellite in Home Assistant.
      */
     private val voice: VoiceBackend? = null,
+    /**
+     * Whether the voice assistant offers timers. Off, Home Assistant
+     * registers no timer handler for the device, so its timer intents
+     * answer that the device has no timers and LLM agents get no timer
+     * tools for it.
+     */
+    private val voiceTimers: Boolean = true,
 ) {
-    private val voiceFlags: Int = if (voice != null) VoiceFeature.KIOSK else 0
+    private val voiceFlags: Int = when {
+        voice == null -> 0
+        voiceTimers -> VoiceFeature.KIOSK
+        else -> VoiceFeature.KIOSK and VoiceFeature.TIMERS.inv()
+    }
 
     private val featureFlags: Int = when {
         !bluetoothProxy -> 0

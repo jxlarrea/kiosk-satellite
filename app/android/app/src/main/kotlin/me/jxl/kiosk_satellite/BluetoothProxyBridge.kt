@@ -73,6 +73,7 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                 webserverPort =
                                     call.argument<Int>("webserverPort") ?: 0,
                                 voice = call.argument<Boolean>("voice") ?: false,
+                                timers = call.argument<Boolean>("timers") ?: true,
                                 onVoice = { kind, fields ->
                                     mainHandler.post {
                                         channel.invokeMethod("voice",

@@ -2768,6 +2768,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingShowInKioskMenuTitle",
     "description": "settingUiDrawerItemsDescription",
   },
+  "timers.enabled": {
+    "title": "settingTimersEnabledTitle",
+    "description": "settingTimersEnabledDescription",
+  },
   "timers.show_on_start": {
     "title": "settingTimersShowOnStartTitle",
     "description": "settingTimersShowOnStartDescription",

@@ -33,6 +33,8 @@
   "settingTimersTtsVoiceDescription": "De stem waarmee timers worden uitgesproken.",
   "settingTimersShowBeforeEndTitle": "Timerweergave tonen vlak voor het einde",
   "settingTimersShowBeforeEndDescription": "Hoe lang voor het einde van een timer de timerweergave opent.",
+  "settingTimersEnabledTitle": "Timers inschakelen",
+  "settingTimersEnabledDescription": "Zet timers op deze kiosk met je stem en met de hand.",
   "settingTimersShowOnStartTitle": "Timerweergave tonen wanneer een timer start",
   "settingTimersShowOnStartDescription": "Opent de timerweergave telkens wanneer een timer wordt gestart.",
   "settingTimersPauseScreensaverTitle": "Schermbeveiliging pauzeren terwijl een timer loopt",

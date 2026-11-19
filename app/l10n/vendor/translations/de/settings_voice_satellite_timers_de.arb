@@ -33,6 +33,8 @@
   "settingTimersTtsVoiceDescription": "Die Stimme, die die Timer vorliest.",
   "settingTimersShowBeforeEndTitle": "Timer-Ansicht kurz vor Ablauf anzeigen",
   "settingTimersShowBeforeEndDescription": "Wie lange vor dem Ablauf eines Timers die Timer-Ansicht geöffnet wird.",
+  "settingTimersEnabledTitle": "Timer aktivieren",
+  "settingTimersEnabledDescription": "Stelle Timer auf diesem Kiosk per Sprache und von Hand.",
   "settingTimersShowOnStartTitle": "Timer-Ansicht beim Start eines Timers anzeigen",
   "settingTimersShowOnStartDescription": "Öffnet die Timer-Ansicht bei jedem Start eines Timers.",
   "settingTimersPauseScreensaverTitle": "Bildschirmschoner pausieren, solange ein Timer läuft",

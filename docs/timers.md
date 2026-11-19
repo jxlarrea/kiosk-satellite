@@ -84,12 +84,23 @@ Requirements:
 
 The timer list is sent again every 30 seconds while timers run, which covers an update that got lost. Timers from a kiosk that sends nothing for 100 seconds are dropped.
 
+## Turning timers off
+
+If you handle timers your own way in Home Assistant, such as with custom intents, scripts or an LLM tool, turn off **Enable timers** under **Settings > Timers**. The kiosk then tells Home Assistant that it has no timers:
+
+- Home Assistant answers its own timer sentences on this kiosk with "Device does not support timers", and LLM agents get no timer tools for it. Your own intents and tools are the only ones left.
+- The Timers view, the pills and shared timers are gone. The kiosk does not share its timers and does not show the ones other kiosks share. The **Timers** row of the drawer menu and the Timers view of the Compass layout are hidden, and the **Open the timers** gesture action and `ks://timers` do nothing.
+- The **VS Timers**, **VS Next timer** and **VS Mute timers** entities and the `vs_` timer actions are removed from the kiosk's ESPHome device.
+
+The rest of the Timers page hides while the switch is off and keeps its settings for when timers are back on. Turning the switch on or off restarts the kiosk's ESPHome server, so Home Assistant picks up the change within a few seconds. Timers on the kiosk at that moment are dropped and a ringing timer stops. [Alarms](alarms.md) are not affected.
+
 ## Timer settings
 
 **Settings > Timers** holds everything about timers:
 
 | Group | Setting | What it does |
 |---|---|---|
+| | Enable timers | On by default. Off, the kiosk has no timers and the other rows hide. See [Turning timers off](#turning-timers-off). |
 | | Show Timers view when a timer starts | On by default. Off, starting a timer leaves the screen as it is and the view waits for the near completion mark or the finish. Not shown with **Show timers as pills** on. |
 | | Show Timers view when near completion | From 30 seconds to 5 minutes, 1 minute by default. The Timers view opens again once a running timer has that long left, if it was closed or another view was opened after the timer started. The screensaver is dismissed and held. Each timer does it once. Not shown with **Show timers as pills** on. |
 | | Pause screensaver while a timer runs | Off by default. Keeps the screensaver from starting while the Timers view is open with a running timer on it. A paused timer does not count. The screensaver starts as usual once the view is closed or another view is in front. Not shown with **Show timers as pills** on. |

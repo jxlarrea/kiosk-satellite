@@ -5378,6 +5378,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingTimersShowBeforeEndTitle,
       'settingTimersShowBeforeEndDescription' =>
         strings.settingTimersShowBeforeEndDescription,
+      'settingTimersEnabledTitle' => strings.settingTimersEnabledTitle,
+      'settingTimersEnabledDescription' =>
+        strings.settingTimersEnabledDescription,
       'settingTimersShowOnStartTitle' => strings.settingTimersShowOnStartTitle,
       'settingTimersShowOnStartDescription' =>
         strings.settingTimersShowOnStartDescription,

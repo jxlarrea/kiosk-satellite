@@ -750,21 +750,24 @@ class EspEntitySurface {
           },
         // The timers on the kiosk, running or paused, and when the next
         // running one ends. ESPHome has no attributes, so the list itself
-        // is the vs_list_timers action's answer.
-        {
-          'type': 'sensor',
-          'objectId': 'vs_timers',
-          'name': 'VS Timers',
-          'icon': 'mdi:timer-outline',
-          'accuracyDecimals': 0,
-        },
-        {
-          'type': 'text_sensor',
-          'objectId': 'vs_next_timer',
-          'name': 'VS Next timer',
-          'icon': 'mdi:timer-sand',
-          'deviceClass': 'timestamp',
-        },
+        // is the vs_list_timers action's answer. Only with Enable timers
+        // on (issue #1508).
+        if (_timersNative) ...[
+          {
+            'type': 'sensor',
+            'objectId': 'vs_timers',
+            'name': 'VS Timers',
+            'icon': 'mdi:timer-outline',
+            'accuracyDecimals': 0,
+          },
+          {
+            'type': 'text_sensor',
+            'objectId': 'vs_next_timer',
+            'name': 'VS Next timer',
+            'icon': 'mdi:timer-sand',
+            'deviceClass': 'timestamp',
+          },
+        ],
       ],
       button(
         'postpone_screensaver',
@@ -1100,6 +1103,7 @@ class EspEntitySurface {
             (proximityPresent || e.key != 'screensaver_proximity') &&
             (e.key != 'now_playing_alongside_screensaver' ||
                 nowPlayingListed) &&
+            (e.key != 'vs_mute_timers' || _timersNative) &&
             (!e.key.startsWith('vs_') || _voiceNative))
           {
             'type': 'switch',
@@ -1517,9 +1521,14 @@ class EspEntitySurface {
       _settings.get(defs.voiceRuntime) == 'native' &&
       _settings.get(defs.voiceEnabled);
 
+  /// Native Voice Satellite with Enable timers on: the timer sensors, the
+  /// Mute timers switch and the timer actions exist only then.
+  bool get _timersNative => _voiceNative && _settings.get(defs.timersEnabled);
+
   List<Map<String, Object?>> buildServices() => [
     ..._services,
     if (_voiceNative) ..._voiceServices,
+    if (_timersNative) ..._timerServices,
   ];
 
   /// Native Voice Satellite's actions: `esphome.<kiosk>_vs_wake` and friends.
@@ -1550,6 +1559,10 @@ class EspEntitySurface {
         {'name': 'duration', 'type': 'int'},
       ],
     },
+  ];
+
+  /// The timer actions, with Enable timers on.
+  static const _timerServices = <Map<String, Object?>>[
     // Starts a voice timer on this kiosk through Home Assistant's timer
     // intent, so it lives in Home Assistant like a spoken one.
     {

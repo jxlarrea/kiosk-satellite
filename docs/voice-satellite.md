@@ -221,7 +221,7 @@ The kiosk also adds a **Voice Satellite** text sensor. It reads `idle`, `listeni
 
 With [Voice Match](voice-match.md) on, the kiosk also adds a **Speaker** text sensor with the name of the person talking.
 
-Two more sensors follow the kiosk's timers. **VS Timers** counts the timers that are running or paused. **VS Next timer** is a timestamp of when the soonest running timer ends, so a tile or entity card counts down to it on its own. It reads unknown while no timer runs.
+Two more sensors follow the kiosk's timers. **VS Timers** counts the timers that are running or paused. **VS Next timer** is a timestamp of when the soonest running timer ends, so a tile or entity card counts down to it on its own. It reads unknown while no timer runs. With **Enable timers** off, these two sensors, **VS Mute timers** and the timer actions are not listed. See [Turning timers off](timers.md#turning-timers-off).
 
 And these actions, named after the kiosk's [node name](esphome.md#node-name):
 

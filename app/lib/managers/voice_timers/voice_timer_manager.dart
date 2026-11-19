@@ -238,6 +238,10 @@ class VoiceTimerManager extends Manager {
     // A new lead time, or the view taking over from the pills, counts for
     // the timers already running.
     _settingSub = bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.timersEnabled.key && !enabled) {
+        _dropAll();
+        return;
+      }
       if (e.key == defs.timersShowBeforeEnd.key ||
           e.key == defs.voiceTimerPills.key) {
         _scheduleNear();
@@ -255,6 +259,7 @@ class VoiceTimerManager extends Manager {
           name: 'openTimers',
           description: 'Open the full screen timers view on the kiosk.',
           handler: (_) async {
+            if (!enabled) return const CommandResult.fail('timers are off');
             _autoOpened = false;
             _closeTimer?.cancel();
             await commands.execute('screenOn', const {});
@@ -365,7 +370,7 @@ class VoiceTimerManager extends Manager {
             return const CommandResult.fail('Invalid timer snapshot');
           }
           _entity = entity;
-          _localTimers = parsed.cast<VoiceTimer>();
+          _localTimers = enabled ? parsed.cast<VoiceTimer>() : const [];
           _merge();
           return const CommandResult.ok();
         },
@@ -387,7 +392,7 @@ class VoiceTimerManager extends Manager {
             return const CommandResult.fail('Invalid timer alert');
           }
           _entity = entity;
-          if (raw.isEmpty) {
+          if (raw.isEmpty || !enabled) {
             _clearLocalAlert();
           } else {
             alertHidden.value = p['hidden'] == true;
@@ -432,9 +437,25 @@ class VoiceTimerManager extends Manager {
   /// admin: native Voice Satellite starts it through Home Assistant. With
   /// the integration in the dashboard, timers are started by voice only.
   bool get canStart =>
+      enabled &&
       settings != null &&
       settings!.get(defs.voiceRuntime) == 'native' &&
       settings!.get(defs.voiceEnabled);
+
+  /// Enable timers: off, the kiosk shows and rings no timers at all
+  /// (issue #1508).
+  bool get enabled => settings?.get(defs.timersEnabled) ?? true;
+
+  /// Takes every timer off this kiosk, its own and the shared ones, and
+  /// closes the view.
+  void _dropAll() {
+    final hadShared = _shared.values.any((s) => s.alerts.isNotEmpty);
+    _shared.clear();
+    _localTimers = const [];
+    visible.value = false;
+    _clearLocalAlert();
+    if (hadShared) bus.publish(const SharedTimerAlertChanged(false));
+  }
 
   /// Whether [timer]'s time can be changed from here: a shared one is
   /// changed on the kiosk that owns it, this kiosk's own needs [canStart].
@@ -563,6 +584,10 @@ class VoiceTimerManager extends Manager {
     String? speech,
     String speechText = '',
   }) {
+    if (!enabled) {
+      timers = const [];
+      alerts = const [];
+    }
     final source = 'shared:$originId';
     VoiceTimer own(VoiceTimer t, {bool finished = false}) => VoiceTimer(
       id: '$source/${t.id}',

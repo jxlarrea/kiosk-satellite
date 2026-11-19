@@ -15894,6 +15894,13 @@ class UiStringsDe extends UiStrings {
       'Wie lange vor dem Ablauf eines Timers die Timer-Ansicht geöffnet wird.';
 
   @override
+  String get settingTimersEnabledTitle => 'Timer aktivieren';
+
+  @override
+  String get settingTimersEnabledDescription =>
+      'Stelle Timer auf diesem Kiosk per Sprache und von Hand.';
+
+  @override
   String get settingTimersShowOnStartTitle =>
       'Timer-Ansicht beim Start eines Timers anzeigen';
 

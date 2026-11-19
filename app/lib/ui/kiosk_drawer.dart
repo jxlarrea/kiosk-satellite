@@ -85,7 +85,8 @@ class KioskDrawer extends StatelessWidget {
             c.intercom.enabled &&
             c.intercom.available,
       'alarms' => allowed(defs.kioskAllowAlarms),
-      'timers' => allowed(defs.kioskAllowTimers),
+      'timers' =>
+        allowed(defs.kioskAllowTimers) && c.settings.get(defs.timersEnabled),
       'calendar' => allowed(defs.kioskAllowCalendar),
       // Once some source is set up to browse.
       'music_library' =>

@@ -33,6 +33,8 @@
   "settingTimersTtsVoiceDescription": "用于播报计时器的声音。",
   "settingTimersShowBeforeEndTitle": "计时器即将结束时显示计时器视图",
   "settingTimersShowBeforeEndDescription": "计时器结束前多久打开计时器视图。",
+  "settingTimersEnabledTitle": "启用计时器",
+  "settingTimersEnabledDescription": "通过语音或手动在此 Kiosk 上设置计时器。",
   "settingTimersShowOnStartTitle": "计时器开始时显示计时器视图",
   "settingTimersShowOnStartDescription": "每次启动计时器时打开计时器视图。",
   "settingTimersPauseScreensaverTitle": "计时器运行时暂停屏保",

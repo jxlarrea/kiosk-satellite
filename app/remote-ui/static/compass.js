@@ -181,6 +181,7 @@ function configurable(kind) {
       return setting('launcher.enabled') === true && apps.length > 0;
     }
     case 'intercom': return setting('intercom.enabled') === true;
+    case 'timers': return setting('timers.enabled') !== false;
     default: return true;
   }
 }

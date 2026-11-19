@@ -15734,6 +15734,13 @@ class UiStringsUk extends UiStrings {
       'За скільки до завершення таймера відкривається вигляд таймерів.';
 
   @override
+  String get settingTimersEnabledTitle => 'Увімкнути таймери';
+
+  @override
+  String get settingTimersEnabledDescription =>
+      'Ставте таймери на цьому кіоску голосом і вручну.';
+
+  @override
   String get settingTimersShowOnStartTitle =>
       'Показувати вигляд таймерів під час запуску таймера';
 

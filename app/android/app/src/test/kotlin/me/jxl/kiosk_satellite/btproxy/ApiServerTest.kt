@@ -203,6 +203,51 @@ class ApiServerTest {
     }
 
     @Test
+    fun deviceInfoOffersTimersOnlyWhileTimersAreOn() {
+        val voice = object : VoiceBackend {
+            override fun onSubscribed(subscribed: Boolean) {}
+            override fun onPipelineResponse(port: Int, error: Boolean) {}
+            override fun onEvent(type: Int, data: Map<String, String>) {}
+            override fun onTimerEvent(event: VoiceTimerEvent) {}
+            override fun onAnnounce(announcement: VoiceAnnouncement) {}
+            override fun onConfigurationRequest(
+                external: List<ExternalWakeWord>,
+                reply: (VoiceConfiguration) -> Unit,
+            ) {}
+            override fun onSetConfiguration(active: List<String>) {}
+        }
+        fun voiceFlags(timers: Boolean): Int {
+            val s = ApiServer(
+                identity, "02:AA:BB:CC:DD:EE", 0, null, RecordingBackend(),
+                log = {}, voice = voice, voiceTimers = timers,
+            )
+            s.start()
+            try {
+                val c = PlainClient(s.boundPort)
+                try {
+                    c.send(Msg.HELLO_REQUEST); c.read()
+                    c.send(Msg.CONNECT_REQUEST); c.read()
+                    c.send(Msg.DEVICE_INFO_REQUEST)
+                    val info = c.read()
+                    var flags = 0
+                    ProtoReader(info.payload).let { r ->
+                        while (r.next()) if (r.field == 17) flags = r.asInt()
+                    }
+                    return flags
+                } finally {
+                    c.close()
+                }
+            } finally {
+                s.stop()
+            }
+        }
+        assertEquals(VoiceFeature.KIOSK, voiceFlags(timers = true))
+        // Off, only the timers bit goes: Home Assistant keeps the
+        // satellite and its announcements and registers no timer handler.
+        assertEquals(VoiceFeature.KIOSK - VoiceFeature.TIMERS, voiceFlags(timers = false))
+    }
+
+    @Test
     fun subscribeForwardsAdvertisementsAndDedupsRssiOnly() {
         val backend = RecordingBackend()
         val s = startServer(backend)

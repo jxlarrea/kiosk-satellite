@@ -349,6 +349,10 @@ class BtProxyManager extends Manager {
       'voice.runtime',
       'voice.enabled',
       'voice.wake_word_engine',
+      // Timers on or off: Home Assistant reads whether the satellite
+      // offers timers at connect, and the timer entities and actions
+      // follow the switch (issue #1508).
+      'timers.enabled',
       // The Speaker sensor exists only while Voice Match and its Speaker
       // sensor switch are on.
       'ground_control.enabled',
@@ -814,6 +818,9 @@ class BtProxyManager extends Manager {
         'webserverPort': webserverPort,
         // The Assist satellite: Home Assistant creates it on this device.
         'voice': _voiceWanted,
+        // Off, the satellite offers no timers, so Home Assistant's timer
+        // intents and LLM timer tools leave this kiosk alone.
+        'timers': _settings.get(defs.timersEnabled),
       });
       _voiceLive = _voiceWanted;
       _running = true;

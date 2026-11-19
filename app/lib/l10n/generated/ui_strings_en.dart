@@ -15573,6 +15573,13 @@ class UiStringsEn extends UiStrings {
       'How long before a timer ends the Timers view opens.';
 
   @override
+  String get settingTimersEnabledTitle => 'Enable timers';
+
+  @override
+  String get settingTimersEnabledDescription =>
+      'Set timers on this kiosk by voice and by hand.';
+
+  @override
   String get settingTimersShowOnStartTitle =>
       'Show Timers view when a timer starts';
 

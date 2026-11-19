@@ -2552,43 +2552,47 @@ class _CategoryContentState extends State<_CategoryContent> {
             replace: _rowReplacements(container),
             after: _rowExtras(container),
           ),
-          SectionHeading(l10n(context).voiceTimersViewTitle),
-          SearchLandingTarget(
-            id: 'x:timers_manage',
-            child: TimersManageCard(container: container),
-          ),
-          ..._sectionedCards(
-            container,
-            [
-              for (final def in _inlineDefsFor('Timers'))
-                if (def.section != null) def,
-            ],
-            () => setState(() {}),
-            replace: _rowReplacements(container),
-            after: _rowExtras(container),
-          ),
-          // Timers by voice are Home Assistant's own, so this group only
-          // points at the guide.
-          SectionHeading(l10n(context).timersVoiceSection),
-          SettingsCard(
-            children: [
-              SearchLandingTarget(
-                id: 'x:timers_voice',
-                child: SettingsRow(
-                  leading: const Icon(Icons.record_voice_over_outlined),
-                  title: Text(l10n(context).timersVoiceManage),
-                  subtitle: Text(l10n(context).timersVoiceHint),
-                  trailing: const Icon(Icons.open_in_new),
-                  onTap: () {
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                    container.commands.execute('showLinkPage', {
-                      'url': _voiceTimersDocsUrl,
-                    });
-                  },
+          // With Enable timers off the page is the switch alone. Mirrored
+          // in timers.js.
+          if (container.settings.get(timersEnabled)) ...[
+            SectionHeading(l10n(context).voiceTimersViewTitle),
+            SearchLandingTarget(
+              id: 'x:timers_manage',
+              child: TimersManageCard(container: container),
+            ),
+            ..._sectionedCards(
+              container,
+              [
+                for (final def in _inlineDefsFor('Timers'))
+                  if (def.section != null) def,
+              ],
+              () => setState(() {}),
+              replace: _rowReplacements(container),
+              after: _rowExtras(container),
+            ),
+            // Timers by voice are Home Assistant's own, so this group only
+            // points at the guide.
+            SectionHeading(l10n(context).timersVoiceSection),
+            SettingsCard(
+              children: [
+                SearchLandingTarget(
+                  id: 'x:timers_voice',
+                  child: SettingsRow(
+                    leading: const Icon(Icons.record_voice_over_outlined),
+                    title: Text(l10n(context).timersVoiceManage),
+                    subtitle: Text(l10n(context).timersVoiceHint),
+                    trailing: const Icon(Icons.open_in_new),
+                    onTap: () {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      container.commands.execute('showLinkPage', {
+                        'url': _voiceTimersDocsUrl,
+                      });
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ] else if (widget.category == 'Alarms') ...[
           // The Drawer menu items link on its own untitled card, then the list
           // itself (the full screen overlay, opened from here), then the

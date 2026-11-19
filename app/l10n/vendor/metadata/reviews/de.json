@@ -30984,5 +30984,17 @@
     "translation": "9090032cff5a339a2284d0720d3ddf65ec84c9dbaa02df17728e9a00e01ddf66",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingTimersEnabledTitle": {
+    "source": "993f96a5fec4d6be2f91d9708340d3d2f9e834abe06391779ce08a53003b8be0",
+    "translation": "ab7c98a68d306f3605537d41024c252c7e4fadc02ec587c353b5186e7b0fde40",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersEnabledDescription": {
+    "source": "78887efb754cb2938e4b5f48ae24664822549f7aa97b1e5945228d671e9ef1c3",
+    "translation": "25b303374066b92f3d90608dfffc6dc8415340b22af31bb8e82e5814a3ae682a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

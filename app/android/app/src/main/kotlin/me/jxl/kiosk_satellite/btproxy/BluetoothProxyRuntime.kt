@@ -67,6 +67,11 @@ internal object BluetoothProxyRuntime {
         /** Serve the voice assistant: the kiosk becomes an Assist satellite. */
         val voice: Boolean = false,
         /**
+         * Whether the satellite offers timers. Off, Home Assistant keeps its
+         * timer intents and LLM timer tools away from this kiosk.
+         */
+        val timers: Boolean = true,
+        /**
          * Where voice messages from Home Assistant land: a kind ("subscribed",
          * "response", "event", "timer", "announce", "setConfiguration") and
          * its fields.
@@ -157,6 +162,7 @@ internal object BluetoothProxyRuntime {
             rssiOf = nearby::lastRssi,
             entities = hub,
             voice = if (config.voice) voiceBackend(config) else null,
+            voiceTimers = config.timers,
         )
 
         try {
@@ -182,7 +188,8 @@ internal object BluetoothProxyRuntime {
             (if (connections != null)
                 " (connections enabled, ${connections.connectionLimit} slots)" else "") +
             (if (hub != null) " (${config.entities.size} entities)" else "") +
-            (if (config.voice) " (voice assistant)" else ""))
+            (if (config.voice) " (voice assistant)" else "") +
+            (if (config.voice && !config.timers) " (no timers)" else ""))
     }
 
     /** The voice backend: every Home Assistant message handed to the Dart side. */

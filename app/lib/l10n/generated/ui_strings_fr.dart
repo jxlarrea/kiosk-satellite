@@ -15869,6 +15869,13 @@ class UiStringsFr extends UiStrings {
       'Combien de temps avant la fin d\'un minuteur la vue des minuteurs s\'ouvre.';
 
   @override
+  String get settingTimersEnabledTitle => 'Activer les minuteurs';
+
+  @override
+  String get settingTimersEnabledDescription =>
+      'Réglez des minuteurs sur ce kiosque à la voix et à la main.';
+
+  @override
   String get settingTimersShowOnStartTitle =>
       'Afficher la vue des minuteurs au démarrage d\'un minuteur';
 

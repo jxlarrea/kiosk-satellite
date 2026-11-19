@@ -27191,6 +27191,18 @@ abstract class UiStrings {
   /// **'How long before a timer ends the Timers view opens.'**
   String get settingTimersShowBeforeEndDescription;
 
+  /// Master switch: whether this kiosk has timers at all. Off, Home Assistant cannot set timers on it and the Timers view, pills and shared timers are gone.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable timers'**
+  String get settingTimersEnabledTitle;
+
+  /// Description of that switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Set timers on this kiosk by voice and by hand.'**
+  String get settingTimersEnabledDescription;
+
   /// Switch: whether starting a timer opens the full screen timers view.
   ///
   /// In en, this message translates to:

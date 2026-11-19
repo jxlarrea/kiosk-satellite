@@ -1274,6 +1274,7 @@ const kioskAllowTimers = SettingDef<bool>(
   section: 'Allowed Actions',
   subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
+  alsoDependsOn: 'timers.enabled',
 );
 
 const kioskAllowCalendar = SettingDef<bool>(
@@ -8728,6 +8729,21 @@ const voiceAnnouncementLinger = SettingDef<num>(
   dependsOn: 'voice.enabled',
 );
 
+/// The master switch for timers on this kiosk. Off, the ESPHome voice
+/// assistant stops offering timers, so Home Assistant's timer intents and
+/// its LLM timer tools leave this kiosk to your own setup (issue #1508).
+/// The Timers view, the pills, shared timers and the timer entities and
+/// actions go with it. Home Assistant reads the feature at connect, so a
+/// flip restarts the ESPHome server.
+const timersEnabled = SettingDef<bool>(
+  key: 'timers.enabled',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable timers',
+  description: 'Set timers on this kiosk by voice and by hand.',
+  category: 'Timers',
+);
+
 const voiceTimerPills = SettingDef<bool>(
   key: 'voice.timer_pills',
   type: SettingType.boolean,
@@ -8737,6 +8753,7 @@ const voiceTimerPills = SettingDef<bool>(
       'Timers float over the screen instead of opening the full screen view.',
   category: 'Timers',
   section: 'Pills',
+  dependsOn: 'timers.enabled',
 );
 
 const voiceTimerNameInPill = SettingDef<bool>(
@@ -8789,6 +8806,7 @@ const voiceMuteTimers = SettingDef<bool>(
   category: 'Timers',
   section: 'When a timer ends',
   dependsOn: 'voice.enabled',
+  alsoDependsOn: 'timers.enabled',
 );
 
 /// The choices of Silence after and Dismiss after, in seconds. 0 never
@@ -8816,6 +8834,7 @@ const timersSilenceAfter = SettingDef<String>(
   description: 'The finished timer stays on screen until it is dismissed.',
   category: 'Timers',
   section: 'When a timer ends',
+  dependsOn: 'timers.enabled',
   options: _timerAlertLimits,
   optionLabels: _timerAlertLimitLabels,
 );
@@ -8831,6 +8850,7 @@ const timersDismissAfter = SettingDef<String>(
   description: 'Clears a finished timer as if Dismiss was tapped.',
   category: 'Timers',
   section: 'When a timer ends',
+  dependsOn: 'timers.enabled',
   options: _timerAlertLimits,
   optionLabels: _timerAlertLimitLabels,
 );
@@ -8855,6 +8875,7 @@ const voiceTimerSpeak = SettingDef<bool>(
   category: 'Timers',
   section: 'When a timer ends',
   dependsOn: 'voice.enabled',
+  alsoDependsOn: 'timers.enabled',
 );
 
 const voiceTimerPhrase = SettingDef<String>(
@@ -8938,6 +8959,7 @@ const timersMenu = SettingDef<bool>(
   title: 'Show in the kiosk menu',
   description: 'Choose the items the drawer menu shows and their order.',
   category: 'Timers',
+  dependsOn: 'timers.enabled',
   linksTo: 'ui.drawer_items',
 );
 
@@ -8994,6 +9016,7 @@ const voiceTimersShare = SettingDef<bool>(
   category: 'Timers',
   section: 'Shared timers',
   dependsOn: 'voice.enabled',
+  alsoDependsOn: 'timers.enabled',
 );
 
 /// The kiosks this one shares its timers with: a JSON list of
@@ -9019,6 +9042,7 @@ const voiceTimersReceive = SettingDef<bool>(
   description: 'Timers shared by other kiosks show and ring here.',
   category: 'Timers',
   section: 'Shared timers',
+  dependsOn: 'timers.enabled',
 );
 
 const voiceWakeSound = SettingDef<bool>(
@@ -9077,6 +9101,7 @@ const voiceChimeTimer = SettingDef<String>(
   description: 'Repeats when a timer finishes until you dismiss it.',
   category: 'Timers',
   section: 'When a timer ends',
+  dependsOn: 'timers.enabled',
   perDevice: true,
   validator: validateNotificationSound,
 );
@@ -9158,6 +9183,7 @@ const voiceChimeTimerVolume = SettingDef<num>(
   description: 'A share of the assistant volume.',
   category: 'Timers',
   section: 'When a timer ends',
+  dependsOn: 'timers.enabled',
 );
 
 const voiceChimeAnnounceVolume = SettingDef<num>(
@@ -14393,6 +14419,7 @@ const ledTimersEnabled = SettingDef<bool>(
   category: 'LED Control',
   section: 'Timers',
   dependsOn: 'led.enabled',
+  alsoDependsOn: 'timers.enabled',
 );
 
 const ledTimersBrightness = SettingDef<num>(
@@ -15142,6 +15169,7 @@ const List<SettingDef<Object>> allSettings = [
   voiceAnnouncementLinger,
   // The Timers page, in its groups' order: the untitled card, Shared
   // timers, When a timer ends, Text to Speech, Pills.
+  timersEnabled,
   timersShowOnStart,
   timersShowBeforeEnd,
   timersPauseScreensaver,

@@ -30800,5 +30800,17 @@
     "translation": "7ee2753a74cc3ae69fa95b725ed4d3ed938359eb725386b573b83ce14d664132",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingTimersEnabledTitle": {
+    "source": "993f96a5fec4d6be2f91d9708340d3d2f9e834abe06391779ce08a53003b8be0",
+    "translation": "1555675342dc353575cebbedd9f5bbb26089b9618379357ed69a1d2ce27e13af",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingTimersEnabledDescription": {
+    "source": "78887efb754cb2938e4b5f48ae24664822549f7aa97b1e5945228d671e9ef1c3",
+    "translation": "cfcb5c5db2817a6f71ba26f2fc8b6e7d7ea22c3d34a100e9d4e71e202e02c71d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

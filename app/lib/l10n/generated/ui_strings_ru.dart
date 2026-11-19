@@ -15671,6 +15671,13 @@ class UiStringsRu extends UiStrings {
       'За сколько до завершения таймера открывается вид таймеров.';
 
   @override
+  String get settingTimersEnabledTitle => 'Включить таймеры';
+
+  @override
+  String get settingTimersEnabledDescription =>
+      'Ставьте таймеры на этом киоске голосом и вручную.';
+
+  @override
   String get settingTimersShowOnStartTitle =>
       'Показывать вид таймеров при запуске таймера';
 

@@ -1089,7 +1089,8 @@ class CompassTile {
 /// its view switched on, a camera a camera view, the App Launcher its
 /// apps and the intercom the intercom.
 bool compassKindConfigurable(AppContainer c, String kind) => switch (kind) {
-  'dashboard' || 'menu' || 'calendar' || 'alarms' || 'timers' => true,
+  'dashboard' || 'menu' || 'calendar' || 'alarms' => true,
+  'timers' => c.settings.get(defs.timersEnabled),
   'music_library' => c.musicLibrary.available.isNotEmpty,
   'now_playing' =>
     c.settings.get(defs.sendspinPlayerActive) &&

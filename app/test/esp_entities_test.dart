@@ -925,6 +925,37 @@ void main() {
       );
     });
 
+    test('go with Enable timers, with Mute timers and the actions', () async {
+      // Issue #1508: a kiosk that leaves timers to the user's own setup
+      // lists none of them.
+      await settings.set(defs.voiceRuntime, 'native');
+      await settings.set(defs.voiceEnabled, true);
+      const timerEntities = {'vs_timers', 'vs_next_timer', 'vs_mute_timers'};
+      const timerActions = {
+        'vs_start_timer',
+        'vs_list_timers',
+        'vs_pause_timer',
+        'vs_resume_timer',
+        'vs_cancel_timer',
+        'vs_add_time',
+        'vs_remove_time',
+      };
+      Future<Set<String>> ids() async => {
+        for (final d in await surface.build()) '${d['objectId']}',
+      };
+      Set<String> actions() => {
+        for (final s in surface.buildServices()) '${s['name']}',
+      };
+      expect(await ids(), containsAll(timerEntities));
+      expect(actions(), containsAll(timerActions));
+      await settings.set(defs.timersEnabled, false);
+      expect((await ids()).intersection(timerEntities), isEmpty);
+      expect(actions().intersection(timerActions), isEmpty);
+      // The rest of Voice Satellite stays.
+      expect(await ids(), contains('vs_mute'));
+      expect(actions(), contains('vs_cancel'));
+    });
+
     test('count pending timers and show the soonest running end', () async {
       await settings.set(defs.voiceRuntime, 'native');
       await settings.set(defs.voiceEnabled, true);

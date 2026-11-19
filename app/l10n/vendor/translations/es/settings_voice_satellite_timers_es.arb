@@ -33,6 +33,8 @@
   "settingTimersTtsVoiceDescription": "La voz que lee los temporizadores.",
   "settingTimersShowBeforeEndTitle": "Mostrar la vista de temporizadores cerca del final",
   "settingTimersShowBeforeEndDescription": "Cuánto antes de que termine un temporizador se abre la vista de temporizadores.",
+  "settingTimersEnabledTitle": "Activar temporizadores",
+  "settingTimersEnabledDescription": "Pon temporizadores en este kiosko por voz y a mano.",
   "settingTimersShowOnStartTitle": "Mostrar la vista de temporizadores al iniciar un temporizador",
   "settingTimersShowOnStartDescription": "Abre la vista de temporizadores cada vez que se inicia un temporizador.",
   "settingTimersPauseScreensaverTitle": "Pausar el protector de pantalla mientras hay un temporizador en marcha",

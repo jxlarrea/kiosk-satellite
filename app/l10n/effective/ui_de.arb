@@ -56982,6 +56982,32 @@
       ]
     }
   },
+  "settingTimersEnabledTitle": "Timer aktivieren",
+  "@settingTimersEnabledTitle": {
+    "context": "Settings > Timers",
+    "description": "Master switch: whether this kiosk has timers at all. Off, Home Assistant cannot set timers on it and the Timers view, pills and shared timers are gone.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersEnabledDescription": "Stelle Timer auf diesem Kiosk per Sprache und von Hand.",
+  "@settingTimersEnabledDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that switch.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "settingTimersShowOnStartTitle": "Timer-Ansicht beim Start eines Timers anzeigen",
   "@settingTimersShowOnStartTitle": {
     "context": "Settings > Timers",

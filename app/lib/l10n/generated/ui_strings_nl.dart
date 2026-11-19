@@ -15752,6 +15752,13 @@ class UiStringsNl extends UiStrings {
       'Hoe lang voor het einde van een timer de timerweergave opent.';
 
   @override
+  String get settingTimersEnabledTitle => 'Timers inschakelen';
+
+  @override
+  String get settingTimersEnabledDescription =>
+      'Zet timers op deze kiosk met je stem en met de hand.';
+
+  @override
   String get settingTimersShowOnStartTitle =>
       'Timerweergave tonen wanneer een timer start';
 

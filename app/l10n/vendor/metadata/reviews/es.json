@@ -25628,5 +25628,15 @@
     "source": "69f7b77bc568ba02cbf746e0f58e39421a02ee00111d5d1be86c79573680783a",
     "translation": "5099079d59b13346238cae88bb0f243dad383c58ca966987158c98fd2d3d77ba",
     "author": "Xavier Larrea"
+  },
+  "settingTimersEnabledDescription": {
+    "source": "78887efb754cb2938e4b5f48ae24664822549f7aa97b1e5945228d671e9ef1c3",
+    "translation": "db3ed3801f03699789a57c478143f00655455d35767c5e7918e8df5504b88ff9",
+    "author": "Xavier Larrea"
+  },
+  "settingTimersEnabledTitle": {
+    "source": "993f96a5fec4d6be2f91d9708340d3d2f9e834abe06391779ce08a53003b8be0",
+    "translation": "570084c0241081aa53b266b4b306d140e3d387d1021b84c3860921c9195873f3",
+    "author": "Xavier Larrea"
   }
 }

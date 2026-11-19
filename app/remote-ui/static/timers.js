@@ -312,6 +312,8 @@ export async function renderTimersPage({ fetch = true } = {}) {
   if (!tab) return;
   if (fetch || !status) await loadStatus();
   tab.querySelectorAll('.timers-built').forEach((n) => n.remove());
+  // With Enable timers off the page is the switch alone, as on the device.
+  if ((state.settings || []).find((s) => s.key === 'timers.enabled')?.value === false) return;
   // The text to speech engine, language and voice as Alarms picks them.
   attachTtsPickers('timers');
   timerCards(tab);

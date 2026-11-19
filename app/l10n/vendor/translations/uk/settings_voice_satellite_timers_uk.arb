@@ -33,6 +33,8 @@
   "settingTimersTtsVoiceDescription": "Голос, який озвучує таймери.",
   "settingTimersShowBeforeEndTitle": "Показувати вигляд таймерів перед завершенням",
   "settingTimersShowBeforeEndDescription": "За скільки до завершення таймера відкривається вигляд таймерів.",
+  "settingTimersEnabledTitle": "Увімкнути таймери",
+  "settingTimersEnabledDescription": "Ставте таймери на цьому кіоску голосом і вручну.",
   "settingTimersShowOnStartTitle": "Показувати вигляд таймерів під час запуску таймера",
   "settingTimersShowOnStartDescription": "Відкриває вигляд таймерів щоразу, коли запускається таймер.",
   "settingTimersPauseScreensaverTitle": "Призупиняти заставку, поки працює таймер",

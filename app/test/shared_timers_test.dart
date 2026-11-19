@@ -382,6 +382,33 @@ void main() {
     await stop();
   });
 
+  // The two kiosks of this harness share one SharedPreferences store, so
+  // the switch flips on both at once: the owner stops sharing and the
+  // other kiosk drops what it showed and refuses more.
+  testWidgets('Enable timers off stops sharing and drops shared timers', (
+    tester,
+  ) async {
+    await pair(tester);
+    await kitchen.setTimers([kitchen.running('t1', 'Pasta', 600)]);
+    await settle(tester);
+    expect(bedroom.timers.timers.value, hasLength(1));
+    await bedroom.settings.set(defs.timersEnabled, false);
+    await settle(tester);
+    expect(bedroom.timers.timers.value, isEmpty);
+    expect(kitchen.shared.sharing, isFalse);
+    expect(bedroom.shared.describe()['receiving'], isFalse);
+    await kitchen.setTimers([
+      kitchen.running('t1', 'Pasta', 600),
+      kitchen.running('t2', 'Tea', 300),
+    ]);
+    await settle(tester);
+    expect(bedroom.timers.timers.value, isEmpty);
+    final open = await bedroom.commands.execute('openTimers', const {});
+    expect(open.ok, isFalse);
+    expect(bedroom.timers.visible.value, isFalse);
+    await stop();
+  });
+
   testWidgets('usage analytics counts a shared timer once, not on every '
       'heartbeat', (tester) async {
     await pair(tester);

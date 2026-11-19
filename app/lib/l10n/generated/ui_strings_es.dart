@@ -15875,6 +15875,13 @@ class UiStringsEs extends UiStrings {
       'Cuánto antes de que termine un temporizador se abre la vista de temporizadores.';
 
   @override
+  String get settingTimersEnabledTitle => 'Activar temporizadores';
+
+  @override
+  String get settingTimersEnabledDescription =>
+      'Pon temporizadores en este kiosko por voz y a mano.';
+
+  @override
   String get settingTimersShowOnStartTitle =>
       'Mostrar la vista de temporizadores al iniciar un temporizador';
 
