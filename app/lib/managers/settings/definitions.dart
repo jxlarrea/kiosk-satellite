@@ -1414,6 +1414,9 @@ const kioskAllowedApps = SettingDef<String>(
 // gesture below replaces the kiosk one, so the two can share a value
 // without ever being armed together.
 
+// Per device (issue #1505): the switch is this kiosk's live state, and a
+// fleet sync would unlock a follower locked on its own. The rest of the
+// Lockdown setup still travels with its category.
 const lockdownEnabled = SettingDef<bool>(
   key: 'lockdown.enabled',
   type: SettingType.boolean,
@@ -1423,6 +1426,7 @@ const lockdownEnabled = SettingDef<bool>(
       'Disables screen interactions until turned off either from Home '
       'Assistant or with the exit gesture.',
   category: 'Lockdown',
+  perDevice: true,
 );
 
 /// Where the kiosk menu's Lockdown Mode row had its own switch. A link to
@@ -9750,6 +9754,8 @@ const haReturnHomeSeconds = SettingDef<num>(
 /// every surface stays in step and the state survives a restart. While on,
 /// the screensaver will not start, dashboard view rotation freezes in
 /// place, the return-home timer stands down and the display stays awake.
+/// Per device (issue #1505): it is this kiosk's live state, and a fleet
+/// sync would turn a follower's hold off again within minutes.
 const haHoldMode = SettingDef<bool>(
   key: 'ha.hold_mode',
   type: SettingType.boolean,
@@ -9761,6 +9767,7 @@ const haHoldMode = SettingDef<bool>(
   category: 'Home Assistant',
   section: 'Hold mode',
   subpage: 'Hold mode',
+  perDevice: true,
 );
 
 /// The forgotten-hold guard: a kiosk left on hold overnight never sleeps

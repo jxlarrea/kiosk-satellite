@@ -888,6 +888,10 @@ void main() {
           'render.disable_impeller',
           'render.legacy_webview',
           'ui.scale',
+          // Live state: a sync would end a follower's hold or unlock it
+          // (#1505).
+          'ha.hold_mode',
+          'lockdown.enabled',
         ]),
       );
       // Every fleet key describes this kiosk's own place in a fleet.
