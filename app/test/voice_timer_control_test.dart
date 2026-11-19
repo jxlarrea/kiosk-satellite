@@ -192,8 +192,13 @@ void main() {
       finish('t2', name: 'tea');
       expect(voice.timerList(), hasLength(2));
       await settings.set(defs.timersEnabled, false);
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
       expect(voice.timerList(), isEmpty);
+      // The running one is cancelled in Home Assistant, which would keep
+      // it. The finished one is gone from there already.
+      expect([for (final r in requests) r['name']], ['HassCancelTimer']);
+      expect(requests.single['data'], {'name': 'pasta'});
+      requests.clear();
       start('t3', name: 'eggs');
       expect(voice.timerList(), isEmpty);
       final started = await commands.execute('voiceStartTimer', {'minutes': 5});

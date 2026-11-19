@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart';
+import 'package:kiosk_satellite/ui/kiosk_drawer.dart';
 import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -46,9 +47,7 @@ void main() {
     expect(
       switchTop,
       lessThan(
-        tester
-            .getTopLeft(find.text('Show Timers view when a timer starts'))
-            .dy,
+        tester.getTopLeft(find.text('Show Timers view when a timer starts')).dy,
       ),
     );
 
@@ -69,5 +68,24 @@ void main() {
     }
     expect(find.text('Share timers'), findsOneWidget);
     expect(find.text('Manage timers using Voice Satellite'), findsOneWidget);
+  });
+
+  testWidgets('the drawer leaves the Timers row out, locked or not', (
+    tester,
+  ) async {
+    final container = await open(tester);
+    for (final restricted in [false, true]) {
+      expect(
+        KioskDrawer.visibleItems(container, restricted: restricted),
+        contains('timers'),
+      );
+    }
+    await container.settings.set(timersEnabled, false);
+    for (final restricted in [false, true]) {
+      expect(
+        KioskDrawer.visibleItems(container, restricted: restricted),
+        isNot(contains('timers')),
+      );
+    }
   });
 }

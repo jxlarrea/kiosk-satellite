@@ -89,10 +89,10 @@ The timer list is sent again every 30 seconds while timers run, which covers an 
 If you handle timers your own way in Home Assistant, such as with custom intents, scripts or an LLM tool, turn off **Enable timers** under **Settings > Timers**. The kiosk then tells Home Assistant that it has no timers:
 
 - Home Assistant answers its own timer sentences on this kiosk with "Device does not support timers", and LLM agents get no timer tools for it. Your own intents and tools are the only ones left.
-- The Timers view, the pills and shared timers are gone. The kiosk does not share its timers and does not show the ones other kiosks share. The **Timers** row of the drawer menu and the Timers view of the Compass layout are hidden, and the **Open the timers** gesture action and `ks://timers` do nothing.
+- The Timers view, the pills and shared timers are gone. The kiosk does not share its timers and does not show the ones other kiosks share. The **Timers** row of the drawer menu is hidden and a swipe skips the Timers view of the Compass layout. A layout with Timers in the center shows the dashboard the kiosk starts on instead. The **Open the timers** gesture action and `ks://timers` do nothing.
 - The **VS Timers**, **VS Next timer** and **VS Mute timers** entities and the `vs_` timer actions are removed from the kiosk's ESPHome device.
 
-The rest of the Timers page hides while the switch is off and keeps its settings for when timers are back on. Turning the switch on or off restarts the kiosk's ESPHome server, so Home Assistant picks up the change within a few seconds. Timers on the kiosk at that moment are dropped and a ringing timer stops. [Alarms](alarms.md) are not affected.
+The rest of the Timers page hides while the switch is off and keeps its settings for when timers are back on. Turning the switch on or off restarts the kiosk's ESPHome server, so Home Assistant picks up the change within a few seconds. Timers running on the kiosk at that moment are cancelled and a ringing timer stops. [Alarms](alarms.md) are not affected.
 
 ## Timer settings
 

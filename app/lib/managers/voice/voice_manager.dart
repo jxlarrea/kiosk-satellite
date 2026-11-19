@@ -527,7 +527,7 @@ class VoiceManager extends Manager {
           // timer stops (issue #1508).
           if (e.key == defs.timersEnabled.key &&
               !_settings.get(defs.timersEnabled)) {
-            _dropTimers();
+            unawaited(_dropTimers());
           }
           if (e.key == defs.voiceRuntime.key ||
               e.key == defs.voiceEnabled.key ||
@@ -3427,9 +3427,16 @@ class VoiceManager extends Manager {
 
   // ── timers ─────────────────────────────────────────────────────────────
 
-  /// Forgets this kiosk's timers and stops a ringing one.
-  void _dropTimers() {
+  /// Forgets this kiosk's timers and stops a ringing one. The running and
+  /// paused ones are cancelled in Home Assistant first: it keeps them once
+  /// the kiosk stops offering timers, and one that ended after timers came
+  /// back on would ring for a timer the kiosk no longer showed.
+  Future<void> _dropTimers() async {
     if (_ringing.isNotEmpty) _dismissAlert();
+    for (final id in [..._timers.keys]) {
+      final error = await controlTimer(id, 'cancel');
+      if (error != null) log.warn(name, 'timer $id not cancelled: $error');
+    }
     if (_timers.isEmpty) return;
     _timers.clear();
     _pushTimers();
