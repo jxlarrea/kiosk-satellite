@@ -26,6 +26,7 @@ class CameraRtspServer(
     private val audioEnabled: Boolean = false,
     private val onAudioDemand: (Boolean) -> Unit = {},
     private val onvif: CameraOnvifService? = null,
+    private val snapshot: CameraOnvifSnapshot? = null,
     streamName: String = "Kiosk Satellite camera",
     private val tls: javax.net.ssl.SSLContext? = null,
 ) {
@@ -356,6 +357,10 @@ class CameraRtspServer(
                             check(count > 0)
                             offset += count
                         }
+                        if (onvif != null && snapshot != null && requestPath == CameraOnvifService.SNAPSHOT_PATH) {
+                            serveSnapshot(snapshot, method, uri, headers["authorization"])
+                            break
+                        }
                         val response = when {
                             onvif == null -> CameraOnvifService.Response("404 Not Found", "")
                             method != "POST" -> CameraOnvifService.Response("405 Method Not Allowed", "")
@@ -446,14 +451,45 @@ class CameraRtspServer(
             } catch (_: Exception) { } finally { close() }
         }
 
-        private fun httpReply(response: CameraOnvifService.Response) {
-            val bytes = response.body.toByteArray(Charsets.UTF_8)
+        private fun httpReply(response: CameraOnvifService.Response) =
+            httpReply(response.status, "application/soap+xml; charset=utf-8", response.body.toByteArray(Charsets.UTF_8))
+
+        private fun httpReply(status: String, contentType: String, bytes: ByteArray, headers: String = "", body: Boolean = true) {
             writeStartedNs = System.nanoTime()
-            output.write(("HTTP/1.1 ${response.status}\r\nContent-Type: application/soap+xml; charset=utf-8\r\n" +
+            output.write(("HTTP/1.1 $status\r\nContent-Type: $contentType\r\n$headers" +
                 "Content-Length: ${bytes.size}\r\nConnection: close\r\n\r\n").toByteArray())
-            output.write(bytes)
+            if (body) output.write(bytes)
             output.flush()
             writeStartedNs = 0L
+        }
+
+        /** GET on the ONVIF snapshot URI: one JPEG of the current frame. */
+        private fun serveSnapshot(snapshot: CameraOnvifSnapshot, method: String, uri: String, authorization: String?) {
+            val client = socket.inetAddress.hostAddress
+            val status = when {
+                method != "GET" && method != "HEAD" -> {
+                    httpReply("405 Method Not Allowed", "text/plain", ByteArray(0), "Allow: GET, HEAD\r\n"); "405"
+                }
+                !snapshot.authorized(authorization, method, uri) -> {
+                    httpReply("401 Unauthorized", "text/plain", ByteArray(0),
+                        "WWW-Authenticate: ${snapshot.challenge(snapshot.stale(authorization))}\r\n"); "401"
+                }
+                else -> {
+                    val result = snapshot.take()
+                    val jpeg = result.jpeg
+                    if (jpeg != null) {
+                        httpReply("200 OK", "image/jpeg", jpeg, "Cache-Control: no-store\r\n", body = method == "GET")
+                        "200"
+                    } else {
+                        httpReply("503 Service Unavailable", "text/plain; charset=utf-8",
+                            (result.error ?: "No frame is available").toByteArray(), "Retry-After: 5\r\n")
+                        "503, error=${result.error}"
+                    }
+                }
+            }
+            note("onvif $client snapshot $status", "onvif request",
+                "client=$client, operation=$method ${CameraOnvifService.SNAPSHOT_PATH}, status=$status" +
+                    (if (userAgent.isNotEmpty()) ", userAgent=$userAgent" else ""))
         }
 
         private fun reply(cseq: String, headers: String = "", body: String = "", code: String = "200 OK") {

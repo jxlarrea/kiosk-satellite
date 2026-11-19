@@ -694,6 +694,8 @@ class CameraMotion(
                     { event, message, cause -> CameraDiagnostics.record(listenerId, event, message,
                         failure = cause != null, cause = cause) },
                     onvif = onvif,
+                    snapshot = if (onvif != null) CameraOnvifSnapshot(if (auth) user else null, password,
+                        { done -> onvifSnapshot(generation, done) }) else null,
                     tls = tls,
                     streamName = deviceName,
                     audioEnabled = config["audio"] == true,
@@ -724,6 +726,28 @@ class CameraMotion(
             result.success(rtspStatus())
         }
         bind(0)
+    }
+
+    /** One JPEG for the ONVIF snapshot URI (issue #1506). While a viewer
+     *  streams, it is the next video frame, so the still matches the
+     *  stream and the camera does no extra work. Otherwise Dart captures
+     *  one, with the checks every snapshot goes through. Any thread. */
+    private fun onvifSnapshot(generation: Int, done: (ByteArray?, String?) -> Unit) {
+        mainHandler.post {
+            val encoder = rtspEncoder
+            when {
+                disposed || rtspGeneration != generation -> done(null, "The camera stream is closed")
+                encoder != null -> encoder.snapshot(done)
+                else -> rtspChannel.invokeMethod("snapshot", null, object : MethodChannel.Result {
+                    override fun success(result: Any?) {
+                        val bytes = result as? ByteArray
+                        if (bytes != null && bytes.isNotEmpty()) done(bytes, null) else done(null, "The camera returned no image")
+                    }
+                    override fun error(code: String, message: String?, details: Any?) = done(null, message ?: code)
+                    override fun notImplemented() = done(null, "The app is not ready for snapshots")
+                })
+            }
+        }
     }
 
     private fun startOnvifDiscovery(deviceId: String, port: Int, deviceName: String, tls: Boolean) {

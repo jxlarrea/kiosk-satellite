@@ -345,6 +345,10 @@ class MotionManager extends Manager {
   PluginCameraClaim? _streamPlugin;
   void Function(String reason)? _pluginLost;
 
+  /// A still for the ONVIF snapshot URI while no viewer is streaming. Set
+  /// by the app container.
+  Future<Uint8List> Function()? onvifStill;
+
   /// The barcode scanner has the camera (see [holdForScanner]): no
   /// session runs, whatever wants one.
   bool _scannerHeld = false;
@@ -534,6 +538,13 @@ class MotionManager extends Manager {
             _rtspEnabled &&
             _settings.get(defs.cameraRtspAudio),
       ),
+      onSnapshot: () {
+        final still = onvifStill;
+        if (_disposed || still == null) {
+          throw StateError('Snapshots are unavailable.');
+        }
+        return still();
+      },
     );
     commands.register(
       Command(

@@ -113,7 +113,7 @@ class CameraOnvifServiceTest {
         val s = service()
         val services = response(s, "<tds:GetServices><tds:IncludeCapability>true</tds:IncludeCapability></tds:GetServices>")
         assertTrue(services.body.contains("http://192.168.1.5:8554/onvif/media_service"))
-        assertTrue(services.body.contains("SnapshotUri=\"false\""))
+        assertTrue(services.body.contains("SnapshotUri=\"true\""))
         assertFalse(services.body.contains("<tds:Namespace>${CameraOnvifService.EVENTS}</tds:Namespace>"))
         val info = response(s, "<tds:GetDeviceInformation/>")
         assertTrue(info.body.contains("test&amp;version"))
@@ -123,6 +123,62 @@ class CameraOnvifServiceTest {
         assertTrue(response(s, streamRequest("missing")).body.contains("ter:NoProfile"))
         assertTrue(response(s, streamRequest().replace(">RTSP<", ">UDP<")).body.contains("ter:InvalidStreamSetup"))
         assertTrue(response(s, "<trt:SetVideoEncoderConfiguration/>").body.contains("ter:ActionNotSupported"))
+    }
+
+    @Test fun snapshotUriPointsAtTheSharedPort() {
+        fun snapshot(profile: String = "camera") = "<trt:GetSnapshotUri><trt:ProfileToken>$profile</trt:ProfileToken></trt:GetSnapshotUri>"
+        val plain = response(service(), snapshot())
+        assertEquals("200 OK", plain.status)
+        assertEquals("GetSnapshotUri", plain.operation)
+        val document = CameraOnvifService.parse(plain.body.toByteArray())
+        assertEquals("http://192.168.1.5:8554/onvif/snapshot",
+            document.getElementsByTagNameNS(CameraOnvifService.SCHEMA, "Uri").item(0).textContent)
+        assertTrue(response(service(), snapshot("missing")).body.contains("ter:NoProfile"))
+        val secure = service(auth = true, tls = true)
+        assertTrue(response(secure, snapshot()).body.contains("ter:NotAuthorized"))
+        assertTrue(response(secure, snapshot(), token()).body.contains("<tt:Uri>https://192.168.1.5:8554/onvif/snapshot</tt:Uri>"))
+        assertTrue(response(service(), "<trt:GetServiceCapabilities/>").body.contains("SnapshotUri=\"true\""))
+    }
+
+    @Test fun snapshotEndpointServesJpegBehindDigest() {
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 1, 2, 3, 0xFF.toByte(), 0xD9.toByte())
+        val snapshot = CameraOnvifSnapshot("viewer", "secret", { done -> done(jpeg, null) })
+        val server = CameraRtspServer(0, "viewer", "secret", { "" }, {}, {}, onvif = service(auth = true), snapshot = snapshot)
+        fun get(authorization: String? = null, method: String = "GET"): Pair<String, ByteArray> =
+            Socket("127.0.0.1", server.localPort).use { socket ->
+                socket.soTimeout = 2000
+                socket.getOutputStream().write(("$method /onvif/snapshot HTTP/1.1\r\nHost: 127.0.0.1\r\n" +
+                    (authorization?.let { "Authorization: $it\r\n" } ?: "") + "\r\n").toByteArray())
+                val bytes = socket.getInputStream().readBytes()
+                val split = String(bytes, Charsets.ISO_8859_1).indexOf("\r\n\r\n")
+                String(bytes, 0, split, Charsets.ISO_8859_1) to bytes.copyOfRange(split + 4, bytes.size)
+            }
+        try {
+            val (challengeHead, _) = get()
+            assertTrue(challengeHead.startsWith("HTTP/1.1 401 Unauthorized"))
+            val nonce = Regex("nonce=\"([^\"]+)\"").find(challengeHead)!!.groupValues[1]
+            assertTrue(challengeHead.contains("qop=\"auth\""))
+            val (head, body) = get(digest("GET", "/onvif/snapshot", nonce, qop = true))
+            assertTrue(head, head.startsWith("HTTP/1.1 200 OK"))
+            assertTrue(head.contains("Content-Type: image/jpeg"))
+            assertArrayEquals(jpeg, body)
+            assertTrue(get(digest("GET", "/onvif/snapshot", nonce)).first.startsWith("HTTP/1.1 200 OK"))
+            val (headOnly, empty) = get(digest("HEAD", "/onvif/snapshot", nonce), "HEAD")
+            assertTrue(headOnly.contains("Content-Length: ${jpeg.size}"))
+            assertEquals(0, empty.size)
+            assertTrue(get(digest("GET", "/onvif/snapshot", nonce, password = "wrong")).first.startsWith("HTTP/1.1 401"))
+            assertTrue(get(digest("GET", "/onvif/snapshot", "0-forged")).first.startsWith("HTTP/1.1 401"))
+            assertTrue(get(digest("POST", "/onvif/snapshot", nonce), "POST").first.startsWith("HTTP/1.1 405"))
+        } finally { server.close() }
+    }
+
+    private fun digest(method: String, uri: String, nonce: String, password: String = "secret", qop: Boolean = false): String {
+        fun md5(text: String) = MessageDigest.getInstance("MD5").digest(text.toByteArray()).joinToString("") { "%02x".format(it) }
+        val ha1 = md5("viewer:Kiosk Satellite:$password")
+        val ha2 = md5("$method:$uri")
+        return if (qop) "Digest username=\"viewer\", realm=\"Kiosk Satellite\", nonce=\"$nonce\", uri=\"$uri\", " +
+            "qop=auth, nc=00000001, cnonce=\"abc\", response=\"${md5("$ha1:$nonce:00000001:abc:auth:$ha2")}\", algorithm=MD5"
+        else "Digest username=\"viewer\", realm=\"Kiosk Satellite\", nonce=\"$nonce\", uri=\"$uri\", response=\"${md5("$ha1:$nonce:$ha2")}\""
     }
 
     @Test fun encryptedServicesAdvertiseHttpsAndRtspsAndKeepAuthentication() {

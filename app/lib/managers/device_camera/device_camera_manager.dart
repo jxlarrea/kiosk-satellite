@@ -354,29 +354,45 @@ class DeviceCameraManager extends Manager {
   }
 
   Future<CommandResult> _snapshot({bool detection = false}) async {
+    final (jpeg, failure) = await _capture(detection: detection);
+    if (jpeg == null) return failure!;
+    bus.publish(CameraSnapshotTaken(jpeg: jpeg));
+    return CommandResult.ok({'bytes': jpeg.length});
+  }
+
+  /// A still for the ONVIF snapshot URI while no viewer is streaming
+  /// (issue #1506). It goes through the same checks as every other capture
+  /// and leaves the Home Assistant camera entity alone.
+  Future<Uint8List> onvifStill() async {
+    final (jpeg, failure) = await _capture();
+    if (jpeg == null) throw StateError(failure?.error ?? 'Capture failed.');
+    return jpeg;
+  }
+
+  /// One frame, or why there is none.
+  Future<(Uint8List?, CommandResult?)> _capture({
+    bool detection = false,
+  }) async {
+    CommandResult fail(String error) => CommandResult.fail(error);
     if (!enabled) {
-      return const CommandResult.fail(
-        'The camera is disabled in the Camera settings.',
-      );
+      return (null, fail('The camera is disabled in the Camera settings.'));
     }
     if (scannerActive()) {
-      return const CommandResult.fail(
-        'The camera is busy with a barcode scan.',
-      );
+      return (null, fail('The camera is busy with a barcode scan.'));
     }
     // Timer ticks and entity button presses can overlap a capture still in
     // flight; the native side would refuse anyway, this keeps it quiet.
     if (_capturing) {
-      return const CommandResult.fail('A snapshot is already in progress.');
+      return (null, fail('A snapshot is already in progress.'));
     }
     if (!await Permission.camera.isGranted) {
       log.warn(name, 'camera permission not granted; snapshot skipped');
-      return const CommandResult.fail('Camera permission not granted.');
+      return (null, fail('Camera permission not granted.'));
     }
     // The setting can change while permission or the native camera is
     // answering. Check before capture and before publishing its result.
     if (detection && _detectionSnapshotsDisabled) {
-      return const CommandResult.fail('Detection snapshots are disabled.');
+      return (null, fail('Detection snapshots are disabled.'));
     }
     _capturing = true;
     try {
@@ -391,25 +407,25 @@ class DeviceCameraManager extends Manager {
         height: height,
       ).timeout(const Duration(seconds: 30));
       if (jpeg == null || jpeg.isEmpty) {
-        return const CommandResult.fail('The camera returned no image.');
+        return (null, fail('The camera returned no image.'));
       }
       if (detection && _detectionSnapshotsDisabled) {
-        return const CommandResult.fail('Detection snapshots are disabled.');
+        return (null, fail('Detection snapshots are disabled.'));
       }
-      bus.publish(CameraSnapshotTaken(jpeg: jpeg));
-      return CommandResult.ok({'bytes': jpeg.length});
+      return (jpeg, null);
     } on TimeoutException {
       log.warn(name, 'snapshot timed out');
-      return const CommandResult.fail('The camera did not answer in time.');
+      return (null, fail('The camera did not answer in time.'));
     } on PlatformException catch (e) {
       log.warn(name, 'snapshot failed: ${e.message}');
-      return CommandResult.fail('Snapshot failed: ${e.message}');
+      return (null, fail('Snapshot failed: ${e.message}'));
     } on MissingPluginException {
       // The cached engine outlives the Activity; without one there is no
       // camera to open (and no screen anybody is pointing it at).
       log.warn(name, 'snapshot unavailable: no Activity attached');
-      return const CommandResult.fail(
-        'The camera is unavailable while the app is in the background.',
+      return (
+        null,
+        fail('The camera is unavailable while the app is in the background.'),
       );
     } finally {
       _capturing = false;

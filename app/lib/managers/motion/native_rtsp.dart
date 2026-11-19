@@ -4,9 +4,12 @@ import 'package:flutter/services.dart';
 class NativeRtsp {
   static const _channel = MethodChannel('kiosk_satellite/camera/rtsp');
 
+  /// [onSnapshot] answers the ONVIF snapshot URI while no viewer is
+  /// streaming. A thrown error reaches the ONVIF client as a 503.
   static void onDemand(
     void Function(bool)? callback, {
     void Function(bool)? onAudioDemand,
+    Future<Uint8List> Function()? onSnapshot,
   }) {
     _channel.setMethodCallHandler(
       callback == null
@@ -16,6 +19,23 @@ class NativeRtsp {
               if (call.method == 'audioDemand') {
                 onAudioDemand?.call(call.arguments == true);
               }
+              if (call.method == 'snapshot') {
+                if (onSnapshot == null) {
+                  throw PlatformException(
+                    code: 'camera',
+                    message: 'Snapshots are unavailable.',
+                  );
+                }
+                try {
+                  return await onSnapshot();
+                } catch (e) {
+                  throw PlatformException(
+                    code: 'camera',
+                    message: e is StateError ? e.message : '$e',
+                  );
+                }
+              }
+              return null;
             },
     );
   }

@@ -244,6 +244,7 @@ class AppContainer {
     pluginActionNames = plugins.actionNames;
     // A snapshot binding the camera mid-scan would take it from the scanner.
     deviceCamera.scannerActive = () => motion.scannerHeld;
+    motion.onvifStill = deviceCamera.onvifStill;
     settings.pluginScreensavers = () => plugins.screensaverOptions;
     screensaver.pluginTouch = plugins.screensaverTouch;
     screensaver.compassCenterIsNowPlaying = () =>

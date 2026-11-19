@@ -230,7 +230,9 @@ void main() {
           );
     });
 
-    Future<void> start([Map<String, Object> initial = const {}]) async {
+    Future<DeviceCameraManager> start([
+      Map<String, Object> initial = const {},
+    ]) async {
       await build({'ks.camera.enabled': true, ...initial});
       bus.on<CameraSnapshotTaken>().listen(published.add);
       final manager = camera();
@@ -240,7 +242,21 @@ void main() {
         await settings.dispose();
         await bus.dispose();
       });
+      return manager;
     }
+
+    testWidgets('ONVIF stills leave the Home Assistant frame alone', (
+      tester,
+    ) async {
+      final manager = await start();
+      expect(await manager.onvifStill(), [1, 2, 3]);
+      await tester.pump();
+      expect(captures, 1);
+      expect(published, isEmpty);
+      manager.scannerActive = () => true;
+      await expectLater(manager.onvifStill(), throwsA(isA<StateError>()));
+      expect(captures, 1);
+    });
 
     testWidgets('detections stay available without capturing images', (
       tester,

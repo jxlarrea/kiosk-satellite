@@ -115,7 +115,7 @@ class CameraOnvifService(
         }
         val base = "${if (tls) "https" else "http"}://${xml(host)}:$port/onvif"
         val profileToken = operation.child(MEDIA, "ProfileToken")?.textContent
-        if (name in listOf("GetProfile", "GetStreamUri") && profileToken != "camera") {
+        if (name in listOf("GetProfile", "GetStreamUri", "GetSnapshotUri") && profileToken != "camera") {
             return fault("ter:InvalidArgVal", "Unknown profile token", subcode = "ter:NoProfile")
         }
         val content = if (namespace == DEVICE) when (name) {
@@ -185,6 +185,11 @@ class CameraOnvifService(
                     "<tt:InvalidAfterConnect>false</tt:InvalidAfterConnect><tt:InvalidAfterReboot>false</tt:InvalidAfterReboot>" +
                     "<tt:Timeout>PT0S</tt:Timeout></trt:MediaUri>"
             }
+            // A JPEG of the current frame, for clients like UniFi Protect
+            // that take event thumbnails from stills (issue #1506).
+            "GetSnapshotUri" -> "<trt:MediaUri><tt:Uri>${if (tls) "https" else "http"}://${xml(host)}:$port$SNAPSHOT_PATH</tt:Uri>" +
+                "<tt:InvalidAfterConnect>false</tt:InvalidAfterConnect><tt:InvalidAfterReboot>false</tt:InvalidAfterReboot>" +
+                "<tt:Timeout>PT0S</tt:Timeout></trt:MediaUri>"
             "GetVideoSources" -> "<trt:VideoSources token=\"camera\"><tt:Framerate>$fps</tt:Framerate>" +
                 "<tt:Resolution><tt:Width>$width</tt:Width><tt:Height>$height</tt:Height></tt:Resolution></trt:VideoSources>"
             "GetVideoSourceConfigurations", "GetCompatibleVideoSourceConfigurations" -> videoSource("trt:Configurations")
@@ -428,7 +433,7 @@ class CameraOnvifService(
         "<tds:Security TLS1.2=\"$tls\" UsernameToken=\"true\" HttpDigest=\"false\"/><tds:System DiscoveryResolve=\"false\" DiscoveryBye=\"true\" RemoteDiscovery=\"false\"/>" +
         "</tds:Capabilities>"
 
-    private fun mediaCapabilities() = "<trt:Capabilities SnapshotUri=\"false\"><trt:ProfileCapabilities MaximumNumberOfProfiles=\"1\"/>" +
+    private fun mediaCapabilities() = "<trt:Capabilities SnapshotUri=\"true\"><trt:ProfileCapabilities MaximumNumberOfProfiles=\"1\"/>" +
         "<trt:StreamingCapabilities RTPMulticast=\"false\" RTP_TCP=\"false\" RTP_RTSP_TCP=\"true\"/></trt:Capabilities>"
 
     private fun dateAndTime(): String {
@@ -462,6 +467,7 @@ class CameraOnvifService(
         const val TOPICS = "http://docs.oasis-open.org/wsn/t-1"
         const val CONCRETE_SET = "http://www.onvif.org/ver10/tev/topicExpression/ConcreteSet"
         private const val SUBSCRIPTION_MANAGER = "http://docs.oasis-open.org/wsn/bw-2/SubscriptionManager"
+        const val SNAPSHOT_PATH = "/onvif/snapshot"
         private val SUBSCRIPTION_PATH = Regex("/onvif/subscription/([0-9]{1,9})")
         private const val MAX_SUBSCRIPTIONS = 8
         private const val MAX_QUEUED = 100
