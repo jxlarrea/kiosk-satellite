@@ -11,5 +11,11 @@
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "Розпізнавання облич за допомогою камери цього пристрою.",
   "groundControlComingSoon": "Незабаром",
-  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming і Isolation."
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming і Isolation.",
+  "groundControlWaitingApproval": "Очікує схвалення",
+  "groundControlApproveHint": "Схваліть цей кіоск на сторінці Kiosks у застосунку Ground Control.",
+  "groundControlDeclined": "Відхилено",
+  "groundControlDeclinedHint": "Цей кіоск відхилено в застосунку Ground Control. Схваліть його на сторінці Kiosks.",
+  "groundControlNotAccepted": "Не прийнято",
+  "groundControlUnsignedBuild": "Ця збірка Kiosk Satellite не може підключитися до Ground Control."
 }

@@ -14822,6 +14822,42 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
+  /// **'Waiting for approval'**
+  String get groundControlWaitingApproval;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve this kiosk on the Kiosks page of the Ground Control app.'**
+  String get groundControlApproveHint;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get groundControlDeclined;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This kiosk was declined in the Ground Control app. Approve it on the Kiosks page.'**
+  String get groundControlDeclinedHint;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Not accepted'**
+  String get groundControlNotAccepted;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'This build of Kiosk Satellite can\'t connect to Ground Control.'**
+  String get groundControlUnsignedBuild;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
   /// **'Ground Control app'**
   String get groundControlApp;
 

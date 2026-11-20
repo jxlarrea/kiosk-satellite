@@ -11,5 +11,11 @@
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "使用此设备的摄像头进行人脸识别。",
   "groundControlComingSoon": "即将推出",
-  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition、Trimming 和 Isolation。"
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition、Trimming 和 Isolation。",
+  "groundControlWaitingApproval": "等待批准",
+  "groundControlApproveHint": "请在 Ground Control 应用的 Kiosks 页面批准此信息亭。",
+  "groundControlDeclined": "已拒绝",
+  "groundControlDeclinedHint": "此信息亭已在 Ground Control 应用中被拒绝。请在 Kiosks 页面批准它。",
+  "groundControlNotAccepted": "未被接受",
+  "groundControlUnsignedBuild": "此版本的 Kiosk Satellite 无法连接到 Ground Control。"
 }

@@ -61,6 +61,7 @@ class VoiceMatchTurn {
   static VoiceMatchTurn open({
     required String baseUrl,
     required String token,
+    String? ticket,
     required String deviceId,
     required String deviceName,
     required String policy,
@@ -86,6 +87,8 @@ class VoiceMatchTurn {
       turn._connect(uri, {
         'type': 'start',
         'token': token,
+        // From the control connection: this kiosk is approved.
+        'ticket': ?ticket,
         'device_id': deviceId,
         'device_name': deviceName,
         'mode': follow ? 'follow' : 'live',

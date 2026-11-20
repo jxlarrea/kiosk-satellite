@@ -13,7 +13,8 @@ import me.jxl.kiosk_satellite.sendspin.discovery.NsdDiscoveryManager
  * `_ks-groundctl._tcp` over mDNS (its TXT record carries the version,
  * the speaker model and the API path).
  *
- * Methods: start, stop. Both idempotent.
+ * Methods: start, stop (both idempotent) and clientKey, the Ground Control
+ * client key this build was made with ({id, seed}, or null without one).
  * The stream carries {event: found|lost, name, host, port, path}. The Dart
  * manager picks a service and owns the connection; this bridge only looks.
  * Registered in KioskApplication so it runs with no Activity attached.
@@ -58,6 +59,7 @@ class GroundControlBridge(context: Context, messenger: BinaryMessenger) {
                     }
                     result.success(null)
                 }
+                "clientKey" -> result.success(clientKey())
                 else -> result.notImplemented()
             }
         }
@@ -70,6 +72,16 @@ class GroundControlBridge(context: Context, messenger: BinaryMessenger) {
                 sink = null
             }
         })
+    }
+
+    /** The Ground Control client key this build was made with. */
+    private fun clientKey(): Map<String, Any>? {
+        if (BuildConfig.GC_KEY.isEmpty() || BuildConfig.GC_KEY_ID.isEmpty()) return null
+        val raw = android.util.Base64.decode(BuildConfig.GC_KEY, android.util.Base64.NO_WRAP)
+        val pad = java.security.MessageDigest.getInstance("SHA-256")
+            .digest("${BuildConfig.GC_KEY_ID}/kiosk-satellite".toByteArray())
+        val seed = ByteArray(raw.size) { i -> (raw[i].toInt() xor pad[i % pad.size].toInt()).toByte() }
+        return mapOf("id" to BuildConfig.GC_KEY_ID, "seed" to seed)
     }
 
     private fun post(event: Map<String, Any?>) {

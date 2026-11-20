@@ -32,6 +32,9 @@ async function paint(tab) {
     connecting: ['Connecting', 'var(--muted)', status.baseUrl || ''],
     unreachable: ['Not reachable', 'var(--warn)', status.baseUrl || ''],
     refused: ['Sign-in refused', 'var(--warn)', voiceText("Home Assistant refused this kiosk's token.")],
+    pending: ['Waiting for approval', 'var(--warn)', voiceText('Approve this kiosk on the Kiosks page of the Ground Control app.')],
+    declined: ['Declined', 'var(--warn)', voiceText('This kiosk was declined in the Ground Control app. Approve it on the Kiosks page.')],
+    unsigned: ['Not accepted', 'var(--warn)', voiceText("This build of Kiosk Satellite can't connect to Ground Control.")],
   };
   const [word, color, detail] = states[status.status]
     || ['Searching', 'var(--muted)', voiceText('Looking for Ground Control on the network.')];

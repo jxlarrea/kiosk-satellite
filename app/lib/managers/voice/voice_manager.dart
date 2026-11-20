@@ -347,6 +347,7 @@ class VoiceManager extends Manager {
   /// Kiosk Satellite Ground Control's address while it is connected, from
   /// GroundControlManager.
   String? _groundControlUrl;
+  String? _groundControlTicket;
 
   @override
   Future<void> init() async {
@@ -376,9 +377,10 @@ class VoiceManager extends Manager {
       onSpeaker: _publishSpeaker,
     );
     _subs.add(
-      bus.on<GroundControlServiceChanged>().listen(
-        (e) => _groundControlUrl = e.baseUrl,
-      ),
+      bus.on<GroundControlServiceChanged>().listen((e) {
+        _groundControlUrl = e.baseUrl;
+        _groundControlTicket = e.ticket;
+      }),
     );
     _realtime = RealtimeSession(
       backend: _realtimeBackend,
@@ -3030,6 +3032,7 @@ class VoiceManager extends Manager {
     return EnrollSocket.open(
       baseUrl: _groundControlUrl ?? '',
       token: s.get(defs.haToken),
+      ticket: _groundControlTicket,
       request: request,
       deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), deviceName),
       deviceName: deviceName,
@@ -4349,6 +4352,7 @@ class _VoiceMatch implements VoiceMatchPort {
     final turn = VoiceMatchTurn.open(
       baseUrl: url,
       token: s.get(defs.haToken),
+      ticket: _voice._groundControlTicket,
       deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), name),
       deviceName: name,
       policy: policy,

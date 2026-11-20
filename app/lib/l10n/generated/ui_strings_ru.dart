@@ -8529,6 +8529,27 @@ class UiStringsRu extends UiStrings {
   String get groundControlLooking => 'Поиск Ground Control в сети.';
 
   @override
+  String get groundControlWaitingApproval => 'Ожидает одобрения';
+
+  @override
+  String get groundControlApproveHint =>
+      'Одобрите этот киоск на странице Kiosks в приложении Ground Control.';
+
+  @override
+  String get groundControlDeclined => 'Отклонён';
+
+  @override
+  String get groundControlDeclinedHint =>
+      'Этот киоск отклонён в приложении Ground Control. Одобрите его на странице Kiosks.';
+
+  @override
+  String get groundControlNotAccepted => 'Не принят';
+
+  @override
+  String get groundControlUnsignedBuild =>
+      'Эта сборка Kiosk Satellite не может подключиться к Ground Control.';
+
+  @override
   String get groundControlApp => 'Приложение Ground Control';
 
   @override

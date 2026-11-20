@@ -31062,5 +31062,41 @@
     "translation": "f3debb33a8d3d444cae82cc4a1d3e8ebc1c37c9a8eb971d35518c08196f35ce5",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "groundControlWaitingApproval": {
+    "source": "558182b43140da7895f73b43f39b9375d37d978c78aa45e1b4e4c7077c712894",
+    "translation": "ea8fd79a6a26e124a5917a5a65c6253fec037b9f0bd321233a29d2821baf2f8e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlApproveHint": {
+    "source": "1872dedbb48093d08729832b9d98a6f230d31e1509353f5dcf67cc90c3ec6038",
+    "translation": "2611adeb1d541545fdea932dbfe805053ce585ae2172364be510eca2f706c6e9",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlDeclined": {
+    "source": "115ae8cf8344254691f0868516166e4b5b54c40efccbb5a963baf590617fbc88",
+    "translation": "a9148e8654e848357e0fae7ee7bb71bc512d5f88256d71d54f502fdec0e174bd",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlDeclinedHint": {
+    "source": "8015d278c51e1c185b2d7e395af8956e891fbf374eb4918090cd3b567ba8c2da",
+    "translation": "11cc9494afeffa273c142b2c0f7fb593d61d62b729ac6658112e3a3d0264abaa",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlNotAccepted": {
+    "source": "b19a83b7bb2b7e19d25c44f834d9bca2932dda643882a1b739e35e0c2190df73",
+    "translation": "43cec249c014f177f064e8927171da7c1e50611cddbee05c255f386396f56366",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlUnsignedBuild": {
+    "source": "7a00ec5901db5e3177cec8bcabac43482b8c14b100139eeedb25e8674d574ebb",
+    "translation": "7bd78a2b3a32f74d5c35536222b1e66d73bd3cf7f6db40127bfbfc497966c21b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

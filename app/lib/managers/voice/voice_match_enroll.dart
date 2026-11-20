@@ -473,6 +473,7 @@ class EnrollSocket implements EnrollSocketPort {
   static EnrollSocket open({
     required String baseUrl,
     required String token,
+    String? ticket,
     required EnrollRequest request,
     required String deviceId,
     required String deviceName,
@@ -491,6 +492,7 @@ class EnrollSocket implements EnrollSocketPort {
       socket._connect(uri, {
         'type': 'start',
         'token': token,
+        'ticket': ?ticket,
         'person_id': request.personId,
         'device_id': deviceId,
         'device_name': deviceName,

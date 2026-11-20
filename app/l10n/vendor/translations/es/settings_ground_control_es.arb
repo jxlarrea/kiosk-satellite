@@ -11,5 +11,11 @@
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "Reconocimiento facial con la cámara de este dispositivo.",
   "groundControlComingSoon": "Próximamente",
-  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming e Isolation."
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming e Isolation.",
+  "groundControlWaitingApproval": "Esperando aprobación",
+  "groundControlApproveHint": "Aprueba este kiosco en la página Kiosks de la app Ground Control.",
+  "groundControlDeclined": "Rechazado",
+  "groundControlDeclinedHint": "Este kiosco fue rechazado en la app Ground Control. Apruébalo en la página Kiosks.",
+  "groundControlNotAccepted": "No aceptado",
+  "groundControlUnsignedBuild": "Esta versión de Kiosk Satellite no puede conectarse a Ground Control."
 }

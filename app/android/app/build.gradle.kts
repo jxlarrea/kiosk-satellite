@@ -1,3 +1,5 @@
+import java.security.MessageDigest
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -20,12 +22,35 @@ fun signing(name: String): String? =
         "ANDROID_" + name.replace(Regex("([A-Z])"), "_$1").uppercase()
     )
 
+// The Ground Control client key. Local builds read
+// android/ground_control_client.properties (git-ignored), CI the
+// repository secrets.
+val groundControlClient = Properties().apply {
+    val f = rootProject.file("ground_control_client.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val groundControlKeyId = groundControlClient.getProperty("keyId")
+    ?: System.getenv("GROUND_CONTROL_CLIENT_KEY_ID") ?: ""
+val groundControlKey: String = run {
+    val plain = groundControlClient.getProperty("key") ?: System.getenv("GROUND_CONTROL_CLIENT_KEY") ?: ""
+    if (plain.isBlank()) return@run ""
+    val seed = Base64.getDecoder().decode(plain.trim())
+    val pad = MessageDigest.getInstance("SHA-256")
+        .digest("$groundControlKeyId/kiosk-satellite".toByteArray())
+    Base64.getEncoder().encodeToString(
+        ByteArray(seed.size) { i -> (seed[i].toInt() xor pad[i % pad.size].toInt()).toByte() }
+    )
+}
+
 android {
     namespace = "me.jxl.kiosk_satellite"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
-    buildFeatures { aidl = true }
+    buildFeatures {
+        aidl = true
+        buildConfig = true
+    }
     testOptions.unitTests.isIncludeAndroidResources = true
     // Robolectric installs Conscrypt, whose JVM socket implementation reads InetAddress internals.
     testOptions.unitTests.all {
@@ -69,6 +94,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        buildConfigField("String", "GC_KEY_ID", "\"$groundControlKeyId\"")
+        buildConfigField("String", "GC_KEY", "\"$groundControlKey\"")
 
         externalNativeBuild {
             cmake {

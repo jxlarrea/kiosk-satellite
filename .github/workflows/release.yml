@@ -73,7 +73,15 @@ jobs:
 
       - name: Build the signed APKs
         working-directory: app
+        env:
+          # Proves to Ground Control that the kiosk runs Kiosk Satellite.
+          GROUND_CONTROL_CLIENT_KEY_ID: ${{ secrets.GROUND_CONTROL_CLIENT_KEY_ID }}
+          GROUND_CONTROL_CLIENT_KEY: ${{ secrets.GROUND_CONTROL_CLIENT_KEY }}
         run: |
+          if [ -z "$GROUND_CONTROL_CLIENT_KEY_ID" ] || [ -z "$GROUND_CONTROL_CLIENT_KEY" ]; then
+            echo "The Ground Control client key secrets are missing" >&2
+            exit 1
+          fi
           VERSION="${RELEASE_TAG#v}"
           # The build number comes from pubspec.yaml, NOT the workflow run
           # counter: dev builds side-loaded during testing carry the pubspec

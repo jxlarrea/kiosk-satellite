@@ -61,6 +61,7 @@ dependencies:
   mobile_scanner: ^7.4.0
   flutter_markdown_plus: ^1.0.12
   url_launcher: ^6.3.2
+  cryptography: ^2.9.0
 
 dependency_overrides:
   # Includes the failed-launch callback fix described in the package README.

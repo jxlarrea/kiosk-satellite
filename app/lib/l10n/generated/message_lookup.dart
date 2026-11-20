@@ -2456,6 +2456,12 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'settingGroundControlAddressDescription' =>
         strings.settingGroundControlAddressDescription,
       'groundControlLooking' => strings.groundControlLooking,
+      'groundControlWaitingApproval' => strings.groundControlWaitingApproval,
+      'groundControlApproveHint' => strings.groundControlApproveHint,
+      'groundControlDeclined' => strings.groundControlDeclined,
+      'groundControlDeclinedHint' => strings.groundControlDeclinedHint,
+      'groundControlNotAccepted' => strings.groundControlNotAccepted,
+      'groundControlUnsignedBuild' => strings.groundControlUnsignedBuild,
       'groundControlApp' => strings.groundControlApp,
       'groundControlFeatures' => strings.groundControlFeatures,
       'settingGroundControlVoiceMatchTitle' =>

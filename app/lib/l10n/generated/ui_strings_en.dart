@@ -8475,6 +8475,27 @@ class UiStringsEn extends UiStrings {
       'Looking for Ground Control on the network.';
 
   @override
+  String get groundControlWaitingApproval => 'Waiting for approval';
+
+  @override
+  String get groundControlApproveHint =>
+      'Approve this kiosk on the Kiosks page of the Ground Control app.';
+
+  @override
+  String get groundControlDeclined => 'Declined';
+
+  @override
+  String get groundControlDeclinedHint =>
+      'This kiosk was declined in the Ground Control app. Approve it on the Kiosks page.';
+
+  @override
+  String get groundControlNotAccepted => 'Not accepted';
+
+  @override
+  String get groundControlUnsignedBuild =>
+      'This build of Kiosk Satellite can\'t connect to Ground Control.';
+
+  @override
   String get groundControlApp => 'Ground Control app';
 
   @override

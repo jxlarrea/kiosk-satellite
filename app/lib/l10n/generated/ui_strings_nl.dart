@@ -8568,6 +8568,27 @@ class UiStringsNl extends UiStrings {
   String get groundControlLooking => 'Ground Control zoeken op het netwerk.';
 
   @override
+  String get groundControlWaitingApproval => 'Wacht op goedkeuring';
+
+  @override
+  String get groundControlApproveHint =>
+      'Keur deze kiosk goed op de pagina Kiosks van de Ground Control-app.';
+
+  @override
+  String get groundControlDeclined => 'Geweigerd';
+
+  @override
+  String get groundControlDeclinedHint =>
+      'Deze kiosk is geweigerd in de Ground Control-app. Keur hem goed op de pagina Kiosks.';
+
+  @override
+  String get groundControlNotAccepted => 'Niet geaccepteerd';
+
+  @override
+  String get groundControlUnsignedBuild =>
+      'Deze build van Kiosk Satellite kan geen verbinding maken met Ground Control.';
+
+  @override
   String get groundControlApp => 'Ground Control app';
 
   @override

@@ -8611,6 +8611,27 @@ class UiStringsFr extends UiStrings {
       'Recherche de Ground Control sur le réseau.';
 
   @override
+  String get groundControlWaitingApproval => 'En attente d\'approbation';
+
+  @override
+  String get groundControlApproveHint =>
+      'Approuvez ce kiosque sur la page Kiosks de l\'app Ground Control.';
+
+  @override
+  String get groundControlDeclined => 'Refusé';
+
+  @override
+  String get groundControlDeclinedHint =>
+      'Ce kiosque a été refusé dans l\'app Ground Control. Approuvez-le sur la page Kiosks.';
+
+  @override
+  String get groundControlNotAccepted => 'Non accepté';
+
+  @override
+  String get groundControlUnsignedBuild =>
+      'Cette version de Kiosk Satellite ne peut pas se connecter à Ground Control.';
+
+  @override
   String get groundControlApp => 'App Ground Control';
 
   @override

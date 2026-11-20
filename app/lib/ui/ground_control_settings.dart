@@ -73,6 +73,30 @@ class _GroundControlStatusRowState extends State<GroundControlStatusRow> {
         scheme.tertiary,
         voiceText(context, "Home Assistant refused this kiosk's token."),
       ),
+      'pending' => (
+        voiceText(context, 'Waiting for approval'),
+        scheme.tertiary,
+        voiceText(
+          context,
+          'Approve this kiosk on the Kiosks page of the Ground Control app.',
+        ),
+      ),
+      'declined' => (
+        voiceText(context, 'Declined'),
+        scheme.tertiary,
+        voiceText(
+          context,
+          'This kiosk was declined in the Ground Control app. Approve it on the Kiosks page.',
+        ),
+      ),
+      'unsigned' => (
+        voiceText(context, 'Not accepted'),
+        scheme.tertiary,
+        voiceText(
+          context,
+          "This build of Kiosk Satellite can't connect to Ground Control.",
+        ),
+      ),
       _ => (
         voiceText(context, 'Searching'),
         scheme.onSurfaceVariant,

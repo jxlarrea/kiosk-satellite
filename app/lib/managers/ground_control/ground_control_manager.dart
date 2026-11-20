@@ -9,6 +9,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'client_key.dart';
 import 'mine.dart';
 
 /// Kiosk Satellite Ground Control: finds the service, keeps this kiosk's
@@ -20,16 +21,45 @@ import 'mine.dart';
 /// `_ks-groundctl._tcp` over mDNS, unless the Address setting names it.
 /// The kiosk signs in with its Home Assistant token.
 ///
-/// The control connection (`/api/kiosk`) says hello with this kiosk's
-/// device id, name and model, so enrollments and sessions know where they
-/// came from, and carries everyone's names and colors back. The voice
-/// turns open their own session sockets (voice_match_client.dart); this
-/// manager only publishes the address they use, as
+/// The control connection (`/api/kiosk`) opens with a challenge from the
+/// service, which this kiosk signs with Kiosk Satellite's client key
+/// (client_key.dart) in its hello. The hello carries this kiosk's device
+/// id, name, model and Voice Match features, so enrollments and sessions
+/// know where they came from and the Kiosks page shows what is on. A new
+/// kiosk waits until it is approved in the Ground Control app, which then
+/// sends a ticket and everyone's names and colors. The voice turns open
+/// their own session sockets (voice_match_client.dart) with that ticket;
+/// this manager only publishes the address and ticket they use, as
 /// [GroundControlServiceChanged].
 class GroundControlManager extends Manager {
-  GroundControlManager(super.bus, super.commands, super.log, this._settings);
+  GroundControlManager(
+    super.bus,
+    super.commands,
+    super.log,
+    this._settings, {
+    Future<ClientKey?> Function()? clientKey,
+  }) : _loadKey = clientKey ?? _bridgeKey;
 
   final SettingsManager _settings;
+  final Future<ClientKey?> Function() _loadKey;
+  Future<ClientKey?>? _key;
+
+  /// The key this build was made with, from GroundControlBridge.
+  static Future<ClientKey?> _bridgeKey() async {
+    try {
+      final raw = await _methods.invokeMethod<Map<Object?, Object?>>(
+        'clientKey',
+      );
+      final id = raw?['id'];
+      final seed = raw?['seed'];
+      if (id is String && seed is List<int>) return ClientKey(id, seed);
+    } on PlatformException {
+      // No key.
+    } on MissingPluginException {
+      // Tests and platforms without the bridge.
+    }
+    return null;
+  }
 
   @override
   String get name => 'ground_control';
@@ -37,7 +67,9 @@ class GroundControlManager extends Manager {
   static const _methods = MethodChannel('kiosk_satellite/ground_control');
   static const _found = EventChannel('kiosk_satellite/ground_control_stream');
 
-  /// off, searching, connecting, connected, unreachable or refused.
+  /// off, searching, connecting, connected, unreachable, refused,
+  /// pending (waiting for approval), declined or unsigned (a build
+  /// without the client key).
   String status = 'off';
   String? baseUrl;
   String version = '';
@@ -92,6 +124,14 @@ class GroundControlManager extends Manager {
   int _attempt = 0;
   int _generation = 0;
   String? _published;
+  String? _publishedTicket;
+
+  /// The ticket the service gave this kiosk once it was approved, for the
+  /// session and enrollment sockets.
+  String? ticket;
+
+  /// The hello to sign when the service's challenge comes.
+  Map<String, Object?>? _pendingHello;
 
   bool get _enabled => _settings.get(defs.groundControlEnabled);
 
@@ -102,13 +142,44 @@ class GroundControlManager extends Manager {
       _settings.get(defs.voiceMatchEnabled) &&
       _settings.get(defs.voiceMatchAllowEnroll);
 
+  /// The settings that make what [features] says.
+  static final _featureKeys = {
+    defs.voiceEnabled.key,
+    defs.voiceMatchEnabled.key,
+    defs.voiceMatchPolicy.key,
+    defs.voiceMatchPeople.key,
+    defs.voiceMatchEndOnOtherVoice.key,
+    defs.voiceMatchIsolation.key,
+    defs.voiceMatchSpeakerSensor.key,
+    defs.voiceMatchShowSpeaker.key,
+    defs.voiceMatchAllowEnroll.key,
+  };
+
+  /// The Voice Match features this kiosk has on, for the Kiosks page of
+  /// the Ground Control app.
+  Map<String, Object?> get features {
+    final s = _settings;
+    final people = [
+      for (final p in defs.decodeVoiceMatchPeople(s.get(defs.voiceMatchPeople)))
+        p.id,
+    ];
+    final chosen = s.get(defs.voiceMatchPolicy) == 'people';
+    return {
+      'voice_match': s.get(defs.voiceEnabled) && s.get(defs.voiceMatchEnabled),
+      'policy': !chosen ? 'anyone' : (people.isEmpty ? 'enrolled' : 'people'),
+      if (chosen && people.isNotEmpty) 'people': people,
+      'trimming': s.get(defs.voiceMatchEndOnOtherVoice),
+      'isolation': s.get(defs.voiceMatchIsolation),
+      'speaker_sensor': s.get(defs.voiceMatchSpeakerSensor),
+      'show_speaker': s.get(defs.voiceMatchShowSpeaker),
+    };
+  }
+
   @override
   Future<void> init() async {
     _subs.add(
       bus.on<SettingChanged>().listen((e) {
-        if (e.key == defs.voiceMatchAllowEnroll.key ||
-            e.key == defs.voiceMatchEnabled.key ||
-            e.key == defs.voiceEnabled.key) {
+        if (_featureKeys.contains(e.key)) {
           _sendSettings();
           return;
         }
@@ -316,7 +387,8 @@ class GroundControlManager extends Manager {
           return;
         }
         _socket = socket;
-        socket.sink.add(jsonEncode(hello));
+        // The hello goes out signed, once the service's challenge comes.
+        _pendingHello = hello;
         _socketSub = socket.stream.listen(
           (data) => _onMessage(gen, data),
           onDone: () => _lost(gen, socket.closeCode),
@@ -347,12 +419,35 @@ class GroundControlManager extends Manager {
       'model': '${data['model'] ?? ''}',
       'version': '${data['appVersion'] ?? ''}',
       'enroll': _enrollAllowed,
+      'features': features,
     };
   }
 
-  /// Allow enrollment here changed: the service lists the kiosk to match.
+  /// Allow enrollment here or a Voice Match feature changed: the service
+  /// lists the kiosk to match.
   void _sendSettings() {
-    _send({'type': 'settings', 'enroll': _enrollAllowed});
+    _send({'type': 'settings', 'enroll': _enrollAllowed, 'features': features});
+  }
+
+  /// Signs the service's challenge into the hello and sends it.
+  Future<void> _answer(int gen, String nonce) async {
+    final hello = _pendingHello;
+    _pendingHello = null;
+    if (hello == null) return;
+    final key = await (_key ??= _loadKey());
+    if (gen != _generation) return;
+    if (key == null) {
+      log.warn(
+        name,
+        'this build has no Ground Control client key, so Ground Control '
+        'turns it away',
+      );
+    }
+    final proof = key == null
+        ? null
+        : await key.proof(nonce, '${hello['device_id'] ?? ''}');
+    if (gen != _generation) return;
+    _send({...hello, 'proof': ?proof});
   }
 
   void _send(Map<String, Object?> message) {
@@ -378,6 +473,23 @@ class GroundControlManager extends Manager {
       return;
     }
     switch (msg['type']) {
+      case 'challenge':
+        final nonce = msg['nonce'];
+        if (nonce is String) unawaited(_answer(gen, nonce));
+      case 'ticket':
+        final t = msg['ticket'];
+        ticket = t is String && t.isNotEmpty ? t : null;
+      case 'pending':
+      case 'declined':
+        ticket = null;
+        log.info(
+          name,
+          msg['type'] == 'pending'
+              ? 'waiting for approval in the Ground Control app'
+              : 'declined in the Ground Control app',
+        );
+        _attempt = 0;
+        _setStatus('${msg['type']}', null);
       case 'people':
         people = [
           for (final p in (msg['people'] as List? ?? const []))
@@ -391,6 +503,7 @@ class GroundControlManager extends Manager {
         _setStatus('connected', baseUrl);
       case 'error':
         if (msg['code'] == 'unauthorized') _setStatus('refused', null);
+        if (msg['code'] == 'not_kiosk_satellite') _setStatus('unsigned', null);
       case 'enroll':
         final personId = '${msg['person_id'] ?? ''}';
         if (personId.isEmpty) return;
@@ -426,8 +539,15 @@ class GroundControlManager extends Manager {
     _socketSub?.cancel();
     _socketSub = null;
     _socket = null;
+    _pendingHello = null;
+    ticket = null;
     if (code == 4401) {
       _setStatus('refused', null);
+      return;
+    }
+    if (code == 4403) {
+      // Not Kiosk Satellite to the service: a build without the key.
+      _setStatus('unsigned', null);
       return;
     }
     _setStatus('unreachable', null);
@@ -465,9 +585,11 @@ class GroundControlManager extends Manager {
   void _setStatus(String next, String? url) {
     status = next;
     final usable = next == 'connected' ? url : null;
-    if (usable != _published) {
+    final pass = usable == null ? null : ticket;
+    if (usable != _published || pass != _publishedTicket) {
       _published = usable;
-      bus.publish(GroundControlServiceChanged(usable));
+      _publishedTicket = pass;
+      bus.publish(GroundControlServiceChanged(usable, ticket: pass));
     }
     // The status row on both settings surfaces.
     bus.publish(const RemoteStatusChanged('ground-control'));

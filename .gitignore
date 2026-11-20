@@ -20,6 +20,8 @@ __pycache__/
 app/android/key.properties
 app/android/app/upload-keystore.jks
 *.jks
+# The Ground Control client key: never committed either.
+app/android/ground_control_client.properties
 
 .claude/
 .vscode/

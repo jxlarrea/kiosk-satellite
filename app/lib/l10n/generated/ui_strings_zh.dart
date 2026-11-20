@@ -8124,6 +8124,27 @@ class UiStringsZh extends UiStrings {
   String get groundControlLooking => '正在网络中查找 Ground Control。';
 
   @override
+  String get groundControlWaitingApproval => '等待批准';
+
+  @override
+  String get groundControlApproveHint =>
+      '请在 Ground Control 应用的 Kiosks 页面批准此信息亭。';
+
+  @override
+  String get groundControlDeclined => '已拒绝';
+
+  @override
+  String get groundControlDeclinedHint =>
+      '此信息亭已在 Ground Control 应用中被拒绝。请在 Kiosks 页面批准它。';
+
+  @override
+  String get groundControlNotAccepted => '未被接受';
+
+  @override
+  String get groundControlUnsignedBuild =>
+      '此版本的 Kiosk Satellite 无法连接到 Ground Control。';
+
+  @override
   String get groundControlApp => 'Ground Control 应用';
 
   @override
@@ -24308,6 +24329,27 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get groundControlLooking => '正在网络中查找 Ground Control。';
+
+  @override
+  String get groundControlWaitingApproval => '等待批准';
+
+  @override
+  String get groundControlApproveHint =>
+      '请在 Ground Control 应用的 Kiosks 页面批准此信息亭。';
+
+  @override
+  String get groundControlDeclined => '已拒绝';
+
+  @override
+  String get groundControlDeclinedHint =>
+      '此信息亭已在 Ground Control 应用中被拒绝。请在 Kiosks 页面批准它。';
+
+  @override
+  String get groundControlNotAccepted => '未被接受';
+
+  @override
+  String get groundControlUnsignedBuild =>
+      '此版本的 Kiosk Satellite 无法连接到 Ground Control。';
 
   @override
   String get groundControlApp => 'Ground Control 应用';

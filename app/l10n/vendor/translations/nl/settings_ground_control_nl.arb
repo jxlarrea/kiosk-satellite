@@ -11,5 +11,11 @@
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "Gezichtsherkenning met de camera van dit apparaat.",
   "groundControlComingSoon": "Binnenkort",
-  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming en Isolation."
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming en Isolation.",
+  "groundControlWaitingApproval": "Wacht op goedkeuring",
+  "groundControlApproveHint": "Keur deze kiosk goed op de pagina Kiosks van de Ground Control-app.",
+  "groundControlDeclined": "Geweigerd",
+  "groundControlDeclinedHint": "Deze kiosk is geweigerd in de Ground Control-app. Keur hem goed op de pagina Kiosks.",
+  "groundControlNotAccepted": "Niet geaccepteerd",
+  "groundControlUnsignedBuild": "Deze build van Kiosk Satellite kan geen verbinding maken met Ground Control."
 }

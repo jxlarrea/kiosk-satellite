@@ -547,8 +547,12 @@ class VoiceInteractionChanged extends AppEvent {
 /// [baseUrl] is its http(s) address (no trailing slash), null when there
 /// is none to use: Voice Match off, not found, or the kiosk's token refused.
 class GroundControlServiceChanged extends AppEvent {
-  const GroundControlServiceChanged(this.baseUrl);
+  const GroundControlServiceChanged(this.baseUrl, {this.ticket});
   final String? baseUrl;
+
+  /// What the session and enrollment sockets show the service: it took
+  /// this kiosk as Kiosk Satellite and it is approved.
+  final String? ticket;
 }
 
 /// Who is talking on this kiosk, for the Speaker sensor and the lights.
