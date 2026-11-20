@@ -8620,8 +8620,8 @@ class UiStringsFr extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchDescription =>
-      'Reconnaissance du locuteur, suppression des autres voix et enregistrement.';
+  String get settingGroundControlVoiceMatchFeaturesDescription =>
+      'Recognition, Trimming et Isolation.';
 
   @override
   String get groundControlVisionMatch => 'Vision Match';
@@ -15127,6 +15127,15 @@ class UiStringsFr extends UiStrings {
   String get voiceSectionSpeaker => 'Enceinte';
 
   @override
+  String get voiceSectionRecognition => 'Recognition';
+
+  @override
+  String get voiceSectionTrimming => 'Trimming';
+
+  @override
+  String get voiceSectionIsolation => 'Isolation';
+
+  @override
   String get voiceSectionWakeCommand => 'Mot de réveil et commande';
 
   @override
@@ -15939,8 +15948,7 @@ class UiStringsFr extends UiStrings {
   String get settingVoiceMatchRejectedTitleChosen => 'Voix non choisie';
 
   @override
-  String get voiceMatchHint =>
-      'Qui parle, autres voix, enregistrement de la voix';
+  String get voiceMatchFeaturesHint => 'Recognition, Trimming et Isolation';
 
   @override
   String get settingVoiceMatchEnabledTitle => 'Activer Voice Match';
@@ -16006,19 +16014,26 @@ class UiStringsFr extends UiStrings {
   String get voiceMatchOpen => 'Ouvrir';
 
   @override
-  String get settingVoiceMatchEnabledDescriptionGroundControl =>
-      'Reconnaître qui parle et arrêter l\'écoute quand quelqu\'un d\'autre prend la parole. Nécessite Ground Control.';
+  String get settingVoiceMatchEnabledDescriptionCommand =>
+      'Qui parle, et seulement sa voix dans la commande. Nécessite Ground Control.';
 
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Permet à l\'app Ground Control d\'enregistrer la voix d\'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l\'anneau lumineux affiche la progression.';
 
   @override
-  String get settingVoiceMatchLeaveOutTitle => 'Écarter les autres voix';
+  String get settingVoiceMatchTrimmingTitle => 'Activer Trimming';
 
   @override
-  String get settingVoiceMatchLeaveOutDescription =>
-      'Home Assistant et l\'assistant en temps réel n\'entendent que la personne qui a dit le mot d\'activation, et la commande se termine quand elle s\'arrête, même avec la télé allumée.';
+  String get settingVoiceMatchTrimmingDescription =>
+      'Les autres voix, comme une télé ou d\'autres personnes, sont coupées entre les mots de la personne qui a dit le mot d\'activation, et la commande se termine quand elle s\'arrête.';
+
+  @override
+  String get settingVoiceMatchIsolationTitle => 'Activer Isolation';
+
+  @override
+  String get settingVoiceMatchIsolationDescription =>
+      'Les autres voix qui parlent par-dessus les mots de la personne qui a dit le mot d\'activation sont aussi supprimées. La commande l\'attend une fois que la personne s\'arrête. Nécessite Isolation activé dans Ground Control.';
 
   @override
   String get voiceWakePage => 'Mot de réveil';

@@ -466,6 +466,21 @@
     "context": "Settings > Voice Satellite",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
+  "voiceSectionRecognition": "Recognition",
+  "@voiceSectionRecognition": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionTrimming": "Trimming",
+  "@voiceSectionTrimming": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionIsolation": "Isolation",
+  "@voiceSectionIsolation": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
   "voiceSectionWakeCommand": "Wake word and command",
   "@voiceSectionWakeCommand": {
     "context": "Settings > Voice Satellite",

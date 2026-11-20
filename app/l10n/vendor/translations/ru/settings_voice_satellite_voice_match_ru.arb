@@ -1,6 +1,5 @@
 {
   "@@locale": "ru",
-  "voiceMatchHint": "Кто говорит, другие голоса, запись голоса",
   "settingVoiceMatchEnabledTitle": "Включить Voice Match",
   "settingVoiceMatchPolicyTitle": "Отвечать",
   "settingVoiceMatchRejectedDescription": "Что происходит, когда слово пробуждения говорит кто-то другой.",
@@ -20,10 +19,7 @@
   "settingVoiceMatchAllowEnrollTitle": "Разрешить запись голоса здесь",
   "voiceMatchAppHint": "Люди, запись голоса, сеансы и настройки.",
   "voiceMatchOpen": "Открыть",
-  "settingVoiceMatchEnabledDescriptionGroundControl": "Распознавать, кто говорит, и прекращать слушать, когда вступает кто-то другой. Нужен Ground Control.",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Разрешает приложению Ground Control записывать голос человека микрофоном этого киоска. Киоск показывает текст для чтения, или световое кольцо показывает прогресс.",
-  "settingVoiceMatchLeaveOutTitle": "Не учитывать другие голоса",
-  "settingVoiceMatchLeaveOutDescription": "Home Assistant и ассистент в реальном времени слышат только того, кто сказал слово активации, и команда заканчивается, когда он замолкает, даже при включённом телевизоре.",
   "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "С выбранными людьми киоск игнорирует телевизор, гостей и всех остальных.",
   "voiceMatchOptionPeople": "Выбранные люди",
@@ -33,5 +29,11 @@
   "voiceMatchPeopleSearch": "Поиск людей",
   "voiceMatchPeopleEmpty": "В Ground Control пока ничьих голосов не записано.",
   "voiceMatchPeopleGone": "Больше нет в Ground Control",
-  "settingVoiceMatchRejectedTitleChosen": "Голос не выбран"
+  "settingVoiceMatchRejectedTitleChosen": "Голос не выбран",
+  "voiceMatchFeaturesHint": "Recognition, Trimming и Isolation",
+  "settingVoiceMatchEnabledDescriptionCommand": "Кто говорит, и в команде только его голос. Нужен Ground Control.",
+  "settingVoiceMatchTrimmingTitle": "Включить Trimming",
+  "settingVoiceMatchTrimmingDescription": "Другие голоса, например телевизор или другие люди, вырезаются между словами того, кто сказал слово активации, и команда заканчивается, когда он замолкает.",
+  "settingVoiceMatchIsolationTitle": "Включить Isolation",
+  "settingVoiceMatchIsolationDescription": "Другие голоса, звучащие поверх слов того, кто сказал слово активации, тоже удаляются. Когда он замолкает, команда ждёт этой обработки. Нужно включить Isolation в Ground Control."
 }

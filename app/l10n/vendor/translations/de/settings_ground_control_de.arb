@@ -8,8 +8,8 @@
   "groundControlApp": "Ground Control App",
   "groundControlFeatures": "Funktionen",
   "settingGroundControlVoiceMatchTitle": "Voice Match",
-  "settingGroundControlVoiceMatchDescription": "Sprechererkennung, Entfernen anderer Stimmen und Einlernen.",
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "Gesichtserkennung mit der Kamera dieses Geräts.",
-  "groundControlComingSoon": "Demnächst"
+  "groundControlComingSoon": "Demnächst",
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming und Isolation."
 }

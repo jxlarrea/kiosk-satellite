@@ -4353,6 +4353,7 @@ class _VoiceMatch implements VoiceMatchPort {
       deviceName: name,
       policy: policy,
       people: people,
+      isolation: s.get(defs.voiceMatchIsolation),
       onEvent: (e) {
         if (e['type'] == 'speaker' && e['id'] is String) {
           _speaker = e['id'] as String;

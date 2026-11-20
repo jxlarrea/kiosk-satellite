@@ -52,7 +52,7 @@ class RealtimeOptions {
 
   /// With Voice Match on Ground Control: the provider hears only the
   /// user's speech and the session ends each turn when the user stops,
-  /// whatever a TV does (Leave other voices out).
+  /// whatever a TV does (Trimming).
   final bool follow;
 
   /// With Chosen people: a voice that is not chosen ends the

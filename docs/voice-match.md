@@ -2,7 +2,13 @@
 
 Navigate to **Settings > Voice Satellite > Ground Control Voice Match**.
 
-With Voice Match, the kiosk knows who is talking and ends a voice command at the speaker's last word when the TV or another person keeps talking. Without it, a TV in the background can keep the assistant listening for many seconds after the command is over.
+Voice Match has three features:
+
+- **Recognition:** who is talking, from the voices enrolled in Ground Control. A kiosk can answer only the people you choose.
+- **Trimming:** other voices, like a TV or other people, are cut out between the user's words, and the command ends when the user stops.
+- **Isolation:** other voices talking over the user's words are removed too.
+
+Without Voice Match, a TV in the background can keep the assistant listening for many seconds after the command is over.
 
 Voice Match runs on [Ground Control](ground-control.md), a Home Assistant app or a Docker container that does the voice work off the kiosk. Voice Match is off by default.
 
@@ -14,24 +20,30 @@ Voice Match runs on [Ground Control](ground-control.md), a Home Assistant app or
 
 Voice Match works with Voice Satellite's native runtime and Home Assistant Assist pipelines.
 
-## Only the User's Voice
+## Trimming
 
-With **Leave other voices out** on, everything the microphone hears goes to Ground Control, and Home Assistant or the realtime assistant hears only the person who said the wake word:
+With **Enable Trimming** on, everything the microphone hears goes to Ground Control, and Home Assistant or the realtime assistant hears only the person who said the wake word:
 
 - **The user is whoever said the wake word.** The kiosk sends the wake word to Ground Control, so a TV talking right after it is never taken for the user. An enrolled person is recognized from it. Without a wake word, such as a conversation started from the screen, the user is whoever of the enrolled people talks.
-- **Other voices are left out.** With a TV going before, between and after the user's words, the assistant hears only the user's words, as if the room was quiet.
+- **Other voices are cut out.** With a TV going before, between and after the user's words, the assistant hears only the user's words, as if the room was quiet.
 - **The command ends when the user stops.** The kiosk ends it once the user has been quiet for 0.7 seconds, whatever the TV does, instead of waiting for Home Assistant's or the provider's own silence detection, which a TV keeps open.
 - **Who is talking** is known about a second into the command, while the person is still talking.
 
 The assistant hears the user about a second late while they talk, the time Ground Control needs to tell voices apart. The end of the command is not delayed by it.
 
-Two voices at the same moment both reach the assistant: Ground Control can leave out a voice between the user's words, not under them. A guest who is not enrolled and sounds much like the TV voice is harder to tell apart than an enrolled person.
+Without Isolation, two voices at the same moment both reach the assistant: Trimming cuts out a voice between the user's words, not under them. A guest who is not enrolled and sounds much like the TV voice is harder to tell apart than an enrolled person.
 
 If Ground Control is not reachable, or stops answering mid-command, commands work as they do without it.
 
+## Isolation
+
+With **Enable Isolation** on, Ground Control also removes other voices that talk over the user's words, using the user's voiceprint. It needs Trimming on here and Isolation on in Ground Control's own settings, which also says how long it takes there. Isolation works on the whole command once the user stops, so the command reaches the assistant a little later: about a tenth of a second with an NVIDIA GPU and about a second on a fast CPU.
+
+Turn Isolation off on a kiosk where that wait matters more than a TV talking over the user.
+
 ## Realtime Conversations
 
-With a [realtime assistant](voice-satellite.md), Leave other voices out works for the whole conversation:
+With a [realtime assistant](voice-satellite.md), Trimming works for the whole conversation:
 
 - **Each turn** is the user's speech only, and ends when they stop. OpenAI and xAI take the turns from the kiosk. Gemini keeps its own speech detection, but only ever hears the user.
 - **Talking over an answer** stops it only when it is the user. A TV or another voice never interrupts the assistant. The stop word still stops an answer whoever says it.
@@ -43,14 +55,18 @@ If Ground Control goes away mid-conversation, the provider's own speech detectio
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| Enable Voice Match | off | Recognizes who is talking and stops listening when someone else takes over. Needs Ground Control. |
+| Enable Voice Match | off | Who is talking, and only their voice in the command. Needs Ground Control. |
+| **Recognition** | | |
 | Answer | Anyone | **Chosen people** ignores the TV, guests and everyone else: a command from anyone not chosen is dropped. |
 | People | nobody | With **Chosen people**, who this kiosk answers, picked from everyone enrolled in Ground Control. With nobody chosen, it answers anyone enrolled. |
 | Voice not chosen | Stay quiet | With **Chosen people**, what happens when someone else says the wake word: nothing, or the error chime. |
-| Leave other voices out | on | Home Assistant and the realtime assistant hear only the person who said the wake word, and the command ends when they stop. Off, Voice Match only says who is talking. |
 | Speaker sensor | on | Adds a Speaker sensor to this kiosk in Home Assistant. |
 | Show who is talking | on | Puts the speaker's name before the command on the voice overlay, in their color. On a device with a light ring, the listening arc takes the color. |
 | Allow enrollment here | on | Lets the Ground Control app record a person's voice with this kiosk's microphone. |
+| **Trimming** | | |
+| Enable Trimming | on | Other voices are cut out between the words of the person who said the wake word, and the command ends when they stop. Off, Voice Match only says who is talking. |
+| **Isolation** | | |
+| Enable Isolation | on | Other voices talking over the user's words are removed too. Needs Trimming on and Isolation on in Ground Control. |
 
 ## Enrollment
 

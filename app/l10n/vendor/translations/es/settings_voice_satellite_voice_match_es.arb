@@ -1,6 +1,5 @@
 {
   "@@locale": "es",
-  "voiceMatchHint": "Quién habla, otras voces, registro de voz",
   "settingVoiceMatchEnabledTitle": "Activar Voice Match",
   "settingVoiceMatchPolicyTitle": "Responder a",
   "settingVoiceMatchRejectedDescription": "Qué pasa cuando otra persona dice la palabra de activación.",
@@ -20,10 +19,7 @@
   "settingVoiceMatchAllowEnrollTitle": "Permitir el registro aquí",
   "voiceMatchAppHint": "Personas, registro de voz, sesiones y ajustes.",
   "voiceMatchOpen": "Abrir",
-  "settingVoiceMatchEnabledDescriptionGroundControl": "Reconoce quién habla y deja de escuchar cuando otra persona toma la palabra. Necesita Ground Control.",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permite que la app Ground Control grabe la voz de una persona con el micrófono de este kiosco. El kiosco muestra el texto a leer o el anillo de luz muestra el progreso.",
-  "settingVoiceMatchLeaveOutTitle": "Dejar fuera otras voces",
-  "settingVoiceMatchLeaveOutDescription": "Home Assistant y el asistente en tiempo real solo oyen a la persona que dijo la palabra de activación, y el comando termina cuando deja de hablar, aunque la tele esté encendida.",
   "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "Con Personas elegidas se ignoran la tele, los invitados y todos los demás.",
   "voiceMatchOptionPeople": "Personas elegidas",
@@ -33,5 +29,11 @@
   "voiceMatchPeopleSearch": "Buscar personas",
   "voiceMatchPeopleEmpty": "Todavía no hay nadie registrado en Ground Control.",
   "voiceMatchPeopleGone": "Ya no está en Ground Control",
-  "settingVoiceMatchRejectedTitleChosen": "Voz no elegida"
+  "settingVoiceMatchRejectedTitleChosen": "Voz no elegida",
+  "voiceMatchFeaturesHint": "Recognition, Trimming e Isolation",
+  "settingVoiceMatchEnabledDescriptionCommand": "Quién habla, y solo su voz en el comando. Necesita Ground Control.",
+  "settingVoiceMatchTrimmingTitle": "Activar Trimming",
+  "settingVoiceMatchTrimmingDescription": "Otras voces, como una tele u otras personas, se recortan entre las palabras de quien dijo la palabra de activación, y el comando termina cuando deja de hablar.",
+  "settingVoiceMatchIsolationTitle": "Activar Isolation",
+  "settingVoiceMatchIsolationDescription": "También se eliminan otras voces que hablan encima de las palabras de quien dijo la palabra de activación. El comando espera a que termine cuando deja de hablar. Necesita Isolation activado en Ground Control."
 }

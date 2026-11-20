@@ -14837,11 +14837,11 @@ abstract class UiStrings {
   /// **'Voice Match'**
   String get settingGroundControlVoiceMatchTitle;
 
-  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Speaker recognition, other voices removal and enrollment.'**
-  String get settingGroundControlVoiceMatchDescription;
+  /// **'Recognition, Trimming and Isolation.'**
+  String get settingGroundControlVoiceMatchFeaturesDescription;
 
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
   ///
@@ -25925,6 +25925,24 @@ abstract class UiStrings {
   /// **'Speaker'**
   String get voiceSectionSpeaker;
 
+  /// A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition'**
+  String get voiceSectionRecognition;
+
+  /// A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Trimming'**
+  String get voiceSectionTrimming;
+
+  /// A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Isolation'**
+  String get voiceSectionIsolation;
+
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///
   /// In en, this message translates to:
@@ -27311,11 +27329,11 @@ abstract class UiStrings {
   /// **'Voice not chosen'**
   String get settingVoiceMatchRejectedTitleChosen;
 
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Who is talking, other voices, enrollment'**
-  String get voiceMatchHint;
+  /// **'Recognition, Trimming and Isolation'**
+  String get voiceMatchFeaturesHint;
 
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
@@ -27431,11 +27449,11 @@ abstract class UiStrings {
   /// **'Open'**
   String get voiceMatchOpen;
 
-  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Recognize who is talking and stop listening when someone else takes over. Needs Ground Control.'**
-  String get settingVoiceMatchEnabledDescriptionGroundControl;
+  /// **'Who is talking, and only their voice in the command. Needs Ground Control.'**
+  String get settingVoiceMatchEnabledDescriptionCommand;
 
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
@@ -27443,17 +27461,29 @@ abstract class UiStrings {
   /// **'Lets the Ground Control app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.'**
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl;
 
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Leave other voices out'**
-  String get settingVoiceMatchLeaveOutTitle;
+  /// **'Enable Trimming'**
+  String get settingVoiceMatchTrimmingTitle;
 
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Home Assistant and the realtime assistant hear only the person who said the wake word, and the command ends when they stop, even with the TV on.'**
-  String get settingVoiceMatchLeaveOutDescription;
+  /// **'Other voices, like a TV or other people, are cut out between the words of the person who said the wake word, and the command ends when they stop.'**
+  String get settingVoiceMatchTrimmingDescription;
+
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Isolation'**
+  String get settingVoiceMatchIsolationTitle;
+
+  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Other voices talking over the words of the person who said the wake word are removed too. The command waits for it once they stop. Needs Isolation on in Ground Control.'**
+  String get settingVoiceMatchIsolationDescription;
 
   /// Translate the visible label or help. Keep model names and technical identifiers unchanged.
   ///

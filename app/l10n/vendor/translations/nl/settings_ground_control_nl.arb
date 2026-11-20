@@ -8,8 +8,8 @@
   "groundControlApp": "Ground Control app",
   "groundControlFeatures": "Functies",
   "settingGroundControlVoiceMatchTitle": "Voice Match",
-  "settingGroundControlVoiceMatchDescription": "Sprekerherkenning, verwijderen van andere stemmen en inschrijven.",
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "Gezichtsherkenning met de camera van dit apparaat.",
-  "groundControlComingSoon": "Binnenkort"
+  "groundControlComingSoon": "Binnenkort",
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming en Isolation."
 }

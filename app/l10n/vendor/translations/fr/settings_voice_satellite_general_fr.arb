@@ -71,5 +71,8 @@
   "settingVoiceEnabledDescription": "Transforme ce kiosque en assistant vocal pour Home Assistant via son serveur ESPHome.",
   "settingVoiceMuteTitle": "Couper le microphone",
   "settingVoiceMuteDescription": "Arrêter d'écouter le mot de réveil.",
-  "voiceSectionSharedTimers": "Minuteurs partagés"
+  "voiceSectionSharedTimers": "Minuteurs partagés",
+  "voiceSectionRecognition": "Recognition",
+  "voiceSectionTrimming": "Trimming",
+  "voiceSectionIsolation": "Isolation"
 }

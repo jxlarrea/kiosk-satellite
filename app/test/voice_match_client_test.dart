@@ -58,4 +58,46 @@ void main() {
     expect(sessions, ['s1', 's1']);
     await server.close(force: true);
   });
+
+  test('a follow session says whether this kiosk wants Isolation', () async {
+    final (server, starts) = await _service();
+    final got = StreamIterator(starts);
+    VoiceMatchTurn open({required bool follow, bool? isolation}) =>
+        isolation == null
+        ? VoiceMatchTurn.open(
+            baseUrl: 'http://127.0.0.1:${server.port}',
+            token: 't',
+            deviceId: 'k1',
+            deviceName: 'Kitchen',
+            policy: 'anyone',
+            onEvent: (_) {},
+            follow: follow,
+          )
+        : VoiceMatchTurn.open(
+            baseUrl: 'http://127.0.0.1:${server.port}',
+            token: 't',
+            deviceId: 'k1',
+            deviceName: 'Kitchen',
+            policy: 'anyone',
+            isolation: isolation,
+            onEvent: (_) {},
+            follow: follow,
+          );
+
+    for (final (follow, isolation, expected) in [
+      (true, false, false),
+      (true, null, true), // on unless the kiosk turned it off
+    ]) {
+      final turn = open(follow: follow, isolation: isolation);
+      expect(await got.moveNext(), isTrue);
+      expect(got.current['isolation'], expected);
+      turn.end();
+    }
+    // A live session has no Trimming, so nothing to isolate.
+    final live = open(follow: false, isolation: true);
+    expect(await got.moveNext(), isTrue);
+    expect(got.current.containsKey('isolation'), isFalse);
+    live.end();
+    await server.close(force: true);
+  });
 }

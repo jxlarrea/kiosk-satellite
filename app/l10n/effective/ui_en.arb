@@ -32094,10 +32094,10 @@
       ]
     }
   },
-  "settingGroundControlVoiceMatchDescription": "Speaker recognition, other voices removal and enrollment.",
-  "@settingGroundControlVoiceMatchDescription": {
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming and Isolation.",
+  "@settingGroundControlVoiceMatchFeaturesDescription": {
     "context": "Settings > Ground Control",
-    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
         "Settings > Ground Control > Features > Voice Match"
@@ -55547,6 +55547,21 @@
     "context": "Settings > Voice Satellite",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
+  "voiceSectionRecognition": "Recognition",
+  "@voiceSectionRecognition": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionTrimming": "Trimming",
+  "@voiceSectionTrimming": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionIsolation": "Isolation",
+  "@voiceSectionIsolation": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
   "voiceSectionWakeCommand": "Wake word and command",
   "@voiceSectionWakeCommand": {
     "context": "Settings > Voice Satellite",
@@ -57242,16 +57257,16 @@
       ]
     }
   },
-  "voiceMatchHint": "Who is talking, other voices, enrollment",
-  "@voiceMatchHint": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+  "voiceMatchFeaturesHint": "Recognition, Trimming and Isolation",
+  "@voiceMatchFeaturesHint": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match"
+        "Settings > Voice Satellite > Ground Control Voice Match"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match"
+        "Voice Satellite > Ground Control Voice Match"
       ]
     }
   },
@@ -57502,16 +57517,16 @@
       ]
     }
   },
-  "settingVoiceMatchEnabledDescriptionGroundControl": "Recognize who is talking and stop listening when someone else takes over. Needs Ground Control.",
-  "@settingVoiceMatchEnabledDescriptionGroundControl": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+  "settingVoiceMatchEnabledDescriptionCommand": "Who is talking, and only their voice in the command. Needs Ground Control.",
+  "@settingVoiceMatchEnabledDescriptionCommand": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match > Enable Voice Match"
+        "Settings > Voice Satellite > Ground Control Voice Match > Enable Voice Match"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match > Enable Voice Match"
+        "Voice Satellite > Ground Control Voice Match > Enable Voice Match"
       ]
     }
   },
@@ -57528,29 +57543,55 @@
       ]
     }
   },
-  "settingVoiceMatchLeaveOutTitle": "Leave other voices out",
-  "@settingVoiceMatchLeaveOutTitle": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+  "settingVoiceMatchTrimmingTitle": "Enable Trimming",
+  "@settingVoiceMatchTrimmingTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+        "Settings > Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match > Leave other voices out"
+        "Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
       ]
     }
   },
-  "settingVoiceMatchLeaveOutDescription": "Home Assistant and the realtime assistant hear only the person who said the wake word, and the command ends when they stop, even with the TV on.",
-  "@settingVoiceMatchLeaveOutDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+  "settingVoiceMatchTrimmingDescription": "Other voices, like a TV or other people, are cut out between the words of the person who said the wake word, and the command ends when they stop.",
+  "@settingVoiceMatchTrimmingDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+        "Settings > Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match > Leave other voices out"
+        "Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
+      ]
+    }
+  },
+  "settingVoiceMatchIsolationTitle": "Enable Isolation",
+  "@settingVoiceMatchIsolationTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Isolation > Enable Isolation"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Isolation > Enable Isolation"
+      ]
+    }
+  },
+  "settingVoiceMatchIsolationDescription": "Other voices talking over the words of the person who said the wake word are removed too. The command waits for it once they stop. Needs Isolation on in Ground Control.",
+  "@settingVoiceMatchIsolationDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Isolation > Enable Isolation"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Isolation > Enable Isolation"
       ]
     }
   },

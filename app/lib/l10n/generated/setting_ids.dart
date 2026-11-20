@@ -2782,7 +2782,7 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "voice_match.enabled": {
     "title": "settingVoiceMatchEnabledTitle",
-    "description": "settingVoiceMatchEnabledDescriptionGroundControl",
+    "description": "settingVoiceMatchEnabledDescriptionCommand",
   },
   "voice_match.policy": {
     "title": "settingVoiceMatchPolicyTitle",
@@ -2797,8 +2797,12 @@ const settingMessageIds = <String, Map<String, String>>{
     "description": "settingVoiceMatchRejectedDescription",
   },
   "voice_match.end_on_other_voice": {
-    "title": "settingVoiceMatchLeaveOutTitle",
-    "description": "settingVoiceMatchLeaveOutDescription",
+    "title": "settingVoiceMatchTrimmingTitle",
+    "description": "settingVoiceMatchTrimmingDescription",
+  },
+  "voice_match.isolation": {
+    "title": "settingVoiceMatchIsolationTitle",
+    "description": "settingVoiceMatchIsolationDescription",
   },
   "voice_match.speaker_sensor": {
     "title": "settingVoiceMatchSpeakerSensorTitle",
@@ -2822,6 +2826,6 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "ground_control.voice_match": {
     "title": "settingGroundControlVoiceMatchTitle",
-    "description": "settingGroundControlVoiceMatchDescription",
+    "description": "settingGroundControlVoiceMatchFeaturesDescription",
   },
 };

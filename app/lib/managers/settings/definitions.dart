@@ -277,7 +277,7 @@ const Map<String, String> subpageHints = {
   // Native Voice Satellite's own pages.
   'Assistant': 'Pipelines, follow-ups',
   'Realtime': 'OpenAI, xAI Grok, Gemini, tools, talk over answers',
-  'Ground Control Voice Match': 'Who is talking, other voices, enrollment',
+  'Ground Control Voice Match': 'Recognition, Trimming and Isolation',
   'Conversation': 'What the overlay shows and for how long',
   // Its entry row sits under the tester, not with the three pages above.
   'Wake word diagnostics':
@@ -8145,14 +8145,15 @@ const groundControlVoiceMatch = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Voice Match',
-  description: 'Speaker recognition, other voices removal and enrollment.',
+  description: 'Recognition, Trimming and Isolation.',
   category: 'Ground Control',
   section: 'Features',
   linksTo: 'voice_match.enabled',
 );
 
-// Voice Match: Ground Control tells who is talking and when someone else (a
-// TV) starts, so a turn ends at the speaker's last word.
+// Voice Match, with Ground Control: Recognition (who is talking), Trimming
+// (other voices cut out between the user's words, and the command ends when
+// they stop) and Isolation (other voices removed under their words too).
 
 const voiceMatchEnabled = SettingDef<bool>(
   key: 'voice_match.enabled',
@@ -8160,8 +8161,8 @@ const voiceMatchEnabled = SettingDef<bool>(
   defaultValue: false,
   title: 'Enable Voice Match',
   description:
-      'Recognize who is talking and stop listening when someone else takes '
-      'over. Needs Ground Control.',
+      'Who is talking, and only their voice in the command. Needs Ground '
+      'Control.',
   category: 'Voice Satellite',
   subpage: 'Ground Control Voice Match',
   dependsOn: 'voice.enabled',
@@ -8178,7 +8179,7 @@ const voiceMatchPolicy = SettingDef<String>(
   description: 'Chosen people ignores the TV, guests and everyone else.',
   category: 'Voice Satellite',
   subpage: 'Ground Control Voice Match',
-  section: 'Listening',
+  section: 'Recognition',
   options: ['anyone', 'people'],
   optionLabels: {'anyone': 'Anyone', 'people': 'Chosen people'},
   dependsOn: 'voice_match.enabled',
@@ -8197,7 +8198,7 @@ const voiceMatchPeople = SettingDef<String>(
       'enrolled.',
   category: 'Voice Satellite',
   subpage: 'Ground Control Voice Match',
-  section: 'Listening',
+  section: 'Recognition',
   dependsOn: 'voice_match.policy',
   dependsOnValue: 'people',
   normalizer: normalizeVoiceMatchPeople,
@@ -8245,26 +8246,11 @@ const voiceMatchRejected = SettingDef<String>(
   description: 'What happens when someone else says the wake word.',
   category: 'Voice Satellite',
   subpage: 'Ground Control Voice Match',
-  section: 'Listening',
+  section: 'Recognition',
   options: ['quiet', 'chime'],
   optionLabels: {'quiet': 'Stay quiet', 'chime': 'Play the error chime'},
   dependsOn: 'voice_match.policy',
   dependsOnValue: 'people',
-);
-
-const voiceMatchEndOnOtherVoice = SettingDef<bool>(
-  key: 'voice_match.end_on_other_voice',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Leave other voices out',
-  description:
-      'Home Assistant and the realtime assistant hear only the person who '
-      'said the wake word, and the command ends when they stop, even with '
-      'the TV on.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
-  section: 'Listening',
-  dependsOn: 'voice_match.enabled',
 );
 
 /// A Speaker text sensor on this kiosk's ESPHome device, for automations
@@ -8279,7 +8265,7 @@ const voiceMatchSpeakerSensor = SettingDef<bool>(
       'and agent instructions.',
   category: 'Voice Satellite',
   subpage: 'Ground Control Voice Match',
-  section: 'Speaker',
+  section: 'Recognition',
   dependsOn: 'voice_match.enabled',
 );
 
@@ -8294,7 +8280,7 @@ const voiceMatchShowSpeaker = SettingDef<bool>(
       'color.',
   category: 'Voice Satellite',
   subpage: 'Ground Control Voice Match',
-  section: 'Speaker',
+  section: 'Recognition',
   dependsOn: 'voice_match.enabled',
 );
 
@@ -8309,8 +8295,43 @@ const voiceMatchAllowEnroll = SettingDef<bool>(
       'shows the progress.',
   category: 'Voice Satellite',
   subpage: 'Ground Control Voice Match',
-  section: 'Speaker',
+  section: 'Recognition',
   dependsOn: 'voice_match.enabled',
+);
+
+/// Trimming: in follow mode Ground Control sends back only the user's
+/// speech. The key predates the name.
+const voiceMatchEndOnOtherVoice = SettingDef<bool>(
+  key: 'voice_match.end_on_other_voice',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable Trimming',
+  description:
+      'Other voices, like a TV or other people, are cut out between the '
+      'words of the person who said the wake word, and the command ends '
+      'when they stop.',
+  category: 'Voice Satellite',
+  subpage: 'Ground Control Voice Match',
+  section: 'Trimming',
+  dependsOn: 'voice_match.enabled',
+);
+
+/// Isolation: Ground Control also removes other voices under the user's
+/// words, when Isolation is on in its own settings too. Sent with each
+/// Trimming session as `isolation`.
+const voiceMatchIsolation = SettingDef<bool>(
+  key: 'voice_match.isolation',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable Isolation',
+  description:
+      'Other voices talking over the words of the person who said the wake '
+      'word are removed too. The command waits for it once they stop. Needs '
+      'Isolation on in Ground Control.',
+  category: 'Voice Satellite',
+  subpage: 'Ground Control Voice Match',
+  section: 'Isolation',
+  dependsOn: 'voice_match.end_on_other_voice',
 );
 
 /// The mirrored selects by the key the kiosk's device gives each one.
@@ -15140,10 +15161,11 @@ const List<SettingDef<Object>> allSettings = [
   voiceMatchPolicy,
   voiceMatchPeople,
   voiceMatchRejected,
-  voiceMatchEndOnOtherVoice,
   voiceMatchSpeakerSensor,
   voiceMatchShowSpeaker,
   voiceMatchAllowEnroll,
+  voiceMatchEndOnOtherVoice,
+  voiceMatchIsolation,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,
   voiceNoiseGate,

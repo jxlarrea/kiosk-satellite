@@ -133,7 +133,7 @@ class VoiceSessionOptions {
   final bool remoteSpeech;
 
   /// Voice Match: end the turn when someone else (the TV) takes over.
-  /// Leave other voices out: Home Assistant hears only the user's speech
+  /// Trimming: Home Assistant hears only the user's speech
   /// (follow mode), and the command ends when the user stops, whatever a
   /// TV does. Off, Voice Match only says who is talking.
   final bool matchEndOnOtherVoice;

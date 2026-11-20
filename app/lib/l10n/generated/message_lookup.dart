@@ -2460,8 +2460,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'groundControlFeatures' => strings.groundControlFeatures,
       'settingGroundControlVoiceMatchTitle' =>
         strings.settingGroundControlVoiceMatchTitle,
-      'settingGroundControlVoiceMatchDescription' =>
-        strings.settingGroundControlVoiceMatchDescription,
+      'settingGroundControlVoiceMatchFeaturesDescription' =>
+        strings.settingGroundControlVoiceMatchFeaturesDescription,
       'groundControlVisionMatch' => strings.groundControlVisionMatch,
       'groundControlVisionMatchDescription' =>
         strings.groundControlVisionMatchDescription,
@@ -5109,6 +5109,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceSectionOnScreen' => strings.voiceSectionOnScreen,
       'voiceSectionPills' => strings.voiceSectionPills,
       'voiceSectionSpeaker' => strings.voiceSectionSpeaker,
+      'voiceSectionRecognition' => strings.voiceSectionRecognition,
+      'voiceSectionTrimming' => strings.voiceSectionTrimming,
+      'voiceSectionIsolation' => strings.voiceSectionIsolation,
       'voiceSectionWakeCommand' => strings.voiceSectionWakeCommand,
       'voiceSectionTimerEnds' => strings.voiceSectionTimerEnds,
       'voiceSectionSharedTimers' => strings.voiceSectionSharedTimers,
@@ -5409,7 +5412,7 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'voiceMatchPeopleGone' => strings.voiceMatchPeopleGone,
       'settingVoiceMatchRejectedTitleChosen' =>
         strings.settingVoiceMatchRejectedTitleChosen,
-      'voiceMatchHint' => strings.voiceMatchHint,
+      'voiceMatchFeaturesHint' => strings.voiceMatchFeaturesHint,
       'settingVoiceMatchEnabledTitle' => strings.settingVoiceMatchEnabledTitle,
       'settingVoiceMatchPolicyTitle' => strings.settingVoiceMatchPolicyTitle,
       'settingVoiceMatchRejectedDescription' =>
@@ -5435,14 +5438,18 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingVoiceMatchAllowEnrollTitle,
       'voiceMatchAppHint' => strings.voiceMatchAppHint,
       'voiceMatchOpen' => strings.voiceMatchOpen,
-      'settingVoiceMatchEnabledDescriptionGroundControl' =>
-        strings.settingVoiceMatchEnabledDescriptionGroundControl,
+      'settingVoiceMatchEnabledDescriptionCommand' =>
+        strings.settingVoiceMatchEnabledDescriptionCommand,
       'settingVoiceMatchAllowEnrollDescriptionGroundControl' =>
         strings.settingVoiceMatchAllowEnrollDescriptionGroundControl,
-      'settingVoiceMatchLeaveOutTitle' =>
-        strings.settingVoiceMatchLeaveOutTitle,
-      'settingVoiceMatchLeaveOutDescription' =>
-        strings.settingVoiceMatchLeaveOutDescription,
+      'settingVoiceMatchTrimmingTitle' =>
+        strings.settingVoiceMatchTrimmingTitle,
+      'settingVoiceMatchTrimmingDescription' =>
+        strings.settingVoiceMatchTrimmingDescription,
+      'settingVoiceMatchIsolationTitle' =>
+        strings.settingVoiceMatchIsolationTitle,
+      'settingVoiceMatchIsolationDescription' =>
+        strings.settingVoiceMatchIsolationDescription,
       'voiceWakePage' => strings.voiceWakePage,
       'voiceWakeHint' => strings.voiceWakeHint,
       'voiceWakeLabel' => strings.voiceWakeLabel,

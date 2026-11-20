@@ -65,6 +65,7 @@ class VoiceMatchTurn {
     required String deviceName,
     required String policy,
     List<String> people = const [],
+    bool isolation = true,
     required void Function(Map<String, Object?> event) onEvent,
     void Function(String line)? log,
     bool follow = false,
@@ -96,6 +97,9 @@ class VoiceMatchTurn {
         // and its session, so the conversation is saved as one.
         if (follow && speaker != null) 'speaker': speaker,
         if (follow && continues != null) 'continues': continues,
+        // Isolation, this kiosk's own switch: Ground Control runs it when
+        // it is on in its own settings too.
+        if (follow) 'isolation': isolation,
       }),
     );
     return turn;

@@ -8,8 +8,8 @@
   "groundControlApp": "App Ground Control",
   "groundControlFeatures": "Fonctionnalités",
   "settingGroundControlVoiceMatchTitle": "Voice Match",
-  "settingGroundControlVoiceMatchDescription": "Reconnaissance du locuteur, suppression des autres voix et enregistrement.",
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "Reconnaissance faciale avec la caméra de cet appareil.",
-  "groundControlComingSoon": "Bientôt disponible"
+  "groundControlComingSoon": "Bientôt disponible",
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming et Isolation."
 }

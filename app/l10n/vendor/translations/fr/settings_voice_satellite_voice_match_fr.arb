@@ -1,6 +1,5 @@
 {
   "@@locale": "fr",
-  "voiceMatchHint": "Qui parle, autres voix, enregistrement de la voix",
   "settingVoiceMatchEnabledTitle": "Activer Voice Match",
   "settingVoiceMatchPolicyTitle": "Répondre à",
   "settingVoiceMatchRejectedDescription": "Ce qui se passe quand quelqu'un d'autre dit le mot de réveil.",
@@ -20,10 +19,7 @@
   "settingVoiceMatchAllowEnrollTitle": "Autoriser l'enregistrement ici",
   "voiceMatchAppHint": "Personnes, enregistrement de la voix, sessions et réglages.",
   "voiceMatchOpen": "Ouvrir",
-  "settingVoiceMatchEnabledDescriptionGroundControl": "Reconnaître qui parle et arrêter l'écoute quand quelqu'un d'autre prend la parole. Nécessite Ground Control.",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permet à l'app Ground Control d'enregistrer la voix d'une personne avec le micro de ce kiosque. Le kiosque affiche le texte à lire, ou l'anneau lumineux affiche la progression.",
-  "settingVoiceMatchLeaveOutTitle": "Écarter les autres voix",
-  "settingVoiceMatchLeaveOutDescription": "Home Assistant et l'assistant en temps réel n'entendent que la personne qui a dit le mot d'activation, et la commande se termine quand elle s'arrête, même avec la télé allumée.",
   "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "Avec Personnes choisies, la télé, les invités et tous les autres sont ignorés.",
   "voiceMatchOptionPeople": "Personnes choisies",
@@ -33,5 +29,11 @@
   "voiceMatchPeopleSearch": "Rechercher des personnes",
   "voiceMatchPeopleEmpty": "Personne n'est encore enregistré dans Ground Control.",
   "voiceMatchPeopleGone": "N'est plus dans Ground Control",
-  "settingVoiceMatchRejectedTitleChosen": "Voix non choisie"
+  "settingVoiceMatchRejectedTitleChosen": "Voix non choisie",
+  "voiceMatchFeaturesHint": "Recognition, Trimming et Isolation",
+  "settingVoiceMatchEnabledDescriptionCommand": "Qui parle, et seulement sa voix dans la commande. Nécessite Ground Control.",
+  "settingVoiceMatchTrimmingTitle": "Activer Trimming",
+  "settingVoiceMatchTrimmingDescription": "Les autres voix, comme une télé ou d'autres personnes, sont coupées entre les mots de la personne qui a dit le mot d'activation, et la commande se termine quand elle s'arrête.",
+  "settingVoiceMatchIsolationTitle": "Activer Isolation",
+  "settingVoiceMatchIsolationDescription": "Les autres voix qui parlent par-dessus les mots de la personne qui a dit le mot d'activation sont aussi supprimées. La commande l'attend une fois que la personne s'arrête. Nécessite Isolation activé dans Ground Control."
 }

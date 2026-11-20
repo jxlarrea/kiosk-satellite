@@ -34,15 +34,36 @@ void main() {
         'voice_match.policy',
         'voice_match.people',
         'voice_match.rejected',
-        'voice_match.end_on_other_voice',
         'voice_match.speaker_sensor',
         'voice_match.show_speaker',
         'voice_match.allow_enroll',
+        'voice_match.end_on_other_voice',
+        'voice_match.isolation',
       ]);
       for (final d in vm) {
         expect(d.category, 'Voice Satellite', reason: d.key);
         expect(d.subpage, 'Ground Control Voice Match', reason: d.key);
       }
+      // Grouped by the Voice Match features, as in Ground Control.
+      expect(
+        {for (final d in vm.skip(1)) d.key: d.section},
+        {
+          'voice_match.policy': 'Recognition',
+          'voice_match.people': 'Recognition',
+          'voice_match.rejected': 'Recognition',
+          'voice_match.speaker_sensor': 'Recognition',
+          'voice_match.show_speaker': 'Recognition',
+          'voice_match.allow_enroll': 'Recognition',
+          'voice_match.end_on_other_voice': 'Trimming',
+          'voice_match.isolation': 'Isolation',
+        },
+      );
+      // Isolation runs on what Trimming sends back, so it follows Trimming.
+      expect(
+        defs.voiceMatchIsolation.dependsOn,
+        'voice_match.end_on_other_voice',
+      );
+      expect(defs.voiceMatchIsolation.defaultValue, isTrue);
       // The switch follows Voice Satellite and Ground Control, the rest
       // follow the switch (or the policy, for the chosen people and what
       // happens to a voice that is not chosen).
@@ -56,7 +77,10 @@ void main() {
       expect(defs.voiceMatchPolicy.defaultValue, 'anyone');
       final byPolicy = {defs.voiceMatchRejected, defs.voiceMatchPeople};
       for (final d in vm.where(
-        (d) => d != defs.voiceMatchEnabled && !byPolicy.contains(d),
+        (d) =>
+            d != defs.voiceMatchEnabled &&
+            d != defs.voiceMatchIsolation &&
+            !byPolicy.contains(d),
       )) {
         expect(d.dependsOn, 'voice_match.enabled', reason: d.key);
       }

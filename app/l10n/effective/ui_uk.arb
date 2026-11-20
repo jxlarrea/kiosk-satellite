@@ -32094,10 +32094,10 @@
       ]
     }
   },
-  "settingGroundControlVoiceMatchDescription": "Розпізнавання мовця, вилучення інших голосів і реєстрація.",
-  "@settingGroundControlVoiceMatchDescription": {
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming і Isolation.",
+  "@settingGroundControlVoiceMatchFeaturesDescription": {
     "context": "Settings > Ground Control",
-    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
         "Settings > Ground Control > Features > Voice Match"
@@ -55547,6 +55547,21 @@
     "context": "Settings > Voice Satellite",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
+  "voiceSectionRecognition": "Recognition",
+  "@voiceSectionRecognition": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionTrimming": "Trimming",
+  "@voiceSectionTrimming": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
+  "voiceSectionIsolation": "Isolation",
+  "@voiceSectionIsolation": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "A section heading of the Ground Control Voice Match page. It is a Voice Match feature name: keep it in English."
+  },
   "voiceSectionWakeCommand": "Слово активації та команда",
   "@voiceSectionWakeCommand": {
     "context": "Settings > Voice Satellite",
@@ -57242,16 +57257,16 @@
       ]
     }
   },
-  "voiceMatchHint": "Хто говорить, інші голоси, реєстрація голосу",
-  "@voiceMatchHint": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+  "voiceMatchFeaturesHint": "Recognition, Trimming і Isolation",
+  "@voiceMatchFeaturesHint": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match"
+        "Settings > Voice Satellite > Ground Control Voice Match"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match"
+        "Voice Satellite > Ground Control Voice Match"
       ]
     }
   },
@@ -57502,16 +57517,16 @@
       ]
     }
   },
-  "settingVoiceMatchEnabledDescriptionGroundControl": "Розпізнавати, хто говорить, і припиняти слухати, коли говорить хтось інший. Потрібен Ground Control.",
-  "@settingVoiceMatchEnabledDescriptionGroundControl": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+  "settingVoiceMatchEnabledDescriptionCommand": "Хто говорить, і в команді лише його голос. Потрібен Ground Control.",
+  "@settingVoiceMatchEnabledDescriptionCommand": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match > Enable Voice Match"
+        "Settings > Voice Satellite > Ground Control Voice Match > Enable Voice Match"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match > Enable Voice Match"
+        "Voice Satellite > Ground Control Voice Match > Enable Voice Match"
       ]
     }
   },
@@ -57528,29 +57543,55 @@
       ]
     }
   },
-  "settingVoiceMatchLeaveOutTitle": "Не враховувати інші голоси",
-  "@settingVoiceMatchLeaveOutTitle": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+  "settingVoiceMatchTrimmingTitle": "Увімкнути Trimming",
+  "@settingVoiceMatchTrimmingTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+        "Settings > Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match > Leave other voices out"
+        "Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
       ]
     }
   },
-  "settingVoiceMatchLeaveOutDescription": "Home Assistant і асистент у реальному часі чують лише людину, яка сказала слово активації, і команда завершується, коли вона замовкає, навіть коли увімкнений телевізор.",
-  "@settingVoiceMatchLeaveOutDescription": {
-    "context": "Settings > Voice Satellite > Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
+  "settingVoiceMatchTrimmingDescription": "Інші голоси, наприклад телевізор або інші люди, вирізаються між словами людини, яка сказала слово активації, і команда завершується, коли вона замовкає.",
+  "@settingVoiceMatchTrimmingDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Voice Satellite > Voice Match > Leave other voices out"
+        "Settings > Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
       ],
       "remoteAdmin": [
-        "Voice Satellite > Voice Match > Leave other voices out"
+        "Voice Satellite > Ground Control Voice Match > Trimming > Enable Trimming"
+      ]
+    }
+  },
+  "settingVoiceMatchIsolationTitle": "Увімкнути Isolation",
+  "@settingVoiceMatchIsolationTitle": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Isolation > Enable Isolation"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Isolation > Enable Isolation"
+      ]
+    }
+  },
+  "settingVoiceMatchIsolationDescription": "Інші голоси, що звучать поверх слів людини, яка сказала слово активації, теж вилучаються. Коли вона замовкає, команда чекає на цю обробку. Потрібно увімкнути Isolation у Ground Control.",
+  "@settingVoiceMatchIsolationDescription": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > Isolation > Enable Isolation"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > Isolation > Enable Isolation"
       ]
     }
   },

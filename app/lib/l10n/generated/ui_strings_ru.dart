@@ -8538,8 +8538,8 @@ class UiStringsRu extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchDescription =>
-      'Распознавание говорящего, удаление других голосов и запись голоса.';
+  String get settingGroundControlVoiceMatchFeaturesDescription =>
+      'Recognition, Trimming и Isolation.';
 
   @override
   String get groundControlVisionMatch => 'Vision Match';
@@ -14939,6 +14939,15 @@ class UiStringsRu extends UiStrings {
   String get voiceSectionSpeaker => 'Колонка';
 
   @override
+  String get voiceSectionRecognition => 'Recognition';
+
+  @override
+  String get voiceSectionTrimming => 'Trimming';
+
+  @override
+  String get voiceSectionIsolation => 'Isolation';
+
+  @override
   String get voiceSectionWakeCommand => 'Слово пробуждения и команда';
 
   @override
@@ -15741,7 +15750,7 @@ class UiStringsRu extends UiStrings {
   String get settingVoiceMatchRejectedTitleChosen => 'Голос не выбран';
 
   @override
-  String get voiceMatchHint => 'Кто говорит, другие голоса, запись голоса';
+  String get voiceMatchFeaturesHint => 'Recognition, Trimming и Isolation';
 
   @override
   String get settingVoiceMatchEnabledTitle => 'Включить Voice Match';
@@ -15806,19 +15815,26 @@ class UiStringsRu extends UiStrings {
   String get voiceMatchOpen => 'Открыть';
 
   @override
-  String get settingVoiceMatchEnabledDescriptionGroundControl =>
-      'Распознавать, кто говорит, и прекращать слушать, когда вступает кто-то другой. Нужен Ground Control.';
+  String get settingVoiceMatchEnabledDescriptionCommand =>
+      'Кто говорит, и в команде только его голос. Нужен Ground Control.';
 
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Разрешает приложению Ground Control записывать голос человека микрофоном этого киоска. Киоск показывает текст для чтения, или световое кольцо показывает прогресс.';
 
   @override
-  String get settingVoiceMatchLeaveOutTitle => 'Не учитывать другие голоса';
+  String get settingVoiceMatchTrimmingTitle => 'Включить Trimming';
 
   @override
-  String get settingVoiceMatchLeaveOutDescription =>
-      'Home Assistant и ассистент в реальном времени слышат только того, кто сказал слово активации, и команда заканчивается, когда он замолкает, даже при включённом телевизоре.';
+  String get settingVoiceMatchTrimmingDescription =>
+      'Другие голоса, например телевизор или другие люди, вырезаются между словами того, кто сказал слово активации, и команда заканчивается, когда он замолкает.';
+
+  @override
+  String get settingVoiceMatchIsolationTitle => 'Включить Isolation';
+
+  @override
+  String get settingVoiceMatchIsolationDescription =>
+      'Другие голоса, звучащие поверх слов того, кто сказал слово активации, тоже удаляются. Когда он замолкает, команда ждёт этой обработки. Нужно включить Isolation в Ground Control.';
 
   @override
   String get voiceWakePage => 'Слово пробуждения';

@@ -2781,7 +2781,7 @@
   },
   "voice_match.enabled": {
     "title": "settingVoiceMatchEnabledTitle",
-    "description": "settingVoiceMatchEnabledDescriptionGroundControl"
+    "description": "settingVoiceMatchEnabledDescriptionCommand"
   },
   "voice_match.policy": {
     "title": "settingVoiceMatchPolicyTitle",
@@ -2796,8 +2796,12 @@
     "description": "settingVoiceMatchRejectedDescription"
   },
   "voice_match.end_on_other_voice": {
-    "title": "settingVoiceMatchLeaveOutTitle",
-    "description": "settingVoiceMatchLeaveOutDescription"
+    "title": "settingVoiceMatchTrimmingTitle",
+    "description": "settingVoiceMatchTrimmingDescription"
+  },
+  "voice_match.isolation": {
+    "title": "settingVoiceMatchIsolationTitle",
+    "description": "settingVoiceMatchIsolationDescription"
   },
   "voice_match.speaker_sensor": {
     "title": "settingVoiceMatchSpeakerSensorTitle",
@@ -2821,6 +2825,6 @@
   },
   "ground_control.voice_match": {
     "title": "settingGroundControlVoiceMatchTitle",
-    "description": "settingGroundControlVoiceMatchDescription"
+    "description": "settingGroundControlVoiceMatchFeaturesDescription"
   }
 }

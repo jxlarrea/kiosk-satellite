@@ -8484,8 +8484,8 @@ class UiStringsEn extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchDescription =>
-      'Speaker recognition, other voices removal and enrollment.';
+  String get settingGroundControlVoiceMatchFeaturesDescription =>
+      'Recognition, Trimming and Isolation.';
 
   @override
   String get groundControlVisionMatch => 'Vision Match';
@@ -14844,6 +14844,15 @@ class UiStringsEn extends UiStrings {
   String get voiceSectionSpeaker => 'Speaker';
 
   @override
+  String get voiceSectionRecognition => 'Recognition';
+
+  @override
+  String get voiceSectionTrimming => 'Trimming';
+
+  @override
+  String get voiceSectionIsolation => 'Isolation';
+
+  @override
   String get voiceSectionWakeCommand => 'Wake word and command';
 
   @override
@@ -15643,7 +15652,7 @@ class UiStringsEn extends UiStrings {
   String get settingVoiceMatchRejectedTitleChosen => 'Voice not chosen';
 
   @override
-  String get voiceMatchHint => 'Who is talking, other voices, enrollment';
+  String get voiceMatchFeaturesHint => 'Recognition, Trimming and Isolation';
 
   @override
   String get settingVoiceMatchEnabledTitle => 'Enable Voice Match';
@@ -15707,19 +15716,26 @@ class UiStringsEn extends UiStrings {
   String get voiceMatchOpen => 'Open';
 
   @override
-  String get settingVoiceMatchEnabledDescriptionGroundControl =>
-      'Recognize who is talking and stop listening when someone else takes over. Needs Ground Control.';
+  String get settingVoiceMatchEnabledDescriptionCommand =>
+      'Who is talking, and only their voice in the command. Needs Ground Control.';
 
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Lets the Ground Control app record a person\'s voice with this kiosk\'s microphone. The kiosk shows the text to read, or the light ring shows the progress.';
 
   @override
-  String get settingVoiceMatchLeaveOutTitle => 'Leave other voices out';
+  String get settingVoiceMatchTrimmingTitle => 'Enable Trimming';
 
   @override
-  String get settingVoiceMatchLeaveOutDescription =>
-      'Home Assistant and the realtime assistant hear only the person who said the wake word, and the command ends when they stop, even with the TV on.';
+  String get settingVoiceMatchTrimmingDescription =>
+      'Other voices, like a TV or other people, are cut out between the words of the person who said the wake word, and the command ends when they stop.';
+
+  @override
+  String get settingVoiceMatchIsolationTitle => 'Enable Isolation';
+
+  @override
+  String get settingVoiceMatchIsolationDescription =>
+      'Other voices talking over the words of the person who said the wake word are removed too. The command waits for it once they stop. Needs Isolation on in Ground Control.';
 
   @override
   String get voiceWakePage => 'Wake Word';

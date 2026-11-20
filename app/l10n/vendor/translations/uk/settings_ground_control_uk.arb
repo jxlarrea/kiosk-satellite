@@ -8,8 +8,8 @@
   "groundControlApp": "Застосунок Ground Control",
   "groundControlFeatures": "Функції",
   "settingGroundControlVoiceMatchTitle": "Voice Match",
-  "settingGroundControlVoiceMatchDescription": "Розпізнавання мовця, вилучення інших голосів і реєстрація.",
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "Розпізнавання облич за допомогою камери цього пристрою.",
-  "groundControlComingSoon": "Незабаром"
+  "groundControlComingSoon": "Незабаром",
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming і Isolation."
 }

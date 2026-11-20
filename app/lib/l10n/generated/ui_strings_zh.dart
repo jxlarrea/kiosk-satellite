@@ -8133,7 +8133,8 @@ class UiStringsZh extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchDescription => '说话人识别、其他声音移除和录入。';
+  String get settingGroundControlVoiceMatchFeaturesDescription =>
+      'Recognition、Trimming 和 Isolation。';
 
   @override
   String get groundControlVisionMatch => 'Vision Match';
@@ -14079,6 +14080,15 @@ class UiStringsZh extends UiStrings {
   String get voiceSectionSpeaker => '扬声器';
 
   @override
+  String get voiceSectionRecognition => 'Recognition';
+
+  @override
+  String get voiceSectionTrimming => 'Trimming';
+
+  @override
+  String get voiceSectionIsolation => 'Isolation';
+
+  @override
   String get voiceSectionWakeCommand => '唤醒词与指令';
 
   @override
@@ -14826,7 +14836,7 @@ class UiStringsZh extends UiStrings {
   String get settingVoiceMatchRejectedTitleChosen => '未选择的声音';
 
   @override
-  String get voiceMatchHint => '谁在说话、其他声音、声纹录入';
+  String get voiceMatchFeaturesHint => 'Recognition、Trimming 和 Isolation';
 
   @override
   String get settingVoiceMatchEnabledTitle => '启用 Voice Match';
@@ -14888,19 +14898,26 @@ class UiStringsZh extends UiStrings {
   String get voiceMatchOpen => '打开';
 
   @override
-  String get settingVoiceMatchEnabledDescriptionGroundControl =>
-      '识别谁在说话，并在其他人接话时停止聆听。需要 Ground Control。';
+  String get settingVoiceMatchEnabledDescriptionCommand =>
+      '识别谁在说话，命令中只保留此人的声音。需要 Ground Control。';
 
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       '允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
 
   @override
-  String get settingVoiceMatchLeaveOutTitle => '排除其他声音';
+  String get settingVoiceMatchTrimmingTitle => '启用 Trimming';
 
   @override
-  String get settingVoiceMatchLeaveOutDescription =>
-      'Home Assistant 和实时助手只会听到说出唤醒词的人，并在此人停止说话时结束命令，即使电视开着也是如此。';
+  String get settingVoiceMatchTrimmingDescription =>
+      '在说出唤醒词的人的话语之间，会剪掉其他声音，例如电视或其他人，并在此人停止说话时结束命令。';
+
+  @override
+  String get settingVoiceMatchIsolationTitle => '启用 Isolation';
+
+  @override
+  String get settingVoiceMatchIsolationDescription =>
+      '与说出唤醒词的人同时说话的其他声音也会被移除。此人停止说话后，命令会等待这一步完成。需要在 Ground Control 中开启 Isolation。';
 
   @override
   String get voiceWakePage => '唤醒词';
@@ -24302,7 +24319,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchDescription => '说话人识别、其他声音移除和录入。';
+  String get settingGroundControlVoiceMatchFeaturesDescription =>
+      'Recognition、Trimming 和 Isolation。';
 
   @override
   String get groundControlVisionMatch => 'Vision Match';
@@ -30248,6 +30266,15 @@ class UiStringsZhCn extends UiStringsZh {
   String get voiceSectionSpeaker => '扬声器';
 
   @override
+  String get voiceSectionRecognition => 'Recognition';
+
+  @override
+  String get voiceSectionTrimming => 'Trimming';
+
+  @override
+  String get voiceSectionIsolation => 'Isolation';
+
+  @override
   String get voiceSectionWakeCommand => '唤醒词与指令';
 
   @override
@@ -30995,7 +31022,7 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingVoiceMatchRejectedTitleChosen => '未选择的声音';
 
   @override
-  String get voiceMatchHint => '谁在说话、其他声音、声纹录入';
+  String get voiceMatchFeaturesHint => 'Recognition、Trimming 和 Isolation';
 
   @override
   String get settingVoiceMatchEnabledTitle => '启用 Voice Match';
@@ -31057,19 +31084,26 @@ class UiStringsZhCn extends UiStringsZh {
   String get voiceMatchOpen => '打开';
 
   @override
-  String get settingVoiceMatchEnabledDescriptionGroundControl =>
-      '识别谁在说话，并在其他人接话时停止聆听。需要 Ground Control。';
+  String get settingVoiceMatchEnabledDescriptionCommand =>
+      '识别谁在说话，命令中只保留此人的声音。需要 Ground Control。';
 
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       '允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。';
 
   @override
-  String get settingVoiceMatchLeaveOutTitle => '排除其他声音';
+  String get settingVoiceMatchTrimmingTitle => '启用 Trimming';
 
   @override
-  String get settingVoiceMatchLeaveOutDescription =>
-      'Home Assistant 和实时助手只会听到说出唤醒词的人，并在此人停止说话时结束命令，即使电视开着也是如此。';
+  String get settingVoiceMatchTrimmingDescription =>
+      '在说出唤醒词的人的话语之间，会剪掉其他声音，例如电视或其他人，并在此人停止说话时结束命令。';
+
+  @override
+  String get settingVoiceMatchIsolationTitle => '启用 Isolation';
+
+  @override
+  String get settingVoiceMatchIsolationDescription =>
+      '与说出唤醒词的人同时说话的其他声音也会被移除。此人停止说话后，命令会等待这一步完成。需要在 Ground Control 中开启 Isolation。';
 
   @override
   String get voiceWakePage => '唤醒词';

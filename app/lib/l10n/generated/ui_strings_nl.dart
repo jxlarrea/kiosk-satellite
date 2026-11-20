@@ -8577,8 +8577,8 @@ class UiStringsNl extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchDescription =>
-      'Sprekerherkenning, verwijderen van andere stemmen en inschrijven.';
+  String get settingGroundControlVoiceMatchFeaturesDescription =>
+      'Recognition, Trimming en Isolation.';
 
   @override
   String get groundControlVisionMatch => 'Vision Match';
@@ -15014,6 +15014,15 @@ class UiStringsNl extends UiStrings {
   String get voiceSectionSpeaker => 'Luidspreker';
 
   @override
+  String get voiceSectionRecognition => 'Recognition';
+
+  @override
+  String get voiceSectionTrimming => 'Trimming';
+
+  @override
+  String get voiceSectionIsolation => 'Isolation';
+
+  @override
   String get voiceSectionWakeCommand => 'Wekwoord en spraakopdracht';
 
   @override
@@ -15822,7 +15831,7 @@ class UiStringsNl extends UiStrings {
   String get settingVoiceMatchRejectedTitleChosen => 'Stem niet gekozen';
 
   @override
-  String get voiceMatchHint => 'Wie er praat, andere stemmen, inschrijven';
+  String get voiceMatchFeaturesHint => 'Recognition, Trimming en Isolation';
 
   @override
   String get settingVoiceMatchEnabledTitle => 'Voice Match inschakelen';
@@ -15887,19 +15896,26 @@ class UiStringsNl extends UiStrings {
   String get voiceMatchOpen => 'Openen';
 
   @override
-  String get settingVoiceMatchEnabledDescriptionGroundControl =>
-      'Herken wie er praat en stop met luisteren als iemand anders het overneemt. Vereist Ground Control.';
+  String get settingVoiceMatchEnabledDescriptionCommand =>
+      'Wie er praat, en alleen die stem in het commando. Vereist Ground Control.';
 
   @override
   String get settingVoiceMatchAllowEnrollDescriptionGroundControl =>
       'Laat de Ground Control app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang.';
 
   @override
-  String get settingVoiceMatchLeaveOutTitle => 'Andere stemmen weglaten';
+  String get settingVoiceMatchTrimmingTitle => 'Trimming inschakelen';
 
   @override
-  String get settingVoiceMatchLeaveOutDescription =>
-      'Home Assistant en de realtime assistent horen alleen de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten, ook met de tv aan.';
+  String get settingVoiceMatchTrimmingDescription =>
+      'Andere stemmen, zoals een tv of andere mensen, worden weggeknipt tussen de woorden van de persoon die het activatiewoord zei, en het commando stopt als die stopt met praten.';
+
+  @override
+  String get settingVoiceMatchIsolationTitle => 'Isolation inschakelen';
+
+  @override
+  String get settingVoiceMatchIsolationDescription =>
+      'Andere stemmen die door de woorden heen praten van de persoon die het activatiewoord zei, worden ook verwijderd. Het commando wacht daarop zodra die stopt met praten. Vereist Isolation in Ground Control.';
 
   @override
   String get voiceWakePage => 'Wekwoorden';

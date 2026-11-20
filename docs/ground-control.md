@@ -2,7 +2,7 @@
 
 Navigate to **Settings > Ground Control**, under the **Kiosk Satellite** heading.
 
-[Kiosk Satellite Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) runs the work that is too heavy for a kiosk on a capable machine, as a Home Assistant app or a Docker container on a CPU or an NVIDIA GPU. Its first feature is [Voice Match](voice-match.md): who is talking to the kiosk, and the command ended at the speaker's last word when the TV or another person keeps talking.
+[Kiosk Satellite Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) runs the work that is too heavy for a kiosk on a capable machine, as a Home Assistant app or a Docker container on a CPU or an NVIDIA GPU. Its first component is [Voice Match](voice-match.md), with Recognition, Trimming and Isolation: who is talking to the kiosk, and only their voice in the command.
 
 Ground Control is off by default.
 

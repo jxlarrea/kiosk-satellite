@@ -104,10 +104,10 @@
       ]
     }
   },
-  "settingGroundControlVoiceMatchDescription": "Speaker recognition, other voices removal and enrollment.",
-  "@settingGroundControlVoiceMatchDescription": {
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming and Isolation.",
+  "@settingGroundControlVoiceMatchFeaturesDescription": {
     "context": "Settings > Ground Control",
-    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
         "Settings > Ground Control > Features > Voice Match"
