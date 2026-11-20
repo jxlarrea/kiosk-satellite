@@ -5106,6 +5106,65 @@ const screensaverImmichEdgeTaps = SettingDef<bool>(
   dependsOn: 'screensaver.immich_validated',
 );
 
+// A bar along the top or bottom edge that fills over each slide's hold, so a
+// photo worth calling someone over for says how long it has left (issue
+// #1522). Videos fill it over their own length unless Video length holds
+// them to Seconds per image.
+const screensaverImmichProgressBar = SettingDef<bool>(
+  key: 'screensaver.immich_progress_bar',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show progress bar',
+  description: 'A thin bar shows the time left before the next slide.',
+  category: 'Screensaver',
+  section: 'Slideshow',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichProgressBarPosition = SettingDef<String>(
+  key: 'screensaver.immich_progress_bar_position',
+  type: SettingType.select,
+  defaultValue: 'bottom',
+  title: 'Progress bar position',
+  description: 'The edge of the screen the progress bar runs along.',
+  category: 'Screensaver',
+  section: 'Slideshow',
+  subpage: 'Immich Media screensaver',
+  options: ['top', 'bottom'],
+  optionLabels: {'top': 'Top', 'bottom': 'Bottom'},
+  dependsOn: 'screensaver.immich_progress_bar',
+);
+
+const screensaverImmichProgressBarColor = SettingDef<String>(
+  key: 'screensaver.immich_progress_bar_color',
+  type: SettingType.string,
+  defaultValue: '255,255,255',
+  title: 'Progress bar color',
+  description: 'The color of the progress bar.',
+  category: 'Screensaver',
+  section: 'Slideshow',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_progress_bar',
+);
+
+// Stops short of 100 percent, which would hide the bar the switch shows.
+const screensaverImmichProgressBarTransparency = SettingDef<num>(
+  key: 'screensaver.immich_progress_bar_transparency',
+  type: SettingType.number,
+  defaultValue: 20,
+  title: 'Progress bar transparency',
+  description: 'How much of the photo shows through the progress bar.',
+  category: 'Screensaver',
+  section: 'Slideshow',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_progress_bar',
+  min: 0,
+  max: 90,
+  step: 5,
+  unit: '%',
+);
+
 const screensaverImmichCache = SettingDef<bool>(
   key: 'screensaver.immich_cache',
   type: SettingType.boolean,
@@ -14991,6 +15050,10 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichPairPortrait,
   screensaverImmichPairLandscape,
   screensaverImmichEdgeTaps,
+  screensaverImmichProgressBar,
+  screensaverImmichProgressBarPosition,
+  screensaverImmichProgressBarColor,
+  screensaverImmichProgressBarTransparency,
   screensaverImmichMetadata,
   screensaverImmichMetadataAlbum,
   screensaverImmichMetadataDate,

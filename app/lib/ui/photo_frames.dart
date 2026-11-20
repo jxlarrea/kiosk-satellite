@@ -200,9 +200,13 @@ class PausableTimer {
     this._callback, {
     bool paused = false,
     Stopwatch? stopwatch,
-  }) : _elapsed = stopwatch ?? Stopwatch() {
+  }) : total = _remaining,
+       _elapsed = stopwatch ?? Stopwatch() {
     if (!paused) resume();
   }
+
+  /// The whole hold, for a progress bar that fills as it runs out.
+  final Duration total;
   Duration _remaining;
   final void Function() _callback;
   final Stopwatch _elapsed;
@@ -210,6 +214,20 @@ class PausableTimer {
   bool _cancelled = false;
 
   bool get isActive => !_cancelled;
+
+  /// Whether the hold is counting down right now: started, not paused,
+  /// not fired and not cancelled.
+  bool get isRunning => _timer != null;
+
+  /// How much of the hold has run, from 0 to 1. It stands still while the
+  /// timer is paused and stays where it was when the timer is cancelled.
+  double get progress {
+    if (total <= Duration.zero) return 1;
+    var left = _remaining;
+    if (_timer != null) left -= _elapsed.elapsed;
+    final done = 1 - left.inMicroseconds / total.inMicroseconds;
+    return done.clamp(0.0, 1.0);
+  }
 
   void pause() {
     if (_timer == null) return;
@@ -227,14 +245,13 @@ class PausableTimer {
       _cancelled = true;
       _timer = null;
       _elapsed.stop();
+      _remaining = Duration.zero;
       _callback();
     });
   }
 
   void cancel() {
+    pause();
     _cancelled = true;
-    _timer?.cancel();
-    _timer = null;
-    _elapsed.stop();
   }
 }

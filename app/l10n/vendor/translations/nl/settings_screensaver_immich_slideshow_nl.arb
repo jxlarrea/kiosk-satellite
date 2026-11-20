@@ -13,5 +13,15 @@
   "settingScreensaverImmichPairLandscapeDescription": "Toon twee landschapsfoto's boven elkaar zodat ze een portretscherm vullen.",
   "settingScreensaverImmichEdgeTapsTitle": "Tik op randen om dia's te wijzigen",
   "settingScreensaverImmichEdgeTapsDescription": "Een tik op het linker- of rechtervijfde deel van het scherm toont de vorige of volgende dia in plaats van de schermbeveiliging te sluiten.",
+  "settingScreensaverImmichProgressBarTitle": "Voortgangsbalk tonen",
+  "settingScreensaverImmichProgressBarDescription": "Een dunne balk toont de resterende tijd tot de volgende dia.",
+  "settingScreensaverImmichProgressBarPositionTitle": "Positie van de voortgangsbalk",
+  "settingScreensaverImmichProgressBarPositionDescription": "De rand van het scherm waarlangs de voortgangsbalk loopt.",
+  "screensaverImmichProgressBarTop": "Boven",
+  "screensaverImmichProgressBarBottom": "Onder",
+  "settingScreensaverImmichProgressBarColorTitle": "Kleur van de voortgangsbalk",
+  "settingScreensaverImmichProgressBarColorDescription": "De kleur van de voortgangsbalk.",
+  "settingScreensaverImmichProgressBarTransparencyTitle": "Transparantie van de voortgangsbalk",
+  "settingScreensaverImmichProgressBarTransparencyDescription": "Hoeveel van de foto door de voortgangsbalk zichtbaar is.",
   "screensaverMediaSlideshow": "Diavoorstelling"
 }

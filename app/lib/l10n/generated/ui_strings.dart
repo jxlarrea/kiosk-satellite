@@ -22703,6 +22703,66 @@ abstract class UiStrings {
   /// **'A tap on the left or right fifth of the screen shows the previous or next slide instead of dismissing.'**
   String get settingScreensaverImmichEdgeTapsDescription;
 
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Show progress bar'**
+  String get settingScreensaverImmichProgressBarTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'A thin bar shows the time left before the next slide.'**
+  String get settingScreensaverImmichProgressBarDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress bar position'**
+  String get settingScreensaverImmichProgressBarPositionTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'The edge of the screen the progress bar runs along.'**
+  String get settingScreensaverImmichProgressBarPositionDescription;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Top'**
+  String get screensaverImmichProgressBarTop;
+
+  /// Label or guidance in this section.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottom'**
+  String get screensaverImmichProgressBarBottom;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress bar color'**
+  String get settingScreensaverImmichProgressBarColorTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'The color of the progress bar.'**
+  String get settingScreensaverImmichProgressBarColorDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress bar transparency'**
+  String get settingScreensaverImmichProgressBarTransparencyTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'How much of the photo shows through the progress bar.'**
+  String get settingScreensaverImmichProgressBarTransparencyDescription;
+
   /// Label or guidance in this section.
   ///
   /// In en, this message translates to:

@@ -13,5 +13,15 @@
   "settingScreensaverImmichPairLandscapeDescription": "Показувати два альбомні фото одне над іншим, щоб заповнити вертикальний екран.",
   "settingScreensaverImmichEdgeTapsTitle": "Торкання країв для зміни слайдів",
   "settingScreensaverImmichEdgeTapsDescription": "Торкання лівої або правої п'ятої частини екрана показує попередній або наступний слайд замість закриття заставки.",
+  "settingScreensaverImmichProgressBarTitle": "Показувати індикатор прогресу",
+  "settingScreensaverImmichProgressBarDescription": "Тонка смуга показує, скільки часу залишилося до наступного слайда.",
+  "settingScreensaverImmichProgressBarPositionTitle": "Положення індикатора прогресу",
+  "settingScreensaverImmichProgressBarPositionDescription": "Край екрана, уздовж якого йде індикатор прогресу.",
+  "screensaverImmichProgressBarTop": "Угорі",
+  "screensaverImmichProgressBarBottom": "Унизу",
+  "settingScreensaverImmichProgressBarColorTitle": "Колір індикатора прогресу",
+  "settingScreensaverImmichProgressBarColorDescription": "Колір індикатора прогресу.",
+  "settingScreensaverImmichProgressBarTransparencyTitle": "Прозорість індикатора прогресу",
+  "settingScreensaverImmichProgressBarTransparencyDescription": "Наскільки фото просвічує крізь індикатор прогресу.",
   "screensaverMediaSlideshow": "Слайд-шоу"
 }

@@ -12373,6 +12373,39 @@ class UiStringsZh extends UiStrings {
       '点击屏幕左侧或右侧五分之一区域，显示上一张或下一张幻灯片，而非关闭屏保。';
 
   @override
+  String get settingScreensaverImmichProgressBarTitle => '显示进度条';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      '细条显示距下一张幻灯片的剩余时间。';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle => '进度条位置';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      '进度条所在的屏幕边缘。';
+
+  @override
+  String get screensaverImmichProgressBarTop => '顶部';
+
+  @override
+  String get screensaverImmichProgressBarBottom => '底部';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle => '进度条颜色';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription => '进度条的颜色。';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle => '进度条透明度';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      '透过进度条可以看到多少照片。';
+
+  @override
   String get screensaverMediaSlideshow => '幻灯片';
 
   @override
@@ -28578,6 +28611,39 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingScreensaverImmichEdgeTapsDescription =>
       '点击屏幕左侧或右侧五分之一区域，显示上一张或下一张幻灯片，而非关闭屏保。';
+
+  @override
+  String get settingScreensaverImmichProgressBarTitle => '显示进度条';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      '细条显示距下一张幻灯片的剩余时间。';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle => '进度条位置';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      '进度条所在的屏幕边缘。';
+
+  @override
+  String get screensaverImmichProgressBarTop => '顶部';
+
+  @override
+  String get screensaverImmichProgressBarBottom => '底部';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle => '进度条颜色';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription => '进度条的颜色。';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle => '进度条透明度';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      '透过进度条可以看到多少照片。';
 
   @override
   String get screensaverMediaSlideshow => '幻灯片';

@@ -13229,6 +13229,44 @@ class UiStringsFr extends UiStrings {
       'Un appui sur le cinquième gauche ou droit de l\'écran affiche la diapositive précédente ou suivante au lieu de fermer l\'économiseur d\'écran.';
 
   @override
+  String get settingScreensaverImmichProgressBarTitle =>
+      'Afficher la barre de progression';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      'Une fine barre indique le temps restant avant la diapositive suivante.';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle =>
+      'Position de la barre de progression';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      'Le bord de l\'écran le long duquel s\'affiche la barre de progression.';
+
+  @override
+  String get screensaverImmichProgressBarTop => 'En haut';
+
+  @override
+  String get screensaverImmichProgressBarBottom => 'En bas';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle =>
+      'Couleur de la barre de progression';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription =>
+      'La couleur de la barre de progression.';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle =>
+      'Transparence de la barre de progression';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      'La part de la photo visible à travers la barre de progression.';
+
+  @override
   String get screensaverMediaSlideshow => 'Diaporama';
 
   @override

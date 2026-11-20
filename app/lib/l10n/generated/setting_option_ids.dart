@@ -578,6 +578,10 @@ const settingOptionMessageIds = <String, Map<String, String>>{
   "voice_match.rejected": {
     "quiet": "voiceMatchOptionQuiet",
     "chime": "voiceMatchOptionChime"
+  },
+  "screensaver.immich_progress_bar_position": {
+    "top": "screensaverImmichProgressBarTop",
+    "bottom": "screensaverImmichProgressBarBottom"
   }
 };
 const settingPlaceholderMessageIds = <String, String>{

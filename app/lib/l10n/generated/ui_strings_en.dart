@@ -12989,6 +12989,43 @@ class UiStringsEn extends UiStrings {
       'A tap on the left or right fifth of the screen shows the previous or next slide instead of dismissing.';
 
   @override
+  String get settingScreensaverImmichProgressBarTitle => 'Show progress bar';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      'A thin bar shows the time left before the next slide.';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle =>
+      'Progress bar position';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      'The edge of the screen the progress bar runs along.';
+
+  @override
+  String get screensaverImmichProgressBarTop => 'Top';
+
+  @override
+  String get screensaverImmichProgressBarBottom => 'Bottom';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle =>
+      'Progress bar color';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription =>
+      'The color of the progress bar.';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle =>
+      'Progress bar transparency';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      'How much of the photo shows through the progress bar.';
+
+  @override
   String get screensaverMediaSlideshow => 'Slideshow';
 
   @override

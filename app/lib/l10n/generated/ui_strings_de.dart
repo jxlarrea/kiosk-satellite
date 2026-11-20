@@ -13263,6 +13263,44 @@ class UiStringsDe extends UiStrings {
       'Ein Tippen auf das linke oder rechte Fünftel des Bildschirms zeigt das vorherige bzw. nächste Bild an, anstatt den Bildschirmschoner zu schließen.';
 
   @override
+  String get settingScreensaverImmichProgressBarTitle =>
+      'Fortschrittsbalken anzeigen';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      'Ein schmaler Balken zeigt die verbleibende Zeit bis zum nächsten Bild.';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle =>
+      'Position des Fortschrittsbalkens';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      'Der Bildschirmrand, an dem der Fortschrittsbalken verläuft.';
+
+  @override
+  String get screensaverImmichProgressBarTop => 'Oben';
+
+  @override
+  String get screensaverImmichProgressBarBottom => 'Unten';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle =>
+      'Farbe des Fortschrittsbalkens';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription =>
+      'Die Farbe des Fortschrittsbalkens.';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle =>
+      'Transparenz des Fortschrittsbalkens';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      'Wie viel vom Foto durch den Fortschrittsbalken sichtbar ist.';
+
+  @override
   String get screensaverMediaSlideshow => 'Diashow';
 
   @override

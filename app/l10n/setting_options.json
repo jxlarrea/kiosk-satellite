@@ -577,5 +577,9 @@
   "voice_match.rejected": {
     "quiet": "voiceMatchOptionQuiet",
     "chime": "voiceMatchOptionChime"
+  },
+  "screensaver.immich_progress_bar_position": {
+    "top": "screensaverImmichProgressBarTop",
+    "bottom": "screensaverImmichProgressBarBottom"
   }
 }

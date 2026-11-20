@@ -26,6 +26,10 @@ The settings page is organized into five main sections: Server Connection, Media
 | Slideshow | Pair portrait photos | on | Displays two portrait photos side by side in landscape mode. |
 | Slideshow | Pair landscape photos | on | Displays two landscape photos one above the other in portrait mode. |
 | Slideshow | Tap edges to change slides | on | A tap on the left or right fifth of the screen shows the previous or next photo instead of dismissing the screensaver. |
+| Slideshow | Show progress bar | off | Shows a thin bar along the edge of the screen that fills until the next slide. A video fills it over its own length, or over Seconds per image when Video length is Same as photos and the video is longer. The bar is hidden when the slideshow has only one item. |
+| Slideshow | Progress bar position | Bottom | Runs the progress bar along the top or bottom edge of the screen. Shown when Show progress bar is on. |
+| Slideshow | Progress bar color | White | Sets the color of the progress bar. Shown when Show progress bar is on. |
+| Slideshow | Progress bar transparency | 20% | Sets how much of the photo shows through the progress bar, from 0 to 90 percent. Shown when Show progress bar is on. |
 | Metadata | Show metadata | off | Displays photo details in a designated corner of the screen. |
 | Metadata | Album name, Date taken, Camera details, Location | on | Toggles individual metadata lines. |
 | Metadata | Description | off | Shows the description written for the photo in Immich at the bottom of the screen. |

@@ -4333,6 +4333,26 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverImmichEdgeTapsTitle,
       'settingScreensaverImmichEdgeTapsDescription' =>
         strings.settingScreensaverImmichEdgeTapsDescription,
+      'settingScreensaverImmichProgressBarTitle' =>
+        strings.settingScreensaverImmichProgressBarTitle,
+      'settingScreensaverImmichProgressBarDescription' =>
+        strings.settingScreensaverImmichProgressBarDescription,
+      'settingScreensaverImmichProgressBarPositionTitle' =>
+        strings.settingScreensaverImmichProgressBarPositionTitle,
+      'settingScreensaverImmichProgressBarPositionDescription' =>
+        strings.settingScreensaverImmichProgressBarPositionDescription,
+      'screensaverImmichProgressBarTop' =>
+        strings.screensaverImmichProgressBarTop,
+      'screensaverImmichProgressBarBottom' =>
+        strings.screensaverImmichProgressBarBottom,
+      'settingScreensaverImmichProgressBarColorTitle' =>
+        strings.settingScreensaverImmichProgressBarColorTitle,
+      'settingScreensaverImmichProgressBarColorDescription' =>
+        strings.settingScreensaverImmichProgressBarColorDescription,
+      'settingScreensaverImmichProgressBarTransparencyTitle' =>
+        strings.settingScreensaverImmichProgressBarTransparencyTitle,
+      'settingScreensaverImmichProgressBarTransparencyDescription' =>
+        strings.settingScreensaverImmichProgressBarTransparencyDescription,
       'screensaverMediaSlideshow' => strings.screensaverMediaSlideshow,
       'settingScreensaverImmichAlbumTitle' =>
         strings.settingScreensaverImmichAlbumTitle,

@@ -5670,6 +5670,8 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
         _failures = 0;
         _lastFailure = null;
         _video = video;
+        // The last photo's finished hold is not this video's.
+        _timer = null;
         final oldPhoto = _photo;
         final oldPairPhoto = _pairPhoto;
         setState(() {
@@ -5744,6 +5746,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
       _claimCorners();
       _retirePhoto(oldPhoto);
       _retirePhoto(oldPairPhoto);
+      _timer = null;
       if (_assets.length > _span) {
         _timer = PausableTimer(_interval, _advance, paused: !_awake);
         _prefetch(next + _span);
@@ -5758,6 +5761,41 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
         .toInt()
         .clamp(2, 3600),
   );
+
+  /// How far the slide on screen is through its hold, for the progress
+  /// bar, or null when nothing counts down to a next slide: a playlist of
+  /// one, a problem message or a slide still loading. A photo follows its
+  /// timer. A video follows its own length, or the timer when Video length
+  /// holds it to Seconds per image and the timer runs out first.
+  _SlideProgress? _slideProgress() {
+    if (_problem != null || _assets.length < 2) return null;
+    final timer = _timer;
+    final video = _video;
+    if (video != null && video.value.isInitialized) {
+      final length = video.value.duration;
+      if (timer != null && timer.total < length) {
+        return (
+          done: timer.progress,
+          length: timer.total,
+          running: timer.isRunning,
+        );
+      }
+      if (length <= Duration.zero) return null;
+      final played =
+          video.value.position.inMicroseconds / length.inMicroseconds;
+      return (
+        done: played.clamp(0.0, 1.0),
+        length: length,
+        running: video.value.isPlaying && !video.value.isBuffering,
+      );
+    }
+    if (_image == null || timer == null) return null;
+    return (
+      done: timer.progress,
+      length: timer.total,
+      running: timer.isRunning,
+    );
+  }
 
   /// See the Local Media state's [_holdVideoForInterval].
   void _holdVideoForInterval(VideoPlayerController video) {
@@ -6203,56 +6241,260 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     final pairIndex = _pairIndex;
     return ColoredBox(
       color: Colors.black,
-      child: showMetadata
-          ? Stack(
-              fit: StackFit.expand,
-              children: [
-                body,
-                // A pair gets a panel per photo, each on its own half,
-                // rather than one panel speaking for a photo it may not
-                // even be next to. The corners are fixed here (the widget
-                // layer stands down from both while the pair holds them).
-                if (pairIndex == null)
-                  _immichMetadata(_assets[_index])
-                else ...[
-                  if (_pairing == ImmichPairing.stacked)
-                    // The top photo's panel lives in the top half, so its
-                    // bottom corner is the middle of the screen: the photo
-                    // keeps its details under it, and the screen's top
-                    // corners stay the widgets'.
-                    // Its caption likewise sits over the seam, under its
-                    // own photo, and stays out of the At a Glance row's
-                    // reckoning since it is nowhere near the bottom.
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      right: 0,
-                      height: MediaQuery.sizeOf(context).height / 2,
-                      child: _immichMetadata(
-                        _assets[_index],
-                        corner: _pairCorners[0],
-                        reportCaption: false,
-                      ),
-                    )
-                  else
-                    _immichMetadata(
-                      _assets[_index],
-                      corner: _pairCorners[0],
-                      captionHalf: _CaptionHalf.left,
-                    ),
-                  _immichMetadata(
-                    _assets[pairIndex],
-                    corner: _pairCorners[1],
-                    captionHalf: _pairing == ImmichPairing.stacked
-                        ? null
-                        : _CaptionHalf.right,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          body,
+          if (showMetadata) ...[
+            // A pair gets a panel per photo, each on its own half,
+            // rather than one panel speaking for a photo it may not
+            // even be next to. The corners are fixed here (the widget
+            // layer stands down from both while the pair holds them).
+            if (pairIndex == null)
+              _immichMetadata(_assets[_index])
+            else ...[
+              if (_pairing == ImmichPairing.stacked)
+                // The top photo's panel lives in the top half, so its
+                // bottom corner is the middle of the screen: the photo
+                // keeps its details under it, and the screen's top
+                // corners stay the widgets'.
+                // Its caption likewise sits over the seam, under its
+                // own photo, and stays out of the At a Glance row's
+                // reckoning since it is nowhere near the bottom.
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  right: 0,
+                  height: MediaQuery.sizeOf(context).height / 2,
+                  child: _immichMetadata(
+                    _assets[_index],
+                    corner: _pairCorners[0],
+                    reportCaption: false,
                   ),
-                ],
-              ],
-            )
-          : body,
+                )
+              else
+                _immichMetadata(
+                  _assets[_index],
+                  corner: _pairCorners[0],
+                  captionHalf: _CaptionHalf.left,
+                ),
+              _immichMetadata(
+                _assets[pairIndex],
+                corner: _pairCorners[1],
+                captionHalf: _pairing == ImmichPairing.stacked
+                    ? null
+                    : _CaptionHalf.right,
+              ),
+            ],
+          ],
+          Positioned.fill(
+            child: IgnorePointer(
+              child: _SlideProgressBar(
+                container: c,
+                active: _awake,
+                progress: _slideProgress,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+/// How far a slide is through its hold, from 0 to 1, how long the whole
+/// hold is and whether it is counting down right now.
+typedef _SlideProgress = ({double done, Duration length, bool running});
+
+/// The Immich slideshow's progress bar (issue #1522): a strip along the
+/// top or bottom edge that fills over each slide's hold, in the color and
+/// transparency its settings name. It hides while [progress] answers null.
+///
+/// The bar animates from where the hold is to its end, so it moves at
+/// the display's frame rate. Its ticker only runs while a hold counts
+/// down on a screen that is on. A light poll checks the hold against the
+/// animation and restarts it on a new slide, a pause or a video that
+/// drifted.
+class _SlideProgressBar extends StatefulWidget {
+  const _SlideProgressBar({
+    required this.container,
+    required this.active,
+    required this.progress,
+  });
+
+  final AppContainer container;
+
+  /// False while the screen is off or covered, which stops the bar.
+  final bool active;
+
+  final _SlideProgress? Function() progress;
+
+  @override
+  State<_SlideProgressBar> createState() => _SlideProgressBarState();
+}
+
+class _SlideProgressBarState extends State<_SlideProgressBar>
+    with SingleTickerProviderStateMixin {
+  static const _thickness = 8.0;
+
+  /// Room under the bar for its shadow.
+  static const _shadow = 4.0;
+
+  /// How often the bar checks the hold. A slide that changes without a
+  /// rebuild (a video handing its hold to the interval timer) is caught
+  /// within this.
+  static const _poll = Duration(milliseconds: 250);
+
+  /// How far the animation may stray from the hold before it is put
+  /// back. A video's position only updates every 100 ms or so, so a
+  /// tighter limit would restart the animation on every poll.
+  static const _drift = 0.01;
+
+  static final _keys = {
+    defs.screensaverImmichProgressBar.key,
+    defs.screensaverImmichProgressBarPosition.key,
+    defs.screensaverImmichProgressBarColor.key,
+    defs.screensaverImmichProgressBarTransparency.key,
+  };
+
+  late final AnimationController _bar = AnimationController(vsync: this);
+  StreamSubscription<SettingChanged>? _settingsSub;
+  Timer? _timer;
+
+  SettingsManager get _settings => widget.container.settings;
+
+  bool get _on => _settings.get(defs.screensaverImmichProgressBar);
+
+  @override
+  void initState() {
+    super.initState();
+    _settingsSub = widget.container.bus.on<SettingChanged>().listen((e) {
+      if (!mounted || !_keys.contains(e.key)) return;
+      setState(() {});
+      _sync();
+    });
+    _sync();
+  }
+
+  /// The parent rebuilds on every slide change, so a new slide starts its
+  /// bar at once instead of on the next poll.
+  @override
+  void didUpdateWidget(_SlideProgressBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _sync();
+  }
+
+  void _sync() {
+    _timer?.cancel();
+    _timer = null;
+    if (!_on || !widget.active) {
+      _bar.stop();
+      return;
+    }
+    _check();
+    _timer = Timer.periodic(_poll, (_) => _check());
+  }
+
+  void _check() {
+    if (!mounted) return;
+    final progress = widget.progress();
+    if (progress == null) {
+      _bar.value = 0;
+      return;
+    }
+    final running = progress.running && progress.done < 1;
+    final strayed = (progress.done - _bar.value).abs() > _drift;
+    if (!strayed && running == _bar.isAnimating) return;
+    _bar.value = progress.done;
+    if (running) {
+      unawaited(
+        _bar.animateTo(1, duration: progress.length * (1 - progress.done)),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _settingsSub?.cancel();
+    _bar.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_on) return const SizedBox.shrink();
+    final transparency =
+        _settings
+            .get(defs.screensaverImmichProgressBarTransparency)
+            .toDouble()
+            .clamp(0.0, 90.0) /
+        100;
+    final color = _rgbOr(
+      _settings.get(defs.screensaverImmichProgressBarColor),
+      Colors.white,
+    ).withValues(alpha: 1 - transparency);
+    final top =
+        _settings.get(defs.screensaverImmichProgressBarPosition) == 'top';
+    return Align(
+      alignment: top ? Alignment.topCenter : Alignment.bottomCenter,
+      child: SizedBox(
+        width: double.infinity,
+        height: _thickness + _shadow,
+        child: RepaintBoundary(
+          child: CustomPaint(
+            painter: _SlideProgressPainter(_bar, color, _thickness, top: top),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The bar rests on a soft dark shadow, like the screensaver's text: a
+/// light bar over a bright photo is otherwise nearly invisible. The
+/// shadow falls toward the middle of the screen and fades with the bar's
+/// own transparency.
+class _SlideProgressPainter extends CustomPainter {
+  _SlideProgressPainter(
+    this.done,
+    this.color,
+    this.thickness, {
+    required this.top,
+  }) : super(repaint: done);
+
+  final Animation<double> done;
+  final Color color;
+  final double thickness;
+
+  /// Whether the bar runs along the top edge rather than the bottom.
+  final bool top;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final value = done.value;
+    if (value <= 0) return;
+    final bar = Rect.fromLTWH(
+      0,
+      top ? 0 : size.height - thickness,
+      size.width * value,
+      thickness,
+    );
+    canvas.drawRect(
+      bar.translate(0, top ? 1 : -1),
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.55 * color.a)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
+    );
+    canvas.drawRect(bar, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_SlideProgressPainter old) =>
+      old.color != color ||
+      old.done != done ||
+      old.thickness != thickness ||
+      old.top != top;
 }
 
 /// The metadata panel in a corner of a photo screensaver: album, date,

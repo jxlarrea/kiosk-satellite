@@ -31098,5 +31098,65 @@
     "translation": "7bd78a2b3a32f74d5c35536222b1e66d73bd3cf7f6db40127bfbfc497966c21b",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingScreensaverImmichProgressBarTransparencyDescription": {
+    "source": "6ccb6eb5f5617a31120b4c2e7c77f9dcdcaaf4635957d27e8db007e7eda196db",
+    "translation": "0ebbf241d89bf396f0a5adab3849f0a21bb3edb9ca77be2fba4a610efed29e0d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichProgressBarTitle": {
+    "source": "968bc619c92835828b049500185b674607818f5992b1e5d458f9760bf57066ca",
+    "translation": "0e7d81766fefb107ae483ad322b956c3cd53159ff3253a72652d28a1748877d8",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichProgressBarColorDescription": {
+    "source": "eabbeb356c36e2df0033ad3c7a948f29dffa2d187be7b0de0db173a8d1686f70",
+    "translation": "a7e78a4a145b2de466bab45a477742d352c56baed8f9f5c2509e5aa73908fd16",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichProgressBarDescription": {
+    "source": "3698d41383be7d4e1660f3c8459a7e945ec415079eaecee7a08b201abbf24ed9",
+    "translation": "8c36ed55857e7aa714d8c9a5fddb0b38fb29de17af06d789da7907d0005cc389",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichProgressBarColorTitle": {
+    "source": "3dcf387a5afa0b8d00d6d7ca5e69746f3d1d838d910ae2fcb3900c202e9223ad",
+    "translation": "8d622b66ec5a1c1e8323332537ba2f0c091a1d91981c4fcaf53267c77fa39850",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichProgressBarTransparencyTitle": {
+    "source": "6a12e1c83b2737fcaf786af34ee486457e77969c6852dde29dd6583d47ba6f2d",
+    "translation": "5833ddcd5bcbfd6bfe32da0cd034e2f09cde74c4f3354852619ea624616f81cb",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "screensaverImmichProgressBarBottom": {
+    "source": "526ba2d058faf90a8a5e80fa31c58a049a2fd27d619c5fa7912b60b58c75cc84",
+    "translation": "39c51de751117c570f538946eab714663a43a429bc6f2c86955e7359961b456b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "screensaverImmichProgressBarTop": {
+    "source": "7dfc08468726744eeb8dabd5c901ee1c5ea84b68ede7e9c71b6e05c98e71026d",
+    "translation": "0d7d94fb8e0944421ff432989c4773f70615757f0f5c428efb891158795c39f0",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichProgressBarPositionTitle": {
+    "source": "2551f49a9a2f45b7976e4e515eb96dfcb2179f121af077979cf4ef28fc34d12e",
+    "translation": "d903eeeb66acb3f89454f53d1afe27c3c53fa1d5923f384c4ad3fa536af8dc9f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichProgressBarPositionDescription": {
+    "source": "4854c38919b03cdc108fe0e97fd33fba10ebd86853d6e30fa8d036b6e29182cf",
+    "translation": "b1589541d58f8ebae73cae3d591ba5f68a86512c708bf85443b61284c364cd0b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

@@ -13,5 +13,15 @@
   "settingScreensaverImmichPairLandscapeDescription": "Zeigt zwei Querformatfotos übereinander an, um einen Bildschirm im Hochformat besser auszufüllen.",
   "settingScreensaverImmichEdgeTapsTitle": "Zum Bildwechsel auf die Bildschirmränder tippen",
   "settingScreensaverImmichEdgeTapsDescription": "Ein Tippen auf das linke oder rechte Fünftel des Bildschirms zeigt das vorherige bzw. nächste Bild an, anstatt den Bildschirmschoner zu schließen.",
+  "settingScreensaverImmichProgressBarTitle": "Fortschrittsbalken anzeigen",
+  "settingScreensaverImmichProgressBarDescription": "Ein schmaler Balken zeigt die verbleibende Zeit bis zum nächsten Bild.",
+  "settingScreensaverImmichProgressBarPositionTitle": "Position des Fortschrittsbalkens",
+  "settingScreensaverImmichProgressBarPositionDescription": "Der Bildschirmrand, an dem der Fortschrittsbalken verläuft.",
+  "screensaverImmichProgressBarTop": "Oben",
+  "screensaverImmichProgressBarBottom": "Unten",
+  "settingScreensaverImmichProgressBarColorTitle": "Farbe des Fortschrittsbalkens",
+  "settingScreensaverImmichProgressBarColorDescription": "Die Farbe des Fortschrittsbalkens.",
+  "settingScreensaverImmichProgressBarTransparencyTitle": "Transparenz des Fortschrittsbalkens",
+  "settingScreensaverImmichProgressBarTransparencyDescription": "Wie viel vom Foto durch den Fortschrittsbalken sichtbar ist.",
   "screensaverMediaSlideshow": "Diashow"
 }

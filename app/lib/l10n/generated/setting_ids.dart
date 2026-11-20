@@ -728,6 +728,22 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingScreensaverImmichEdgeTapsTitle",
     "description": "settingScreensaverImmichEdgeTapsDescription",
   },
+  "screensaver.immich_progress_bar": {
+    "title": "settingScreensaverImmichProgressBarTitle",
+    "description": "settingScreensaverImmichProgressBarDescription",
+  },
+  "screensaver.immich_progress_bar_position": {
+    "title": "settingScreensaverImmichProgressBarPositionTitle",
+    "description": "settingScreensaverImmichProgressBarPositionDescription",
+  },
+  "screensaver.immich_progress_bar_color": {
+    "title": "settingScreensaverImmichProgressBarColorTitle",
+    "description": "settingScreensaverImmichProgressBarColorDescription",
+  },
+  "screensaver.immich_progress_bar_transparency": {
+    "title": "settingScreensaverImmichProgressBarTransparencyTitle",
+    "description": "settingScreensaverImmichProgressBarTransparencyDescription",
+  },
   "screensaver.immich_cache": {
     "title": "settingScreensaverImmichCacheTitle",
     "description": "settingScreensaverImmichCacheDescription",

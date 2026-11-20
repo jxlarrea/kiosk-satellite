@@ -321,7 +321,10 @@ async function flushSettingsUpdates() {
     // ringing in its own card (issue #991), Video calls reveals Video
     // quality and both Video calls and Answer mode gate Answer with camera
     // on, in place like the switches above.
-    if (!shapeChanged && ['intercom.hangup_key', 'intercom.video', 'intercom.answer_mode'].includes(setting.key)) {
+    // Show progress bar reveals its color and transparency in the Immich
+    // Slideshow card (issue #1522), in place the same way.
+    if (!shapeChanged && ['intercom.hangup_key', 'intercom.video', 'intercom.answer_mode',
+      'screensaver.immich_progress_bar'].includes(setting.key)) {
       const byKey = Object.fromEntries(state.settings.map(s => [s.key, s]));
       if ((!rows.length && !depSatisfied(setting, byKey)) || (rows.length
           && rows.every(row => row.updateSetting?.() && syncGatedRows(setting.key, row)))) {

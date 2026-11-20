@@ -13128,6 +13128,44 @@ class UiStringsUk extends UiStrings {
       'Торкання лівої або правої п\'ятої частини екрана показує попередній або наступний слайд замість закриття заставки.';
 
   @override
+  String get settingScreensaverImmichProgressBarTitle =>
+      'Показувати індикатор прогресу';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      'Тонка смуга показує, скільки часу залишилося до наступного слайда.';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle =>
+      'Положення індикатора прогресу';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      'Край екрана, уздовж якого йде індикатор прогресу.';
+
+  @override
+  String get screensaverImmichProgressBarTop => 'Угорі';
+
+  @override
+  String get screensaverImmichProgressBarBottom => 'Унизу';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle =>
+      'Колір індикатора прогресу';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription =>
+      'Колір індикатора прогресу.';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle =>
+      'Прозорість індикатора прогресу';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      'Наскільки фото просвічує крізь індикатор прогресу.';
+
+  @override
   String get screensaverMediaSlideshow => 'Слайд-шоу';
 
   @override

@@ -67,6 +67,42 @@ void main() {
     },
   );
 
+  test('progress fills with the hold and holds still when paused', () {
+    fakeAsync((async) {
+      final timer = PausableTimer(
+        const Duration(seconds: 10),
+        () {},
+        stopwatch: async.getClock(DateTime(2000)).stopwatch(),
+      );
+      expect(timer.total, const Duration(seconds: 10));
+      expect(timer.progress, 0);
+      async.elapse(const Duration(seconds: 4));
+      expect(timer.progress, closeTo(0.4, 1e-9));
+      timer.pause();
+      async.elapse(const Duration(hours: 1));
+      expect(timer.progress, closeTo(0.4, 1e-9));
+      timer.resume();
+      async.elapse(const Duration(seconds: 1));
+      expect(timer.progress, closeTo(0.5, 1e-9));
+      timer.cancel();
+      async.elapse(const Duration(seconds: 3));
+      expect(timer.progress, closeTo(0.5, 1e-9));
+    });
+  });
+
+  test('progress is full once the hold fires', () {
+    fakeAsync((async) {
+      final timer = PausableTimer(
+        const Duration(seconds: 2),
+        () {},
+        stopwatch: async.getClock(DateTime(2000)).stopwatch(),
+      );
+      async.elapse(const Duration(seconds: 2));
+      expect(timer.isActive, isFalse);
+      expect(timer.progress, 1);
+    });
+  });
+
   test('a cancelled or initially sleeping hold schedules no work', () {
     fakeAsync((async) {
       var changes = 0;

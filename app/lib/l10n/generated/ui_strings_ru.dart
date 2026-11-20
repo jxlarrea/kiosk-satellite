@@ -13087,6 +13087,44 @@ class UiStringsRu extends UiStrings {
       'Касание левой или правой пятой части экрана показывает предыдущий или следующий слайд вместо закрытия.';
 
   @override
+  String get settingScreensaverImmichProgressBarTitle =>
+      'Показывать индикатор прогресса';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      'Тонкая полоса показывает, сколько времени осталось до следующего слайда.';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle =>
+      'Положение индикатора прогресса';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      'Край экрана, вдоль которого идёт индикатор прогресса.';
+
+  @override
+  String get screensaverImmichProgressBarTop => 'Сверху';
+
+  @override
+  String get screensaverImmichProgressBarBottom => 'Снизу';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle =>
+      'Цвет индикатора прогресса';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription =>
+      'Цвет индикатора прогресса.';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle =>
+      'Прозрачность индикатора прогресса';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      'Насколько фото просвечивает сквозь индикатор прогресса.';
+
+  @override
   String get screensaverMediaSlideshow => 'Слайд-шоу';
 
   @override

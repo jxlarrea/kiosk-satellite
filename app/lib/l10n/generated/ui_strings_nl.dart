@@ -13139,6 +13139,43 @@ class UiStringsNl extends UiStrings {
       'Een tik op het linker- of rechtervijfde deel van het scherm toont de vorige of volgende dia in plaats van de schermbeveiliging te sluiten.';
 
   @override
+  String get settingScreensaverImmichProgressBarTitle => 'Voortgangsbalk tonen';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      'Een dunne balk toont de resterende tijd tot de volgende dia.';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle =>
+      'Positie van de voortgangsbalk';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      'De rand van het scherm waarlangs de voortgangsbalk loopt.';
+
+  @override
+  String get screensaverImmichProgressBarTop => 'Boven';
+
+  @override
+  String get screensaverImmichProgressBarBottom => 'Onder';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle =>
+      'Kleur van de voortgangsbalk';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription =>
+      'De kleur van de voortgangsbalk.';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle =>
+      'Transparantie van de voortgangsbalk';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      'Hoeveel van de foto door de voortgangsbalk zichtbaar is.';
+
+  @override
   String get screensaverMediaSlideshow => 'Diavoorstelling';
 
   @override

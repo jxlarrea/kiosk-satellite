@@ -13226,6 +13226,44 @@ class UiStringsEs extends UiStrings {
       'Tocar el quinto izquierdo o derecho de la pantalla muestra la imagen anterior o siguiente en lugar de cerrar el protector de pantalla.';
 
   @override
+  String get settingScreensaverImmichProgressBarTitle =>
+      'Mostrar barra de progreso';
+
+  @override
+  String get settingScreensaverImmichProgressBarDescription =>
+      'Una barra delgada muestra el tiempo que falta para la siguiente imagen.';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionTitle =>
+      'Posición de la barra de progreso';
+
+  @override
+  String get settingScreensaverImmichProgressBarPositionDescription =>
+      'El borde de la pantalla por el que corre la barra de progreso.';
+
+  @override
+  String get screensaverImmichProgressBarTop => 'Arriba';
+
+  @override
+  String get screensaverImmichProgressBarBottom => 'Abajo';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorTitle =>
+      'Color de la barra de progreso';
+
+  @override
+  String get settingScreensaverImmichProgressBarColorDescription =>
+      'El color de la barra de progreso.';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyTitle =>
+      'Transparencia de la barra de progreso';
+
+  @override
+  String get settingScreensaverImmichProgressBarTransparencyDescription =>
+      'Cuánto de la foto se ve a través de la barra de progreso.';
+
+  @override
   String get screensaverMediaSlideshow => 'Presentación';
 
   @override
