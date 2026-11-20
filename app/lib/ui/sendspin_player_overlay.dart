@@ -224,6 +224,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
   AppContainer get c => widget.container;
 
   Uint8List? _artBytes;
+
+  /// The loaded artwork's width over its height, 1 for square art or none.
+  double _artAspect = 1;
   String _artUrl = '';
   String _loadedArtUrl = '';
   Object? _presentation;
@@ -301,9 +304,17 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
 
   Future<void> _fetchArt(String url) async {
     final bytes = await fetchSendspinArtwork(c, url);
+    var aspect = 1.0;
+    if (bytes != null) {
+      try {
+        final (width, height) = await imageUprightSize(bytes);
+        if (width > 0 && height > 0) aspect = width / height;
+      } catch (_) {}
+    }
     if (mounted && url == _artUrl) {
       setState(() {
         _artBytes = bytes;
+        _artAspect = aspect;
         _loadedArtUrl = url;
       });
     }
@@ -492,7 +503,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                 final detailsHeight = havePanel
                     ? titleSize * 2.3 + artistSize * 2.8 + 16 + gap * 0.5
                     : 0.0;
-                final coverSize = min(
+                final cover = nowPlayingCoverSize(
+                  art == null ? 1 : _artAspect,
                   box.maxWidth,
                   max(48.0, box.maxHeight - detailsHeight),
                 );
@@ -501,9 +513,10 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox.square(
+                        SizedBox(
                           key: const ValueKey('horizontal-cover'),
-                          dimension: coverSize,
+                          width: cover.width,
+                          height: cover.height,
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 700),
                             child: art == null
@@ -522,7 +535,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                                       image: resizedMemoryImage(
                                         art,
                                         width:
-                                            (coverSize *
+                                            (cover.width *
                                                     MediaQuery.devicePixelRatioOf(
                                                       context,
                                                     ))
@@ -621,12 +634,21 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       return LayoutBuilder(
         builder: (context, full) {
           final area = padding.deflateRect(Offset.zero & full.biggest);
-          final coverSize = max(0.0, min(area.width, area.height));
+          final coverSize = nowPlayingCoverSize(
+            art == null ? 1 : _artAspect,
+            max(0.0, area.width),
+            max(0.0, area.height),
+          );
           final cover = Rect.fromCenter(
             center: area.center,
-            width: coverSize,
-            height: coverSize,
+            width: coverSize.width,
+            height: coverSize.height,
           );
+          // The details and transport keep the square a cover would take,
+          // so a wide frame from a show does not stretch them across the
+          // screen.
+          final square = max(0.0, min(area.width, area.height));
+          final controlsLeft = area.center.dx - square / 2;
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -651,7 +673,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                             image: resizedMemoryImage(
                               art,
                               width:
-                                  (coverSize *
+                                  (coverSize.width *
                                           MediaQuery.devicePixelRatioOf(
                                             context,
                                           ))
@@ -672,12 +694,12 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                   fit: StackFit.expand,
                   children: [
                     const ColoredBox(color: Color(0x99000000)),
-                    // As wide as the cover, as tall as the screen allows.
-                    // Half the inset below: the transport already keeps a
-                    // margin under its buttons.
+                    // As wide as a square cover, as tall as the screen
+                    // allows. Half the inset below: the transport already
+                    // keeps a margin under its buttons.
                     Positioned(
-                      left: cover.left,
-                      width: coverSize,
+                      left: controlsLeft,
+                      width: square,
                       top: area.top,
                       bottom: full.maxHeight - area.bottom,
                       child: Padding(
@@ -720,8 +742,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                                         // Sized to the cover, not the
                                         // column a portrait screen leaves.
                                         maxHeight:
-                                            min(inner.maxHeight, coverSize) *
-                                            0.5,
+                                            min(inner.maxHeight, square) * 0.5,
                                         shadows: _overArtShadows,
                                       ),
                                     ),
@@ -1096,10 +1117,16 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         final spare = max(0.0, box.maxHeight - titleHeight - artistHeight);
         final fittedGap = min(gap, spare * 0.15);
         final artistGap = artist.isEmpty ? 0.0 : min(12.0, spare * 0.1);
-        final coverSize = min(
-          min(art == null ? artSize * 0.45 : artSize, box.maxWidth),
+        final coverHeight = min(
+          art == null ? artSize * 0.45 : artSize,
           max(0.0, spare - fittedGap - artistGap),
         );
+        final cover = nowPlayingCoverSize(
+          art == null ? 1 : _artAspect,
+          box.maxWidth,
+          coverHeight,
+        );
+        final coverSize = cover.height;
         return FittedBox(
           fit: BoxFit.scaleDown,
           child: SizedBox(
@@ -1119,12 +1146,12 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                         image: resizedMemoryImage(
                           art,
                           width:
-                              (coverSize *
+                              (cover.width *
                                       MediaQuery.devicePixelRatioOf(context))
                                   .ceil(),
                         ),
-                        width: coverSize,
-                        height: coverSize,
+                        width: cover.width,
+                        height: cover.height,
                         fit: BoxFit.cover,
                         gaplessPlayback: true,
                       ),
@@ -3552,6 +3579,28 @@ Widget _trackShadow({
     ],
   );
 }
+
+/// The Now Playing cover's size inside [maxWidth] x [maxHeight] for
+/// artwork [aspect] times as wide as it is tall. Album covers, square or
+/// nearly so, keep a square crop. Wider art, such as a still from a TV
+/// episode, and taller art, such as a movie poster, keep their own shape
+/// so none of the picture is cut off.
+Size nowPlayingCoverSize(double aspect, double maxWidth, double maxHeight) {
+  final width = max(0.0, maxWidth);
+  final height = max(0.0, maxHeight);
+  if (!aspect.isFinite ||
+      aspect <= 0 ||
+      (aspect <= _squareCoverLimit && aspect >= 1 / _squareCoverLimit)) {
+    final side = min(width, height);
+    return Size(side, side);
+  }
+  return width / height > aspect
+      ? Size(height * aspect, height)
+      : Size(width, width / aspect);
+}
+
+/// How far from square artwork may be and still get a square crop.
+const _squareCoverLimit = 1.3;
 
 /// Shared by the floating card and the full-screen view: the manager's
 /// fetcher, which trusts the Sendspin and Music Assistant hosts.
