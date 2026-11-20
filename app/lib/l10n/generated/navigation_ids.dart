@@ -78,5 +78,5 @@ const navigationMessageIds = <String, String>{
   "Compass options": "navigationOptionsSection",
   "Full screen view, pills, shared timers": "settingsMenuTimersSummary",
   "Ground Control": "settingsMenuGroundControl",
-  "Voice Match on a capable machine": "settingsMenuGroundControlSummary"
+  "Voice Match and Vision Match": "settingsMenuGroundControlFeatures"
 };

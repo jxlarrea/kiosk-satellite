@@ -800,10 +800,10 @@
       ]
     }
   },
-  "settingsMenuGroundControlSummary": "Voice Match on a capable machine",
-  "@settingsMenuGroundControlSummary": {
+  "settingsMenuGroundControlFeatures": "Voice Match and Vision Match",
+  "@settingsMenuGroundControlFeatures": {
     "context": "Settings:Menu",
-    "description": "Summary under the Ground Control entry. Keep Voice Match unchanged.",
+    "description": "Summary under the Ground Control entry: the features Ground Control runs. Voice Match and Vision Match are product names: keep both unchanged.",
     "x-locations": {
       "device": [
         "Settings > menu"

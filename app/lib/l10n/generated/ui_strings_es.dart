@@ -11133,8 +11133,7 @@ class UiStringsEs extends UiStrings {
   String get settingsMenuGroundControl => 'Ground Control';
 
   @override
-  String get settingsMenuGroundControlSummary =>
-      'Voice Match en un equipo potente';
+  String get settingsMenuGroundControlFeatures => 'Voice Match y Vision Match';
 
   @override
   String get settingAdaptiveBrightnessTitle => 'Brillo adaptativo';

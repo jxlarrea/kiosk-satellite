@@ -19133,11 +19133,11 @@ abstract class UiStrings {
   /// **'Ground Control'**
   String get settingsMenuGroundControl;
 
-  /// Summary under the Ground Control entry. Keep Voice Match unchanged.
+  /// Summary under the Ground Control entry: the features Ground Control runs. Voice Match and Vision Match are product names: keep both unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Voice Match on a capable machine'**
-  String get settingsMenuGroundControlSummary;
+  /// **'Voice Match and Vision Match'**
+  String get settingsMenuGroundControlFeatures;
 
   /// Setting label.
   ///

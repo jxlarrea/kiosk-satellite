@@ -30911,5 +30911,11 @@
     "translation": "45c4fc064e525974b1c12d9f7168edcde18dcbbf878aa21fd761da5cdfc59702",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingsMenuGroundControlFeatures": {
+    "source": "5a3d3175ff8970d0bd84474b5a4aaec2b01c0fa93e36736fcc30671cf3c1a2eb",
+    "translation": "994ac35f6ed2f2d8fe113de70b5601770f6f402a5c78745e08ce13504357c519",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

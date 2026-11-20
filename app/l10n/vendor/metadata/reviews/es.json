@@ -25688,5 +25688,10 @@
     "source": "2da58a386c0f4aadb68353d9a056b13b23aff4b2405a53a854ae46c5b561aab9",
     "translation": "45c4fc064e525974b1c12d9f7168edcde18dcbbf878aa21fd761da5cdfc59702",
     "author": "Xavier Larrea"
+  },
+  "settingsMenuGroundControlFeatures": {
+    "source": "5a3d3175ff8970d0bd84474b5a4aaec2b01c0fa93e36736fcc30671cf3c1a2eb",
+    "translation": "d24516c3cdc347755dee84d6329bb33b7760273b743d85e9f1823db0f4815029",
+    "author": "Xavier Larrea"
   }
 }

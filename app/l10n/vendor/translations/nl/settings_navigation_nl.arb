@@ -61,5 +61,5 @@
   "compassHoldMode": "Wachtstand",
   "settingOffUnderCompass": "Uit zolang Compass-navigatie aan staat.",
   "settingsMenuGroundControl": "Ground Control",
-  "settingsMenuGroundControlSummary": "Voice Match op een krachtige computer"
+  "settingsMenuGroundControlFeatures": "Voice Match en Vision Match"
 }

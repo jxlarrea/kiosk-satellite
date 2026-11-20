@@ -10446,7 +10446,7 @@ class UiStringsZh extends UiStrings {
   String get settingsMenuGroundControl => 'Ground Control';
 
   @override
-  String get settingsMenuGroundControlSummary => '在高性能设备上运行 Voice Match';
+  String get settingsMenuGroundControlFeatures => 'Voice Match 和 Vision Match';
 
   @override
   String get settingAdaptiveBrightnessTitle => '自适应亮度';
@@ -26632,7 +26632,7 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingsMenuGroundControl => 'Ground Control';
 
   @override
-  String get settingsMenuGroundControlSummary => '在高性能设备上运行 Voice Match';
+  String get settingsMenuGroundControlFeatures => 'Voice Match 和 Vision Match';
 
   @override
   String get settingAdaptiveBrightnessTitle => '自适应亮度';

@@ -245,13 +245,13 @@ const _updateDocsUrl =
 const _categories = <(String, String, Object, String)>[
   // How the kiosk is moved around: the drawer menu or Compass.
   ('Navigation', 'Navigation', Icons.explore_outlined, 'Classic or Compass'),
-  // Kiosk Satellite Ground Control: Voice Match on a capable machine. It
+  // Kiosk Satellite Ground Control and its features. It
   // wears the Kiosk Satellite mark, as the Ground Control app does.
   (
     'Ground Control',
     'Ground Control',
     'assets/svg/kiosk-satellite.svg',
-    'Voice Match on a capable machine',
+    'Voice Match and Vision Match',
   ),
   (
     'Home Assistant',

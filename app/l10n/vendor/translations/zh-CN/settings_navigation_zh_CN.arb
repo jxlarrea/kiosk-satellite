@@ -61,5 +61,5 @@
   "compassHoldMode": "页面保持模式",
   "settingOffUnderCompass": "启用 Compass 导航时关闭。",
   "settingsMenuGroundControl": "Ground Control",
-  "settingsMenuGroundControlSummary": "在高性能设备上运行 Voice Match"
+  "settingsMenuGroundControlFeatures": "Voice Match 和 Vision Match"
 }

@@ -11048,8 +11048,7 @@ class UiStringsUk extends UiStrings {
   String get settingsMenuGroundControl => 'Ground Control';
 
   @override
-  String get settingsMenuGroundControlSummary =>
-      'Voice Match на потужному комп\'ютері';
+  String get settingsMenuGroundControlFeatures => 'Voice Match і Vision Match';
 
   @override
   String get settingAdaptiveBrightnessTitle => 'Адаптивна яскравість';

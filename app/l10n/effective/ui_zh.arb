@@ -41403,10 +41403,10 @@
       ]
     }
   },
-  "settingsMenuGroundControlSummary": "在高性能设备上运行 Voice Match",
-  "@settingsMenuGroundControlSummary": {
+  "settingsMenuGroundControlFeatures": "Voice Match 和 Vision Match",
+  "@settingsMenuGroundControlFeatures": {
     "context": "Settings:Menu",
-    "description": "Summary under the Ground Control entry. Keep Voice Match unchanged.",
+    "description": "Summary under the Ground Control entry: the features Ground Control runs. Voice Match and Vision Match are product names: keep both unchanged.",
     "x-locations": {
       "device": [
         "Settings > menu"

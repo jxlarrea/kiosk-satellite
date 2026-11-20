@@ -61,5 +61,5 @@
   "compassHoldMode": "Режим удержания",
   "settingOffUnderCompass": "Отключено, пока включена навигация Compass.",
   "settingsMenuGroundControl": "Ground Control",
-  "settingsMenuGroundControlSummary": "Voice Match на мощном компьютере"
+  "settingsMenuGroundControlFeatures": "Voice Match и Vision Match"
 }

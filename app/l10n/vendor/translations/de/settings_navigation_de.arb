@@ -61,5 +61,5 @@
   "compassHoldMode": "Pausenmodus",
   "settingOffUnderCompass": "Aus, solange die Compass-Navigation aktiv ist.",
   "settingsMenuGroundControl": "Ground Control",
-  "settingsMenuGroundControlSummary": "Voice Match auf einem leistungsstarken Rechner"
+  "settingsMenuGroundControlFeatures": "Voice Match und Vision Match"
 }

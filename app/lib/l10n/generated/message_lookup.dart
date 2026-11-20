@@ -3416,8 +3416,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'compassStateOff' => strings.compassStateOff,
       'compassHoldMode' => strings.compassHoldMode,
       'settingsMenuGroundControl' => strings.settingsMenuGroundControl,
-      'settingsMenuGroundControlSummary' =>
-        strings.settingsMenuGroundControlSummary,
+      'settingsMenuGroundControlFeatures' =>
+        strings.settingsMenuGroundControlFeatures,
       'settingAdaptiveBrightnessTitle' =>
         strings.settingAdaptiveBrightnessTitle,
       'settingAdaptiveBrightnessDescription' =>

@@ -11060,8 +11060,7 @@ class UiStringsNl extends UiStrings {
   String get settingsMenuGroundControl => 'Ground Control';
 
   @override
-  String get settingsMenuGroundControlSummary =>
-      'Voice Match op een krachtige computer';
+  String get settingsMenuGroundControlFeatures => 'Voice Match en Vision Match';
 
   @override
   String get settingAdaptiveBrightnessTitle => 'Adaptieve helderheid';
