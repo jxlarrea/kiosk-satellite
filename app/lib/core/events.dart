@@ -530,6 +530,11 @@ class VoiceInteractionChanged extends AppEvent {
   /// like a call, but the screensaver stays up under it (issue #1441).
   static const announcementReason = 'intercom_announcement';
 
+  /// The reason a Voice Match enrollment on this kiosk holds with. Its
+  /// reading screen covers the whole display, so the screensaver is
+  /// dismissed for it and the display is at its normal brightness.
+  static const enrollmentReason = 'voice_match_enroll';
+
   /// What kind of interaction, as reported by the page: 'voice',
   /// 'announcement', 'ask_question', 'start_conversation', 'timer', 'media',
   /// or '' when the page did not say (the legacy pauseScreensaver fallback).

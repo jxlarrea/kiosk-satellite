@@ -3060,7 +3060,7 @@ class VoiceManager extends Manager {
       bus.publish(
         VoiceInteractionChanged(
           active: hold,
-          reason: 'voice_match_enroll',
+          reason: VoiceInteractionChanged.enrollmentReason,
           source: InteractionSource.native,
         ),
       );

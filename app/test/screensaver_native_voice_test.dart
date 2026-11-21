@@ -124,4 +124,22 @@ void main() {
     await pumpEventQueue();
     expect(saver.isActive, isFalse);
   });
+
+  test('an enrollment dismisses the screensaver and its dimmed brightness', () async {
+    await build(runtime: 'native');
+    bus.publish(
+      VoiceInteractionChanged(
+        active: true,
+        reason: VoiceInteractionChanged.enrollmentReason,
+        source: InteractionSource.native,
+      ),
+    );
+    await pumpEventQueue();
+    expect(saver.isActive, isFalse);
+    expect(levels.last, 0.8);
+    // It doesn't start again while the person reads.
+    await saver.start();
+    await pumpEventQueue();
+    expect(saver.isActive, isFalse);
+  });
 }

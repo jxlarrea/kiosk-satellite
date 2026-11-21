@@ -633,10 +633,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (e.reason == VoiceInteractionChanged.announcementReason) return;
       _paused = _interactions.update(e);
       // The native satellite's overlay draws over the screensaver, full
-      // screen or docked.
+      // screen or docked. An enrollment's reading screen is read from
+      // across the room, so the screensaver goes, and its dimmed
+      // brightness with it.
+      final enrolling =
+          e.active && e.reason == VoiceInteractionChanged.enrollmentReason;
       if (_paused &&
-          e.source != InteractionSource.native &&
-          !(_openedByHand && !_interactions.needsScreen)) {
+          (enrolling ||
+              (e.source != InteractionSource.native &&
+                  !(_openedByHand && !_interactions.needsScreen)))) {
         _stopForInteraction();
       }
       _resetIdleTimer();
