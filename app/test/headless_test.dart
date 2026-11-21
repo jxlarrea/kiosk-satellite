@@ -33,6 +33,7 @@ void main() {
       'ks.camera.enabled': true,
       'ks.remote.enabled': false,
       'ks.intercom.talk_mode': 'ptt',
+      'ks.voice.timer_pills': true,
     });
     bus = EventBus();
     final log = Logger();
@@ -76,6 +77,28 @@ void main() {
     expect(hidden, isNot(contains(defs.alarmsVolume.key)));
   });
 
+  test('the Timers page keeps only what works without a screen', () {
+    final hidden = defs.deviceHiddenKeys;
+    for (final def in [
+      defs.voiceTimerPills,
+      defs.voiceTimerNameInPill,
+      defs.voiceTimerPillScale,
+      defs.voiceTimerAlertPill,
+      defs.voiceTimerNameOnAlert,
+      defs.timersShowOnStart,
+      defs.timersShowBeforeEnd,
+      defs.timersPauseScreensaver,
+    ]) {
+      expect(hidden, contains(def.key), reason: def.key);
+    }
+    expect(hidden, isNot(contains(defs.timersEnabled.key)));
+    expect(hidden, isNot(contains(defs.voiceMuteTimers.key)));
+    expect(hidden, isNot(contains(defs.voiceTimerSpeak.key)));
+    expect(hidden, isNot(contains(defs.voiceTimersShare.key)));
+    // It speaks the {time} of the alarm phrase too.
+    expect(hidden, isNot(contains(defs.alarmsClock24h.key)));
+  });
+
   test('the remote admin hides the same display pages', () {
     // headless.js keeps its own list for the page's tabs and search.
     final js = File('remote-ui/static/headless.js').readAsStringSync();
@@ -93,6 +116,7 @@ void main() {
     expect(settings.get(defs.remoteEnabled), isTrue);
     expect(settings.get(defs.intercomTalkMode), 'handsfree');
     expect(settings.get(defs.wakeWordBackground), isTrue);
+    expect(settings.get(defs.voiceTimerPills), isFalse);
   });
 
   test('a later change to a pinned setting is put back', () async {

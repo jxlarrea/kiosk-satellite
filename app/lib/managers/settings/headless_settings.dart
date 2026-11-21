@@ -58,8 +58,10 @@ class HeadlessSettings {
     // Voice: listening never leaves the foreground, there is none.
     defs.wakeWordBackground.key,
     defs.wakeWordReturnToBackground.key,
-    defs.voiceTimerAlertPill.key,
-    defs.voiceTimerNameOnAlert.key,
+    // Timers: no Timers view to open or screensaver to hold.
+    defs.timersShowOnStart.key,
+    defs.timersShowBeforeEnd.key,
+    defs.timersPauseScreensaver.key,
     // Intercom: no talk button, and the buttons are gestures.
     defs.intercomTalkMode.key,
     defs.intercomHangupKey.key,
@@ -107,8 +109,9 @@ class HeadlessSettings {
       case 'ESPHome':
         return def.subpage == 'Notifications' && def.section == 'Appearance';
       case 'Voice Satellite':
-        return const {'Appearance', 'Conversation'}.contains(def.subpage) ||
-            def.section == 'Pills';
+        return const {'Appearance', 'Conversation'}.contains(def.subpage);
+      case 'Timers':
+        return def.section == 'Pills';
     }
     return false;
   }
@@ -127,6 +130,8 @@ class HeadlessSettings {
     defs.wakeWordBackground: true,
     defs.wakeWordReturnToBackground: false,
     defs.dlnaAudioBackground: true,
+    // The pills would blank the timer names Home Assistant gets.
+    defs.voiceTimerPills: false,
     defs.intercomTalkMode: 'handsfree',
     // The dashboard runtime runs inside the WebView.
     defs.voiceRuntime: 'native',
