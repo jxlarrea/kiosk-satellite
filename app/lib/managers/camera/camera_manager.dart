@@ -857,7 +857,13 @@ class CameraManager extends Manager {
   }
 
   void _onVoiceInteraction(VoiceInteractionChanged event) {
-    _voiceActive = _interactions.update(event);
+    // An announcement from Home Assistant plays over the view, with its
+    // card on top, as it does over the screensaver (#1441, #1530).
+    if (event.reason == VoiceInteractionChanged.announcementReason) return;
+    _interactions.update(event);
+    // Music plays behind the view and never takes the screen from it, so
+    // it neither closes the view nor keeps it closed.
+    _voiceActive = _interactions.anyBesidesMedia;
     final change = ++_voiceChange;
     if (_voiceActive) {
       interruptForVoice();

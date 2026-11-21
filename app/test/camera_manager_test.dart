@@ -329,14 +329,14 @@ void main() {
       bus.publish(
         const VoiceInteractionChanged(
           active: true,
-          reason: 'media',
-          source: InteractionSource.sendspin,
+          reason: 'voice',
+          source: InteractionSource.command,
         ),
       );
       bus.publish(
         const VoiceInteractionChanged(
           active: true,
-          reason: 'media',
+          reason: 'voice',
           source: InteractionSource.page,
         ),
       );
@@ -344,7 +344,7 @@ void main() {
       bus.publish(
         const VoiceInteractionChanged(
           active: false,
-          reason: 'media',
+          reason: 'voice',
           source: InteractionSource.page,
         ),
       );
@@ -352,7 +352,54 @@ void main() {
       expect(
         cameras.activeViewId.value,
         isNull,
-        reason: 'discarding the page must preserve native playback',
+        reason: 'discarding the page must preserve the native turn',
+      );
+      bus.publish(
+        const VoiceInteractionChanged(
+          active: false,
+          reason: 'voice',
+          source: InteractionSource.command,
+        ),
+      );
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, viewId);
+      expect(cameras.focusedCameraId.value, cameraId);
+
+      // Music and an announcement from Home Assistant play over the view
+      // (#1530), and a voice turn during music brings it back once the
+      // turn ends, with the music still playing.
+      const sendspinPlaying = VoiceInteractionChanged(
+        active: true,
+        reason: 'media',
+        source: InteractionSource.sendspin,
+      );
+      const announcement = VoiceInteractionChanged(
+        active: true,
+        reason: VoiceInteractionChanged.announcementReason,
+      );
+      bus.publish(sendspinPlaying);
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, viewId, reason: 'music keeps it');
+      bus.publish(announcement);
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, viewId, reason: 'announcement too');
+      bus.publish(
+        const VoiceInteractionChanged(
+          active: false,
+          reason: VoiceInteractionChanged.announcementReason,
+        ),
+      );
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, viewId);
+      bus.publish(const VoiceInteractionChanged(active: true));
+      await Future<void>.delayed(Duration.zero);
+      expect(cameras.activeViewId.value, isNull);
+      bus.publish(const VoiceInteractionChanged(active: false));
+      await pumpEventQueue();
+      expect(
+        cameras.activeViewId.value,
+        viewId,
+        reason: 'the music still playing must not keep the view closed',
       );
       bus.publish(
         const VoiceInteractionChanged(

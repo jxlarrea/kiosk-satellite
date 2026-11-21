@@ -25,6 +25,11 @@ class ActiveInteractions {
 
   static const _idleOnlyReasons = {'', 'media'};
 
+  /// Whether an open hold is for anything but media playing. A reasonless
+  /// pause counts: older Voice Satellite versions bracket every voice turn
+  /// with one.
+  bool get anyBesidesMedia => _active.any((entry) => entry.$2 != 'media');
+
   /// The holds still open, as `source:reason` (`source:legacy` for a
   /// reasonless pause), for the log line that says why the screensaver
   /// stood down.
