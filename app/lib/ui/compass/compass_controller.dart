@@ -335,44 +335,56 @@ class CompassController {
   /// is the one the layout says, with nothing else drawn over it. A camera
   /// view opened by the doorbell, a ringing alarm, a call, a link page or
   /// the screensaver all keep the swipe out until they are gone.
-  bool get swipeReady {
-    if (!enabled || stage.value != null) return false;
-    if (c.voice.covers.value) return false;
+  bool get swipeReady => swipeBlocker == null;
+
+  /// What keeps a swipe from starting now, for the log, or null when one
+  /// may start ([swipeReady]).
+  String? get swipeBlocker {
+    if (!enabled) return 'Compass is off';
+    if (stage.value != null) return 'a swipe is in motion';
+    if (c.voice.covers.value) return 'the voice overlay is up';
     // Now Playing runs as a screensaver session. As a Compass view it is
     // the one on screen, not a screensaver to wake from.
     final nowPlaying = currentView.kind == 'now_playing' && _nowPlayingUp;
-    if (c.screensaver.isActive && !nowPlaying) return false;
-    if (c.kiosk.lockdownActive) return false;
-    if (c.browser.overlayUrl.value != null) return false;
+    if (c.screensaver.isActive && !nowPlaying) return 'the screensaver is up';
+    if (c.kiosk.lockdownActive) return 'Lockdown Mode is on';
+    if (c.browser.overlayUrl.value != null) return 'a link page is open';
     // A plugin's window draws over the dashboard, in its layer. On another
     // view it waits underneath, hidden, and must not hold the swipe up.
     if (c.plugins.windows.value.isNotEmpty && currentView.isDashboard) {
-      return false;
+      return 'a plugin window is open';
     }
-    if (c.dlna.media.value != null) return false;
+    if (c.dlna.media.value != null) return 'DLNA media is playing';
     final phase = c.alarms.status.value.phase;
     if (phase == AlarmPhase.ringing || phase == AlarmPhase.sunrise) {
-      return false;
+      return 'an alarm is ringing';
     }
     if (c.intercom.screenShown && !c.intercom.rosterVisible.value) {
-      return false;
+      return 'an intercom call is up';
     }
     // Now Playing draws over every other view. One left open under it,
     // such as the library a track was started from, is not in the way,
     // and it is where the kiosk lands when Now Playing closes.
-    if (nowPlaying) return true;
+    if (nowPlaying) return null;
     final view = currentView;
-    bool only(bool up, String kind) => !up || view.kind == kind;
     final camera = c.camera.activeViewId.value;
-    return only(c.musicLibrary.visible.value, 'music_library') &&
-        only(c.calendar.visible.value, 'calendar') &&
-        only(c.alarms.visible.value, 'alarms') &&
-        only(c.voiceTimers.visible.value, 'timers') &&
-        only(_nowPlayingUp, 'now_playing') &&
-        only(c.launcher.visible.value, 'app_launcher') &&
-        only(c.intercom.rosterVisible.value, 'intercom') &&
-        only(menuVisible.value, 'menu') &&
-        (camera == null || (view.kind == 'camera' && view.id == camera));
+    final up = <String, bool>{
+      'music_library': c.musicLibrary.visible.value,
+      'calendar': c.calendar.visible.value,
+      'alarms': c.alarms.visible.value,
+      'timers': c.voiceTimers.visible.value,
+      'now_playing': _nowPlayingUp,
+      'app_launcher': c.launcher.visible.value,
+      'intercom': c.intercom.rosterVisible.value,
+      'menu': menuVisible.value,
+    };
+    for (final MapEntry(:key, :value) in up.entries) {
+      if (value && view.kind != key) return 'the $key view is open';
+    }
+    if (camera != null && (view.kind != 'camera' || view.id != camera)) {
+      return 'camera view $camera is open';
+    }
+    return null;
   }
 
   // ── Moving ──────────────────────────────────────────────────────────

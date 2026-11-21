@@ -119,6 +119,10 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
   DateTime _downAt = DateTime.now();
   VelocityTracker? _velocity;
   bool _gaveUp = false;
+
+  /// Why a swipe could not start when this touch went down, logged only
+  /// if the finger then moves like a swipe.
+  String? _blocked;
   bool _scrolledH = false;
   bool _scrolledV = false;
 
@@ -178,9 +182,12 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
       return;
     }
     _pointer = null;
-    if (_model != null || !ctrl.swipeReady) return;
+    if (_model != null || !ctrl.enabled) return;
     // A plugin overlay took this touch: its slider or button, not a swipe.
     if (CompassTouchClaims.claimed(e.pointer)) return;
+    // Followed even when no swipe can start, so a swipe the kiosk turns
+    // down says why in the log.
+    _blocked = ctrl.swipeBlocker;
     _pointer = e.pointer;
     _start = e.position;
     _downAt = DateTime.now();
@@ -258,6 +265,11 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
       _gaveUp = true;
       return;
     }
+    final blocked = _blocked;
+    if (blocked != null) {
+      _refuse(move, blocked);
+      return;
+    }
     if (sideways ? _scrolledH : _scrolledV) {
       _gaveUp = true;
       return;
@@ -268,7 +280,13 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
         // The page has not answered yet: wait for it a little, then leave
         // the touch alone. No answer at all means the finger is on a card
         // drawn over the page, not on the page.
-        if (DateTime.now().difference(_downAt) > _hintWait) _gaveUp = true;
+        if (DateTime.now().difference(_downAt) > _hintWait) {
+          _refuse(
+            move,
+            'the page did not report the touch within '
+            '${_hintWait.inMilliseconds}ms',
+          );
+        }
         return;
       }
       final owned = sideways ? hint.sideways : hint.vertical;
@@ -277,7 +295,16 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
         CompassMove.down => hint.bottom,
         _ => true,
       };
-      if (owned || !edge) {
+      if (owned) {
+        _refuse(
+          move,
+          'the page keeps this swipe (a slider, map, video or '
+          '${sideways ? 'sideways scroller' : 'control'} under the finger)',
+        );
+        return;
+      }
+      // The page scrolls that way first: an ordinary scroll, not logged.
+      if (!edge) {
         _gaveUp = true;
         return;
       }
@@ -285,10 +312,28 @@ class _CompassGestureLayerState extends State<CompassGestureLayer>
     final from = ctrl.current.value;
     final target = ctrl.layout.step(from, move, available: ctrl.available);
     if (target == null) {
-      _gaveUp = true;
+      final placed = ctrl.layout.step(from, move, available: (_) => true);
+      _refuse(
+        move,
+        placed == null
+            ? 'no view in the layout that way'
+            : 'the views that way cannot show now (locked kiosk or '
+                  'nothing to show)',
+      );
       return;
     }
     _claim(from, move, target, sideways, at);
+  }
+
+  /// Leaves this touch to the page and says why in the log: one line per
+  /// swipe the kiosk turns down.
+  void _refuse(CompassMove move, String why) {
+    _gaveUp = true;
+    ctrl.c.log.info(
+      'compass',
+      'swipe toward ${move.name} from ${ctrl.current.value} '
+          '(${ctrl.currentView}) skipped: $why',
+    );
   }
 
   void _claim(
