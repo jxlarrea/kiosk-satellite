@@ -16003,6 +16003,11 @@ class UiStringsFr extends UiStrings {
   String get voiceMatchPeopleGone => 'N\'est plus dans Ground Control';
 
   @override
+  String voiceMatchPeopleMissing(String names) {
+    return 'Introuvable dans ce Ground Control : $names. Choisissez à nouveau.';
+  }
+
+  @override
   String get settingVoiceMatchRejectedTitleChosen => 'Voix non choisie';
 
   @override

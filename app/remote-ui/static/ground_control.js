@@ -85,6 +85,10 @@ const PEOPLE_KEY = 'voice_match.people';
 // A person (mdi account).
 export const PERSON_ICON = 'M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z';
 
+// Ground Control's status when the people list last loaded: its people are
+// known only once it is connected.
+let peopleStatus = null;
+
 function chosenPeople() {
   try {
     const list = JSON.parse(`${(state.settings || []).find((s) => s.key === PEOPLE_KEY)?.value || '[]'}`);
@@ -102,6 +106,7 @@ export function voiceMatchPeopleSpec() {
     key: 'voice-match:people',
     loader: async () => {
       const r = await cmd('groundControlStatus', {}).catch(() => null);
+      peopleStatus = r?.ok ? r.data?.status ?? null : null;
       const found = (r?.ok && Array.isArray(r.data?.people) ? r.data.people : [])
         .filter((p) => p && p.id)
         .map((p) => ({
@@ -131,6 +136,17 @@ export function peopleText() {
   const items = cachedList('voice-match:people')?.items || [];
   const names = chosenPeople().map((p) => items.find((i) => i.id === p.id)?.name || p.name || p.id);
   return names.length ? names.join(', ') : t('voiceMatchPeopleNone', {}, 'Anyone enrolled');
+}
+
+// Chosen people this Ground Control doesn't have, as after moving to
+// another one, or '' when there are none. The device's People row.
+export function peopleMissingText() {
+  if (peopleStatus !== 'connected') return '';
+  const items = cachedList('voice-match:people')?.items || [];
+  const missing = chosenPeople().filter((p) => !items.find((i) => i.id === p.id && i.available));
+  if (!missing.length) return '';
+  return t('voiceMatchPeopleMissing', { names: missing.map((p) => p.name || p.id).join(', ') },
+    'Not on this Ground Control: {names}. Choose again.');
 }
 
 // Opens the picker. Resolves to the value to store, named from the list so

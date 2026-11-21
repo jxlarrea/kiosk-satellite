@@ -49,7 +49,7 @@ import { dashboardField } from './dashboard_picker.js';
 import { drawerItemsText, openDrawerItemsPicker } from './drawer_items.js';
 import { compassLayoutRow, compassStyleRow } from './compass.js';
 import { KIOSK_ICON, openShareWithPicker, shareKiosksSpec, shareWithPicked, shareWithText } from './timers.js';
-import { PERSON_ICON, openPeoplePicker, peopleChosen, peopleText, voiceMatchPeopleSpec } from './ground_control.js';
+import { PERSON_ICON, openPeoplePicker, peopleChosen, peopleMissingText, peopleText, voiceMatchPeopleSpec } from './ground_control.js';
 import { SEARCH_CATEGORY_TABS, jumpToResult } from './search.js';
 import { updatePlayerRow } from './panels.js';
 import {
@@ -645,7 +645,16 @@ export function settingRow(s) {
   // the device's row: the chosen people by name in a dropdown-style box that
   // opens a checkbox dialog over everyone enrolled. A JSON list of {id, name}.
   if (s.key === 'voice_match.people') {
-    const paint = () => { field.setText(peopleText()); field.setIcon(peopleChosen()); };
+    const missing = document.createElement('div');
+    missing.className = 'desc dp-missing';
+    missing.hidden = true;
+    row.querySelector('.info .name').after(missing);
+    const paint = () => {
+      field.setText(peopleText());
+      field.setIcon(peopleChosen());
+      missing.textContent = peopleMissingText();
+      missing.hidden = !missing.textContent;
+    };
     const field = choiceBox(peopleText(), async () => {
       const value = await openPeoplePicker(s.title);
       if (value == null) return;

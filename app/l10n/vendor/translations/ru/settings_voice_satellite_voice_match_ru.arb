@@ -29,6 +29,7 @@
   "voiceMatchPeopleSearch": "Поиск людей",
   "voiceMatchPeopleEmpty": "В Ground Control пока ничьих голосов не записано.",
   "voiceMatchPeopleGone": "Больше нет в Ground Control",
+  "voiceMatchPeopleMissing": "Нет в этом Ground Control: {names}. Выберите снова.",
   "settingVoiceMatchRejectedTitleChosen": "Голос не выбран",
   "voiceMatchFeaturesHint": "Recognition, Trimming и Isolation",
   "settingVoiceMatchEnabledDescriptionCommand": "Кто говорит, и в команде только его голос. Нужен Ground Control.",

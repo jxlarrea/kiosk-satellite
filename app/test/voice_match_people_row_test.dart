@@ -67,4 +67,22 @@ void main() {
     ]);
     expect(find.text('Leo'), findsOneWidget);
   });
+
+  testWidgets('chosen people this Ground Control lacks get a line once it is connected', (
+    tester,
+  ) async {
+    await c.settings.set(
+      defs.voiceMatchPeople,
+      '[{"id": "a", "name": "Ana"}, {"id": "gone", "name": "Mia"}]',
+    );
+    await pump(tester);
+    // Away, its people aren't known: no line.
+    expect(find.textContaining('Not on this Ground Control'), findsNothing);
+    c.groundControl.status = 'connected';
+    await pump(tester);
+    expect(
+      find.text('Not on this Ground Control: Mia. Choose again.'),
+      findsOneWidget,
+    );
+  });
 }

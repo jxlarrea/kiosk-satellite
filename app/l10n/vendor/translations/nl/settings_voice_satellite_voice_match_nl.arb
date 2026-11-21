@@ -29,6 +29,7 @@
   "voiceMatchPeopleSearch": "Personen zoeken",
   "voiceMatchPeopleEmpty": "Er is nog niemand ingeschreven in Ground Control.",
   "voiceMatchPeopleGone": "Niet meer in Ground Control",
+  "voiceMatchPeopleMissing": "Niet in deze Ground Control: {names}. Kies opnieuw.",
   "settingVoiceMatchRejectedTitleChosen": "Stem niet gekozen",
   "voiceMatchFeaturesHint": "Recognition, Trimming en Isolation",
   "settingVoiceMatchEnabledDescriptionCommand": "Wie er praat, en alleen die stem in het commando. Vereist Ground Control.",

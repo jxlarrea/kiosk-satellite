@@ -27419,6 +27419,12 @@ abstract class UiStrings {
   /// **'No longer in Ground Control'**
   String get voiceMatchPeopleGone;
 
+  /// Shown under People when chosen people aren't on the Ground Control this kiosk is connected to, as after moving to another Ground Control. Keep Ground Control unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on this Ground Control: {names}. Choose again.'**
+  String voiceMatchPeopleMissing(String names);
+
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///
   /// In en, this message translates to:

@@ -327,10 +327,37 @@ class _VoiceMatchPeopleRowState extends State<VoiceMatchPeopleRow> {
             ],
           ),
         );
+        // Chosen people this Ground Control doesn't have, as after moving
+        // to another one: every command would be rejected. Only once it is
+        // connected, when its people are known.
+        final have = {
+          for (final p in c.groundControl.people) '${p['id'] ?? ''}',
+        };
+        final missing = c.groundControl.status == 'connected'
+            ? [
+                for (final p in picks)
+                  if (!have.contains(p.id)) p.name.isEmpty ? p.id : p.name,
+              ]
+            : const <String>[];
+        final description = Text(
+          defs.voiceMatchPeople.localizedDescription(context),
+        );
         return SettingsRow(
           title: Text(defs.voiceMatchPeople.localizedTitle(context)),
           stack: true,
-          subtitle: Text(defs.voiceMatchPeople.localizedDescription(context)),
+          subtitle: missing.isEmpty
+              ? description
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    description,
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n(context).voiceMatchPeopleMissing(missing.join(', ')),
+                      style: TextStyle(color: scheme.error),
+                    ),
+                  ],
+                ),
           trailing: tightPane(context)
               ? field
               : SizedBox(width: 300, child: field),

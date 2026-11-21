@@ -15868,6 +15868,11 @@ class UiStringsUk extends UiStrings {
   String get voiceMatchPeopleGone => 'Більше немає в Ground Control';
 
   @override
+  String voiceMatchPeopleMissing(String names) {
+    return 'Немає в цьому Ground Control: $names. Виберіть ще раз.';
+  }
+
+  @override
   String get settingVoiceMatchRejectedTitleChosen => 'Голос не вибрано';
 
   @override

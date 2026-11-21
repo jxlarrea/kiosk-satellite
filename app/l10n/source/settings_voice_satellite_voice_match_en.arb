@@ -117,6 +117,25 @@
       ]
     }
   },
+  "voiceMatchPeopleMissing": "Not on this Ground Control: {names}. Choose again.",
+  "@voiceMatchPeopleMissing": {
+    "context": "Settings > Voice Satellite > Ground Control Voice Match",
+    "description": "Shown under People when chosen people aren't on the Ground Control this kiosk is connected to, as after moving to another Ground Control. Keep Ground Control unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Voice Satellite > Ground Control Voice Match > People"
+      ],
+      "remoteAdmin": [
+        "Voice Satellite > Ground Control Voice Match > People"
+      ]
+    },
+    "placeholders": {
+      "names": {
+        "type": "String",
+        "description": "The names of the missing people, comma separated."
+      }
+    }
+  },
   "settingVoiceMatchRejectedTitleChosen": "Voice not chosen",
   "@settingVoiceMatchRejectedTitleChosen": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",

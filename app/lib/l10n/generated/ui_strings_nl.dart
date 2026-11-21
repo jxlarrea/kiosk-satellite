@@ -15885,6 +15885,11 @@ class UiStringsNl extends UiStrings {
   String get voiceMatchPeopleGone => 'Niet meer in Ground Control';
 
   @override
+  String voiceMatchPeopleMissing(String names) {
+    return 'Niet in deze Ground Control: $names. Kies opnieuw.';
+  }
+
+  @override
   String get settingVoiceMatchRejectedTitleChosen => 'Stem niet gekozen';
 
   @override

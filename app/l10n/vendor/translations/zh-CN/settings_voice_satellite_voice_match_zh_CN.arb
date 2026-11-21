@@ -29,6 +29,7 @@
   "voiceMatchPeopleSearch": "搜索人员",
   "voiceMatchPeopleEmpty": "Ground Control 中还没有录入任何人。",
   "voiceMatchPeopleGone": "已不在 Ground Control 中",
+  "voiceMatchPeopleMissing": "不在此 Ground Control 中：{names}。请重新选择。",
   "settingVoiceMatchRejectedTitleChosen": "未选择的声音",
   "voiceMatchFeaturesHint": "Recognition、Trimming 和 Isolation",
   "settingVoiceMatchEnabledDescriptionCommand": "识别谁在说话，命令中只保留此人的声音。需要 Ground Control。",

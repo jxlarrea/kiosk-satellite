@@ -29,6 +29,7 @@
   "voiceMatchPeopleSearch": "Buscar personas",
   "voiceMatchPeopleEmpty": "Todavía no hay nadie registrado en Ground Control.",
   "voiceMatchPeopleGone": "Ya no está en Ground Control",
+  "voiceMatchPeopleMissing": "No están en este Ground Control: {names}. Vuelve a elegir.",
   "settingVoiceMatchRejectedTitleChosen": "Voz no elegida",
   "voiceMatchFeaturesHint": "Recognition, Trimming e Isolation",
   "settingVoiceMatchEnabledDescriptionCommand": "Quién habla, y solo su voz en el comando. Necesita Ground Control.",

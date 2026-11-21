@@ -14887,6 +14887,11 @@ class UiStringsZh extends UiStrings {
   String get voiceMatchPeopleGone => '已不在 Ground Control 中';
 
   @override
+  String voiceMatchPeopleMissing(String names) {
+    return '不在此 Ground Control 中：$names。请重新选择。';
+  }
+
+  @override
   String get settingVoiceMatchRejectedTitleChosen => '未选择的声音';
 
   @override
@@ -31125,6 +31130,11 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get voiceMatchPeopleGone => '已不在 Ground Control 中';
+
+  @override
+  String voiceMatchPeopleMissing(String names) {
+    return '不在此 Ground Control 中：$names。请重新选择。';
+  }
 
   @override
   String get settingVoiceMatchRejectedTitleChosen => '未选择的声音';
