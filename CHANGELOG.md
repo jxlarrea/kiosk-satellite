@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.24 - 2026-11-21
 
 ### Added
 - **Slide progress bar for the Immich Media screensaver (#1522).** There was no way to tell how long a photo would stay on screen, so there was no telling whether there was time to call someone over to see it. A new **Show progress bar** switch at the end of **Settings > Screensaver > Immich Media screensaver > Slideshow**, off by default, shows a thin bar along the bottom of the screen that fills until the next slide. **Progress bar position**, **Progress bar color** and **Progress bar transparency** appear under it when it is on, so the bar can run along the top instead and take any color. A soft shadow keeps it visible over bright photos. A video fills the bar over its own length, or over **Seconds per image** when **Video length** is **Same as photos** and the video is longer. Mirrored in the remote admin. See [Immich](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/immich.md#settings).
