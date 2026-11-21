@@ -6,6 +6,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Fixed
 - **Home Assistant Cloud speech-to-text failing after a pause with Trimming (ground-control#4).** With **Enable Trimming** on, Home Assistant got no audio until Ground Control accepted the user's speech, so a pause after the wake word, or speech that took a moment to be accepted, ended the command with "400 Invalid HTTP request" after about 6 seconds with Home Assistant Cloud's speech-to-text. The kiosk now sends Home Assistant a little silence each time Ground Control 2026.11.3 or newer asks, until the user's speech comes back. Nobody talking still cancels the command after 10 seconds, and the kiosk still falls back to its microphone if Ground Control goes away.
+- **Ground Control missing from Fleet Management (#1547).** Fleet Management had no Ground Control category, so **Enable Ground Control** and the address never reached followers. The Voice Match settings synced with Voice Satellite, but Voice Match needs Ground Control on, so it did nothing on a follower until Ground Control was turned on by hand. Ground Control is now a fleet category, on by default for new profiles. A profile saved before this needs Ground Control ticked. Each follower still has to be approved on the Kiosks page of the Ground Control app. See [Fleet Management](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/fleet.md).
 
 ## v2026.11.24 - 2026-11-21
 

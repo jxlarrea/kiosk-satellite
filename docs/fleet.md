@@ -175,6 +175,8 @@ The Calendar category carries the [calendars](calendar.md) with their names, col
 
 The Timers category carries the [timer settings](timers.md#timer-settings): Enable timers, the pills, what a finished timer does, Share timers and Show shared timers. The kiosks picked in Share with and the timer sound stay on each kiosk. These settings used to sync with Voice Satellite, so add Timers to a profile that should keep pushing them.
 
+The Ground Control category carries **Enable Ground Control** and the address. The [Voice Match](voice-match.md) settings travel with Voice Satellite, and Voice Match needs Ground Control on, so sync both. Each follower still signs in to [Ground Control](ground-control.md) on its own, so approve it on the Kiosks page of the Ground Control app.
+
 The Navigation category carries the navigation style, the [Compass](navigation.md) layout and its options. A camera view in the layout only shows on a follower that has it, so sync Camera Streams too if the layout holds one.
 
 Custom wake word models are the exception: a leader passes its models to every follower whose profile syncs Voice Satellite, and those followers mirror the leader's set. See [Custom Wake Word Models](custom-wake-words.md).

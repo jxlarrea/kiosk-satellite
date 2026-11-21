@@ -13205,6 +13205,10 @@ String? validateCalendarList(Object? value) {
 /// a page of its own.
 const fleetSyncCategories = <(String, String, String)>[
   ('Navigation', 'Navigation', ''),
+  // Enable Ground Control and its address. The Voice Match settings on
+  // Voice Satellite > Ground Control Voice Match travel with Voice
+  // Satellite.
+  ('Ground Control', 'Ground Control', ''),
   // ha.satellite_entity stays per kiosk; its row (Assigned satellite) is
   // on the Voice Satellite page, so the note goes there.
   ('Home Assistant', 'Home Assistant', ''),
@@ -13781,6 +13785,7 @@ const fleetFollowsKey = {
 
 /// What a new follower gets unless the leader says otherwise.
 const fleetDefaultCategories = {
+  'Ground Control',
   'Home Assistant',
   'Voice Satellite',
   'Browser',
