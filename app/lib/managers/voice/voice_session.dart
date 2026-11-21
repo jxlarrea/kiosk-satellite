@@ -1076,6 +1076,15 @@ class VoiceSession {
             ),
           );
         }
+      case 'keepalive' when _following && _sending && !_followSent:
+        // Nobody has talked yet, so Ground Control has sent nothing:
+        // Home Assistant gets a little silence so a speech-to-text that gives
+        // up on a quiet stream, like Home Assistant Cloud's, keeps it open.
+        // It isn't the user's speech: the no-speech cancel and the
+        // microphone kept for a lost Voice Match stay as they are.
+        final ms = e['ms'];
+        final samples = 16 * (ms is num ? ms.clamp(10, 100).toInt() : 20);
+        unawaited(link.audio(Uint8List(samples * 2)));
       case 'turn_start':
         _noSpeechTimer?.cancel();
         onTrace?.call('voice match: the user started talking');

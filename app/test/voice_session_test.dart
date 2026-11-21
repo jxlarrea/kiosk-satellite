@@ -910,6 +910,48 @@ void main() {
     );
 
     test(
+      'follow mode: keepalives send silence before the user talks, and nobody talking still cancels',
+      () {
+        fakeAsync((async) {
+          final h = _Harness(match: _Match());
+          listening(h, async);
+          final turn = h.match!.turns.single;
+          for (var i = 0; i < 3; i++) {
+            turn.onEvent({'type': 'keepalive', 't': 0.5 * (i + 1), 'ms': 20});
+          }
+          async.flushMicrotasks();
+          // 20 ms of silence each, so Home Assistant Cloud keeps the stream.
+          expect(h.link.sent.length, 3);
+          expect(h.link.sent.every((p) => p.length == 640), isTrue);
+          expect(h.link.sent.every((p) => p.every((b) => b == 0)), isTrue);
+          async.elapse(const Duration(seconds: 10));
+          async.flushMicrotasks();
+          // The silence isn't the user's speech: the run is still cancelled.
+          expect(h.link.audioEnds, 0);
+          expect(h.session.busy, isFalse);
+        });
+      },
+    );
+
+    test(
+      'follow mode: Voice Match gone after keepalives, Home Assistant still gets the microphone',
+      () {
+        fakeAsync((async) {
+          final h = _Harness(match: _Match());
+          listening(h, async);
+          final turn = h.match!.turns.single;
+          turn.onEvent({'type': 'keepalive', 't': 0.5, 'ms': 20});
+          h.mic.speak(4);
+          async.flushMicrotasks();
+          turn.onLost!();
+          async.flushMicrotasks();
+          // The silence, then what the microphone heard from the start.
+          expect(h.link.sent.skip(1).map((p) => p.first), [2, 4]);
+        });
+      },
+    );
+
+    test(
       'a voice that is not enrolled ends the turn, quietly or with a chime',
       () {
         fakeAsync((async) {
