@@ -2,7 +2,9 @@
 
 Navigate to **Settings > Ground Control**, under the **Kiosk Satellite** heading.
 
-[Kiosk Satellite Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) runs the work that is too heavy for a kiosk on a capable machine, as a Home Assistant app or a Docker container on a CPU or an NVIDIA GPU. Its first component is [Voice Match](voice-match.md), with Recognition, Trimming and Isolation: who is talking to the kiosk, and only their voice in the command.
+[Kiosk Satellite Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) is a companion service for Kiosk Satellite. It runs on a computer or server in your home and handles the voice and vision processing that kiosks don't have the computing power for. Install it as a Home Assistant app, or run it in Docker on a CPU or an NVIDIA GPU.
+
+Ground Control currently has two components: [Voice Match](voice-match.md) which does speaker voice recognition, trimming and isolation. **Vision Match** which does facial recognition (coming soon).
 
 Ground Control is off by default.
 
