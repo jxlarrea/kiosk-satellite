@@ -27,11 +27,13 @@ data:
   device_id: 5f1c...
   event_type: started
   reason: voice
+  slot: 2
+  wake_word: Hey Jarvis
 ```
 
 | `event_type` | When |
 | --- | --- |
-| `started` | A voice interaction begins: a turn, an announcement, a `vs_show` prompt, a realtime conversation or a ringing timer. `reason` says which: `voice`, `announcement`, `show`, `conversation` or `timer`. |
+| `started` | A voice interaction begins: a turn, an announcement, a `vs_show` prompt, a realtime conversation or a ringing timer. `reason` says which: `voice`, `announcement`, `show`, `conversation` or `timer`. A turn, a realtime conversation and a `vs_show` also carry `slot`, the Assistant that answers (1 or 2), and `wake_word`, the wake word that started it. `wake_word` is empty when no wake word did, as for a `vs_show`. `vs_wake` reports the wake word of the slot it starts. |
 | `listening` | The microphone opens for a command. |
 | `thinking` | The command is in and the assistant is working on it. |
 | `speaking` | The answer starts playing. |

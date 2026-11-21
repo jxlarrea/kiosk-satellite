@@ -1045,6 +1045,7 @@ class VoiceManager extends Manager {
             }
             final slot = (p['pipeline'] as num?)?.toInt() == 2 ? 2 : 1;
             _assistant = slot;
+            _wakePhrase = '';
             final gen = _session.beginShow(prompt);
             if (gen == null) {
               return const CommandResult.fail('a turn is on screen');
@@ -2324,11 +2325,15 @@ class VoiceManager extends Manager {
       if (_session.busy) return;
       _activeProvider = provider;
       _assistant = slot;
+      _wakePhrase = phrase;
       unawaited(UsageCounters.bump(_settings, 'vs_turns_${provider.id}'));
       unawaited(_realtime.wake(phrase));
       return;
     }
-    if (!_session.busy || _session.announcing) _assistant = slot;
+    if (!_session.busy || _session.announcing) {
+      _assistant = slot;
+      _wakePhrase = phrase;
+    }
     unawaited(UsageCounters.bump(_settings, 'vs_turns_assist'));
     unawaited(_session.wake(phrase));
   }
@@ -2337,6 +2342,10 @@ class VoiceManager extends Manager {
   /// no wake word starts run on Assistant 1, as Home Assistant runs them,
   /// except a vs_show on pipeline 2.
   int _assistant = 1;
+
+  /// The wake word that started the turn on screen, '' when none did. It
+  /// goes out with the started event beside [_assistant] (issue #1545).
+  String _wakePhrase = '';
 
   RealtimeOptions _realtimeOptions() => RealtimeOptions(
     wakeSound: _settings.get(defs.voiceWakeSound),
@@ -3084,11 +3093,17 @@ class VoiceManager extends Manager {
     if (busy) {
       _previewDocked = false;
       if (_busyReasons.add(reason)) {
+        // Which Assistant answers and the wake word that started it, for
+        // automations that branch on them (issue #1545). An announcement
+        // is Home Assistant's, not an Assistant's.
+        final answered = reason != 'announcement';
         bus.publish(
           VoiceInteractionChanged(
             active: true,
             reason: reason,
             source: InteractionSource.native,
+            slot: answered ? _assistant : 0,
+            wakeWord: answered ? _wakePhrase : '',
           ),
         );
       }
@@ -3201,6 +3216,7 @@ class VoiceManager extends Manager {
         unawaited(
           _announceOverConversation().then((_) {
             _assistant = 1;
+            _wakePhrase = '';
             return _session.announce(announcement);
           }),
         );
@@ -3237,6 +3253,7 @@ class VoiceManager extends Manager {
       if (_session.busy) await _session.cancel();
       _activeProvider = provider;
       _assistant = 1;
+      _wakePhrase = '';
       unawaited(UsageCounters.bump(_settings, 'vs_turns_${provider.id}'));
       // Home Assistant started it, not someone at the screen: the screen
       // comes on as it does for an announcement.

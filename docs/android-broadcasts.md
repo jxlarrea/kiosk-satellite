@@ -12,7 +12,7 @@ Home Assistant gets the same changes as [Home Assistant Events](events.md).
 
 | Action | When | Extras |
 | --- | --- | --- |
-| `VS_STARTED` | A voice interaction begins: a turn, an announcement, a `vs_show` prompt, a realtime conversation or a ringing timer. | `reason`: `voice`, `announcement`, `show`, `conversation` or `timer` |
+| `VS_STARTED` | A voice interaction begins: a turn, an announcement, a `vs_show` prompt, a realtime conversation or a ringing timer. | `reason`: `voice`, `announcement`, `show`, `conversation` or `timer`. A turn, a realtime conversation and a `vs_show` also carry `slot`, the Assistant that answers (1 or 2), and `wake_word`, the wake word that started it, empty when none did. |
 | `VS_LISTENING` | The microphone opens for a command. | |
 | `VS_THINKING` | The command is in and the assistant is working on it. | |
 | `VS_SPEAKING` | The answer starts playing. | |

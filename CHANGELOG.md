@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Which Assistant and wake word started a voice turn (#1545).** The `started` event of `esphome.kiosk_satellite_voice` only said what kind of interaction began, so an automation could not tell wake word 1 from wake word 2. A turn, a realtime conversation and a `vs_show` now also carry `slot`, the Assistant that answers (1 or 2), and `wake_word`, the wake word that started it, empty when none did. The `VS_STARTED` Android broadcast has the same extras. See [Home Assistant Events](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/events.md#voice-satellite).
+
 ### Changed
 - **The reason a Compass swipe did not start is in the log (#1551).** When a swipe did not switch views, nothing in the log said why. Each swipe that does not start now adds one line to the remote admin **Console**, such as `compass: swipe toward right from center (dashboard:) skipped: no view in the layout that way`. The reason is one of: no view that way, views that cannot show on a locked kiosk, the page keeping the touch (a slider, map, video or sideways scroller), the page not reporting the touch in time or something in the way, such as the screensaver or a plugin window.
 

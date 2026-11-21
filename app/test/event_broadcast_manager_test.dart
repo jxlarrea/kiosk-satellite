@@ -74,6 +74,30 @@ void main() {
     },
   );
 
+  test('a started turn says which Assistant and wake word (#1545)', () async {
+    await publish([
+      const VoiceInteractionChanged(
+        active: true,
+        reason: 'voice',
+        source: InteractionSource.native,
+        slot: 2,
+        wakeWord: 'Hey Jarvis',
+      ),
+    ]);
+    expect(sent.single.$1, 'VS_STARTED');
+    expect(sent.single.$2, {
+      'reason': 'voice',
+      'slot': 2,
+      'wake_word': 'Hey Jarvis',
+    });
+    expect(fired.single.data, {
+      'event_type': 'started',
+      'reason': 'voice',
+      'slot': 2,
+      'wake_word': 'Hey Jarvis',
+    });
+  });
+
   test('a turn hidden at once ends when its hold drops', () async {
     final names = await publish([
       hold(true, 'voice'),

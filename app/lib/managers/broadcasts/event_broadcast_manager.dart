@@ -114,7 +114,15 @@ class EventBroadcastManager extends Manager {
     final held = _voiceHolds.update(event);
     if (held && !_voiceActive) {
       _voiceActive = true;
-      _emit('voice', 'started', {'reason': event.reason});
+      _emit('voice', 'started', {
+        'reason': event.reason,
+        // Which Assistant answers and its wake word, for an automation
+        // that treats the two wake words differently (issue #1545).
+        if (event.slot > 0) ...{
+          'slot': event.slot,
+          'wake_word': event.wakeWord,
+        },
+      });
     }
     _endVoiceIfIdle(held: held);
   }

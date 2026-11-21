@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/btproxy/bt_proxy_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
@@ -73,6 +74,8 @@ void main() {
     late CommandRegistry commands;
     late SettingsManager settings;
     late VoiceManager voice;
+    late EventBus bus;
+    late List<VoiceInteractionChanged> holds;
 
     setUp(() async {
       support = await Directory.systemTemp.createTemp('ks_voice_skin');
@@ -82,7 +85,9 @@ void main() {
             (call) async => support.path,
           );
       SharedPreferences.setMockInitialValues({});
-      final bus = EventBus();
+      bus = EventBus();
+      holds = [];
+      bus.on<VoiceInteractionChanged>().listen(holds.add);
       final log = Logger();
       commands = CommandRegistry(log);
       settings = SettingsManager(bus, commands, log);
@@ -129,6 +134,31 @@ void main() {
       expect(voice.view.value.visible, true);
       expect(voice.view.value.assistant, 1);
     });
+
+    // Issue #1545: the started event says which Assistant answers and the
+    // wake word that started it.
+    test('a wake word turn holds with its Assistant and phrase', () async {
+      bus.publish(
+        const WakeWordDetected(model: 'ok_nabu', phrase: 'Okay Nabu'),
+      );
+      await pumpEventQueue();
+      final started = holds.firstWhere((e) => e.active);
+      expect(started.reason, 'voice');
+      expect(started.slot, 1);
+      expect(started.wakeWord, 'Okay Nabu');
+    });
+
+    test(
+      'a vs_show on pipeline 2 holds as Assistant 2, no wake word',
+      () async {
+        await commands.execute('voiceShow', {'prompt': 'Hi', 'pipeline': 2});
+        await pumpEventQueue();
+        final started = holds.firstWhere((e) => e.active);
+        expect(started.reason, 'show');
+        expect(started.slot, 2);
+        expect(started.wakeWord, '');
+      },
+    );
 
     test('a vs_show refused over another turn leaves it alone', () async {
       await commands.execute('voiceShow', {'prompt': 'Hello'});

@@ -521,9 +521,19 @@ class VoiceInteractionChanged extends AppEvent {
     required this.active,
     this.reason = '',
     this.source = InteractionSource.command,
+    this.slot = 0,
+    this.wakeWord = '',
   });
   final bool active;
   final InteractionSource source;
+
+  /// The Assistant (1 or 2) answering a built-in Voice Satellite turn,
+  /// realtime conversation or vs_show, 0 for everything else (issue #1545).
+  final int slot;
+
+  /// The phrase of the wake word that started the turn, or '' when none
+  /// did (a vs_show, a conversation Home Assistant started).
+  final String wakeWord;
 
   /// The reason an announcement from Home Assistant (the ESPHome announce
   /// action) holds with. It ducks the music and pauses wake word detection
