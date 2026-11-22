@@ -100,6 +100,12 @@ class GroundControlManager extends Manager {
   /// service runs as a Home Assistant app.
   String? appPath;
 
+  /// How the service is installed, for Kiosk Satellite Analytics: `install`
+  /// (ha_app, docker or python), `arch`, `cuda` (the CUDA image's version,
+  /// empty for the CPU image) and `onGpu`. Empty from a Ground Control
+  /// that doesn't say.
+  Map<String, Object?> install = const {};
+
   /// Where Open goes: the app's page in Home Assistant, or the Docker
   /// container's own web page. Null until connected.
   String? get appUrl {
@@ -241,6 +247,7 @@ class GroundControlManager extends Manager {
     'appUrl': appUrl,
     // Runs as a Home Assistant app, not a Docker container.
     'haApp': appPath != null,
+    'install': install,
     'allowEnroll': _enrollAllowed,
     'enrollment': enrollment,
   };
@@ -499,6 +506,15 @@ class GroundControlManager extends Manager {
         model = '${msg['model'] ?? model}';
         final path = msg['app_path'];
         appPath = path is String && path.startsWith('/') ? path : null;
+        final kind = msg['install'];
+        if (kind is String) {
+          install = {
+            'install': kind,
+            'arch': '${msg['arch'] ?? ''}',
+            'cuda': '${msg['cuda'] ?? ''}',
+            'onGpu': msg['on_gpu'] == true,
+          };
+        }
         _attempt = 0;
         _setStatus('connected', baseUrl);
       case 'error':

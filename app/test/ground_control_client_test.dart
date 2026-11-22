@@ -120,8 +120,23 @@ void main() {
       expect(published.where((e) => e.baseUrl != null), isEmpty);
 
       toKiosk.add(jsonEncode({'type': 'ticket', 'ticket': 't1'}));
-      toKiosk.add(jsonEncode({'type': 'people', 'people': <Object>[]}));
+      toKiosk.add(
+        jsonEncode({
+          'type': 'people',
+          'people': <Object>[],
+          'install': 'docker',
+          'arch': 'amd64',
+          'cuda': '12.9',
+          'on_gpu': true,
+        }),
+      );
       await until(() => gc.status == 'connected');
+      expect(gc.describe()['install'], {
+        'install': 'docker',
+        'arch': 'amd64',
+        'cuda': '12.9',
+        'onGpu': true,
+      });
       expect(published.last.ticket, 't1');
       expect(published.last.baseUrl, 'http://127.0.0.1:${server.port}');
 

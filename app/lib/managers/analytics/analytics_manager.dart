@@ -725,6 +725,22 @@ class AnalyticsManager extends Manager {
           final model = '${data['model'] ?? ''}';
           groundControl['gc_version'] = version;
           groundControl['gc_ha_app'] = data['haApp'] == true;
+          // How it is installed: the HA app, standalone Docker or Python,
+          // the architecture, the CUDA image's version (empty for the CPU
+          // image) and whether the speaker model runs on the GPU. Left
+          // out by a Ground Control that doesn't say.
+          final install = data['install'];
+          if (install is Map && install['install'] is String) {
+            String clip(Object? v) {
+              final t = '${v ?? ''}';
+              return t.length > 32 ? t.substring(0, 32) : t;
+            }
+
+            groundControl['gc_install'] = clip(install['install']);
+            groundControl['gc_arch'] = clip(install['arch']);
+            groundControl['gc_cuda'] = clip(install['cuda']);
+            groundControl['gc_on_gpu'] = install['onGpu'] == true;
+          }
           final people = data['people'];
           groundControl['gc_people'] = people is List ? people.length : 0;
           // Voice Match's speaker model, picked in Ground Control's own

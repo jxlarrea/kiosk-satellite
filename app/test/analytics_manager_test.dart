@@ -990,6 +990,12 @@ void main() {
         'version': '1.2.0',
         'model': 'accurate',
         'haApp': true,
+        'install': {
+          'install': 'docker',
+          'arch': 'aarch64',
+          'cuda': '13.0',
+          'onGpu': true,
+        },
         'people': [
           {'id': 'p1', 'name': 'Alice'},
           {'id': 'p2', 'name': 'Bob'},
@@ -1005,6 +1011,10 @@ void main() {
         'gc_version',
         'voice_match_model',
         'gc_ha_app',
+        'gc_install',
+        'gc_arch',
+        'gc_cuda',
+        'gc_on_gpu',
         'gc_people',
         'voice_match_enabled',
         'voice_match_policy',
@@ -1030,6 +1040,10 @@ void main() {
       expect(u['gc_version'], '1.2.0');
       expect(u['voice_match_model'], 'accurate');
       expect(u['gc_ha_app'], isTrue);
+      expect(u['gc_install'], 'docker');
+      expect(u['gc_arch'], 'aarch64');
+      expect(u['gc_cuda'], '13.0');
+      expect(u['gc_on_gpu'], isTrue);
       expect(u['gc_people'], 2);
       expect(u['voice_match_enabled'], isTrue);
       expect(u['voice_match_policy'], 'people');
@@ -1046,10 +1060,20 @@ void main() {
       final u = await usage({'ks.ground_control.enabled': true});
       expect(u['gc_address'], 'mdns');
       expect(u.containsKey('gc_version'), isFalse);
+      expect(u.containsKey('gc_install'), isFalse);
       expect(u.containsKey('gc_people'), isFalse);
       expect(u.containsKey('voice_match_model'), isFalse);
       expect(u['voice_match_enabled'], isFalse);
       expect(u.containsKey('voice_match_policy'), isFalse);
+    });
+
+    test('an older Ground Control leaves out how it is installed', () async {
+      gcState!.remove('install');
+      final u = await usage({'ks.ground_control.enabled': true});
+      expect(u['gc_version'], '1.2.0');
+      for (final k in ['gc_install', 'gc_arch', 'gc_cuda', 'gc_on_gpu']) {
+        expect(u.containsKey(k), isFalse, reason: k);
+      }
     });
 
     test('Chosen people with nobody picked reads as enrolled', () async {
