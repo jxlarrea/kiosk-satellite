@@ -2,13 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.27 - 2026-11-22
 
 ### Added
 - **Ground Control version, architecture and CPU or CUDA on the Ground Control page.** While the kiosk is connected, **Settings > Ground Control** shows three more rows under the **Ground Control app** row: **Version**, **Architecture** (`amd64` or `aarch64`) and **Runs on**, which reads **CUDA** when the speaker model runs on an NVIDIA GPU and **CPU** otherwise. Remote Admin shows the same rows. **Architecture** and **Runs on** need Ground Control 2026.11.10 or newer. See [Ground Control](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/ground-control.md).
 
 ### Changed
 - **The stop word waits for an answer to have played for a second and a half (#1548, #1558).** With **Stop word interruption** on, an answer or an announcement could end about a second after it started with nobody saying "stop". The start of a sound is where the least of the kiosk's own voice is removed from the microphone and it was taken for the stop word, most often with Amazon's wake word engine and German answers. A "stop" heard in the first second and a half of an answer or an announcement is now ignored and the log says so. This applies to every answer of a conversation, to realtime conversations, to announcements and to `start_conversation`. A ringing timer or alarm still stops at once, and a false stop later in an answer is not affected.
+- **How Ground Control is installed in Kiosk Satellite Analytics.** With **Usage** on, the daily report now also includes whether Ground Control runs as a Home Assistant app, in standalone Docker or with Python, its CPU architecture, the CUDA version of its CUDA image and whether its speaker model runs on the GPU. This needs Ground Control 2026.11.10 or newer. See [Kiosk Satellite Analytics](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/analytics.md).
 
 ### Fixed
 - **The assistant's voice coming back through the microphone at the start of some answers.** When a sound started, the reference that echo cancellation works from could be placed up to 10 ms away from what the speaker was playing and it stayed there until the sound ended. Echo cancellation then started over for that sound and again for the next one, so the first 2 to 3 seconds of an answer reached the microphone almost uncancelled and could be heard in Ground Control recordings. On a Galaxy Tab S8+ this affected 3 of 19 sounds, two of them answers in realtime conversations. The reference is now corrected within the first half second of every sound.
@@ -16,7 +17,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## v2026.11.26 - 2026-11-22
 
 ### Changed
-- **Ground Control in Kiosk Satellite Analytics.** With **Usage** on, the daily report now says whether Ground Control is on, whether the kiosk finds it on the network or by an address that was entered, its version, whether it runs as a Home Assistant app, in standalone Docker or with Python, its CPU architecture, the CUDA version of its CUDA image, whether its speaker model runs on the GPU, how many people are enrolled and, for Voice Match, whether it is on, who the kiosk answers and the speaker model Ground Control uses. The names of the people and the address stay on the kiosk. See [Kiosk Satellite Analytics](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/analytics.md).
+- **Ground Control in Kiosk Satellite Analytics.** With **Usage** on, the daily report now says whether Ground Control is on, whether the kiosk finds it on the network or by an address that was entered, its version, whether it runs as a Home Assistant app, how many people are enrolled and, for Voice Match, whether it is on, who the kiosk answers and the speaker model Ground Control uses. The names of the people and the address stay on the kiosk. See [Kiosk Satellite Analytics](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/analytics.md).
 
 ### Fixed
 - **Return to center closing Now Playing over and over (#1557).** With Compass navigation and a Now Playing view in the layout, **"Now Playing" instead of the screensaver** brought Now Playing up while music played and **Return to center** closed it once its time ran out. Now Playing came back after the screensaver's idle time and was closed again, for as long as the music played. Return to center now leaves Now Playing up when it shows in the screensaver's place, as it leaves the screensaver up. If Now Playing was opened with a swipe, from the Menu or from the floating player, the kiosk still goes back to the center.
