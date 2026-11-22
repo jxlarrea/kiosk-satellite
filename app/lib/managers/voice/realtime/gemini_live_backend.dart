@@ -11,8 +11,9 @@ import 'realtime_tools.dart';
 ///
 /// Gemini keeps the turns: its own voice activity detection decides when
 /// the user is done and stops an answer the user talks over. It reports
-/// neither the start nor the end of speech, only the transcript as it
-/// grows, so the session's listening and thinking states come from that.
+/// the start and end of speech as voiceActivity, and the transcript only
+/// once the user stops talking, so the session's listening and thinking
+/// states come from both.
 /// It has no way to cut an answer short from the kiosk either: the session
 /// holds the microphone back while an answer plays, as it does for xAI.
 class GeminiLiveBackend implements RealtimeBackend {
@@ -42,6 +43,10 @@ class GeminiLiveBackend implements RealtimeBackend {
   /// it, never the user starting to talk over the answer still playing.
   static const lateTranscript = Duration(seconds: 1);
 
+  /// Speech Gemini says started and never says ended counts as over after
+  /// this long, so a lost end does not hold the conversation open.
+  static const activityLimit = Duration(seconds: 30);
+
   final _events = StreamController<RealtimeEvent>();
   RealtimeSocket? _socket;
   StreamSubscription<Object?>? _sub;
@@ -57,8 +62,14 @@ class GeminiLiveBackend implements RealtimeBackend {
   DateTime? _answerEnded;
   final _answer = StringBuffer();
 
-  /// The user is talking, as far as the transcript shows.
+  /// The user is talking, as far as the transcript or Gemini's voice
+  /// activity shows.
   bool _hearing = false;
+
+  /// Gemini said speech started and has not said it ended. Its transcript
+  /// comes only after the user stops, so a quiet transcript means nothing
+  /// while this is on.
+  bool _activity = false;
   final _heard = StringBuffer();
 
   /// Calls Gemini took back: their outputs are not sent.
@@ -82,6 +93,7 @@ class GeminiLiveBackend implements RealtimeBackend {
     'goAway',
     'sessionResumptionUpdate',
     'usageMetadata',
+    'voiceActivity',
   };
 
   @override
@@ -368,6 +380,7 @@ class GeminiLiveBackend implements RealtimeBackend {
       }
     }
     if (msg.containsKey('setupComplete')) _markReady();
+    if (msg['voiceActivity'] case final Map activity) _onActivity(activity);
     if (msg['serverContent'] case final Map content) _onContent(content);
     if (msg['toolCall'] case final Map call) {
       _beginAnswer();
@@ -409,7 +422,7 @@ class GeminiLiveBackend implements RealtimeBackend {
         _heard.write(text);
         final so = _heard.toString().trim();
         if (so.isNotEmpty) _emit(RealtimeUserText(so, complete: false));
-        if (_hearing) {
+        if (_hearing && !_activity) {
           _quietTimer?.cancel();
           _quietTimer = Timer(speechQuiet, _stoppedTalking);
         }
@@ -447,6 +460,32 @@ class GeminiLiveBackend implements RealtimeBackend {
     }
   }
 
+  /// Gemini's own speech detection. It says speech started a fraction of a
+  /// second after the user starts talking, while the transcript comes only
+  /// after they stop: measured on 2026-11-21, a 2.5 s follow-up started
+  /// 1 s after an answer got its transcript 4.7 s after that answer, past
+  /// a 3 s End after silence (#1543). A start while an answer is open or
+  /// just after one is skipped by the transcript's rule.
+  void _onActivity(Map activity) {
+    switch ('${activity['type'] ?? ''}') {
+      case 'ACTIVITY_START':
+        final late =
+            _answerEnded != null &&
+            DateTime.now().difference(_answerEnded!) < lateTranscript;
+        if (_responding || late) return;
+        _activity = true;
+        _hear();
+        _quietTimer?.cancel();
+        _quietTimer = Timer(activityLimit, _stoppedTalking);
+      case 'ACTIVITY_END':
+        if (!_activity) return;
+        _activity = false;
+        // The transcript and the answer follow: the transcript's own wait.
+        _quietTimer?.cancel();
+        if (_hearing) _quietTimer = Timer(speechQuiet, _stoppedTalking);
+    }
+  }
+
   /// The exchange is over: what the user said and the answer, in that
   /// order. The user's transcript comes in apart from the answer and can
   /// still grow after the answer starts, so it is only final here.
@@ -471,6 +510,7 @@ class GeminiLiveBackend implements RealtimeBackend {
   /// the transcript went quiet.
   void _stoppedTalking() {
     _quietTimer?.cancel();
+    _activity = false;
     if (!_hearing) return;
     _hearing = false;
     _emit(const RealtimeSpeechStopped());

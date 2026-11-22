@@ -1093,38 +1093,48 @@ void main() {
       },
     );
 
-    test('manual turns: no speech detection, the session commits and asks for the answer', () async {
-      for (final provider in [RealtimeProvider.openai, RealtimeProvider.xai]) {
-        final backend = make(RealtimeConfig(provider: provider, apiKey: 'k'));
-        await backend.start(const RealtimeStart(manualTurns: true));
-        final session = socket.sent.first['session'] as Map;
-        final turns = provider == RealtimeProvider.openai
-            ? ((session['audio'] as Map)['input'] as Map)['turn_detection']
-            : session['turn_detection'];
-        expect(turns, isNull, reason: '$provider');
-        socket.server({'type': 'session.updated'});
-        await pumpEventQueue();
-        socket.sent.clear();
-        backend.endTurn();
-        expect(socket.types, ['input_audio_buffer.commit', 'response.create']);
+    test(
+      'manual turns: no speech detection, the session commits and asks for the answer',
+      () async {
+        for (final provider in [
+          RealtimeProvider.openai,
+          RealtimeProvider.xai,
+        ]) {
+          final backend = make(RealtimeConfig(provider: provider, apiKey: 'k'));
+          await backend.start(const RealtimeStart(manualTurns: true));
+          final session = socket.sent.first['session'] as Map;
+          final turns = provider == RealtimeProvider.openai
+              ? ((session['audio'] as Map)['input'] as Map)['turn_detection']
+              : session['turn_detection'];
+          expect(turns, isNull, reason: '$provider');
+          socket.server({'type': 'session.updated'});
+          await pumpEventQueue();
+          socket.sent.clear();
+          backend.endTurn();
+          expect(socket.types, [
+            'input_audio_buffer.commit',
+            'response.create',
+          ]);
 
-        // Ground Control gone: the server's speech detection comes back.
-        socket.sent.clear();
-        backend.autoTurns();
-        expect(socket.types, ['session.update']);
-        final update = socket.sent.single['session'] as Map;
-        final back = provider == RealtimeProvider.openai
-            ? ((update['audio'] as Map)['input'] as Map)['turn_detection'] as Map
-            : update['turn_detection'] as Map;
-        expect(back['type'], 'server_vad');
-        // And only once: a second loss changes nothing.
-        socket.sent.clear();
-        backend.autoTurns();
-        backend.endTurn();
-        expect(socket.sent, isEmpty);
-        await backend.close();
-      }
-    });
+          // Ground Control gone: the server's speech detection comes back.
+          socket.sent.clear();
+          backend.autoTurns();
+          expect(socket.types, ['session.update']);
+          final update = socket.sent.single['session'] as Map;
+          final back = provider == RealtimeProvider.openai
+              ? ((update['audio'] as Map)['input'] as Map)['turn_detection']
+                    as Map
+              : update['turn_detection'] as Map;
+          expect(back['type'], 'server_vad');
+          // And only once: a second loss changes nothing.
+          socket.sent.clear();
+          backend.autoTurns();
+          backend.endTurn();
+          expect(socket.sent, isEmpty);
+          await backend.close();
+        }
+      },
+    );
 
     test('the speaker goes in as a system item, without an answer', () async {
       final backend = make(
@@ -1704,19 +1714,22 @@ void main() {
 
     String audio(List<int> samples) => base64Encode(_pcm(samples));
 
-    test('the end of a turn is the end of the audio stream, its speech detection stays on', () async {
-      final backend = await ready();
-      socket.sent.clear();
-      backend.endTurn();
-      expect(socket.sent.single, {
-        'realtimeInput': {'audioStreamEnd': true},
-      });
-      socket.sent.clear();
-      backend.autoTurns();
-      backend.speaker('Ana');
-      expect(socket.sent, isEmpty);
-      await backend.close();
-    });
+    test(
+      'the end of a turn is the end of the audio stream, its speech detection stays on',
+      () async {
+        final backend = await ready();
+        socket.sent.clear();
+        backend.endTurn();
+        expect(socket.sent.single, {
+          'realtimeInput': {'audioStreamEnd': true},
+        });
+        socket.sent.clear();
+        backend.autoTurns();
+        backend.speaker('Ana');
+        expect(socket.sent, isEmpty);
+        await backend.close();
+      },
+    );
 
     test('the key in a header, the model and voice in the setup', () async {
       final backend = make(
@@ -2100,6 +2113,68 @@ void main() {
       });
     });
 
+    test(
+      'Gemini\'s voice activity is the user talking, long before the transcript (#1543)',
+      () {
+        fakeAsync((async) {
+          final backend = make(
+            const RealtimeConfig(provider: RealtimeProvider.gemini),
+          );
+          unawaited(backend.start(const RealtimeStart()));
+          async.flushMicrotasks();
+          socket.server({'setupComplete': <String, Object?>{}});
+          async.flushMicrotasks();
+          events.clear();
+          socket.server({
+            'voiceActivity': {'type': 'ACTIVITY_START', 'audioOffset': '8.2s'},
+          });
+          async.flushMicrotasks();
+          expect(events.single, isA<RealtimeSpeechStarted>());
+          // A transcript going quiet means nothing while Gemini hears speech.
+          socket.server({
+            'serverContent': {
+              'inputTranscription': {'text': 'When will'},
+            },
+          });
+          async.elapse(GeminiLiveBackend.speechQuiet * 2);
+          expect(events.whereType<RealtimeSpeechStopped>(), isEmpty);
+          socket.server({
+            'voiceActivity': {'type': 'ACTIVITY_END', 'audioOffset': '11.5s'},
+          });
+          async.flushMicrotasks();
+          expect(events.whereType<RealtimeSpeechStopped>(), isEmpty);
+          async.elapse(GeminiLiveBackend.speechQuiet);
+          expect(events.last, isA<RealtimeSpeechStopped>());
+          expect(events.whereType<RealtimeSpeechStarted>(), hasLength(1));
+
+          // A start with no end counts as over in the end.
+          events.clear();
+          socket.server({
+            'voiceActivity': {'type': 'ACTIVITY_START'},
+          });
+          async.elapse(GeminiLiveBackend.activityLimit);
+          expect(events.first, isA<RealtimeSpeechStarted>());
+          expect(events.last, isA<RealtimeSpeechStopped>());
+
+          // A start while an answer is open is Gemini's to handle.
+          socket.server({
+            'serverContent': {
+              'outputTranscription': {'text': 'It will'},
+            },
+          });
+          async.flushMicrotasks();
+          events.clear();
+          socket.server({
+            'voiceActivity': {'type': 'ACTIVITY_START'},
+          });
+          async.flushMicrotasks();
+          expect(events.whereType<RealtimeSpeechStarted>(), isEmpty);
+          unawaited(backend.close());
+          async.flushMicrotasks();
+        });
+      },
+    );
+
     test('tools run with the call\'s arguments and answer by id', () async {
       final backend = await ready();
       events.clear();
@@ -2268,39 +2343,42 @@ void main() {
       return h.match!.turns.single;
     }
 
-    test('the provider hears only what Ground Control sends back, and the session ends the turn', () {
-      fakeAsync((time) {
-        final h = _Harness(time, match: _Match());
-        final turn = connect(h);
-        expect(h.match!.follow, isTrue);
-        expect(h.backend.started?.manualTurns, isTrue);
-        h.mic.speak();
-        h.mic.speak();
-        time.flushMicrotasks();
-        // The microphone went to Ground Control, not the provider.
-        expect(turn.fed, 2);
-        expect(h.backend.audio, isEmpty);
-        turn.onEvent({'type': 'turn_start', 't': 1.0});
-        turn.user();
-        turn.user();
-        time.flushMicrotasks();
-        expect(h.backend.audio, hasLength(2));
-        // 16 kHz in, the provider's 24 kHz out (one sample carries over).
-        expect(h.backend.audio.first.length, closeTo(1920 * 2, 4));
-        expect(h.view.phase, AssistPhase.listening);
-        turn.onEvent({'type': 'turn_end', 't': 2.0});
-        time.flushMicrotasks();
-        expect(h.backend.endTurns, 1);
-        expect(h.view.phase, AssistPhase.thinking);
-        // Provider speech events mean nothing while Ground Control follows.
-        h.backend.emit(const RealtimeSpeechStarted());
-        time.flushMicrotasks();
-        expect(h.view.phase, AssistPhase.thinking);
-        h.session.cancel();
-        time.flushMicrotasks();
-        expect(turn.ended, isTrue);
-      });
-    });
+    test(
+      'the provider hears only what Ground Control sends back, and the session ends the turn',
+      () {
+        fakeAsync((time) {
+          final h = _Harness(time, match: _Match());
+          final turn = connect(h);
+          expect(h.match!.follow, isTrue);
+          expect(h.backend.started?.manualTurns, isTrue);
+          h.mic.speak();
+          h.mic.speak();
+          time.flushMicrotasks();
+          // The microphone went to Ground Control, not the provider.
+          expect(turn.fed, 2);
+          expect(h.backend.audio, isEmpty);
+          turn.onEvent({'type': 'turn_start', 't': 1.0});
+          turn.user();
+          turn.user();
+          time.flushMicrotasks();
+          expect(h.backend.audio, hasLength(2));
+          // 16 kHz in, the provider's 24 kHz out (one sample carries over).
+          expect(h.backend.audio.first.length, closeTo(1920 * 2, 4));
+          expect(h.view.phase, AssistPhase.listening);
+          turn.onEvent({'type': 'turn_end', 't': 2.0});
+          time.flushMicrotasks();
+          expect(h.backend.endTurns, 1);
+          expect(h.view.phase, AssistPhase.thinking);
+          // Provider speech events mean nothing while Ground Control follows.
+          h.backend.emit(const RealtimeSpeechStarted());
+          time.flushMicrotasks();
+          expect(h.view.phase, AssistPhase.thinking);
+          h.session.cancel();
+          time.flushMicrotasks();
+          expect(turn.ended, isTrue);
+        });
+      },
+    );
 
     test('the user talking over an answer stops it, the TV never does', () {
       fakeAsync((time) {
@@ -2329,7 +2407,12 @@ void main() {
         final h = _Harness(time, match: _Match());
         final turn = connect(h);
         expect(h.speakers, [null]);
-        turn.onEvent({'type': 'speaker', 'name': 'Ana', 'color': '#56814F', 'score': 0.7});
+        turn.onEvent({
+          'type': 'speaker',
+          'name': 'Ana',
+          'color': '#56814F',
+          'score': 0.7,
+        });
         time.flushMicrotasks();
         expect(h.backend.speakers, ['Ana']);
         expect(h.speakers.last?['name'], 'Ana');
@@ -2355,26 +2438,29 @@ void main() {
       });
     });
 
-    test('Ground Control not answering in time: the conversation runs as without it', () {
-      fakeAsync((time) {
-        final match = _Match();
-        final h = _Harness(time, match: match);
-        unawaited(h.session.wake('Hey Jarvis'));
-        time.flushMicrotasks();
-        match.turns.single.ready = false;
-        time.elapse(RealtimeSession.matchReadyWait);
-        h.backend.emit(const RealtimeReady());
-        time.flushMicrotasks();
-        // The provider was asked for manual turns while the chime played,
-        // and gets its own speech detection back.
-        expect(h.backend.autoTurnsCalls, 1);
-        h.mic.speak();
-        time.flushMicrotasks();
-        expect(h.backend.audio, isNotEmpty);
-        h.session.cancel();
-        time.flushMicrotasks();
-      });
-    });
+    test(
+      'Ground Control not answering in time: the conversation runs as without it',
+      () {
+        fakeAsync((time) {
+          final match = _Match();
+          final h = _Harness(time, match: match);
+          unawaited(h.session.wake('Hey Jarvis'));
+          time.flushMicrotasks();
+          match.turns.single.ready = false;
+          time.elapse(RealtimeSession.matchReadyWait);
+          h.backend.emit(const RealtimeReady());
+          time.flushMicrotasks();
+          // The provider was asked for manual turns while the chime played,
+          // and gets its own speech detection back.
+          expect(h.backend.autoTurnsCalls, 1);
+          h.mic.speak();
+          time.flushMicrotasks();
+          expect(h.backend.audio, isNotEmpty);
+          h.session.cancel();
+          time.flushMicrotasks();
+        });
+      },
+    );
 
     test('a voice that is not enrolled ends the conversation', () {
       fakeAsync((time) {
