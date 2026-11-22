@@ -412,6 +412,10 @@ class ImmichManager extends Manager {
   DateTime? _playlistAt;
   Future<List<ImmichAsset>>? _playlistRefresh;
 
+  /// Moves on every [_forgetPlaylist]. A listing that finishes after a
+  /// move ran on settings that no longer apply, so it lists again.
+  int _playlistGeneration = 0;
+
   /// How old the kept playlist may get before a start refreshes it in the
   /// background for the one after: the session in hand still starts on the
   /// kept list. New uploads show within this plus one session.
@@ -608,6 +612,7 @@ class ImmichManager extends Manager {
   }
 
   void _forgetPlaylist() {
+    _playlistGeneration++;
     _playlist = null;
     _playlistAt = null;
     _warmOrder = null;
@@ -771,12 +776,20 @@ class ImmichManager extends Manager {
   Future<List<ImmichAsset>> _refreshPlaylist() =>
       _playlistRefresh ??= () async {
         try {
-          final assets = await listAssets();
-          if (assets.isNotEmpty) {
-            _playlist = List.unmodifiable(assets);
-            _playlistAt = clock();
+          // A filter changed while the server was answering would leave
+          // the old answer kept until the playlist goes stale, and the
+          // callers waiting here would start on it. List again until a
+          // listing finishes on the settings it started with.
+          while (true) {
+            final generation = _playlistGeneration;
+            final assets = await listAssets();
+            if (generation != _playlistGeneration) continue;
+            if (assets.isNotEmpty) {
+              _playlist = List.unmodifiable(assets);
+              _playlistAt = clock();
+            }
+            return assets;
           }
-          return assets;
         } finally {
           _playlistRefresh = null;
         }

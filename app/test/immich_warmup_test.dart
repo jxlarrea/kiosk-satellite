@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -28,6 +29,7 @@ void main() {
   var searchStatus = 200;
   final thumbnails = <String, int>{};
   var library = <String>['a', 'b', 'c'];
+  Completer<void>? holdListing;
 
   Future<void> build({Map<String, Object> extra = const {}}) async {
     SharedPreferences.setMockInitialValues({
@@ -53,6 +55,7 @@ void main() {
     searchStatus = 200;
     thumbnails.clear();
     library = ['a', 'b', 'c'];
+    holdListing = null;
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
       final path = request.uri.path;
@@ -60,13 +63,17 @@ void main() {
       if (path == '/api/search/metadata') {
         await utf8.decoder.bind(request).join();
         listings++;
+        // Read before the hold: the answer is the library as it was when
+        // the request arrived, as a real server's would be.
+        final answer = [...library];
+        await holdListing?.future;
         response.statusCode = searchStatus;
         response.headers.contentType = ContentType.json;
         response.write(
           jsonEncode({
             'assets': {
               'items': [
-                for (final id in library)
+                for (final id in answer)
                   {'id': id, 'type': 'IMAGE', 'fileCreatedAt': '2026-01-01'},
               ],
               'nextPage': null,
@@ -322,6 +329,25 @@ void main() {
       immich.markShown(const ImmichAsset(id: 'a', isVideo: false));
       expect(ids(await immich.startOrder()), ['b', 'c', 'a']);
     });
+  });
+
+  test('a filter changed while the server lists is not lost to the '
+      'answer in flight', () async {
+    await build();
+    holdListing = Completer<void>();
+    final start = immich.startOrder();
+    await until(() => listings == 1);
+    // The listing in flight ran on the old filter. The new one admits
+    // only what the server lists after it.
+    library = ['x'];
+    await settings.set(defs.screensaverImmichFavoritesOnly, true);
+    holdListing!.complete();
+    holdListing = null;
+
+    expect(ids(await start), ['x']);
+    expect(listings, 2);
+    expect(ids(await immich.startOrder()), ['x'], reason: 'kept, not stale');
+    expect(listings, 2);
   });
 
   test('a fresh start lists again and drops the readied photo', () async {
