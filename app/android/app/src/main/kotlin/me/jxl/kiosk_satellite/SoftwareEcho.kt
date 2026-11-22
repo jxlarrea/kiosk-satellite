@@ -321,14 +321,6 @@ object SoftwareEcho {
     }
 
     /**
-     * How far a chunk's place by the clock may stray from where the last
-     * chunk ended and still follow on from it. A track's position comes in
-     * mixer-sized steps a few milliseconds apart: jumping on each of them
-     * would cut the reference into pieces the canceller cannot follow.
-     */
-    private const val SLACK = RATE * 10 / 1000
-
-    /**
      * A source's recent samples, placed in time: [end] is one past the last
      * one the speaker had presented at [endNs]. A capture chunk reads the
      * samples the speaker was playing while it was being captured, by the
@@ -336,14 +328,15 @@ object SoftwareEcho {
      * by the clock rather than by when this code happens to run keeps the
      * reference the same distance from the microphone every time a sound
      * starts, so the canceller keeps what it learned instead of relearning
-     * the delay for a second and a half at the start of every answer.
+     * the delay for a second and a half at the start of every answer. Where
+     * the chunk is read from is the [cursor]'s to say.
      */
     private class Stream {
         val samples = ShortArray(HISTORY)
         var length = 0
         var end = 0L
         var endNs = 0L
-        var cursor = Long.MIN_VALUE
+        val cursor = ReferenceCursor()
     }
 
     private val streams = HashMap<EchoReference.Source, Stream>()
@@ -550,10 +543,7 @@ object SoftwareEcho {
                 // The sample the speaker was presenting as the chunk's last
                 // frame was heard, and the chunk's worth before it.
                 val heard = stream.end - (stream.endNs - heardNs) * RATE / 1_000_000_000L
-                val start = heard - need
-                if (stream.cursor == Long.MIN_VALUE || kotlin.math.abs(start - stream.cursor) > SLACK) {
-                    stream.cursor = start
-                }
+                stream.cursor.place(heard - need)
             }
             var at = 0
             var switchTo = false
@@ -593,7 +583,7 @@ object SoftwareEcho {
                 }
                 at += FRAME_BYTES
             }
-            for (stream in streams.values) stream.cursor += need
+            for (stream in streams.values) stream.cursor.advance(need)
             if (vqe != 0L) reportDelay()
             if (switchTo) aec3Pending = true
         }
@@ -674,7 +664,7 @@ object SoftwareEcho {
         java.util.Arrays.fill(mix, 0)
         for (stream in streams.values) {
             val first = stream.end - stream.length
-            val from = stream.cursor + f * FRAME
+            val from = stream.cursor.at + f * FRAME
             for (i in 0 until FRAME) {
                 val at = from + i - first
                 if (at < 0 || at >= stream.length) continue

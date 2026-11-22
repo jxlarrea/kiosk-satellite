@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **The assistant's voice coming back through the microphone at the start of some answers.** When a sound started, the reference that echo cancellation works from could be placed up to 10 ms away from what the speaker was playing and it stayed there until the sound ended. Echo cancellation then started over for that sound and again for the next one, so the first 2 to 3 seconds of an answer reached the microphone almost uncancelled and could be heard in Ground Control recordings. On a Galaxy Tab S8+ this affected 3 of 19 sounds, two of them answers in realtime conversations. The reference is now corrected within the first half second of every sound.
+
 ## v2026.11.26 - 2026-11-22
 
 ### Changed
