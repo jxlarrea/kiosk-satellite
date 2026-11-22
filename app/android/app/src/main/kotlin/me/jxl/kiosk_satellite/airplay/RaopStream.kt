@@ -181,6 +181,42 @@ internal class PacketBuffer(private val onGap: (first: Int, count: Int) -> Unit)
 }
 
 /**
+ * Decrypts and decodes audio payloads. Live packets arrive on the audio
+ * thread and resent ones on the control thread. The cipher and the ALAC
+ * decoder both keep working state for the packet in hand, so [decode]
+ * takes one packet at a time.
+ */
+internal class PayloadDecoder(private val format: StreamFormat) {
+    private val cipher = format.aesKey?.let { RaopCrypto.PacketCipher(it, format.aesIv!!) }
+    private val decoder = if (format.alac) AlacDecoder(
+        frameLength = format.fmtp[1],
+        sampleSize = format.fmtp[3],
+        historyMult = format.fmtp[4],
+        initialHistory = format.fmtp[5],
+        riceLimit = format.fmtp[6],
+        channels = format.fmtp[7],
+    ) else null
+
+    /**
+     * Decrypts the [size] bytes at [payload] in place and decodes them into
+     * [pcm] as interleaved samples. Returns the number of sample frames
+     * written.
+     */
+    @Synchronized
+    fun decode(buf: ByteArray, payload: Int, size: Int, pcm: ShortArray): Int {
+        cipher?.decrypt(buf, payload, size)
+        if (decoder != null) return decoder.decode(buf, payload, size, pcm)
+        // L16: big-endian stereo samples.
+        val count = minOf(size / 4, format.framesPerPacket)
+        for (i in 0 until count * 2) {
+            val p = payload + i * 2
+            pcm[i] = ((buf[p].toInt() shl 8) or (buf[p + 1].toInt() and 0xFF)).toShort()
+        }
+        return count
+    }
+}
+
+/**
  * The three UDP channels of one AirPlay 1 stream: audio in, control
  * (sync packets, resend requests and the resent audio) and timing (the
  * NTP-like exchange with the sender). The sockets bind on [start] and
@@ -205,15 +241,7 @@ internal class RaopStream(
     private val timing = DatagramSocket(null)
     @Volatile private var running = false
     private val threads = ArrayList<Thread>()
-    private val cipher = format.aesKey?.let { RaopCrypto.PacketCipher(it, format.aesIv!!) }
-    private val decoder = if (format.alac) AlacDecoder(
-        frameLength = format.fmtp[1],
-        sampleSize = format.fmtp[3],
-        historyMult = format.fmtp[4],
-        initialHistory = format.fmtp[5],
-        riceLimit = format.fmtp[6],
-        channels = format.fmtp[7],
-    ) else null
+    private val payloads = PayloadDecoder(format)
     private var resendSeq = 1
     @Volatile private var timingSentNs = 0L
 
@@ -280,24 +308,13 @@ internal class RaopStream(
         val rtp = u32(buf, offset + 4)
         val payload = offset + 12
         val size = length - 12
-        cipher?.decrypt(buf, payload, size)
         val frames = format.framesPerPacket
         val pcm = ShortArray(frames * 2)
-        val n = if (decoder != null) {
-            try {
-                decoder.decode(buf, payload, size, pcm)
-            } catch (e: AlacDecoder.AlacException) {
-                Log.w(TAG, "packet $seq undecodable: ${e.message}")
-                frames
-            }
-        } else {
-            // L16: big-endian stereo samples.
-            val count = minOf(size / 4, frames)
-            for (i in 0 until count * 2) {
-                val p = payload + i * 2
-                pcm[i] = ((buf[p].toInt() shl 8) or (buf[p + 1].toInt() and 0xFF)).toShort()
-            }
-            count
+        val n = try {
+            payloads.decode(buf, payload, size, pcm)
+        } catch (e: AlacDecoder.AlacException) {
+            Log.w(TAG, "packet $seq undecodable: ${e.message}")
+            frames
         }
         buffer.put(AudioPacket(seq, rtp, pcm, n))
     }
