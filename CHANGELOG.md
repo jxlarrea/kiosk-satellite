@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Ground Control version, architecture and CPU or CUDA on the Ground Control page.** While the kiosk is connected, **Settings > Ground Control** shows three more rows under the **Ground Control app** row: **Version**, **Architecture** (`amd64` or `aarch64`) and **Runs on**, which reads **CUDA** when the speaker model runs on an NVIDIA GPU and **CPU** otherwise. Remote Admin shows the same rows. **Architecture** and **Runs on** need Ground Control 2026.11.10 or newer. See [Ground Control](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/ground-control.md).
+
 ### Changed
 - **The stop word waits for an answer to have played for a second and a half (#1548, #1558).** With **Stop word interruption** on, an answer or an announcement could end about a second after it started with nobody saying "stop". The start of a sound is where the least of the kiosk's own voice is removed from the microphone and it was taken for the stop word, most often with Amazon's wake word engine and German answers. A "stop" heard in the first second and a half of an answer or an announcement is now ignored and the log says so. This applies to every answer of a conversation, to realtime conversations, to announcements and to `start_conversation`. A ringing timer or alarm still stops at once, and a false stop later in an answer is not affected.
 

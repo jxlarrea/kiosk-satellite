@@ -17,5 +17,7 @@
   "groundControlDeclined": "Geweigerd",
   "groundControlDeclinedHint": "Deze kiosk is geweigerd in de Ground Control-app. Keur hem goed op de pagina Kiosks.",
   "groundControlNotAccepted": "Niet geaccepteerd",
-  "groundControlUnsignedBuild": "Deze build van Kiosk Satellite kan geen verbinding maken met Ground Control."
+  "groundControlUnsignedBuild": "Deze build van Kiosk Satellite kan geen verbinding maken met Ground Control.",
+  "groundControlArchitecture": "Architectuur",
+  "groundControlRunsOn": "Draait op"
 }

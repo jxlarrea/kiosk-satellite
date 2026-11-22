@@ -8148,6 +8148,12 @@ class UiStringsZh extends UiStrings {
   String get groundControlApp => 'Ground Control 应用';
 
   @override
+  String get groundControlArchitecture => '架构';
+
+  @override
+  String get groundControlRunsOn => '运行于';
+
+  @override
   String get groundControlFeatures => '功能';
 
   @override
@@ -24404,6 +24410,12 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get groundControlApp => 'Ground Control 应用';
+
+  @override
+  String get groundControlArchitecture => '架构';
+
+  @override
+  String get groundControlRunsOn => '运行于';
 
   @override
   String get groundControlFeatures => '功能';

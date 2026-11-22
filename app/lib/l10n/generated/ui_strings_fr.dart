@@ -8635,6 +8635,12 @@ class UiStringsFr extends UiStrings {
   String get groundControlApp => 'App Ground Control';
 
   @override
+  String get groundControlArchitecture => 'Architecture';
+
+  @override
+  String get groundControlRunsOn => 'S\'exécute sur';
+
+  @override
   String get groundControlFeatures => 'Fonctionnalités';
 
   @override

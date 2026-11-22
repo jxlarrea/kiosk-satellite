@@ -17,5 +17,7 @@
   "groundControlDeclined": "已拒绝",
   "groundControlDeclinedHint": "此信息亭已在 Ground Control 应用中被拒绝。请在 Kiosks 页面批准它。",
   "groundControlNotAccepted": "未被接受",
-  "groundControlUnsignedBuild": "此版本的 Kiosk Satellite 无法连接到 Ground Control。"
+  "groundControlUnsignedBuild": "此版本的 Kiosk Satellite 无法连接到 Ground Control。",
+  "groundControlArchitecture": "架构",
+  "groundControlRunsOn": "运行于"
 }

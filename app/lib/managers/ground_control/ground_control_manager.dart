@@ -100,10 +100,10 @@ class GroundControlManager extends Manager {
   /// service runs as a Home Assistant app.
   String? appPath;
 
-  /// How the service is installed, for Kiosk Satellite Analytics: `install`
-  /// (ha_app, docker or python), `arch`, `cuda` (the CUDA image's version,
-  /// empty for the CPU image) and `onGpu`. Empty from a Ground Control
-  /// that doesn't say.
+  /// How the service is installed, for the Ground Control page and Kiosk
+  /// Satellite Analytics: `install` (ha_app, docker or python), `arch`,
+  /// `cuda` (the CUDA image's version, empty for the CPU image) and `onGpu`.
+  /// Empty from a Ground Control that doesn't say.
   Map<String, Object?> install = const {};
 
   /// Where Open goes: the app's page in Home Assistant, or the Docker
@@ -514,6 +514,9 @@ class GroundControlManager extends Manager {
             'cuda': '${msg['cuda'] ?? ''}',
             'onGpu': msg['on_gpu'] == true,
           };
+        } else {
+          // An older Ground Control: nothing left from the one before it.
+          install = const {};
         }
         _attempt = 0;
         _setStatus('connected', baseUrl);

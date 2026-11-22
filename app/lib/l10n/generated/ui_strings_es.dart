@@ -8639,6 +8639,12 @@ class UiStringsEs extends UiStrings {
   String get groundControlApp => 'App Ground Control';
 
   @override
+  String get groundControlArchitecture => 'Arquitectura';
+
+  @override
+  String get groundControlRunsOn => 'Se ejecuta en';
+
+  @override
   String get groundControlFeatures => 'Funciones';
 
   @override

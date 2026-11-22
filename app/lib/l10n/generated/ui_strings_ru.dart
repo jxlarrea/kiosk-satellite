@@ -8553,6 +8553,12 @@ class UiStringsRu extends UiStrings {
   String get groundControlApp => 'Приложение Ground Control';
 
   @override
+  String get groundControlArchitecture => 'Архитектура';
+
+  @override
+  String get groundControlRunsOn => 'Работает на';
+
+  @override
   String get groundControlFeatures => 'Функции';
 
   @override

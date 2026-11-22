@@ -17,5 +17,7 @@
   "groundControlDeclined": "Rechazado",
   "groundControlDeclinedHint": "Este kiosco fue rechazado en la app Ground Control. Apruébalo en la página Kiosks.",
   "groundControlNotAccepted": "No aceptado",
-  "groundControlUnsignedBuild": "Esta versión de Kiosk Satellite no puede conectarse a Ground Control."
+  "groundControlUnsignedBuild": "Esta versión de Kiosk Satellite no puede conectarse a Ground Control.",
+  "groundControlArchitecture": "Arquitectura",
+  "groundControlRunsOn": "Se ejecuta en"
 }

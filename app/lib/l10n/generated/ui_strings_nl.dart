@@ -8592,6 +8592,12 @@ class UiStringsNl extends UiStrings {
   String get groundControlApp => 'Ground Control app';
 
   @override
+  String get groundControlArchitecture => 'Architectuur';
+
+  @override
+  String get groundControlRunsOn => 'Draait op';
+
+  @override
   String get groundControlFeatures => 'Functies';
 
   @override

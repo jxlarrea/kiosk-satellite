@@ -2463,6 +2463,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'groundControlNotAccepted' => strings.groundControlNotAccepted,
       'groundControlUnsignedBuild' => strings.groundControlUnsignedBuild,
       'groundControlApp' => strings.groundControlApp,
+      'groundControlArchitecture' => strings.groundControlArchitecture,
+      'groundControlRunsOn' => strings.groundControlRunsOn,
       'groundControlFeatures' => strings.groundControlFeatures,
       'settingGroundControlVoiceMatchTitle' =>
         strings.settingGroundControlVoiceMatchTitle,

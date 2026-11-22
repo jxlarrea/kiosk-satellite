@@ -14863,6 +14863,18 @@ abstract class UiStrings {
   /// **'Ground Control app'**
   String get groundControlApp;
 
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. The label of a value: the CPU architecture of the machine Ground Control runs on, such as amd64 or aarch64.
+  ///
+  /// In en, this message translates to:
+  /// **'Architecture'**
+  String get groundControlArchitecture;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. The label of a value: what Ground Control runs its models on, CPU or CUDA.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs on'**
+  String get groundControlRunsOn;
+
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:

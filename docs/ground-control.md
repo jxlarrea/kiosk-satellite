@@ -45,4 +45,14 @@ Each feature Ground Control runs has a row under **Features**, after Connection.
 | Declined | The kiosk was declined, or its access removed, in the Ground Control app. Approve it on the Kiosks page. |
 | Not accepted | Ground Control only accepts Kiosk Satellite releases. A build made from the source code without the release key can't connect. |
 
+While the kiosk is connected, three more rows describe the Ground Control it is connected to:
+
+| Row | What it shows |
+| --- | --- |
+| Version | The Ground Control version. |
+| Architecture | The CPU architecture of the machine Ground Control runs on: `amd64` or `aarch64`. |
+| Runs on | **CUDA** when the speaker model runs on an NVIDIA GPU, **CPU** otherwise. |
+
+**Architecture** and **Runs on** need Ground Control 2026.11.10 or newer.
+
 The Kiosks page of the Ground Control app also shows which Voice Match features each kiosk has on, from **Settings > Voice Satellite > Ground Control Voice Match**.

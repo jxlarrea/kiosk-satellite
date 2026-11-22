@@ -17,5 +17,7 @@
   "groundControlDeclined": "Відхилено",
   "groundControlDeclinedHint": "Цей кіоск відхилено в застосунку Ground Control. Схваліть його на сторінці Kiosks.",
   "groundControlNotAccepted": "Не прийнято",
-  "groundControlUnsignedBuild": "Ця збірка Kiosk Satellite не може підключитися до Ground Control."
+  "groundControlUnsignedBuild": "Ця збірка Kiosk Satellite не може підключитися до Ground Control.",
+  "groundControlArchitecture": "Архітектура",
+  "groundControlRunsOn": "Працює на"
 }

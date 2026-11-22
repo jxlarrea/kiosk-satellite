@@ -140,6 +140,10 @@ void main() {
       expect(published.last.ticket, 't1');
       expect(published.last.baseUrl, 'http://127.0.0.1:${server.port}');
 
+      // A Ground Control that doesn't say leaves nothing from the last one.
+      toKiosk.add(jsonEncode({'type': 'people', 'people': <Object>[]}));
+      await until(() => (gc.describe()['install'] as Map).isEmpty);
+
       // Declined later: the voice turns stop using it.
       toKiosk.add(jsonEncode({'type': 'declined'}));
       await until(() => gc.status == 'declined');

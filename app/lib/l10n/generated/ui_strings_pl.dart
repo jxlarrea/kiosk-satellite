@@ -8589,6 +8589,12 @@ class UiStringsPl extends UiStrings {
   String get groundControlApp => 'Aplikacja Ground Control';
 
   @override
+  String get groundControlArchitecture => 'Architektura';
+
+  @override
+  String get groundControlRunsOn => 'Działa na';
+
+  @override
   String get groundControlFeatures => 'Funkcje';
 
   @override

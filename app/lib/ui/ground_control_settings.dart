@@ -11,7 +11,8 @@ import 'kit.dart';
 
 /// The Ground Control page's status rows, under Enable Ground Control:
 /// whether the kiosk found and signed in to Kiosk Satellite Ground Control,
-/// who is enrolled there and Open for its app. Mirrored in the remote admin
+/// who is enrolled there, Open for its app and its version, architecture and
+/// whether it runs on the CPU or with CUDA. Mirrored in the remote admin
 /// (ground_control.js).
 class GroundControlStatusRow extends StatefulWidget {
   const GroundControlStatusRow({super.key, required this.container});
@@ -116,6 +117,14 @@ class _GroundControlStatusRowState extends State<GroundControlStatusRow> {
     );
     final app = m.appUrl;
     if (app == null) return status;
+    final valueStyle = Theme.of(
+      context,
+    ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant);
+    Widget value(String title, String text) => SettingsRow(
+      title: Text(voiceText(context, title)),
+      trailing: Text(text, style: valueStyle),
+    );
+    final arch = '${m.install['arch'] ?? ''}';
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -135,6 +144,12 @@ class _GroundControlStatusRowState extends State<GroundControlStatusRow> {
             child: Text(voiceText(context, 'Open')),
           ),
         ),
+        // What the service said about itself when the kiosk connected. An
+        // older Ground Control only gives its version.
+        if (m.version.isNotEmpty) value('Version', m.version),
+        if (arch.isNotEmpty) value('Architecture', arch),
+        if (m.install.isNotEmpty)
+          value('Runs on', m.install['onGpu'] == true ? 'CUDA' : 'CPU'),
       ],
     );
   }

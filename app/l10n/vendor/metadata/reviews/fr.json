@@ -31008,5 +31008,17 @@
     "translation": "6fb6d75b2071d406fe7043635524cbd4ff0b54c77662f5c2f62f74887c8a7af8",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "groundControlArchitecture": {
+    "source": "fca36a28ad1cac90d71c3cce809b16226c4d1752046a4221648d4f951e9affd9",
+    "translation": "cd74053c54816e473883dede0ad3b152f38a41995409eade6b42704919bb1359",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlRunsOn": {
+    "source": "3a8a7886a5cdcc4f480de1fe6c5b942d5ae956008cedc27ee55f656cfd72a3d5",
+    "translation": "7b19a9753919f370e0907e301cbea89d87dbc619fe4dc663cccc4c8c6780febe",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

@@ -17,5 +17,7 @@
   "groundControlDeclined": "Отклонён",
   "groundControlDeclinedHint": "Этот киоск отклонён в приложении Ground Control. Одобрите его на странице Kiosks.",
   "groundControlNotAccepted": "Не принят",
-  "groundControlUnsignedBuild": "Эта сборка Kiosk Satellite не может подключиться к Ground Control."
+  "groundControlUnsignedBuild": "Эта сборка Kiosk Satellite не может подключиться к Ground Control.",
+  "groundControlArchitecture": "Архитектура",
+  "groundControlRunsOn": "Работает на"
 }

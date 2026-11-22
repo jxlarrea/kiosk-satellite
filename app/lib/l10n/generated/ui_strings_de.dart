@@ -8681,6 +8681,12 @@ class UiStringsDe extends UiStrings {
   String get groundControlApp => 'Ground Control App';
 
   @override
+  String get groundControlArchitecture => 'Architektur';
+
+  @override
+  String get groundControlRunsOn => 'Läuft auf';
+
+  @override
   String get groundControlFeatures => 'Funktionen';
 
   @override

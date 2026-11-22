@@ -17,5 +17,7 @@
   "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming i Isolation.",
   "groundControlVisionMatch": "Vision Match",
   "groundControlVisionMatchDescription": "Rozpoznawanie twarzy za pomocą kamery tego urządzenia.",
-  "groundControlComingSoon": "Wkrótce"
+  "groundControlComingSoon": "Wkrótce",
+  "groundControlArchitecture": "Architektura",
+  "groundControlRunsOn": "Działa na"
 }

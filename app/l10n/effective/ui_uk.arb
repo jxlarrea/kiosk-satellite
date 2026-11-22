@@ -32146,6 +32146,32 @@
       ]
     }
   },
+  "groundControlArchitecture": "Архітектура",
+  "@groundControlArchitecture": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. The label of a value: the CPU architecture of the machine Ground Control runs on, such as amd64 or aarch64.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Architecture row"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Architecture row"
+      ]
+    }
+  },
+  "groundControlRunsOn": "Працює на",
+  "@groundControlRunsOn": {
+    "context": "Settings > Ground Control",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. The label of a value: what Ground Control runs its models on, CPU or CUDA.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Runs on row"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Runs on row"
+      ]
+    }
+  },
   "groundControlFeatures": "Функції",
   "@groundControlFeatures": {
     "context": "Settings > Ground Control",

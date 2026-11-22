@@ -8569,6 +8569,12 @@ class UiStringsUk extends UiStrings {
   String get groundControlApp => 'Застосунок Ground Control';
 
   @override
+  String get groundControlArchitecture => 'Архітектура';
+
+  @override
+  String get groundControlRunsOn => 'Працює на';
+
+  @override
   String get groundControlFeatures => 'Функції';
 
   @override

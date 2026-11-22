@@ -1,6 +1,7 @@
 /* The Ground Control page's status rows under its switch, as on the device
    (ground_control_settings.dart): found or not, signed in or not, who is
-   enrolled and Open for the Ground Control app. */
+   enrolled, Open for the Ground Control app and its version, architecture
+   and whether it runs on the CPU or with CUDA. */
 
 import { t, voiceText } from './localization.js';
 import { cmd, state } from './core.js';
@@ -54,6 +55,21 @@ async function paint(tab) {
   open.addEventListener('click', () => window.open(status.appUrl, '_blank', 'noopener'));
   app.appendChild(open);
   row.after(app);
+  // What the service said about itself when the kiosk connected. An older
+  // Ground Control only gives its version.
+  const install = status.install || {};
+  const values = [];
+  if (status.version) values.push(['Version', status.version]);
+  if (install.arch) values.push(['Architecture', install.arch]);
+  if (install.install) values.push(['Runs on', install.onGpu === true ? 'CUDA' : 'CPU']);
+  let last = app;
+  for (const [title, text] of values) {
+    const info = readOnlyRow(voiceText(title), '', text, false);
+    info.lastElementChild.style.color = 'var(--muted)';
+    info.classList.add('gc-status');
+    last.after(info);
+    last = info;
+  }
 }
 
 /* Under Features, after Voice Match: Vision Match, coming soon, as on
