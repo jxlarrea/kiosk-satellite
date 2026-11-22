@@ -1,0 +1,7 @@
+{
+  "@@locale": "pl",
+  "settingHomeLauncherEnabledTitle": "Działaj jako ekran główny",
+  "settingHomeLauncherEnabledDescription": "Zarejestruj Kiosk Satellite jako ekran główny urządzenia: kiosk uruchamia się przy starcie systemu, a każde naciśnięcie przycisku ekranu głównego wraca do niego. Wyłącza się samoczynnie i przywraca poprzedni launcher, jeśli aplikacja kilka razy z rzędu nie zdoła się uruchomić.",
+  "settingHomeKeepPinningTitle": "Zachowaj przypinanie ekranu",
+  "settingHomeKeepPinningDescription": "Przypinaj ekran nawet wtedy, gdy Kiosk Satellite jest ekranem głównym. Natywnie blokuje ostatnie aplikacje i przycisk Wstecz, ale przywraca okno potwierdzenia przypięcia na urządzeniach bez trybu właściciela urządzenia."
+}

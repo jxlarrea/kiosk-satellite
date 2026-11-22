@@ -1,0 +1,6 @@
+{
+  "@@locale": "pl",
+  "setupServiceHelp": "Utrzymuje aplikację w działaniu, gdy ekran jest wyłączony lub na pierwszym planie jest inna aplikacja, dzięki czemu połączenie z Home Assistant oraz inne funkcje, takie jak wykrywanie ruchu i proxy Bluetooth, pozostają aktywne. Poniższe uprawnienia są opcjonalne, ale zalecane: każde z nich pomaga usłudze przetrwać wyłączenie ekranu.",
+  "setupBatteryMissing": "Android może wstrzymywać aplikację przy wyłączonym ekranie, zrywając przy tym połączenie z Home Assistant.",
+  "setupOverlayMissing": "Bez tego uprawnienia usługa nie może ponownie uruchomić kiosku po awarii."
+}

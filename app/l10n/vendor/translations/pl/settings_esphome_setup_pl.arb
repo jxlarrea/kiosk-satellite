@@ -1,0 +1,19 @@
+{
+  "@@locale": "pl",
+  "settingEsphomeEnabledTitle": "Włącz ESPHome",
+  "settingEsphomeEnabledDescription": "Udostępnia ten kiosk w Home Assistant jako urządzenie ESPHome: jego czujniki i elementy sterujące jako natywne encje. Wykrywany automatycznie.",
+  "settingEsphomeEntitiesTitle": "Udostępniaj encje kiosku",
+  "settingEsphomeEntitiesDescription": "Udostępnia czujniki i elementy sterujące tego urządzenia jako encje ESPHome.",
+  "settingEsphomeExcludedEntitiesTitle": "Wykluczone encje",
+  "settingEsphomeExcludedEntitiesDescription": "Wybierz encje do wykluczenia z Home Assistant. Wszystkie pozostałe dostępne encje są udostępniane. Zapisanie powoduje ponowne połączenie ESPHome.",
+  "settingEsphomeNodeNameTitle": "Nazwa węzła",
+  "settingEsphomeNodeNameDescription": "Nazwa tego kiosku w sieci, z której Home Assistant tworzy nazwy akcji. Zmiana tej nazwy zmienia też nazwy akcji.",
+  "settingEsphomeNodeNamePlaceholder": "Ustawiana przy pierwszym uruchomieniu",
+  "settingBtproxyKeyTitle": "Klucz szyfrowania",
+  "settingBtproxyKeyDescription": "Wklej ten klucz w Home Assistant, gdy pojawi się prośba o klucz szyfrowania. Generowany automatycznie przy pierwszym uruchomieniu.",
+  "settingBtproxyKeyPlaceholder": "Generowany przy pierwszym uruchomieniu",
+  "settingBtproxyPortTitle": "Port API",
+  "settingBtproxyPortDescription": "Port, z którym łączy się Home Assistant. Pozostaw pole puste, aby użyć standardowego portu ESPHome: 6053.",
+  "esphomeStartFailed": "Nie udało się uruchomić serwera ESPHome: {error}",
+  "esphomeExcludedInvalid": "Wybierz listę identyfikatorów encji."
+}

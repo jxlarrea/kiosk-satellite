@@ -1,0 +1,10 @@
+{
+  "@@locale": "pl",
+  "settingDlnaEnabledTitle": "Włącz renderer DLNA",
+  "settingDlnaEnabledDescription": "Wyświetlaj obrazy i odtwarzaj multimedia przesyłane z Home Assistant lub dowolnej aplikacji DLNA. Urządzenie pojawia się jako odtwarzacz multimediów o nazwie urządzenia.",
+  "settingDlnaAudioBackgroundTitle": "Odtwarzaj dźwięk w tle",
+  "settingDlnaAudioBackgroundDescription": "Przesłany dźwięk jest odtwarzany bez przejmowania ekranu.",
+  "settingDlnaPortTitle": "Port serwera",
+  "settingDlnaPortDescription": "Port, na którym działa renderer, wpisywany przy jego uruchomieniu. Zmień go, aby przenieść renderer, lub wyczyść, aby renderer ponownie wybrał port.",
+  "settingDlnaPortPlaceholder": "Ustawiany przy uruchomieniu renderera"
+}

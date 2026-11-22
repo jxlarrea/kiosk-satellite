@@ -1,0 +1,17 @@
+{
+  "@@locale": "pl",
+  "settingVoiceShowCommandTitle": "Pokazuj, co mówisz",
+  "settingVoiceShowCommandDescription": "Twoje polecenie nad odpowiedzią.",
+  "settingVoiceShowAnswerTitle": "Pokazuj odpowiedź",
+  "settingVoiceShowAnswerDescription": "Pokaż odpowiedź w trakcie jej wypowiadania.",
+  "settingVoiceShowToolsTitle": "Pokazuj użycie narzędzi",
+  "settingVoiceShowToolsDescription": "Wiersz dla każdej akcji wykonanej przez asystenta.",
+  "settingVoiceHideSentimentTagsTitle": "Ukryj tagi emocji",
+  "settingVoiceHideSentimentTagsDescription": "Pomiń tagi takie jak [happy], które dodają niektórzy asystenci.",
+  "settingVoiceAnswerLingerTitle": "Pozostaw odpowiedź na ekranie",
+  "settingVoiceAnswerLingerDescription": "Po wypowiedzeniu odpowiedzi.",
+  "settingVoiceResultsLingerTitle": "Pozostaw wyniki na ekranie",
+  "settingVoiceResultsLingerDescription": "Obrazy, pogoda i inne wyniki. Wartość 0 powoduje, że pozostają one widoczne do momentu ich zamknięcia.",
+  "settingVoiceAnnouncementLingerTitle": "Czas ogłoszenia",
+  "settingVoiceAnnouncementLingerDescription": "Po wypowiedzeniu ogłoszenia."
+}

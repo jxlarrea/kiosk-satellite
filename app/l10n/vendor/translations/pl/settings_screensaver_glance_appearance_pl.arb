@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverGlanceScaleTitle": "Skalowanie wierszy",
+  "settingScreensaverGlanceScaleDescription": "Przeskaluj wiersz, aby lepiej pasował do rozmiaru ekranu.",
+  "settingScreensaverGlanceFontTitle": "Rodzina czcionek",
+  "settingScreensaverGlanceFontDescription": "Krój czcionki użyty w wierszu.",
+  "settingScreensaverGlanceFontWeightTitle": "Grubość czcionki",
+  "settingScreensaverGlanceFontWeightDescription": "Grubość tekstu w wierszu. Domyślnie każda linia ma własną grubość: nazwy zwykłą, a wartości półgrubą.",
+  "settingScreensaverGlanceHideNamesTitle": "Ukryj nazwy",
+  "settingScreensaverGlanceHideNamesDescription": "Pokazuj tylko ikonę i wartość, przy czym wartość jest większa.",
+  "settingScreensaverGlanceBwIconsTitle": "Ikony monochromatyczne",
+  "settingScreensaverGlanceBwIconsDescription": "Wyświetlaj wszystkie ikony w neutralnej szarości zamiast w kolorze odpowiadającym ich stanowi.",
+  "settingScreensaverGlanceTextOnlyTitle": "Styl pływającego tekstu",
+  "settingScreensaverGlanceTextOnlyDescription": "Pokazuj encje jako pływający tekst zamiast etykiet.",
+  "screensaverOverlayAppearance": "Wygląd"
+}

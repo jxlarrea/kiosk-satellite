@@ -1,0 +1,20 @@
+{
+  "@@locale": "pl",
+  "gestureTester": "Tester gestów dłoni",
+  "gestureOpenTester": "Otwórz tester",
+  "gestureCameraFirst": "Najpierw włącz kamerę w ustawieniach kamery.",
+  "gestureTesterHelp": "Obserwuj, które palce odczytuje kamera, aby nauczyć się, jak trzymać dłoń.",
+  "gestureHandHelp": "Trzymaj dłoń uniesioną na wysokości barku, wnętrzem do kamery, z rozstawionymi palcami. Zegnij palec całkowicie, aby nie był liczony. Aby pokazać cztery, przyłóż kciuk do wnętrza dłoni: kciuk jest liczony tylko przy otwartej dłoni.",
+  "gestureTesterPaused": "Gesty nie działają, gdy tester jest otwarty.",
+  "gestureShowHand": "Pokaż dłoń kamerze.",
+  "gestureTesterTrigger": "Wyzwala: {action}",
+  "gestureNoCount": "Żaden gest nie używa tej liczby palców.",
+  "gestureNoHand": "Brak dłoni w kadrze",
+  "gestureReadingHand": "Odczytywanie dłoni",
+  "gestureNoFingers": "Brak uniesionych palców",
+  "gestureHandsCount": "Dłonie w kadrze: {count}, odczytywana jest większa.",
+  "gestureTesterSearch": "Podgląd na żywo palców odczytywanych przez kamerę.",
+  "gestureHoldConfirmed": "Przytrzymanie potwierdzone",
+  "gestureHoldProgress": "Postęp przytrzymania: {progress}",
+  "gestureTesterHoldDuration": "Czas przytrzymania: {duration}"
+}

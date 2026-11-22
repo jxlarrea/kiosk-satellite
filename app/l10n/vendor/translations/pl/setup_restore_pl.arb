@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "setupNotBackup": "To nie jest plik kopii zapasowej",
+  "setupInvalidBackupHelp": "Ten plik nie jest prawidłowym plikiem JSON. Wyeksportuj konfigurację z ustawień skonfigurowanej aplikacji Kiosk Satellite albo z jej zdalnej administracji.",
+  "setupWrongBackupKind": "Wyeksportuj konfigurację z karty ustawień skonfigurowanej aplikacji Kiosk Satellite.",
+  "setupImportFailedHelp": "Nie udało się zastosować pliku.",
+  "setupBackupNoDashboard": "Kopia zapasowa nie zawiera pulpitu",
+  "setupBackupNoDashboardHelp": "Zastosowano ustawienia, ale tę kopię zapasową utworzono przed konfiguracją jej urządzenia, więc nie ma pulpitu do wyświetlenia. Przejdź dalej w kreatorze, aby wybrać pulpit.",
+  "setupImporting": "Importowanie…",
+  "setupRemoteRestoreHelp": "Zaimportuj konfigurację wyeksportowaną z Kiosk Satellite i pomiń resztę kreatora.",
+  "setupFinishOnDevice": "Dokończ na urządzeniu",
+  "setupFinishOnDeviceHelp": "Zaimportowano konfigurację. Odpowiedz na prośby o uprawnienia na ekranie tabletu. Ta strona przejdzie dalej automatycznie po wczytaniu pulpitu.",
+  "setupBackupObject": "Kopia zapasowa musi zawierać obiekt JSON.",
+  "setupBackupKind": "To nie jest plik konfiguracji Kiosk Satellite.",
+  "setupBackupSettings": "Kopia zapasowa nie zawiera ustawień."
+}

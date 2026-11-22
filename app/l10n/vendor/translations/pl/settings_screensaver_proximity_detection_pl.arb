@@ -1,0 +1,14 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverDismissOnProximityTitle": "Zamykaj po wykryciu zbliżenia",
+  "settingScreensaverDismissOnProximityDescription": "Obserwuje czujnik zbliżeniowy, gdy wyświetlany jest wygaszacz ekranu, i wybudza ekran, gdy coś zbliży się do urządzenia. Nie zadziała w urządzeniu, które ma tylko czujniki przeznaczone do rozmów („palm”, „touch”).",
+  "settingScreensaverDismissOnProximityScreenOffOnlyTitle": "Tylko przy wyłączonym ekranie",
+  "settingScreensaverDismissOnProximityScreenOffOnlyDescription": "Wygaszacz ekranu pozostaje aktywny, gdy coś się zbliży przy włączonym ekranie. Po wyłączeniu ekranu wykrycie wybudza pulpit. Dotknięcie nadal zamyka wygaszacz.",
+  "settingScreensaverPostponeOnProximityTitle": "Opóźnij uruchomienie wygaszacza ekranu po wykryciu zbliżenia",
+  "settingScreensaverPostponeOnProximityDescription": "Opóźnia uruchomienie wygaszacza ekranu, gdy coś znajduje się blisko czujnika.",
+  "screensaverDetectionProximityPage": "Wykrywanie zbliżenia",
+  "screensaverDetectionProximityHint": "Zamykanie lub opóźnianie uruchomienia wygaszacza ekranu przez czujnik zbliżeniowy",
+  "screensaverDetectionNoProximity": "Niedostępne na tym urządzeniu: brak czujnika zbliżeniowego.",
+  "screensaverDetectionSensor": "Czujnik",
+  "screensaverDetectionSensorHelp": "Czujnik, który urządzenie zgłasza jako czujnik zbliżeniowy. Czujnik przeznaczony do rozmów o nazwie „palm” lub „touch” nie zadziała."
+}

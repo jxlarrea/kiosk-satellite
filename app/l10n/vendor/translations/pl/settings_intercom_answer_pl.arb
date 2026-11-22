@@ -1,0 +1,21 @@
+{
+  "@@locale": "pl",
+  "settingIntercomAnswerModeTitle": "Tryb odbierania",
+  "settingIntercomAnswerModeDescription": "„Dzwonek” wyświetla pytanie na ekranie. „Odbieraj automatycznie” nawiązuje połączenie po sygnale dźwiękowym.",
+  "settingIntercomRingSecondsTitle": "Czas dzwonienia",
+  "settingIntercomRingSecondsDescription": "Jak długo połączenie dzwoni, zanim zostanie uznane za nieodebrane.",
+  "settingIntercomRingSoundTitle": "Dźwięk dzwonka",
+  "settingIntercomRingSoundVolumeDescription": "Odtwarzany z głośnością dzwonka.",
+  "settingIntercomRingVolumeTitle": "Głośność dzwonka",
+  "settingIntercomRingVolumeDescription": "Jak głośno dzwoni połączenie, niezależnie od głośności multimediów.",
+  "settingIntercomAcceptAnnouncementsTitle": "Przyjmuj ogłoszenia",
+  "settingIntercomAcceptAnnouncementsDescription": "Odtwarzaj ogłoszenia „Ogłoś wszystkim” z innych kiosków.",
+  "intercomOptionAnswerRing": "Dzwonek",
+  "intercomOptionAnswerAuto": "Odbieraj automatycznie",
+  "intercomOptionAnswerDnd": "Nie przeszkadzać",
+  "intercomOptionAnswer15": "15 sekund",
+  "intercomOptionAnswer30": "30 sekund",
+  "intercomOptionAnswer45": "45 sekund",
+  "intercomOptionAnswer60": "60 sekund",
+  "intercomAnswerSection": "Odbieranie"
+}

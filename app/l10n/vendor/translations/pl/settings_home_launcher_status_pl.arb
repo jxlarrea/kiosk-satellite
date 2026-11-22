@@ -1,0 +1,17 @@
+{
+  "@@locale": "pl",
+  "kioskHomeScreen": "Ekran główny",
+  "kioskCheckingDevice": "Sprawdzanie urządzenia…",
+  "kioskFireOs": "Fire OS nie pozwala zastąpić swojego launchera.",
+  "kioskUnsupported": "To urządzenie nie pozwala na zmianę ekranu głównego.",
+  "kioskRecovered": "Wyłączono automatycznie po wielokrotnych nieudanych uruchomieniach; przywrócono poprzedni launcher. Włącz przełącznik ponownie, aby spróbować jeszcze raz.",
+  "kioskHeld": "Kiosk Satellite jest ekranem głównym. Kiosk uruchamia się przy starcie urządzenia, a każde naciśnięcie przycisku ekranu głównego do niego wraca.",
+  "kioskDisabled": "Nie jest ekranem głównym. Włącz powyżej opcję „Działaj jako ekran główny”.",
+  "kioskWaiting": "To jeszcze nie jest bieżący ekran główny: urządzenie czeka na potwierdzenie.",
+  "kioskOpenHomeSettings": "Otwórz ustawienia ekranu głównego",
+  "kioskSetDefault": "Ustaw jako domyślny",
+  "kioskActive": "Aktywny",
+  "kioskNotHome": "Nie jest ekranem głównym.",
+  "kioskWaitingRemote": "Oczekiwanie na potwierdzenie na urządzeniu: jest tam otwarte okno systemowe lub ustawienia ekranu głównego.",
+  "kioskSetDevice": "Ustaw na urządzeniu"
+}

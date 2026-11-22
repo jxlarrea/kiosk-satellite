@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "settingLauncherEnabledTitle": "Włącz launcher aplikacji",
+  "settingLauncherEnabledDescription": "Otwieraj wybrane zainstalowane aplikacje z poziomu kiosku.",
+  "settingLauncherAppsDescription": "Aplikacje oferowane przez launcher.",
+  "settingLauncherAutoReturnTitle": "Wracaj automatycznie",
+  "settingLauncherAutoReturnDescription": "Wracaj do widoku kiosku automatycznie, gdy inna aplikacja przez jakiś czas nie była używana.",
+  "settingLauncherAutoReturnSecondsTitle": "Powrót po (s)",
+  "settingLauncherAutoReturnSecondsDescription": "Czas bez dotknięcia ekranu w innej aplikacji, po którym wraca widok kiosku.",
+  "settingLauncherAutoReturnHoldTitle": "Czekaj podczas multimediów i połączeń",
+  "settingLauncherAutoReturnHoldDescription": "Nie wracaj do widoku kiosku, gdy trwa wideo, muzyka lub połączenie."
+}

@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "overviewNoScreenshot": "Brak zrzutu ekranu",
+  "overviewStill": "Statyczny",
+  "overviewLive": "Na żywo",
+  "overviewFullSize": "Pełny rozmiar",
+  "overviewLiveInterval": "Na żywo, co 5 s",
+  "overviewTaken": "Wykonano {age}",
+  "overviewCameraViewNamed": "Widok kamery: {name}",
+  "overviewCameraView": "Widok kamery",
+  "overviewScreenOffState": "Ekran jest wyłączony"
+}

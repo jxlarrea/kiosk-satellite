@@ -1,0 +1,23 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverWidgetsEnabledTitle": "Włącz widżety wygaszacza ekranu",
+  "settingScreensaverWidgetsEnabledDescription": "Małe nakładki w rogach wygaszacza ekranu.",
+  "settingScreensaverWidgetsTitle": "Widżety",
+  "settingScreensaverWidgetsDescription": "Małe nakładki w rogach wygaszacza ekranu.",
+  "settingScreensaverWidgetScaleTitle": "Globalne skalowanie widżetów",
+  "settingScreensaverWidgetScaleDescription": "Skaluj wszystkie widżety jednocześnie, aby lepiej pasowały do rozmiaru ekranu. Każdy widżet zachowuje własną skalę względem pozostałych.",
+  "settingScreensaverWidgetFontTitle": "Globalna rodzina czcionek",
+  "settingScreensaverWidgetFontDescription": "Krój czcionki, którym rysowane są wszystkie widżety. Każdy widżet może wybrać własny.",
+  "settingScreensaverWidgetFontWeightTitle": "Globalna grubość czcionki",
+  "settingScreensaverWidgetFontWeightDescription": "Grubość tekstu wszystkich widżetów. Domyślnie każdy wiersz ma własną grubość. Każdy widżet może wybrać własną.",
+  "settingScreensaverWidgetTextShadowTitle": "Cień tekstu",
+  "settingScreensaverWidgetTextShadowDescription": "Dodaj cień do tekstu widżetów, aby poprawić czytelność na zdjęciach.",
+  "settingScreensaverVignetteStrengthTitle": "Intensywność winiety",
+  "settingScreensaverVignetteStrengthDescription": "Intensywność przyciemnienia za widżetami, poprawiająca czytelność na jasnych zdjęciach. 0 wyłącza efekt.",
+  "screensaverOverlayWidgetsEmpty": "Brak widżetów",
+  "screensaverOverlayShow": "Pokaż ten widżet",
+  "screensaverOverlayRemove": "Usuń widżet",
+  "screensaverOverlayAdd": "Dodaj widżet",
+  "screensaverOverlayAddHelp": "Mały zegar, pogoda, poziom baterii lub encja w rogu ekranu.",
+  "screensaverOverlayWidgetsHint": "Nakładki w rogach i ich skala"
+}

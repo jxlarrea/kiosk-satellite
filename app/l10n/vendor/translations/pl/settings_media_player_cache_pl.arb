@@ -1,0 +1,9 @@
+{
+  "@@locale": "pl",
+  "mediaCacheTitle": "Pamięć podręczna okładek albumów",
+  "mediaCacheReadFailed": "Nie udało się odczytać rozmiaru pamięci podręcznej.",
+  "mediaCacheClearFailed": "Nie udało się wyczyścić pamięci podręcznej.",
+  "mediaCacheChecking": "Sprawdzanie rozmiaru pamięci podręcznej…",
+  "mediaCacheClearing": "Usuwanie…",
+  "mediaCacheUsage": "Wykorzystano {used} z {limit}. Miniatury z kolejki są automatycznie zapisywane w pamięci podręcznej."
+}

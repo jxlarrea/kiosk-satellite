@@ -1,0 +1,11 @@
+{
+  "@@locale": "pl",
+  "kioskForeground": "Kiosk Satellite może samodzielnie wrócić na pierwszy plan.",
+  "kioskOverlayMissing": "Bez tego kiosk nie może sam wrócić na pierwszy plan, a osłona trybu blokady zakrywa tylko aplikację.",
+  "kioskGuardHeld": "Pasek powiadomień i lista ostatnich aplikacji zamykają się same, gdy ekran jest chroniony.",
+  "kioskGuardMissing": "Bez tego pasek powiadomień i lista ostatnich aplikacji pozostają dostępne. Włącz Kiosk Satellite w sekcji „Ułatwienia dostępu”.",
+  "kioskOverlayRemote": "Bez tego kiosk nie może sam wrócić na pierwszy plan. Ekran przyznawania uprawnienia wyświetla się na tablecie.",
+  "kioskGuardRemote": "Bez tego pasek powiadomień i lista ostatnich aplikacji pozostają dostępne. Włącz Kiosk Satellite w sekcji „Ułatwienia dostępu” na tablecie.",
+  "kioskGrantDevice": "Przyznaj na urządzeniu",
+  "kioskOpenSettingsDevice": "Otwórz ustawienia na urządzeniu"
+}

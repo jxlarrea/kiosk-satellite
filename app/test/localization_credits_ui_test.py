@@ -51,6 +51,7 @@ try:
         if german:
             languages.insert(0, ("Deutsch", "Dee-san"))
         languages.append(("Nederlands", "rononline"))
+        languages.append(("Polski", "ThePnx"))
         languages.append(("Русский", "MrYadro"))
         languages.append(("Українська", "kdinya"))
         languages.append(("简体中文", "panda-star357"))
@@ -71,6 +72,7 @@ try:
         if german:
             locales.append(("de", "Mitwirkende an der Übersetzung"))
         locales.append(("nl", "Vertalers"))
+        locales.append(("pl", "Autorzy tłumaczeń"))
         locales.append(("ru", "Авторы локализации"))
         locales.append(("uk", "Автори перекладу"))
         locales.append(("zh-CN", "翻译贡献者"))

@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "launcherOverlayHeld": "Kiosk Satellite może sam wrócić na pierwszy plan i rejestrować dotknięcia w innej aplikacji.",
+  "launcherOverlayMissing": "Bez tego kiosk nie może sam wrócić na pierwszy plan, a dotknięcia ekranu w innej aplikacji pozostają niezarejestrowane.",
+  "launcherOverlayRemote": "Bez tego kiosk nie może sam wrócić na pierwszy plan, a dotknięcia ekranu w innej aplikacji pozostają niezarejestrowane. Ekran nadania uprawnienia pojawi się na tablecie.",
+  "launcherBatteryMissing": "Android może wstrzymać aplikację działającą w tle za inną aplikacją, a wstrzymany zegar nigdy nie przywróci kiosku na pierwszy plan.",
+  "launcherBatteryRemote": "Android może wstrzymać aplikację działającą w tle za inną aplikacją, a wstrzymany zegar nigdy nie przywróci kiosku na pierwszy plan. Okno nadania uprawnienia pojawi się na tablecie.",
+  "launcherNotificationAccessHeld": "Kiosk nie wraca na pierwszy plan, gdy w innej aplikacji odtwarzane jest wideo lub muzyka.",
+  "launcherNotificationAccessMissing": "Bez tego kiosk nie rozpozna, że odtwarzane jest wideo lub muzyka, i mimo to wróci na pierwszy plan.",
+  "launcherNotificationAccessRemote": "Bez tego kiosk nie rozpozna, że odtwarzane jest wideo lub muzyka, i mimo to wróci na pierwszy plan. Ekran nadania uprawnienia pojawi się na tablecie.",
+  "launcherPermissionsSearch": "Uprawnienia, których wymaga funkcja „Wracaj automatycznie”."
+}

@@ -1,0 +1,18 @@
+{
+  "@@locale": "pl",
+  "screensaverMediaTransitionNone": "Brak",
+  "screensaverMediaTransitionFade": "Przenikanie",
+  "screensaverMediaTransitionSlide": "Przesunięcie",
+  "screensaverMediaTransitionZoom": "Powiększenie",
+  "screensaverMediaTransitionKenBurns": "Efekt Kena Burnsa",
+  "screensaverMediaTransitionRandom": "Losowo",
+  "screensaverMediaFillOff": "Wyłączone",
+  "screensaverMediaFillSmart": "Inteligentne",
+  "screensaverMediaFillAlways": "Zawsze",
+  "settingScreensaverVideoLengthTitle": "Długość filmu",
+  "settingScreensaverVideoLengthDescription": "Jak długo odtwarzany jest każdy film przed następnym.",
+  "screensaverMediaVideoLengthFull": "Cały film",
+  "screensaverMediaVideoLengthInterval": "Jak zdjęcia",
+  "settingScreensaverImageIntervalDescription": "Jak długo wyświetlany jest każdy obraz przed następnym.",
+  "settingScreensaverPhotoIntervalDescription": "Jak długo wyświetlane jest każde zdjęcie przed następnym."
+}

@@ -1,0 +1,9 @@
+{
+  "@@locale": "pl",
+  "settingBrowserInjectJsTitle": "Wstrzyknij JavaScript do pulpitu HA",
+  "settingBrowserInjectJsDescription": "Uruchamiaj ten kod JavaScript po każdym wczytaniu strony pulpitu. Przydaje się do ukrycia rozpraszających elementów lub dostosowania pulpitu, którego nie można samodzielnie zmieniać.",
+  "settingBrowserInjectJsExternalTitle": "Wstrzyknij JavaScript do stron zewnętrznych",
+  "settingBrowserInjectJsExternalDescription": "Uruchamiaj ten kod JavaScript po wczytaniu każdej strony zewnętrznej: stron otwartych z linku na pulpicie, stron w rotacji pulpitów i wygaszacza ekranu „Strona internetowa”. Strona Music Assistant pozostaje bez zmian.",
+  "browserInjectJsPlaceholder": "// Przykład: ukryj rozpraszający element\ndocument.querySelector('#banner').style.display = 'none';",
+  "browserInjectJsExternalPlaceholder": "// Przykład: powiększ stronę, która ignoruje poziom powiększenia pulpitu\ndocument.documentElement.style.zoom = '1.25';"
+}

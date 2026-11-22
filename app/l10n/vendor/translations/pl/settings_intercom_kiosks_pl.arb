@@ -1,0 +1,15 @@
+{
+  "@@locale": "pl",
+  "intercomKiosks": "Kioski",
+  "intercomRosterHelp": "Wykryte kioski i zapisani członkowie floty. Kiosk jest gotowy, gdy jest osiągalny, ma włączony interkom, ten sam klucz i zgodne ustawienia szyfrowania.",
+  "intercomNoOther": "Nie znaleziono innych kiosków",
+  "intercomRosterDeviceHelp": "Pojawiają się tu kioski z włączonymi opcjami „Zdalne zarządzanie” i „Znajdź inne kioski”.",
+  "intercomNoneHeard": "Nie znaleziono kiosków",
+  "intercomRosterRemoteHelp": "Kioski pojawiają się dzięki wykrywaniu w sieci lub zapisanemu członkostwu we flocie. Opcje „Zdalne zarządzanie” i „Znajdź inne kioski” muszą być włączone.",
+  "intercomReady": "Gotowy",
+  "intercomOff": "Interkom wyłączony",
+  "intercomDifferentKey": "Inny klucz",
+  "intercomUnreachable": "Nieosiągalny",
+  "intercomOffline": "Offline",
+  "intercomChecking": "Sprawdzanie…"
+}

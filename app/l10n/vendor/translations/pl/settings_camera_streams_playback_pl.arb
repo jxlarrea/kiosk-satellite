@@ -1,0 +1,19 @@
+{
+  "@@locale": "pl",
+  "settingCameraAllowH265Title": "Zezwalaj na strumienie H.265",
+  "settingCameraAllowH265Description": "Strumienie z kamer w standardzie kompresji H.265 są odtwarzane bez konwersji. Urządzenie, które nie potrafi dekodować H.265, pokazuje zamiast nich pusty obraz.",
+  "settingCameraPreferMseTitle": "Preferuj MSE zamiast WebRTC",
+  "settingCameraPreferMseDescription": "Strumienie kamer Go2RTC są najpierw przesyłane przez MSE. Dla urządzeń, które nie odtwarzają WebRTC; opóźnienie wzrasta o sekundę lub dwie.",
+  "settingCameraPreferHlsTitle": "Preferuj HLS zamiast WebRTC",
+  "settingCameraPreferHlsDescription": "Strumienie kamer Home Assistant są najpierw przesyłane przez HLS. Dla urządzeń, które nie odtwarzają WebRTC; opóźnienie wzrasta o kilka sekund.",
+  "settingCameraSingleAudioTitle": "Odtwarzaj dźwięk pojedynczej kamery",
+  "settingCameraSingleAudioDescription": "Dźwięk kamery jest odtwarzany, gdy na ekranie jest tylko jedna kamera. Siatki z kilkoma kamerami pozostają wyciszone.",
+  "settingCameraPinchZoomTitle": "Wykonaj gest zsuwania palców, aby powiększyć obraz pojedynczej kamery",
+  "settingCameraPinchZoomDescription": "Powiększaj obraz dwoma palcami, gdy na ekranie jest tylko jedna kamera. Przeciągnij, aby go przesunąć, dotknij dwukrotnie, aby zresetować.",
+  "settingCameraAutoDismissSecondsTitle": "Zamknij automatycznie po",
+  "settingCameraAutoDismissCompassDescription": "Zamyka otwarty widok kamery po tym czasie. 0 pozostawia go otwartym. Nie dotyczy wygaszacza ekranu z kamerą. W układzie Compass obowiązuje zamiast tego ustawienie „Powrót do środka”.",
+  "cameraStreamsPlayback": "Odtwarzanie",
+  "cameraStreamsOff": "Wyłączone",
+  "cameraStreamsSeconds": "{seconds} s",
+  "cameraStreamsGridHelp": "Siatki z kilkoma kamerami odtwarzają tylko obraz. Na słabszych urządzeniach używaj w widokach strumieni Go2RTC o niższej rozdzielczości i opcjonalnie ustaw osobny strumień pełnoekranowy."
+}

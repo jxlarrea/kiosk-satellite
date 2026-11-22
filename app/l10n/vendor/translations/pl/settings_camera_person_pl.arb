@@ -1,0 +1,7 @@
+{
+  "@@locale": "pl",
+  "settingPersonSensorTitle": "Włącz czujnik osób",
+  "settingPersonSensorDescription": "Udostępnia czujnik osób urządzenia w Home Assistant jako czujnik obecności. Wymaga poniższego uprawnienia dostępu do logów.",
+  "cameraPersonPage": "Czujnik osób",
+  "cameraPersonHint": "Czujnik obecności w Home Assistant oparty na czujniku osób urządzenia"
+}

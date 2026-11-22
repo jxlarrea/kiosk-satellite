@@ -1,0 +1,15 @@
+{
+  "@@locale": "pl",
+  "settingSendspinShowPlayerTitle": "Pokazuj pływający odtwarzacz",
+  "settingSendspinShowPlayerDescription": "Podczas odtwarzania muzyki pokazuj nad pulpitem małe okno z bieżącym utworem, okładką, informacjami o utworze i postępem. Przeciągnij je w dowolne miejsce; pozycja zostanie zapamiętana.",
+  "settingSendspinPlayerSizeTitle": "Rozmiar odtwarzacza",
+  "settingSendspinPlayerSizeDescription": "Kompaktowy to małe, dyskretne okienko wyświetlające aktualnie odtwarzany utwór. Duży wyświetla przyciski „Poprzedni”, „Odtwarzaj/Wstrzymaj” i „Następny”, dopasowane do obsługi dotykiem i sterujące całą grupą odtwarzania.",
+  "settingSendspinPausedHideMinutesTitle": "Ukryj wstrzymany odtwarzacz po",
+  "settingSendspinPausedHideMinutesDescription": "Jak długo wstrzymany odtwarzacz pozostaje na ekranie. Dotyczy zarówno pływającego odtwarzacza, jak i ekranu „Teraz odtwarzane”.",
+  "settingSendspinDismissKeepsPlayingTitle": "Odtwarzaj dalej po odrzuceniu",
+  "settingSendspinDismissKeepsPlayingDescription": "Odrzucenie pływającego odtwarzacza szybkim ruchem palca ukrywa go, ale nie zatrzymuje muzyki.",
+  "mediaFloatingPage": "Pływający odtwarzacz",
+  "mediaFloatingHint": "Mała karta nad pulpitem",
+  "mediaCompact": "Kompaktowy",
+  "mediaLargeControls": "Duży z przyciskami"
+}

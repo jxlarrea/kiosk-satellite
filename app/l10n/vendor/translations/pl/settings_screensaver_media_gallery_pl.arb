@@ -1,0 +1,23 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverGalleryItemsTitle": "Zdjęcia",
+  "settingScreensaverGalleryItemsDescription": "Zdjęcia i filmy wyświetlane przez ten wygaszacz. Wybierane z galerii na urządzeniu; ponowny wybór zastępuje poprzedni.",
+  "settingScreensaverGalleryIntervalTitle": "Sekundy na zdjęcie",
+  "settingScreensaverGalleryShuffleTitle": "Losowa kolejność",
+  "settingScreensaverGalleryShuffleDescription": "Wyświetlaj wybrane elementy w losowej kolejności.",
+  "settingScreensaverGalleryTransitionTitle": "Przejście",
+  "settingScreensaverGalleryTransitionDescription": "Sposób przejścia z jednego zdjęcia do następnego.",
+  "settingScreensaverGalleryFillTitle": "Wypełnij ekran",
+  "settingScreensaverGalleryFillDescription": "„Wyłączone” pokazuje całe zdjęcie między czarnymi pasami. „Inteligentne” powiększa zdjęcia o proporcjach zbliżonych do ekranu, a pozostałe umieszcza na rozmytym tle. „Zawsze” powiększa każde zdjęcie, przycinając to, co się nie mieści.",
+  "settingScreensaverGalleryEdgeTapsTitle": "Zmieniaj slajdy dotknięciem krawędzi",
+  "settingScreensaverGalleryEdgeTapsDescription": "Dotknięcie lewej lub prawej połowy ekranu pokazuje poprzedni lub następny slajd zamiast zamykać wygaszacz.",
+  "screensaverMediaGalleryPage": "Wygaszacz „Galeria zdjęć”",
+  "screensaverMediaGalleryHint": "Zdjęcia, czas, losowa kolejność, przejście",
+  "screensaverMediaLoadingPhotos": "Wczytywanie zdjęć…",
+  "screensaverMediaCopying": "Kopiowanie zdjęcia {index} z {total}…",
+  "screensaverMediaCopyFailed": "Nie udało się skopiować zdjęć",
+  "screensaverMediaSmallerSelection": "Wybierz mniej zdjęć.",
+  "screensaverMediaNoPhotos": "Nie wybrano zdjęć",
+  "screensaverMediaSelected": "Wybrane: {count}",
+  "screensaverMediaPickOnDevice": "Nic nie wybrano. Wybierz na urządzeniu."
+}

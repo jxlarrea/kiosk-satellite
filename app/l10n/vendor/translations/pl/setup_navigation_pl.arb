@@ -1,0 +1,11 @@
+{
+  "@@locale": "pl",
+  "setupWelcome": "Witaj",
+  "setupConnect": "Połączenie",
+  "setupConnectSummary": "Adres URL i token Home Assistant",
+  "setupDashboard": "Pulpit",
+  "setupDashboardSummary": "Co wyświetla kiosk",
+  "setupRecommendedSummary": "Zalecane ustawienia",
+  "setupPermissions": "Uprawnienia",
+  "setupPermissionsSummary": "Czego potrzebuje konfiguracja"
+}

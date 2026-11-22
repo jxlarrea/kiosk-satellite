@@ -1,0 +1,21 @@
+{
+  "@@locale": "pl",
+  "searchInstallApk": "Prześlij plik APK Kiosk Satellite przez zdalną administrację i zainstaluj go.",
+  "searchPermissionsHelp": "Wszystkie uprawnienia systemu Android, z których może korzystać aplikacja, wraz z ich stanem: mikrofon, kamera, powiadomienia, nieograniczone zużycie baterii, wyświetlanie nad innymi aplikacjami, modyfikowanie ustawień systemu, ochrona interfejsu systemu, administrator urządzenia, dostęp do wszystkich plików, dostęp do danych o użyciu i lokalizacja.",
+  "searchServiceStatus": "Stan usługi",
+  "searchServiceHelp": "Czy usługa Kiosk Satellite działa i co utrzymuje w działaniu.",
+  "searchServicePermissions": "Uprawnienia potrzebne usłudze Kiosk Satellite.",
+  "searchIntercomKiosks": "Znane kioski i informacja, czy każdy z nich może odebrać połączenie.",
+  "searchHaValidate": "Sprawdź adres URL i token w swoim Home Assistant.",
+  "searchHaProxy": "Udostępnij Home Assistant działający przez zwykłe HTTP za pomocą bezpiecznego proxy w aplikacji.",
+  "searchHaDashboard": "Wybierz pulpit i widok wyświetlany przez kiosk.",
+  "searchKioskPermissions": "Uprawnienia, na których opierają się zabezpieczenia trybu kiosku i trybu blokady.",
+  "searchHomeStatus": "Stan ekranu głównego",
+  "searchHomeHelp": "Czy Kiosk Satellite jest ekranem głównym urządzenia i gdzie dokończyć ustawianie go jako domyślnego.",
+  "searchMasterVolume": "Głośność urządzenia, względem której skalowane są suwaki głośności multimediów i asystenta.",
+  "searchSmallClock": "Widżet zegara w rogu wygaszacza ekranu.",
+  "searchBattery": "Widżet baterii w rogu wygaszacza ekranu: poziom naładowania tego urządzenia.",
+  "searchWeatherForecast": "Widżet prognozy w rogu wygaszacza ekranu: nadchodzące dni z temperaturami maksymalnymi i minimalnymi.",
+  "searchPersonPermission": "Uprawnienie dostępu do logów, którego wymaga czujnik wykrywania osób w urządzeniu.",
+  "searchSonosSpeakers": "Głośniki Sonos znane temu urządzeniu, wyszukiwanie w sieci i pole adresu."
+}

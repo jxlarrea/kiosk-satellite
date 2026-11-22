@@ -1,0 +1,23 @@
+{
+  "@@locale": "pl",
+  "settingAnnouncementsEnabledTitle": "Włącz ogłoszenia",
+  "settingAnnouncementsEnabledDescription": "Odtwarzaj ogłoszenia wysyłane przez Home Assistant za pomocą akcji „announce”.",
+  "esphomeTtsSection": "Zamiana tekstu na mowę",
+  "settingAnnouncementsTtsEngineTitle": "Silnik zamiany tekstu na mowę",
+  "settingAnnouncementsTtsEngineDescription": "Encja zamiany tekstu na mowę w Home Assistant, która odczytuje ogłoszenia.",
+  "settingAnnouncementsTtsLanguageTitle": "Język",
+  "settingAnnouncementsTtsLanguageDescription": "Język, w którym odczytywane są ogłoszenia.",
+  "settingAnnouncementsTtsVoiceTitle": "Głos",
+  "settingAnnouncementsTtsVoiceDescription": "Głos, który odczytuje ogłoszenia.",
+  "esphomeTtsFirst": "Pierwszy dostępny",
+  "esphomeTtsDefault": "Domyślny",
+  "settingAnnouncementsChimeTitle": "Najpierw sygnał",
+  "settingAnnouncementsChimeDescription": "Odtwarzaj sygnał przed ogłoszeniem.",
+  "settingAnnouncementsChimeFileTitle": "Dźwięk sygnału",
+  "settingAnnouncementsChimeFileDescription": "Odtwarzany z tą samą głośnością co ogłoszenie.",
+  "esphomeAnnouncements": "Ogłoszenia",
+  "esphomeAnnouncementsHelp": "Ogłoszenia głosowe z Home Assistant",
+  "esphomeChime": "Sygnał",
+  "esphomeTtsUnavailable": "Nie udało się połączyć z Home Assistant",
+  "esphomeTtsNoVoices": "Brak głosów do wyboru"
+}

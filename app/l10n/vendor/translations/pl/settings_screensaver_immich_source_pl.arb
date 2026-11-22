@@ -1,0 +1,19 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverImmichAlbumTitle": "Źródło multimediów",
+  "settingScreensaverImmichAlbumDescription": "Cała biblioteka lub wybrane albumy.",
+  "settingScreensaverImmichPhotosOnlyTitle": "Tylko zdjęcia",
+  "settingScreensaverImmichPhotosOnlyDescription": "Pomijaj filmy w pokazie slajdów.",
+  "settingScreensaverImmichCacheTitle": "Zapisuj multimedia w pamięci podręcznej",
+  "settingScreensaverImmichCacheDescription": "Przechowuj kopie na urządzeniu, aby obrazy wczytywały się od razu.",
+  "settingScreensaverImmichCacheMaxTitle": "Rozmiar pamięci podręcznej (elementy)",
+  "settingScreensaverImmichCacheMaxDescription": "Po zapełnieniu pamięci podręcznej najstarsze elementy są usuwane.",
+  "screensaverMediaAll": "Wszystkie multimedia",
+  "screensaverMediaAllDevice": "Wszystkie multimedia.",
+  "screensaverMediaNoAlbums": "Brak albumów. Najpierw utwórz album w Immich.",
+  "screensaverMediaAlbumsFailed": "Nie udało się pobrać listy albumów",
+  "screensaverMediaListError": "Nie udało się pobrać listy: {error}",
+  "screensaverMediaListingFailed": "błąd pobierania listy",
+  "screensaverMediaItems": "Elementy: {count}",
+  "screensaverMediaCached": "W pamięci podręcznej: {count}, {size}"
+}

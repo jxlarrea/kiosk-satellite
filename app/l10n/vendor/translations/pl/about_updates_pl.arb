@@ -1,0 +1,19 @@
+{
+  "@@locale": "pl",
+  "aboutCheckNow": "Sprawdź aktualizacje teraz",
+  "aboutChecking": "Sprawdzanie…",
+  "aboutCheckFailed": "Nie udało się sprawdzić aktualizacji. Czy urządzenie ma dostęp do serwisu GitHub?",
+  "aboutOverlayMissing": "Brak uprawnienia „Wyświetlanie nad innymi aplikacjami”",
+  "aboutOverlayHelp": "Bez niego aplikacja nie może sama uruchomić się ponownie po aktualizacji. Ekran przyznawania uprawnienia pojawi się na tablecie.",
+  "aboutDownloadProgress": "Pobieranie… {percent}%",
+  "aboutDownloadFailed": "Aktualizacja nie powiodła się: {error}",
+  "aboutAlreadyCurrent": "Wersja jest już aktualna",
+  "aboutInstallHelp": "Pobieranie odbywa się na tablecie; instalację trzeba potwierdzić na ekranie tabletu.",
+  "aboutSystem": "System",
+  "aboutSystemVersion": "Wersja ROM",
+  "aboutSystemVerifying": "Weryfikowanie…",
+  "aboutSystemInstalling": "Instalowanie…",
+  "aboutSystemRestartHelp": "Urządzenie uruchomi się ponownie dwa razy, aby zainstalować aktualizację, i przez kilka minut będzie niedostępne.",
+  "aboutSystemManual": "Dostępny jest nowy obraz",
+  "aboutSystemManualHelp": "Wersję {version} nowego obrazu dla Echo Dot instaluje się ręcznie, nie jako aktualizację."
+}

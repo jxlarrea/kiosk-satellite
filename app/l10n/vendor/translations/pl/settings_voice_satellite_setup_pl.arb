@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "voiceDisconnected": "Brak połączenia z Home Assistant",
+  "voiceValidate": "Najpierw sprawdź połączenie w sekcji „Konfiguracja Home Assistant”.",
+  "voiceChecking": "Sprawdzanie obecności Voice Satellite…",
+  "voiceMissing": "Voice Satellite nie jest zainstalowany w Home Assistant",
+  "voiceInstallHelp": "Voice Satellite zmienia ten kiosk w pełnego asystenta głosowego Home Assistant obsługiwanego bez użycia rąk: wykrywanie słowa wybudzającego, rozmowy, minutniki i ogłoszenia, bezpośrednio na pulpicie.\n\nJest dostępny w domyślnym repozytorium HACS. Zainstaluj go w swojej instancji Home Assistant, a następnie wróć tutaj.",
+  "voiceLearnMore": "Dowiedz się więcej o ",
+  "voiceGithub": "Voice Satellite w serwisie Github",
+  "voiceHacs": "Otwórz repozytorium HACS",
+  "voiceLoading": "Wczytywanie elementów sterujących Voice Satellite…"
+}

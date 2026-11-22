@@ -1,0 +1,17 @@
+{
+  "@@locale": "pl",
+  "settingHaThemeTitle": "Motyw",
+  "settingHaThemeDescription": "Jasny lub ciemny motyw pulpitu Home Assistant, ustawiany też przez encję motywu w Home Assistant. Opcja „Automatyczny” działa według ustawień poniżej.",
+  "settingThemeMatchAppTitle": "Synchronizuj motywy Home Assistant z Kiosk Satellite",
+  "settingThemeMatchAppDescription": "Automatycznie dopasowuj motyw Home Assistant do interfejsu Kiosk Satellite.",
+  "settingThemeAutoTitle": "Dopasuj motyw do pory dnia",
+  "settingThemeAutoDescription": "Przełączaj Home Assistant między trybem jasnym a ciemnym według harmonogramu. Wybrany motyw pozostaje bez zmian, zmienia się tylko jego wariant jasny/ciemny.",
+  "settingThemeDarkAtTitle": "Ciemny motyw o",
+  "settingThemeDarkAtDescription": "Czas lokalny przełączenia na ciemny motyw.",
+  "settingThemeLightAtTitle": "Jasny motyw o",
+  "settingThemeLightAtDescription": "Czas lokalny powrotu do jasnego motywu.",
+  "settingThemeAutoAppTitle": "Przełączaj też motyw aplikacji",
+  "settingThemeAutoAppDescription": "Zmieniaj motyw samego Kiosk Satellite (menu, ustawienia) razem z zaplanowaną zmianą w Home Assistant.",
+  "haThemeHint": "Dopasuj do aplikacji lub przełączaj jasny i ciemny motyw według harmonogramu",
+  "haThemeAuto": "Automatyczny"
+}

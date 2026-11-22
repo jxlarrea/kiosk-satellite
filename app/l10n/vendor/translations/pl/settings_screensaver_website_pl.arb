@@ -1,0 +1,10 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverWebsiteUrlTitle": "Adres URL strony",
+  "settingScreensaverWebsiteUrlDescription": "Strona wyświetlana na pełnym ekranie. Musi zezwalać na osadzanie.",
+  "settingScreensaverWebsiteZoomTitle": "Poziom powiększenia",
+  "settingScreensaverWebsiteZoomDescription": "Skaluje cały WebView zewnętrznego wygaszacza ekranu.",
+  "settingScreensaverWebsiteDoubleTapTitle": "Zamykanie dwukrotnym dotknięciem",
+  "settingScreensaverWebsiteDoubleTapDescription": "Pojedyncze dotknięcia obsługują stronę zamiast zamykać wygaszacz.",
+  "screensaverWebsiteSection": "Wygaszacz ekranu „Strona internetowa”"
+}

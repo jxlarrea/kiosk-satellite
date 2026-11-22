@@ -1,0 +1,23 @@
+{
+  "@@locale": "pl",
+  "setupRemoteHeading": "Zdalna administracja",
+  "setupTitle": "Skonfiguruj\nKiosk Satellite",
+  "setupWelcomeLead": "Zamień ten tablet w kiosk Home Assistant. Konfiguracja zajmuje kilka minut i przebiega krok po kroku w tym kreatorze.",
+  "setupDeviceName": "Nazwa urządzenia",
+  "setupDeviceNameHelp": "Nazwa tego kiosku w Home Assistant, w zdalnej administracji i w sieci. Zmień ją w dowolnej chwili w sekcji Ustawienia, Urządzenie.",
+  "setupEnableRemote": "Włącz zdalną administrację",
+  "setupEnableRemoteHelp": "Zarządzaj tym kioskiem z przeglądarki internetowej także po konfiguracji. Tam znacznie łatwiej wkleić token dostępu Home Assistant.",
+  "setupRemotePassword": "Hasło zdalnej administracji",
+  "setupRestoreHeading": "Przywracanie kopii zapasowej",
+  "setupRestore": "Przywróć z pliku konfiguracji",
+  "setupRestoreHelp": "Zaimportuj konfigurację wyeksportowaną z Kiosk Satellite i pomiń resztę kreatora. Przenoszone są ustawienia, pulpit i dane logowania.",
+  "setupServicePermissions": "Zalecane uprawnienia usług",
+  "setupPasswordShort": "Za krótkie hasło",
+  "setupPasswordMinimum": "Hasło musi mieć co najmniej 4 znaki.",
+  "setupRemoteAddress": "Tę konfigurację można kontynuować zdalnie w przeglądarce pod adresem {address}, niezależnie od tego, czy powyższy przełącznik jest włączony.",
+  "remoteWelcomeTitle": "Witamy w Kiosk Satellite",
+  "remoteWelcomePassword": "Ten tablet czeka na konfigurację. Najpierw zabezpiecz zdalną administrację hasłem.",
+  "remoteWelcomeReady": "Ten tablet czeka na konfigurację. Hasło zdalnej administracji jest już ustawione; wpisz tutaj nowe, aby je zmienić.",
+  "remoteInitialPassword": "Hasło administratora (min. 4 znaki)",
+  "remoteNewPassword": "Nowe hasło administratora (pozostaw puste, aby zachować obecne)"
+}

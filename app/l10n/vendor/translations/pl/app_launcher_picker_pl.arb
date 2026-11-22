@@ -1,0 +1,10 @@
+{
+  "@@locale": "pl",
+  "launcherNoneHelp": "Na razie brak. Wybierz aplikacje, które oferuje launcher.",
+  "launcherNone": "Na razie brak",
+  "launcherListFailed": "Nie udało się wyświetlić listy aplikacji",
+  "launcherListError": "Nie udało się wyświetlić listy aplikacji: {error}",
+  "launcherListingFailed": "błąd pobierania listy",
+  "launcherEmpty": "Nie znaleziono aplikacji do uruchomienia.",
+  "launcherSearchApps": "Szukaj aplikacji"
+}

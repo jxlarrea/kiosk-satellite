@@ -1,0 +1,17 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverDismissOnMotionTitle": "Zamykaj po wykryciu ruchu",
+  "settingScreensaverDismissOnMotionDescription": "Monitoruje obraz z kamery podczas wyświetlania wygaszacza ekranu, i wybudza ekran, gdy ktoś się zbliża. Kamera działa tylko podczas wyświetlania wygaszacza.",
+  "settingScreensaverDismissOnMotionScreenOffOnlyTitle": "Tylko przy wyłączonym ekranie",
+  "settingScreensaverDismissOnMotionScreenOffOnlyDescription": "Wygaszacz ekranu pozostaje aktywny, gdy ruch zostanie wykryty przy włączonym ekranie. Po wyłączeniu ekranu wykrycie wybudza pulpit. Dotknięcie nadal zamyka wygaszacz.",
+  "settingScreensaverPostponeOnMotionTitle": "Opóźnij uruchomienie wygaszacza ekranu po wykryciu ruchu",
+  "settingScreensaverPostponeOnMotionDescription": "Opóźnia uruchomienie wygaszacza ekranu po wykryciu ruchu. UWAGA: kamera działa wtedy bez przerwy.",
+  "screensaverDetectionMotionPage": "Wykrywanie ruchu",
+  "screensaverDetectionMotionHint": "Zamykanie lub opóźnianie uruchomienia wygaszacza ekranu po wykryciu ruchu",
+  "screensaverDetectionMotionTuning": "Wykrywanie ruchu można dostroić w ustawieniach kamery.",
+  "settingMotionUseEntityTitle": "Użyj encji Home Assistant",
+  "settingMotionUseEntityDescription": "Wykrywanie ruchu przez czujnik z Home Assistant zamiast kamery.",
+  "settingMotionEntityTitle": "Encja czujnika ruchu",
+  "settingMotionEntityDescription": "Obserwowany czujnik obecności lub ruchu z Home Assistant.",
+  "screensaverDetectionExternalMotionHeading": "Zewnętrzny czujnik ruchu"
+}

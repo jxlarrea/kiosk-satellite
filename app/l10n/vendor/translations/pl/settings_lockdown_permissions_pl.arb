@@ -1,0 +1,6 @@
+{
+  "@@locale": "pl",
+  "lockdownOverlayHeld": "Osłona blokady może zakryć cały ekran.",
+  "lockdownOverlayMissing": "Bez tego uprawnienia osłona zakrywa tylko aplikację. Ekran przyznawania uprawnienia pojawi się na tablecie.",
+  "lockdownPermissionsSearch": "Uprawnienia, na których opierają się zabezpieczenia trybu blokady."
+}

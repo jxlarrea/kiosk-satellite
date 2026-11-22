@@ -1,0 +1,21 @@
+{
+  "@@locale": "pl",
+  "kioskBackClose": "Naciśnij Wstecz ponownie, aby zamknąć aplikację",
+  "kioskBackAgain": "Naciśnij Wstecz ponownie, aby wrócić",
+  "kioskHoldOn": "Tryb wstrzymania włączony",
+  "kioskHoldOff": "Tryb wstrzymania wyłączony",
+  "kioskHoldNotice": "Bieżący widok pozostanie, dopóki nie wyłączysz tego trybu.",
+  "kioskDownloadComplete": "Pobieranie zakończone",
+  "kioskDownloadFailed": "Pobieranie nie powiodło się",
+  "kioskDownload": "Pobierz",
+  "kioskDownloading": "Pobieranie",
+  "kioskOpen": "Otwórz",
+  "kioskTip": "Wskazówka",
+  "kioskMenuHint": "Przesuń palcem od lewej krawędzi, aby otworzyć menu.",
+  "kioskUnknownLink": "Nieznany link kiosku",
+  "kioskOpenAppFailed": "Nie udało się otworzyć aplikacji",
+  "kioskWebViewMissing": "Android System WebView nie jest zainstalowany",
+  "kioskWebViewMissingHelp": "To urządzenie nie ma dostawcy WebView, więc nie można wyświetlić Home Assistant. Zainstaluj Android System WebView lub Chrome, a następnie uruchom ponownie Kiosk Satellite.",
+  "kioskDuraSpeedBlocking": "DuraSpeed blokuje pulpit",
+  "kioskDuraSpeedBlockingHelp": "DuraSpeed na tym tablecie nie pozwala uruchomić procesu renderującego pulpitu, a niektóre tablety nie mają strony jego ustawień. Wyłącz go jednorazowo przez adb, a następnie uruchom ponownie Kiosk Satellite:"
+}

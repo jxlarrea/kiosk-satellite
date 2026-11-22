@@ -1,0 +1,8 @@
+{
+  "@@locale": "pl",
+  "setupChooseDashboard": "Wybierz pulpit",
+  "setupDashboardHelp": "To właśnie kiosk wyświetli po uruchomieniu.",
+  "setupSelectDashboard": "Wybierz pulpit",
+  "setupSelectDashboardHelp": "Wybierz pulpit, który będzie wyświetlany w kiosku. Pulpit można później zmienić w ustawieniach.",
+  "setupHeadlessGrants": "To urządzenie nie ma ekranu, więc Android nie może na nim poprosić o te uprawnienia. Nadaj każde z nich przez adb, a następnie dokończ tutaj."
+}

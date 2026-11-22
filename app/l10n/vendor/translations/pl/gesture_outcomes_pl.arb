@@ -1,0 +1,17 @@
+{
+  "@@locale": "pl",
+  "gestureHaServiceKind": "Usługa Home Assistant",
+  "gestureHaScriptKind": "Skrypt Home Assistant",
+  "gestureHaAutomationKind": "Automatyzacja Home Assistant",
+  "gestureHaEventKind": "Zdarzenie Home Assistant",
+  "gestureRan": "Uruchomiono „{value}”",
+  "gestureRunFailed": "Nie udało się uruchomić „{value}”",
+  "gestureCalled": "Wywołano „{value}”",
+  "gestureCallFailed": "Nie udało się wywołać „{value}”",
+  "gestureTriggered": "Wyzwolono „{value}”",
+  "gestureTriggerFailed": "Nie udało się wyzwolić „{value}”",
+  "gestureFired": "Wysłano zdarzenie „{value}”",
+  "gestureFireFailed": "Nie udało się wysłać zdarzenia „{value}”",
+  "gestureDone": "Gotowe",
+  "gestureFailed": "Niepowodzenie"
+}

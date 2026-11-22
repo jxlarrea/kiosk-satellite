@@ -1,0 +1,19 @@
+{
+  "@@locale": "pl",
+  "settingNotificationsTransparencyTitle": "Przezroczystość",
+  "settingNotificationsTransparencyDescription": "Ekran pod spodem prześwituje przez karty powiadomień. Tekst i ikony pozostają nieprzezroczyste.",
+  "settingNotificationsBlurTitle": "Rozmycie tła",
+  "settingNotificationsBlurDescription": "Rozmywa to, co prześwituje przez przezroczystą kartę powiadomienia. Uwaga: rozmycia nie można zastosować nad powierzchnią pulpitu Home Assistant.",
+  "settingNotificationsChimeFileTitle": "Dźwięk powiadomienia",
+  "settingNotificationsChimeFileDescription": "Pliki dźwiękowe są odczytywane z katalogu Android/data/me.jxl.kiosk_satellite/files/sounds na urządzeniu, dostępnego też z menedżera plików.",
+  "settingNotificationsVolumeTitle": "Głośność powiadomień",
+  "settingNotificationsVolumeDescription": "Głośność dźwięku powiadomienia, niezależna od głośności multimediów i asystenta.",
+  "esphomeNotifications": "Powiadomienia",
+  "esphomeNotificationsHelp": "Przezroczystość, rozmycie, dźwięk powiadomienia, powiadomienie testowe",
+  "esphomeAppearance": "Wygląd",
+  "esphomeSound": "Dźwięk",
+  "esphomeNotificationTest": "Powiadomienie testowe",
+  "esphomeNotificationHelp": "Powiadomienia są wysyłane z Home Assistant za pomocą akcji {action}. Test wyświetla przykładowe powiadomienie nad pulpitem.",
+  "esphomeNotificationBody": "Tak wygląda i brzmi powiadomienie z Home Assistant.",
+  "esphomeNotificationSearch": "Akcja Home Assistant wysyłająca powiadomienia oraz przycisk wyświetlający przykładowe powiadomienie."
+}

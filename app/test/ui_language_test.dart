@@ -45,10 +45,12 @@ void main() {
       expect(uiLanguage.optionLabels!['de'], 'Deutsch');
       expect(uiLanguage.optionLabels!['fr'], 'Français');
       expect(uiLanguage.optionLabels!['nl'], 'Nederlands');
+      expect(uiLanguage.optionLabels!['pl'], 'Polski');
       expect(uiLanguage.optionLabels!['ru'], 'Русский');
       expect(uiLanguage.optionLabels!['uk'], 'Українська');
       expect(uiLanguage.optionLabels!['zh-CN'], '简体中文');
       expect(appLocaleForLanguage('nl'), const Locale('nl'));
+      expect(appLocaleForLanguage('pl'), const Locale('pl'));
       expect(appLocaleForLanguage('ru'), const Locale('ru'));
       expect(appLocaleForLanguage('uk'), const Locale('uk'));
       expect(appLocaleForLanguage('zh-CN'), const Locale('zh', 'CN'));

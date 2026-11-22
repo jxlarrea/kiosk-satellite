@@ -1,0 +1,13 @@
+{
+  "@@locale": "pl",
+  "settingAirplayEnabledTitle": "Włącz odbiornik AirPlay",
+  "settingAirplayEnabledDescription": "Urządzenie pojawia się jako głośnik AirPlay w menu AirPlay na urządzeniu iPhone, iPad lub Mac.",
+  "settingAirplayNameTitle": "Nazwa głośnika",
+  "settingAirplayNameDescription": "Nazwa w menu AirPlay. Jeśli pole jest puste, używana jest nazwa urządzenia.",
+  "settingAirplaySenderVolumeTitle": "Używaj głośności nadawcy",
+  "settingAirplaySenderVolumeDescription": "Regulacja głośności na urządzeniu iPhone, iPad lub Mac zmienia głośność odtwarzania na tym urządzeniu. Po wyłączeniu działa tylko regulacja głośności tego urządzenia.",
+  "settingAirplaySyncOffsetDescription": "Wartość ujemna sprawia, że to urządzenie odtwarza dźwięk wcześniej, aby zsynchronizować go z obrazem na urządzeniu nadawcy. Zmiana działa od razu.",
+  "settingAirplayTakeoverTitle": "Pozwól innemu nadawcy przejąć odtwarzanie",
+  "settingAirplayTakeoverDescription": "Drugi iPhone, iPad lub Mac może przejąć odtwarzanie, gdy odtwarza pierwszy. Po wyłączeniu musi poczekać, aż pierwszy się rozłączy.",
+  "mediaAirplayHint": "Odtwarzaj dźwięk z urządzenia iPhone, iPad lub Mac"
+}

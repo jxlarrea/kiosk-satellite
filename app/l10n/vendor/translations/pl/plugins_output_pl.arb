@@ -1,0 +1,14 @@
+{
+  "@@locale": "pl",
+  "pluginCharts": "Wykresy",
+  "pluginReadings": "Odczyty",
+  "pluginWaitingForSamples": "Oczekiwanie na próbki",
+  "pluginLatest": "Najnowsze",
+  "pluginSelected": "Wybrane",
+  "pluginNoDataYet": "Na razie brak danych",
+  "pluginTapOrDragToInspectSamplesDoubleTapTo": "Dotknij lub przeciągnij, aby sprawdzić próbki. Dotknij dwukrotnie, aby śledzić najnowsze.",
+  "pluginNoData": "Brak danych",
+  "pluginOn": "Włączone",
+  "pluginEmpty": "Puste",
+  "pluginChartKeyboardHelp": "Używaj strzałek, aby przeglądać próbki, a klawisza End, aby przejść do najnowszej."
+}

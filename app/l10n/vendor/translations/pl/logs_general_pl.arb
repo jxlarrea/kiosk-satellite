@@ -1,0 +1,10 @@
+{
+  "@@locale": "pl",
+  "logsEntries": "Wpisy: {count}",
+  "logsCopyLog": "Kopiuj log",
+  "logsShareLog": "Udostępnij log",
+  "logsCopied": "Skopiowano",
+  "logsCopyFailed": "Nie udało się skopiować",
+  "logsOnClipboard": "Log jest w schowku.",
+  "logsConsoleOnClipboard": "Log konsoli jest w schowku."
+}

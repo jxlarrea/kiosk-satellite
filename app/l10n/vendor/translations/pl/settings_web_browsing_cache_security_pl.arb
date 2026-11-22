@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "settingDisableCacheTitle": "Wyłącz pamięć podręczną",
+  "settingDisableCacheDescription": "Zawsze pobiera dane z sieci i usuwa dane strony z pamięci podręcznej podczas ładowania, aby ponownie wdrożony pulpit wyświetlał się w najnowszej wersji. Spowalnia działanie; traktuj to jako pomoc przy programowaniu.",
+  "settingAllowMixedContentTitle": "Zezwalaj na treści mieszane",
+  "settingAllowMixedContentDescription": "Pozwala stronom HTTPS wczytywać niezabezpieczone zasoby HTTP. Pomaga, gdy pulpit https:// zawiera treści http:// umieszczone przez Home Assistant.",
+  "settingIgnoreSslErrorsTitle": "Ignoruj błędy SSL",
+  "settingIgnoreSslErrorsDescription": "Akceptuj niezaufane lub samopodpisane certyfikaty. Używaj tylko we własnej sieci, ponieważ wyłącza to weryfikację certyfikatów.",
+  "settingBrowserUserAgentTitle": "Własny identyfikator przeglądarki",
+  "settingBrowserUserAgentDescription": "Wysyłany do stron internetowych zamiast domyślnego identyfikatora przeglądarki. Pozostaw puste, aby użyć domyślnego.",
+  "webGeolocationSection": "Geolokalizacja HTML5",
+  "settingWebGeolocationTitle": "Włącz dostęp do geolokalizacji",
+  "settingWebGeolocationDescription": "Pozwala stronom, takim jak radar pogodowy czy mapa, odczytywać lokalizację urządzenia. Prosić o nią mogą tylko strony wczytane przez HTTPS.",
+  "webGeolocationPermissionHeld": "Strony mogą odczytywać lokalizację urządzenia.",
+  "webGeolocationPermissionMissing": "Bez tego uprawnienia strony nie mogą odczytywać lokalizacji urządzenia."
+}

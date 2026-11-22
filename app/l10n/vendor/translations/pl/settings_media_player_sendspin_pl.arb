@@ -1,0 +1,19 @@
+{
+  "@@locale": "pl",
+  "settingSendspinEnabledTitle": "Włącz odtwarzacz Sendspin",
+  "settingSendspinEnabledDescription": "Zmień to urządzenie w zsynchronizowany odtwarzacz Sendspin. Pojawia się w Music Assistant pod nazwą urządzenia, zsynchronizowany ze wszystkimi innymi głośnikami Sendspin.",
+  "settingSendspinServerTitle": "Serwer",
+  "settingSendspinServerDescription": "Adres serwera Sendspin, na przykład 192.168.1.10:8927. Zostaw puste, aby automatycznie wyszukać serwer w sieci.",
+  "settingSendspinCodecTitle": "Preferowany kodek audio",
+  "settingSendspinCodecDescription": "FLAC jest bezstratny i idealny w sieci Wi-Fi lub Ethernet. Ostateczny wybór spośród kodeków oferowanych przez to urządzenie należy do serwera.",
+  "settingSendspinSyncOffsetTitle": "Przesunięcie synchronizacji dźwięku (ms)",
+  "settingSendspinSyncOffsetDescription": "Wartość ujemna przyspiesza odtwarzanie na tym urządzeniu, dla głośników opóźnionych względem grupy (Bluetooth). Dostrój na słuch, zmiana działa na bieżąco.",
+  "settingSendspinGroupVolumeDescription": "Gdy to urządzenie gra w grupie, suwak głośności ustawia głośność całej grupy. Po wyłączeniu tylko tego urządzenia. Wymaga połączenia z Music Assistant.",
+  "settingSendspinMasterVolumeTitle": "Steruj głośnością urządzenia",
+  "settingSendspinMasterVolumeDescription": "Music Assistant ustawia głośność zmienianą przyciskami głośności zamiast głośności multimediów. Dźwięki asystenta również się do niej dostosowują.",
+  "mediaSendspinPage": "Odtwarzacz Sendspin",
+  "mediaSendspinHint": "Zmień to urządzenie w zsynchronizowany odtwarzacz Music Assistant",
+  "mediaFlac": "FLAC (bezstratny)",
+  "mediaOpus": "Opus (wydajny)",
+  "mediaPcm": "PCM (bez kompresji)"
+}

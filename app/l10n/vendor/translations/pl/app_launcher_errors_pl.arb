@@ -1,0 +1,5 @@
+{
+  "@@locale": "pl",
+  "launcherErrorAndroidOnly": "wyświetlanie listy aplikacji działa tylko w systemie Android",
+  "launcherErrorListDetail": "nie udało się wyświetlić listy aplikacji: {error}"
+}

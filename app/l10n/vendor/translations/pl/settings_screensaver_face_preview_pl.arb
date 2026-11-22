@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "settingFacePreviewTitle": "Pokazuj podgląd z kamery",
+  "settingFacePreviewDescription": "Po wykryciu twarzy, która aktywuje kiosk, w rogu ekranu przez kilka sekund wyświetla się mały, okrągły podgląd na żywo z kamery.",
+  "settingFacePreviewSecondsTitle": "Czas podglądu",
+  "settingFacePreviewSecondsDescription": "Jak długo podgląd pozostaje na ekranie.",
+  "settingFacePreviewScaleTitle": "Skalowanie podglądu",
+  "settingFacePreviewScaleDescription": "Skaluj podgląd, aby lepiej pasował do rozmiaru ekranu.",
+  "settingFacePreviewPositionTitle": "Pozycja podglądu",
+  "settingFacePreviewPositionDescription": "W którym rogu wyświetla się podgląd.",
+  "screensaverDetectionPreviewSection": "Podgląd z kamery"
+}

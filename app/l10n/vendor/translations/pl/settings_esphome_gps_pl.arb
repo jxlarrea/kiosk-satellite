@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "settingLocationEnabledTitle": "Udostępniaj lokalizację",
+  "settingLocationEnabledDescription": "Odczytuje pozycję GPS i udostępnia ją w Home Assistant jako czujniki szerokości i długości geograficznej, dokładności, wysokości i prędkości. Włączenie lub wyłączenie tej opcji powoduje ponowną rejestrację urządzenia ESPHome.",
+  "settingLocationIntervalTitle": "Interwał aktualizacji",
+  "settingLocationIntervalDescription": "Liczba sekund między odczytami pozycji.",
+  "esphomeGps": "Czujnik GPS",
+  "esphomeGpsHelp": "Udostępnianie danych czujnika GPS w Home Assistant",
+  "esphomeLocationOff": "Wyłączone.",
+  "esphomeLocationWaiting": "Oczekiwanie na pierwsze ustalenie pozycji. Zimny start pod otwartym niebem może potrwać kilka minut.",
+  "esphomeCoordinates": "Ostatnie współrzędne",
+  "esphomeLocationDenied": "Nie przyznano uprawnienia do lokalizacji.",
+  "esphomeLocationAbsent": "Brak odbiornika GPS.",
+  "esphomeLocationError": "GPS niedostępny: {error}",
+  "esphomeLocationUnsupported": "Niedostępne na tym urządzeniu: brak odbiornika GPS."
+}

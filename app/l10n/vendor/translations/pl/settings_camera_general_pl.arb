@@ -1,0 +1,19 @@
+{
+  "@@locale": "pl",
+  "settingCameraEnabledTitle": "Włącz kamerę",
+  "settingCameraEnabledDescription": "Korzystanie z kamery zwiększa obciążenie procesora i nagrzewanie, co może skrócić żywotność baterii i urządzenia.",
+  "settingCameraDeviceTitle": "Kamera",
+  "settingCameraDeviceDescription": "Kamera, której używać.",
+  "settingCameraSnapshotResolutionTitle": "Rozdzielczość zdjęć",
+  "settingCameraSnapshotResolutionDescription": "Wyższa daje ostrzejszy obraz, ale bardziej obciąża procesor i łącze.",
+  "settingCameraDisableDetectionSnapshotsTitle": "Wyłącz zdjęcia przy wykryciu",
+  "settingCameraDisableDetectionSnapshotsDescription": "Zapobiega automatycznym zdjęciom wyzwalanym przez wykrywanie. Wykrywanie ruchu, twarzy, obecności i gestów nadal działa. Ręczne żądania i „Ciągłe zdjęcia” nadal mogą rejestrować obrazy.",
+  "settingCameraSnapshotsTitle": "Ciągłe zdjęcia",
+  "settingCameraSnapshotsDescription": "Publikuje nowe zdjęcie z kamery w Home Assistant w stałych odstępach czasu.",
+  "settingCameraSnapshotIntervalTitle": "Odstęp między zdjęciami",
+  "settingCameraSnapshotIntervalDescription": "Liczba sekund między zdjęciami.",
+  "cameraFront": "Przednia",
+  "cameraBack": "Tylna",
+  "cameraExternal": "Zewnętrzna",
+  "cameraOnlyCamera": "Jedyna kamera tego urządzenia."
+}

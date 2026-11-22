@@ -1,0 +1,22 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverImmichUrlTitle": "Adres serwera",
+  "settingScreensaverImmichUrlDescription": "Adres serwera Immich wraz z portem.",
+  "settingScreensaverImmichApiKeyTitle": "Klucz API",
+  "settingScreensaverImmichApiKeyDescription": "Utworzony w Immich w sekcji „Account Settings” → „API Keys”.",
+  "screensaverMediaImmichPage": "Wygaszacz ekranu „Multimedia z Immich”",
+  "screensaverMediaImmichHint": "Serwer, multimedia, pokaz slajdów, metadane, filtry",
+  "screensaverMediaServerConnection": "Połączenie z serwerem",
+  "screensaverMediaValidateFailedLog": "Weryfikacja nie powiodła się. Sprawdź nieudane wywołanie w logach aplikacji.",
+  "screensaverMediaValidateFailed": "Weryfikacja nie powiodła się.",
+  "screensaverMediaNoAnswer": "Urządzenie nie odpowiedziało.",
+  "screensaverMediaAddressFirst": "Najpierw wpisz adres serwera.",
+  "screensaverMediaKeyFirst": "Najpierw wpisz klucz API.",
+  "screensaverMediaBadAddress": "Adres serwera nie jest prawidłowym adresem URL.",
+  "screensaverMediaKeyRejected": "Klucz API został odrzucony.",
+  "screensaverMediaScopeMissing": "Klucz API nie ma uprawnienia {scope}.",
+  "screensaverMediaPermissionMissing": "Klucz API nie ma jednego z uprawnień: {error}",
+  "screensaverMediaServerError": "Serwer odpowiedział kodem {status}: {error}",
+  "screensaverMediaUnreachable": "Nie udało się połączyć z {url}.",
+  "screensaverMediaTalkError": "Nie udało się skomunikować z serwerem: {error}"
+}

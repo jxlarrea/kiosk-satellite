@@ -1,0 +1,13 @@
+{
+  "@@locale": "pl",
+  "esphomeNearby": "Urządzenia w pobliżu",
+  "esphomeNearbySearch": "Urządzenia Bluetooth odbierane przez ten kiosk, z nazwami, jeśli są znane.",
+  "esphomeNearbyEmpty": "Jeszcze nic nie wykryto.",
+  "esphomeNearbyWaiting": "Jeszcze nic nie wykryto. Urządzenia pojawią się tutaj, gdy proxy zacznie skanować.",
+  "esphomeRotating": "(zmienny adres)",
+  "esphomeNearbyCount": "Wyświetlane: {count} z {total}.",
+  "esphomeSlots": "Maksymalna liczba urządzeń połączonych jednocześnie przez to proxy: {count}. Home Assistant kieruje kolejne urządzenia przez inne proxy.",
+  "esphomeSecondsAgo": "{count} s temu",
+  "esphomeMinutesAgo": "{count} min temu",
+  "esphomeHoursAgo": "{count} h temu"
+}

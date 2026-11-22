@@ -1,0 +1,22 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverDismissOnPersonTitle": "Zamykaj po wykryciu osoby",
+  "settingScreensaverDismissOnPersonDescription": "Odczytuje dane z czujnika osób urządzenia podczas działania wygaszacza ekranu i wybudza ekran, gdy ktoś jest przed urządzeniem. Wymaga uprawnienia „Dostęp do logów” opisanego poniżej.",
+  "settingScreensaverDismissOnPersonScreenOffOnlyTitle": "Tylko przy wyłączonym ekranie",
+  "settingScreensaverDismissOnPersonScreenOffOnlyDescription": "Wygaszacz ekranu pozostaje aktywny, gdy ktoś podejdzie przy włączonym ekranie. Po wyłączeniu ekranu wykrycie wybudza pulpit. Dotknięcie nadal zamyka wygaszacz.",
+  "settingScreensaverPostponeOnPersonTitle": "Opóźnij uruchomienie wygaszacza ekranu po wykryciu osoby",
+  "settingScreensaverPostponeOnPersonDescription": "Opóźnia uruchomienie wygaszacza ekranu, gdy ktoś jest przed urządzeniem.",
+  "screensaverDetectionPersonPage": "Wykrywanie osób",
+  "screensaverDetectionPersonHint": "Zamykanie lub opóźnianie uruchomienia wygaszacza ekranu przez czujnik osób w urządzeniu",
+  "screensaverDetectionOccupancy": "Obecność",
+  "screensaverDetectionStatusUnavailable": "Stan niedostępny.",
+  "screensaverDetectionOff": "Wyłączone.",
+  "screensaverDetectionStarting": "Uruchamianie…",
+  "screensaverDetectionWaiting": "Oczekiwanie na pierwszy sygnał kontrolny. Czujnik wysyła go co 30 s, gdy ktoś jest w polu widzenia.",
+  "screensaverDetectionLastHeartbeat": "Ostatni sygnał kontrolny: {ago}.",
+  "screensaverDetectionSecondsAgo": "{count} s temu",
+  "screensaverDetectionMinutesAgo": "{count} min temu",
+  "screensaverDetectionHoursAgo": "{count} h temu",
+  "screensaverDetectionDetected": "Wykryto",
+  "screensaverDetectionClear": "Brak"
+}

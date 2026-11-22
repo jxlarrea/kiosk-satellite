@@ -1,0 +1,18 @@
+{
+  "@@locale": "pl",
+  "settingAutoReloadOnErrorTitle": "Automatyczne przeładowanie po błędzie",
+  "settingAutoReloadOnErrorDescription": "Automatycznie przywraca działanie po błędach stron i awariach aplikacji.",
+  "settingPullToRefreshTitle": "Włącz odświeżanie przeciągnięciem",
+  "settingPullToRefreshDescription": "Przeciągnij w dół od góry strony, aby ją odświeżyć. Domyślnie wyłączone: na przewijanym pulpicie łatwo o przypadkowe przeciągnięcie.",
+  "settingPullToRefreshClearCacheTitle": "Wyczyść pamięć podręczną przy odświeżaniu przeciągnięciem",
+  "settingPullToRefreshClearCacheDescription": "Przeciągnięcie przed przeładowaniem strony czyści też pamięć podręczną stron i modele słów wybudzających, więc wszystko wczytuje się od nowa. Sesja logowania i zapisane dane stron zostają zachowane.",
+  "settingBrowserZoomTitle": "Poziom powiększenia",
+  "settingBrowserZoomDescription": "Skaluje całą stronę. Wartość powyżej 1x przydaje się na tabletach ściennych oglądanych z odległości; poniżej 1x na małym ekranie zmieści się więcej pulpitu.",
+  "settingPinchToZoomTitle": "Włącz powiększanie dwoma palcami",
+  "settingPinchToZoomDescription": "Powiększaj stronę, rozsuwając lub zsuwając dwa palce. Domyślnie wyłączone, aby pulpit kiosku nie przesuwał się od przypadkowych dotknięć.",
+  "settingDisableScrollingTitle": "Wyłącz przewijanie",
+  "settingDisableScrollingDescription": "Blokuje stronę w miejscu, tak że nie można jej przewijać w żadnym kierunku. Dotknięcia i przyciski nadal działają.",
+  "browserCrashPermissionHelp": "Bez tego uprawnienia kiosk nie może wrócić po awarii.",
+  "browserCrashPermissionMissing": "Brak uprawnienia „Wyświetlanie nad innymi aplikacjami”",
+  "browserCrashPermissionRemoteHelp": "Bez niego kiosk nie może sam wrócić po awarii. Ekran przyznawania uprawnienia wyświetli się na tablecie."
+}

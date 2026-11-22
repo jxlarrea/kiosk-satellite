@@ -1,0 +1,23 @@
+{
+  "@@locale": "pl",
+  "esphomeIdentityBthome": "Czujnik BTHome",
+  "esphomeIdentityXiaomi": "Czujnik Xiaomi",
+  "esphomeIdentityQingping": "Czujnik Qingping",
+  "esphomeIdentityGoogleNest": "Urządzenie Google/Nest",
+  "esphomeIdentityEddystone": "Nadajnik Eddystone",
+  "esphomeIdentityGoogleFastPair": "Urządzenie Google Fast Pair",
+  "esphomeIdentityAppleFindMy": "Urządzenie Apple Find My",
+  "esphomeIdentityExposure": "Exposure notification (na telefonie)",
+  "esphomeIdentityAugustYale": "Zamek August/Yale",
+  "esphomeIdentityAmazon": "Urządzenie Amazon",
+  "esphomeIdentityTile": "Lokalizator Tile",
+  "esphomeIdentityInput": "Urządzenie wejściowe (pilot/klawiatura)",
+  "esphomeIdentityHeartRate": "Czujnik tętna",
+  "esphomeIdentityEnvironmental": "Czujnik środowiskowy",
+  "esphomeIdentityApple": "Urządzenie Apple",
+  "esphomeIdentityWindows": "Komputer z Windows",
+  "esphomeIdentitySamsung": "Urządzenie Samsung",
+  "esphomeIdentityGoogle": "Urządzenie Google",
+  "esphomeIdentityUnknown": "Nieznane urządzenie",
+  "esphomeIdentityVendor": "Urządzenie {vendor}"
+}

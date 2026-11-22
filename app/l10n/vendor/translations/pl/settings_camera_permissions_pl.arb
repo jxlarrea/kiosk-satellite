@@ -1,0 +1,11 @@
+{
+  "@@locale": "pl",
+  "cameraNoCamera": "Nie wykryto kamery",
+  "cameraNoCameraHelp": "To urządzenie nie zgłasza żadnej kamery, której można użyć.",
+  "cameraCameraPermission": "Brak uprawnienia do kamery",
+  "cameraCameraPermissionHelp": "Bez niego nie można używać kamery. Okno przyznania uprawnienia pojawia się na ekranie tabletu.",
+  "cameraGrantOnDevice": "Przyznaj na urządzeniu",
+  "cameraCameraBlocked": "Zablokowano. Android nie zapyta ponownie, więc przyznaj uprawnienie w ustawieniach aplikacji.",
+  "cameraCameraNeeded": "Bez tego uprawnienia nie można używać kamery.",
+  "cameraAppSettings": "Ustawienia aplikacji"
+}

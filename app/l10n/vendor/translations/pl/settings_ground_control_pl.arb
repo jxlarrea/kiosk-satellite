@@ -1,0 +1,21 @@
+{
+  "@@locale": "pl",
+  "settingGroundControlEnabledTitle": "Włącz Ground Control",
+  "settingGroundControlEnabledDescription": "Połącz z Kiosk Satellite Ground Control, aby uruchamiać Voice Match na wydajnym komputerze.",
+  "settingGroundControlAddressTitle": "Adres",
+  "settingGroundControlAddressDescription": "Pozostaw puste, aby wyszukać Ground Control w sieci. Wpisz adres, jeśli Ground Control działa w innej sieci.",
+  "groundControlLooking": "Wyszukiwanie Ground Control w sieci.",
+  "groundControlWaitingApproval": "Oczekiwanie na zatwierdzenie",
+  "groundControlApproveHint": "Zatwierdź ten kiosk na stronie „Kiosks” w aplikacji Ground Control.",
+  "groundControlDeclined": "Odrzucono",
+  "groundControlDeclinedHint": "Ten kiosk został odrzucony w aplikacji Ground Control. Zatwierdź go na stronie „Kiosks”.",
+  "groundControlNotAccepted": "Nie zaakceptowano",
+  "groundControlUnsignedBuild": "Ta kompilacja Kiosk Satellite nie może połączyć się z Ground Control.",
+  "groundControlApp": "Aplikacja Ground Control",
+  "groundControlFeatures": "Funkcje",
+  "settingGroundControlVoiceMatchTitle": "Voice Match",
+  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming i Isolation.",
+  "groundControlVisionMatch": "Vision Match",
+  "groundControlVisionMatchDescription": "Rozpoznawanie twarzy za pomocą kamery tego urządzenia.",
+  "groundControlComingSoon": "Wkrótce"
+}

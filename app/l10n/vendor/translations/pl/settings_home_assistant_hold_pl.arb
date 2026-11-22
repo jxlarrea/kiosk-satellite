@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "settingHaHoldModeTitle": "Tryb wstrzymania",
+  "settingHaHoldModeDescription": "Zachowuje bieżący widok na ekranie: wygaszacz ekranu, rotacja widoków pulpitu i timer powrotu do widoku głównego są wstrzymane do wyłączenia trybu.",
+  "settingHaHoldReleaseMinutesTitle": "Automatycznie kończ wstrzymanie po",
+  "settingHaHoldReleaseMinutesDescription": "Samoczynnie wyłącza tryb wstrzymania po ustawionym czasie. Ustaw 0, aby wstrzymanie trwało do ręcznego wyłączenia.",
+  "haHoldHint": "Przypięcie bieżącego widoku, automatyczne zakończenie, pozycja w menu",
+  "haNever": "Nigdy",
+  "haMinutes": "{minutes} min",
+  "haHours": "{hours} h",
+  "haHoursMinutes": "{hours} h {minutes} min"
+}

@@ -1,0 +1,10 @@
+{
+  "@@locale": "pl",
+  "settingAudioMicDeviceTitle": "Mikrofon",
+  "settingAudioMicDeviceDescription": "Mikrofon, z którego korzystają wykrywanie słowa wybudzającego i polecenia głosowe.",
+  "settingAudioSpeakerDeviceTitle": "Głośnik",
+  "settingAudioSpeakerDeviceDescription": "Wyjście dźwięków Voice Satellite; multimedia są odtwarzane przez wyjście wybrane w systemie.",
+  "screenAudioDevices": "Urządzenia audio",
+  "screenAudioSelectedDevice": "Wybrane urządzenie",
+  "screenAudioDisconnected": "{name} (nie połączono)"
+}

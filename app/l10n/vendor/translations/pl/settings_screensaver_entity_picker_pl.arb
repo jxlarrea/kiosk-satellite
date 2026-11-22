@@ -1,0 +1,13 @@
+{
+  "@@locale": "pl",
+  "screensaverOverlayEntity": "Encja",
+  "screensaverOverlayNotSet": "Nie ustawiono",
+  "screensaverOverlayName": "Nazwa",
+  "screensaverOverlayNameHelp": "Pozostaw puste, aby użyć nazwy z Home Assistant.",
+  "screensaverOverlayValue": "Wyświetlana wartość",
+  "screensaverOverlayState": "Stan",
+  "screensaverOverlayEntityRequired": "Wybierz encję.",
+  "screensaverOverlaySearching": "Wyszukiwanie…",
+  "screensaverOverlayUnreachable": "Nie udało się połączyć z Home Assistant",
+  "screensaverOverlayNoAnswer": "Urządzenie nie odpowiedziało."
+}

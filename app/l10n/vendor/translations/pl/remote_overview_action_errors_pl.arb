@@ -1,0 +1,10 @@
+{
+  "@@locale": "pl",
+  "deviceScreenOffPermission": "Wyłączenie ekranu wymaga jednorazowego uprawnienia. Na tablecie wyświetla się teraz ekran przyznawania uprawnienia „Administrator urządzenia”. Zatwierdź je tam i spróbuj ponownie.",
+  "deviceAdminInactive": "Uprawnienie administratora urządzenia jest nieaktywne.",
+  "deviceRestartOverlay": "Ponowne uruchomienie wymaga uprawnienia „Wyświetlanie nad innymi aplikacjami”, bez niego aplikacja nie może sama wrócić na ekran. Na urządzeniu otwiera się ekran przyznawania uprawnienia, zezwól na nie tam i ponów próbę.",
+  "deviceRebootPermission": "Ponowne uruchomienie urządzenia wymaga skonfigurowania Kiosk Satellite jako właściciela urządzenia lub przyznanego połączenia z Shizuku.",
+  "deviceRestartAndroidOnly": "Ponowne uruchomienie jest dostępne tylko w systemie Android.",
+  "deviceRestartShizukuRefused": "Ponowne uruchomienie zostało odrzucone przez Shizuku",
+  "deviceRestartFailed": "Ponowne uruchomienie nie powiodło się: {error}"
+}

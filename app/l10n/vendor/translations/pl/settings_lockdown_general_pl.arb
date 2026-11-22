@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "settingLockdownEnabledTitle": "Włącz tryb blokady",
+  "settingLockdownEnabledDescription": "Wyłącza interakcje z ekranem, dopóki tryb nie zostanie wyłączony z Home Assistant lub gestem wyjścia.",
+  "settingLockdownAutoUnlockMinutesTitle": "Odblokuj automatycznie po",
+  "settingLockdownAutoUnlockMinutesDescription": "Wyłącza tryb blokady po tym czasie, jeśli został włączony z menu kiosku. Ustaw 0, aby blokada pozostała aktywna.",
+  "settingLockdownBlackoutTitle": "Zaciemnij ekran",
+  "settingLockdownBlackoutDescription": "Podczas blokady ekran jest czarny.",
+  "settingLockdownAllowScreensaverTitle": "Zezwalaj na wygaszacz ekranu",
+  "settingLockdownAllowScreensaverDescription": "Wygaszacz ekranu może działać podczas blokady. Zamykanie wygaszacza po wykryciu ruchu pozostaje wyłączone do czasu zdjęcia blokady.",
+  "settingLockdownExitGestureTitle": "Gest wyjścia z trybu blokady",
+  "settingLockdownExitGestureDescription": "Szybkie dotknięcia w dowolnym miejscu wyłączają tryb blokady, po podaniu PIN-u kiosku, jeśli został ustawiony. Warianty z przytrzymaniem wymagają przytrzymania ostatniego dotknięcia. Gdy gest jest wyłączony, tryb mogą wyłączyć tylko zdalna administracja lub Home Assistant.",
+  "lockdownGestureNone": "Wyłączony (tylko zdalnie)",
+  "lockdownExplanation": "Tryb blokady sprawia, że pulpit nie reaguje na interakcje, włącza wszystkie zabezpieczenia trybu kiosku bez zmiany jego ustawień i wycisza wykrywanie słowa wybudzającego na czas swojego działania. Przy włączonej ochronie interfejsu systemu (powyżej) blokowane są też obszar powiadomień i ostatnie aplikacje. Home Assistant otrzymuje przez ESPHome przełącznik trybu blokady.",
+  "lockdownSearch": "Osłona przed dotykiem sterowana tylko zdalnie. Skonfiguruj ją w interfejsie zdalnej administracji; jej uprawnienia znajdują się w sekcji „Wymagane uprawnienia systemowe”."
+}

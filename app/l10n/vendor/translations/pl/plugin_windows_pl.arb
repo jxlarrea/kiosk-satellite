@@ -1,0 +1,7 @@
+{
+  "@@locale": "pl",
+  "pluginCloseWindow": "Zamknij „{name}”",
+  "pluginScanTitle": "Zeskanuj kod",
+  "pluginScanHelp": "Umieść kod w ramce.",
+  "pluginScanSource": "Na żądanie wtyczki „{name}”"
+}

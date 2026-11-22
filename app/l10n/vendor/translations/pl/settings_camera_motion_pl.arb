@@ -1,0 +1,15 @@
+{
+  "@@locale": "pl",
+  "settingMotionSensorTitle": "Czujnik ruchu",
+  "settingMotionSensorDescription": "Udostępnia ruch w Home Assistant jako czujnik. UWAGA: kamera pozostaje stale włączona, nawet przy wyłączonym ekranie.",
+  "settingMotionSensorOffDelayTitle": "Brak ruchu po",
+  "settingMotionSensorOffDelayDescription": "Liczba sekund bez ruchu, po której czujnik zgłasza brak ruchu.",
+  "settingMotionFpsTitle": "Liczba klatek wykrywania ruchu",
+  "settingMotionFpsDescription": "Liczba klatek na sekundę, w których kamera sprawdza ruch. Mniejsza wartość mniej obciąża procesor; 2 wystarczy, by zauważyć zbliżającą się osobę.",
+  "settingMotionStartDelayTitle": "Opóźnienie startu",
+  "settingMotionStartDelayDescription": "Ruch jest ignorowany przez ten czas po uruchomieniu kamery. Przydatne w urządzeniach, których kamera fizycznie porusza się podczas otwierania.",
+  "settingMotionSensitivityTitle": "Czułość wykrywania ruchu",
+  "settingMotionSensitivityDescription": "Wyższa wartość reaguje na mniejsze ruchy. 1 wymaga dużej zmiany w całym kadrze; 100 reaguje na najmniejszy ruch.",
+  "cameraMotionPage": "Czujnik ruchu",
+  "cameraMotionHint": "Czujnik ruchu w Home Assistant i wspólne ustawienia wykrywania"
+}

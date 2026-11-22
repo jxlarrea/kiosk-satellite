@@ -1,0 +1,23 @@
+{
+  "@@locale": "pl",
+  "gestureValid": "Wszystko w porządku.",
+  "gestureValidationFailed": "Nie udało się sprawdzić poprawności.",
+  "gestureDomainMissing": "Nie znaleziono domeny „{value}”.",
+  "gestureServiceMissing": "Nie znaleziono usługi „{value}”.",
+  "gestureEntityMissing": "Nie znaleziono encji „{value}”.",
+  "gestureEntityRequired": "Wpisz encję typu {domain}.*.",
+  "gestureScriptEntity": "Encja skryptu",
+  "gestureAutomationEntity": "Encja automatyzacji",
+  "gestureEntityOptional": "Encja (opcjonalnie)",
+  "gestureServiceData": "Dane usługi (opcjonalnie)",
+  "gestureServiceTitle": "Wywołaj usługę Home Assistant",
+  "gestureServiceJson": "Dane usługi muszą być obiektem JSON.",
+  "gestureEventType": "Typ zdarzenia",
+  "gestureEventData": "Dane zdarzenia (opcjonalnie)",
+  "gestureEventTitle": "Wyślij zdarzenie Home Assistant",
+  "gestureEventRequired": "Typ zdarzenia jest wymagany.",
+  "gestureEventJson": "Dane zdarzenia muszą być obiektem JSON.",
+  "gestureServiceSearch": "Szukaj usług",
+  "gestureServiceChoose": "Wybierz usługę",
+  "gestureServiceNoEntity": "Ta usługa nie używa encji"
+}

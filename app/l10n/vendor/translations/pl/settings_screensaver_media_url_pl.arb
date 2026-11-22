@@ -1,0 +1,8 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverUrlImageDescription": "Adres obrazu, który urządzenie pobiera ponownie przy każdym slajdzie.",
+  "settingScreensaverUrlIntervalDescription": "Jak długo wyświetlane jest każde zdjęcie przed pobraniem następnego.",
+  "screensaverMediaUrlPage": "Wygaszacz „Adres URL obrazu”",
+  "screensaverMediaUrlPageHint": "Adres URL, czas, przejście, metadane",
+  "screensaverMediaUrlMetadata": "Metadane trybu „Adres URL obrazu”"
+}

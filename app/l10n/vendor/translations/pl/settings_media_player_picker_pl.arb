@@ -1,0 +1,18 @@
+{
+  "@@locale": "pl",
+  "mediaPickPlayer": "Wybierz odtwarzacz",
+  "mediaMaPlayer": "Odtwarzacz Music Assistant",
+  "mediaHaPlayer": "Odtwarzacz multimediów Home Assistant",
+  "mediaSonosRoom": "Pomieszczenie Sonos",
+  "mediaSearchPlayers": "Szukaj odtwarzaczy",
+  "mediaOffline": "Offline",
+  "mediaOfflineName": "{name} (offline)",
+  "mediaSetUpMa": "Skonfiguruj Music Assistant, aby wyświetlić listę jego odtwarzaczy.",
+  "mediaSetUpHa": "Połącz z Home Assistant, aby wyświetlić listę odtwarzaczy multimediów.",
+  "mediaSetUpSonos": "Nie znaleziono jeszcze głośników Sonos. Znajdź lub dodaj głośnik na stronie Sonos.",
+  "mediaHaFailed": "Brak odpowiedzi od Home Assistant: {error}",
+  "mediaSaveFailed": "Nie udało się zapisać odtwarzacza.",
+  "mediaSelectFailed": "Nie udało się wybrać odtwarzacza",
+  "mediaNotificationAccessRemote": "Bez tego Android nie wyświetla żadnych sesji multimediów, więc ekran „Teraz odtwarzane” nie może śledzić aplikacji odtwarzających na tym urządzeniu. Ekran przyznawania uprawnienia pojawi się na tablecie.",
+  "mediaLocalMediaSession": "Lokalna sesja multimediów"
+}

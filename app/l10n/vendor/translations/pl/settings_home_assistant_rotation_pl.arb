@@ -1,0 +1,18 @@
+{
+  "@@locale": "pl",
+  "settingHaRotationEnabledTitle": "Włącz rotację widoków pulpitu",
+  "settingHaRotationEnabledDescription": "Wybrane widoki pulpitu są wyświetlane po kolei w nieskończonej pętli, każdy przez wybraną liczbę sekund.",
+  "settingHaRotationSecondsTitle": "Czas wyświetlania widoku (s)",
+  "settingHaRotationSecondsDescription": "Jak długo każdy widok pozostaje na ekranie.",
+  "settingHaRotationPauseSecondsTitle": "Wstrzymanie rotacji przy interakcji (s)",
+  "settingHaRotationPauseSecondsDescription": "Dotknięcie ekranu wstrzymuje rotację na ten czas, a każde kolejne dotknięcie odlicza go od nowa. Interakcje głosowe wstrzymują rotację do ich zakończenia. 0 oznacza rotację mimo dotknięć.",
+  "settingHaRotationCrossfadeTitle": "Płynne przejścia między widokami",
+  "settingHaRotationCrossfadeDescription": "Zamiast natychmiastowego przełączenia widok wygasa do tła, a następnie pojawia się kolejny. Przejście na inny pulpit lub stronę zewnętrzną nadal następuje natychmiast.",
+  "settingHaRotationFadeSecondsTitle": "Czas przejścia (s)",
+  "settingHaRotationFadeSecondsDescription": "Łączny czas wygaszania i pojawiania się. Wczytywanie następnego widoku może go wydłużyć, zwłaszcza przy pierwszym wyświetleniu.",
+  "haRotation": "Rotacja widoków pulpitu",
+  "haRotationHint": "Przełączanie widoków, czas wyświetlania, przejście",
+  "haExternalPages": "Strony zewnętrzne",
+  "haFadeError": "Wybierz czas przejścia od 0,2 do 5 s.",
+  "haPauseRemoteHelp": "Dotknięcie wstrzymuje rotację na ten czas; każde kolejne dotknięcie odlicza go od nowa. Interakcje głosowe zawsze wstrzymują rotację do ich zakończenia. 0 oznacza ciągłą rotację."
+}

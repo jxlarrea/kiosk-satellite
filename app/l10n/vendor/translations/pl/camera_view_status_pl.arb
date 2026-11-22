@@ -1,0 +1,18 @@
+{
+  "@@locale": "pl",
+  "cameraViewerTitle": "Widok kamery",
+  "cameraViewerConnecting": "Łączenie…",
+  "cameraViewerReconnecting": "Ponowne łączenie…",
+  "cameraViewerTrying": "Próba połączenia: {transport}…",
+  "cameraViewerCannotDecode": "To urządzenie nie obsługuje dekodowania {codec}",
+  "cameraViewerCannotPlay": "To urządzenie nie może odtwarzać strumieni {transport}",
+  "cameraViewerCannotDecodeStream": "To urządzenie nie może zdekodować tego strumienia",
+  "cameraViewerHaRetry": "Brak połączenia z Home Assistant. Ponowna próba za {seconds} s",
+  "cameraViewerServerRetry": "Brak połączenia z serwerem kamer. Ponowna próba za {seconds} s",
+  "cameraViewerConnectionRetry": "Połączenie nie powiodło się. Ponowna próba za {seconds} s",
+  "cameraViewerStartRetry": "Serwer kamer nie mógł uruchomić tego strumienia. Ponowna próba…",
+  "cameraViewerStartDelayedRetry": "Serwer kamer nie mógł uruchomić tego strumienia. Ponowna próba za {seconds} s",
+  "cameraViewerMissingRetry": "Nie znaleziono strumienia na serwerze kamer. Ponowna próba za {seconds} s",
+  "cameraViewerLoginRetry": "Serwer kamer odrzucił logowanie. Ponowna próba za {seconds} s",
+  "cameraViewerMissing": "Brak strumienia w Go2RTC"
+}

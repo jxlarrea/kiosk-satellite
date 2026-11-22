@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "setupPermissionLead": "Android poprosi o te uprawnienia. Wszystkie prośby pojawiają się na początku, dzięki czemu kiosk nie będzie później przeszkadzać.",
+  "setupRemotePermissionLead": "Android prosi o te uprawnienia na samym tablecie. Podejdź do niego i zaakceptuj wyświetlone prośby, a następnie dokończ tutaj.",
+  "setupMicrophoneHelp": "Voice Satellite i interkom wymagają dostępu do mikrofonu",
+  "setupNotificationListening": "Umożliwia wyświetlanie stałego powiadomienia usługi Kiosk Satellite, które informuje, co usługa utrzymuje w działaniu i kiedy kiosk nasłuchuje.",
+  "setupBatteryService": "Pozwala usłudze Kiosk Satellite działać w tle bez wstrzymywania ani wymuszonego zamykania.",
+  "setupOverlayBoot": "Pozwala aplikacji Kiosk Satellite wrócić po awarii i uruchomić się przy starcie urządzenia.",
+  "setupOverlayCrash": "Pozwala aplikacji Kiosk Satellite wrócić na ekran po awarii.",
+  "setupBrightnessHelp": "Pozwala aplikacji Kiosk Satellite ustawiać rzeczywistą jasność panelu (modyfikowanie ustawień systemu).",
+  "setupScreenControl": "Sterowanie ekranem",
+  "setupScreenControlHelp": "Pozwala aplikacji Kiosk Satellite wyłączać ekran na żądanie (administrator urządzenia).",
+  "setupGrantPermissions": "Nadaj uprawnienia na urządzeniu",
+  "setupRequestingPermissions": "Wysyłanie próśb do urządzenia…",
+  "setupPermissionsRequested": "Poproszono o uprawnienia na urządzeniu"
+}

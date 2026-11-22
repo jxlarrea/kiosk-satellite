@@ -1,0 +1,13 @@
+{
+  "@@locale": "pl",
+  "settingSendspinLyricsEnabledTitle": "Włącz tekst utworu",
+  "settingSendspinLyricsEnabledDescription": "Synchronizowany tekst utworu na ekranie „Teraz odtwarzane”, dla każdego źródła odtwarzacza.",
+  "settingSendspinLyricsSourceTitle": "Źródło tekstu utworu",
+  "settingSendspinLyricsSourceDescription": "Skąd pochodzi tekst utworu. Music Assistant wymaga podania adresu serwera i tokenu na stronie Music Assistant.",
+  "settingSendspinLyricsFallbackTitle": "Zapasowe źródło: Music Assistant",
+  "settingSendspinLyricsFallbackDescription": "Gdy LRCLIB jest nieosiągalny, zapytanie trafia do Music Assistant. Wymaga połączenia z Music Assistant.",
+  "settingSendspinLyricsOffsetTitle": "Przesunięcie tekstu utworu",
+  "settingSendspinLyricsOffsetDescription": "Przesuń tekst utworu względem muzyki. Wartość dodatnia pokazuje każdy wiersz wcześniej, ujemna później. Warto to skorygować przy utworach, w których tekst stale się rozjeżdża.",
+  "mediaLyricsPage": "Tekst utworu",
+  "mediaLyricsHint": "Synchronizowany tekst utworu, jego źródło i przesunięcie"
+}

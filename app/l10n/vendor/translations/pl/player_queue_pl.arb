@@ -1,0 +1,8 @@
+{
+  "@@locale": "pl",
+  "mediaNothingQueued": "Kolejka jest pusta",
+  "mediaChapters": "Rozdziały",
+  "mediaNowPlaying": "Teraz odtwarzane",
+  "mediaUpNext": "Następne w kolejce",
+  "mediaUnnamedChapter": "Rozdział {number}"
+}

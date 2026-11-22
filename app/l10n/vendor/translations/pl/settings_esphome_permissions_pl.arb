@@ -1,0 +1,17 @@
+{
+  "@@locale": "pl",
+  "esphomeLocation": "Lokalizacja",
+  "esphomeLocationSearch": "Uprawnienie „Lokalizacja” potrzebne czujnikom lokalizacji.",
+  "esphomeBluetoothSearch": "Uprawnienie „Urządzenia w pobliżu” potrzebne proxy Bluetooth do skanowania.",
+  "esphomeLocationMissing": "Bez tego uprawnienia nie można odczytać odbiornika GPS, a czujniki lokalizacji mają stan nieznany.",
+  "esphomeLocationServicesOff": "Lokalizacja jest wyłączona w ustawieniach urządzenia, więc odbiornik nie dostarcza danych.",
+  "esphomeLocationApproximate": "Dozwolona jest tylko przybliżona lokalizacja, a odbiornik GPS wymaga dokładnej lokalizacji.",
+  "esphomeLocationGranted": "Czujniki lokalizacji mogą odczytywać odbiornik GPS.",
+  "esphomeBluetoothGranted": "Proxy może wyszukiwać urządzenia Bluetooth w pobliżu.",
+  "esphomeBluetoothMissing": "Bez tego uprawnienia proxy nie może wyszukiwać urządzeń.",
+  "esphomeBluetoothLocationMissing": "Android dostarcza wyniki skanowania Bluetooth, w tym beacony, tylko po przyznaniu uprawnienia „Lokalizacja”. Proxy nigdy nie odczytuje położenia urządzenia.",
+  "esphomeBluetoothLocationOff": "Lokalizacja jest wyłączona w ustawieniach urządzenia, więc skanowanie Bluetooth niczego nie znajduje.",
+  "esphomeBluetoothBeacons": "Skanowanie Bluetooth może wykrywać beacony.",
+  "esphomeSent": "Wysłano",
+  "esphomeNotsaved": "Nie zapisano"
+}

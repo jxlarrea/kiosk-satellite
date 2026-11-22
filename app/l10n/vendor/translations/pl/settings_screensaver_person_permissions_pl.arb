@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "screensaverDetectionPermissions": "Wymagane uprawnienia systemowe",
+  "screensaverDetectionLogAccess": "Dostęp do logów",
+  "screensaverDetectionChecking": "Sprawdzanie…",
+  "screensaverDetectionReadable": "Czujnik osób w urządzeniu jest dostępny do odczytu.",
+  "screensaverDetectionRestartRequired": "Przyznano. Uruchom ponownie Kiosk Satellite, aby je zastosować.",
+  "screensaverDetectionGrantHelp": "To uprawnienie można przyznać tylko przez ADB. Pełne polecenie znajduje się w dokumentacji Meta Portal. Następnie uruchom ponownie Kiosk Satellite.",
+  "screensaverDetectionGrantRemoteHelp": "To uprawnienie można przyznać tylko przez ADB. Poniżej znajduje się pełne polecenie gotowe do skopiowania. Następnie uruchom ponownie Kiosk Satellite.",
+  "screensaverDetectionGranted": "Przyznano",
+  "screensaverDetectionMissing": "Brak",
+  "screensaverDetectionRestart": "Uruchom ponownie",
+  "screensaverDetectionRestartRemote": "Uruchom ponownie na urządzeniu",
+  "screensaverDetectionLogRestart": "Dostęp do logów został przyznany, ale zacznie działać po ponownym uruchomieniu Kiosk Satellite.",
+  "screensaverDetectionLogMissing": "Nie przyznano dostępu do logów."
+}

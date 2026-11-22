@@ -1,0 +1,9 @@
+{
+  "@@locale": "pl",
+  "pluginShizuku13OrLaterIsRequiredTapForSetup": "Wymagana jest aplikacja Shizuku w wersji 13 lub nowszej. Dotknij, aby wyświetlić instrukcje konfiguracji.",
+  "pluginStartShizukuOnThisDeviceTapForSetupInstructions": "Uruchom Shizuku na tym urządzeniu. Dotknij, aby wyświetlić instrukcje konfiguracji.",
+  "pluginShizukuGrantsKioskSatelliteShellOrRootAccessInstalled": "Shizuku przyznaje aplikacji Kiosk Satellite dostęp do powłoki lub uprawnienia roota. Zainstalowane wtyczki działają wewnątrz KS, więc przyznaj dostęp tylko wtedy, gdy im ufasz.",
+  "pluginSetUp": "Skonfiguruj",
+  "pluginGrantAccess": "Przyznaj dostęp",
+  "pluginApproveThePermissionRequestOnTheKiosk": "Zatwierdź prośbę o uprawnienie na kiosku."
+}

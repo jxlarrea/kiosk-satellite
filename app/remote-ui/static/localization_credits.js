@@ -30,6 +30,12 @@ export const localizationCredits = {
       "login": "rononline"
     }
   ],
+  "pl": [
+    {
+      "name": "ThePnx",
+      "login": "ThePnx"
+    }
+  ],
   "ru": [
     {
       "name": "Iaroslav Iadryshnikov",
@@ -49,4 +55,4 @@ export const localizationCredits = {
     }
   ]
 };
-export const localizationLanguageNames = {"de": "Deutsch", "en": "English", "es": "Español", "fr": "Français", "nl": "Nederlands", "ru": "Русский", "uk": "Українська", "zh-CN": "简体中文"};
+export const localizationLanguageNames = {"de": "Deutsch", "en": "English", "es": "Español", "fr": "Français", "nl": "Nederlands", "pl": "Polski", "ru": "Русский", "uk": "Українська", "zh-CN": "简体中文"};

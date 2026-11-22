@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "logsWebConsole": "Konsola Web",
+  "logsDock": "Zadokuj nad bieżącą stroną",
+  "logsNoOutput": "Brak danych w konsoli",
+  "logsShareSubject": "Log konsoli Kiosk Satellite",
+  "logsInput": "Uruchom JavaScript na stronie",
+  "logsInputHistory": "Uruchom JavaScript na stronie (Enter: uruchom, strzałki w górę/w dół: historia)",
+  "logsRun": "Uruchom",
+  "logsEvaluationFailed": "wykonanie nie powiodło się",
+  "logsDeviceUnreachable": "urządzenie nieosiągalne"
+}

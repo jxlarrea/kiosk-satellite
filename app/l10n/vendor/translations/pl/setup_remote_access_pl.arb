@@ -1,0 +1,8 @@
+{
+  "@@locale": "pl",
+  "setupPasswordFirst": "Najpierw ustaw hasło administratora",
+  "setupPasswordBeforeImport": "Wpisz hasło administratora w polu powyżej (co najmniej 4 znaki), a następnie zaimportuj kopię zapasową.",
+  "setupPasswordFailed": "Nie udało się ustawić hasła",
+  "setupPasswordExists": "Hasło jest już ustawione",
+  "setupPasswordExistsHelp": "Zaloguj się hasłem ustawionym na tablecie, aby kontynuować tutaj. Przeładowywanie…"
+}

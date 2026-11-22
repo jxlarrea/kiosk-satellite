@@ -1,0 +1,17 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverDismissOnFaceTitle": "Zamykaj po wykryciu twarzy",
+  "settingScreensaverDismissOnFaceDescription": "Wybudza ekran, gdy ktoś patrzy na kiosk, a nie wyłącznie na podstawie wykrycia ruchu. Kamera działa tylko podczas wygaszacza ekranu. UWAGA: wymaga oświetlonej twarzy; w ciemności należy zamiast tego ustawić wykrywanie ruchu.",
+  "settingScreensaverDismissOnFaceScreenOffOnlyTitle": "Tylko przy wyłączonym ekranie",
+  "settingScreensaverDismissOnFaceScreenOffOnlyDescription": "Wygaszacz ekranu pozostaje widoczny, gdy twarz zostanie wykryta przy włączonym ekranie. Po wyłączeniu ekranu wykrycie twarzy wybudza pulpit. Dotknięcie nadal zamyka wygaszacz.",
+  "settingScreensaverPostponeOnFaceTitle": "Odraczaj wygaszacz po wykryciu twarzy",
+  "settingScreensaverPostponeOnFaceDescription": "Opóźnia włączenie wygaszacza ekranu, gdy ktoś patrzy na kiosk. UWAGA: kamera działa bez przerwy, a wykrywanie twarzy dodatkowo obciąża procesor.",
+  "settingFaceSensitivityTitle": "Czułość wykrywania twarzy",
+  "settingFaceSensitivityDescription": "Wyższa wartość wybudza przy mniejszych, bardziej oddalonych twarzach. 1 wymaga twarzy blisko ekranu; 100 reaguje na każdą twarz, którą kamera rozpozna.",
+  "screensaverDetectionFacePage": "Wykrywanie twarzy",
+  "screensaverDetectionFaceHint": "Zamykaj wygaszacz ekranu, gdy ktoś na niego patrzy",
+  "screensaverDetectionMotionPrecedence": "Opcja „Zamykaj po wykryciu ruchu” jest włączona i ma pierwszeństwo, więc wykrywanie twarzy pozostaje nieaktywne do czasu jej wyłączenia.",
+  "screensaverDetectionFaceTuning": "Liczbę klatek na sekundę, wybór kamery i opóźnienie uruchomienia ustawia się w ustawieniach kamery.",
+  "screensaverDetectionAndroidUnsupported": "Niedostępne w tej wersji Androida.",
+  "screensaverDetectionX86Unsupported": "Niedostępne na urządzeniach x86."
+}

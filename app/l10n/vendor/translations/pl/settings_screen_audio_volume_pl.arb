@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "settingMediaVolumeTitle": "Głośność multimediów",
+  "settingMediaVolumeDescription": "Muzyka i filmy są odtwarzane z takim procentem głośności głównej. Głośność odtwarzacza Sendspin w Music Assistant przesuwa ten suwak.",
+  "settingAssistantVolumeTitle": "Głośność asystenta",
+  "settingAssistantVolumeDescription": "Odpowiedzi głosowe i sygnały dźwiękowe są odtwarzane z takim procentem głośności głównej, niezależnie od głośności multimediów.",
+  "settingIntercomVolumeTitle": "Głośność interkomu",
+  "settingIntercomVolumeDescription": "Głos z drugiego kiosku i ogłoszenia są odtwarzane z takim procentem głośności głównej.",
+  "screenAudioVolume": "Głośność dźwięku",
+  "screenAudioMasterVolume": "Głośność główna",
+  "screenAudioMasterHelp": "Głośność urządzenia. Głośność multimediów, interkomu i asystenta jest skalowana względem niej."
+}

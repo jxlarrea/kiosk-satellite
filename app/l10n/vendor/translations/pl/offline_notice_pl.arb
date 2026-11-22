@@ -1,0 +1,9 @@
+{
+  "@@locale": "pl",
+  "offlineDashboard": "Pulpit niedostępny",
+  "offlineNetwork": "Brak połączenia z siecią",
+  "offlinePageHelp": "Nie udało się wczytać strony.",
+  "offlineNetworkHelp": "Pulpit wróci, gdy sieć znów będzie dostępna.",
+  "offlineLost": "Utracono połączenie z siecią",
+  "offlineRestored": "Przywrócono połączenie z siecią"
+}

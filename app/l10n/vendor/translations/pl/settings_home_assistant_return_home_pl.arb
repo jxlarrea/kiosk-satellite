@@ -1,0 +1,12 @@
+{
+  "@@locale": "pl",
+  "settingHaReturnHomeEnabledTitle": "Powrót do widoku głównego pulpitu",
+  "settingHaReturnHomeEnabledDescription": "Po okresie bezczynności wraca do pulpitu skonfigurowanego powyżej.",
+  "settingHaReturnHomeSecondsTitle": "Powrót po (s)",
+  "settingHaReturnHomeSecondsDescription": "Czas bezczynności, po którym kiosk wraca.",
+  "haReturnHint": "Powrót do widoku głównego po okresie bezczynności",
+  "haReturnDisabled": "Wyłączone, gdy włączona jest rotacja widoków pulpitu.",
+  "haReturnNoPath": "Skonfigurowany pulpit nie ma ścieżki widoku, do której można wrócić.",
+  "haReturnPath": "Po upływie limitu czasu następuje powrót do „{path}”.",
+  "haReturnCompass": "W nawigacji Compass każdy widok pulpitu w układzie po upływie limitu czasu wraca do wybranego dla niego widoku."
+}

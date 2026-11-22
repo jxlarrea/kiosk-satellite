@@ -1,0 +1,14 @@
+{
+  "@@locale": "pl",
+  "voiceMicHeld": "Funkcja wykrywania słowa wybudzającego może cię usłyszeć.",
+  "voiceMicBlocked": "Zablokowano. Android nie zapyta ponownie, więc przyznaj uprawnienie w ustawieniach aplikacji.",
+  "voiceMicMissing": "Bez tego nic nie nasłuchuje słowa wybudzającego.",
+  "voiceForegroundHeld": "Kiosk Satellite może przejść na pierwszy plan, gdy cię usłyszy.",
+  "voiceForegroundMissing": "Bez tego słowo wybudzające zostaje zarejestrowane, ale nic się nie dzieje.",
+  "voiceNotificationHeld": "Stałe powiadomienie, które umożliwia nasłuchiwanie w tle.",
+  "voiceNotificationMissing": "Potrzebne, aby nasłuchiwanie w tle działało niezawodnie.",
+  "voiceBatteryHeld": "Android nie zatrzyma nasłuchiwania.",
+  "voiceBatteryMissing": "Bez tego nasłuchiwanie zostanie zatrzymane po kilku godzinach.",
+  "voicePermissionDirections": "Przyznaj je na samym urządzeniu: przesuń palcem od lewej krawędzi → „Ustawienia” → „Voice Satellite” → „Wymagane uprawnienia systemowe”.",
+  "voicePermissionsSearch": "Mikrofon i inne uprawnienia potrzebne do wykrywania słowa wybudzającego."
+}

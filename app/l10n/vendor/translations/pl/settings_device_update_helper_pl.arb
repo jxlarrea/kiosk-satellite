@@ -1,0 +1,15 @@
+{
+  "@@locale": "pl",
+  "deviceHelperPage": "Opcjonalny pomocnik aktualizacji",
+  "deviceHelperStatus": "Stan pomocnika",
+  "deviceHelperError": "Nie udało się sprawdzić pomocnika aktualizacji.",
+  "deviceHelperUnneeded": "Android może teraz instalować aktualizacje bez udziału użytkownika. Pomocnik nie jest potrzebny.",
+  "deviceHelperIntro": "To urządzenie wymaga obecnie potwierdzenia na ekranie, aby zainstalować aktualizacje przez system Android. Opcjonalny pomocnik pozwala Kiosk Satellite instalować aktualizacje bez dotknięcia.",
+  "deviceHelperBusy": "Instalowanie aktualizacji.",
+  "deviceHelperReady": "Gotowy. Aktualizacje instalują się bez potwierdzenia.",
+  "deviceHelperUnavailable": "Niedostępny. Uruchom pomocnika przez ADB, aby włączyć aktualizacje bez potwierdzenia.",
+  "deviceHelperLifetime": "Pomocnik działa nadal po ponownym uruchomieniu i aktualizacji aplikacji, ale zatrzymuje się po ponownym uruchomieniu urządzenia. Uruchom polecenie z komputera z ADB, aby go ponownie włączyć. Komputer można potem odłączyć.",
+  "deviceHelperStart": "Uruchom przez ADB",
+  "deviceHelperGuide": "Przewodnik konfiguracji",
+  "deviceHelperGuideHelp": "Przeczytaj instrukcje i wymagania pomocnika aktualizacji."
+}

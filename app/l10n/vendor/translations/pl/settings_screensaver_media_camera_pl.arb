@@ -1,0 +1,20 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverCameraViewsTitle": "Podglądy z kamer",
+  "settingScreensaverCameraViewsDescription": "Podglądy z kamer pokazywane przez wygaszacz, w tej kolejności.",
+  "settingScreensaverCameraViewSecondsTitle": "Sekundy na podgląd z kamery",
+  "settingScreensaverCameraViewSecondsDescription": "Jak długo każdy podgląd z kamery jest na ekranie przed następnym. Przy jednym wybranym podglądzie z kamery nic się nie zmienia.",
+  "settingScreensaverCameraMuteTitle": "Wycisz wszystkie podglądy",
+  "settingScreensaverCameraMuteDescription": "Wszystkie podglądy z kamer pozostają bez dźwięku, nawet przy jednej kamerze.",
+  "screensaverMediaCameraPage": "Wygaszacz „Obraz z kamer”",
+  "screensaverMediaCameraHint": "Podglądy z kamer, sekundy przypadające na podgląd z kamery, dźwięk",
+  "screensaverMediaNoCameras": "Żaden podgląd z kamery nie ma jeszcze kamer. Dodaj kamerę w sekcji „Obraz z kamer”.",
+  "screensaverMediaNoCamerasRemote": "Żaden podgląd z kamery nie ma jeszcze kamer",
+  "screensaverMediaAddCameras": "Dodaj kamerę w sekcji „Obraz z kamer”.",
+  "screensaverMediaNoViews": "Brak podglądów z kamer. Wybierz podglądy z kamer, które wygaszacz ma wyświetlać po kolei.",
+  "screensaverMediaRotation": "W rotacji (przeciągnij, aby zmienić kolejność)",
+  "screensaverMediaAvailable": "Dostępne",
+  "screensaverMediaOneCamera": "Kamery: {count}",
+  "screensaverMediaCameras": "Kamery: {count}",
+  "screensaverMediaPosition": "Pozycja {index} · {cameras}"
+}

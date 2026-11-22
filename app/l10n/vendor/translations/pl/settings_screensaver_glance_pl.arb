@@ -1,0 +1,15 @@
+{
+  "@@locale": "pl",
+  "settingScreensaverGlanceEnabledTitle": "W skrócie",
+  "settingScreensaverGlanceEnabledDescription": "Pokazuj na wygaszaczu ekranu wiersz ze stanami encji Home Assistant.",
+  "settingScreensaverGlanceEntitiesTitle": "Encje",
+  "settingScreensaverGlanceEntitiesDescription": "Maksymalnie cztery encje do wyświetlenia, każda z opcjonalną własną nazwą.",
+  "settingScreensaverGlanceNowPlayingTitle": "Pokazuj na ekranie „Teraz odtwarzane”",
+  "settingScreensaverGlanceNowPlayingDescription": "Pokazuj wiersz w pełnoekranowym widoku „Teraz odtwarzane”. Jest ukryty, gdy wyświetlany jest tekst utworu.",
+  "screensaverOverlayShowing": "Wyświetlane",
+  "screensaverOverlayNone": "Na razie brak",
+  "screensaverOverlayGlancePage": "W skrócie",
+  "screensaverOverlayGlanceHint": "Encje wyświetlane na wygaszaczu ekranu",
+  "glanceUnavailable": "Niedostępne",
+  "glanceUnknown": "Nieznane"
+}

@@ -1,0 +1,7 @@
+{
+  "@@locale": "pl",
+  "mediaGroupLead": "Lider grupy",
+  "mediaGroupReadFailed": "Nie udało się odczytać grupy.",
+  "mediaGroupEmpty": "Brak innych odtwarzaczy do zgrupowania.",
+  "mediaSpeakerSelection": "Wybór głośników"
+}

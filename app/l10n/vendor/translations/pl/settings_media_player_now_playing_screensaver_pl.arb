@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "settingSendspinFullscreenTitle": "„Teraz odtwarzane” zamiast wygaszacza ekranu",
+  "settingSendspinFullscreenDescription": "Podczas odtwarzania muzyki wygaszacz ekranu zmienia się w pełnoekranowy ekran „Teraz odtwarzane” z okładką albumu. Gdy nic nie jest odtwarzane, działa zwykły wygaszacz ekranu.",
+  "settingSendspinFullscreenSplitTitle": "Pokaż obok wygaszacza ekranu",
+  "settingSendspinFullscreenSplitDescription": "Wygaszacz ekranu pozostaje widoczny obok ekranu „Teraz odtwarzane”. Na ekranach pionowych wygaszacz jest wyświetlany nad odtwarzaczem. Na małych ekranach odtwarzacz nadal zajmuje cały ekran.",
+  "settingSendspinFullscreenPhotoFillTitle": "Wypełnij ekran",
+  "settingSendspinFullscreenPhotoFillDescription": "Zastępuje ustawienie wypełniania ekranu zdjęciem, gdy wygaszacz ekranu dzieli ekran z ekranem „Teraz odtwarzane”. „Domyślne” używa własnego ustawienia każdego wygaszacza. „Wyłączone” pokazuje całe zdjęcie z czarnymi pasami. „Inteligentne” powiększa zdjęcia o proporcjach zbliżonych do ekranu, a pozostałe umieszcza na rozmytym tle. „Zawsze” powiększa każde zdjęcie, obcinając to, co się nie mieści.",
+  "settingSendspinFullscreenOverrideBrightnessTitle": "Zastąp jasność wygaszacza ekranu",
+  "settingSendspinFullscreenOverrideBrightnessDescription": "Używaj zwykłej jasności ekranu zamiast jasności wygaszacza, gdy ekran „Teraz odtwarzane” jest wyświetlany obok wygaszacza ekranu. Zastępuje to też zaplanowaną jasność wygaszacza.",
+  "mediaScreensaverHeading": "Wygaszacz ekranu",
+  "mediaDefaultFill": "Domyślne",
+  "mediaFillOff": "Wyłączone",
+  "mediaFillSmart": "Inteligentne",
+  "mediaFillAlways": "Zawsze"
+}

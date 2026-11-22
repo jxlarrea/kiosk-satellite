@@ -1,0 +1,11 @@
+{
+  "@@locale": "pl",
+  "setupQrFlipCamera": "Przełącz kamerę",
+  "setupQrCameraFailed": "Nie udało się uruchomić kamery.",
+  "setupQrTitle": "Zeskanuj kod QR tokenu",
+  "setupQrHelp": "Pojawia się obok nowo utworzonego tokenu w profilu użytkownika Home Assistant.",
+  "setupQrFlashOff": "Wyłącz latarkę",
+  "setupQrFlashOn": "Włącz latarkę",
+  "setupQrScreenLightOff": "Wyłącz oświetlenie ekranem",
+  "setupQrScreenLightOn": "Włącz oświetlenie ekranem"
+}

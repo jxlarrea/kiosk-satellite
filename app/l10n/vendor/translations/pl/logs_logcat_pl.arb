@@ -1,0 +1,11 @@
+{
+  "@@locale": "pl",
+  "logsSystemLog": "Log systemu Android dla tej aplikacji (tu trafiają awarie)",
+  "logsErrors": "Błędy i awarie",
+  "logsWarnings": "Ostrzeżenia",
+  "logsInfo": "Informacje i debugowanie",
+  "logsNoMatches": "Brak pasujących wierszy. Włącz więcej typów powyżej, aby zobaczyć cały log.",
+  "logsUnavailable": "logcat jest niedostępny",
+  "logsReadFailed": "Nie udało się odczytać logcat: {error}",
+  "logsUnknown": "nieznany błąd"
+}

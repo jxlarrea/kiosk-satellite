@@ -1,0 +1,18 @@
+{
+  "@@locale": "pl",
+  "intercomBuiltinRing": "Wbudowany krótki dzwonek",
+  "intercomBuiltinChime": "Wbudowany dzwonek",
+  "intercomMissingFile": "{file} (brak pliku)",
+  "intercomAddSound": "Dodaj dźwięk",
+  "intercomCopySoundHelp": "Skopiuj plik dźwiękowy z tego urządzenia do folderu z dźwiękami.",
+  "intercomUploadSoundHelp": "Prześlij plik dźwiękowy z tego komputera do folderu z dźwiękami.",
+  "intercomUpload": "Prześlij",
+  "intercomUploading": "Przesyłanie…",
+  "intercomUnsupportedSound": "Nieobsługiwany plik dźwiękowy",
+  "intercomChooseSound": "Nieobsługiwany plik dźwiękowy: wybierz plik MP3, OGG, WAV, FLAC, M4A lub AAC.",
+  "intercomCopyFailed": "Nie udało się skopiować pliku",
+  "intercomUploadFailed": "Przesyłanie nie powiodło się: {error}",
+  "intercomSaveFailed": "Nie zapisano: {error}",
+  "intercomSoundFilename": "Wpisz nazwę pliku, a nie ścieżkę.",
+  "intercomSoundFormats": "Wybierz plik MP3, OGG, WAV, FLAC, M4A lub AAC."
+}

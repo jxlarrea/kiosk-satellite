@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "pluginActions": "Akcje",
+  "pluginKioskDrawer": "Menu boczne kiosku",
+  "pluginToAssignAGestureOpenGesturesAndChooseRun": "Aby przypisać gest, otwórz „Gesty” i wybierz „Uruchom akcję wtyczki”.",
+  "pluginShowInKioskDrawer": "Pokaż w menu bocznym kiosku",
+  "pluginAlsoAvailableWhileLockedIfTheKioskDrawerIs": "Dostępne także przy zablokowanym kiosku, jeśli menu boczne kiosku jest dozwolone.",
+  "pluginExposeToHomeAssistant": "Udostępnij w Home Assistant",
+  "pluginAddsAButtonToTheKioskEsphomeDeviceRequires": "Dodaje przycisk do urządzenia ESPHome kiosku. Wymaga ESPHome i natywnych encji.",
+  "pluginConfigureName": "Skonfiguruj „{name}”",
+  "pluginThePluginDidNotAnswerInTime": "Wtyczka nie odpowiedziała na czas.",
+  "pluginNoChoicesYetRefreshToLookForThem": "Brak opcji. Odśwież, aby je wyszukać.",
+  "pluginThisChoiceIsNoLongerListed": "Tej opcji nie ma już na liście.",
+  "pluginDashboardLink": "Link dla pulpitu",
+  "pluginDashboardLinkHint": "Ustaw ten link jako akcję dotknięcia przycisku na pulpicie."
+}

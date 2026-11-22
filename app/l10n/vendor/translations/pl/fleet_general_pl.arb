@@ -1,0 +1,15 @@
+{
+  "@@locale": "pl",
+  "fleetFleetManagementNeedsTheRemoteAdmin": "Zarządzanie flotą wymaga zdalnej administracji",
+  "fleetKiosksFindEachOtherThroughItTurnOnRemote": "Kioski odnajdują się nawzajem za jej pośrednictwem. Włącz „Zdalne zarządzanie” i „Znajdź inne kioski” w sekcji „Urządzenie”, a potem wróć.",
+  "fleetLeadThisFleet": "Zostań liderem tej floty",
+  "fleetSyncThisKioskSSettingsToItsFollowersRequires": "Synchronizuj ustawienia tego kiosku z podlegającymi mu członkami floty. Wymaga, aby wszystkie kioski działały w tej samej wersji.",
+  "fleetAKioskThatFollowsALeaderCannotLead": "Członek floty podlegający liderowi nie może zostać liderem.",
+  "fleetFollowers": "Członkowie floty",
+  "fleetProfiles": "Profile",
+  "fleetLeader": "Lider floty",
+  "fleetLearnWhichSettingsSyncAndWhichDoNotIn": "Dowiedz się, które ustawienia są synchronizowane, a które nie, w ",
+  "fleetFleetManagementDocumentation": "dokumentacji zarządzania flotą",
+  "fleetMore": "Więcej",
+  "fleetSearchFollowers": "Kioski, dla których ten kiosk jest liderem, ich stan i sposób dodania kolejnego."
+}

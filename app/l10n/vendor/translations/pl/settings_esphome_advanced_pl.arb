@@ -1,0 +1,13 @@
+{
+  "@@locale": "pl",
+  "settingEsphomeRealMacTitle": "Używaj prawdziwego adresu MAC Wi-Fi",
+  "settingEsphomeRealMacDescription": "Home Assistant łączy ten kiosk z tym samym urządzeniem, które jest już monitorowane przez integracje sieciowe. Zmiana tego ustawienia tworzy nowe urządzenie ESPHome w Home Assistant.",
+  "settingEsphomeMacOverrideTitle": "Podmień adres MAC Wi-Fi",
+  "settingEsphomeMacOverrideDescription": "Adresu MAC nie można ustalić, więc w tym polu możesz wpisać własny. Zmiana tego ustawienia tworzy nowe urządzenie ESPHome w Home Assistant.",
+  "esphomeAdvanced": "Ustawienia zaawansowane",
+  "esphomeAdvancedHelp": "Prawdziwy lub podmieniony adres MAC Wi-Fi",
+  "esphomeMacInvalid": "Wpisz prawidłowy adres MAC.",
+  "esphomeMacHardware": "Zgłaszany adres: {mac}.",
+  "esphomeMacManual": "Zgłaszany adres: {mac}, wpisany poniżej.",
+  "esphomeMacUnavailable": "Android nie udostępnia adresu sprzętowego tego urządzenia."
+}

@@ -1,0 +1,20 @@
+{
+  "@@locale": "pl",
+  "settingIntercomEnabledTitle": "Włącz interkom",
+  "settingIntercomEnabledDescription": "Dzwoń do innych kiosków w tej sieci i odbieraj ich połączenia.",
+  "settingIntercomKeyTitle": "Klucz interkomu",
+  "settingIntercomKeyDescription": "Kioski z tym samym kluczem mogą się ze sobą łączyć. Klucz można synchronizować w sekcji „Zarządzanie flotą”.",
+  "settingIntercomKeyPlaceholder": "Tworzony po włączeniu interkomu",
+  "intercomNeedsAdmin": "Interkom wymaga zdalnej administracji",
+  "intercomAdminHelp": "Za jej pośrednictwem kioski znajdują się i łączą ze sobą. Włącz opcje „Zdalne zarządzanie” i „Znajdź inne kioski” w sekcji „Urządzenie”, a potem wróć tutaj.",
+  "intercomChangeKey": "Zmień klucz",
+  "intercomChangeKeyHelp": "Wklej klucz z innego kiosku lub utwórz nowy.",
+  "intercomChange": "Zmień",
+  "intercomKeyWarning": "Kioski z tym kluczem mogą się ze sobą łączyć. Nowy klucz odetnie ten kiosk od pozostałych, dopóki one też go nie otrzymają.",
+  "intercomRegenerate": "Wygeneruj ponownie",
+  "intercomKeyChanged": "Zmieniono klucz",
+  "intercomNotSet": "Nie ustawiono",
+  "intercomOpen": "Otwórz",
+  "settingIntercomTlsTitle": "Szyfruj komunikację",
+  "settingIntercomTlsDescription": "Używaj TLS do szyfrowania połączeń interkomu między kioskami. Wszystkie kioski w połączeniu muszą mieć tę opcję włączoną."
+}

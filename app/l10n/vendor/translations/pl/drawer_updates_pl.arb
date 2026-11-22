@@ -1,0 +1,20 @@
+{
+  "@@locale": "pl",
+  "drawerVersion": "Wersja {version}",
+  "drawerUpdateAvailable": "Dostępna aktualizacja",
+  "drawerUpdateInstall": "Wersja {version} · dotknij, aby zainstalować",
+  "drawerUpdateChecking": "Sprawdzanie aktualizacji…",
+  "drawerUpdateCurrent": "Aktualna wersja",
+  "drawerUpdateCurrentHelp": "Zainstalowana jest najnowsza wersja.",
+  "drawerUpdateCheckFailed": "Nie udało się sprawdzić aktualizacji",
+  "drawerUpdateOffline": "Czy urządzenie ma połączenie z internetem?",
+  "drawerUpdateTo": "Aktualizacja do wersji {version}",
+  "drawerUpdateInstructions": "Pobieranie rozpocznie się po dotknięciu „Aktualizuj”. Android poprosi o potwierdzenie instalacji.",
+  "drawerUpdateRelaunch": "Bez uprawnienia „Wyświetlanie nad innymi aplikacjami” aplikacja nie może ponownie uruchomić się po aktualizacji.",
+  "drawerUpdate": "Aktualizuj",
+  "drawerUpdateDownloading": "Pobieranie aktualizacji",
+  "drawerUpdateStarting": "Rozpoczynanie…",
+  "drawerUpdateFailed": "Aktualizacja nie powiodła się",
+  "drawerUpdates": "Aktualizacje",
+  "drawerNoReleaseNotes": "Brak informacji o zmianach."
+}

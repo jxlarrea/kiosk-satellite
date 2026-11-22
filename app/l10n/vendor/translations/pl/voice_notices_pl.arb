@@ -1,0 +1,21 @@
+{
+  "@@locale": "pl",
+  "voiceNoticeError": "Błąd Voice Satellite",
+  "voiceNoticeWarning": "Ostrzeżenie Voice Satellite",
+  "voiceNoticeNotice": "Komunikat Voice Satellite",
+  "voiceNoticeTts": "Zamiana tekstu na mowę",
+  "voiceNoticeAssistPipeline": "Kanał przetwarzania mowy Assist",
+  "voiceNoticePipeline": "Kanał przetwarzania mowy „{name}”",
+  "voiceNoticeMicUnavailable": "Mikrofon jest niedostępny.",
+  "voiceNoticeNotConnected": "Home Assistant nie jest połączony z tym kioskiem.",
+  "voiceNoticeConnectionLost": "Utracono połączenie z Home Assistant. Trwa ponowne łączenie.",
+  "voiceNoticePlayback": "Nie udało się odtworzyć dźwięku na urządzeniu.",
+  "voiceNoticeWatchdog": "Brak odpowiedzi z Home Assistant po zakończeniu mówienia. Kanał przetwarzania mowy mógł się zawiesić.",
+  "voiceNoticeRefused": "Home Assistant nie mógł uruchomić asystenta.",
+  "voiceNoticeUnexpected": "Wystąpił nieoczekiwany błąd kanału przetwarzania mowy.",
+  "voiceNoticeMicBlocked": "Dostęp do mikrofonu jest zablokowany. Zezwól na niego dla Kiosk Satellite w ustawieniach systemu Android.",
+  "voiceNoticeMicDeclined": "Odmówiono dostępu do mikrofonu, więc słowo wybudzające nie może zostać wykryte.",
+  "voiceNoticeMicLost": "Mikrofon przestał działać.",
+  "voiceNoticeModels": "Nie udało się wczytać modeli słów wybudzających.",
+  "voiceNoticeCrashed": "Detektor słowa wybudzającego wielokrotnie ulegał awarii na tym urządzeniu, dlatego został zatrzymany."
+}

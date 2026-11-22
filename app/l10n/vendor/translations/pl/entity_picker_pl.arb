@@ -1,0 +1,13 @@
+{
+  "@@locale": "pl",
+  "entityPickerNoArea": "Bez obszaru",
+  "entityPickerAll": "Wszystkie",
+  "entityPickerChoose": "Wybierz encję",
+  "entityPickerNoMatch": "Brak wyników",
+  "entityPickerOfflineHelp": "Encje zostaną wczytane po przywróceniu połączenia.",
+  "entityPickerMissing": "Tej encji nie ma już w Home Assistant. Wybierz inną.",
+  "entityPickerOrderHint": "Przeciągnij lub użyj strzałek, aby zmienić kolejność.",
+  "entityPickerFull": "Usuń jedną, aby dodać kolejną.",
+  "entityPickerAdd": "Dodaj encje",
+  "entityPickerShowing": "Wyświetlane: {count} z {max}"
+}

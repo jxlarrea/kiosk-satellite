@@ -1,0 +1,8 @@
+{
+  "@@locale": "pl",
+  "remoteDisableTitle": "Wyłączyć zdalne zarządzanie?",
+  "remoteDisableHelp": "OSTRZEŻENIE: dostęp do tej strony nie będzie już możliwy. Aby ponownie włączyć zdalne zarządzanie, użyj urządzenia lub przełącznika „Zdalne zarządzanie” w Home Assistant.",
+  "remoteDisableConfirm": "Wyłącz",
+  "remoteCopyHelp": "Zaznacz klucz i skopiuj go ręcznie.",
+  "remoteSaveSettingFailed": "Nie udało się zapisać tego ustawienia. Spróbuj ponownie."
+}

@@ -1,0 +1,19 @@
+{
+  "@@locale": "pl",
+  "settingEqualizerEnabledTitle": "Włącz korektor",
+  "settingEqualizerEnabledDescription": "Kształtuje brzmienie muzyki, asystenta, sygnałów dźwiękowych i interkomu. Dźwięki filmów i pulpitu nie przechodzą przez korektor.",
+  "settingEqualizerBand1Title": "100 Hz",
+  "settingEqualizerBand1Description": "Bas. Małe głośniki szybko zniekształcają dźwięk przy podbiciu tego pasma.",
+  "settingEqualizerBand2Title": "300 Hz",
+  "settingEqualizerBand2Description": "Niskie średnie tony. Obniżenie usuwa brzmienie jak z pudełka lub dudnienie.",
+  "settingEqualizerBand3Title": "1 kHz",
+  "settingEqualizerBand3Description": "Średnie tony, w których mieści się większość głosu.",
+  "settingEqualizerBand4Title": "3 kHz",
+  "settingEqualizerBand4Description": "Wysokie średnie tony. Podbicie poprawia zrozumiałość mowy.",
+  "settingEqualizerBand5Title": "10 kHz",
+  "settingEqualizerBand5Description": "Wysokie tony.",
+  "settingEqualizerPreampTitle": "Automatyczny przedwzmacniacz",
+  "settingEqualizerPreampDescription": "Obniża poziom o wartość największego podbicia, aby głośnik nie zniekształcał dźwięku, a funkcja eliminacji echa nadal działała.",
+  "screenAudioEqualizer": "Korektor",
+  "screenAudioEqualizerHint": "Bas, średnie i wysokie tony, przedwzmacniacz"
+}

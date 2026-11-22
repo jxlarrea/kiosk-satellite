@@ -1,0 +1,16 @@
+{
+  "@@locale": "pl",
+  "screensaverNoPhotos": "Nie wybrano zdjęć. Wybierz je w ustawieniach.",
+  "screensaverNoFolder": "Nie wybrano folderu. Wybierz go w ustawieniach.",
+  "screensaverFolderEmpty": "Brak zdjęć i filmów w folderze {folder}",
+  "screensaverFolderUnreadable": "Nie udało się odczytać folderu {folder}. Czy przyznano uprawnienie do multimediów?",
+  "screensaverReadPhotosFailed": "Nie udało się odczytać zdjęć.",
+  "screensaverImmichNotReady": "Brak połączenia z Immich. Sprawdź połączenie w ustawieniach.",
+  "screensaverNoMediaMatch": "Żadne multimedia nie pasują do źródła i filtrów.",
+  "screensaverNoMediaSource": "Brak multimediów w wybranym źródle.",
+  "screensaverImmichUnreachable": "Nie udało się połączyć z serwerem Immich.",
+  "screensaverRetryNotice": "{error} Ponowna próba nastąpi automatycznie.",
+  "screensaverVideosTooLarge": "Wszystkie filmy na tej playliście są za duże, aby to urządzenie mogło je odtworzyć.",
+  "screensaverUrlNotSet": "Nie ustawiono adresu URL obrazu. Dodaj go w ustawieniach.",
+  "screensaverUrlLoadFailed": "Nie udało się wczytać obrazu."
+}
