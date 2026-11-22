@@ -142,9 +142,10 @@ class HeadlessSettings {
   Future<void> init() async {
     for (final def in defs.allSettings) {
       // A link to Drawer menu items goes with the menu, which is not here.
+      // Other links stay, like Voice Match under Ground Control's Features.
       if (_hiddenCategories.contains(def.category) ||
           _hiddenKeys.contains(def.key) ||
-          def.linksTo != null ||
+          def.linksTo == defs.uiDrawerItems.key ||
           _hiddenPart(def)) {
         defs.deviceHiddenKeys.add(def.key);
       }

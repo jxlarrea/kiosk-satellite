@@ -7,6 +7,7 @@ import { cmd, state } from './core.js';
 import { cachedList, pickItems } from './entity_picker.js';
 import { readOnlyRow } from './device.js';
 import { watchUpdates } from './live.js';
+import { isHeadless } from './headless.js';
 
 function statusWord(row, text, color) {
   const span = row.lastElementChild;
@@ -56,11 +57,12 @@ async function paint(tab) {
 }
 
 /* Under Features, after Voice Match: Vision Match, coming soon, as on
-   the device (GroundControlComingSoonRow). */
+   the device (GroundControlComingSoonRow). A device without a screen has
+   no camera to watch, so it shows Voice Match only. */
 function comingSoon(tab) {
   tab.querySelectorAll('.gc-soon').forEach((r) => r.remove());
   const link = tab.querySelector('[data-key="ground_control.voice_match"]');
-  if (!link) return;
+  if (!link || isHeadless()) return;
   const row = readOnlyRow(voiceText('Vision Match'),
     voiceText("Facial recognition using this device's camera."), '', false);
   statusWord(row, voiceText('Coming soon'), 'var(--muted)');

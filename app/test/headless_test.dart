@@ -77,6 +77,17 @@ void main() {
     expect(hidden, isNot(contains(defs.alarmsVolume.key)));
   });
 
+  test('Ground Control keeps Voice Match under Features, menu links go', () {
+    final hidden = defs.deviceHiddenKeys;
+    expect(hidden, isNot(contains(defs.groundControlVoiceMatch.key)));
+    expect(hidden, isNot(contains(defs.voiceMatchEnabled.key)));
+    for (final def in defs.allSettings) {
+      if (def.linksTo == defs.uiDrawerItems.key) {
+        expect(hidden, contains(def.key), reason: def.key);
+      }
+    }
+  });
+
   test('the Timers page keeps only what works without a screen', () {
     final hidden = defs.deviceHiddenKeys;
     for (final def in [
