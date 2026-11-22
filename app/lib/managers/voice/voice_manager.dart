@@ -2909,15 +2909,24 @@ class VoiceManager extends Manager {
       return;
     }
     if (_realtime.busy) {
+      if (_realtime.stopWordHeld) return _stopWordTooSoon();
       // A conversation keeps going: the stop word stops the answer.
       unawaited(_realtime.stopAnswer());
       return;
     }
     if (_session.busy) {
+      if (_session.stopWordHeld) return _stopWordTooSoon();
       unawaited(_session.cancel());
     } else {
       _session.dismiss();
     }
+  }
+
+  /// The stop word within the first second and a half of an answer or an
+  /// announcement is its own echo, not someone in the room
+  /// ([VoiceSession.stopWordHold]).
+  void _stopWordTooSoon() {
+    log.info(name, 'stop word ignored: the sound had only just started');
   }
 
   // ── the overlay ────────────────────────────────────────────────────────

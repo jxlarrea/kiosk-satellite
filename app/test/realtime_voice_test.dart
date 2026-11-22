@@ -2686,6 +2686,69 @@ void main() {
       });
     });
 
+    test('the stop word is not taken a second and a half into each answer', () {
+      fakeAsync((time) {
+        final h = _Harness(time);
+        h.wakeAndConnect();
+        expect(h.session.stopWordHeld, isFalse);
+        h.answer('a1', seconds: 4);
+        // It listens from the answer's first sound and is not taken.
+        expect(h.stopArmed.last, isTrue);
+        expect(h.session.stopWordHeld, isTrue);
+        time.elapse(const Duration(milliseconds: 1400));
+        expect(h.session.stopWordHeld, isTrue);
+        time.elapse(const Duration(milliseconds: 200));
+        expect(h.session.stopWordHeld, isFalse);
+        // The answer ends and the user takes a turn.
+        h.player.frames = 24000 * 4;
+        time.elapse(const Duration(seconds: 3));
+        expect(h.session.stopWordHeld, isFalse);
+        // The next answer of the same conversation is held again.
+        h.answer('a2', seconds: 4);
+        expect(h.session.stopWordHeld, isTrue);
+        time.elapse(const Duration(milliseconds: 1400));
+        expect(h.session.stopWordHeld, isTrue);
+        time.elapse(const Duration(milliseconds: 200));
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.cancel();
+        time.flushMicrotasks();
+        expect(h.session.stopWordHeld, isFalse);
+      });
+    });
+
+    test('an opening said by the model is held the same way', () {
+      fakeAsync((time) {
+        final h = _Harness(time);
+        unawaited(h.session.wake('', opening: 'Close the garage?'));
+        time.flushMicrotasks();
+        time.elapse(const Duration(milliseconds: 600));
+        h.backend.emit(const RealtimeReady());
+        time.flushMicrotasks();
+        expect(h.session.stopWordHeld, isFalse);
+        h.answer('o1', seconds: 4);
+        expect(h.session.stopWordHeld, isTrue);
+        time.elapse(const Duration(milliseconds: 1600));
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.cancel();
+        time.flushMicrotasks();
+      });
+    });
+
+    test('an answer the user talked over holds nothing', () {
+      fakeAsync((time) {
+        final h = _Harness(time);
+        h.wakeAndConnect();
+        h.answer('a1', seconds: 4);
+        time.elapse(const Duration(milliseconds: 500));
+        h.player.frames = 12000;
+        h.backend.emit(const RealtimeSpeechStarted());
+        time.flushMicrotasks();
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.cancel();
+        time.flushMicrotasks();
+      });
+    });
+
     test('plays the answer and talking over it cuts it where it was heard', () {
       fakeAsync((time) {
         final h = _Harness(time);

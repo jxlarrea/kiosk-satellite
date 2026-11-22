@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **The stop word waits for an answer to have played for a second and a half (#1548, #1558).** With **Stop word interruption** on, an answer or an announcement could end about a second after it started with nobody saying "stop". The start of a sound is where the least of the kiosk's own voice is removed from the microphone and it was taken for the stop word, most often with Amazon's wake word engine and German answers. A "stop" heard in the first second and a half of an answer or an announcement is now ignored and the log says so. This applies to every answer of a conversation, to realtime conversations, to announcements and to `start_conversation`. A ringing timer or alarm still stops at once, and a false stop later in an answer is not affected.
+
 ### Fixed
 - **The assistant's voice coming back through the microphone at the start of some answers.** When a sound started, the reference that echo cancellation works from could be placed up to 10 ms away from what the speaker was playing and it stayed there until the sound ended. Echo cancellation then started over for that sound and again for the next one, so the first 2 to 3 seconds of an answer reached the microphone almost uncancelled and could be heard in Ground Control recordings. On a Galaxy Tab S8+ this affected 3 of 19 sounds, two of them answers in realtime conversations. The reference is now corrected within the first half second of every sound.
 

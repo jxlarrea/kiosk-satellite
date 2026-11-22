@@ -611,6 +611,202 @@ void main() {
     });
   });
 
+  group('the stop word is not taken while a sound starts', () {
+    const held = VoiceSessionOptions(stopWord: true);
+
+    /// The player reports the sound playing now at [position].
+    void progress(_Harness h, Duration position) =>
+        h.session.onSoundProgress(h.player.lastId, position, null);
+
+    /// Lets the sound playing now go a second and a half in, the hold with
+    /// it, from a first report 250 ms in.
+    void playThrough(FakeAsync async, _Harness h) {
+      progress(h, const Duration(milliseconds: 250));
+      async.elapse(const Duration(milliseconds: 1249));
+      expect(h.session.stopWordHeld, isTrue);
+      async.elapse(const Duration(milliseconds: 1));
+      expect(h.session.stopWordHeld, isFalse);
+    }
+
+    test('an answer is held for a second and a half of its own playing', () {
+      fakeAsync((async) {
+        final h = _Harness(options: held);
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.wake('Okay Nabu');
+        async.elapse(const Duration(seconds: 1));
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.onEvent(VaEvent.ttsEnd, {'url': 'http://ha/tts.mp3'});
+        // A streamed answer: at the player, nothing heard yet. The stop
+        // word listens from the start and is not taken.
+        async.elapse(const Duration(milliseconds: 600));
+        progress(h, Duration.zero);
+        expect(h.stopArmed, [true]);
+        expect(h.session.stopWordHeld, isTrue);
+        async.elapse(const Duration(milliseconds: 250));
+        playThrough(async, h);
+        // Later reports do not hold it again.
+        progress(h, const Duration(seconds: 2));
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.cancel();
+        async.flushMicrotasks();
+        expect(h.session.stopWordHeld, isFalse);
+      });
+    });
+
+    test('a player that never reports holds it for three seconds', () {
+      fakeAsync((async) {
+        final h = _Harness(options: held);
+        h.session.wake('Okay Nabu');
+        async.elapse(const Duration(seconds: 1));
+        h.session.onEvent(VaEvent.ttsEnd, {'url': 'http://ha/tts.mp3'});
+        async.elapse(const Duration(milliseconds: 2999));
+        expect(h.session.stopWordHeld, isTrue);
+        async.elapse(const Duration(milliseconds: 1));
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.cancel();
+        async.flushMicrotasks();
+      });
+    });
+
+    test('a first report past the hold ends it at once', () {
+      fakeAsync((async) {
+        final h = _Harness(options: held);
+        h.session.wake('Okay Nabu');
+        async.elapse(const Duration(seconds: 1));
+        h.session.onEvent(VaEvent.ttsEnd, {'url': 'http://ha/tts.mp3'});
+        async.flushMicrotasks();
+        expect(h.session.stopWordHeld, isTrue);
+        progress(h, const Duration(seconds: 2));
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.cancel();
+        async.flushMicrotasks();
+      });
+    });
+
+    test('nothing is held once the sound is over', () {
+      fakeAsync((async) {
+        final h = _Harness(options: held);
+        h.session.wake('Okay Nabu');
+        async.elapse(const Duration(seconds: 1));
+        h.session.onEvent(VaEvent.intentEnd, {'continue_conversation': '0'});
+        h.session.onEvent(VaEvent.ttsEnd, {'url': 'http://ha/done.mp3'});
+        async.flushMicrotasks();
+        progress(h, const Duration(milliseconds: 250));
+        async.elapse(const Duration(milliseconds: 700));
+        expect(h.session.stopWordHeld, isTrue);
+        h.session.onSoundEnded(h.player.lastId);
+        async.flushMicrotasks();
+        expect(h.session.stopWordHeld, isFalse);
+      });
+    });
+
+    test('every answer of a conversation with follow-ups is held again', () {
+      fakeAsync((async) {
+        final h = _Harness(options: held);
+        h.session.wake('Hey Jarvis');
+        async.elapse(const Duration(seconds: 5));
+        h.session.onEvent(VaEvent.sttEnd, {'text': 'set a timer'});
+        h.session.onEvent(VaEvent.intentEnd, {
+          'conversation_id': 'c1',
+          'continue_conversation': '1',
+        });
+        h.session.onEvent(VaEvent.ttsEnd, {'url': 'http://ha/q.mp3'});
+        async.flushMicrotasks();
+        expect(h.session.stopWordHeld, isTrue);
+        playThrough(async, h);
+        h.session.onSoundEnded(h.player.lastId);
+        async.flushMicrotasks();
+        h.session.onEvent(VaEvent.runEnd, {});
+        async.flushMicrotasks();
+        // The second turn, with no new wake word: nothing plays yet.
+        expect(h.mic.opens, 2);
+        expect(h.session.stopWordHeld, isFalse);
+        async.elapse(const Duration(seconds: 3));
+        h.session.onEvent(VaEvent.sttEnd, {'text': 'five minutes'});
+        h.session.onEvent(VaEvent.intentEnd, {
+          'conversation_id': 'c1',
+          'continue_conversation': '0',
+        });
+        h.session.onEvent(VaEvent.ttsEnd, {'url': 'http://ha/a.mp3'});
+        async.flushMicrotasks();
+        expect(h.player.played.last, 'http://ha/a.mp3');
+        expect(h.session.stopWordHeld, isTrue);
+        async.elapse(const Duration(milliseconds: 400));
+        playThrough(async, h);
+      });
+    });
+
+    test('an announcement is held, its chime is not a sound to stop', () {
+      fakeAsync((async) {
+        final h = _Harness(options: held);
+        h.session.announce(
+          const VoiceAnnouncement(
+            mediaId: 'http://ha/a.mp3',
+            text: 'The laundry is done.',
+            preannounceMediaId:
+                'http://ha/api/assist_satellite/static/preannounce.mp3',
+            startConversation: false,
+          ),
+        );
+        async.flushMicrotasks();
+        expect(h.player.chimes, ['announce']);
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.onSoundEnded(h.player.lastId);
+        async.flushMicrotasks();
+        expect(h.player.played, ['http://ha/a.mp3']);
+        expect(h.session.stopWordHeld, isTrue);
+        playThrough(async, h);
+        h.session.onSoundEnded(h.player.lastId);
+        async.flushMicrotasks();
+        expect(h.session.stopWordHeld, isFalse);
+      });
+    });
+
+    test('start_conversation holds it for the question and for the answer', () {
+      fakeAsync((async) {
+        final h = _Harness(options: held);
+        h.session.announce(
+          const VoiceAnnouncement(
+            mediaId: 'http://ha/q.mp3',
+            text: 'Close the garage?',
+            preannounceMediaId: '',
+            startConversation: true,
+          ),
+        );
+        async.flushMicrotasks();
+        expect(h.player.played, ['http://ha/q.mp3']);
+        expect(h.session.stopWordHeld, isTrue);
+        playThrough(async, h);
+        h.session.onSoundEnded(h.player.lastId);
+        async.flushMicrotasks();
+        expect(h.view.phase, AssistPhase.listening);
+        expect(h.session.stopWordHeld, isFalse);
+        // The reply and its answer.
+        async.elapse(const Duration(seconds: 3));
+        h.session.onEvent(VaEvent.sttEnd, {'text': 'yes'});
+        h.session.onEvent(VaEvent.intentEnd, {'continue_conversation': '0'});
+        h.session.onEvent(VaEvent.ttsEnd, {'url': 'http://ha/ok.mp3'});
+        async.flushMicrotasks();
+        expect(h.player.played.last, 'http://ha/ok.mp3');
+        expect(h.session.stopWordHeld, isTrue);
+        playThrough(async, h);
+      });
+    });
+
+    test('with the stop word off nothing is held', () {
+      fakeAsync((async) {
+        final h = _Harness();
+        h.session.wake('Okay Nabu');
+        async.elapse(const Duration(seconds: 1));
+        h.session.onEvent(VaEvent.ttsEnd, {'url': 'http://ha/tts.mp3'});
+        async.flushMicrotasks();
+        expect(h.session.stopWordHeld, isFalse);
+        h.session.cancel();
+        async.flushMicrotasks();
+      });
+    });
+  });
+
   test('a lingering result panel keeps the stop word armed', () {
     fakeAsync((async) {
       final h = _Harness(

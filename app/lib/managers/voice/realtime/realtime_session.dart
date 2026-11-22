@@ -1370,6 +1370,16 @@ class RealtimeSession {
 
   // ── ending ──────────────────────────────────────────────────────────────
 
+  /// Whether the answer playing now has only just started, so the stop
+  /// word is not taken yet: the echo of its first second is the loudest
+  /// and was taken for the stop word ([VoiceSession.stopWordHold]).
+  bool get stopWordHeld {
+    final from = _answerFrom;
+    return _playing &&
+        from != null &&
+        _now().difference(from) < VoiceSession.stopWordHold;
+  }
+
   /// The stop word: stop the answer and keep listening.
   Future<void> stopAnswer() async {
     if (!_busy) return;

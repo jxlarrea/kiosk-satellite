@@ -242,6 +242,19 @@ class VoiceSession {
   static const vadWatchdog = Duration(seconds: 60);
   static const playbackSafety = Duration(seconds: 120);
   static const stopWordArmDelay = Duration(milliseconds: 250);
+
+  /// How long an answer or an announcement has to have played before the
+  /// stop word stops it ([stopWordHeld]). Echo cancellation takes the least
+  /// off a sound's first second, and what is left of the kiosk's own voice
+  /// there was taken for the stop word: with Amazon's German model every
+  /// answer ended about a second in (#1548, #1558). Nobody stops an answer
+  /// that soon. The stop word listens through it all the same: armed only
+  /// after it, a detector judges the second and a half it has just heard.
+  static const stopWordHold = Duration(milliseconds: 1500);
+
+  /// The hold ends this long after a sound went to the player when the
+  /// player never says where the sound is.
+  static const stopWordHoldLatest = Duration(seconds: 3);
   static const noMediaAnnouncement = Duration(seconds: 3);
   static const remoteChimeSafety = Duration(seconds: 35);
 
@@ -734,16 +747,21 @@ class VoiceSession {
     _position = null;
     _length = null;
     Timer? arm;
+    _StopHold? hold;
     if (armStopWord && options().stopWord) {
       arm = Timer(stopWordArmDelay, () {
         if (gen == _gen && _playId == id) onStopArmed(true);
       });
+      hold = _StopHold(id)..endIn(stopWordHoldLatest);
+      _stopHold = hold;
     }
     final guard = Timer(safety, () {
       if (!done.isCompleted) done.complete(false);
     });
     final ok = await done.future;
     arm?.cancel();
+    hold?.cancel();
+    if (identical(_stopHold, hold)) _stopHold = null;
     guard.cancel();
     if (_playId == id) {
       _playId = null;
@@ -770,12 +788,31 @@ class VoiceSession {
   Duration? _length;
   DateTime? _positionAt;
 
+  /// The hold of the sound playing now, when the stop word can stop it.
+  _StopHold? _stopHold;
+
+  /// Whether the sound playing now has only just started, so the stop word
+  /// is not taken yet ([stopWordHold]). A ringing timer or alarm is not a
+  /// sound of the session and is never held.
+  bool get stopWordHeld => !(_stopHold?.over ?? true);
+
   /// The player's report of where the sound playing now is.
   void onSoundProgress(String id, Duration position, Duration? duration) {
     if (id != _playId) return;
     _position = position;
     _length = duration;
     _positionAt = _now();
+    // The hold counts from the sound itself: a streamed answer goes to
+    // the player before its first audio has arrived.
+    final hold = _stopHold;
+    if (hold != null &&
+        hold.id == id &&
+        !hold.placed &&
+        position > Duration.zero) {
+      hold.placed = true;
+      final left = stopWordHold - position;
+      hold.endIn(left.isNegative ? Duration.zero : left);
+    }
   }
 
   /// Seconds into the sound playing now and its length, while both are
@@ -1258,4 +1295,31 @@ class VoiceSession {
     }
     _show(AssistView.hidden);
   }
+}
+
+/// The start of one sound, during which the stop word is not taken
+/// ([VoiceSession.stopWordHold]).
+class _StopHold {
+  _StopHold(this.id);
+
+  /// The sound it is for.
+  final String id;
+  Timer? _timer;
+
+  /// Whether the wait already counts from the sound's own position.
+  bool placed = false;
+
+  /// Whether the sound has played long enough.
+  bool over = false;
+
+  void endIn(Duration wait) {
+    _timer?.cancel();
+    if (wait <= Duration.zero) {
+      over = true;
+      return;
+    }
+    _timer = Timer(wait, () => over = true);
+  }
+
+  void cancel() => _timer?.cancel();
 }
