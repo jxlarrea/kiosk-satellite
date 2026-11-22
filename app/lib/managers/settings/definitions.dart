@@ -14079,6 +14079,19 @@ String effectiveHostname(String typed, String deviceName) {
   return esphomeNodeFromDeviceName(deviceName);
 }
 
+/// The name this kiosk goes by in Ground Control: the hostname above,
+/// else `kiosk-satellite-` and the end of the fleet id (the Android ID),
+/// the name the Bluetooth proxy takes without one. So a kiosk with no
+/// device name and no mDNS name still connects (Ground Control #15).
+/// Empty only while the fleet id is not written yet.
+String groundControlDeviceId(String typed, String deviceName, String fleetId) {
+  final named = effectiveHostname(typed, deviceName);
+  if (named.isNotEmpty) return named;
+  final id = esphomeNodeSlug(fleetId).replaceAll('-', '');
+  if (id.isEmpty) return '';
+  return 'kiosk-satellite-${id.length > 6 ? id.substring(id.length - 6) : id}';
+}
+
 const uiLanguage = SettingDef<String>(
   key: 'ui.language',
   type: SettingType.select,

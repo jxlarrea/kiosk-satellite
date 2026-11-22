@@ -413,10 +413,7 @@ class GroundControlManager extends Manager {
     return {
       'type': 'hello',
       'token': _settings.get(defs.haToken),
-      'device_id': defs.effectiveHostname(
-        _settings.get(defs.deviceHostname),
-        deviceName,
-      ),
+      'device_id': deviceId,
       'name': deviceName.isNotEmpty ? deviceName : '${data['name'] ?? ''}',
       'model': '${data['model'] ?? ''}',
       'version': '${data['appVersion'] ?? ''}',
@@ -461,9 +458,10 @@ class GroundControlManager extends Manager {
   }
 
   /// The id this kiosk goes by in Ground Control, for the session sockets too.
-  String get deviceId => defs.effectiveHostname(
+  String get deviceId => defs.groundControlDeviceId(
     _settings.get(defs.deviceHostname),
     _settings.get(defs.deviceName).trim(),
+    _settings.get(defs.fleetId),
   );
 
   void _onMessage(int gen, Object? data) {
@@ -504,6 +502,7 @@ class GroundControlManager extends Manager {
         _attempt = 0;
         _setStatus('connected', baseUrl);
       case 'error':
+        log.warn(name, 'Ground Control turned this kiosk away: ${msg['code']}');
         if (msg['code'] == 'unauthorized') _setStatus('refused', null);
         if (msg['code'] == 'not_kiosk_satellite') _setStatus('unsigned', null);
       case 'enroll':

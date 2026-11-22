@@ -57,6 +57,8 @@ void main() {
 
   Future<(GroundControlManager, List<GroundControlServiceChanged>)> start({
     ClientKey? key,
+    String deviceName = '',
+    String fleetId = '',
   }) async {
     final bus = EventBus();
     final log = Logger();
@@ -66,6 +68,8 @@ void main() {
     await settings.set(defs.voiceEnabled, true);
     await settings.set(defs.voiceMatchEnabled, true);
     await settings.set(defs.groundControlEnabled, true);
+    await settings.set(defs.deviceName, deviceName);
+    await settings.set(defs.fleetId, fleetId);
     await settings.set(
       defs.groundControlAddress,
       'http://127.0.0.1:${server.port}',
@@ -128,6 +132,44 @@ void main() {
       expect(gc.ticket, isNull);
     },
   );
+
+  test('goes by a name made from the device id without a name (#15)', () async {
+    // Ground Control turns away a hello without a device id.
+    final (gc, _) = await start(
+      key: ClientKey('test', seed),
+      fleetId: '9F3c0aD41E7b2A6c',
+    );
+    await until(() => received.isNotEmpty);
+    expect(received.single['device_id'], 'kiosk-satellite-7b2a6c');
+    expect(gc.deviceId, 'kiosk-satellite-7b2a6c');
+  });
+
+  test('goes by its device name when it has one', () async {
+    await start(
+      key: ClientKey('test', seed),
+      deviceName: 'Kitchen Tablet',
+      fleetId: '9f3c0ad41e7b2a6c',
+    );
+    await until(() => received.isNotEmpty);
+    expect(received.single['device_id'], 'ks-kitchen-tablet');
+  });
+
+  test('the Ground Control id falls back in order', () {
+    expect(defs.groundControlDeviceId('Hall', 'Kitchen', 'abc123def'), 'hall');
+    expect(
+      defs.groundControlDeviceId('', 'Kitchen', 'abc123def'),
+      'ks-kitchen',
+    );
+    expect(
+      defs.groundControlDeviceId('', '', 'abc123def'),
+      'kiosk-satellite-123def',
+    );
+    expect(
+      defs.groundControlDeviceId('', '\u{1F600}', 'abc'),
+      'kiosk-satellite-abc',
+    );
+    expect(defs.groundControlDeviceId('', '', ''), '');
+  });
 
   test('signs exactly what Ground Control checks', () async {
     // The signature ground_control/clients.py makes with the same seed.

@@ -3043,7 +3043,11 @@ class VoiceManager extends Manager {
       token: s.get(defs.haToken),
       ticket: _groundControlTicket,
       request: request,
-      deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), deviceName),
+      deviceId: defs.groundControlDeviceId(
+        s.get(defs.deviceHostname),
+        deviceName,
+        s.get(defs.fleetId),
+      ),
       deviceName: deviceName,
       model: '',
       passage: enrollPassage(
@@ -4370,7 +4374,11 @@ class _VoiceMatch implements VoiceMatchPort {
       baseUrl: url,
       token: s.get(defs.haToken),
       ticket: _voice._groundControlTicket,
-      deviceId: defs.effectiveHostname(s.get(defs.deviceHostname), name),
+      deviceId: defs.groundControlDeviceId(
+        s.get(defs.deviceHostname),
+        name,
+        s.get(defs.fleetId),
+      ),
       deviceName: name,
       policy: policy,
       people: people,
