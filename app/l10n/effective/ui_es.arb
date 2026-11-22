@@ -57283,6 +57283,32 @@
       ]
     }
   },
+  "settingTimersViewScaleTitle": "Escala de la vista de temporizadores",
+  "@settingTimersViewScaleTitle": {
+    "context": "Settings > Timers",
+    "description": "Slider label, in percent: the size of the timer names, the buttons and the smaller timer cards in the full screen Timers view. The large time of the first timer fills the room that is left.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersViewScaleDescription": "El tamaño de los nombres y los botones de los temporizadores en la vista de temporizadores.",
+  "@settingTimersViewScaleDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that slider.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "settingTimersSilenceAfterTitle": "Silenciar después de",
   "@settingTimersSilenceAfterTitle": {
     "context": "Settings > Timers",

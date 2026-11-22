@@ -15841,6 +15841,13 @@ class UiStringsNl extends UiStrings {
       'Voorkomt dat de schermbeveiliging start terwijl de timerweergave een lopende timer toont.';
 
   @override
+  String get settingTimersViewScaleTitle => 'Grootte van de timerweergave';
+
+  @override
+  String get settingTimersViewScaleDescription =>
+      'De grootte van de timernamen en knoppen in de timerweergave.';
+
+  @override
   String get settingTimersSilenceAfterTitle => 'Dempen na';
 
   @override

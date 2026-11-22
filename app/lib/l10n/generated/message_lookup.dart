@@ -5417,6 +5417,9 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingTimersPauseScreensaverTitle,
       'settingTimersPauseScreensaverDescription' =>
         strings.settingTimersPauseScreensaverDescription,
+      'settingTimersViewScaleTitle' => strings.settingTimersViewScaleTitle,
+      'settingTimersViewScaleDescription' =>
+        strings.settingTimersViewScaleDescription,
       'settingTimersSilenceAfterTitle' =>
         strings.settingTimersSilenceAfterTitle,
       'settingTimersSilenceAfterDescription' =>

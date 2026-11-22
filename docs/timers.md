@@ -12,6 +12,8 @@ A finished timer takes the top in its alert color with **Time's up** and a **Dis
 
 The X closes the view until the next timer starts, nears its end or finishes. The view closes by itself once the last timer is gone.
 
+**Timers view scale** under **Settings > Timers** sets the size of the timer names, the buttons and the list of other timers, from 75 to 200 percent. The time of the first timer fills the room that is left. On a small screen such as an Echo Show, the list shows fewer timers at once and the names and buttons grow only as far as the screen allows, so nothing overlaps and the time stays readable. With a long name, the kiosk name and **Time's up** move to a line under it.
+
 ### Timers and the screensaver
 
 The view sits under the screensaver, like the alarm list. A timer that starts dismisses the screensaver so the view shows, with **Show Timers view when a timer starts** on. A timer that only runs does not keep the screensaver away, so it comes back on its idle timer, unless **Pause screensaver while a timer runs** is on. The screensaver is dismissed and held back when a timer reaches the **Show Timers view when near completion** mark and when one finishes, so the view shows at full brightness. The screensaver can start again once the view is closed or that timer is gone.
@@ -104,6 +106,7 @@ The rest of the Timers page hides while the switch is off and keeps its settings
 | | Show Timers view when a timer starts | On by default. Off, starting a timer leaves the screen as it is and the view waits for the near completion mark or the finish. Not shown with **Show timers as pills** on. |
 | | Show Timers view when near completion | From 30 seconds to 5 minutes, 1 minute by default. The Timers view opens again once a running timer has that long left, if it was closed or another view was opened after the timer started. The screensaver is dismissed and held. Each timer does it once. Not shown with **Show timers as pills** on. |
 | | Pause screensaver while a timer runs | Off by default. Keeps the screensaver from starting while the Timers view is open with a running timer on it. A paused timer does not count. The screensaver starts as usual once the view is closed or another view is in front. Not shown with **Show timers as pills** on. |
+| | Timers view scale | From 75 to 200 percent, 100 by default. The size of the timer names, the buttons and the list of other timers in the Timers view. See [The Timers view](#the-timers-view). |
 | | Show in the kiosk menu | Opens **Drawer menu items**, where the **Timers** row is turned on or off. |
 | Timers | Manage timers | Opens the Timers view. In the remote admin, the list of timers itself. |
 | Shared timers | Share timers, Share with, Show shared timers | Run this kiosk's timers on other kiosks too. See [Shared timers](#shared-timers). |

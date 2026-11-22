@@ -15663,6 +15663,13 @@ class UiStringsEn extends UiStrings {
       'Keep the screensaver from starting while the Timers view shows a running timer.';
 
   @override
+  String get settingTimersViewScaleTitle => 'Timers view scale';
+
+  @override
+  String get settingTimersViewScaleDescription =>
+      'The size of the timer names and buttons in the Timers view.';
+
+  @override
   String get settingTimersSilenceAfterTitle => 'Silence after';
 
   @override

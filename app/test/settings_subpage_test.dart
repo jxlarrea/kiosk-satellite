@@ -191,6 +191,7 @@ void main() {
         defs.timersShowOnStart.key,
         defs.timersShowBeforeEnd.key,
         defs.timersPauseScreensaver.key,
+        defs.timersViewScale.key,
         defs.timersMenu.key,
       ],
     );
@@ -200,6 +201,9 @@ void main() {
     expect(defs.timersShowBeforeEnd.max, 300);
     expect(defs.timersShowBeforeEnd.step, 30);
     expect(defs.timersMenu.linksTo, defs.uiDrawerItems.key);
+    expect(defs.timersViewScale.defaultValue, 100);
+    expect(defs.timersViewScale.min, 75);
+    expect(defs.timersViewScale.max, 200);
     for (final d in defs.allSettings) {
       if (d.hidden || d.category != 'Timers' || d.section == null) continue;
       if (sections.isEmpty || sections.last != d.section) {

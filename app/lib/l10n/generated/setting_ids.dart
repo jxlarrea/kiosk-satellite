@@ -2796,6 +2796,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingTimersPauseScreensaverTitle",
     "description": "settingTimersPauseScreensaverDescription",
   },
+  "timers.view_scale": {
+    "title": "settingTimersViewScaleTitle",
+    "description": "settingTimersViewScaleDescription",
+  },
   "voice_match.enabled": {
     "title": "settingVoiceMatchEnabledTitle",
     "description": "settingVoiceMatchEnabledDescriptionCommand",

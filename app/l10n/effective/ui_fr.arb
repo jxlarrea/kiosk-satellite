@@ -57283,6 +57283,32 @@
       ]
     }
   },
+  "settingTimersViewScaleTitle": "Taille de la vue des minuteurs",
+  "@settingTimersViewScaleTitle": {
+    "context": "Settings > Timers",
+    "description": "Slider label, in percent: the size of the timer names, the buttons and the smaller timer cards in the full screen Timers view. The large time of the first timer fills the room that is left.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
+  "settingTimersViewScaleDescription": "La taille des noms et des boutons des minuteurs dans la vue des minuteurs.",
+  "@settingTimersViewScaleDescription": {
+    "context": "Settings > Timers",
+    "description": "Description of that slider.",
+    "x-locations": {
+      "device": [
+        "Settings > Timers"
+      ],
+      "remoteAdmin": [
+        "Timers"
+      ]
+    }
+  },
   "settingTimersSilenceAfterTitle": "Silence après",
   "@settingTimersSilenceAfterTitle": {
     "context": "Settings > Timers",

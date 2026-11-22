@@ -39,6 +39,8 @@
   "settingTimersShowOnStartDescription": "Abre la vista de temporizadores cada vez que se inicia un temporizador.",
   "settingTimersPauseScreensaverTitle": "Pausar el protector de pantalla mientras hay un temporizador en marcha",
   "settingTimersPauseScreensaverDescription": "Evita que el protector de pantalla se inicie mientras la vista de temporizadores muestra un temporizador en marcha.",
+  "settingTimersViewScaleTitle": "Escala de la vista de temporizadores",
+  "settingTimersViewScaleDescription": "El tamaño de los nombres y los botones de los temporizadores en la vista de temporizadores.",
   "settingTimersSilenceAfterTitle": "Silenciar después de",
   "settingTimersSilenceAfterDescription": "El temporizador finalizado sigue en pantalla hasta que se cierre.",
   "settingTimersDismissAfterTitle": "Cerrar después de",

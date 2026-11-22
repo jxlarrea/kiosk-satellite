@@ -39,6 +39,8 @@
   "settingTimersShowOnStartDescription": "Відкриває вигляд таймерів щоразу, коли запускається таймер.",
   "settingTimersPauseScreensaverTitle": "Призупиняти заставку, поки працює таймер",
   "settingTimersPauseScreensaverDescription": "Заставка не запускається, поки вигляд таймерів показує активний таймер.",
+  "settingTimersViewScaleTitle": "Масштаб вигляду таймерів",
+  "settingTimersViewScaleDescription": "Розмір назв таймерів і кнопок у вигляді таймерів.",
   "settingTimersSilenceAfterTitle": "Вимкнути звук через",
   "settingTimersSilenceAfterDescription": "Завершений таймер лишається на екрані, доки його не закрито.",
   "settingTimersDismissAfterTitle": "Закрити через",

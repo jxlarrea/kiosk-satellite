@@ -88,6 +88,7 @@ void main() {
       defs.timersShowOnStart,
       defs.timersShowBeforeEnd,
       defs.timersPauseScreensaver,
+      defs.timersViewScale,
     ]) {
       expect(hidden, contains(def.key), reason: def.key);
     }

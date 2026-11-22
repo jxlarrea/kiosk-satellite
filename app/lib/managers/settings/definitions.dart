@@ -9030,6 +9030,26 @@ const timersPauseScreensaver = SettingDef<bool>(
   dependsOnValue: false,
 );
 
+/// The size of the names, buttons and other timers in the full screen
+/// Timers view (issue #1544). The time of the first timer takes the room
+/// they leave. On a small screen the view grows them only as far as the
+/// room allows, so the time stays large and nothing overlaps. Unlike the
+/// rows above, it applies with the pills on too: the view still opens
+/// from the menu, a gesture or Compass.
+const timersViewScale = SettingDef<num>(
+  key: 'timers.view_scale',
+  type: SettingType.number,
+  defaultValue: 100,
+  title: 'Timers view scale',
+  description: 'The size of the timer names and buttons in the Timers view.',
+  category: 'Timers',
+  min: 75,
+  max: 200,
+  step: 5,
+  unit: '%',
+  dependsOn: 'timers.enabled',
+);
+
 /// The kiosk menu's Timers row: a link to Drawer menu items, which decides
 /// every row, as on the Alarms page.
 const timersMenu = SettingDef<bool>(
@@ -15263,6 +15283,7 @@ const List<SettingDef<Object>> allSettings = [
   timersShowOnStart,
   timersShowBeforeEnd,
   timersPauseScreensaver,
+  timersViewScale,
   timersMenu,
   voiceTimersShare,
   voiceTimersShareWith,

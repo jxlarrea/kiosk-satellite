@@ -62,6 +62,7 @@ class HeadlessSettings {
     defs.timersShowOnStart.key,
     defs.timersShowBeforeEnd.key,
     defs.timersPauseScreensaver.key,
+    defs.timersViewScale.key,
     // Intercom: no talk button, and the buttons are gestures.
     defs.intercomTalkMode.key,
     defs.intercomHangupKey.key,

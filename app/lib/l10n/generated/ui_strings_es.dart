@@ -15965,6 +15965,14 @@ class UiStringsEs extends UiStrings {
       'Evita que el protector de pantalla se inicie mientras la vista de temporizadores muestra un temporizador en marcha.';
 
   @override
+  String get settingTimersViewScaleTitle =>
+      'Escala de la vista de temporizadores';
+
+  @override
+  String get settingTimersViewScaleDescription =>
+      'El tamaño de los nombres y los botones de los temporizadores en la vista de temporizadores.';
+
+  @override
   String get settingTimersSilenceAfterTitle => 'Silenciar después de';
 
   @override

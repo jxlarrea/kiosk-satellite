@@ -15985,6 +15985,13 @@ class UiStringsDe extends UiStrings {
       'Verhindert den Start des Bildschirmschoners, solange die Timer-Ansicht einen laufenden Timer zeigt.';
 
   @override
+  String get settingTimersViewScaleTitle => 'Größe der Timer-Ansicht';
+
+  @override
+  String get settingTimersViewScaleDescription =>
+      'Die Größe der Timer-Namen und Schaltflächen in der Timer-Ansicht.';
+
+  @override
   String get settingTimersSilenceAfterTitle => 'Stumm nach';
 
   @override

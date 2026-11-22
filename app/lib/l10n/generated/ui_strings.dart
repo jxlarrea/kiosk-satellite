@@ -27341,6 +27341,18 @@ abstract class UiStrings {
   /// **'Keep the screensaver from starting while the Timers view shows a running timer.'**
   String get settingTimersPauseScreensaverDescription;
 
+  /// Slider label, in percent: the size of the timer names, the buttons and the smaller timer cards in the full screen Timers view. The large time of the first timer fills the room that is left.
+  ///
+  /// In en, this message translates to:
+  /// **'Timers view scale'**
+  String get settingTimersViewScaleTitle;
+
+  /// Description of that slider.
+  ///
+  /// In en, this message translates to:
+  /// **'The size of the timer names and buttons in the Timers view.'**
+  String get settingTimersViewScaleDescription;
+
   /// Setting label: how long a finished timer rings before its sound stops. Its options are lengths of time or Never.
   ///
   /// In en, this message translates to:

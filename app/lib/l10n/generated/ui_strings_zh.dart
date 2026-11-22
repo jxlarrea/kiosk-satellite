@@ -14846,6 +14846,12 @@ class UiStringsZh extends UiStrings {
       '计时器视图显示运行中的计时器时，不启动屏保。';
 
   @override
+  String get settingTimersViewScaleTitle => '计时器视图缩放';
+
+  @override
+  String get settingTimersViewScaleDescription => '计时器视图中计时器名称和按钮的大小。';
+
+  @override
   String get settingTimersSilenceAfterTitle => '自动静音时间';
 
   @override
@@ -31089,6 +31095,12 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingTimersPauseScreensaverDescription =>
       '计时器视图显示运行中的计时器时，不启动屏保。';
+
+  @override
+  String get settingTimersViewScaleTitle => '计时器视图缩放';
+
+  @override
+  String get settingTimersViewScaleDescription => '计时器视图中计时器名称和按钮的大小。';
 
   @override
   String get settingTimersSilenceAfterTitle => '自动静音时间';

@@ -15959,6 +15959,13 @@ class UiStringsFr extends UiStrings {
       'Empêche l\'économiseur d\'écran de démarrer tant que la vue des minuteurs affiche un minuteur en cours.';
 
   @override
+  String get settingTimersViewScaleTitle => 'Taille de la vue des minuteurs';
+
+  @override
+  String get settingTimersViewScaleDescription =>
+      'La taille des noms et des boutons des minuteurs dans la vue des minuteurs.';
+
+  @override
   String get settingTimersSilenceAfterTitle => 'Silence après';
 
   @override

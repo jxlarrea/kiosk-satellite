@@ -39,6 +39,8 @@
   "settingTimersShowOnStartDescription": "Öffnet die Timer-Ansicht bei jedem Start eines Timers.",
   "settingTimersPauseScreensaverTitle": "Bildschirmschoner pausieren, solange ein Timer läuft",
   "settingTimersPauseScreensaverDescription": "Verhindert den Start des Bildschirmschoners, solange die Timer-Ansicht einen laufenden Timer zeigt.",
+  "settingTimersViewScaleTitle": "Größe der Timer-Ansicht",
+  "settingTimersViewScaleDescription": "Die Größe der Timer-Namen und Schaltflächen in der Timer-Ansicht.",
   "settingTimersSilenceAfterTitle": "Stumm nach",
   "settingTimersSilenceAfterDescription": "Der abgelaufene Timer bleibt auf dem Bildschirm, bis er geschlossen wird.",
   "settingTimersDismissAfterTitle": "Schließen nach",

@@ -63,10 +63,14 @@ class _TimersScreenState extends State<_TimersScreen> {
     _watched.addListener(_changed);
     c.voiceTimers.error.addListener(_error);
     _saver = c.bus.on<ScreensaverStateChanged>().listen((_) => _changed());
+    _setting = c.bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.timersViewScale.key) _changed();
+    });
     _schedule();
   }
 
   StreamSubscription<ScreensaverStateChanged>? _saver;
+  StreamSubscription<SettingChanged>? _setting;
 
   /// The wheels are up: for a new timer, or for [_editing]'s time left.
   bool _editor = false;
@@ -119,6 +123,7 @@ class _TimersScreenState extends State<_TimersScreen> {
     _watched.removeListener(_changed);
     c.voiceTimers.error.removeListener(_error);
     _saver?.cancel();
+    _setting?.cancel();
     _tick?.cancel();
     super.dispose();
   }
@@ -186,6 +191,7 @@ class _TimersScreenState extends State<_TimersScreen> {
         : all.where((t) => t.id == _editing && !t.finished).firstOrNull;
     final editor = _editor && (_editing == null || edited != null);
     final canStart = c.voiceTimers.canStart;
+    final scale = (c.settings.get(defs.timersViewScale) / 100).clamp(.75, 2.0);
     return Listener(
       child: GestureDetector(
         // The ground only shields what is underneath.
@@ -217,6 +223,7 @@ class _TimersScreenState extends State<_TimersScreen> {
                                   container: c,
                                   timers: all,
                                   now: now,
+                                  scale: scale,
                                   size: Size(
                                     box.maxWidth,
                                     box.maxHeight - (compact ? 48 : 60),
@@ -394,6 +401,7 @@ class _Body extends StatelessWidget {
     required this.container,
     required this.timers,
     required this.now,
+    required this.scale,
     required this.size,
     required this.onEdit,
   });
@@ -401,6 +409,9 @@ class _Body extends StatelessWidget {
   final AppContainer container;
   final List<VoiceTimer> timers;
   final DateTime now;
+
+  /// Timers view scale as a factor, 1 at 100 percent.
+  final double scale;
   final Size size;
 
   /// A tap on a timer's time: the wheels open on it.
@@ -426,6 +437,7 @@ class _Body extends StatelessWidget {
       now: now,
       layout: layout,
       alone: rest.isEmpty,
+      scale: scale,
       onEdit: container.voiceTimers.canEdit(first) ? () => onEdit(first) : null,
     );
     if (rest.isEmpty) {
@@ -434,12 +446,16 @@ class _Body extends StatelessWidget {
         child: hero,
       );
     }
-    Widget card(VoiceTimer t, {double? width}) => _TimerCard(
+    final roomy = layout == _Layout.under;
+    // The width a card needs at a scale of 1 to show its time in full.
+    final need = _TimerCard.widthFor(roomy: roomy);
+    Widget card(VoiceTimer t, double scale, {double? width}) => _TimerCard(
       key: ValueKey('timer-card-${t.id}'),
       container: container,
       timer: t,
       now: now,
-      roomy: layout == _Layout.under,
+      roomy: roomy,
+      scale: scale,
       width: width,
       onEdit: container.voiceTimers.canEdit(t) ? () => onEdit(t) : null,
     );
@@ -447,10 +463,24 @@ class _Body extends StatelessWidget {
       case _Layout.under:
         const gap = 16.0;
         final inner = size.width - 2 * side;
-        // Three in full. With more, the fourth shows its edge.
-        final width = rest.length <= 3
-            ? (inner - 2 * gap) / 3
-            : (inner - 3 * gap - 64) / 3;
+        // The width of each card with [n] in full. With more timers than
+        // that, the next one shows its edge.
+        double widthOf(int n) => rest.length <= n
+            ? (inner - (n - 1) * gap) / n
+            : (inner - n * gap - 64) / n;
+        // The row keeps to about a third of the height, so the first timer
+        // keeps its room.
+        final target = _grown(scale, size.height * .34 / _TimerCard.rowHeight);
+        // Three in full. A larger scale shows fewer, as many as still
+        // come close to it, so each card keeps room for its time.
+        var full = 3;
+        while (target > 1 &&
+            full > 1 &&
+            widthOf(full) / need < max(1.0, target * .85)) {
+          full--;
+        }
+        final width = widthOf(full);
+        final cardScale = _grown(target, width / need);
         return Padding(
           padding: EdgeInsets.fromLTRB(side, 0, side, 32),
           child: Column(
@@ -458,14 +488,14 @@ class _Body extends StatelessWidget {
               Expanded(child: hero),
               const SizedBox(height: 16),
               SizedBox(
-                height: 142,
-                child: rest.length <= 3
+                height: _TimerCard.rowHeight * cardScale,
+                child: rest.length <= full
                     ? Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           for (final (i, t) in rest.indexed) ...[
                             if (i > 0) const SizedBox(width: gap),
-                            card(t, width: width),
+                            card(t, cardScale, width: width),
                           ],
                         ],
                       )
@@ -477,7 +507,8 @@ class _Body extends StatelessWidget {
                           itemCount: rest.length,
                           separatorBuilder: (_, _) =>
                               const SizedBox(width: gap),
-                          itemBuilder: (_, i) => card(rest[i], width: width),
+                          itemBuilder: (_, i) =>
+                              card(rest[i], cardScale, width: width),
                         ),
                       ),
               ),
@@ -485,6 +516,12 @@ class _Body extends StatelessWidget {
           ),
         );
       case _Layout.beside:
+        // A larger scale widens the column, up to 45 percent of the width.
+        final base = min(348.0, size.width * .4);
+        final column = scale <= 1
+            ? base
+            : max(base, min(need * scale, size.width * .45));
+        final cardScale = _grown(scale, column / need);
         return Padding(
           padding: EdgeInsets.fromLTRB(side, 0, side, 16),
           child: Row(
@@ -492,16 +529,17 @@ class _Body extends StatelessWidget {
               Expanded(child: hero),
               const SizedBox(width: 24),
               SizedBox(
-                width: min(348.0, size.width * .4),
+                width: column,
                 child: _CardColumn(
                   centered: true,
-                  children: [for (final t in rest) card(t)],
+                  children: [for (final t in rest) card(t, cardScale)],
                 ),
               ),
             ],
           ),
         );
       case _Layout.stacked:
+        final cardScale = _grown(scale, (size.width - 2 * side) / need);
         return Padding(
           padding: EdgeInsets.fromLTRB(side, 0, side, 20),
           child: Column(
@@ -512,11 +550,11 @@ class _Body extends StatelessWidget {
                 // Three in full and the edge of a fourth, or what a short
                 // phone can give.
                 constraints: BoxConstraints(
-                  maxHeight: min(372.0, size.height * .5),
+                  maxHeight: min(372.0 * cardScale, size.height * .5),
                 ),
                 child: _CardColumn(
                   centered: false,
-                  children: [for (final t in rest) card(t)],
+                  children: [for (final t in rest) card(t, cardScale)],
                 ),
               ),
             ],
@@ -525,6 +563,12 @@ class _Body extends StatelessWidget {
     }
   }
 }
+
+/// The scale a part of the view draws at: [scale] itself at 100 percent
+/// and below, and above it no more than [room] allows. Never less than 1,
+/// so a larger setting never draws a part smaller than the default.
+double _grown(double scale, double room) =>
+    scale <= 1 ? scale : room.clamp(1.0, scale);
 
 /// The other timers one under another, scrolling under the edge fade once
 /// they do not fit.
@@ -611,6 +655,7 @@ class _Chip extends StatelessWidget {
     required this.background,
     required this.foreground,
     this.large = false,
+    this.scale = 1,
   });
 
   final IconData icon;
@@ -618,12 +663,13 @@ class _Chip extends StatelessWidget {
   final Color background;
   final Color foreground;
   final bool large;
+  final double scale;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: EdgeInsets.symmetric(
-      horizontal: large ? 12 : 9,
-      vertical: large ? 4 : 2,
+      horizontal: (large ? 12 : 9) * scale,
+      vertical: (large ? 4 : 2) * scale,
     ),
     decoration: ShapeDecoration(
       color: background,
@@ -632,14 +678,17 @@ class _Chip extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: large ? 16 : 13, color: foreground),
-        SizedBox(width: large ? 7 : 5),
+        Icon(icon, size: (large ? 16 : 13) * scale, color: foreground),
+        SizedBox(width: (large ? 7 : 5) * scale),
         Flexible(
           child: Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: large ? 15 : 12.5, color: foreground),
+            style: TextStyle(
+              fontSize: (large ? 15 : 12.5) * scale,
+              color: foreground,
+            ),
           ),
         ),
       ],
@@ -655,12 +704,16 @@ class _NameLine extends StatelessWidget {
     required this.fontSize,
     this.large = false,
     this.centered = false,
+    this.scale = 1,
   });
 
   final VoiceTimer timer;
   final double fontSize;
   final bool large;
   final bool centered;
+
+  /// The size of the chips and of Paused beside the name.
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
@@ -672,6 +725,22 @@ class _NameLine extends StatelessWidget {
     );
   }
 
+  /// How wide [text] draws at [size].
+  double _textWidth(BuildContext context, String text, double size) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: DefaultTextStyle.of(context).style.copyWith(fontSize: size),
+      ),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width + 1;
+  }
+
   Widget _row(
     BuildContext context,
     ColorScheme scheme,
@@ -679,55 +748,122 @@ class _NameLine extends StatelessWidget {
     _Tone tone,
     double width,
   ) {
-    // With a kiosk name beside it, the timer's name keeps half the line at
-    // most and the kiosk's name gets what is left.
+    final name = _nameOf(context, timer);
     final shared = timer.origin.isNotEmpty;
-    return Row(
-      mainAxisSize: centered ? MainAxisSize.min : MainAxisSize.max,
-      children: [
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: width.isFinite ? width * (shared ? .5 : .7) : 400,
-          ),
-          child: Text(
-            _nameOf(context, timer),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: fontSize,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        if (timer.origin.isNotEmpty) ...[
-          SizedBox(width: large ? 12 : 8),
-          Flexible(
-            child: _Chip(
-              icon: Icons.home_outlined,
-              label: timer.origin,
-              background: scheme.primaryContainer,
-              foreground: scheme.onPrimaryContainer,
-              large: large,
-            ),
-          ),
-        ],
-        if (tone == _Tone.finished) ...[
-          SizedBox(width: large ? 12 : 8),
-          _Chip(
+    final gap = (large ? 12 : 8) * scale;
+    final small = (large ? 15 : 12.5) * scale;
+    // A chip's padding, icon and the gap after the icon.
+    final chipExtra = (large ? 12 * 2 + 16 + 7 : 9 * 2 + 13 + 5) * scale;
+    final finished = tone == _Tone.finished;
+    final status = switch (tone) {
+      _Tone.finished => s.voiceTimerTimesUp,
+      _Tone.paused => s.voiceTimerPaused,
+      _Tone.running => null,
+    };
+    final originChip = _Chip(
+      icon: Icons.home_outlined,
+      label: timer.origin,
+      background: scheme.primaryContainer,
+      foreground: scheme.onPrimaryContainer,
+      large: large,
+      scale: scale,
+    );
+    final Widget? trail = status == null
+        ? null
+        : finished
+        ? _Chip(
             icon: Icons.notifications_active_outlined,
-            label: s.voiceTimerTimesUp,
+            label: status,
             background: scheme.errorContainer,
             foreground: scheme.onErrorContainer,
             large: large,
-          ),
-        ] else if (tone == _Tone.paused) ...[
-          SizedBox(width: large ? 12 : 8),
-          Text(
-            s.voiceTimerPaused,
-            style: TextStyle(
-              fontSize: large ? 15 : 12.5,
-              color: scheme.tertiary,
+            scale: scale,
+          )
+        : Text(
+            status,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: small, color: scheme.tertiary),
+          );
+    final statusWidth = status == null
+        ? 0.0
+        : _textWidth(context, status, small) + (finished ? chipExtra : 0);
+    Widget nameText(double maxWidth) => ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: max(0, maxWidth)),
+      child: Text(
+        name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: fontSize, color: scheme.onSurfaceVariant),
+      ),
+    );
+    // The first timer's name keeps the whole width: what goes beside it
+    // moves under it when the line is too long, as with a large scale.
+    if (centered && width.isFinite && (shared || trail != null)) {
+      final whole =
+          _textWidth(context, name, fontSize) +
+          (shared
+              ? gap + _textWidth(context, timer.origin, small) + chipExtra
+              : 0) +
+          (trail != null ? gap + statusWidth : 0);
+      if (whole > width) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            nameText(width),
+            SizedBox(height: 6 * scale),
+            // The kiosk's name shortens to leave Time's up or Paused in
+            // full. Each goes on a line of its own should even that not fit.
+            if (!shared ||
+                trail == null ||
+                statusWidth + gap + 56 * scale <= width)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (shared) Flexible(child: originChip),
+                  if (shared && trail != null) SizedBox(width: gap),
+                  if (trail != null) shared ? trail : Flexible(child: trail),
+                ],
+              )
+            else
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: gap,
+                runSpacing: 6 * scale,
+                children: [originChip, trail],
+              ),
+          ],
+        );
+      }
+    }
+    // With a kiosk name beside it, the timer's name keeps half the line at
+    // most and the kiosk's name gets what is left. Time's up and Paused
+    // always show in full: a long name gives way, and so does the kiosk's
+    // name down to its icon. Alone on its line, the name takes all of it.
+    var nameWidth = width.isFinite
+        ? width * (shared ? .5 : (trail != null ? .7 : 1))
+        : 400.0;
+    if (trail != null && width.isFinite) {
+      nameWidth = min(
+        nameWidth,
+        width - gap - statusWidth - (shared ? gap + 56 * scale : 0),
+      );
+    }
+    return Row(
+      mainAxisSize: centered ? MainAxisSize.min : MainAxisSize.max,
+      children: [
+        nameText(nameWidth),
+        if (shared) ...[SizedBox(width: gap), Flexible(child: originChip)],
+        if (trail != null) ...[
+          SizedBox(width: gap),
+          // On a line too narrow even for it, it shortens too.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: width.isFinite
+                  ? max(0, width - gap - (shared ? gap + 56 * scale : 0))
+                  : double.infinity,
             ),
+            child: trail,
           ),
         ],
       ],
@@ -745,6 +881,7 @@ class _Hero extends StatelessWidget {
     required this.now,
     required this.layout,
     required this.alone,
+    required this.scale,
     this.onEdit,
   });
 
@@ -753,6 +890,9 @@ class _Hero extends StatelessWidget {
   final DateTime now;
   final _Layout layout;
   final bool alone;
+
+  /// Timers view scale: the name, the bar and the buttons.
+  final double scale;
 
   /// A tap on the time opens the wheels. Null where it cannot be changed.
   final VoidCallback? onEdit;
@@ -769,148 +909,177 @@ class _Hero extends StatelessWidget {
     // On a phone the two buttons share the width, however narrow.
     final narrow = layout == _Layout.stacked;
     Widget fit(Widget button) => narrow ? Expanded(child: button) : button;
-    final buttonStyle = ButtonStyle(
-      minimumSize: WidgetStatePropertyAll(
-        Size(narrow ? 0 : (tablet ? 148 : 124), tablet ? 60 : 52),
-      ),
-      padding: WidgetStatePropertyAll(
-        EdgeInsets.symmetric(horizontal: narrow ? 12 : (tablet ? 32 : 24)),
-      ),
-      textStyle: WidgetStatePropertyAll(
-        TextStyle(
-          fontFamily: Ks.displayFont,
-          fontSize: tablet ? 18 : 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
     return LayoutBuilder(
       builder: (context, box) {
         // The time takes what the name, the bar and the buttons leave,
         // and no more than its width allows.
-        final nameSize = tablet ? (alone ? 32.0 : 28.0) : 21.0;
-        final barHeight = tablet ? 12.0 : 8.0;
-        final buttons = tablet ? 60.0 : 52.0;
+        final nameBase = tablet ? (alone ? 32.0 : 28.0) : 21.0;
+        final barBase = tablet ? 12.0 : 8.0;
+        final buttonsBase = tablet ? 60.0 : 52.0;
         final gaps = tablet ? 84.0 : 56.0;
-        final free =
-            box.maxHeight - nameSize * 1.3 - barHeight - buttons - gaps;
+        // What the scale grows: the name's line, the bar and the buttons.
+        final grows = nameBase * 1.3 + barBase + buttonsBase;
+        // Above 100 percent they grow while the time keeps at least 30
+        // percent of the height, and on a phone while the two buttons
+        // still show their labels.
+        final k = _grown(
+          scale,
+          min(
+            (box.maxHeight * .7 - gaps) / grows,
+            narrow ? box.maxWidth / 250 : double.infinity,
+          ),
+        );
+        final nameSize = nameBase * k;
+        final barHeight = barBase * k;
+        final buttons = buttonsBase * k;
+        final free = box.maxHeight - grows * k - gaps;
         final width = min(box.maxWidth, tablet ? 1080.0 : 640.0);
         // Eight glyphs of Rubik's tabular digits run about 4.6 em wide.
         final timeSize = max(40.0, min(free, width / 4.6));
+        final buttonStyle = ButtonStyle(
+          minimumSize: WidgetStatePropertyAll(
+            Size(narrow ? 0 : (tablet ? 148 : 124) * k, buttons),
+          ),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.symmetric(
+              horizontal: (narrow ? 12 : (tablet ? 32 : 24)) * k,
+            ),
+          ),
+          iconSize: WidgetStatePropertyAll(18 * k),
+          textStyle: WidgetStatePropertyAll(
+            TextStyle(
+              fontFamily: Ks.displayFont,
+              fontSize: (tablet ? 18 : 16) * k,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        );
         final finished = tone == _Tone.finished;
+        // Should the parts still not fit, as with a long name on a short
+        // screen, the whole timer shrinks rather than overflow.
         return Center(
-          child: SizedBox(
-            width: width,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _NameLine(
-                  timer: timer,
-                  fontSize: nameSize,
-                  large: tablet,
-                  centered: true,
-                ),
-                SizedBox(height: tablet ? 10 : 6),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onEdit,
-                  child: Semantics(
-                    button: onEdit != null,
-                    hint: onEdit == null ? null : s.voiceTimerEditTimer,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        voiceTimerClock(timer.remaining(now)),
-                        key: const ValueKey('timers-hero-time'),
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontFamily: Ks.displayFont,
-                          fontSize: timeSize,
-                          height: 1,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: -timeSize * .012,
-                          fontFeatures: _digits,
-                          color: tone == _Tone.running
-                              ? scheme.onSurface
-                              : color,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: SizedBox(
+              width: width,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _NameLine(
+                    timer: timer,
+                    fontSize: nameSize,
+                    large: tablet,
+                    centered: true,
+                    scale: k,
+                  ),
+                  SizedBox(height: tablet ? 10 : 6),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onEdit,
+                    child: Semantics(
+                      button: onEdit != null,
+                      hint: onEdit == null ? null : s.voiceTimerEditTimer,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          voiceTimerClock(timer.remaining(now)),
+                          key: const ValueKey('timers-hero-time'),
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontFamily: Ks.displayFont,
+                            fontSize: timeSize,
+                            height: 1,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: -timeSize * .012,
+                            fontFeatures: _digits,
+                            color: tone == _Tone.running
+                                ? scheme.onSurface
+                                : color,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(height: tablet ? 26 : 18),
-                FractionallySizedBox(
-                  widthFactor: tablet ? .86 : 1,
-                  child: _Bar(
-                    value: finished ? 0 : timer.progress(now),
-                    color: color,
-                    height: barHeight,
+                  SizedBox(height: tablet ? 26 : 18),
+                  FractionallySizedBox(
+                    widthFactor: tablet ? .86 : 1,
+                    child: _Bar(
+                      value: finished ? 0 : timer.progress(now),
+                      color: color,
+                      height: barHeight,
+                    ),
                   ),
-                ),
-                SizedBox(height: tablet ? 30 : 22),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: finished
-                      ? [
-                          fit(
-                            FilledButton.icon(
-                              key: const ValueKey('timers-dismiss'),
-                              style: buttonStyle.copyWith(
-                                backgroundColor: WidgetStatePropertyAll(
-                                  scheme.error,
+                  SizedBox(height: tablet ? 30 : 22),
+                  _fitRow(
+                    narrow,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: narrow
+                          ? MainAxisSize.max
+                          : MainAxisSize.min,
+                      children: finished
+                          ? [
+                              fit(
+                                FilledButton.icon(
+                                  key: const ValueKey('timers-dismiss'),
+                                  style: buttonStyle.copyWith(
+                                    backgroundColor: WidgetStatePropertyAll(
+                                      scheme.error,
+                                    ),
+                                    foregroundColor: WidgetStatePropertyAll(
+                                      scheme.onError,
+                                    ),
+                                  ),
+                                  onPressed: () =>
+                                      timers.control(timer.id, 'dismiss'),
+                                  icon: const Icon(Icons.check),
+                                  label: Text(s.voiceTimerDismiss),
                                 ),
-                                foregroundColor: WidgetStatePropertyAll(
-                                  scheme.onError,
+                              ),
+                            ]
+                          : [
+                              fit(
+                                OutlinedButton.icon(
+                                  key: const ValueKey('timers-hero-pause'),
+                                  style: buttonStyle,
+                                  onPressed: () => timers.control(
+                                    timer.id,
+                                    timer.active ? 'pause' : 'resume',
+                                  ),
+                                  icon: Icon(
+                                    timer.active
+                                        ? Icons.pause_rounded
+                                        : Icons.play_arrow_rounded,
+                                  ),
+                                  label: Text(
+                                    timer.active
+                                        ? s.voiceTimerPause
+                                        : s.voiceTimerResume,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
-                              onPressed: () =>
-                                  timers.control(timer.id, 'dismiss'),
-                              icon: const Icon(Icons.check),
-                              label: Text(s.voiceTimerDismiss),
-                            ),
-                          ),
-                        ]
-                      : [
-                          fit(
-                            OutlinedButton.icon(
-                              key: const ValueKey('timers-hero-pause'),
-                              style: buttonStyle,
-                              onPressed: () => timers.control(
-                                timer.id,
-                                timer.active ? 'pause' : 'resume',
+                              SizedBox(width: 14 * k),
+                              fit(
+                                OutlinedButton.icon(
+                                  key: const ValueKey('timers-hero-cancel'),
+                                  style: buttonStyle,
+                                  onPressed: () =>
+                                      timers.control(timer.id, 'cancel'),
+                                  icon: const Icon(Icons.close),
+                                  label: Text(
+                                    s.commonCancel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ),
-                              icon: Icon(
-                                timer.active
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                              ),
-                              label: Text(
-                                timer.active
-                                    ? s.voiceTimerPause
-                                    : s.voiceTimerResume,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          fit(
-                            OutlinedButton.icon(
-                              key: const ValueKey('timers-hero-cancel'),
-                              style: buttonStyle,
-                              onPressed: () =>
-                                  timers.control(timer.id, 'cancel'),
-                              icon: const Icon(Icons.close),
-                              label: Text(
-                                s.commonCancel,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                ),
-              ],
+                            ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -918,6 +1087,11 @@ class _Hero extends StatelessWidget {
     );
   }
 }
+
+/// The hero's buttons: shared across the width on a phone, and otherwise
+/// shrunk to fit should a large scale and long labels not.
+Widget _fitRow(bool narrow, Widget row) =>
+    narrow ? row : FittedBox(fit: BoxFit.scaleDown, child: row);
 
 /// One of the other timers.
 class _TimerCard extends StatelessWidget {
@@ -927,9 +1101,18 @@ class _TimerCard extends StatelessWidget {
     required this.timer,
     required this.now,
     required this.roomy,
+    this.scale = 1,
     this.width,
     this.onEdit,
   });
+
+  /// The width a card needs at a scale of 1 for its padding, its time in
+  /// full and its two buttons.
+  static double widthFor({required bool roomy}) => roomy ? 316 : 254;
+
+  /// The height of the row of cards under a tablet's first timer at a
+  /// scale of 1.
+  static const rowHeight = 142.0;
 
   final AppContainer container;
   final VoiceTimer timer;
@@ -941,6 +1124,9 @@ class _TimerCard extends StatelessWidget {
 
   /// The tablet's card: larger type and more air.
   final bool roomy;
+
+  /// Timers view scale, as far as the room for the cards allows.
+  final double scale;
   final double? width;
 
   @override
@@ -955,8 +1141,11 @@ class _TimerCard extends StatelessWidget {
         IconButton.filledTonal(
           icon: Icon(icon),
           tooltip: '$tooltip: $name',
-          iconSize: 20,
-          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+          iconSize: 20 * scale,
+          constraints: BoxConstraints.tightFor(
+            width: 44 * scale,
+            height: 44 * scale,
+          ),
           style: IconButton.styleFrom(
             backgroundColor: scheme.surfaceContainerHighest,
             foregroundColor: scheme.onSurface,
@@ -965,9 +1154,11 @@ class _TimerCard extends StatelessWidget {
         );
     return Container(
       width: width,
-      padding: roomy
-          ? const EdgeInsets.fromLTRB(24, 18, 18, 20)
-          : const EdgeInsets.fromLTRB(16, 12, 12, 14),
+      padding:
+          (roomy
+              ? const EdgeInsets.fromLTRB(24, 18, 18, 20)
+              : const EdgeInsets.fromLTRB(16, 12, 12, 14)) *
+          scale,
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(roomy ? Ks.radiusCard : 18),
@@ -986,7 +1177,11 @@ class _TimerCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _NameLine(timer: timer, fontSize: roomy ? 17 : 14),
+                      _NameLine(
+                        timer: timer,
+                        fontSize: (roomy ? 17 : 14) * scale,
+                        scale: scale,
+                      ),
                       // A large text scale shrinks the time before it clips.
                       FittedBox(
                         fit: BoxFit.scaleDown,
@@ -996,7 +1191,7 @@ class _TimerCard extends StatelessWidget {
                           maxLines: 1,
                           style: TextStyle(
                             fontFamily: Ks.displayFont,
-                            fontSize: roomy ? 42 : 30,
+                            fontSize: (roomy ? 42 : 30) * scale,
                             height: 1.15,
                             fontWeight: FontWeight.w500,
                             fontFeatures: _digits,
@@ -1010,7 +1205,7 @@ class _TimerCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8 * scale),
               if (tone == _Tone.finished)
                 action(Icons.check, s.voiceTimerDismiss, 'dismiss')
               else ...[
@@ -1019,16 +1214,16 @@ class _TimerCard extends StatelessWidget {
                   timer.active ? s.voiceTimerPause : s.voiceTimerResume,
                   timer.active ? 'pause' : 'resume',
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6 * scale),
                 action(Icons.close, s.commonCancel, 'cancel'),
               ],
             ],
           ),
-          SizedBox(height: roomy ? 14 : 10),
+          SizedBox(height: (roomy ? 14 : 10) * scale),
           _Bar(
             value: tone == _Tone.finished ? 0 : timer.progress(now),
             color: color,
-            height: roomy ? 6 : 4,
+            height: (roomy ? 6 : 4) * scale,
           ),
         ],
       ),

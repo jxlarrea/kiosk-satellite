@@ -544,4 +544,87 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('Timers view scale grows the name and the buttons, and a '
+      'change shows at once', (tester) async {
+    await size(tester, const Size(1280, 800));
+    await tester.pumpWidget(app());
+    await snapshot([timer('one', 600, name: 'Eggs')]);
+    await tester.pump();
+    double nameSize() =>
+        tester.widget<Text>(find.text('Eggs')).style!.fontSize!;
+    double pauseHeight() =>
+        tester.getSize(find.byKey(const ValueKey('timers-hero-pause'))).height;
+    expect(nameSize(), 32);
+    expect(pauseHeight(), 60);
+    await c.settings.set(defs.timersViewScale, 150);
+    await tester.pump();
+    await tester.pump();
+    expect(nameSize(), 48);
+    expect(pauseHeight(), 90);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await snapshot([]);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  for (final (label, screen) in const [
+    ('a tablet', Size(1280, 800)),
+    ('an Echo Show 8', Size(960, 600)),
+    ('an Echo Show 5', Size(787, 393)),
+    ('a phone', Size(390, 844)),
+    ('a small phone', Size(320, 568)),
+  ]) {
+    for (final scale in const [75, 200]) {
+      testWidgets('at $scale percent nothing overlaps on $label', (
+        tester,
+      ) async {
+        await size(tester, screen);
+        await c.settings.set(defs.timersViewScale, scale);
+        await tester.pumpWidget(app());
+        await snapshot([
+          for (var i = 0; i < 6; i++)
+            timer('$i', 300 + i * 600, name: 'A rather long timer name $i'),
+        ]);
+        // A shared timer rings, with the longest line a name can have.
+        c.voiceTimers.setShared(
+          'kitchen',
+          name: 'Kitchen tablet by the window',
+          timers: const [],
+          alerts: [
+            VoiceTimer.parse(
+              timer('k0', 0, name: 'Spaghetti carbonara sauce'),
+            )!,
+          ],
+          muted: true,
+        );
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        expect(heroTime(tester), '00:00:00');
+        final list = tester.getRect(find.byKey(const ValueKey('timers-list')));
+        for (final key in const ['timers-hero-time', 'timers-dismiss']) {
+          final rect = tester.getRect(find.byKey(ValueKey(key)));
+          expect(rect.overlaps(list), isFalse, reason: key);
+          expect(
+            Offset.zero & screen,
+            isA<Rect>().having(
+              (r) => r.intersect(rect) == rect,
+              'holds',
+              isTrue,
+            ),
+            reason: key,
+          );
+        }
+        c.voiceTimers.setShared(
+          'kitchen',
+          name: 'Kitchen tablet by the window',
+          timers: const [],
+          alerts: const [],
+        );
+        await tester.pumpWidget(const SizedBox());
+        await snapshot([]);
+        await tester.pump(const Duration(seconds: 3));
+      });
+    }
+  }
 }

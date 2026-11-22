@@ -15761,6 +15761,13 @@ class UiStringsRu extends UiStrings {
       'Заставка не запускается, пока вид таймеров показывает идущий таймер.';
 
   @override
+  String get settingTimersViewScaleTitle => 'Масштаб вида таймеров';
+
+  @override
+  String get settingTimersViewScaleDescription =>
+      'Размер названий таймеров и кнопок в виде таймеров.';
+
+  @override
   String get settingTimersSilenceAfterTitle => 'Замолкание через';
 
   @override
