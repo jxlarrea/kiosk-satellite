@@ -7,6 +7,8 @@
   "settingScreensaverImmichTransitionDescription": "Як один елемент змінює інший.",
   "settingScreensaverImmichFillTitle": "Заповнювати екран",
   "settingScreensaverImmichFillDescription": "Вимкнено залишає фото повністю між чорними смугами. Розумне збільшує фото, близькі за пропорціями до екрана, розміщуючи решту на розмитому фоні. Завжди масштабує кожне фото, обрізаючи зайве.",
+  "settingScreensaverImmichCropFacesTitle": "Обрізати навколо облич",
+  "settingScreensaverImmichCropFacesDescription": "Фото, обрізані для заповнення екрана, залишають у кадрі обличчя, знайдені Immich. Потрібен дозвіл face.read.",
   "settingScreensaverImmichPairPortraitTitle": "Об'єднувати портретні фото",
   "settingScreensaverImmichPairPortraitDescription": "Показувати два портретні фото поруч, щоб заповнити екран.",
   "settingScreensaverImmichPairLandscapeTitle": "Об'єднувати альбомні фото",

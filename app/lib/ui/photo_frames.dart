@@ -50,6 +50,135 @@ bool photoCovers(String fill, double? aspect, double frameAspect) {
   return max(aspect / frameAspect, frameAspect / aspect) <= 1.45;
 }
 
+/// Where a cover-fit photo sits in its frame so the faces in it stay in
+/// view (issue #1552).
+///
+/// [crop] is the alignment to give the cover-fit image. [focus] is where
+/// the faces land in the frame, as an alignment of the frame itself, which
+/// is the point a Ken Burns zoom holds still so it never pushes them out.
+typedef PhotoFraming = ({Alignment crop, Alignment focus});
+
+/// Faces shorter than this share of the tallest one are people in the
+/// background, and do not move the crop.
+const _backgroundFace = 0.4;
+
+/// The share of the crop window above the faces' center along a cropped
+/// height: a little above the middle, where a portrait puts the eyes.
+const _faceHeight = 0.4;
+
+/// Whether a photo of [aspect] that covers a frame of [frameAspect] loses
+/// any of itself to the crop: a shape a hair from the frame's shows whole
+/// either way, and has nothing to frame.
+bool photoCropped(double? aspect, double frameAspect) =>
+    aspect != null &&
+    aspect > 0 &&
+    frameAspect > 0 &&
+    (aspect / frameAspect - 1).abs() >= 0.01;
+
+/// The framing that keeps [faces] (fractions of the photo, 0 to 1 across
+/// and down) in view when a photo of [aspect] covers a frame of
+/// [frameAspect], or null when the centered crop stands: no faces, a shape
+/// that could not be read or nothing cropped.
+///
+/// Only the cropped axis moves. A crop across centers the window on the
+/// faces. A crop down puts them a little above the middle and, for a group
+/// too tall for the window, keeps the top of it, since a cut chin reads
+/// better than a cut forehead. Each face is grown to roughly the head and
+/// shoulders around it first, so the crop does not stop at the eyebrows.
+PhotoFraming? photoFraming(
+  List<Rect> faces,
+  double? aspect,
+  double frameAspect,
+) {
+  if (faces.isEmpty || !photoCropped(aspect, frameAspect)) return null;
+  final ratio = aspect! / frameAspect;
+  final tallest = faces.map((f) => f.height).reduce(max);
+  final kept = [
+    for (final f in faces)
+      if (f.height >= tallest * _backgroundFace) f,
+  ];
+  final heads = kept.reduce((a, b) => a.expandToInclude(b));
+  final shoulders = kept
+      .map(
+        (f) => Rect.fromLTRB(
+          f.left - f.width * 0.3,
+          f.top - f.height * 0.5,
+          f.right + f.width * 0.3,
+          f.bottom + f.height * 0.7,
+        ),
+      )
+      .reduce((a, b) => a.expandToInclude(b))
+      .intersect(const Rect.fromLTRB(0, 0, 1, 1));
+  final center = heads.center;
+  if (ratio > 1) {
+    // Wider than the frame: the sides are cut, the window spans 1/ratio.
+    final span = 1 / ratio;
+    final start = _cropStart(
+      shoulders.left,
+      shoulders.right,
+      center.dx,
+      span,
+      at: 0.5,
+      keepStart: false,
+    );
+    return (
+      crop: Alignment(_alignmentOf(start, span), 0),
+      focus: Alignment(
+        _frameAlignment(center.dx, start, span),
+        center.dy * 2 - 1,
+      ),
+    );
+  }
+  // Taller than the frame: the top and bottom are cut.
+  final span = ratio;
+  final start = _cropStart(
+    shoulders.top,
+    shoulders.bottom,
+    center.dy,
+    span,
+    at: _faceHeight,
+    keepStart: true,
+  );
+  return (
+    crop: Alignment(0, _alignmentOf(start, span)),
+    focus: Alignment(
+      center.dx * 2 - 1,
+      _frameAlignment(center.dy, start, span),
+    ),
+  );
+}
+
+/// Where a window of [span] starts along one axis of the photo, so the
+/// faces' [center] sits [at] its length, moved as little as needed to keep
+/// the padded faces from [lo] to [hi] whole. Faces too long for the window
+/// keep their start with [keepStart], or stay centered without it.
+double _cropStart(
+  double lo,
+  double hi,
+  double center,
+  double span, {
+  required double at,
+  required bool keepStart,
+}) {
+  final double start;
+  if (hi - lo > span) {
+    start = keepStart ? lo : (lo + hi - span) / 2;
+  } else {
+    start = (center - span * at).clamp(hi - span, lo);
+  }
+  return start.clamp(0.0, 1.0 - span);
+}
+
+/// The alignment that puts a window of [span] starting at [start] in view:
+/// -1 shows the start of the photo, 1 its end.
+double _alignmentOf(double start, double span) =>
+    span >= 1 ? 0 : (start / (1 - span) * 2 - 1).clamp(-1.0, 1.0);
+
+/// Where [at] (a fraction of the photo) lands across the frame showing the
+/// window from [start], as an alignment of the frame.
+double _frameAlignment(double at, double start, double span) =>
+    ((at - start) / span * 2 - 1).clamp(-1.0, 1.0);
+
 Future<double?> photoAspect(Uint8List bytes) async {
   final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
   try {

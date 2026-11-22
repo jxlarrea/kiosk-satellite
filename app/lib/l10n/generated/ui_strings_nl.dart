@@ -13115,6 +13115,14 @@ class UiStringsNl extends UiStrings {
       'Uit toont de volledige foto met zwarte balken ernaast. Slim vergroot foto\'s met een beeldverhouding die dicht bij die van het scherm ligt; de rest wordt tegen een vervaagde achtergrond getoond. Altijd vergroot elke foto en snijdt af wat niet op het scherm past.';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle =>
+      'Bijsnijden rond gezichten';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      'Foto\'s die worden bijgesneden om het scherm te vullen, houden de gezichten die Immich heeft gevonden in beeld. Vereist de machtiging face.read.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Portretfoto\'s combineren';
 

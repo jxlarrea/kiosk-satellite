@@ -13205,6 +13205,14 @@ class UiStringsFr extends UiStrings {
       '« Désactivé » garde la photo entière entre des bandes noires. « Intelligent » agrandit les photos dont la forme est proche de celle de l\'écran et encadre les autres sur un arrière-plan flouté. « Toujours » agrandit chaque photo en coupant ce qui dépasse.';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle =>
+      'Recadrer autour des visages';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      'Les photos recadrées pour remplir l\'écran gardent en vue les visages détectés par Immich. Nécessite l\'autorisation face.read.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Associer les photos portrait';
 

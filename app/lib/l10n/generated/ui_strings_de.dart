@@ -13239,6 +13239,14 @@ class UiStringsDe extends UiStrings {
       'Deaktiviert zeigt das vollständige Foto mit schwarzen Balken an. Intelligent vergrößert Fotos mit einem ähnlichen Seitenverhältnis wie der Bildschirm und zeigt andere auf einem unscharfen Hintergrund an. Immer vergrößert alle Fotos und schneidet überstehende Bereiche ab.';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle =>
+      'Um Gesichter herum zuschneiden';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      'Fotos, die zum Ausfüllen des Bildschirms zugeschnitten werden, behalten die von Immich erkannten Gesichter im Bild. Erfordert die Berechtigung face.read.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Hochformatfotos kombinieren';
 

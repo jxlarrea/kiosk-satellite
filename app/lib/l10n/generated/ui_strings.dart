@@ -22672,6 +22672,18 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Crop around faces'**
+  String get settingScreensaverImmichCropFacesTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos cropped to fill the screen keep the faces Immich found in view. Needs the face.read permission.'**
+  String get settingScreensaverImmichCropFacesDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Pair portrait photos'**
   String get settingScreensaverImmichPairPortraitTitle;
 

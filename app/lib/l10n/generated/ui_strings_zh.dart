@@ -12352,6 +12352,13 @@ class UiStringsZh extends UiStrings {
       '“关闭”：完整显示照片，空白处显示黑边。“智能”：照片宽高比与屏幕接近时放大填充；其余照片完整显示，空白处使用模糊背景。“始终”：放大照片填满屏幕，超出部分会被裁掉。';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle => '围绕人脸裁剪';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      '为填满屏幕而裁剪的照片会保留 Immich 识别出的人脸。需要 face.read 权限。';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle => '配对竖向照片';
 
   @override
@@ -28601,6 +28608,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingScreensaverImmichFillDescription =>
       '“关闭”：完整显示照片，空白处显示黑边。“智能”：照片宽高比与屏幕接近时放大填充；其余照片完整显示，空白处使用模糊背景。“始终”：放大照片填满屏幕，超出部分会被裁掉。';
+
+  @override
+  String get settingScreensaverImmichCropFacesTitle => '围绕人脸裁剪';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      '为填满屏幕而裁剪的照片会保留 Immich 识别出的人脸。需要 face.read 权限。';
 
   @override
   String get settingScreensaverImmichPairPortraitTitle => '配对竖向照片';

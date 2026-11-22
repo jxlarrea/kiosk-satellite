@@ -5334,10 +5334,22 @@ class ImmichScreensaver extends StatefulWidget {
 }
 
 class _ImmichSlide {
-  _ImmichSlide(this.photo, this.pair, this.pairIndex, this.pairing);
+  _ImmichSlide(
+    this.photo,
+    this.pair,
+    this.pairIndex,
+    this.pairing, {
+    this.faces = const [],
+    this.pairFaces = const [],
+  });
   final PreparedPhoto photo;
   final PreparedPhoto? pair;
   final int? pairIndex;
+
+  /// The faces in each photo, for Crop around faces. Empty for a photo
+  /// shown whole, with the setting off or when Immich found none.
+  final List<Rect> faces;
+  final List<Rect> pairFaces;
 
   /// How the two halves share the screen, null without a pair.
   final ImmichPairing? pairing;
@@ -5364,6 +5376,11 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
   /// Width over height of the current image, or null when unknown; feeds
   /// the fill-the-screen decision.
   double? _imageAspect;
+
+  /// The faces in the current photo and in its partner, which move the
+  /// crop off center (Crop around faces).
+  List<Rect> _faces = const [];
+  List<Rect> _pairFaces = const [];
 
   /// The second half of a pair of photos: the playlist index right after
   /// [_index], its decoded provider and its aspect. Null whenever one photo
@@ -5466,6 +5483,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     _watchPhotoScreen(c);
     _watchPhotoSettings(c, {
       defs.screensaverImmichFill.key,
+      defs.screensaverImmichCropFaces.key,
       defs.screensaverImmichTransition.key,
       defs.screensaverImmichInterval.key,
       defs.screensaverImmichPairPortrait.key,
@@ -5679,6 +5697,8 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
           _photo = null;
           _pairPhoto = null;
           _image = null;
+          _faces = const [];
+          _pairFaces = const [];
           _pairIndex = null;
           _pairImage = null;
           _pairAspect = null;
@@ -5738,6 +5758,8 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
         _pairPhoto = slide.pair;
         _imageAspect = slide.photo.aspect;
         _image = slide.photo.image;
+        _faces = slide.faces;
+        _pairFaces = slide.pairFaces;
         _pairIndex = slide.pairIndex;
         _pairImage = slide.pair?.image;
         _pairAspect = slide.pair?.aspect;
@@ -5872,7 +5894,33 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     c.settings.get(defs.screensaverImmichTransition),
     c.settings.get(defs.screensaverImmichPairPortrait),
     c.settings.get(defs.screensaverImmichPairLandscape),
+    c.settings.get(defs.screensaverImmichCropFaces),
   );
+
+  /// How long a slide waits on Immich for its faces once the photo has
+  /// decoded. A slower server shows the photo centered, and the answer it
+  /// sends later is kept for the next lap.
+  static const _faceWait = Duration(seconds: 2);
+
+  /// The faces in [asset] when Crop around faces is on and the photo will
+  /// be cropped in a frame of [frameAspect]. Started before the decode so
+  /// the two overlap. A photo shown whole asks nothing of the server.
+  Future<List<Rect>> _facesFor(
+    ImmichAsset asset,
+    String fill,
+    double? aspect,
+    double frameAspect,
+  ) {
+    if (!c.settings.get(defs.screensaverImmichCropFaces) ||
+        !photoCovers(fill, aspect, frameAspect) ||
+        !photoCropped(aspect, frameAspect)) {
+      return Future.value(const []);
+    }
+    return c.immich.faces(asset);
+  }
+
+  Future<List<Rect>> _awaitFaces(Future<List<Rect>> faces) =>
+      faces.timeout(_faceWait, onTimeout: () => const []);
 
   Future<_ImmichSlide> _prepareSlide(int index, bool Function() valid) async {
     bool current() => mounted && valid();
@@ -5906,6 +5954,11 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
       'zoom',
       'random',
     ].contains(c.settings.get(defs.screensaverImmichTransition));
+    final frameAspect = frame.height == 0 ? 1.0 : frame.width / frame.height;
+    final faces = _facesFor(_assets[index], fill, aspect, frameAspect);
+    final pairFaces = pair == null
+        ? Future.value(const <Rect>[])
+        : _facesFor(_assets[pair.index], fill, pair.aspect, frameAspect);
     final photo = await PreparedPhoto.prepare(
       bytes,
       context: context,
@@ -5930,12 +5983,33 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
               valid: current,
               beforeDecode: _waitForPhotoScreen,
             );
-      return _ImmichSlide(photo, partner, pair?.index, pair?.pairing);
+      final found = await Future.wait([
+        _awaitFaces(faces),
+        _awaitFaces(pairFaces),
+      ]);
+      if (!mounted || !valid()) {
+        partner?.dispose();
+        throw PhotoPreparationCancelled();
+      }
+      return _ImmichSlide(
+        photo,
+        partner,
+        pair?.index,
+        pair?.pairing,
+        faces: found[0],
+        pairFaces: found[1],
+      );
     } catch (e) {
       photo.dispose();
       if (e is PhotoPreparationCancelled || !mounted || !valid()) rethrow;
       // A broken optional partner must not discard the usable first photo.
       c.log.debug('screensaver', 'immich partner decode failed: $e');
+      final singleFaces = _facesFor(
+        _assets[index],
+        fill,
+        aspect,
+        mq.size.height == 0 ? 1 : mq.size.width / mq.size.height,
+      );
       final single = await PreparedPhoto.prepare(
         bytes,
         context: context,
@@ -5946,7 +6020,12 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
         valid: current,
         beforeDecode: _waitForPhotoScreen,
       );
-      return _ImmichSlide(single, null, null, null);
+      final found = await _awaitFaces(singleFaces);
+      if (!mounted || !valid()) {
+        single.dispose();
+        throw PhotoPreparationCancelled();
+      }
+      return _ImmichSlide(single, null, null, null, faces: found);
     }
   }
 
@@ -6051,6 +6130,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     required double frameAspect,
     required int index,
     required String transition,
+    List<Rect> faces = const [],
   }) {
     final fill = PhotoFillOverride.resolve(
       context,
@@ -6058,9 +6138,13 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     );
     final fillWanted = fill != 'off';
     final covers = photoCovers(fill, aspect, frameAspect);
+    // Framed against the frame this build has, not the one the faces were
+    // looked up for, so a rotated panel still crops around them.
+    final framing = covers ? photoFraming(faces, aspect, frameAspect) : null;
     Widget picture = Image(
       image: image,
       fit: covers ? BoxFit.cover : BoxFit.contain,
+      alignment: framing?.crop ?? Alignment.center,
       gaplessPlayback: true,
       errorBuilder: (_, _, _) => const SizedBox.expand(),
     );
@@ -6071,6 +6155,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
       picture = _KenBurnsDrift(
         index: index,
         active: _awake,
+        anchor: framing?.focus,
         duration:
             Duration(
               seconds: c.settings
@@ -6177,6 +6262,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
           frameAspect: size.height == 0 ? 1 : size.width / size.height,
           index: _index,
           transition: transition,
+          faces: _faces,
         );
       } else {
         // Two photos, half the panel each: no gutter between them, since
@@ -6200,6 +6286,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
               frameAspect: half,
               index: _index,
               transition: transition,
+              faces: _faces,
             ),
           ),
           Expanded(
@@ -6210,6 +6297,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
               frameAspect: half,
               index: pairIndex,
               transition: transition,
+              faces: _pairFaces,
             ),
           ),
         ];
@@ -6931,10 +7019,16 @@ class _KenBurnsDrift extends StatefulWidget {
     required this.duration,
     required this.active,
     required this.child,
+    this.anchor,
   });
 
   final bool active;
   final int index;
+
+  /// The point the zoom holds still, in place of the corner [index] picks:
+  /// where the faces of a photo cropped around them land, so the zoom
+  /// cannot push them back out of the frame.
+  final Alignment? anchor;
   final Duration duration;
   final Widget child;
 
@@ -7005,7 +7099,7 @@ class _KenBurnsDriftState extends State<_KenBurnsDrift> {
       animation: _progress,
       builder: (context, child) => Transform.scale(
         scale: 1 + 0.1 * _progress.value,
-        alignment: _anchors[widget.index % _anchors.length],
+        alignment: widget.anchor ?? _anchors[widget.index % _anchors.length],
         child: child,
       ),
       child: widget.child,

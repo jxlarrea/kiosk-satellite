@@ -7,6 +7,8 @@
   "settingScreensaverImmichTransitionDescription": "媒体之间的切换方式。",
   "settingScreensaverImmichFillTitle": "填满屏幕",
   "settingScreensaverImmichFillDescription": "“关闭”：完整显示照片，空白处显示黑边。“智能”：照片宽高比与屏幕接近时放大填充；其余照片完整显示，空白处使用模糊背景。“始终”：放大照片填满屏幕，超出部分会被裁掉。",
+  "settingScreensaverImmichCropFacesTitle": "围绕人脸裁剪",
+  "settingScreensaverImmichCropFacesDescription": "为填满屏幕而裁剪的照片会保留 Immich 识别出的人脸。需要 face.read 权限。",
   "settingScreensaverImmichPairPortraitTitle": "配对竖向照片",
   "settingScreensaverImmichPairPortraitDescription": "将两张竖向照片并排显示以填满屏幕。",
   "settingScreensaverImmichPairLandscapeTitle": "配对横向照片",

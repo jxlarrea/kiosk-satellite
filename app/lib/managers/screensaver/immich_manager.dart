@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show Random;
 import 'dart:typed_data';
+import 'dart:ui' show Rect;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
@@ -249,6 +250,39 @@ double? exifAspect(Object? exifInfo) {
   final orientation = int.tryParse('${exifInfo['orientation'] ?? ''}') ?? 1;
   final turned = orientation >= 5 && orientation <= 8;
   return turned ? height / width : width / height;
+}
+
+/// The face boxes in an answer from Immich's `GET /api/faces?id=`, each as
+/// fractions of the picture it was measured on, so they hold for the
+/// preview the slideshow decodes at any size. Immich detects faces on that
+/// upright preview, so no orientation tag needs undoing. Entries without
+/// usable dimensions are dropped.
+List<Rect> immichFaceBoxes(Object? answer) {
+  if (answer is! List) return const [];
+  final boxes = <Rect>[];
+  for (final face in answer) {
+    if (face is! Map) continue;
+    double? read(String field) => (face[field] as num?)?.toDouble();
+    final width = read('imageWidth');
+    final height = read('imageHeight');
+    final x1 = read('boundingBoxX1');
+    final y1 = read('boundingBoxY1');
+    final x2 = read('boundingBoxX2');
+    final y2 = read('boundingBoxY2');
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      continue;
+    }
+    if (x1 == null || y1 == null || x2 == null || y2 == null) continue;
+    final box = Rect.fromLTRB(
+      x1 / width,
+      y1 / height,
+      x2 / width,
+      y2 / height,
+    ).intersect(const Rect.fromLTRB(0, 0, 1, 1));
+    if (box.width <= 0 || box.height <= 0) continue;
+    boxes.add(box);
+  }
+  return boxes;
 }
 
 /// [assets] reordered so every photo that pairs on this panel is followed
@@ -1449,6 +1483,93 @@ class ImmichManager extends Manager {
     if (_details.length > 300) _details.clear();
     if (generation == _detailsGeneration) _details[asset.id] = out;
     return out;
+  }
+
+  /// Faces found in each asset, kept for the session: a looping playlist
+  /// shows the same photos again and their faces rarely change. Only
+  /// answers that found faces are kept here. A photo without faces goes in
+  /// [_facelessAt] instead, so a face detected later is still picked up.
+  final _faces = <String, List<Rect>>{};
+  final _facelessAt = <String, DateTime>{};
+
+  /// When the key was last refused face.read. Until [faceRetry] passes no
+  /// slide asks again, and a permission granted later is picked up after.
+  DateTime? _facesRefusedAt;
+  Object? _facesScope;
+  int _facesGeneration = 0;
+  final _faceRequests = <(int, String), Future<List<Rect>>>{};
+
+  /// How long a photo without faces, or a key without face.read, waits
+  /// before it is asked about again.
+  static const faceRetry = Duration(minutes: 30);
+
+  /// The faces Immich detected in [asset], each as fractions of the photo
+  /// (0 to 1 across and down), for Crop around faces. Empty when the photo
+  /// has none, the key lacks face.read or the server did not answer: the
+  /// crop then stays centered. Never throws.
+  Future<List<Rect>> faces(ImmichAsset asset) {
+    final scope = (_base, _settings.get(defs.screensaverImmichApiKey));
+    if (scope != _facesScope) {
+      _facesScope = scope;
+      _facesGeneration++;
+      _faces.clear();
+      _facelessAt.clear();
+      _facesRefusedAt = null;
+    }
+    final known = _faces[asset.id];
+    if (known != null) return Future.value(known);
+    final now = clock();
+    bool recent(DateTime? at) => at != null && now.difference(at) < faceRetry;
+    if (recent(_facesRefusedAt) || recent(_facelessAt[asset.id])) {
+      return Future.value(const []);
+    }
+    final generation = _facesGeneration;
+    final key = (generation, asset.id);
+    return _faceRequests.putIfAbsent(key, () async {
+      try {
+        return await _readFaces(asset, generation);
+      } finally {
+        _faceRequests.remove(key);
+      }
+    });
+  }
+
+  Future<List<Rect>> _readFaces(ImmichAsset asset, int generation) async {
+    final List<Rect> found;
+    try {
+      final response = await http
+          .get(Uri.parse('$_base/api/faces?id=${asset.id}'), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 403) {
+        if (generation == _facesGeneration) {
+          if (_facesRefusedAt == null) {
+            log.info(
+              name,
+              'the API key lacks face.read, so photos crop around the '
+              'center',
+            );
+          }
+          _facesRefusedAt = clock();
+        }
+        return const [];
+      }
+      _throwUnlessOk(response, scope: 'face.read');
+      found = immichFaceBoxes(jsonDecode(response.body));
+    } catch (e) {
+      // Uncached: a server that was slow or away is asked on the next lap.
+      log.debug(name, 'faces failed (${asset.id}): $e');
+      return const [];
+    }
+    if (generation != _facesGeneration) return found;
+    _facesRefusedAt = null;
+    if (found.isEmpty) {
+      if (_facelessAt.length > 2000) _facelessAt.clear();
+      _facelessAt[asset.id] = clock();
+    } else {
+      if (_faces.length > 2000) _faces.clear();
+      _faces[asset.id] = found;
+    }
+    return found;
   }
 
   // Localized via the device locale (issue #108): "August 2, 2026" on an

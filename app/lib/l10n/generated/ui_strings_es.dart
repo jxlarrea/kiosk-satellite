@@ -13202,6 +13202,14 @@ class UiStringsEs extends UiStrings {
       'Desactivado mantiene la foto completa entre franjas negras. Inteligente amplía las fotos de proporciones similares a la pantalla y muestra las demás sobre un fondo desenfocado. Siempre amplía todas las fotos y recorta lo que no cabe.';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle =>
+      'Recortar alrededor de las caras';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      'Las fotos recortadas para llenar la pantalla mantienen a la vista las caras que encontró Immich. Requiere el permiso face.read.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Combinar fotos verticales';
 

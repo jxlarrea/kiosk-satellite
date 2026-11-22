@@ -4,7 +4,7 @@ Kiosk Satellite can turn your device into a smart digital photo frame using an [
 
 ## Setup
 
-1. In Immich, generate an API key under **Account Settings > API Keys**. A full access key works great. If you prefer a restricted key, make sure to grant `album.read`, `asset.read`, and `asset.view` permissions. Add `person.read` if you plan to filter by people, and `tag.read` for tag filtering (see [Filters](#filters)). Note that Immich separates viewing from downloading: `asset.view` handles the screen sized previews the screensaver uses, so `asset.download` is not required.
+1. In Immich, generate an API key under **Account Settings > API Keys**. A full access key works great. If you prefer a restricted key, make sure to grant `album.read`, `asset.read`, and `asset.view` permissions. Add `person.read` if you plan to filter by people, `tag.read` for tag filtering (see [Filters](#filters)) and `face.read` for [Crop Around Faces](#crop-around-faces). Note that Immich separates viewing from downloading: `asset.view` handles the screen sized previews the screensaver uses, so `asset.download` is not required.
 2. On your device, go to **Settings > Screensaver** and set the mode to **Immich Media** (or configure this from the Screensaver tab in the remote admin).
 3. Enter your **Server address** (such as `http://immich.local:2283`) and your **API key**, then tap **Validate connection**. Validation tests the exact API endpoints the screensaver depends on, including album listings, asset searches, and preview fetches. If your key is missing a required permission, validation will explicitly name the issue rather than failing silently later. The preview check tests up to five assets from your selected source and passes on the first successful response. Once validated, the remaining settings will unlock. Updating the address or key will require validating again.
 
@@ -23,6 +23,7 @@ The settings page is organized into five main sections: Server Connection, Media
 | Slideshow | Shuffle | off | Displays media in random order instead of the server default (newest first). Each session picks up where the last one stopped, so every item shows once before any repeats. |
 | Slideshow | Transition | Crossfade | Options include none, crossfade, slide, zoom, Ken Burns, or random. |
 | Slideshow | Fill the screen | Smart | Controls how aggressively photos and videos are cropped to fit the screen. |
+| Slideshow | Crop around faces | on | Moves the crop of a photo that fills the screen so the faces Immich found stay in view. Needs the `face.read` permission. Shown when Fill the screen is Smart or Always. |
 | Slideshow | Pair portrait photos | on | Displays two portrait photos side by side in landscape mode. |
 | Slideshow | Pair landscape photos | on | Displays two landscape photos one above the other in portrait mode. |
 | Slideshow | Tap edges to change slides | on | A tap on the left or right fifth of the screen shows the previous or next photo instead of dismissing the screensaver. |
@@ -73,9 +74,20 @@ Most users prefer photos to fill the entire display. The **Fill the screen** set
 
 Videos follow the same rule. A video that is not enlarged keeps black bars instead of the blurred background, since blurring every frame would cost too much on a kiosk.
 
-The **Always** mode has no awareness of a photo's subject, so anything outside the crop area is lost. If a photo features an off center subject like a person or a pet, this setting may crop them out.
+A cropped photo keeps its center, unless **Crop around faces** moves the crop to the people in it (see [Crop Around Faces](#crop-around-faces)). A pet or any other off center subject can still be cropped out, most often with **Always**.
 
 For portrait photos on landscape screens, the **Pair portrait photos** setting provides a much better solution without severe cropping, and **Pair landscape photos** does the same for landscape photos on portrait screens.
+
+## Crop Around Faces
+
+When **Fill the screen** crops a photo, the crop keeps the middle of it. On a portrait photo shown on a landscape screen with **Always**, that is often a torso with the head cut off. With **Crop around faces** on, which is the default, the crop moves to the faces Immich detected in the photo:
+
+* Only the cropped direction moves. A photo cropped at the sides centers on the faces. A photo cropped at the top and bottom puts the faces a little above the middle, and a group too tall to fit keeps the top of it.
+* Small faces in the background do not move the crop.
+* With the **Ken Burns** transition, the zoom holds still on the faces instead of a corner, so it does not push them out of view.
+* A photo with no faces, or one that is shown whole, keeps the centered crop and makes no extra request to the server.
+
+The face positions come from Immich's face detection, so the API key needs the `face.read` permission. Without it, photos crop around the center as before and nothing else changes. The kiosk asks for the faces of a photo only when it will be cropped, and waits for them for up to 2 seconds while the photo loads. Answers are kept for the session. A key without `face.read`, or a photo Immich found no faces in, is asked again after 30 minutes, so a newly granted permission or a newly scanned photo is picked up without a restart.
 
 ## Pair Portrait Photos
 
@@ -127,6 +139,7 @@ The playlist itself is kept in memory between sessions, so a start does not wait
 * **Validation fails with a permission message:** Your API key is restricted. Ensure it has `album.read`, `asset.read`, and `asset.view` permissions enabled in Immich.
 * **"The API key is missing the asset.view permission":** Your key can search assets but cannot fetch previews. Add `asset.view` to the key permissions in Immich. You do not need to generate a new key; changes apply immediately.
 * **The People or Tags picker indicates a permission is missing:** The key lacks `person.read` (for people) or `tag.read` (for tags). Grant the missing permission in Immich. The rest of the screensaver functions fine without them.
+* **Photos still crop around the center with Crop around faces on:** The key lacks `face.read`, which the app log notes once per session. Grant it in Immich and the crop follows faces within 30 minutes. Otherwise Immich found no faces in the photo: face detection runs as a background job in Immich, so recently uploaded photos may not have been scanned yet.
 * **No individuals appear under People:** The picker relies on named individuals. Open Immich, assign names to your recognized face clusters on the People page, and reopen the picker. Hiding a person in Immich will not remove them from this list.
 * **Validation passes but logs show a preview probe was skipped:** The selected asset does not have a preview generated on the server yet (it may still be processing, failed to generate, or belongs to an offline external library). Validation will test the next asset, and the screensaver will simply skip ungenerated photos during playback.
 * **"Could not reach the Immich server":** The server address is incorrect, the server is offline, or the device cannot connect to your network. This message is reserved for true network transport errors (DNS failures, refused connections, or timeouts). If the server responds with an HTTP error code, the app displays that specific status instead. The screensaver will automatically attempt to reconnect (first after 15 seconds, then every minute), resuming the slideshow seamlessly once the connection recovers.

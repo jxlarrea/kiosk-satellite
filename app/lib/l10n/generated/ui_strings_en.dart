@@ -12965,6 +12965,13 @@ class UiStringsEn extends UiStrings {
       'Off keeps the whole photo between black bars. Smart enlarges photos shaped close to the screen, framing the rest over a blurred backdrop. Always enlarges every photo, cutting off what does not fit.';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle => 'Crop around faces';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      'Photos cropped to fill the screen keep the faces Immich found in view. Needs the face.read permission.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Pair portrait photos';
 

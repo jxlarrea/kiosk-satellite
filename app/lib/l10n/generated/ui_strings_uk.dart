@@ -13104,6 +13104,13 @@ class UiStringsUk extends UiStrings {
       'Вимкнено залишає фото повністю між чорними смугами. Розумне збільшує фото, близькі за пропорціями до екрана, розміщуючи решту на розмитому фоні. Завжди масштабує кожне фото, обрізаючи зайве.';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle => 'Обрізати навколо облич';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      'Фото, обрізані для заповнення екрана, залишають у кадрі обличчя, знайдені Immich. Потрібен дозвіл face.read.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Об\'єднувати портретні фото';
 

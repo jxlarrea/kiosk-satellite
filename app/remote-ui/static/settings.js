@@ -322,9 +322,10 @@ async function flushSettingsUpdates() {
     // quality and both Video calls and Answer mode gate Answer with camera
     // on, in place like the switches above.
     // Show progress bar reveals its color and transparency in the Immich
-    // Slideshow card (issue #1522), in place the same way.
+    // Slideshow card (issue #1522), and Fill the screen reveals Crop around
+    // faces there (issue #1552), in place the same way.
     if (!shapeChanged && ['intercom.hangup_key', 'intercom.video', 'intercom.answer_mode',
-      'screensaver.immich_progress_bar'].includes(setting.key)) {
+      'screensaver.immich_progress_bar', 'screensaver.immich_fill'].includes(setting.key)) {
       const byKey = Object.fromEntries(state.settings.map(s => [s.key, s]));
       if ((!rows.length && !depSatisfied(setting, byKey)) || (rows.length
           && rows.every(row => row.updateSetting?.() && syncGatedRows(setting.key, row)))) {

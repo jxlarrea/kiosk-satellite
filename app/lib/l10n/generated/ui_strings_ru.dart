@@ -13063,6 +13063,13 @@ class UiStringsRu extends UiStrings {
       '«Выкл» держит всё фото между чёрными полосами. «Умно» увеличивает фото, близкие по форме к экрану, оформляя остальные поверх размытого фона. «Всегда» увеличивает каждое фото, обрезая не влезающее.';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle => 'Обрезать вокруг лиц';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      'Фото, обрезанные для заполнения экрана, оставляют в кадре лица, найденные Immich. Нужно разрешение face.read.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Парные портретные фото';
 

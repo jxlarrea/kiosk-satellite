@@ -13112,6 +13112,13 @@ class UiStringsPl extends UiStrings {
       '„Wyłączone” pokazuje całe zdjęcie między czarnymi pasami. „Inteligentne” powiększa zdjęcia o proporcjach zbliżonych do ekranu, a pozostałe umieszcza na rozmytym tle. „Zawsze” powiększa każde zdjęcie, przycinając to, co się nie mieści.';
 
   @override
+  String get settingScreensaverImmichCropFacesTitle => 'Przycinaj wokół twarzy';
+
+  @override
+  String get settingScreensaverImmichCropFacesDescription =>
+      'Zdjęcia przycinane do wypełnienia ekranu zachowują w kadrze twarze wykryte przez Immich. Wymaga uprawnienia face.read.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Łącz zdjęcia pionowe w pary';
 

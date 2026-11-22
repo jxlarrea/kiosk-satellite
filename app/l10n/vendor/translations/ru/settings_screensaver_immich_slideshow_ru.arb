@@ -7,6 +7,8 @@
   "settingScreensaverImmichTransitionDescription": "Как один элемент сменяется следующим.",
   "settingScreensaverImmichFillTitle": "Заполнить экран",
   "settingScreensaverImmichFillDescription": "«Выкл» держит всё фото между чёрными полосами. «Умно» увеличивает фото, близкие по форме к экрану, оформляя остальные поверх размытого фона. «Всегда» увеличивает каждое фото, обрезая не влезающее.",
+  "settingScreensaverImmichCropFacesTitle": "Обрезать вокруг лиц",
+  "settingScreensaverImmichCropFacesDescription": "Фото, обрезанные для заполнения экрана, оставляют в кадре лица, найденные Immich. Нужно разрешение face.read.",
   "settingScreensaverImmichPairPortraitTitle": "Парные портретные фото",
   "settingScreensaverImmichPairPortraitDescription": "Показывать два портретных фото бок о бок, чтобы заполнить экран.",
   "settingScreensaverImmichPairLandscapeTitle": "Парные альбомные фото",

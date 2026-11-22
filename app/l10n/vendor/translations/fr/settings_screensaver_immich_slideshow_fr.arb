@@ -7,6 +7,8 @@
   "settingScreensaverImmichTransitionDescription": "Comment un élément cède la place au suivant.",
   "settingScreensaverImmichFillTitle": "Remplir l'écran",
   "settingScreensaverImmichFillDescription": "« Désactivé » garde la photo entière entre des bandes noires. « Intelligent » agrandit les photos dont la forme est proche de celle de l'écran et encadre les autres sur un arrière-plan flouté. « Toujours » agrandit chaque photo en coupant ce qui dépasse.",
+  "settingScreensaverImmichCropFacesTitle": "Recadrer autour des visages",
+  "settingScreensaverImmichCropFacesDescription": "Les photos recadrées pour remplir l'écran gardent en vue les visages détectés par Immich. Nécessite l'autorisation face.read.",
   "settingScreensaverImmichPairPortraitTitle": "Associer les photos portrait",
   "settingScreensaverImmichPairPortraitDescription": "Afficher deux photos portrait côte à côte pour qu'elles remplissent l'écran.",
   "settingScreensaverImmichPairLandscapeTitle": "Associer les photos paysage",

@@ -31407,5 +31407,17 @@
     "translation": "2f9e457199d9dfea726abf6f21ee052223fa144773ed831f07b387ff2f54eeec",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingScreensaverImmichCropFacesTitle": {
+    "source": "4ac165e821c674cf7a31c023894cb3b39753a70ccb80953bda84b04440088115",
+    "translation": "7a227efbb63f3efff19d4f3e4c8baa4ebe44e5cbca2697317214f81eefe8a503",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichCropFacesDescription": {
+    "source": "bba72bf34b1e3626a6e2e6ee501b08af856729d7f3867af6eced247050f5ba7a",
+    "translation": "f5e7d2f2bf559092098f600c563a01daeb3a1f29c0eae7c90f92371dfff109f0",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

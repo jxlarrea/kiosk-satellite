@@ -168,4 +168,83 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(await cache.take('next', (_) async => 1), 1);
   });
+
+  group('photoFraming (issue #1552)', () {
+    // A 2:3 portrait photo covering a 16:10 panel shows 0.42 of its height.
+    const portrait = 2 / 3;
+    const panel = 16 / 10;
+    const window = portrait / panel;
+
+    test('nothing to frame keeps the centered crop', () {
+      const face = Rect.fromLTWH(0.4, 0.1, 0.2, 0.1);
+      expect(photoFraming(const [], portrait, panel), isNull);
+      expect(photoFraming(const [face], null, panel), isNull);
+      // Shaped like the frame: covering it crops nothing.
+      expect(photoFraming(const [face], panel, panel), isNull);
+    });
+
+    test('a face near the top of a portrait photo moves the crop up', () {
+      const face = Rect.fromLTWH(0.42, 0.12, 0.16, 0.1);
+      final framing = photoFraming(const [face], portrait, panel)!;
+      // Only the cropped axis moves.
+      expect(framing.crop.x, 0);
+      expect(framing.crop.y, lessThan(-0.6));
+      // The visible window still holds the head with room above it.
+      final start = (framing.crop.y + 1) / 2 * (1 - window);
+      expect(start, lessThanOrEqualTo(face.top - face.height * 0.5));
+      expect(start + window, greaterThan(face.bottom));
+      // The face sits a little above the middle of the frame.
+      expect(framing.focus.y, closeTo(-0.2, 0.01));
+      expect(framing.focus.x, closeTo(0, 0.01));
+    });
+
+    test('a face at the very top pins the crop to the top edge', () {
+      const face = Rect.fromLTWH(0.4, 0, 0.2, 0.08);
+      final framing = photoFraming(const [face], portrait, panel)!;
+      expect(framing.crop.y, -1);
+    });
+
+    test('a face low in the photo moves the crop down', () {
+      const face = Rect.fromLTWH(0.4, 0.75, 0.2, 0.1);
+      final framing = photoFraming(const [face], portrait, panel)!;
+      expect(framing.crop.y, greaterThan(0.5));
+    });
+
+    test('a group too tall for the window keeps its top', () {
+      const faces = [
+        Rect.fromLTWH(0.2, 0.1, 0.15, 0.1),
+        Rect.fromLTWH(0.6, 0.7, 0.15, 0.1),
+      ];
+      final framing = photoFraming(faces, portrait, panel)!;
+      final start = (framing.crop.y + 1) / 2 * (1 - window);
+      expect(start, closeTo(0.1 - 0.05, 1e-9));
+    });
+
+    test('faces in the background do not steer the crop', () {
+      const subject = Rect.fromLTWH(0.4, 0.15, 0.2, 0.12);
+      const passerby = Rect.fromLTWH(0.8, 0.8, 0.03, 0.03);
+      expect(
+        photoFraming(const [subject, passerby], portrait, panel),
+        photoFraming(const [subject], portrait, panel),
+      );
+    });
+
+    test('a wide photo on a portrait frame centers across on the face', () {
+      // A 16:9 photo in a portrait half of 0.8 shows 0.45 of its width.
+      const face = Rect.fromLTWH(0.75, 0.3, 0.1, 0.15);
+      final framing = photoFraming(const [face], 16 / 9, 0.8)!;
+      expect(framing.crop.y, 0);
+      expect(framing.crop.x, greaterThan(0.6));
+      expect(framing.focus.x, closeTo(0, 0.2));
+      // Down the frame the face stays where the photo has it.
+      expect(framing.focus.y, closeTo(face.center.dy * 2 - 1, 1e-9));
+    });
+
+    test('photoCropped ignores a shape a hair from the frame', () {
+      expect(photoCropped(1.6, 1.6), isFalse);
+      expect(photoCropped(1.605, 1.6), isFalse);
+      expect(photoCropped(4 / 3, 1.6), isTrue);
+      expect(photoCropped(null, 1.6), isFalse);
+    });
+  });
 }

@@ -5061,6 +5061,25 @@ const screensaverImmichFill = SettingDef<String>(
   dependsOn: 'screensaver.immich_validated',
 );
 
+// A photo cropped to fill the screen slides so the faces Immich detected in
+// it stay in view, instead of keeping the middle and cutting off heads
+// (issue #1552). The boxes come from the face.read endpoint, so a key
+// without that permission keeps the centered crop.
+const screensaverImmichCropFaces = SettingDef<bool>(
+  key: 'screensaver.immich_crop_faces',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Crop around faces',
+  description:
+      'Photos cropped to fill the screen keep the faces Immich found in '
+      'view. Needs the face.read permission.',
+  category: 'Screensaver',
+  section: 'Slideshow',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_fill',
+  dependsOnValue: ['smart', 'always'],
+);
+
 // Two portrait photos side by side instead of one framed by empty screen:
 // the pair fills a landscape panel the way a single portrait shot never
 // can. On by default, like Fill the screen's Smart setting, since filling
@@ -15072,6 +15091,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichShuffle,
   screensaverImmichTransition,
   screensaverImmichFill,
+  screensaverImmichCropFaces,
   screensaverImmichPairPortrait,
   screensaverImmichPairLandscape,
   screensaverImmichEdgeTaps,
