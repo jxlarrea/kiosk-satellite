@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.26 - 2026-11-22
 
 ### Changed
 - **Ground Control in Kiosk Satellite Analytics.** With **Usage** on, the daily report now says whether Ground Control is on, whether the kiosk finds it on the network or by an address that was entered, its version, whether it runs as a Home Assistant app, how many people are enrolled and, for Voice Match, whether it is on, who the kiosk answers and the speaker model Ground Control uses. The names of the people and the address stay on the kiosk. See [Kiosk Satellite Analytics](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/analytics.md).
