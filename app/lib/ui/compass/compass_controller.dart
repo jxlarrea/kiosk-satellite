@@ -861,6 +861,7 @@ class CompassController {
         _returnOnWake = true;
         return;
       }
+      if (_nowPlayingForScreensaver) return;
       // A ringing alarm or a call keeps its screen; the next touch arms
       // the timer again.
       if (!swipeReady) return;
@@ -871,9 +872,19 @@ class CompassController {
       // the countdown starts over then.
       if (await behindAnotherApp()) return;
       if (!_returnDue || _underScreensaver || !swipeReady) return;
+      if (_nowPlayingForScreensaver) return;
       unawaited(goCenter());
     });
   }
+
+  /// Now Playing came up in the screensaver's place, on the idle clock or
+  /// as a track started, and nobody opened it. It is the view in hand all
+  /// the same, since the layout holds it, but going to the center would
+  /// close it and the idle clock would bring it back, over and over for
+  /// as long as the music plays (issue #1557). The timer leaves it up, as
+  /// it leaves the screensaver, and the next touch arms it again.
+  bool get _nowPlayingForScreensaver =>
+      _nowPlayingUp && !c.screensaver.openedByHand;
 
   /// The return timer still has somewhere to go.
   bool get _returnDue =>

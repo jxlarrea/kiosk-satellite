@@ -65,7 +65,7 @@ A swipe that starts on a plugin overlay, such as a navigation bar, stays with th
 
 ### The screensaver
 
-The screensaver starts over any view after the idle timeout, as it does over the dashboard, and the view is still there when it ends. The **Home Assistant Dashboard** screensaver shows the dashboard over any view. A camera view is the exception: live cameras hold the screensaver off, as they do everywhere else. If Return to center comes due while the screensaver runs, the kiosk lands on the center when it ends.
+The screensaver starts over any view after the idle timeout, as it does over the dashboard, and the view is still there when it ends. The **Home Assistant Dashboard** screensaver shows the dashboard over any view. A camera view is the exception: live cameras hold the screensaver off, as they do everywhere else. If Return to center comes due while the screensaver runs, the kiosk lands on the center when it ends. Now Playing shown in the screensaver's place while music plays counts as the screensaver here: Return to center leaves it up. If you open Now Playing yourself, with a swipe, from the Menu or from the floating player, Return to center applies to it like any other view.
 
 Views in the layout skip their own **Close when idle** and the camera view's **Auto-dismiss after**. **Return to center** decides when they go instead. Opened outside the layout, such as a camera view a doorbell opens, they keep their own setting.
 

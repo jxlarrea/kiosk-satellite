@@ -415,6 +415,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// other view, so holds that only keep the screensaver from starting by
   /// itself do not apply to it, nor does Hold Mode.
   bool _openedByHand = false;
+
+  /// Whether someone opened the session on screen for Now Playing. False
+  /// for one the idle clock or a track starting brought up, where Now
+  /// Playing only stands in for the screensaver.
+  bool get openedByHand => _active && _openedByHand;
   bool _restoreForNowPlaying = false;
   Future<void>? _interactionStop;
   bool _cameraViewActive = false;
