@@ -25,18 +25,25 @@ class ImmichAsset {
     required this.isVideo,
     this.aspect,
     this.durationSeconds,
+    this.edit,
   });
 
   final String id;
   final bool isVideo;
+
+  /// Which edit of a photo edited in Immich's editor the server holds,
+  /// or null for a photo shown as it was taken. Part of the cache file
+  /// name, so a photo edited again, or edited after it was cached, is
+  /// downloaded again instead of showing the copy kept from before.
+  final String? edit;
 
   /// A video's length from the listing, or null for a photo or when the
   /// server did not say. With the stream's size it says how much of the
   /// video the player would buffer at once.
   final double? durationSeconds;
 
-  /// Width over height as the photo will appear, from the server's EXIF,
-  /// or null when the server did not say. Known up front, it lets the
+  /// Width over height as the photo will appear, after any edit made in
+  /// Immich, or null when the server did not say. Known up front, it lets the
   /// playlist be arranged into pairs without downloading anything.
   final double? aspect;
 }
@@ -252,11 +259,37 @@ double? exifAspect(Object? exifInfo) {
   return turned ? height / width : width / height;
 }
 
+/// The shape a photo will appear in, from one asset of an Immich listing:
+/// the asset's own width and height, which Immich keeps upright and
+/// updates when the photo is cropped or rotated in its editor. Servers
+/// that do not report them fall back to the camera's EXIF, which knows
+/// nothing of edits.
+double? immichAspect(Map item) {
+  final width = (item['width'] as num?)?.toDouble();
+  final height = (item['height'] as num?)?.toDouble();
+  if (width != null && height != null && width > 0 && height > 0) {
+    return width / height;
+  }
+  return exifAspect(item['exifInfo']);
+}
+
+/// [ImmichAsset.edit] for one asset of an Immich listing: the thumbhash of
+/// an edited photo, which Immich replaces once the edited preview is
+/// ready, in a form safe for a file name. Null for an unedited photo, so
+/// its cached copy keeps the name it always had.
+String? immichEdit(Map item) {
+  if (item['isEdited'] != true) return null;
+  final hash = item['thumbhash'];
+  if (hash is! String || hash.isEmpty) return null;
+  return hash.replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+}
+
 /// The face boxes in an answer from Immich's `GET /api/faces?id=`, each as
 /// fractions of the picture it was measured on, so they hold for the
 /// preview the slideshow decodes at any size. Immich detects faces on that
-/// upright preview, so no orientation tag needs undoing. Entries without
-/// usable dimensions are dropped.
+/// upright preview, so no orientation tag needs undoing. For a photo edited
+/// in Immich the server moves the boxes onto the edited picture, the one
+/// the slideshow shows. Entries without usable dimensions are dropped.
 List<Rect> immichFaceBoxes(Object? answer) {
   if (answer is! List) return const [];
   final boxes = <Rect>[];
@@ -1151,10 +1184,11 @@ class ImmichManager extends Manager {
                 ImmichAsset(
                   id: id,
                   isVideo: isVideo,
-                  aspect: isVideo ? null : exifAspect(item['exifInfo']),
+                  aspect: isVideo ? null : immichAspect(item),
                   durationSeconds: isVideo
                       ? immichDurationSeconds(item['duration'])
                       : null,
+                  edit: isVideo ? null : immichEdit(item),
                 ),
               );
             }
@@ -1302,8 +1336,13 @@ class ImmichManager extends Manager {
 
   Map<String, String> get videoHeaders => _headers;
 
-  Uri _imageUri(ImmichAsset asset) =>
-      Uri.parse('$_base/api/assets/${asset.id}/thumbnail?size=preview');
+  /// The photo as Immich shows it. Edits made in Immich's editor never
+  /// touch the original, and the preview without `edited` is the unedited
+  /// one. Photos without edits answer with their usual preview, and
+  /// servers older than the editor ignore the parameter.
+  Uri _imageUri(ImmichAsset asset) => Uri.parse(
+    '$_base/api/assets/${asset.id}/thumbnail?size=preview&edited=true',
+  );
 
   /// An image, from the cache when enabled and present, from the server
   /// otherwise. Returns the bytes either way; disk is an implementation
@@ -1334,7 +1373,8 @@ class ImmichManager extends Manager {
     final caching = _settings.get(defs.screensaverImmichCache);
     File? cached;
     if (caching) {
-      cached = File('${(await _cacheDir()).path}/${asset.id}.img');
+      final edit = asset.edit == null ? '' : '_${asset.edit}';
+      cached = File('${(await _cacheDir()).path}/${asset.id}$edit.img');
       if (await cached.exists()) {
         // Touch so eviction's "oldest" means least-recently-shown, not
         // first-ever-downloaded.

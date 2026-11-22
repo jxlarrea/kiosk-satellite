@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Photos edited in Immich showing unedited in the Immich Media screensaver (#1401).** A photo rotated or cropped in Immich's editor showed as it was taken, because Immich keeps the original and the screensaver asked for the unedited preview. The screensaver now asks for the edited one. A photo edited after it was cached is downloaded again, and one whose edit is undone goes back to its original copy. Pairing portrait photos goes by the shape after the edit, and **Crop around faces** finds the faces on edited photos, which it missed before.
+
 ## v2026.11.25 - 2026-11-21
 
 ### Added
