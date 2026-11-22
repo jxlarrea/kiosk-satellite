@@ -966,6 +966,103 @@ void main() {
     expect(text, isNot(contains('gentle')));
   });
 
+  group('Ground Control', () {
+    Map<String, Object?>? gcState;
+
+    Future<Map> usage(Map<String, Object> initial) async {
+      await build(initial, firstDelay: const Duration(days: 1));
+      commands.register(
+        Command(
+          name: 'groundControlStatus',
+          description: 'stub',
+          handler: (_) async => CommandResult.ok(gcState),
+        ),
+      );
+      expect(await analytics.sendSnapshot(force: true), isTrue);
+      return bodyOf(sent.single)['usage'] as Map;
+    }
+
+    setUp(() {
+      gcState = {
+        'enabled': true,
+        'status': 'connected',
+        'baseUrl': 'http://192.168.1.10:10900',
+        'version': '1.2.0',
+        'model': 'accurate',
+        'haApp': true,
+        'people': [
+          {'id': 'p1', 'name': 'Alice'},
+          {'id': 'p2', 'name': 'Bob'},
+        ],
+      };
+    });
+
+    test('off reports only the switch', () async {
+      final u = await usage({});
+      expect(u['gc_enabled'], isFalse);
+      for (final k in [
+        'gc_address',
+        'gc_version',
+        'voice_match_model',
+        'gc_ha_app',
+        'gc_people',
+        'voice_match_enabled',
+        'voice_match_policy',
+      ]) {
+        expect(u.containsKey(k), isFalse, reason: k);
+      }
+    });
+
+    test('on reports what it runs and a count of people, never their names '
+        'or the address', () async {
+      final u = await usage({
+        'ks.ground_control.enabled': true,
+        'ks.ground_control.address': '192.168.1.10:10900',
+        'ks.voice.enabled': true,
+        'ks.voice_match.enabled': true,
+        'ks.voice_match.policy': 'people',
+        'ks.voice_match.people': jsonEncode([
+          {'id': 'p1', 'name': 'Alice'},
+        ]),
+      });
+      expect(u['gc_enabled'], isTrue);
+      expect(u['gc_address'], 'manual');
+      expect(u['gc_version'], '1.2.0');
+      expect(u['voice_match_model'], 'accurate');
+      expect(u['gc_ha_app'], isTrue);
+      expect(u['gc_people'], 2);
+      expect(u['voice_match_enabled'], isTrue);
+      expect(u['voice_match_policy'], 'people');
+      final text = jsonEncode(u);
+      expect(text, isNot(contains('Alice')));
+      expect(text, isNot(contains('Bob')));
+      expect(text, isNot(contains('p1')));
+      expect(text, isNot(contains('192.168.1.10')));
+    });
+
+    test('a kiosk that never connected leaves out what Ground Control '
+        'runs', () async {
+      gcState = {'enabled': true, 'status': 'searching', 'version': ''};
+      final u = await usage({'ks.ground_control.enabled': true});
+      expect(u['gc_address'], 'mdns');
+      expect(u.containsKey('gc_version'), isFalse);
+      expect(u.containsKey('gc_people'), isFalse);
+      expect(u.containsKey('voice_match_model'), isFalse);
+      expect(u['voice_match_enabled'], isFalse);
+      expect(u.containsKey('voice_match_policy'), isFalse);
+    });
+
+    test('Chosen people with nobody picked reads as enrolled', () async {
+      final u = await usage({
+        'ks.ground_control.enabled': true,
+        'ks.voice.enabled': true,
+        'ks.voice_match.enabled': true,
+        'ks.voice_match.policy': 'people',
+      });
+      expect(u['voice_match_policy'], 'enrolled');
+    });
+  });
+
   test('custom pages read as counts and places, never as names or '
       'addresses', () async {
     await build({

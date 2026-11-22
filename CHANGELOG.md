@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **Ground Control in Kiosk Satellite Analytics.** With **Usage** on, the daily report now says whether Ground Control is on, whether the kiosk finds it on the network or by an address that was entered, its version, whether it runs as a Home Assistant app, how many people are enrolled and, for Voice Match, whether it is on, who the kiosk answers and the speaker model Ground Control uses. The names of the people and the address stay on the kiosk. See [Kiosk Satellite Analytics](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/analytics.md).
+
 ### Fixed
 - **An Immich filter changed while the playlist loaded being ignored.** If an Immich Media screensaver filter, album or other playlist setting changed while the playlist was still loading from the server, the screensaver kept the playlist from before the change for up to 10 minutes. Switching the screensaver to Immich and changing a filter at the same time, as a settings import or the remote admin API does, was enough to hit it. The playlist now loads again with the new settings.
 - **Photos edited in Immich showing unedited in the Immich Media screensaver (#1401).** A photo rotated or cropped in Immich's editor showed as it was taken, because Immich keeps the original and the screensaver asked for the unedited preview. The screensaver now asks for the edited one. A photo edited after it was cached is downloaded again, and one whose edit is undone goes back to its original copy. Pairing portrait photos goes by the shape after the edit, and **Crop around faces** finds the faces on edited photos, which it missed before.

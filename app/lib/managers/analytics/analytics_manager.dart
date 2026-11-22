@@ -706,6 +706,48 @@ class AnalyticsManager extends Manager {
     // times, labels and tone files stay on the kiosk.
     final alarms = decodeAlarms(s.get(defs.alarmsList));
 
+    // Ground Control: the switches, how it was found and what it runs, as
+    // the last connection told it. People are a count, never their names,
+    // and the address itself stays on the kiosk. Voice Match keys carry
+    // their full name, so Vision Match can sit beside them.
+    final groundControl = <String, Object?>{
+      'gc_enabled': s.get(defs.groundControlEnabled),
+    };
+    if (s.get(defs.groundControlEnabled)) {
+      groundControl['gc_address'] =
+          s.get(defs.groundControlAddress).trim().isEmpty ? 'mdns' : 'manual';
+      try {
+        final r = await commands.execute('groundControlStatus', const {});
+        final data = r.data;
+        final version = data is Map ? '${data['version'] ?? ''}' : '';
+        // Empty until the first connection that got this far.
+        if (data is Map && version.isNotEmpty) {
+          final model = '${data['model'] ?? ''}';
+          groundControl['gc_version'] = version;
+          groundControl['gc_ha_app'] = data['haApp'] == true;
+          final people = data['people'];
+          groundControl['gc_people'] = people is List ? people.length : 0;
+          // Voice Match's speaker model, picked in Ground Control's own
+          // settings: accurate or light.
+          groundControl['voice_match_model'] = model.length > 64
+              ? model.substring(0, 64)
+              : model;
+        }
+      } catch (_) {}
+      final voiceMatch =
+          s.get(defs.voiceEnabled) && s.get(defs.voiceMatchEnabled);
+      groundControl['voice_match_enabled'] = voiceMatch;
+      if (voiceMatch) {
+        final chosen = s.get(defs.voiceMatchPolicy) == 'people';
+        final picked = defs
+            .decodeVoiceMatchPeople(s.get(defs.voiceMatchPeople))
+            .isNotEmpty;
+        groundControl['voice_match_policy'] = !chosen
+            ? 'anyone'
+            : (picked ? 'people' : 'enrolled');
+      }
+    }
+
     // Who installs updates: Android itself for a device owner, the ADB
     // update helper, Shizuku, or the on-screen confirmation. Shizuku's own
     // state comes along: installed and authorized, installed and waiting,
@@ -759,6 +801,7 @@ class AnalyticsManager extends Manager {
       'vs_skin': vs.skin,
       ...nativeVoice,
       ...timers,
+      ...groundControl,
       // The kiosk's own echo canceller, for everything that listens: the
       // switch, and the engine it actually ran with and why, which can
       // differ from the method picked (Automatic's verdict, or GTCRN

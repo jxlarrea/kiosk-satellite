@@ -239,6 +239,8 @@ class GroundControlManager extends Manager {
     'model': model,
     'people': people,
     'appUrl': appUrl,
+    // Runs as a Home Assistant app, not a Docker container.
+    'haApp': appPath != null,
     'allowEnroll': _enrollAllowed,
     'enrollment': enrollment,
   };
