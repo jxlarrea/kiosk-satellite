@@ -97,6 +97,10 @@ Two related switches are located elsewhere: with **Allow screensaver** turned on
 
 On a Meta Portal, **Camera > Person Sensor** exposes the Portal's built-in person detector to Home Assistant as a **Person** occupancy sensor. It does not use the app's camera or the Camera switch. See [Meta Portal](portal.md#person-sensor).
 
+## Flashlight
+
+On a device with a camera flash, **Camera > Flashlight** has a **Turn on flashlight** switch that turns the flash on as a steady light, for example to see a 3D printer on the RTSP stream at night. It does not need **Enable camera** and works while the camera streams, detects motion or takes snapshots. The light comes back on after another app or the barcode scanner releases the camera, and after the app restarts. If the quick settings tile turns the flashlight on or off, the switch follows. The switch is per device and Fleet Management never syncs it. The Flashlight group is hidden on devices without a flash.
+
 ## RTSP & ONVIF Streaming
 
 Open **Settings -> Camera -> RTSP & ONVIF Streaming**, after **Motion Sensor**, then turn on **Enable camera streaming**. The page reveals the stream settings and its URL. The Camera master switch and Android camera permission must also be enabled.
@@ -171,6 +175,7 @@ With [ESPHome](esphome.md) **Expose kiosk entities** turned on, the camera adds 
 | RTSP Streaming | switch | Enables or disables RTSP using the saved stream settings. Appears under Configuration. |
 | Screensaver motion detection | switch | The remote Dismiss on motion toggle. Pairs nicely with the Camera enabled switch for staged wake ups. |
 | Screensaver face detection | switch | The remote Dismiss on face toggle. Motion maintains precedence on the device, allowing an automation to flip the motion switch to use faces by day and raw motion by night. |
+| Flashlight | switch | Turns the camera flashlight on or off, like **Turn on flashlight** in the settings. Only available on devices with a camera flash. |
 | Camera facing | select | The remote **Camera** pick: Front or Back, applying to every camera feature at once. Switching it captures a fresh frame from the newly selected camera a moment later, allowing an automation to flip a phone to its back camera for use as a baby monitor, and back again. Like the switches, it functions even with the camera off. Only available on devices with both cameras. |
 
 Disabling the camera keeps every one of these entities in place: the camera simply shows a "Camera off" frame, and the Motion sensor reads unknown until the camera is re-enabled. The entity list only changes if the hardware itself changes. This means an automation that arms the camera when someone is home and disarms it when they leave will never force the device to re-register with Home Assistant. On camera-less hardware, none of these entities will exist, though the Screenshot camera will be available either way.

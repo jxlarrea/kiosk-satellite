@@ -1506,6 +1506,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'cameraBack' => strings.cameraBack,
       'cameraExternal' => strings.cameraExternal,
       'cameraOnlyCamera' => strings.cameraOnlyCamera,
+      'cameraFlashlightHeading' => strings.cameraFlashlightHeading,
+      'settingCameraFlashlightTitle' => strings.settingCameraFlashlightTitle,
+      'settingCameraFlashlightDescription' =>
+        strings.settingCameraFlashlightDescription,
       'settingMotionSensorTitle' => strings.settingMotionSensorTitle,
       'settingMotionSensorDescription' =>
         strings.settingMotionSensorDescription,

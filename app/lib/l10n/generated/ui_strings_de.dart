@@ -5508,6 +5508,16 @@ class UiStringsDe extends UiStrings {
   String get cameraOnlyCamera => 'Die einzige Kamera dieses Geräts.';
 
   @override
+  String get cameraFlashlightHeading => 'Taschenlampe';
+
+  @override
+  String get settingCameraFlashlightTitle => 'Taschenlampe einschalten';
+
+  @override
+  String get settingCameraFlashlightDescription =>
+      'Nutzt den Kamerablitz als Dauerlicht.';
+
+  @override
   String get settingMotionSensorTitle => 'Bewegungssensor';
 
   @override

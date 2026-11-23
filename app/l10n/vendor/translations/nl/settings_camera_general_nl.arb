@@ -15,5 +15,8 @@
   "cameraFront": "Voorzijde",
   "cameraBack": "Achterzijde",
   "cameraExternal": "Extern",
-  "cameraOnlyCamera": "De enige camera die dit apparaat heeft."
+  "cameraOnlyCamera": "De enige camera die dit apparaat heeft.",
+  "cameraFlashlightHeading": "Zaklamp",
+  "settingCameraFlashlightTitle": "Zaklamp inschakelen",
+  "settingCameraFlashlightDescription": "Gebruik de cameraflitser als continu licht."
 }

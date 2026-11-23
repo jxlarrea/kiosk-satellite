@@ -5215,6 +5215,15 @@ class UiStringsZh extends UiStrings {
   String get cameraOnlyCamera => '此设备唯一的摄像头。';
 
   @override
+  String get cameraFlashlightHeading => '手电筒';
+
+  @override
+  String get settingCameraFlashlightTitle => '开启手电筒';
+
+  @override
+  String get settingCameraFlashlightDescription => '将摄像头闪光灯用作常亮灯光。';
+
+  @override
   String get settingMotionSensorTitle => '运动传感器';
 
   @override
@@ -21477,6 +21486,15 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get cameraOnlyCamera => '此设备唯一的摄像头。';
+
+  @override
+  String get cameraFlashlightHeading => '手电筒';
+
+  @override
+  String get settingCameraFlashlightTitle => '开启手电筒';
+
+  @override
+  String get settingCameraFlashlightDescription => '将摄像头闪光灯用作常亮灯光。';
 
   @override
   String get settingMotionSensorTitle => '运动传感器';

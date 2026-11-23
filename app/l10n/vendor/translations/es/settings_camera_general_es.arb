@@ -15,5 +15,8 @@
   "cameraFront": "Frontal",
   "cameraBack": "Trasera",
   "cameraExternal": "Externa",
-  "cameraOnlyCamera": "La única cámara de este dispositivo."
+  "cameraOnlyCamera": "La única cámara de este dispositivo.",
+  "cameraFlashlightHeading": "Linterna",
+  "settingCameraFlashlightTitle": "Encender linterna",
+  "settingCameraFlashlightDescription": "Usa el flash de la cámara como luz continua."
 }

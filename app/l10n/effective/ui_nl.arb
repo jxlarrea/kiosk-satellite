@@ -20321,6 +20321,45 @@
       ]
     }
   },
+  "cameraFlashlightHeading": "Zaklamp",
+  "@cameraFlashlightHeading": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Section heading.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
+  "settingCameraFlashlightTitle": "Zaklamp inschakelen",
+  "@settingCameraFlashlightTitle": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
+  "settingCameraFlashlightDescription": "Gebruik de cameraflitser als continu licht.",
+  "@settingCameraFlashlightDescription": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
   "settingMotionSensorTitle": "Bewegingssensor",
   "@settingMotionSensorTitle": {
     "context": "Settings > Camera > Motion Sensor",

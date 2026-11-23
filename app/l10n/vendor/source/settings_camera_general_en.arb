@@ -207,5 +207,44 @@
         "Camera"
       ]
     }
+  },
+  "cameraFlashlightHeading": "Flashlight",
+  "@cameraFlashlightHeading": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Section heading.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
+  "settingCameraFlashlightTitle": "Turn on flashlight",
+  "@settingCameraFlashlightTitle": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
+  "settingCameraFlashlightDescription": "Use the camera flash as a steady light.",
+  "@settingCameraFlashlightDescription": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
   }
 }

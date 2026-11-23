@@ -2852,4 +2852,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingGroundControlVoiceMatchTitle",
     "description": "settingGroundControlVoiceMatchFeaturesDescription",
   },
+  "camera.flashlight": {
+    "title": "settingCameraFlashlightTitle",
+    "description": "settingCameraFlashlightDescription",
+  },
 };

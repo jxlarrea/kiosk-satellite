@@ -31016,5 +31016,23 @@
     "translation": "b0a338894e5ea91dbd1105e12ca120f1f796824e74b2891a7a5f843d0c2a7daa",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingCameraFlashlightTitle": {
+    "source": "4eb5a6b4124c82ef327becce991202746af81d902a917b8274dbe373ddfe2e34",
+    "translation": "9c5c363b525a9554af384b7380f1999c5503670fe1846a99afdc332fbf13d75e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingCameraFlashlightDescription": {
+    "source": "105853fd3c6b75a11377220c6c102e1059144ad15d33ed216c578b62896b4753",
+    "translation": "28dd6a0af0e0557a9242be7240904e97d881937cde62075af27ae91e737fddb1",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "cameraFlashlightHeading": {
+    "source": "a9f4100f1a5f646a998d41683c75891dba02279bb9dec85b9b3faf6dfc10035a",
+    "translation": "cb8c10fc537e0fc0c5ee8fa2903a4b3276688bf45df932e0db4baa3afd1b3f7d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

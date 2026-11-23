@@ -5449,6 +5449,16 @@ class UiStringsPl extends UiStrings {
   String get cameraOnlyCamera => 'Jedyna kamera tego urządzenia.';
 
   @override
+  String get cameraFlashlightHeading => 'Latarka';
+
+  @override
+  String get settingCameraFlashlightTitle => 'Włącz latarkę';
+
+  @override
+  String get settingCameraFlashlightDescription =>
+      'Użyj lampy błyskowej kamery jako stałego światła.';
+
+  @override
   String get settingMotionSensorTitle => 'Czujnik ruchu';
 
   @override

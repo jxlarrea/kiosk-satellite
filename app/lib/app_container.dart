@@ -41,6 +41,7 @@ import 'managers/kiosk/kiosk_manager.dart';
 import 'managers/launcher/app_launcher_manager.dart';
 import 'managers/launcher/home_launcher_manager.dart';
 import 'managers/led/led_manager.dart';
+import 'managers/flashlight/flashlight_manager.dart';
 import 'managers/motion/motion_entity_manager.dart';
 import 'managers/motion/motion_manager.dart';
 import 'managers/motion/onvif_events_manager.dart';
@@ -127,6 +128,7 @@ class AppContainer {
     // Before motion: its init runs the legacy motion-camera migration the
     // motion manager's gate reads.
     deviceCamera = DeviceCameraManager(bus, commands, log, settings);
+    flashlight = FlashlightManager(bus, commands, log, settings);
     motion = MotionManager(bus, commands, log, settings);
     // It watches the motion sensor entity through homeAssistant.
     motionEntity = MotionEntityManager(
@@ -380,6 +382,7 @@ class AppContainer {
   late final ScreensaverManager screensaver;
   late final ImmichManager immich;
   late final DeviceCameraManager deviceCamera;
+  late final FlashlightManager flashlight;
   late final MotionManager motion;
   late final MotionEntityManager motionEntity;
   late final ProximityManager proximity;
@@ -450,6 +453,9 @@ class AppContainer {
     screensaver,
     immich,
     deviceCamera,
+    // Before btProxy, whose first catalog lists the Flashlight switch only
+    // where there is one, and before the remote admin reads its hidden rows.
+    flashlight,
     motion,
     // After screensaver, which takes its motion.
     motionEntity,

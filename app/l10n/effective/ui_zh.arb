@@ -20321,6 +20321,45 @@
       ]
     }
   },
+  "cameraFlashlightHeading": "手电筒",
+  "@cameraFlashlightHeading": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Section heading.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
+  "settingCameraFlashlightTitle": "开启手电筒",
+  "@settingCameraFlashlightTitle": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
+  "settingCameraFlashlightDescription": "将摄像头闪光灯用作常亮灯光。",
+  "@settingCameraFlashlightDescription": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
   "settingMotionSensorTitle": "运动传感器",
   "@settingMotionSensorTitle": {
     "context": "Settings > Camera > Motion Sensor",

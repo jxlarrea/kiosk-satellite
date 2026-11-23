@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- **Flashlight control (#1574).** On a device with a camera flash, **Settings > Camera > Flashlight** has a **Turn on flashlight** switch that uses the flash as a steady light, for example to watch a 3D printer on the camera stream at night. It works with the camera off and while the camera streams, detects motion or takes snapshots. The light comes back on after another app releases the camera and after the app restarts. Switching the light from the quick settings tile updates the switch. ESPHome gets a matching **Flashlight** switch. Fleet Management never syncs it, and the group is hidden on devices without a flash. See [Flashlight](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/camera.md#flashlight).
+
 ### Changed
 - **A Ground Control section in the README.** The README now describes Ground Control and Voice Match before Get started, with the Isolation demo video.
 

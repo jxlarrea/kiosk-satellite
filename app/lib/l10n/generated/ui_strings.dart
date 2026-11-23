@@ -9516,6 +9516,24 @@ abstract class UiStrings {
   /// **'The only camera this device has.'**
   String get cameraOnlyCamera;
 
+  /// Section heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashlight'**
+  String get cameraFlashlightHeading;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on flashlight'**
+  String get settingCameraFlashlightTitle;
+
+  /// Help below this setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the camera flash as a steady light.'**
+  String get settingCameraFlashlightDescription;
+
   /// Setting label.
   ///
   /// In en, this message translates to:

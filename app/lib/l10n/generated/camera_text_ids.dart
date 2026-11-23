@@ -165,5 +165,6 @@ const cameraTextMessageIds = <String, String>{
   "Show date and time": "settingCameraRtspDateTimeTitle",
   "Show the device date and time in the upper-left corner of the video using its date format and 12/24-hour setting.": "settingCameraRtspDateTimeDescription",
   "Black background": "settingCameraRtspDateTimeBackgroundTitle",
-  "Add a black background behind the date and time for visibility.": "settingCameraRtspDateTimeBackgroundDescription"
+  "Add a black background behind the date and time for visibility.": "settingCameraRtspDateTimeBackgroundDescription",
+  "Flashlight": "cameraFlashlightHeading"
 };

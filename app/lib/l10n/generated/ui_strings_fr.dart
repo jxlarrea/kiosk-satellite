@@ -5474,6 +5474,16 @@ class UiStringsFr extends UiStrings {
   String get cameraOnlyCamera => 'La seule caméra que possède cet appareil.';
 
   @override
+  String get cameraFlashlightHeading => 'Lampe torche';
+
+  @override
+  String get settingCameraFlashlightTitle => 'Allumer la lampe torche';
+
+  @override
+  String get settingCameraFlashlightDescription =>
+      'Utiliser le flash de la caméra comme éclairage continu.';
+
+  @override
   String get settingMotionSensorTitle => 'Capteur de mouvement';
 
   @override

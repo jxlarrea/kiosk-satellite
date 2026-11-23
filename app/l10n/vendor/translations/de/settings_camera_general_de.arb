@@ -15,5 +15,8 @@
   "cameraFront": "Vorderkamera",
   "cameraBack": "Rückkamera",
   "cameraExternal": "Externe Kamera",
-  "cameraOnlyCamera": "Die einzige Kamera dieses Geräts."
+  "cameraOnlyCamera": "Die einzige Kamera dieses Geräts.",
+  "cameraFlashlightHeading": "Taschenlampe",
+  "settingCameraFlashlightTitle": "Taschenlampe einschalten",
+  "settingCameraFlashlightDescription": "Nutzt den Kamerablitz als Dauerlicht."
 }

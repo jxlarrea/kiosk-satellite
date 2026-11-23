@@ -5434,6 +5434,16 @@ class UiStringsRu extends UiStrings {
   String get cameraOnlyCamera => 'Единственная камера этого устройства.';
 
   @override
+  String get cameraFlashlightHeading => 'Фонарик';
+
+  @override
+  String get settingCameraFlashlightTitle => 'Включить фонарик';
+
+  @override
+  String get settingCameraFlashlightDescription =>
+      'Использовать вспышку камеры как постоянный свет.';
+
+  @override
   String get settingMotionSensorTitle => 'Датчик движения';
 
   @override

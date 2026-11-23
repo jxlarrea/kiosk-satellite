@@ -5459,6 +5459,16 @@ class UiStringsNl extends UiStrings {
   String get cameraOnlyCamera => 'De enige camera die dit apparaat heeft.';
 
   @override
+  String get cameraFlashlightHeading => 'Zaklamp';
+
+  @override
+  String get settingCameraFlashlightTitle => 'Zaklamp inschakelen';
+
+  @override
+  String get settingCameraFlashlightDescription =>
+      'Gebruik de cameraflitser als continu licht.';
+
+  @override
   String get settingMotionSensorTitle => 'Bewegingssensor';
 
   @override

@@ -15,5 +15,8 @@
   "cameraFront": "前置",
   "cameraBack": "后置",
   "cameraExternal": "外接",
-  "cameraOnlyCamera": "此设备唯一的摄像头。"
+  "cameraOnlyCamera": "此设备唯一的摄像头。",
+  "cameraFlashlightHeading": "手电筒",
+  "settingCameraFlashlightTitle": "开启手电筒",
+  "settingCameraFlashlightDescription": "将摄像头闪光灯用作常亮灯光。"
 }

@@ -5441,6 +5441,16 @@ class UiStringsUk extends UiStrings {
   String get cameraOnlyCamera => 'Єдина камера на цьому пристрої.';
 
   @override
+  String get cameraFlashlightHeading => 'Ліхтарик';
+
+  @override
+  String get settingCameraFlashlightTitle => 'Увімкнути ліхтарик';
+
+  @override
+  String get settingCameraFlashlightDescription =>
+      'Використовувати спалах камери як постійне світло.';
+
+  @override
   String get settingMotionSensorTitle => 'Датчик руху';
 
   @override

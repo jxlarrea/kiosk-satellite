@@ -5471,6 +5471,16 @@ class UiStringsEs extends UiStrings {
   String get cameraOnlyCamera => 'La única cámara de este dispositivo.';
 
   @override
+  String get cameraFlashlightHeading => 'Linterna';
+
+  @override
+  String get settingCameraFlashlightTitle => 'Encender linterna';
+
+  @override
+  String get settingCameraFlashlightDescription =>
+      'Usa el flash de la cámara como luz continua.';
+
+  @override
   String get settingMotionSensorTitle => 'Sensor de movimiento';
 
   @override

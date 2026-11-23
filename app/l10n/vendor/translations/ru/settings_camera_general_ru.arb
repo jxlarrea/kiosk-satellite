@@ -15,5 +15,8 @@
   "cameraFront": "Фронтальная",
   "cameraBack": "Задняя",
   "cameraExternal": "Внешняя",
-  "cameraOnlyCamera": "Единственная камера этого устройства."
+  "cameraOnlyCamera": "Единственная камера этого устройства.",
+  "cameraFlashlightHeading": "Фонарик",
+  "settingCameraFlashlightTitle": "Включить фонарик",
+  "settingCameraFlashlightDescription": "Использовать вспышку камеры как постоянный свет."
 }

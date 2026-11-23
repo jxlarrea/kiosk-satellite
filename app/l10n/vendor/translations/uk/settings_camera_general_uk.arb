@@ -15,5 +15,8 @@
   "cameraFront": "Передня",
   "cameraBack": "Задня",
   "cameraExternal": "Зовнішня",
-  "cameraOnlyCamera": "Єдина камера на цьому пристрої."
+  "cameraOnlyCamera": "Єдина камера на цьому пристрої.",
+  "cameraFlashlightHeading": "Ліхтарик",
+  "settingCameraFlashlightTitle": "Увімкнути ліхтарик",
+  "settingCameraFlashlightDescription": "Використовувати спалах камери як постійне світло."
 }

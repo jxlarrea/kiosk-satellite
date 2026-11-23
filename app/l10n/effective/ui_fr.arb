@@ -20321,6 +20321,45 @@
       ]
     }
   },
+  "cameraFlashlightHeading": "Lampe torche",
+  "@cameraFlashlightHeading": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Section heading.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
+  "settingCameraFlashlightTitle": "Allumer la lampe torche",
+  "@settingCameraFlashlightTitle": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
+  "settingCameraFlashlightDescription": "Utiliser le flash de la caméra comme éclairage continu.",
+  "@settingCameraFlashlightDescription": {
+    "context": "Settings > Camera > Flashlight",
+    "description": "Help below this setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Camera > Flashlight"
+      ],
+      "remoteAdmin": [
+        "Camera > Flashlight"
+      ]
+    }
+  },
   "settingMotionSensorTitle": "Capteur de mouvement",
   "@settingMotionSensorTitle": {
     "context": "Settings > Camera > Motion Sensor",

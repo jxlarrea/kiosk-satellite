@@ -109,6 +109,7 @@ Every item in this list corresponds directly to a kiosk setting. They are fully 
 | **Adaptive brightness** | switch | Follows the device's light sensor or the Home Assistant entity picked in its settings. |
 | **Camera enabled**, **Screensaver motion detection**, **Screensaver face detection** | switch | Requires physical camera hardware. The Camera enabled switch can be safely toggled throughout the day; the camera entities will remain listed. |
 | **RTSP Streaming** | switch | Enables or disables the RTSP server using the saved stream settings. Requires physical camera hardware. Camera enabled and Android camera permission must also be on. Changes sync with the local and remote settings pages without reconnecting ESPHome. |
+| **Flashlight** | switch | Turns the camera flashlight on or off. Requires a camera flash. Works with the camera off and while it streams. |
 | **Screensaver proximity detection** | switch | Requires a physical proximity sensor. |
 | **Screensaver schedule** | switch | Turns [scheduled screensavers](screensavers.md#schedule) on or off, the same as **Enable scheduled screensavers** on the device. The times themselves are set on the device. |
 | **Screensaver widgets** | switch | Shows or hides all [screensaver widgets](screensavers.md#widgets), the same as **Enable screensaver widgets** on the device. A running screensaver updates right away and the widget list stays as it is. |

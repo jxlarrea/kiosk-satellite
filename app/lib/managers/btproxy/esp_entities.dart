@@ -169,6 +169,10 @@ class EspEntitySurface {
   /// catalog.
   bool _ledIdleListed = false;
 
+  /// Whether this device has a camera flashlight, so the Flashlight switch
+  /// is in this run's catalog.
+  bool _flashlightListed = false;
+
   /// Coalesces the burst of wake-word state changes one voice turn makes
   /// into a single read of the page's engine state.
   Timer? _vsNudge;
@@ -290,6 +294,8 @@ class EspEntitySurface {
           'mdi:video-wireless-outline',
           defs.cameraRtspEnabled,
         ),
+        // Listed only where the device has a flash (issue #1574).
+        'flashlight': ('Flashlight', 'mdi:flashlight', defs.cameraFlashlight),
         'screensaver_motion': (
           'Screensaver motion detection',
           'mdi:motion-sensor',
@@ -630,6 +636,12 @@ class EspEntitySurface {
         reboot.ok &&
         reboot.data is Map &&
         (reboot.data as Map)['supported'] == true;
+    // The Flashlight switch exists where the device has a flash.
+    final flash = await commands.execute('getFlashlightSupport', const {});
+    _flashlightListed =
+        flash.ok &&
+        flash.data is Map &&
+        (flash.data as Map)['supported'] == true;
     // The LED Control idle entities exist where the LED Control page works:
     // on a device with lights, which is the only place the LED manager
     // registers ledStatus, and with Enable LED Control on.
@@ -1101,6 +1113,7 @@ class EspEntitySurface {
                     e.key != 'screensaver_motion' &&
                     e.key != 'screensaver_face')) &&
             (proximityPresent || e.key != 'screensaver_proximity') &&
+            (e.key != 'flashlight' || _flashlightListed) &&
             (e.key != 'now_playing_alongside_screensaver' ||
                 nowPlayingListed) &&
             (e.key != 'vs_mute_timers' || _timersNative) &&

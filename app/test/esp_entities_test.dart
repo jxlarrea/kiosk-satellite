@@ -1505,6 +1505,29 @@ void main() {
     expect(executed.map((e) => e.$1).toList(), ['rebootDevice']);
   });
 
+  test('the Flashlight switch is listed only with a flash', () async {
+    var ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, isNot(contains('flashlight')));
+
+    commands.register(
+      Command(
+        name: 'getFlashlightSupport',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok({'supported': true}),
+      ),
+    );
+    final catalog = await surface.build();
+    final entity = catalog.firstWhere((d) => d['objectId'] == 'flashlight');
+    expect(entity['type'], 'switch');
+    expect(entity['name'], 'Flashlight');
+    expect(entity['category'], 1);
+
+    await surface.handleCommand('flashlight', true);
+    expect(settings.get(defs.cameraFlashlight), true);
+    await surface.handleCommand('flashlight', false);
+    expect(settings.get(defs.cameraFlashlight), false);
+  });
+
   group('the LED Control Idle entities', () {
     void lights() => commands.register(
       Command(

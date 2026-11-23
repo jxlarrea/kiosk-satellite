@@ -15,5 +15,8 @@
   "cameraFront": "Avant",
   "cameraBack": "Arrière",
   "cameraExternal": "Externe",
-  "cameraOnlyCamera": "La seule caméra que possède cet appareil."
+  "cameraOnlyCamera": "La seule caméra que possède cet appareil.",
+  "cameraFlashlightHeading": "Lampe torche",
+  "settingCameraFlashlightTitle": "Allumer la lampe torche",
+  "settingCameraFlashlightDescription": "Utiliser le flash de la caméra comme éclairage continu."
 }

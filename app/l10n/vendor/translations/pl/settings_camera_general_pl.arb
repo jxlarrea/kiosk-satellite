@@ -15,5 +15,8 @@
   "cameraFront": "Przednia",
   "cameraBack": "Tylna",
   "cameraExternal": "Zewnętrzna",
-  "cameraOnlyCamera": "Jedyna kamera tego urządzenia."
+  "cameraOnlyCamera": "Jedyna kamera tego urządzenia.",
+  "cameraFlashlightHeading": "Latarka",
+  "settingCameraFlashlightTitle": "Włącz latarkę",
+  "settingCameraFlashlightDescription": "Użyj lampy błyskowej kamery jako stałego światła."
 }

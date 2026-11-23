@@ -1355,6 +1355,7 @@ class CameraMotion(
                     cameraProvider.bindToLifecycle(owner, selector, imageAnalysis)
                 }
                 boundCamera = camera
+                Flashlight.attach(camera, owner)
                 deviceCamera?.sharedCaptureCamera = camera.cameraInfo
                 deviceCamera?.sharedAnalysis = includeAnalysis && deviceCamera?.sharedCapture == null
                 deviceCamera?.sharedDiagnosticSession = diagnosticId

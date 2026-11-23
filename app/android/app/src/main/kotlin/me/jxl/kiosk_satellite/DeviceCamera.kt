@@ -423,7 +423,10 @@ class DeviceCamera(
             // and logs an invalid-camera warning for each one.
             parkCleanup { owner.destroy() }
             val camera = try {
-                provider.bindToLifecycle(owner, selector, capture).also { owner.resume() }
+                provider.bindToLifecycle(owner, selector, capture).also {
+                    Flashlight.attach(it, owner)
+                    owner.resume()
+                }
             } catch (e: Exception) {
                 CameraDiagnostics.record(diagnosticId, "snapshot bind failure", "requested=$target", true, e)
                 done(null, "could not open camera: ${e.message}")
@@ -468,7 +471,7 @@ class DeviceCamera(
         }
         pendingAnalysis.set(done)
         try {
-            provider.bindToLifecycle(owner, selector, analysis)
+            Flashlight.attach(provider.bindToLifecycle(owner, selector, analysis), owner)
             owner.resume()
         } catch (e: Exception) {
             CameraDiagnostics.record(diagnosticId, "snapshot bind failure", "requested=$target, analysis", true, e)

@@ -6888,6 +6888,22 @@ const cameraRtspDateTimeBackground = SettingDef<bool>(
   dependsOn: 'camera.rtsp.datetime',
 );
 
+// The camera flash as a steady light (issue #1574), for example to watch
+// a 3D printer on the camera stream at night. It needs no camera session of
+// the app's, so it does not gate on the Camera switch. Hidden where the
+// device has no flash (deviceHiddenKeys, filled at boot by the flashlight
+// manager). Per device: the light belongs to the spot this kiosk watches.
+const cameraFlashlight = SettingDef<bool>(
+  key: 'camera.flashlight',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Turn on flashlight',
+  description: 'Use the camera flash as a steady light.',
+  category: 'Camera',
+  section: 'Flashlight',
+  perDevice: true,
+);
+
 String? validateRtspPort(Object? value) {
   final port = value is num ? value : num.tryParse('$value');
   return port == null ||
@@ -15217,6 +15233,7 @@ const List<SettingDef<Object>> allSettings = [
   cameraRtspDateTime,
   cameraRtspDateTimeBackground,
   cameraRtspTls,
+  cameraFlashlight,
   screensaverScheduleEnabled,
   screensaverSchedule,
   wakeWordEnabled,

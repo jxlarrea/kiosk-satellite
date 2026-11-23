@@ -2850,5 +2850,9 @@
   "ground_control.voice_match": {
     "title": "settingGroundControlVoiceMatchTitle",
     "description": "settingGroundControlVoiceMatchFeaturesDescription"
+  },
+  "camera.flashlight": {
+    "title": "settingCameraFlashlightTitle",
+    "description": "settingCameraFlashlightDescription"
   }
 }

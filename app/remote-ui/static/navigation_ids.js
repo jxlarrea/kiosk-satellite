@@ -78,5 +78,6 @@ export const navigationMessageIds = {
   "Compass options": "navigationOptionsSection",
   "Full screen view, pills, shared timers": "settingsMenuTimersSummary",
   "Ground Control": "settingsMenuGroundControl",
-  "Voice Match and Vision Match": "settingsMenuGroundControlFeatures"
+  "Voice Match and Vision Match": "settingsMenuGroundControlFeatures",
+  "Flashlight": "cameraFlashlightHeading"
 };

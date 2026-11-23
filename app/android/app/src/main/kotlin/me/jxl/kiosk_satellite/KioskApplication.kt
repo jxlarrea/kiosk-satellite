@@ -187,6 +187,7 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         EventBroadcastBridge(applicationContext, messenger)
         HardwareKeys.attach(applicationContext, messenger)
         LedBridge(applicationContext, messenger)
+        Flashlight.register(applicationContext, messenger)
         SystemUpdateBridge(applicationContext, messenger)
         plugins = me.jxl.kiosk_satellite.plugins.PluginBridge(applicationContext, messenger)
         // Plugin overlays are platform views on the cached engine, built
