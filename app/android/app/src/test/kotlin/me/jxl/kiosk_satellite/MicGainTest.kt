@@ -26,9 +26,10 @@ class MicGainTest {
 
     @Test
     fun sliderStaysInItsRange() {
-        assertEquals(24.0, db(MicRecorder.gainFactor(60.0)), 1e-9)
+        assertEquals(36.0, db(MicRecorder.gainFactor(36.0)), 1e-9)
+        assertEquals(36.0, db(MicRecorder.gainFactor(60.0)), 1e-9)
         assertEquals(-24.0, db(MicRecorder.gainFactor(-60.0)), 1e-9)
-        assertEquals(29.0, db(MicRecorder.gainFactor(60.0, 5.0)), 1e-9)
+        assertEquals(41.0, db(MicRecorder.gainFactor(60.0, 5.0)), 1e-9)
     }
 
     @Test

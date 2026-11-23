@@ -13,6 +13,7 @@ import 'ort_init.dart';
 import 'ort_tensor_io.dart';
 import 'ort_float_runner.dart';
 import 'stream_matcher.dart';
+import 'window_level.dart';
 import '../wake_msg.dart';
 import '../near_miss.dart';
 import '../pcm16.dart';
@@ -87,6 +88,9 @@ class _Kw {
 
   OrtFloatRunner? runner;
 
+  /// When the silence veto last logged for this word.
+  int vetoLoggedMs = -(1 << 30);
+
   /// Set when the first-inference output check fails: the session is released
   /// and the model never scored again (removing mid-iteration would break the
   /// scoring loop).
@@ -99,7 +103,17 @@ class _IsolateWorker {
   late final _chunkTelemetry = ChunkTelemetry(_main);
 
   static const _chunkSamples = 1280;
+
+  /// A wake word match is dropped when both the whole window and its
+  /// loudest [_vetoSpanMs] read below this RMS (about -54 dBFS), and a stop
+  /// word match when the whole window does: speech that quiet is far from
+  /// the microphone.
   static const _rmsVeto = 0.002;
+  static const _vetoSpanMs = 500;
+
+  /// How often the veto logs one word's decisions, so a word that matches
+  /// on several windows in a row logs once.
+  static const _vetoLogEveryMs = 2000;
 
   final List<_Kw> _kws = [];
   LogMelExtractor? _extractor;
@@ -403,7 +417,7 @@ class _IsolateWorker {
         combined = streamRes;
       }
 
-      final matched = combined.matched && rms() >= _rmsVeto;
+      final matched = combined.matched && _passesVeto(k, rms(), nowMs);
       final fired = k.gate.update(
         matched: matched,
         matchedConfidence: combined.matchedConfidence,
@@ -537,6 +551,47 @@ class _IsolateWorker {
       }
     }
   }
+
+  /// Whether a match in a window of RMS [windowRms] is loud enough to keep.
+  ///
+  /// The whole window used to be the only measure, which on a quiet
+  /// microphone dropped a wake word said in a normal voice a few meters
+  /// away: the word fills about half the window and the quiet around it
+  /// pulls the RMS down. The loudest stretch of the window is measured too
+  /// and either one at the veto keeps the match, so every match the window
+  /// alone kept is still kept. A match the window alone would have dropped
+  /// is logged with both levels, kept or not.
+  ///
+  /// The stop word keeps the whole window as its only measure. It matches
+  /// much more loosely than a wake word and listens while the kiosk talks,
+  /// so a quiet stretch of the answer left over by echo cancellation must
+  /// not be enough to end it.
+  bool _passesVeto(_Kw k, double windowRms, int nowMs) {
+    if (windowRms >= _rmsVeto) return true;
+    if (k.isStop) return false;
+    final feature = _feature!;
+    final loudest = loudestRms(
+      _ring!,
+      _head,
+      feature.sampleRate * _vetoSpanMs ~/ 1000,
+      step: feature.hopSamples,
+    );
+    final kept = loudest >= _rmsVeto;
+    if (nowMs - k.vetoLoggedMs >= _vetoLogEveryMs) {
+      k.vetoLoggedMs = nowMs;
+      _log(
+        'info',
+        'silence veto: ${kept ? 'kept' : 'dropped'} a "${k.id}" match '
+            '(loudest $_vetoSpanMs ms ${_dbfs(loudest)}, '
+            'window ${_dbfs(windowRms)}, veto ${_dbfs(_rmsVeto)})',
+      );
+    }
+    return kept;
+  }
+
+  static String _dbfs(double rms) => rms > 0
+      ? '${(20 * math.log(rms) / math.ln10).toStringAsFixed(1)} dBFS'
+      : '-inf dBFS';
 
   /// Absolute sample index where the matched wake word ended.
   ///

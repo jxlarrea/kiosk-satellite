@@ -91,7 +91,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
          * there. Negative values attenuate, for microphones that run too hot.
          */
         internal fun gainFactor(db: Double, baseDb: Double = 0.0): Double {
-            val total = db.coerceIn(-24.0, 24.0) + baseDb.coerceIn(0.0, 48.0)
+            val total = db.coerceIn(-24.0, 36.0) + baseDb.coerceIn(0.0, 48.0)
             if (total == 0.0) return 1.0
             return Math.pow(10.0, total / 20.0)
         }

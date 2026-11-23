@@ -7093,7 +7093,7 @@ const micGainDb = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 0,
   min: -24,
-  max: 24,
+  max: 36,
   step: 1,
   unit: ' dB',
   title: 'Microphone gain',

@@ -4,7 +4,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- **Microphone gain goes up to 36 dB (#1568).** **Microphone gain** now goes from -24 to 36 dB, for microphones that still record too quietly at 24 dB. A kiosk on an older version that gets a higher value from Fleet or a settings import uses 24 dB. See [Microphone](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/microphone.md#microphone-gain).
+
 ### Fixed
+- **A wake word said in a normal voice dropped as too quiet (#1568).** With vsWakeWord, a wake word that was recognized and scored above the threshold could still be dropped as speech from too far away, so on a device whose microphone records quietly, like the Lenovo Smart Display 8, it only worked when shouted. The level was measured over the whole 1.3 seconds the engine listens to, and a wake word fills only about half of that, so the quiet around it pulled the level down. The loudest half second is now measured too and either one at the limit keeps the wake word. Speech from across the room is still dropped, and the log shows both levels when the loudest half second decides. The stop word keeps the old measure, since it matches more loosely and listens while an answer plays.
 - **A black screen with flashing navigation buttons after turning Lockdown Mode off (#1565).** On a device where Kiosk Satellite is the device owner, such as an Echo Show running the Kiosk Satellite image, Android kept the screen pinned to the app that had closed when the app updated or restarted during Lockdown Mode or with **Disable home button** on. Turning Lockdown Mode off after that made Android close the kiosk and open it again several times a second. The screen stayed black, the remote admin stopped answering and only restarting the device ended it. A pin left over from before the app restarted is now ended as the app starts, and the kiosk pins again right away when it should.
 
 ## v2026.11.27 - 2026-11-22

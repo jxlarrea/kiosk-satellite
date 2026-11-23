@@ -55,7 +55,7 @@ Off by default. It runs WebRTC's noise suppressor over the microphone, on any ca
 
 ## Microphone Gain
 
-Adjusts the captured audio from -24 to 24 dB after echo cancellation and noise suppression, so a boost never clips the speaker's echo before the canceller removes it. The wake word engine, the stop word classifier and the speech to text stream sent to Home Assistant all receive the adjusted signal.
+Adjusts the captured audio from -24 to 36 dB after echo cancellation and noise suppression, so a boost never clips the speaker's echo before the canceller removes it. The wake word engine, the stop word classifier and the speech to text stream sent to Home Assistant all receive the adjusted signal.
 
 To calibrate this, keep the wake word tester open and adjust the gain until normal speech from your usual distance reads around 0.05. As a baseline rule, every 6 dB doubles the signal level; for example, if the tester reads 0.012, you will need roughly 12 dB of gain to hit the target 0.05 mark.
 
