@@ -203,6 +203,8 @@ class CompassController {
     for (final l in _watched) {
       l.addListener(_onOverlayChanged);
     }
+    c.voiceTimers.timers.addListener(_onTimersChanged);
+    c.voiceTimers.alerts.addListener(_onTimersChanged);
     menuVisible.addListener(() {
       if (!menuVisible.value) menuUnlocked.value = false;
       // Opaque and full screen, like the Music Library: the page under it
@@ -274,6 +276,8 @@ class CompassController {
     for (final l in _watched) {
       l.removeListener(_onOverlayChanged);
     }
+    c.voiceTimers.timers.removeListener(_onTimersChanged);
+    c.voiceTimers.alerts.removeListener(_onTimersChanged);
     _clearShots();
     current.dispose();
     planeCovered.dispose();
@@ -775,6 +779,10 @@ class CompassController {
       current.value = picked;
       menuVisible.value = false;
       if (candidate.kind != 'now_playing') unawaited(_closeAllBut(candidate));
+      // Nobody touched the screen to get here: a timer opened its view, or
+      // Home Assistant opened one. The countdown starts with the view, or
+      // the view stayed until the next touch (issue #1575).
+      _armReturn();
       return;
     }
     if (view.isDashboard || _isUp(view)) return;
@@ -837,6 +845,9 @@ class CompassController {
       // A ringing alarm or a call keeps its screen; the next touch arms
       // the timer again.
       if (!swipeReady) return;
+      // So does a finished timer on the Timers view. The countdown starts
+      // over once it is dismissed.
+      if (_timerRinging) return;
       // Another app is in front, opened from the Menu, say. Most views
       // bring the kiosk forward as they open, so going to the center
       // would pull it back over that app (issue #1453). The App
@@ -848,6 +859,33 @@ class CompassController {
       unawaited(goCenter());
     });
   }
+
+  /// The timers on the Timers view at the last look.
+  String _timersSeen = '';
+
+  /// A timer that starts, ends or is dismissed on the Timers view counts
+  /// as activity there, by voice or from another kiosk as much as by hand.
+  /// The countdown runs from the last change, or a voice timer cancelled a
+  /// minute after it started took the kiosk to the center at once. Only a
+  /// change of which timers show counts: the lists are sent again on every
+  /// shared heartbeat.
+  void _onTimersChanged() {
+    final t = c.voiceTimers;
+    final seen = [
+      for (final timer in t.timers.value) timer.id,
+      '|',
+      for (final timer in t.alerts.value) timer.id,
+    ].join(',');
+    if (seen == _timersSeen) return;
+    _timersSeen = seen;
+    if (enabled && currentView.kind == 'timers') _armReturn();
+  }
+
+  /// A finished timer rings on the Timers view in hand.
+  bool get _timerRinging =>
+      currentView.kind == 'timers' &&
+      c.voiceTimers.alerts.value.isNotEmpty &&
+      !c.voiceTimers.alertHidden.value;
 
   /// Now Playing came up in the screensaver's place, on the idle clock or
   /// as a track started, and nobody opened it. It is the view in hand all
