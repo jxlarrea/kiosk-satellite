@@ -196,6 +196,7 @@ class _Match implements VoiceMatchPort {
   final turns = <_MatchTurn>[];
   bool follow = false;
   bool seamless = false;
+  bool asked = false;
 
   @override
   VoiceMatchTurnPort? begin(
@@ -203,11 +204,13 @@ class _Match implements VoiceMatchPort {
     bool follow = false,
     bool followup = false,
     bool seamless = false,
+    bool asked = false,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   }) {
     this.follow = follow;
     this.seamless = seamless;
+    this.asked = asked;
     final t = _MatchTurn(onEvent, onAudio, onLost);
     turns.add(t);
     return t;
@@ -2341,6 +2344,8 @@ void main() {
         // Talk right after the wake word doesn't apply to a realtime
         // conversation: its audio never starts inside the wake word.
         expect(h.match!.seamless, isFalse);
+        // The wake word started it, not a line from Home Assistant.
+        expect(h.match!.asked, isFalse);
         expect(h.backend.started?.manualTurns, isTrue);
         h.mic.speak();
         h.mic.speak();

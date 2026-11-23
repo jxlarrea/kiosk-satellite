@@ -1271,6 +1271,9 @@ class RealtimeSession {
     final match = port.begin(
       (e) => unawaited(_onMatch(gen, e)),
       follow: true,
+      // Home Assistant opened the conversation: the user's first words are
+      // a reply to its line.
+      asked: _opening.isNotEmpty,
       onAudio: (pcm) => _onMatchAudio(gen, pcm),
       onLost: () => _onMatchLost(gen),
     );
@@ -1311,9 +1314,7 @@ class RealtimeSession {
     switch (e['type']) {
       case 'speaker':
         final name = e['name'];
-        onTrace?.call(
-          'voice match: ${name ?? 'unknown voice'} (${e['score']})',
-        );
+        onTrace?.call(voiceMatchSpeakerLine(e));
         onSpeaker?.call(e);
         if (name is String && name.isNotEmpty) {
           _speakerName = name;

@@ -105,6 +105,7 @@ class _MatchTurn implements VoiceMatchTurnPort {
     this.follow = false,
     this.followup = false,
     this.seamless = false,
+    this.asked = false,
   });
   final void Function(Map<String, Object?> event) onEvent;
   final void Function(Uint8List pcm)? onAudio;
@@ -112,6 +113,7 @@ class _MatchTurn implements VoiceMatchTurnPort {
   final bool follow;
   final bool followup;
   final bool seamless;
+  final bool asked;
   int fed = 0;
   bool ended = false;
 
@@ -140,6 +142,7 @@ class _Match implements VoiceMatchPort {
     bool follow = false,
     bool followup = false,
     bool seamless = false,
+    bool asked = false,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   }) {
@@ -150,6 +153,7 @@ class _Match implements VoiceMatchPort {
       follow: follow,
       followup: followup,
       seamless: seamless,
+      asked: asked,
     )..ready = ready;
     turns.add(t);
     return t;
@@ -942,6 +946,31 @@ void main() {
     });
   });
 
+  test(
+    "Voice Match's speaker in the log: a name, a short answer or nobody",
+    () {
+      expect(
+        voiceMatchSpeakerLine({'name': 'Ana', 'score': 0.71, 'by': 'voice'}),
+        'voice match: Ana (0.71)',
+      );
+      // A reply to a question with no wake word, too short to say who: taken
+      // without a name, which is not an unknown voice.
+      expect(
+        voiceMatchSpeakerLine({
+          'name': null,
+          'score': 0.457,
+          'by': 'answer',
+          'line': 0.32,
+        }),
+        'voice match: short answer taken (0.457, needed 0.32)',
+      );
+      expect(
+        voiceMatchSpeakerLine({'name': null, 'score': 0.2, 'by': null}),
+        'voice match: unknown voice (0.2)',
+      );
+    },
+  );
+
   group('Voice Match', () {
     void listening(_Harness h, FakeAsync async) {
       h.session.wake('Okay Nabu');
@@ -980,6 +1009,36 @@ void main() {
         h.session.onEvent(VaEvent.runEnd, {});
         async.flushMicrotasks();
         expect(turn.ended, isTrue);
+      });
+    });
+
+    test('a reply to a question from Home Assistant is one Voice Match can '
+        'take a short answer for', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        h.session.announce(
+          const VoiceAnnouncement(
+            mediaId: 'http://ha/q.mp3',
+            text: 'Close the garage?',
+            preannounceMediaId: '',
+            startConversation: true,
+          ),
+        );
+        async.flushMicrotasks();
+        h.session.onSoundEnded(h.player.lastId);
+        async.flushMicrotasks();
+        final turn = h.match!.turns.single;
+        expect(turn.asked, isTrue);
+        expect(turn.followup, isFalse);
+        expect(turn.seamless, isFalse);
+      });
+    });
+
+    test('a wake word turn is not a reply to a question', () {
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        listening(h, async);
+        expect(h.match!.turns.single.asked, isFalse);
       });
     });
 

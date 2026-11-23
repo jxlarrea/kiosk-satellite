@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **How each turn started, for Ground Control (Ground Control #20).** Each command sent to Ground Control now says how it started: a wake word, a reply to something Home Assistant asked (`assist_satellite.ask_question`, `assist_satellite.start_conversation`), a follow-up in a conversation or a conversation started by hand. On a kiosk that answers chosen people, Ground Control 2026.11.13 or newer takes a short reply like "yes" only for a reply to a question and a follow-up, where it was dropped as an unknown voice before. See [Trimming](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/voice-match.md#trimming).
+
+### Changed
+- **A short answer taken by Ground Control in the log.** When Home Assistant asks a question and Ground Control takes a short reply like "yes" without saying who is speaking, the log now reads `voice match: short answer taken` with the score and the score it needed. It read `unknown voice`, as for a voice that is turned away. This needs Ground Control 2026.11.13 or newer.
+
 ## v2026.11.30 - 2026-11-23
 
 ### Added

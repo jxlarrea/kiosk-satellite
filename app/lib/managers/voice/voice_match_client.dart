@@ -79,6 +79,7 @@ class VoiceMatchTurn {
     bool seamless = false,
     String? assistant,
     String? language,
+    String? interaction,
     void Function(String session)? onReady,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
@@ -121,6 +122,9 @@ class VoiceMatchTurn {
         // leaves the end of the wake word out of the command.
         'seamless': seamless,
         'assistant': ?assistant,
+        // How the turn started: wake_word, question (a reply to something
+        // Home Assistant asked), follow_up or manual.
+        'interaction': ?interaction,
         // The wake word is said with the accent of the kiosk's language.
         if (language != null && language.isNotEmpty) 'language': language,
       }),

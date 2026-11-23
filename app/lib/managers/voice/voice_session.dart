@@ -52,16 +52,32 @@ abstract class VoiceMatchPort {
   /// later turn of the same conversation, with no wake word of its own.
   /// [seamless] says the turn's audio starts the moment the wake word
   /// fired (Talk right after the wake word), so it can hold the end of the
-  /// wake word. [onLost] says the service went away before the turn was
-  /// over.
+  /// wake word. [asked] says the turn is a reply to something Home
+  /// Assistant asked (ask_question, start_conversation or a conversation it
+  /// opened), where a short answer like "yes" is expected. [onLost] says
+  /// the service went away before the turn was over.
   VoiceMatchTurnPort? begin(
     void Function(Map<String, Object?> event) onEvent, {
     bool follow = false,
     bool followup = false,
     bool seamless = false,
+    bool asked = false,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   });
+}
+
+/// Ground Control's `speaker` event in a few words, for the log: who was
+/// recognized, a short answer taken without a name (a reply to a question
+/// with no wake word, too short to say who) or a voice nobody knows.
+String voiceMatchSpeakerLine(Map<String, Object?> e) {
+  final name = e['name'];
+  final score = e['score'];
+  if (name is String && name.isNotEmpty) return 'voice match: $name ($score)';
+  if (e['by'] == 'answer') {
+    return 'voice match: short answer taken ($score, needed ${e['line']})';
+  }
+  return 'voice match: unknown voice ($score)';
 }
 
 abstract class VoiceMatchTurnPort {
@@ -361,6 +377,7 @@ class VoiceSession {
     int gen, {
     required bool chime,
     required bool keepPreRoll,
+    bool reply = false,
   }) async {
     _endMatch();
     onSpeaker?.call(null);
@@ -370,6 +387,8 @@ class VoiceSession {
       follow: follow,
       followup: _phase == _Phase.followup,
       seamless: keepPreRoll,
+      // A reply to something Home Assistant asked.
+      asked: reply,
       onAudio: (pcm) => _onMatchAudio(gen, pcm),
       onLost: () => _onMatchLost(gen),
     );
@@ -973,6 +992,7 @@ class VoiceSession {
         gen,
         chime: opts.followupChime && opts.wakeSound,
         keepPreRoll: false,
+        reply: true,
       );
       return;
     }
@@ -1102,9 +1122,7 @@ class VoiceSession {
     if (gen != _gen) return;
     switch (e['type']) {
       case 'speaker':
-        onTrace?.call(
-          'voice match: ${e['name'] ?? 'unknown voice'} (${e['score']})',
-        );
+        onTrace?.call(voiceMatchSpeakerLine(e));
         onSpeaker?.call(e);
         final name = e['name'];
         // The same turn, even when the command ended before the voice was

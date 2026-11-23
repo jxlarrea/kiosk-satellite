@@ -68,6 +68,7 @@ void main() {
       bool seamless = false,
       String? assistant,
       String? language,
+      String? interaction,
     }) => VoiceMatchTurn.open(
       baseUrl: 'http://127.0.0.1:${server.port}',
       token: 't',
@@ -82,6 +83,7 @@ void main() {
       seamless: seamless,
       assistant: assistant,
       language: language,
+      interaction: interaction,
     );
 
     final woken = open(
@@ -89,8 +91,10 @@ void main() {
       seamless: true,
       assistant: 'assist',
       language: 'fr',
+      interaction: 'wake_word',
     );
     expect(await got.moveNext(), isTrue);
+    expect(got.current['interaction'], 'wake_word');
     expect(got.current['wake_word'], 'Alexa');
     expect(got.current['wake_word_engine'], 'microWakeWord');
     expect(got.current['wake_word_model'], 'alexa');
@@ -101,8 +105,11 @@ void main() {
 
     // No wake word was said (a follow-up or a turn Home Assistant
     // started): nothing about one and nothing to leave out.
-    final asked = open(assistant: 'realtime');
+    final asked = open(assistant: 'realtime', interaction: 'question');
     expect(await got.moveNext(), isTrue);
+    // A reply to something Home Assistant asked: Ground Control takes a
+    // short answer for it.
+    expect(got.current['interaction'], 'question');
     expect(got.current.containsKey('wake_word'), isFalse);
     expect(got.current.containsKey('wake_word_engine'), isFalse);
     expect(got.current.containsKey('wake_word_model'), isFalse);

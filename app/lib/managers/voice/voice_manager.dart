@@ -4357,6 +4357,7 @@ class _VoiceMatch implements VoiceMatchPort {
     bool follow = false,
     bool followup = false,
     bool seamless = false,
+    bool asked = false,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   }) {
@@ -4418,6 +4419,15 @@ class _VoiceMatch implements VoiceMatchPort {
       wakeWordModel: _voice._modelForSlot(_voice._assistant),
       seamless: seamless && clip != null,
       assistant: _voice._realtime.busy ? 'realtime' : 'assist',
+      // How the turn started. Ground Control takes a short answer like
+      // "yes" only for a reply to something Home Assistant asked.
+      interaction: followup
+          ? 'follow_up'
+          : asked
+          ? 'question'
+          : clip != null
+          ? 'wake_word'
+          : 'manual',
       language: s.get(defs.uiLanguage),
       onReady: (session) => _conversation = session,
       onAudio: onAudio,
