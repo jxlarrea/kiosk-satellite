@@ -131,17 +131,29 @@ void main() {
         'launchApp': {'package': 'com.example.music'},
         'openKioskLink': {'url': 'ks://alarms'},
         'openAlarms': {'alarm': 'next'},
+        'sayAlarm': {'text': 'Snooze 2, 10 minutes'},
+      };
+      const alarms = {
+        'snoozeAlarm': 'alarmSnooze',
+        'stopAlarm': 'alarmStop',
+        'skipNextAlarm': 'alarmSkip',
+        'sayAlarm': 'alarmSay',
       };
       String target(String name) => switch (name) {
         'launchApp' => 'pluginLaunchApp',
         'openKioskLink' => 'pluginOpenKioskLink',
-        _ => name,
+        _ => alarms[name] ?? name,
       };
       for (final name in PluginHostApi.controlNames) {
         register(target(name), (p) async {
           expect(
             p,
-            name == 'screenOff' ? {'prompt': false} : arguments[name] ?? {},
+            name == 'screenOff'
+                ? {'prompt': false}
+                : {
+                    ...?arguments[name],
+                    if (alarms.containsKey(name)) 'source': 'plugin:example',
+                  },
           );
           return const CommandResult.ok({'secret': 'hidden'});
         });
@@ -230,6 +242,17 @@ void main() {
           {'alarm': 'first'},
           {'alarm': true},
           {'alarm': 'next', 'view': 'list'},
+        ],
+        'snoozeAlarm': [
+          {'minutes': '5'},
+        ],
+        'sayAlarm': [
+          {},
+          {'text': ''},
+          {'text': '   '},
+          {'text': true},
+          {'text': 'x' * 251},
+          {'text': 'Snoozed', 'volume': '50'},
         ],
         'openKioskLink': [
           {},
@@ -2003,6 +2026,80 @@ void main() {
       view.value = AssistView.hidden;
       await settle();
       expect((sent.single['payload'] as Map)['overlay'], 'hidden');
+    });
+  });
+
+  group('Alarms (issue #1585)', () {
+    final status = {
+      'phase': 'ringing',
+      'ids': ['a1'],
+      'labels': ['', 'Work'],
+      'at': '2026-11-24T12:00:00.000Z',
+      'snoozedUntil': null,
+      'takeover': 'clock',
+      'next': {'id': 'a1', 'at': '2026-11-25T12:00:00.000Z'},
+      'alarms': [
+        {'id': 'a1', 'time': '07:00', 'label': 'Work'},
+      ],
+      'visible': false,
+    };
+
+    test('getAlarmState reads the phase and times, not the list', () async {
+      register('alarmsStatus', (_) async => CommandResult.ok(status));
+      final result = await read('getAlarmState');
+      expect(result['ok'], true);
+      expect(result['data'], {
+        'phase': 'ringing',
+        'label': 'Work',
+        'at': '2026-11-24T12:00:00.000Z',
+        'snoozedUntil': null,
+        'next': '2026-11-25T12:00:00.000Z',
+      });
+    });
+
+    test('alarm.state follows the phase, once per change', () async {
+      subscribe('alarm.state');
+      bus.publish(AlarmStateChanged(status));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      expect(sent.single['event'], 'alarm.state');
+      expect((sent.single['payload'] as Map)['phase'], 'ringing');
+      sent.clear();
+      // An edit to the list alone changes nothing a plugin sees.
+      bus.publish(AlarmStateChanged({...status, 'alarms': const []}));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      expect(sent, isEmpty);
+      bus.publish(
+        AlarmStateChanged({
+          ...status,
+          'phase': 'snoozed',
+          'snoozedUntil': '2026-11-24T12:10:00.000Z',
+        }),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      final payload = Map.of(sent.single['payload'] as Map)..remove('time');
+      expect(payload, {
+        'phase': 'snoozed',
+        'label': 'Work',
+        'at': '2026-11-24T12:00:00.000Z',
+        'snoozedUntil': '2026-11-24T12:10:00.000Z',
+        'next': '2026-11-25T12:00:00.000Z',
+      });
+    });
+
+    test('alarm controls say why nothing happened', () async {
+      api.open({
+        ...session,
+        'capabilities': ['host.control'],
+      });
+      register(
+        'alarmSnooze',
+        (_) async => const CommandResult.fail('no alarm is ringing'),
+      );
+      final result = await read('snoozeAlarm');
+      expect(result, {'ok': false, 'error': 'no alarm is ringing'});
+      // Reads stay out of reach without host.read.
+      register('alarmsStatus', (_) async => CommandResult.ok(status));
+      expect((await read('getAlarmState'))['ok'], false);
     });
   });
 

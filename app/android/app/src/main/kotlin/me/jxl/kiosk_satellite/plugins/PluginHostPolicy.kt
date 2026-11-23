@@ -16,7 +16,7 @@ internal object PluginHostPolicy {
         "detection.person", "detection.presence", "voice.interaction", "voice.state", "intercom.state",
         "wakeword.state", "wakeword.detected", "stopword.detected", "camera.view", "navigation.view", "browser.state",
         "audio.noise", "voice.text", "voice.level", "voice.overlay", "voice.skin", "voice.appearance",
-        "sendspin.player",
+        "sendspin.player", "alarm.state",
     )
 
     /** The key of a Home Assistant subscription event, `ha.subscription.KEY`, or null. */

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/command_registry.dart';
 import '../../core/event_bus.dart';
 import '../../core/events.dart';
+import '../alarms/alarm_manager.dart';
 import '../browser/dashboard_state.dart';
 import '../home_assistant/plugin_entities.dart';
 import '../home_assistant/plugin_ha_socket.dart';
@@ -127,6 +128,7 @@ class PluginHostApi {
   final _sessions = <String, _HostSession>{};
   bool _disposed = false;
   String? _intercomSent;
+  String? _alarmSent;
   String? _voiceTextSent;
   String _overlaySent = 'hidden';
   double _voiceLevelSent = 0;
@@ -169,6 +171,7 @@ class PluginHostApi {
     'getDashboards',
     'getSendspinPlayer',
     'getLauncherApps',
+    'getAlarmState',
   ];
   static const controlNames = [
     'startScreensaver',
@@ -197,6 +200,10 @@ class PluginHostApi {
     'hideCalendar',
     'openAlarms',
     'hideAlarms',
+    'snoozeAlarm',
+    'stopAlarm',
+    'skipNextAlarm',
+    'sayAlarm',
     'openKioskLink',
     'loadUrl',
     'loadDashboard',
@@ -339,6 +346,11 @@ class PluginHostApi {
                     DateTime.tryParse(date) != null));
       case 'openAlarms':
         return keys({'alarm'}) && (params.isEmpty || params['alarm'] == 'next');
+      case 'sayAlarm':
+        return params.length == 1 &&
+            text('text') &&
+            (params['text'] as String).trim().length <=
+                AlarmManager.sayMaxLength;
       case 'openKioskLink':
         // Any ks:// link a dashboard can use (issue #1213). The command
         // refuses the few a plugin may not run.
@@ -398,7 +410,47 @@ class PluginHostApi {
     'navigation.view',
     'browser.state',
     'sendspin.player',
+    'alarm.state',
   ];
+
+  /// The controls that run an alarm command. They answer with the reason
+  /// one did not happen, such as no alarm ringing.
+  static const _alarmControls = {
+    'snoozeAlarm': 'alarmSnooze',
+    'stopAlarm': 'alarmStop',
+    'skipNextAlarm': 'alarmSkip',
+    'sayAlarm': 'alarmSay',
+  };
+
+  /// What plugins see of the alarms (issue #1585): the phase, the ringing
+  /// alarm's name, its ring time, the end of a snooze and the next ring.
+  /// The list itself stays private.
+  static Map<String, Object?> alarmState(Map status) {
+    final labels = status['labels'];
+    final next = status['next'];
+    String? time(Object? value) => value is String ? value : null;
+    return {
+      'phase':
+          const [
+            'idle',
+            'sunrise',
+            'ringing',
+            'snoozed',
+          ].contains(status['phase'])
+          ? status['phase']
+          : 'idle',
+      'label': labels is List
+          ? labels.whereType<String>().firstWhere(
+              (l) => l.trim().isNotEmpty,
+              orElse: () => '',
+            )
+          : '',
+      'at': time(status['at']),
+      'snoozedUntil': time(status['snoozedUntil']),
+      'next': next is Map ? time(next['at']) : null,
+    };
+  }
+
   static const _fields = {
     'getLightLevel': ['present', 'lux', 'live'],
     'getNoiseLevel': ['available', 'dbfs', 'held', 'updated'],
@@ -770,12 +822,15 @@ class PluginHostApi {
               'getVoiceState' => 'voiceStatus',
               'getIntercomState' => 'intercomSensors',
               'getSendspinPlayer' => 'sendspinPlayer',
+              'getAlarmState' => 'alarmsStatus',
               'launchApp' => 'pluginLaunchApp',
               'openKioskLink' => 'pluginOpenKioskLink',
-              _ => name,
+              _ => _alarmControls[name] ?? name,
             },
             name == 'screenOff'
                 ? {'prompt': false}
+                : _alarmControls.containsKey(name)
+                ? {...params, 'source': 'plugin:${session.id}'}
                 : Map<String, Object?>.from(params),
           )
           .timeout(const Duration(seconds: 8));
@@ -785,6 +840,10 @@ class PluginHostApi {
         ).toJson();
       }
       if (!result.ok) {
+        // The alarm commands' reasons are fixed words, safe to pass on.
+        if (_alarmControls.containsKey(name) && result.error != null) {
+          return CommandResult.fail(result.error).toJson();
+        }
         return const CommandResult.fail(
           'KS could not complete this command. The feature may be unavailable.',
         ).toJson();
@@ -829,6 +888,14 @@ class PluginHostApi {
           ).toJson();
         }
         return CommandResult.ok(projected).toJson();
+      }
+      if (name == 'getAlarmState') {
+        if (data is! Map) {
+          return const CommandResult.fail(
+            'KS returned an unexpected read response',
+          ).toJson();
+        }
+        return CommandResult.ok(alarmState(data)).toJson();
       }
       final fields = _fields[name];
       if (fields != null) {
@@ -1173,6 +1240,7 @@ class PluginHostApi {
     ),
     VoiceSatelliteStateChanged e => ('voice.state', {'state': e.state}),
     IntercomStateChanged e => ('intercom.state', intercomSensors(e.status)),
+    AlarmStateChanged e => ('alarm.state', alarmState(e.status)),
     WakeWordStateChanged e => (
       'wakeword.state',
       {'active': e.active, 'listening': e.listening, 'muted': e.muted},
@@ -1470,6 +1538,12 @@ class PluginHostApi {
       final value = jsonEncode(projected.$2);
       if (value == _intercomSent) return;
       _intercomSent = value;
+    }
+    // The alarms' status also changes with every edit to the list.
+    if (projected.$1 == 'alarm.state') {
+      final value = jsonEncode(projected.$2);
+      if (value == _alarmSent) return;
+      _alarmSent = value;
     }
     for (final session in _sessions.values) {
       if (!session.subscriptions.contains(projected.$1)) continue;

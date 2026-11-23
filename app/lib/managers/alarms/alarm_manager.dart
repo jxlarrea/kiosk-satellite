@@ -147,6 +147,7 @@ class AlarmManager extends Manager {
     DateTime Function()? clock,
     MethodChannel? channel,
     this._userName,
+    this._tts,
   }) : _clock = clock ?? DateTime.now,
        _channel = channel ?? const MethodChannel('kiosk_satellite/alarms');
 
@@ -154,6 +155,16 @@ class AlarmManager extends Manager {
   final DateTime Function() _clock;
   final MethodChannel _channel;
   final Future<String> Function()? _userName;
+
+  /// Speaks a message in place of Home Assistant, for tests: engine,
+  /// language, voice and message in, audio out.
+  final Future<Uint8List?> Function(
+    String engine,
+    String language,
+    String voice,
+    String message,
+  )?
+  _tts;
 
   /// The mode a plugin holds the screensaver on, which wins over the
   /// schedule and the setting. Set by the app container.
@@ -962,6 +973,78 @@ class AlarmManager extends Manager {
   Future<void> _speakRing(Alarm alarm, DateTime at, int gen) async {
     final text = await spokenPhrase(alarm, at);
     if (text.isEmpty) return;
+    final path = await _phraseFile(text);
+    if (path == null) return;
+    if (gen != _ringGen || _s.phase != AlarmPhase.ringing) return;
+    log.info(name, 'speaking "$text" between the rings');
+    try {
+      await _channel.invokeMethod('speech', {'path': path});
+    } on MissingPluginException {
+      // Tests.
+    } catch (e) {
+      log.warn(name, 'could not add the phrase: $e');
+    }
+  }
+
+  /// How long after a ring, snooze or sunrise ends [say] still speaks, so
+  /// a confirmation like "Alarm off" lands after Stop.
+  static const sayGrace = Duration(seconds: 30);
+
+  /// The longest text [say] takes.
+  static const sayMaxLength = 250;
+
+  /// When the last ring, snooze or sunrise ended, for [sayGrace].
+  DateTime? _endedAt;
+
+  /// Say [text] once in the Alarms voice at the alarm volume, for a plugin
+  /// that confirms a snooze or a stop (issue #1585). Only around an alarm:
+  /// during a sunrise or a snooze, and up to [sayGrace] after one ends. A
+  /// ringing alarm refuses it: the ring would drown the words. Null when it
+  /// plays, else why not.
+  Future<String?> say(String text, {String source = 'command'}) async {
+    final words = text.trim();
+    if (words.isEmpty || words.length > sayMaxLength) {
+      return 'the text must be 1 to $sayMaxLength characters';
+    }
+    String? refused() {
+      if (_s.phase == AlarmPhase.ringing) return 'an alarm is ringing';
+      final ended = _endedAt;
+      if (!_s.active &&
+          (ended == null || _clock().difference(ended) > sayGrace)) {
+        return 'no alarm is going';
+      }
+      return null;
+    }
+
+    final early = refused();
+    if (early != null) return early;
+    final path = await _phraseFile(words);
+    if (path == null) return 'Home Assistant did not speak the text';
+    // A snooze can end while Home Assistant speaks.
+    final late = refused();
+    if (late != null) return late;
+    log.info(name, 'saying "$words" ($source)');
+    try {
+      final played =
+          await _channel.invokeMethod<bool>('ring', {
+            'path': path,
+            'volume': _settings.get(defs.alarmsVolume).toDouble(),
+            'loop': false,
+          }) ??
+          false;
+      _previewing = false;
+      return played ? null : 'the text did not play';
+    } on MissingPluginException {
+      return null;
+    } catch (e) {
+      log.warn(name, 'could not say the text: $e');
+      return 'the text did not play';
+    }
+  }
+
+  /// Has Home Assistant speak [text] in the Alarms voice and keeps the
+  /// audio on disk, or null when it could not.
+  Future<String?> _phraseFile(String text) async {
     final engine = _settings.get(defs.alarmsTtsEngine).trim();
     // A language or voice only goes with an engine picked by name.
     final language = engine.isEmpty
@@ -974,17 +1057,20 @@ class AlarmManager extends Manager {
     final key = '$engine|$language|$voice|$text';
     var path = _phrases[key];
     if (path == null || !File(path).existsSync()) {
-      final audio = await haSpeak(
-        base: _settings.get(defs.haUrl),
-        token: _settings.get(defs.haToken),
-        engine: engine,
-        language: language,
-        voice: voice,
-        message: text,
-      );
+      final tts = _tts;
+      final audio = tts != null
+          ? await tts(engine, language, voice, text)
+          : await haSpeak(
+              base: _settings.get(defs.haUrl),
+              token: _settings.get(defs.haToken),
+              engine: engine,
+              language: language,
+              voice: voice,
+              message: text,
+            );
       if (audio == null) {
-        log.warn(name, 'Home Assistant did not speak "$text"; ringing on');
-        return;
+        log.warn(name, 'Home Assistant did not speak "$text"');
+        return null;
       }
       try {
         final dir = await getTemporaryDirectory();
@@ -996,18 +1082,10 @@ class AlarmManager extends Manager {
         _phrases[key] = path;
       } catch (e) {
         log.warn(name, 'could not keep the phrase: $e');
-        return;
+        return null;
       }
     }
-    if (gen != _ringGen || _s.phase != AlarmPhase.ringing) return;
-    log.info(name, 'speaking "$text" between the rings');
-    try {
-      await _channel.invokeMethod('speech', {'path': path});
-    } on MissingPluginException {
-      // Tests.
-    } catch (e) {
-      log.warn(name, 'could not add the phrase: $e');
-    }
+    return path;
   }
 
   /// A one time alarm is spent once it rings, or once its sunrise is
@@ -1123,6 +1201,7 @@ class AlarmManager extends Manager {
 
   Future<void> _finish(String why, {String? event}) async {
     if (_s.active) {
+      _endedAt = _clock();
       log.info(name, '${_describe(_s.ids)}: $why');
       if (event != null) _alarmEvent(event, _s.ids);
     }
@@ -1585,6 +1664,25 @@ class AlarmManager extends Manager {
               await snooze(source: '${p['source'] ?? 'command'}')
               ? const CommandResult.ok()
               : const CommandResult.fail('no alarm is ringing'),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'alarmSay',
+          description:
+              'Say a text once in the Alarms voice at the alarm volume. '
+              'Works during a sunrise or a snooze and up to 30 seconds '
+              'after one ends, never while an alarm rings.',
+          params: const {'text': 'Up to 250 characters'},
+          handler: (p) async {
+            final error = await say(
+              '${p['text'] ?? ''}',
+              source: '${p['source'] ?? 'command'}',
+            );
+            return error == null
+                ? const CommandResult.ok()
+                : CommandResult.fail(error);
+          },
         ),
       )
       ..register(
