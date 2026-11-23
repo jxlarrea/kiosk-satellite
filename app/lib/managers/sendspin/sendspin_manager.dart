@@ -1572,6 +1572,10 @@ class SendspinManager extends Manager {
         'sendspin.player_active',
         'sendspin.kept_for',
         'sendspin.local_player_name',
+        // Who the player is lent to. The pick the lend changes restarts
+        // the client on its own when it has to; saving the lend must not,
+        // or an alarm's music on this device lands while it reconnects.
+        'sendspin.handoff',
       ];
       final relevant =
           e.key.startsWith('sendspin.') &&

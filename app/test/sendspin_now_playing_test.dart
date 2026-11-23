@@ -667,6 +667,41 @@ void main() {
       expect(calls, isNot(contains('start')));
     });
 
+    test('lending this device to an alarm keeps the player connected', () async {
+      // Issue #1580: the lend is kept in sendspin.handoff, and saving it
+      // restarted the client, so Music Assistant dropped the alarm's play
+      // while the player reconnected.
+      await build(
+        extra: {
+          'ks.sendspin.player': '',
+          'ks.sendspin.player_source': '',
+          'ks.sendspin.enabled': true,
+          'ks.sendspin.client_id': 'abc123',
+        },
+      );
+      final calls = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            calls.add(call.method);
+            return null;
+          });
+      final lent = await commands.execute('mediaBorrow', const {
+        'owner': 'alarm',
+        'player': '',
+        'name': 'Mi Clock',
+      });
+      expect(lent.ok, isTrue);
+      expect(settings.get(defs.sendspinHandoff), isNotEmpty);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(calls, isNot(contains('stop')));
+      expect(calls, isNot(contains('start')));
+      await commands.execute('mediaReturn', const {'owner': 'alarm'});
+      expect(settings.get(defs.sendspinHandoff), isEmpty);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(calls, isNot(contains('stop')));
+      expect(calls, isNot(contains('start')));
+    });
+
     test(
       'the local player watches its queue for shuffle set elsewhere',
       () async {

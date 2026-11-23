@@ -11,6 +11,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **A Ground Control section in the README.** The README now describes Ground Control and Voice Match before Get started, with the Isolation demo video.
 
 ### Fixed
+- **An alarm rang its tone instead of music from Music Assistant on this device (#1580).** When an alarm played music on the kiosk's own Sendspin player, the kiosk restarted that player as the alarm started. Music Assistant could get the alarm's play request while the player was reconnecting and drop it, so the alarm rang its tone after a few seconds. The player now stays connected when an alarm starts and when it stops.
 - **The Timers view stayed on screen with Compass (#1575).** With the Timers view in the Compass layout, a timer that started or finished opened the view, but **Return to center** never went back unless someone touched the screen. The same happened when Home Assistant opened the view. The countdown now starts when the view opens and starts over when a timer on it starts, ends or is dismissed, by voice or by hand. While a finished timer rings, the view stays up, and the countdown starts once the timer is dismissed.
 
 ## v2026.11.28 - 2026-11-22
