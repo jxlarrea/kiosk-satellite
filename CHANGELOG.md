@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.28 - 2026-11-22
 
 ### Changed
 - **Microphone gain goes up to 36 dB (#1568).** **Microphone gain** now goes from -24 to 36 dB, for microphones that still record too quietly at 24 dB. A kiosk on an older version that gets a higher value from Fleet or a settings import uses 24 dB. See [Microphone](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/microphone.md#microphone-gain).
