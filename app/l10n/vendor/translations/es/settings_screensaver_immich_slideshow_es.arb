@@ -9,6 +9,8 @@
   "settingScreensaverImmichFillDescription": "Desactivado mantiene la foto completa entre franjas negras. Inteligente amplía las fotos de proporciones similares a la pantalla y muestra las demás sobre un fondo desenfocado. Siempre amplía todas las fotos y recorta lo que no cabe.",
   "settingScreensaverImmichCropFacesTitle": "Recortar alrededor de las caras",
   "settingScreensaverImmichCropFacesDescription": "Las fotos recortadas para llenar la pantalla mantienen a la vista las caras que encontró Immich. Requiere el permiso face.read.",
+  "settingScreensaverImmichCropVideosTitle": "Recortar videos",
+  "settingScreensaverImmichCropVideosDescription": "Los videos se recortan para llenar la pantalla como las fotos. Desactívalo para ver cada video completo.",
   "settingScreensaverImmichPairPortraitTitle": "Combinar fotos verticales",
   "settingScreensaverImmichPairPortraitDescription": "Muestra dos fotos verticales una junto a la otra para llenar la pantalla.",
   "settingScreensaverImmichPairLandscapeTitle": "Combinar fotos horizontales",

@@ -48943,6 +48943,32 @@
       ]
     }
   },
+  "settingScreensaverImmichCropVideosTitle": "Video's bijsnijden",
+  "@settingScreensaverImmichCropVideosTitle": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverImmichCropVideosDescription": "Video's worden net als foto's bijgesneden om het scherm te vullen. Zet uit om elke video volledig te tonen.",
+  "@settingScreensaverImmichCropVideosDescription": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
   "settingScreensaverImmichPairPortraitTitle": "Portretfoto's combineren",
   "@settingScreensaverImmichPairPortraitTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",

@@ -117,6 +117,32 @@
       ]
     }
   },
+  "settingScreensaverImmichCropVideosTitle": "Crop videos",
+  "@settingScreensaverImmichCropVideosTitle": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverImmichCropVideosDescription": "Videos are cropped to fill the screen like photos. Turn off to show every video whole.",
+  "@settingScreensaverImmichCropVideosDescription": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
   "settingScreensaverImmichPairPortraitTitle": "Pair portrait photos",
   "@settingScreensaverImmichPairPortraitTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",

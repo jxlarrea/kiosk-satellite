@@ -12374,6 +12374,13 @@ class UiStringsZh extends UiStrings {
       '为填满屏幕而裁剪的照片会保留 Immich 识别出的人脸。需要 face.read 权限。';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => '裁剪视频';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      '视频会像照片一样裁剪以填满屏幕。关闭后每个视频都完整显示。';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle => '配对竖向照片';
 
   @override
@@ -28645,6 +28652,13 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingScreensaverImmichCropFacesDescription =>
       '为填满屏幕而裁剪的照片会保留 Immich 识别出的人脸。需要 face.read 权限。';
+
+  @override
+  String get settingScreensaverImmichCropVideosTitle => '裁剪视频';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      '视频会像照片一样裁剪以填满屏幕。关闭后每个视频都完整显示。';
 
   @override
   String get settingScreensaverImmichPairPortraitTitle => '配对竖向照片';

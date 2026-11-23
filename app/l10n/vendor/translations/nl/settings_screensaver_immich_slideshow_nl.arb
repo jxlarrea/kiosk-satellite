@@ -9,6 +9,8 @@
   "settingScreensaverImmichFillDescription": "Uit toont de volledige foto met zwarte balken ernaast. Slim vergroot foto's met een beeldverhouding die dicht bij die van het scherm ligt; de rest wordt tegen een vervaagde achtergrond getoond. Altijd vergroot elke foto en snijdt af wat niet op het scherm past.",
   "settingScreensaverImmichCropFacesTitle": "Bijsnijden rond gezichten",
   "settingScreensaverImmichCropFacesDescription": "Foto's die worden bijgesneden om het scherm te vullen, houden de gezichten die Immich heeft gevonden in beeld. Vereist de machtiging face.read.",
+  "settingScreensaverImmichCropVideosTitle": "Video's bijsnijden",
+  "settingScreensaverImmichCropVideosDescription": "Video's worden net als foto's bijgesneden om het scherm te vullen. Zet uit om elke video volledig te tonen.",
   "settingScreensaverImmichPairPortraitTitle": "Portretfoto's combineren",
   "settingScreensaverImmichPairPortraitDescription": "Toon twee portretfoto's naast elkaar zodat ze het scherm vullen.",
   "settingScreensaverImmichPairLandscapeTitle": "Liggende foto's combineren",

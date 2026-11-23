@@ -13263,6 +13263,13 @@ class UiStringsDe extends UiStrings {
       'Fotos, die zum Ausfüllen des Bildschirms zugeschnitten werden, behalten die von Immich erkannten Gesichter im Bild. Erfordert die Berechtigung face.read.';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => 'Videos zuschneiden';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      'Videos werden wie Fotos zugeschnitten, um den Bildschirm auszufüllen. Deaktivieren, um jedes Video vollständig zu zeigen.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Hochformatfotos kombinieren';
 

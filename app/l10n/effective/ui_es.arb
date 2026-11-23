@@ -48943,6 +48943,32 @@
       ]
     }
   },
+  "settingScreensaverImmichCropVideosTitle": "Recortar videos",
+  "@settingScreensaverImmichCropVideosTitle": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverImmichCropVideosDescription": "Los videos se recortan para llenar la pantalla como las fotos. Desactívalo para ver cada video completo.",
+  "@settingScreensaverImmichCropVideosDescription": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
   "settingScreensaverImmichPairPortraitTitle": "Combinar fotos verticales",
   "@settingScreensaverImmichPairPortraitTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",

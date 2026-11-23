@@ -5484,6 +5484,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
     _watchPhotoSettings(c, {
       defs.screensaverImmichFill.key,
       defs.screensaverImmichCropFaces.key,
+      defs.screensaverImmichCropVideos.key,
       defs.screensaverImmichTransition.key,
       defs.screensaverImmichInterval.key,
       defs.screensaverImmichPairPortrait.key,
@@ -6246,12 +6247,16 @@ class _ImmichScreensaverState extends State<ImmichScreensaver>
       final size = MediaQuery.of(context).size;
       final Widget inner;
       if (isVideoSlide) {
+        // Crop videos off keeps every video whole, whatever photos do
+        // (issue #1586).
         inner = _videoSlide(
           video,
-          PhotoFillOverride.resolve(
-            context,
-            c.settings.get(defs.screensaverImmichFill),
-          ),
+          c.settings.get(defs.screensaverImmichCropVideos)
+              ? PhotoFillOverride.resolve(
+                  context,
+                  c.settings.get(defs.screensaverImmichFill),
+                )
+              : 'off',
           size,
         );
       } else if (pairIndex == null) {

@@ -48943,6 +48943,32 @@
       ]
     }
   },
+  "settingScreensaverImmichCropVideosTitle": "Przycinaj filmy",
+  "@settingScreensaverImmichCropVideosTitle": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverImmichCropVideosDescription": "Filmy są przycinane do wypełnienia ekranu tak jak zdjęcia. Wyłącz, aby pokazywać każdy film w całości.",
+  "@settingScreensaverImmichCropVideosDescription": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
   "settingScreensaverImmichPairPortraitTitle": "Łącz zdjęcia pionowe w pary",
   "@settingScreensaverImmichPairPortraitTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",

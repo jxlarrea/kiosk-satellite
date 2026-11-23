@@ -13229,6 +13229,13 @@ class UiStringsFr extends UiStrings {
       'Les photos recadrées pour remplir l\'écran gardent en vue les visages détectés par Immich. Nécessite l\'autorisation face.read.';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => 'Recadrer les vidéos';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      'Les vidéos sont recadrées pour remplir l\'écran comme les photos. Désactivez pour afficher chaque vidéo en entier.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Associer les photos portrait';
 

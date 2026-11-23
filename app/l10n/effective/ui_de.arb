@@ -48943,6 +48943,32 @@
       ]
     }
   },
+  "settingScreensaverImmichCropVideosTitle": "Videos zuschneiden",
+  "@settingScreensaverImmichCropVideosTitle": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
+  "settingScreensaverImmichCropVideosDescription": "Videos werden wie Fotos zugeschnitten, um den Bildschirm auszufüllen. Deaktivieren, um jedes Video vollständig zu zeigen.",
+  "@settingScreensaverImmichCropVideosDescription": {
+    "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",
+    "description": "Help below the setting.",
+    "x-locations": {
+      "device": [
+        "Settings > Screensaver > Immich Media screensaver > Slideshow"
+      ],
+      "remoteAdmin": [
+        "Screensaver > Immich Media screensaver > Slideshow"
+      ]
+    }
+  },
   "settingScreensaverImmichPairPortraitTitle": "Hochformatfotos kombinieren",
   "@settingScreensaverImmichPairPortraitTitle": {
     "context": "Settings:Screensaver:Immich Media screensaver:Slideshow",

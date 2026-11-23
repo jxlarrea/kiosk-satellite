@@ -9,6 +9,8 @@
   "settingScreensaverImmichFillDescription": "Deaktiviert zeigt das vollständige Foto mit schwarzen Balken an. Intelligent vergrößert Fotos mit einem ähnlichen Seitenverhältnis wie der Bildschirm und zeigt andere auf einem unscharfen Hintergrund an. Immer vergrößert alle Fotos und schneidet überstehende Bereiche ab.",
   "settingScreensaverImmichCropFacesTitle": "Um Gesichter herum zuschneiden",
   "settingScreensaverImmichCropFacesDescription": "Fotos, die zum Ausfüllen des Bildschirms zugeschnitten werden, behalten die von Immich erkannten Gesichter im Bild. Erfordert die Berechtigung face.read.",
+  "settingScreensaverImmichCropVideosTitle": "Videos zuschneiden",
+  "settingScreensaverImmichCropVideosDescription": "Videos werden wie Fotos zugeschnitten, um den Bildschirm auszufüllen. Deaktivieren, um jedes Video vollständig zu zeigen.",
   "settingScreensaverImmichPairPortraitTitle": "Hochformatfotos kombinieren",
   "settingScreensaverImmichPairPortraitDescription": "Zeigt zwei Hochformatfotos nebeneinander an, um den Bildschirm besser auszufüllen.",
   "settingScreensaverImmichPairLandscapeTitle": "Querformatfotos kombinieren",

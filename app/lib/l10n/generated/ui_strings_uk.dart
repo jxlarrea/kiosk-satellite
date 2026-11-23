@@ -13127,6 +13127,13 @@ class UiStringsUk extends UiStrings {
       'Фото, обрізані для заповнення екрана, залишають у кадрі обличчя, знайдені Immich. Потрібен дозвіл face.read.';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => 'Обрізати відео';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      'Відео обрізаються для заповнення екрана, як і фото. Вимкніть, щоб показувати кожне відео повністю.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Об\'єднувати портретні фото';
 

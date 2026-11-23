@@ -9,6 +9,8 @@
   "settingScreensaverImmichFillDescription": "„Wyłączone” pokazuje całe zdjęcie między czarnymi pasami. „Inteligentne” powiększa zdjęcia o proporcjach zbliżonych do ekranu, a pozostałe umieszcza na rozmytym tle. „Zawsze” powiększa każde zdjęcie, przycinając to, co się nie mieści.",
   "settingScreensaverImmichCropFacesTitle": "Przycinaj wokół twarzy",
   "settingScreensaverImmichCropFacesDescription": "Zdjęcia przycinane do wypełnienia ekranu zachowują w kadrze twarze wykryte przez Immich. Wymaga uprawnienia face.read.",
+  "settingScreensaverImmichCropVideosTitle": "Przycinaj filmy",
+  "settingScreensaverImmichCropVideosDescription": "Filmy są przycinane do wypełnienia ekranu tak jak zdjęcia. Wyłącz, aby pokazywać każdy film w całości.",
   "settingScreensaverImmichPairPortraitTitle": "Łącz zdjęcia pionowe w pary",
   "settingScreensaverImmichPairPortraitDescription": "Pokazuje dwa zdjęcia pionowe obok siebie, aby wypełniły ekran.",
   "settingScreensaverImmichPairLandscapeTitle": "Łącz zdjęcia poziome w pary",

@@ -22714,6 +22714,18 @@ abstract class UiStrings {
   /// Setting label.
   ///
   /// In en, this message translates to:
+  /// **'Crop videos'**
+  String get settingScreensaverImmichCropVideosTitle;
+
+  /// Help below the setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos are cropped to fill the screen like photos. Turn off to show every video whole.'**
+  String get settingScreensaverImmichCropVideosDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
   /// **'Pair portrait photos'**
   String get settingScreensaverImmichPairPortraitTitle;
 

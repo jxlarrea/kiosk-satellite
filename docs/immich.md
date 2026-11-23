@@ -24,6 +24,7 @@ The settings page is organized into five main sections: Server Connection, Media
 | Slideshow | Transition | Crossfade | Options include none, crossfade, slide, zoom, Ken Burns, or random. |
 | Slideshow | Fill the screen | Smart | Controls how aggressively photos and videos are cropped to fit the screen. |
 | Slideshow | Crop around faces | on | Moves the crop of a photo that fills the screen so the faces Immich found stay in view. Needs the `face.read` permission. Shown when Fill the screen is Smart or Always. |
+| Slideshow | Crop videos | on | Crops videos to fill the screen the same way as photos. Turn it off to show every video whole between black bars, while photos keep filling the screen. Shown when Fill the screen is Smart or Always. |
 | Slideshow | Pair portrait photos | on | Displays two portrait photos side by side in landscape mode. |
 | Slideshow | Pair landscape photos | on | Displays two landscape photos one above the other in portrait mode. |
 | Slideshow | Tap edges to change slides | on | A tap on the left or right fifth of the screen shows the previous or next photo instead of dismissing the screensaver. |
@@ -72,7 +73,7 @@ Most users prefer photos to fill the entire display. The **Fill the screen** set
 | Smart (default) | Enlarges photos to fill the display if the aspect ratio is close to the screen's dimensions (allowing up to roughly a 25 percent crop on one axis). This accommodates standard 4:3 and 16:9 camera shots on landscape displays. For portrait or square photos where cropping would ruin the composition, the photo remains uncropped in the center while an enlarged, blurred, and dimmed version of the image serves as the background instead of black bars. |
 | Always | Forces every photo to fill the panel regardless of aspect ratio. Nothing is ever letterboxed, but cropping can be severe. A 4:3 image on a 2:1 screen loses about a third of its height, and a portrait photo on a landscape screen is cropped down to a narrow horizontal strip. |
 
-Videos follow the same rule. A video that is not enlarged keeps black bars instead of the blurred background, since blurring every frame would cost too much on a kiosk.
+Videos follow the same rule. A video that is not enlarged keeps black bars instead of the blurred background, since blurring every frame would cost too much on a kiosk. With **Always**, a portrait video on a landscape screen loses most of its frame. Turn off **Crop videos** to show every video whole while photos still fill the screen.
 
 A cropped photo keeps its center, unless **Crop around faces** moves the crop to the people in it (see [Crop Around Faces](#crop-around-faces)). A pet or any other off center subject can still be cropped out, most often with **Always**.
 

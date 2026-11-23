@@ -13139,6 +13139,13 @@ class UiStringsNl extends UiStrings {
       'Foto\'s die worden bijgesneden om het scherm te vullen, houden de gezichten die Immich heeft gevonden in beeld. Vereist de machtiging face.read.';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => 'Video\'s bijsnijden';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      'Video\'s worden net als foto\'s bijgesneden om het scherm te vullen. Zet uit om elke video volledig te tonen.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Portretfoto\'s combineren';
 

@@ -12988,6 +12988,13 @@ class UiStringsEn extends UiStrings {
       'Photos cropped to fill the screen keep the faces Immich found in view. Needs the face.read permission.';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => 'Crop videos';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      'Videos are cropped to fill the screen like photos. Turn off to show every video whole.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Pair portrait photos';
 

@@ -234,6 +234,65 @@ void main() {
     });
   });
 
+  // Issue #1586: Crop videos off shows every video whole while photos keep
+  // filling the screen.
+  Finder fitted() => find.ancestor(
+    of: find.byType(VideoPlayer),
+    matching: find.byType(FittedBox),
+  );
+
+  testWidgets('Always crops a video while Crop videos is on', (tester) async {
+    await tester.runAsync(() async {
+      await container.settings.set(defs.screensaverImmichFill, 'always');
+      await start(tester);
+      expect(tester.widget<FittedBox>(fitted()).fit, BoxFit.cover);
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
+
+  testWidgets('Crop videos off keeps a video whole under Always', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await container.settings.set(defs.screensaverImmichFill, 'always');
+      await container.settings.set(defs.screensaverImmichCropVideos, false);
+      await start(tester);
+      expect(fitted(), findsNothing);
+      final box = tester.widget<AspectRatio>(
+        find.ancestor(
+          of: find.byType(VideoPlayer),
+          matching: find.byType(AspectRatio),
+        ),
+      );
+      expect(box.aspectRatio, closeTo(16 / 9, 0.001));
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
+
+  testWidgets('turning Crop videos off reframes a playing video', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await container.settings.set(defs.screensaverImmichFill, 'always');
+      await start(tester);
+      expect(fitted(), findsOneWidget);
+      await container.settings.set(defs.screensaverImmichCropVideos, false);
+      await pumpUntil(tester, () => fitted().evaluate().isEmpty);
+      expect(fitted(), findsNothing);
+      expect(video.creates, 1);
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
+
+  test('Crop videos shows only while Fill the screen crops', () {
+    final def = defs.screensaverImmichCropVideos;
+    expect(def.defaultValue, isTrue);
+    expect(def.dependsOn, defs.screensaverImmichFill.key);
+    expect(def.dependsSatisfiedBy('smart'), isTrue);
+    expect(def.dependsSatisfiedBy('always'), isTrue);
+    expect(def.dependsSatisfiedBy('off'), isFalse);
+  });
+
   testWidgets('Same as photos stops a Local Media video too', (tester) async {
     await tester.runAsync(() async {
       final dir = await Directory.systemTemp.createTemp('ks_video_length');

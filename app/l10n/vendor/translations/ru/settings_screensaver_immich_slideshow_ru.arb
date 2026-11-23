@@ -9,6 +9,8 @@
   "settingScreensaverImmichFillDescription": "«Выкл» держит всё фото между чёрными полосами. «Умно» увеличивает фото, близкие по форме к экрану, оформляя остальные поверх размытого фона. «Всегда» увеличивает каждое фото, обрезая не влезающее.",
   "settingScreensaverImmichCropFacesTitle": "Обрезать вокруг лиц",
   "settingScreensaverImmichCropFacesDescription": "Фото, обрезанные для заполнения экрана, оставляют в кадре лица, найденные Immich. Нужно разрешение face.read.",
+  "settingScreensaverImmichCropVideosTitle": "Обрезать видео",
+  "settingScreensaverImmichCropVideosDescription": "Видео обрезаются для заполнения экрана, как и фото. Выключите, чтобы показывать каждое видео целиком.",
   "settingScreensaverImmichPairPortraitTitle": "Парные портретные фото",
   "settingScreensaverImmichPairPortraitDescription": "Показывать два портретных фото бок о бок, чтобы заполнить экран.",
   "settingScreensaverImmichPairLandscapeTitle": "Парные альбомные фото",

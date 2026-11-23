@@ -5080,6 +5080,25 @@ const screensaverImmichCropFaces = SettingDef<bool>(
   dependsOnValue: ['smart', 'always'],
 );
 
+// Videos follow Fill the screen like photos (issue #1298), and with Always
+// a portrait video on a landscape screen loses most of its frame. Off shows
+// every video whole between black bars while photos keep filling the
+// screen (issue #1586).
+const screensaverImmichCropVideos = SettingDef<bool>(
+  key: 'screensaver.immich_crop_videos',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Crop videos',
+  description:
+      'Videos are cropped to fill the screen like photos. Turn off to show '
+      'every video whole.',
+  category: 'Screensaver',
+  section: 'Slideshow',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_fill',
+  dependsOnValue: ['smart', 'always'],
+);
+
 // Two portrait photos side by side instead of one framed by empty screen:
 // the pair fills a landscape panel the way a single portrait shot never
 // can. On by default, like Fill the screen's Smart setting, since filling
@@ -15121,6 +15140,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichTransition,
   screensaverImmichFill,
   screensaverImmichCropFaces,
+  screensaverImmichCropVideos,
   screensaverImmichPairPortrait,
   screensaverImmichPairLandscape,
   screensaverImmichEdgeTaps,

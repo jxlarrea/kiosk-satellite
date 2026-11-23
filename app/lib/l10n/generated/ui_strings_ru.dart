@@ -13086,6 +13086,13 @@ class UiStringsRu extends UiStrings {
       'Фото, обрезанные для заполнения экрана, оставляют в кадре лица, найденные Immich. Нужно разрешение face.read.';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => 'Обрезать видео';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      'Видео обрезаются для заполнения экрана, как и фото. Выключите, чтобы показывать каждое видео целиком.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Парные портретные фото';
 

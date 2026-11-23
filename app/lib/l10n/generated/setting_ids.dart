@@ -720,6 +720,10 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingScreensaverImmichCropFacesTitle",
     "description": "settingScreensaverImmichCropFacesDescription",
   },
+  "screensaver.immich_crop_videos": {
+    "title": "settingScreensaverImmichCropVideosTitle",
+    "description": "settingScreensaverImmichCropVideosDescription",
+  },
   "screensaver.immich_pair_portrait": {
     "title": "settingScreensaverImmichPairPortraitTitle",
     "description": "settingScreensaverImmichPairPortraitDescription",

@@ -13135,6 +13135,13 @@ class UiStringsPl extends UiStrings {
       'Zdjęcia przycinane do wypełnienia ekranu zachowują w kadrze twarze wykryte przez Immich. Wymaga uprawnienia face.read.';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => 'Przycinaj filmy';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      'Filmy są przycinane do wypełnienia ekranu tak jak zdjęcia. Wyłącz, aby pokazywać każdy film w całości.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Łącz zdjęcia pionowe w pary';
 

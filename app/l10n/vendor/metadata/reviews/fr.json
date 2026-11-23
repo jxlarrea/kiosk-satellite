@@ -31038,5 +31038,17 @@
     "translation": "c889f94fa550c38c44a37d9412902eb2a39e06d9b669464411e8a3d46500f04e",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingScreensaverImmichCropVideosTitle": {
+    "source": "a5eaec45223a564d72cb462532b2bd79f0b27d6b824c34618be267832e93fb26",
+    "translation": "8c54d3a54c53fb25bbbb3eae03ca797696e0fb494e3e89d234e102a7d18b648d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingScreensaverImmichCropVideosDescription": {
+    "source": "4221cb2a7ef7524217b622d436333e0383ab9fcb8613bd22f9066d106ad1f7e4",
+    "translation": "52353b2fac9ebb74629ae6d80896b4ae083204a1ba9f338a783e26a766779263",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

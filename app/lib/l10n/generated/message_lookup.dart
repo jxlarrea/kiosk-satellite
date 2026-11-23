@@ -4331,6 +4331,10 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingScreensaverImmichCropFacesTitle,
       'settingScreensaverImmichCropFacesDescription' =>
         strings.settingScreensaverImmichCropFacesDescription,
+      'settingScreensaverImmichCropVideosTitle' =>
+        strings.settingScreensaverImmichCropVideosTitle,
+      'settingScreensaverImmichCropVideosDescription' =>
+        strings.settingScreensaverImmichCropVideosDescription,
       'settingScreensaverImmichPairPortraitTitle' =>
         strings.settingScreensaverImmichPairPortraitTitle,
       'settingScreensaverImmichPairPortraitDescription' =>

@@ -13226,6 +13226,13 @@ class UiStringsEs extends UiStrings {
       'Las fotos recortadas para llenar la pantalla mantienen a la vista las caras que encontró Immich. Requiere el permiso face.read.';
 
   @override
+  String get settingScreensaverImmichCropVideosTitle => 'Recortar videos';
+
+  @override
+  String get settingScreensaverImmichCropVideosDescription =>
+      'Los videos se recortan para llenar la pantalla como las fotos. Desactívalo para ver cada video completo.';
+
+  @override
   String get settingScreensaverImmichPairPortraitTitle =>
       'Combinar fotos verticales';
 
