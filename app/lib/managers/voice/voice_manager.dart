@@ -2856,6 +2856,13 @@ class VoiceManager extends Manager {
     return models[index].wakeWord;
   }
 
+  /// The id of [slot]'s wake word model, empty when there is none.
+  String _modelForSlot(int slot) {
+    final models = _wakeWord.config?.models ?? const [];
+    if (models.isEmpty) return '';
+    return models[(slot - 1).clamp(0, models.length - 1)].id;
+  }
+
   /// Brings the wake word engine in line with the settings: configured and
   /// listening while enabled and unmuted, released otherwise (only when this
   /// manager configured it: the dashboard runtime's page owns it there).
@@ -4349,6 +4356,7 @@ class _VoiceMatch implements VoiceMatchPort {
     void Function(Map<String, Object?> event) onEvent, {
     bool follow = false,
     bool followup = false,
+    bool seamless = false,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   }) {
@@ -4403,6 +4411,14 @@ class _VoiceMatch implements VoiceMatchPort {
       anchor: _anchor,
       speaker: followup ? _speaker : null,
       continues: followup ? _conversation : null,
+      // A wake word someone said, not a turn Home Assistant or a button
+      // started: only that one has a clip.
+      wakeWord: clip == null ? null : _voice._wakePhrase,
+      wakeWordEngine: _voice._engine.name,
+      wakeWordModel: _voice._modelForSlot(_voice._assistant),
+      seamless: seamless && clip != null,
+      assistant: _voice._realtime.busy ? 'realtime' : 'assist',
+      language: s.get(defs.uiLanguage),
       onReady: (session) => _conversation = session,
       onAudio: onAudio,
       onLost: onLost,

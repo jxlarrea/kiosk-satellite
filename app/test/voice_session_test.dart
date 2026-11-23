@@ -104,12 +104,14 @@ class _MatchTurn implements VoiceMatchTurnPort {
     this.onLost,
     this.follow = false,
     this.followup = false,
+    this.seamless = false,
   });
   final void Function(Map<String, Object?> event) onEvent;
   final void Function(Uint8List pcm)? onAudio;
   final void Function()? onLost;
   final bool follow;
   final bool followup;
+  final bool seamless;
   int fed = 0;
   bool ended = false;
 
@@ -137,6 +139,7 @@ class _Match implements VoiceMatchPort {
     void Function(Map<String, Object?> event) onEvent, {
     bool follow = false,
     bool followup = false,
+    bool seamless = false,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   }) {
@@ -146,6 +149,7 @@ class _Match implements VoiceMatchPort {
       onLost: onLost,
       follow: follow,
       followup: followup,
+      seamless: seamless,
     )..ready = ready;
     turns.add(t);
     return t;
@@ -991,8 +995,21 @@ void main() {
         listening(h, async);
         expect(h.match!.turns.single.fed, h.link.sent.length);
         expect(h.match!.turns.single.fed, 2);
+        // Voice Match is told, so the end of the wake word can be left out.
+        expect(h.match!.turns.single.seamless, isTrue);
       });
     });
+
+    test(
+      'with the wake chime, Voice Match is not told the turn is seamless',
+      () {
+        fakeAsync((async) {
+          final h = _Harness(match: _Match());
+          listening(h, async);
+          expect(h.match!.turns.single.seamless, isFalse);
+        });
+      },
+    );
 
     test('the speaker stopping ends the audio and keeps the turn', () {
       fakeAsync((async) {

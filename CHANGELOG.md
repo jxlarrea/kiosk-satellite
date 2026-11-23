@@ -5,6 +5,8 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **The end of the wake word left out of the command with Ground Control (Ground Control #19).** With **Talk right after the wake word** on, the command's audio starts the moment the wake word is recognized, before the word is over, so the "xa" of "Alexa" reached the assistant in front of the command: "So what time is it". With **Enable Trimming** on, the wake word and whether **Talk right after the wake word** is on are now sent to Ground Control with each command. With Ground Control 2026.11.12 or newer, the end of the wake word is then left out. It works with every wake word engine and any wake word. See [Trimming](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/voice-match.md#trimming).
+- **The wake word, its engine and the assistant on Ground Control's Sessions page.** Each command sent to Ground Control now includes the wake word, the wake word engine and model, whether an Assist pipeline or a realtime assistant answers and the kiosk's language. Ground Control 2026.11.12 or newer shows them on the session's page.
 - **Skip next alarm button in ESPHome.** A new **Skip next alarm** button skips the next ring of the kiosk's alarms from Home Assistant, the same as the **Skip** button on the screensaver. It works at any time before the alarm. A repeating alarm rings again on its next day and a one time alarm turns off. See [Skipping the next alarm](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/alarms.md#skipping-the-next-alarm).
 
 ## v2026.11.29 - 2026-11-23

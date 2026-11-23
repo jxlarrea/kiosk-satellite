@@ -195,16 +195,19 @@ class _MatchTurn implements VoiceMatchTurnPort {
 class _Match implements VoiceMatchPort {
   final turns = <_MatchTurn>[];
   bool follow = false;
+  bool seamless = false;
 
   @override
   VoiceMatchTurnPort? begin(
     void Function(Map<String, Object?> event) onEvent, {
     bool follow = false,
     bool followup = false,
+    bool seamless = false,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   }) {
     this.follow = follow;
+    this.seamless = seamless;
     final t = _MatchTurn(onEvent, onAudio, onLost);
     turns.add(t);
     return t;
@@ -2335,6 +2338,9 @@ void main() {
         final h = _Harness(time, match: _Match());
         final turn = connect(h);
         expect(h.match!.follow, isTrue);
+        // Talk right after the wake word doesn't apply to a realtime
+        // conversation: its audio never starts inside the wake word.
+        expect(h.match!.seamless, isFalse);
         expect(h.backend.started?.manualTurns, isTrue);
         h.mic.speak();
         h.mic.speak();

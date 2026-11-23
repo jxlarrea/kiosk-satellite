@@ -50,11 +50,15 @@ abstract class VoiceMatchPort {
   /// [follow] asks for follow mode: only the user's speech comes back
   /// ([onAudio]) to forward in place of the microphone. [followup] is a
   /// later turn of the same conversation, with no wake word of its own.
-  /// [onLost] says the service went away before the turn was over.
+  /// [seamless] says the turn's audio starts the moment the wake word
+  /// fired (Talk right after the wake word), so it can hold the end of the
+  /// wake word. [onLost] says the service went away before the turn was
+  /// over.
   VoiceMatchTurnPort? begin(
     void Function(Map<String, Object?> event) onEvent, {
     bool follow = false,
     bool followup = false,
+    bool seamless = false,
     void Function(Uint8List pcm)? onAudio,
     void Function()? onLost,
   });
@@ -365,6 +369,7 @@ class VoiceSession {
       (e) => _onMatch(gen, e),
       follow: follow,
       followup: _phase == _Phase.followup,
+      seamless: keepPreRoll,
       onAudio: (pcm) => _onMatchAudio(gen, pcm),
       onLost: () => _onMatchLost(gen),
     );

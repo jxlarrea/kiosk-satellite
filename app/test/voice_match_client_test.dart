@@ -59,6 +59,60 @@ void main() {
     await server.close(force: true);
   });
 
+  test('a session says how it started: the wake word, what heard it and '
+      'who answers', () async {
+    final (server, starts) = await _service();
+    final got = StreamIterator(starts);
+    VoiceMatchTurn open({
+      String? wakeWord,
+      bool seamless = false,
+      String? assistant,
+      String? language,
+    }) => VoiceMatchTurn.open(
+      baseUrl: 'http://127.0.0.1:${server.port}',
+      token: 't',
+      deviceId: 'k1',
+      deviceName: 'Kitchen',
+      policy: 'anyone',
+      onEvent: (_) {},
+      follow: true,
+      wakeWord: wakeWord,
+      wakeWordEngine: 'microWakeWord',
+      wakeWordModel: 'alexa',
+      seamless: seamless,
+      assistant: assistant,
+      language: language,
+    );
+
+    final woken = open(
+      wakeWord: 'Alexa',
+      seamless: true,
+      assistant: 'assist',
+      language: 'fr',
+    );
+    expect(await got.moveNext(), isTrue);
+    expect(got.current['wake_word'], 'Alexa');
+    expect(got.current['wake_word_engine'], 'microWakeWord');
+    expect(got.current['wake_word_model'], 'alexa');
+    expect(got.current['seamless'], isTrue);
+    expect(got.current['assistant'], 'assist');
+    expect(got.current['language'], 'fr');
+    woken.end();
+
+    // No wake word was said (a follow-up or a turn Home Assistant
+    // started): nothing about one and nothing to leave out.
+    final asked = open(assistant: 'realtime');
+    expect(await got.moveNext(), isTrue);
+    expect(got.current.containsKey('wake_word'), isFalse);
+    expect(got.current.containsKey('wake_word_engine'), isFalse);
+    expect(got.current.containsKey('wake_word_model'), isFalse);
+    expect(got.current.containsKey('language'), isFalse);
+    expect(got.current['seamless'], isFalse);
+    expect(got.current['assistant'], 'realtime');
+    asked.end();
+    await server.close(force: true);
+  });
+
   test('a follow session says whether this kiosk wants Isolation', () async {
     final (server, starts) = await _service();
     final got = StreamIterator(starts);
