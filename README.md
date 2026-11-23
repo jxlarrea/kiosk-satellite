@@ -88,6 +88,12 @@ Also built in: [PIN-protected kiosk mode](https://kiosksatellite.com/docs/kiosk/
   <a href="assets/screenshots/camera-1.png"><img src="assets/screenshots/camera-1.png" alt="Live camera feeds in Kiosk Satellite" width="320" /></a>
 </p>
 
+## Ground Control
+
+[Ground Control](https://github.com/jxlarrea/kiosk-satellite-ground-control) is a companion service for Kiosk Satellite. It runs on a computer or server in your home and handles the voice and vision processing that kiosks don't have the computing power for. Its first component is [Voice Match](https://kiosksatellite.com/docs/voice-match/): speaker recognition, plus trimming and isolation that leave only the voice of the person who said the wake word, even when a TV or another person talks over them. Install it as a Home Assistant app or run it in Docker on a CPU or an NVIDIA GPU. See [Ground Control](https://kiosksatellite.com/docs/ground-control/) for the kiosk setup.
+
+https://github.com/user-attachments/assets/4485f1fc-af2a-4d17-a7de-2b0b3ebe7f3f
+
 ## Get started
 
 You need **Android 7.0 or newer**, a reachable Home Assistant instance and a long-lived access token from **Home Assistant Profile → Security → Long-lived access tokens**.

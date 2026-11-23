@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- **A Ground Control section in the README.** The README now describes Ground Control and Voice Match before Get started, with the Isolation demo video.
+
 ## v2026.11.28 - 2026-11-22
 
 ### Changed
