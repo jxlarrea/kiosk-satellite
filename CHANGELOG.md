@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.30 - 2026-11-23
 
 ### Added
 - **The end of the wake word left out of the command with Ground Control (Ground Control #19).** With **Talk right after the wake word** on, the command's audio starts the moment the wake word is recognized, before the word is over, so the "xa" of "Alexa" reached the assistant in front of the command: "So what time is it". With **Enable Trimming** on, the wake word and whether **Talk right after the wake word** is on are now sent to Ground Control with each command. With Ground Control 2026.11.12 or newer, the end of the wake word is then left out. It works with every wake word engine and any wake word. See [Trimming](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/voice-match.md#trimming).
