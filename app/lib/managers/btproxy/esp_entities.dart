@@ -813,6 +813,7 @@ class EspEntitySurface {
       button('bring_to_front', 'Bring to front', 'mdi:flip-to-front'),
       button('alarm_stop', 'Stop alarm', 'mdi:alarm-off'),
       button('alarm_snooze', 'Snooze alarm', 'mdi:alarm-snooze'),
+      button('alarm_skip', 'Skip next alarm', 'mdi:skip-next-outline'),
       if (_settings.get(defs.launcherEnabled))
         button('open_launcher', 'Open app launcher', 'mdi:apps'),
       // Only with a Music Assistant server address configured, exactly like
@@ -2465,6 +2466,8 @@ class EspEntitySurface {
         await commands.execute('alarmStop', const {'source': 'esphome'});
       case 'alarm_snooze':
         await commands.execute('alarmSnooze', const {'source': 'esphome'});
+      case 'alarm_skip':
+        await commands.execute('alarmSkip', const {'source': 'esphome'});
       case 'load_start_url':
         await commands.execute('loadStartUrl', const {});
       case 'close_overlays':

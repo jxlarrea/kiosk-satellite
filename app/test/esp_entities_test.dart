@@ -1505,6 +1505,34 @@ void main() {
     expect(executed.map((e) => e.$1).toList(), ['rebootDevice']);
   });
 
+  test('the alarm buttons run the alarm commands', () async {
+    final ran = <(String, Map<String, Object?>)>[];
+    for (final name in ['alarmStop', 'alarmSnooze', 'alarmSkip']) {
+      commands.register(
+        Command(
+          name: name,
+          description: 'stub',
+          handler: (p) async {
+            ran.add((name, Map<String, Object?>.from(p)));
+            return const CommandResult.ok();
+          },
+        ),
+      );
+    }
+    final catalog = await surface.build();
+    final skip = catalog.firstWhere((d) => d['objectId'] == 'alarm_skip');
+    expect(skip['type'], 'button');
+    expect(skip['name'], 'Skip next alarm');
+
+    await surface.handleCommand('alarm_stop', null);
+    await surface.handleCommand('alarm_snooze', null);
+    await surface.handleCommand('alarm_skip', null);
+    expect(ran.map((e) => e.$1), ['alarmStop', 'alarmSnooze', 'alarmSkip']);
+    for (final (_, params) in ran) {
+      expect(params, {'source': 'esphome'});
+    }
+  });
+
   test('the Flashlight switch is listed only with a flash', () async {
     var ids = [for (final d in await surface.build()) '${d['objectId']}'];
     expect(ids, isNot(contains('flashlight')));

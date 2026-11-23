@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Skip next alarm button in ESPHome.** A new **Skip next alarm** button skips the next ring of the kiosk's alarms from Home Assistant, the same as the **Skip** button on the screensaver. It works at any time before the alarm. A repeating alarm rings again on its next day and a one time alarm turns off. See [Skipping the next alarm](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/alarms.md#skipping-the-next-alarm).
+
 ## v2026.11.29 - 2026-11-23
 
 ### Added

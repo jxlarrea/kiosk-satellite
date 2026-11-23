@@ -47,6 +47,8 @@ If you wake up before your alarm, skip it from the screensaver. Shortly before a
 
 **Skip button** under **Settings > Alarms** sets how early the button shows, 10 minutes before the alarm by default. Set it to Off to never show it. Two alarms set to the same minute are skipped together. During a sunrise, Skip also ends the sunrise. Editing a skipped alarm brings its next ring back.
 
+To skip from Home Assistant, press the **Skip next alarm** button the kiosk has in [ESPHome](esphome.md). It skips the next ring at any time, not only while the Skip button shows.
+
 ## Waking up to music
 
 An alarm can ring with music from your library instead of its tone. Set **Alarm music** under **Settings, Alarms** for every alarm that follows the default, or tap **Music** on an alarm's details page and pick **Choose music** to give it music of its own. Both open the music picker:
@@ -189,6 +191,7 @@ The kiosk's alarms reach Home Assistant through [ESPHome](esphome.md):
 | **Alarm ringing** | binary sensor | On while an alarm rings. |
 | **Alarm snoozed until** | timestamp | When a snooze runs out, unknown when nothing is snoozed. |
 | **Stop alarm**, **Snooze alarm** | button | The same as the buttons on screen. |
+| **Skip next alarm** | button | Skips the next ring, the same as the **Skip** button on the screensaver. It works at any time before the alarm, not only while the Skip button shows. Does nothing while an alarm rings or is snoozed. |
 
 A morning routine is an automation that triggers when **Alarm ringing** turns off.
 

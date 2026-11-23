@@ -89,6 +89,7 @@ Use **Settings > ESPHome > Excluded entities** to pick entities that should stay
 | **Alarm ringing** | binary sensor | On while one of the kiosk's [alarms](alarms.md) rings. |
 | **Alarm snoozed until** | timestamp | When a snoozed alarm rings again. Reads unknown when nothing is snoozed. |
 | **Stop alarm**, **Snooze alarm** | button | Stop the ringing, snoozed or sunrise alarm, or snooze a ringing one. |
+| **Skip next alarm** | button | Skips the next ring of the kiosk's [alarms](alarms.md#skipping-the-next-alarm), however far away it is. A repeating alarm rings again on its next day and a one time alarm turns off. Does nothing while an alarm rings or is snoozed. |
 | **Last interaction** | timestamp | Records the timestamp of the last touch, spoken voice turn, or gesture based wake. The value is saved across restarts. |
 | **Next screensaver** | timestamp | Indicates exactly when the idle clock will trigger the screensaver. This updates on every touch, dismissal, or timeout change, allowing an automation to trigger off it directly, or a template to count down to it without the device needing to push a new value every single second. It reads "unknown" when nothing is actively counting down (e.g., if the screensaver is off, already showing, during a voice turn, in a camera view, in hold mode, or if another app is in front). Under a rapid stream of touches, it republishes at most once a minute, and always before the previously reported moment passes. |
 
