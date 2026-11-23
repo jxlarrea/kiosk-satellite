@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **A black screen with flashing navigation buttons after turning Lockdown Mode off (#1565).** On a device where Kiosk Satellite is the device owner, such as an Echo Show running the Kiosk Satellite image, Android kept the screen pinned to the app that had closed when the app updated or restarted during Lockdown Mode or with **Disable home button** on. Turning Lockdown Mode off after that made Android close the kiosk and open it again several times a second. The screen stayed black, the remote admin stopped answering and only restarting the device ended it. A pin left over from before the app restarted is now ended as the app starts, and the kiosk pins again right away when it should.
+
 ## v2026.11.27 - 2026-11-22
 
 ### Added

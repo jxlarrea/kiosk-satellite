@@ -91,6 +91,49 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
         }
 
         /**
+         * Whether this process ended a pin it found as it started, kept
+         * until Dart asks, so the app log can say so.
+         */
+        @Volatile private var endedStalePin = false
+
+        /**
+         * End a pin left over from a process that is gone. Called as the
+         * process starts, before it has pinned anything itself.
+         *
+         * A device owner's pin is Android's lock task mode. An update
+         * kills the process, and Android keeps the mode locked to the
+         * dead Activity's empty task. The next Activity opens in a new
+         * task, which Android adds to the mode behind the dead one. The
+         * pin then looks held, and stays that way until the kiosk asks to
+         * unpin: stopLockTask from a task that is not the first one makes
+         * Android finish that task's Activity and keep the mode. Android
+         * starts the kiosk again, the kiosk asks to unpin again, and that
+         * repeats several times a second with a black screen until the
+         * device restarts (issue #1565).
+         *
+         * No call removes a single locked task, so the whole mode ends:
+         * Android drops every locked task when no package is allowed.
+         * A process that is starting has nothing pinned to lose, and the
+         * first apply allows the package again and pins if it should.
+         */
+        fun endStalePin(context: Context) {
+            try {
+                val am = context.getSystemService(ActivityManager::class.java)
+                if (am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_LOCKED) return
+                val dpm = context.getSystemService(DevicePolicyManager::class.java)
+                if (!dpm.isDeviceOwnerApp(context.packageName)) return
+                dpm.setLockTaskPackages(
+                    ComponentName(context, KioskAdminReceiver::class.java),
+                    arrayOf(),
+                )
+                endedStalePin = true
+                Log.w(TAG, "ended a pin left over from before the app restarted")
+            } catch (e: Exception) {
+                Log.w(TAG, "could not end a pin left over from before the app restarted: $e")
+            }
+        }
+
+        /**
          * Show the Activity over the lock screen, or stop. A secured lock
          * screen stays armed underneath: Home, Recents and other apps still
          * ask for the credential. Before Android 8.1 this is a window flag.
@@ -250,6 +293,11 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                         am.lockTaskModeState !=
                             ActivityManager.LOCK_TASK_MODE_NONE
                     )
+                }
+                // Asked once per process, for the app log.
+                "endedStalePin" -> {
+                    result.success(endedStalePin)
+                    endedStalePin = false
                 }
                 "lockShieldText" -> {
                     call.argument<String>("text")?.let { LockShieldOverlay.setText(it) }

@@ -94,6 +94,10 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         // A deadlocked main thread takes every other recovery down with it
         // (issue #1166), so this one watches from its own thread.
         MainThreadWatchdog.start(this)
+        // Before Dart can ask for an unpin: a pin held by the last
+        // process would turn that unpin into an endless restart of the
+        // Activity (issue #1565).
+        KioskLock.endStalePin(this)
 
         // Before any bridge: they all read volume state through it.
         VolumeController.init(applicationContext)
