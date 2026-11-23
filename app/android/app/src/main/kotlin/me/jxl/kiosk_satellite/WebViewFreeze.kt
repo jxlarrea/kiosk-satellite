@@ -8,6 +8,8 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
+import java.util.Collections
+import java.util.WeakHashMap
 
 /**
  * Hides the dashboard WebView while the screensaver covers it, so Chromium
@@ -97,18 +99,34 @@ class WebViewFreeze(
             if (!prefix.contains("://")) return true
             return url.length == prefix.length || url[prefix.length] in "/?#"
         }
+
+        /**
+         * The views [setHidden] hid and has not revealed since. A reveal
+         * takes them in whatever page they show now: the page can move to
+         * another origin while hidden (Compass leaving the Menu for a
+         * dashboard view while a Custom Page on another server was up),
+         * and a reveal matched by the new origin missed the view, which
+         * stayed hidden with nothing over it (issue #1567). Kept for the
+         * process, since the same WebView outlives a re-created Activity.
+         */
+        private val hiddenHere: MutableSet<WebView> =
+            Collections.newSetFromMap(WeakHashMap())
     }
 
     /** Runs [action] on every WebView under the decor whose URL matches
-     *  [prefix]; returns how many matched. */
-    private fun forEachWebView(prefix: String, action: (WebView) -> Unit): Int {
+     *  [prefix], or that [also] takes; returns how many matched. */
+    private fun forEachWebView(
+        prefix: String,
+        also: (WebView) -> Boolean = { false },
+        action: (WebView) -> Unit,
+    ): Int {
         var matched = 0
         val stack = ArrayDeque<View>()
         stack.add(activity.window.decorView)
         while (stack.isNotEmpty()) {
             val view = stack.removeLast()
             if (view is WebView) {
-                if (matchesPrefix(view.url, prefix)) {
+                if (matchesPrefix(view.url, prefix) || also(view)) {
                     action(view)
                     matched++
                 }
@@ -129,7 +147,8 @@ class WebViewFreeze(
      *  to be revealed again. */
     private fun setHidden(hidden: Boolean, prefix: String): Int {
         val target = if (hidden) View.INVISIBLE else View.VISIBLE
-        val changed = forEachWebView(prefix) { view ->
+        val changed = forEachWebView(prefix, also = { !hidden && it in hiddenHere }) { view ->
+            if (hidden) hiddenHere.add(view) else hiddenHere.remove(view)
             if (view.visibility != target) {
                 if (target == View.VISIBLE) {
                     revealWithoutScrollbarFlash(view)

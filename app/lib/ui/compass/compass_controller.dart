@@ -674,14 +674,14 @@ class CompassController {
   }
 
   /// The page moved on its own, through a navigation card, Home Assistant
-  /// or the dashboard select, to a dashboard view the layout holds in
-  /// another place: that place is the one on screen now. A path the layout
-  /// does not hold changes nothing, the kiosk is still on the view it
-  /// swiped to.
+  /// or the dashboard select, to a dashboard view or a Custom Page the
+  /// layout holds in another place: that place is the one on screen now. A
+  /// path the layout does not hold changes nothing, the kiosk is still on
+  /// the view it swiped to.
   void _onPageMoved(String url) {
     if (!enabled || _switching || stage.value != null) return;
     if (!currentView.isDashboard) return;
-    final path = _routeOfUrl(url);
+    final path = compassRouteOfUrl(url, c.homeAssistant.customPages);
     if (path == null) return;
     final here = _routeOf(currentView);
     // The view in hand, or a bare dashboard opening on its first view.
@@ -696,36 +696,8 @@ class CompassController {
     }
   }
 
-  /// The route in Home Assistant a dashboard view shows, or null for one
-  /// that is a document of its own (a Custom Page) or has no path.
-  String? _routeOf(CompassView view) {
-    final target = view.path.isEmpty ? homePath : view.path;
-    if (target.isEmpty || isCustomPagePath(target)) return null;
-    return _plain(viewRoute(target));
-  }
-
-  /// The same for a URL the page is on, whatever origin serves it.
-  String? _routeOfUrl(String url) {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return null;
-    final path = _plain(uri.path);
-    return path.isEmpty || isCustomPagePath(path) ? null : path;
-  }
-
-  static String _plain(String path) {
-    var out = path;
-    while (out.startsWith('/')) {
-      out = out.substring(1);
-    }
-    while (out.endsWith('/')) {
-      out = out.substring(0, out.length - 1);
-    }
-    try {
-      return Uri.decodeComponent(out);
-    } catch (_) {
-      return out;
-    }
-  }
+  String? _routeOf(CompassView view) =>
+      compassRouteOfPath(view.path.isEmpty ? homePath : view.path);
 
   /// Someone else opened or closed a page: a gesture, Home Assistant, the
   /// page's own close button. Opening a view the layout holds makes it the
@@ -1199,4 +1171,44 @@ String compassViewLabel(
       return strings.drawerIntercom;
   }
   return view.kind;
+}
+
+/// The route a Compass dashboard view stands for, compared with
+/// [compassRouteOfUrl] to tell which place the page is on: the route in
+/// Home Assistant for a dashboard view, the whole navigation path for a
+/// Custom Page, since its query and fragment pick the page. Null for no
+/// path.
+String? compassRouteOfPath(String navPath) {
+  if (navPath.isEmpty) return null;
+  if (isCustomPagePath(navPath)) return navPath;
+  return _plainRoute(viewRoute(navPath));
+}
+
+/// The same for a URL the page is on. A dashboard view goes by its path,
+/// whatever origin serves it (the secure context proxy's, say). A page on
+/// another server goes by its navigation path among the Custom [pages].
+String? compassRouteOfUrl(String url, List<CustomPage> pages) {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return null;
+  final external = externalPageNavPath(url, pages);
+  if (external != null) return external;
+  final nav = navPathOfUri(uri);
+  if (isCustomPagePath(nav)) return nav;
+  final path = _plainRoute(uri.path);
+  return path.isEmpty ? null : path;
+}
+
+String _plainRoute(String path) {
+  var out = path;
+  while (out.startsWith('/')) {
+    out = out.substring(1);
+  }
+  while (out.endsWith('/')) {
+    out = out.substring(0, out.length - 1);
+  }
+  try {
+    return Uri.decodeComponent(out);
+  } catch (_) {
+    return out;
+  }
 }
