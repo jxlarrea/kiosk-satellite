@@ -2001,6 +2001,31 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
     await runJs(colorSchemeSetJs(dark: dark));
   }
 
+  /// The document-start script group that sets the Home Assistant
+  /// frontend's light or dark (see haColorSchemeJs).
+  static const haSchemeGroup = 'ks-ha-scheme';
+
+  /// Home Assistant renders light or dark per [dark] on this device, or
+  /// its own choice when null: the page on screen switches at once, and
+  /// the document-start script is swapped so the next load starts on it.
+  Future<void> setHaDark(bool? dark) async {
+    final controller = _controller;
+    if (controller == null) return;
+    try {
+      await controller.removeUserScriptsByGroupName(groupName: haSchemeGroup);
+      await controller.addUserScript(
+        userScript: UserScript(
+          groupName: haSchemeGroup,
+          source: haColorSchemeJs(dark: dark),
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
+      );
+    } catch (e) {
+      log.debug(name, 'Home Assistant color scheme not swapped: $e');
+    }
+    await runJs(haColorSchemeSetJs(dark: dark));
+  }
+
   /// Whether the dashboard WebView skips the HTTP cache right now: always
   /// with Disable cache on, otherwise while a custom page is the target.
   bool _freshLoads = false;

@@ -66,6 +66,116 @@ String colorSchemeJs({required bool dark}) {
 String colorSchemeSetJs({required bool dark}) =>
     'window.__ksSetDark && window.__ksSetDark($dark);';
 
+/// Sets light or dark for the Home Assistant frontend on this device only
+/// (issue #1101). [dark] null leaves the choice to Home Assistant.
+///
+/// Home Assistant keeps the theme in the user's profile, shared live by
+/// every browser that user is signed into, so a `settheme` event from one
+/// kiosk switched them all. Instead, the page's `prefers-color-scheme`
+/// answers with [dark], which is what Home Assistant follows when the
+/// profile's dark mode is Auto. A profile set to Light or Dark ignores that
+/// answer, so while [dark] is set this page also renders as if the profile
+/// said Auto: `_applyTheme` sees the selected theme without its `dark` key
+/// for the length of the call. The profile itself is never written, the
+/// theme name is kept and other browsers are left alone.
+///
+/// Acts only on pages with a `<home-assistant>` element, which sits in the
+/// markup ahead of the scripts that ask, so it can ride the dashboard
+/// WebView's document-start scripts. Custom pages have their own override
+/// in [customPageColorSchemeJs]. [haColorSchemeSetJs] switches it live.
+String haColorSchemeJs({required bool? dark}) =>
+    '''
+    (function () {
+      if (window.__ksHaScheme || typeof window.matchMedia !== 'function') {
+        return;
+      }
+      var mode = ${dark ?? 'null'};
+      var native = window.matchMedia.bind(window);
+      var scheme = /prefers-color-scheme\\s*:\\s*(dark|light)/i;
+      var lists = [];
+      function fire(list) {
+        var ev = new Event('change');
+        ev.matches = list.matches;
+        ev.media = list.media;
+        list.dispatchEvent(ev);
+        if (typeof list.onchange === 'function') list.onchange(ev);
+      }
+      window.matchMedia = function (query) {
+        var m = scheme.exec(String(query));
+        if (!m || !document.querySelector('home-assistant')) {
+          return native(query);
+        }
+        var real = native(query);
+        var want = m[1].toLowerCase() === 'dark';
+        var list = new EventTarget();
+        Object.defineProperty(list, 'media', { value: String(query) });
+        Object.defineProperty(list, 'matches', {
+          get: function () { return mode === null ? real.matches : mode === want; },
+        });
+        list.onchange = null;
+        list.addListener = function (fn) {
+          list.addEventListener('change', fn);
+        };
+        list.removeListener = function (fn) {
+          list.removeEventListener('change', fn);
+        };
+        real.addEventListener('change', function () {
+          if (mode === null) fire(list);
+        });
+        lists.push(list);
+        return list;
+      };
+      function darkNow() {
+        return mode === null
+          ? native('(prefers-color-scheme: dark)').matches : mode;
+      }
+      if (window.customElements) {
+        customElements.whenDefined('home-assistant').then(function () {
+          var proto = customElements.get('home-assistant').prototype;
+          var apply = proto._applyTheme;
+          if (typeof apply !== 'function' || apply.__ks) return;
+          var wrapped = function () {
+            if (mode === null) return apply.apply(this, arguments);
+            var hass = this.hass;
+            var theme = hass && hass.selectedTheme;
+            if (!theme || theme.dark === undefined) {
+              return apply.call(this, mode);
+            }
+            var shadow = {};
+            for (var k in theme) if (k !== 'dark') shadow[k] = theme[k];
+            hass.selectedTheme = shadow;
+            try {
+              return apply.call(this, mode);
+            } finally {
+              hass.selectedTheme = theme;
+              if (this.hass && this.hass.selectedTheme === shadow) {
+                this.hass.selectedTheme = theme;
+              }
+            }
+          };
+          wrapped.__ks = true;
+          proto._applyTheme = wrapped;
+        });
+      }
+      window.__ksHaScheme = function (next) {
+        if (next === mode) return;
+        var before = lists.map(function (list) { return list.matches; });
+        mode = next;
+        lists.forEach(function (list, i) {
+          if (list.matches !== before[i]) fire(list);
+        });
+        var el = document.querySelector('home-assistant');
+        if (el && el.hass && typeof el._applyTheme === 'function') {
+          try { el._applyTheme(darkNow()); } catch (e) {}
+        }
+      };
+    })();
+  ''';
+
+/// Switches what [haColorSchemeJs] installed. A no-op on a page without it.
+String haColorSchemeSetJs({required bool? dark}) =>
+    'window.__ksHaScheme && window.__ksHaScheme(${dark ?? 'null'});';
+
 /// [colorSchemeJs] for a custom page (a person's own HTML under `/local/`),
 /// which also covers the page's CSS: a custom page asks
 /// `@media (prefers-color-scheme)` as often as it asks `matchMedia`.

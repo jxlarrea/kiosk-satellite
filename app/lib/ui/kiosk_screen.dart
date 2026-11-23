@@ -1014,6 +1014,7 @@ class _KioskScreenState extends State<KioskScreen>
     // slot (issue #544); the setting rides _onSettingChanged.
     c.sendspin.nowPlaying.addListener(_syncVolumeKeys);
     c.pageState.pageDark.addListener(_pageDarkChanged);
+    c.homeAssistant.dashboardDark.addListener(_haDarkChanged);
     c.screensaver.activeView.addListener(_syncVolumeKeys);
     c.screensaver.dashboardShowing.addListener(_applyKioskMode);
     // The build and the native key routing both follow these surfaces.
@@ -1182,6 +1183,11 @@ class _KioskScreenState extends State<KioskScreen>
   void _pageDarkChanged() =>
       unawaited(c.browser.setCustomPageDark(c.pageState.pageDark.value));
 
+  /// The kiosk's Home Assistant theme changed: the dashboard on screen, and
+  /// the next load, follow.
+  void _haDarkChanged() =>
+      unawaited(c.browser.setHaDark(c.homeAssistant.dashboardDark.value));
+
   /// The JS bridge is always injected at document start. Kiosk mode rides
   /// along as a document-start script too, and is re-asserted per load in
   /// [onLoadStop] so a page that outlived a toggle catches up.
@@ -1222,6 +1228,14 @@ class _KioskScreenState extends State<KioskScreen>
         dark: c.pageState.pageDark.value,
         origins: c.browser.customPageOrigins,
       ),
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    // Home Assistant's light or dark on this device only, never through the
+    // user's profile (issue #1101). Acts only on Home Assistant pages;
+    // swapped live by BrowserManager.setHaDark.
+    UserScript(
+      groupName: BrowserManager.haSchemeGroup,
+      source: haColorSchemeJs(dark: c.homeAssistant.dashboardDark.value),
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     UserScript(
@@ -1794,6 +1808,7 @@ class _KioskScreenState extends State<KioskScreen>
     _saverSub?.cancel();
     c.sendspin.nowPlaying.removeListener(_syncVolumeKeys);
     c.pageState.pageDark.removeListener(_pageDarkChanged);
+    c.homeAssistant.dashboardDark.removeListener(_haDarkChanged);
     c.screensaver.activeView.removeListener(_syncVolumeKeys);
     c.screensaver.dashboardShowing.removeListener(_applyKioskMode);
     c.browser.overlayUrl.removeListener(_onOverlayChanged);

@@ -855,10 +855,10 @@ class HomeAssistantManager extends Manager {
         ),
       );
 
-    // Day/night theme. Re-assert on every full page load (login, logout,
-    // reload all reset the frontend), react to schedule edits at once, and tick
-    // once a minute to catch the scheduled switchover with no page load.
-    bus.on<PageChanged>().listen((_) => _applyThemeSchedule(force: true));
+    // Day/night theme. Settled now, so the dashboard's first load starts on
+    // it, then on schedule edits at once and on a minute tick to catch the
+    // scheduled switchover.
+    unawaited(_applyThemeSchedule());
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.haTheme.key ||
           e.key == defs.themeAuto.key ||
@@ -867,7 +867,7 @@ class HomeAssistantManager extends Manager {
           e.key == defs.uiTheme.key ||
           e.key == defs.themeDarkAt.key ||
           e.key == defs.themeLightAt.key) {
-        _applyThemeSchedule(force: true);
+        _applyThemeSchedule();
       }
     });
     _themeTimer = Timer.periodic(
@@ -1712,19 +1712,15 @@ class HomeAssistantManager extends Manager {
   Timer? _themeTimer;
   Timer? _revalidateTimer;
 
-  /// The dark state last pushed to the page, so the minute tick only fires JS
-  /// on an actual light↔dark transition. Cleared when the feature is off so
-  /// re-enabling always re-applies. Null means the dashboard picks its own
-  /// theme. The Music Assistant page follows it too (issue #907).
+  /// Whether the dashboard is light or dark on this device. Null means Home
+  /// Assistant picks its own theme. The dashboard WebView applies it to the
+  /// page without touching the user's profile (haColorSchemeJs, issue
+  /// #1101), and the Music Assistant page follows it too (issue #907).
   final dashboardDark = ValueNotifier<bool?>(null);
 
-  /// Push the scheduled light/dark theme into the HA frontend when it changes.
-  ///
-  /// Mirrors what browser_mod's `set_theme` does — dispatch a `settheme` event
-  /// on the `<home-assistant>` base element — but keeps the selected theme and
-  /// only flips its dark variant. HA persists this per browser (localStorage),
-  /// so it survives SPA navigation; we re-assert on full loads that reset it.
-  Future<void> _applyThemeSchedule({bool force = false}) async {
+  /// Settle [dashboardDark] from the pin, the schedule and the mirror, and
+  /// move the app's own theme along where those ask for it.
+  Future<void> _applyThemeSchedule() async {
     final matchApp = _settings.get(defs.themeMatchApp);
     // A theme pinned from Home Assistant (the Theme select, discussion
     // #351) outranks the schedule and the mirror: Light or Dark holds
@@ -1742,9 +1738,7 @@ class HomeAssistantManager extends Manager {
           await _settings.setFromJson(defs.uiTheme.key, want);
         }
       }
-      if (!force && pinned == dashboardDark.value) return;
       dashboardDark.value = pinned;
-      await _evalJs({'code': _themeJs(pinned)});
       return;
     }
     if (_settings.get(defs.themeAuto)) {
@@ -1761,9 +1755,7 @@ class HomeAssistantManager extends Manager {
         }
       }
       if (!matchApp) {
-        if (!force && dark == dashboardDark.value) return;
         dashboardDark.value = dark;
-        await _evalJs({'code': _themeJs(dark)});
         return;
       }
     }
@@ -1771,10 +1763,7 @@ class HomeAssistantManager extends Manager {
     // theme — the App theme setting, or the device's own dark mode when it
     // is System, which Android flips at its own sunset/sunrise.
     if (matchApp) {
-      final dark = _effectiveAppDark();
-      if (!force && dark == dashboardDark.value) return;
-      dashboardDark.value = dark;
-      await _evalJs({'code': _themeJs(dark)});
+      dashboardDark.value = _effectiveAppDark();
       return;
     }
     dashboardDark.value = null;
@@ -1792,9 +1781,7 @@ class HomeAssistantManager extends Manager {
 
   /// Relays the platform's dark-mode flips into the theme logic; see the
   /// observer registration in [init].
-  late final _brightnessWatch = _PlatformBrightnessWatch(
-    () => _applyThemeSchedule(force: true),
-  );
+  late final _brightnessWatch = _PlatformBrightnessWatch(_applyThemeSchedule);
 
   /// Whether [now] falls in the dark window between the two configured times.
   /// The usual case (dark 19:00 → light 07:00) wraps midnight.
@@ -1818,19 +1805,6 @@ class HomeAssistantManager extends Manager {
     }
     return h * 60 + m;
   }
-
-  String _themeJs(bool dark) =>
-      '''
-(function () {
-  var base = document.querySelector('home-assistant');
-  if (!base || !base.hass) return;
-  var t = (base.hass.selectedTheme && base.hass.selectedTheme.theme)
-      || (base.hass.themes && base.hass.themes.default_theme)
-      || 'default';
-  base.dispatchEvent(new CustomEvent('settheme',
-      { detail: { theme: t, dark: $dark } }));
-})();
-''';
 
   bool? _vsDetected;
 
