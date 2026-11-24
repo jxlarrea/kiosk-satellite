@@ -7,6 +7,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'client_key.dart';
@@ -159,10 +160,16 @@ class GroundControlManager extends Manager {
     defs.voiceMatchSpeakerSensor.key,
     defs.voiceMatchShowSpeaker.key,
     defs.voiceMatchAllowEnroll.key,
+    defs.visionMatchEnabled.key,
+    defs.visionMatchFaceDetection.key,
+    defs.visionMatchHandGestures.key,
+    defs.screensaverDismissOnFace.key,
+    defs.screensaverPostponeOnFace.key,
+    defs.gestureMappings.key,
   };
 
-  /// The Voice Match features this kiosk has on, for the Kiosks page of
-  /// the Ground Control app.
+  /// The Voice Match and Vision Match features this kiosk has on, for the
+  /// Kiosks page of the Ground Control app.
   Map<String, Object?> get features {
     final s = _settings;
     final people = [
@@ -178,6 +185,14 @@ class GroundControlManager extends Manager {
       'isolation': s.get(defs.voiceMatchIsolation),
       'speaker_sensor': s.get(defs.voiceMatchSpeakerSensor),
       'show_speaker': s.get(defs.voiceMatchShowSpeaker),
+      'vision_match': s.get(defs.visionMatchEnabled),
+      'face_detection': s.get(defs.visionMatchFaceDetection),
+      'hand_gestures': s.get(defs.visionMatchHandGestures),
+      'dismiss_on_face': s.get(defs.screensaverDismissOnFace),
+      'postpone_on_face': s.get(defs.screensaverPostponeOnFace),
+      'finger_gestures': decodeGestureMappings(
+        s.get(defs.gestureMappings),
+      ).where((m) => m.triggerType == 'fingers').length,
     };
   }
 

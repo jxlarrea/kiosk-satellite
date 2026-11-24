@@ -1721,7 +1721,7 @@ class CameraMotion(
                 // With Vision Match the due looks go to Ground Control as one
                 // frame, after the same gate, at most one waiting at a time.
                 var remoteFace = false
-                var remoteHands = false
+                var remoteHand = false
                 if (fingersWanted && worthIt) {
                     // The tracker's graph runs on several cores per frame
                     // (145% of one core when offered every frame), so
@@ -1737,7 +1737,7 @@ class CameraMotion(
                             !groundControl.busy(now)
                         ) {
                             lastHandFeedNs = now
-                            remoteHands = true
+                            remoteHand = true
                         }
                     } else if (now - lastHandFeedNs >= feedEvery) {
                         lastHandFeedNs = now
@@ -1754,8 +1754,8 @@ class CameraMotion(
                     lastVisionRunNs = now
                     remoteFace = true
                 }
-                if (remoteFace || remoteHands) {
-                    groundControl.prepare(image, remoteFace, remoteHands, now)?.let { look ->
+                if (remoteFace || remoteHand) {
+                    groundControl.prepare(image, remoteFace, remoteHand, now)?.let { look ->
                         mainHandler.post { sink.success(look) }
                     }
                 }
