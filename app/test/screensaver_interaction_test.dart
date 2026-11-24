@@ -320,6 +320,115 @@ void main() {
     });
   }
 
+  // Native Voice Satellite with Keep the answer on screen: the turn ends
+  // (wake word resumed, the native hold released) while the answer stays
+  // on screen, so the overlay outlasts the turn (discussion #1566).
+  Future<void> nativeTurn(bool active) async {
+    if (active) {
+      bus.publish(const WakeWordDetected(model: 'test', phrase: 'test'));
+      bus.publish(const AssistOverlayVisibility(true, covers: false));
+    }
+    bus.publish(
+      VoiceInteractionChanged(
+        active: active,
+        reason: 'voice',
+        source: InteractionSource.native,
+      ),
+    );
+    if (!active) {
+      bus.publish(const WakeWordStateChanged(active: true, listening: true));
+    }
+    await pumpEventQueue();
+  }
+
+  Future<void> answerGone() async {
+    bus.publish(const AssistOverlayVisibility(false));
+    await pumpEventQueue();
+  }
+
+  Future<void> playMusic() async {
+    bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+    await pumpEventQueue();
+  }
+
+  Future<void> buildLaunchOnPlay() async {
+    await build(nowPlaying: true);
+    await settings.set(defs.sendspinFullscreenOnPlay, true);
+  }
+
+  test('music asked for by voice launches once the answer goes', () async {
+    await buildLaunchOnPlay();
+    await nativeTurn(true);
+    await playMusic();
+    await nativeTurn(false);
+    expect(saver.isActive, isFalse);
+    await answerGone();
+    expect(saver.isActive, isTrue);
+    expect(saver.activeView.value, isNotNull);
+  });
+
+  test('music started under a kept answer launches once it goes', () async {
+    await buildLaunchOnPlay();
+    await nativeTurn(true);
+    await nativeTurn(false);
+    await playMusic();
+    expect(saver.isActive, isFalse);
+    await answerGone();
+    expect(saver.isActive, isTrue);
+  });
+
+  test('without a kept answer the launch still follows the turn', () async {
+    await buildLaunchOnPlay();
+    await nativeTurn(true);
+    await playMusic();
+    await answerGone();
+    expect(saver.isActive, isFalse);
+    await nativeTurn(false);
+    expect(saver.isActive, isTrue);
+  });
+
+  test('a kept answer gone mid turn still waits for the turn', () async {
+    await buildLaunchOnPlay();
+    await nativeTurn(true);
+    await playMusic();
+    await nativeTurn(false);
+    // Asked again while the answer still shows.
+    await nativeTurn(true);
+    await answerGone();
+    expect(saver.isActive, isFalse);
+    await nativeTurn(false);
+    expect(saver.isActive, isTrue);
+  });
+
+  for (final change in ['music stopped', 'launch disabled', 'dismissed']) {
+    test('a launch held for a kept answer is dropped after $change', () async {
+      await buildLaunchOnPlay();
+      await nativeTurn(true);
+      await playMusic();
+      await nativeTurn(false);
+      switch (change) {
+        case 'music stopped':
+          bus.publish(const SendspinNowPlayingChanged(active: false));
+          await pumpEventQueue();
+        case 'launch disabled':
+          await settings.set(defs.sendspinFullscreenOnPlay, false);
+        case 'dismissed':
+          await commands.execute('stopScreensaver', const {});
+      }
+      await answerGone();
+      expect(saver.isActive, isFalse);
+    });
+  }
+
+  test('a kept answer gone with nothing to launch starts nothing', () async {
+    await buildLaunchOnPlay();
+    await nativeTurn(true);
+    await nativeTurn(false);
+    await answerGone();
+    expect(saver.isActive, isFalse);
+    expect(saver.idleDue, isNotNull);
+  });
+
   test(
     'voice completion leaves a previously dismissed player closed',
     () async {

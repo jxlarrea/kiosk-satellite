@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Now Playing opens after a kept answer (discussion #1566).** With **Launch Now Playing when music starts playing** on and **Keep the answer on screen** set above 0 seconds in **Settings > Voice Satellite > Conversation**, music started by voice did not open Now Playing on the kiosk that was asked. The turn ended while the answer was still on screen, and the launch was dropped. Now Playing now opens when the answer closes. This also covers music that starts while the answer is still showing.
+
 ## v2026.11.31 - 2026-11-23
 
 ### Added

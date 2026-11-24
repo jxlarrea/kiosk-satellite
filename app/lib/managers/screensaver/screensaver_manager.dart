@@ -399,9 +399,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   bool _voiceTurn = false;
   bool _restoreNowPlaying = false;
 
-  /// A launch on play that a voice turn or page interaction refused. Music
-  /// asked for by voice starts mid-turn, so the launch waits for the turn
-  /// to end instead of being dropped (issue #718).
+  /// A launch on play that a voice turn, the voice overlay or a page
+  /// interaction refused. Music asked for by voice starts mid-turn, so the
+  /// launch waits for the turn to end instead of being dropped (issue
+  /// #718). With Keep the answer on screen, the overlay outlasts the turn
+  /// and the launch waits for the overlay too (discussion #1566).
   bool _launchOnPlayPending = false;
 
   /// The session exists only to show Now Playing: playback launched it or
@@ -677,6 +679,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         unawaited(_applyVisuals());
       } else {
         _resetIdleTimer();
+        // The answer kept on screen outlasted the turn: Now Playing held
+        // back for it opens now.
+        if (!_paused) unawaited(_restoreAfterInteraction());
       }
     });
     bus.on<CameraViewStateChanged>().listen((event) {
@@ -815,15 +820,16 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // Launch on play (sendspin.fullscreen_on_play): playback starting
       // is the cue for the music display, not the idle clock. start()
       // keeps every refusal it has for a timed start (hold mode, a
-      // voice turn, another app in front, lockdown). A voice turn or page
-      // interaction only defers it: the launch runs once they end.
+      // voice turn, another app in front, lockdown). A voice turn, the
+      // voice overlay or a page interaction only defers it: the launch
+      // runs once they end.
       if (startedPlaying &&
           !_alarmOnTop &&
           allowsNowPlaying &&
           _settings.get(defs.sendspinFullscreen) &&
           _settings.get(defs.sendspinFullscreenOnPlay)) {
         log.info(name, 'Now Playing launched by playback');
-        _launchOnPlayPending = _paused || _voiceTurn;
+        _launchOnPlayPending = _paused || _voiceTurn || _assistOverlay;
         unawaited(start(forNowPlaying: true));
       }
     });
@@ -1616,7 +1622,8 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // Let it finish before bringing the player back over the page.
     await _interactionStop;
     if (!_restoreNowPlaying && !_launchOnPlayPending) return;
-    if (_paused || _voiceTurn) return;
+    // The overlay listener calls this again once the overlay goes.
+    if (_paused || _voiceTurn || _assistOverlay) return;
     final launchOnPlay =
         _sendspinPlaying && _settings.get(defs.sendspinFullscreenOnPlay);
     final launch = _restoreNowPlaying || launchOnPlay;
