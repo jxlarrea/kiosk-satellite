@@ -6,6 +6,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Fixed
 - **Now Playing opens after a kept answer (discussion #1566).** With **Launch Now Playing when music starts playing** on and **Keep the answer on screen** set above 0 seconds in **Settings > Voice Satellite > Conversation**, music started by voice did not open Now Playing on the kiosk that was asked. The turn ended while the answer was still on screen, and the launch was dropped. Now Playing now opens when the answer closes. This also covers music that starts while the answer is still showing.
+- **The previous answer flashed at the start of a turn.** In full screen with a backdrop that hides the screen, a wake word said soon after a turn could show the previous answer for a fraction of a second, just after the backdrop finished blurring. It was seen over the screensaver on an older Android 8.1 device. When a turn ends, the command, the answer and any result panel now fade out first and the overlay fades out after them.
 
 ## v2026.11.31 - 2026-11-23
 

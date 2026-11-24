@@ -81,7 +81,7 @@ class AssistPluginSkinTouch extends StatelessWidget {
 }
 
 class _AssistOverlayState extends State<AssistOverlay>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   AppContainer get c => widget.container;
 
   StreamSubscription<SettingChanged>? _settingsSub;
@@ -127,6 +127,25 @@ class _AssistOverlayState extends State<AssistOverlay>
   /// still shows through it, so it cannot be hidden yet.
   bool _fadedIn = false;
 
+  /// A covering overlay's hide starts with the words: the command, the
+  /// answer and the result panels fade out over the backdrop, and only
+  /// then does the overlay stop covering and fade out itself.
+  ///
+  /// While it covers, Flutter draws into its SurfaceView. The hide moves it
+  /// back to the image view, and the paused SurfaceView keeps its last
+  /// frame until the next covering turn draws into it again. On some
+  /// devices (an Android 8.1 Lenovo ThinkSmart View on the legacy renderer)
+  /// that old frame shows for a refresh when the next turn switches back.
+  /// With the words gone first, it is the backdrop and the bar, much like
+  /// the new turn at that moment, instead of the previous answer.
+  bool _clearing = false;
+  int _clearGen = 0;
+  late final AnimationController _words = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 150),
+    value: 1,
+  );
+
   /// Whether the backdrop hides the screen under it: opaque, or blurred
   /// once the capture is in place. Lens Flares and the plugin skins draw
   /// over the live screen, and a docked bubble sits on it.
@@ -143,11 +162,12 @@ class _AssistOverlayState extends State<AssistOverlay>
   /// Reports whether the overlay hides the screen: the kiosk screen drops
   /// the dashboard's platform view from the frame and the browser stops
   /// compositing it. Hiding waits for the fade in; the report that it no
-  /// longer covers goes out the moment a hide starts, so the dashboard is
-  /// drawing again under the fade out.
+  /// longer covers goes out once the words have faded ([_clearing]), as the
+  /// fade out starts, so the dashboard is drawing again under the fade out.
   void _syncCovers() {
-    final view = c.voice.view.value;
-    final covers = _fadedIn && view.visible && _backdropCovers(view);
+    final view = _clearing ? _shown : c.voice.view.value;
+    final covers =
+        _fadedIn && (view.visible || _clearing) && _backdropCovers(view);
     if (c.voice.covers.value == covers) return;
     c.voice.covers.value = covers;
     c.browser.setCovered('voice', covered: covers);
@@ -226,6 +246,8 @@ class _AssistOverlayState extends State<AssistOverlay>
     _syncCovers();
     _frozenGen++;
     _frozen?.dispose();
+    _clearGen++;
+    _words.dispose();
     _settingsSub?.cancel();
     _errorSub?.cancel();
     _clearedSub?.cancel();
@@ -249,6 +271,42 @@ class _AssistOverlayState extends State<AssistOverlay>
   void _onView() {
     final next = c.voice.view.value;
     if (!mounted) return;
+    if (next.visible) {
+      _stopClearing();
+    } else if (_clearing) {
+      return;
+    } else if (_shown.visible && c.voice.covers.value) {
+      _clearWords();
+      return;
+    }
+    _applyView(next);
+  }
+
+  /// The words fade out while the overlay still covers ([_clearing]), and
+  /// the hide carries on once a frame without them has been drawn.
+  void _clearWords() {
+    final gen = ++_clearGen;
+    setState(() {
+      _clearing = true;
+      _lightbox = null;
+    });
+    _words.reverse().then((_) async {
+      // The frame the fade ended on goes to the screen before the next.
+      await SchedulerBinding.instance.endOfFrame;
+      if (gen != _clearGen || !mounted) return;
+      _clearing = false;
+      _applyView(c.voice.view.value);
+    });
+  }
+
+  /// A turn came back before the words had gone: it shows as it is.
+  void _stopClearing() {
+    _clearGen++;
+    _words.value = 1;
+    _clearing = false;
+  }
+
+  void _applyView(AssistView next) {
     _watchFrames(next.visible);
     if (next.visible) _clock.running = true;
     if (!next.visible) {
@@ -369,7 +427,7 @@ class _AssistOverlayState extends State<AssistOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final visible = c.voice.view.value.visible;
+    final visible = c.voice.view.value.visible || _clearing;
     return IgnorePointer(
       ignoring: !visible,
       child: AnimatedOpacity(
@@ -569,16 +627,28 @@ class _AssistOverlayState extends State<AssistOverlay>
           level: _glide,
           clock: _clock,
         ),
-        if (view.phase == AssistPhase.announcement)
-          _announcement(context, skin, palette, scale, view)
-        else ...[
-          // With the whole conversation hidden, Jarvis, KITT and HAL show
-          // only their art: no thinking dots either.
-          if (!skin.art.hasTopSlot || !_conversationHidden)
-            _chat(context, skin, palette, scale, view, reactive),
-          if (primaryResult(view.results) case final result?)
-            _panel(context, skin, dark, scale, result),
-        ],
+        // The words, which a covering hide fades out first ([_clearing]).
+        Positioned.fill(
+          child: FadeTransition(
+            key: assistWordsKey,
+            opacity: _words,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (view.phase == AssistPhase.announcement)
+                  _announcement(context, skin, palette, scale, view)
+                else ...[
+                  // With the whole conversation hidden, Jarvis, KITT and
+                  // HAL show only their art: no thinking dots either.
+                  if (!skin.art.hasTopSlot || !_conversationHidden)
+                    _chat(context, skin, palette, scale, view, reactive),
+                  if (primaryResult(view.results) case final result?)
+                    _panel(context, skin, dark, scale, result),
+                ],
+              ],
+            ),
+          ),
+        ),
         if (_lightbox case (final kind, final value))
           Positioned.fill(child: _lightboxView(context, kind, value)),
       ],
@@ -1562,6 +1632,9 @@ Color speakerTextColor(String? hex, Color text) {
       ? Color.lerp(color, Colors.white, 0.45)!
       : color;
 }
+
+/// The full-screen overlay's words, for tests.
+const assistWordsKey = ValueKey('assist-words');
 
 /// The docked caption's text against the skin's full-screen sizes.
 const dockedTextScale = 0.55;
