@@ -1188,7 +1188,11 @@ class CameraMotion(
             // display at ROTATION_90), so upright frames came labeled 270
             // and every reader of the label turned them on their side: the
             // face and hand models, the camera preview and Ground Control.
+            // It follows the display for the whole session too: a session
+            // bound as the app starts can meet the display still in its
+            // natural orientation, before the Activity turns it.
             imageAnalysis.targetRotation = currentDisplayRotation()
+            followDisplayRotation(mySession, imageAnalysis)
             var firstFrame = true
             imageAnalysis.setAnalyzer(analysisExecutor) { image ->
                 if (session == mySession && firstFrame) {
@@ -1792,6 +1796,40 @@ class CameraMotion(
      * [PREVIEW_DUTY]). Nothing in here may take the kiosk down: it runs
      * on the analyzer's thread, so a failing frame is a skipped frame.
      */
+    /** Updates the session's analysis rotation as the display turns. Main thread. */
+    private var rotationListener: DisplayManager.DisplayListener? = null
+
+    private fun followDisplayRotation(mySession: Int, imageAnalysis: ImageAnalysis) {
+        stopFollowingDisplayRotation()
+        val listener = object : DisplayManager.DisplayListener {
+            override fun onDisplayAdded(id: Int) {}
+            override fun onDisplayRemoved(id: Int) {}
+            override fun onDisplayChanged(id: Int) {
+                if (session != mySession) return
+                val rotation = currentDisplayRotation()
+                if (imageAnalysis.targetRotation != rotation) {
+                    imageAnalysis.targetRotation = rotation
+                    Log.i(TAG, "analysis rotation follows the display: $rotation")
+                }
+            }
+        }
+        try {
+            (context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager)
+                .registerDisplayListener(listener, mainHandler)
+            rotationListener = listener
+        } catch (e: Exception) {
+            Log.w(TAG, "display rotation not followed: $e")
+        }
+    }
+
+    private fun stopFollowingDisplayRotation() {
+        val listener = rotationListener ?: return
+        rotationListener = null
+        try {
+            (context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager).unregisterDisplayListener(listener)
+        } catch (_: Exception) {}
+    }
+
     /** The default display's rotation now, ROTATION_0 when it can't be read. */
     private fun currentDisplayRotation(): Int = try {
         @Suppress("DEPRECATION")
@@ -2341,6 +2379,7 @@ class CameraMotion(
         deviceCamera?.sharedDiagnosticSession = null
         deviceCamera?.motionSessionActive = false
         boundCamera = null
+        stopFollowingDisplayRotation()
         analysis?.clearAnalyzer()
         lifecycle?.destroy()
         lifecycle = null
