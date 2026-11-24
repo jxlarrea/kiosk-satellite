@@ -75,7 +75,10 @@ import kotlin.math.max
  * asked for). Silence is weak
  * evidence, so [CaptureWalk] decides how much of it a rung gets, where
  * capture lands when the whole ladder has been tried and when it may walk
- * again. Anything but 16 kHz mono is converted here ([CaptureConvert]). A
+ * again. The record in hand is released before the next rung opens, or
+ * the audio policy attaches the new record to the input already open and
+ * the HAL never sees the new format. Anything but 16 kHz mono is converted
+ * here ([CaptureConvert]). A
  * `format` argument of "hardware" starts the ladder at the card's 48 kHz
  * stereo.
  */
@@ -355,14 +358,31 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                 null
             }
 
-            fun swapTo(next: AudioRecord, rung: Int) {
+            // Stops and releases the capture in hand, ahead of opening the
+            // next one. Android's audio policy attaches a new record to an
+            // input that still has a running client, whatever format the
+            // new record asks for, and AudioFlinger converts between the
+            // two. A rung opened while the old record ran therefore read
+            // the old rung's HAL stream under a new label (an MT8167 clock
+            // delivered 600% on every rung, 48 kHz stereo included). With
+            // the old record gone the input closes and the next open
+            // reaches the HAL in its own format.
+            var curClosed = false
+            fun closeCurrent() {
+                if (curClosed) return
+                curClosed = true
                 try { cur.stop() } catch (_: IllegalStateException) {}
                 releasePlatformEffects()
                 cur.release()
+            }
+
+            fun swapTo(next: AudioRecord, rung: Int) {
+                closeCurrent()
                 applyPreferredDevice(next, selector)
                 silencePlatformEffects(next, ladder[rung].source)
                 next.startRecording()
                 cur = next
+                curClosed = false
                 record = next
                 walk.opened(rung)
                 shape = ladder[rung]
@@ -384,11 +404,14 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             // exhausted, back to the rung that delivered audio (the first
             // rung when none did), with the next walk held off by the
             // backoff. False when no walk is allowed yet: the capture in
-            // hand stays, whatever it is.
+            // hand stays, whatever it is. The capture in hand is released
+            // before any rung is opened (see closeCurrent), so when nothing
+            // opens at all the loop reads errors until the next walk.
             fun advance(why: String): Boolean {
                 if (!frames.isOpen) return false
                 val now = System.nanoTime()
                 if (!walk.mayWalk(now)) return false
+                closeCurrent()
                 var next: AudioRecord? = null
                 var rung = walk.step
                 while (frames.isOpen && next == null && rung + 1 < ladder.size) {
@@ -404,8 +427,13 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                     rung = walk.exhausted(now)
                     val wait = "next check in ${walk.waitSeconds}s"
                     next = tryOpen(rung)
+                    // The format capture was on, now that it is released.
+                    if (next == null && rung != walk.step) {
+                        rung = walk.step
+                        next = tryOpen(rung)
+                    }
                     if (next == null) {
-                        warn("$why and no other capture format is left; keeping $shape, $wait")
+                        warn("$why and no capture format opens now, $wait")
                         return true
                     }
                     warn(
@@ -537,6 +565,8 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                         if (walk.gating) {
                             // Silence on a gating rung is a quiet room.
                             // Reopening in place still frees a wedged record.
+                            // The format is not in question here, so the
+                            // record in hand stays until the new one opens.
                             tryOpen(walk.step)?.let {
                                 Log.i(TAG, "$shape read only zeros for ${limit / (SAMPLE_RATE * 2)}s; reopening it in place")
                                 swapTo(it, walk.step)
