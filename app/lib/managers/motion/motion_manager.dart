@@ -508,6 +508,9 @@ class MotionManager extends Manager {
   bool _streamRemoteHands = false;
   bool get _streamRemoteVision => _streamRemoteFaces || _streamRemoteHands;
 
+  /// When a postponed screensaver was last reported to Ground Control.
+  DateTime? _postponeReported;
+
   /// Ground Control's address and this kiosk's ticket, from the control
   /// connection (null while it isn't connected or approved).
   String? _groundControlUrl;
@@ -659,7 +662,35 @@ class MotionManager extends Manager {
     // configured span, on the session that saw it. Published ahead of
     // the screensaver's stop, so the hold is up before the stop's
     // ScreensaverStateChanged runs [_sync].
-    bus.on<FaceDismissedScreensaver>().listen((_) => _showPreview());
+    bus.on<FaceDismissedScreensaver>().listen((_) {
+      _showPreview();
+      if (_streamRemoteFaces) _visionSocket?.outcome('screensaver_dismissed');
+    });
+    // What the kiosk did with Ground Control's looks, for its vision
+    // session there. A postpone repeats with every face while someone
+    // stays: once every 10 seconds is enough.
+    bus.on<FacePostponedScreensaver>().listen((_) {
+      if (!_streamRemoteFaces) return;
+      final now = DateTime.now();
+      final last = _postponeReported;
+      if (last != null && now.difference(last) < const Duration(seconds: 10)) {
+        return;
+      }
+      _postponeReported = now;
+      _visionSocket?.outcome('screensaver_postponed');
+    });
+    bus.on<GestureDetected>().listen((e) {
+      if (!_streamRemoteHands) return;
+      final mapping = decodeGestureMappings(
+        _settings.get(defs.gestureMappings),
+      ).where((m) => m.id == e.id).firstOrNull;
+      if (mapping == null || mapping.triggerType != 'fingers') return;
+      _visionSocket?.outcome(
+        'gesture',
+        fingers: (mapping.trigger['fingers'] as num?)?.toInt() ?? 5,
+        action: describeGestureAction(mapping.action),
+      );
+    });
     // A voice interaction: idle the camera's analysis for its span. The
     // detection comes first (the page suspends wake detection a bridge
     // round trip later), the page's resume ends it.
@@ -1189,6 +1220,7 @@ class MotionManager extends Manager {
           rotation: look.rotation,
           want: look.want,
           jpeg: look.jpeg,
+          encodeMs: look.encodeMs,
         );
     if (sent) return;
     if (!_voiceTurn) _visionDown('not connected to Ground Control');

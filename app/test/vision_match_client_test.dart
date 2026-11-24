@@ -105,6 +105,51 @@ void main() {
     await c.socket.close();
   });
 
+  test('frames carry their encoding time and the last round trip', () async {
+    final c = open();
+    final gc = await sockets.stream.first;
+    final messages = StreamIterator(gc);
+    expect(await messages.moveNext(), isTrue); // start
+    gc.add(
+      jsonEncode({
+        'type': 'ready',
+        'max_looks': {'face': 2, 'hands': 2},
+      }),
+    );
+    await c.ready.future;
+    final jpeg = Uint8List.fromList([0xff, 0xd8]);
+    c.socket.send(
+      id: 1,
+      rotation: 0,
+      want: ['face'],
+      jpeg: jpeg,
+      encodeMs: 8.5,
+    );
+    expect(await messages.moveNext(), isTrue);
+    final first = jsonDecode(messages.current as String) as Map;
+    expect(first['encode_ms'], 8.5);
+    expect(first.containsKey('rtt_ms'), isFalse);
+    expect(await messages.moveNext(), isTrue); // its JPEG
+    gc.add(jsonEncode({'type': 'result', 'id': 1, 'faces': []}));
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    c.socket.send(id: 2, rotation: 0, want: ['face'], jpeg: jpeg);
+    expect(await messages.moveNext(), isTrue);
+    final second = jsonDecode(messages.current as String) as Map;
+    expect(second['rtt_ms'], isA<num>());
+    expect(second.containsKey('encode_ms'), isFalse);
+    expect(await messages.moveNext(), isTrue); // its JPEG
+
+    c.socket.outcome('gesture', fingers: 3, action: 'Refresh the dashboard');
+    expect(await messages.moveNext(), isTrue);
+    expect(jsonDecode(messages.current as String), {
+      'type': 'outcome',
+      'what': 'gesture',
+      'fingers': 3,
+      'action': 'Refresh the dashboard',
+    });
+    await c.socket.close();
+  });
+
   test('a dropped frame and a frame that could not be read fail', () async {
     final c = open();
     final gc = await sockets.stream.first;

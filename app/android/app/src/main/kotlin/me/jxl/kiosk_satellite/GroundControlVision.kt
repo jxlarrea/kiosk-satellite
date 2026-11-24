@@ -105,6 +105,7 @@ class GroundControlVision {
      * event for the Dart side, or null when the frame can't be encoded.
      */
     fun prepare(image: ImageProxy, face: Boolean, hands: Boolean, now: Long): Map<String, Any>? {
+        val started = System.nanoTime()
         val bytes = try {
             val nv21 = PluginCameraFrames.copy(image, true)
             val out = ByteArrayOutputStream(48 * 1024)
@@ -130,7 +131,9 @@ class GroundControlVision {
             if (face) add("face")
             if (hands) add("hands")
         }
-        return mapOf("vision" to bytes, "id" to look.id, "rotation" to rotation, "want" to want)
+        // How long the frame took to encode, for the vision session on Ground Control.
+        val encodeMs = Math.round((System.nanoTime() - started) / 1e5) / 10.0
+        return mapOf("vision" to bytes, "id" to look.id, "rotation" to rotation, "want" to want, "encode_ms" to encodeMs)
     }
 
     /** Analyzer thread: the look [id] was answered or failed. The look, or null when it is not the one waiting. */

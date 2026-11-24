@@ -44,7 +44,8 @@ Navigate to **Settings > Ground Control > Vision Match**. With **Enable Vision M
 
 
 - The finger count is right more often, also in dim light and a few meters away, and a face turned away no longer counts as one looking at the screen. On an Echo Show 5 the CPU the models used is free again: about a tenth of a second for each face look and half a second for each hand look.
-- The camera and motion detection stay on the device. A frame goes to Ground Control only when something moves in front of the camera, one at a time, and Ground Control doesn't keep it.
+- The camera and motion detection stay on the device. A frame goes to Ground Control only when something moves in front of the camera, one at a time.
+- Ground Control saves what it saw as vision sessions on its **Sessions** page, with what the kiosk did: the screensaver dismissed or postponed and each finger gesture with its action. It keeps up to 8 frames of each session while **Keep frames** is on in its **Settings > Vision Match**, and deletes them with the session.
 - Looks are paced to what the machine running Ground Control keeps up with.
 - A feature on Ground Control also works on devices that can't run it on their own, such as Android 7 devices and x86 devices for hands.
 - When Ground Control doesn't answer, the looks of the features on Ground Control wait for it and the log says so once. The models on the device are used only for a feature that is off here.

@@ -183,6 +183,7 @@ class NativeMotionTick {
       if (vision is Uint8List && id is num) {
         final rotation = raw['rotation'];
         final want = raw['want'];
+        final encodeMs = raw['encode_ms'];
         return NativeMotionTick._(
           null,
           null,
@@ -192,6 +193,7 @@ class NativeMotionTick {
             jpeg: vision,
             rotation: rotation is num ? rotation.toInt() : 0,
             want: want is List ? want.whereType<String>().toList() : const [],
+            encodeMs: encodeMs is num ? encodeMs.toDouble() : null,
           ),
         );
       }
@@ -216,20 +218,23 @@ class NativeMotionTick {
 
 /// A frame the analyzer wants Ground Control to look at (Vision Match): a
 /// JPEG of the analysis frame as the sensor delivered it, the clockwise
-/// rotation that turns it upright and what to look for (`face`, `hands`).
-/// Every look must be answered with [NativeMotion.visionResult].
+/// rotation that turns it upright, what to look for (`face`, `hands`) and
+/// how long the frame took to encode. Every look must be answered with
+/// [NativeMotion.visionResult].
 class VisionLook {
   const VisionLook({
     required this.id,
     required this.jpeg,
     required this.rotation,
     required this.want,
+    this.encodeMs,
   });
 
   final int id;
   final Uint8List jpeg;
   final int rotation;
   final List<String> want;
+  final double? encodeMs;
 }
 
 /// One frame of the camera preview (discussion #371), as the native side

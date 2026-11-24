@@ -856,6 +856,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
             _settings.get(defs.screensaverDismissOnFace) &&
             !_settings.get(defs.screensaverDismissOnMotion)) {
           _resetIdleTimer();
+          bus.publish(const FacePostponedScreensaver());
         }
         return;
       }

@@ -17,6 +17,10 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 /// [onReady] carries how many looks a second Ground Control keeps up with,
 /// for the analyzer's pacing. [onLost] says the socket is gone: the owner
 /// opens a new one after a pause.
+///
+/// For the vision sessions on Ground Control, each frame carries how long
+/// it took to encode and the round trip of the frame before it, and
+/// [outcome] says what the kiosk did with a result.
 class VisionMatchSocket {
   VisionMatchSocket._(this._onReady, this._onResult, this._onLost, this._log);
 
@@ -32,8 +36,12 @@ class VisionMatchSocket {
   bool _lostSaid = false;
 
   /// Frames sent and not answered yet, so a socket that goes answers them
-  /// as failed instead of leaving the analyzer waiting.
-  final _waiting = <int>{};
+  /// as failed instead of leaving the analyzer waiting, with when each was
+  /// sent for its round trip.
+  final _waiting = <int, Stopwatch>{};
+
+  /// The last answered frame's round trip, sent with the next frame.
+  double? _roundTripMs;
 
   bool get ready => _ready && !_closed;
 
@@ -97,20 +105,41 @@ class VisionMatchSocket {
     required int rotation,
     required List<String> want,
     required Uint8List jpeg,
+    double? encodeMs,
   }) {
     final socket = _socket;
     if (!ready || socket == null) return false;
-    _waiting.add(id);
+    _waiting[id] = Stopwatch()..start();
+    final roundTrip = _roundTripMs;
+    _roundTripMs = null;
     socket.sink.add(
       jsonEncode({
         'type': 'frame',
         'id': id,
         'rotation': rotation,
         'want': want,
+        'encode_ms': ?encodeMs,
+        'rtt_ms': ?roundTrip,
       }),
     );
     socket.sink.add(jpeg);
     return true;
+  }
+
+  /// What the kiosk did with Ground Control's results, for its vision
+  /// session: `screensaver_dismissed`, `screensaver_postponed` or
+  /// `gesture` with the finger count and the action it ran.
+  void outcome(String what, {int? fingers, String? action}) {
+    final socket = _socket;
+    if (!ready || socket == null) return;
+    socket.sink.add(
+      jsonEncode({
+        'type': 'outcome',
+        'what': what,
+        'fingers': ?fingers,
+        'action': ?action,
+      }),
+    );
   }
 
   void _onMessage(Object? data) {
@@ -131,7 +160,11 @@ class VisionMatchSocket {
         );
       case 'result':
         final id = e['id'];
-        if (id is int && _waiting.remove(id)) _onResult(e);
+        final sent = id is int ? _waiting.remove(id) : null;
+        if (sent != null) {
+          _roundTripMs = (sent.elapsedMicroseconds / 100).round() / 10;
+          _onResult(e);
+        }
       case 'dropped':
         _fail(e['id']);
       case 'error':
@@ -149,14 +182,14 @@ class VisionMatchSocket {
   }
 
   void _fail(Object? id) {
-    if (id is int && _waiting.remove(id)) {
+    if (id is int && _waiting.remove(id) != null) {
       _onResult({'id': id, 'failed': true});
     }
   }
 
   void _drop() {
     _ready = false;
-    for (final id in _waiting.toList()) {
+    for (final id in _waiting.keys.toList()) {
       _fail(id);
     }
     if (_closed || _lostSaid) return;

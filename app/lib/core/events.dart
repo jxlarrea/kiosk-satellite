@@ -810,6 +810,13 @@ class FaceDismissedScreensaver extends AppEvent {
   const FaceDismissedScreensaver();
 }
 
+/// A face put off the next screensaver (Postpone on face). Repeats with
+/// every face while someone stays. Vision Match reports it to Ground
+/// Control for the vision session it belongs to.
+class FacePostponedScreensaver extends AppEvent {
+  const FacePostponedScreensaver();
+}
+
 /// Someone is in view of the device's own person sensor (discussion #353,
 /// today the Meta Portal's people tracker): the person sensor manager
 /// relays it while the screensaver's "Dismiss on person" has it reading
