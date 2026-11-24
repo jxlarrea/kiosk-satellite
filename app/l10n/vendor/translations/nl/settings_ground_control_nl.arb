@@ -23,5 +23,15 @@
   "groundControlNotAccepted": "Niet geaccepteerd",
   "groundControlUnsignedBuild": "Deze build van Kiosk Satellite kan geen verbinding maken met Ground Control.",
   "groundControlArchitecture": "Architectuur",
-  "groundControlRunsOn": "Draait op"
+  "groundControlRunsOn": "Draait op",
+  "settingVisionMatchFaceRecognitionTitle": "Gezichtsherkenning inschakelen",
+  "settingVisionMatchFaceRecognitionDescriptionGroundControl": "Herkent wie naar de kiosk kijkt en toont dit in de Face-sensor. Vereist gezichtsdetectie op Ground Control.",
+  "groundControlFaceRecognition": "Gezichtsherkenning",
+  "faceEnrollRowTitle": "Een gezicht inschrijven",
+  "faceEnrollRowDescription": "Kies een persoon en volg de stappen op het scherm. Dit duurt ongeveer een halve minuut.",
+  "faceEnrollPickTitle": "Wiens gezicht?",
+  "faceEnrollNewPerson": "Nieuwe persoon",
+  "faceEnrollEnrolled": "Gezicht ingeschreven",
+  "faceEnrollNameLabel": "Naam",
+  "faceEnrollStart": "Starten"
 }

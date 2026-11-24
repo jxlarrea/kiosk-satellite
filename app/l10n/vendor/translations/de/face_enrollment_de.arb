@@ -1,0 +1,23 @@
+{
+  "@@locale": "de",
+  "faceEnrollTitle": "{name} wird eingelernt",
+  "faceEnrollStepOf": "Schritt {step} von {total}",
+  "faceEnrollStepLook": "Schau auf den Bildschirm",
+  "faceEnrollStepSideA": "Dreh den Kopf ein wenig zur Seite",
+  "faceEnrollStepSideB": "Jetzt ein wenig zur anderen Seite",
+  "faceEnrollStepFar": "Geh einen Schritt zurück",
+  "faceEnrollHintNoFace": "Kein Gesicht im Bild",
+  "faceEnrollHintSeveral": "Bitte nur eine Person im Bild",
+  "faceEnrollHintCloser": "Komm etwas näher",
+  "faceEnrollHintFarther": "Geh noch etwas weiter zurück",
+  "faceEnrollHintTurnMore": "Dreh dich etwas mehr",
+  "faceEnrollHintTurnLess": "Dreh dich etwas zurück",
+  "faceEnrollHintOtherSide": "Jetzt zur anderen Seite",
+  "faceEnrollHintDark": "Zu dunkel, um dein Gesicht zu sehen",
+  "faceEnrollHintOtherFace": "Das ist ein anderes Gesicht",
+  "faceEnrollSaved": "Gesicht für {name} eingelernt",
+  "faceEnrollSavedPartly": "Ein Teil des Gesichts wurde eingelernt. Lerne es erneut ein, um es abzuschließen.",
+  "faceEnrollTooShort": "Das Gesicht war nicht lange genug zu sehen. Es wurde nichts gespeichert.",
+  "faceEnrollUnavailable": "Die Gesichtswiedererkennung benötigt Ground Control mit aktivem Vision Match und aktiver Gesichtswiedererkennung.",
+  "faceEnrollLost": "Die Verbindung zu Ground Control wurde unterbrochen. Es wurde nichts gespeichert."
+}

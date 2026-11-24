@@ -21,10 +21,21 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 /// For the vision sessions on Ground Control, each frame carries how long
 /// it took to encode and the round trip of the frame before it, and
 /// [outcome] says what the kiosk did with a result.
+///
+/// With [recognize], Ground Control also says who is looking at the kiosk
+/// (Face Recognition), through [onPerson]: a person's id, name and score
+/// when it names someone, null when nobody known is in view.
 class VisionMatchSocket {
-  VisionMatchSocket._(this._onReady, this._onResult, this._onLost, this._log);
+  VisionMatchSocket._(
+    this._onReady,
+    this._onResult,
+    this._onLost,
+    this._log,
+    this._onPerson,
+  );
 
   final void Function(double? face, double? hands) _onReady;
+  final void Function(Map<String, Object?>? person)? _onPerson;
   final void Function(Map<String, Object?> answer) _onResult;
   final void Function() _onLost;
   final void Function(String line)? _log;
@@ -56,8 +67,16 @@ class VisionMatchSocket {
     required void Function(Map<String, Object?> answer) onResult,
     required void Function() onLost,
     void Function(String line)? log,
+    bool recognize = false,
+    void Function(Map<String, Object?>? person)? onPerson,
   }) {
-    final socket = VisionMatchSocket._(onReady, onResult, onLost, log);
+    final socket = VisionMatchSocket._(
+      onReady,
+      onResult,
+      onLost,
+      log,
+      onPerson,
+    );
     final base = Uri.parse(baseUrl);
     final uri = base.replace(
       scheme: base.scheme == 'https' ? 'wss' : 'ws',
@@ -71,6 +90,7 @@ class VisionMatchSocket {
         'device_id': deviceId,
         'device_name': deviceName,
         'want': want,
+        if (recognize) 'recognize': true,
       }),
     );
     return socket;
@@ -165,6 +185,9 @@ class VisionMatchSocket {
           _roundTripMs = (sent.elapsedMicroseconds / 100).round() / 10;
           _onResult(e);
         }
+        if (e.containsKey('person')) _person(e['person']);
+      case 'person':
+        _person(e['person']);
       case 'dropped':
         _fail(e['id']);
       case 'error':
@@ -179,6 +202,19 @@ class VisionMatchSocket {
         _log?.call('Ground Control could not look at frame $id: ${e['code']}');
         _fail(id);
     }
+  }
+
+  /// Who is in view, said once when it changes.
+  Object? _lastPerson = const Object();
+
+  void _person(Object? raw) {
+    final person = raw is Map && raw['id'] is String
+        ? raw.cast<String, Object?>()
+        : null;
+    final key = person?['id'];
+    if (key == _lastPerson) return;
+    _lastPerson = key;
+    _onPerson?.call(person);
   }
 
   void _fail(Object? id) {

@@ -1,0 +1,23 @@
+{
+  "@@locale": "ru",
+  "faceEnrollTitle": "Запись лица: {name}",
+  "faceEnrollStepOf": "Шаг {step} из {total}",
+  "faceEnrollStepLook": "Посмотрите на экран",
+  "faceEnrollStepSideA": "Немного поверните голову в сторону",
+  "faceEnrollStepSideB": "Теперь немного в другую сторону",
+  "faceEnrollStepFar": "Сделайте шаг назад",
+  "faceEnrollHintNoFace": "Лицо не видно",
+  "faceEnrollHintSeveral": "Пожалуйста, только один человек в кадре",
+  "faceEnrollHintCloser": "Подойдите немного ближе",
+  "faceEnrollHintFarther": "Отойдите ещё немного",
+  "faceEnrollHintTurnMore": "Поверните ещё немного",
+  "faceEnrollHintTurnLess": "Поверните немного обратно",
+  "faceEnrollHintOtherSide": "Теперь в другую сторону",
+  "faceEnrollHintDark": "Слишком темно, лицо не видно",
+  "faceEnrollHintOtherFace": "Это другое лицо",
+  "faceEnrollSaved": "Лицо записано: {name}",
+  "faceEnrollSavedPartly": "Записана часть лица. Запишите ещё раз, чтобы закончить.",
+  "faceEnrollTooShort": "Лицо было видно недостаточно долго. Ничего не сохранено.",
+  "faceEnrollUnavailable": "Для распознавания лиц нужен Ground Control с включёнными Vision Match и распознаванием лиц.",
+  "faceEnrollLost": "Связь с Ground Control потеряна. Ничего не сохранено."
+}

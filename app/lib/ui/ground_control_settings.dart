@@ -356,3 +356,92 @@ class _VoiceMatchPeopleRowState extends State<VoiceMatchPeopleRow> {
     );
   }
 }
+
+/// Under Enable Face Recognition: Enroll a face picks a person from Ground
+/// Control, or a new one, and starts the guided capture on this kiosk. The
+/// settings close so the capture fills the screen.
+class FaceEnrollRow extends StatelessWidget {
+  const FaceEnrollRow({super.key, required this.container});
+
+  final AppContainer container;
+
+  Future<void> _start(BuildContext context) async {
+    final t = l10n(context);
+    final people = container.groundControl.people;
+    final picked = await showRadioPicker<String>(
+      context,
+      title: t.faceEnrollPickTitle,
+      options: [
+        for (final p in people)
+          if ('${p['id'] ?? ''}'.isNotEmpty)
+            PickerOption(
+              '${p['id']}',
+              '${p['name'] ?? ''}',
+              detail: p['has_face'] == true ? t.faceEnrollEnrolled : null,
+            ),
+        PickerOption('', t.faceEnrollNewPerson),
+      ],
+    );
+    if (picked == null || !context.mounted) return;
+    String? id = picked.isEmpty ? null : picked;
+    var name = id == null
+        ? ''
+        : '${people.firstWhere((p) => p['id'] == id)['name'] ?? ''}';
+    String? color = id == null
+        ? null
+        : people.firstWhere((p) => p['id'] == id)['color'] as String?;
+    if (id == null) {
+      name = await _askName(context) ?? '';
+      if (name.isEmpty || !context.mounted) return;
+    }
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    container.bus.publish(
+      FaceEnrollRequested(personId: id, name: name, color: color),
+    );
+  }
+
+  Future<String?> _askName(BuildContext context) {
+    final t = l10n(context);
+    final field = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.faceEnrollNewPerson),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: TextField(
+            controller: field,
+            autofocus: true,
+            maxLength: 40,
+            decoration: InputDecoration(labelText: t.faceEnrollNameLabel),
+            onSubmitted: (v) => Navigator.of(context).pop(v.trim()),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(t.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(field.text.trim()),
+            child: Text(t.faceEnrollStart),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = l10n(context);
+    final connected = container.groundControl.status == 'connected';
+    return SettingsRow(
+      leading: const Icon(Icons.face_retouching_natural),
+      title: Text(t.faceEnrollRowTitle),
+      subtitle: Text(t.faceEnrollRowDescription),
+      enabled: connected,
+      trailing: const Icon(Icons.chevron_right),
+      onTap: connected ? () => unawaited(_start(context)) : null,
+    );
+  }
+}

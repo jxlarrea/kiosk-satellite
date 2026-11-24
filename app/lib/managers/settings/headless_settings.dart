@@ -58,6 +58,7 @@ class HeadlessSettings {
     // Ground Control: Vision Match works on the camera's frames.
     defs.visionMatchEnabled.key,
     defs.visionMatchFaceDetection.key,
+    defs.visionMatchFaceRecognition.key,
     defs.visionMatchHandGestures.key,
     // Voice: listening never leaves the foreground, there is none.
     defs.wakeWordBackground.key,

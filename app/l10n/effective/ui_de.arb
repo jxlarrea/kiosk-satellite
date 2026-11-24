@@ -4883,6 +4883,227 @@
       ]
     }
   },
+  "faceEnrollTitle": "{name} wird eingelernt",
+  "@faceEnrollTitle": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "faceEnrollStepOf": "Schritt {step} von {total}",
+  "@faceEnrollStepOf": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    },
+    "placeholders": {
+      "step": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "faceEnrollStepLook": "Schau auf den Bildschirm",
+  "@faceEnrollStepLook": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollStepSideA": "Dreh den Kopf ein wenig zur Seite",
+  "@faceEnrollStepSideA": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollStepSideB": "Jetzt ein wenig zur anderen Seite",
+  "@faceEnrollStepSideB": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollStepFar": "Geh einen Schritt zurück",
+  "@faceEnrollStepFar": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintNoFace": "Kein Gesicht im Bild",
+  "@faceEnrollHintNoFace": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintSeveral": "Bitte nur eine Person im Bild",
+  "@faceEnrollHintSeveral": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintCloser": "Komm etwas näher",
+  "@faceEnrollHintCloser": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintFarther": "Geh noch etwas weiter zurück",
+  "@faceEnrollHintFarther": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintTurnMore": "Dreh dich etwas mehr",
+  "@faceEnrollHintTurnMore": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintTurnLess": "Dreh dich etwas zurück",
+  "@faceEnrollHintTurnLess": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintOtherSide": "Jetzt zur anderen Seite",
+  "@faceEnrollHintOtherSide": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintDark": "Zu dunkel, um dein Gesicht zu sehen",
+  "@faceEnrollHintDark": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollHintOtherFace": "Das ist ein anderes Gesicht",
+  "@faceEnrollHintOtherFace": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollSaved": "Gesicht für {name} eingelernt",
+  "@faceEnrollSaved": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "x-notes": "Keep placeholders unchanged. Supplied names, IDs and values are inserted by the app."
+  },
+  "faceEnrollSavedPartly": "Ein Teil des Gesichts wurde eingelernt. Lerne es erneut ein, um es abzuschließen.",
+  "@faceEnrollSavedPartly": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk. Shown when the capture stopped after the first step.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollTooShort": "Das Gesicht war nicht lange genug zu sehen. Es wurde nichts gespeichert.",
+  "@faceEnrollTooShort": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollUnavailable": "Die Gesichtswiedererkennung benötigt Ground Control mit aktivem Vision Match und aktiver Gesichtswiedererkennung.",
+  "@faceEnrollUnavailable": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
+  "faceEnrollLost": "Die Verbindung zu Ground Control wurde unterbrochen. Es wurde nichts gespeichert.",
+  "@faceEnrollLost": {
+    "context": "Face Recognition enrollment screen",
+    "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
+    "x-locations": {
+      "device": [
+        "Face Recognition enrollment"
+      ]
+    }
+  },
   "filesUpload": "Datei hochladen",
   "@filesUpload": {
     "context": "File Manager > folders, uploads and file actions",
@@ -32338,6 +32559,115 @@
       ],
       "remoteAdmin": [
         "Ground Control > Vision Match > Hand Gestures > Enable Hand Gestures"
+      ]
+    }
+  },
+  "settingVisionMatchFaceRecognitionTitle": "Gesichtswiedererkennung aktivieren",
+  "@settingVisionMatchFaceRecognitionTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Enable Face Recognition"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Recognition > Enable Face Recognition"
+      ]
+    }
+  },
+  "settingVisionMatchFaceRecognitionDescriptionGroundControl": "Erkennt, wer auf den Kiosk schaut, und zeigt es im Face-Sensor. Benötigt die Gesichtserkennung auf Ground Control.",
+  "@settingVisionMatchFaceRecognitionDescriptionGroundControl": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is. Face is the name of a sensor in Home Assistant.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Enable Face Recognition"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Recognition > Enable Face Recognition"
+      ]
+    }
+  },
+  "groundControlFaceRecognition": "Gesichtswiedererkennung",
+  "@groundControlFaceRecognition": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition section heading"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Recognition section heading"
+      ]
+    }
+  },
+  "faceEnrollRowTitle": "Gesicht einlernen",
+  "@faceEnrollRowTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Enroll a face"
+      ]
+    }
+  },
+  "faceEnrollRowDescription": "Wähle eine Person und folge den Schritten auf dem Bildschirm. Das dauert etwa eine halbe Minute.",
+  "@faceEnrollRowDescription": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Enroll a face"
+      ]
+    }
+  },
+  "faceEnrollPickTitle": "Wessen Gesicht?",
+  "@faceEnrollPickTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > person picker title"
+      ]
+    }
+  },
+  "faceEnrollNewPerson": "Neue Person",
+  "@faceEnrollNewPerson": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > person picker"
+      ]
+    }
+  },
+  "faceEnrollEnrolled": "Gesicht eingelernt",
+  "@faceEnrollEnrolled": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > person picker, under a person whose face is already enrolled"
+      ]
+    }
+  },
+  "faceEnrollNameLabel": "Name",
+  "@faceEnrollNameLabel": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > New person > name field"
+      ]
+    }
+  },
+  "faceEnrollStart": "Starten",
+  "@faceEnrollStart": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > button that starts the capture"
       ]
     }
   },

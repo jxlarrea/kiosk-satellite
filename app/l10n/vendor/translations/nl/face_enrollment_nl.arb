@@ -1,0 +1,23 @@
+{
+  "@@locale": "nl",
+  "faceEnrollTitle": "{name} inschrijven",
+  "faceEnrollStepOf": "Stap {step} van {total}",
+  "faceEnrollStepLook": "Kijk naar het scherm",
+  "faceEnrollStepSideA": "Draai je hoofd een beetje opzij",
+  "faceEnrollStepSideB": "Nu een beetje naar de andere kant",
+  "faceEnrollStepFar": "Doe een stap achteruit",
+  "faceEnrollHintNoFace": "Geen gezicht in beeld",
+  "faceEnrollHintSeveral": "Graag maar één persoon in beeld",
+  "faceEnrollHintCloser": "Kom wat dichterbij",
+  "faceEnrollHintFarther": "Ga nog wat verder achteruit",
+  "faceEnrollHintTurnMore": "Draai wat verder",
+  "faceEnrollHintTurnLess": "Draai een beetje terug",
+  "faceEnrollHintOtherSide": "Nu naar de andere kant",
+  "faceEnrollHintDark": "Te donker om je gezicht te zien",
+  "faceEnrollHintOtherFace": "Dat is een ander gezicht",
+  "faceEnrollSaved": "Gezicht ingeschreven voor {name}",
+  "faceEnrollSavedPartly": "Een deel van het gezicht is ingeschreven. Schrijf opnieuw in om af te ronden.",
+  "faceEnrollTooShort": "Het gezicht was niet lang genoeg te zien. Er is niets opgeslagen.",
+  "faceEnrollUnavailable": "Gezichtsherkenning vereist Ground Control met Vision Match en gezichtsherkenning ingeschakeld.",
+  "faceEnrollLost": "De verbinding met Ground Control is verbroken. Er is niets opgeslagen."
+}

@@ -2866,5 +2866,9 @@
   "vision_match.hand_gestures": {
     "title": "settingVisionMatchHandGesturesTitle",
     "description": "settingVisionMatchHandGesturesDescriptionGroundControl"
+  },
+  "vision_match.face_recognition": {
+    "title": "settingVisionMatchFaceRecognitionTitle",
+    "description": "settingVisionMatchFaceRecognitionDescriptionGroundControl"
   }
 }

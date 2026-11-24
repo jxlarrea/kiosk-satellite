@@ -1,0 +1,23 @@
+{
+  "@@locale": "pl",
+  "faceEnrollTitle": "Rejestrowanie twarzy: {name}",
+  "faceEnrollStepOf": "Krok {step} z {total}",
+  "faceEnrollStepLook": "Spójrz na ekran",
+  "faceEnrollStepSideA": "Obróć lekko głowę w jedną stronę",
+  "faceEnrollStepSideB": "Teraz lekko w drugą stronę",
+  "faceEnrollStepFar": "Zrób krok do tyłu",
+  "faceEnrollHintNoFace": "Nie widać twarzy",
+  "faceEnrollHintSeveral": "Proszę, tylko jedna osoba w kadrze",
+  "faceEnrollHintCloser": "Podejdź trochę bliżej",
+  "faceEnrollHintFarther": "Cofnij się jeszcze trochę",
+  "faceEnrollHintTurnMore": "Obróć się trochę bardziej",
+  "faceEnrollHintTurnLess": "Obróć się trochę z powrotem",
+  "faceEnrollHintOtherSide": "Teraz w drugą stronę",
+  "faceEnrollHintDark": "Za ciemno, by zobaczyć twarz",
+  "faceEnrollHintOtherFace": "To inna twarz",
+  "faceEnrollSaved": "Twarz zarejestrowana dla: {name}",
+  "faceEnrollSavedPartly": "Zarejestrowano część twarzy. Zarejestruj ją ponownie, aby dokończyć.",
+  "faceEnrollTooShort": "Twarz była widoczna zbyt krótko. Nic nie zapisano.",
+  "faceEnrollUnavailable": "Rozpoznawanie twarzy wymaga Ground Control z włączonymi Vision Match i rozpoznawaniem twarzy.",
+  "faceEnrollLost": "Utracono połączenie z Ground Control. Nic nie zapisano."
+}

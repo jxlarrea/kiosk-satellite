@@ -23,5 +23,15 @@
   "groundControlNotAccepted": "Не принят",
   "groundControlUnsignedBuild": "Эта сборка Kiosk Satellite не может подключиться к Ground Control.",
   "groundControlArchitecture": "Архитектура",
-  "groundControlRunsOn": "Работает на"
+  "groundControlRunsOn": "Работает на",
+  "settingVisionMatchFaceRecognitionTitle": "Включить распознавание лиц",
+  "settingVisionMatchFaceRecognitionDescriptionGroundControl": "Распознаёт, кто смотрит на киоск, и показывает это в датчике Face. Нужно определение лица на Ground Control.",
+  "groundControlFaceRecognition": "Распознавание лиц",
+  "faceEnrollRowTitle": "Записать лицо",
+  "faceEnrollRowDescription": "Выберите человека и выполните шаги на экране. Это займёт около полуминуты.",
+  "faceEnrollPickTitle": "Чьё лицо?",
+  "faceEnrollNewPerson": "Новый человек",
+  "faceEnrollEnrolled": "Лицо записано",
+  "faceEnrollNameLabel": "Имя",
+  "faceEnrollStart": "Начать"
 }

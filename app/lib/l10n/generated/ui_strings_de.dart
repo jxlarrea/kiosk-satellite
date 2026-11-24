@@ -1284,6 +1284,76 @@ class UiStringsDe extends UiStrings {
   String get esphomeTypeText => 'Text';
 
   @override
+  String faceEnrollTitle(String name) {
+    return '$name wird eingelernt';
+  }
+
+  @override
+  String faceEnrollStepOf(String step, String total) {
+    return 'Schritt $step von $total';
+  }
+
+  @override
+  String get faceEnrollStepLook => 'Schau auf den Bildschirm';
+
+  @override
+  String get faceEnrollStepSideA => 'Dreh den Kopf ein wenig zur Seite';
+
+  @override
+  String get faceEnrollStepSideB => 'Jetzt ein wenig zur anderen Seite';
+
+  @override
+  String get faceEnrollStepFar => 'Geh einen Schritt zurück';
+
+  @override
+  String get faceEnrollHintNoFace => 'Kein Gesicht im Bild';
+
+  @override
+  String get faceEnrollHintSeveral => 'Bitte nur eine Person im Bild';
+
+  @override
+  String get faceEnrollHintCloser => 'Komm etwas näher';
+
+  @override
+  String get faceEnrollHintFarther => 'Geh noch etwas weiter zurück';
+
+  @override
+  String get faceEnrollHintTurnMore => 'Dreh dich etwas mehr';
+
+  @override
+  String get faceEnrollHintTurnLess => 'Dreh dich etwas zurück';
+
+  @override
+  String get faceEnrollHintOtherSide => 'Jetzt zur anderen Seite';
+
+  @override
+  String get faceEnrollHintDark => 'Zu dunkel, um dein Gesicht zu sehen';
+
+  @override
+  String get faceEnrollHintOtherFace => 'Das ist ein anderes Gesicht';
+
+  @override
+  String faceEnrollSaved(String name) {
+    return 'Gesicht für $name eingelernt';
+  }
+
+  @override
+  String get faceEnrollSavedPartly =>
+      'Ein Teil des Gesichts wurde eingelernt. Lerne es erneut ein, um es abzuschließen.';
+
+  @override
+  String get faceEnrollTooShort =>
+      'Das Gesicht war nicht lange genug zu sehen. Es wurde nichts gespeichert.';
+
+  @override
+  String get faceEnrollUnavailable =>
+      'Die Gesichtswiedererkennung benötigt Ground Control mit aktivem Vision Match und aktiver Gesichtswiedererkennung.';
+
+  @override
+  String get faceEnrollLost =>
+      'Die Verbindung zu Ground Control wurde unterbrochen. Es wurde nichts gespeichert.';
+
+  @override
   String get filesUpload => 'Datei hochladen';
 
   @override
@@ -8730,6 +8800,39 @@ class UiStringsDe extends UiStrings {
   @override
   String get settingVisionMatchHandGesturesDescriptionGroundControl =>
       'Erkennung von Handflächen- und Fingergesten auf Ground Control ausführen. Ausschalten, um sie auf dem Gerät auszuführen.';
+
+  @override
+  String get settingVisionMatchFaceRecognitionTitle =>
+      'Gesichtswiedererkennung aktivieren';
+
+  @override
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl =>
+      'Erkennt, wer auf den Kiosk schaut, und zeigt es im Face-Sensor. Benötigt die Gesichtserkennung auf Ground Control.';
+
+  @override
+  String get groundControlFaceRecognition => 'Gesichtswiedererkennung';
+
+  @override
+  String get faceEnrollRowTitle => 'Gesicht einlernen';
+
+  @override
+  String get faceEnrollRowDescription =>
+      'Wähle eine Person und folge den Schritten auf dem Bildschirm. Das dauert etwa eine halbe Minute.';
+
+  @override
+  String get faceEnrollPickTitle => 'Wessen Gesicht?';
+
+  @override
+  String get faceEnrollNewPerson => 'Neue Person';
+
+  @override
+  String get faceEnrollEnrolled => 'Gesicht eingelernt';
+
+  @override
+  String get faceEnrollNameLabel => 'Name';
+
+  @override
+  String get faceEnrollStart => 'Starten';
 
   @override
   String get haCustomPages => 'Eigene Seiten';

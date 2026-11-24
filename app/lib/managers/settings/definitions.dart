@@ -8288,6 +8288,24 @@ const visionMatchFaceDetection = SettingDef<bool>(
   dependsOn: 'vision_match.enabled',
 );
 
+/// Who is looking at the kiosk, from the faces enrolled on Ground Control,
+/// in the Face sensor. Needs Face Detection on Ground Control: its looks are
+/// what Ground Control recognizes.
+const visionMatchFaceRecognition = SettingDef<bool>(
+  key: 'vision_match.face_recognition',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable Face Recognition',
+  description:
+      'Recognize who is looking at the kiosk and show it in the Face sensor. '
+      'Needs Face Detection on Ground Control.',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Face Recognition',
+  dependsOn: 'vision_match.enabled',
+  alsoDependsOn: 'vision_match.face_detection',
+);
+
 /// Show fingers gestures, on Ground Control.
 const visionMatchHandGestures = SettingDef<bool>(
   key: 'vision_match.hand_gestures',
@@ -15365,6 +15383,7 @@ const List<SettingDef<Object>> allSettings = [
   voiceMatchIsolation,
   visionMatchEnabled,
   visionMatchFaceDetection,
+  visionMatchFaceRecognition,
   visionMatchHandGestures,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,

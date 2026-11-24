@@ -1282,6 +1282,76 @@ class UiStringsPl extends UiStrings {
   String get esphomeTypeText => 'tekst';
 
   @override
+  String faceEnrollTitle(String name) {
+    return 'Rejestrowanie twarzy: $name';
+  }
+
+  @override
+  String faceEnrollStepOf(String step, String total) {
+    return 'Krok $step z $total';
+  }
+
+  @override
+  String get faceEnrollStepLook => 'Spójrz na ekran';
+
+  @override
+  String get faceEnrollStepSideA => 'Obróć lekko głowę w jedną stronę';
+
+  @override
+  String get faceEnrollStepSideB => 'Teraz lekko w drugą stronę';
+
+  @override
+  String get faceEnrollStepFar => 'Zrób krok do tyłu';
+
+  @override
+  String get faceEnrollHintNoFace => 'Nie widać twarzy';
+
+  @override
+  String get faceEnrollHintSeveral => 'Proszę, tylko jedna osoba w kadrze';
+
+  @override
+  String get faceEnrollHintCloser => 'Podejdź trochę bliżej';
+
+  @override
+  String get faceEnrollHintFarther => 'Cofnij się jeszcze trochę';
+
+  @override
+  String get faceEnrollHintTurnMore => 'Obróć się trochę bardziej';
+
+  @override
+  String get faceEnrollHintTurnLess => 'Obróć się trochę z powrotem';
+
+  @override
+  String get faceEnrollHintOtherSide => 'Teraz w drugą stronę';
+
+  @override
+  String get faceEnrollHintDark => 'Za ciemno, by zobaczyć twarz';
+
+  @override
+  String get faceEnrollHintOtherFace => 'To inna twarz';
+
+  @override
+  String faceEnrollSaved(String name) {
+    return 'Twarz zarejestrowana dla: $name';
+  }
+
+  @override
+  String get faceEnrollSavedPartly =>
+      'Zarejestrowano część twarzy. Zarejestruj ją ponownie, aby dokończyć.';
+
+  @override
+  String get faceEnrollTooShort =>
+      'Twarz była widoczna zbyt krótko. Nic nie zapisano.';
+
+  @override
+  String get faceEnrollUnavailable =>
+      'Rozpoznawanie twarzy wymaga Ground Control z włączonymi Vision Match i rozpoznawaniem twarzy.';
+
+  @override
+  String get faceEnrollLost =>
+      'Utracono połączenie z Ground Control. Nic nie zapisano.';
+
+  @override
   String get filesUpload => 'Prześlij plik';
 
   @override
@@ -8637,6 +8707,39 @@ class UiStringsPl extends UiStrings {
   @override
   String get settingVisionMatchHandGesturesDescriptionGroundControl =>
       'Uruchamiaj wykrywanie gestów dłoni i palców na Ground Control. Wyłącz, aby uruchamiać na urządzeniu.';
+
+  @override
+  String get settingVisionMatchFaceRecognitionTitle =>
+      'Włącz rozpoznawanie twarzy';
+
+  @override
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl =>
+      'Rozpoznaje, kto patrzy na kiosk, i pokazuje to w czujniku Face. Wymaga wykrywania twarzy na Ground Control.';
+
+  @override
+  String get groundControlFaceRecognition => 'Rozpoznawanie twarzy';
+
+  @override
+  String get faceEnrollRowTitle => 'Zarejestruj twarz';
+
+  @override
+  String get faceEnrollRowDescription =>
+      'Wybierz osobę i wykonaj kroki na ekranie. Trwa to około pół minuty.';
+
+  @override
+  String get faceEnrollPickTitle => 'Czyja twarz?';
+
+  @override
+  String get faceEnrollNewPerson => 'Nowa osoba';
+
+  @override
+  String get faceEnrollEnrolled => 'Twarz zarejestrowana';
+
+  @override
+  String get faceEnrollNameLabel => 'Imię';
+
+  @override
+  String get faceEnrollStart => 'Rozpocznij';
 
   @override
   String get haCustomPages => 'Własne strony';

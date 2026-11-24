@@ -182,6 +182,15 @@ class EspEntitySurface {
   /// second-to-second jitter in "now minus uptime" is not a restart).
   final Map<String, DateTime?> _lastAnchor = {};
   String _speaker = '';
+  String _face = '';
+
+  /// Who Face Recognition sees looking at the kiosk, from Ground Control.
+  bool get _faceSensor =>
+      _settings.get(defs.groundControlEnabled) &&
+      _settings.get(defs.cameraEnabled) &&
+      _settings.get(defs.visionMatchEnabled) &&
+      _settings.get(defs.visionMatchFaceDetection) &&
+      _settings.get(defs.visionMatchFaceRecognition);
 
   bool get _speakerSensor =>
       _voiceNative &&
@@ -973,6 +982,15 @@ class EspEntitySurface {
           'objectId': 'motion',
           'name': 'Motion',
           'deviceClass': 'motion',
+        },
+      // Who is looking at the kiosk, from Ground Control's Face
+      // Recognition: empty when nobody known is in view.
+      if (_faceSensor)
+        {
+          'type': 'text_sensor',
+          'objectId': 'face',
+          'name': 'Face',
+          'icon': 'mdi:face-recognition',
         },
       // Someone in view of the device's own person sensor (discussion
       // #353): occupancy, since it reports people at any angle, not a
@@ -2223,6 +2241,12 @@ class EspEntitySurface {
       }),
     );
     _subs.add(
+      bus.on<FaceInViewChanged>().listen((e) {
+        _face = e.name;
+        if (_faceSensor) _send('face', e.name);
+      }),
+    );
+    _subs.add(
       bus.on<VoiceTimersChanged>().listen((e) {
         if (_voiceNative) unawaited(_sendTimers(e.timers));
       }),
@@ -2924,6 +2948,7 @@ class EspEntitySurface {
       if (match != null) await _send('dashboard_view', match);
     }
     await _sendMotionState();
+    if (_faceSensor) await _send('face', _face);
   }
 
   /// The kiosk's own Bluetooth links, and the proxy's connection budget

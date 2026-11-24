@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "8bbec7f79bfd2f57623e82d7ff5daba799fd05b2",
+  "revision": "1cbc6e9871aa96f2b4cf20e312f2d543dfb21b0a",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -22,6 +22,7 @@
     "drawer_updates_en.arb": "51e19440c034c4a169b43ff5ff3780c7d762dcf88751c81bf4aef3c04029a956",
     "entity_picker_en.arb": "039a3d165f65f5f856724b9215dfa67d72185cefc0f870893b60df2eae9e058f",
     "esphome_entity_picker_en.arb": "43f71f000a352dac8890878ad4f92051b8982f7cb87e404cc133b4d9278ab676",
+    "face_enrollment_en.arb": "5ce3b2f7cefccac2477b4b788b3e0dccf7bb21d6bc9902ff8033b0a308174880",
     "file_manager_en.arb": "3ba763d18b6dd9794f69167087a14b241e8e0929cb0823638a72df8c1dc5af69",
     "fleet_general_en.arb": "81eedc53b95a855c10d7874fb4c809d08ae5ef0692d011400fa547f841d3a82b",
     "fleet_invitations_en.arb": "b49f4f9cf064c501db1df1f7962f01b8df7f5f8ea3d15f47117984b2faaa7df1",
@@ -110,7 +111,7 @@
     "settings_esphome_setup_en.arb": "c4c7a944ea206ffc62f04ecfb5936b9d17eaf0a85abee2222cdd2ae74cf5bb90",
     "settings_footer_en.arb": "2b6279c9f3a304b5ad3fe7aec3e8dcd07ada7704de51489dc2f6866d147950a4",
     "settings_gestures_en.arb": "30a3d7c7867d80faeed298d2e11e46bbd99182f4d58d8e585faadbec551939f0",
-    "settings_ground_control_en.arb": "ec4de6036d91f06da9b8eb44a26c8480ffe2a3d69f78e0a3e5ef72996dee465c",
+    "settings_ground_control_en.arb": "69be005ed820c9598cff3eb25ea775f77effe006e43ebedf9b8db4ad9ae3ad4e",
     "settings_home_assistant_custom_pages_en.arb": "7ff2971d55e9fce55f50423c185d357ddd1c2f1af72a3ab09947713a03789bf7",
     "settings_home_assistant_hold_en.arb": "65c0336973aa9ced2a0ceff298a569b2a6d034c2016569727f3a84de2fe819b2",
     "settings_home_assistant_optimizations_en.arb": "6848f403e77ebbe6a51c201b09cbc75c385debfbce96168830772418b7afdcf7",

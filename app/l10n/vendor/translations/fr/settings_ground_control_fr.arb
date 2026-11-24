@@ -23,5 +23,15 @@
   "groundControlNotAccepted": "Non accepté",
   "groundControlUnsignedBuild": "Cette version de Kiosk Satellite ne peut pas se connecter à Ground Control.",
   "groundControlArchitecture": "Architecture",
-  "groundControlRunsOn": "S'exécute sur"
+  "groundControlRunsOn": "S'exécute sur",
+  "settingVisionMatchFaceRecognitionTitle": "Activer la reconnaissance faciale",
+  "settingVisionMatchFaceRecognitionDescriptionGroundControl": "Reconnaît qui regarde le kiosque et l'affiche dans le capteur Face. Nécessite la détection de visage sur Ground Control.",
+  "groundControlFaceRecognition": "Reconnaissance faciale",
+  "faceEnrollRowTitle": "Enregistrer un visage",
+  "faceEnrollRowDescription": "Choisissez une personne, puis suivez les étapes à l'écran. Cela prend environ une demi-minute.",
+  "faceEnrollPickTitle": "Le visage de qui ?",
+  "faceEnrollNewPerson": "Nouvelle personne",
+  "faceEnrollEnrolled": "Visage enregistré",
+  "faceEnrollNameLabel": "Nom",
+  "faceEnrollStart": "Commencer"
 }

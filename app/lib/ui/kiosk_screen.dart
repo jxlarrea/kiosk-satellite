@@ -75,6 +75,7 @@ import 'sendspin_player_overlay.dart';
 import 'assist/assist_overlay.dart';
 import 'toast.dart';
 import 'settings_screen.dart';
+import 'face_enroll_overlay.dart';
 import 'voice_match_enroll_overlay.dart';
 import 'voice_timer_overlay.dart';
 import 'web_console_panel.dart';
@@ -2238,6 +2239,9 @@ class _KioskScreenState extends State<KioskScreen>
                     // A Voice Match enrollment: the reading view while it
                     // records, then its result card.
                     VoiceMatchEnrollOverlay(container: c),
+                    // Face Recognition's guided capture: the camera's view and
+                    // the steps while it runs, then its result card.
+                    FaceEnrollOverlay(container: c),
                     // The timer pills stay over the voice overlay, as Voice
                     // Satellite stacks them over its own.
                     TimerPillsSetting(

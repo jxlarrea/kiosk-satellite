@@ -2868,4 +2868,8 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingVisionMatchHandGesturesTitle",
     "description": "settingVisionMatchHandGesturesDescriptionGroundControl",
   },
+  "vision_match.face_recognition": {
+    "title": "settingVisionMatchFaceRecognitionTitle",
+    "description": "settingVisionMatchFaceRecognitionDescriptionGroundControl",
+  },
 };

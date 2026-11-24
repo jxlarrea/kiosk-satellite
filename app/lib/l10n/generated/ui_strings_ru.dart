@@ -1281,6 +1281,76 @@ class UiStringsRu extends UiStrings {
   String get esphomeTypeText => 'текст';
 
   @override
+  String faceEnrollTitle(String name) {
+    return 'Запись лица: $name';
+  }
+
+  @override
+  String faceEnrollStepOf(String step, String total) {
+    return 'Шаг $step из $total';
+  }
+
+  @override
+  String get faceEnrollStepLook => 'Посмотрите на экран';
+
+  @override
+  String get faceEnrollStepSideA => 'Немного поверните голову в сторону';
+
+  @override
+  String get faceEnrollStepSideB => 'Теперь немного в другую сторону';
+
+  @override
+  String get faceEnrollStepFar => 'Сделайте шаг назад';
+
+  @override
+  String get faceEnrollHintNoFace => 'Лицо не видно';
+
+  @override
+  String get faceEnrollHintSeveral => 'Пожалуйста, только один человек в кадре';
+
+  @override
+  String get faceEnrollHintCloser => 'Подойдите немного ближе';
+
+  @override
+  String get faceEnrollHintFarther => 'Отойдите ещё немного';
+
+  @override
+  String get faceEnrollHintTurnMore => 'Поверните ещё немного';
+
+  @override
+  String get faceEnrollHintTurnLess => 'Поверните немного обратно';
+
+  @override
+  String get faceEnrollHintOtherSide => 'Теперь в другую сторону';
+
+  @override
+  String get faceEnrollHintDark => 'Слишком темно, лицо не видно';
+
+  @override
+  String get faceEnrollHintOtherFace => 'Это другое лицо';
+
+  @override
+  String faceEnrollSaved(String name) {
+    return 'Лицо записано: $name';
+  }
+
+  @override
+  String get faceEnrollSavedPartly =>
+      'Записана часть лица. Запишите ещё раз, чтобы закончить.';
+
+  @override
+  String get faceEnrollTooShort =>
+      'Лицо было видно недостаточно долго. Ничего не сохранено.';
+
+  @override
+  String get faceEnrollUnavailable =>
+      'Для распознавания лиц нужен Ground Control с включёнными Vision Match и распознаванием лиц.';
+
+  @override
+  String get faceEnrollLost =>
+      'Связь с Ground Control потеряна. Ничего не сохранено.';
+
+  @override
   String get filesUpload => 'Загрузить файл';
 
   @override
@@ -8602,6 +8672,39 @@ class UiStringsRu extends UiStrings {
   @override
   String get settingVisionMatchHandGesturesDescriptionGroundControl =>
       'Выполнять определение жестов ладонью и пальцами на Ground Control. Выключите, чтобы выполнять на устройстве.';
+
+  @override
+  String get settingVisionMatchFaceRecognitionTitle =>
+      'Включить распознавание лиц';
+
+  @override
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl =>
+      'Распознаёт, кто смотрит на киоск, и показывает это в датчике Face. Нужно определение лица на Ground Control.';
+
+  @override
+  String get groundControlFaceRecognition => 'Распознавание лиц';
+
+  @override
+  String get faceEnrollRowTitle => 'Записать лицо';
+
+  @override
+  String get faceEnrollRowDescription =>
+      'Выберите человека и выполните шаги на экране. Это займёт около полуминуты.';
+
+  @override
+  String get faceEnrollPickTitle => 'Чьё лицо?';
+
+  @override
+  String get faceEnrollNewPerson => 'Новый человек';
+
+  @override
+  String get faceEnrollEnrolled => 'Лицо записано';
+
+  @override
+  String get faceEnrollNameLabel => 'Имя';
+
+  @override
+  String get faceEnrollStart => 'Начать';
 
   @override
   String get haCustomPages => 'Свои страницы';

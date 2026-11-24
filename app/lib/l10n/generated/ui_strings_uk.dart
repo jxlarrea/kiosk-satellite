@@ -1277,6 +1277,76 @@ class UiStringsUk extends UiStrings {
   String get esphomeTypeText => 'текст';
 
   @override
+  String faceEnrollTitle(String name) {
+    return 'Реєстрація: $name';
+  }
+
+  @override
+  String faceEnrollStepOf(String step, String total) {
+    return 'Крок $step з $total';
+  }
+
+  @override
+  String get faceEnrollStepLook => 'Подивіться на екран';
+
+  @override
+  String get faceEnrollStepSideA => 'Трохи поверніть голову вбік';
+
+  @override
+  String get faceEnrollStepSideB => 'Тепер трохи в інший бік';
+
+  @override
+  String get faceEnrollStepFar => 'Відступіть на крок назад';
+
+  @override
+  String get faceEnrollHintNoFace => 'Обличчя не видно';
+
+  @override
+  String get faceEnrollHintSeveral => 'Будь ласка, лише одна людина в кадрі';
+
+  @override
+  String get faceEnrollHintCloser => 'Підійдіть трохи ближче';
+
+  @override
+  String get faceEnrollHintFarther => 'Відійдіть ще трохи';
+
+  @override
+  String get faceEnrollHintTurnMore => 'Поверніться трохи більше';
+
+  @override
+  String get faceEnrollHintTurnLess => 'Поверніться трохи назад';
+
+  @override
+  String get faceEnrollHintOtherSide => 'Тепер в інший бік';
+
+  @override
+  String get faceEnrollHintDark => 'Надто темно, щоб побачити ваше обличчя';
+
+  @override
+  String get faceEnrollHintOtherFace => 'Це інше обличчя';
+
+  @override
+  String faceEnrollSaved(String name) {
+    return 'Обличчя зареєстровано: $name';
+  }
+
+  @override
+  String get faceEnrollSavedPartly =>
+      'Зареєстровано частину обличчя. Зареєструйте ще раз, щоб завершити.';
+
+  @override
+  String get faceEnrollTooShort =>
+      'Обличчя було видно недостатньо довго. Нічого не збережено.';
+
+  @override
+  String get faceEnrollUnavailable =>
+      'Для впізнавання облич потрібен Ground Control з увімкненими Vision Match і впізнаванням облич.';
+
+  @override
+  String get faceEnrollLost =>
+      'Зв\'язок із Ground Control втрачено. Нічого не збережено.';
+
+  @override
   String get filesUpload => 'Завантажити файл';
 
   @override
@@ -8618,6 +8688,39 @@ class UiStringsUk extends UiStrings {
   @override
   String get settingVisionMatchHandGesturesDescriptionGroundControl =>
       'Виконувати розпізнавання жестів долонею та пальцями на Ground Control. Вимкніть, щоб виконувати на пристрої.';
+
+  @override
+  String get settingVisionMatchFaceRecognitionTitle =>
+      'Увімкнути впізнавання облич';
+
+  @override
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl =>
+      'Впізнає, хто дивиться на кіоск, і показує це в датчику Face. Потрібне розпізнавання обличчя на Ground Control.';
+
+  @override
+  String get groundControlFaceRecognition => 'Впізнавання облич';
+
+  @override
+  String get faceEnrollRowTitle => 'Зареєструвати обличчя';
+
+  @override
+  String get faceEnrollRowDescription =>
+      'Виберіть людину й виконайте кроки на екрані. Це займає близько пів хвилини.';
+
+  @override
+  String get faceEnrollPickTitle => 'Чиє обличчя?';
+
+  @override
+  String get faceEnrollNewPerson => 'Нова людина';
+
+  @override
+  String get faceEnrollEnrolled => 'Обличчя зареєстровано';
+
+  @override
+  String get faceEnrollNameLabel => 'Ім\'я';
+
+  @override
+  String get faceEnrollStart => 'Почати';
 
   @override
   String get haCustomPages => 'Власні сторінки';

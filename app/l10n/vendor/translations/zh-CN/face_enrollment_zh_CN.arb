@@ -1,0 +1,23 @@
+{
+  "@@locale": "zh_CN",
+  "faceEnrollTitle": "正在录入 {name}",
+  "faceEnrollStepOf": "第 {step} 步，共 {total} 步",
+  "faceEnrollStepLook": "请看屏幕",
+  "faceEnrollStepSideA": "把头稍微转向一侧",
+  "faceEnrollStepSideB": "现在稍微转向另一侧",
+  "faceEnrollStepFar": "向后退一步",
+  "faceEnrollHintNoFace": "画面中没有人脸",
+  "faceEnrollHintSeveral": "画面中请只保留一个人",
+  "faceEnrollHintCloser": "请再靠近一点",
+  "faceEnrollHintFarther": "请再后退一点",
+  "faceEnrollHintTurnMore": "再多转一点",
+  "faceEnrollHintTurnLess": "稍微转回来一点",
+  "faceEnrollHintOtherSide": "现在转向另一侧",
+  "faceEnrollHintDark": "太暗，看不清你的脸",
+  "faceEnrollHintOtherFace": "这是另一张脸",
+  "faceEnrollSaved": "已为 {name} 录入人脸",
+  "faceEnrollSavedPartly": "已录入部分人脸。请再次录入以完成。",
+  "faceEnrollTooShort": "人脸出现的时间不够长，未保存任何内容。",
+  "faceEnrollUnavailable": "人脸识别需要 Ground Control，并开启 Vision Match 和人脸识别。",
+  "faceEnrollLost": "与 Ground Control 的连接已断开，未保存任何内容。"
+}

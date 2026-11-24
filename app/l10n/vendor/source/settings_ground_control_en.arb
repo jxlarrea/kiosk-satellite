@@ -311,5 +311,114 @@
         "Ground Control > Vision Match > Hand Gestures > Enable Hand Gestures"
       ]
     }
+  },
+  "settingVisionMatchFaceRecognitionTitle": "Enable Face Recognition",
+  "@settingVisionMatchFaceRecognitionTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Enable Face Recognition"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Recognition > Enable Face Recognition"
+      ]
+    }
+  },
+  "settingVisionMatchFaceRecognitionDescriptionGroundControl": "Recognize who is looking at the kiosk and show it in the Face sensor. Needs Face Detection on Ground Control.",
+  "@settingVisionMatchFaceRecognitionDescriptionGroundControl": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is. Face is the name of a sensor in Home Assistant.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Enable Face Recognition"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Recognition > Enable Face Recognition"
+      ]
+    }
+  },
+  "groundControlFaceRecognition": "Face Recognition",
+  "@groundControlFaceRecognition": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition section heading"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Recognition section heading"
+      ]
+    }
+  },
+  "faceEnrollRowTitle": "Enroll a face",
+  "@faceEnrollRowTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Enroll a face"
+      ]
+    }
+  },
+  "faceEnrollRowDescription": "Pick a person, then follow the steps on the screen. It takes about half a minute.",
+  "@faceEnrollRowDescription": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Recognition > Enroll a face"
+      ]
+    }
+  },
+  "faceEnrollPickTitle": "Whose face?",
+  "@faceEnrollPickTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > person picker title"
+      ]
+    }
+  },
+  "faceEnrollNewPerson": "New person",
+  "@faceEnrollNewPerson": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > person picker"
+      ]
+    }
+  },
+  "faceEnrollEnrolled": "Face enrolled",
+  "@faceEnrollEnrolled": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > person picker, under a person whose face is already enrolled"
+      ]
+    }
+  },
+  "faceEnrollNameLabel": "Name",
+  "@faceEnrollNameLabel": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > New person > name field"
+      ]
+    }
+  },
+  "faceEnrollStart": "Start",
+  "@faceEnrollStart": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enroll a face > button that starts the capture"
+      ]
+    }
   }
 }

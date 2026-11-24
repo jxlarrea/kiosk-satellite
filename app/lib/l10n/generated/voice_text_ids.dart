@@ -347,5 +347,6 @@ const voiceTextMessageIds = <String, String>{
   "Features": "groundControlFeatures",
   "Ground Control": "settingsMenuGroundControl",
   "Face Detection": "screensaverDetectionFacePage",
-  "Hand Gestures": "gestureHandGestures"
+  "Hand Gestures": "gestureHandGestures",
+  "Face Recognition": "groundControlFaceRecognition"
 };

@@ -192,6 +192,7 @@ class CameraMotion(
         // wake-up that still feels immediate.
         private const val VISION_ACTIVITY_WINDOW_NS = 3_000_000_000L
         private const val VISION_MIN_INTERVAL_NS = 500_000_000L
+        private const val ENROLL_INTERVAL_NS = 250_000_000L
         private const val VISION_DUTY = 5L
 
         // While a raised hand is being timed, the pace tightens: for the
@@ -484,6 +485,14 @@ class CameraMotion(
      */
     @Volatile private var remoteFaces = false
     @Volatile private var remoteHands = false
+
+    /**
+     * Face Recognition's guided capture: while it runs, a frame goes to
+     * Ground Control every [ENROLL_INTERVAL_NS] whatever moves, one waiting
+     * at a time, and nothing else is analyzed.
+     */
+    @Volatile private var enrollFrames = false
+    private var lastEnrollNs = 0L
     private val groundControl = GroundControlVision()
 
     /** What this listen wants emitted: motion ticks, face sightings,
@@ -956,6 +965,8 @@ class CameraMotion(
             palmsWanted = fingersWanted
             remoteFaces = args?.get("remoteFaces") == true
             remoteHands = args?.get("remoteHands") == true
+            enrollFrames = args?.get("enroll") == true
+            lastEnrollNs = 0L
             groundControl.reset()
             faceMinWidth =
                 ((args?.get("faceMinWidth") as? Number)?.toFloat() ?: 0.1f).coerceIn(0.01f, 1f)
@@ -1167,7 +1178,7 @@ class CameraMotion(
             val jpegHung = deviceCamera?.jpegHung(cameraId) == true
             val legSize =
                 if (captureLevel >= 2) Size(320, 240)
-                else if (palmsWanted || previewWanted || boundVideo || (remoteFaces && facesWanted)) Size(640, 480)
+                else if (palmsWanted || previewWanted || boundVideo || (remoteFaces && facesWanted) || enrollFrames) Size(640, 480)
                 else Size(320, 240)
             val analysisSize = listOfNotNull(
                 legSize,
@@ -1551,8 +1562,17 @@ class CameraMotion(
             if (session != boundSession) return
             lastFrameAtMs = SystemClock.elapsedRealtime()
             deviceCamera?.captureAnalysisFrame(image)
-            if (!motionWanted && !facesWanted && !fingersWanted && !previewWanted && pluginFrames == null) return
+            if (!motionWanted && !facesWanted && !fingersWanted && !previewWanted && pluginFrames == null && !enrollFrames) return
             val now = System.nanoTime()
+            if (enrollFrames) {
+                if (!paused && now - lastEnrollNs >= ENROLL_INTERVAL_NS && !groundControl.busy(now)) {
+                    lastEnrollNs = now
+                    groundControl.prepare(image, true, false, now)?.let { look ->
+                        mainHandler.post { sink.success(look + mapOf("enroll" to true, "mirror" to boundFront)) }
+                    }
+                }
+                return
+            }
             // A plugin holding the camera is offered every frame, never
             // during a voice turn. The bridge paces and copies them.
             if (pluginFrames != null && !paused) PluginCameraFrames.offer(image, boundFront)

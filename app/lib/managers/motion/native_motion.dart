@@ -62,6 +62,7 @@ class NativeMotion {
     bool fingers = false,
     bool remoteFaces = false,
     bool remoteHands = false,
+    bool enroll = false,
     bool paused = false,
     bool preview = false,
     bool rtsp = false,
@@ -98,6 +99,8 @@ class NativeMotion {
           // vision tick instead of running its own models for them.
           'remoteFaces': remoteFaces,
           'remoteHands': remoteHands,
+          // Face Recognition's guided capture: a frame every quarter second.
+          if (enroll) 'enroll': true,
           // Whether a voice interaction is running as the session starts
           // (see [setPaused]): the flag rides the bind too, so a session
           // rebound mid-turn, on a native side recreated with the
@@ -184,6 +187,7 @@ class NativeMotionTick {
         final rotation = raw['rotation'];
         final want = raw['want'];
         final encodeMs = raw['encode_ms'];
+        final enroll = raw['enroll'] == true;
         return NativeMotionTick._(
           null,
           null,
@@ -194,6 +198,8 @@ class NativeMotionTick {
             rotation: rotation is num ? rotation.toInt() : 0,
             want: want is List ? want.whereType<String>().toList() : const [],
             encodeMs: encodeMs is num ? encodeMs.toDouble() : null,
+            enroll: enroll,
+            mirror: raw['mirror'] == true,
           ),
         );
       }
@@ -228,6 +234,8 @@ class VisionLook {
     required this.rotation,
     required this.want,
     this.encodeMs,
+    this.enroll = false,
+    this.mirror = false,
   });
 
   final int id;
@@ -235,6 +243,12 @@ class VisionLook {
   final int rotation;
   final List<String> want;
   final double? encodeMs;
+
+  /// A frame of Face Recognition's guided capture, not a look.
+  final bool enroll;
+
+  /// The camera faces the person: the frame is shown mirrored.
+  final bool mirror;
 }
 
 /// One frame of the camera preview (discussion #371), as the native side

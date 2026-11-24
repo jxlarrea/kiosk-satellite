@@ -3446,6 +3446,9 @@ class _CategoryContentState extends State<_CategoryContent> {
     // Open for its app, under the switch and the address it uses (the
     // address shows only with Ground Control on, and so do these).
     groundControlAddress.key: GroundControlStatusRow(container: container),
+    // Under Enable Face Recognition: start the guided capture here.
+    if (container.settings.get(visionMatchFaceRecognition))
+      visionMatchFaceRecognition.key: FaceEnrollRow(container: container),
     if (widget.category == 'Sendspin')
       sendspinDuckPercent.key: AlbumArtCacheRow(container: container),
     // Under the key's copy box: paste one from another kiosk or make a

@@ -1,0 +1,23 @@
+{
+  "@@locale": "uk",
+  "faceEnrollTitle": "Реєстрація: {name}",
+  "faceEnrollStepOf": "Крок {step} з {total}",
+  "faceEnrollStepLook": "Подивіться на екран",
+  "faceEnrollStepSideA": "Трохи поверніть голову вбік",
+  "faceEnrollStepSideB": "Тепер трохи в інший бік",
+  "faceEnrollStepFar": "Відступіть на крок назад",
+  "faceEnrollHintNoFace": "Обличчя не видно",
+  "faceEnrollHintSeveral": "Будь ласка, лише одна людина в кадрі",
+  "faceEnrollHintCloser": "Підійдіть трохи ближче",
+  "faceEnrollHintFarther": "Відійдіть ще трохи",
+  "faceEnrollHintTurnMore": "Поверніться трохи більше",
+  "faceEnrollHintTurnLess": "Поверніться трохи назад",
+  "faceEnrollHintOtherSide": "Тепер в інший бік",
+  "faceEnrollHintDark": "Надто темно, щоб побачити ваше обличчя",
+  "faceEnrollHintOtherFace": "Це інше обличчя",
+  "faceEnrollSaved": "Обличчя зареєстровано: {name}",
+  "faceEnrollSavedPartly": "Зареєстровано частину обличчя. Зареєструйте ще раз, щоб завершити.",
+  "faceEnrollTooShort": "Обличчя було видно недостатньо довго. Нічого не збережено.",
+  "faceEnrollUnavailable": "Для впізнавання облич потрібен Ground Control з увімкненими Vision Match і впізнаванням облич.",
+  "faceEnrollLost": "Зв'язок із Ground Control втрачено. Нічого не збережено."
+}

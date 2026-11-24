@@ -23,5 +23,15 @@
   "settingVisionMatchFaceDetectionDescriptionGroundControl": "Uruchamiaj wykrywanie twarzy na Ground Control. Wyłącz, aby uruchamiać na urządzeniu.",
   "settingVisionMatchHandGesturesDescriptionGroundControl": "Uruchamiaj wykrywanie gestów dłoni i palców na Ground Control. Wyłącz, aby uruchamiać na urządzeniu.",
   "groundControlArchitecture": "Architektura",
-  "groundControlRunsOn": "Działa na"
+  "groundControlRunsOn": "Działa na",
+  "settingVisionMatchFaceRecognitionTitle": "Włącz rozpoznawanie twarzy",
+  "settingVisionMatchFaceRecognitionDescriptionGroundControl": "Rozpoznaje, kto patrzy na kiosk, i pokazuje to w czujniku Face. Wymaga wykrywania twarzy na Ground Control.",
+  "groundControlFaceRecognition": "Rozpoznawanie twarzy",
+  "faceEnrollRowTitle": "Zarejestruj twarz",
+  "faceEnrollRowDescription": "Wybierz osobę i wykonaj kroki na ekranie. Trwa to około pół minuty.",
+  "faceEnrollPickTitle": "Czyja twarz?",
+  "faceEnrollNewPerson": "Nowa osoba",
+  "faceEnrollEnrolled": "Twarz zarejestrowana",
+  "faceEnrollNameLabel": "Imię",
+  "faceEnrollStart": "Rozpocznij"
 }

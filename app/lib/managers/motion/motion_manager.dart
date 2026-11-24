@@ -10,6 +10,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../core/permissions.dart';
 import '../device_camera/native_camera.dart' show snapshotResolution;
+import '../ground_control/face_enroll.dart';
 import '../ground_control/vision_match_client.dart';
 import '../device_camera/camera_resolutions.dart';
 import '../gestures/gesture_mappings.dart';
@@ -302,7 +303,8 @@ class MotionManager extends Manager {
       _sensorEnabled ||
       (_screensaverActive ? enabled : _postponeEnabled && _screenOn);
   bool get _wantFaces =>
-      _screensaverActive ? faceEnabled : _postponeFaceEnabled;
+      (_screensaverActive ? faceEnabled : _postponeFaceEnabled) ||
+      (_recognize && _screenOn);
 
   /// The camera preview (discussion #371): the latest frame the native
   /// side handed over while a preview is showing, null otherwise. The
@@ -331,6 +333,14 @@ class MotionManager extends Manager {
   /// [handTest] instead of the gestures manager, so trying counts fires
   /// nothing. Null between hands and while the tester is closed.
   final handTest = ValueNotifier<HandTestReading?>(null);
+
+  /// Face Recognition's guided capture while it runs, then its result for a
+  /// few seconds. The kiosk screen's FaceEnrollOverlay shows it.
+  final faceEnrollment = ValueNotifier<FaceEnrollState?>(null);
+  FaceEnrollSocket? _enrollSocket;
+  bool _streamEnroll = false;
+  Timer? _enrollClear;
+  bool get _enrolling => _enrollSocket != null;
   bool _handTesting = false;
   bool get handTesting => _handTesting;
   bool get _handTestWanted =>
@@ -496,6 +506,14 @@ class MotionManager extends Manager {
       _visionMatch && _settings.get(defs.visionMatchFaceDetection);
   bool get _remoteHands =>
       _visionMatch && _settings.get(defs.visionMatchHandGestures);
+
+  /// Face Recognition: Ground Control names who is looking at the kiosk,
+  /// for the Face sensor. It rides on the face looks, so with it on they
+  /// also run whenever the screen is lit, still only after motion.
+  bool get _recognize =>
+      _remoteFaces &&
+      _settings.get(defs.cameraEnabled) &&
+      _settings.get(defs.visionMatchFaceRecognition);
   VisionSupport get _support => VisionSupport(
     faces: _remoteFaces || _vision.faces,
     hands: _remoteHands || _vision.hands,
@@ -662,6 +680,7 @@ class MotionManager extends Manager {
     // configured span, on the session that saw it. Published ahead of
     // the screensaver's stop, so the hold is up before the stop's
     // ScreensaverStateChanged runs [_sync].
+    bus.on<FaceEnrollRequested>().listen(_startFaceEnroll);
     bus.on<FaceDismissedScreensaver>().listen((_) {
       _showPreview();
       if (_streamRemoteFaces) _visionSocket?.outcome('screensaver_dismissed');
@@ -754,6 +773,7 @@ class MotionManager extends Manager {
           // Vision Match moves the looks to Ground Control and back.
           e.key == defs.visionMatchEnabled.key ||
           e.key == defs.visionMatchFaceDetection.key ||
+          e.key == defs.visionMatchFaceRecognition.key ||
           e.key == defs.visionMatchHandGestures.key ||
           e.key == defs.groundControlEnabled.key ||
           // The hand leg's gates: the mappings themselves and the
@@ -888,9 +908,11 @@ class MotionManager extends Manager {
       ((_rtspDemand && _rtspEnabled) ||
           (_intercomVideo != null && _settings.get(defs.cameraEnabled)) ||
           _plugin != null ||
+          _enrolling ||
           _sensorEnabled ||
           _wantPalms ||
           _previewHolding ||
+          (_recognize && _screenOn) ||
           (_screensaverActive
               ? enabled || faceEnabled
               : (_postponeEnabled || _postponeFaceEnabled) && _screenOn));
@@ -920,6 +942,7 @@ class MotionManager extends Manager {
             _streamRemoteFaces != _wantRemoteFaces ||
             _streamRemoteHands != _wantRemoteHands ||
             _streamPreview != _wantPreview ||
+            _streamEnroll != _enrolling ||
             _streamRtsp != _rtspDemand ||
             !mapEquals(_streamIntercom, _intercomVideo) ||
             _streamPlugin != _plugin)) {
@@ -977,6 +1000,7 @@ class MotionManager extends Manager {
       _streamPalms = palms;
       _streamRemoteFaces = remoteFaces;
       _streamRemoteHands = remoteHands;
+      _streamEnroll = _enrolling;
       _streamPreview = preview;
       _streamRtsp = _rtspDemand;
       _streamIntercom = _intercomVideo;
@@ -991,6 +1015,7 @@ class MotionManager extends Manager {
         '${remoteFaces ? ' faces on Ground Control' : ''}'
         '${remoteHands ? ' hands on Ground Control' : ''}'
         '${preview ? ' preview' : ''}'
+        '${_streamEnroll ? ' face capture' : ''}'
         '${plugin == null ? '' : ' plugin ${plugin.width}x${plugin.height}'}'
         '${motion ? '' : ' motion off'}'
         '${_boundBlind ? ', panel off: restart on wake unless frames flow' : ''})',
@@ -1009,6 +1034,7 @@ class MotionManager extends Manager {
             faceMinWidth: faceMinWidth,
             fingers: palms,
             remoteFaces: remoteFaces,
+            enroll: _streamEnroll,
             remoteHands: remoteHands,
             paused: _voiceTurn,
             preview: preview,
@@ -1026,7 +1052,12 @@ class MotionManager extends Manager {
               // A frame for Ground Control (Vision Match): every look gets
               // an answer, a failed one during a voice turn.
               if (tick.isVision) {
-                _sendVision(tick.vision!);
+                final look = tick.vision!;
+                if (look.enroll) {
+                  _sendEnrollFrame(look);
+                } else {
+                  _sendVision(look);
+                }
                 return;
               }
               // The native side emits nothing during a voice interaction;
@@ -1170,6 +1201,8 @@ class MotionManager extends Manager {
       ),
       deviceName: deviceName,
       want: [if (_streamRemoteFaces) 'face', if (_streamRemoteHands) 'hands'],
+      recognize: _streamRemoteFaces && _recognize,
+      onPerson: _inView,
       onReady: (face, hands) {
         _visionRetrySeconds = 5;
         if (_visionDownSaid) {
@@ -1188,6 +1221,7 @@ class MotionManager extends Manager {
       onLost: () {
         if (!identical(_visionSocket, socket)) return;
         _visionSocket = null;
+        _inView(null);
         _visionDown('the vision socket closed');
         if (_camera == null || !_streamRemoteVision) return;
         _visionRetry = Timer(Duration(seconds: _visionRetrySeconds), () {
@@ -1201,11 +1235,170 @@ class MotionManager extends Manager {
     _visionSocket = socket;
   }
 
+  // ── Face Recognition's guided capture ──────────────────────────────────
+
+  void _startFaceEnroll(FaceEnrollRequested e) {
+    if (_enrolling) {
+      log.info(name, 'face capture for ${e.name} ignored: one is running');
+      return;
+    }
+    _enrollClear?.cancel();
+    final url = _groundControlUrl;
+    final state = FaceEnrollState(
+      phase: FaceEnrollPhase.starting,
+      name: e.name,
+      color: e.color,
+    );
+    if (url == null || url.isEmpty || !_recognize) {
+      _endFaceEnroll(
+        state.copyWith(phase: FaceEnrollPhase.failed, error: 'unavailable'),
+      );
+      return;
+    }
+    final s = _settings;
+    final deviceName = s.get(defs.deviceName).trim();
+    log.info(name, 'face capture for ${e.name} starting');
+    faceEnrollment.value = state;
+    _enrollSocket = FaceEnrollSocket.open(
+      baseUrl: url,
+      token: s.get(defs.haToken),
+      ticket: _groundControlTicket,
+      deviceId: defs.groundControlDeviceId(
+        s.get(defs.deviceHostname),
+        deviceName,
+        s.get(defs.fleetId),
+      ),
+      deviceName: deviceName,
+      personId: e.personId,
+      name: e.personId == null ? e.name : null,
+      onEvent: _onEnrollEvent,
+      onAnswered: (id) => unawaited(
+        _native(() => NativeMotion.visionResult({'id': id, 'failed': true})),
+      ),
+      log: (line) => log.info(name, line),
+    );
+    _sync();
+  }
+
+  /// Stop the capture early. Ground Control keeps what it has when the
+  /// first step was done.
+  void stopFaceEnroll() {
+    final socket = _enrollSocket;
+    if (socket == null) {
+      faceEnrollment.value = null;
+      return;
+    }
+    socket.end();
+  }
+
+  void _sendEnrollFrame(VisionLook look) {
+    final state = faceEnrollment.value;
+    if (state != null && state.active) {
+      faceEnrollment.value = state.copyWith(
+        frame: look.jpeg,
+        rotation: look.rotation,
+        mirror: look.mirror,
+      );
+    }
+    final sent =
+        _enrollSocket?.send(
+          id: look.id,
+          rotation: look.rotation,
+          jpeg: look.jpeg,
+        ) ??
+        false;
+    if (!sent) {
+      unawaited(
+        _native(
+          () => NativeMotion.visionResult({'id': look.id, 'failed': true}),
+        ),
+      );
+    }
+  }
+
+  void _onEnrollEvent(Map<String, Object?> e) {
+    final state = faceEnrollment.value;
+    if (state == null) return;
+    switch (e['type']) {
+      case 'ready':
+        faceEnrollment.value = state.copyWith(phase: FaceEnrollPhase.capturing);
+      case 'progress':
+        faceEnrollment.value = state.copyWith(
+          phase: FaceEnrollPhase.capturing,
+          step: e['step'] as String?,
+          stepIndex: (e['step_index'] as num?)?.toInt(),
+          steps: (e['steps'] as num?)?.toInt(),
+          have: (e['have'] as num?)?.toInt(),
+          need: (e['need'] as num?)?.toInt(),
+          hint: e['hint'] as String?,
+        );
+      case 'saved':
+        log.info(
+          name,
+          'face capture for ${state.name} saved: ${e['crops']} pictures',
+        );
+        _endFaceEnroll(
+          state.copyWith(
+            phase: FaceEnrollPhase.saved,
+            crops: (e['crops'] as num?)?.toInt() ?? 0,
+            complete: e['complete'] == true,
+          ),
+        );
+      case 'error':
+        if (e['id'] != null) return;
+        log.warn(
+          name,
+          'face capture for ${state.name} not saved: ${e['code']} ${e['message'] ?? ''}',
+        );
+        _endFaceEnroll(
+          state.copyWith(
+            phase: FaceEnrollPhase.failed,
+            error: '${e['code'] ?? 'lost'}',
+          ),
+        );
+    }
+  }
+
+  void _endFaceEnroll(FaceEnrollState result) {
+    final socket = _enrollSocket;
+    _enrollSocket = null;
+    unawaited(socket?.close());
+    faceEnrollment.value = result;
+    _enrollClear?.cancel();
+    _enrollClear = Timer(const Duration(seconds: 6), () {
+      if (!(faceEnrollment.value?.active ?? false)) faceEnrollment.value = null;
+    });
+    _sync();
+  }
+
   void _closeVision() {
     _visionRetry?.cancel();
     _visionRetry = null;
     unawaited(_visionSocket?.close());
     _visionSocket = null;
+    _inView(null);
+  }
+
+  /// Face Recognition: who Ground Control sees, said when it changes.
+  String? _inViewId;
+
+  void _inView(Map<String, Object?>? person) {
+    final id = person?['id'] as String?;
+    if (id == _inViewId) return;
+    _inViewId = id;
+    if (person == null) {
+      log.debug(name, 'nobody known in view');
+      bus.publish(const FaceInViewChanged());
+      return;
+    }
+    log.info(name, '${person['name']} is in view (${person['score']})');
+    bus.publish(
+      FaceInViewChanged(
+        id: id,
+        name: '${person['name'] ?? ''}',
+        score: (person['score'] as num?)?.toDouble(),
+      ),
+    );
   }
 
   /// One look off the analyzer: to Ground Control, or answered as failed

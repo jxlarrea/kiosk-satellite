@@ -2374,6 +2374,126 @@ abstract class UiStrings {
   /// **'text'**
   String get esphomeTypeText;
 
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrolling {name}'**
+  String faceEnrollTitle(String name);
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String faceEnrollStepOf(String step, String total);
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Look at the screen'**
+  String get faceEnrollStepLook;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn your head a little to one side'**
+  String get faceEnrollStepSideA;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Now a little to the other side'**
+  String get faceEnrollStepSideB;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a step back'**
+  String get faceEnrollStepFar;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'No face in view'**
+  String get faceEnrollHintNoFace;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one person in view, please'**
+  String get faceEnrollHintSeveral;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Come a little closer'**
+  String get faceEnrollHintCloser;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Step back a little more'**
+  String get faceEnrollHintFarther;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn a little more'**
+  String get faceEnrollHintTurnMore;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn back a little'**
+  String get faceEnrollHintTurnLess;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Now to the other side'**
+  String get faceEnrollHintOtherSide;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Too dark to see your face'**
+  String get faceEnrollHintDark;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s a different face'**
+  String get faceEnrollHintOtherFace;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Face enrolled for {name}'**
+  String faceEnrollSaved(String name);
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk. Shown when the capture stopped after the first step.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of the face was enrolled. Enroll again to finish.'**
+  String get faceEnrollSavedPartly;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'The face wasn\'t seen long enough. Nothing was saved.'**
+  String get faceEnrollTooShort;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'Face Recognition needs Ground Control with Vision Match and Face Recognition on.'**
+  String get faceEnrollUnavailable;
+
+  /// Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection to Ground Control was lost. Nothing was saved.'**
+  String get faceEnrollLost;
+
   /// Translate the visible message. Keep placeholders and any technical names unchanged.
   ///
   /// In en, this message translates to:
@@ -14952,6 +15072,66 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Run palm and fingers gestures detection on Ground Control. Disable to run on-device.'**
   String get settingVisionMatchHandGesturesDescriptionGroundControl;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Face Recognition'**
+  String get settingVisionMatchFaceRecognitionTitle;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is. Face is the name of a sensor in Home Assistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognize who is looking at the kiosk and show it in the Face sensor. Needs Face Detection on Ground Control.'**
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Face Recognition'**
+  String get groundControlFaceRecognition;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Enroll a face'**
+  String get faceEnrollRowTitle;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a person, then follow the steps on the screen. It takes about half a minute.'**
+  String get faceEnrollRowDescription;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Whose face?'**
+  String get faceEnrollPickTitle;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'New person'**
+  String get faceEnrollNewPerson;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Face enrolled'**
+  String get faceEnrollEnrolled;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get faceEnrollNameLabel;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get faceEnrollStart;
 
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///

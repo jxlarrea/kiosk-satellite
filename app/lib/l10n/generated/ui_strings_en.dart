@@ -1273,6 +1273,76 @@ class UiStringsEn extends UiStrings {
   String get esphomeTypeText => 'text';
 
   @override
+  String faceEnrollTitle(String name) {
+    return 'Enrolling $name';
+  }
+
+  @override
+  String faceEnrollStepOf(String step, String total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get faceEnrollStepLook => 'Look at the screen';
+
+  @override
+  String get faceEnrollStepSideA => 'Turn your head a little to one side';
+
+  @override
+  String get faceEnrollStepSideB => 'Now a little to the other side';
+
+  @override
+  String get faceEnrollStepFar => 'Take a step back';
+
+  @override
+  String get faceEnrollHintNoFace => 'No face in view';
+
+  @override
+  String get faceEnrollHintSeveral => 'Only one person in view, please';
+
+  @override
+  String get faceEnrollHintCloser => 'Come a little closer';
+
+  @override
+  String get faceEnrollHintFarther => 'Step back a little more';
+
+  @override
+  String get faceEnrollHintTurnMore => 'Turn a little more';
+
+  @override
+  String get faceEnrollHintTurnLess => 'Turn back a little';
+
+  @override
+  String get faceEnrollHintOtherSide => 'Now to the other side';
+
+  @override
+  String get faceEnrollHintDark => 'Too dark to see your face';
+
+  @override
+  String get faceEnrollHintOtherFace => 'That\'s a different face';
+
+  @override
+  String faceEnrollSaved(String name) {
+    return 'Face enrolled for $name';
+  }
+
+  @override
+  String get faceEnrollSavedPartly =>
+      'Part of the face was enrolled. Enroll again to finish.';
+
+  @override
+  String get faceEnrollTooShort =>
+      'The face wasn\'t seen long enough. Nothing was saved.';
+
+  @override
+  String get faceEnrollUnavailable =>
+      'Face Recognition needs Ground Control with Vision Match and Face Recognition on.';
+
+  @override
+  String get faceEnrollLost =>
+      'The connection to Ground Control was lost. Nothing was saved.';
+
+  @override
   String get filesUpload => 'Upload file';
 
   @override
@@ -8547,6 +8617,39 @@ class UiStringsEn extends UiStrings {
   @override
   String get settingVisionMatchHandGesturesDescriptionGroundControl =>
       'Run palm and fingers gestures detection on Ground Control. Disable to run on-device.';
+
+  @override
+  String get settingVisionMatchFaceRecognitionTitle =>
+      'Enable Face Recognition';
+
+  @override
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl =>
+      'Recognize who is looking at the kiosk and show it in the Face sensor. Needs Face Detection on Ground Control.';
+
+  @override
+  String get groundControlFaceRecognition => 'Face Recognition';
+
+  @override
+  String get faceEnrollRowTitle => 'Enroll a face';
+
+  @override
+  String get faceEnrollRowDescription =>
+      'Pick a person, then follow the steps on the screen. It takes about half a minute.';
+
+  @override
+  String get faceEnrollPickTitle => 'Whose face?';
+
+  @override
+  String get faceEnrollNewPerson => 'New person';
+
+  @override
+  String get faceEnrollEnrolled => 'Face enrolled';
+
+  @override
+  String get faceEnrollNameLabel => 'Name';
+
+  @override
+  String get faceEnrollStart => 'Start';
 
   @override
   String get haCustomPages => 'Custom Pages';

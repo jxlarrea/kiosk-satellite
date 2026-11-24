@@ -23,5 +23,15 @@
   "groundControlNotAccepted": "未被接受",
   "groundControlUnsignedBuild": "此版本的 Kiosk Satellite 无法连接到 Ground Control。",
   "groundControlArchitecture": "架构",
-  "groundControlRunsOn": "运行于"
+  "groundControlRunsOn": "运行于",
+  "settingVisionMatchFaceRecognitionTitle": "启用人脸识别",
+  "settingVisionMatchFaceRecognitionDescriptionGroundControl": "识别正在看 Kiosk 的人，并显示在 Face 传感器中。需要在 Ground Control 上运行人脸检测。",
+  "groundControlFaceRecognition": "人脸识别",
+  "faceEnrollRowTitle": "录入人脸",
+  "faceEnrollRowDescription": "选择一个人，然后按屏幕上的步骤操作。大约需要半分钟。",
+  "faceEnrollPickTitle": "录入谁的人脸？",
+  "faceEnrollNewPerson": "新的人",
+  "faceEnrollEnrolled": "已录入人脸",
+  "faceEnrollNameLabel": "姓名",
+  "faceEnrollStart": "开始"
 }

@@ -1245,6 +1245,73 @@ class UiStringsZh extends UiStrings {
   String get esphomeTypeText => '文本';
 
   @override
+  String faceEnrollTitle(String name) {
+    return '正在录入 $name';
+  }
+
+  @override
+  String faceEnrollStepOf(String step, String total) {
+    return '第 $step 步，共 $total 步';
+  }
+
+  @override
+  String get faceEnrollStepLook => '请看屏幕';
+
+  @override
+  String get faceEnrollStepSideA => '把头稍微转向一侧';
+
+  @override
+  String get faceEnrollStepSideB => '现在稍微转向另一侧';
+
+  @override
+  String get faceEnrollStepFar => '向后退一步';
+
+  @override
+  String get faceEnrollHintNoFace => '画面中没有人脸';
+
+  @override
+  String get faceEnrollHintSeveral => '画面中请只保留一个人';
+
+  @override
+  String get faceEnrollHintCloser => '请再靠近一点';
+
+  @override
+  String get faceEnrollHintFarther => '请再后退一点';
+
+  @override
+  String get faceEnrollHintTurnMore => '再多转一点';
+
+  @override
+  String get faceEnrollHintTurnLess => '稍微转回来一点';
+
+  @override
+  String get faceEnrollHintOtherSide => '现在转向另一侧';
+
+  @override
+  String get faceEnrollHintDark => '太暗，看不清你的脸';
+
+  @override
+  String get faceEnrollHintOtherFace => '这是另一张脸';
+
+  @override
+  String faceEnrollSaved(String name) {
+    return '已为 $name 录入人脸';
+  }
+
+  @override
+  String get faceEnrollSavedPartly => '已录入部分人脸。请再次录入以完成。';
+
+  @override
+  String get faceEnrollTooShort => '人脸出现的时间不够长，未保存任何内容。';
+
+  @override
+  String get faceEnrollUnavailable =>
+      '人脸识别需要 Ground Control，并开启 Vision Match 和人脸识别。';
+
+  @override
+  String get faceEnrollLost => '与 Ground Control 的连接已断开，未保存任何内容。';
+
+  @override
   String get filesUpload => '上传文件';
 
   @override
@@ -8194,6 +8261,37 @@ class UiStringsZh extends UiStrings {
   @override
   String get settingVisionMatchHandGesturesDescriptionGroundControl =>
       '在 Ground Control 上运行手掌和手指手势检测。关闭则在设备上运行。';
+
+  @override
+  String get settingVisionMatchFaceRecognitionTitle => '启用人脸识别';
+
+  @override
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl =>
+      '识别正在看 Kiosk 的人，并显示在 Face 传感器中。需要在 Ground Control 上运行人脸检测。';
+
+  @override
+  String get groundControlFaceRecognition => '人脸识别';
+
+  @override
+  String get faceEnrollRowTitle => '录入人脸';
+
+  @override
+  String get faceEnrollRowDescription => '选择一个人，然后按屏幕上的步骤操作。大约需要半分钟。';
+
+  @override
+  String get faceEnrollPickTitle => '录入谁的人脸？';
+
+  @override
+  String get faceEnrollNewPerson => '新的人';
+
+  @override
+  String get faceEnrollEnrolled => '已录入人脸';
+
+  @override
+  String get faceEnrollNameLabel => '姓名';
+
+  @override
+  String get faceEnrollStart => '开始';
 
   @override
   String get haCustomPages => '自定义网页';
@@ -17536,6 +17634,73 @@ class UiStringsZhCn extends UiStringsZh {
   String get esphomeTypeText => '文本';
 
   @override
+  String faceEnrollTitle(String name) {
+    return '正在录入 $name';
+  }
+
+  @override
+  String faceEnrollStepOf(String step, String total) {
+    return '第 $step 步，共 $total 步';
+  }
+
+  @override
+  String get faceEnrollStepLook => '请看屏幕';
+
+  @override
+  String get faceEnrollStepSideA => '把头稍微转向一侧';
+
+  @override
+  String get faceEnrollStepSideB => '现在稍微转向另一侧';
+
+  @override
+  String get faceEnrollStepFar => '向后退一步';
+
+  @override
+  String get faceEnrollHintNoFace => '画面中没有人脸';
+
+  @override
+  String get faceEnrollHintSeveral => '画面中请只保留一个人';
+
+  @override
+  String get faceEnrollHintCloser => '请再靠近一点';
+
+  @override
+  String get faceEnrollHintFarther => '请再后退一点';
+
+  @override
+  String get faceEnrollHintTurnMore => '再多转一点';
+
+  @override
+  String get faceEnrollHintTurnLess => '稍微转回来一点';
+
+  @override
+  String get faceEnrollHintOtherSide => '现在转向另一侧';
+
+  @override
+  String get faceEnrollHintDark => '太暗，看不清你的脸';
+
+  @override
+  String get faceEnrollHintOtherFace => '这是另一张脸';
+
+  @override
+  String faceEnrollSaved(String name) {
+    return '已为 $name 录入人脸';
+  }
+
+  @override
+  String get faceEnrollSavedPartly => '已录入部分人脸。请再次录入以完成。';
+
+  @override
+  String get faceEnrollTooShort => '人脸出现的时间不够长，未保存任何内容。';
+
+  @override
+  String get faceEnrollUnavailable =>
+      '人脸识别需要 Ground Control，并开启 Vision Match 和人脸识别。';
+
+  @override
+  String get faceEnrollLost => '与 Ground Control 的连接已断开，未保存任何内容。';
+
+  @override
   String get filesUpload => '上传文件';
 
   @override
@@ -24485,6 +24650,37 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingVisionMatchHandGesturesDescriptionGroundControl =>
       '在 Ground Control 上运行手掌和手指手势检测。关闭则在设备上运行。';
+
+  @override
+  String get settingVisionMatchFaceRecognitionTitle => '启用人脸识别';
+
+  @override
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl =>
+      '识别正在看 Kiosk 的人，并显示在 Face 传感器中。需要在 Ground Control 上运行人脸检测。';
+
+  @override
+  String get groundControlFaceRecognition => '人脸识别';
+
+  @override
+  String get faceEnrollRowTitle => '录入人脸';
+
+  @override
+  String get faceEnrollRowDescription => '选择一个人，然后按屏幕上的步骤操作。大约需要半分钟。';
+
+  @override
+  String get faceEnrollPickTitle => '录入谁的人脸？';
+
+  @override
+  String get faceEnrollNewPerson => '新的人';
+
+  @override
+  String get faceEnrollEnrolled => '已录入人脸';
+
+  @override
+  String get faceEnrollNameLabel => '姓名';
+
+  @override
+  String get faceEnrollStart => '开始';
 
   @override
   String get haCustomPages => '自定义网页';

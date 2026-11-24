@@ -358,6 +358,11 @@ class BtProxyManager extends Manager {
       'ground_control.enabled',
       'voice_match.enabled',
       'voice_match.speaker_sensor',
+      // The Face sensor exists only while Face Recognition can run.
+      'camera.enabled',
+      'vision_match.enabled',
+      'vision_match.face_detection',
+      'vision_match.face_recognition',
     };
     // The remote admin server's settings, which decide the web page port
     // reported to Home Assistant (the device page's Visit link).

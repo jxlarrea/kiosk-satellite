@@ -810,6 +810,28 @@ class FaceDismissedScreensaver extends AppEvent {
   const FaceDismissedScreensaver();
 }
 
+/// Face Recognition: who Ground Control sees looking at the kiosk, or
+/// nobody ([name] empty). Feeds the Face sensor.
+class FaceInViewChanged extends AppEvent {
+  const FaceInViewChanged({this.id, this.name = '', this.score});
+  final String? id;
+  final String name;
+  final double? score;
+}
+
+/// Ground Control asked this kiosk to enroll a person's face, or someone
+/// started it here: the guided capture opens.
+class FaceEnrollRequested extends AppEvent {
+  const FaceEnrollRequested({
+    required this.personId,
+    required this.name,
+    this.color,
+  });
+  final String? personId;
+  final String name;
+  final String? color;
+}
+
 /// A face put off the next screensaver (Postpone on face). Repeats with
 /// every face while someone stays. Vision Match reports it to Ground
 /// Control for the vision session it belongs to.

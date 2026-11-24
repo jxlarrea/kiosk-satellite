@@ -162,11 +162,21 @@ class GroundControlManager extends Manager {
     defs.voiceMatchAllowEnroll.key,
     defs.visionMatchEnabled.key,
     defs.visionMatchFaceDetection.key,
+    defs.visionMatchFaceRecognition.key,
     defs.visionMatchHandGestures.key,
     defs.screensaverDismissOnFace.key,
     defs.screensaverPostponeOnFace.key,
     defs.gestureMappings.key,
   };
+
+  /// Face Recognition on this kiosk: Vision Match with its faces looked at
+  /// on Ground Control, and the switch.
+  bool get faceRecognition =>
+      _settings.get(defs.groundControlEnabled) &&
+      _settings.get(defs.cameraEnabled) &&
+      _settings.get(defs.visionMatchEnabled) &&
+      _settings.get(defs.visionMatchFaceDetection) &&
+      _settings.get(defs.visionMatchFaceRecognition);
 
   /// The Voice Match and Vision Match features this kiosk has on, for the
   /// Kiosks page of the Ground Control app.
@@ -187,6 +197,7 @@ class GroundControlManager extends Manager {
       'show_speaker': s.get(defs.voiceMatchShowSpeaker),
       'vision_match': s.get(defs.visionMatchEnabled),
       'face_detection': s.get(defs.visionMatchFaceDetection),
+      'face_recognition': faceRecognition,
       'hand_gestures': s.get(defs.visionMatchHandGestures),
       'dismiss_on_face': s.get(defs.screensaverDismissOnFace),
       'postpone_on_face': s.get(defs.screensaverPostponeOnFace),
@@ -539,6 +550,29 @@ class GroundControlManager extends Manager {
         log.warn(name, 'Ground Control turned this kiosk away: ${msg['code']}');
         if (msg['code'] == 'unauthorized') _setStatus('refused', null);
         if (msg['code'] == 'not_kiosk_satellite') _setStatus('unsigned', null);
+      case 'enroll_face':
+        final personId = '${msg['person_id'] ?? ''}';
+        if (personId.isEmpty) return;
+        if (!faceRecognition) {
+          log.info(
+            name,
+            'face enrollment for ${msg['name']} refused: Face Recognition is off',
+          );
+          _send({
+            'type': 'enroll_error',
+            'person_id': personId,
+            'code': 'off',
+            'message': '',
+          });
+          return;
+        }
+        bus.publish(
+          FaceEnrollRequested(
+            personId: personId,
+            name: '${msg['name'] ?? ''}',
+            color: msg['color'] is String ? msg['color'] as String : null,
+          ),
+        );
       case 'enroll':
         final personId = '${msg['person_id'] ?? ''}';
         if (personId.isEmpty) return;

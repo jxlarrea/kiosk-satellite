@@ -1276,6 +1276,76 @@ class UiStringsNl extends UiStrings {
   String get esphomeTypeText => 'tekst';
 
   @override
+  String faceEnrollTitle(String name) {
+    return '$name inschrijven';
+  }
+
+  @override
+  String faceEnrollStepOf(String step, String total) {
+    return 'Stap $step van $total';
+  }
+
+  @override
+  String get faceEnrollStepLook => 'Kijk naar het scherm';
+
+  @override
+  String get faceEnrollStepSideA => 'Draai je hoofd een beetje opzij';
+
+  @override
+  String get faceEnrollStepSideB => 'Nu een beetje naar de andere kant';
+
+  @override
+  String get faceEnrollStepFar => 'Doe een stap achteruit';
+
+  @override
+  String get faceEnrollHintNoFace => 'Geen gezicht in beeld';
+
+  @override
+  String get faceEnrollHintSeveral => 'Graag maar één persoon in beeld';
+
+  @override
+  String get faceEnrollHintCloser => 'Kom wat dichterbij';
+
+  @override
+  String get faceEnrollHintFarther => 'Ga nog wat verder achteruit';
+
+  @override
+  String get faceEnrollHintTurnMore => 'Draai wat verder';
+
+  @override
+  String get faceEnrollHintTurnLess => 'Draai een beetje terug';
+
+  @override
+  String get faceEnrollHintOtherSide => 'Nu naar de andere kant';
+
+  @override
+  String get faceEnrollHintDark => 'Te donker om je gezicht te zien';
+
+  @override
+  String get faceEnrollHintOtherFace => 'Dat is een ander gezicht';
+
+  @override
+  String faceEnrollSaved(String name) {
+    return 'Gezicht ingeschreven voor $name';
+  }
+
+  @override
+  String get faceEnrollSavedPartly =>
+      'Een deel van het gezicht is ingeschreven. Schrijf opnieuw in om af te ronden.';
+
+  @override
+  String get faceEnrollTooShort =>
+      'Het gezicht was niet lang genoeg te zien. Er is niets opgeslagen.';
+
+  @override
+  String get faceEnrollUnavailable =>
+      'Gezichtsherkenning vereist Ground Control met Vision Match en gezichtsherkenning ingeschakeld.';
+
+  @override
+  String get faceEnrollLost =>
+      'De verbinding met Ground Control is verbroken. Er is niets opgeslagen.';
+
+  @override
   String get filesUpload => 'Bestand uploaden';
 
   @override
@@ -8641,6 +8711,39 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingVisionMatchHandGesturesDescriptionGroundControl =>
       'Voer detectie van handpalm- en vingergebaren uit op Ground Control. Schakel uit om dit op het apparaat te doen.';
+
+  @override
+  String get settingVisionMatchFaceRecognitionTitle =>
+      'Gezichtsherkenning inschakelen';
+
+  @override
+  String get settingVisionMatchFaceRecognitionDescriptionGroundControl =>
+      'Herkent wie naar de kiosk kijkt en toont dit in de Face-sensor. Vereist gezichtsdetectie op Ground Control.';
+
+  @override
+  String get groundControlFaceRecognition => 'Gezichtsherkenning';
+
+  @override
+  String get faceEnrollRowTitle => 'Een gezicht inschrijven';
+
+  @override
+  String get faceEnrollRowDescription =>
+      'Kies een persoon en volg de stappen op het scherm. Dit duurt ongeveer een halve minuut.';
+
+  @override
+  String get faceEnrollPickTitle => 'Wiens gezicht?';
+
+  @override
+  String get faceEnrollNewPerson => 'Nieuwe persoon';
+
+  @override
+  String get faceEnrollEnrolled => 'Gezicht ingeschreven';
+
+  @override
+  String get faceEnrollNameLabel => 'Naam';
+
+  @override
+  String get faceEnrollStart => 'Starten';
 
   @override
   String get haCustomPages => 'Eigen pagina\'s';

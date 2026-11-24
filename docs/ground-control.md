@@ -40,6 +40,8 @@ Navigate to **Settings > Ground Control > Vision Match**. With **Enable Vision M
 | --- | --- | --- |
 | Enable Vision Match | off | Runs the features below on Ground Control. Needs the camera and Ground Control. |
 | Enable Face Detection | on | Runs face detection on Ground Control. Off, it runs on the device. |
+| Enable Face Recognition | on | Recognizes who is looking at the kiosk and shows it in the **Face** sensor. Needs Face Detection on Ground Control. |
+| Enroll a face | | Picks a person from Ground Control, or a new one, and starts the guided capture. See [Face Recognition](#face-recognition). |
 | Enable Hand Gestures | on | Runs palm and finger gesture detection on Ground Control. Off, it runs on the device. |
 
 
@@ -51,6 +53,19 @@ Navigate to **Settings > Ground Control > Vision Match**. With **Enable Vision M
 - When Ground Control doesn't answer, the looks of the features on Ground Control wait for it and the log says so once. The models on the device are used only for a feature that is off here.
 
 Vision Match needs a Ground Control version with Vision Match. Choose its models in Ground Control under **Settings > Vision Match**: Light runs on any CPU, Accurate needs an NVIDIA GPU. A device without a screen has no Vision Match page.
+
+### Face Recognition
+
+With **Enable Face Recognition** on, Ground Control tells who is looking at the kiosk, from the faces enrolled in it, and the kiosk shows the name in its **Face** sensor in Home Assistant. The sensor is empty when nobody known is in view, and it clears 3 seconds after the face goes. Face Recognition uses Face Detection's looks, so with it on they also run whenever the screen is on, still only after something moves.
+
+Each person's face is enrolled once through a kiosk's camera, in a guided capture of about half a minute. Choose **Enroll a face** on the Vision Match page and pick the person, or start it from the person's page in the Ground Control app. The kiosk shows its camera's view and the steps:
+
+1. Look at the screen.
+2. Turn your head a little to one side.
+3. Now a little to the other side.
+4. Take a step back.
+
+Under the view, the kiosk says what to fix: no face in view, only one person in view, come closer, turn more or less, too dark. A different face is left out. **Stop** ends it early, and the pictures from a finished first step are kept. Ground Control keeps only small pictures of the face, never the frames.
 
 ## Status
 

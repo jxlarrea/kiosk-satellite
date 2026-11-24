@@ -1,0 +1,23 @@
+{
+  "@@locale": "fr",
+  "faceEnrollTitle": "Enregistrement de {name}",
+  "faceEnrollStepOf": "Étape {step} sur {total}",
+  "faceEnrollStepLook": "Regardez l'écran",
+  "faceEnrollStepSideA": "Tournez un peu la tête d'un côté",
+  "faceEnrollStepSideB": "Maintenant un peu de l'autre côté",
+  "faceEnrollStepFar": "Reculez d'un pas",
+  "faceEnrollHintNoFace": "Aucun visage visible",
+  "faceEnrollHintSeveral": "Une seule personne visible, s'il vous plaît",
+  "faceEnrollHintCloser": "Approchez-vous un peu",
+  "faceEnrollHintFarther": "Reculez encore un peu",
+  "faceEnrollHintTurnMore": "Tournez un peu plus",
+  "faceEnrollHintTurnLess": "Tournez un peu moins",
+  "faceEnrollHintOtherSide": "Maintenant de l'autre côté",
+  "faceEnrollHintDark": "Trop sombre pour voir votre visage",
+  "faceEnrollHintOtherFace": "C'est un autre visage",
+  "faceEnrollSaved": "Visage enregistré pour {name}",
+  "faceEnrollSavedPartly": "Une partie du visage a été enregistrée. Recommencez l'enregistrement pour terminer.",
+  "faceEnrollTooShort": "Le visage n'a pas été vu assez longtemps. Rien n'a été sauvegardé.",
+  "faceEnrollUnavailable": "La reconnaissance faciale nécessite Ground Control avec Vision Match et la reconnaissance faciale activés.",
+  "faceEnrollLost": "La connexion à Ground Control a été perdue. Rien n'a été sauvegardé."
+}
