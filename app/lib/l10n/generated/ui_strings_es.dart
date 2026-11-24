@@ -8611,8 +8611,8 @@ class UiStringsEs extends UiStrings {
   String get settingGroundControlEnabledTitle => 'Activar Ground Control';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      'Conecta con Kiosk Satellite Ground Control, que ejecuta Voice Match en un equipo potente.';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      'Conecta con Kiosk Satellite Ground Control, que ejecuta Voice Match y Vision Match en un equipo potente.';
 
   @override
   String get settingGroundControlAddressTitle => 'Dirección';
@@ -8661,18 +8661,33 @@ class UiStringsEs extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition, Trimming e Isolation.';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => 'Activar Vision Match';
 
   @override
-  String get groundControlVisionMatchDescription =>
-      'Reconocimiento facial con la cámara de este dispositivo.';
+  String get settingVisionMatchFaceDetectionTitle =>
+      'Activar detección de rostros';
 
   @override
-  String get groundControlComingSoon => 'Próximamente';
+  String get settingVisionMatchHandGesturesTitle => 'Activar gestos de la mano';
+
+  @override
+  String get visionMatchFeaturesHint =>
+      'Reconocimiento y detección de rostros, gestos de la mano y detección de presencia';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      'Reconocimiento y detección de rostros, gestos de la mano y detección de presencia. Necesita Ground Control.';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      'Ejecuta la detección de rostros en Ground Control. Desactívalo para ejecutarla en el dispositivo.';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      'Ejecuta la detección de gestos de la palma y los dedos en Ground Control. Desactívalo para ejecutarla en el dispositivo.';
 
   @override
   String get haCustomPages => 'Páginas personalizadas';
@@ -16016,9 +16031,6 @@ class UiStringsEs extends UiStrings {
   @override
   String get settingTimersDismissAfterDescription =>
       'Cierra un temporizador finalizado como si se tocara Cerrar.';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>

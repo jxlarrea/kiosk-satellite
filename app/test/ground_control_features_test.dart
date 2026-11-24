@@ -7,8 +7,8 @@ import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:kiosk_satellite/ui/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Settings > Ground Control lists its features after Connection: Voice
-/// Match opens its page under Voice Satellite, Vision Match is coming.
+/// Settings > Ground Control has a page per feature after Connection: Voice
+/// Match and Vision Match.
 void main() {
   Future<AppContainer> containerFor(WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -18,6 +18,7 @@ void main() {
     // Satellite on too.
     await container.settings.set(defs.groundControlEnabled, true);
     await container.settings.set(defs.voiceEnabled, true);
+    await container.settings.set(defs.cameraEnabled, true);
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(() async {
@@ -42,7 +43,7 @@ void main() {
     ),
   );
 
-  testWidgets('Features follow Connection, with Voice Match and Vision Match', (
+  testWidgets('the feature pages follow Connection, with their summaries', (
     tester,
   ) async {
     final container = await containerFor(tester);
@@ -52,34 +53,83 @@ void main() {
     double top(String text) => tester.getTopLeft(find.text(text).first).dy;
     for (final text in [
       'Address',
-      'Features',
       'Voice Match',
+      'Recognition, Trimming and Isolation',
       'Vision Match',
-      'Coming soon',
+      'Face recognition, detection, hand gestures and presence detection',
     ]) {
       expect(find.text(text), findsWidgets, reason: text);
     }
-    expect(top('Features'), greaterThan(top('Address')));
-    expect(top('Voice Match'), greaterThan(top('Features')));
+    expect(top('Voice Match'), greaterThan(top('Address')));
     expect(top('Vision Match'), greaterThan(top('Voice Match')));
+    expect(find.text('Coming soon'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Voice Match opens the Ground Control Voice Match page', (
-    tester,
-  ) async {
+  Future<void> opens(WidgetTester tester, String page, String first) async {
     final container = await containerFor(tester);
     await tester.pumpWidget(app(container));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Voice Match').first);
+    await tester.tap(find.text(page).first);
     await tester.pumpAndSettle();
-    final page = tester.widget<SubpageSettingsScreen>(
+    final screen = tester.widget<SubpageSettingsScreen>(
       find.byType(SubpageSettingsScreen),
     );
-    expect(page.category, 'Voice Satellite');
-    expect(page.subpage, 'Ground Control Voice Match');
-    expect(find.text('Enable Voice Match'), findsWidgets);
+    expect(screen.category, 'Ground Control');
+    expect(screen.subpage, page);
+    expect(find.text(first), findsWidgets);
+    expect(tester.takeException(), isNull);
+  }
+
+  testWidgets(
+    'Voice Match opens its page under Ground Control',
+    (tester) async => opens(tester, 'Voice Match', 'Enable Voice Match'),
+  );
+
+  testWidgets(
+    'Vision Match opens its page under Ground Control',
+    (tester) async => opens(tester, 'Vision Match', 'Enable Vision Match'),
+  );
+
+  testWidgets('each Vision Match feature has its own group and switch', (
+    tester,
+  ) async {
+    final container = await containerFor(tester);
+    await container.settings.set(defs.visionMatchEnabled, true);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: appSupportedLocales,
+        localizationsDelegates: appLocalizationsDelegates,
+        theme: buildTheme(Brightness.light),
+        home: SubpageSettingsScreen(
+          container: container,
+          category: 'Ground Control',
+          subpage: 'Vision Match',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    double top(String text) => tester.getTopLeft(find.text(text).first).dy;
+    for (final text in [
+      'Enable Vision Match',
+      'Face recognition, detection, hand gestures and presence detection. '
+          'Needs Ground Control.',
+      'Face Detection',
+      'Enable Face Detection',
+      'Run face detection on Ground Control. Disable to run on-device.',
+      'Hand Gestures',
+      'Enable Hand Gestures',
+      'Run palm and fingers gestures detection on Ground Control. Disable to '
+          'run on-device.',
+    ]) {
+      expect(find.text(text), findsWidgets, reason: text);
+    }
+    expect(top('Face Detection'), greaterThan(top('Enable Vision Match')));
+    expect(top('Hand Gestures'), greaterThan(top('Enable Face Detection')));
+    expect(container.settings.get(defs.visionMatchFaceDetection), isTrue);
+    expect(container.settings.get(defs.visionMatchHandGestures), isTrue);
     expect(tester.takeException(), isNull);
   });
 }

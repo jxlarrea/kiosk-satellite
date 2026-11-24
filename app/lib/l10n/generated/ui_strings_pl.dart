@@ -8561,8 +8561,8 @@ class UiStringsPl extends UiStrings {
   String get settingGroundControlEnabledTitle => 'Włącz Ground Control';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      'Połącz z Kiosk Satellite Ground Control, aby uruchamiać Voice Match na wydajnym komputerze.';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      'Połącz z Kiosk Satellite Ground Control, aby uruchamiać Voice Match i Vision Match na wydajnym komputerze.';
 
   @override
   String get settingGroundControlAddressTitle => 'Adres';
@@ -8611,18 +8611,32 @@ class UiStringsPl extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition, Trimming i Isolation.';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => 'Włącz Vision Match';
 
   @override
-  String get groundControlVisionMatchDescription =>
-      'Rozpoznawanie twarzy za pomocą kamery tego urządzenia.';
+  String get settingVisionMatchFaceDetectionTitle => 'Włącz wykrywanie twarzy';
 
   @override
-  String get groundControlComingSoon => 'Wkrótce';
+  String get settingVisionMatchHandGesturesTitle => 'Włącz gesty dłonią';
+
+  @override
+  String get visionMatchFeaturesHint =>
+      'Rozpoznawanie i wykrywanie twarzy, gesty dłonią i wykrywanie obecności';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      'Rozpoznawanie i wykrywanie twarzy, gesty dłonią i wykrywanie obecności. Wymaga Ground Control.';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      'Uruchamiaj wykrywanie twarzy na Ground Control. Wyłącz, aby uruchamiać na urządzeniu.';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      'Uruchamiaj wykrywanie gestów dłoni i palców na Ground Control. Wyłącz, aby uruchamiać na urządzeniu.';
 
   @override
   String get haCustomPages => 'Własne strony';
@@ -15890,9 +15904,6 @@ class UiStringsPl extends UiStrings {
   @override
   String get settingTimersDismissAfterDescription =>
       'Usuwa zakończony minutnik tak, jakby dotknięto przycisku „Zamknij”.';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>

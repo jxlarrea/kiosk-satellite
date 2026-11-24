@@ -8653,8 +8653,8 @@ class UiStringsDe extends UiStrings {
   String get settingGroundControlEnabledTitle => 'Ground Control aktivieren';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      'Mit Kiosk Satellite Ground Control verbinden, das Voice Match auf einem leistungsstarken Rechner ausführt.';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      'Mit Kiosk Satellite Ground Control verbinden, das Voice Match und Vision Match auf einem leistungsstarken Rechner ausführt.';
 
   @override
   String get settingGroundControlAddressTitle => 'Adresse';
@@ -8703,18 +8703,33 @@ class UiStringsDe extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition, Trimming und Isolation.';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => 'Vision Match aktivieren';
 
   @override
-  String get groundControlVisionMatchDescription =>
-      'Gesichtserkennung mit der Kamera dieses Geräts.';
+  String get settingVisionMatchFaceDetectionTitle =>
+      'Gesichtserkennung aktivieren';
 
   @override
-  String get groundControlComingSoon => 'Demnächst';
+  String get settingVisionMatchHandGesturesTitle => 'Handgesten aktivieren';
+
+  @override
+  String get visionMatchFeaturesHint =>
+      'Gesichtserkennung und -zuordnung, Handgesten und Anwesenheitserkennung';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      'Gesichtserkennung und -zuordnung, Handgesten und Anwesenheitserkennung. Benötigt Ground Control.';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      'Gesichtserkennung auf Ground Control ausführen. Ausschalten, um sie auf dem Gerät auszuführen.';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      'Erkennung von Handflächen- und Fingergesten auf Ground Control ausführen. Ausschalten, um sie auf dem Gerät auszuführen.';
 
   @override
   String get haCustomPages => 'Eigene Seiten';
@@ -16035,9 +16050,6 @@ class UiStringsDe extends UiStrings {
   @override
   String get settingTimersDismissAfterDescription =>
       'Schließt einen abgelaufenen Timer, als wäre Schließen getippt worden.';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>

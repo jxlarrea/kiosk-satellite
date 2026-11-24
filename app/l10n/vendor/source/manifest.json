@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "f8e5d3a371694e42f0a2362557748d3dbacbc723",
+  "revision": "8bbec7f79bfd2f57623e82d7ff5daba799fd05b2",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -110,7 +110,7 @@
     "settings_esphome_setup_en.arb": "c4c7a944ea206ffc62f04ecfb5936b9d17eaf0a85abee2222cdd2ae74cf5bb90",
     "settings_footer_en.arb": "2b6279c9f3a304b5ad3fe7aec3e8dcd07ada7704de51489dc2f6866d147950a4",
     "settings_gestures_en.arb": "30a3d7c7867d80faeed298d2e11e46bbd99182f4d58d8e585faadbec551939f0",
-    "settings_ground_control_en.arb": "e5faf408a88ae72e84567440c7e6c95364a4e7db7840d6d2c9466996f831187b",
+    "settings_ground_control_en.arb": "ec4de6036d91f06da9b8eb44a26c8480ffe2a3d69f78e0a3e5ef72996dee465c",
     "settings_home_assistant_custom_pages_en.arb": "7ff2971d55e9fce55f50423c185d357ddd1c2f1af72a3ab09947713a03789bf7",
     "settings_home_assistant_hold_en.arb": "65c0336973aa9ced2a0ceff298a569b2a6d034c2016569727f3a84de2fe819b2",
     "settings_home_assistant_optimizations_en.arb": "6848f403e77ebbe6a51c201b09cbc75c385debfbce96168830772418b7afdcf7",
@@ -194,7 +194,7 @@
     "settings_voice_satellite_setup_en.arb": "5d6e328bc7d48614c3b6af3e3ee2ecd16c9e36b38991a5f2e9477b2ac0584874",
     "settings_voice_satellite_tester_en.arb": "fe39cf6c05dec11c5bde90939f5098ecf79a6457e407dfee3a0a4a3d3cf13f12",
     "settings_voice_satellite_timers_en.arb": "bcfb857d01732594d0566e6294328a1c4487976678ff168daaa37b315d0d1488",
-    "settings_voice_satellite_voice_match_en.arb": "c132751ecb56df31dee5aa2f284aa4b57020b6a0d303ce659d9921772c61e145",
+    "settings_voice_satellite_voice_match_en.arb": "20ff39dffe948746978525cffa43fae6c6ccebc3ba6a352cfacc6bf07537fbf4",
     "settings_voice_satellite_wake_word_en.arb": "d2279eb005162a31742b111ff460db6cc9b57a6d2f5a8606dcef9abe8a27d541",
     "settings_web_browsing_cache_security_en.arb": "8e0e89c934290b05090a2228ee8982201258bd05da9c7fd30cc4ef9bc6f54e1a",
     "settings_web_browsing_navigation_en.arb": "ce4e29dcf1800a203436a4aad1575976dea606df52b005d088f6932886c6495a",

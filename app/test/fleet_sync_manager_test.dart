@@ -2399,20 +2399,15 @@ void main() {
     }
   });
 
-  test('Ground Control travels with its own category and Voice Match with '
-      'Voice Satellite', () {
+  test('Voice Match and Vision Match travel with Ground Control', () {
     const gcOnly = SyncProfile(categories: {'Ground Control'});
     expect(FleetSyncManager.syncs(defs.groundControlEnabled, gcOnly), isTrue);
     expect(FleetSyncManager.syncs(defs.groundControlAddress, gcOnly), isTrue);
-    // The Features row links to Enable Voice Match and holds nothing.
-    expect(
-      FleetSyncManager.syncs(defs.groundControlVoiceMatch, gcOnly),
-      isFalse,
-    );
-    expect(FleetSyncManager.syncs(defs.voiceMatchEnabled, gcOnly), isFalse);
+    expect(FleetSyncManager.syncs(defs.voiceMatchEnabled, gcOnly), isTrue);
+    expect(FleetSyncManager.syncs(defs.voiceMatchPeople, gcOnly), isTrue);
+    expect(FleetSyncManager.syncs(defs.visionMatchEnabled, gcOnly), isTrue);
     const voiceOnly = SyncProfile(categories: {'Voice Satellite'});
-    expect(FleetSyncManager.syncs(defs.voiceMatchEnabled, voiceOnly), isTrue);
-    expect(FleetSyncManager.syncs(defs.voiceMatchPeople, voiceOnly), isTrue);
+    expect(FleetSyncManager.syncs(defs.voiceMatchEnabled, voiceOnly), isFalse);
     expect(
       FleetSyncManager.syncs(defs.groundControlEnabled, voiceOnly),
       isFalse,

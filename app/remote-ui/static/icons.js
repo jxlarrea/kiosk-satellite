@@ -52,7 +52,7 @@ export const SUBPAGE_ICONS = {
     + ' 2.6 0 4.6-1.6 4.6-3.7 0-1.8-1.1-3.3-2.5-3.3z"/>'),
   'Assistant': svg('<path d="M4 5h11v8H8l-4 3z"/><path d="M9 16v1h7l4 3V9h-5"/>'),
   'Realtime': svg('<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>'),
-  'Ground Control Voice Match': svg('<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M18 5a5 5 0 0 1 0 7M21 3a9 9 0 0 1 0 11"/>'),
+  'Voice Match': svg('<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M18 5a5 5 0 0 1 0 7M21 3a9 9 0 0 1 0 11"/>'),
   'Conversation': svg('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
   // Screen & Audio.
   'Microphone settings': svg('<rect x="9" y="3" width="6" height="11" rx="3"/>'
@@ -114,6 +114,7 @@ export const SUBPAGE_ICONS = {
   'Person Sensor': svg('<circle cx="12" cy="7" r="3"/>'
     + '<path d="M6 21v-2a6 6 0 0 1 12 0v2"/>'
     + '<path d="M3 10a9 9 0 0 1 0 5m18-5a9 9 0 0 1 0 5"/>'),
+  'Vision Match': svg('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
   'Proximity Detection': svg('<circle cx="12" cy="12" r="1.5"/>'
     + '<path d="M8.5 8.5a5 5 0 0 0 0 7m7-7a5 5 0 0 1 0 7"/>'
     + '<path d="M5.6 5.6a9 9 0 0 0 0 12.8m12.8-12.8a9 9 0 0 1 0 12.8"/>'),

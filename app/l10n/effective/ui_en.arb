@@ -32042,10 +32042,10 @@
       ]
     }
   },
-  "settingGroundControlEnabledDescription": "Connect to Kiosk Satellite Ground Control, which runs Voice Match on a capable machine.",
-  "@settingGroundControlEnabledDescription": {
+  "settingGroundControlEnabledDescriptionVisionMatch": "Connect to Kiosk Satellite Ground Control, which runs Voice Match and Vision Match on a capable machine.",
+  "@settingGroundControlEnabledDescriptionVisionMatch": {
     "context": "Settings > Ground Control",
-    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
     "x-locations": {
       "device": [
         "Settings > Ground Control > Enable Ground Control"
@@ -32237,55 +32237,107 @@
       ]
     }
   },
-  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming and Isolation.",
-  "@settingGroundControlVoiceMatchFeaturesDescription": {
-    "context": "Settings > Ground Control",
-    "description": "Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Ground Control > Features > Voice Match"
-      ],
-      "remoteAdmin": [
-        "Ground Control > Features > Voice Match"
-      ]
-    }
-  },
-  "groundControlVisionMatch": "Vision Match",
-  "@groundControlVisionMatch": {
-    "context": "Settings > Ground Control",
+  "settingVisionMatchEnabledTitle": "Vision Match",
+  "@settingVisionMatchEnabledTitle": {
+    "context": "Settings > Ground Control > Vision Match",
     "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
     "x-locations": {
       "device": [
-        "Settings > Ground Control > Features > Vision Match"
+        "Settings > Ground Control > Vision Match"
       ],
       "remoteAdmin": [
-        "Ground Control > Features > Vision Match"
+        "Ground Control > Vision Match"
       ]
     }
   },
-  "groundControlVisionMatchDescription": "Facial recognition using this device's camera.",
-  "@groundControlVisionMatchDescription": {
-    "context": "Settings > Ground Control",
-    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.",
+  "settingVisionMatchEnableTitle": "Enable Vision Match",
+  "@settingVisionMatchEnableTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
     "x-locations": {
       "device": [
-        "Settings > Ground Control > Features > Vision Match"
+        "Settings > Ground Control > Vision Match > Enable Vision Match"
       ],
       "remoteAdmin": [
-        "Ground Control > Features > Vision Match"
+        "Ground Control > Vision Match > Enable Vision Match"
       ]
     }
   },
-  "groundControlComingSoon": "Coming soon",
-  "@groundControlComingSoon": {
-    "context": "Settings > Ground Control",
-    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Shown in place of a value: the feature isn't available yet.",
+  "settingVisionMatchFaceDetectionTitle": "Enable Face Detection",
+  "@settingVisionMatchFaceDetectionTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
     "x-locations": {
       "device": [
-        "Settings > Ground Control > Features > Vision Match"
+        "Settings > Ground Control > Vision Match > Face Detection > Enable Face Detection"
       ],
       "remoteAdmin": [
-        "Ground Control > Features > Vision Match"
+        "Ground Control > Vision Match > Face Detection > Enable Face Detection"
+      ]
+    }
+  },
+  "settingVisionMatchHandGesturesTitle": "Enable Hand Gestures",
+  "@settingVisionMatchHandGesturesTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Hand Gestures > Enable Hand Gestures"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Hand Gestures > Enable Hand Gestures"
+      ]
+    }
+  },
+  "visionMatchFeaturesHint": "Face recognition, detection, hand gestures and presence detection",
+  "@visionMatchFeaturesHint": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match"
+      ]
+    }
+  },
+  "settingVisionMatchEnabledDescriptionGroundControl": "Face recognition, detection, hand gestures and presence detection. Needs Ground Control.",
+  "@settingVisionMatchEnabledDescriptionGroundControl": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Enable Vision Match"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Enable Vision Match"
+      ]
+    }
+  },
+  "settingVisionMatchFaceDetectionDescriptionGroundControl": "Run face detection on Ground Control. Disable to run on-device.",
+  "@settingVisionMatchFaceDetectionDescriptionGroundControl": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Detection > Enable Face Detection"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Detection > Enable Face Detection"
+      ]
+    }
+  },
+  "settingVisionMatchHandGesturesDescriptionGroundControl": "Run palm and fingers gestures detection on Ground Control. Disable to run on-device.",
+  "@settingVisionMatchHandGesturesDescriptionGroundControl": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Hand Gestures > Enable Hand Gestures"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Hand Gestures > Enable Hand Gestures"
       ]
     }
   },
@@ -57475,19 +57527,6 @@
       ],
       "remoteAdmin": [
         "Timers > When a timer ends"
-      ]
-    }
-  },
-  "voiceMatchGroundControlPage": "Ground Control Voice Match",
-  "@voiceMatchGroundControlPage": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Ground Control Voice Match"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Ground Control Voice Match"
       ]
     }
   },

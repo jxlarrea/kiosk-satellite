@@ -34,7 +34,7 @@ const Map<String, Object> subpageIcons = {
   'Appearance': Icons.brush_outlined,
   'Assistant': Icons.forum_outlined,
   'Realtime': Icons.graphic_eq_rounded,
-  'Ground Control Voice Match': Icons.record_voice_over_outlined,
+  'Voice Match': Icons.record_voice_over_outlined,
   'Conversation': Icons.chat_bubble_outline,
   'Wake word diagnostics': Icons.troubleshoot_outlined,
   // Screen & Audio.
@@ -60,6 +60,7 @@ const Map<String, Object> subpageIcons = {
   'Motion Detection': Icons.directions_walk,
   'Motion Sensor': Icons.directions_walk,
   'Person Sensor': Icons.sensor_occupied_outlined,
+  'Vision Match': Icons.visibility_outlined,
   'Face Detection': Icons.face_outlined,
   'Proximity Detection': Icons.sensors,
   'Person Detection': Icons.sensor_occupied_outlined,

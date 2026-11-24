@@ -20,7 +20,6 @@
   "voiceMatchAppHint": "Люди, запись голоса, сеансы и настройки.",
   "voiceMatchOpen": "Открыть",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Разрешает приложению Ground Control записывать голос человека микрофоном этого киоска. Киоск показывает текст для чтения, или световое кольцо показывает прогресс.",
-  "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "С выбранными людьми киоск игнорирует телевизор, гостей и всех остальных.",
   "voiceMatchOptionPeople": "Выбранные люди",
   "settingVoiceMatchPeopleTitle": "Люди",

@@ -8564,8 +8564,8 @@ class UiStringsNl extends UiStrings {
   String get settingGroundControlEnabledTitle => 'Ground Control inschakelen';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      'Verbind met Kiosk Satellite Ground Control, dat Voice Match op een krachtige computer draait.';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      'Verbind met Kiosk Satellite Ground Control, dat Voice Match en Vision Match op een krachtige computer draait.';
 
   @override
   String get settingGroundControlAddressTitle => 'Adres';
@@ -8614,18 +8614,33 @@ class UiStringsNl extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition, Trimming en Isolation.';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => 'Vision Match inschakelen';
 
   @override
-  String get groundControlVisionMatchDescription =>
-      'Gezichtsherkenning met de camera van dit apparaat.';
+  String get settingVisionMatchFaceDetectionTitle =>
+      'Gezichtsdetectie inschakelen';
 
   @override
-  String get groundControlComingSoon => 'Binnenkort';
+  String get settingVisionMatchHandGesturesTitle => 'Handgebaren inschakelen';
+
+  @override
+  String get visionMatchFeaturesHint =>
+      'Gezichtsherkenning en -detectie, handgebaren en aanwezigheidsdetectie';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      'Gezichtsherkenning en -detectie, handgebaren en aanwezigheidsdetectie. Vereist Ground Control.';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      'Voer gezichtsdetectie uit op Ground Control. Schakel uit om dit op het apparaat te doen.';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      'Voer detectie van handpalm- en vingergebaren uit op Ground Control. Schakel uit om dit op het apparaat te doen.';
 
   @override
   String get haCustomPages => 'Eigen pagina\'s';
@@ -15891,9 +15906,6 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingTimersDismissAfterDescription =>
       'Sluit een afgelopen timer alsof op Sluiten is getikt.';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>

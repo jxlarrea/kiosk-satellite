@@ -14815,11 +14815,11 @@ abstract class UiStrings {
   /// **'Enable Ground Control'**
   String get settingGroundControlEnabledTitle;
 
-  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
   ///
   /// In en, this message translates to:
-  /// **'Connect to Kiosk Satellite Ground Control, which runs Voice Match on a capable machine.'**
-  String get settingGroundControlEnabledDescription;
+  /// **'Connect to Kiosk Satellite Ground Control, which runs Voice Match and Vision Match on a capable machine.'**
+  String get settingGroundControlEnabledDescriptionVisionMatch;
 
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
@@ -14905,29 +14905,53 @@ abstract class UiStrings {
   /// **'Voice Match'**
   String get settingGroundControlVoiceMatchTitle;
 
-  /// Translate the visible label or help. Keep Recognition, Trimming, Isolation, Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Recognition, Trimming and Isolation.'**
-  String get settingGroundControlVoiceMatchFeaturesDescription;
-
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
   ///
   /// In en, this message translates to:
   /// **'Vision Match'**
-  String get groundControlVisionMatch;
+  String get settingVisionMatchEnabledTitle;
 
-  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
   ///
   /// In en, this message translates to:
-  /// **'Facial recognition using this device\'s camera.'**
-  String get groundControlVisionMatchDescription;
+  /// **'Enable Vision Match'**
+  String get settingVisionMatchEnableTitle;
 
-  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Shown in place of a value: the feature isn't available yet.
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
   ///
   /// In en, this message translates to:
-  /// **'Coming soon'**
-  String get groundControlComingSoon;
+  /// **'Enable Face Detection'**
+  String get settingVisionMatchFaceDetectionTitle;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Hand Gestures'**
+  String get settingVisionMatchHandGesturesTitle;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Face recognition, detection, hand gestures and presence detection'**
+  String get visionMatchFeaturesHint;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Face recognition, detection, hand gestures and presence detection. Needs Ground Control.'**
+  String get settingVisionMatchEnabledDescriptionGroundControl;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Run face detection on Ground Control. Disable to run on-device.'**
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl;
+
+  /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Run palm and fingers gestures detection on Ground Control. Disable to run on-device.'**
+  String get settingVisionMatchHandGesturesDescriptionGroundControl;
 
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///
@@ -27432,12 +27456,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Clears a finished timer as if Dismiss was tapped.'**
   String get settingTimersDismissAfterDescription;
-
-  /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Ground Control Voice Match'**
-  String get voiceMatchGroundControlPage;
 
   /// Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.
   ///

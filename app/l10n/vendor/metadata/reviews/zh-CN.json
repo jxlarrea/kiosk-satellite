@@ -30981,5 +30981,89 @@
     "translation": "741652e99dcd07d841f81bf551dcbb8d651629d4ba2ae005fcd1bd671b4a8326",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingVisionMatchEnabledDescription": {
+    "source": "0ff92d70b95cf317a4fa003cd0bee2cd88e5b2810143bf4b65286411e51cff1a",
+    "translation": "d08a75a6d7af2b9d1b21b9c7624530cbcd4ed2122b285ac16781157206f1c66c",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingGroundControlEnabledDescriptionVisionMatch": {
+    "source": "c792036fb8d8221bd373c9ac92e5f4796207cf4012fcf441e548f604837abcdf",
+    "translation": "cd73137ae6036b342fc5799ecd36200766fe559cf38421634ae6239c098a82ed",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchEnabledTitle": {
+    "source": "6be636c7b1cf84bdffbf95ec257ca079bbadf88737d61d90d539666aa1fcc4a7",
+    "translation": "5099079d59b13346238cae88bb0f243dad383c58ca966987158c98fd2d3d77ba",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchFaceDetectionTitle": {
+    "source": "02fa21ecbf49ba85284c23845d795a7ae48d40694514e63d996348bb13e6b58f",
+    "translation": "d62e45bfee1616c21143e0c840b95dd7e3203cfe9eb3044b996eb218d324345a",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchHandGesturesDescription": {
+    "source": "9bb7d0cfa87cf98d687ba840f8ac7e2689a0f1489eda912c56e9b90113163806",
+    "translation": "d1b1e36c1597c5c78c018b7d2674a62cbc81b26ac8fbc5fc044a3020889f3c4e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "cameraVisionMatchPage": {
+    "source": "3f46da1a6ab2352bc6459340428364c3116c96c2aa48ad5fff5944ff33cc3ec5",
+    "translation": "014fe7e523edfa87affff9cc687733684ac49725c154c3d26ec3fce54784160b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingGroundControlVisionMatchFeaturesDescription": {
+    "source": "b8d807f35fc366b7a67ae01cb58ccedb49de628b311bc23ca5a32813bc773482",
+    "translation": "730c6728508c0c4a808c336be4d6b98d59ff62a59de3e7984429612b74793a43",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchFaceDetectionDescription": {
+    "source": "fbb936adce66a0cf54df5a6b3de50f4c1f7e6ab1980c0073c714990805374263",
+    "translation": "dd8f0e11624d04b335c049c5b880570a20d4554b4a620cb751f0567fa09de591",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchHandGesturesTitle": {
+    "source": "54c6170fe1fe5d1420e263ffceec08fa9b42f93b1e1089c19aee575fc8a77f5d",
+    "translation": "bf23db6810a14c54ee07dc5ecb6eb3cae5f5a097868a5ed0d6238282a2435897",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchEnableTitle": {
+    "source": "717719941b7b519c485c0ee162ba4ddb77828497931ce2c3dfa7f43f4c398b79",
+    "translation": "ebfb05a4e78ed8c30a3d355087ab291c017cc9ddc819484555c35a92e6c2f932",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchFaceDetectionDescriptionGroundControl": {
+    "source": "591f67f49bedc177419f96d7c3725d5ff087a8d1a8be40791cd776aca195cc1e",
+    "translation": "9688343503dfdc05d276e69853fa491c62e5a6bdeb9bc0dcd91a31ee6614d353",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchEnabledDescriptionGroundControl": {
+    "source": "41a2d3980c9612907371f501c545c0413ef04d36be810985271c0b0fb3b473bc",
+    "translation": "9c75c40493bfb611d2bbdcc8422ec886de7d162fe532ebdee71c68fdae25f838",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchHandGesturesDescriptionGroundControl": {
+    "source": "f3c4e1674bd8e7ae223bd67795db8ea064b66ac34edf9a8995a751846ba63ff8",
+    "translation": "e668fec934c7122898c27bb3109ff84d4252fdaa9f7f954702ff769df13f65f1",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "visionMatchFeaturesHint": {
+    "source": "6df017b86ef3f40db0349f358f2311088608eb12484ef2b67ffdfd06daccf02b",
+    "translation": "51aee91d4cad7303d6c259e011053e538746da0ae28d5ed797b70fccf0fc1925",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

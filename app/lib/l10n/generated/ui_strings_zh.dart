@@ -8119,8 +8119,8 @@ class UiStringsZh extends UiStrings {
   String get settingGroundControlEnabledTitle => '启用 Ground Control';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      '连接到 Kiosk Satellite Ground Control，它在高性能设备上运行 Voice Match。';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      '连接到 Kiosk Satellite Ground Control，它在高性能设备上运行 Voice Match 和 Vision Match。';
 
   @override
   String get settingGroundControlAddressTitle => '地址';
@@ -8169,17 +8169,31 @@ class UiStringsZh extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition、Trimming 和 Isolation。';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => '启用 Vision Match';
 
   @override
-  String get groundControlVisionMatchDescription => '使用此设备的摄像头进行人脸识别。';
+  String get settingVisionMatchFaceDetectionTitle => '启用人脸检测';
 
   @override
-  String get groundControlComingSoon => '即将推出';
+  String get settingVisionMatchHandGesturesTitle => '启用隔空手势';
+
+  @override
+  String get visionMatchFeaturesHint => '人脸识别与检测、隔空手势和存在检测';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      '人脸识别与检测、隔空手势和存在检测。需要 Ground Control。';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      '在 Ground Control 上运行人脸检测。关闭则在设备上运行。';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      '在 Ground Control 上运行手掌和手指手势检测。关闭则在设备上运行。';
 
   @override
   String get haCustomPages => '自定义网页';
@@ -14891,9 +14905,6 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingTimersDismissAfterDescription => '像点击“关闭”一样清除已结束的计时器。';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>
@@ -24399,8 +24410,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingGroundControlEnabledTitle => '启用 Ground Control';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      '连接到 Kiosk Satellite Ground Control，它在高性能设备上运行 Voice Match。';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      '连接到 Kiosk Satellite Ground Control，它在高性能设备上运行 Voice Match 和 Vision Match。';
 
   @override
   String get settingGroundControlAddressTitle => '地址';
@@ -24449,17 +24460,31 @@ class UiStringsZhCn extends UiStringsZh {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition、Trimming 和 Isolation。';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => '启用 Vision Match';
 
   @override
-  String get groundControlVisionMatchDescription => '使用此设备的摄像头进行人脸识别。';
+  String get settingVisionMatchFaceDetectionTitle => '启用人脸检测';
 
   @override
-  String get groundControlComingSoon => '即将推出';
+  String get settingVisionMatchHandGesturesTitle => '启用隔空手势';
+
+  @override
+  String get visionMatchFeaturesHint => '人脸识别与检测、隔空手势和存在检测';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      '人脸识别与检测、隔空手势和存在检测。需要 Ground Control。';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      '在 Ground Control 上运行人脸检测。关闭则在设备上运行。';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      '在 Ground Control 上运行手掌和手指手势检测。关闭则在设备上运行。';
 
   @override
   String get haCustomPages => '自定义网页';
@@ -31171,9 +31196,6 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingTimersDismissAfterDescription => '像点击“关闭”一样清除已结束的计时器。';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>

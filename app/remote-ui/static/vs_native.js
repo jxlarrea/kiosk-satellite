@@ -32,7 +32,7 @@ const WAKE_ROWS = [
   ['wake_word', 'Wake word 1', 'The word that starts a voice command.'],
   ['wake_word_2', 'Wake word 2', 'A second wake word, answered by Assistant 2.'],
 ];
-const PAGES = ['Wake Word', 'Assistant', 'Realtime', 'Ground Control Voice Match', 'Appearance', 'Conversation', 'Chimes'];
+const PAGES = ['Wake Word', 'Assistant', 'Realtime', 'Appearance', 'Conversation', 'Chimes'];
 
 
 function voiceRow(name, desc, value = '') {

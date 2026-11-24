@@ -641,7 +641,7 @@ export function settingRow(s) {
     return row;
   }
 
-  // People under Answer on the Ground Control Voice Match page, mirroring
+  // People under Answer on Ground Control's Voice Match page, mirroring
   // the device's row: the chosen people by name in a dropdown-style box that
   // opens a checkbox dialog over everyone enrolled. A JSON list of {id, name}.
   if (s.key === 'voice_match.people') {

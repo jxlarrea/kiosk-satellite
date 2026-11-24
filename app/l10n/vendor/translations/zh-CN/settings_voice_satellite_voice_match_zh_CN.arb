@@ -20,7 +20,6 @@
   "voiceMatchAppHint": "人员、声纹录入、会话和设置。",
   "voiceMatchOpen": "打开",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "允许 Ground Control 应用使用此信息亭的麦克风录制某人的声音。信息亭会显示要朗读的文字，或由灯环显示进度。",
-  "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "选择“指定人员”时，会忽略电视、访客和其他所有人。",
   "voiceMatchOptionPeople": "指定人员",
   "settingVoiceMatchPeopleTitle": "人员",

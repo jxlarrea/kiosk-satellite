@@ -320,8 +320,10 @@
   "Not validated": "voiceRealtimeNotValidated",
   "Connection validated": "voiceRealtimeValidated",
   "Wake, done, error and announcement sounds": "voiceChimesSoundsHint",
-  "Ground Control Voice Match": "voiceMatchGroundControlPage",
+  "Voice Match": "settingGroundControlVoiceMatchTitle",
+  "Vision Match": "settingVisionMatchEnabledTitle",
   "Recognition, Trimming and Isolation": "voiceMatchFeaturesHint",
+  "Face recognition, detection, hand gestures and presence detection": "visionMatchFeaturesHint",
   "Connecting": "voiceMatchConnecting",
   "Searching": "voiceMatchSearching",
   "Not reachable": "voiceMatchNotReachable",
@@ -342,8 +344,7 @@
   "Architecture": "groundControlArchitecture",
   "Runs on": "groundControlRunsOn",
   "Features": "groundControlFeatures",
-  "Vision Match": "groundControlVisionMatch",
-  "Facial recognition using this device's camera.": "groundControlVisionMatchDescription",
-  "Coming soon": "groundControlComingSoon",
-  "Ground Control": "settingsMenuGroundControl"
+  "Ground Control": "settingsMenuGroundControl",
+  "Face Detection": "screensaverDetectionFacePage",
+  "Hand Gestures": "gestureHandGestures"
 }

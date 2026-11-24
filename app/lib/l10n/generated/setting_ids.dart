@@ -2846,18 +2846,26 @@ const settingMessageIds = <String, Map<String, String>>{
   },
   "ground_control.enabled": {
     "title": "settingGroundControlEnabledTitle",
-    "description": "settingGroundControlEnabledDescription",
+    "description": "settingGroundControlEnabledDescriptionVisionMatch",
   },
   "ground_control.address": {
     "title": "settingGroundControlAddressTitle",
     "description": "settingGroundControlAddressDescription",
   },
-  "ground_control.voice_match": {
-    "title": "settingGroundControlVoiceMatchTitle",
-    "description": "settingGroundControlVoiceMatchFeaturesDescription",
-  },
   "camera.flashlight": {
     "title": "settingCameraFlashlightTitle",
     "description": "settingCameraFlashlightDescription",
+  },
+  "vision_match.enabled": {
+    "title": "settingVisionMatchEnableTitle",
+    "description": "settingVisionMatchEnabledDescriptionGroundControl",
+  },
+  "vision_match.face_detection": {
+    "title": "settingVisionMatchFaceDetectionTitle",
+    "description": "settingVisionMatchFaceDetectionDescriptionGroundControl",
+  },
+  "vision_match.hand_gestures": {
+    "title": "settingVisionMatchHandGesturesTitle",
+    "description": "settingVisionMatchHandGesturesDescriptionGroundControl",
   },
 };

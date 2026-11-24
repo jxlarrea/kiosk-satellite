@@ -2453,8 +2453,8 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'gestureHoldInstant' => strings.gestureHoldInstant,
       'settingGroundControlEnabledTitle' =>
         strings.settingGroundControlEnabledTitle,
-      'settingGroundControlEnabledDescription' =>
-        strings.settingGroundControlEnabledDescription,
+      'settingGroundControlEnabledDescriptionVisionMatch' =>
+        strings.settingGroundControlEnabledDescriptionVisionMatch,
       'settingGroundControlAddressTitle' =>
         strings.settingGroundControlAddressTitle,
       'settingGroundControlAddressDescription' =>
@@ -2472,12 +2472,20 @@ String messageById(UiStrings strings, String? id, String fallback) =>
       'groundControlFeatures' => strings.groundControlFeatures,
       'settingGroundControlVoiceMatchTitle' =>
         strings.settingGroundControlVoiceMatchTitle,
-      'settingGroundControlVoiceMatchFeaturesDescription' =>
-        strings.settingGroundControlVoiceMatchFeaturesDescription,
-      'groundControlVisionMatch' => strings.groundControlVisionMatch,
-      'groundControlVisionMatchDescription' =>
-        strings.groundControlVisionMatchDescription,
-      'groundControlComingSoon' => strings.groundControlComingSoon,
+      'settingVisionMatchEnabledTitle' =>
+        strings.settingVisionMatchEnabledTitle,
+      'settingVisionMatchEnableTitle' => strings.settingVisionMatchEnableTitle,
+      'settingVisionMatchFaceDetectionTitle' =>
+        strings.settingVisionMatchFaceDetectionTitle,
+      'settingVisionMatchHandGesturesTitle' =>
+        strings.settingVisionMatchHandGesturesTitle,
+      'visionMatchFeaturesHint' => strings.visionMatchFeaturesHint,
+      'settingVisionMatchEnabledDescriptionGroundControl' =>
+        strings.settingVisionMatchEnabledDescriptionGroundControl,
+      'settingVisionMatchFaceDetectionDescriptionGroundControl' =>
+        strings.settingVisionMatchFaceDetectionDescriptionGroundControl,
+      'settingVisionMatchHandGesturesDescriptionGroundControl' =>
+        strings.settingVisionMatchHandGesturesDescriptionGroundControl,
       'haCustomPages' => strings.haCustomPages,
       'haCustomPagesHintDashboard' => strings.haCustomPagesHintDashboard,
       'settingHaCustomPagesSocketTitle' =>
@@ -5442,7 +5450,6 @@ String messageById(UiStrings strings, String? id, String fallback) =>
         strings.settingTimersDismissAfterTitle,
       'settingTimersDismissAfterDescription' =>
         strings.settingTimersDismissAfterDescription,
-      'voiceMatchGroundControlPage' => strings.voiceMatchGroundControlPage,
       'settingVoiceMatchPolicyDescriptionChosen' =>
         strings.settingVoiceMatchPolicyDescriptionChosen,
       'voiceMatchOptionPeople' => strings.voiceMatchOptionPeople,

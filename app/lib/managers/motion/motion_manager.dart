@@ -10,6 +10,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../core/permissions.dart';
 import '../device_camera/native_camera.dart' show snapshotResolution;
+import '../ground_control/vision_match_client.dart';
 import '../device_camera/camera_resolutions.dart';
 import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
@@ -255,7 +256,7 @@ class MotionManager extends Manager {
   /// camera or from a Home Assistant entity. With motion effectively on,
   /// the face leg is idle, which the settings pages say under the switch.
   bool get faceEnabled =>
-      _vision.faces &&
+      _support.faces &&
       !_dismissOnMotion &&
       (_faceSchedulePolicy ?? _settings.get(defs.screensaverDismissOnFace)) &&
       _settings.get(defs.cameraEnabled);
@@ -266,7 +267,7 @@ class MotionManager extends Manager {
   /// schedule overrides, and the same precedence: Dismiss on motion on
   /// means the face legs are idle, this one included.
   bool get _postponeFaceEnabled =>
-      _vision.faces &&
+      _support.faces &&
       _settings.get(defs.screensaverPostponeOnFace) &&
       _settings.get(defs.screensaverDismissOnFace) &&
       !_settings.get(defs.screensaverDismissOnMotion) &&
@@ -278,7 +279,7 @@ class MotionManager extends Manager {
   /// Disable Gestures). Screen-on is applied where the leg is consulted,
   /// like the postpone legs: nobody raises a hand at a dark panel.
   bool get palmEnabled =>
-      _vision.hands &&
+      _support.hands &&
       hasFingersTrigger(
         decodeGestureMappings(_settings.get(defs.gestureMappings)),
       ) &&
@@ -333,8 +334,13 @@ class MotionManager extends Manager {
   bool _handTesting = false;
   bool get handTesting => _handTesting;
   bool get _handTestWanted =>
-      _handTesting && _vision.hands && _settings.get(defs.cameraEnabled);
+      _handTesting && _support.hands && _settings.get(defs.cameraEnabled);
   bool get _wantPalms => (palmEnabled || _handTestWanted) && _screenOn;
+
+  /// A session that looks for faces or hands looks through Ground Control
+  /// when Vision Match is on.
+  bool get _wantRemoteFaces => _remoteFaces && _wantFaces;
+  bool get _wantRemoteHands => _remoteHands && _wantPalms;
 
   /// The plugin holding the camera (the SDK's openCamera): the analysis
   /// size and lens it asked for, and who hears when the camera goes. It
@@ -480,6 +486,41 @@ class MotionManager extends Manager {
   /// so a device without a runtime never binds the camera for a leg
   /// that cannot see, and never prompts for the camera over it either.
   VisionSupport _vision = VisionSupport.unknown;
+
+  /// Vision Match: a feature on Ground Control works here whether or not
+  /// its on-device runtime can load.
+  bool get _visionMatch =>
+      _settings.get(defs.visionMatchEnabled) &&
+      _settings.get(defs.groundControlEnabled);
+  bool get _remoteFaces =>
+      _visionMatch && _settings.get(defs.visionMatchFaceDetection);
+  bool get _remoteHands =>
+      _visionMatch && _settings.get(defs.visionMatchHandGestures);
+  VisionSupport get _support => VisionSupport(
+    faces: _remoteFaces || _vision.faces,
+    hands: _remoteHands || _vision.hands,
+    hint: _vision.hint,
+  );
+
+  /// What the running session was bound with: which looks go to Ground
+  /// Control.
+  bool _streamRemoteFaces = false;
+  bool _streamRemoteHands = false;
+  bool get _streamRemoteVision => _streamRemoteFaces || _streamRemoteHands;
+
+  /// Ground Control's address and this kiosk's ticket, from the control
+  /// connection (null while it isn't connected or approved).
+  String? _groundControlUrl;
+  String? _groundControlTicket;
+
+  /// The vision socket of the running session, and the timer that opens a
+  /// new one after one went.
+  VisionMatchSocket? _visionSocket;
+  Timer? _visionRetry;
+  int _visionRetrySeconds = 5;
+
+  /// Said once per outage: looks are waiting for Ground Control.
+  bool _visionDownSaid = false;
   bool _warnedFaces = false;
   bool _warnedHands = false;
 
@@ -490,7 +531,7 @@ class MotionManager extends Manager {
   void _warnUnsupported() {
     final hint = _vision.hint ?? 'Not available on this device.';
     final cameraOn = _settings.get(defs.cameraEnabled);
-    if (!_vision.faces &&
+    if (!_support.faces &&
         !_warnedFaces &&
         cameraOn &&
         _settings.get(defs.screensaverDismissOnFace)) {
@@ -501,7 +542,7 @@ class MotionManager extends Manager {
         'stays idle',
       );
     }
-    if (!_vision.hands &&
+    if (!_support.hands &&
         !_warnedHands &&
         cameraOn &&
         hasFingersTrigger(
@@ -588,6 +629,13 @@ class MotionManager extends Manager {
     // display: the change the camera is about to see is self-inflicted
     // (see _selfLightQuiet), the loop being a screensaver whose own dark
     // background reads as motion and dismisses it instantly.
+    bus.on<GroundControlServiceChanged>().listen((e) {
+      final changed =
+          e.baseUrl != _groundControlUrl || e.ticket != _groundControlTicket;
+      _groundControlUrl = e.baseUrl;
+      _groundControlTicket = e.ticket;
+      if (changed && _camera != null && _streamRemoteVision) _openVision();
+    });
     bus.on<ScreensaverStateChanged>().listen((e) {
       _selfLit();
       _screensaverActive = e.active;
@@ -672,6 +720,11 @@ class MotionManager extends Manager {
           e.key == defs.motionUseEntity.key ||
           e.key == defs.screensaverEnabled.key ||
           e.key == defs.cameraEnabled.key ||
+          // Vision Match moves the looks to Ground Control and back.
+          e.key == defs.visionMatchEnabled.key ||
+          e.key == defs.visionMatchFaceDetection.key ||
+          e.key == defs.visionMatchHandGestures.key ||
+          e.key == defs.groundControlEnabled.key ||
           // The hand leg's gates: the mappings themselves and the
           // gesture suppressions.
           e.key == defs.gestureMappings.key ||
@@ -833,6 +886,8 @@ class MotionManager extends Manager {
         (_streamMotion != _wantMotion ||
             _streamFaces != _wantFaces ||
             _streamPalms != _wantPalms ||
+            _streamRemoteFaces != _wantRemoteFaces ||
+            _streamRemoteHands != _wantRemoteHands ||
             _streamPreview != _wantPreview ||
             _streamRtsp != _rtspDemand ||
             !mapEquals(_streamIntercom, _intercomVideo) ||
@@ -880,6 +935,8 @@ class MotionManager extends Manager {
       final motion = _wantMotion;
       final faces = _wantFaces;
       final palms = _wantPalms;
+      final remoteFaces = faces && _remoteFaces;
+      final remoteHands = palms && _remoteHands;
       final preview = _wantPreview;
       final faceMinWidth = faceMinWidthFor(
         _settings.get(defs.faceSensitivity).toInt(),
@@ -887,6 +944,8 @@ class MotionManager extends Manager {
       _streamMotion = motion;
       _streamFaces = faces;
       _streamPalms = palms;
+      _streamRemoteFaces = remoteFaces;
+      _streamRemoteHands = remoteHands;
       _streamPreview = preview;
       _streamRtsp = _rtspDemand;
       _streamIntercom = _intercomVideo;
@@ -898,11 +957,14 @@ class MotionManager extends Manager {
         '${startDelay > 0 ? ' delay=${startDelay}s' : ''}'
         '${faces ? ' faces>=${(faceMinWidth * 100).round()}%' : ''}'
         '${palms ? ' hands' : ''}'
+        '${remoteFaces ? ' faces on Ground Control' : ''}'
+        '${remoteHands ? ' hands on Ground Control' : ''}'
         '${preview ? ' preview' : ''}'
         '${plugin == null ? '' : ' plugin ${plugin.width}x${plugin.height}'}'
         '${motion ? '' : ' motion off'}'
         '${_boundBlind ? ', panel off: restart on wake unless frames flow' : ''})',
       );
+      if (remoteFaces || remoteHands) _openVision();
       _camera =
           NativeMotion.stream(
             fps: fps,
@@ -915,6 +977,8 @@ class MotionManager extends Manager {
             faces: faces,
             faceMinWidth: faceMinWidth,
             fingers: palms,
+            remoteFaces: remoteFaces,
+            remoteHands: remoteHands,
             paused: _voiceTurn,
             preview: preview,
             rtsp: _streamRtsp,
@@ -928,6 +992,12 @@ class MotionManager extends Manager {
               // accumulated rebind backoff and any blind-bind suspicion.
               _retryDelay = _retryFloor;
               _boundBlind = false;
+              // A frame for Ground Control (Vision Match): every look gets
+              // an answer, a failed one during a voice turn.
+              if (tick.isVision) {
+                _sendVision(tick.vision!);
+                return;
+              }
               // The native side emits nothing during a voice interaction;
               // this catches what was already on its way across.
               if (_voiceTurn) {
@@ -1027,6 +1097,7 @@ class MotionManager extends Manager {
     final dead = _camera;
     if (dead == null) return;
     _camera = null;
+    _closeVision();
     unawaited(dead.cancel());
     if (detached || !_shouldRun) return;
     if (!_screenOn) {
@@ -1044,6 +1115,108 @@ class MotionManager extends Manager {
     });
   }
 
+  /// Vision Match: open the running session's vision socket. Without an
+  /// address or a ticket yet, the control connection's next change opens
+  /// it (see the GroundControlServiceChanged listener).
+  void _openVision() {
+    _visionRetry?.cancel();
+    _visionRetry = null;
+    unawaited(_visionSocket?.close());
+    _visionSocket = null;
+    final url = _groundControlUrl;
+    if (url == null || url.isEmpty) return;
+    final s = _settings;
+    final deviceName = s.get(defs.deviceName).trim();
+    late final VisionMatchSocket socket;
+    socket = VisionMatchSocket.open(
+      baseUrl: url,
+      token: s.get(defs.haToken),
+      ticket: _groundControlTicket,
+      deviceId: defs.groundControlDeviceId(
+        s.get(defs.deviceHostname),
+        deviceName,
+        s.get(defs.fleetId),
+      ),
+      deviceName: deviceName,
+      want: [if (_streamRemoteFaces) 'face', if (_streamRemoteHands) 'hands'],
+      onReady: (face, hands) {
+        _visionRetrySeconds = 5;
+        if (_visionDownSaid) {
+          log.info(name, 'Ground Control is answering vision looks again');
+        }
+        _visionDownSaid = false;
+        log.info(
+          name,
+          'vision on Ground Control: $face face and $hands hand looks a '
+          'second',
+        );
+        unawaited(_native(() => NativeMotion.visionReady(face, hands)));
+      },
+      onResult: (answer) =>
+          unawaited(_native(() => NativeMotion.visionResult(answer))),
+      onLost: () {
+        if (!identical(_visionSocket, socket)) return;
+        _visionSocket = null;
+        _visionDown('the vision socket closed');
+        if (_camera == null || !_streamRemoteVision) return;
+        _visionRetry = Timer(Duration(seconds: _visionRetrySeconds), () {
+          _visionRetry = null;
+          if (_camera != null && _streamRemoteVision) _openVision();
+        });
+        _visionRetrySeconds = (_visionRetrySeconds * 2).clamp(5, 60);
+      },
+      log: (line) => log.info(name, line),
+    );
+    _visionSocket = socket;
+  }
+
+  void _closeVision() {
+    _visionRetry?.cancel();
+    _visionRetry = null;
+    unawaited(_visionSocket?.close());
+    _visionSocket = null;
+  }
+
+  /// One look off the analyzer: to Ground Control, or answered as failed
+  /// right away when it can't go, so the analyzer can send the next one.
+  void _sendVision(VisionLook look) {
+    final socket = _visionSocket;
+    final sent =
+        !_voiceTurn &&
+        socket != null &&
+        socket.send(
+          id: look.id,
+          rotation: look.rotation,
+          want: look.want,
+          jpeg: look.jpeg,
+        );
+    if (sent) return;
+    if (!_voiceTurn) _visionDown('not connected to Ground Control');
+    unawaited(
+      _native(() => NativeMotion.visionResult({'id': look.id, 'failed': true})),
+    );
+  }
+
+  /// Once per outage: no fallback to the models on this device, so the
+  /// face and hand looks wait for Ground Control.
+  void _visionDown(String why) {
+    if (_visionDownSaid) return;
+    _visionDownSaid = true;
+    log.warn(
+      name,
+      'Ground Control is not answering vision looks ($why); face and hand '
+      'looks wait for it',
+    );
+  }
+
+  /// A native call that must never take the manager down (no plugin in
+  /// tests, an Activity going away).
+  Future<void> _native(Future<void> Function() call) async {
+    try {
+      await call();
+    } catch (_) {}
+  }
+
   void _stop() {
     _retry?.cancel();
     _retry = null;
@@ -1054,6 +1227,7 @@ class MotionManager extends Manager {
     // does the tester's reading: the hand it described is unseen now.
     _endPreview();
     handTest.value = null;
+    _closeVision();
     if (_camera == null) return;
     bus.publish(const PalmDetected(hands: 0, fingers: null));
     _camera!.cancel();

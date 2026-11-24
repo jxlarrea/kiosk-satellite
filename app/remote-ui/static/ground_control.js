@@ -8,7 +8,6 @@ import { cmd, state } from './core.js';
 import { cachedList, pickItems } from './entity_picker.js';
 import { readOnlyRow } from './device.js';
 import { watchUpdates } from './live.js';
-import { isHeadless } from './headless.js';
 
 function statusWord(row, text, color) {
   const span = row.lastElementChild;
@@ -20,6 +19,8 @@ async function paint(tab) {
   const gen = (tab._gcGen || 0) + 1;
   tab._gcGen = gen;
   const enabledRow = tab.querySelector('[data-key="ground_control.enabled"]');
+  // Under the switch and the address it uses, as on the device.
+  const anchorRow = tab.querySelector('[data-key="ground_control.address"]') || enabledRow;
   let status = {};
   try {
     const r = await cmd('groundControlStatus', {});
@@ -43,7 +44,7 @@ async function paint(tab) {
   const row = readOnlyRow(voiceText('Ground Control'), detail, '', false);
   statusWord(row, voiceText(word), color);
   row.classList.add('gc-status');
-  enabledRow.after(row);
+  anchorRow.after(row);
   if (!status.appUrl) return;
   const app = readOnlyRow(voiceText('Ground Control app'), voiceText('People, enrollment, sessions and settings.'), '', false);
   app.classList.add('gc-status');
@@ -72,24 +73,9 @@ async function paint(tab) {
   }
 }
 
-/* Under Features, after Voice Match: Vision Match, coming soon, as on
-   the device (GroundControlComingSoonRow). A device without a screen has
-   no camera to watch, so it shows Voice Match only. */
-function comingSoon(tab) {
-  tab.querySelectorAll('.gc-soon').forEach((r) => r.remove());
-  const link = tab.querySelector('[data-key="ground_control.voice_match"]');
-  if (!link || isHeadless()) return;
-  const row = readOnlyRow(voiceText('Vision Match'),
-    voiceText("Facial recognition using this device's camera."), '', false);
-  statusWord(row, voiceText('Coming soon'), 'var(--muted)');
-  row.classList.add('gc-soon');
-  link.after(row);
-}
-
 /* Called after every render of the Ground Control tab. */
 export function renderGroundControl(tab) {
   if (!tab) return;
-  comingSoon(tab);
   paint(tab);
   if (!tab._gcWatch) {
     tab._gcWatch = watchUpdates(['ground-control'], () => paint(tab), { owner: tab });

@@ -153,11 +153,27 @@ class DeviceCameraManager extends Manager {
   /// on a guess.
   VisionSupport? _vision;
 
-  Future<VisionSupport> visionSupport() async =>
-      _vision ??= await VisionSupport.probe();
+  Future<VisionSupport> visionSupport() async {
+    final probed = _vision ??= await VisionSupport.probe();
+    return VisionSupport(
+      faces: _remoteFaces || probed.faces,
+      hands: _remoteHands || probed.hands,
+      hint: probed.hint,
+    );
+  }
 
-  bool get facesKnownUnsupported => _vision?.faces == false;
-  bool get handsKnownUnsupported => _vision?.hands == false;
+  /// Vision Match: a feature on Ground Control works here whether or not
+  /// its runtime can load.
+  bool get _visionMatch =>
+      _settings.get(defs.visionMatchEnabled) &&
+      _settings.get(defs.groundControlEnabled);
+  bool get _remoteFaces =>
+      _visionMatch && _settings.get(defs.visionMatchFaceDetection);
+  bool get _remoteHands =>
+      _visionMatch && _settings.get(defs.visionMatchHandGestures);
+
+  bool get facesKnownUnsupported => !_remoteFaces && _vision?.faces == false;
+  bool get handsKnownUnsupported => !_remoteHands && _vision?.hands == false;
 
   /// The reason to show under a disabled face or hand row.
   String? get visionHint => _vision?.hint;

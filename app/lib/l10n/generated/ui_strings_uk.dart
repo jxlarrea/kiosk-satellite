@@ -8541,8 +8541,8 @@ class UiStringsUk extends UiStrings {
   String get settingGroundControlEnabledTitle => 'Увімкнути Ground Control';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      'Підключитися до Kiosk Satellite Ground Control, який запускає Voice Match на потужному комп\'ютері.';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      'Підключитися до Kiosk Satellite Ground Control, який запускає Voice Match і Vision Match на потужному комп\'ютері.';
 
   @override
   String get settingGroundControlAddressTitle => 'Адреса';
@@ -8591,18 +8591,33 @@ class UiStringsUk extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition, Trimming і Isolation.';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => 'Увімкнути Vision Match';
 
   @override
-  String get groundControlVisionMatchDescription =>
-      'Розпізнавання облич за допомогою камери цього пристрою.';
+  String get settingVisionMatchFaceDetectionTitle =>
+      'Увімкнути розпізнавання обличчя';
 
   @override
-  String get groundControlComingSoon => 'Незабаром';
+  String get settingVisionMatchHandGesturesTitle => 'Увімкнути жести руками';
+
+  @override
+  String get visionMatchFeaturesHint =>
+      'Розпізнавання та виявлення облич, жести руками та виявлення присутності';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      'Розпізнавання та виявлення облич, жести руками та виявлення присутності. Потрібен Ground Control.';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      'Виконувати розпізнавання обличчя на Ground Control. Вимкніть, щоб виконувати на пристрої.';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      'Виконувати розпізнавання жестів долонею та пальцями на Ground Control. Вимкніть, щоб виконувати на пристрої.';
 
   @override
   String get haCustomPages => 'Власні сторінки';
@@ -15873,9 +15888,6 @@ class UiStringsUk extends UiStrings {
   @override
   String get settingTimersDismissAfterDescription =>
       'Закриває завершений таймер, ніби торкнулися «Закрити».';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>

@@ -20,7 +20,6 @@
   "voiceMatchAppHint": "Personas, registro de voz, sesiones y ajustes.",
   "voiceMatchOpen": "Abrir",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Permite que la app Ground Control grabe la voz de una persona con el micrófono de este kiosco. El kiosco muestra el texto a leer o el anillo de luz muestra el progreso.",
-  "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "Con Personas elegidas se ignoran la tele, los invitados y todos los demás.",
   "voiceMatchOptionPeople": "Personas elegidas",
   "settingVoiceMatchPeopleTitle": "Personas",

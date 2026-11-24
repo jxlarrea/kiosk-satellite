@@ -1,6 +1,6 @@
 # Voice Match
 
-Navigate to **Settings > Voice Satellite > Ground Control Voice Match**.
+Navigate to **Settings > Ground Control > Voice Match**.
 
 Voice Match has three features:
 

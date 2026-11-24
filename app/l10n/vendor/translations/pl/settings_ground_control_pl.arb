@@ -1,7 +1,7 @@
 {
   "@@locale": "pl",
   "settingGroundControlEnabledTitle": "Włącz Ground Control",
-  "settingGroundControlEnabledDescription": "Połącz z Kiosk Satellite Ground Control, aby uruchamiać Voice Match na wydajnym komputerze.",
+  "settingGroundControlEnabledDescriptionVisionMatch": "Połącz z Kiosk Satellite Ground Control, aby uruchamiać Voice Match i Vision Match na wydajnym komputerze.",
   "settingGroundControlAddressTitle": "Adres",
   "settingGroundControlAddressDescription": "Pozostaw puste, aby wyszukać Ground Control w sieci. Wpisz adres, jeśli Ground Control działa w innej sieci.",
   "groundControlLooking": "Wyszukiwanie Ground Control w sieci.",
@@ -14,10 +14,14 @@
   "groundControlApp": "Aplikacja Ground Control",
   "groundControlFeatures": "Funkcje",
   "settingGroundControlVoiceMatchTitle": "Voice Match",
-  "settingGroundControlVoiceMatchFeaturesDescription": "Recognition, Trimming i Isolation.",
-  "groundControlVisionMatch": "Vision Match",
-  "groundControlVisionMatchDescription": "Rozpoznawanie twarzy za pomocą kamery tego urządzenia.",
-  "groundControlComingSoon": "Wkrótce",
+  "settingVisionMatchEnabledTitle": "Vision Match",
+  "settingVisionMatchEnableTitle": "Włącz Vision Match",
+  "settingVisionMatchFaceDetectionTitle": "Włącz wykrywanie twarzy",
+  "settingVisionMatchHandGesturesTitle": "Włącz gesty dłonią",
+  "visionMatchFeaturesHint": "Rozpoznawanie i wykrywanie twarzy, gesty dłonią i wykrywanie obecności",
+  "settingVisionMatchEnabledDescriptionGroundControl": "Rozpoznawanie i wykrywanie twarzy, gesty dłonią i wykrywanie obecności. Wymaga Ground Control.",
+  "settingVisionMatchFaceDetectionDescriptionGroundControl": "Uruchamiaj wykrywanie twarzy na Ground Control. Wyłącz, aby uruchamiać na urządzeniu.",
+  "settingVisionMatchHandGesturesDescriptionGroundControl": "Uruchamiaj wykrywanie gestów dłoni i palców na Ground Control. Wyłącz, aby uruchamiać na urządzeniu.",
   "groundControlArchitecture": "Architektura",
   "groundControlRunsOn": "Działa na"
 }

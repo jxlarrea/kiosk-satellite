@@ -77,16 +77,22 @@ void main() {
     expect(hidden, isNot(contains(defs.alarmsVolume.key)));
   });
 
-  test('Ground Control keeps Voice Match under Features, menu links go', () {
-    final hidden = defs.deviceHiddenKeys;
-    expect(hidden, isNot(contains(defs.groundControlVoiceMatch.key)));
-    expect(hidden, isNot(contains(defs.voiceMatchEnabled.key)));
-    for (final def in defs.allSettings) {
-      if (def.linksTo == defs.uiDrawerItems.key) {
-        expect(hidden, contains(def.key), reason: def.key);
+  test(
+    'Ground Control keeps Voice Match and drops Vision Match, menu links go',
+    () {
+      final hidden = defs.deviceHiddenKeys;
+      expect(hidden, isNot(contains(defs.voiceMatchEnabled.key)));
+      // Vision Match works on the camera's frames: none without a screen.
+      expect(hidden, contains(defs.visionMatchEnabled.key));
+      expect(hidden, contains(defs.visionMatchFaceDetection.key));
+      expect(hidden, contains(defs.visionMatchHandGestures.key));
+      for (final def in defs.allSettings) {
+        if (def.linksTo == defs.uiDrawerItems.key) {
+          expect(hidden, contains(def.key), reason: def.key);
+        }
       }
-    }
-  });
+    },
+  );
 
   test('the Timers page keeps only what works without a screen', () {
     final hidden = defs.deviceHiddenKeys;

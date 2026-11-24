@@ -20,7 +20,6 @@
   "voiceMatchAppHint": "Personen, inschrijven, sessies en instellingen.",
   "voiceMatchOpen": "Openen",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Laat de Ground Control app iemands stem opnemen met de microfoon van deze kiosk. De kiosk toont de tekst om voor te lezen of de lichtring toont de voortgang.",
-  "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "Met Gekozen personen worden de tv, gasten en alle anderen genegeerd.",
   "voiceMatchOptionPeople": "Gekozen personen",
   "settingVoiceMatchPeopleTitle": "Personen",

@@ -35,6 +35,20 @@ class NativeMotion {
   /// where the plugin is missing; callers treat that as best effort.
   static Future<void> release() => _control.invokeMethod<void>('release');
 
+  /// Vision Match: Ground Control's vision socket is ready and keeps up
+  /// with [face] face looks and [hands] hand looks a second (null when it
+  /// didn't say). The analyzer paces its looks to them. Throws where the
+  /// plugin is missing; callers treat that as best effort.
+  static Future<void> visionReady(double? face, double? hands) => _control
+      .invokeMethod<void>('visionReady', {'face': face, 'hands': hands});
+
+  /// Vision Match: Ground Control's answer to a look ([VisionLook.id]):
+  /// `faces` and `hand` as the vision socket sent them, or `failed: true`
+  /// when the look got no answer. Throws where the plugin is missing;
+  /// callers treat that as best effort.
+  static Future<void> visionResult(Map<String, Object?> answer) =>
+      _control.invokeMethod<void>('visionResult', answer);
+
   static Stream<NativeMotionTick> stream({
     required double fps,
     required int sensitivity,
@@ -46,6 +60,8 @@ class NativeMotion {
     bool faces = false,
     double faceMinWidth = 0.1,
     bool fingers = false,
+    bool remoteFaces = false,
+    bool remoteHands = false,
     bool paused = false,
     bool preview = false,
     bool rtsp = false,
@@ -77,6 +93,11 @@ class NativeMotion {
           // Hands (the Show fingers gesture): found, confirmed and counted
           // natively, reported as a hand count and a finger count.
           'fingers': fingers,
+          // Vision Match: the face looks, the hand looks or both go to
+          // Ground Control. The native side hands each due frame over as a
+          // vision tick instead of running its own models for them.
+          'remoteFaces': remoteFaces,
+          'remoteHands': remoteHands,
           // Whether a voice interaction is running as the session starts
           // (see [setPaused]): the flag rides the bind too, so a session
           // rebound mid-turn, on a native side recreated with the
@@ -109,6 +130,7 @@ class NativeMotionTick {
     this.fingers, {
     this.fingersUp,
     this.preview,
+    this.vision,
   });
 
   /// Extended fingers on the largest hand, when the landmark stage judged
@@ -126,9 +148,13 @@ class NativeMotionTick {
   /// A camera preview frame (see [NativeMotion.showPreview]).
   final FacePreviewFrame? preview;
 
+  /// A frame for Ground Control to look at (Vision Match).
+  final VisionLook? vision;
+
   bool get isFace => faceWidth != null;
   bool get isPalms => palms != null;
   bool get isPreview => preview != null;
+  bool get isVision => vision != null;
 
   /// Anything that is not a face sighting, a hand report or a preview
   /// frame is a motion tick, which keeps the wire compatible with the
@@ -152,6 +178,23 @@ class NativeMotionTick {
               : null,
         );
       }
+      final vision = raw['vision'];
+      final id = raw['id'];
+      if (vision is Uint8List && id is num) {
+        final rotation = raw['rotation'];
+        final want = raw['want'];
+        return NativeMotionTick._(
+          null,
+          null,
+          null,
+          vision: VisionLook(
+            id: id.toInt(),
+            jpeg: vision,
+            rotation: rotation is num ? rotation.toInt() : 0,
+            want: want is List ? want.whereType<String>().toList() : const [],
+          ),
+        );
+      }
       final preview = raw['preview'];
       if (preview is Uint8List) {
         final rotation = raw['rotation'];
@@ -169,6 +212,24 @@ class NativeMotionTick {
     }
     return const NativeMotionTick._(null, null, null);
   }
+}
+
+/// A frame the analyzer wants Ground Control to look at (Vision Match): a
+/// JPEG of the analysis frame as the sensor delivered it, the clockwise
+/// rotation that turns it upright and what to look for (`face`, `hands`).
+/// Every look must be answered with [NativeMotion.visionResult].
+class VisionLook {
+  const VisionLook({
+    required this.id,
+    required this.jpeg,
+    required this.rotation,
+    required this.want,
+  });
+
+  final int id;
+  final Uint8List jpeg;
+  final int rotation;
+  final List<String> want;
 }
 
 /// One frame of the camera preview (discussion #371), as the native side

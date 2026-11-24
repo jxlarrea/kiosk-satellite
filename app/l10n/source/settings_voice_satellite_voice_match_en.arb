@@ -1,18 +1,5 @@
 {
   "@@locale": "en",
-  "voiceMatchGroundControlPage": "Ground Control Voice Match",
-  "@voiceMatchGroundControlPage": {
-    "context": "Settings > Voice Satellite > Ground Control Voice Match",
-    "description": "Translate the visible label or help. Keep Voice Match, Voice Satellite, Kiosk Satellite, Home Assistant and ESPHome unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Voice Satellite > Ground Control Voice Match"
-      ],
-      "remoteAdmin": [
-        "Voice Satellite > Ground Control Voice Match"
-      ]
-    }
-  },
   "settingVoiceMatchPolicyDescriptionChosen": "Chosen people ignores the TV, guests and everyone else.",
   "@settingVoiceMatchPolicyDescriptionChosen": {
     "context": "Settings > Voice Satellite > Ground Control Voice Match",

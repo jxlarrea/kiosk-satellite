@@ -8525,8 +8525,8 @@ class UiStringsRu extends UiStrings {
   String get settingGroundControlEnabledTitle => 'Включить Ground Control';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      'Подключиться к Kiosk Satellite Ground Control, который запускает Voice Match на мощном компьютере.';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      'Подключиться к Kiosk Satellite Ground Control, который запускает Voice Match и Vision Match на мощном компьютере.';
 
   @override
   String get settingGroundControlAddressTitle => 'Адрес';
@@ -8575,18 +8575,33 @@ class UiStringsRu extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition, Trimming и Isolation.';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => 'Включить Vision Match';
 
   @override
-  String get groundControlVisionMatchDescription =>
-      'Распознавание лиц с помощью камеры этого устройства.';
+  String get settingVisionMatchFaceDetectionTitle =>
+      'Включить определение лица';
 
   @override
-  String get groundControlComingSoon => 'Скоро';
+  String get settingVisionMatchHandGesturesTitle => 'Включить жесты рукой';
+
+  @override
+  String get visionMatchFeaturesHint =>
+      'Распознавание и определение лиц, жесты рукой и определение присутствия';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      'Распознавание и определение лиц, жесты рукой и определение присутствия. Нужен Ground Control.';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      'Выполнять определение лица на Ground Control. Выключите, чтобы выполнять на устройстве.';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      'Выполнять определение жестов ладонью и пальцами на Ground Control. Выключите, чтобы выполнять на устройстве.';
 
   @override
   String get haCustomPages => 'Свои страницы';
@@ -15810,9 +15825,6 @@ class UiStringsRu extends UiStrings {
   @override
   String get settingTimersDismissAfterDescription =>
       'Скрывает завершённый таймер, как будто нажали «Скрыть».';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>

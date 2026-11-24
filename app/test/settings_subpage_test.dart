@@ -23,7 +23,7 @@ void main() {
   }
 
   test(
-    'the Voice Match settings are on the Ground Control Voice Match page, right after Realtime',
+    'the Voice Match settings are on the Voice Match page under Ground Control',
     () {
       final vm = [
         for (final d in defs.allSettings)
@@ -41,8 +41,8 @@ void main() {
         'voice_match.isolation',
       ]);
       for (final d in vm) {
-        expect(d.category, 'Voice Satellite', reason: d.key);
-        expect(d.subpage, 'Ground Control Voice Match', reason: d.key);
+        expect(d.category, 'Ground Control', reason: d.key);
+        expect(d.subpage, 'Voice Match', reason: d.key);
       }
       // Grouped by the Voice Match features, as in Ground Control.
       expect(
@@ -84,20 +84,27 @@ void main() {
       )) {
         expect(d.dependsOn, 'voice_match.enabled', reason: d.key);
       }
-      // Entry rows follow allSettings: Voice Match comes after Realtime.
+      // Entry rows follow allSettings: Voice Match, then Vision Match.
       final pages = <String>[];
       for (final d in defs.allSettings) {
-        if (d.category == 'Voice Satellite' &&
+        if (d.category == 'Ground Control' &&
             d.subpage != null &&
             !pages.contains(d.subpage)) {
           pages.add(d.subpage!);
         }
       }
+      expect(pages, ['Voice Match', 'Vision Match']);
+      expect(defs.subpageHints['Voice Match'], isNotEmpty);
+      expect(defs.subpageHints['Vision Match'], isNotEmpty);
+      // Nothing about Voice Match is left on the Voice Satellite pages.
       expect(
-        pages.indexOf('Ground Control Voice Match'),
-        pages.indexOf('Realtime') + 1,
+        defs.allSettings.where(
+          (d) =>
+              d.category == 'Voice Satellite' &&
+              d.key.startsWith('voice_match.'),
+        ),
+        isEmpty,
       );
-      expect(defs.subpageHints['Ground Control Voice Match'], isNotEmpty);
     },
   );
 
@@ -123,19 +130,18 @@ void main() {
     expect(gc.map((d) => d.key), [
       'ground_control.enabled',
       'ground_control.address',
-      'ground_control.voice_match',
     ]);
     for (final d in gc) {
       expect(d.category, 'Ground Control', reason: d.key);
       expect(d.subpage, isNull, reason: d.key);
     }
     expect(defs.groundControlAddress.dependsOn, 'ground_control.enabled');
-    // Features, after Connection: Voice Match opens its page under Voice
-    // Satellite, at its switch.
-    expect(defs.groundControlAddress.section, 'Connection');
-    expect(defs.groundControlVoiceMatch.section, 'Features');
-    expect(defs.groundControlVoiceMatch.linksTo, defs.voiceMatchEnabled.key);
-    expect(defs.voiceMatchEnabled.subpage, 'Ground Control Voice Match');
+    // The address sits with the switch, then the feature pages: Voice
+    // Match and Vision Match.
+    expect(defs.groundControlAddress.section, isNull);
+    expect(defs.voiceMatchEnabled.subpage, 'Voice Match');
+    expect(defs.visionMatchEnabled.subpage, 'Vision Match');
+    expect(defs.visionMatchEnabled.category, 'Ground Control');
     // Nothing on the Voice Match page still connects to the service.
     expect(
       defs.allSettings.where((d) => d.key == 'voice_match.address'),

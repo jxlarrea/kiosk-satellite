@@ -8470,8 +8470,8 @@ class UiStringsEn extends UiStrings {
   String get settingGroundControlEnabledTitle => 'Enable Ground Control';
 
   @override
-  String get settingGroundControlEnabledDescription =>
-      'Connect to Kiosk Satellite Ground Control, which runs Voice Match on a capable machine.';
+  String get settingGroundControlEnabledDescriptionVisionMatch =>
+      'Connect to Kiosk Satellite Ground Control, which runs Voice Match and Vision Match on a capable machine.';
 
   @override
   String get settingGroundControlAddressTitle => 'Address';
@@ -8521,18 +8521,32 @@ class UiStringsEn extends UiStrings {
   String get settingGroundControlVoiceMatchTitle => 'Voice Match';
 
   @override
-  String get settingGroundControlVoiceMatchFeaturesDescription =>
-      'Recognition, Trimming and Isolation.';
+  String get settingVisionMatchEnabledTitle => 'Vision Match';
 
   @override
-  String get groundControlVisionMatch => 'Vision Match';
+  String get settingVisionMatchEnableTitle => 'Enable Vision Match';
 
   @override
-  String get groundControlVisionMatchDescription =>
-      'Facial recognition using this device\'s camera.';
+  String get settingVisionMatchFaceDetectionTitle => 'Enable Face Detection';
 
   @override
-  String get groundControlComingSoon => 'Coming soon';
+  String get settingVisionMatchHandGesturesTitle => 'Enable Hand Gestures';
+
+  @override
+  String get visionMatchFeaturesHint =>
+      'Face recognition, detection, hand gestures and presence detection';
+
+  @override
+  String get settingVisionMatchEnabledDescriptionGroundControl =>
+      'Face recognition, detection, hand gestures and presence detection. Needs Ground Control.';
+
+  @override
+  String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
+      'Run face detection on Ground Control. Disable to run on-device.';
+
+  @override
+  String get settingVisionMatchHandGesturesDescriptionGroundControl =>
+      'Run palm and fingers gestures detection on Ground Control. Disable to run on-device.';
 
   @override
   String get haCustomPages => 'Custom Pages';
@@ -15712,9 +15726,6 @@ class UiStringsEn extends UiStrings {
   @override
   String get settingTimersDismissAfterDescription =>
       'Clears a finished timer as if Dismiss was tapped.';
-
-  @override
-  String get voiceMatchGroundControlPage => 'Ground Control Voice Match';
 
   @override
   String get settingVoiceMatchPolicyDescriptionChosen =>

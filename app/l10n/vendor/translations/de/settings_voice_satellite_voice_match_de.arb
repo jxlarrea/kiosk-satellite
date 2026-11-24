@@ -20,7 +20,6 @@
   "voiceMatchAppHint": "Personen, Einlernen, Sitzungen und Einstellungen.",
   "voiceMatchOpen": "Öffnen",
   "settingVoiceMatchAllowEnrollDescriptionGroundControl": "Erlaubt der Ground Control App, die Stimme einer Person mit dem Mikrofon dieses Kiosks aufzunehmen. Der Kiosk zeigt den Text zum Vorlesen oder der Lichtring zeigt den Fortschritt.",
-  "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "Mit Ausgewählte Personen werden der Fernseher, Gäste und alle anderen ignoriert.",
   "voiceMatchOptionPeople": "Ausgewählte Personen",
   "settingVoiceMatchPeopleTitle": "Personen",

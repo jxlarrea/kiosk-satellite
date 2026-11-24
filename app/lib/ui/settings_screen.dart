@@ -184,6 +184,7 @@ List<Widget> _sectionedCards(
                   def.category == 'Home Assistant' ||
                   def.category == 'Screen & Audio' ||
                   def.category == 'Screensaver' ||
+                  def.category == 'Ground Control' ||
                   def.category == 'Voice Satellite' ||
                   def.category == 'Timers' ||
                   def.category == 'Browser' ||
@@ -3442,10 +3443,9 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// rows, live telemetry. Keyed and forwarded the same way.
   Map<String, Widget> _rowExtras(AppContainer container) => {
     // Ground Control: whether the service was found, who is enrolled and
-    // Open for its app.
-    groundControlEnabled.key: GroundControlStatusRow(container: container),
-    // Under Features: what Ground Control will do next.
-    groundControlVoiceMatch.key: const GroundControlComingSoonRow(),
+    // Open for its app, under the switch and the address it uses (the
+    // address shows only with Ground Control on, and so do these).
+    groundControlAddress.key: GroundControlStatusRow(container: container),
     if (widget.category == 'Sendspin')
       sendspinDuckPercent.key: AlbumArtCacheRow(container: container),
     // Under the key's copy box: paste one from another kiosk or make a
@@ -4751,7 +4751,6 @@ extension on _CategoryContentState {
           'Wake Word',
           'Assistant',
           'Realtime',
-          'Ground Control Voice Match',
           'Appearance',
           'Conversation',
           'Chimes',

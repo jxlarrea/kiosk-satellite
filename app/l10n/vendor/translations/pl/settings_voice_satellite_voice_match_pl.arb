@@ -1,6 +1,5 @@
 {
   "@@locale": "pl",
-  "voiceMatchGroundControlPage": "Ground Control Voice Match",
   "settingVoiceMatchPolicyDescriptionChosen": "Opcja „Wybrane osoby” ignoruje telewizor, gości i wszystkie inne osoby.",
   "voiceMatchOptionPeople": "Wybrane osoby",
   "settingVoiceMatchPeopleTitle": "Osoby",

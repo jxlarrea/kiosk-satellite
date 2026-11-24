@@ -277,8 +277,11 @@ const Map<String, String> subpageHints = {
   // Native Voice Satellite's own pages.
   'Assistant': 'Pipelines, follow-ups',
   'Realtime': 'OpenAI, xAI Grok, Gemini, tools, talk over answers',
-  'Ground Control Voice Match': 'Recognition, Trimming and Isolation',
   'Conversation': 'What the overlay shows and for how long',
+  // Ground Control's feature pages.
+  'Voice Match': 'Recognition, Trimming and Isolation',
+  'Vision Match':
+      'Face recognition, detection, hand gestures and presence detection',
   // Its entry row sits under the tester, not with the three pages above.
   'Wake word diagnostics':
       'Recent activations and near misses with audio clips',
@@ -8230,8 +8233,8 @@ const groundControlEnabled = SettingDef<bool>(
   defaultValue: false,
   title: 'Enable Ground Control',
   description:
-      'Connect to Kiosk Satellite Ground Control, which runs Voice Match on '
-      'a capable machine.',
+      'Connect to Kiosk Satellite Ground Control, which runs Voice Match and '
+      'Vision Match on a capable machine.',
   category: 'Ground Control',
 );
 
@@ -8244,24 +8247,60 @@ const groundControlAddress = SettingDef<String>(
       'Leave empty to find Ground Control on the network. Enter one for '
       'Ground Control on another network.',
   category: 'Ground Control',
-  section: 'Connection',
   placeholder: '192.168.1.10:10900',
   dependsOn: 'ground_control.enabled',
 );
 
-/// Ground Control's features, each a row under Features that opens its page:
-/// Voice Match lives under Voice Satellite. Vision Match, coming soon,
-/// is a row of its own under this one (GroundControlComingSoonRow, and
-/// ground_control.js on the remote).
-const groundControlVoiceMatch = SettingDef<bool>(
-  key: 'ground_control.voice_match',
+// Ground Control's feature pages, Voice Match and Vision Match, follow
+// Connection on its page.
+
+// Vision Match, with Ground Control: the camera's face and hand looks run on
+// Ground Control instead of this device, each feature by its own switch. The
+// camera and motion detection stay here, and motion still decides when a
+// frame is worth sending. A feature on Ground Control waits for it when it
+// doesn't answer: the models on this device stand in only with it off.
+
+const visionMatchEnabled = SettingDef<bool>(
+  key: 'vision_match.enabled',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Voice Match',
-  description: 'Recognition, Trimming and Isolation.',
+  title: 'Enable Vision Match',
+  description:
+      'Face recognition, detection, hand gestures and presence detection. '
+      'Needs Ground Control.',
   category: 'Ground Control',
-  section: 'Features',
-  linksTo: 'voice_match.enabled',
+  subpage: 'Vision Match',
+  dependsOn: 'camera.enabled',
+  alsoDependsOn: 'ground_control.enabled',
+);
+
+/// Dismiss and Postpone on face, on Ground Control.
+const visionMatchFaceDetection = SettingDef<bool>(
+  key: 'vision_match.face_detection',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable Face Detection',
+  description:
+      'Run face detection on Ground Control. Disable to run on-device.',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Face Detection',
+  dependsOn: 'vision_match.enabled',
+);
+
+/// Show fingers gestures, on Ground Control.
+const visionMatchHandGestures = SettingDef<bool>(
+  key: 'vision_match.hand_gestures',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable Hand Gestures',
+  description:
+      'Run palm and fingers gestures detection on Ground Control. Disable to '
+      'run on-device.',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Hand Gestures',
+  dependsOn: 'vision_match.enabled',
 );
 
 // Voice Match, with Ground Control: Recognition (who is talking), Trimming
@@ -8276,8 +8315,8 @@ const voiceMatchEnabled = SettingDef<bool>(
   description:
       'Who is talking, and only their voice in the command. Needs Ground '
       'Control.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   dependsOn: 'voice.enabled',
   alsoDependsOn: 'ground_control.enabled',
 );
@@ -8290,8 +8329,8 @@ const voiceMatchPolicy = SettingDef<String>(
   defaultValue: 'anyone',
   title: 'Answer',
   description: 'Chosen people ignores the TV, guests and everyone else.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   section: 'Recognition',
   options: ['anyone', 'people'],
   optionLabels: {'anyone': 'Anyone', 'people': 'Chosen people'},
@@ -8309,8 +8348,8 @@ const voiceMatchPeople = SettingDef<String>(
   description:
       'Who this kiosk answers. With nobody chosen, it answers anyone '
       'enrolled.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   section: 'Recognition',
   dependsOn: 'voice_match.policy',
   dependsOnValue: 'people',
@@ -8357,8 +8396,8 @@ const voiceMatchRejected = SettingDef<String>(
   defaultValue: 'quiet',
   title: 'Voice not chosen',
   description: 'What happens when someone else says the wake word.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   section: 'Recognition',
   options: ['quiet', 'chime'],
   optionLabels: {'quiet': 'Stay quiet', 'chime': 'Play the error chime'},
@@ -8376,8 +8415,8 @@ const voiceMatchSpeakerSensor = SettingDef<bool>(
   description:
       'Adds a Speaker sensor to this kiosk in Home Assistant, for automations '
       'and agent instructions.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   section: 'Recognition',
   dependsOn: 'voice_match.enabled',
 );
@@ -8391,8 +8430,8 @@ const voiceMatchShowSpeaker = SettingDef<bool>(
       "The speaker's name before the command on the voice overlay, in their "
       'color. On a device with a light ring, the listening arc takes the '
       'color.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   section: 'Recognition',
   dependsOn: 'voice_match.enabled',
 );
@@ -8406,8 +8445,8 @@ const voiceMatchAllowEnroll = SettingDef<bool>(
       "Lets the Ground Control app record a person's voice with this kiosk's "
       'microphone. The kiosk shows the text to read, or the light ring '
       'shows the progress.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   section: 'Recognition',
   dependsOn: 'voice_match.enabled',
 );
@@ -8423,8 +8462,8 @@ const voiceMatchEndOnOtherVoice = SettingDef<bool>(
       'Other voices, like a TV or other people, are cut out between the '
       'words of the person who said the wake word, and the command ends '
       'when they stop.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   section: 'Trimming',
   dependsOn: 'voice_match.enabled',
 );
@@ -8441,8 +8480,8 @@ const voiceMatchIsolation = SettingDef<bool>(
       'Other voices talking over the words of the person who said the wake '
       'word are removed too. The command waits for it once they stop. Needs '
       'Isolation on in Ground Control.',
-  category: 'Voice Satellite',
-  subpage: 'Ground Control Voice Match',
+  category: 'Ground Control',
+  subpage: 'Voice Match',
   section: 'Isolation',
   dependsOn: 'voice_match.end_on_other_voice',
 );
@@ -13281,9 +13320,8 @@ String? validateCalendarList(Object? value) {
 /// a page of its own.
 const fleetSyncCategories = <(String, String, String)>[
   ('Navigation', 'Navigation', ''),
-  // Enable Ground Control and its address. The Voice Match settings on
-  // Voice Satellite > Ground Control Voice Match travel with Voice
-  // Satellite.
+  // Enable Ground Control, its address and its feature pages, Voice Match
+  // and Vision Match.
   ('Ground Control', 'Ground Control', ''),
   // ha.satellite_entity stays per kiosk; its row (Assigned satellite) is
   // on the Voice Satellite page, so the note goes there.
@@ -15316,7 +15354,6 @@ const List<SettingDef<Object>> allSettings = [
   voiceRealtimeMcpToken,
   groundControlEnabled,
   groundControlAddress,
-  groundControlVoiceMatch,
   voiceMatchEnabled,
   voiceMatchPolicy,
   voiceMatchPeople,
@@ -15326,6 +15363,9 @@ const List<SettingDef<Object>> allSettings = [
   voiceMatchAllowEnroll,
   voiceMatchEndOnOtherVoice,
   voiceMatchIsolation,
+  visionMatchEnabled,
+  visionMatchFaceDetection,
+  visionMatchHandGestures,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,
   voiceNoiseGate,
