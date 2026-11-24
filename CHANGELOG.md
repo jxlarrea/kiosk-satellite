@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.11.31 - 2026-11-23
 
 ### Added
 - **How each turn started, for Ground Control (Ground Control #20).** Each command sent to Ground Control now says how it started: a wake word, a reply to something Home Assistant asked (`assist_satellite.ask_question`, `assist_satellite.start_conversation`), a follow-up in a conversation or a conversation started by hand. The two kinds of question arrive the same, so the kiosk says which one it is when Home Assistant's pipeline starts: one that will answer is a `start_conversation` and one that ends at speech-to-text is an `ask_question`. On a kiosk that answers chosen people, Ground Control 2026.11.13 or newer takes a short reply like "yes" only for a reply to a question and a follow-up, where it was dropped as an unknown voice before. See [Trimming](https://github.com/jxlarrea/kiosk-satellite/blob/main/docs/voice-match.md#trimming).
