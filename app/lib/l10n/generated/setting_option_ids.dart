@@ -377,14 +377,6 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "default": "voiceVadDefault",
     "voice-only": "voiceSkinVoiceOnly"
   },
-  "alarms.snooze_minutes": {
-    "5": "alarmsOption5Minutes",
-    "10": "alarmsOption10Minutes",
-    "15": "alarmsOption15Minutes",
-    "20": "alarmsOption20Minutes",
-    "25": "alarmsOption25Minutes",
-    "30": "alarmsOption30Minutes"
-  },
   "alarms.silence_after_minutes": {
     "5": "alarmsOption5Minutes",
     "10": "alarmsOption10Minutes",

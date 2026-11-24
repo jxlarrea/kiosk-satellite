@@ -158,6 +158,27 @@ void main() {
     });
   });
 
+  group('Snooze length, pick to slider (#1585)', () {
+    test('a stored pick carries over as minutes', () async {
+      await build({'ks.alarms.snooze_minutes': '15'});
+      expect(settings.get(defs.alarmsSnoozeMinutes), 15);
+    });
+
+    test('an install that never touched it snoozes for 10 minutes', () async {
+      await build({});
+      expect(settings.get(defs.alarmsSnoozeMinutes), 10);
+    });
+
+    test('a backup with the old pick still restores it', () async {
+      await build({});
+      expect(await settings.setFromJson('alarms.snooze_minutes', '5'), isTrue);
+      expect(settings.get(defs.alarmsSnoozeMinutes), 5);
+      expect(await settings.setFromJson('alarms.snooze_minutes', 'x'), isFalse);
+      expect(await settings.setFromJson('alarms.snooze_minutes', 1), isTrue);
+      expect(settings.get(defs.alarmsSnoozeMinutes), 1);
+    });
+  });
+
   group('Fill the screen, switch to choice', () {
     test('a stored switch carries over to the matching choice', () async {
       await build({

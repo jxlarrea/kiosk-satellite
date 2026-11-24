@@ -12946,24 +12946,26 @@ String? _validateMusicPick(Object? value) {
   }
 }
 
-const alarmsSnoozeMinutes = SettingDef<String>(
+const alarmsSnoozeMinutes = SettingDef<num>(
   key: 'alarms.snooze_minutes',
-  type: SettingType.select,
-  defaultValue: '10',
+  type: SettingType.number,
+  defaultValue: 10,
   title: 'Snooze length',
   description: 'How long Snooze holds an alarm off.',
   category: 'Alarms',
   section: 'Defaults',
-  options: ['5', '10', '15', '20', '25', '30'],
-  optionLabels: {
-    '5': '5 minutes',
-    '10': '10 minutes',
-    '15': '15 minutes',
-    '20': '20 minutes',
-    '25': '25 minutes',
-    '30': '30 minutes',
-  },
+  min: 1,
+  max: 60,
+  step: 1,
+  unit: 'min',
 );
+
+/// The minutes in a snooze length stored before the slider, when it was
+/// a pick like '10' (issue #1585). Null for anything that is not 1 to 60.
+int? snoozeMinutesFrom(String pick) {
+  final minutes = int.tryParse(pick.trim());
+  return minutes != null && minutes >= 1 && minutes <= 60 ? minutes : null;
+}
 
 const alarmsSilenceAfterMinutes = SettingDef<String>(
   key: 'alarms.silence_after_minutes',

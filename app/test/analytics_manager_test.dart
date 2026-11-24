@@ -944,7 +944,7 @@ void main() {
         },
       ]),
       'ks.alarms.tone': 'gentle.mp3',
-      'ks.alarms.snooze_minutes': '5',
+      'ks.alarms.snooze_minutes': 5,
     }, firstDelay: const Duration(days: 1));
     expect(await analytics.sendSnapshot(force: true), isTrue);
     final u = bodyOf(sent.single)['usage'] as Map;

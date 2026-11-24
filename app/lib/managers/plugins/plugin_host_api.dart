@@ -347,10 +347,14 @@ class PluginHostApi {
       case 'openAlarms':
         return keys({'alarm'}) && (params.isEmpty || params['alarm'] == 'next');
       case 'sayAlarm':
-        return params.length == 1 &&
+        // An optional percent, like setVolume's, can only make the speech
+        // quieter than the alarm volume (issue #1585).
+        return keys({'text', 'percent'}) &&
             text('text') &&
             (params['text'] as String).trim().length <=
-                AlarmManager.sayMaxLength;
+                AlarmManager.sayMaxLength &&
+            (!params.containsKey('percent') ||
+                _sayPercent(params['percent']) != null);
       case 'openKioskLink':
         // Any ks:// link a dashboard can use (issue #1213). The command
         // refuses the few a plugin may not run.
@@ -421,6 +425,14 @@ class PluginHostApi {
     'skipNextAlarm': 'alarmSkip',
     'sayAlarm': 'alarmSay',
   };
+
+  /// sayAlarm's percent, 5 to 100 as text like setVolume's, or null.
+  static num? _sayPercent(Object? percent) {
+    final value = percent is String ? num.tryParse(percent.trim()) : null;
+    return value != null && value >= AlarmManager.sayMinPercent && value <= 100
+        ? value
+        : null;
+  }
 
   /// What plugins see of the alarms (issue #1585): the phase, the ringing
   /// alarm's name, its ring time, the end of a snooze and the next ring.

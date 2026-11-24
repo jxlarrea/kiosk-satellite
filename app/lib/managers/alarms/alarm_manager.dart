@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -220,7 +221,7 @@ class AlarmManager extends Manager {
   AlarmStatus get _s => status.value;
 
   Duration get _snooze => Duration(
-    minutes: int.tryParse(_settings.get(defs.alarmsSnoozeMinutes)) ?? 10,
+    minutes: _settings.get(defs.alarmsSnoozeMinutes).round().clamp(1, 60),
   );
 
   Duration get _silenceAfter => Duration(
@@ -996,15 +997,27 @@ class AlarmManager extends Manager {
   /// When the last ring, snooze or sunrise ended, for [sayGrace].
   DateTime? _endedAt;
 
-  /// Say [text] once in the Alarms voice at the alarm volume, for a plugin
-  /// that confirms a snooze or a stop (issue #1585). Only around an alarm:
-  /// during a sunrise or a snooze, and up to [sayGrace] after one ends. A
-  /// ringing alarm refuses it: the ring would drown the words. Null when it
-  /// plays, else why not.
-  Future<String?> say(String text, {String source = 'command'}) async {
+  /// The quietest [say] plays in percent, the same floor as the alarm
+  /// volume.
+  static const sayMinPercent = 5;
+
+  /// Say [text] once in the Alarms voice, for a plugin that confirms a
+  /// snooze or a stop (issue #1585). Only around an alarm: during a sunrise
+  /// or a snooze, and up to [sayGrace] after one ends. A ringing alarm
+  /// refuses it: the ring would drown the words. It plays at the alarm
+  /// volume, or at [percent] when that is quieter, so a "Snooze 2" can be
+  /// soft. Null when it plays, else why not.
+  Future<String?> say(
+    String text, {
+    num? percent,
+    String source = 'command',
+  }) async {
     final words = text.trim();
     if (words.isEmpty || words.length > sayMaxLength) {
       return 'the text must be 1 to $sayMaxLength characters';
+    }
+    if (percent != null && (percent < sayMinPercent || percent > 100)) {
+      return 'the percent must be $sayMinPercent to 100';
     }
     String? refused() {
       if (_s.phase == AlarmPhase.ringing) return 'an alarm is ringing';
@@ -1023,12 +1036,14 @@ class AlarmManager extends Manager {
     // A snooze can end while Home Assistant speaks.
     final late = refused();
     if (late != null) return late;
-    log.info(name, 'saying "$words" ($source)');
+    final alarm = _settings.get(defs.alarmsVolume).toDouble();
+    final level = percent == null ? alarm : math.min(alarm, percent / 100);
+    log.info(name, 'saying "$words" at ${(level * 100).round()}% ($source)');
     try {
       final played =
           await _channel.invokeMethod<bool>('ring', {
             'path': path,
-            'volume': _settings.get(defs.alarmsVolume).toDouble(),
+            'volume': level,
             'loop': false,
           }) ??
           false;
@@ -1670,13 +1685,26 @@ class AlarmManager extends Manager {
         Command(
           name: 'alarmSay',
           description:
-              'Say a text once in the Alarms voice at the alarm volume. '
-              'Works during a sunrise or a snooze and up to 30 seconds '
-              'after one ends, never while an alarm rings.',
-          params: const {'text': 'Up to 250 characters'},
+              'Say a text once in the Alarms voice at the alarm volume, or '
+              'at a quieter volume. Works during a sunrise or a snooze and '
+              'up to 30 seconds after one ends, never while an alarm rings.',
+          params: const {
+            'text': 'Up to 250 characters',
+            'percent': 'Optional, 5-100, never above the alarm volume',
+          },
           handler: (p) async {
+            final raw = p['percent'];
+            final percent = raw is num
+                ? raw
+                : raw is String
+                ? num.tryParse(raw.trim())
+                : null;
+            if (raw != null && percent == null) {
+              return const CommandResult.fail('percent must be a number');
+            }
             final error = await say(
               '${p['text'] ?? ''}',
+              percent: percent,
               source: '${p['source'] ?? 'command'}',
             );
             return error == null

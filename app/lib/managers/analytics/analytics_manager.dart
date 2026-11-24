@@ -846,7 +846,8 @@ class AnalyticsManager extends Manager {
       'alarms_tone': s.get(defs.alarmsTone).trim().isEmpty
           ? 'built_in'
           : 'custom',
-      'alarms_snooze_minutes': s.get(defs.alarmsSnoozeMinutes),
+      // A string like before the slider, so earlier reports group with it.
+      'alarms_snooze_minutes': '${s.get(defs.alarmsSnoozeMinutes).round()}',
       'alarms_silence_after_minutes': s.get(defs.alarmsSilenceAfterMinutes),
       'alarms_sunrise_minutes': s.get(defs.alarmsSunriseMinutes),
       'alarms_skip_minutes': s.get(defs.alarmsSkipMinutes),

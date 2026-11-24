@@ -253,6 +253,11 @@ void main() {
           {'text': true},
           {'text': 'x' * 251},
           {'text': 'Snoozed', 'volume': '50'},
+          {'text': 'Snoozed', 'percent': 20},
+          {'text': 'Snoozed', 'percent': '4'},
+          {'text': 'Snoozed', 'percent': '101'},
+          {'text': 'Snoozed', 'percent': 'loud'},
+          {'text': 'Snoozed', 'pitch': 1},
         ],
         'openKioskLink': [
           {},
@@ -2083,6 +2088,28 @@ void main() {
         'at': '2026-11-24T12:00:00.000Z',
         'snoozedUntil': '2026-11-24T12:10:00.000Z',
         'next': '2026-11-25T12:00:00.000Z',
+      });
+    });
+
+    test('sayAlarm passes a quieter percent through', () async {
+      api.open({
+        ...session,
+        'capabilities': ['host.control'],
+      });
+      Map<String, Object?>? got;
+      register('alarmSay', (p) async {
+        got = Map.of(p);
+        return const CommandResult.ok();
+      });
+      final result = await read(
+        'sayAlarm',
+        params: {'text': 'Snooze 2', 'percent': '20'},
+      );
+      expect(result['ok'], true);
+      expect(got, {
+        'text': 'Snooze 2',
+        'percent': '20',
+        'source': 'plugin:example',
       });
     });
 

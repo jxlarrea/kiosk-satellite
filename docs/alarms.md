@@ -109,7 +109,7 @@ Home Assistant makes the speech with the **Text to speech engine**, **Language**
 | Ease in over | How long the volume takes to grow, 5 to 120 seconds. Shows while Ease in the volume is on and applies to every alarm that eases in. |
 | Alarm tone | The tone an alarm set to Default plays: the built-in alarm or a sound from the sounds folder. **Add a sound** copies a file into the folder, the same way the notification and announcement sounds work. |
 | Alarm music | The music an alarm set to Default rings with instead of the tone, picked in the music picker. None by default. The tone rings when the music cannot play. |
-| Snooze length | 5 to 30 minutes. |
+| Snooze length | How long Snooze holds an alarm off, 1 to 60 minutes. 10 minutes by default. |
 | Silence after | How long an alarm rings when nobody stops it, 5 to 30 minutes. |
 | Sunrise length | How long the screen takes to brighten before a sunrise alarm, 10 to 30 minutes. |
 | Skip button | How long before an alarm the Clock and Weather Mood screensavers show a button to skip it, 5 to 60 minutes or Off. 10 minutes by default. See [Skipping the next alarm](#skipping-the-next-alarm). |

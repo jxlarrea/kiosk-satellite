@@ -697,6 +697,19 @@ class SettingsManager extends Manager {
       await _prefs.setBool('${_prefix}wake_word.enabled', true);
       log.info(name, 'migrated wake_word.enabled to always-on');
     }
+    // Snooze length was a pick of 5 to 30 minutes and is now a slider of
+    // 1 to 60 (issue #1585). The stored pick carries straight over.
+    final snoozeKey = _prefix + alarmsSnoozeMinutes.key;
+    final snooze = _prefs.get(snoozeKey);
+    if (snooze is String) {
+      final minutes = snoozeMinutesFrom(snooze);
+      if (minutes == null) {
+        await _prefs.remove(snoozeKey);
+      } else {
+        await _prefs.setInt(snoozeKey, minutes);
+      }
+      log.info(name, 'migrated $snoozeKey ($snooze)');
+    }
     // "Fill the screen" was a switch in the four photo modes and is now a
     // choice of how far a photo may be cropped. The switch on is what
     // 'smart' does, so a stored bool carries straight over and nobody's
@@ -938,6 +951,12 @@ class SettingsManager extends Manager {
     // screensaver became a pick still sends the switch.
     if (def.key == screensaverScreenOffWakeToScreensaver.key && value is bool) {
       value = wakeToScreensaverFromSwitch(value);
+    }
+    // A backup or a fleet leader from before the snooze slider still sends
+    // the pick as a string.
+    if (def.key == alarmsSnoozeMinutes.key && value is String) {
+      value = snoozeMinutesFrom(value);
+      if (value == null) return false;
     }
     if (validate(def, value, batch: batch) != null) return false;
     switch (def.type) {

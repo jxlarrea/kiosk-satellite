@@ -185,6 +185,14 @@ void main() {
     },
   );
 
+  test('any snooze length from the slider holds it off (#1585)', () async {
+    now = DateTime(2026, 10, 2, 7, 0, 5);
+    await build([daily('07:00')]);
+    await settings.set(defs.alarmsSnoozeMinutes, 3);
+    expect(await alarms.snooze(), isTrue);
+    expect(alarms.status.value.snoozedUntil, DateTime(2026, 10, 2, 7, 3, 5));
+  });
+
   test('stop ends it and the same ring never comes back', () async {
     now = DateTime(2026, 10, 2, 7, 0, 5);
     await build([daily('07:00')]);
@@ -866,6 +874,19 @@ void main() {
       // The same words again come from disk.
       expect(await alarms.say('Snooze 1, 10 minutes'), isNull);
       expect(spoken, hasLength(1));
+      expect(rings(), hasLength(2));
+    });
+
+    test('a percent only makes it quieter than the alarm', () async {
+      now = DateTime(2026, 10, 2, 7, 0, 5);
+      await build([daily('07:00')], tts: tts);
+      await settings.set(defs.alarmsVolume, 0.6);
+      await alarms.snooze();
+      expect(await alarms.say('Snooze 1', percent: 20), isNull);
+      expect(await alarms.say('Snooze 1', percent: 90), isNull);
+      expect(rings().map((c) => (c.arguments as Map)['volume']), [0.2, 0.6]);
+      expect(await alarms.say('Snooze 1', percent: 4), isNotNull);
+      expect(await alarms.say('Snooze 1', percent: 101), isNotNull);
       expect(rings(), hasLength(2));
     });
 
