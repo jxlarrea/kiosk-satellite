@@ -120,6 +120,56 @@ void main() {
     await server.close(force: true);
   });
 
+  test('the kind of question goes to the service once it has answered the '
+      'start', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final got = <Map<String, Object?>>[];
+    final ends = StreamController<void>();
+    server.listen((req) async {
+      final ws = await WebSocketTransformer.upgrade(req);
+      ws.listen((m) {
+        if (m is! String) return;
+        final msg = jsonDecode(m) as Map<String, Object?>;
+        got.add(msg);
+        if (msg['type'] == 'start') {
+          ws.add(jsonEncode({'type': 'ready', 'session': 's1'}));
+        }
+        if (msg['type'] == 'end') ends.add(null);
+      });
+    });
+    VoiceMatchTurn open() => VoiceMatchTurn.open(
+      baseUrl: 'http://127.0.0.1:${server.port}',
+      token: 't',
+      deviceId: 'k1',
+      deviceName: 'Kitchen',
+      policy: 'anyone',
+      onEvent: (_) {},
+      follow: true,
+      interaction: 'question',
+    );
+    final seen = StreamIterator(ends.stream);
+
+    // Known before the service answered: kept, and sent right after.
+    final early = open()..interaction('start_conversation');
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    early.end();
+    expect(await seen.moveNext(), isTrue);
+    expect([for (final m in got) m['type']], ['start', 'interaction', 'end']);
+    expect(got[0]['interaction'], 'question');
+    expect(got[1]['interaction'], 'start_conversation');
+
+    // Known later, as for an ask_question: sent when it is.
+    got.clear();
+    final late = open();
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    late.interaction('ask_question');
+    late.end();
+    expect(await seen.moveNext(), isTrue);
+    expect([for (final m in got) m['type']], ['start', 'interaction', 'end']);
+    expect(got[1]['interaction'], 'ask_question');
+    await server.close(force: true);
+  });
+
   test('a follow session says whether this kiosk wants Isolation', () async {
     final (server, starts) = await _service();
     final got = StreamIterator(starts);

@@ -4449,4 +4449,7 @@ class _Turn implements VoiceMatchTurnPort {
 
   @override
   bool get ready => _turn.ready;
+
+  @override
+  void interaction(String kind) => _turn.interaction(kind);
 }

@@ -173,6 +173,7 @@ class VoiceMatchTurn {
       _ready = true;
       final session = e['session'];
       if (session is String) _onReady?.call(session);
+      _sendInteraction();
       for (final pcm in _queue) {
         _socket?.sink.add(pcm);
       }
@@ -198,6 +199,31 @@ class VoiceMatchTurn {
     if (_queued + pcm.length > _maxQueued) return;
     _queue.add(Uint8List.fromList(pcm));
     _queued += pcm.length;
+  }
+
+  String? _interaction;
+
+  /// Which kind of question the turn replies to, once it is known:
+  /// `ask_question` or `start_conversation`. The start said `question` for
+  /// both, since they arrive the same. Sent once the service has answered
+  /// the start, for the session's page there.
+  void interaction(String kind) {
+    if (_ended) return;
+    _interaction = kind;
+    if (_ready) _sendInteraction();
+  }
+
+  void _sendInteraction() {
+    final kind = _interaction;
+    if (kind == null) return;
+    _interaction = null;
+    try {
+      _socket?.sink.add(
+        jsonEncode({'type': 'interaction', 'interaction': kind}),
+      );
+    } on Object {
+      // Already closed.
+    }
   }
 
   /// The turn is over. The service keeps the session (its audio, scores

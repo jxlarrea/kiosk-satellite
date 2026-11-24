@@ -89,6 +89,11 @@ abstract class VoiceMatchTurnPort {
 
   /// The service answered the start.
   bool get ready;
+
+  /// Which kind of question the turn replies to, once it is known:
+  /// `ask_question` or `start_conversation`. The two arrive the same and
+  /// only what Home Assistant does with the reply tells them apart.
+  void interaction(String kind);
 }
 
 /// The microphone: the wake word engine's capture, pre-roll first.
@@ -311,6 +316,22 @@ class VoiceSession {
   bool _heard = false;
   bool _intentStarted = false;
 
+  /// The run replies to something Home Assistant asked: ask_question or
+  /// start_conversation, which arrive as the same announcement.
+  bool _asked = false;
+
+  /// Which of the two Voice Match was last told, empty before the run
+  /// shows it.
+  String _askedKind = '';
+
+  /// Tells Voice Match which kind of question the run replies to, when
+  /// that is new.
+  void _sayAsked(String kind) {
+    if (!_asked || _askedKind == kind) return;
+    _askedKind = kind;
+    _match?.interaction(kind);
+  }
+
   /// How the answer's playback went: null while none finished yet.
   bool? _answerPlayed;
   bool _continue = false;
@@ -393,6 +414,8 @@ class VoiceSession {
       onLost: () => _onMatchLost(gen),
     );
     _match = match;
+    _asked = reply;
+    _askedKind = '';
     _following = match != null && follow;
     _followSent = false;
     _followMic.clear();
@@ -610,6 +633,9 @@ class VoiceSession {
       VaEvent.ttsStart,
       VaEvent.ttsEnd,
     }.contains(type)) {
+      // Home Assistant goes on to answer the reply itself: the question
+      // was a start_conversation, whatever the run's start looked like.
+      _sayAsked('start_conversation');
       _intentStarted = true;
     }
     switch (type) {
@@ -617,6 +643,11 @@ class VoiceSession {
         // A streaming text to speech engine hands the answer's URL here,
         // before the answer exists; it plays when the intent says so.
         _streamUrl = data['url'] ?? '';
+        // A run that will answer has that URL: a start_conversation. An
+        // ask_question's pipeline ends at speech to text and has none.
+        _sayAsked(
+          _streamUrl.isNotEmpty ? 'start_conversation' : 'ask_question',
+        );
       case VaEvent.sttStart:
         _phase = _Phase.listening;
         _armWatchdog(gen);
@@ -681,6 +712,7 @@ class VoiceSession {
         // kiosk cannot know whether it matched, so it neither confirms nor
         // lingers: it goes back to idle, as a Voice PE does.
         if (_heard && !_intentStarted) {
+          _sayAsked('ask_question');
           onTrace?.call('reply handed to Home Assistant');
           await _finish(gen);
           return;

@@ -178,9 +178,13 @@ class _MatchTurn implements VoiceMatchTurnPort {
   final void Function()? onLost;
   int fed = 0;
   bool ended = false;
+  String? kind;
 
   @override
   bool ready = true;
+
+  @override
+  void interaction(String kind) => this.kind = kind;
 
   @override
   void feed(Uint8List pcm) => fed++;

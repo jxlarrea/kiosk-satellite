@@ -1278,6 +1278,9 @@ class RealtimeSession {
       onLost: () => _onMatchLost(gen),
     );
     if (match == null) return;
+    // A realtime conversation Home Assistant opens is always a
+    // start_conversation.
+    if (_opening.isNotEmpty) match.interaction('start_conversation');
     _match = match;
     _following = true;
     _matchReady = Timer(matchReadyWait, () {

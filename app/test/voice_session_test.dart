@@ -116,9 +116,13 @@ class _MatchTurn implements VoiceMatchTurnPort {
   final bool asked;
   int fed = 0;
   bool ended = false;
+  String? kind;
 
   @override
   bool ready = true;
+
+  @override
+  void interaction(String kind) => this.kind = kind;
 
   @override
   void feed(Uint8List pcm) => fed++;
@@ -1031,6 +1035,73 @@ void main() {
         expect(turn.asked, isTrue);
         expect(turn.followup, isFalse);
         expect(turn.seamless, isFalse);
+      });
+    });
+
+    test('Voice Match is told which kind of question it was once Home '
+        'Assistant shows it', () {
+      // ask_question and start_conversation arrive the same. A reply whose
+      // pipeline ends at speech to text was an ask_question. One that Home
+      // Assistant goes on to answer itself was a start_conversation.
+      _MatchTurn asked(FakeAsync async, _Harness h) {
+        h.session.announce(
+          const VoiceAnnouncement(
+            mediaId: 'http://ha/q.mp3',
+            text: 'Close the garage?',
+            preannounceMediaId: '',
+            startConversation: true,
+          ),
+        );
+        async.flushMicrotasks();
+        h.session.onSoundEnded(h.player.lastId);
+        async.flushMicrotasks();
+        return h.match!.turns.single;
+      }
+
+      // An ask_question's pipeline ends at speech to text, so its start
+      // carries no URL for an answer.
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        final turn = asked(async, h);
+        expect(turn.kind, isNull);
+        h.session.onEvent(VaEvent.runStart, {});
+        async.flushMicrotasks();
+        expect(turn.kind, 'ask_question');
+        h.session.onEvent(VaEvent.sttEnd, {'text': 'yes'});
+        h.session.onEvent(VaEvent.runEnd, {});
+        async.flushMicrotasks();
+        expect(turn.kind, 'ask_question');
+      });
+      // A start_conversation runs through to an answer: the URL is there
+      // from the start.
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        final turn = asked(async, h);
+        h.session.onEvent(VaEvent.runStart, {'url': 'http://ha/a.mp3'});
+        async.flushMicrotasks();
+        expect(turn.kind, 'start_conversation');
+      });
+      // A pipeline that gives no URL at its start and then answers anyway
+      // was a start_conversation after all.
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        final turn = asked(async, h);
+        h.session.onEvent(VaEvent.runStart, {});
+        h.session.onEvent(VaEvent.sttEnd, {'text': 'yes'});
+        h.session.onEvent(VaEvent.intentStart, {});
+        async.flushMicrotasks();
+        expect(turn.kind, 'start_conversation');
+      });
+      // A wake word turn says nothing more: it started as one.
+      fakeAsync((async) {
+        final h = _Harness(match: _Match());
+        listening(h, async);
+        h.session.onEvent(VaEvent.runStart, {'url': 'http://ha/a.mp3'});
+        h.session.onEvent(VaEvent.sttEnd, {'text': 'lights on'});
+        h.session.onEvent(VaEvent.intentStart, {});
+        h.session.onEvent(VaEvent.runEnd, {});
+        async.flushMicrotasks();
+        expect(h.match!.turns.single.kind, isNull);
       });
     });
 
