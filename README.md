@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <a href="https://kiosksatellite.com/download/">Download</a> · <a href="https://kiosksatellite.com/#get-started">Get started</a> · <a href="https://kiosksatellite.com/docs/">Documentation</a>
+  <a href="https://kiosksatellite.com/download/">Download</a> · <a href="https://kiosksatellite.com/#get-started">Get started</a> · <a href="https://kiosksatellite.com/docs/">Docs</a> · <a href="https://github.com/jxlarrea/kiosk-satellite-ground-control">Ground Control</a>
 </p>
 
 <p align="center">
