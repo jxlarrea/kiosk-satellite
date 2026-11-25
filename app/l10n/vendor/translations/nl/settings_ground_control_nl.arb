@@ -37,7 +37,7 @@
   "settingVisionMatchFaceConfirmsVoiceTitle": "Stemmen met gezichten bevestigen",
   "settingVisionMatchFaceConfirmsVoiceDescription": "Een stem die er dichtbij zit aannemen als het gezicht van dezelfde persoon bij de kiosk wordt herkend. Zo kan alleen de persoon met de meest overeenkomende stemafdruk worden gekozen.",
   "groundControlUsedElsewhere": "Gebruikt in andere instellingen",
-  "settingVisionMatchLinkFaceWhoDescription": "Schermbeveiliging > Gezichtsdetectie > Ground Control-gezichtsherkenning",
+  "settingVisionMatchLinkFaceWhoDescription": "Schermbeveiliging > Gezichtsdetectie > Ground Control Vision Match",
   "settingVisionMatchLinkPreviewPersonDescription": "Schermbeveiliging > Gezichtsdetectie > Cameravoorbeeld",
   "groundControlValueOn": "Aan",
   "groundControlValueOff": "Uit",

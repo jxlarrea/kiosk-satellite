@@ -285,11 +285,7 @@ export function settingRow(s) {
   const info = document.createElement('div'); info.className = 'info';
   info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
   info.querySelector('.name').textContent = s.title;
-  // Not in a Ground Control group, such as Ground Control Face Recognition,
-  // whose heading already says it.
-  if (s.groundControl && !String(s.section || '').startsWith('Ground Control')) {
-    info.querySelector('.name').append(' ', groundControlTag(s.groundControl));
-  }
+  if (s.groundControl) info.querySelector('.name').append(' ', groundControlTag(s.groundControl));
   info.querySelector('.desc').textContent = s.description;
   row.appendChild(info);
   const save = async (value) => {

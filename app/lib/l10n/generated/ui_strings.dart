@@ -15154,7 +15154,7 @@ abstract class UiStrings {
   /// Where the Faces that count setting is, as a path of page names. Use the translated names of these pages.
   ///
   /// In en, this message translates to:
-  /// **'Screensaver > Face Detection > Ground Control Face Recognition'**
+  /// **'Screensaver > Face Detection > Ground Control Vision Match'**
   String get settingVisionMatchLinkFaceWhoDescription;
 
   /// Where the Show who is recognized setting is, as a path of page names. Use the translated names of these pages.
@@ -21835,11 +21835,11 @@ abstract class UiStrings {
   /// **'Anyone recognized'**
   String get screensaverFacePeopleNone;
 
-  /// Group heading for the settings that use Face Recognition on Ground Control. Keep Ground Control unchanged and use the same Face Recognition term as on the Vision Match page.
+  /// Group heading for the settings that use Vision Match on Ground Control. Ground Control and Vision Match are names: keep them unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Ground Control Face Recognition'**
-  String get screensaverGroundControlFaceRecognition;
+  /// **'Ground Control Vision Match'**
+  String get screensaverGroundControlVisionMatch;
 
   /// Setting label.
   ///

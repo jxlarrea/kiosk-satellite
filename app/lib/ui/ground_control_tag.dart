@@ -105,11 +105,7 @@ Future<void> showGroundControlTagInfo(BuildContext context, String feature) {
 Widget settingTitle(BuildContext context, SettingDef<Object> def) {
   final title = def.localizedTitle(context);
   final feature = def.groundControl;
-  // A Ground Control group, such as Ground Control Face Recognition, says
-  // it in its heading already.
-  if (feature == null || (def.section ?? '').startsWith('Ground Control')) {
-    return Text(title);
-  }
+  if (feature == null) return Text(title);
   return Text.rich(
     TextSpan(
       text: title,

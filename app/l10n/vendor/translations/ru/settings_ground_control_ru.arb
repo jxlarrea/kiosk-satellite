@@ -37,7 +37,7 @@
   "settingVisionMatchFaceConfirmsVoiceTitle": "Подтверждать голоса лицами",
   "settingVisionMatchFaceConfirmsVoiceDescription": "Принимать похожий голос, когда перед киоском распознано лицо того же человека. Так можно определить только человека с самым близким голосовым отпечатком.",
   "groundControlUsedElsewhere": "Используется в других настройках",
-  "settingVisionMatchLinkFaceWhoDescription": "Заставка > Определение лица > Распознавание лиц Ground Control",
+  "settingVisionMatchLinkFaceWhoDescription": "Заставка > Определение лица > Ground Control Vision Match",
   "settingVisionMatchLinkPreviewPersonDescription": "Заставка > Определение лица > Превью камеры",
   "groundControlValueOn": "Вкл.",
   "groundControlValueOff": "Выкл.",

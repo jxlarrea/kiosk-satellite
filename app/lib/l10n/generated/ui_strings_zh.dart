@@ -8305,7 +8305,7 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      '屏保 > 人脸检测 > Ground Control 人脸识别';
+      '屏保 > 人脸检测 > Ground Control Vision Match';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -11907,7 +11907,8 @@ class UiStringsZh extends UiStrings {
   String get screensaverFacePeopleNone => '任何已识别的人';
 
   @override
-  String get screensaverGroundControlFaceRecognition => 'Ground Control 人脸识别';
+  String get screensaverGroundControlVisionMatch =>
+      'Ground Control Vision Match';
 
   @override
   String get settingFacePreviewTitle => '显示摄像头预览';
@@ -24773,7 +24774,7 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      '屏保 > 人脸检测 > Ground Control 人脸识别';
+      '屏保 > 人脸检测 > Ground Control Vision Match';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -28375,7 +28376,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get screensaverFacePeopleNone => '任何已识别的人';
 
   @override
-  String get screensaverGroundControlFaceRecognition => 'Ground Control 人脸识别';
+  String get screensaverGroundControlVisionMatch =>
+      'Ground Control Vision Match';
 
   @override
   String get settingFacePreviewTitle => '显示摄像头预览';

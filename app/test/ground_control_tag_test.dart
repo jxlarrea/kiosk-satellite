@@ -28,16 +28,16 @@ void main() {
               children: [
                 settingTitle(context, defs.facePreviewPerson),
                 settingTitle(context, defs.screensaverDismissOnFace),
-                // In the Ground Control Face Recognition group: no tag.
+                // In the Ground Control Vision Match group too.
                 settingTitle(context, defs.screensaverFaceWho),
               ],
             ),
           ),
         ),
       );
-      expect(find.text('GC'), findsOneWidget);
-      expect(find.byType(GroundControlTag), findsOneWidget);
-      await tester.tap(find.byType(GroundControlTag));
+      expect(find.text('GC'), findsNWidgets(2));
+      expect(find.byType(GroundControlTag), findsNWidgets(2));
+      await tester.tap(find.byType(GroundControlTag).first);
       await tester.pumpAndSettle();
       expect(find.text('A Ground Control setting'), findsOneWidget);
       expect(find.textContaining('Face Recognition'), findsOneWidget);

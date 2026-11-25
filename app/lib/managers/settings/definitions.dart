@@ -6261,7 +6261,7 @@ const facePreview = SettingDef<bool>(
   dependsOn: 'screensaver.dismiss_on_face',
 );
 
-/// Ground Control Face Recognition > Detect faces: whose face dismisses or
+/// Ground Control Vision Match > Detect faces: whose face dismisses or
 /// postpones the screensaver, anyone or the chosen people, as Voice Match's
 /// Answer picks who a kiosk answers. The group is the one every feature
 /// that reacts to Face Recognition uses.
@@ -6274,7 +6274,7 @@ const screensaverFaceWho = SettingDef<String>(
       'With Chosen people, only the people picked below dismiss or postpone '
       'the screensaver.',
   category: 'Screensaver',
-  section: 'Ground Control Face Recognition',
+  section: 'Ground Control Vision Match',
   subpage: 'Face Detection',
   options: ['anyone', 'people'],
   optionLabels: {'anyone': 'Anyone', 'people': 'Chosen people'},
@@ -6295,7 +6295,7 @@ const screensaverFacePeople = SettingDef<String>(
       'Choose who can dismiss or postpone the screensaver by looking at the '
       'kiosk. If nobody is chosen, anyone recognized can.',
   category: 'Screensaver',
-  section: 'Ground Control Face Recognition',
+  section: 'Ground Control Vision Match',
   subpage: 'Face Detection',
   dependsOn: 'screensaver.face_who',
   dependsOnValue: 'people',
@@ -8402,7 +8402,7 @@ const visionMatchLinkFaceWho = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Detect faces',
-  description: 'Screensaver > Face Detection > Ground Control Face Recognition',
+  description: 'Screensaver > Face Detection > Ground Control Vision Match',
   category: 'Ground Control',
   subpage: 'Vision Match',
   section: 'Used in other settings',

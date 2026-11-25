@@ -21,5 +21,5 @@
   "settingScreensaverFacePeopleTitle": "Personen",
   "settingScreensaverFacePeopleDescription": "Wähle, wer den Bildschirmschoner durch einen Blick auf den Kiosk schließen oder aufschieben kann. Ist niemand ausgewählt, kann das jede erkannte Person.",
   "screensaverFacePeopleNone": "Alle erkannten Personen",
-  "screensaverGroundControlFaceRecognition": "Ground Control Gesichtswiedererkennung"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
 }

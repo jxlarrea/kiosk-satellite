@@ -437,9 +437,9 @@ To conserve system resources, the face detection model executes only when frame 
 
 Under [Lockdown Mode](kiosk.md), face events will neither dismiss nor postpone screensavers.
 
-### Ground Control Face Recognition
+### Ground Control Vision Match
 
-With [Face Recognition](ground-control.md#face-recognition) on Ground Control, the **Ground Control Face Recognition** group on the Face Detection page sets whose face dismisses or postpones the screensaver. It works like **Answer** on the Voice Match page.
+With [Face Recognition](ground-control.md#face-recognition) on Ground Control, the **Ground Control Vision Match** group on the Face Detection page sets whose face dismisses or postpones the screensaver. It works like **Answer** on the Voice Match page.
 
 | Setting | What it does |
 | --- | --- |

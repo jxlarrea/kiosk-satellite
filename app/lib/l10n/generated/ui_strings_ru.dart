@@ -8719,7 +8719,7 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Заставка > Определение лица > Распознавание лиц Ground Control';
+      'Заставка > Определение лица > Ground Control Vision Match';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12586,8 +12586,8 @@ class UiStringsRu extends UiStrings {
   String get screensaverFacePeopleNone => 'Любой распознанный человек';
 
   @override
-  String get screensaverGroundControlFaceRecognition =>
-      'Распознавание лиц Ground Control';
+  String get screensaverGroundControlVisionMatch =>
+      'Ground Control Vision Match';
 
   @override
   String get settingFacePreviewTitle => 'Показывать превью камеры';

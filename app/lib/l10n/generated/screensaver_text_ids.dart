@@ -637,5 +637,5 @@ const screensaverTextMessageIds = <String, String>{
   "Waning crescent": "celestialMoonWaningCrescent",
   "When the display really powers off, the tablet's own power management takes over. Many Android models misbehave in that state: Wi-Fi naps or drops, Home Assistant entities go unavailable, the camera can be revoked and some models kill background apps. Some light sensors also stop reporting with the display off, so the screen may not turn back on by itself when the room brightens. What happens depends on the manufacturer.\n\nThe reliable alternative is Use a black screen instead. The panel looks just as dark and the app keeps full control.": "screensaverNightTurnOffWarning",
   "Waiting for a GPS fix...": "screensaverCelestialWaitingForGps",
-  "Ground Control Face Recognition": "screensaverGroundControlFaceRecognition"
+  "Ground Control Vision Match": "screensaverGroundControlVisionMatch"
 };

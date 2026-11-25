@@ -21,5 +21,5 @@
   "settingScreensaverFacePeopleTitle": "人员",
   "settingScreensaverFacePeopleDescription": "选择谁可以通过看向 Kiosk 来关闭或推迟屏保。如果没有选择任何人，任何已识别的人都可以。",
   "screensaverFacePeopleNone": "任何已识别的人",
-  "screensaverGroundControlFaceRecognition": "Ground Control 人脸识别"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
 }

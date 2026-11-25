@@ -8758,7 +8758,7 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Schermbeveiliging > Gezichtsdetectie > Ground Control-gezichtsherkenning';
+      'Schermbeveiliging > Gezichtsdetectie > Ground Control Vision Match';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12632,8 +12632,8 @@ class UiStringsNl extends UiStrings {
   String get screensaverFacePeopleNone => 'Iedereen die herkend wordt';
 
   @override
-  String get screensaverGroundControlFaceRecognition =>
-      'Ground Control-gezichtsherkenning';
+  String get screensaverGroundControlVisionMatch =>
+      'Ground Control Vision Match';
 
   @override
   String get settingFacePreviewTitle => 'Cameravoorbeeld tonen';

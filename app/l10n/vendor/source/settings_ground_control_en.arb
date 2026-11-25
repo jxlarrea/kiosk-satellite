@@ -460,7 +460,7 @@
       ]
     }
   },
-  "settingVisionMatchLinkFaceWhoDescription": "Screensaver > Face Detection > Ground Control Face Recognition",
+  "settingVisionMatchLinkFaceWhoDescription": "Screensaver > Face Detection > Ground Control Vision Match",
   "@settingVisionMatchLinkFaceWhoDescription": {
     "context": "Settings > Ground Control > Vision Match > Used in other settings",
     "description": "Where the Faces that count setting is, as a path of page names. Use the translated names of these pages.",

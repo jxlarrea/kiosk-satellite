@@ -184,99 +184,99 @@
   },
   "settingScreensaverFaceWhoTitle": "Detect faces",
   "@settingScreensaverFaceWhoTitle": {
-    "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
     "description": "Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Screensaver > Face Detection > Ground Control Face Recognition"
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
       ],
       "remoteAdmin": [
-        "Screensaver > Face Detection > Ground Control Face Recognition"
+        "Screensaver > Face Detection > Ground Control Vision Match"
       ]
     }
   },
   "settingScreensaverFaceWhoDescription": "With Chosen people, only the people picked below dismiss or postpone the screensaver.",
   "@settingScreensaverFaceWhoDescription": {
-    "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Screensaver > Face Detection > Ground Control Face Recognition"
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
       ],
       "remoteAdmin": [
-        "Screensaver > Face Detection > Ground Control Face Recognition"
+        "Screensaver > Face Detection > Ground Control Vision Match"
       ]
     }
   },
   "screensaverFaceWhoOptionAnyone": "Anyone",
   "@screensaverFaceWhoOptionAnyone": {
-    "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
     "description": "Option of Faces that count: any face looking at the kiosk.",
     "x-locations": {
       "device": [
-        "Settings > Screensaver > Face Detection > Ground Control Face Recognition"
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
       ],
       "remoteAdmin": [
-        "Screensaver > Face Detection > Ground Control Face Recognition"
+        "Screensaver > Face Detection > Ground Control Vision Match"
       ]
     }
   },
   "screensaverFaceWhoOptionPeople": "Chosen people",
   "@screensaverFaceWhoOptionPeople": {
-    "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
     "description": "Option of Faces that count: only the people picked below.",
     "x-locations": {
       "device": [
-        "Settings > Screensaver > Face Detection > Ground Control Face Recognition"
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
       ],
       "remoteAdmin": [
-        "Screensaver > Face Detection > Ground Control Face Recognition"
+        "Screensaver > Face Detection > Ground Control Vision Match"
       ]
     }
   },
   "settingScreensaverFacePeopleTitle": "People",
   "@settingScreensaverFacePeopleTitle": {
-    "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
     "description": "Setting label: the people whose face counts.",
     "x-locations": {
       "device": [
-        "Settings > Screensaver > Face Detection > Ground Control Face Recognition"
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
       ],
       "remoteAdmin": [
-        "Screensaver > Face Detection > Ground Control Face Recognition"
+        "Screensaver > Face Detection > Ground Control Vision Match"
       ]
     }
   },
   "settingScreensaverFacePeopleDescription": "Choose who can dismiss or postpone the screensaver by looking at the kiosk. If nobody is chosen, anyone recognized can.",
   "@settingScreensaverFacePeopleDescription": {
-    "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
     "x-locations": {
       "device": [
-        "Settings > Screensaver > Face Detection > Ground Control Face Recognition"
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
       ],
       "remoteAdmin": [
-        "Screensaver > Face Detection > Ground Control Face Recognition"
+        "Screensaver > Face Detection > Ground Control Vision Match"
       ]
     }
   },
   "screensaverFacePeopleNone": "Anyone recognized",
   "@screensaverFacePeopleNone": {
-    "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
+    "context": "Settings > Screensaver > Face Detection > Ground Control Vision Match",
     "description": "Shown in the People box when nobody is chosen.",
     "x-locations": {
       "device": [
-        "Settings > Screensaver > Face Detection > Ground Control Face Recognition"
+        "Settings > Screensaver > Face Detection > Ground Control Vision Match"
       ],
       "remoteAdmin": [
-        "Screensaver > Face Detection > Ground Control Face Recognition"
+        "Screensaver > Face Detection > Ground Control Vision Match"
       ]
     }
   },
-  "screensaverGroundControlFaceRecognition": "Ground Control Face Recognition",
-  "@screensaverGroundControlFaceRecognition": {
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match",
+  "@screensaverGroundControlVisionMatch": {
     "context": "Settings > Screensaver > Face Detection",
-    "description": "Group heading for the settings that use Face Recognition on Ground Control. Keep Ground Control unchanged and use the same Face Recognition term as on the Vision Match page.",
+    "description": "Group heading for the settings that use Vision Match on Ground Control. Ground Control and Vision Match are names: keep them unchanged.",
     "x-locations": {
       "device": [
         "Settings > Screensaver > Face Detection"

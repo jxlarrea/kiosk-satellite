@@ -850,7 +850,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     bus.on<FaceDetected>().listen((_) {
       // Same lockdown rule as motion.
       if (_settings.get(defs.lockdownEnabled)) return;
-      // Ground Control Face Recognition > Detect faces: only someone recognized,
+      // Ground Control Vision Match > Detect faces: only someone recognized,
       // or one of the chosen people. A face not named yet waits for the
       // next sighting, about a second later.
       if (!_faceCounts) return;

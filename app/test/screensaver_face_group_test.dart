@@ -6,7 +6,7 @@ import 'package:kiosk_satellite/ui/ground_control_tag.dart';
 import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Screensaver > Face Detection > Ground Control Face Recognition: its own
+/// Screensaver > Face Detection > Ground Control Vision Match: its own
 /// group, there only with Face Recognition on Ground Control, with Detect
 /// faces as a dropdown and People, Voice Match's picker, on Chosen people.
 void main() {
@@ -43,18 +43,18 @@ void main() {
       'ks.vision_match.face_recognition': true,
       'ks.screensaver.face_who': 'people',
     });
-    expect(find.text('Ground Control Face Recognition'), findsOneWidget);
+    expect(find.text('Ground Control Vision Match'), findsOneWidget);
     expect(find.text('Detect faces'), findsOneWidget);
     expect(find.text('Chosen people'), findsWidgets);
     expect(find.byType(TextField), findsNothing);
     expect(find.byType(VoiceMatchPeopleRow), findsOneWidget);
-    // The heading says Ground Control: no tag in the group.
+    // The rows carry the GC tag, in the group as everywhere else.
     expect(
       find.descendant(
         of: find.byType(VoiceMatchPeopleRow),
         matching: find.byType(GroundControlTag),
       ),
-      findsNothing,
+      findsOneWidget,
     );
   });
 
@@ -71,7 +71,7 @@ void main() {
       'ks.vision_match.face_recognition': false,
       'ks.screensaver.face_who': 'people',
     });
-    expect(find.text('Ground Control Face Recognition'), findsNothing);
+    expect(find.text('Ground Control Vision Match'), findsNothing);
     expect(find.text('Detect faces'), findsNothing);
     expect(find.byType(VoiceMatchPeopleRow), findsNothing);
   });

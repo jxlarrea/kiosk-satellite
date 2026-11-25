@@ -3877,8 +3877,8 @@ final _messages = <String, String Function(UiStrings)>{
   'settingScreensaverFacePeopleDescription': (s) =>
       s.settingScreensaverFacePeopleDescription,
   'screensaverFacePeopleNone': (s) => s.screensaverFacePeopleNone,
-  'screensaverGroundControlFaceRecognition': (s) =>
-      s.screensaverGroundControlFaceRecognition,
+  'screensaverGroundControlVisionMatch': (s) =>
+      s.screensaverGroundControlVisionMatch,
   'settingFacePreviewTitle': (s) => s.settingFacePreviewTitle,
   'settingFacePreviewDescription': (s) => s.settingFacePreviewDescription,
   'settingFacePreviewSecondsTitle': (s) => s.settingFacePreviewSecondsTitle,

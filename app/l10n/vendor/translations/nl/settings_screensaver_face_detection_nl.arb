@@ -21,5 +21,5 @@
   "settingScreensaverFacePeopleTitle": "Personen",
   "settingScreensaverFacePeopleDescription": "Kies wie de schermbeveiliging kan sluiten of uitstellen door naar de kiosk te kijken. Is er niemand gekozen, dan kan iedereen die herkend wordt dat.",
   "screensaverFacePeopleNone": "Iedereen die herkend wordt",
-  "screensaverGroundControlFaceRecognition": "Ground Control-gezichtsherkenning"
+  "screensaverGroundControlVisionMatch": "Ground Control Vision Match"
 }

@@ -8847,7 +8847,7 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Bildschirmschoner > Gesichtserkennung > Ground Control Gesichtswiedererkennung';
+      'Bildschirmschoner > Gesichtserkennung > Ground Control Vision Match';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12748,8 +12748,8 @@ class UiStringsDe extends UiStrings {
   String get screensaverFacePeopleNone => 'Alle erkannten Personen';
 
   @override
-  String get screensaverGroundControlFaceRecognition =>
-      'Ground Control Gesichtswiedererkennung';
+  String get screensaverGroundControlVisionMatch =>
+      'Ground Control Vision Match';
 
   @override
   String get settingFacePreviewTitle => 'Kameravorschau anzeigen';

@@ -8754,7 +8754,7 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Wygaszacz ekranu > Wykrywanie twarzy > Rozpoznawanie twarzy Ground Control';
+      'Wygaszacz ekranu > Wykrywanie twarzy > Ground Control Vision Match';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12629,8 +12629,8 @@ class UiStringsPl extends UiStrings {
   String get screensaverFacePeopleNone => 'Każda rozpoznana osoba';
 
   @override
-  String get screensaverGroundControlFaceRecognition =>
-      'Rozpoznawanie twarzy Ground Control';
+  String get screensaverGroundControlVisionMatch =>
+      'Ground Control Vision Match';
 
   @override
   String get settingFacePreviewTitle => 'Pokazuj podgląd z kamery';
