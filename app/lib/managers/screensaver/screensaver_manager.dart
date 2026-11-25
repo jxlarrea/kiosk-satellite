@@ -845,55 +845,13 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       _onMotion(held: e.held);
     });
     bus.on<FaceInViewChanged>().listen((e) {
+      final counted = _faceCounts;
       _facesInView = {for (final p in e.people) p.id, ?e.id};
+      // The name a sighting was waiting for: act on it now. The next
+      // sighting is up to a second away.
+      if (!counted && _faceCounts && _faceUnnamed != null) _onFace();
     });
-    bus.on<FaceDetected>().listen((_) {
-      // Same lockdown rule as motion.
-      if (_settings.get(defs.lockdownEnabled)) return;
-      // Ground Control Vision Match > Detect faces: only someone recognized,
-      // or one of the chosen people. A face not named yet waits for the
-      // next sighting, about a second later.
-      if (!_faceCounts) return;
-      if (!_active) {
-        // Between screensavers a face can only postpone the next one,
-        // under Postpone on motion's rules: the postpone switch extends
-        // Dismiss on face and never acts on its own, and Dismiss on
-        // motion keeps precedence over both face legs.
-        if (_settings.get(defs.screensaverPostponeOnFace) &&
-            _settings.get(defs.screensaverDismissOnFace) &&
-            !_settings.get(defs.screensaverDismissOnMotion)) {
-          _resetIdleTimer();
-          bus.publish(const FacePostponedScreensaver());
-        }
-        return;
-      }
-      if (!_screenDark &&
-          _settings.get(defs.screensaverDismissOnFaceScreenOffOnly)) {
-        return;
-      }
-      // Dismiss on motion (or its schedule override) takes precedence:
-      // the native side does not look for faces while motion is on, and
-      // this double-gate keeps a stale tick from acting either way.
-      if (_motionPolicy ?? _settings.get(defs.screensaverDismissOnMotion)) {
-        return;
-      }
-      if (!(_facePolicy ?? _settings.get(defs.screensaverDismissOnFace))) {
-        return;
-      }
-      // Now Playing keeps its own policy; a face counts like motion there.
-      final showingNowPlaying = activeView.value != null && _nowPlayingTakeover;
-      if (showingNowPlaying &&
-          !nowPlayingShared &&
-          !_settings.get(defs.sendspinFullscreenMotion)) {
-        return;
-      }
-      // A wake to the screensaver dismisses nothing, so no camera preview.
-      if (_wakeToScreensaver('face')) return;
-      // Before the stop, so the camera preview's hold (MotionManager) is
-      // armed by the time the session's end reaches it.
-      bus.publish(const FaceDismissedScreensaver());
-      notifyActivity('face');
-    });
+    bus.on<FaceDetected>().listen((_) => _onFace());
     bus.on<PersonDetected>().listen((e) {
       // The device's own person sensor (discussion #353), under
       // Proximity's rules: lockdown holds, the postpone switch extends
@@ -1617,6 +1575,69 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   /// Everyone Face Recognition names in view, for Detect faces.
   Set<String> _facesInView = const {};
+
+  /// A sighting that did not count because Face Recognition had not named
+  /// the face yet, for as long as the name can still act on it. Sightings
+  /// come a second apart while someone keeps looking at the kiosk, so one
+  /// this old is a face that has left.
+  Timer? _faceUnnamed;
+  static const _faceUnnamedFor = Duration(milliseconds: 1500);
+
+  /// Someone is looking at the kiosk: dismiss the screensaver or postpone
+  /// the next one, under the Face Detection settings.
+  void _onFace() {
+    // Same lockdown rule as motion.
+    if (_settings.get(defs.lockdownEnabled)) return;
+    // Ground Control Vision Match > Detect faces: only someone recognized,
+    // or one of the chosen people. A face not named yet waits for its
+    // name (see the FaceInViewChanged listener) or for the next sighting.
+    if (!_faceCounts) {
+      _faceUnnamed?.cancel();
+      _faceUnnamed = Timer(_faceUnnamedFor, () => _faceUnnamed = null);
+      return;
+    }
+    _faceUnnamed?.cancel();
+    _faceUnnamed = null;
+    if (!_active) {
+      // Between screensavers a face can only postpone the next one,
+      // under Postpone on motion's rules: the postpone switch extends
+      // Dismiss on face and never acts on its own, and Dismiss on
+      // motion keeps precedence over both face legs.
+      if (_settings.get(defs.screensaverPostponeOnFace) &&
+          _settings.get(defs.screensaverDismissOnFace) &&
+          !_settings.get(defs.screensaverDismissOnMotion)) {
+        _resetIdleTimer();
+        bus.publish(const FacePostponedScreensaver());
+      }
+      return;
+    }
+    if (!_screenDark &&
+        _settings.get(defs.screensaverDismissOnFaceScreenOffOnly)) {
+      return;
+    }
+    // Dismiss on motion (or its schedule override) takes precedence:
+    // the native side does not look for faces while motion is on, and
+    // this double-gate keeps a stale tick from acting either way.
+    if (_motionPolicy ?? _settings.get(defs.screensaverDismissOnMotion)) {
+      return;
+    }
+    if (!(_facePolicy ?? _settings.get(defs.screensaverDismissOnFace))) {
+      return;
+    }
+    // Now Playing keeps its own policy; a face counts like motion there.
+    final showingNowPlaying = activeView.value != null && _nowPlayingTakeover;
+    if (showingNowPlaying &&
+        !nowPlayingShared &&
+        !_settings.get(defs.sendspinFullscreenMotion)) {
+      return;
+    }
+    // A wake to the screensaver dismisses nothing, so no camera preview.
+    if (_wakeToScreensaver('face')) return;
+    // Before the stop, so the camera preview's hold (MotionManager) is
+    // armed by the time the session's end reaches it.
+    bus.publish(const FaceDismissedScreensaver());
+    notifyActivity('face');
+  }
 
   /// Whether a face in view dismisses or postpones the screensaver under
   /// Detect faces. Anyone when Face Recognition is off, since the
@@ -2822,6 +2843,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
     _pauseProbe?.cancel();
     _idleTimer?.cancel();
+    _faceUnnamed?.cancel();
     _scheduleTimer?.cancel();
     _screenOffTimer?.cancel();
     _nightTimer?.cancel();

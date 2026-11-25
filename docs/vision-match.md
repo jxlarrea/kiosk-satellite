@@ -45,7 +45,7 @@ Choose the model for each feature in Ground Control under **Settings > Vision Ma
 ## How It Works
 
 - **Frames go to Ground Control one at a time and only when something moves in front of the camera.** Each frame is a 640x480 JPEG.
-- **Looks are paced to what the machine running Ground Control can keep up with.** The kiosk looks at most 2 times a second for faces and 4 times a second for hands.
+- **Looks are paced to what the machine running Ground Control can keep up with.** The kiosk looks at most 2 times a second for faces and 4 times a second for hands. With Face Recognition on, it looks up to 5 times a second for the first 2 seconds a face is in view without a name, since a name often takes a second look.
 - **A feature on Ground Control also works on devices that can't run it on their own.** Examples are Android 7 devices for any feature and x86 devices for Hand Gestures.
 - **When Ground Control doesn't answer,** looks for the features on Ground Control wait until it answers again. The log records this once. The models on the device run only for a feature that is turned off on this page.
 - **Ground Control saves the results as vision sessions** on its **Sessions** page. Each session also lists what the kiosk did, such as when the screensaver was dismissed or postponed and each finger gesture with its action. While **Keep frames** is on in Ground Control's **Settings > Vision Match**, it keeps up to 8 frames of each session. Deleting a session also deletes its frames.

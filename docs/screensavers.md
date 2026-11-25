@@ -446,7 +446,7 @@ With [Face Recognition](vision-match.md#face-recognition) on Ground Control, the
 | Detect faces | **Anyone**, the default, counts any face looking at the kiosk. With **Chosen people**, only the people picked under **People** dismiss or postpone the screensaver. A guest or a passing child looking at the kiosk doesn't. |
 | People | Shown on Chosen people. Pick people from Ground Control in the same list as Voice Match's **People**. If nobody is picked, anyone recognized counts. |
 
-A face counts once Ground Control recognizes it. That takes a look or two, so the screensaver is dismissed about a second later than with Anyone. A chosen person still counts when someone else is in view too. The group appears only while Face Recognition is on.
+A face counts once Ground Control recognizes it. That takes a look or two, so the screensaver is dismissed a little later than with Anyone. The kiosk looks up to 5 times a second while a face in view has no name yet and the screensaver is dismissed by the look that brings the name. A chosen person still counts when someone else is in view too. The group appears only while Face Recognition is on.
 
 ### Camera Preview
 

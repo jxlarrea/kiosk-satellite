@@ -1583,8 +1583,12 @@ class CameraMotion(
                 lastPreviewNs = now
                 emitPreview(image, sink)
             }
-            // Drop frames that arrive before the next slot is due.
-            if (lastProcessedNs != 0L && now - lastProcessedNs < frameIntervalNs) return
+            // Drop frames that arrive before the next slot is due, except
+            // for the face looks of someone waiting for a name.
+            if (lastProcessedNs != 0L && now - lastProcessedNs < frameIntervalNs) {
+                hurriedFaceLook(image, now, sink)
+                return
+            }
             lastProcessedNs = now
 
             val grid = sampleGrid(image)
@@ -1719,7 +1723,12 @@ class CameraMotion(
                     else -> VISION_DUTY
                 }
                 val paced = (costMs * 1_000_000L * duty).toLong()
-                visionIntervalNs = max(VISION_MIN_INTERVAL_NS, max(paced, if (remoteFaces) groundControl.faceIntervalNs else 0L))
+                // Someone in view whom Face Recognition has not named yet
+                // is looked at faster (see GroundControlVision.hurried).
+                val floor = if (remoteFaces && groundControl.hurried(now)) {
+                    GroundControlVision.UNNAMED_INTERVAL_NS
+                } else VISION_MIN_INTERVAL_NS
+                visionIntervalNs = max(floor, max(paced, if (remoteFaces) groundControl.faceIntervalNs else 0L))
                 val due = now - lastVisionRunNs >= visionIntervalNs
                 val burst = !due && burstCredit && bigChange &&
                     now - lastVisionRunNs >= VISION_MIN_INTERVAL_NS
@@ -1906,6 +1915,29 @@ class CameraMotion(
     }
 
     /**
+     * Vision Match with Face Recognition: a face look from a frame between
+     * two analysis slots, while someone in view waits for a name (see
+     * [GroundControlVision.hurried]). The slots are as far apart as the
+     * Motion frame rate asks, half a second by default, which is the pace
+     * the faster looks are there to beat. Nothing else reads this frame:
+     * the motion grid keeps its own rate. With the hand looks on Ground
+     * Control the slots are a quarter second apart already and a face look
+     * rides with a hand look there, so none is sent from here: one waiting
+     * for its answer would hold up the hand look of the next slot.
+     */
+    private fun hurriedFaceLook(image: ImageProxy, now: Long, sink: EventChannel.EventSink) {
+        if (!remoteFaces || !facesWanted || paused) return
+        if (remoteHands && fingersWanted) return
+        if (!groundControl.hurried(now)) return
+        val every = max(GroundControlVision.UNNAMED_INTERVAL_NS, groundControl.faceIntervalNs)
+        if (now - lastVisionRunNs < every || groundControl.busy(now)) return
+        lastVisionRunNs = now
+        groundControl.prepare(image, true, false, now)?.let { look ->
+            mainHandler.post { sink.success(look) }
+        }
+    }
+
+    /**
      * Vision Match: Ground Control's answer to a look, on the analyzer
      * thread. Faces go through the same size check and rate limit as the
      * on-device detector's, the hand through [onHandResult]. A failed look
@@ -1920,6 +1952,7 @@ class CameraMotion(
         if (look.face) {
             val faces = args["faces"] as? List<*> ?: emptyList<Any>()
             if (faces.isNotEmpty()) lastSightingNs = now
+            groundControl.faceLook(faces.isNotEmpty(), GroundControlVision.nobodyNamed(args), now)
             val width = GroundControlVision.frontalWidth(faces, look.uprightWidth, look.uprightHeight)
             if (width != null) {
                 Log.d(TAG, "face (Ground Control): width=${"%.2f".format(width)}")

@@ -150,4 +150,66 @@ void main() {
       expect(postponed(async, null), isTrue);
     });
   });
+
+  /// A sighting at 3 s with nobody named, then [inView] named [after]
+  /// later with no sighting since: whether that kept the 5 s screensaver
+  /// away at 5.5 s.
+  bool namedLater(FakeAsync async, FaceInViewChanged inView, Duration after) {
+    async.flushMicrotasks();
+    saver.init();
+    async.flushMicrotasks();
+    async.elapse(const Duration(seconds: 3));
+    bus.publish(const FaceDetected());
+    async.flushMicrotasks();
+    async.elapse(after);
+    bus.publish(inView);
+    async.flushMicrotasks();
+    async.elapse(
+      const Duration(milliseconds: 5500) - const Duration(seconds: 3) - after,
+    );
+    async.flushMicrotasks();
+    return !saver.isActive;
+  }
+
+  test('a name that follows a sighting counts without the next sighting', () {
+    fakeAsync((async) {
+      build({'ks.screensaver.face_who': 'people'});
+      expect(namedLater(async, ana, const Duration(milliseconds: 250)), isTrue);
+    });
+  });
+
+  test('a name for someone not chosen does not count', () {
+    fakeAsync((async) {
+      build({
+        'ks.screensaver.face_who': 'people',
+        'ks.screensaver.face_people': chosenAna,
+      });
+      expect(
+        namedLater(async, leo, const Duration(milliseconds: 250)),
+        isFalse,
+      );
+    });
+  });
+
+  test('a name long after the last sighting waits for the next one', () {
+    fakeAsync((async) {
+      build({'ks.screensaver.face_who': 'people'});
+      expect(namedLater(async, ana, const Duration(seconds: 2)), isFalse);
+    });
+  });
+
+  test('a name with no sighting before it does nothing by itself', () {
+    fakeAsync((async) {
+      build({'ks.screensaver.face_who': 'people'});
+      async.flushMicrotasks();
+      saver.init();
+      async.flushMicrotasks();
+      async.elapse(const Duration(seconds: 3));
+      bus.publish(ana);
+      async.flushMicrotasks();
+      async.elapse(const Duration(seconds: 3));
+      async.flushMicrotasks();
+      expect(saver.isActive, isTrue);
+    });
+  });
 }

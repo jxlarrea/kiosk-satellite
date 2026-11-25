@@ -24,11 +24,37 @@ import kotlin.math.max
  * Ground Control tells the kiosk how many looks a second it keeps up with
  * ([setMaxLooks]). Looks are never more frequent than that, on top of the
  * analyzer's own pacing.
+ *
+ * With Face Recognition, a face that comes into view and is not named yet
+ * gets its looks [UNNAMED_INTERVAL_NS] apart for [UNNAMED_SPRINT_NS] (see
+ * [hurried]): a name takes two looks at the face more often than not, and
+ * at the usual pace that is over a second before the kiosk can act on it.
  */
 class GroundControlVision {
     companion object {
         private const val JPEG_QUALITY = 80
         const val ANSWER_TIMEOUT_NS = 2_000_000_000L
+
+        // The face looks while someone in view has no name yet: five a
+        // second for two seconds, measured from the first look that found
+        // the face. Whoever is still not named after that is a guest and
+        // gets the usual pace. A face gone this long starts over.
+        const val UNNAMED_INTERVAL_NS = 200_000_000L
+        const val UNNAMED_SPRINT_NS = 2_000_000_000L
+        const val UNNAMED_GONE_NS = 1_000_000_000L
+
+        /**
+         * Whether Ground Control's answer to a face look names nobody while
+         * Face Recognition is on. An answer says who is in view ("person"
+         * and "people") only with Face Recognition, so one without them is
+         * never waiting for a name.
+         */
+        fun nobodyNamed(answer: Map<*, *>): Boolean {
+            if (!answer.containsKey("person")) return false
+            if ((answer["person"] as? Map<*, *>)?.get("id") != null) return false
+            val people = answer["people"] as? List<*> ?: return true
+            return people.none { (it as? Map<*, *>)?.get("id") != null }
+        }
 
         /**
          * The width of the largest face looking at the kiosk, as a fraction
@@ -82,6 +108,32 @@ class GroundControlVision {
     private var nextId = 0
     private var inFlight: Look? = null
     private var timedOut = 0
+    private var unnamedSinceNs = 0L
+    private var lastFaceNs = 0L
+
+    /**
+     * Analyzer thread: a face look was answered. [faces] is whether it
+     * found any face, also one cut off by the frame or turned away, and
+     * [unnamed] whether Face Recognition has named nobody (see
+     * [nobodyNamed]).
+     */
+    fun faceLook(faces: Boolean, unnamed: Boolean, now: Long) {
+        if (!faces) return
+        if (!unnamed) {
+            unnamedSinceNs = 0L
+        } else if (unnamedSinceNs == 0L || now - lastFaceNs > UNNAMED_GONE_NS) {
+            unnamedSinceNs = now
+        }
+        lastFaceNs = now
+    }
+
+    /**
+     * Analyzer thread. True while a face in view waits for its name and
+     * the faster looks still apply.
+     */
+    fun hurried(now: Long): Boolean =
+        unnamedSinceNs != 0L && now - unnamedSinceNs <= UNNAMED_SPRINT_NS &&
+            now - lastFaceNs <= UNNAMED_GONE_NS
 
     /** Analyzer thread. True while a look waits for its answer. */
     fun busy(now: Long): Boolean {
@@ -148,5 +200,7 @@ class GroundControlVision {
     fun reset() {
         inFlight = null
         timedOut = 0
+        unnamedSinceNs = 0L
+        lastFaceNs = 0L
     }
 }
