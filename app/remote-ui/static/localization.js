@@ -160,6 +160,8 @@ const CALENDAR_PAGE_TEXT = {
 
 function calendarPageText(english) {
   if (english === 'Display' || english === 'Kiosk') return navigationText(english);
+  // The Kiosk page's name for the group, as every page with one says it.
+  if (english === 'Ground Control Vision Match') return kioskText(english);
   const id = CALENDAR_PAGE_TEXT[english];
   return id ? t(id, {}, english) : english;
 }

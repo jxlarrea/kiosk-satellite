@@ -1176,5 +1176,21 @@
         "Calendar"
       ]
     }
+  },
+  "calendarUpNextFor": "Up next for {name}",
+  "@calendarUpNextFor": {
+    "context": "Calendar",
+    "description": "Heading of the next event today of the person Face Recognition names at the kiosk, in the Schedule view. {name} is the person's name.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The person's name, such as Maya."
+      }
+    }
   }
 }

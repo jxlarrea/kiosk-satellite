@@ -96,5 +96,6 @@
   "calendarScopeThis": "Это событие",
   "calendarScopeFollowing": "Это и следующие события",
   "calendarScopeAll": "Все события",
-  "calendarEditingSection": "Редактирование"
+  "calendarEditingSection": "Редактирование",
+  "calendarUpNextFor": "Дальше по плану: {name}"
 }

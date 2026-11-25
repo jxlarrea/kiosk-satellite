@@ -23,5 +23,7 @@
   "calendarIdle2Minutes": "2 хвилини",
   "settingsMenuCalendar": "Календар",
   "settingsMenuCalendarSummary": "Сімейні календарі з Home Assistant",
-  "fleetTheCalendarsHiddenWithTheirChips": "календарі, приховані своїми позначками"
+  "fleetTheCalendarsHiddenWithTheirChips": "календарі, приховані своїми позначками",
+  "settingCalendarFaceFocusTitle": "Виділяти того, хто в кіоску",
+  "settingCalendarFaceFocusDescription": "Обводить значок людини в кіоску, ставить її колонку першою в поданні День і вибирає її календар для нових подій."
 }

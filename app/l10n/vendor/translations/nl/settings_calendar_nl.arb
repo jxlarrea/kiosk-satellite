@@ -23,5 +23,7 @@
   "calendarIdle2Minutes": "2 minuten",
   "settingsMenuCalendar": "Agenda",
   "settingsMenuCalendarSummary": "Gezinsagenda's uit Home Assistant",
-  "fleetTheCalendarsHiddenWithTheirChips": "de agenda's die met hun labels zijn verborgen"
+  "fleetTheCalendarsHiddenWithTheirChips": "de agenda's die met hun labels zijn verborgen",
+  "settingCalendarFaceFocusTitle": "Focus op wie bij de kiosk staat",
+  "settingCalendarFaceFocusDescription": "Omcirkelt de chip van de persoon bij de kiosk, zet diens kolom vooraan in Dag en kiest diens agenda voor nieuwe afspraken."
 }

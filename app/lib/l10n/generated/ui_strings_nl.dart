@@ -696,6 +696,11 @@ class UiStringsNl extends UiStrings {
   String get calendarEditingSection => 'Bewerken';
 
   @override
+  String calendarUpNextFor(String name) {
+    return 'Hierna voor $name';
+  }
+
+  @override
   String get cameraViewerTitle => 'Cameraweergave';
 
   @override
@@ -5472,6 +5477,13 @@ class UiStringsNl extends UiStrings {
       'de agenda\'s die met hun labels zijn verborgen';
 
   @override
+  String get settingCalendarFaceFocusTitle => 'Focus op wie bij de kiosk staat';
+
+  @override
+  String get settingCalendarFaceFocusDescription =>
+      'Omcirkelt de chip van de persoon bij de kiosk, zet diens kolom vooraan in Dag en kiest diens agenda voor nieuwe afspraken.';
+
+  @override
   String get settingCameraEnabledTitle => 'Camera inschakelen';
 
   @override
@@ -8860,6 +8872,10 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingVisionMatchLinkGestureWhoDescription =>
       'Gebaren > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkCalendarFocusDescription =>
+      'Agenda > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Eigen pagina\'s';

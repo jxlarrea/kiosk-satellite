@@ -759,5 +759,18 @@
         "Ground Control > Vision Match > Used in other settings"
       ]
     }
+  },
+  "settingVisionMatchLinkCalendarFocusDescription": "Calendar > Ground Control Vision Match",
+  "@settingVisionMatchLinkCalendarFocusDescription": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Where the setting is, as a path of page names. Use the translated name of the Calendar page. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings"
+      ]
+    }
   }
 }

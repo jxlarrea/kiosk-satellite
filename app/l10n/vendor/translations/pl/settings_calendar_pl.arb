@@ -23,5 +23,7 @@
   "calendarIdle2Minutes": "2 minuty",
   "settingsMenuCalendar": "Kalendarz",
   "settingsMenuCalendarSummary": "Kalendarze rodzinne z Home Assistant",
-  "fleetTheCalendarsHiddenWithTheirChips": "kalendarze ukryte za pomocą ich etykiet"
+  "fleetTheCalendarsHiddenWithTheirChips": "kalendarze ukryte za pomocą ich etykiet",
+  "settingCalendarFaceFocusTitle": "Wyróżniaj osobę przy kiosku",
+  "settingCalendarFaceFocusDescription": "Obrysowuje znacznik osoby przy kiosku, ustawia jej kolumnę jako pierwszą w widoku Dzień i wybiera jej kalendarz dla nowych wydarzeń."
 }

@@ -684,6 +684,11 @@ class UiStringsZh extends UiStrings {
   String get calendarEditingSection => '编辑';
 
   @override
+  String calendarUpNextFor(String name) {
+    return '$name 接下来';
+  }
+
+  @override
   String get cameraViewerTitle => '摄像头画面';
 
   @override
@@ -5230,6 +5235,13 @@ class UiStringsZh extends UiStrings {
   String get fleetTheCalendarsHiddenWithTheirChips => '用标签隐藏的日历';
 
   @override
+  String get settingCalendarFaceFocusTitle => '突出显示 Kiosk 前的人';
+
+  @override
+  String get settingCalendarFaceFocusDescription =>
+      '为 Kiosk 前的人的标签加上圆环，在“日”视图中把其栏放在最前，并为新日程选择其日历。';
+
+  @override
   String get settingCameraEnabledTitle => '启用摄像头';
 
   @override
@@ -8406,6 +8418,10 @@ class UiStringsZh extends UiStrings {
   @override
   String get settingVisionMatchLinkGestureWhoDescription =>
       '手势 > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkCalendarFocusDescription =>
+      '日历 > Ground Control Vision Match';
 
   @override
   String get haCustomPages => '自定义网页';
@@ -17258,6 +17274,11 @@ class UiStringsZhCn extends UiStringsZh {
   String get calendarEditingSection => '编辑';
 
   @override
+  String calendarUpNextFor(String name) {
+    return '$name 接下来';
+  }
+
+  @override
   String get cameraViewerTitle => '摄像头画面';
 
   @override
@@ -21804,6 +21825,13 @@ class UiStringsZhCn extends UiStringsZh {
   String get fleetTheCalendarsHiddenWithTheirChips => '用标签隐藏的日历';
 
   @override
+  String get settingCalendarFaceFocusTitle => '突出显示 Kiosk 前的人';
+
+  @override
+  String get settingCalendarFaceFocusDescription =>
+      '为 Kiosk 前的人的标签加上圆环，在“日”视图中把其栏放在最前，并为新日程选择其日历。';
+
+  @override
   String get settingCameraEnabledTitle => '启用摄像头';
 
   @override
@@ -24980,6 +25008,10 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingVisionMatchLinkGestureWhoDescription =>
       '手势 > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkCalendarFocusDescription =>
+      '日历 > Ground Control Vision Match';
 
   @override
   String get haCustomPages => '自定义网页';

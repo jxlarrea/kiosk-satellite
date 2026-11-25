@@ -716,18 +716,26 @@ class CalendarRequests {
     return (found: found, unknown: unknown, unidentified: unidentified);
   }
 
-  /// The calendar of [speaking]: the one Ground Control has for them, the
-  /// one set for their Home Assistant person or the one with their name.
-  CalendarSource? _calendarOf(Speaking speaking) {
-    final entity = speaking.things['calendar'];
-    final person = speaking.things['person'];
-    final word = normalizeKioskName(speaking.name);
+  CalendarSource? _calendarOf(Speaking speaking) =>
+      calendarFor(speaking, _store.enabled);
+
+  /// The calendar of [person] among [calendars]: the one Ground Control
+  /// has for them, the one set for their Home Assistant person or the one
+  /// with their name. Voice's "my calendar" and the face at the kiosk
+  /// find the same one.
+  static CalendarSource? calendarFor(
+    Speaking person,
+    Iterable<CalendarSource> calendars,
+  ) {
+    final entity = person.things['calendar'];
+    final ha = person.things['person'];
+    final word = normalizeKioskName(person.name);
     for (final match in <bool Function(CalendarSource)>[
       (c) => entity != null && c.entity == entity,
-      (c) => person != null && c.person == person,
+      (c) => ha != null && c.person == ha,
       (c) => word.isNotEmpty && _names(c).any((n) => _sameName(n, word)),
     ]) {
-      for (final c in _store.enabled) {
+      for (final c in calendars) {
         if (match(c)) return c;
       }
     }

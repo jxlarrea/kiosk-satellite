@@ -23,5 +23,7 @@
   "calendarIdle2Minutes": "2 Minuten",
   "settingsMenuCalendar": "Kalender",
   "settingsMenuCalendarSummary": "Familienkalender aus Home Assistant",
-  "fleetTheCalendarsHiddenWithTheirChips": "die mit ihren Chips ausgeblendeten Kalender"
+  "fleetTheCalendarsHiddenWithTheirChips": "die mit ihren Chips ausgeblendeten Kalender",
+  "settingCalendarFaceFocusTitle": "Person am Kiosk hervorheben",
+  "settingCalendarFaceFocusDescription": "Umrandet den Chip der Person am Kiosk, stellt ihre Spalte in Tag an den Anfang und wählt ihren Kalender für neue Termine."
 }

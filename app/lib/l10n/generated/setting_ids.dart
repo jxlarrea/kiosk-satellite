@@ -2948,4 +2948,12 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingGesturesFacePeopleTitle",
     "description": "settingGesturesFacePeopleDescription",
   },
+  "calendar.face_focus": {
+    "title": "settingCalendarFaceFocusTitle",
+    "description": "settingCalendarFaceFocusDescription",
+  },
+  "vision_match.link_calendar_focus": {
+    "title": "settingCalendarFaceFocusTitle",
+    "description": "settingVisionMatchLinkCalendarFocusDescription",
+  },
 };

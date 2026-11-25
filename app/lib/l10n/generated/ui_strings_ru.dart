@@ -700,6 +700,11 @@ class UiStringsRu extends UiStrings {
   String get calendarEditingSection => 'Редактирование';
 
   @override
+  String calendarUpNextFor(String name) {
+    return 'Дальше по плану: $name';
+  }
+
+  @override
   String get cameraViewerTitle => 'Вид камер';
 
   @override
@@ -5450,6 +5455,13 @@ class UiStringsRu extends UiStrings {
       'календари, скрытые их метками';
 
   @override
+  String get settingCalendarFaceFocusTitle => 'Выделять того, кто у киоска';
+
+  @override
+  String get settingCalendarFaceFocusDescription =>
+      'Обводит значок человека у киоска, ставит его колонку первой в виде «День» и выбирает его календарь для новых событий.';
+
+  @override
   String get settingCameraEnabledTitle => 'Включить камеру';
 
   @override
@@ -8821,6 +8833,10 @@ class UiStringsRu extends UiStrings {
   @override
   String get settingVisionMatchLinkGestureWhoDescription =>
       'Жесты > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkCalendarFocusDescription =>
+      'Календарь > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Свои страницы';

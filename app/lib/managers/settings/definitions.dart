@@ -8664,6 +8664,19 @@ const visionMatchLinkGestureWho = SettingDef<String>(
   linksTo: 'gestures.face_who',
 );
 
+const visionMatchLinkCalendarFocus = SettingDef<String>(
+  key: 'vision_match.link_calendar_focus',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Focus on who is at the kiosk',
+  description: 'Calendar > Ground Control Vision Match',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Used in other settings',
+  dependsOn: 'vision_match.face_recognition',
+  linksTo: 'calendar.face_focus',
+);
+
 /// The People setting each Chosen people option lists, for the values on
 /// Vision Match > Used in other settings.
 const groundControlPeopleOf = {
@@ -13646,6 +13659,26 @@ const calendarAllowDelete = SettingDef<bool>(
   section: 'Editing',
 );
 
+/// Calendar > Ground Control Vision Match: the calendars of the people
+/// Face Recognition names at the kiosk stand out. Their chips get a ring,
+/// their lanes come first in Day, Up next is the person at the kiosk's and
+/// New event starts on their calendar. Nothing is hidden or saved.
+const calendarFaceFocus = SettingDef<bool>(
+  key: 'calendar.face_focus',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Focus on who is at the kiosk',
+  description:
+      'Rings the chip of the person at the kiosk, puts their lane first in '
+      'Day and picks their calendar for new events.',
+  category: 'Calendar',
+  section: 'Ground Control Vision Match',
+  // The gate lives on Ground Control's Vision Match page, so it is the
+  // second gate, as for Finger gestures for.
+  alsoDependsOn: 'vision_match.face_recognition',
+  groundControl: 'vision',
+);
+
 /// Where the kiosk menu's Calendar row had its own switch. A link to
 /// Drawer menu items now (issue #1194), which decides every row.
 const calendarMenu = SettingDef<bool>(
@@ -15772,6 +15805,7 @@ const List<SettingDef<Object>> allSettings = [
   visionMatchLinkLockdownDisable,
   visionMatchLinkLockdownRelock,
   visionMatchLinkGestureWho,
+  visionMatchLinkCalendarFocus,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,
   voiceNoiseGate,
@@ -16076,6 +16110,7 @@ const List<SettingDef<Object>> allSettings = [
   calendarWeatherEntity,
   calendarAllowEdit,
   calendarAllowDelete,
+  calendarFaceFocus,
   calendarIdleCloseMinutes,
   calendarMenu,
 ];

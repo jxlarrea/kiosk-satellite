@@ -59,5 +59,6 @@
   "recognitionCardVoiceConfirmed": "声音已确认",
   "settingVisionMatchPresenceSensorsTitle": "存在传感器",
   "settingVisionMatchPresenceSensorsDescription": "向 Home Assistant 添加 Presence 和 Looking at the kiosk 传感器。摄像头会保持开启，每当有物体移动时都会检测人脸，即使屏幕已关闭。",
-  "settingVisionMatchLinkGestureWhoDescription": "手势 > Ground Control Vision Match"
+  "settingVisionMatchLinkGestureWhoDescription": "手势 > Ground Control Vision Match",
+  "settingVisionMatchLinkCalendarFocusDescription": "日历 > Ground Control Vision Match"
 }

@@ -23,5 +23,7 @@
   "calendarIdle2Minutes": "2 minutes",
   "settingsMenuCalendar": "Calendrier",
   "settingsMenuCalendarSummary": "Calendriers familiaux de Home Assistant",
-  "fleetTheCalendarsHiddenWithTheirChips": "les calendriers masqués par leurs pastilles"
+  "fleetTheCalendarsHiddenWithTheirChips": "les calendriers masqués par leurs pastilles",
+  "settingCalendarFaceFocusTitle": "Mettre en avant la personne au kiosque",
+  "settingCalendarFaceFocusDescription": "Entoure la puce de la personne au kiosque, place sa colonne en premier dans Jour et choisit son calendrier pour les nouveaux événements."
 }

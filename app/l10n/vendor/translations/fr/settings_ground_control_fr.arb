@@ -59,5 +59,6 @@
   "recognitionCardVoiceConfirmed": "Voix confirmée",
   "settingVisionMatchPresenceSensorsTitle": "Capteurs de présence",
   "settingVisionMatchPresenceSensorsDescription": "Ajoute les capteurs Presence et Looking at the kiosk à Home Assistant. La caméra reste allumée et les visages sont recherchés à chaque mouvement, même écran éteint.",
-  "settingVisionMatchLinkGestureWhoDescription": "Gestes > Ground Control Vision Match"
+  "settingVisionMatchLinkGestureWhoDescription": "Gestes > Ground Control Vision Match",
+  "settingVisionMatchLinkCalendarFocusDescription": "Calendrier > Ground Control Vision Match"
 }

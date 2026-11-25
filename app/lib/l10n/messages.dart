@@ -458,6 +458,8 @@ String settingsPageText(
   'Calendar' => switch (english) {
     'Display' || 'Kiosk' => navigationText(context, english),
     'Editing' => l10n(context).calendarEditingSection,
+    // The Kiosk page's name for the group, as every page with one says it.
+    'Ground Control Vision Match' => kioskText(context, english),
     // The hand-built rows search finds.
     'Open calendar' => l10n(context).calendarOpen,
     'Show the calendar on this kiosk.' => l10n(context).calendarOpenHint,

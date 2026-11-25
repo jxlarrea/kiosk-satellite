@@ -697,6 +697,11 @@ class UiStringsUk extends UiStrings {
   String get calendarEditingSection => 'Редагування';
 
   @override
+  String calendarUpNextFor(String name) {
+    return 'Далі за планом: $name';
+  }
+
+  @override
   String get cameraViewerTitle => 'Перегляд камери';
 
   @override
@@ -5457,6 +5462,13 @@ class UiStringsUk extends UiStrings {
       'календарі, приховані своїми позначками';
 
   @override
+  String get settingCalendarFaceFocusTitle => 'Виділяти того, хто в кіоску';
+
+  @override
+  String get settingCalendarFaceFocusDescription =>
+      'Обводить значок людини в кіоску, ставить її колонку першою в поданні День і вибирає її календар для нових подій.';
+
+  @override
   String get settingCameraEnabledTitle => 'Увімкнути камеру';
 
   @override
@@ -8837,6 +8849,10 @@ class UiStringsUk extends UiStrings {
   @override
   String get settingVisionMatchLinkGestureWhoDescription =>
       'Жести > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkCalendarFocusDescription =>
+      'Календар > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Власні сторінки';

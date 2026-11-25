@@ -69,6 +69,7 @@ class HeadlessSettings {
     defs.visionMatchLinkLockdownDisable.key,
     defs.visionMatchLinkLockdownRelock.key,
     defs.visionMatchLinkGestureWho.key,
+    defs.visionMatchLinkCalendarFocus.key,
     defs.visionMatchHandGestures.key,
     // Voice: listening never leaves the foreground, there is none.
     defs.wakeWordBackground.key,

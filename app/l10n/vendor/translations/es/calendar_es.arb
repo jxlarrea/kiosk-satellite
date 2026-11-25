@@ -96,5 +96,6 @@
   "calendarScopeThis": "Este evento",
   "calendarScopeFollowing": "Este y los siguientes eventos",
   "calendarScopeAll": "Todos los eventos",
-  "calendarEditingSection": "Edición"
+  "calendarEditingSection": "Edición",
+  "calendarUpNextFor": "A continuación para {name}"
 }

@@ -1326,6 +1326,12 @@ abstract class UiStrings {
   /// **'Editing'**
   String get calendarEditingSection;
 
+  /// Heading of the next event today of the person Face Recognition names at the kiosk, in the Schedule view. {name} is the person's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Up next for {name}'**
+  String calendarUpNextFor(String name);
+
   /// Page title.
   ///
   /// In en, this message translates to:
@@ -9542,6 +9548,18 @@ abstract class UiStrings {
   /// **'the calendars hidden with their chips'**
   String get fleetTheCalendarsHiddenWithTheirChips;
 
+  /// Setting label: the calendar puts the person Face Recognition names at the kiosk first.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus on who is at the kiosk'**
+  String get settingCalendarFaceFocusTitle;
+
+  /// Setting description. The chip is the person's round button at the top of the calendar. Day is the name of the calendar's Day view.
+  ///
+  /// In en, this message translates to:
+  /// **'Rings the chip of the person at the kiosk, puts their lane first in Day and picks their calendar for new events.'**
+  String get settingCalendarFaceFocusDescription;
+
   /// Setting label.
   ///
   /// In en, this message translates to:
@@ -15332,6 +15350,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Gestures > Ground Control Vision Match'**
   String get settingVisionMatchLinkGestureWhoDescription;
+
+  /// Where the setting is, as a path of page names. Use the translated name of the Calendar page. Ground Control and Vision Match are names: keep them unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar > Ground Control Vision Match'**
+  String get settingVisionMatchLinkCalendarFocusDescription;
 
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///

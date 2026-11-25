@@ -59,6 +59,21 @@ Only calendars whose integration takes changes can be edited, such as Local Cale
 
 An event that appears on more than one of your calendars, such as an invitation sent to two people, is drawn once. Its background is split on a diagonal, one band per calendar, in the order the calendars are listed in Settings. The details show every calendar it is on. Two copies count as the same event when Home Assistant gives them the same event ID, which Google Calendar, CalDAV and Local Calendar do for invitations. Otherwise they match when the title, start and end are the same.
 
+## Ground Control Vision Match
+
+With [Face Recognition](vision-match.md#face-recognition) on Ground Control, the calendar puts forward the people recognized at the kiosk. **Focus on who is at the kiosk** under **Settings > Calendar > Ground Control Vision Match** turns it on and off. It is on by default.
+
+- **Chips:** the chip of each person recognized at the kiosk gets a ring in their calendar's color. On a tablet the chip also shows Vision Match's face icon.
+- **Day:** their lanes come first, the person at the kiosk's first, then everyone else in the order of Settings.
+- **Schedule:** Up next shows the next event of the person at the kiosk, as **Up next for** and their name. When they have nothing left today it shows the household's next event.
+- **New event:** the form starts with the person at the kiosk's calendar picked. A tap on an empty hour in the Day view still picks that lane's calendar.
+
+Each person's calendar is found the same way as "my calendar" by voice: the calendar set for them on Ground Control's People page, the calendar with their Home Assistant person or the one with their name. Someone without a calendar changes nothing.
+
+- **Nothing is hidden or saved.** Week and Month only ring the chips. Every calendar stays on screen and the hidden chips stay as you set them.
+- **Nothing moves under a finger.** A change waits until nobody has touched the calendar for 5 seconds.
+- **It goes back on the arrival card's rule.** Someone counts until they have been out of view for a minute, so a face turned away for a moment does not move the lanes.
+
 ## Weather
 
 Pick a weather entity under **Weather** to add the daily forecast to each day in the Week view, the Schedule view and the phone's day heading. The kiosk subscribes to the forecast only while the calendar is open.
@@ -73,6 +88,7 @@ Pick a weather entity under **Weather** to add the daily forecast to each day in
 | Weather | None | The weather entity for the daily forecast. |
 | Allow adding and editing events | Off | Adds **New event** and **Edit**. See [Adding and changing events](#adding-and-changing-events). |
 | Allow deleting events | Off | Adds **Delete** to each event. |
+| Focus on who is at the kiosk | On | Puts forward the calendars of the people recognized at the kiosk. Shows only with Face Recognition on Ground Control. See [Ground Control Vision Match](#ground-control-vision-match). |
 | Close when idle | 2 minutes | Returns to the dashboard after no touch for this long. Never keeps it open. The screensaver also closes it when it starts. It does not apply to the Calendar screensaver. In the [Compass](navigation.md) layout, Return to center applies instead and the calendar stays open under the screensaver. |
 | Show in the kiosk menu | On | Opens [Device > User Interface > Drawer menu items](drawer-menu.md), where the Calendar entry is turned on or off. The restricted menu also needs **Calendar** under **Kiosk Mode, Allowed Actions**. |
 

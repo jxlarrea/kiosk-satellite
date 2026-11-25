@@ -26323,5 +26323,25 @@
     "source": "36fe9466f394cbeed9b871252e270b84ed88ccb2e4193d2a81fa22fa5de04882",
     "translation": "014fe7e523edfa87affff9cc687733684ac49725c154c3d26ec3fce54784160b",
     "author": "Xavier Larrea"
+  },
+  "settingCalendarFaceFocusDescription": {
+    "source": "f8802fecd282fd8d1e7f73df8b62f0a043650b783886c9cbe2b01a5e58164f6c",
+    "translation": "f5ec078a012fd715da450e190f1c345ee0e5ca3af6d5f5a2da4cddc7385a5191",
+    "author": "Xavier Larrea"
+  },
+  "calendarUpNextFor": {
+    "source": "7e1ab61547b598f0633d99ae428f63cbb1a532e5081bc3c3fd40bf27aa04e29b",
+    "translation": "5a3fd72b8f32dff1b6bc3073ec1d92303bac96a887aeaa84d13a9e9b7568c4c6",
+    "author": "Xavier Larrea"
+  },
+  "settingCalendarFaceFocusTitle": {
+    "source": "863d9862a8180cbee3a6036153d066e17734a15f1686ae50c3d86c781496e5cb",
+    "translation": "5ea30dd7336936ed4a751298d99f17b2a4f5561a39f57da9a0a4db08a90591e9",
+    "author": "Xavier Larrea"
+  },
+  "settingVisionMatchLinkCalendarFocusDescription": {
+    "source": "7c70dc09ca18c491e7228e5238a7164a332443e11467a47037027adc9a29a949",
+    "translation": "9ecebaa2ace1fc0d2f611575267095fd3bfc1efab9f91e72740b12bfa15847f5",
+    "author": "Xavier Larrea"
   }
 }

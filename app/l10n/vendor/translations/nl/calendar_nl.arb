@@ -96,5 +96,6 @@
   "calendarScopeThis": "Deze afspraak",
   "calendarScopeFollowing": "Deze en volgende afspraken",
   "calendarScopeAll": "Alle afspraken",
-  "calendarEditingSection": "Bewerken"
+  "calendarEditingSection": "Bewerken",
+  "calendarUpNextFor": "Hierna voor {name}"
 }

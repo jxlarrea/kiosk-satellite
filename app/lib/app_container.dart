@@ -80,6 +80,7 @@ import 'managers/update/update_manager.dart';
 import 'managers/voice/voice_manager.dart';
 import 'managers/voice/voice_requests_manager.dart';
 import 'managers/ground_control/ground_control_manager.dart';
+import 'managers/ground_control/mine.dart';
 import 'managers/ground_control/recognition_cards.dart';
 import 'managers/voice_timers/shared_timers_manager.dart';
 import 'managers/voice_timers/voice_timer_manager.dart';
@@ -321,6 +322,9 @@ class AppContainer {
     groundControl = GroundControlManager(bus, commands, log, settings);
     recognitionCards = RecognitionCards(bus, commands, log, settings);
     voiceRequests.speaking = () => groundControl.speaking;
+    // The calendar finds the people at the kiosk's calendars from what
+    // Ground Control keeps for them, as voice finds "my calendar".
+    calendar.personThings = (id) => thingsOf(id, groundControl.people);
     // It follows what the managers above are doing, through the bus and
     // the media players' own states.
     leds = LedManager(

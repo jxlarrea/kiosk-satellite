@@ -12,6 +12,7 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../voice/ha_socket.dart';
 import 'calendar_edits.dart';
+import 'calendar_face_focus.dart';
 import 'calendar_model.dart';
 import 'calendar_requests.dart';
 
@@ -147,6 +148,23 @@ class CalendarManager extends Manager implements CalendarStore {
   /// Adding, changing and deleting events from the calendar's own screen.
   late final edits = CalendarEdits(this, log);
 
+  /// What Ground Control keeps for a person by their id, set by the
+  /// composition root from the people it sends.
+  Map<String, String> Function(String id) personThings = _noThings;
+  static Map<String, String> _noThings(String _) => const {};
+
+  /// Settings > Calendar > Focus on who is at the kiosk: the calendars of
+  /// the people Face Recognition names at the kiosk.
+  late final faceFocus = CalendarFaceFocus(
+    calendars: () => enabled,
+    thingsOf: (id) => personThings(id),
+    on: () =>
+        _settings.visible(defs.calendarFaceFocus) &&
+        _settings.get(defs.calendarFaceFocus),
+  );
+
+  ValueListenable<CalendarFocus> get focus => faceFocus.value;
+
   /// Set by [open] just before [visible] goes true: the view and day the
   /// overlay starts on.
   CalendarOpening opening = (view: null, date: null);
@@ -219,6 +237,7 @@ class CalendarManager extends Manager implements CalendarStore {
       () => bus.publish(CalendarViewChanged(shownView.value)),
     );
     _subs
+      ..add(bus.on<FaceInViewChanged>().listen(faceFocus.inView))
       ..add(
         bus.on<SettingChanged>().listen((e) {
           if (e.key == defs.calendarCalendars.key) {
@@ -235,6 +254,8 @@ class CalendarManager extends Manager implements CalendarStore {
           } else if (e.key == defs.kioskAllowCalendar.key && e.value != true) {
             visible.value = false;
           }
+          // The setting, its Face Recognition gate or the calendars moved.
+          faceFocus.refresh();
         }),
       )
       ..add(
@@ -263,6 +284,7 @@ class CalendarManager extends Manager implements CalendarStore {
     }
     await _unsubscribeAll();
     await _socket.close();
+    faceFocus.dispose();
     visible.dispose();
     compassView.dispose();
     screensaverShown.dispose();

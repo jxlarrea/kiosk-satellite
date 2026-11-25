@@ -311,5 +311,31 @@
         "Fleet Management"
       ]
     }
+  },
+  "settingCalendarFaceFocusTitle": "Focus on who is at the kiosk",
+  "@settingCalendarFaceFocusTitle": {
+    "context": "Settings > Calendar > Ground Control Vision Match",
+    "description": "Setting label: the calendar puts the person Face Recognition names at the kiosk first.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar > Focus on who is at the kiosk"
+      ],
+      "remoteAdmin": [
+        "Calendar > Focus on who is at the kiosk"
+      ]
+    }
+  },
+  "settingCalendarFaceFocusDescription": "Rings the chip of the person at the kiosk, puts their lane first in Day and picks their calendar for new events.",
+  "@settingCalendarFaceFocusDescription": {
+    "context": "Settings > Calendar > Ground Control Vision Match",
+    "description": "Setting description. The chip is the person's round button at the top of the calendar. Day is the name of the calendar's Day view.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar > Focus on who is at the kiosk"
+      ],
+      "remoteAdmin": [
+        "Calendar > Focus on who is at the kiosk"
+      ]
+    }
   }
 }

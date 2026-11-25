@@ -1470,6 +1470,9 @@ final _messages = <String, String Function(UiStrings)>{
   'settingsMenuCalendarSummary': (s) => s.settingsMenuCalendarSummary,
   'fleetTheCalendarsHiddenWithTheirChips': (s) =>
       s.fleetTheCalendarsHiddenWithTheirChips,
+  'settingCalendarFaceFocusTitle': (s) => s.settingCalendarFaceFocusTitle,
+  'settingCalendarFaceFocusDescription': (s) =>
+      s.settingCalendarFaceFocusDescription,
   'settingCameraEnabledTitle': (s) => s.settingCameraEnabledTitle,
   'settingCameraEnabledDescription': (s) => s.settingCameraEnabledDescription,
   'settingCameraDeviceTitle': (s) => s.settingCameraDeviceTitle,
@@ -2483,6 +2486,8 @@ final _messages = <String, String Function(UiStrings)>{
       s.settingVisionMatchPresenceSensorsDescription,
   'settingVisionMatchLinkGestureWhoDescription': (s) =>
       s.settingVisionMatchLinkGestureWhoDescription,
+  'settingVisionMatchLinkCalendarFocusDescription': (s) =>
+      s.settingVisionMatchLinkCalendarFocusDescription,
   'haCustomPages': (s) => s.haCustomPages,
   'haCustomPagesHintDashboard': (s) => s.haCustomPagesHintDashboard,
   'settingHaCustomPagesSocketTitle': (s) => s.settingHaCustomPagesSocketTitle,

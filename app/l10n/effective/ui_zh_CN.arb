@@ -2547,6 +2547,22 @@
       ]
     }
   },
+  "calendarUpNextFor": "{name} 接下来",
+  "@calendarUpNextFor": {
+    "context": "Calendar",
+    "description": "Heading of the next event today of the person Face Recognition names at the kiosk, in the Schedule view. {name} is the person's name.",
+    "x-locations": {
+      "device": [
+        "Kiosk menu > Calendar"
+      ]
+    },
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "description": "The person's name, such as Maya."
+      }
+    }
+  },
   "cameraViewerTitle": "摄像头画面",
   "@cameraViewerTitle": {
     "context": "Live camera view and camera screensaver",
@@ -20334,6 +20350,32 @@
       ]
     }
   },
+  "settingCalendarFaceFocusTitle": "突出显示 Kiosk 前的人",
+  "@settingCalendarFaceFocusTitle": {
+    "context": "Settings > Calendar > Ground Control Vision Match",
+    "description": "Setting label: the calendar puts the person Face Recognition names at the kiosk first.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar > Focus on who is at the kiosk"
+      ],
+      "remoteAdmin": [
+        "Calendar > Focus on who is at the kiosk"
+      ]
+    }
+  },
+  "settingCalendarFaceFocusDescription": "为 Kiosk 前的人的标签加上圆环，在“日”视图中把其栏放在最前，并为新日程选择其日历。",
+  "@settingCalendarFaceFocusDescription": {
+    "context": "Settings > Calendar > Ground Control Vision Match",
+    "description": "Setting description. The chip is the person's round button at the top of the calendar. Day is the name of the calendar's Day view.",
+    "x-locations": {
+      "device": [
+        "Settings > Calendar > Focus on who is at the kiosk"
+      ],
+      "remoteAdmin": [
+        "Calendar > Focus on who is at the kiosk"
+      ]
+    }
+  },
   "settingCameraEnabledTitle": "启用摄像头",
   "@settingCameraEnabledTitle": {
     "context": "Settings > Camera",
@@ -33092,6 +33134,19 @@
   "@settingVisionMatchLinkGestureWhoDescription": {
     "context": "Settings > Ground Control > Vision Match > Used in other settings",
     "description": "Where the setting is, as a path of page names. Use the translated name of the Gestures page. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings"
+      ]
+    }
+  },
+  "settingVisionMatchLinkCalendarFocusDescription": "日历 > Ground Control Vision Match",
+  "@settingVisionMatchLinkCalendarFocusDescription": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Where the setting is, as a path of page names. Use the translated name of the Calendar page. Ground Control and Vision Match are names: keep them unchanged.",
     "x-locations": {
       "device": [
         "Settings > Ground Control > Vision Match > Used in other settings"

@@ -332,6 +332,171 @@ void main() {
     await tester.pump(const Duration(seconds: 61));
   });
 
+  group('Focus on who is at the kiosk', () {
+    Future<AppContainer> recognizing(WidgetTester tester, String view) async {
+      final c = await container();
+      for (final key in [
+        defs.groundControlEnabled,
+        defs.cameraEnabled,
+        defs.visionMatchEnabled,
+        defs.calendarAllowEdit,
+      ]) {
+        await c.settings.set(key, true);
+      }
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      c.calendar.opening = (view: view, date: null);
+      c.calendar.visible.value = true;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Stack(children: [CalendarOverlay(container: c)]),
+          ),
+        ),
+      );
+      c.calendar.snapshot.value = CalendarSnapshot(
+        events: _week(),
+        link: CalendarLink.live,
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      return c;
+    }
+
+    // The lane headers sit under the chips in the top bar.
+    double laneX(WidgetTester tester, String name) => tester
+        .getTopLeft(
+          find
+              .text(name)
+              .evaluate()
+              .map((e) => find.byWidget(e.widget))
+              .firstWhere((f) => tester.getTopLeft(f).dy > 100),
+        )
+        .dx;
+
+    void maya(AppContainer c, {List<String> also = const []}) => c.bus.publish(
+      FaceInViewChanged(
+        id: 'm1',
+        name: 'Maya',
+        people: [
+          (id: 'm1', name: 'Maya'),
+          for (final id in also) (id: id, name: 'Leo'),
+        ],
+      ),
+    );
+
+    testWidgets('the person at the kiosk gets the first lane and a ring', (
+      tester,
+    ) async {
+      final c = await recognizing(tester, 'day');
+      expect(laneX(tester, 'Leo'), lessThan(laneX(tester, 'Maya')));
+      expect(find.byType(CalendarFaceIcon), findsNothing);
+      maya(c);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(laneX(tester, 'Maya'), lessThan(laneX(tester, 'Leo')));
+      // On her chip and her lane.
+      expect(find.byType(CalendarFaceIcon), findsNWidgets(2));
+      final chip = tester.widget<CalendarChip>(
+        find.widgetWithText(CalendarChip, 'Maya'),
+      );
+      expect(chip.ring, isNotNull);
+      // Leo in view too: his lane follows hers.
+      maya(c, also: ['l1']);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(laneX(tester, 'Maya'), lessThan(laneX(tester, 'Leo')));
+      expect(laneX(tester, 'Leo'), lessThan(laneX(tester, 'Sam')));
+      expect(tester.takeException(), isNull);
+      await letGo(tester, c);
+    });
+
+    testWidgets('nothing moves under a finger', (tester) async {
+      final c = await recognizing(tester, 'day');
+      // A touch on Leo's lane header, which does nothing else.
+      await tester.tapAt(
+        Offset(
+          laneX(tester, 'Leo') + 4,
+          tester.getCenter(find.text('Leo').last).dy,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      maya(c);
+      await tester.pump(const Duration(seconds: 1));
+      expect(laneX(tester, 'Leo'), lessThan(laneX(tester, 'Maya')));
+      await tester.pump(const Duration(seconds: 5));
+      expect(laneX(tester, 'Maya'), lessThan(laneX(tester, 'Leo')));
+      await letGo(tester, c);
+    });
+
+    testWidgets('New event starts on the calendar of the person at the '
+        'kiosk', (tester) async {
+      final c = await recognizing(tester, 'week');
+      maya(c);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('New event'));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      final picked = {
+        for (final chip in tester.widgetList<CalendarChip>(
+          find.descendant(
+            of: find.byType(Dialog),
+            matching: find.byType(CalendarChip),
+          ),
+        ))
+          chip.label: chip.on,
+      };
+      expect(picked, {'Leo': false, 'Sam': false, 'Maya': true});
+      await tester.tap(find.text('Cancel'));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await letGo(tester, c);
+    });
+
+    testWidgets('Up next is the person at the kiosk\'s', (tester) async {
+      final c = await recognizing(tester, 'schedule');
+      final now = DateTime.now();
+      final left = addDays(dateOnly(now), 1).difference(now);
+      c.calendar.snapshot.value = CalendarSnapshot(
+        events: [
+          CalendarEvent(
+            summary: 'Soon for Leo',
+            start: now.add(left ~/ 4),
+            end: now.add(left ~/ 3),
+            allDay: false,
+            calendars: const ['calendar.leo'],
+          ),
+          CalendarEvent(
+            summary: 'Later for Maya',
+            start: now.add(left ~/ 2),
+            end: now.add(left * 2 ~/ 3),
+            allDay: false,
+            calendars: const ['calendar.maya'],
+          ),
+        ],
+        link: CalendarLink.live,
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('UP NEXT'), findsOneWidget);
+      maya(c);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('UP NEXT FOR MAYA'), findsOneWidget);
+      // Leo's event moves to Later today.
+      expect(find.text('Soon for Leo'), findsWidgets);
+      await letGo(tester, c);
+    });
+
+    testWidgets('off, nobody known changes anything', (tester) async {
+      final c = await recognizing(tester, 'day');
+      await c.settings.set(defs.calendarFaceFocus, false);
+      maya(c);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(laneX(tester, 'Leo'), lessThan(laneX(tester, 'Maya')));
+      expect(find.byType(CalendarFaceIcon), findsNothing);
+      await letGo(tester, c);
+    });
+  });
+
   testWidgets('a hidden chip takes its calendar off the screen', (
     tester,
   ) async {

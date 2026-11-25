@@ -31634,5 +31634,29 @@
     "translation": "cf996a8dbe3635cee5de10437d0c53bfccfe097122b5bc84df024e7fbcbfecf5",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingCalendarFaceFocusDescription": {
+    "source": "f8802fecd282fd8d1e7f73df8b62f0a043650b783886c9cbe2b01a5e58164f6c",
+    "translation": "a562cabdc215ef188a192bbc5a78cde4a0bd2f296e9749daee54551d02ead73f",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingCalendarFaceFocusTitle": {
+    "source": "863d9862a8180cbee3a6036153d066e17734a15f1686ae50c3d86c781496e5cb",
+    "translation": "9a682de30a51fb3a589502fda08760c195a6110f5a2cf8366833210d6e3d8fda",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchLinkCalendarFocusDescription": {
+    "source": "7c70dc09ca18c491e7228e5238a7164a332443e11467a47037027adc9a29a949",
+    "translation": "7211b31e0ff30052f0ab0a8dcf0c1cdb9452847a7f6caf543b4e1b9692054d57",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "calendarUpNextFor": {
+    "source": "7e1ab61547b598f0633d99ae428f63cbb1a532e5081bc3c3fd40bf27aa04e29b",
+    "translation": "2c38309fa5a00b999bf17b93f2978378998f81bdbcd8318d1cec2e83c773e8d8",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

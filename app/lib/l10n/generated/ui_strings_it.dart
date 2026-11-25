@@ -699,6 +699,11 @@ class UiStringsIt extends UiStrings {
   String get calendarEditingSection => 'Modifica';
 
   @override
+  String calendarUpNextFor(String name) {
+    return 'A seguire per $name';
+  }
+
+  @override
   String get cameraViewerTitle => 'Vista telecamere';
 
   @override
@@ -5475,6 +5480,14 @@ class UiStringsIt extends UiStrings {
       'i calendari nascosti con le rispettive etichette';
 
   @override
+  String get settingCalendarFaceFocusTitle =>
+      'Metti in evidenza chi è al kiosk';
+
+  @override
+  String get settingCalendarFaceFocusDescription =>
+      'Evidenzia con un anello il chip della persona al kiosk, mette la sua colonna per prima in Giorno e sceglie il suo calendario per i nuovi eventi.';
+
+  @override
   String get settingCameraEnabledTitle => 'Abilita la fotocamera';
 
   @override
@@ -8885,6 +8898,10 @@ class UiStringsIt extends UiStrings {
   @override
   String get settingVisionMatchLinkGestureWhoDescription =>
       'Gesti > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkCalendarFocusDescription =>
+      'Calendario > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Pagine personalizzate';

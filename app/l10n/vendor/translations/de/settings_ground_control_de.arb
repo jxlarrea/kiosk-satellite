@@ -59,5 +59,6 @@
   "recognitionCardVoiceConfirmed": "Stimme bestätigt",
   "settingVisionMatchPresenceSensorsTitle": "Anwesenheitssensoren",
   "settingVisionMatchPresenceSensorsDescription": "Fügt Home Assistant die Sensoren Presence und Looking at the kiosk hinzu. Die Kamera bleibt an und bei jeder Bewegung wird nach Gesichtern gesucht, auch bei ausgeschaltetem Bildschirm.",
-  "settingVisionMatchLinkGestureWhoDescription": "Gesten > Ground Control Vision Match"
+  "settingVisionMatchLinkGestureWhoDescription": "Gesten > Ground Control Vision Match",
+  "settingVisionMatchLinkCalendarFocusDescription": "Kalender > Ground Control Vision Match"
 }

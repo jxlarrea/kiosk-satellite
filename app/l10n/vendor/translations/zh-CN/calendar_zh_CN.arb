@@ -96,5 +96,6 @@
   "calendarScopeThis": "此日程",
   "calendarScopeFollowing": "此日程及之后的日程",
   "calendarScopeAll": "所有日程",
-  "calendarEditingSection": "编辑"
+  "calendarEditingSection": "编辑",
+  "calendarUpNextFor": "{name} 接下来"
 }

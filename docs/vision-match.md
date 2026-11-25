@@ -38,7 +38,7 @@ Vision Match runs on [Ground Control](ground-control.md), a Home Assistant app o
 | **Hand Gestures** | | |
 | Enable Hand Gestures | on | Runs palm and finger gesture detection on Ground Control. When it is off, gesture detection runs on the device. |
 | **Used in other settings** | | |
-| Detect faces, Skip the PIN for, Disable Lockdown Mode for, Turn Lockdown Mode back on, Finger gestures for | | The settings on other pages that use Face Recognition, with their values. Tap one to go to that setting. See [Settings That Work With Ground Control](ground-control.md#settings-that-work-with-ground-control). |
+| Detect faces, Skip the PIN for, Disable Lockdown Mode for, Turn Lockdown Mode back on, Finger gestures for, Focus on who is at the kiosk | | The settings on other pages that use Face Recognition, with their values. Tap one to go to that setting. See [Settings That Work With Ground Control](ground-control.md#settings-that-work-with-ground-control). |
 
 Choose the model for each feature in Ground Control under **Settings > Vision Match**. Each feature has a Light and an Accurate model. On an NVIDIA GPU every feature uses Accurate. On a CPU, Face Detection and Hand Gestures use Light. Face Recognition uses Accurate on an x86 CPU or an Apple M-series chip and Light on other ARM CPUs. See [Vision Models](https://github.com/jxlarrea/kiosk-satellite-ground-control/blob/main/docs/vision-match.md#vision-models).
 
@@ -92,6 +92,7 @@ With Face Recognition on, these settings on other pages can act on who is at the
 | Detect faces | **Settings > Screensaver > Face Detection** | Only the chosen people dismiss or postpone the screensaver. See [Screensavers](screensavers.md#ground-control-vision-match). |
 | Skip the PIN for | **Settings > Kiosk Mode** | The menu opens after the exit gesture without the PIN for the chosen people. See [Kiosk Mode](kiosk.md#ground-control-vision-match). |
 | Finger gestures for | **Settings > Gestures** | Show fingers gestures run only while one of the chosen people is recognized. See [Show Fingers](gestures.md#show-fingers). |
+| Focus on who is at the kiosk | **Settings > Calendar** | The calendar rings the chips of the people recognized, puts their lanes first in Day, shows Up next for the person at the kiosk and picks their calendar for new events. See [Calendar](calendar.md#ground-control-vision-match). |
 | Disable Lockdown Mode for | The Lockdown Mode page | Lockdown Mode is turned off when one of the chosen people is recognized. **Turn Lockdown Mode back on** turns it back on once they leave. See [Lockdown Mode](kiosk.md#ground-control-vision-match-on-the-lockdown-mode-page). |
 
 The kiosk also fires a [face event](events.md#face) in Home Assistant when someone recognized arrives at the kiosk and when they leave.

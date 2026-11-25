@@ -23,5 +23,7 @@
   "calendarIdle2Minutes": "2 minutos",
   "settingsMenuCalendar": "Calendario",
   "settingsMenuCalendarSummary": "Calendarios familiares de Home Assistant",
-  "fleetTheCalendarsHiddenWithTheirChips": "los calendarios ocultos con sus etiquetas"
+  "fleetTheCalendarsHiddenWithTheirChips": "los calendarios ocultos con sus etiquetas",
+  "settingCalendarFaceFocusTitle": "Destacar a quien está en el kiosko",
+  "settingCalendarFaceFocusDescription": "Resalta con un anillo el chip de la persona que está en el kiosko, pone su carril primero en Día y elige su calendario para los eventos nuevos."
 }

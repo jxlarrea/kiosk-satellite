@@ -805,6 +805,9 @@ class AnalyticsManager extends Manager {
             groundControl['vision_match_finger_gestures'] = s.get(
               defs.gesturesFaceWho,
             );
+            groundControl['vision_match_calendar_focus'] = s.get(
+              defs.calendarFaceFocus,
+            );
           }
         }
       }

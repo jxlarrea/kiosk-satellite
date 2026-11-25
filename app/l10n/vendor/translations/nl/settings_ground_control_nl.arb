@@ -59,5 +59,6 @@
   "recognitionCardVoiceConfirmed": "Stem bevestigd",
   "settingVisionMatchPresenceSensorsTitle": "Aanwezigheidssensoren",
   "settingVisionMatchPresenceSensorsDescription": "Voegt de sensoren Presence en Looking at the kiosk toe aan Home Assistant. De camera blijft aan en bij elke beweging wordt naar gezichten gezocht, ook met het scherm uit.",
-  "settingVisionMatchLinkGestureWhoDescription": "Gebaren > Ground Control Vision Match"
+  "settingVisionMatchLinkGestureWhoDescription": "Gebaren > Ground Control Vision Match",
+  "settingVisionMatchLinkCalendarFocusDescription": "Agenda > Ground Control Vision Match"
 }

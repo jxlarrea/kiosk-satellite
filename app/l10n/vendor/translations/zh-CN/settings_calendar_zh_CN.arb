@@ -23,5 +23,7 @@
   "calendarIdle2Minutes": "2 分钟",
   "settingsMenuCalendar": "日历",
   "settingsMenuCalendarSummary": "来自 Home Assistant 的家庭日历",
-  "fleetTheCalendarsHiddenWithTheirChips": "用标签隐藏的日历"
+  "fleetTheCalendarsHiddenWithTheirChips": "用标签隐藏的日历",
+  "settingCalendarFaceFocusTitle": "突出显示 Kiosk 前的人",
+  "settingCalendarFaceFocusDescription": "为 Kiosk 前的人的标签加上圆环，在“日”视图中把其栏放在最前，并为新日程选择其日历。"
 }

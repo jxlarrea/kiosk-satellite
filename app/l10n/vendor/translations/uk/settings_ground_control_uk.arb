@@ -59,5 +59,6 @@
   "recognitionCardVoiceConfirmed": "Голос підтверджено",
   "settingVisionMatchPresenceSensorsTitle": "Датчики присутності",
   "settingVisionMatchPresenceSensorsDescription": "Додає до Home Assistant датчики Presence і Looking at the kiosk. Камера залишається увімкненою, а обличчя шукаються щоразу, коли щось рухається, навіть із вимкненим екраном.",
-  "settingVisionMatchLinkGestureWhoDescription": "Жести > Ground Control Vision Match"
+  "settingVisionMatchLinkGestureWhoDescription": "Жести > Ground Control Vision Match",
+  "settingVisionMatchLinkCalendarFocusDescription": "Календар > Ground Control Vision Match"
 }
