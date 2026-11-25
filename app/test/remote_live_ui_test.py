@@ -94,7 +94,7 @@ with sync_playwright() as playwright:
     gesture_detection = gestures.locator('[data-key="gestures.clap_strictness"] .name')
     expect(gesture_detection).to_have_text('TEST palmadas')
     change('gestures.clap_strictness', 'strict')
-    expect(gestures.locator('select')).to_have_value('strict')
+    expect(gestures.locator('[data-key="gestures.clap_strictness"] select')).to_have_value('strict')
     mapped = [{'id':'original', 'trigger':{'type':'claps','claps':2},
                'action':{'type':'launch_app','package':'com.example.KeepCase'}}]
     change('gestures.mappings', json.dumps(mapped))
