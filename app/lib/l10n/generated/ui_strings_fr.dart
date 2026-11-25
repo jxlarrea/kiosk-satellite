@@ -12704,7 +12704,7 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Choisissez les personnes pour qui l\'écran se réveille. Si personne n\'est choisi, l\'écran se réveille pour toute personne reconnue.';
+      'Choisissez qui peut fermer ou repousser l\'économiseur d\'écran en regardant le kiosque. Si personne n\'est choisi, toute personne reconnue le peut.';
 
   @override
   String get screensaverFacePeopleNone => 'Toute personne reconnue';

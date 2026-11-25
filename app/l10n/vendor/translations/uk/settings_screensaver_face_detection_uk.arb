@@ -19,7 +19,7 @@
   "screensaverFaceWhoOptionAnyone": "Будь-хто",
   "screensaverFaceWhoOptionPeople": "Вибрані люди",
   "settingScreensaverFacePeopleTitle": "Люди",
-  "settingScreensaverFacePeopleDescription": "Виберіть людей, для яких вмикається екран. Якщо нікого не вибрано, екран вмикається для будь-кого впізнаного.",
+  "settingScreensaverFacePeopleDescription": "Виберіть, хто може вимкнути або відкласти заставку, подивившись на кіоск. Якщо нікого не вибрано, це може будь-хто впізнаний.",
   "screensaverFacePeopleNone": "Будь-хто впізнаний",
   "screensaverGroundControlFaceRecognition": "Впізнавання облич Ground Control"
 }

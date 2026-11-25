@@ -46937,7 +46937,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Виберіть людей, для яких вмикається екран. Якщо нікого не вибрано, екран вмикається для будь-кого впізнаного.",
+  "settingScreensaverFacePeopleDescription": "Виберіть, хто може вимкнути або відкласти заставку, подивившись на кіоск. Якщо нікого не вибрано, це може будь-хто впізнаний.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

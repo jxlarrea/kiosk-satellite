@@ -12626,7 +12626,7 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Kies de personen voor wie het scherm wakker wordt. Is er niemand gekozen, dan wordt het scherm wakker voor iedereen die herkend wordt.';
+      'Kies wie de schermbeveiliging kan sluiten of uitstellen door naar de kiosk te kijken. Is er niemand gekozen, dan kan iedereen die herkend wordt dat.';
 
   @override
   String get screensaverFacePeopleNone => 'Iedereen die herkend wordt';

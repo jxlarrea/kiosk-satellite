@@ -19,7 +19,7 @@
   "screensaverFaceWhoOptionAnyone": "Alle",
   "screensaverFaceWhoOptionPeople": "Ausgewählte Personen",
   "settingScreensaverFacePeopleTitle": "Personen",
-  "settingScreensaverFacePeopleDescription": "Wähle die Personen, für die der Bildschirm aufwacht. Ist niemand ausgewählt, wacht er für alle erkannten Personen auf.",
+  "settingScreensaverFacePeopleDescription": "Wähle, wer den Bildschirmschoner durch einen Blick auf den Kiosk schließen oder aufschieben kann. Ist niemand ausgewählt, kann das jede erkannte Person.",
   "screensaverFacePeopleNone": "Alle erkannten Personen",
   "screensaverGroundControlFaceRecognition": "Ground Control Gesichtswiedererkennung"
 }

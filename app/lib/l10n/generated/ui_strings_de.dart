@@ -12742,7 +12742,7 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Wähle die Personen, für die der Bildschirm aufwacht. Ist niemand ausgewählt, wacht er für alle erkannten Personen auf.';
+      'Wähle, wer den Bildschirmschoner durch einen Blick auf den Kiosk schließen oder aufschieben kann. Ist niemand ausgewählt, kann das jede erkannte Person.';
 
   @override
   String get screensaverFacePeopleNone => 'Alle erkannten Personen';

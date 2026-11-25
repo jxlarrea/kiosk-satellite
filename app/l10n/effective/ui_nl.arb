@@ -46937,7 +46937,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Kies de personen voor wie het scherm wakker wordt. Is er niemand gekozen, dan wordt het scherm wakker voor iedereen die herkend wordt.",
+  "settingScreensaverFacePeopleDescription": "Kies wie de schermbeveiliging kan sluiten of uitstellen door naar de kiosk te kijken. Is er niemand gekozen, dan kan iedereen die herkend wordt dat.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

@@ -46937,7 +46937,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Wybierz osoby, dla których ekran się wybudza. Jeśli nikt nie jest wybrany, ekran wybudza się dla każdej rozpoznanej osoby.",
+  "settingScreensaverFacePeopleDescription": "Wybierz, kto może zamknąć lub odłożyć wygaszacz ekranu, patrząc na kiosk. Jeśli nikt nie jest wybrany, może to zrobić każda rozpoznana osoba.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

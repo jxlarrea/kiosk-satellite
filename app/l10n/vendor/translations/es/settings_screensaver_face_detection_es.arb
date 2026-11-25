@@ -19,7 +19,7 @@
   "screensaverFaceWhoOptionAnyone": "Cualquiera",
   "screensaverFaceWhoOptionPeople": "Personas elegidas",
   "settingScreensaverFacePeopleTitle": "Personas",
-  "settingScreensaverFacePeopleDescription": "Elige las personas para las que se activa la pantalla. Si no eliges a nadie, se activa para cualquier persona reconocida.",
+  "settingScreensaverFacePeopleDescription": "Elige quién puede cerrar o aplazar el protector de pantalla mirando el kiosko. Si no eliges a nadie, puede cualquier persona reconocida.",
   "screensaverFacePeopleNone": "Cualquier persona reconocida",
   "screensaverGroundControlFaceRecognition": "Reconocimiento facial de Ground Control"
 }

@@ -6292,8 +6292,8 @@ const screensaverFacePeople = SettingDef<String>(
   defaultValue: '[]',
   title: 'People',
   description:
-      'Choose the people the screen wakes for. If nobody is chosen, the '
-      'screen wakes for anyone recognized.',
+      'Choose who can dismiss or postpone the screensaver by looking at the '
+      'kiosk. If nobody is chosen, anyone recognized can.',
   category: 'Screensaver',
   section: 'Ground Control Face Recognition',
   subpage: 'Face Detection',

@@ -247,7 +247,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Choose the people the screen wakes for. If nobody is chosen, the screen wakes for anyone recognized.",
+  "settingScreensaverFacePeopleDescription": "Choose who can dismiss or postpone the screensaver by looking at the kiosk. If nobody is chosen, anyone recognized can.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

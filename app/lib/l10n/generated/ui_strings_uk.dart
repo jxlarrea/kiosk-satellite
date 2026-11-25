@@ -12616,7 +12616,7 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Виберіть людей, для яких вмикається екран. Якщо нікого не вибрано, екран вмикається для будь-кого впізнаного.';
+      'Виберіть, хто може вимкнути або відкласти заставку, подивившись на кіоск. Якщо нікого не вибрано, це може будь-хто впізнаний.';
 
   @override
   String get screensaverFacePeopleNone => 'Будь-хто впізнаний';

@@ -21826,7 +21826,7 @@ abstract class UiStrings {
   /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Choose the people the screen wakes for. If nobody is chosen, the screen wakes for anyone recognized.'**
+  /// **'Choose who can dismiss or postpone the screensaver by looking at the kiosk. If nobody is chosen, anyone recognized can.'**
   String get settingScreensaverFacePeopleDescription;
 
   /// Shown in the People box when nobody is chosen.

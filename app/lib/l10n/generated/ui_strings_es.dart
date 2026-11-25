@@ -12704,7 +12704,7 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Elige las personas para las que se activa la pantalla. Si no eliges a nadie, se activa para cualquier persona reconocida.';
+      'Elige quién puede cerrar o aplazar el protector de pantalla mirando el kiosko. Si no eliges a nadie, puede cualquier persona reconocida.';
 
   @override
   String get screensaverFacePeopleNone => 'Cualquier persona reconocida';

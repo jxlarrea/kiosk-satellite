@@ -19,7 +19,7 @@
   "screensaverFaceWhoOptionAnyone": "Все",
   "screensaverFaceWhoOptionPeople": "Выбранные люди",
   "settingScreensaverFacePeopleTitle": "Люди",
-  "settingScreensaverFacePeopleDescription": "Выберите людей, для которых включается экран. Если никто не выбран, экран включается для любого распознанного человека.",
+  "settingScreensaverFacePeopleDescription": "Выберите, кто может закрыть или отложить заставку, посмотрев на киоск. Если никто не выбран, это может любой распознанный человек.",
   "screensaverFacePeopleNone": "Любой распознанный человек",
   "screensaverGroundControlFaceRecognition": "Распознавание лиц Ground Control"
 }

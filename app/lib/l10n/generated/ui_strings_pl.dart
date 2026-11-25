@@ -12623,7 +12623,7 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Wybierz osoby, dla których ekran się wybudza. Jeśli nikt nie jest wybrany, ekran wybudza się dla każdej rozpoznanej osoby.';
+      'Wybierz, kto może zamknąć lub odłożyć wygaszacz ekranu, patrząc na kiosk. Jeśli nikt nie jest wybrany, może to zrobić każda rozpoznana osoba.';
 
   @override
   String get screensaverFacePeopleNone => 'Każda rozpoznana osoba';

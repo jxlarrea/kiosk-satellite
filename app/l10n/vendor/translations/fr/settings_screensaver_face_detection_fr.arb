@@ -19,7 +19,7 @@
   "screensaverFaceWhoOptionAnyone": "Tout le monde",
   "screensaverFaceWhoOptionPeople": "Personnes choisies",
   "settingScreensaverFacePeopleTitle": "Personnes",
-  "settingScreensaverFacePeopleDescription": "Choisissez les personnes pour qui l'écran se réveille. Si personne n'est choisi, l'écran se réveille pour toute personne reconnue.",
+  "settingScreensaverFacePeopleDescription": "Choisissez qui peut fermer ou repousser l'économiseur d'écran en regardant le kiosque. Si personne n'est choisi, toute personne reconnue le peut.",
   "screensaverFacePeopleNone": "Toute personne reconnue",
   "screensaverGroundControlFaceRecognition": "Reconnaissance faciale Ground Control"
 }

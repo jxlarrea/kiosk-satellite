@@ -12480,7 +12480,7 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Choose the people the screen wakes for. If nobody is chosen, the screen wakes for anyone recognized.';
+      'Choose who can dismiss or postpone the screensaver by looking at the kiosk. If nobody is chosen, anyone recognized can.';
 
   @override
   String get screensaverFacePeopleNone => 'Anyone recognized';

@@ -19,7 +19,7 @@
   "screensaverFaceWhoOptionAnyone": "Każdy",
   "screensaverFaceWhoOptionPeople": "Wybrane osoby",
   "settingScreensaverFacePeopleTitle": "Osoby",
-  "settingScreensaverFacePeopleDescription": "Wybierz osoby, dla których ekran się wybudza. Jeśli nikt nie jest wybrany, ekran wybudza się dla każdej rozpoznanej osoby.",
+  "settingScreensaverFacePeopleDescription": "Wybierz, kto może zamknąć lub odłożyć wygaszacz ekranu, patrząc na kiosk. Jeśli nikt nie jest wybrany, może to zrobić każda rozpoznana osoba.",
   "screensaverFacePeopleNone": "Każda rozpoznana osoba",
   "screensaverGroundControlFaceRecognition": "Rozpoznawanie twarzy Ground Control"
 }

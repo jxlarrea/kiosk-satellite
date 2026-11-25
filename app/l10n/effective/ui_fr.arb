@@ -46937,7 +46937,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Choisissez les personnes pour qui l'écran se réveille. Si personne n'est choisi, l'écran se réveille pour toute personne reconnue.",
+  "settingScreensaverFacePeopleDescription": "Choisissez qui peut fermer ou repousser l'économiseur d'écran en regardant le kiosque. Si personne n'est choisi, toute personne reconnue le peut.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

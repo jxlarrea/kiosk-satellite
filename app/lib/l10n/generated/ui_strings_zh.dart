@@ -11901,7 +11901,7 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      '选择屏幕为哪些人唤醒。如果没有选择任何人，屏幕会为任何已识别的人唤醒。';
+      '选择谁可以通过看向 Kiosk 来关闭或推迟屏保。如果没有选择任何人，任何已识别的人都可以。';
 
   @override
   String get screensaverFacePeopleNone => '任何已识别的人';
@@ -28369,7 +28369,7 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      '选择屏幕为哪些人唤醒。如果没有选择任何人，屏幕会为任何已识别的人唤醒。';
+      '选择谁可以通过看向 Kiosk 来关闭或推迟屏保。如果没有选择任何人，任何已识别的人都可以。';
 
   @override
   String get screensaverFacePeopleNone => '任何已识别的人';

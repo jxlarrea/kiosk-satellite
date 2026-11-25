@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "e97e11f982b240fe8cdda1fbe72d9faab7696a67",
+  "revision": "3e218f781a0b9aa2ed8d2caf93d9c9e299f1a928",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -156,7 +156,7 @@
     "settings_screensaver_celestial_en.arb": "60602ad23fd9ca784628354b49e0a76b8c826235f51f2ea2532bc65fe305de6b",
     "settings_screensaver_clock_en.arb": "5dfed8c2227422bbf791214ac36c5b7c0876fbb5d083e850f152d7b73647b577",
     "settings_screensaver_entity_picker_en.arb": "95f3f0519bcd315bac1cbffb9ccdf2c1fa9a67315fea45b2acf5a364de10d085",
-    "settings_screensaver_face_detection_en.arb": "791a3001083369df8e9deb881eeec89e3f5a917291c7676d41729b1cec7edde4",
+    "settings_screensaver_face_detection_en.arb": "afb2ff0ae18bb6a676b4676112e77ae3f827c176b792d5eea6e9c28fdf7e8550",
     "settings_screensaver_face_preview_en.arb": "0f646dbd764d2f001bffb0353a717e4c729af4163afa1ca2ca6eb57b8013994b",
     "settings_screensaver_general_en.arb": "656495cc1fa2ac9333cd79667afe22828c5f12a305d300be640c54abd8adf7eb",
     "settings_screensaver_glance_appearance_en.arb": "b574a776553d61438bb268830e45cdcb30aa79995d3a865aa3caab8c741d628e",

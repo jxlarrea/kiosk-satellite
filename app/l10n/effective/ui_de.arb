@@ -46937,7 +46937,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Wähle die Personen, für die der Bildschirm aufwacht. Ist niemand ausgewählt, wacht er für alle erkannten Personen auf.",
+  "settingScreensaverFacePeopleDescription": "Wähle, wer den Bildschirmschoner durch einen Blick auf den Kiosk schließen oder aufschieben kann. Ist niemand ausgewählt, kann das jede erkannte Person.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

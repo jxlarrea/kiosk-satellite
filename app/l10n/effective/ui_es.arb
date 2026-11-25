@@ -46937,7 +46937,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Elige las personas para las que se activa la pantalla. Si no eliges a nadie, se activa para cualquier persona reconocida.",
+  "settingScreensaverFacePeopleDescription": "Elige quién puede cerrar o aplazar el protector de pantalla mirando el kiosko. Si no eliges a nadie, puede cualquier persona reconocida.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection > Ground Control Face Recognition",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
