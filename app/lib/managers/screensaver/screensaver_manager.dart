@@ -850,7 +850,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     bus.on<FaceDetected>().listen((_) {
       // Same lockdown rule as motion.
       if (_settings.get(defs.lockdownEnabled)) return;
-      // Faces that count: with Face Recognition, only someone recognized,
+      // Ground Control Face Recognition > Detect faces: only someone recognized,
       // or one of the chosen people. A face not named yet waits for the
       // next sighting, about a second later.
       if (!_faceCounts) return;
@@ -1615,15 +1615,17 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     _setIdleDue(clock().add(wait));
   }
 
-  /// Everyone Face Recognition names in view, for Faces that count.
+  /// Everyone Face Recognition names in view, for Detect faces.
   Set<String> _facesInView = const {};
 
   /// Whether a face in view dismisses or postpones the screensaver under
-  /// Faces that count. Anyone when Face Recognition is off, since the
+  /// Detect faces. Anyone when Face Recognition is off, since the
   /// setting is then hidden.
   bool get _faceCounts {
     if (!_settings.visible(defs.screensaverFaceWho)) return true;
     switch (_settings.get(defs.screensaverFaceWho)) {
+      // Recognized people, before the option went: the same as Chosen
+      // people with nobody chosen.
       case 'recognized':
         return _facesInView.isNotEmpty;
       case 'people':

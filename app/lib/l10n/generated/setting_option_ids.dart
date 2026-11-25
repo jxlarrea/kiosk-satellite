@@ -577,7 +577,6 @@ const settingOptionMessageIds = <String, Map<String, String>>{
   },
   "screensaver.face_who": {
     "anyone": "screensaverFaceWhoOptionAnyone",
-    "recognized": "screensaverFaceWhoOptionRecognized",
     "people": "screensaverFaceWhoOptionPeople"
   }
 };

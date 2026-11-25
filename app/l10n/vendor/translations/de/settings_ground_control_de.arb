@@ -37,7 +37,7 @@
   "settingVisionMatchFaceConfirmsVoiceTitle": "Stimmen mit Gesichtern bestätigen",
   "settingVisionMatchFaceConfirmsVoiceDescription": "Eine ähnliche Stimme annehmen, wenn das Gesicht derselben Person am Kiosk erkannt wird. So kann nur die Person mit dem ähnlichsten Stimmprofil zugeordnet werden.",
   "groundControlUsedElsewhere": "In anderen Einstellungen verwendet",
-  "settingVisionMatchLinkFaceWhoDescription": "Bildschirmschoner > Gesichtserkennung",
+  "settingVisionMatchLinkFaceWhoDescription": "Bildschirmschoner > Gesichtserkennung > Ground Control Gesichtswiedererkennung",
   "settingVisionMatchLinkPreviewPersonDescription": "Bildschirmschoner > Gesichtserkennung > Kameravorschau",
   "groundControlValueOn": "An",
   "groundControlValueOff": "Aus",

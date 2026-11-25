@@ -8754,7 +8754,7 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Wygaszacz ekranu > Wykrywanie twarzy';
+      'Wygaszacz ekranu > Wykrywanie twarzy > Rozpoznawanie twarzy Ground Control';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12606,17 +12606,14 @@ class UiStringsPl extends UiStrings {
       'Niedostępne na urządzeniach x86.';
 
   @override
-  String get settingScreensaverFaceWhoTitle => 'Uwzględniane twarze';
+  String get settingScreensaverFaceWhoTitle => 'Wykrywaj twarze';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Wybierz, czyja twarz liczy się przy zamykaniu lub odkładaniu wygaszacza ekranu. Opcja Rozpoznane osoby liczy tylko twarze zarejestrowane w Ground Control.';
+      'Przy opcji Wybrane osoby wygaszacz ekranu zamykają lub odkładają tylko osoby wybrane poniżej.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Każdy';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => 'Rozpoznane osoby';
 
   @override
   String get screensaverFaceWhoOptionPeople => 'Wybrane osoby';
@@ -12630,6 +12627,10 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get screensaverFacePeopleNone => 'Każda rozpoznana osoba';
+
+  @override
+  String get screensaverGroundControlFaceRecognition =>
+      'Rozpoznawanie twarzy Ground Control';
 
   @override
   String get settingFacePreviewTitle => 'Pokazuj podgląd z kamery';

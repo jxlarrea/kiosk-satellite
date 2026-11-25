@@ -14,12 +14,12 @@
   "screensaverDetectionFaceTuning": "Framesnelheid, camerakeuze en opstartvertraging worden ingesteld bij de camera-instellingen.",
   "screensaverDetectionAndroidUnsupported": "Niet beschikbaar op deze Android-versie.",
   "screensaverDetectionX86Unsupported": "Niet beschikbaar op x86-apparaten.",
-  "settingScreensaverFaceWhoTitle": "Gezichten die tellen",
-  "settingScreensaverFaceWhoDescription": "Kies wiens gezicht telt voor het sluiten of uitstellen van de schermbeveiliging. Herkende personen telt alleen gezichten die in Ground Control zijn ingeschreven.",
+  "settingScreensaverFaceWhoTitle": "Gezichten detecteren",
+  "settingScreensaverFaceWhoDescription": "Met Gekozen personen sluiten of uitstellen alleen de personen die hieronder zijn gekozen de schermbeveiliging.",
   "screensaverFaceWhoOptionAnyone": "Iedereen",
-  "screensaverFaceWhoOptionRecognized": "Herkende personen",
   "screensaverFaceWhoOptionPeople": "Gekozen personen",
   "settingScreensaverFacePeopleTitle": "Personen",
   "settingScreensaverFacePeopleDescription": "Kies de personen voor wie het scherm wakker wordt. Is er niemand gekozen, dan wordt het scherm wakker voor iedereen die herkend wordt.",
-  "screensaverFacePeopleNone": "Iedereen die herkend wordt"
+  "screensaverFacePeopleNone": "Iedereen die herkend wordt",
+  "screensaverGroundControlFaceRecognition": "Ground Control-gezichtsherkenning"
 }

@@ -14,12 +14,12 @@
   "screensaverDetectionFaceTuning": "La fréquence d'images, le choix de la caméra et le délai de démarrage se règlent dans les paramètres de la Caméra.",
   "screensaverDetectionAndroidUnsupported": "Non disponible sur cette version d'Android.",
   "screensaverDetectionX86Unsupported": "Non disponible sur les appareils x86.",
-  "settingScreensaverFaceWhoTitle": "Visages pris en compte",
-  "settingScreensaverFaceWhoDescription": "Choisissez les visages pris en compte pour fermer ou repousser l'économiseur d'écran. Personnes reconnues ne compte que les visages enregistrés dans Ground Control.",
+  "settingScreensaverFaceWhoTitle": "Détecter les visages",
+  "settingScreensaverFaceWhoDescription": "Avec Personnes choisies, seules les personnes choisies ci-dessous ferment ou repoussent l'économiseur d'écran.",
   "screensaverFaceWhoOptionAnyone": "Tout le monde",
-  "screensaverFaceWhoOptionRecognized": "Personnes reconnues",
   "screensaverFaceWhoOptionPeople": "Personnes choisies",
   "settingScreensaverFacePeopleTitle": "Personnes",
   "settingScreensaverFacePeopleDescription": "Choisissez les personnes pour qui l'écran se réveille. Si personne n'est choisi, l'écran se réveille pour toute personne reconnue.",
-  "screensaverFacePeopleNone": "Toute personne reconnue"
+  "screensaverFacePeopleNone": "Toute personne reconnue",
+  "screensaverGroundControlFaceRecognition": "Reconnaissance faciale Ground Control"
 }

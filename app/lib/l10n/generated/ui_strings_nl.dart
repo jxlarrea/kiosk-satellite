@@ -8758,7 +8758,7 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Schermbeveiliging > Gezichtsdetectie';
+      'Schermbeveiliging > Gezichtsdetectie > Ground Control-gezichtsherkenning';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12609,17 +12609,14 @@ class UiStringsNl extends UiStrings {
       'Niet beschikbaar op x86-apparaten.';
 
   @override
-  String get settingScreensaverFaceWhoTitle => 'Gezichten die tellen';
+  String get settingScreensaverFaceWhoTitle => 'Gezichten detecteren';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Kies wiens gezicht telt voor het sluiten of uitstellen van de schermbeveiliging. Herkende personen telt alleen gezichten die in Ground Control zijn ingeschreven.';
+      'Met Gekozen personen sluiten of uitstellen alleen de personen die hieronder zijn gekozen de schermbeveiliging.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Iedereen';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => 'Herkende personen';
 
   @override
   String get screensaverFaceWhoOptionPeople => 'Gekozen personen';
@@ -12633,6 +12630,10 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get screensaverFacePeopleNone => 'Iedereen die herkend wordt';
+
+  @override
+  String get screensaverGroundControlFaceRecognition =>
+      'Ground Control-gezichtsherkenning';
 
   @override
   String get settingFacePreviewTitle => 'Cameravoorbeeld tonen';

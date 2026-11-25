@@ -576,7 +576,6 @@
   },
   "screensaver.face_who": {
     "anyone": "screensaverFaceWhoOptionAnyone",
-    "recognized": "screensaverFaceWhoOptionRecognized",
     "people": "screensaverFaceWhoOptionPeople"
   }
 }

@@ -212,7 +212,7 @@ PickSpec voiceMatchPeopleSpec(
 /// everyone enrolled. Mirrored on the remote admin (rows.js).
 ///
 /// Also Screensaver > Face Detection > People ([def]), whose faces dismiss
-/// or postpone the screensaver on Faces that count: Chosen people.
+/// or postpone the screensaver on Detect faces: Chosen people.
 class VoiceMatchPeopleRow extends StatefulWidget {
   const VoiceMatchPeopleRow({
     super.key,

@@ -37,7 +37,7 @@
   "settingVisionMatchFaceConfirmsVoiceTitle": "Confirmer les voix par les visages",
   "settingVisionMatchFaceConfirmsVoiceDescription": "Accepter une voix proche quand le visage de la même personne est reconnu devant le kiosque. Seule la personne à l'empreinte vocale la plus proche peut être reconnue ainsi.",
   "groundControlUsedElsewhere": "Utilisé dans d'autres paramètres",
-  "settingVisionMatchLinkFaceWhoDescription": "Économiseur d'écran > Détection de visage",
+  "settingVisionMatchLinkFaceWhoDescription": "Économiseur d'écran > Détection de visage > Reconnaissance faciale Ground Control",
   "settingVisionMatchLinkPreviewPersonDescription": "Économiseur d'écran > Détection de visage > Aperçu caméra",
   "groundControlValueOn": "Activé",
   "groundControlValueOff": "Désactivé",

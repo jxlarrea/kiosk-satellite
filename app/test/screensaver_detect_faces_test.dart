@@ -9,7 +9,8 @@ import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Faces that count (Screensaver > Face Detection): with Face Recognition
+/// Detect faces (Screensaver > Face Detection > Ground Control Face
+/// Recognition): with Face Recognition
 /// on Ground Control, only a recognized face, or one of the chosen people,
 /// dismisses or postpones the screensaver. Checked on the postpone leg: a
 /// face that counts at 3 s keeps the 5 s screensaver away.
@@ -87,16 +88,19 @@ void main() {
     });
   });
 
-  test('Recognized people: a face nobody named does not count', () {
-    fakeAsync((async) {
-      build({'ks.screensaver.face_who': 'recognized'});
-      expect(postponed(async, null), isFalse);
-    });
-  });
+  test(
+    'Chosen people with nobody chosen: a face nobody named does not count',
+    () {
+      fakeAsync((async) {
+        build({'ks.screensaver.face_who': 'people'});
+        expect(postponed(async, null), isFalse);
+      });
+    },
+  );
 
-  test('Recognized people: a named face counts', () {
+  test('Chosen people with nobody chosen: anyone recognized counts', () {
     fakeAsync((async) {
-      build({'ks.screensaver.face_who': 'recognized'});
+      build({'ks.screensaver.face_who': 'people'});
       expect(postponed(async, leo), isTrue);
     });
   });

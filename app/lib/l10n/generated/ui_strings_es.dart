@@ -8805,7 +8805,7 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Protector de pantalla > Detección de rostros';
+      'Protector de pantalla > Detección de rostros > Reconocimiento facial de Ground Control';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12687,17 +12687,14 @@ class UiStringsEs extends UiStrings {
       'No disponible en dispositivos x86.';
 
   @override
-  String get settingScreensaverFaceWhoTitle => 'Rostros que cuentan';
+  String get settingScreensaverFaceWhoTitle => 'Detectar rostros';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Elige de quién cuenta el rostro para cerrar o aplazar el protector de pantalla. Personas reconocidas solo cuenta los rostros registrados en Ground Control.';
+      'Con Personas elegidas, solo las personas elegidas abajo cierran o aplazan el protector de pantalla.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Cualquiera';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => 'Personas reconocidas';
 
   @override
   String get screensaverFaceWhoOptionPeople => 'Personas elegidas';
@@ -12711,6 +12708,10 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get screensaverFacePeopleNone => 'Cualquier persona reconocida';
+
+  @override
+  String get screensaverGroundControlFaceRecognition =>
+      'Reconocimiento facial de Ground Control';
 
   @override
   String get settingFacePreviewTitle => 'Mostrar vista previa de la cámara';

@@ -14,12 +14,12 @@
   "screensaverDetectionFaceTuning": "La frecuencia de cuadros, la cámara y el retraso de inicio se ajustan en la configuración de Cámara.",
   "screensaverDetectionAndroidUnsupported": "No disponible en esta versión de Android.",
   "screensaverDetectionX86Unsupported": "No disponible en dispositivos x86.",
-  "settingScreensaverFaceWhoTitle": "Rostros que cuentan",
-  "settingScreensaverFaceWhoDescription": "Elige de quién cuenta el rostro para cerrar o aplazar el protector de pantalla. Personas reconocidas solo cuenta los rostros registrados en Ground Control.",
+  "settingScreensaverFaceWhoTitle": "Detectar rostros",
+  "settingScreensaverFaceWhoDescription": "Con Personas elegidas, solo las personas elegidas abajo cierran o aplazan el protector de pantalla.",
   "screensaverFaceWhoOptionAnyone": "Cualquiera",
-  "screensaverFaceWhoOptionRecognized": "Personas reconocidas",
   "screensaverFaceWhoOptionPeople": "Personas elegidas",
   "settingScreensaverFacePeopleTitle": "Personas",
   "settingScreensaverFacePeopleDescription": "Elige las personas para las que se activa la pantalla. Si no eliges a nadie, se activa para cualquier persona reconocida.",
-  "screensaverFacePeopleNone": "Cualquier persona reconocida"
+  "screensaverFacePeopleNone": "Cualquier persona reconocida",
+  "screensaverGroundControlFaceRecognition": "Reconocimiento facial de Ground Control"
 }

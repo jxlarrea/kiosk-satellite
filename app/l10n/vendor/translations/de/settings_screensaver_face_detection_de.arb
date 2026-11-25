@@ -14,12 +14,12 @@
   "screensaverDetectionFaceTuning": "Bildrate, Kamera und Startverzögerung werden in den Kamera-Einstellungen konfiguriert.",
   "screensaverDetectionAndroidUnsupported": "Auf dieser Android-Version nicht verfügbar.",
   "screensaverDetectionX86Unsupported": "Auf x86-Geräten nicht verfügbar.",
-  "settingScreensaverFaceWhoTitle": "Zählende Gesichter",
-  "settingScreensaverFaceWhoDescription": "Wähle, wessen Gesicht für das Schließen oder Aufschieben des Bildschirmschoners zählt. Erkannte Personen zählt nur Gesichter, die in Ground Control eingelernt sind.",
+  "settingScreensaverFaceWhoTitle": "Gesichter erkennen",
+  "settingScreensaverFaceWhoDescription": "Mit Ausgewählte Personen schließen oder verschieben nur die unten ausgewählten Personen den Bildschirmschoner.",
   "screensaverFaceWhoOptionAnyone": "Alle",
-  "screensaverFaceWhoOptionRecognized": "Erkannte Personen",
   "screensaverFaceWhoOptionPeople": "Ausgewählte Personen",
   "settingScreensaverFacePeopleTitle": "Personen",
   "settingScreensaverFacePeopleDescription": "Wähle die Personen, für die der Bildschirm aufwacht. Ist niemand ausgewählt, wacht er für alle erkannten Personen auf.",
-  "screensaverFacePeopleNone": "Alle erkannten Personen"
+  "screensaverFacePeopleNone": "Alle erkannten Personen",
+  "screensaverGroundControlFaceRecognition": "Ground Control Gesichtswiedererkennung"
 }

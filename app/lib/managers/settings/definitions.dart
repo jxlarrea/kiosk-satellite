@@ -6261,26 +6261,23 @@ const facePreview = SettingDef<bool>(
   dependsOn: 'screensaver.dismiss_on_face',
 );
 
-/// Which faces dismiss or postpone the screensaver, with Face Recognition
-/// on Ground Control: anyone, anyone recognized or the chosen people.
+/// Ground Control Face Recognition > Detect faces: whose face dismisses or
+/// postpones the screensaver, anyone or the chosen people, as Voice Match's
+/// Answer picks who a kiosk answers. The group is the one every feature
+/// that reacts to Face Recognition uses.
 const screensaverFaceWho = SettingDef<String>(
   key: 'screensaver.face_who',
-  type: SettingType.string,
+  type: SettingType.select,
   defaultValue: 'anyone',
-  title: 'Faces that count',
+  title: 'Detect faces',
   description:
-      'Choose whose face counts for Dismiss on face and Postpone screensaver '
-      'on face. Recognized people only counts faces enrolled in Ground '
-      'Control.',
+      'With Chosen people, only the people picked below dismiss or postpone '
+      'the screensaver.',
   category: 'Screensaver',
-  section: 'Face Detection',
+  section: 'Ground Control Face Recognition',
   subpage: 'Face Detection',
-  options: ['anyone', 'recognized', 'people'],
-  optionLabels: {
-    'anyone': 'Anyone',
-    'recognized': 'Recognized people',
-    'people': 'Chosen people',
-  },
+  options: ['anyone', 'people'],
+  optionLabels: {'anyone': 'Anyone', 'people': 'Chosen people'},
   dependsOn: 'screensaver.dismiss_on_face',
   alsoDependsOn: 'vision_match.face_recognition',
   groundControl: 'vision',
@@ -6298,7 +6295,7 @@ const screensaverFacePeople = SettingDef<String>(
       'Choose the people the screen wakes for. If nobody is chosen, the '
       'screen wakes for anyone recognized.',
   category: 'Screensaver',
-  section: 'Face Detection',
+  section: 'Ground Control Face Recognition',
   subpage: 'Face Detection',
   dependsOn: 'screensaver.face_who',
   dependsOnValue: 'people',
@@ -8404,8 +8401,8 @@ const visionMatchLinkFaceWho = SettingDef<String>(
   key: 'vision_match.link_face_who',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Faces that count',
-  description: 'Screensaver > Face Detection',
+  title: 'Detect faces',
+  description: 'Screensaver > Face Detection > Ground Control Face Recognition',
   category: 'Ground Control',
   subpage: 'Vision Match',
   section: 'Used in other settings',

@@ -14,12 +14,12 @@
   "screensaverDetectionFaceTuning": "Частота кадрів, вибір камери та затримка запуску налаштовуються у параметрах камери.",
   "screensaverDetectionAndroidUnsupported": "Не підтримується на цій версії Android.",
   "screensaverDetectionX86Unsupported": "Не підтримується на пристроях з архітектурою x86.",
-  "settingScreensaverFaceWhoTitle": "Обличчя, що враховуються",
-  "settingScreensaverFaceWhoDescription": "Виберіть, чиє обличчя враховується для вимкнення або відкладення заставки. Варіант «Впізнані люди» враховує лише обличчя, зареєстровані в Ground Control.",
+  "settingScreensaverFaceWhoTitle": "Виявляти обличчя",
+  "settingScreensaverFaceWhoDescription": "Якщо вибрано «Вибрані люди», заставку вимикають або відкладають лише люди, вибрані нижче.",
   "screensaverFaceWhoOptionAnyone": "Будь-хто",
-  "screensaverFaceWhoOptionRecognized": "Впізнані люди",
   "screensaverFaceWhoOptionPeople": "Вибрані люди",
   "settingScreensaverFacePeopleTitle": "Люди",
   "settingScreensaverFacePeopleDescription": "Виберіть людей, для яких вмикається екран. Якщо нікого не вибрано, екран вмикається для будь-кого впізнаного.",
-  "screensaverFacePeopleNone": "Будь-хто впізнаний"
+  "screensaverFacePeopleNone": "Будь-хто впізнаний",
+  "screensaverGroundControlFaceRecognition": "Впізнавання облич Ground Control"
 }

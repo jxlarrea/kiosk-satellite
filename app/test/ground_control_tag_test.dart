@@ -26,8 +26,10 @@ void main() {
           Builder(
             builder: (context) => Column(
               children: [
-                settingTitle(context, defs.screensaverFaceWho),
+                settingTitle(context, defs.facePreviewPerson),
                 settingTitle(context, defs.screensaverDismissOnFace),
+                // In the Ground Control Face Recognition group: no tag.
+                settingTitle(context, defs.screensaverFaceWho),
               ],
             ),
           ),

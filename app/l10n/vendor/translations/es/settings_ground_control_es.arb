@@ -37,7 +37,7 @@
   "settingVisionMatchFaceConfirmsVoiceTitle": "Confirmar voces con rostros",
   "settingVisionMatchFaceConfirmsVoiceDescription": "Acepta una voz parecida cuando se reconoce el rostro de la misma persona en el kiosko. Solo se puede asignar así a la persona con la huella de voz más parecida.",
   "groundControlUsedElsewhere": "Usado en otros ajustes",
-  "settingVisionMatchLinkFaceWhoDescription": "Protector de pantalla > Detección de rostros",
+  "settingVisionMatchLinkFaceWhoDescription": "Protector de pantalla > Detección de rostros > Reconocimiento facial de Ground Control",
   "settingVisionMatchLinkPreviewPersonDescription": "Protector de pantalla > Detección de rostros > Vista previa de la cámara",
   "groundControlValueOn": "Activado",
   "groundControlValueOff": "Desactivado",

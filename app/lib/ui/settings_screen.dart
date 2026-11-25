@@ -3183,7 +3183,7 @@ class _CategoryContentState extends State<_CategoryContent> {
         id: voiceMatchPeople.key,
         child: VoiceMatchPeopleRow(container: container),
       ),
-    // Faces that count on Chosen people: the same picker.
+    // Detect faces on Chosen people: the same picker.
     if (widget.category == 'Screensaver')
       screensaverFacePeople.key: SearchLandingTarget(
         id: screensaverFacePeople.key,

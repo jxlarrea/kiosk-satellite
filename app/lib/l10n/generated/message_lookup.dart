@@ -3871,14 +3871,14 @@ final _messages = <String, String Function(UiStrings)>{
   'settingScreensaverFaceWhoDescription': (s) =>
       s.settingScreensaverFaceWhoDescription,
   'screensaverFaceWhoOptionAnyone': (s) => s.screensaverFaceWhoOptionAnyone,
-  'screensaverFaceWhoOptionRecognized': (s) =>
-      s.screensaverFaceWhoOptionRecognized,
   'screensaverFaceWhoOptionPeople': (s) => s.screensaverFaceWhoOptionPeople,
   'settingScreensaverFacePeopleTitle': (s) =>
       s.settingScreensaverFacePeopleTitle,
   'settingScreensaverFacePeopleDescription': (s) =>
       s.settingScreensaverFacePeopleDescription,
   'screensaverFacePeopleNone': (s) => s.screensaverFacePeopleNone,
+  'screensaverGroundControlFaceRecognition': (s) =>
+      s.screensaverGroundControlFaceRecognition,
   'settingFacePreviewTitle': (s) => s.settingFacePreviewTitle,
   'settingFacePreviewDescription': (s) => s.settingFacePreviewDescription,
   'settingFacePreviewSecondsTitle': (s) => s.settingFacePreviewSecondsTitle,

@@ -8719,7 +8719,7 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Заставка > Определение лица';
+      'Заставка > Определение лица > Распознавание лиц Ground Control';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12563,17 +12563,14 @@ class UiStringsRu extends UiStrings {
       'Недоступно на устройствах x86.';
 
   @override
-  String get settingScreensaverFaceWhoTitle => 'Учитываемые лица';
+  String get settingScreensaverFaceWhoTitle => 'Определять лица';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Выберите, чьё лицо учитывается для закрытия или откладывания заставки. Вариант «Распознанные люди» учитывает только лица, записанные в Ground Control.';
+      'При варианте «Выбранные люди» заставку закрывают или откладывают только люди, выбранные ниже.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Все';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => 'Распознанные люди';
 
   @override
   String get screensaverFaceWhoOptionPeople => 'Выбранные люди';
@@ -12587,6 +12584,10 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get screensaverFacePeopleNone => 'Любой распознанный человек';
+
+  @override
+  String get screensaverGroundControlFaceRecognition =>
+      'Распознавание лиц Ground Control';
 
   @override
   String get settingFacePreviewTitle => 'Показывать превью камеры';

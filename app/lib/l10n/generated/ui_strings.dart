@@ -15154,7 +15154,7 @@ abstract class UiStrings {
   /// Where the Faces that count setting is, as a path of page names. Use the translated names of these pages.
   ///
   /// In en, this message translates to:
-  /// **'Screensaver > Face Detection'**
+  /// **'Screensaver > Face Detection > Ground Control Face Recognition'**
   String get settingVisionMatchLinkFaceWhoDescription;
 
   /// Where the Show who is recognized setting is, as a path of page names. Use the translated names of these pages.
@@ -21796,13 +21796,13 @@ abstract class UiStrings {
   /// Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Faces that count'**
+  /// **'Detect faces'**
   String get settingScreensaverFaceWhoTitle;
 
   /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
-  /// **'Choose whose face counts for Dismiss on face and Postpone screensaver on face. Recognized people only counts faces enrolled in Ground Control.'**
+  /// **'With Chosen people, only the people picked below dismiss or postpone the screensaver.'**
   String get settingScreensaverFaceWhoDescription;
 
   /// Option of Faces that count: any face looking at the kiosk.
@@ -21810,12 +21810,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Anyone'**
   String get screensaverFaceWhoOptionAnyone;
-
-  /// Option of Faces that count: only a face Face Recognition names.
-  ///
-  /// In en, this message translates to:
-  /// **'Recognized people'**
-  String get screensaverFaceWhoOptionRecognized;
 
   /// Option of Faces that count: only the people picked below.
   ///
@@ -21840,6 +21834,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Anyone recognized'**
   String get screensaverFacePeopleNone;
+
+  /// Group heading for the settings that use Face Recognition on Ground Control. Keep Ground Control unchanged and use the same Face Recognition term as on the Vision Match page.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground Control Face Recognition'**
+  String get screensaverGroundControlFaceRecognition;
 
   /// Setting label.
   ///

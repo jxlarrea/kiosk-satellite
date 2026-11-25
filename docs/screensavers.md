@@ -437,17 +437,16 @@ To conserve system resources, the face detection model executes only when frame 
 
 Under [Lockdown Mode](kiosk.md), face events will neither dismiss nor postpone screensavers.
 
-#### Faces That Count
+### Ground Control Face Recognition
 
-With [Face Recognition](ground-control.md#face-recognition) on Ground Control, use **Faces that count** to choose which faces dismiss or postpone the screensaver:
+With [Face Recognition](ground-control.md#face-recognition) on Ground Control, the **Ground Control Face Recognition** group on the Face Detection page sets whose face dismisses or postpones the screensaver. It works like **Answer** on the Voice Match page.
 
-| Option | What counts |
+| Setting | What it does |
 | --- | --- |
-| Anyone | Any face looking at the kiosk. This is the default. |
-| Recognized people | Only a face Ground Control recognizes. A guest or a passing child doesn't wake the screen. |
-| Chosen people | Only the people picked under **People**. If nobody is picked, anyone recognized counts. |
+| Detect faces | **Anyone**, the default, counts any face looking at the kiosk. With **Chosen people**, only the people picked under **People** dismiss or postpone the screensaver. A guest or a passing child doesn't wake the screen. |
+| People | Shown on Chosen people. Pick people from Ground Control in the same list as Voice Match's **People**. If nobody is picked, anyone recognized counts. |
 
-A face counts once Ground Control recognizes it. That takes a look or two, so the screen wakes about a second later than with Anyone. A chosen person still counts when someone else is in view too. The **Faces that count** row and **People** have the GC tag and appear only while Face Recognition is on. See [Settings That Work With Ground Control](ground-control.md#settings-that-work-with-ground-control).
+A face counts once Ground Control recognizes it. That takes a look or two, so the screen wakes about a second later than with Anyone. A chosen person still counts when someone else is in view too. The group appears only while Face Recognition is on.
 
 ### Camera Preview
 

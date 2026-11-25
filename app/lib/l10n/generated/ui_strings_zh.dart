@@ -8304,7 +8304,8 @@ class UiStringsZh extends UiStrings {
   String get groundControlUsedElsewhere => '在其他设置中使用';
 
   @override
-  String get settingVisionMatchLinkFaceWhoDescription => '屏保 > 人脸检测';
+  String get settingVisionMatchLinkFaceWhoDescription =>
+      '屏保 > 人脸检测 > Ground Control 人脸识别';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -11883,17 +11884,14 @@ class UiStringsZh extends UiStrings {
   String get screensaverDetectionX86Unsupported => '不支持 x86 设备。';
 
   @override
-  String get settingScreensaverFaceWhoTitle => '计入的人脸';
+  String get settingScreensaverFaceWhoTitle => '检测人脸';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      '选择谁的人脸可以关闭或推迟屏保。“已识别的人”只计入在 Ground Control 中录入的人脸。';
+      '选择“指定人员”时，只有下方选中的人才能关闭或推迟屏保。';
 
   @override
   String get screensaverFaceWhoOptionAnyone => '任何人';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => '已识别的人';
 
   @override
   String get screensaverFaceWhoOptionPeople => '指定人员';
@@ -11907,6 +11905,9 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get screensaverFacePeopleNone => '任何已识别的人';
+
+  @override
+  String get screensaverGroundControlFaceRecognition => 'Ground Control 人脸识别';
 
   @override
   String get settingFacePreviewTitle => '显示摄像头预览';
@@ -24771,7 +24772,8 @@ class UiStringsZhCn extends UiStringsZh {
   String get groundControlUsedElsewhere => '在其他设置中使用';
 
   @override
-  String get settingVisionMatchLinkFaceWhoDescription => '屏保 > 人脸检测';
+  String get settingVisionMatchLinkFaceWhoDescription =>
+      '屏保 > 人脸检测 > Ground Control 人脸识别';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -28350,17 +28352,14 @@ class UiStringsZhCn extends UiStringsZh {
   String get screensaverDetectionX86Unsupported => '不支持 x86 设备。';
 
   @override
-  String get settingScreensaverFaceWhoTitle => '计入的人脸';
+  String get settingScreensaverFaceWhoTitle => '检测人脸';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      '选择谁的人脸可以关闭或推迟屏保。“已识别的人”只计入在 Ground Control 中录入的人脸。';
+      '选择“指定人员”时，只有下方选中的人才能关闭或推迟屏保。';
 
   @override
   String get screensaverFaceWhoOptionAnyone => '任何人';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => '已识别的人';
 
   @override
   String get screensaverFaceWhoOptionPeople => '指定人员';
@@ -28374,6 +28373,9 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get screensaverFacePeopleNone => '任何已识别的人';
+
+  @override
+  String get screensaverGroundControlFaceRecognition => 'Ground Control 人脸识别';
 
   @override
   String get settingFacePreviewTitle => '显示摄像头预览';

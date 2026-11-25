@@ -8802,7 +8802,7 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Économiseur d\'écran > Détection de visage';
+      'Économiseur d\'écran > Détection de visage > Reconnaissance faciale Ground Control';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12687,17 +12687,14 @@ class UiStringsFr extends UiStrings {
       'Non disponible sur les appareils x86.';
 
   @override
-  String get settingScreensaverFaceWhoTitle => 'Visages pris en compte';
+  String get settingScreensaverFaceWhoTitle => 'Détecter les visages';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Choisissez les visages pris en compte pour fermer ou repousser l\'économiseur d\'écran. Personnes reconnues ne compte que les visages enregistrés dans Ground Control.';
+      'Avec Personnes choisies, seules les personnes choisies ci-dessous ferment ou repoussent l\'économiseur d\'écran.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Tout le monde';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => 'Personnes reconnues';
 
   @override
   String get screensaverFaceWhoOptionPeople => 'Personnes choisies';
@@ -12711,6 +12708,10 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get screensaverFacePeopleNone => 'Toute personne reconnue';
+
+  @override
+  String get screensaverGroundControlFaceRecognition =>
+      'Reconnaissance faciale Ground Control';
 
   @override
   String get settingFacePreviewTitle => 'Afficher l\'aperçu caméra';

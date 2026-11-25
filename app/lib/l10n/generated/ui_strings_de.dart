@@ -8847,7 +8847,7 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Bildschirmschoner > Gesichtserkennung';
+      'Bildschirmschoner > Gesichtserkennung > Ground Control Gesichtswiedererkennung';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12725,17 +12725,14 @@ class UiStringsDe extends UiStrings {
       'Auf x86-Geräten nicht verfügbar.';
 
   @override
-  String get settingScreensaverFaceWhoTitle => 'Zählende Gesichter';
+  String get settingScreensaverFaceWhoTitle => 'Gesichter erkennen';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Wähle, wessen Gesicht für das Schließen oder Aufschieben des Bildschirmschoners zählt. Erkannte Personen zählt nur Gesichter, die in Ground Control eingelernt sind.';
+      'Mit Ausgewählte Personen schließen oder verschieben nur die unten ausgewählten Personen den Bildschirmschoner.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Alle';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => 'Erkannte Personen';
 
   @override
   String get screensaverFaceWhoOptionPeople => 'Ausgewählte Personen';
@@ -12749,6 +12746,10 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get screensaverFacePeopleNone => 'Alle erkannten Personen';
+
+  @override
+  String get screensaverGroundControlFaceRecognition =>
+      'Ground Control Gesichtswiedererkennung';
 
   @override
   String get settingFacePreviewTitle => 'Kameravorschau anzeigen';

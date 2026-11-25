@@ -37,7 +37,7 @@
   "settingVisionMatchFaceConfirmsVoiceTitle": "Potwierdzaj głosy twarzami",
   "settingVisionMatchFaceConfirmsVoiceDescription": "Przyjmuj podobny głos, gdy przed kioskiem rozpoznano twarz tej samej osoby. W ten sposób można dopasować tylko osobę z najbardziej podobnym odciskiem głosu.",
   "groundControlUsedElsewhere": "Używane w innych ustawieniach",
-  "settingVisionMatchLinkFaceWhoDescription": "Wygaszacz ekranu > Wykrywanie twarzy",
+  "settingVisionMatchLinkFaceWhoDescription": "Wygaszacz ekranu > Wykrywanie twarzy > Rozpoznawanie twarzy Ground Control",
   "settingVisionMatchLinkPreviewPersonDescription": "Wygaszacz ekranu > Wykrywanie twarzy > Podgląd z kamery",
   "groundControlValueOn": "Włączone",
   "groundControlValueOff": "Wyłączone",

@@ -14,12 +14,12 @@
   "screensaverDetectionFaceTuning": "帧率、摄像头选择和启动延迟可在摄像头设置中调整。",
   "screensaverDetectionAndroidUnsupported": "此 Android 版本不支持。",
   "screensaverDetectionX86Unsupported": "不支持 x86 设备。",
-  "settingScreensaverFaceWhoTitle": "计入的人脸",
-  "settingScreensaverFaceWhoDescription": "选择谁的人脸可以关闭或推迟屏保。“已识别的人”只计入在 Ground Control 中录入的人脸。",
+  "settingScreensaverFaceWhoTitle": "检测人脸",
+  "settingScreensaverFaceWhoDescription": "选择“指定人员”时，只有下方选中的人才能关闭或推迟屏保。",
   "screensaverFaceWhoOptionAnyone": "任何人",
-  "screensaverFaceWhoOptionRecognized": "已识别的人",
   "screensaverFaceWhoOptionPeople": "指定人员",
   "settingScreensaverFacePeopleTitle": "人员",
   "settingScreensaverFacePeopleDescription": "选择屏幕为哪些人唤醒。如果没有选择任何人，屏幕会为任何已识别的人唤醒。",
-  "screensaverFacePeopleNone": "任何已识别的人"
+  "screensaverFacePeopleNone": "任何已识别的人",
+  "screensaverGroundControlFaceRecognition": "Ground Control 人脸识别"
 }

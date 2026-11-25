@@ -8664,7 +8664,7 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingVisionMatchLinkFaceWhoDescription =>
-      'Screensaver > Face Detection';
+      'Screensaver > Face Detection > Ground Control Face Recognition';
 
   @override
   String get settingVisionMatchLinkPreviewPersonDescription =>
@@ -12463,17 +12463,14 @@ class UiStringsEn extends UiStrings {
       'Not available on x86 devices.';
 
   @override
-  String get settingScreensaverFaceWhoTitle => 'Faces that count';
+  String get settingScreensaverFaceWhoTitle => 'Detect faces';
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Choose whose face counts for Dismiss on face and Postpone screensaver on face. Recognized people only counts faces enrolled in Ground Control.';
+      'With Chosen people, only the people picked below dismiss or postpone the screensaver.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Anyone';
-
-  @override
-  String get screensaverFaceWhoOptionRecognized => 'Recognized people';
 
   @override
   String get screensaverFaceWhoOptionPeople => 'Chosen people';
@@ -12487,6 +12484,10 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get screensaverFacePeopleNone => 'Anyone recognized';
+
+  @override
+  String get screensaverGroundControlFaceRecognition =>
+      'Ground Control Face Recognition';
 
   @override
   String get settingFacePreviewTitle => 'Show camera preview';

@@ -37,7 +37,7 @@
   "settingVisionMatchFaceConfirmsVoiceTitle": "用人脸确认声音",
   "settingVisionMatchFaceConfirmsVoiceDescription": "当在 Kiosk 前识别到同一个人的人脸时，接受相近的声音匹配。只有声纹最接近的人才能以这种方式匹配。",
   "groundControlUsedElsewhere": "在其他设置中使用",
-  "settingVisionMatchLinkFaceWhoDescription": "屏保 > 人脸检测",
+  "settingVisionMatchLinkFaceWhoDescription": "屏保 > 人脸检测 > Ground Control 人脸识别",
   "settingVisionMatchLinkPreviewPersonDescription": "屏保 > 人脸检测 > 摄像头预览",
   "groundControlValueOn": "开",
   "groundControlValueOff": "关",

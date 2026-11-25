@@ -76,7 +76,7 @@ With **Confirm voices with faces** on, Voice Match accepts a voice that is close
 
 ### Settings That Work With Ground Control
 
-Some settings outside Settings > Ground Control only work with Ground Control. One example is **Faces that count** under **Settings > Screensaver > Face Detection**. These settings have a **GC** tag after their title with Vision Match's face icon or Voice Match's voice icon. They appear only while that feature is on. Tap the tag to see what it means. The Vision Match page lists them with their values under **Used in other settings**. Tap one to go to that setting.
+Some settings outside Settings > Ground Control only work with Ground Control. One example is **Show who is recognized** under **Settings > Screensaver > Face Detection > Camera Preview**. These settings have a **GC** tag after their title with Vision Match's face icon or Voice Match's voice icon. Settings in a group named after Ground Control, such as **Ground Control Face Recognition**, have no tag because the group's name already says it. They appear only while that feature is on. Tap the tag to see what it means. The Vision Match page lists them with their values under **Used in other settings**. Tap one to go to that setting.
 
 ## Status
 
