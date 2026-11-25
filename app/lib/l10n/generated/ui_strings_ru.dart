@@ -8722,10 +8722,6 @@ class UiStringsRu extends UiStrings {
       'Заставка > Определение лица > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      'Заставка > Определение лица > Превью камеры';
-
-  @override
   String get groundControlValueOn => 'Вкл.';
 
   @override
@@ -8757,6 +8753,40 @@ class UiStringsRu extends UiStrings {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       'Режим блокировки > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => 'Карточки распознавания';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => 'Показывать приход';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      'Показывает карточку с фото и именем человека, когда его распознают перед киоском. Для того же человека она снова появляется, только если его не было минуту.';
+
+  @override
+  String get settingVisionMatchShowActionsTitle =>
+      'Показывать действия по лицу';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      'Показывает маленькую карточку каждый раз, когда PIN пропущен, режим блокировки выключен или голос подтверждён, потому что распознано лицо.';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => 'Позиция карточек';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      'Угол экрана, где появляются обе карточки. Пока показано превью камеры, они появляются рядом с ним.';
+
+  @override
+  String get recognitionCardPinSkipped => 'PIN пропущен';
+
+  @override
+  String get recognitionCardLockdownOff => 'Режим блокировки выключен';
+
+  @override
+  String get recognitionCardVoiceConfirmed => 'Голос подтверждён';
 
   @override
   String get haCustomPages => 'Свои страницы';
@@ -12670,13 +12700,6 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Превью камеры';
-
-  @override
-  String get settingFacePreviewPersonTitle => 'Показывать, кто распознан';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      'Показывать цвет распознанного человека вокруг превью и его имя рядом.';
 
   @override
   String get facePreviewRecognized => 'Распознан';

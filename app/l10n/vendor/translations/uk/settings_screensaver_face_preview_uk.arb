@@ -9,7 +9,5 @@
   "settingFacePreviewPositionTitle": "Розташування перегляду",
   "settingFacePreviewPositionDescription": "У якому кутку показувати вікно перегляду.",
   "screensaverDetectionPreviewSection": "Попередній перегляд камери",
-  "settingFacePreviewPersonTitle": "Показувати, кого впізнано",
-  "settingFacePreviewPersonDescription": "Показувати колір впізнаної людини навколо попереднього перегляду та її ім'я поруч.",
   "facePreviewRecognized": "Впізнано"
 }

@@ -66,6 +66,7 @@ import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
 import 'code_scanner.dart';
 import 'face_preview_overlay.dart';
+import 'recognition_card_overlay.dart';
 import 'fleet_settings.dart';
 import 'intercom_settings.dart';
 import 'back_nav.dart';
@@ -2190,6 +2191,7 @@ class _KioskScreenState extends State<KioskScreen>
                     FacePreviewOverlay(
                       motion: c.motion,
                       settings: c.settings,
+                      cards: c.recognitionCards,
                       pictureOf: c.groundControl.pictureOf,
                     ),
                     // The black timeout cover while a voice turn shows: the
@@ -2278,6 +2280,16 @@ class _KioskScreenState extends State<KioskScreen>
                       LockdownShield(
                         blackout: c.settings.get(defs.lockdownBlackout),
                       ),
+                    // Vision Match > Recognition cards: over everything but
+                    // an alarm, including the lockdown shield and the voice
+                    // overlay, so the person in front sees when Face
+                    // Recognition was used.
+                    RecognitionCardOverlay(
+                      cards: c.recognitionCards,
+                      motion: c.motion,
+                      settings: c.settings,
+                      pictureOf: c.groundControl.pictureOf,
+                    ),
                     // An alarm on its own view: over everything, the lockdown
                     // shield included, since Stop has to answer. Its sunrise
                     // covers the screensaver and the dark panel too.

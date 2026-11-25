@@ -8757,10 +8757,6 @@ class UiStringsPl extends UiStrings {
       'Wygaszacz ekranu > Wykrywanie twarzy > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      'Wygaszacz ekranu > Wykrywanie twarzy > Podgląd z kamery';
-
-  @override
   String get groundControlValueOn => 'Włączone';
 
   @override
@@ -8793,6 +8789,39 @@ class UiStringsPl extends UiStrings {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       'Tryb blokady > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => 'Karty rozpoznawania';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => 'Pokazuj przybycia';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      'Pokazuje kartę ze zdjęciem i imieniem osoby, gdy zostanie rozpoznana przed kioskiem. Dla tej samej osoby pojawia się ponownie dopiero, gdy nie było jej przez minutę.';
+
+  @override
+  String get settingVisionMatchShowActionsTitle => 'Pokazuj działania twarzą';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      'Pokazuje małą kartę za każdym razem, gdy PIN zostanie pominięty, tryb blokady wyłączony lub głos potwierdzony, ponieważ rozpoznano twarz.';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => 'Pozycja kart';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      'Róg ekranu, w którym pojawiają się obie karty. Gdy widoczny jest podgląd z kamery, pojawiają się obok niego.';
+
+  @override
+  String get recognitionCardPinSkipped => 'PIN pominięty';
+
+  @override
+  String get recognitionCardLockdownOff => 'Tryb blokady wyłączony';
+
+  @override
+  String get recognitionCardVoiceConfirmed => 'Głos potwierdzony';
 
   @override
   String get haCustomPages => 'Własne strony';
@@ -12711,13 +12740,6 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Podgląd z kamery';
-
-  @override
-  String get settingFacePreviewPersonTitle => 'Pokazuj, kto został rozpoznany';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      'Pokazuj kolor rozpoznanej osoby wokół podglądu i jej imię obok.';
 
   @override
   String get facePreviewRecognized => 'Rozpoznano';

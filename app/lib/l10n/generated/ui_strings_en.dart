@@ -8667,10 +8667,6 @@ class UiStringsEn extends UiStrings {
       'Screensaver > Face Detection > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      'Screensaver > Face Detection > Camera Preview';
-
-  @override
   String get groundControlValueOn => 'On';
 
   @override
@@ -8702,6 +8698,39 @@ class UiStringsEn extends UiStrings {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       'Lockdown Mode > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => 'Recognition cards';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => 'Show arrivals';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      'Show a card with the person\'s picture and name when someone is recognized at the kiosk. It shows again for the same person after they have been away for a minute.';
+
+  @override
+  String get settingVisionMatchShowActionsTitle => 'Show face actions';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      'Show a small card each time the PIN is skipped, Lockdown Mode is turned off or a voice is confirmed because a face was recognized.';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => 'Card position';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      'The corner of the screen where both cards show. While the camera preview shows, they show next to it.';
+
+  @override
+  String get recognitionCardPinSkipped => 'PIN skipped';
+
+  @override
+  String get recognitionCardLockdownOff => 'Lockdown Mode off';
+
+  @override
+  String get recognitionCardVoiceConfirmed => 'Voice confirmed';
 
   @override
   String get haCustomPages => 'Custom Pages';
@@ -12568,13 +12597,6 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Camera Preview';
-
-  @override
-  String get settingFacePreviewPersonTitle => 'Show who is recognized';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      'Show the recognized person\'s color around the preview and their name next to it.';
 
   @override
   String get facePreviewRecognized => 'Recognized';

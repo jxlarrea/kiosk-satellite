@@ -428,35 +428,6 @@ void main() {
       await bus.dispose();
     });
 
-    test('a face that skips the kiosk PIN or turns Lockdown Mode off shows '
-        'the preview with the name card, the switch off', () async {
-      await build({
-        'ks.camera.enabled': true,
-        'ks.ground_control.enabled': true,
-        'ks.vision_match.enabled': true,
-        'ks.vision_match.face_detection': true,
-        'ks.vision_match.face_recognition': true,
-        'ks.kiosk.enabled': true,
-        'ks.kiosk.face_skip_pin': 'people',
-      });
-      await pump();
-      expect(lastArgs?['preview'], isTrue);
-      expect(motion.previewNamed, isFalse);
-      bus.publish(const FacePinSkipped(lockdown: false, name: 'Ana'));
-      await pump();
-      expect(controlCalls.map((c) => c.method), contains('showPreview'));
-      expect(motion.previewNamed, isTrue);
-
-      // Lockdown Mode turned back on shows nothing.
-      controlCalls.clear();
-      bus.publish(const FaceLockdownChanged(locked: true));
-      await pump();
-      expect(controlCalls.where((c) => c.method == 'showPreview'), isEmpty);
-      await motion.dispose();
-      await settings.dispose();
-      await bus.dispose();
-    });
-
     test('with the switch off a face dismissal changes nothing', () async {
       await build(faceOnly);
       bus.publish(const ScreensaverStateChanged(active: true));
@@ -551,14 +522,13 @@ void main() {
       expect(dismissals, hasLength(1));
     });
 
-    test('the five settings live in one Camera Preview group on the Face '
+    test('the four settings live in one Camera Preview group on the Face '
         'Detection page, gated on the switch and it on Dismiss on face', () {
       final group = defs.allSettings.where(
         (d) => d.section == 'Camera Preview',
       );
       expect(group.map((d) => d.key), [
         'face.preview',
-        'face.preview_person',
         'face.preview_seconds',
         'face.preview_scale',
         'face.preview_position',
@@ -568,13 +538,6 @@ void main() {
         expect(d.category, 'Screensaver');
       }
       expect(defs.facePreview.dependsOn, defs.screensaverDismissOnFace.key);
-      expect(defs.facePreviewPerson.dependsOn, defs.facePreview.key);
-      // Show who is recognized needs Face Recognition on Ground Control.
-      expect(
-        defs.facePreviewPerson.alsoDependsOn,
-        defs.visionMatchFaceRecognition.key,
-      );
-      expect(defs.facePreviewPerson.groundControl, 'vision');
       expect(defs.facePreviewSeconds.dependsOn, defs.facePreview.key);
       expect(defs.facePreviewScale.dependsOn, defs.facePreview.key);
       expect(defs.facePreviewPosition.dependsOn, defs.facePreview.key);

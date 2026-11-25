@@ -8308,10 +8308,6 @@ class UiStringsZh extends UiStrings {
       '屏保 > 人脸检测 > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      '屏保 > 人脸检测 > 摄像头预览';
-
-  @override
   String get groundControlValueOn => '开';
 
   @override
@@ -8343,6 +8339,39 @@ class UiStringsZh extends UiStrings {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       '锁定模式 > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => '识别卡片';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => '显示到达';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      '在 Kiosk 前识别到某人时，显示带有其照片和姓名的卡片。同一个人离开一分钟后才会再次显示。';
+
+  @override
+  String get settingVisionMatchShowActionsTitle => '显示人脸操作';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      '每当因识别到人脸而免输 PIN 码、关闭锁定模式或确认声音时，显示一张小卡片。';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => '卡片位置';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      '两种卡片显示在屏幕的哪个角落。显示摄像头预览时，卡片显示在预览旁边。';
+
+  @override
+  String get recognitionCardPinSkipped => '已免输 PIN 码';
+
+  @override
+  String get recognitionCardLockdownOff => '锁定模式已关闭';
+
+  @override
+  String get recognitionCardVoiceConfirmed => '声音已确认';
 
   @override
   String get haCustomPages => '自定义网页';
@@ -11986,13 +12015,6 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => '摄像头预览';
-
-  @override
-  String get settingFacePreviewPersonTitle => '显示识别出的人';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      '在预览周围显示识别出的人的颜色，并在旁边显示其姓名。';
 
   @override
   String get facePreviewRecognized => '已识别';
@@ -24826,10 +24848,6 @@ class UiStringsZhCn extends UiStringsZh {
       '屏保 > 人脸检测 > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      '屏保 > 人脸检测 > 摄像头预览';
-
-  @override
   String get groundControlValueOn => '开';
 
   @override
@@ -24861,6 +24879,39 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       '锁定模式 > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => '识别卡片';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => '显示到达';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      '在 Kiosk 前识别到某人时，显示带有其照片和姓名的卡片。同一个人离开一分钟后才会再次显示。';
+
+  @override
+  String get settingVisionMatchShowActionsTitle => '显示人脸操作';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      '每当因识别到人脸而免输 PIN 码、关闭锁定模式或确认声音时，显示一张小卡片。';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => '卡片位置';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      '两种卡片显示在屏幕的哪个角落。显示摄像头预览时，卡片显示在预览旁边。';
+
+  @override
+  String get recognitionCardPinSkipped => '已免输 PIN 码';
+
+  @override
+  String get recognitionCardLockdownOff => '锁定模式已关闭';
+
+  @override
+  String get recognitionCardVoiceConfirmed => '声音已确认';
 
   @override
   String get haCustomPages => '自定义网页';
@@ -28504,13 +28555,6 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get screensaverDetectionPreviewSection => '摄像头预览';
-
-  @override
-  String get settingFacePreviewPersonTitle => '显示识别出的人';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      '在预览周围显示识别出的人的颜色，并在旁边显示其姓名。';
 
   @override
   String get facePreviewRecognized => '已识别';

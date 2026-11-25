@@ -31311,18 +31311,6 @@
     "author": "Xavier Larrea",
     "ownerAuthored": true
   },
-  "settingFacePreviewPersonTitle": {
-    "source": "3491e72b8348d75c39212c94d8b2d71760ae2df83c5aa1215dcda569e07e3f97",
-    "translation": "1e12aa296975ec4be45e7708d1fb80eb6f2b5b7079215358a31c7a6ec491c682",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
-  "settingFacePreviewPersonDescription": {
-    "source": "2e5be59d22c5e0cafb9312c393eecf7138f17f4536b92aa3e7fd01f5861a7d91",
-    "translation": "fcc5b7880a25c1116660e7e45f7409a1015213e37800c07816bb36d841803bcb",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
   "groundControlValueOn": {
     "source": "202f89080fa723930384804da284c2c92fbca888f782a061d507c0e34232a915",
     "translation": "b8a642e0bafb1adc94397eb20c26a44f9ee7c2598812250cd49544d2cae459ac",
@@ -31392,12 +31380,6 @@
   "settingVisionMatchFaceConfirmsVoiceDescription": {
     "source": "b3c1adde7c5ddcc10ab19e4dce60a79e2b4cc030932e6c89ff4636889057a401",
     "translation": "b8a82678eccf13a9c82a0415358e7f70c5a02c0a5e382b2362333b78bbc86e81",
-    "author": "Xavier Larrea",
-    "ownerAuthored": true
-  },
-  "settingVisionMatchLinkPreviewPersonDescription": {
-    "source": "4916027d1d4a1e4e0c399af6a92715122491c1233324fac41dfc59f4c4ad9758",
-    "translation": "e0e55b0a8667b0ea5f0c53aa6a3275a75c1f15a8d3dcd98cec096afc47bd1274",
     "author": "Xavier Larrea",
     "ownerAuthored": true
   },
@@ -31530,6 +31512,66 @@
   "settingLockdownFaceRelockDescription": {
     "source": "9bf2321d70a5056e7f85df803d8cf4dec08daff637fb113b4cd4c6cefb9465d9",
     "translation": "71b9d29d188f7244571b6f6c4bcd730a34b4bbdb57ded84e2fb25c59dc66ad20",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchShowArrivalsDescription": {
+    "source": "39479f18f2395b0447ab4913330456e5a9b530db6a0ea49bc2f424811e4b9b52",
+    "translation": "d335330103b885c21fdef90ce70cd81326a374ed8bfd9e8fce85721679c8140b",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchShowActionsDescription": {
+    "source": "33d8788a4f266fed16c6cba6c70f5c54ea8c2e668ecd8e770144d46d86560b23",
+    "translation": "4ea6f7e3484908987d61afb0cd324e99af4dceae205036a79b425c8fc7b0eba5",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchShowActionsTitle": {
+    "source": "5aae8c17b0380621ce6a5d2748e7ab9a49799d27578a067878714b2eb7eedd60",
+    "translation": "8874968bde4b61e72b4b670eca292491caa514aba93b68fe29669ea46aaf6c56",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchCardPositionDescription": {
+    "source": "b016654e7a67f9d607a2a14f386a289a6837a77f6b569451f262ae9446988f94",
+    "translation": "69f5e3f6e15718e66bd7404eeeda1749bdbc6835cfaca619e57313365a1dfd28",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "recognitionCardPinSkipped": {
+    "source": "5766ba04dfef7a39ac0a7514124d5f075bf4aa1df662a9fda335b039ca2ff24b",
+    "translation": "5309e7820a933f592a38e29913e1a9a18e4d39a31bc01653d591f8ec19738342",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "groundControlRecognitionCards": {
+    "source": "aa93eb280460ced4900870466d432bd7fddff55578d4fec04112a6fffe11794f",
+    "translation": "1113741e143475c08188ce7e431a397bf7527dd2386045665adf278ed338c42d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchCardPositionTitle": {
+    "source": "ad1883b26febc26d3ec882d1ff44663b902709e41ccbf796eaa7faa7209e3b8d",
+    "translation": "a29d76cc99601db4cf1210070752470270c310d8b9526f0789e5bc8c04e2bc43",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "recognitionCardLockdownOff": {
+    "source": "6e947f57ae545622d32771ae1fab642270a3876a1c0c87520ced7def6ee04146",
+    "translation": "b62b2d78e91fdc2537374ae4ae596f2f0c750aae81c461294a792fda49009c3d",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "settingVisionMatchShowArrivalsTitle": {
+    "source": "57440ef628439b44c0ed472ec8f84e43f6f578cfecc6e0c0f5bb25f78be76428",
+    "translation": "421b715b3f1fdd3d2ee3c3c9d2064f259d26a1612fb9a6bc6eb7d1d51e44a8ec",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "recognitionCardVoiceConfirmed": {
+    "source": "4da307f94fb8ebc67fc28d8bb3fec26fbf1918632905bb301c1673b96be53444",
+    "translation": "3c2520a6b05f61e4f52e4f3b41f3e664cf6d5204fadd90b940e29f66e193d4af",
     "author": "Xavier Larrea",
     "ownerAuthored": true
   }

@@ -40,7 +40,7 @@ With [Face Recognition](ground-control.md#face-recognition) on Ground Control, t
 
 The exit gesture is still needed. Whoever does it is usually looking at the screen, and a face counts for 3 seconds after it was last seen. Face Recognition doesn't check that it sees a real face, so a photo of a chosen person would probably skip the PIN too. Don't rely on it to keep anyone out. Ground Control's vision session shows each time the PIN was skipped and for whom.
 
-When the PIN is skipped, the camera preview shows with the person's name for a few seconds so they know their face was recognized. This happens even with **Show camera preview** off. Its size, corner and duration come from the **Camera Preview** settings under **Settings > Screensaver > Face Detection**.
+When the PIN is skipped, a small **PIN skipped** card with the person's picture shows so they know their face was used. Turn it off with **Show face actions** under [Recognition Cards](ground-control.md#recognition-cards).
 
 ### Staying in Front
 
@@ -91,7 +91,7 @@ With [Face Recognition](ground-control.md#face-recognition) on Ground Control, t
 
 With both on, the screen stays locked for everyone else, including guests and children. Leave **Disable Lockdown Mode for** on Nobody if you lock the screen to clean it, since your own face could unlock it while you clean. A lock from Home Assistant or the remote admin holds while a chosen person stays in front of the kiosk. It only lifts the next time one of them arrives. While that lock holds, the exit gesture skips the kiosk PIN for them. If someone unlocks with the exit gesture while nobody chosen is in view, Lockdown Mode comes back on 10 seconds later when **Turn Lockdown Mode back on** is on.
 
-When a face turns Lockdown Mode off, the camera preview shows with the person's name for a few seconds, as it does for a skipped PIN. Ground Control's vision session shows each time Lockdown Mode was turned off or on this way.
+When a face turns Lockdown Mode off, a small **Lockdown Mode off** card with the person's picture shows, as it does for a skipped PIN. Ground Control's vision session shows each time Lockdown Mode was turned off or on this way.
 
 ## Required System Permissions
 

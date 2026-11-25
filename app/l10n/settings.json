@@ -2879,21 +2879,25 @@
     "title": "settingScreensaverFacePeopleTitle",
     "description": "settingScreensaverFacePeopleDescription"
   },
-  "face.preview_person": {
-    "title": "settingFacePreviewPersonTitle",
-    "description": "settingFacePreviewPersonDescription"
-  },
   "vision_match.face_confirms_voice": {
     "title": "settingVisionMatchFaceConfirmsVoiceTitle",
     "description": "settingVisionMatchFaceConfirmsVoiceDescription"
   },
+  "vision_match.show_arrivals": {
+    "title": "settingVisionMatchShowArrivalsTitle",
+    "description": "settingVisionMatchShowArrivalsDescription"
+  },
+  "vision_match.show_actions": {
+    "title": "settingVisionMatchShowActionsTitle",
+    "description": "settingVisionMatchShowActionsDescription"
+  },
+  "vision_match.card_position": {
+    "title": "settingVisionMatchCardPositionTitle",
+    "description": "settingVisionMatchCardPositionDescription"
+  },
   "vision_match.link_face_who": {
     "title": "settingScreensaverFaceWhoTitle",
     "description": "settingVisionMatchLinkFaceWhoDescription"
-  },
-  "vision_match.link_preview_person": {
-    "title": "settingFacePreviewPersonTitle",
-    "description": "settingVisionMatchLinkPreviewPersonDescription"
   },
   "kiosk.face_skip_pin": {
     "title": "settingKioskFaceSkipPinTitle",

@@ -8761,10 +8761,6 @@ class UiStringsNl extends UiStrings {
       'Schermbeveiliging > Gezichtsdetectie > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      'Schermbeveiliging > Gezichtsdetectie > Cameravoorbeeld';
-
-  @override
   String get groundControlValueOn => 'Aan';
 
   @override
@@ -8797,6 +8793,39 @@ class UiStringsNl extends UiStrings {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       'Vergrendelingsmodus > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => 'Herkenningskaarten';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => 'Aankomsten tonen';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      'Toont een kaart met de foto en naam van de persoon wanneer iemand bij de kiosk wordt herkend. Voor dezelfde persoon verschijnt hij pas weer nadat die een minuut weg is geweest.';
+
+  @override
+  String get settingVisionMatchShowActionsTitle => 'Gezichtsacties tonen';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      'Toont een kleine kaart telkens wanneer de pincode wordt overgeslagen, de vergrendelingsmodus wordt uitgeschakeld of een stem wordt bevestigd omdat een gezicht is herkend.';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => 'Positie van de kaarten';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      'De hoek van het scherm waar beide kaarten verschijnen. Terwijl het cameravoorbeeld zichtbaar is, verschijnen ze ernaast.';
+
+  @override
+  String get recognitionCardPinSkipped => 'Pincode overgeslagen';
+
+  @override
+  String get recognitionCardLockdownOff => 'Vergrendelingsmodus uit';
+
+  @override
+  String get recognitionCardVoiceConfirmed => 'Stem bevestigd';
 
   @override
   String get haCustomPages => 'Eigen pagina\'s';
@@ -12716,13 +12745,6 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Cameravoorbeeld';
-
-  @override
-  String get settingFacePreviewPersonTitle => 'Tonen wie er herkend is';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      'De kleur van de herkende persoon rond het voorbeeld tonen, met de naam ernaast.';
 
   @override
   String get facePreviewRecognized => 'Herkend';

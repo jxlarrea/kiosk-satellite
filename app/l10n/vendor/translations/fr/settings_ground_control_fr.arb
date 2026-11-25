@@ -38,7 +38,6 @@
   "settingVisionMatchFaceConfirmsVoiceDescription": "Accepter une voix proche quand le visage de la même personne est reconnu devant le kiosque. Seule la personne à l'empreinte vocale la plus proche peut être reconnue ainsi.",
   "groundControlUsedElsewhere": "Utilisé dans d'autres paramètres",
   "settingVisionMatchLinkFaceWhoDescription": "Économiseur d'écran > Détection de visage > Ground Control Vision Match",
-  "settingVisionMatchLinkPreviewPersonDescription": "Économiseur d'écran > Détection de visage > Aperçu caméra",
   "groundControlValueOn": "Activé",
   "groundControlValueOff": "Désactivé",
   "groundControlValuePeople": "{option} : {names}",
@@ -47,5 +46,15 @@
   "groundControlTagVision": "Ce paramètre nécessite Kiosk Satellite Ground Control. Ground Control est une application distincte qui tourne sur un ordinateur de votre maison. Le paramètre utilise la reconnaissance faciale et ne s'affiche que lorsque la reconnaissance faciale est activée dans Paramètres > Ground Control > Vision Match.",
   "groundControlTagVoice": "Ce paramètre nécessite Kiosk Satellite Ground Control. Ground Control est une application distincte qui tourne sur un ordinateur de votre maison. Le paramètre utilise Voice Match et ne s'affiche que lorsque Voice Match est activé dans Paramètres > Ground Control > Voice Match.",
   "settingVisionMatchLinkKioskPinDescription": "Mode kiosque > Ground Control Vision Match",
-  "settingVisionMatchLinkLockdownDescription": "Mode verrouillage > Ground Control Vision Match"
+  "settingVisionMatchLinkLockdownDescription": "Mode verrouillage > Ground Control Vision Match",
+  "groundControlRecognitionCards": "Cartes de reconnaissance",
+  "settingVisionMatchShowArrivalsTitle": "Afficher les arrivées",
+  "settingVisionMatchShowArrivalsDescription": "Affiche une carte avec la photo et le nom de la personne quand quelqu'un est reconnu devant le kiosque. Elle réapparaît pour la même personne après une absence d'une minute.",
+  "settingVisionMatchShowActionsTitle": "Afficher les actions par visage",
+  "settingVisionMatchShowActionsDescription": "Affiche une petite carte chaque fois que le code PIN est ignoré, que le mode verrouillage est désactivé ou qu'une voix est confirmée parce qu'un visage a été reconnu.",
+  "settingVisionMatchCardPositionTitle": "Position des cartes",
+  "settingVisionMatchCardPositionDescription": "Le coin de l'écran où les deux cartes s'affichent. Pendant l'aperçu caméra, elles s'affichent à côté.",
+  "recognitionCardPinSkipped": "Code PIN ignoré",
+  "recognitionCardLockdownOff": "Mode verrouillage désactivé",
+  "recognitionCardVoiceConfirmed": "Voix confirmée"
 }

@@ -827,6 +827,7 @@ class FaceInViewChanged extends AppEvent {
     this.score,
     this.color,
     this.people = const [],
+    this.colors = const {},
   });
   final String? id;
   final String name;
@@ -835,6 +836,10 @@ class FaceInViewChanged extends AppEvent {
   /// The person's color on the kiosk, as Ground Control keeps it (#RRGGBB).
   final String? color;
   final List<({String id, String name})> people;
+
+  /// The colors of everyone in view, by person id, for the recognition
+  /// cards.
+  final Map<String, String> colors;
 }
 
 /// Ground Control asked this kiosk to enroll a person's face, or someone
@@ -854,20 +859,26 @@ class FaceEnrollRequested extends AppEvent {
 /// because [name], one of the chosen people, was recognized at the kiosk.
 /// Reported to Ground Control's vision session.
 class FacePinSkipped extends AppEvent {
-  const FacePinSkipped({required this.lockdown, required this.name});
+  const FacePinSkipped({required this.lockdown, required this.name, this.id});
 
   /// The lockdown exit gesture, not the kiosk one.
   final bool lockdown;
   final String name;
+
+  /// The person's Ground Control id, for the action card.
+  final String? id;
 }
 
 /// Disable Lockdown Mode for turned Lockdown Mode off because [name] was
 /// recognized at the kiosk, or Turn Lockdown Mode back on turned it on
 /// because nobody chosen was. Reported to Ground Control's vision session.
 class FaceLockdownChanged extends AppEvent {
-  const FaceLockdownChanged({required this.locked, this.name});
+  const FaceLockdownChanged({required this.locked, this.name, this.id});
   final bool locked;
   final String? name;
+
+  /// The person's Ground Control id, for the action card.
+  final String? id;
 }
 
 /// Ground Control asked this kiosk to stop its face capture early, as its

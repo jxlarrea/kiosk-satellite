@@ -38,7 +38,6 @@
   "settingVisionMatchFaceConfirmsVoiceDescription": "Een stem die er dichtbij zit aannemen als het gezicht van dezelfde persoon bij de kiosk wordt herkend. Zo kan alleen de persoon met de meest overeenkomende stemafdruk worden gekozen.",
   "groundControlUsedElsewhere": "Gebruikt in andere instellingen",
   "settingVisionMatchLinkFaceWhoDescription": "Schermbeveiliging > Gezichtsdetectie > Ground Control Vision Match",
-  "settingVisionMatchLinkPreviewPersonDescription": "Schermbeveiliging > Gezichtsdetectie > Cameravoorbeeld",
   "groundControlValueOn": "Aan",
   "groundControlValueOff": "Uit",
   "groundControlValuePeople": "{option}: {names}",
@@ -47,5 +46,15 @@
   "groundControlTagVision": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt gezichtsherkenning en is alleen zichtbaar zolang gezichtsherkenning aan staat onder Instellingen > Ground Control > Vision Match.",
   "groundControlTagVoice": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt Voice Match en is alleen zichtbaar zolang Voice Match aan staat onder Instellingen > Ground Control > Voice Match.",
   "settingVisionMatchLinkKioskPinDescription": "Kioskmodus > Ground Control Vision Match",
-  "settingVisionMatchLinkLockdownDescription": "Vergrendelingsmodus > Ground Control Vision Match"
+  "settingVisionMatchLinkLockdownDescription": "Vergrendelingsmodus > Ground Control Vision Match",
+  "groundControlRecognitionCards": "Herkenningskaarten",
+  "settingVisionMatchShowArrivalsTitle": "Aankomsten tonen",
+  "settingVisionMatchShowArrivalsDescription": "Toont een kaart met de foto en naam van de persoon wanneer iemand bij de kiosk wordt herkend. Voor dezelfde persoon verschijnt hij pas weer nadat die een minuut weg is geweest.",
+  "settingVisionMatchShowActionsTitle": "Gezichtsacties tonen",
+  "settingVisionMatchShowActionsDescription": "Toont een kleine kaart telkens wanneer de pincode wordt overgeslagen, de vergrendelingsmodus wordt uitgeschakeld of een stem wordt bevestigd omdat een gezicht is herkend.",
+  "settingVisionMatchCardPositionTitle": "Positie van de kaarten",
+  "settingVisionMatchCardPositionDescription": "De hoek van het scherm waar beide kaarten verschijnen. Terwijl het cameravoorbeeld zichtbaar is, verschijnen ze ernaast.",
+  "recognitionCardPinSkipped": "Pincode overgeslagen",
+  "recognitionCardLockdownOff": "Vergrendelingsmodus uit",
+  "recognitionCardVoiceConfirmed": "Stem bevestigd"
 }

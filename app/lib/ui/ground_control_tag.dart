@@ -6,7 +6,7 @@ import '../managers/settings/settings_manager.dart';
 
 /// MDI face-recognition and account-voice, the icons of Vision Match and
 /// Voice Match, inline so the tag draws on its first frame.
-const _facePath =
+const faceRecognitionIconPath =
     'M9,11.75A1.25,1.25 0 0,0 7.75,13A1.25,1.25 0 0,0 9,14.25A1.25,1.25 0 0,0 '
     '10.25,13A1.25,1.25 0 0,0 9,11.75M15,11.75A1.25,1.25 0 0,0 13.75,13A1.25,'
     '1.25 0 0,0 15,14.25A1.25,1.25 0 0,0 16.25,13A1.25,1.25 0 0,0 15,11.75M12,'
@@ -54,7 +54,7 @@ class GroundControlTag extends StatelessWidget {
               children: [
                 SvgPicture.string(
                   '<svg viewBox="0 0 24 24"><path d="'
-                  '${feature == 'voice' ? _voicePath : _facePath}"/></svg>',
+                  '${feature == 'voice' ? _voicePath : faceRecognitionIconPath}"/></svg>',
                   width: 14,
                   height: 14,
                   colorFilter: ColorFilter.mode(ink, BlendMode.srcIn),

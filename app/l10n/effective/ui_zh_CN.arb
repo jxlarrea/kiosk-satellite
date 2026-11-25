@@ -32723,19 +32723,6 @@
       ]
     }
   },
-  "settingVisionMatchLinkPreviewPersonDescription": "屏保 > 人脸检测 > 摄像头预览",
-  "@settingVisionMatchLinkPreviewPersonDescription": {
-    "context": "Settings > Ground Control > Vision Match > Used in other settings",
-    "description": "Where the Show who is recognized setting is, as a path of page names. Use the translated names of these pages.",
-    "x-locations": {
-      "device": [
-        "Settings > Ground Control > Vision Match > Used in other settings > Show who is recognized"
-      ],
-      "remoteAdmin": [
-        "Ground Control > Vision Match > Used in other settings > Show who is recognized"
-      ]
-    }
-  },
   "groundControlValueOn": "开",
   "@groundControlValueOn": {
     "context": "Settings > Ground Control > Vision Match > Used in other settings",
@@ -32860,6 +32847,127 @@
       ],
       "remoteAdmin": [
         "Ground Control > Vision Match > Used in other settings"
+      ]
+    }
+  },
+  "groundControlRecognitionCards": "识别卡片",
+  "@groundControlRecognitionCards": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Section heading: the cards on the kiosk screen that show who Face Recognition named and what it let through. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match"
+      ]
+    }
+  },
+  "settingVisionMatchShowArrivalsTitle": "显示到达",
+  "@settingVisionMatchShowArrivalsTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Recognition cards"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Recognition cards"
+      ]
+    }
+  },
+  "settingVisionMatchShowArrivalsDescription": "在 Kiosk 前识别到某人时，显示带有其照片和姓名的卡片。同一个人离开一分钟后才会再次显示。",
+  "@settingVisionMatchShowArrivalsDescription": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Recognition cards > Show arrivals"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Recognition cards > Show arrivals"
+      ]
+    }
+  },
+  "settingVisionMatchShowActionsTitle": "显示人脸操作",
+  "@settingVisionMatchShowActionsTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Recognition cards"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Recognition cards"
+      ]
+    }
+  },
+  "settingVisionMatchShowActionsDescription": "每当因识别到人脸而免输 PIN 码、关闭锁定模式或确认声音时，显示一张小卡片。",
+  "@settingVisionMatchShowActionsDescription": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Recognition cards > Show face actions"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Recognition cards > Show face actions"
+      ]
+    }
+  },
+  "settingVisionMatchCardPositionTitle": "卡片位置",
+  "@settingVisionMatchCardPositionTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Recognition cards"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Recognition cards"
+      ]
+    }
+  },
+  "settingVisionMatchCardPositionDescription": "两种卡片显示在屏幕的哪个角落。显示摄像头预览时，卡片显示在预览旁边。",
+  "@settingVisionMatchCardPositionDescription": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Recognition cards > Card position"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Recognition cards > Card position"
+      ]
+    }
+  },
+  "recognitionCardPinSkipped": "已免输 PIN 码",
+  "@recognitionCardPinSkipped": {
+    "context": "Kiosk screen > recognition card",
+    "description": "Next to the person's picture on the small card on the kiosk screen: the kiosk PIN was not asked because a chosen person was recognized. Keep it to two or three words.",
+    "x-locations": {
+      "device": [
+        "Kiosk screen > recognition card"
+      ]
+    }
+  },
+  "recognitionCardLockdownOff": "锁定模式已关闭",
+  "@recognitionCardLockdownOff": {
+    "context": "Kiosk screen > recognition card",
+    "description": "Next to the person's picture on the small card on the kiosk screen: Lockdown Mode was turned off because a chosen person was recognized. Keep it to two or three words.",
+    "x-locations": {
+      "device": [
+        "Kiosk screen > recognition card"
+      ]
+    }
+  },
+  "recognitionCardVoiceConfirmed": "声音已确认",
+  "@recognitionCardVoiceConfirmed": {
+    "context": "Kiosk screen > recognition card",
+    "description": "Next to the person's picture on the small card on the kiosk screen: a voice close to the person's voiceprint was accepted because their face was recognized. Keep it to two or three words.",
+    "x-locations": {
+      "device": [
+        "Kiosk screen > recognition card"
       ]
     }
   },
@@ -47272,32 +47380,6 @@
       ],
       "remoteAdmin": [
         "Screensaver > Face Detection > Camera Preview"
-      ]
-    }
-  },
-  "settingFacePreviewPersonTitle": "显示识别出的人",
-  "@settingFacePreviewPersonTitle": {
-    "context": "Settings > Screensaver > Face Detection > Camera Preview",
-    "description": "Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Face Detection > Camera Preview"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Face Detection > Camera Preview"
-      ]
-    }
-  },
-  "settingFacePreviewPersonDescription": "在预览周围显示识别出的人的颜色，并在旁边显示其姓名。",
-  "@settingFacePreviewPersonDescription": {
-    "context": "Settings > Screensaver > Face Detection > Camera Preview",
-    "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
-    "x-locations": {
-      "device": [
-        "Settings > Screensaver > Face Detection > Camera Preview > Show who is recognized"
-      ],
-      "remoteAdmin": [
-        "Screensaver > Face Detection > Camera Preview > Show who is recognized"
       ]
     }
   },

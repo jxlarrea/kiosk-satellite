@@ -15157,12 +15157,6 @@ abstract class UiStrings {
   /// **'Screensaver > Face Detection > Ground Control Vision Match'**
   String get settingVisionMatchLinkFaceWhoDescription;
 
-  /// Where the Show who is recognized setting is, as a path of page names. Use the translated names of these pages.
-  ///
-  /// In en, this message translates to:
-  /// **'Screensaver > Face Detection > Camera Preview'**
-  String get settingVisionMatchLinkPreviewPersonDescription;
-
   /// The value of a switch on another page.
   ///
   /// In en, this message translates to:
@@ -15216,6 +15210,66 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Lockdown Mode > Ground Control Vision Match'**
   String get settingVisionMatchLinkLockdownDescription;
+
+  /// Section heading: the cards on the kiosk screen that show who Face Recognition named and what it let through. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition cards'**
+  String get groundControlRecognitionCards;
+
+  /// Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Show arrivals'**
+  String get settingVisionMatchShowArrivalsTitle;
+
+  /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Show a card with the person\'s picture and name when someone is recognized at the kiosk. It shows again for the same person after they have been away for a minute.'**
+  String get settingVisionMatchShowArrivalsDescription;
+
+  /// Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Show face actions'**
+  String get settingVisionMatchShowActionsTitle;
+
+  /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Show a small card each time the PIN is skipped, Lockdown Mode is turned off or a voice is confirmed because a face was recognized.'**
+  String get settingVisionMatchShowActionsDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Card position'**
+  String get settingVisionMatchCardPositionTitle;
+
+  /// Setting help.
+  ///
+  /// In en, this message translates to:
+  /// **'The corner of the screen where both cards show. While the camera preview shows, they show next to it.'**
+  String get settingVisionMatchCardPositionDescription;
+
+  /// Next to the person's picture on the small card on the kiosk screen: the kiosk PIN was not asked because a chosen person was recognized. Keep it to two or three words.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN skipped'**
+  String get recognitionCardPinSkipped;
+
+  /// Next to the person's picture on the small card on the kiosk screen: Lockdown Mode was turned off because a chosen person was recognized. Keep it to two or three words.
+  ///
+  /// In en, this message translates to:
+  /// **'Lockdown Mode off'**
+  String get recognitionCardLockdownOff;
+
+  /// Next to the person's picture on the small card on the kiosk screen: a voice close to the person's voiceprint was accepted because their face was recognized. Keep it to two or three words.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice confirmed'**
+  String get recognitionCardVoiceConfirmed;
 
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///
@@ -21978,18 +22032,6 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Camera Preview'**
   String get screensaverDetectionPreviewSection;
-
-  /// Setting label. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Show who is recognized'**
-  String get settingFacePreviewPersonTitle;
-
-  /// Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.
-  ///
-  /// In en, this message translates to:
-  /// **'Show the recognized person\'s color around the preview and their name next to it.'**
-  String get settingFacePreviewPersonDescription;
 
   /// Under the person's name in the card next to the camera preview, when Face Recognition names them.
   ///

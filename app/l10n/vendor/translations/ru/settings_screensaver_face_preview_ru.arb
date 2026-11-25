@@ -9,7 +9,5 @@
   "settingFacePreviewPositionTitle": "Позиция превью",
   "settingFacePreviewPositionDescription": "В каком углу находится превью.",
   "screensaverDetectionPreviewSection": "Превью камеры",
-  "settingFacePreviewPersonTitle": "Показывать, кто распознан",
-  "settingFacePreviewPersonDescription": "Показывать цвет распознанного человека вокруг превью и его имя рядом.",
   "facePreviewRecognized": "Распознан"
 }

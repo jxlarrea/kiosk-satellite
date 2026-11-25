@@ -9,7 +9,5 @@
   "settingFacePreviewPositionTitle": "Position der Vorschau",
   "settingFacePreviewPositionDescription": "Die Ecke, in der die Vorschau angezeigt wird.",
   "screensaverDetectionPreviewSection": "Kameravorschau",
-  "settingFacePreviewPersonTitle": "Zeigen, wer erkannt wurde",
-  "settingFacePreviewPersonDescription": "Die Farbe der erkannten Person um die Vorschau und ihren Namen daneben anzeigen.",
   "facePreviewRecognized": "Erkannt"
 }

@@ -8808,10 +8808,6 @@ class UiStringsEs extends UiStrings {
       'Protector de pantalla > Detección de rostros > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      'Protector de pantalla > Detección de rostros > Vista previa de la cámara';
-
-  @override
   String get groundControlValueOn => 'Activado';
 
   @override
@@ -8844,6 +8840,40 @@ class UiStringsEs extends UiStrings {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       'Modo de bloqueo > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => 'Tarjetas de reconocimiento';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => 'Mostrar llegadas';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      'Muestra una tarjeta con la foto y el nombre de la persona cuando se la reconoce en el kiosko. Vuelve a aparecer para la misma persona después de que haya estado fuera un minuto.';
+
+  @override
+  String get settingVisionMatchShowActionsTitle =>
+      'Mostrar acciones con rostro';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      'Muestra una tarjeta pequeña cada vez que se omite el PIN, se desactiva el modo de bloqueo o se confirma una voz porque se reconoció un rostro.';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => 'Posición de las tarjetas';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      'La esquina de la pantalla donde aparecen ambas tarjetas. Mientras se muestra la vista previa de la cámara, aparecen junto a ella.';
+
+  @override
+  String get recognitionCardPinSkipped => 'PIN omitido';
+
+  @override
+  String get recognitionCardLockdownOff => 'Modo de bloqueo desactivado';
+
+  @override
+  String get recognitionCardVoiceConfirmed => 'Voz confirmada';
 
   @override
   String get haCustomPages => 'Páginas personalizadas';
@@ -12794,13 +12824,6 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Vista previa de la cámara';
-
-  @override
-  String get settingFacePreviewPersonTitle => 'Mostrar quién se reconoce';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      'Muestra el color de la persona reconocida alrededor de la vista previa y su nombre al lado.';
 
   @override
   String get facePreviewRecognized => 'Reconocido';

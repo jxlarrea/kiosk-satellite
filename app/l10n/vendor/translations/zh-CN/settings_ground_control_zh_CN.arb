@@ -38,7 +38,6 @@
   "settingVisionMatchFaceConfirmsVoiceDescription": "当在 Kiosk 前识别到同一个人的人脸时，接受相近的声音匹配。只有声纹最接近的人才能以这种方式匹配。",
   "groundControlUsedElsewhere": "在其他设置中使用",
   "settingVisionMatchLinkFaceWhoDescription": "屏保 > 人脸检测 > Ground Control Vision Match",
-  "settingVisionMatchLinkPreviewPersonDescription": "屏保 > 人脸检测 > 摄像头预览",
   "groundControlValueOn": "开",
   "groundControlValueOff": "关",
   "groundControlValuePeople": "{option}：{names}",
@@ -47,5 +46,15 @@
   "groundControlTagVision": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用人脸识别，仅在“设置 > Ground Control > Vision Match”中开启人脸识别时显示。",
   "groundControlTagVoice": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启 Voice Match 时显示。",
   "settingVisionMatchLinkKioskPinDescription": "Kiosk 模式 > Ground Control Vision Match",
-  "settingVisionMatchLinkLockdownDescription": "锁定模式 > Ground Control Vision Match"
+  "settingVisionMatchLinkLockdownDescription": "锁定模式 > Ground Control Vision Match",
+  "groundControlRecognitionCards": "识别卡片",
+  "settingVisionMatchShowArrivalsTitle": "显示到达",
+  "settingVisionMatchShowArrivalsDescription": "在 Kiosk 前识别到某人时，显示带有其照片和姓名的卡片。同一个人离开一分钟后才会再次显示。",
+  "settingVisionMatchShowActionsTitle": "显示人脸操作",
+  "settingVisionMatchShowActionsDescription": "每当因识别到人脸而免输 PIN 码、关闭锁定模式或确认声音时，显示一张小卡片。",
+  "settingVisionMatchCardPositionTitle": "卡片位置",
+  "settingVisionMatchCardPositionDescription": "两种卡片显示在屏幕的哪个角落。显示摄像头预览时，卡片显示在预览旁边。",
+  "recognitionCardPinSkipped": "已免输 PIN 码",
+  "recognitionCardLockdownOff": "锁定模式已关闭",
+  "recognitionCardVoiceConfirmed": "声音已确认"
 }

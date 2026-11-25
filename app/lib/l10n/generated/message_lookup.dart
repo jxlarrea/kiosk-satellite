@@ -2442,8 +2442,6 @@ final _messages = <String, String Function(UiStrings)>{
   'groundControlUsedElsewhere': (s) => s.groundControlUsedElsewhere,
   'settingVisionMatchLinkFaceWhoDescription': (s) =>
       s.settingVisionMatchLinkFaceWhoDescription,
-  'settingVisionMatchLinkPreviewPersonDescription': (s) =>
-      s.settingVisionMatchLinkPreviewPersonDescription,
   'groundControlValueOn': (s) => s.groundControlValueOn,
   'groundControlValueOff': (s) => s.groundControlValueOff,
   'groundControlTagHint': (s) => s.groundControlTagHint,
@@ -2454,6 +2452,22 @@ final _messages = <String, String Function(UiStrings)>{
       s.settingVisionMatchLinkKioskPinDescription,
   'settingVisionMatchLinkLockdownDescription': (s) =>
       s.settingVisionMatchLinkLockdownDescription,
+  'groundControlRecognitionCards': (s) => s.groundControlRecognitionCards,
+  'settingVisionMatchShowArrivalsTitle': (s) =>
+      s.settingVisionMatchShowArrivalsTitle,
+  'settingVisionMatchShowArrivalsDescription': (s) =>
+      s.settingVisionMatchShowArrivalsDescription,
+  'settingVisionMatchShowActionsTitle': (s) =>
+      s.settingVisionMatchShowActionsTitle,
+  'settingVisionMatchShowActionsDescription': (s) =>
+      s.settingVisionMatchShowActionsDescription,
+  'settingVisionMatchCardPositionTitle': (s) =>
+      s.settingVisionMatchCardPositionTitle,
+  'settingVisionMatchCardPositionDescription': (s) =>
+      s.settingVisionMatchCardPositionDescription,
+  'recognitionCardPinSkipped': (s) => s.recognitionCardPinSkipped,
+  'recognitionCardLockdownOff': (s) => s.recognitionCardLockdownOff,
+  'recognitionCardVoiceConfirmed': (s) => s.recognitionCardVoiceConfirmed,
   'haCustomPages': (s) => s.haCustomPages,
   'haCustomPagesHintDashboard': (s) => s.haCustomPagesHintDashboard,
   'settingHaCustomPagesSocketTitle': (s) => s.settingHaCustomPagesSocketTitle,
@@ -3913,9 +3927,6 @@ final _messages = <String, String Function(UiStrings)>{
       s.settingFacePreviewPositionDescription,
   'screensaverDetectionPreviewSection': (s) =>
       s.screensaverDetectionPreviewSection,
-  'settingFacePreviewPersonTitle': (s) => s.settingFacePreviewPersonTitle,
-  'settingFacePreviewPersonDescription': (s) =>
-      s.settingFacePreviewPersonDescription,
   'facePreviewRecognized': (s) => s.facePreviewRecognized,
   'settingScreensaverEnabledTitle': (s) => s.settingScreensaverEnabledTitle,
   'settingScreensaverEnabledDescription': (s) =>

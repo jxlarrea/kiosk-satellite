@@ -4,12 +4,12 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import '../core/events.dart';
-import '../l10n/messages.dart';
+import '../managers/ground_control/recognition_cards.dart';
 import '../managers/motion/motion_manager.dart';
 import '../managers/motion/native_motion.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/settings/settings_manager.dart';
+import 'recognition_card_overlay.dart' show recognitionSubtitle;
 import 'theme.dart';
 import 'voice_match_enroll_overlay.dart' show personColor;
 
@@ -29,11 +29,16 @@ class FacePreviewOverlay extends StatefulWidget {
     super.key,
     required this.motion,
     required this.settings,
+    this.cards,
     this.pictureOf,
   });
 
   final MotionManager motion;
   final SettingsManager settings;
+
+  /// The recognition card showing now, drawn beside the preview while it
+  /// shows (an action on it in place of Recognized).
+  final RecognitionCards? cards;
 
   /// The recognized person's Home Assistant picture, by Ground Control
   /// person id, for the name card ([GroundControlManager.pictureOf]).
@@ -69,6 +74,7 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
     super.initState();
     widget.motion.facePreview.addListener(_onFrame);
     widget.motion.atKiosk.addListener(_onPerson);
+    widget.cards?.card.addListener(_onPerson);
     _onFrame();
     _onPerson();
   }
@@ -77,6 +83,7 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
   void dispose() {
     widget.motion.facePreview.removeListener(_onFrame);
     widget.motion.atKiosk.removeListener(_onPerson);
+    widget.cards?.card.removeListener(_onPerson);
     _decodeSeq++;
     _image?.dispose();
     _image = null;
@@ -117,14 +124,29 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
     });
   }
 
-  /// Who Face Recognition names at the kiosk, kept through the card's
-  /// fade-out so its name doesn't blank while it goes.
-  FaceInViewChanged? _person;
+  /// Who the card beside the preview names: the recognition card showing
+  /// now, else the person at the kiosk with Show arrivals on. Kept through
+  /// the card's fade-out so its name doesn't blank while it goes.
+  RecognitionCard? _person;
   bool _named = false;
   String? _picture;
 
+  RecognitionCard? _who() {
+    final card = widget.cards?.card.value;
+    if (card != null) return card;
+    final settings = widget.settings;
+    final at = widget.motion.atKiosk.value;
+    final id = at?.id;
+    if (id == null ||
+        !settings.visible(defs.visionMatchShowArrivals) ||
+        !settings.get(defs.visionMatchShowArrivals)) {
+      return null;
+    }
+    return RecognitionCard(id: id, name: at!.name, color: at.color);
+  }
+
   void _onPerson() {
-    final person = widget.motion.atKiosk.value;
+    final person = _who();
     if (!mounted) return;
     final changed = person != null && person.id != _person?.id;
     setState(() {
@@ -163,15 +185,9 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
     final turned = _rotation % 180 != 0;
     final width = (turned ? image.height : image.width).toDouble();
     final height = (turned ? image.width : image.height).toDouble();
-    // Show who is recognized: a ring in their color around the preview and
-    // their name sliding out from behind it, toward the middle of the screen.
-    // A face that skipped the PIN or turned Lockdown Mode off always shows
-    // the name card.
-    final showPerson =
-        widget.motion.previewNamed ||
-        (settings.get(defs.facePreviewPerson) &&
-            settings.visible(defs.facePreviewPerson));
-    final named = showPerson && _named && _shown;
+    // Who is recognized: a ring in their color around the preview and their
+    // card sliding out from behind it, toward the middle of the screen.
+    final named = _named && _shown;
     final person = _person;
     final color = personColor(
       person?.color,
@@ -246,7 +262,7 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
       ),
     );
     final cardHeight = 76.0 * scale;
-    final card = person == null || !showPerson
+    final card = person == null
         ? null
         : Positioned(
             top: (box - cardHeight) / 2,
@@ -261,6 +277,7 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
                 duration: Duration(milliseconds: named ? 260 : 180),
                 child: _NameCard(
                   name: person.name,
+                  action: person.action,
                   picture: _picture,
                   token: settings.get(defs.haToken),
                   color: color,
@@ -344,6 +361,7 @@ class _RingPainter extends CustomPainter {
 class _NameCard extends StatelessWidget {
   const _NameCard({
     required this.name,
+    required this.action,
     required this.picture,
     required this.token,
     required this.color,
@@ -354,6 +372,10 @@ class _NameCard extends StatelessWidget {
   });
 
   final String name;
+
+  /// What a face made happen while the card is up, shown in place of
+  /// Recognized.
+  final FaceAction? action;
 
   /// The person's Home Assistant picture, drawn inside a ring of their
   /// color in place of the initial. Null for none.
@@ -389,13 +411,7 @@ class _NameCard extends StatelessWidget {
             ),
           ),
         ),
-        Text(
-          l10n(context).facePreviewRecognized,
-          style: TextStyle(
-            color: const Color(0xFFB6BABF),
-            fontSize: 13.5 * scale,
-          ),
-        ),
+        recognitionSubtitle(context, action, 13.5 * scale),
       ],
     );
     final letter = Center(

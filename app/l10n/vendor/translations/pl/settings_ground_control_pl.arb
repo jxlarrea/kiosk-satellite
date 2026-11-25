@@ -38,7 +38,6 @@
   "settingVisionMatchFaceConfirmsVoiceDescription": "Przyjmuj podobny głos, gdy przed kioskiem rozpoznano twarz tej samej osoby. W ten sposób można dopasować tylko osobę z najbardziej podobnym odciskiem głosu.",
   "groundControlUsedElsewhere": "Używane w innych ustawieniach",
   "settingVisionMatchLinkFaceWhoDescription": "Wygaszacz ekranu > Wykrywanie twarzy > Ground Control Vision Match",
-  "settingVisionMatchLinkPreviewPersonDescription": "Wygaszacz ekranu > Wykrywanie twarzy > Podgląd z kamery",
   "groundControlValueOn": "Włączone",
   "groundControlValueOff": "Wyłączone",
   "groundControlValuePeople": "{option}: {names}",
@@ -47,5 +46,15 @@
   "groundControlTagVision": "To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z rozpoznawania twarzy i jest widoczne tylko wtedy, gdy rozpoznawanie twarzy jest włączone w Ustawienia > Ground Control > Vision Match.",
   "groundControlTagVoice": "To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z Voice Match i jest widoczne tylko wtedy, gdy Voice Match jest włączony w Ustawienia > Ground Control > Voice Match.",
   "settingVisionMatchLinkKioskPinDescription": "Tryb kiosku > Ground Control Vision Match",
-  "settingVisionMatchLinkLockdownDescription": "Tryb blokady > Ground Control Vision Match"
+  "settingVisionMatchLinkLockdownDescription": "Tryb blokady > Ground Control Vision Match",
+  "groundControlRecognitionCards": "Karty rozpoznawania",
+  "settingVisionMatchShowArrivalsTitle": "Pokazuj przybycia",
+  "settingVisionMatchShowArrivalsDescription": "Pokazuje kartę ze zdjęciem i imieniem osoby, gdy zostanie rozpoznana przed kioskiem. Dla tej samej osoby pojawia się ponownie dopiero, gdy nie było jej przez minutę.",
+  "settingVisionMatchShowActionsTitle": "Pokazuj działania twarzą",
+  "settingVisionMatchShowActionsDescription": "Pokazuje małą kartę za każdym razem, gdy PIN zostanie pominięty, tryb blokady wyłączony lub głos potwierdzony, ponieważ rozpoznano twarz.",
+  "settingVisionMatchCardPositionTitle": "Pozycja kart",
+  "settingVisionMatchCardPositionDescription": "Róg ekranu, w którym pojawiają się obie karty. Gdy widoczny jest podgląd z kamery, pojawiają się obok niego.",
+  "recognitionCardPinSkipped": "PIN pominięty",
+  "recognitionCardLockdownOff": "Tryb blokady wyłączony",
+  "recognitionCardVoiceConfirmed": "Głos potwierdzony"
 }

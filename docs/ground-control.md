@@ -74,9 +74,21 @@ Hints under the view show what to fix: no face in view, only one person in view,
 
 With **Confirm voices with faces** on, Voice Match accepts a voice that is close to someone's voiceprint but under the recognition threshold if that same person's face is recognized at the kiosk. This helps most with short commands and answers to questions because they are too short to recognize by voice alone. The voice is only accepted for the person whose voiceprint is closest to it. The setting is off by default because a guest talking while an enrolled person stands at the kiosk can now and then be mistaken for that person. Ground Control's session page shows when a voice was accepted this way.
 
+### Recognition Cards
+
+With Face Recognition on, cards on the kiosk screen show who was recognized and what happened because of it. They show over everything on screen including the screensaver, the voice overlay and the Lockdown Mode shield. Touches go through them to the dashboard.
+
+| Setting | What it does |
+| --- | --- |
+| Show arrivals | On by default. Shows a card with the person's picture and name for 4 seconds when someone is recognized at the kiosk. It shows again for the same person only after they have been away for a minute. When several people are in view, the card is for the person with the highest score. |
+| Show face actions | On by default. Shows a small card for 3 seconds with the person's picture and what happened: **PIN skipped**, **Lockdown Mode off** or **Voice confirmed**. If the arrival card for the same person is up, the action shows on that card instead. |
+| Card position | The corner where both cards show. Bottom left by default. |
+
+The picture is the person's Home Assistant picture when they are linked to a Home Assistant person on Ground Control's People page. Otherwise the card shows the first letter of their name in their color. While the camera preview shows, the cards show next to it in the preview's corner instead and a ring in the person's color appears around the preview.
+
 ### Settings That Work With Ground Control
 
-Some settings outside Settings > Ground Control only work with Ground Control. One example is **Show who is recognized** under **Settings > Screensaver > Face Detection > Camera Preview**. These settings have a **GC** tag after their title with Vision Match's face icon or Voice Match's voice icon. They appear only while that feature is on. Tap the tag to see what it means. The Vision Match page lists them with their values under **Used in other settings**. Tap one to go to that setting.
+Some settings outside Settings > Ground Control only work with Ground Control. One example is **Detect faces** under **Settings > Screensaver > Face Detection > Ground Control Vision Match**. These settings have a **GC** tag after their title with Vision Match's face icon or Voice Match's voice icon. They appear only while that feature is on. Tap the tag to see what it means. The Vision Match page lists them with their values under **Used in other settings**. Tap one to go to that setting.
 
 ## Status
 

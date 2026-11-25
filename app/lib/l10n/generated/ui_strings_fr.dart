@@ -8805,10 +8805,6 @@ class UiStringsFr extends UiStrings {
       'Économiseur d\'écran > Détection de visage > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      'Économiseur d\'écran > Détection de visage > Aperçu caméra';
-
-  @override
   String get groundControlValueOn => 'Activé';
 
   @override
@@ -8841,6 +8837,40 @@ class UiStringsFr extends UiStrings {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       'Mode verrouillage > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => 'Cartes de reconnaissance';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => 'Afficher les arrivées';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      'Affiche une carte avec la photo et le nom de la personne quand quelqu\'un est reconnu devant le kiosque. Elle réapparaît pour la même personne après une absence d\'une minute.';
+
+  @override
+  String get settingVisionMatchShowActionsTitle =>
+      'Afficher les actions par visage';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      'Affiche une petite carte chaque fois que le code PIN est ignoré, que le mode verrouillage est désactivé ou qu\'une voix est confirmée parce qu\'un visage a été reconnu.';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => 'Position des cartes';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      'Le coin de l\'écran où les deux cartes s\'affichent. Pendant l\'aperçu caméra, elles s\'affichent à côté.';
+
+  @override
+  String get recognitionCardPinSkipped => 'Code PIN ignoré';
+
+  @override
+  String get recognitionCardLockdownOff => 'Mode verrouillage désactivé';
+
+  @override
+  String get recognitionCardVoiceConfirmed => 'Voix confirmée';
 
   @override
   String get haCustomPages => 'Pages personnalisées';
@@ -12793,13 +12823,6 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Aperçu caméra';
-
-  @override
-  String get settingFacePreviewPersonTitle => 'Afficher qui est reconnu';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      'Afficher la couleur de la personne reconnue autour de l\'aperçu et son nom à côté.';
 
   @override
   String get facePreviewRecognized => 'Reconnu';

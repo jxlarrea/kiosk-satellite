@@ -8739,10 +8739,6 @@ class UiStringsUk extends UiStrings {
       'Заставка > Розпізнавання обличчя > Ground Control Vision Match';
 
   @override
-  String get settingVisionMatchLinkPreviewPersonDescription =>
-      'Заставка > Розпізнавання обличчя > Попередній перегляд камери';
-
-  @override
   String get groundControlValueOn => 'Увімкнено';
 
   @override
@@ -8774,6 +8770,39 @@ class UiStringsUk extends UiStrings {
   @override
   String get settingVisionMatchLinkLockdownDescription =>
       'Повне блокування > Ground Control Vision Match';
+
+  @override
+  String get groundControlRecognitionCards => 'Картки впізнавання';
+
+  @override
+  String get settingVisionMatchShowArrivalsTitle => 'Показувати прибуття';
+
+  @override
+  String get settingVisionMatchShowArrivalsDescription =>
+      'Показує картку з фото та ім\'ям людини, коли її впізнано перед кіоском. Для тієї ж людини вона знову з\'являється, коли та була відсутня хвилину.';
+
+  @override
+  String get settingVisionMatchShowActionsTitle => 'Показувати дії за обличчям';
+
+  @override
+  String get settingVisionMatchShowActionsDescription =>
+      'Показує маленьку картку щоразу, коли PIN-код пропущено, режим блокування вимкнено або голос підтверджено, бо впізнано обличчя.';
+
+  @override
+  String get settingVisionMatchCardPositionTitle => 'Розташування карток';
+
+  @override
+  String get settingVisionMatchCardPositionDescription =>
+      'Кут екрана, де з\'являються обидві картки. Поки показано попередній перегляд камери, вони з\'являються поруч із ним.';
+
+  @override
+  String get recognitionCardPinSkipped => 'PIN-код пропущено';
+
+  @override
+  String get recognitionCardLockdownOff => 'Режим блокування вимкнено';
+
+  @override
+  String get recognitionCardVoiceConfirmed => 'Голос підтверджено';
 
   @override
   String get haCustomPages => 'Власні сторінки';
@@ -12704,13 +12733,6 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get screensaverDetectionPreviewSection => 'Попередній перегляд камери';
-
-  @override
-  String get settingFacePreviewPersonTitle => 'Показувати, кого впізнано';
-
-  @override
-  String get settingFacePreviewPersonDescription =>
-      'Показувати колір впізнаної людини навколо попереднього перегляду та її ім\'я поруч.';
 
   @override
   String get facePreviewRecognized => 'Впізнано';

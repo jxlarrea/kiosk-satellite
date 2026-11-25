@@ -38,7 +38,6 @@
   "settingVisionMatchFaceConfirmsVoiceDescription": "Принимать похожий голос, когда перед киоском распознано лицо того же человека. Так можно определить только человека с самым близким голосовым отпечатком.",
   "groundControlUsedElsewhere": "Используется в других настройках",
   "settingVisionMatchLinkFaceWhoDescription": "Заставка > Определение лица > Ground Control Vision Match",
-  "settingVisionMatchLinkPreviewPersonDescription": "Заставка > Определение лица > Превью камеры",
   "groundControlValueOn": "Вкл.",
   "groundControlValueOff": "Выкл.",
   "groundControlValuePeople": "{option}: {names}",
@@ -47,5 +46,15 @@
   "groundControlTagVision": "Этой настройке нужен Kiosk Satellite Ground Control. Ground Control является отдельным приложением, которое работает на компьютере у вас дома. Настройка использует распознавание лиц и показывается, только пока распознавание лиц включено в разделе Настройки > Ground Control > Vision Match.",
   "groundControlTagVoice": "Этой настройке нужен Kiosk Satellite Ground Control. Ground Control является отдельным приложением, которое работает на компьютере у вас дома. Настройка использует Voice Match и показывается, только пока Voice Match включён в разделе Настройки > Ground Control > Voice Match.",
   "settingVisionMatchLinkKioskPinDescription": "Режим киоска > Ground Control Vision Match",
-  "settingVisionMatchLinkLockdownDescription": "Режим блокировки > Ground Control Vision Match"
+  "settingVisionMatchLinkLockdownDescription": "Режим блокировки > Ground Control Vision Match",
+  "groundControlRecognitionCards": "Карточки распознавания",
+  "settingVisionMatchShowArrivalsTitle": "Показывать приход",
+  "settingVisionMatchShowArrivalsDescription": "Показывает карточку с фото и именем человека, когда его распознают перед киоском. Для того же человека она снова появляется, только если его не было минуту.",
+  "settingVisionMatchShowActionsTitle": "Показывать действия по лицу",
+  "settingVisionMatchShowActionsDescription": "Показывает маленькую карточку каждый раз, когда PIN пропущен, режим блокировки выключен или голос подтверждён, потому что распознано лицо.",
+  "settingVisionMatchCardPositionTitle": "Позиция карточек",
+  "settingVisionMatchCardPositionDescription": "Угол экрана, где появляются обе карточки. Пока показано превью камеры, они появляются рядом с ним.",
+  "recognitionCardPinSkipped": "PIN пропущен",
+  "recognitionCardLockdownOff": "Режим блокировки выключен",
+  "recognitionCardVoiceConfirmed": "Голос подтверждён"
 }

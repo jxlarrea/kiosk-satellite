@@ -316,24 +316,7 @@ class MotionManager extends Manager {
   /// Whether a session should ask for the preview: the switch, on a
   /// session that looks for faces (the only thing that can open the
   /// window). The native side sizes its analysis stream up for it.
-  bool get _wantPreview =>
-      _wantFaces && (_settings.get(defs.facePreview) || _faceActs);
-
-  /// Whether a recognized face can skip the kiosk PIN or turn Lockdown
-  /// Mode off here. Each time it does, the camera preview shows with the
-  /// person's name card, so the person knows their face was recognized.
-  bool get _faceActs =>
-      _chosenPeopleOn(defs.kioskFaceSkipPin) ||
-      _chosenPeopleOn(defs.lockdownFaceDisable);
-
-  bool _chosenPeopleOn(defs.SettingDef<String> rule) =>
-      _settings.visible(rule) && _settings.get(rule) == 'people';
-
-  /// Whether the preview showing now is for a face that skipped the PIN or
-  /// turned Lockdown Mode off. The overlay then shows the name card even
-  /// with Show recognized person off.
-  bool get previewNamed => _previewNamed;
-  bool _previewNamed = false;
+  bool get _wantPreview => _wantFaces && _settings.get(defs.facePreview);
 
   /// The hold that keeps the camera bound through a preview: a face
   /// dismisses the screensaver, and without Postpone on face the session
@@ -701,14 +684,12 @@ class MotionManager extends Manager {
     // What a recognized face let through, for Ground Control's vision
     // session.
     bus.on<FacePinSkipped>().listen((e) {
-      _showPreview(named: true);
       _visionSocket?.outcome(
         'pin_skipped',
         extra: {'mode': e.lockdown ? 'lockdown' : 'kiosk', 'name': e.name},
       );
     });
     bus.on<FaceLockdownChanged>().listen((e) {
-      if (!e.locked) _showPreview(named: true);
       _visionSocket?.outcome(
         e.locked ? 'lockdown_on' : 'lockdown_off',
         extra: {'name': ?e.name},
@@ -820,11 +801,7 @@ class MotionManager extends Manager {
           e.key == defs.gestureMappings.key ||
           e.key == defs.lockdownEnabled.key ||
           e.key == defs.kioskEnabled.key ||
-          e.key == defs.kioskDisableGestures.key ||
-          // A face that skips the PIN or turns Lockdown Mode off shows
-          // the camera preview, which the session is bound for.
-          e.key == defs.kioskFaceSkipPin.key ||
-          e.key == defs.lockdownFaceDisable.key;
+          e.key == defs.kioskDisableGestures.key;
       // Entity-side only (the ESPHome sensor times its own clear): no
       // reason to restart the camera over it.
       if (e.key == defs.motionSensorOffDelay.key) return;
@@ -1459,6 +1436,11 @@ class MotionManager extends Manager {
         if (p['id'] is String)
           (id: p['id'] as String, name: '${p['name'] ?? ''}'),
     ];
+    final colors = <String, String>{
+      for (final p in [...people, ?person])
+        if (p['id'] is String && p['color'] is String)
+          p['id'] as String: p['color'] as String,
+    };
     final key = '$id|${everyone.map((p) => p.id).join(',')}';
     if (key == _inViewKey) return;
     _inViewKey = key;
@@ -1485,6 +1467,7 @@ class MotionManager extends Manager {
       score: (person?['score'] as num?)?.toDouble(),
       color: person?['color'] as String?,
       people: everyone,
+      colors: colors,
     );
     atKiosk.value = id == null ? null : event;
     bus.publish(event);
@@ -1551,11 +1534,9 @@ class MotionManager extends Manager {
 
   /// Show the camera preview (discussion #371) on the running session:
   /// hold the camera for the configured span, ask the native side to
-  /// emit frames for it, and drop it all when the span ends. [named] is a
-  /// face that skipped the PIN or turned Lockdown Mode off: it shows with
-  /// the name card, whatever the screensaver's preview switches say.
-  void _showPreview({bool named = false}) {
-    if (!named && !_settings.get(defs.facePreview)) return;
+  /// emit frames for it, and drop it all when the span ends.
+  void _showPreview() {
+    if (!_settings.get(defs.facePreview)) return;
     if (_camera == null || !_streamPreview) {
       // A face can only come off a session, so this is a session bound
       // before the switch was flipped (the flip restarts it, so once).
@@ -1565,15 +1546,10 @@ class MotionManager extends Manager {
     final span = Duration(
       seconds: _settings.get(defs.facePreviewSeconds).toInt().clamp(3, 10),
     );
-    log.info(
-      name,
-      'camera preview for ${span.inSeconds}s${named ? ' with the name' : ''}',
-    );
-    _previewNamed = named || (_previewHolding && _previewNamed);
+    log.info(name, 'camera preview for ${span.inSeconds}s');
     _previewHold?.cancel();
     _previewHold = Timer(span, () {
       _previewHold = null;
-      _previewNamed = false;
       facePreview.value = null;
       _sync();
     });
@@ -1588,7 +1564,6 @@ class MotionManager extends Manager {
     if (_previewHold == null) return;
     _previewHold!.cancel();
     _previewHold = null;
-    _previewNamed = false;
     facePreview.value = null;
   }
 

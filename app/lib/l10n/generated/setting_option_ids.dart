@@ -586,6 +586,12 @@ const settingOptionMessageIds = <String, Map<String, String>>{
   "lockdown.face_disable": {
     "nobody": "kioskFaceSkipPinNobody",
     "people": "kioskFaceSkipPinPeople"
+  },
+  "vision_match.card_position": {
+    "top_left": "screensaverMediaTopLeft",
+    "top_right": "screensaverMediaTopRight",
+    "bottom_left": "screensaverMediaBottomLeft",
+    "bottom_right": "screensaverMediaBottomRight"
   }
 };
 const settingPlaceholderMessageIds = <String, String>{

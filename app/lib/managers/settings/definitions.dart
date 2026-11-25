@@ -6407,24 +6407,6 @@ const screensaverFacePeople = SettingDef<String>(
   groundControl: 'vision',
 );
 
-/// A ring in the recognized person's color around the camera preview and
-/// their name next to it.
-const facePreviewPerson = SettingDef<bool>(
-  key: 'face.preview_person',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Show who is recognized',
-  description:
-      "Show the recognized person's color around the preview and their name "
-      'next to it.',
-  category: 'Screensaver',
-  section: 'Camera Preview',
-  subpage: 'Face Detection',
-  dependsOn: 'face.preview',
-  alsoDependsOn: 'vision_match.face_recognition',
-  groundControl: 'vision',
-);
-
 const facePreviewSeconds = SettingDef<num>(
   key: 'face.preview_seconds',
   type: SettingType.number,
@@ -8499,6 +8481,62 @@ const visionMatchFaceConfirmsVoice = SettingDef<bool>(
   alsoDependsOn: 'voice_match.enabled',
 );
 
+/// Vision Match > Recognition cards: a card with the person's picture and
+/// name when someone arrives at the kiosk (RecognitionCards). Shown again
+/// for the same person after [recognitionArrivalAway] away.
+const visionMatchShowArrivals = SettingDef<bool>(
+  key: 'vision_match.show_arrivals',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show arrivals',
+  description:
+      "Show a card with the person's picture and name when someone is "
+      'recognized at the kiosk. It shows again for the same person after they '
+      'have been away for a minute.',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Recognition cards',
+  dependsOn: 'vision_match.face_recognition',
+);
+
+/// A small card each time a recognized face lets something through: the
+/// kiosk PIN skipped, Lockdown Mode turned off, a voice confirmed.
+const visionMatchShowActions = SettingDef<bool>(
+  key: 'vision_match.show_actions',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show face actions',
+  description:
+      'Show a small card each time the PIN is skipped, Lockdown Mode is turned '
+      'off or a voice is confirmed because a face was recognized.',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Recognition cards',
+  dependsOn: 'vision_match.face_recognition',
+);
+
+/// The corner both cards show in. While the camera preview shows, they show
+/// beside it in the preview's corner instead.
+const visionMatchCardPosition = SettingDef<String>(
+  key: 'vision_match.card_position',
+  type: SettingType.select,
+  defaultValue: 'bottom_left',
+  title: 'Card position',
+  description:
+      'The corner of the screen where both cards show. While the camera '
+      'preview shows, they show next to it.',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Recognition cards',
+  options: cornerOptions,
+  optionLabels: cornerLabels,
+  dependsOn: 'vision_match.face_recognition',
+);
+
+/// How long someone has to be out of view before their arrival card shows
+/// again.
+const recognitionArrivalAway = Duration(minutes: 1);
+
 /// Vision Match > Used in other settings: rows to the settings outside
 /// Ground Control that react to Face Recognition, with their value.
 const visionMatchLinkFaceWho = SettingDef<String>(
@@ -8512,19 +8550,6 @@ const visionMatchLinkFaceWho = SettingDef<String>(
   section: 'Used in other settings',
   dependsOn: 'vision_match.face_recognition',
   linksTo: 'screensaver.face_who',
-);
-
-const visionMatchLinkPreviewPerson = SettingDef<String>(
-  key: 'vision_match.link_preview_person',
-  type: SettingType.string,
-  defaultValue: '',
-  title: 'Show who is recognized',
-  description: 'Screensaver > Face Detection > Camera Preview',
-  category: 'Ground Control',
-  subpage: 'Vision Match',
-  section: 'Used in other settings',
-  dependsOn: 'vision_match.face_recognition',
-  linksTo: 'face.preview_person',
 );
 
 const visionMatchLinkKioskPin = SettingDef<String>(
@@ -15544,7 +15569,6 @@ const List<SettingDef<Object>> allSettings = [
   screensaverFacePeople,
   faceSensitivity,
   facePreview,
-  facePreviewPerson,
   facePreviewSeconds,
   facePreviewScale,
   facePreviewPosition,
@@ -15661,8 +15685,10 @@ const List<SettingDef<Object>> allSettings = [
   visionMatchFaceDetection,
   visionMatchFaceRecognition,
   visionMatchFaceConfirmsVoice,
+  visionMatchShowArrivals,
+  visionMatchShowActions,
+  visionMatchCardPosition,
   visionMatchLinkFaceWho,
-  visionMatchLinkPreviewPerson,
   visionMatchLinkKioskPin,
   visionMatchLinkLockdownDisable,
   visionMatchLinkLockdownRelock,

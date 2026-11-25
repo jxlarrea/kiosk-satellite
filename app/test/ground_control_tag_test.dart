@@ -26,7 +26,7 @@ void main() {
           Builder(
             builder: (context) => Column(
               children: [
-                settingTitle(context, defs.facePreviewPerson),
+                settingTitle(context, defs.lockdownFaceRelock),
                 settingTitle(context, defs.screensaverDismissOnFace),
                 // In the Ground Control Vision Match group too.
                 settingTitle(context, defs.screensaverFaceWho),
@@ -54,7 +54,7 @@ void main() {
       'ks.screensaver.face_who': 'people',
       'ks.screensaver.face_people':
           '[{"id":"ana","name":"Ana"},{"id":"leo","name":"Leo"}]',
-      'ks.face.preview_person': false,
+      'ks.lockdown.face_relock': false,
     });
     final bus = EventBus();
     final log = Logger();
@@ -74,7 +74,7 @@ void main() {
             preview = groundControlValueText(
               context,
               settings,
-              defs.facePreviewPerson,
+              defs.lockdownFaceRelock,
             );
             return const SizedBox();
           },

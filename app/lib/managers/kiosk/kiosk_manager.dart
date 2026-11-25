@@ -189,21 +189,22 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     if (who == null) return false;
     log.info(
       name,
-      '${lockdown ? 'lockdown' : 'kiosk'} PIN skipped: $who is at the kiosk',
+      '${lockdown ? 'lockdown' : 'kiosk'} PIN skipped: ${who.name} is at the '
+      'kiosk',
     );
-    bus.publish(FacePinSkipped(lockdown: lockdown, name: who));
+    bus.publish(FacePinSkipped(lockdown: lockdown, name: who.name, id: who.id));
     return true;
   }
 
-  /// The name of a chosen person in view under [people], or null.
-  String? _chosenHere(defs.SettingDef<String> people) {
+  /// A chosen person in view under [people], or null.
+  ({String id, String name})? _chosenHere(defs.SettingDef<String> people) {
     final json = _settings.get(people);
     if (!defs.chosenInView(_facesInView.keys.toSet(), json)) return null;
     final chosen = {for (final p in defs.decodeVoiceMatchPeople(json)) p.id};
     final id = _facesInView.keys.firstWhere(
       (id) => chosen.isEmpty || chosen.contains(id),
     );
-    return _facesInView[id];
+    return (id: id, name: _facesInView[id] ?? '');
   }
 
   /// Disable Lockdown Mode for: Lockdown Mode off when a chosen person
@@ -230,8 +231,10 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       _faceRelockTimer?.cancel();
       _faceRelockTimer = null;
       if (!_chosenWasHere && lockdownActive) {
-        log.info(name, 'lockdown off: $who is at the kiosk');
-        bus.publish(FaceLockdownChanged(locked: false, name: who));
+        log.info(name, 'lockdown off: ${who.name} is at the kiosk');
+        bus.publish(
+          FaceLockdownChanged(locked: false, name: who.name, id: who.id),
+        );
         unawaited(_settings.set(defs.lockdownEnabled, false));
       }
     } else if (relock && !lockdownActive && _faceRelockTimer == null) {

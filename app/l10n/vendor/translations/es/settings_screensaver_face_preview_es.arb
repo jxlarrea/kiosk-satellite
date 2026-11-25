@@ -9,7 +9,5 @@
   "settingFacePreviewPositionTitle": "Posición de la vista previa",
   "settingFacePreviewPositionDescription": "Esquina en la que se muestra la vista previa.",
   "screensaverDetectionPreviewSection": "Vista previa de la cámara",
-  "settingFacePreviewPersonTitle": "Mostrar quién se reconoce",
-  "settingFacePreviewPersonDescription": "Muestra el color de la persona reconocida alrededor de la vista previa y su nombre al lado.",
   "facePreviewRecognized": "Reconocido"
 }

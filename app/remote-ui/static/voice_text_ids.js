@@ -349,5 +349,6 @@ export const voiceTextMessageIds = {
   "Face Detection": "screensaverDetectionFacePage",
   "Hand Gestures": "gestureHandGestures",
   "Face Recognition": "groundControlFaceRecognition",
-  "Used in other settings": "groundControlUsedElsewhere"
+  "Used in other settings": "groundControlUsedElsewhere",
+  "Recognition cards": "groundControlRecognitionCards"
 };
