@@ -84,6 +84,8 @@ class SettingsManager extends Manager {
     voiceRealtimeXaiVoice.key: ('xai', false),
     voiceRealtimeGeminiModel.key: ('gemini', true),
     voiceRealtimeGeminiVoice.key: ('gemini', false),
+    voiceRealtimeVercelModel.key: ('vercel', true),
+    voiceRealtimeVercelVoice.key: ('vercel', false),
   };
 
   void updateRealtimeCatalog(

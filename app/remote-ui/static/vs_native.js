@@ -313,7 +313,7 @@ export const VS_SELECT_SETTINGS = new Set([
   'voice.wake_words',
   'voice.engine_1', 'voice.engine_2',
   'voice.realtime_openai_validated', 'voice.realtime_xai_validated',
-  'voice.realtime_gemini_validated',
+  'voice.realtime_gemini_validated', 'voice.realtime_vercel_validated',
 ]);
 
 /* Calls `paint` when one of `keys` changes, while `node` is on the page. */
@@ -341,9 +341,11 @@ function selectsBlock(rows) {
 /* The realtime providers, and the settings each one's Configure dialog
    holds (the device's realtimeProviderSettings). Neither UI draws them as
    rows: the provider's row takes the first one's place. */
-export const REALTIME_PROVIDERS = { openai: 'OpenAI', xai: 'xAI Grok', gemini: 'Google Gemini' };
+export const REALTIME_PROVIDERS = {
+  openai: 'OpenAI', xai: 'xAI Grok', gemini: 'Google Gemini', vercel: 'Vercel AI Gateway',
+};
 const PROVIDER_FIELDS = ['api_key', 'model', 'voice', 'endpoint'];
-// OpenAI's and Gemini's Reasoning effort, which xAI has no say in.
+// OpenAI's, Gemini's and Vercel's Reasoning effort, which xAI has no say in.
 const providerFields = (provider) => provider === 'xai'
   ? PROVIDER_FIELDS : [...PROVIDER_FIELDS, 'reasoning'];
 // The switches after them (the device's realtimeProviderSwitches).
@@ -425,6 +427,24 @@ function openRealtimeProvider(provider, onSaved) {
   };
   const model = picker(modelDef);
   const voice = picker(voiceDef);
+  // Vercel's voices are those of the model's provider: they follow the
+  // model picked here (the device's realtimeVoices).
+  if (provider === 'vercel') {
+    model.addEventListener('change', async () => {
+      const r = await cmd('voiceRealtimeVoices', { provider, model: model.value }).catch(() => null);
+      const voices = r?.ok && Array.isArray(r.data?.voices) ? r.data.voices : null;
+      if (!voices) return;
+      const keep = voices.includes(voice.value) ? voice.value : '';
+      voice.replaceChildren();
+      for (const value of ['', ...voices]) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = voiceDef?.optionLabels?.[value] ?? value;
+        option.selected = value === keep;
+        voice.appendChild(option);
+      }
+    });
+  }
   const reasoning = reasoningDef ? picker(reasoningDef) : null;
   const endpoint = document.createElement('input');
   endpoint.type = 'url';

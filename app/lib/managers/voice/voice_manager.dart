@@ -26,6 +26,7 @@ import 'chat_log.dart';
 import 'custom_wake_models.dart';
 import 'ha_socket.dart';
 import 'migration.dart';
+import 'realtime/gateway_realtime.dart';
 import 'realtime/gemini_live_backend.dart';
 import 'realtime/mcp_client.dart';
 import 'realtime/openai_realtime_backend.dart';
@@ -473,10 +474,14 @@ class VoiceManager extends Manager {
             log.info(name, 'realtime: instructions changed, history cleared');
           }
           // A provider's key or endpoint moved: its model and voice lists
-          // may too.
+          // may too. Vercel's voices are those of its model's provider.
           for (final provider in RealtimeProvider.values) {
             final d = _realtimeDefs(provider);
-            if (e.key != d.apiKey.key && e.key != d.endpoint.key) continue;
+            final voices =
+                provider == RealtimeProvider.vercel && e.key == d.model.key;
+            if (e.key != d.apiKey.key && e.key != d.endpoint.key && !voices) {
+              continue;
+            }
             _scheduleRealtimeCheck(provider);
             _catalogTimers[provider]?.cancel();
             _catalogTimers[provider] = Timer(
@@ -684,7 +689,7 @@ class VoiceManager extends Manager {
               'A realtime provider\'s status as its row reads it: {status '
               '(unconfigured, unvalidated, validated or failed), error, '
               'toolsError (the error is about the tools), ready, provider}',
-          params: const {'provider': 'openai, xai or gemini'},
+          params: const {'provider': 'openai, xai, gemini or vercel'},
           quiet: true,
           handler: (p) async {
             final provider = RealtimeProvider.byId('${p['provider'] ?? ''}');
@@ -708,15 +713,15 @@ class VoiceManager extends Manager {
               'the session: {connected, error, tools, toolsError}. A saved '
               'provider is a choice in the Assistant selects',
           params: const {
-            'provider': 'openai, xai or gemini',
+            'provider': 'openai, xai, gemini or vercel',
             'apiKey': 'optional, the key to use (left out keeps the saved one)',
             'endpoint': 'the endpoint, empty for the provider\'s own',
             'model': 'the model, empty for the provider\'s default',
             'voice': 'the voice, empty for the provider\'s default',
             'reasoning':
-                'OpenAI: minimal, low, medium, high or xhigh. Gemini: '
-                'minimal, low, medium or high. Empty for the model\'s '
-                'default',
+                'OpenAI, and Vercel with an OpenAI model: minimal, low, '
+                'medium, high or xhigh. Gemini: minimal, low, medium or '
+                'high. Empty for the model\'s default',
             'search': 'Gemini and xAI: true for the provider\'s own web search',
             'x_search': 'xAI only: true for its X search',
             'proactive':
@@ -747,7 +752,7 @@ class VoiceManager extends Manager {
               'and switches go back to their defaults and it leaves the '
               'Assistant selects. A wake word it answered goes back to '
               'Assist',
-          params: const {'provider': 'openai, xai or gemini'},
+          params: const {'provider': 'openai, xai, gemini or vercel'},
           handler: (p) async {
             final id = '${p['provider'] ?? ''}';
             if (!RealtimeProvider.values.any((r) => r.id == id)) {
@@ -756,6 +761,25 @@ class VoiceManager extends Manager {
             await realtimeClear(RealtimeProvider.byId(id));
             return const CommandResult.ok();
           },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'voiceRealtimeVoices',
+          description:
+              'The voices a realtime provider offers for a model: {voices}. '
+              'Vercel AI Gateway\'s depend on whose model it is',
+          params: const {
+            'provider': 'openai, xai, gemini or vercel',
+            'model': 'the model, empty for the provider\'s default',
+          },
+          quiet: true,
+          handler: (p) async => CommandResult.ok({
+            'voices': realtimeVoices(
+              RealtimeProvider.byId('${p['provider'] ?? ''}'),
+              '${p['model'] ?? ''}',
+            ),
+          }),
         ),
       )
       ..register(
@@ -2209,6 +2233,17 @@ class VoiceManager extends Manager {
       proactive: defs.voiceRealtimeGeminiProactive,
       validated: defs.voiceRealtimeGeminiValidated,
     ),
+    RealtimeProvider.vercel => (
+      apiKey: defs.voiceRealtimeVercelApiKey,
+      endpoint: defs.voiceRealtimeVercelEndpoint,
+      model: defs.voiceRealtimeVercelModel,
+      voice: defs.voiceRealtimeVercelVoice,
+      reasoning: defs.voiceRealtimeVercelReasoning,
+      search: null,
+      xSearch: null,
+      proactive: null,
+      validated: defs.voiceRealtimeVercelValidated,
+    ),
   };
 
   /// The provider answering [slot]'s wake word: picked in its Assistant
@@ -2310,6 +2345,7 @@ class VoiceManager extends Manager {
     RealtimeProvider.openai => 'OpenAI',
     RealtimeProvider.xai => 'xAI Grok',
     RealtimeProvider.gemini => 'Google Gemini',
+    RealtimeProvider.vercel => 'Vercel AI Gateway',
   };
 
   /// Who answers the realtime conversation starting now.
@@ -2459,7 +2495,11 @@ class VoiceManager extends Manager {
   /// The tools a realtime conversation gets: Home Assistant's MCP server
   /// (or the one set instead) and the app's own.
   RealtimeToolbox realtimeToolbox() {
-    final boxes = <RealtimeToolbox>[];
+    // The app's own first. ElevenLabs' mini model said goodbye and never
+    // called end_conversation behind 13 Home Assistant tools, and called it
+    // every time in front of them (2026-11-25). First also wins a name
+    // Home Assistant shares with them.
+    final boxes = <RealtimeToolbox>[const LocalToolbox()];
     switch (_settings.get(defs.voiceRealtimeTools)) {
       case 'home_assistant':
         final base = _settings
@@ -2494,7 +2534,6 @@ class VoiceManager extends Manager {
           );
         }
     }
-    boxes.add(const LocalToolbox());
     return CombinedToolbox(boxes);
   }
 
@@ -2748,6 +2787,52 @@ class VoiceManager extends Manager {
     'Zubenelgenubi',
   ];
 
+  /// What Vercel AI Gateway lists as realtime models (2026-11-25). Its
+  /// GPT-Live models are left out: they speak a protocol of their own.
+  static const _vercelModels = [
+    'elevenlabs/eleven-realtime-v1-max',
+    'elevenlabs/eleven-realtime-v1-mini',
+    'google/gemini-3.8-live',
+    'google/gemini-3.8-live-extended-thinking',
+    'openai/gpt-realtime-1.5',
+    'openai/gpt-realtime-2',
+    'openai/gpt-realtime-2.1',
+    'openai/gpt-realtime-mini',
+    'spacexai/grok-voice-3.0',
+  ];
+
+  /// ElevenLabs' own voices, as its refusal of any other name lists them.
+  /// It takes OpenAI's names and the voice ids of the account too.
+  static const _elevenLabsVoices = [
+    'brian',
+    'chris',
+    'george',
+    'jessica',
+    'liam',
+    'lily',
+    'matilda',
+    'michael',
+    'sarah',
+    'will',
+  ];
+
+  /// The voices [provider] has for [model]. On Vercel AI Gateway they are
+  /// those of the model's own provider.
+  static List<String> realtimeVoices(RealtimeProvider provider, String model) =>
+      switch (provider) {
+        RealtimeProvider.openai => _openAiVoices,
+        RealtimeProvider.xai => _xaiVoices,
+        RealtimeProvider.gemini => _geminiVoices,
+        RealtimeProvider.vercel => switch (GatewayFamily.of(
+          model.trim().isEmpty ? provider.model : model,
+        )) {
+          GatewayFamily.openai => _openAiVoices,
+          GatewayFamily.xai => _xaiVoices,
+          GatewayFamily.gemini => _geminiVoices,
+          GatewayFamily.elevenlabs => _elevenLabsVoices,
+        },
+      };
+
   final _catalogTimers = <RealtimeProvider, Timer>{};
 
   /// A provider's Model and Voice choices: its own lists when the kiosk
@@ -2761,12 +2846,30 @@ class VoiceManager extends Manager {
       RealtimeProvider.openai => (_openAiModels, _openAiVoices),
       RealtimeProvider.xai => (_xaiModels, _xaiVoices),
       RealtimeProvider.gemini => (_geminiModels, _geminiVoices),
+      RealtimeProvider.vercel => (
+        _vercelModels,
+        realtimeVoices(provider, _settings.get(d.model)),
+      ),
     };
     final key = _settings.get(d.apiKey).trim();
     if (_settings.get(d.endpoint).trim().isEmpty && key.isNotEmpty) {
       final headers = {'Authorization': 'Bearer $key'};
       try {
-        if (provider == RealtimeProvider.gemini) {
+        if (provider == RealtimeProvider.vercel) {
+          // A public list: every model the gateway serves, by kind.
+          final response = await http
+              .get(Uri.parse('https://ai-gateway.vercel.sh/v1/models'))
+              .timeout(const Duration(seconds: 10));
+          final list = (jsonDecode(response.body) as Map)['data'];
+          final ids = [
+            for (final m in (list as List? ?? const []))
+              if (m is Map &&
+                  m['type'] == 'realtime' &&
+                  !'${m['id']}'.contains('/gpt-live'))
+                '${m['id']}',
+          ]..sort();
+          if (ids.isNotEmpty) models = ids;
+        } else if (provider == RealtimeProvider.gemini) {
           final response = await http
               .get(
                 Uri.parse(
@@ -2842,9 +2945,15 @@ class VoiceManager extends Manager {
     RealtimeConfig config,
     RealtimeToolbox toolbox,
     void Function(String line) log,
-  ) => config.provider == RealtimeProvider.gemini
-      ? GeminiLiveBackend(config: config, toolbox: toolbox, log: log)
-      : OpenAiRealtimeBackend(config: config, toolbox: toolbox, log: log);
+  ) => switch (config.provider) {
+    RealtimeProvider.gemini => GeminiLiveBackend(
+      config: config,
+      toolbox: toolbox,
+      log: log,
+    ),
+    RealtimeProvider.vercel => gatewayBackend(config, toolbox, log: log),
+    _ => OpenAiRealtimeBackend(config: config, toolbox: toolbox, log: log),
+  };
 
   /// The phrase of the wake word in [slot], what pipeline 1 or 2 is
   /// picked by.

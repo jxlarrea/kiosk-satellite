@@ -18,6 +18,7 @@
   "settingVoiceRealtimeReasoningTitle": "Redeneerinspanning",
   "settingVoiceRealtimeReasoningDescription": "Meer inspanning beantwoordt moeilijke vragen beter. Vereist een gpt-realtime-2-model.",
   "settingVoiceRealtimeGeminiReasoningDescription": "Meer inspanning beantwoordt moeilijke vragen beter. Vereist een model dat nadenkt, zoals gemini-3.8-live-extended-thinking.",
+  "settingVoiceRealtimeVercelReasoningDescription": "Meer inspanning beantwoordt moeilijke vragen beter. Alleen voor openai/gpt-realtime-2-modellen.",
   "settingVoiceRealtimeGeminiSearchTitle": "Google Zoeken",
   "settingVoiceRealtimeGeminiSearchBillingDescription": "Laat het model dingen opzoeken op het web. Hiervoor moet facturering voor de API-sleutel aan staan.",
   "settingVoiceRealtimeGeminiProactiveTitle": "Negeren wat niet voor het model bedoeld is",

@@ -546,6 +546,7 @@ final _messages = <String, String Function(UiStrings)>{
   'fleetOpenAiApiKey': (s) => s.fleetOpenAiApiKey,
   'fleetXaiApiKey': (s) => s.fleetXaiApiKey,
   'fleetGeminiApiKey': (s) => s.fleetGeminiApiKey,
+  'fleetVercelApiKey': (s) => s.fleetVercelApiKey,
   'fleetMcpServerToken': (s) => s.fleetMcpServerToken,
   'fleetPlugins': (s) => s.fleetPlugins,
   'fleetPluginSecrets': (s) => s.fleetPluginSecrets,
@@ -5113,6 +5114,8 @@ final _messages = <String, String Function(UiStrings)>{
       s.settingVoiceRealtimeReasoningDescription,
   'settingVoiceRealtimeGeminiReasoningDescription': (s) =>
       s.settingVoiceRealtimeGeminiReasoningDescription,
+  'settingVoiceRealtimeVercelReasoningDescription': (s) =>
+      s.settingVoiceRealtimeVercelReasoningDescription,
   'settingVoiceRealtimeGeminiSearchTitle': (s) =>
       s.settingVoiceRealtimeGeminiSearchTitle,
   'settingVoiceRealtimeGeminiSearchBillingDescription': (s) =>

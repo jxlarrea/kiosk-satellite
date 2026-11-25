@@ -324,6 +324,19 @@
       ]
     }
   },
+  "fleetVercelApiKey": "Vercel AI Gateway API key",
+  "@fleetVercelApiKey": {
+    "context": "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings",
+    "description": "Visible label, help or status in this section.",
+    "x-locations": {
+      "device": [
+        "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings"
+      ],
+      "remoteAdmin": [
+        "Fleet Management > a profile > Categories, Credentials or Excluded settings"
+      ]
+    }
+  },
   "fleetMcpServerToken": "MCP server token",
   "@fleetMcpServerToken": {
     "context": "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings",

@@ -10,6 +10,8 @@ import 'realtime_tools.dart';
 /// The providers a direct backend talks to. OpenAI and xAI speak OpenAI's
 /// realtime protocol and differ in where the session puts the voice and the
 /// turn detection. Gemini speaks Google's Live API (gemini_live_backend).
+/// Vercel AI Gateway serves other providers' models: its backend is theirs
+/// (gateway_realtime).
 enum RealtimeProvider {
   openai(
     id: 'openai',
@@ -30,6 +32,12 @@ enum RealtimeProvider {
         'generativelanguage.v1beta.GenerativeService.BidiGenerateContent',
     model: 'gemini-3.8-live',
     voice: 'Puck',
+  ),
+  vercel(
+    id: 'vercel',
+    endpoint: 'wss://ai-gateway.vercel.sh/v4/ai/realtime-model',
+    model: 'openai/gpt-realtime-2',
+    voice: '',
   );
 
   const RealtimeProvider({
@@ -99,7 +107,8 @@ class RealtimeConfig {
 
   /// The WebSocket address, with the model in the query unless the
   /// address already names one. Gemini names the model in its setup
-  /// message instead, and proactive audio takes its v1alpha API.
+  /// message instead, and proactive audio takes its v1alpha API. Vercel's
+  /// gateway takes it as ai-model-id.
   Uri get url {
     var base = endpoint.trim().isEmpty ? provider.endpoint : endpoint.trim();
     if (provider == RealtimeProvider.gemini &&
@@ -112,12 +121,13 @@ class RealtimeConfig {
           .replaceFirst(RegExp('^https://'), 'wss://')
           .replaceFirst(RegExp('^http://'), 'ws://'),
     );
+    final param = provider == RealtimeProvider.vercel ? 'ai-model-id' : 'model';
     if (provider == RealtimeProvider.gemini ||
-        uri.queryParameters.containsKey('model')) {
+        uri.queryParameters.containsKey(param)) {
       return uri;
     }
     return uri.replace(
-      queryParameters: {...uri.queryParameters, 'model': effectiveModel},
+      queryParameters: {...uri.queryParameters, param: effectiveModel},
     );
   }
 }
@@ -242,6 +252,29 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
   bool _responseDone = true;
 
   final _userText = <String, String>{};
+
+  /// The last events each way, but for audio and deltas, for the log when
+  /// an answer repeats itself.
+  final _recent = <String>[];
+
+  void _remember(String line) {
+    _recent.add(line);
+    if (_recent.length > 40) _recent.removeAt(0);
+  }
+
+  static final _segmentTag = RegExp(r'</?response_segment_\d+_already_spoken>');
+  static final _segment = RegExp(
+    r'<response_segment_(\d+)_already_spoken>[\s\S]*?'
+    r'(</response_segment_\1_already_spoken>|$)',
+  );
+
+  /// [text] without what xAI marks as already spoken. Grok once answered
+  /// with its answer again inside `response_segment_0_already_spoken` tags
+  /// after the user talked over the answer before (2026-11-25), and said
+  /// it twice. Left in, the bubble shows the tags and the next
+  /// conversation's instructions carry them in the earlier exchanges.
+  static String spokenText(String text) =>
+      text.replaceAll(_segment, '').replaceAll(_segmentTag, '');
   final _answer = StringBuffer();
 
   @override
@@ -419,6 +452,10 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
       RealtimeProvider.gemini => throw UnsupportedError(
         'Gemini speaks the Live API (GeminiLiveBackend)',
       ),
+      RealtimeProvider.vercel => throw UnsupportedError(
+        'The gateway runs the backend of its model\'s provider '
+        '(gatewayBackend)',
+      ),
     };
     return {'type': 'session.update', 'session': session};
   }
@@ -426,6 +463,8 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
   void _send(Map<String, Object?> message) {
     final socket = _socket;
     if (socket == null || _closing) return;
+    final type = '${message['type'] ?? ''}';
+    if (type != 'input_audio_buffer.append') _remember('> $type');
     try {
       socket.send(jsonEncode(message));
     } catch (e) {
@@ -461,6 +500,18 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
     if (!_manual) return;
     // An empty buffer is refused with an error, which is harmless here.
     _send({'type': 'input_audio_buffer.commit'});
+    if (config.provider == RealtimeProvider.xai) {
+      // With turn_detection off xAI runs "client_controlled" and answers
+      // the commit itself. A reply asked for as well was taken as a second
+      // turn whenever xAI had started its own answer by the time it came:
+      // the same answer twice, the second one after a note that the reply
+      // was already spoken.
+      if (_responding && !_cancelled) {
+        _send({'type': 'response.cancel'});
+        _cancelled = true;
+      }
+      return;
+    }
     if (_responding) {
       // The user's turn wins over an answer still open on the server.
       if (!_cancelled) _send({'type': 'response.cancel'});
@@ -575,6 +626,10 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
       return;
     }
     final type = '${msg['type'] ?? ''}';
+    if (!type.endsWith('.delta')) {
+      final id = msg['item_id'] ?? msg['response_id'] ?? '';
+      _remember('< $type${'$id'.isEmpty ? '' : ' ${'$id'.split('-').first}'}');
+    }
     switch (type) {
       case 'session.updated':
         _markReady();
@@ -649,7 +704,7 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
         final delta = '${msg['delta'] ?? ''}';
         if (delta.isNotEmpty) {
           _answer.write(delta);
-          _emit(RealtimeAnswerText(_answer.toString()));
+          _emit(RealtimeAnswerText(spokenText('$_answer')));
         }
       case 'response.output_audio_transcript.done' ||
           'response.audio_transcript.done':
@@ -659,7 +714,14 @@ class OpenAiRealtimeBackend implements RealtimeBackend {
             ..clear()
             ..write(text);
         }
-        _emit(RealtimeAnswerText(_answer.toString(), complete: true));
+        final said = '$_answer';
+        if (said.contains(_segmentTag)) {
+          log?.call(
+            'answer repeated what it already said, events before it: '
+            '${_recent.join(', ')}',
+          );
+        }
+        _emit(RealtimeAnswerText(spokenText(said).trim(), complete: true));
       case 'response.function_call_arguments.done':
         unawaited(
           _runTool(

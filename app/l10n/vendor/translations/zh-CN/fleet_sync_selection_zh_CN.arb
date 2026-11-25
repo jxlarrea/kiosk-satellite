@@ -24,6 +24,7 @@
   "fleetOpenAiApiKey": "OpenAI API 密钥",
   "fleetXaiApiKey": "xAI API 密钥",
   "fleetGeminiApiKey": "Gemini API 密钥",
+  "fleetVercelApiKey": "Vercel AI Gateway API 密钥",
   "fleetMcpServerToken": "MCP 服务器令牌",
   "fleetPlugins": "插件",
   "fleetPluginSecrets": "插件密钥",

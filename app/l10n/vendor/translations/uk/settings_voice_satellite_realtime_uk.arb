@@ -9,6 +9,7 @@
   "settingVoiceRealtimeReasoningTitle": "Рівень міркувань",
   "settingVoiceRealtimeReasoningDescription": "Більше зусиль дає кращі відповіді на складні запитання. Потрібна модель gpt-realtime-2.",
   "settingVoiceRealtimeGeminiReasoningDescription": "Більше зусиль дає кращі відповіді на складні запитання. Потрібна модель, що міркує, наприклад gemini-3.8-live-extended-thinking.",
+  "settingVoiceRealtimeVercelReasoningDescription": "Більше зусиль дає кращі відповіді на складні запитання. Лише для моделей openai/gpt-realtime-2.",
   "settingVoiceRealtimeGeminiSearchTitle": "Пошук Google",
   "settingVoiceRealtimeGeminiSearchBillingDescription": "Дозволяє моделі шукати інформацію в інтернеті. Потрібно ввімкнути оплату для ключа API.",
   "settingVoiceRealtimeGeminiProactiveTitle": "Ігнорувати мовлення, звернене не до нього",

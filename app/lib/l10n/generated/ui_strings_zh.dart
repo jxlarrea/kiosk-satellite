@@ -1996,6 +1996,9 @@ class UiStringsZh extends UiStrings {
   String get fleetGeminiApiKey => 'Gemini API 密钥';
 
   @override
+  String get fleetVercelApiKey => 'Vercel AI Gateway API 密钥';
+
+  @override
   String get fleetMcpServerToken => 'MCP 服务器令牌';
 
   @override
@@ -14833,6 +14836,10 @@ class UiStringsZh extends UiStrings {
   @override
   String get settingVoiceRealtimeGeminiReasoningDescription =>
       '更高强度能更好地回答难题。需要支持思考的模型，例如 gemini-3.8-live-extended-thinking。';
+
+  @override
+  String get settingVoiceRealtimeVercelReasoningDescription =>
+      '更高强度能更好地回答难题。仅适用于 openai/gpt-realtime-2 模型。';
 
   @override
   String get settingVoiceRealtimeGeminiSearchTitle => 'Google 搜索';
@@ -18586,6 +18593,9 @@ class UiStringsZhCn extends UiStringsZh {
   String get fleetGeminiApiKey => 'Gemini API 密钥';
 
   @override
+  String get fleetVercelApiKey => 'Vercel AI Gateway API 密钥';
+
+  @override
   String get fleetMcpServerToken => 'MCP 服务器令牌';
 
   @override
@@ -31423,6 +31433,10 @@ class UiStringsZhCn extends UiStringsZh {
   @override
   String get settingVoiceRealtimeGeminiReasoningDescription =>
       '更高强度能更好地回答难题。需要支持思考的模型，例如 gemini-3.8-live-extended-thinking。';
+
+  @override
+  String get settingVoiceRealtimeVercelReasoningDescription =>
+      '更高强度能更好地回答难题。仅适用于 openai/gpt-realtime-2 模型。';
 
   @override
   String get settingVoiceRealtimeGeminiSearchTitle => 'Google 搜索';

@@ -440,6 +440,20 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "medium": "voiceRealtimeReasoningMedium",
     "high": "voiceRealtimeReasoningHigh"
   },
+  "voice.realtime_vercel_model": {
+    "": "voiceRealtimeProviderDefault"
+  },
+  "voice.realtime_vercel_voice": {
+    "": "voiceRealtimeProviderDefault"
+  },
+  "voice.realtime_vercel_reasoning": {
+    "": "voiceRealtimeReasoningDefault",
+    "minimal": "voiceRealtimeReasoningMinimal",
+    "low": "voiceRealtimeReasoningLow",
+    "medium": "voiceRealtimeReasoningMedium",
+    "high": "voiceRealtimeReasoningHigh",
+    "xhigh": "voiceRealtimeReasoningExtraHigh"
+  },
   "screensaver.media_metadata_position": {
     "top_left": "screensaverMediaTopLeft",
     "top_right": "screensaverMediaTopRight",
@@ -618,6 +632,7 @@ const settingPlaceholderMessageIds = <String, String>{
   "voice.realtime_openai_endpoint": "voiceRealtimeProviderDefault",
   "voice.realtime_xai_endpoint": "voiceRealtimeProviderDefault",
   "voice.realtime_gemini_endpoint": "voiceRealtimeProviderDefault",
+  "voice.realtime_vercel_endpoint": "voiceRealtimeProviderDefault",
   "timers.tts_engine": "esphomeTtsFirst",
   "timers.tts_language": "esphomeTtsDefault",
   "timers.tts_voice": "esphomeTtsDefault"

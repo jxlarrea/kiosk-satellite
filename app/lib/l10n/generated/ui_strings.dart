@@ -3682,6 +3682,12 @@ abstract class UiStrings {
   /// Visible label, help or status in this section.
   ///
   /// In en, this message translates to:
+  /// **'Vercel AI Gateway API key'**
+  String get fleetVercelApiKey;
+
+  /// Visible label, help or status in this section.
+  ///
+  /// In en, this message translates to:
   /// **'MCP server token'**
   String get fleetMcpServerToken;
 
@@ -27296,6 +27302,12 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'More effort answers harder questions better. Needs a model that thinks, such as gemini-3.8-live-extended-thinking.'**
   String get settingVoiceRealtimeGeminiReasoningDescription;
+
+  /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'More effort answers harder questions better. Only for openai/gpt-realtime-2 models.'**
+  String get settingVoiceRealtimeVercelReasoningDescription;
 
   /// Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged.
   ///

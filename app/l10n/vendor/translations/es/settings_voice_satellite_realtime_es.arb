@@ -9,6 +9,7 @@
   "settingVoiceRealtimeReasoningTitle": "Esfuerzo de razonamiento",
   "settingVoiceRealtimeReasoningDescription": "Más esfuerzo responde mejor las preguntas difíciles. Requiere un modelo gpt-realtime-2.",
   "settingVoiceRealtimeGeminiReasoningDescription": "Más esfuerzo responde mejor las preguntas difíciles. Requiere un modelo que razone, como gemini-3.8-live-extended-thinking.",
+  "settingVoiceRealtimeVercelReasoningDescription": "Más esfuerzo responde mejor las preguntas difíciles. Solo para modelos openai/gpt-realtime-2.",
   "settingVoiceRealtimeGeminiSearchTitle": "Búsqueda de Google",
   "settingVoiceRealtimeGeminiSearchBillingDescription": "Permite que el modelo busque información en la web. Requiere activar la facturación para la clave de API.",
   "settingVoiceRealtimeGeminiProactiveTitle": "Ignorar lo que no va dirigido a él",

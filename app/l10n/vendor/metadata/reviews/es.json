@@ -26343,5 +26343,15 @@
     "source": "7c70dc09ca18c491e7228e5238a7164a332443e11467a47037027adc9a29a949",
     "translation": "9ecebaa2ace1fc0d2f611575267095fd3bfc1efab9f91e72740b12bfa15847f5",
     "author": "Xavier Larrea"
+  },
+  "fleetVercelApiKey": {
+    "source": "fae75b87e8bfc370717a03a306c0ab6d008b8309c1266054e4050d04f847c7e5",
+    "translation": "bb37087a18094cec3a1501f9920aaeb53b450af5553334815e18c888b0318f36",
+    "author": "Xavier Larrea"
+  },
+  "settingVoiceRealtimeVercelReasoningDescription": {
+    "source": "f5e7da897b90c0188b459290d125100e96b08dbca33b46ff250b7e482dfa7845",
+    "translation": "66c935322efcd6a86b084bec22d09afe13e0da8d2c1dd63ba5b8fec801b43c78",
+    "author": "Xavier Larrea"
   }
 }

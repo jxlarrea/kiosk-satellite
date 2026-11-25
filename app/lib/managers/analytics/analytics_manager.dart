@@ -582,6 +582,7 @@ class AnalyticsManager extends Manager {
           'vs_turns_openai',
           'vs_turns_xai',
           'vs_turns_gemini',
+          'vs_turns_vercel',
         ])
           k: counts[k] ?? 0,
       if (arbitration)
@@ -690,6 +691,14 @@ class AnalyticsManager extends Manager {
           ),
           'vs_realtime_gemini_voice': pick(
             s.get(defs.voiceRealtimeGeminiVoice),
+          ),
+        },
+        if (realtime.contains('vercel')) ...{
+          'vs_realtime_vercel_model': pick(
+            s.get(defs.voiceRealtimeVercelModel),
+          ),
+          'vs_realtime_vercel_voice': pick(
+            s.get(defs.voiceRealtimeVercelVoice),
           ),
         },
         'vs_wake_arbitration': arbitration,

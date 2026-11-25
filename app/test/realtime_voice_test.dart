@@ -1103,7 +1103,7 @@ void main() {
       },
     );
 
-    test('manual turns: no speech detection, the session commits and asks for the answer', () async {
+    test('manual turns: no speech detection, the session commits and asks OpenAI for the answer', () async {
       for (final provider in [RealtimeProvider.openai, RealtimeProvider.xai]) {
         final backend = make(RealtimeConfig(provider: provider, apiKey: 'k'));
         await backend.start(const RealtimeStart(manualTurns: true));
@@ -1116,7 +1116,15 @@ void main() {
         await pumpEventQueue();
         socket.sent.clear();
         backend.endTurn();
-        expect(socket.types, ['input_audio_buffer.commit', 'response.create']);
+        // xAI answers the commit itself: a reply asked for too came out as
+        // the same answer twice.
+        expect(
+          socket.types,
+          provider == RealtimeProvider.openai
+              ? ['input_audio_buffer.commit', 'response.create']
+              : ['input_audio_buffer.commit'],
+          reason: '$provider',
+        );
 
         // Ground Control gone: the server's speech detection comes back.
         socket.sent.clear();
@@ -1134,6 +1142,31 @@ void main() {
         expect(socket.sent, isEmpty);
         await backend.close();
       }
+    });
+
+    test('what xAI marks as already spoken never shows', () async {
+      final backend = make(
+        const RealtimeConfig(provider: RealtimeProvider.xai, apiKey: 'k'),
+      );
+      await backend.start(const RealtimeStart());
+      socket.server({'type': 'session.updated'});
+      socket.server({'type': 'response.created'});
+      socket.server({
+        'type': 'response.output_audio_transcript.delta',
+        'delta': "It's 4:45 PM. <response_segment_0_already_spoken>It's",
+      });
+      socket.server({
+        'type': 'response.output_audio_transcript.done',
+        'transcript':
+            "It's 4:45 PM. <response_segment_0_already_spoken>It's 4:45 "
+            'PM.</response_segment_0_already_spoken>',
+      });
+      await pumpEventQueue();
+      final texts = events.whereType<RealtimeAnswerText>().toList();
+      expect(texts.first.text, "It's 4:45 PM. ");
+      expect(texts.last.text, "It's 4:45 PM.");
+      expect(texts.last.complete, isTrue);
+      await backend.close();
     });
 
     test('the speaker goes in as a system item, without an answer', () async {
@@ -1714,11 +1747,19 @@ void main() {
 
     String audio(List<int> samples) => base64Encode(_pcm(samples));
 
-    test('the end of a turn is the end of the audio stream, its speech detection stays on', () async {
+    test('the end of a turn is silence and the end of the audio stream, its speech detection stays on', () async {
       final backend = await ready();
       socket.sent.clear();
       backend.endTurn();
-      expect(socket.sent.single, {
+      // Silence first: Ground Control sends a turn's speech at once, and
+      // the end of the stream right after it left the turn open.
+      expect(socket.sent, hasLength(2));
+      final input = socket.sent.first['realtimeInput'] as Map;
+      final silence = base64Decode('${(input['audio'] as Map)['data']}');
+      const ms = GeminiLiveBackend.turnSilenceMs;
+      expect(silence, hasLength(GeminiLiveBackend.inputRate * 2 * ms ~/ 1000));
+      expect(silence.every((b) => b == 0), isTrue);
+      expect(socket.sent.last, {
         'realtimeInput': {'audioStreamEnd': true},
       });
       socket.sent.clear();

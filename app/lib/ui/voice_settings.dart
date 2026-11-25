@@ -514,16 +514,21 @@ Future<bool> showRealtimeProviderDialog(
       container.voice.realtimeStatus(provider).status !=
       RealtimeStatus.unconfigured;
 
+  // Vercel's voices are those of the model's provider, so they follow the
+  // model picked here.
+  final gateway = provider == RealtimeProvider.vercel;
+  List<String> choices(defs.SettingDef<String> def) =>
+      gateway && def == voiceDef
+      ? ['', ...VoiceManager.realtimeVoices(provider, model)]
+      : settings.optionsFor(def);
+
   Widget picker(
     BuildContext ctx,
     defs.SettingDef<String> def,
     String value,
     ValueChanged<String> onChanged,
   ) {
-    final options = [
-      ...settings.optionsFor(def),
-      if (!settings.optionsFor(def).contains(value)) value,
-    ];
+    final options = [...choices(def), if (!choices(def).contains(value)) value];
     String label(String option) => def.localizedOption(
       ctx,
       option,
@@ -533,6 +538,9 @@ Future<bool> showRealtimeProviderDialog(
       label: def.localizedTitle(ctx),
       helper: def.localizedDescription(ctx),
       child: DropdownButtonFormField<String>(
+        // A new list (Vercel's voices for another provider's model) starts
+        // the field over: it keeps the value it started with otherwise.
+        key: ValueKey('${def.key} ${options.join(',')}'),
         initialValue: value,
         isExpanded: true,
         decoration: const InputDecoration(),
@@ -617,7 +625,13 @@ Future<bool> showRealtimeProviderDialog(
                       ctx,
                       modelDef,
                       model,
-                      (v) => setDialogState(() => model = v),
+                      (v) => setDialogState(() {
+                        // Another provider's model: the voice picked was
+                        // the last one's.
+                        final voices = VoiceManager.realtimeVoices(provider, v);
+                        if (gateway && !voices.contains(voice)) voice = '';
+                        model = v;
+                      }),
                     ),
                     picker(
                       ctx,

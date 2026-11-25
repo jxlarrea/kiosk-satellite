@@ -64,6 +64,7 @@ export const fleetTextMessageIds = {
   "OpenAI API key": "fleetOpenAiApiKey",
   "xAI API key": "fleetXaiApiKey",
   "Gemini API key": "fleetGeminiApiKey",
+  "Vercel AI Gateway API key": "fleetVercelApiKey",
   "MCP server token": "fleetMcpServerToken",
   "Intercom key": "settingIntercomKeyTitle",
   "Add a kiosk": "fleetAddAKiosk",

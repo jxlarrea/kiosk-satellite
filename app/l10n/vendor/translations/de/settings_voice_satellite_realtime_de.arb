@@ -9,6 +9,7 @@
   "settingVoiceRealtimeReasoningTitle": "Denkaufwand",
   "settingVoiceRealtimeReasoningDescription": "Mehr Aufwand beantwortet schwierige Fragen besser. Erfordert ein gpt-realtime-2-Modell.",
   "settingVoiceRealtimeGeminiReasoningDescription": "Mehr Aufwand beantwortet schwierige Fragen besser. Erfordert ein Modell, das nachdenkt, etwa gemini-3.8-live-extended-thinking.",
+  "settingVoiceRealtimeVercelReasoningDescription": "Mehr Aufwand beantwortet schwierige Fragen besser. Nur für openai/gpt-realtime-2-Modelle.",
   "settingVoiceRealtimeGeminiSearchTitle": "Google Suche",
   "settingVoiceRealtimeGeminiSearchBillingDescription": "Lässt das Modell im Web nachschlagen. Erfordert, dass für den API-Schlüssel die Abrechnung aktiviert ist.",
   "settingVoiceRealtimeGeminiProactiveTitle": "Gespräche ignorieren, die nicht ihm gelten",

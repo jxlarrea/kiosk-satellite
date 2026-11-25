@@ -336,13 +336,32 @@ class GeminiLiveBackend implements RealtimeBackend {
   /// speech while Ground Control follows them, and the end of the audio
   /// stream flushes the turn. Its client activity signals were reported
   /// to answer too early on Gemini 3.1.
+  ///
+  /// Ground Control sends a turn's speech at once as it ends, and Gemini
+  /// given that with the end of the stream right after it never ended the
+  /// turn: the answer waited for the user to talk again. Silence after the
+  /// speech lets its detection see the user stop. In a live test
+  /// (2026-11-25) 1 s of it still missed 2 turns in 6 and 1.5 s none.
   @override
   void endTurn() {
     if (!_ready) return;
     _send({
+      'realtimeInput': {
+        'audio': {
+          'data': base64Encode(
+            Uint8List(inputRate * 2 * turnSilenceMs ~/ 1000),
+          ),
+          'mimeType': 'audio/pcm;rate=$inputRate',
+        },
+      },
+    });
+    _send({
       'realtimeInput': {'audioStreamEnd': true},
     });
   }
+
+  /// The silence [endTurn] sends after the user's speech.
+  static const turnSilenceMs = 2000;
 
   /// Nothing to switch back: its speech detection never went off.
   @override

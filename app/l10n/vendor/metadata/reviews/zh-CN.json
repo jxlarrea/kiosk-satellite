@@ -31593,5 +31593,17 @@
     "translation": "975b0af71b47533c725744e3c4e520b692a0cc632f7cd1047943cdfb9100da9a",
     "author": "Xavier Larrea",
     "ownerAuthored": true
+  },
+  "settingVoiceRealtimeVercelReasoningDescription": {
+    "source": "f5e7da897b90c0188b459290d125100e96b08dbca33b46ff250b7e482dfa7845",
+    "translation": "a3c5a7696b8e8687f7020920c5b781f9596ed7acc7d90b3e70925d053b1a8727",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
+  },
+  "fleetVercelApiKey": {
+    "source": "fae75b87e8bfc370717a03a306c0ab6d008b8309c1266054e4050d04f847c7e5",
+    "translation": "d6bb2290a0d8828d1e14d7bb68a8db407328817273e25001f16661afa82c5c6e",
+    "author": "Xavier Larrea",
+    "ownerAuthored": true
   }
 }

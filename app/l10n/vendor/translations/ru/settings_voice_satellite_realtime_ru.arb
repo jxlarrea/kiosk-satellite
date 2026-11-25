@@ -18,6 +18,7 @@
   "settingVoiceRealtimeReasoningTitle": "Глубина размышлений",
   "settingVoiceRealtimeReasoningDescription": "Больше усилий: лучше отвечает на сложные вопросы. Нужна модель gpt-realtime-2.",
   "settingVoiceRealtimeGeminiReasoningDescription": "Больше усилий: лучше отвечает на сложные вопросы. Нужна думающая модель, например gemini-3.8-live-extended-thinking.",
+  "settingVoiceRealtimeVercelReasoningDescription": "Больше усилий: лучше отвечает на сложные вопросы. Только для моделей openai/gpt-realtime-2.",
   "settingVoiceRealtimeGeminiSearchTitle": "Google Поиск",
   "settingVoiceRealtimeGeminiSearchBillingDescription": "Позволяет модели искать в интернете. Нужен включённый биллинг у API-ключа.",
   "settingVoiceRealtimeGeminiProactiveTitle": "Игнорировать речь, обращённую не к ассистенту",

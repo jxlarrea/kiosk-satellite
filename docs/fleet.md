@@ -51,6 +51,7 @@ A profile consists of:
 | OpenAI API key | Off | Kiosk keeps its own. | Key syncs across fleet, and each follower validates it on its own. |
 | xAI API key | Off | Kiosk keeps its own. | Key syncs across fleet, and each follower validates it on its own. |
 | Gemini API key | Off | Kiosk keeps its own. | Key syncs across fleet, and each follower validates it on its own. |
+| Vercel AI Gateway API key | Off | Kiosk keeps its own. | Key syncs across fleet, and each follower validates it on its own. |
 | MCP server token | Off | Kiosk keeps its own. | Token syncs across fleet. |
 | Plugin secrets | Off | Kiosk keeps its own secret plugin settings. | Secret plugin settings sync with their plugins. |
 | Include the dashboard | Off | Kiosk keeps its local start page and dashboard. | Start page and dashboard sync. |
@@ -162,7 +163,7 @@ Certain settings remain unique to each kiosk regardless of the profile configura
 | Stop word fine-tune | `voice.stop_word_fine_tune` |
 | Realtime talk over sensitivity | `voice.realtime_talk_over_sensitivity` |
 | Wake words this kiosk listens for | `voice.wake_words`, `voice.pending_selects` |
-| Local state | `voice.runtime`, `voice.timer_position`, `voice.dock_position`, `voice.realtime_openai_validated`, `voice.realtime_xai_validated`, `voice.realtime_gemini_validated`, `screensaver.saved_brightness`, `screensaver.immich_validated`, `sendspin.player_active`, `sendspin.player_pos`, `sendspin.sonos_hosts` |
+| Local state | `voice.runtime`, `voice.timer_position`, `voice.dock_position`, `voice.realtime_openai_validated`, `voice.realtime_xai_validated`, `voice.realtime_gemini_validated`, `voice.realtime_vercel_validated`, `screensaver.saved_brightness`, `screensaver.immich_validated`, `sendspin.player_active`, `sendspin.player_pos`, `sendspin.sonos_hosts` |
 
 Plugins sync only through a profile's **Plugins** row (see [Plugins](#plugins)). Plugin entity exclusions stay local even when ordinary ESPHome exclusions are synced, and the **Enable Plugins** master switch stays on each kiosk.
 

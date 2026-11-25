@@ -2308,6 +2308,26 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingVoiceRealtimeGeminiProactiveTitle",
     "description": "settingVoiceRealtimeGeminiProactiveDescription",
   },
+  "voice.realtime_vercel_api_key": {
+    "title": "settingVoiceRealtimeApiKeyTitle",
+    "description": "settingVoiceRealtimeApiKeyDescription",
+  },
+  "voice.realtime_vercel_endpoint": {
+    "title": "settingVoiceRealtimeEndpointTitle",
+    "description": "settingVoiceRealtimeEndpointDescription",
+  },
+  "voice.realtime_vercel_model": {
+    "title": "settingVoiceRealtimeModelTitle",
+    "description": "settingVoiceRealtimeModelDescription",
+  },
+  "voice.realtime_vercel_voice": {
+    "title": "settingVoiceRealtimeVoiceTitle",
+    "description": "settingVoiceRealtimeVoiceDescription",
+  },
+  "voice.realtime_vercel_reasoning": {
+    "title": "settingVoiceRealtimeReasoningTitle",
+    "description": "settingVoiceRealtimeVercelReasoningDescription",
+  },
   "screensaver.media_metadata": {
     "title": "settingScreensaverMediaMetadataTitle",
     "description": "settingScreensaverMediaMetadataDescription",

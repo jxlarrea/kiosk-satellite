@@ -18,6 +18,7 @@
   "settingVoiceRealtimeReasoningTitle": "推理强度",
   "settingVoiceRealtimeReasoningDescription": "更高强度能更好地回答难题。需要 gpt-realtime-2 模型。",
   "settingVoiceRealtimeGeminiReasoningDescription": "更高强度能更好地回答难题。需要支持思考的模型，例如 gemini-3.8-live-extended-thinking。",
+  "settingVoiceRealtimeVercelReasoningDescription": "更高强度能更好地回答难题。仅适用于 openai/gpt-realtime-2 模型。",
   "settingVoiceRealtimeGeminiSearchTitle": "Google 搜索",
   "settingVoiceRealtimeGeminiSearchBillingDescription": "允许模型在网上查询信息。需要为 API 密钥启用计费功能。",
   "settingVoiceRealtimeGeminiProactiveTitle": "忽略非面向助手的语音",

@@ -18,6 +18,7 @@
   "settingVoiceRealtimeReasoningTitle": "Livello di ragionamento",
   "settingVoiceRealtimeReasoningDescription": "Un livello più alto risponde meglio alle domande difficili. Richiede un modello gpt-realtime-2.",
   "settingVoiceRealtimeGeminiReasoningDescription": "Un livello più alto risponde meglio alle domande difficili. Richiede un modello che ragiona, come gemini-3.8-live-extended-thinking.",
+  "settingVoiceRealtimeVercelReasoningDescription": "Un livello più alto risponde meglio alle domande difficili. Solo per i modelli openai/gpt-realtime-2.",
   "settingVoiceRealtimeGeminiSearchTitle": "Ricerca Google",
   "settingVoiceRealtimeGeminiSearchBillingDescription": "Consente al modello di cercare informazioni sul web. Richiede la fatturazione attiva per la chiave API.",
   "settingVoiceRealtimeGeminiProactiveTitle": "Ignora ciò che non gli è rivolto",

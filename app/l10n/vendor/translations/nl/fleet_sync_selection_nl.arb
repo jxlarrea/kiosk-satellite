@@ -24,6 +24,7 @@
   "fleetOpenAiApiKey": "OpenAI-API-sleutel",
   "fleetXaiApiKey": "xAI-API-sleutel",
   "fleetGeminiApiKey": "Gemini-API-sleutel",
+  "fleetVercelApiKey": "Vercel AI Gateway-API-sleutel",
   "fleetMcpServerToken": "MCP-servertoken",
   "fleetPlugins": "Plug-ins",
   "fleetPluginSecrets": "Geheimen van plug-ins",

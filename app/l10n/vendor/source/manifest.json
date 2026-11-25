@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "repository": "https://github.com/jxlarrea/kiosk-satellite",
-  "revision": "5063a505a8580f2c0b61d4719a541c233f645357",
+  "revision": "a4d9b969a2ffa0e18ca8084f5a0c18c2a9b004ec",
   "workingTree": true,
   "files": {
     "about_identity_en.arb": "dd006567f69f846e2e3b73f09ad13784f0022d282ea3101fa9be7fc95175ec2d",
@@ -29,7 +29,7 @@
     "fleet_profiles_en.arb": "e9487e27a346f21492ab6a0a6224cf251758965dbfb30bb5a5a8faef94bc3605",
     "fleet_status_en.arb": "7a13ae298318ef5819ccf2b4ed156cc5e542b6220c9f6e416cf05df2db13bec0",
     "fleet_switcher_en.arb": "5991593bdda40d6869f6e2c3402a626b4b2ed8846c3c74135a0b7608cdd374d0",
-    "fleet_sync_selection_en.arb": "bfb150594173903db5607071469d14391e5c1e657f84fb25a01a658e904e071b",
+    "fleet_sync_selection_en.arb": "f4ac79863c5e6a135da9f813ceb2349458c6f4cc904859933fd2d4d872929fb6",
     "fleet_updates_en.arb": "3b5463bf3e7e96ff4554b313bcfdf836e38df61b1a0a848dc8d386a55615c954",
     "gesture_actions_en.arb": "15367f367895474adbd0261c5c71dafdd15a6376971570af5ea4ab205937c118",
     "gesture_descriptions_en.arb": "0da7338e10d59d50296ae35af8efd9e71aa7da3dc8b349c355f60cd398e9610d",
@@ -191,7 +191,7 @@
     "settings_voice_satellite_general_en.arb": "aa00128ae7aedcbdea3f6d42130daa02c475649f22d3a778b307f3f389da1bfc",
     "settings_voice_satellite_migration_en.arb": "c4975bfc10dc321a5c6f4af6493bb0839ebf14e33181c045809295d33d7493a7",
     "settings_voice_satellite_permissions_en.arb": "96fc7cab269a286bfa12be9adc861941c3548cc41b45195d828d739610441f5e",
-    "settings_voice_satellite_realtime_en.arb": "87b9ff70fe6a03cf3a9fc68a1f0e4ce7877fe1ebcaa5078c64b38c56750e623c",
+    "settings_voice_satellite_realtime_en.arb": "a6bedf80fa400b214c787764422a71334f9a984b5a3a793b19db2e8658a342f8",
     "settings_voice_satellite_setup_en.arb": "5d6e328bc7d48614c3b6af3e3ee2ecd16c9e36b38991a5f2e9477b2ac0584874",
     "settings_voice_satellite_tester_en.arb": "fe39cf6c05dec11c5bde90939f5098ecf79a6457e407dfee3a0a4a3d3cf13f12",
     "settings_voice_satellite_timers_en.arb": "bcfb857d01732594d0566e6294328a1c4487976678ff168daaa37b315d0d1488",

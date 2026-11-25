@@ -2067,6 +2067,9 @@ class UiStringsPl extends UiStrings {
   String get fleetGeminiApiKey => 'Klucz API Gemini';
 
   @override
+  String get fleetVercelApiKey => 'Klucz API Vercel AI Gateway';
+
+  @override
   String get fleetMcpServerToken => 'Token serwera MCP';
 
   @override
@@ -15800,6 +15803,10 @@ class UiStringsPl extends UiStrings {
   @override
   String get settingVoiceRealtimeGeminiReasoningDescription =>
       'Wyższy poziom pozwala lepiej odpowiadać na trudniejsze pytania. Wymaga modelu z funkcją myślenia, takiego jak gemini-3.8-live-extended-thinking.';
+
+  @override
+  String get settingVoiceRealtimeVercelReasoningDescription =>
+      'Wyższy poziom pozwala lepiej odpowiadać na trudniejsze pytania. Tylko dla modeli openai/gpt-realtime-2.';
 
   @override
   String get settingVoiceRealtimeGeminiSearchTitle => 'Wyszukiwanie Google';

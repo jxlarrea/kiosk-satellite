@@ -439,6 +439,20 @@
     "medium": "voiceRealtimeReasoningMedium",
     "high": "voiceRealtimeReasoningHigh"
   },
+  "voice.realtime_vercel_model": {
+    "": "voiceRealtimeProviderDefault"
+  },
+  "voice.realtime_vercel_voice": {
+    "": "voiceRealtimeProviderDefault"
+  },
+  "voice.realtime_vercel_reasoning": {
+    "": "voiceRealtimeReasoningDefault",
+    "minimal": "voiceRealtimeReasoningMinimal",
+    "low": "voiceRealtimeReasoningLow",
+    "medium": "voiceRealtimeReasoningMedium",
+    "high": "voiceRealtimeReasoningHigh",
+    "xhigh": "voiceRealtimeReasoningExtraHigh"
+  },
   "screensaver.media_metadata_position": {
     "top_left": "screensaverMediaTopLeft",
     "top_right": "screensaverMediaTopRight",

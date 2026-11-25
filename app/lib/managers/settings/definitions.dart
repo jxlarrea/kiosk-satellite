@@ -7872,7 +7872,7 @@ const voiceEngine1 = SettingDef<String>(
   title: 'Wake word 1',
   description: 'What answers wake word 1.',
   category: 'Voice Satellite',
-  options: ['assist', 'openai', 'xai', 'gemini'],
+  options: ['assist', 'openai', 'xai', 'gemini', 'vercel'],
   hidden: true,
 );
 
@@ -7883,12 +7883,13 @@ const voiceEngine2 = SettingDef<String>(
   title: 'Wake word 2',
   description: 'What answers wake word 2.',
   category: 'Voice Satellite',
-  options: ['assist', 'openai', 'xai', 'gemini'],
+  options: ['assist', 'openai', 'xai', 'gemini', 'vercel'],
   hidden: true,
 );
 
 // Realtime: wake words answered by a speech to speech model, full duplex.
-// OpenAI, xAI Grok and Google Gemini side by side, each with its own connection, and the
+// OpenAI, xAI Grok, Google Gemini and Vercel AI Gateway side by side, each
+// with its own connection, and the
 // conversation and the tools shared. A provider's settings are edited in
 // its Configure dialog, which saves them only once they connect: the
 // Providers group shows one row per provider in their place
@@ -8223,6 +8224,104 @@ const voiceRealtimeGeminiValidated = SettingDef<String>(
   perDevice: true,
 );
 
+const voiceRealtimeVercelApiKey = SettingDef<String>(
+  key: 'voice.realtime_vercel_api_key',
+  type: SettingType.password,
+  defaultValue: '',
+  title: 'API key',
+  description: 'Leave empty when a relay adds it.',
+  category: 'Voice Satellite',
+  subpage: 'Realtime',
+  section: 'Providers',
+  secret: true,
+  dependsOn: 'voice.enabled',
+);
+
+/// The gateway's realtime models, each named after its provider
+/// (SettingsManager's realtime catalog); '' is its default.
+const voiceRealtimeVercelModel = SettingDef<String>(
+  key: 'voice.realtime_vercel_model',
+  type: SettingType.select,
+  defaultValue: '',
+  title: 'Model',
+  description: 'The speech to speech model that answers.',
+  category: 'Voice Satellite',
+  subpage: 'Realtime',
+  section: 'Providers',
+  options: [''],
+  optionLabels: {'': 'Provider default'},
+  dependsOn: 'voice.enabled',
+);
+
+/// The voices of the model's provider; '' is that provider's default.
+const voiceRealtimeVercelVoice = SettingDef<String>(
+  key: 'voice.realtime_vercel_voice',
+  type: SettingType.select,
+  defaultValue: '',
+  title: 'Voice',
+  description: 'How the assistant sounds.',
+  category: 'Voice Satellite',
+  subpage: 'Realtime',
+  section: 'Providers',
+  options: [''],
+  optionLabels: {'': 'Provider default'},
+  dependsOn: 'voice.enabled',
+);
+
+/// OpenAI's reasoning effort, which reaches only the gateway's OpenAI
+/// models: Gemini read its thinking aloud and the others have none.
+const voiceRealtimeVercelReasoning = SettingDef<String>(
+  key: 'voice.realtime_vercel_reasoning',
+  type: SettingType.select,
+  defaultValue: '',
+  title: 'Reasoning effort',
+  description:
+      'More effort answers harder questions better. Only for '
+      'openai/gpt-realtime-2 models.',
+  category: 'Voice Satellite',
+  subpage: 'Realtime',
+  section: 'Providers',
+  options: ['', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+  optionLabels: {
+    '': 'Model default',
+    'minimal': 'Minimal',
+    'low': 'Low',
+    'medium': 'Medium',
+    'high': 'High',
+    'xhigh': 'Extra high',
+  },
+  dependsOn: 'voice.enabled',
+);
+
+const voiceRealtimeVercelEndpoint = SettingDef<String>(
+  key: 'voice.realtime_vercel_endpoint',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Endpoint',
+  description:
+      'Leave empty to use the provider. Use a relay on your network to keep '
+      'this kiosk offline.',
+  category: 'Voice Satellite',
+  subpage: 'Realtime',
+  section: 'Providers',
+  placeholder: 'Provider default',
+  dependsOn: 'voice.enabled',
+);
+
+/// What Vercel's last successful Save & Validate checked: a hash of
+/// its endpoint and key. The Assistant selects offer it only while that
+/// still matches. Per device: each kiosk reaches the provider on its own.
+const voiceRealtimeVercelValidated = SettingDef<String>(
+  key: 'voice.realtime_vercel_validated',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Realtime connection validated',
+  description: '',
+  category: 'Voice Satellite',
+  hidden: true,
+  perDevice: true,
+);
+
 /// The settings each provider's Configure dialog holds, by provider id.
 /// Neither UI draws them as rows: the first one's place in the Providers
 /// group takes the provider's row, the others add nothing.
@@ -8246,6 +8345,13 @@ const realtimeProviderSettings = <String, List<SettingDef<String>>>{
     voiceRealtimeGeminiVoice,
     voiceRealtimeGeminiEndpoint,
     voiceRealtimeGeminiReasoning,
+  ],
+  'vercel': [
+    voiceRealtimeVercelApiKey,
+    voiceRealtimeVercelModel,
+    voiceRealtimeVercelVoice,
+    voiceRealtimeVercelEndpoint,
+    voiceRealtimeVercelReasoning,
   ],
 };
 
@@ -13794,6 +13900,7 @@ const fleetCredentials = <(String, String)>[
   ('voice.realtime_openai_api_key', 'OpenAI API key'),
   ('voice.realtime_xai_api_key', 'xAI API key'),
   ('voice.realtime_gemini_api_key', 'Gemini API key'),
+  ('voice.realtime_vercel_api_key', 'Vercel AI Gateway API key'),
   ('voice.realtime_mcp_token', 'MCP server token'),
   (fleetPluginSecrets, 'Plugin secrets'),
 ];
@@ -13810,6 +13917,7 @@ const fleetCredentialKeys = {
   'voice.realtime_openai_api_key',
   'voice.realtime_xai_api_key',
   'voice.realtime_gemini_api_key',
+  'voice.realtime_vercel_api_key',
   'voice.realtime_mcp_token',
   fleetPluginSecrets,
 };
@@ -15770,6 +15878,12 @@ const List<SettingDef<Object>> allSettings = [
   voiceRealtimeGeminiSearch,
   voiceRealtimeGeminiProactive,
   voiceRealtimeGeminiValidated,
+  voiceRealtimeVercelApiKey,
+  voiceRealtimeVercelModel,
+  voiceRealtimeVercelVoice,
+  voiceRealtimeVercelEndpoint,
+  voiceRealtimeVercelReasoning,
+  voiceRealtimeVercelValidated,
   voiceRealtimeInstructions,
   voiceRealtimeIdleSeconds,
   voiceRealtimeSpeed,

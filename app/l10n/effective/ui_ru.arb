@@ -7805,6 +7805,19 @@
       ]
     }
   },
+  "fleetVercelApiKey": "API-ключ Vercel AI Gateway",
+  "@fleetVercelApiKey": {
+    "context": "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings",
+    "description": "Visible label, help or status in this section.",
+    "x-locations": {
+      "device": [
+        "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings"
+      ],
+      "remoteAdmin": [
+        "Fleet Management > a profile > Categories, Credentials or Excluded settings"
+      ]
+    }
+  },
   "fleetMcpServerToken": "токен сервера MCP",
   "@fleetMcpServerToken": {
     "context": "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings",
@@ -57662,6 +57675,11 @@
   },
   "settingVoiceRealtimeGeminiReasoningDescription": "Больше усилий: лучше отвечает на сложные вопросы. Нужна думающая модель, например gemini-3.8-live-extended-thinking.",
   "@settingVoiceRealtimeGeminiReasoningDescription": {
+    "context": "Settings > Voice Satellite > Realtime",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingVoiceRealtimeVercelReasoningDescription": "Больше усилий: лучше отвечает на сложные вопросы. Только для моделей openai/gpt-realtime-2.",
+  "@settingVoiceRealtimeVercelReasoningDescription": {
     "context": "Settings > Voice Satellite > Realtime",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },

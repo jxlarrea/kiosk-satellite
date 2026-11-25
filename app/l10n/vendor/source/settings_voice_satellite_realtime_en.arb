@@ -90,6 +90,11 @@
     "context": "Settings > Voice Satellite > Realtime",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
+  "settingVoiceRealtimeVercelReasoningDescription": "More effort answers harder questions better. Only for openai/gpt-realtime-2 models.",
+  "@settingVoiceRealtimeVercelReasoningDescription": {
+    "context": "Settings > Voice Satellite > Realtime",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
   "settingVoiceRealtimeGeminiSearchTitle": "Google Search",
   "@settingVoiceRealtimeGeminiSearchTitle": {
     "context": "Settings > Voice Satellite > Realtime",

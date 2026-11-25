@@ -7805,6 +7805,19 @@
       ]
     }
   },
+  "fleetVercelApiKey": "Vercel AI Gateway API 密钥",
+  "@fleetVercelApiKey": {
+    "context": "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings",
+    "description": "Visible label, help or status in this section.",
+    "x-locations": {
+      "device": [
+        "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings"
+      ],
+      "remoteAdmin": [
+        "Fleet Management > a profile > Categories, Credentials or Excluded settings"
+      ]
+    }
+  },
   "fleetMcpServerToken": "MCP 服务器令牌",
   "@fleetMcpServerToken": {
     "context": "Settings > Fleet Management > a profile > Categories, Credentials or Excluded settings",
@@ -57662,6 +57675,11 @@
   },
   "settingVoiceRealtimeGeminiReasoningDescription": "更高强度能更好地回答难题。需要支持思考的模型，例如 gemini-3.8-live-extended-thinking。",
   "@settingVoiceRealtimeGeminiReasoningDescription": {
+    "context": "Settings > Voice Satellite > Realtime",
+    "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
+  },
+  "settingVoiceRealtimeVercelReasoningDescription": "更高强度能更好地回答难题。仅适用于 openai/gpt-realtime-2 模型。",
+  "@settingVoiceRealtimeVercelReasoningDescription": {
     "context": "Settings > Voice Satellite > Realtime",
     "description": "Translate the visible label or help. Keep Voice Satellite, Kiosk Satellite, Home Assistant, ESPHome, HACS and model names unchanged."
   },
