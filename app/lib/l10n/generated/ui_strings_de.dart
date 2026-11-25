@@ -1309,7 +1309,7 @@ class UiStringsDe extends UiStrings {
   String get faceEnrollHintNoFace => 'Kein Gesicht im Bild';
 
   @override
-  String get faceEnrollHintSeveral => 'Bitte nur eine Person im Bild';
+  String get faceEnrollHintSeveral => 'Es sollte nur eine Person zu sehen sein';
 
   @override
   String get faceEnrollHintCloser => 'Komm etwas näher';
@@ -8840,7 +8840,7 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingVisionMatchFaceConfirmsVoiceDescription =>
-      'Eine ähnliche, aber nicht sichere Stimme wird angenommen, wenn das Gesicht vor dem Kiosk dieselbe Person ist. Ein Gesicht ordnet eine Stimme nie allein zu.';
+      'Eine ähnliche Stimme annehmen, wenn das Gesicht derselben Person am Kiosk erkannt wird. So kann nur die Person mit dem ähnlichsten Stimmprofil zugeordnet werden.';
 
   @override
   String get groundControlUsedElsewhere => 'In anderen Einstellungen verwendet';
@@ -8873,11 +8873,11 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get groundControlTagVision =>
-      'Diese Einstellung funktioniert mit Kiosk Satellite Ground Control, einer eigenen App, die auf einem Computer bei dir zu Hause läuft. Sie nutzt die Gesichtswiedererkennung und wird nur angezeigt, solange diese unter Einstellungen > Ground Control > Vision Match aktiviert ist.';
+      'Diese Einstellung braucht Kiosk Satellite Ground Control. Ground Control ist eine eigene App, die auf einem Computer bei dir zu Hause läuft. Die Einstellung nutzt die Gesichtswiedererkennung und wird nur angezeigt, solange die Gesichtswiedererkennung unter Einstellungen > Ground Control > Vision Match aktiviert ist.';
 
   @override
   String get groundControlTagVoice =>
-      'Diese Einstellung funktioniert mit Kiosk Satellite Ground Control, einer eigenen App, die auf einem Computer bei dir zu Hause läuft. Sie nutzt Voice Match und wird nur angezeigt, solange es unter Einstellungen > Ground Control > Voice Match aktiviert ist.';
+      'Diese Einstellung braucht Kiosk Satellite Ground Control. Ground Control ist eine eigene App, die auf einem Computer bei dir zu Hause läuft. Die Einstellung nutzt Voice Match und wird nur angezeigt, solange Voice Match unter Einstellungen > Ground Control > Voice Match aktiviert ist.';
 
   @override
   String get haCustomPages => 'Eigene Seiten';
@@ -12729,7 +12729,7 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Welche Gesichter den Bildschirmschoner schließen oder aufschieben. Erkannte Personen setzt ein in Ground Control eingelerntes Gesicht voraus.';
+      'Wähle, wessen Gesicht für das Schließen oder Aufschieben des Bildschirmschoners zählt. Erkannte Personen zählt nur Gesichter, die in Ground Control eingelernt sind.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Alle';
@@ -12745,7 +12745,7 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Für wen der Bildschirm aufwacht. Ist niemand ausgewählt, für alle erkannten Personen.';
+      'Wähle die Personen, für die der Bildschirm aufwacht. Ist niemand ausgewählt, wacht er für alle erkannten Personen auf.';
 
   @override
   String get screensaverFacePeopleNone => 'Alle erkannten Personen';
@@ -12786,7 +12786,7 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingFacePreviewPersonDescription =>
-      'Die Vorschau nimmt die Farbe der Person an und ihr Name erscheint daneben.';
+      'Die Farbe der erkannten Person um die Vorschau und ihren Namen daneben anzeigen.';
 
   @override
   String get facePreviewRecognized => 'Erkannt';

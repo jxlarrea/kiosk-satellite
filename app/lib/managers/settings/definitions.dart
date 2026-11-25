@@ -6269,8 +6269,9 @@ const screensaverFaceWho = SettingDef<String>(
   defaultValue: 'anyone',
   title: 'Faces that count',
   description:
-      'Which faces dismiss or postpone the screensaver. Recognized people '
-      'needs the face enrolled in Ground Control.',
+      'Choose whose face counts for Dismiss on face and Postpone screensaver '
+      'on face. Recognized people only counts faces enrolled in Ground '
+      'Control.',
   category: 'Screensaver',
   section: 'Face Detection',
   subpage: 'Face Detection',
@@ -6294,7 +6295,8 @@ const screensaverFacePeople = SettingDef<String>(
   defaultValue: '[]',
   title: 'People',
   description:
-      'Who the screen wakes for. With nobody chosen, anyone recognized.',
+      'Choose the people the screen wakes for. If nobody is chosen, the '
+      'screen wakes for anyone recognized.',
   category: 'Screensaver',
   section: 'Face Detection',
   subpage: 'Face Detection',
@@ -6304,15 +6306,16 @@ const screensaverFacePeople = SettingDef<String>(
   groundControl: 'vision',
 );
 
-/// The camera preview takes the recognized person's color, with their name
-/// next to it.
+/// A ring in the recognized person's color around the camera preview and
+/// their name next to it.
 const facePreviewPerson = SettingDef<bool>(
   key: 'face.preview_person',
   type: SettingType.boolean,
   defaultValue: true,
   title: 'Show who is recognized',
   description:
-      "The preview takes the person's color and their name shows next to it.",
+      "Show the recognized person's color around the preview and their name "
+      'next to it.',
   category: 'Screensaver',
   section: 'Camera Preview',
   subpage: 'Face Detection',
@@ -8385,8 +8388,9 @@ const visionMatchFaceConfirmsVoice = SettingDef<bool>(
   defaultValue: false,
   title: 'Confirm voices with faces',
   description:
-      'A voice that is close but not sure is taken when the face in front of '
-      'the kiosk is the same person. A face never names a voice on its own.',
+      "Accept a close voice match when the same person's face is recognized "
+      'at the kiosk. Only the person with the closest voiceprint can be '
+      'matched this way.',
   category: 'Ground Control',
   subpage: 'Vision Match',
   section: 'Face Recognition',

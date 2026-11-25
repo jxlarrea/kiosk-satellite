@@ -15,11 +15,11 @@
   "screensaverDetectionAndroidUnsupported": "Auf dieser Android-Version nicht verfügbar.",
   "screensaverDetectionX86Unsupported": "Auf x86-Geräten nicht verfügbar.",
   "settingScreensaverFaceWhoTitle": "Zählende Gesichter",
-  "settingScreensaverFaceWhoDescription": "Welche Gesichter den Bildschirmschoner schließen oder aufschieben. Erkannte Personen setzt ein in Ground Control eingelerntes Gesicht voraus.",
+  "settingScreensaverFaceWhoDescription": "Wähle, wessen Gesicht für das Schließen oder Aufschieben des Bildschirmschoners zählt. Erkannte Personen zählt nur Gesichter, die in Ground Control eingelernt sind.",
   "screensaverFaceWhoOptionAnyone": "Alle",
   "screensaverFaceWhoOptionRecognized": "Erkannte Personen",
   "screensaverFaceWhoOptionPeople": "Ausgewählte Personen",
   "settingScreensaverFacePeopleTitle": "Personen",
-  "settingScreensaverFacePeopleDescription": "Für wen der Bildschirm aufwacht. Ist niemand ausgewählt, für alle erkannten Personen.",
+  "settingScreensaverFacePeopleDescription": "Wähle die Personen, für die der Bildschirm aufwacht. Ist niemand ausgewählt, wacht er für alle erkannten Personen auf.",
   "screensaverFacePeopleNone": "Alle erkannten Personen"
 }

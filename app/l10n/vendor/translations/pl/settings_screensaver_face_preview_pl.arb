@@ -10,6 +10,6 @@
   "settingFacePreviewPositionDescription": "W którym rogu wyświetla się podgląd.",
   "screensaverDetectionPreviewSection": "Podgląd z kamery",
   "settingFacePreviewPersonTitle": "Pokazuj, kto został rozpoznany",
-  "settingFacePreviewPersonDescription": "Podgląd przybiera kolor osoby, a obok pojawia się jej imię.",
+  "settingFacePreviewPersonDescription": "Pokazuj kolor rozpoznanej osoby wokół podglądu i jej imię obok.",
   "facePreviewRecognized": "Rozpoznano"
 }

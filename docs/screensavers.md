@@ -439,15 +439,15 @@ Under [Lockdown Mode](kiosk.md), face events will neither dismiss nor postpone s
 
 #### Faces That Count
 
-With [Face Recognition](ground-control.md#face-recognition) on Ground Control, **Faces that count** picks which faces dismiss or postpone the screensaver:
+With [Face Recognition](ground-control.md#face-recognition) on Ground Control, use **Faces that count** to choose which faces dismiss or postpone the screensaver:
 
 | Option | What counts |
 | --- | --- |
 | Anyone | Any face looking at the kiosk. This is the default. |
 | Recognized people | Only a face Ground Control recognizes. A guest or a passing child doesn't wake the screen. |
-| Chosen people | Only the people picked under **People**. With nobody picked, anyone recognized. |
+| Chosen people | Only the people picked under **People**. If nobody is picked, anyone recognized counts. |
 
-A face counts once Ground Control names it, which takes a look or two, so the screen wakes about a second later than with Anyone. With someone else in view as well, a chosen person still counts. The row and **People** carry the GC tag and appear only while Face Recognition is on. See [Settings That Work With Ground Control](ground-control.md#settings-that-work-with-ground-control).
+A face counts once Ground Control recognizes it. That takes a look or two, so the screen wakes about a second later than with Anyone. A chosen person still counts when someone else is in view too. The **Faces that count** row and **People** have the GC tag and appear only while Face Recognition is on. See [Settings That Work With Ground Control](ground-control.md#settings-that-work-with-ground-control).
 
 ### Camera Preview
 
@@ -455,7 +455,7 @@ A face counts once Ground Control names it, which takes a look or two, so the sc
 
 | Setting | What it does |
 | --- | --- |
-| Show who is recognized | With Face Recognition on Ground Control, a ring in the person's color draws around the preview and a card with their name slides out beside it. On by default. With several people in view, the one with the highest score is shown. |
+| Show who is recognized | With Face Recognition on Ground Control, a ring in the person's color appears around the preview and a card with their name slides out beside it. On by default. When several people are in view, the preview shows the one with the highest score. |
 | Preview duration | Controls preview display time from 3 to 10 seconds (5 seconds default). |
 | Preview scaling | Scales preview size from 50% to 150% of default. |
 | Preview position | Selects the display corner for the preview overlay (top-right default). |

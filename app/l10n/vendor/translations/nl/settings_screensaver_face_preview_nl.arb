@@ -10,6 +10,6 @@
   "settingFacePreviewPositionDescription": "In welke hoek de voorbeeldweergave verschijnt.",
   "screensaverDetectionPreviewSection": "Cameravoorbeeld",
   "settingFacePreviewPersonTitle": "Tonen wie er herkend is",
-  "settingFacePreviewPersonDescription": "Het voorbeeld krijgt de kleur van de persoon en de naam verschijnt ernaast.",
+  "settingFacePreviewPersonDescription": "De kleur van de herkende persoon rond het voorbeeld tonen, met de naam ernaast.",
   "facePreviewRecognized": "Herkend"
 }

@@ -15,11 +15,11 @@
   "screensaverDetectionAndroidUnsupported": "Non disponible sur cette version d'Android.",
   "screensaverDetectionX86Unsupported": "Non disponible sur les appareils x86.",
   "settingScreensaverFaceWhoTitle": "Visages pris en compte",
-  "settingScreensaverFaceWhoDescription": "Les visages qui ferment ou repoussent l'économiseur d'écran. Personnes reconnues nécessite un visage enregistré dans Ground Control.",
+  "settingScreensaverFaceWhoDescription": "Choisissez les visages pris en compte pour fermer ou repousser l'économiseur d'écran. Personnes reconnues ne compte que les visages enregistrés dans Ground Control.",
   "screensaverFaceWhoOptionAnyone": "Tout le monde",
   "screensaverFaceWhoOptionRecognized": "Personnes reconnues",
   "screensaverFaceWhoOptionPeople": "Personnes choisies",
   "settingScreensaverFacePeopleTitle": "Personnes",
-  "settingScreensaverFacePeopleDescription": "Pour qui l'écran se réveille. Si personne n'est choisi, pour toute personne reconnue.",
+  "settingScreensaverFacePeopleDescription": "Choisissez les personnes pour qui l'écran se réveille. Si personne n'est choisi, l'écran se réveille pour toute personne reconnue.",
   "screensaverFacePeopleNone": "Toute personne reconnue"
 }

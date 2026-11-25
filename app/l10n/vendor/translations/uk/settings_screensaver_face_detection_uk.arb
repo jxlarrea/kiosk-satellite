@@ -15,11 +15,11 @@
   "screensaverDetectionAndroidUnsupported": "Не підтримується на цій версії Android.",
   "screensaverDetectionX86Unsupported": "Не підтримується на пристроях з архітектурою x86.",
   "settingScreensaverFaceWhoTitle": "Обличчя, що враховуються",
-  "settingScreensaverFaceWhoDescription": "Які обличчя вимикають або відкладають заставку. Для варіанта «Впізнані люди» обличчя має бути зареєстроване в Ground Control.",
+  "settingScreensaverFaceWhoDescription": "Виберіть, чиє обличчя враховується для вимкнення або відкладення заставки. Варіант «Впізнані люди» враховує лише обличчя, зареєстровані в Ground Control.",
   "screensaverFaceWhoOptionAnyone": "Будь-хто",
   "screensaverFaceWhoOptionRecognized": "Впізнані люди",
   "screensaverFaceWhoOptionPeople": "Вибрані люди",
   "settingScreensaverFacePeopleTitle": "Люди",
-  "settingScreensaverFacePeopleDescription": "Для кого вмикається екран. Якщо нікого не вибрано, для будь-кого впізнаного.",
+  "settingScreensaverFacePeopleDescription": "Виберіть людей, для яких вмикається екран. Якщо нікого не вибрано, екран вмикається для будь-кого впізнаного.",
   "screensaverFacePeopleNone": "Будь-хто впізнаний"
 }

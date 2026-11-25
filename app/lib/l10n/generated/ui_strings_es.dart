@@ -1308,7 +1308,7 @@ class UiStringsEs extends UiStrings {
   String get faceEnrollHintNoFace => 'No se ve ningún rostro';
 
   @override
-  String get faceEnrollHintSeveral => 'Solo una persona a la vista, por favor';
+  String get faceEnrollHintSeveral => 'Solo debe haber una persona a la vista';
 
   @override
   String get faceEnrollHintCloser => 'Acércate un poco';
@@ -8798,7 +8798,7 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingVisionMatchFaceConfirmsVoiceDescription =>
-      'Una voz parecida pero no segura se acepta cuando el rostro frente al kiosko es de la misma persona. Un rostro nunca identifica una voz por sí solo.';
+      'Acepta una voz parecida cuando se reconoce el rostro de la misma persona en el kiosko. Solo se puede asignar así a la persona con la huella de voz más parecida.';
 
   @override
   String get groundControlUsedElsewhere => 'Usado en otros ajustes';
@@ -8831,11 +8831,11 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get groundControlTagVision =>
-      'Este ajuste funciona con Kiosk Satellite Ground Control, una aplicación aparte que se ejecuta en un ordenador de tu casa. Usa el reconocimiento facial y solo aparece mientras está activado, en Configuración > Ground Control > Vision Match.';
+      'Este ajuste necesita Kiosk Satellite Ground Control. Ground Control es una aplicación aparte que se ejecuta en un ordenador de tu casa. El ajuste usa el reconocimiento facial y solo aparece mientras el reconocimiento facial está activado en Configuración > Ground Control > Vision Match.';
 
   @override
   String get groundControlTagVoice =>
-      'Este ajuste funciona con Kiosk Satellite Ground Control, una aplicación aparte que se ejecuta en un ordenador de tu casa. Usa Voice Match y solo aparece mientras está activado, en Configuración > Ground Control > Voice Match.';
+      'Este ajuste necesita Kiosk Satellite Ground Control. Ground Control es una aplicación aparte que se ejecuta en un ordenador de tu casa. El ajuste usa Voice Match y solo aparece mientras Voice Match está activado en Configuración > Ground Control > Voice Match.';
 
   @override
   String get haCustomPages => 'Páginas personalizadas';
@@ -12691,7 +12691,7 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Qué rostros cierran o aplazan el protector de pantalla. Personas reconocidas requiere el rostro registrado en Ground Control.';
+      'Elige de quién cuenta el rostro para cerrar o aplazar el protector de pantalla. Personas reconocidas solo cuenta los rostros registrados en Ground Control.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Cualquiera';
@@ -12707,7 +12707,7 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Para quién se activa la pantalla. Si no eliges a nadie, para cualquier persona reconocida.';
+      'Elige las personas para las que se activa la pantalla. Si no eliges a nadie, se activa para cualquier persona reconocida.';
 
   @override
   String get screensaverFacePeopleNone => 'Cualquier persona reconocida';
@@ -12748,7 +12748,7 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingFacePreviewPersonDescription =>
-      'La vista previa toma el color de la persona y su nombre aparece al lado.';
+      'Muestra el color de la persona reconocida alrededor de la vista previa y su nombre al lado.';
 
   @override
   String get facePreviewRecognized => 'Reconocido';

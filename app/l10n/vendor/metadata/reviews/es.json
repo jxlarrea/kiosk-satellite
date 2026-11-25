@@ -25915,8 +25915,8 @@
     "author": "Xavier Larrea"
   },
   "faceEnrollHintSeveral": {
-    "source": "b77f816e0e359055ed53fd6f49bd3f2eabb7eca6134410d32f7922d3acbad0a0",
-    "translation": "3371bd43a1fd409779233f08da85971df9a3e5ea3e16b9157ef2acda505cd9bc",
+    "source": "7566498728d2ad1a5d2ea3521544bb2b0f720d7093557674c49e4a7c49872200",
+    "translation": "ea98426702990bb69a42f4e717aa78789dc1ee3bd2c6b6bb82d258ab8f393ce1",
     "author": "Xavier Larrea"
   },
   "faceEnrollStepOf": {
@@ -26055,8 +26055,8 @@
     "author": "Xavier Larrea"
   },
   "groundControlTagVoice": {
-    "source": "e92e647648a3fb8a3c2e221babdab3224c7af48a9cfbe321f738e1c05a06940d",
-    "translation": "b1d8ba9587dfb79526817ecc37d60371d7588927e07d483d543e8c935d00a1b4",
+    "source": "721858b447002d7829a24e5aa4ea7e00ac2ca7423640413072a0830c6f112859",
+    "translation": "c9771d435af3d9a17cd96b7956946fff228f053a52bfb193df858cecd9b1e5f0",
     "author": "Xavier Larrea"
   },
   "settingVisionMatchLinkFaceWhoDescription": {
@@ -26090,13 +26090,13 @@
     "author": "Xavier Larrea"
   },
   "settingScreensaverFacePeopleDescription": {
-    "source": "e4170b282f49f3f5872edfc119cabba8777e162e0f3c50f52d1e6205ee7fc259",
-    "translation": "f7b261a4dc3244f2a4b2114b236f4a470946dedd278c618ac41b07da76b58e1f",
+    "source": "4cf948243c6cb16f8dbc678b19f284ea02632c87016f379e51faf8e86c60bedb",
+    "translation": "079e532f9e3060f51760463354503d6b29e3d6cf12170f7bec83af1372279ff3",
     "author": "Xavier Larrea"
   },
   "groundControlTagVision": {
-    "source": "555ad165ddce03c243694fd3d853db9c463881e9bf4307ee81f4cb1c27fd83be",
-    "translation": "117573b37ebe0506143e59161761bcb253847350b7c47dbe8cc3367723223d59",
+    "source": "c2d61959b1836927bbe0616cf7822b51489152be9a4e31ab4647e942556df9f8",
+    "translation": "bd10d5eb46df7e55a92fb62f875ca9bee67cd6e3c3aeb0cc0dc01b92172cee44",
     "author": "Xavier Larrea"
   },
   "settingVisionMatchFaceConfirmsVoiceTitle": {
@@ -26105,8 +26105,8 @@
     "author": "Xavier Larrea"
   },
   "settingScreensaverFaceWhoDescription": {
-    "source": "e9410e187449e649d6ee8e5e468aff3da7c7c797e89080689c5a22173381008b",
-    "translation": "513da1dd1814c1850ff6898e233fc5aba0a382eba25706ffed9a87dee5da5179",
+    "source": "87486500b232bca2fe81b22a12a365ddf30cc528116054f18ea70338c88c75c6",
+    "translation": "cfde17b4648c01684f1dc674d4d869e083238c8de8a77ae926ebf8323cce1046",
     "author": "Xavier Larrea"
   },
   "settingScreensaverFacePeopleTitle": {
@@ -26115,8 +26115,8 @@
     "author": "Xavier Larrea"
   },
   "settingFacePreviewPersonDescription": {
-    "source": "2f3450efbd6618863fcccade25301fbbcc95df03f069c0bad4044a893bc5cabe",
-    "translation": "c05f13bdaee0c47c0a08011a70475eccdfa4ae73d85846d1a1a9dcda1dc3ca13",
+    "source": "2e5be59d22c5e0cafb9312c393eecf7138f17f4536b92aa3e7fd01f5861a7d91",
+    "translation": "bc52059ea2f72f3a1da9177f28e724a160ca6817ec8c760c4d0a3be1e3308066",
     "author": "Xavier Larrea"
   },
   "groundControlUsedElsewhere": {
@@ -26150,8 +26150,8 @@
     "author": "Xavier Larrea"
   },
   "settingVisionMatchFaceConfirmsVoiceDescription": {
-    "source": "c0c9181c3424404af5fc11254164e422a9f87e3c8a9085dde69bab89542849d4",
-    "translation": "b38d05ad6ddbcb1f47d89ff69078b30d9dd298a897cb540fddffae20982e131d",
+    "source": "b3c1adde7c5ddcc10ab19e4dce60a79e2b4cc030932e6c89ff4636889057a401",
+    "translation": "1bbb7de28292b5cb0e4947af42b9618bff39bd696c464308ad88e95d6b7b2d67",
     "author": "Xavier Larrea"
   },
   "facePreviewRecognized": {

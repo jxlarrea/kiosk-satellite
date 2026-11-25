@@ -35,7 +35,7 @@
   "faceEnrollNameLabel": "姓名",
   "faceEnrollStart": "开始",
   "settingVisionMatchFaceConfirmsVoiceTitle": "用人脸确认声音",
-  "settingVisionMatchFaceConfirmsVoiceDescription": "当声音接近但不确定，而 Kiosk 前的人脸是同一个人时，会采纳该声音。人脸绝不会单独确定声音是谁的。",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "当在 Kiosk 前识别到同一个人的人脸时，接受相近的声音匹配。只有声纹最接近的人才能以这种方式匹配。",
   "groundControlUsedElsewhere": "在其他设置中使用",
   "settingVisionMatchLinkFaceWhoDescription": "屏保 > 人脸检测",
   "settingVisionMatchLinkPreviewPersonDescription": "屏保 > 人脸检测 > 摄像头预览",
@@ -44,6 +44,6 @@
   "groundControlValuePeople": "{option}：{names}",
   "groundControlTagHint": "Ground Control 设置。了解详情",
   "groundControlTagTitle": "Ground Control 设置",
-  "groundControlTagVision": "此设置需配合 Kiosk Satellite Ground Control 使用，这是一款在你家中电脑上运行的独立应用。它使用人脸识别，仅在“设置 > Ground Control > Vision Match”中开启人脸识别时显示。",
-  "groundControlTagVoice": "此设置需配合 Kiosk Satellite Ground Control 使用，这是一款在你家中电脑上运行的独立应用。它使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启时显示。"
+  "groundControlTagVision": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用人脸识别，仅在“设置 > Ground Control > Vision Match”中开启人脸识别时显示。",
+  "groundControlTagVoice": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启 Voice Match 时显示。"
 }

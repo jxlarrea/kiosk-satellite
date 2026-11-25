@@ -10,6 +10,6 @@
   "settingFacePreviewPositionDescription": "预览显示的屏幕角落。",
   "screensaverDetectionPreviewSection": "摄像头预览",
   "settingFacePreviewPersonTitle": "显示识别出的人",
-  "settingFacePreviewPersonDescription": "预览会变成此人的颜色，并在旁边显示其姓名。",
+  "settingFacePreviewPersonDescription": "在预览周围显示识别出的人的颜色，并在旁边显示其姓名。",
   "facePreviewRecognized": "已识别"
 }

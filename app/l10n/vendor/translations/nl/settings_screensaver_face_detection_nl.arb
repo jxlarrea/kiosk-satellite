@@ -15,11 +15,11 @@
   "screensaverDetectionAndroidUnsupported": "Niet beschikbaar op deze Android-versie.",
   "screensaverDetectionX86Unsupported": "Niet beschikbaar op x86-apparaten.",
   "settingScreensaverFaceWhoTitle": "Gezichten die tellen",
-  "settingScreensaverFaceWhoDescription": "Welke gezichten de schermbeveiliging sluiten of uitstellen. Herkende personen vereist een gezicht dat in Ground Control is ingeschreven.",
+  "settingScreensaverFaceWhoDescription": "Kies wiens gezicht telt voor het sluiten of uitstellen van de schermbeveiliging. Herkende personen telt alleen gezichten die in Ground Control zijn ingeschreven.",
   "screensaverFaceWhoOptionAnyone": "Iedereen",
   "screensaverFaceWhoOptionRecognized": "Herkende personen",
   "screensaverFaceWhoOptionPeople": "Gekozen personen",
   "settingScreensaverFacePeopleTitle": "Personen",
-  "settingScreensaverFacePeopleDescription": "Voor wie het scherm wakker wordt. Is er niemand gekozen, dan voor iedereen die herkend wordt.",
+  "settingScreensaverFacePeopleDescription": "Kies de personen voor wie het scherm wakker wordt. Is er niemand gekozen, dan wordt het scherm wakker voor iedereen die herkend wordt.",
   "screensaverFacePeopleNone": "Iedereen die herkend wordt"
 }

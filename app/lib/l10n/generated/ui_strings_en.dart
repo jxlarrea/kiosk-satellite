@@ -1298,7 +1298,7 @@ class UiStringsEn extends UiStrings {
   String get faceEnrollHintNoFace => 'No face in view';
 
   @override
-  String get faceEnrollHintSeveral => 'Only one person in view, please';
+  String get faceEnrollHintSeveral => 'Only one person should be in view';
 
   @override
   String get faceEnrollHintCloser => 'Come a little closer';
@@ -8657,7 +8657,7 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingVisionMatchFaceConfirmsVoiceDescription =>
-      'A voice that is close but not sure is taken when the face in front of the kiosk is the same person. A face never names a voice on its own.';
+      'Accept a close voice match when the same person\'s face is recognized at the kiosk. Only the person with the closest voiceprint can be matched this way.';
 
   @override
   String get groundControlUsedElsewhere => 'Used in other settings';
@@ -8689,11 +8689,11 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get groundControlTagVision =>
-      'This setting works with Kiosk Satellite Ground Control, a separate app that runs on a computer in your home. It uses Face Recognition and shows only while that is on, under Settings > Ground Control > Vision Match.';
+      'This setting needs Kiosk Satellite Ground Control. Ground Control is a separate app that runs on a computer in your home. The setting uses Face Recognition and only shows while Face Recognition is on in Settings > Ground Control > Vision Match.';
 
   @override
   String get groundControlTagVoice =>
-      'This setting works with Kiosk Satellite Ground Control, a separate app that runs on a computer in your home. It uses Voice Match and shows only while that is on, under Settings > Ground Control > Voice Match.';
+      'This setting needs Kiosk Satellite Ground Control. Ground Control is a separate app that runs on a computer in your home. The setting uses Voice Match and only shows while Voice Match is on in Settings > Ground Control > Voice Match.';
 
   @override
   String get haCustomPages => 'Custom Pages';
@@ -12467,7 +12467,7 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Which faces dismiss or postpone the screensaver. Recognized people needs the face enrolled in Ground Control.';
+      'Choose whose face counts for Dismiss on face and Postpone screensaver on face. Recognized people only counts faces enrolled in Ground Control.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Anyone';
@@ -12483,7 +12483,7 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Who the screen wakes for. With nobody chosen, anyone recognized.';
+      'Choose the people the screen wakes for. If nobody is chosen, the screen wakes for anyone recognized.';
 
   @override
   String get screensaverFacePeopleNone => 'Anyone recognized';
@@ -12524,7 +12524,7 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingFacePreviewPersonDescription =>
-      'The preview takes the person\'s color and their name shows next to it.';
+      'Show the recognized person\'s color around the preview and their name next to it.';
 
   @override
   String get facePreviewRecognized => 'Recognized';

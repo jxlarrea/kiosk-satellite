@@ -434,7 +434,7 @@
       ]
     }
   },
-  "settingVisionMatchFaceConfirmsVoiceDescription": "A voice that is close but not sure is taken when the face in front of the kiosk is the same person. A face never names a voice on its own.",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Accept a close voice match when the same person's face is recognized at the kiosk. Only the person with the closest voiceprint can be matched this way.",
   "@settingVisionMatchFaceConfirmsVoiceDescription": {
     "context": "Settings > Ground Control > Vision Match",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -561,7 +561,7 @@
       ]
     }
   },
-  "groundControlTagVision": "This setting works with Kiosk Satellite Ground Control, a separate app that runs on a computer in your home. It uses Face Recognition and shows only while that is on, under Settings > Ground Control > Vision Match.",
+  "groundControlTagVision": "This setting needs Kiosk Satellite Ground Control. Ground Control is a separate app that runs on a computer in your home. The setting uses Face Recognition and only shows while Face Recognition is on in Settings > Ground Control > Vision Match.",
   "@groundControlTagVision": {
     "context": "Settings, GC tag",
     "description": "Dialog text for a setting that needs Face Recognition. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -574,7 +574,7 @@
       ]
     }
   },
-  "groundControlTagVoice": "This setting works with Kiosk Satellite Ground Control, a separate app that runs on a computer in your home. It uses Voice Match and shows only while that is on, under Settings > Ground Control > Voice Match.",
+  "groundControlTagVoice": "This setting needs Kiosk Satellite Ground Control. Ground Control is a separate app that runs on a computer in your home. The setting uses Voice Match and only shows while Voice Match is on in Settings > Ground Control > Voice Match.",
   "@groundControlTagVoice": {
     "context": "Settings, GC tag",
     "description": "Dialog text for a setting that needs Voice Match. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

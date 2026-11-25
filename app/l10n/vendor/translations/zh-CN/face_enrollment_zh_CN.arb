@@ -7,7 +7,7 @@
   "faceEnrollStepSideB": "现在稍微转向另一侧",
   "faceEnrollStepFar": "向后退一步",
   "faceEnrollHintNoFace": "画面中没有人脸",
-  "faceEnrollHintSeveral": "画面中请只保留一个人",
+  "faceEnrollHintSeveral": "画面中应只有一个人",
   "faceEnrollHintCloser": "请再靠近一点",
   "faceEnrollHintFarther": "请再后退一点",
   "faceEnrollHintTurnMore": "再多转一点",

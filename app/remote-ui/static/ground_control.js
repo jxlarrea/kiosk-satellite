@@ -194,8 +194,8 @@ export function groundControlTag(feature) {
     messageBox({
       title: () => t('groundControlTagTitle', {}, 'A Ground Control setting'),
       message: () => (feature === 'voice'
-        ? t('groundControlTagVoice', {}, 'This setting works with Ground Control and its Voice Match.')
-        : t('groundControlTagVision', {}, 'This setting works with Ground Control and its Face Recognition.')),
+        ? t('groundControlTagVoice', {}, 'This setting needs Kiosk Satellite Ground Control and Voice Match.')
+        : t('groundControlTagVision', {}, 'This setting needs Kiosk Satellite Ground Control and Face Recognition.')),
       buttons: ['Close'],
       buttonText: () => t('commonClose', {}, 'Close'),
     });

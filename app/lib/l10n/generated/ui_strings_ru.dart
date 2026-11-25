@@ -1306,7 +1306,7 @@ class UiStringsRu extends UiStrings {
   String get faceEnrollHintNoFace => 'Лицо не видно';
 
   @override
-  String get faceEnrollHintSeveral => 'Пожалуйста, только один человек в кадре';
+  String get faceEnrollHintSeveral => 'В кадре должен быть только один человек';
 
   @override
   String get faceEnrollHintCloser => 'Подойдите немного ближе';
@@ -8712,7 +8712,7 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingVisionMatchFaceConfirmsVoiceDescription =>
-      'Похожий, но неуверенно распознанный голос принимается, если лицо перед киоском принадлежит тому же человеку. Лицо никогда само не определяет голос.';
+      'Принимать похожий голос, когда перед киоском распознано лицо того же человека. Так можно определить только человека с самым близким голосовым отпечатком.';
 
   @override
   String get groundControlUsedElsewhere => 'Используется в других настройках';
@@ -8744,11 +8744,11 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get groundControlTagVision =>
-      'Эта настройка работает с Kiosk Satellite Ground Control, отдельным приложением, которое запущено на компьютере у вас дома. Она использует распознавание лиц и показывается только пока оно включено в разделе Настройки > Ground Control > Vision Match.';
+      'Этой настройке нужен Kiosk Satellite Ground Control. Ground Control является отдельным приложением, которое работает на компьютере у вас дома. Настройка использует распознавание лиц и показывается, только пока распознавание лиц включено в разделе Настройки > Ground Control > Vision Match.';
 
   @override
   String get groundControlTagVoice =>
-      'Эта настройка работает с Kiosk Satellite Ground Control, отдельным приложением, которое запущено на компьютере у вас дома. Она использует Voice Match и показывается только пока он включён в разделе Настройки > Ground Control > Voice Match.';
+      'Этой настройке нужен Kiosk Satellite Ground Control. Ground Control является отдельным приложением, которое работает на компьютере у вас дома. Настройка использует Voice Match и показывается, только пока Voice Match включён в разделе Настройки > Ground Control > Voice Match.';
 
   @override
   String get haCustomPages => 'Свои страницы';
@@ -12567,7 +12567,7 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Какие лица закрывают или откладывают заставку. Для варианта «Распознанные люди» лицо должно быть записано в Ground Control.';
+      'Выберите, чьё лицо учитывается для закрытия или откладывания заставки. Вариант «Распознанные люди» учитывает только лица, записанные в Ground Control.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Все';
@@ -12583,7 +12583,7 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Для кого включается экран. Если никто не выбран, для любого распознанного человека.';
+      'Выберите людей, для которых включается экран. Если никто не выбран, экран включается для любого распознанного человека.';
 
   @override
   String get screensaverFacePeopleNone => 'Любой распознанный человек';
@@ -12624,7 +12624,7 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingFacePreviewPersonDescription =>
-      'Превью принимает цвет человека, а рядом появляется его имя.';
+      'Показывать цвет распознанного человека вокруг превью и его имя рядом.';
 
   @override
   String get facePreviewRecognized => 'Распознан';

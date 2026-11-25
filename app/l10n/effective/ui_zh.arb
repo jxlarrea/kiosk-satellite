@@ -4968,7 +4968,7 @@
       ]
     }
   },
-  "faceEnrollHintSeveral": "画面中请只保留一个人",
+  "faceEnrollHintSeveral": "画面中应只有一个人",
   "@faceEnrollHintSeveral": {
     "context": "Face Recognition enrollment screen",
     "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
@@ -32684,7 +32684,7 @@
       ]
     }
   },
-  "settingVisionMatchFaceConfirmsVoiceDescription": "当声音接近但不确定，而 Kiosk 前的人脸是同一个人时，会采纳该声音。人脸绝不会单独确定声音是谁的。",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "当在 Kiosk 前识别到同一个人的人脸时，接受相近的声音匹配。只有声纹最接近的人才能以这种方式匹配。",
   "@settingVisionMatchFaceConfirmsVoiceDescription": {
     "context": "Settings > Ground Control > Vision Match",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -32811,7 +32811,7 @@
       ]
     }
   },
-  "groundControlTagVision": "此设置需配合 Kiosk Satellite Ground Control 使用，这是一款在你家中电脑上运行的独立应用。它使用人脸识别，仅在“设置 > Ground Control > Vision Match”中开启人脸识别时显示。",
+  "groundControlTagVision": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用人脸识别，仅在“设置 > Ground Control > Vision Match”中开启人脸识别时显示。",
   "@groundControlTagVision": {
     "context": "Settings, GC tag",
     "description": "Dialog text for a setting that needs Face Recognition. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -32824,7 +32824,7 @@
       ]
     }
   },
-  "groundControlTagVoice": "此设置需配合 Kiosk Satellite Ground Control 使用，这是一款在你家中电脑上运行的独立应用。它使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启时显示。",
+  "groundControlTagVoice": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启 Voice Match 时显示。",
   "@groundControlTagVoice": {
     "context": "Settings, GC tag",
     "description": "Dialog text for a setting that needs Voice Match. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -46885,7 +46885,7 @@
       ]
     }
   },
-  "settingScreensaverFaceWhoDescription": "哪些人脸会关闭或推迟屏保。“已识别的人”需要先在 Ground Control 中录入人脸。",
+  "settingScreensaverFaceWhoDescription": "选择谁的人脸可以关闭或推迟屏保。“已识别的人”只计入在 Ground Control 中录入的人脸。",
   "@settingScreensaverFaceWhoDescription": {
     "context": "Settings > Screensaver > Face Detection",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -46950,7 +46950,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "屏幕为谁唤醒。如果没有选择任何人，则为任何已识别的人。",
+  "settingScreensaverFacePeopleDescription": "选择屏幕为哪些人唤醒。如果没有选择任何人，屏幕会为任何已识别的人唤醒。",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -47106,7 +47106,7 @@
       ]
     }
   },
-  "settingFacePreviewPersonDescription": "预览会变成此人的颜色，并在旁边显示其姓名。",
+  "settingFacePreviewPersonDescription": "在预览周围显示识别出的人的颜色，并在旁边显示其姓名。",
   "@settingFacePreviewPersonDescription": {
     "context": "Settings > Screensaver > Face Detection > Camera Preview",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

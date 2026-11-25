@@ -1307,7 +1307,7 @@ class UiStringsPl extends UiStrings {
   String get faceEnrollHintNoFace => 'Nie widać twarzy';
 
   @override
-  String get faceEnrollHintSeveral => 'Proszę, tylko jedna osoba w kadrze';
+  String get faceEnrollHintSeveral => 'W kadrze powinna być tylko jedna osoba';
 
   @override
   String get faceEnrollHintCloser => 'Podejdź trochę bliżej';
@@ -8747,7 +8747,7 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get settingVisionMatchFaceConfirmsVoiceDescription =>
-      'Głos podobny, ale niepewny jest przyjmowany, gdy twarz przed kioskiem należy do tej samej osoby. Twarz nigdy sama nie przypisuje głosu.';
+      'Przyjmuj podobny głos, gdy przed kioskiem rozpoznano twarz tej samej osoby. W ten sposób można dopasować tylko osobę z najbardziej podobnym odciskiem głosu.';
 
   @override
   String get groundControlUsedElsewhere => 'Używane w innych ustawieniach';
@@ -8780,11 +8780,11 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get groundControlTagVision =>
-      'To ustawienie działa z Kiosk Satellite Ground Control, osobną aplikacją działającą na komputerze w Twoim domu. Korzysta z rozpoznawania twarzy i jest widoczne tylko wtedy, gdy jest ono włączone w Ustawienia > Ground Control > Vision Match.';
+      'To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z rozpoznawania twarzy i jest widoczne tylko wtedy, gdy rozpoznawanie twarzy jest włączone w Ustawienia > Ground Control > Vision Match.';
 
   @override
   String get groundControlTagVoice =>
-      'To ustawienie działa z Kiosk Satellite Ground Control, osobną aplikacją działającą na komputerze w Twoim domu. Korzysta z Voice Match i jest widoczne tylko wtedy, gdy jest on włączony w Ustawienia > Ground Control > Voice Match.';
+      'To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z Voice Match i jest widoczne tylko wtedy, gdy Voice Match jest włączony w Ustawienia > Ground Control > Voice Match.';
 
   @override
   String get haCustomPages => 'Własne strony';
@@ -12610,7 +12610,7 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get settingScreensaverFaceWhoDescription =>
-      'Które twarze zamykają lub odkładają wygaszacz ekranu. Opcja Rozpoznane osoby wymaga twarzy zarejestrowanej w Ground Control.';
+      'Wybierz, czyja twarz liczy się przy zamykaniu lub odkładaniu wygaszacza ekranu. Opcja Rozpoznane osoby liczy tylko twarze zarejestrowane w Ground Control.';
 
   @override
   String get screensaverFaceWhoOptionAnyone => 'Każdy';
@@ -12626,7 +12626,7 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get settingScreensaverFacePeopleDescription =>
-      'Dla kogo ekran się wybudza. Jeśli nikt nie jest wybrany, dla każdej rozpoznanej osoby.';
+      'Wybierz osoby, dla których ekran się wybudza. Jeśli nikt nie jest wybrany, ekran wybudza się dla każdej rozpoznanej osoby.';
 
   @override
   String get screensaverFacePeopleNone => 'Każda rozpoznana osoba';
@@ -12667,7 +12667,7 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get settingFacePreviewPersonDescription =>
-      'Podgląd przybiera kolor osoby, a obok pojawia się jej imię.';
+      'Pokazuj kolor rozpoznanej osoby wokół podglądu i jej imię obok.';
 
   @override
   String get facePreviewRecognized => 'Rozpoznano';

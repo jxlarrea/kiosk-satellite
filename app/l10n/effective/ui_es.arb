@@ -4968,7 +4968,7 @@
       ]
     }
   },
-  "faceEnrollHintSeveral": "Solo una persona a la vista, por favor",
+  "faceEnrollHintSeveral": "Solo debe haber una persona a la vista",
   "@faceEnrollHintSeveral": {
     "context": "Face Recognition enrollment screen",
     "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
@@ -32684,7 +32684,7 @@
       ]
     }
   },
-  "settingVisionMatchFaceConfirmsVoiceDescription": "Una voz parecida pero no segura se acepta cuando el rostro frente al kiosko es de la misma persona. Un rostro nunca identifica una voz por sí solo.",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Acepta una voz parecida cuando se reconoce el rostro de la misma persona en el kiosko. Solo se puede asignar así a la persona con la huella de voz más parecida.",
   "@settingVisionMatchFaceConfirmsVoiceDescription": {
     "context": "Settings > Ground Control > Vision Match",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -32811,7 +32811,7 @@
       ]
     }
   },
-  "groundControlTagVision": "Este ajuste funciona con Kiosk Satellite Ground Control, una aplicación aparte que se ejecuta en un ordenador de tu casa. Usa el reconocimiento facial y solo aparece mientras está activado, en Configuración > Ground Control > Vision Match.",
+  "groundControlTagVision": "Este ajuste necesita Kiosk Satellite Ground Control. Ground Control es una aplicación aparte que se ejecuta en un ordenador de tu casa. El ajuste usa el reconocimiento facial y solo aparece mientras el reconocimiento facial está activado en Configuración > Ground Control > Vision Match.",
   "@groundControlTagVision": {
     "context": "Settings, GC tag",
     "description": "Dialog text for a setting that needs Face Recognition. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -32824,7 +32824,7 @@
       ]
     }
   },
-  "groundControlTagVoice": "Este ajuste funciona con Kiosk Satellite Ground Control, una aplicación aparte que se ejecuta en un ordenador de tu casa. Usa Voice Match y solo aparece mientras está activado, en Configuración > Ground Control > Voice Match.",
+  "groundControlTagVoice": "Este ajuste necesita Kiosk Satellite Ground Control. Ground Control es una aplicación aparte que se ejecuta en un ordenador de tu casa. El ajuste usa Voice Match y solo aparece mientras Voice Match está activado en Configuración > Ground Control > Voice Match.",
   "@groundControlTagVoice": {
     "context": "Settings, GC tag",
     "description": "Dialog text for a setting that needs Voice Match. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -46885,7 +46885,7 @@
       ]
     }
   },
-  "settingScreensaverFaceWhoDescription": "Qué rostros cierran o aplazan el protector de pantalla. Personas reconocidas requiere el rostro registrado en Ground Control.",
+  "settingScreensaverFaceWhoDescription": "Elige de quién cuenta el rostro para cerrar o aplazar el protector de pantalla. Personas reconocidas solo cuenta los rostros registrados en Ground Control.",
   "@settingScreensaverFaceWhoDescription": {
     "context": "Settings > Screensaver > Face Detection",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -46950,7 +46950,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Para quién se activa la pantalla. Si no eliges a nadie, para cualquier persona reconocida.",
+  "settingScreensaverFacePeopleDescription": "Elige las personas para las que se activa la pantalla. Si no eliges a nadie, se activa para cualquier persona reconocida.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -47106,7 +47106,7 @@
       ]
     }
   },
-  "settingFacePreviewPersonDescription": "La vista previa toma el color de la persona y su nombre aparece al lado.",
+  "settingFacePreviewPersonDescription": "Muestra el color de la persona reconocida alrededor de la vista previa y su nombre al lado.",
   "@settingFacePreviewPersonDescription": {
     "context": "Settings > Screensaver > Face Detection > Camera Preview",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

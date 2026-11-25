@@ -15,11 +15,11 @@
   "screensaverDetectionAndroidUnsupported": "Niedostępne w tej wersji Androida.",
   "screensaverDetectionX86Unsupported": "Niedostępne na urządzeniach x86.",
   "settingScreensaverFaceWhoTitle": "Uwzględniane twarze",
-  "settingScreensaverFaceWhoDescription": "Które twarze zamykają lub odkładają wygaszacz ekranu. Opcja Rozpoznane osoby wymaga twarzy zarejestrowanej w Ground Control.",
+  "settingScreensaverFaceWhoDescription": "Wybierz, czyja twarz liczy się przy zamykaniu lub odkładaniu wygaszacza ekranu. Opcja Rozpoznane osoby liczy tylko twarze zarejestrowane w Ground Control.",
   "screensaverFaceWhoOptionAnyone": "Każdy",
   "screensaverFaceWhoOptionRecognized": "Rozpoznane osoby",
   "screensaverFaceWhoOptionPeople": "Wybrane osoby",
   "settingScreensaverFacePeopleTitle": "Osoby",
-  "settingScreensaverFacePeopleDescription": "Dla kogo ekran się wybudza. Jeśli nikt nie jest wybrany, dla każdej rozpoznanej osoby.",
+  "settingScreensaverFacePeopleDescription": "Wybierz osoby, dla których ekran się wybudza. Jeśli nikt nie jest wybrany, ekran wybudza się dla każdej rozpoznanej osoby.",
   "screensaverFacePeopleNone": "Każda rozpoznana osoba"
 }

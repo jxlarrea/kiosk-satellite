@@ -35,7 +35,7 @@
   "faceEnrollNameLabel": "Имя",
   "faceEnrollStart": "Начать",
   "settingVisionMatchFaceConfirmsVoiceTitle": "Подтверждать голоса лицами",
-  "settingVisionMatchFaceConfirmsVoiceDescription": "Похожий, но неуверенно распознанный голос принимается, если лицо перед киоском принадлежит тому же человеку. Лицо никогда само не определяет голос.",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Принимать похожий голос, когда перед киоском распознано лицо того же человека. Так можно определить только человека с самым близким голосовым отпечатком.",
   "groundControlUsedElsewhere": "Используется в других настройках",
   "settingVisionMatchLinkFaceWhoDescription": "Заставка > Определение лица",
   "settingVisionMatchLinkPreviewPersonDescription": "Заставка > Определение лица > Превью камеры",
@@ -44,6 +44,6 @@
   "groundControlValuePeople": "{option}: {names}",
   "groundControlTagHint": "Настройка Ground Control. Подробнее",
   "groundControlTagTitle": "Настройка Ground Control",
-  "groundControlTagVision": "Эта настройка работает с Kiosk Satellite Ground Control, отдельным приложением, которое запущено на компьютере у вас дома. Она использует распознавание лиц и показывается только пока оно включено в разделе Настройки > Ground Control > Vision Match.",
-  "groundControlTagVoice": "Эта настройка работает с Kiosk Satellite Ground Control, отдельным приложением, которое запущено на компьютере у вас дома. Она использует Voice Match и показывается только пока он включён в разделе Настройки > Ground Control > Voice Match."
+  "groundControlTagVision": "Этой настройке нужен Kiosk Satellite Ground Control. Ground Control является отдельным приложением, которое работает на компьютере у вас дома. Настройка использует распознавание лиц и показывается, только пока распознавание лиц включено в разделе Настройки > Ground Control > Vision Match.",
+  "groundControlTagVoice": "Этой настройке нужен Kiosk Satellite Ground Control. Ground Control является отдельным приложением, которое работает на компьютере у вас дома. Настройка использует Voice Match и показывается, только пока Voice Match включён в разделе Настройки > Ground Control > Voice Match."
 }

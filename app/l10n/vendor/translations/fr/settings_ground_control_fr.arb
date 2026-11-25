@@ -35,7 +35,7 @@
   "faceEnrollNameLabel": "Nom",
   "faceEnrollStart": "Commencer",
   "settingVisionMatchFaceConfirmsVoiceTitle": "Confirmer les voix par les visages",
-  "settingVisionMatchFaceConfirmsVoiceDescription": "Une voix proche mais incertaine est acceptée quand le visage devant le kiosque est celui de la même personne. Un visage n'identifie jamais une voix à lui seul.",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Accepter une voix proche quand le visage de la même personne est reconnu devant le kiosque. Seule la personne à l'empreinte vocale la plus proche peut être reconnue ainsi.",
   "groundControlUsedElsewhere": "Utilisé dans d'autres paramètres",
   "settingVisionMatchLinkFaceWhoDescription": "Économiseur d'écran > Détection de visage",
   "settingVisionMatchLinkPreviewPersonDescription": "Économiseur d'écran > Détection de visage > Aperçu caméra",
@@ -44,6 +44,6 @@
   "groundControlValuePeople": "{option} : {names}",
   "groundControlTagHint": "Un paramètre Ground Control. En savoir plus",
   "groundControlTagTitle": "Un paramètre Ground Control",
-  "groundControlTagVision": "Ce paramètre fonctionne avec Kiosk Satellite Ground Control, une application distincte qui tourne sur un ordinateur de votre maison. Il utilise la reconnaissance faciale et ne s'affiche que lorsqu'elle est activée, dans Paramètres > Ground Control > Vision Match.",
-  "groundControlTagVoice": "Ce paramètre fonctionne avec Kiosk Satellite Ground Control, une application distincte qui tourne sur un ordinateur de votre maison. Il utilise Voice Match et ne s'affiche que lorsqu'il est activé, dans Paramètres > Ground Control > Voice Match."
+  "groundControlTagVision": "Ce paramètre nécessite Kiosk Satellite Ground Control. Ground Control est une application distincte qui tourne sur un ordinateur de votre maison. Le paramètre utilise la reconnaissance faciale et ne s'affiche que lorsque la reconnaissance faciale est activée dans Paramètres > Ground Control > Vision Match.",
+  "groundControlTagVoice": "Ce paramètre nécessite Kiosk Satellite Ground Control. Ground Control est une application distincte qui tourne sur un ordinateur de votre maison. Le paramètre utilise Voice Match et ne s'affiche que lorsque Voice Match est activé dans Paramètres > Ground Control > Voice Match."
 }

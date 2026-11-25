@@ -85,7 +85,7 @@
       ]
     }
   },
-  "faceEnrollHintSeveral": "Only one person in view, please",
+  "faceEnrollHintSeveral": "Only one person should be in view",
   "@faceEnrollHintSeveral": {
     "context": "Face Recognition enrollment screen",
     "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",

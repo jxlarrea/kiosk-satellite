@@ -195,7 +195,7 @@
       ]
     }
   },
-  "settingScreensaverFaceWhoDescription": "Which faces dismiss or postpone the screensaver. Recognized people needs the face enrolled in Ground Control.",
+  "settingScreensaverFaceWhoDescription": "Choose whose face counts for Dismiss on face and Postpone screensaver on face. Recognized people only counts faces enrolled in Ground Control.",
   "@settingScreensaverFaceWhoDescription": {
     "context": "Settings > Screensaver > Face Detection",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -260,7 +260,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Who the screen wakes for. With nobody chosen, anyone recognized.",
+  "settingScreensaverFacePeopleDescription": "Choose the people the screen wakes for. If nobody is chosen, the screen wakes for anyone recognized.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

@@ -35,7 +35,7 @@
   "faceEnrollNameLabel": "Imię",
   "faceEnrollStart": "Rozpocznij",
   "settingVisionMatchFaceConfirmsVoiceTitle": "Potwierdzaj głosy twarzami",
-  "settingVisionMatchFaceConfirmsVoiceDescription": "Głos podobny, ale niepewny jest przyjmowany, gdy twarz przed kioskiem należy do tej samej osoby. Twarz nigdy sama nie przypisuje głosu.",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Przyjmuj podobny głos, gdy przed kioskiem rozpoznano twarz tej samej osoby. W ten sposób można dopasować tylko osobę z najbardziej podobnym odciskiem głosu.",
   "groundControlUsedElsewhere": "Używane w innych ustawieniach",
   "settingVisionMatchLinkFaceWhoDescription": "Wygaszacz ekranu > Wykrywanie twarzy",
   "settingVisionMatchLinkPreviewPersonDescription": "Wygaszacz ekranu > Wykrywanie twarzy > Podgląd z kamery",
@@ -44,6 +44,6 @@
   "groundControlValuePeople": "{option}: {names}",
   "groundControlTagHint": "Ustawienie Ground Control. Więcej informacji",
   "groundControlTagTitle": "Ustawienie Ground Control",
-  "groundControlTagVision": "To ustawienie działa z Kiosk Satellite Ground Control, osobną aplikacją działającą na komputerze w Twoim domu. Korzysta z rozpoznawania twarzy i jest widoczne tylko wtedy, gdy jest ono włączone w Ustawienia > Ground Control > Vision Match.",
-  "groundControlTagVoice": "To ustawienie działa z Kiosk Satellite Ground Control, osobną aplikacją działającą na komputerze w Twoim domu. Korzysta z Voice Match i jest widoczne tylko wtedy, gdy jest on włączony w Ustawienia > Ground Control > Voice Match."
+  "groundControlTagVision": "To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z rozpoznawania twarzy i jest widoczne tylko wtedy, gdy rozpoznawanie twarzy jest włączone w Ustawienia > Ground Control > Vision Match.",
+  "groundControlTagVoice": "To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z Voice Match i jest widoczne tylko wtedy, gdy Voice Match jest włączony w Ustawienia > Ground Control > Voice Match."
 }

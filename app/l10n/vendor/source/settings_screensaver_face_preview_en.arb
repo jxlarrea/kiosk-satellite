@@ -130,7 +130,7 @@
       ]
     }
   },
-  "settingFacePreviewPersonDescription": "The preview takes the person's color and their name shows next to it.",
+  "settingFacePreviewPersonDescription": "Show the recognized person's color around the preview and their name next to it.",
   "@settingFacePreviewPersonDescription": {
     "context": "Settings > Screensaver > Face Detection > Camera Preview",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

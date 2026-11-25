@@ -15,11 +15,11 @@
   "screensaverDetectionAndroidUnsupported": "Недоступно на этой версии Android.",
   "screensaverDetectionX86Unsupported": "Недоступно на устройствах x86.",
   "settingScreensaverFaceWhoTitle": "Учитываемые лица",
-  "settingScreensaverFaceWhoDescription": "Какие лица закрывают или откладывают заставку. Для варианта «Распознанные люди» лицо должно быть записано в Ground Control.",
+  "settingScreensaverFaceWhoDescription": "Выберите, чьё лицо учитывается для закрытия или откладывания заставки. Вариант «Распознанные люди» учитывает только лица, записанные в Ground Control.",
   "screensaverFaceWhoOptionAnyone": "Все",
   "screensaverFaceWhoOptionRecognized": "Распознанные люди",
   "screensaverFaceWhoOptionPeople": "Выбранные люди",
   "settingScreensaverFacePeopleTitle": "Люди",
-  "settingScreensaverFacePeopleDescription": "Для кого включается экран. Если никто не выбран, для любого распознанного человека.",
+  "settingScreensaverFacePeopleDescription": "Выберите людей, для которых включается экран. Если никто не выбран, экран включается для любого распознанного человека.",
   "screensaverFacePeopleNone": "Любой распознанный человек"
 }

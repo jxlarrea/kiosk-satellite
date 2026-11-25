@@ -15,11 +15,11 @@
   "screensaverDetectionAndroidUnsupported": "此 Android 版本不支持。",
   "screensaverDetectionX86Unsupported": "不支持 x86 设备。",
   "settingScreensaverFaceWhoTitle": "计入的人脸",
-  "settingScreensaverFaceWhoDescription": "哪些人脸会关闭或推迟屏保。“已识别的人”需要先在 Ground Control 中录入人脸。",
+  "settingScreensaverFaceWhoDescription": "选择谁的人脸可以关闭或推迟屏保。“已识别的人”只计入在 Ground Control 中录入的人脸。",
   "screensaverFaceWhoOptionAnyone": "任何人",
   "screensaverFaceWhoOptionRecognized": "已识别的人",
   "screensaverFaceWhoOptionPeople": "指定人员",
   "settingScreensaverFacePeopleTitle": "人员",
-  "settingScreensaverFacePeopleDescription": "屏幕为谁唤醒。如果没有选择任何人，则为任何已识别的人。",
+  "settingScreensaverFacePeopleDescription": "选择屏幕为哪些人唤醒。如果没有选择任何人，屏幕会为任何已识别的人唤醒。",
   "screensaverFacePeopleNone": "任何已识别的人"
 }

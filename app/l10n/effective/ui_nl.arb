@@ -4968,7 +4968,7 @@
       ]
     }
   },
-  "faceEnrollHintSeveral": "Graag maar één persoon in beeld",
+  "faceEnrollHintSeveral": "Er mag maar één persoon in beeld zijn",
   "@faceEnrollHintSeveral": {
     "context": "Face Recognition enrollment screen",
     "description": "Shown full screen on the kiosk while a person stands in front of its camera to enroll their face for Face Recognition. Keep Ground Control unchanged. Speak to the person in front of the kiosk.",
@@ -32684,7 +32684,7 @@
       ]
     }
   },
-  "settingVisionMatchFaceConfirmsVoiceDescription": "Een stem die dichtbij maar niet zeker is, wordt aangenomen als het gezicht voor de kiosk van dezelfde persoon is. Een gezicht wijst nooit op zichzelf een stem toe.",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Een stem die er dichtbij zit aannemen als het gezicht van dezelfde persoon bij de kiosk wordt herkend. Zo kan alleen de persoon met de meest overeenkomende stemafdruk worden gekozen.",
   "@settingVisionMatchFaceConfirmsVoiceDescription": {
     "context": "Settings > Ground Control > Vision Match",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -32811,7 +32811,7 @@
       ]
     }
   },
-  "groundControlTagVision": "Deze instelling werkt met Kiosk Satellite Ground Control, een aparte app die op een computer bij je thuis draait. Ze gebruikt gezichtsherkenning en is alleen zichtbaar zolang die aan staat, onder Instellingen > Ground Control > Vision Match.",
+  "groundControlTagVision": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt gezichtsherkenning en is alleen zichtbaar zolang gezichtsherkenning aan staat onder Instellingen > Ground Control > Vision Match.",
   "@groundControlTagVision": {
     "context": "Settings, GC tag",
     "description": "Dialog text for a setting that needs Face Recognition. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -32824,7 +32824,7 @@
       ]
     }
   },
-  "groundControlTagVoice": "Deze instelling werkt met Kiosk Satellite Ground Control, een aparte app die op een computer bij je thuis draait. Ze gebruikt Voice Match en is alleen zichtbaar zolang dat aan staat, onder Instellingen > Ground Control > Voice Match.",
+  "groundControlTagVoice": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt Voice Match en is alleen zichtbaar zolang Voice Match aan staat onder Instellingen > Ground Control > Voice Match.",
   "@groundControlTagVoice": {
     "context": "Settings, GC tag",
     "description": "Dialog text for a setting that needs Voice Match. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -46885,7 +46885,7 @@
       ]
     }
   },
-  "settingScreensaverFaceWhoDescription": "Welke gezichten de schermbeveiliging sluiten of uitstellen. Herkende personen vereist een gezicht dat in Ground Control is ingeschreven.",
+  "settingScreensaverFaceWhoDescription": "Kies wiens gezicht telt voor het sluiten of uitstellen van de schermbeveiliging. Herkende personen telt alleen gezichten die in Ground Control zijn ingeschreven.",
   "@settingScreensaverFaceWhoDescription": {
     "context": "Settings > Screensaver > Face Detection",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -46950,7 +46950,7 @@
       ]
     }
   },
-  "settingScreensaverFacePeopleDescription": "Voor wie het scherm wakker wordt. Is er niemand gekozen, dan voor iedereen die herkend wordt.",
+  "settingScreensaverFacePeopleDescription": "Kies de personen voor wie het scherm wakker wordt. Is er niemand gekozen, dan wordt het scherm wakker voor iedereen die herkend wordt.",
   "@settingScreensaverFacePeopleDescription": {
     "context": "Settings > Screensaver > Face Detection",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",
@@ -47106,7 +47106,7 @@
       ]
     }
   },
-  "settingFacePreviewPersonDescription": "Het voorbeeld krijgt de kleur van de persoon en de naam verschijnt ernaast.",
+  "settingFacePreviewPersonDescription": "De kleur van de herkende persoon rond het voorbeeld tonen, met de naam ernaast.",
   "@settingFacePreviewPersonDescription": {
     "context": "Settings > Screensaver > Face Detection > Camera Preview",
     "description": "Setting help. Keep Ground Control, Face Recognition, Vision Match, Voice Match, Kiosk Satellite and Home Assistant unchanged.",

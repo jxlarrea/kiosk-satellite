@@ -35,7 +35,7 @@
   "faceEnrollNameLabel": "Name",
   "faceEnrollStart": "Starten",
   "settingVisionMatchFaceConfirmsVoiceTitle": "Stimmen mit Gesichtern bestätigen",
-  "settingVisionMatchFaceConfirmsVoiceDescription": "Eine ähnliche, aber nicht sichere Stimme wird angenommen, wenn das Gesicht vor dem Kiosk dieselbe Person ist. Ein Gesicht ordnet eine Stimme nie allein zu.",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Eine ähnliche Stimme annehmen, wenn das Gesicht derselben Person am Kiosk erkannt wird. So kann nur die Person mit dem ähnlichsten Stimmprofil zugeordnet werden.",
   "groundControlUsedElsewhere": "In anderen Einstellungen verwendet",
   "settingVisionMatchLinkFaceWhoDescription": "Bildschirmschoner > Gesichtserkennung",
   "settingVisionMatchLinkPreviewPersonDescription": "Bildschirmschoner > Gesichtserkennung > Kameravorschau",
@@ -44,6 +44,6 @@
   "groundControlValuePeople": "{option}: {names}",
   "groundControlTagHint": "Eine Ground-Control-Einstellung. Mehr erfahren",
   "groundControlTagTitle": "Eine Ground-Control-Einstellung",
-  "groundControlTagVision": "Diese Einstellung funktioniert mit Kiosk Satellite Ground Control, einer eigenen App, die auf einem Computer bei dir zu Hause läuft. Sie nutzt die Gesichtswiedererkennung und wird nur angezeigt, solange diese unter Einstellungen > Ground Control > Vision Match aktiviert ist.",
-  "groundControlTagVoice": "Diese Einstellung funktioniert mit Kiosk Satellite Ground Control, einer eigenen App, die auf einem Computer bei dir zu Hause läuft. Sie nutzt Voice Match und wird nur angezeigt, solange es unter Einstellungen > Ground Control > Voice Match aktiviert ist."
+  "groundControlTagVision": "Diese Einstellung braucht Kiosk Satellite Ground Control. Ground Control ist eine eigene App, die auf einem Computer bei dir zu Hause läuft. Die Einstellung nutzt die Gesichtswiedererkennung und wird nur angezeigt, solange die Gesichtswiedererkennung unter Einstellungen > Ground Control > Vision Match aktiviert ist.",
+  "groundControlTagVoice": "Diese Einstellung braucht Kiosk Satellite Ground Control. Ground Control ist eine eigene App, die auf einem Computer bei dir zu Hause läuft. Die Einstellung nutzt Voice Match und wird nur angezeigt, solange Voice Match unter Einstellungen > Ground Control > Voice Match aktiviert ist."
 }

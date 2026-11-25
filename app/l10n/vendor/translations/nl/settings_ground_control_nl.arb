@@ -35,7 +35,7 @@
   "faceEnrollNameLabel": "Naam",
   "faceEnrollStart": "Starten",
   "settingVisionMatchFaceConfirmsVoiceTitle": "Stemmen met gezichten bevestigen",
-  "settingVisionMatchFaceConfirmsVoiceDescription": "Een stem die dichtbij maar niet zeker is, wordt aangenomen als het gezicht voor de kiosk van dezelfde persoon is. Een gezicht wijst nooit op zichzelf een stem toe.",
+  "settingVisionMatchFaceConfirmsVoiceDescription": "Een stem die er dichtbij zit aannemen als het gezicht van dezelfde persoon bij de kiosk wordt herkend. Zo kan alleen de persoon met de meest overeenkomende stemafdruk worden gekozen.",
   "groundControlUsedElsewhere": "Gebruikt in andere instellingen",
   "settingVisionMatchLinkFaceWhoDescription": "Schermbeveiliging > Gezichtsdetectie",
   "settingVisionMatchLinkPreviewPersonDescription": "Schermbeveiliging > Gezichtsdetectie > Cameravoorbeeld",
@@ -44,6 +44,6 @@
   "groundControlValuePeople": "{option}: {names}",
   "groundControlTagHint": "Een Ground Control-instelling. Meer informatie",
   "groundControlTagTitle": "Een Ground Control-instelling",
-  "groundControlTagVision": "Deze instelling werkt met Kiosk Satellite Ground Control, een aparte app die op een computer bij je thuis draait. Ze gebruikt gezichtsherkenning en is alleen zichtbaar zolang die aan staat, onder Instellingen > Ground Control > Vision Match.",
-  "groundControlTagVoice": "Deze instelling werkt met Kiosk Satellite Ground Control, een aparte app die op een computer bij je thuis draait. Ze gebruikt Voice Match en is alleen zichtbaar zolang dat aan staat, onder Instellingen > Ground Control > Voice Match."
+  "groundControlTagVision": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt gezichtsherkenning en is alleen zichtbaar zolang gezichtsherkenning aan staat onder Instellingen > Ground Control > Vision Match.",
+  "groundControlTagVoice": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt Voice Match en is alleen zichtbaar zolang Voice Match aan staat onder Instellingen > Ground Control > Voice Match."
 }

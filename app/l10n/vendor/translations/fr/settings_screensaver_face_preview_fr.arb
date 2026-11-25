@@ -10,6 +10,6 @@
   "settingFacePreviewPositionDescription": "Dans quel coin l'aperçu apparaît.",
   "screensaverDetectionPreviewSection": "Aperçu caméra",
   "settingFacePreviewPersonTitle": "Afficher qui est reconnu",
-  "settingFacePreviewPersonDescription": "L'aperçu prend la couleur de la personne et son nom s'affiche à côté.",
+  "settingFacePreviewPersonDescription": "Afficher la couleur de la personne reconnue autour de l'aperçu et son nom à côté.",
   "facePreviewRecognized": "Reconnu"
 }
