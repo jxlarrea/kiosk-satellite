@@ -28,7 +28,6 @@ void main() {
   late EventBus bus;
   late SettingsManager settings;
   late RecognitionCards cards;
-  late DateTime clock;
 
   void build(FakeAsync async, [Map<String, Object> extra = const {}]) {
     SharedPreferences.setMockInitialValues({...faceRecognition, ...extra});
@@ -38,8 +37,7 @@ void main() {
     settings = SettingsManager(bus, commands, log);
     settings.init();
     async.flushMicrotasks();
-    clock = DateTime(2026, 11, 25, 9);
-    cards = RecognitionCards(bus, commands, log, settings, now: () => clock);
+    cards = RecognitionCards(bus, commands, log, settings);
     cards.init();
     async.flushMicrotasks();
   }
@@ -57,10 +55,7 @@ void main() {
     async.flushMicrotasks();
   }
 
-  void pass(FakeAsync async, Duration d) {
-    clock = clock.add(d);
-    async.elapse(d);
-  }
+  void pass(FakeAsync async, Duration d) => async.elapse(d);
 
   const ana = (id: 'ana', name: 'Ana');
   const leo = (id: 'leo', name: 'Leo');
@@ -87,6 +82,31 @@ void main() {
       pass(async, const Duration(seconds: 61));
       see(async, [ana]);
       expect(cards.card.value?.name, 'Ana');
+    });
+  });
+
+  test('says who arrives and leaves, on the same rule, with the cards '
+      'off too', () {
+    fakeAsync((async) {
+      build(async, {'ks.vision_match.show_arrivals': false});
+      final arrived = <String>[];
+      final left = <String>[];
+      bus.on<FaceArrived>().listen((e) => arrived.add(e.name));
+      bus.on<FaceLeft>().listen((e) => left.add(e.name));
+      see(async, [ana]);
+      expect(arrived, ['Ana']);
+      expect(cards.card.value, isNull);
+      // Out of view for 30 s and back: still here.
+      see(async, []);
+      pass(async, const Duration(seconds: 30));
+      see(async, [ana]);
+      see(async, []);
+      pass(async, const Duration(seconds: 59));
+      expect(left, isEmpty);
+      pass(async, const Duration(seconds: 2));
+      expect(left, ['Ana']);
+      see(async, [ana]);
+      expect(arrived, ['Ana', 'Ana']);
     });
   });
 

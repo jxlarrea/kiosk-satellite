@@ -282,6 +282,25 @@ class GroundControlManager extends Manager {
         if (e.name.isNotEmpty || e.score != null) _speakerEvent(e);
       }),
     );
+    _subs
+      ..add(
+        bus.on<FaceArrived>().listen(
+          (e) => _faceEvent('arrived', e.id, e.name),
+        ),
+      )
+      ..add(bus.on<FaceLeft>().listen((e) => _faceEvent('left', e.id, e.name)))
+      ..add(
+        bus.on<FacePinSkipped>().listen(
+          (e) => _faceEvent('pin_skipped', e.id, e.name, {
+            'mode': e.lockdown ? 'lockdown' : 'kiosk',
+          }),
+        ),
+      )
+      ..add(
+        bus.on<FaceLockdownChanged>().listen((e) {
+          if (!e.locked) _faceEvent('lockdown_off', e.id, e.name ?? '');
+        }),
+      );
     commands.register(
       Command(
         name: 'groundControlStatus',
@@ -342,6 +361,27 @@ class GroundControlManager extends Manager {
         'person': person ?? '',
         'score': e.score,
         'by': e.name.isEmpty ? '' : e.by ?? 'voice',
+      }),
+    );
+  }
+
+  /// Face Recognition on Home Assistant's bus as
+  /// `esphome.kiosk_satellite_face`, for automations: someone arrived or
+  /// left on the arrival card's rule, or the PIN was skipped or Lockdown
+  /// Mode turned off because they were recognized. With their Home
+  /// Assistant person when Ground Control has one.
+  void _faceEvent(
+    String type,
+    String? id,
+    String who, [
+    Map<String, Object?> extra = const {},
+  ]) {
+    bus.publish(
+      HaEventRequested('kiosk_satellite_face', {
+        'event_type': type,
+        'name': who,
+        'person': thingsOf(id, people)['person'] ?? '',
+        ...extra,
       }),
     );
   }

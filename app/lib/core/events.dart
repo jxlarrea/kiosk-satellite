@@ -842,6 +842,23 @@ class FaceInViewChanged extends AppEvent {
   final Map<String, String> colors;
 }
 
+/// Someone Face Recognition named arrived at the kiosk: the person at the
+/// kiosk now, out of view for at least a minute before.
+/// Fires whether or not the arrival card shows. Home Assistant gets it as
+/// `esphome.kiosk_satellite_face`.
+class FaceArrived extends AppEvent {
+  const FaceArrived({required this.id, required this.name});
+  final String id;
+  final String name;
+}
+
+/// Someone who arrived has been out of view for a minute.
+class FaceLeft extends AppEvent {
+  const FaceLeft({required this.id, required this.name});
+  final String id;
+  final String name;
+}
+
 /// Ground Control asked this kiosk to enroll a person's face, or someone
 /// started it here: the guided capture opens.
 class FaceEnrollRequested extends AppEvent {

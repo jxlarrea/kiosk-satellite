@@ -70,6 +70,18 @@ Each person's face is enrolled once with a guided capture through a kiosk's came
 
 Hints under the view show what to fix: no face in view, only one person in view, come closer, turn more or less, too dark. Any other face in view is left out of the capture. Tap **Stop** on the kiosk or on the person's page in the Ground Control app to end it early. The pictures from a finished first step are kept. Starting a capture while the screensaver is up dismisses the screensaver so the screen is at its normal brightness. The screensaver doesn't come back until the capture ends. Ground Control keeps only small pictures of the face. It never keeps the frames.
 
+### Face Recognition Is Not Security
+
+Face Recognition is a convenience for the people who live with the kiosk. It is not a lock.
+
+- There is no check for a real person. A photo or a video of an enrolled person held up to the camera can be recognized as them.
+- Twins, siblings and young children can be mistaken for each other.
+- A guest who looks like an enrolled person can now and then be recognized as them, more so in poor light.
+
+Use the settings that act on faces to skip steps for your family, like **Skip the PIN for** and **Disable Lockdown Mode for**. Don't rely on them to keep a determined person out. For the same reason, don't use the [face event](events.md#face) or the **Face** sensor in Home Assistant to unlock doors, open a garage or disarm an alarm.
+
+Everything stays on your network. Camera frames go only to Ground Control, which keeps only small pictures of each enrolled face.
+
 ### Confirm Voices With Faces
 
 With **Confirm voices with faces** on, Voice Match accepts a voice that is close to someone's voiceprint but under the recognition threshold if that same person's face is recognized at the kiosk. This helps most with short commands and answers to questions because they are too short to recognize by voice alone. The voice is only accepted for the person whose voiceprint is closest to it. The setting is off by default because a guest talking while an enrolled person stands at the kiosk can now and then be mistaken for that person. Ground Control's session page shows when a voice was accepted this way.

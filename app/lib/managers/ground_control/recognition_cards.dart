@@ -33,7 +33,8 @@ class RecognitionCard {
 }
 
 /// Vision Match > Recognition cards: the standard way the kiosk shows that
-/// Face Recognition was used.
+/// Face Recognition was used. Also says who arrives and leaves
+/// ([FaceArrived], [FaceLeft]) on the same rule as the arrival card.
 ///
 /// An arrival card (Show arrivals) when someone is recognized at the kiosk,
 /// again for them only after [defs.recognitionArrivalAway] out of view. A
@@ -44,16 +45,9 @@ class RecognitionCard {
 /// The kiosk screen's RecognitionCardOverlay draws [card] in its corner,
 /// and the camera preview draws it beside itself while it shows.
 class RecognitionCards extends Manager {
-  RecognitionCards(
-    super.bus,
-    super.commands,
-    super.log,
-    this._settings, {
-    DateTime Function()? now,
-  }) : _now = now ?? DateTime.now;
+  RecognitionCards(super.bus, super.commands, super.log, this._settings);
 
   final SettingsManager _settings;
-  final DateTime Function() _now;
 
   static const arrivalSpan = Duration(seconds: 4);
   static const actionSpan = Duration(seconds: 3);
@@ -67,12 +61,14 @@ class RecognitionCards extends Manager {
   final _subscriptions = <StreamSubscription<Object?>>[];
   Timer? _hide;
 
-  /// Everyone in view now, and when the others were last in view.
+  /// Everyone in view now.
   Set<String> _present = const {};
-  final _leftAt = <String, DateTime>{};
 
-  /// People whose arrival card has shown since they last arrived.
-  final _greeted = <String>{};
+  /// People who arrived and haven't left yet, with their names. Someone
+  /// leaves after [defs.recognitionArrivalAway] out of view.
+  final _arrived = <String, String>{};
+  final _leaving = <String, Timer>{};
+  final _names = <String, String>{};
 
   /// Names and colors seen, by id, for an action whose event only names
   /// the person.
@@ -107,30 +103,44 @@ class RecognitionCards extends Manager {
       _settings.visible(def) && _settings.get(def);
 
   void _onInView(FaceInViewChanged e) {
-    final now = _now();
     _colors.addAll(e.colors);
     final color = e.color;
     if (e.id != null && color != null) _colors[e.id!] = color;
+    for (final p in e.people) {
+      if (p.name.isNotEmpty) _names[p.id] = p.name;
+    }
+    if (e.id != null && e.name.isNotEmpty) _names[e.id!] = e.name;
     final inView = {for (final p in e.people) p.id, ?e.id};
     for (final id in _present.difference(inView)) {
-      _leftAt[id] = now;
-    }
-    for (final id in inView.difference(_present)) {
-      final left = _leftAt[id];
-      if (left != null && now.difference(left) >= defs.recognitionArrivalAway) {
-        _greeted.remove(id);
+      if (_arrived.containsKey(id)) {
+        _leaving[id]?.cancel();
+        _leaving[id] = Timer(defs.recognitionArrivalAway, () => _left(id));
       }
+    }
+    for (final id in inView) {
+      _leaving.remove(id)?.cancel();
     }
     _present = inView;
     final id = e.id;
-    if (id == null || _greeted.contains(id)) return;
-    _greeted.add(id);
+    if (id == null || _arrived.containsKey(id)) return;
+    _arrived[id] = e.name;
+    log.info(name, '${e.name} arrived');
+    bus.publish(FaceArrived(id: id, name: e.name));
     if (!_on(defs.visionMatchShowArrivals)) return;
     log.info(name, 'arrival card for ${e.name}');
     _show(
       RecognitionCard(id: id, name: e.name, color: e.color, arrival: true),
       arrivalSpan,
     );
+  }
+
+  void _left(String id) {
+    _leaving.remove(id);
+    if (_present.contains(id)) return;
+    final who = _arrived.remove(id);
+    if (who == null) return;
+    log.info(name, '$who left');
+    bus.publish(FaceLeft(id: id, name: _names[id] ?? who));
   }
 
   void _act(String? id, String who, FaceAction action) {
@@ -162,6 +172,9 @@ class RecognitionCards extends Manager {
   @override
   Future<void> dispose() async {
     _hide?.cancel();
+    for (final t in _leaving.values) {
+      t.cancel();
+    }
     for (final s in _subscriptions) {
       await s.cancel();
     }
