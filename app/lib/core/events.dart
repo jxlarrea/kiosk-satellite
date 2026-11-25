@@ -545,6 +545,12 @@ class VoiceInteractionChanged extends AppEvent {
   /// dismissed for it and the display is at its normal brightness.
   static const enrollmentReason = 'voice_match_enroll';
 
+  /// The reason the settings screen holds with while it is open. It only
+  /// keeps ambient features away (the screensaver, the dashboard
+  /// rotation). Nobody is talking, so other apps' music and Sendspin
+  /// keep playing at full volume (issue #1603).
+  static const settingsReason = 'settings';
+
   /// What kind of interaction, as reported by the page: 'voice',
   /// 'announcement', 'ask_question', 'start_conversation', 'timer', 'media',
   /// or '' when the page did not say (the legacy pauseScreensaver fallback).

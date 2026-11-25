@@ -1365,7 +1365,11 @@ class SendspinManager extends Manager {
     // (issue #544).
     bus.on<VolumeKeyPressed>().listen((e) => _onVolumeKey(e.direction));
     bus.on<VoiceInteractionChanged>().listen((e) {
-      if (e.reason == 'media') return;
+      // The settings screen holds the screensaver, not the music.
+      if (e.reason == 'media' ||
+          e.reason == VoiceInteractionChanged.settingsReason) {
+        return;
+      }
       if (e.active) {
         _voiceReasons.add(e.reason);
       } else {

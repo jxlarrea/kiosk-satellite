@@ -1457,7 +1457,14 @@ class _KioskScreenState extends State<KioskScreen>
     // Hold the screensaver while settings are open. Otherwise the idle timer
     // keeps firing behind the route: it dims the backlight and, with motion
     // on, opens the camera while someone is configuring. Re-arm on return.
-    await c.commands.execute('pauseScreensaver', {'paused': true});
+    // The settings reason keeps it from ducking or pausing music the way a
+    // voice turn does (issue #1603).
+    c.bus.publish(
+      const VoiceInteractionChanged(
+        active: true,
+        reason: VoiceInteractionChanged.settingsReason,
+      ),
+    );
     _settingsOpen = true;
     _syncMenuBusy();
     if (mounted) {
@@ -1483,7 +1490,12 @@ class _KioskScreenState extends State<KioskScreen>
     }
     _settingsOpen = false;
     _syncMenuBusy();
-    await c.commands.execute('pauseScreensaver', {'paused': false});
+    c.bus.publish(
+      const VoiceInteractionChanged(
+        active: false,
+        reason: VoiceInteractionChanged.settingsReason,
+      ),
+    );
   }
 
   /// Tell the kiosk manager whether the owner is inside the menu or the

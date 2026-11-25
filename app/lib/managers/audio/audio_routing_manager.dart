@@ -132,7 +132,12 @@ class AudioRoutingManager extends Manager {
     });
 
     bus.on<VoiceInteractionChanged>().listen((e) {
-      if (e.reason == 'media') return;
+      // Nobody is talking while the settings screen is open, so other
+      // apps' music keeps playing (issue #1603).
+      if (e.reason == 'media' ||
+          e.reason == VoiceInteractionChanged.settingsReason) {
+        return;
+      }
       final wasActive = _interactions.isNotEmpty;
       if (e.active) {
         _interactions.add(e.reason);

@@ -18,12 +18,17 @@ class ActiveInteractions {
   }
 
   /// Whether an open hold is for something that needs the screen: a voice
-  /// turn, a timer, an alarm or a call. Media playing on the page and a
-  /// reasonless pause only keep the screensaver from starting by itself.
+  /// turn, a timer, an alarm or a call. Media playing on the page, the
+  /// settings screen and a reasonless pause only keep the screensaver
+  /// from starting by itself.
   bool get needsScreen =>
       _active.any((entry) => !_idleOnlyReasons.contains(entry.$2));
 
-  static const _idleOnlyReasons = {'', 'media'};
+  static const _idleOnlyReasons = {
+    '',
+    'media',
+    VoiceInteractionChanged.settingsReason,
+  };
 
   /// Whether an open hold is for anything but media playing. A reasonless
   /// pause counts: older Voice Satellite versions bracket every voice turn

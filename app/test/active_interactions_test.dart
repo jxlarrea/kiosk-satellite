@@ -77,4 +77,17 @@ void main() {
     );
     expect(ledger.needsScreen, isTrue);
   });
+
+  test('the settings screen only holds the idle clock', () {
+    final ledger = ActiveInteractions();
+    final held = ledger.update(
+      const VoiceInteractionChanged(
+        active: true,
+        reason: VoiceInteractionChanged.settingsReason,
+      ),
+    );
+    expect(held, isTrue);
+    expect(ledger.needsScreen, isFalse);
+    expect(ledger.held.toList(), ['command:settings']);
+  });
 }
