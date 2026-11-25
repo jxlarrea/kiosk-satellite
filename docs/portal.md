@@ -128,7 +128,7 @@ Turn on **Enable person sensor** under **Settings > Camera > Person Sensor** to 
 Reading the Portal's presence logs requires the `READ_LOGS` permission. Android strictly requires this permission to be granted via ADB to a process launched after the grant is applied:
 
 ```
-adb shell pm grant me.jxl.kiosk_satellite android.permission.RECORD_AUDIO
+adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS
 adb shell am force-stop me.jxl.kiosk_satellite
 adb shell monkey -p me.jxl.kiosk_satellite -c android.intent.category.LAUNCHER 1
 ```
