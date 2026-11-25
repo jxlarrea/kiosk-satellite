@@ -100,6 +100,10 @@ class GesturesManager extends Manager {
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<WakeWordStateChanged>? _wakeStateSub;
   StreamSubscription<ScreenStateChanged>? _screenSub;
+  StreamSubscription<FaceInViewChanged>? _facesSub;
+
+  /// Everyone Face Recognition names in view, for Finger gestures for.
+  Set<String> _inView = const {};
 
   /// Finger mappings that fired for the count being shown.
   final _palmFired = <String>{};
@@ -193,6 +197,10 @@ class GesturesManager extends Manager {
       if (!e.on) _resetHand();
     });
 
+    _facesSub = bus.on<FaceInViewChanged>().listen((e) {
+      _inView = {for (final p in e.people) p.id, ?e.id};
+    });
+
     await _syncClapper();
   }
 
@@ -202,6 +210,7 @@ class GesturesManager extends Manager {
     await _settingsSub?.cancel();
     await _wakeStateSub?.cancel();
     await _screenSub?.cancel();
+    await _facesSub?.cancel();
     _resetHand();
     await _micSub?.cancel();
     await _palmSub?.cancel();
@@ -244,11 +253,30 @@ class GesturesManager extends Manager {
       final wanted = (m.trigger['fingers'] as num?)?.toInt() ?? 5;
       if (ready && _handHold.count == wanted) {
         if (_palmFired.add(m.id)) {
+          if (!_fingersAllowed) {
+            log.info(
+              name,
+              'a hand showing $wanted finger(s) skipped: none of the people '
+              'chosen under Finger gestures for is recognized at the kiosk',
+            );
+            continue;
+          }
           log.info(name, 'detected a hand showing $wanted finger(s)');
           bus.publish(GestureDetected(id: m.id));
         }
       }
     }
+  }
+
+  /// Gestures > Ground Control Vision Match > Finger gestures for: on
+  /// Chosen people, a Show fingers gesture runs only while one of them is
+  /// recognized at the kiosk.
+  bool get _fingersAllowed {
+    if (!_settings.visible(defs.gesturesFaceWho) ||
+        _settings.get(defs.gesturesFaceWho) != 'people') {
+      return true;
+    }
+    return defs.chosenInView(_inView, _settings.get(defs.gesturesFacePeople));
   }
 
   /// Whether clap detection should be listening right now.

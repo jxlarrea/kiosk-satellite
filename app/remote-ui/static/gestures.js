@@ -918,6 +918,21 @@ export async function loadGestures() {
     group.appendChild(settingRow(hold));
     root.appendChild(group);
   }
+  // Mirrors the device's Ground Control Vision Match section: whose
+  // fingers run Show fingers gestures, with Face Recognition on.
+  const who = settings.find((s) => s.key === 'gestures.face_who');
+  if (who && !who.hidden) {
+    const heading = document.createElement('h2');
+    heading.className = 'card-title';
+    heading.textContent = gestureText('Ground Control Vision Match');
+    root.appendChild(heading);
+    const group = document.createElement('div');
+    group.className = 'card';
+    group.appendChild(settingRow(who));
+    const people = settings.find((s) => s.key === 'gestures.face_people');
+    if (people && !people.hidden) group.appendChild(settingRow(people));
+    root.appendChild(group);
+  }
 }
 
 /* ---- Settings ---- */

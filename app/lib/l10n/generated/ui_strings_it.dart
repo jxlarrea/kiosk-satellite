@@ -8654,6 +8654,29 @@ class UiStringsIt extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Gesti con le dita per';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'Con Persone scelte, i gesti Mostra le dita funzionano solo mentre una delle persone selezionate qui sotto viene riconosciuta al kiosk.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Chiunque';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Persone scelte';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'Persone';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Scegli chi può usare i gesti con le dita. Se non scegli nessuno, può farlo chiunque venga riconosciuto.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Abilita Ground Control';
 
   @override
@@ -8726,7 +8749,7 @@ class UiStringsIt extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Riconoscimento e rilevamento dei volti, gesti della mano e rilevamento della presenza. Richiede Ground Control.';
+      'Face Detection, Hand Gestures and Face Recognition. Needs Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8851,6 +8874,17 @@ class UiStringsIt extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Voce confermata';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Sensori di presenza';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Aggiunge a Home Assistant i sensori Presence e Looking at the kiosk. La fotocamera resta accesa e i volti vengono cercati a ogni movimento, anche a schermo spento.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Gesti > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Pagine personalizzate';

@@ -8673,6 +8673,29 @@ class UiStringsFr extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Gestes des doigts pour';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'Avec Personnes choisies, les gestes Montrer des doigts ne s\'exécutent que lorsqu\'une des personnes choisies ci-dessous est reconnue au kiosque.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Tout le monde';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Personnes choisies';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'Personnes';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Choisissez qui peut utiliser les gestes des doigts. Si personne n\'est choisi, toute personne reconnue le peut.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Activer Ground Control';
 
   @override
@@ -8746,7 +8769,7 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Reconnaissance et détection de visage, gestes de la main et détection de présence. Nécessite Ground Control.';
+      'Détection de visage, gestes de la main et reconnaissance faciale. Nécessite Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8871,6 +8894,17 @@ class UiStringsFr extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Voix confirmée';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Capteurs de présence';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Ajoute les capteurs Presence et Looking at the kiosk à Home Assistant. La caméra reste allumée et les visages sont recherchés à chaque mouvement, même écran éteint.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Gestes > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Pages personnalisées';

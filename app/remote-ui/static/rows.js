@@ -645,7 +645,7 @@ export function settingRow(s) {
   // People under Answer on Ground Control's Voice Match page, mirroring
   // the device's row: the chosen people by name in a dropdown-style box that
   // opens a checkbox dialog over everyone enrolled. A JSON list of {id, name}.
-  if (['voice_match.people', 'screensaver.face_people', 'kiosk.face_people', 'lockdown.face_people'].includes(s.key)) {
+  if (['voice_match.people', 'screensaver.face_people', 'kiosk.face_people', 'lockdown.face_people', 'gestures.face_people'].includes(s.key)) {
     const missing = document.createElement('div');
     missing.className = 'desc dp-missing';
     missing.hidden = true;

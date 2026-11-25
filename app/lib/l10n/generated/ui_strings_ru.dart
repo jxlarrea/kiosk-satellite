@@ -8592,6 +8592,29 @@ class UiStringsRu extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Жесты пальцами для';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'При варианте «Выбранные люди» жесты «Показ пальцев» срабатывают, только пока у киоска распознан один из людей, выбранных ниже.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Все';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Выбранные люди';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'Люди';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Выберите, кто может использовать жесты пальцами. Если никто не выбран, это может любой распознанный человек.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Включить Ground Control';
 
   @override
@@ -8663,7 +8686,7 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Распознавание и определение лиц, жесты рукой и определение присутствия. Нужен Ground Control.';
+      'Определение лиц, жесты рукой и распознавание лиц. Нужен Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8787,6 +8810,17 @@ class UiStringsRu extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Голос подтверждён';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Датчики присутствия';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Добавляет в Home Assistant датчики Presence и Looking at the kiosk. Камера остается включенной, и лица ищутся при любом движении, даже при выключенном экране.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Жесты > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Свои страницы';

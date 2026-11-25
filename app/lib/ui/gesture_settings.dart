@@ -8,6 +8,8 @@ import '../l10n/gesture_messages.dart';
 import '../managers/gestures/gesture_mappings.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'gesture_action_picker.dart';
+import 'ground_control_settings.dart' show VoiceMatchPeopleRow;
+import 'ground_control_tag.dart' show settingTitle;
 import 'hand_gesture_tester.dart';
 import 'kit.dart';
 import 'settings_search.dart';
@@ -206,6 +208,53 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
             ),
           ],
         ),
+        // Ground Control Vision Match: whose fingers run Show fingers
+        // gestures, with Face Recognition on. Mirrored on the remote.
+        if (c.settings.visible(defs.gesturesFaceWho)) ...[
+          SectionHeading(gestureText(context, 'Ground Control Vision Match')),
+          SettingsCard(
+            children: [
+              SearchLandingTarget(
+                id: defs.gesturesFaceWho.key,
+                child: DropdownRow<String>(
+                  title: defs.gesturesFaceWho.localizedTitle(context),
+                  titleWidget: settingTitle(context, defs.gesturesFaceWho),
+                  description: defs.gesturesFaceWho.localizedDescription(
+                    context,
+                  ),
+                  value: c.settings.get(defs.gesturesFaceWho),
+                  options: [
+                    for (final o in defs.gesturesFaceWho.options!)
+                      (
+                        o,
+                        defs.gesturesFaceWho.localizedOption(
+                          context,
+                          o,
+                          defs.gesturesFaceWho.optionLabels![o]!,
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) async {
+                    if (value == null) return;
+                    await c.settings.setFromJson(
+                      defs.gesturesFaceWho.key,
+                      value,
+                    );
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ),
+              if (c.settings.visible(defs.gesturesFacePeople))
+                SearchLandingTarget(
+                  id: defs.gesturesFacePeople.key,
+                  child: VoiceMatchPeopleRow(
+                    container: c,
+                    def: defs.gesturesFacePeople,
+                  ),
+                ),
+            ],
+          ),
+        ],
         // The tester: a live look at the fingers the camera reads, for
         // learning how to hold a hand before (or after) mapping one.
         SectionHeading(gestureText(context, 'Hand Gesture Tester')),

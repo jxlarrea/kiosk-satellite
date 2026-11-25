@@ -13,7 +13,7 @@
   "settingVisionMatchFaceDetectionTitle": "Gezichtsdetectie inschakelen",
   "settingVisionMatchHandGesturesTitle": "Handgebaren inschakelen",
   "visionMatchFeaturesHint": "Gezichtsherkenning en -detectie, handgebaren en aanwezigheidsdetectie",
-  "settingVisionMatchEnabledDescriptionGroundControl": "Gezichtsherkenning en -detectie, handgebaren en aanwezigheidsdetectie. Vereist Ground Control.",
+  "settingVisionMatchEnabledDescriptionGroundControl": "Gezichtsdetectie, handgebaren en gezichtsherkenning. Vereist Ground Control.",
   "settingVisionMatchFaceDetectionDescriptionGroundControl": "Voer gezichtsdetectie uit op Ground Control. Schakel uit om dit op het apparaat te doen.",
   "settingVisionMatchHandGesturesDescriptionGroundControl": "Voer detectie van handpalm- en vingergebaren uit op Ground Control. Schakel uit om dit op het apparaat te doen.",
   "groundControlWaitingApproval": "Wacht op goedkeuring",
@@ -56,5 +56,8 @@
   "settingVisionMatchCardPositionDescription": "De hoek van het scherm waar beide kaarten verschijnen. Terwijl het cameravoorbeeld zichtbaar is, verschijnen ze ernaast.",
   "recognitionCardPinSkipped": "Pincode overgeslagen",
   "recognitionCardLockdownOff": "Vergrendelingsmodus uit",
-  "recognitionCardVoiceConfirmed": "Stem bevestigd"
+  "recognitionCardVoiceConfirmed": "Stem bevestigd",
+  "settingVisionMatchPresenceSensorsTitle": "Aanwezigheidssensoren",
+  "settingVisionMatchPresenceSensorsDescription": "Voegt de sensoren Presence en Looking at the kiosk toe aan Home Assistant. De camera blijft aan en bij elke beweging wordt naar gezichten gezocht, ook met het scherm uit.",
+  "settingVisionMatchLinkGestureWhoDescription": "Gebaren > Ground Control Vision Match"
 }

@@ -299,5 +299,96 @@
         "type": "String"
       }
     }
+  },
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "@gestureGroundControlVisionMatch": {
+    "context": "Settings > Gestures",
+    "description": "Group heading for the settings that use Vision Match on Ground Control. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures"
+      ],
+      "remoteAdmin": [
+        "Gestures"
+      ]
+    }
+  },
+  "settingGesturesFaceWhoTitle": "Finger gestures for",
+  "@settingGesturesFaceWhoTitle": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Setting label: whose raised fingers run Show fingers gestures.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingGesturesFaceWhoDescription": "With Chosen people, Show fingers gestures run only while one of the people picked below is recognized at the kiosk.",
+  "@settingGesturesFaceWhoDescription": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Setting help. Use the same name for the Show fingers gesture as elsewhere in the Gestures page.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match > Finger gestures for"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match > Finger gestures for"
+      ]
+    }
+  },
+  "gesturesFaceWhoOptionAnyone": "Anyone",
+  "@gesturesFaceWhoOptionAnyone": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Option of Finger gestures for: anyone can run them.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match > Finger gestures for"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match > Finger gestures for"
+      ]
+    }
+  },
+  "gesturesFaceWhoOptionPeople": "Chosen people",
+  "@gesturesFaceWhoOptionPeople": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Option of Finger gestures for: only the people picked under People.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match > Finger gestures for"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match > Finger gestures for"
+      ]
+    }
+  },
+  "settingGesturesFacePeopleTitle": "People",
+  "@settingGesturesFacePeopleTitle": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Setting label: the people who can run finger gestures.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingGesturesFacePeopleDescription": "Choose who can run finger gestures. If nobody is chosen, anyone recognized can.",
+  "@settingGesturesFacePeopleDescription": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match > People"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match > People"
+      ]
+    }
   }
 }

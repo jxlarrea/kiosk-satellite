@@ -2391,6 +2391,15 @@ final _messages = <String, String Function(UiStrings)>{
   'settingHandGestureHoldSecondsDescription': (s) =>
       s.settingHandGestureHoldSecondsDescription,
   'gestureHoldInstant': (s) => s.gestureHoldInstant,
+  'gestureGroundControlVisionMatch': (s) => s.gestureGroundControlVisionMatch,
+  'settingGesturesFaceWhoTitle': (s) => s.settingGesturesFaceWhoTitle,
+  'settingGesturesFaceWhoDescription': (s) =>
+      s.settingGesturesFaceWhoDescription,
+  'gesturesFaceWhoOptionAnyone': (s) => s.gesturesFaceWhoOptionAnyone,
+  'gesturesFaceWhoOptionPeople': (s) => s.gesturesFaceWhoOptionPeople,
+  'settingGesturesFacePeopleTitle': (s) => s.settingGesturesFacePeopleTitle,
+  'settingGesturesFacePeopleDescription': (s) =>
+      s.settingGesturesFacePeopleDescription,
   'settingGroundControlEnabledTitle': (s) => s.settingGroundControlEnabledTitle,
   'settingGroundControlEnabledDescriptionVisionMatch': (s) =>
       s.settingGroundControlEnabledDescriptionVisionMatch,
@@ -2468,6 +2477,12 @@ final _messages = <String, String Function(UiStrings)>{
   'recognitionCardPinSkipped': (s) => s.recognitionCardPinSkipped,
   'recognitionCardLockdownOff': (s) => s.recognitionCardLockdownOff,
   'recognitionCardVoiceConfirmed': (s) => s.recognitionCardVoiceConfirmed,
+  'settingVisionMatchPresenceSensorsTitle': (s) =>
+      s.settingVisionMatchPresenceSensorsTitle,
+  'settingVisionMatchPresenceSensorsDescription': (s) =>
+      s.settingVisionMatchPresenceSensorsDescription,
+  'settingVisionMatchLinkGestureWhoDescription': (s) =>
+      s.settingVisionMatchLinkGestureWhoDescription,
   'haCustomPages': (s) => s.haCustomPages,
   'haCustomPagesHintDashboard': (s) => s.haCustomPagesHintDashboard,
   'settingHaCustomPagesSocketTitle': (s) => s.settingHaCustomPagesSocketTitle,

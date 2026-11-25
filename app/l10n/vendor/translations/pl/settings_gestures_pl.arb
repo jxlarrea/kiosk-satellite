@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "Czas przytrzymania",
   "settingHandGestureHoldSecondsDescription": "Przytrzymaj ten sam gest palców przez ten czas, aby uruchomić jego akcję. Zwiększ tę wartość, aby ograniczyć przypadkowe uruchomienia.",
   "gestureHoldInstant": "Natychmiast",
-  "gestureHoldSeconds": "{seconds} s"
+  "gestureHoldSeconds": "{seconds} s",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "Gesty palcami dla",
+  "settingGesturesFaceWhoDescription": "Przy opcji Wybrane osoby gesty Pokaż palce działają tylko wtedy, gdy przy kiosku rozpoznana jest jedna z osób wybranych poniżej.",
+  "gesturesFaceWhoOptionAnyone": "Każdy",
+  "gesturesFaceWhoOptionPeople": "Wybrane osoby",
+  "settingGesturesFacePeopleTitle": "Osoby",
+  "settingGesturesFacePeopleDescription": "Wybierz, kto może używać gestów palcami. Jeśli nikt nie jest wybrany, może to zrobić każda rozpoznana osoba."
 }

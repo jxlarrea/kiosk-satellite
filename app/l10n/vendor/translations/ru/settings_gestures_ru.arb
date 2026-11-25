@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "Длительность удержания",
   "settingHandGestureHoldSecondsDescription": "Удерживайте один и тот же жест пальцами столько времени до запуска действия. Увеличьте, чтобы сократить случайные срабатывания.",
   "gestureHoldInstant": "Мгновенно",
-  "gestureHoldSeconds": "{seconds} с"
+  "gestureHoldSeconds": "{seconds} с",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "Жесты пальцами для",
+  "settingGesturesFaceWhoDescription": "При варианте «Выбранные люди» жесты «Показ пальцев» срабатывают, только пока у киоска распознан один из людей, выбранных ниже.",
+  "gesturesFaceWhoOptionAnyone": "Все",
+  "gesturesFaceWhoOptionPeople": "Выбранные люди",
+  "settingGesturesFacePeopleTitle": "Люди",
+  "settingGesturesFacePeopleDescription": "Выберите, кто может использовать жесты пальцами. Если никто не выбран, это может любой распознанный человек."
 }

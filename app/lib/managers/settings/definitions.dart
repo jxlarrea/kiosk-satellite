@@ -1189,6 +1189,45 @@ const handGestureHoldSeconds = SettingDef<num>(
   category: 'Gestures',
 );
 
+/// Gestures > Ground Control Vision Match: whose raised fingers run Show
+/// fingers gestures, anyone or the chosen people recognized at the kiosk.
+/// Touch, clap and button gestures are not affected.
+const gesturesFaceWho = SettingDef<String>(
+  key: 'gestures.face_who',
+  type: SettingType.select,
+  defaultValue: 'anyone',
+  title: 'Finger gestures for',
+  description:
+      'With Chosen people, Show fingers gestures run only while one of the '
+      'people picked below is recognized at the kiosk.',
+  category: 'Gestures',
+  section: 'Ground Control Vision Match',
+  options: ['anyone', 'people'],
+  optionLabels: {'anyone': 'Anyone', 'people': 'Chosen people'},
+  // The gate lives on Ground Control's Vision Match page, so it is the
+  // second gate: the first must share the row's page.
+  alsoDependsOn: 'vision_match.face_recognition',
+  groundControl: 'vision',
+);
+
+/// Who can run finger gestures on Chosen people, stored like
+/// [voiceMatchPeople]. With nobody chosen, anyone recognized.
+const gesturesFacePeople = SettingDef<String>(
+  key: 'gestures.face_people',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'People',
+  description:
+      'Choose who can run finger gestures. If nobody is chosen, anyone '
+      'recognized can.',
+  category: 'Gestures',
+  section: 'Ground Control Vision Match',
+  dependsOn: 'gestures.face_who',
+  dependsOnValue: 'people',
+  normalizer: normalizeVoiceMatchPeople,
+  groundControl: 'vision',
+);
+
 Object normalizeHandGestureHold(Object value) =>
     value is num && value.isFinite ? (value.clamp(0, 3) * 2).round() / 2 : 0;
 
@@ -8420,8 +8459,8 @@ const visionMatchEnabled = SettingDef<bool>(
   defaultValue: false,
   title: 'Enable Vision Match',
   description:
-      'Face recognition, detection, hand gestures and presence detection. '
-      'Needs Ground Control.',
+      'Face Detection, Hand Gestures and Face Recognition. Needs Ground '
+      'Control.',
   category: 'Ground Control',
   subpage: 'Vision Match',
   dependsOn: 'camera.enabled',
@@ -8440,6 +8479,27 @@ const visionMatchFaceDetection = SettingDef<bool>(
   subpage: 'Vision Match',
   section: 'Face Detection',
   dependsOn: 'vision_match.enabled',
+);
+
+/// Vision Match > Face Detection > Presence sensors: the Presence and
+/// Looking at the kiosk binary sensors in Home Assistant, from Ground
+/// Control's face looks (VisionPresence). Off by default: with it on the
+/// camera stays bound and faces are looked for after motion with the screen
+/// off too.
+const visionMatchPresenceSensors = SettingDef<bool>(
+  key: 'vision_match.presence_sensors',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Presence sensors',
+  description:
+      'Add the Presence and Looking at the kiosk sensors to Home Assistant. '
+      'The camera stays on and faces are checked whenever something moves, '
+      'even with the screen off.',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Face Detection',
+  dependsOn: 'vision_match.enabled',
+  alsoDependsOn: 'vision_match.face_detection',
 );
 
 /// Who is looking at the kiosk, from the faces enrolled on Ground Control,
@@ -8591,12 +8651,26 @@ const visionMatchLinkLockdownRelock = SettingDef<String>(
   linksTo: 'lockdown.face_relock',
 );
 
+const visionMatchLinkGestureWho = SettingDef<String>(
+  key: 'vision_match.link_gesture_who',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Finger gestures for',
+  description: 'Gestures > Ground Control Vision Match',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Used in other settings',
+  dependsOn: 'vision_match.face_recognition',
+  linksTo: 'gestures.face_who',
+);
+
 /// The People setting each Chosen people option lists, for the values on
 /// Vision Match > Used in other settings.
 const groundControlPeopleOf = {
   'screensaver.face_who': screensaverFacePeople,
   'kiosk.face_skip_pin': kioskFacePeople,
   'lockdown.face_disable': lockdownFacePeople,
+  'gestures.face_who': gesturesFacePeople,
 };
 
 /// Show fingers gestures, on Ground Control.
@@ -15223,6 +15297,8 @@ const List<SettingDef<Object>> allSettings = [
   gestureMappings,
   clapStrictness,
   handGestureHoldSeconds,
+  gesturesFaceWho,
+  gesturesFacePeople,
   ...ledSettings,
   kioskAllowDrawer,
   kioskAllowDashboard,
@@ -15683,6 +15759,7 @@ const List<SettingDef<Object>> allSettings = [
   voiceMatchIsolation,
   visionMatchEnabled,
   visionMatchFaceDetection,
+  visionMatchPresenceSensors,
   visionMatchFaceRecognition,
   visionMatchFaceConfirmsVoice,
   visionMatchShowArrivals,
@@ -15692,6 +15769,7 @@ const List<SettingDef<Object>> allSettings = [
   visionMatchLinkKioskPin,
   visionMatchLinkLockdownDisable,
   visionMatchLinkLockdownRelock,
+  visionMatchLinkGestureWho,
   visionMatchHandGestures,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,

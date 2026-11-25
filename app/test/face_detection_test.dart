@@ -189,6 +189,29 @@ void main() {
     expect(sink, isNotNull, reason: 'the sensor leg keeps the camera');
   });
 
+  test('the Presence sensors look for faces on Ground Control with the '
+      'screen off too', () async {
+    await build({
+      'ks.camera.enabled': true,
+      'ks.ground_control.enabled': true,
+      'ks.vision_match.enabled': true,
+      'ks.vision_match.face_recognition': false,
+    });
+    await pump();
+    expect(listens, 0, reason: 'nothing asks for faces yet');
+    await settings.set(defs.visionMatchPresenceSensors, true);
+    await pump();
+    expect(listens, 1);
+    expect(lastArgs?['faces'], isTrue);
+    bus.publish(const ScreenStateChanged(on: false));
+    await pump();
+    expect(sink, isNotNull, reason: 'presence keeps looking in the dark');
+    expect(lastArgs?['faces'], isTrue);
+    await settings.set(defs.visionMatchPresenceSensors, false);
+    await pump();
+    expect(sink, isNull);
+  });
+
   test('Postpone on face runs the camera between screensavers, screen on, '
       'asking for faces only', () async {
     await build({

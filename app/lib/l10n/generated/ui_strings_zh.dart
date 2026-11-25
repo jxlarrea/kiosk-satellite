@@ -8183,6 +8183,29 @@ class UiStringsZh extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => '手指手势适用于';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      '选择“指定人员”时，只有在 Kiosk 前识别到下方选中的某个人时，“展示手指”手势才会运行。';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => '任何人';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => '指定人员';
+
+  @override
+  String get settingGesturesFacePeopleTitle => '人员';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      '选择谁可以使用手指手势。如果没有选择任何人，任何已识别的人都可以。';
+
+  @override
   String get settingGroundControlEnabledTitle => '启用 Ground Control';
 
   @override
@@ -8252,7 +8275,7 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      '人脸识别与检测、隔空手势和存在检测。需要 Ground Control。';
+      '人脸检测、隔空手势和人脸识别。需要 Ground Control。';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8372,6 +8395,17 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => '声音已确认';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => '存在传感器';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      '向 Home Assistant 添加 Presence 和 Looking at the kiosk 传感器。摄像头会保持开启，每当有物体移动时都会检测人脸，即使屏幕已关闭。';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      '手势 > Ground Control Vision Match';
 
   @override
   String get haCustomPages => '自定义网页';
@@ -24723,6 +24757,29 @@ class UiStringsZhCn extends UiStringsZh {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => '手指手势适用于';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      '选择“指定人员”时，只有在 Kiosk 前识别到下方选中的某个人时，“展示手指”手势才会运行。';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => '任何人';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => '指定人员';
+
+  @override
+  String get settingGesturesFacePeopleTitle => '人员';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      '选择谁可以使用手指手势。如果没有选择任何人，任何已识别的人都可以。';
+
+  @override
   String get settingGroundControlEnabledTitle => '启用 Ground Control';
 
   @override
@@ -24792,7 +24849,7 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      '人脸识别与检测、隔空手势和存在检测。需要 Ground Control。';
+      '人脸检测、隔空手势和人脸识别。需要 Ground Control。';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -24912,6 +24969,17 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get recognitionCardVoiceConfirmed => '声音已确认';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => '存在传感器';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      '向 Home Assistant 添加 Presence 和 Looking at the kiosk 传感器。摄像头会保持开启，每当有物体移动时都会检测人脸，即使屏幕已关闭。';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      '手势 > Ground Control Vision Match';
 
   @override
   String get haCustomPages => '自定义网页';

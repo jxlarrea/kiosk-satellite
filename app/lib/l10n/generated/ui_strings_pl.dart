@@ -8628,6 +8628,29 @@ class UiStringsPl extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Gesty palcami dla';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'Przy opcji Wybrane osoby gesty Pokaż palce działają tylko wtedy, gdy przy kiosku rozpoznana jest jedna z osób wybranych poniżej.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Każdy';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Wybrane osoby';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'Osoby';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Wybierz, kto może używać gestów palcami. Jeśli nikt nie jest wybrany, może to zrobić każda rozpoznana osoba.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Włącz Ground Control';
 
   @override
@@ -8698,7 +8721,7 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Rozpoznawanie i wykrywanie twarzy, gesty dłonią i wykrywanie obecności. Wymaga Ground Control.';
+      'Wykrywanie twarzy, gesty dłonią i rozpoznawanie twarzy. Wymaga Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8822,6 +8845,17 @@ class UiStringsPl extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Głos potwierdzony';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Czujniki obecności';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Dodaje do Home Assistant czujniki Presence i Looking at the kiosk. Kamera pozostaje włączona, a twarze są wyszukiwane przy każdym ruchu, nawet przy wyłączonym ekranie.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Gesty > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Własne strony';

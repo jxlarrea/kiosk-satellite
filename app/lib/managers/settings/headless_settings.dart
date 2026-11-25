@@ -58,6 +58,7 @@ class HeadlessSettings {
     // Ground Control: Vision Match works on the camera's frames.
     defs.visionMatchEnabled.key,
     defs.visionMatchFaceDetection.key,
+    defs.visionMatchPresenceSensors.key,
     defs.visionMatchFaceRecognition.key,
     defs.visionMatchFaceConfirmsVoice.key,
     defs.visionMatchLinkFaceWho.key,
@@ -67,6 +68,7 @@ class HeadlessSettings {
     defs.visionMatchLinkKioskPin.key,
     defs.visionMatchLinkLockdownDisable.key,
     defs.visionMatchLinkLockdownRelock.key,
+    defs.visionMatchLinkGestureWho.key,
     defs.visionMatchHandGestures.key,
     // Voice: listening never leaves the foreground, there is none.
     defs.wakeWordBackground.key,
@@ -88,6 +90,8 @@ class HeadlessSettings {
     defs.alarmsSkipMinutes.key,
     // Gestures: the hand hold needs the camera.
     defs.handGestureHoldSeconds.key,
+    defs.gesturesFaceWho.key,
+    defs.gesturesFacePeople.key,
     // DLNA: everything is background audio here.
     defs.dlnaAudioBackground.key,
   };

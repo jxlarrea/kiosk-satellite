@@ -363,6 +363,8 @@ class BtProxyManager extends Manager {
       'vision_match.enabled',
       'vision_match.face_detection',
       'vision_match.face_recognition',
+      // So do the Presence sensors, with their own switch.
+      'vision_match.presence_sensors',
     };
     // The remote admin server's settings, which decide the web page port
     // reported to Home Assistant (the device page's Visit link).

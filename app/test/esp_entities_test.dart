@@ -1247,6 +1247,33 @@ void main() {
     expect(ids, isNot(contains('motion'))); // rides the camera
   });
 
+  test('the Presence sensors are listed with their switch and follow '
+      'Ground Control\'s looks', () async {
+    var ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, isNot(contains('presence')));
+    expect(ids, isNot(contains('looking')));
+    for (final def in [
+      defs.groundControlEnabled,
+      defs.visionMatchEnabled,
+      defs.visionMatchPresenceSensors,
+    ]) {
+      await settings.set(def, true);
+    }
+    final catalog = await surface.build();
+    ids = [for (final d in catalog) '${d['objectId']}'];
+    expect(ids, containsAll(['presence', 'looking']));
+    final presence = catalog.firstWhere((d) => d['objectId'] == 'presence');
+    expect(presence['type'], 'binary_sensor');
+    expect(presence['deviceClass'], 'occupancy');
+    await attach();
+    expect(pushed, contains(('presence', false)));
+    expect(pushed, contains(('looking', false)));
+    pushed.clear();
+    bus.publish(const VisionPresenceChanged(present: true, looking: true));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(pushed, containsAll([('presence', true), ('looking', true)]));
+  });
+
   test(
     'switching the camera off keeps its entities and blanks motion',
     () async {

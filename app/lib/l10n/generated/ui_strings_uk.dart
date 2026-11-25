@@ -8608,6 +8608,29 @@ class UiStringsUk extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Жести пальцями для';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'Якщо вибрано «Вибрані люди», жести «Показати пальці» спрацьовують лише тоді, коли в кіоску впізнано одну з людей, вибраних нижче.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Будь-хто';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Вибрані люди';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'Люди';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Виберіть, хто може використовувати жести пальцями. Якщо нікого не вибрано, це може будь-хто впізнаний.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Увімкнути Ground Control';
 
   @override
@@ -8679,7 +8702,7 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Розпізнавання та виявлення облич, жести руками та виявлення присутності. Потрібен Ground Control.';
+      'Виявлення облич, жести руками та впізнавання облич. Потрібен Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8803,6 +8826,17 @@ class UiStringsUk extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Голос підтверджено';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Датчики присутності';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Додає до Home Assistant датчики Presence і Looking at the kiosk. Камера залишається увімкненою, а обличчя шукаються щоразу, коли щось рухається, навіть із вимкненим екраном.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Жести > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Власні сторінки';

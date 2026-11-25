@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "Durata del mantenimento",
   "settingHandGestureHoldSecondsDescription": "Mantieni lo stesso gesto delle dita per questo tempo prima che venga eseguita la sua azione. Aumentalo per ridurre le attivazioni accidentali.",
   "gestureHoldInstant": "Immediato",
-  "gestureHoldSeconds": "{seconds} s"
+  "gestureHoldSeconds": "{seconds} s",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "Gesti con le dita per",
+  "settingGesturesFaceWhoDescription": "Con Persone scelte, i gesti Mostra le dita funzionano solo mentre una delle persone selezionate qui sotto viene riconosciuta al kiosk.",
+  "gesturesFaceWhoOptionAnyone": "Chiunque",
+  "gesturesFaceWhoOptionPeople": "Persone scelte",
+  "settingGesturesFacePeopleTitle": "Persone",
+  "settingGesturesFacePeopleDescription": "Scegli chi può usare i gesti con le dita. Se non scegli nessuno, può farlo chiunque venga riconosciuto."
 }

@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "保持时长",
   "settingHandGestureHoldSecondsDescription": "保持同一手指手势达到设定时长后，才会执行操作。延长时间可减少误触发。",
   "gestureHoldInstant": "立即",
-  "gestureHoldSeconds": "{seconds} 秒"
+  "gestureHoldSeconds": "{seconds} 秒",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "手指手势适用于",
+  "settingGesturesFaceWhoDescription": "选择“指定人员”时，只有在 Kiosk 前识别到下方选中的某个人时，“展示手指”手势才会运行。",
+  "gesturesFaceWhoOptionAnyone": "任何人",
+  "gesturesFaceWhoOptionPeople": "指定人员",
+  "settingGesturesFacePeopleTitle": "人员",
+  "settingGesturesFacePeopleDescription": "选择谁可以使用手指手势。如果没有选择任何人，任何已识别的人都可以。"
 }

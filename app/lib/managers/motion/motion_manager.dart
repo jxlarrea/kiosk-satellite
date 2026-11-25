@@ -20,6 +20,7 @@ import 'native_motion.dart';
 import 'native_rtsp.dart';
 import 'rtsp_audio.dart';
 import 'camera_diagnostics.dart';
+import 'vision_presence.dart';
 import 'vision_support.dart';
 
 /// Camera-based motion detection.
@@ -304,7 +305,8 @@ class MotionManager extends Manager {
       (_screensaverActive ? enabled : _postponeEnabled && _screenOn);
   bool get _wantFaces =>
       (_screensaverActive ? faceEnabled : _postponeFaceEnabled) ||
-      (_recognize && _screenOn);
+      (_recognize && _screenOn) ||
+      _presenceSensors;
 
   /// The camera preview (discussion #371): the latest frame the native
   /// side handed over while a preview is showing, null otherwise. The
@@ -514,6 +516,25 @@ class MotionManager extends Manager {
       _remoteFaces &&
       _settings.get(defs.cameraEnabled) &&
       _settings.get(defs.visionMatchFaceRecognition);
+
+  /// Vision Match > Presence sensors: face looks go to Ground Control
+  /// after motion whatever the screen does, for the Presence and Looking at
+  /// the kiosk sensors.
+  bool get _presenceSensors =>
+      _remoteFaces &&
+      _settings.get(defs.cameraEnabled) &&
+      _settings.get(defs.visionMatchPresenceSensors);
+
+  late final _presence = VisionPresence((present, looking) {
+    log.info(
+      name,
+      present
+          ? 'someone is in front of the kiosk${looking ? ', looking at it' : ''}'
+          : 'nobody is in front of the kiosk',
+    );
+    bus.publish(VisionPresenceChanged(present: present, looking: looking));
+  });
+
   VisionSupport get _support => VisionSupport(
     faces: _remoteFaces || _vision.faces,
     hands: _remoteHands || _vision.hands,
@@ -794,6 +815,7 @@ class MotionManager extends Manager {
           e.key == defs.visionMatchEnabled.key ||
           e.key == defs.visionMatchFaceDetection.key ||
           e.key == defs.visionMatchFaceRecognition.key ||
+          e.key == defs.visionMatchPresenceSensors.key ||
           e.key == defs.visionMatchHandGestures.key ||
           e.key == defs.groundControlEnabled.key ||
           // The hand leg's gates: the mappings themselves and the
@@ -802,6 +824,8 @@ class MotionManager extends Manager {
           e.key == defs.lockdownEnabled.key ||
           e.key == defs.kioskEnabled.key ||
           e.key == defs.kioskDisableGestures.key;
+      // The Presence sensors turned off or can't run: nobody is reported.
+      if (isGate && !_presenceSensors) _presence.clear();
       // Entity-side only (the ESPHome sensor times its own clear): no
       // reason to restart the camera over it.
       if (e.key == defs.motionSensorOffDelay.key) return;
@@ -933,6 +957,7 @@ class MotionManager extends Manager {
           _wantPalms ||
           _previewHolding ||
           (_recognize && _screenOn) ||
+          _presenceSensors ||
           (_screensaverActive
               ? enabled || faceEnabled
               : (_postponeEnabled || _postponeFaceEnabled) && _screenOn));
@@ -1236,8 +1261,10 @@ class MotionManager extends Manager {
         );
         unawaited(_native(() => NativeMotion.visionReady(face, hands)));
       },
-      onResult: (answer) =>
-          unawaited(_native(() => NativeMotion.visionResult(answer))),
+      onResult: (answer) {
+        if (_presenceSensors) _presence.look(answer);
+        unawaited(_native(() => NativeMotion.visionResult(answer)));
+      },
       onLost: () {
         if (!identical(_visionSocket, socket)) return;
         _visionSocket = null;
@@ -1608,6 +1635,7 @@ class MotionManager extends Manager {
     _stop();
     facePreview.dispose();
     handTest.dispose();
+    _presence.dispose();
   }
 }
 

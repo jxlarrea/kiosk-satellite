@@ -842,6 +842,17 @@ class FaceInViewChanged extends AppEvent {
   final Map<String, String> colors;
 }
 
+/// Vision Match > Presence sensors: someone is in front of the kiosk
+/// ([present]: a face, turned away or not, or a raised hand seen lately)
+/// and someone looks at the screen ([looking]). From Ground Control's
+/// looks (VisionPresence). Feeds the Presence and Looking at the kiosk
+/// binary sensors.
+class VisionPresenceChanged extends AppEvent {
+  const VisionPresenceChanged({required this.present, required this.looking});
+  final bool present;
+  final bool looking;
+}
+
 /// Someone Face Recognition named arrived at the kiosk: the person at the
 /// kiosk now, out of view for at least a minute before.
 /// Fires whether or not the arrival card shows. Home Assistant gets it as

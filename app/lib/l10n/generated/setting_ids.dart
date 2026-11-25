@@ -2932,4 +2932,20 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingLockdownFaceRelockTitle",
     "description": "settingVisionMatchLinkLockdownDescription",
   },
+  "vision_match.presence_sensors": {
+    "title": "settingVisionMatchPresenceSensorsTitle",
+    "description": "settingVisionMatchPresenceSensorsDescription",
+  },
+  "vision_match.link_gesture_who": {
+    "title": "settingGesturesFaceWhoTitle",
+    "description": "settingVisionMatchLinkGestureWhoDescription",
+  },
+  "gestures.face_who": {
+    "title": "settingGesturesFaceWhoTitle",
+    "description": "settingGesturesFaceWhoDescription",
+  },
+  "gestures.face_people": {
+    "title": "settingGesturesFacePeopleTitle",
+    "description": "settingGesturesFacePeopleDescription",
+  },
 };

@@ -114,8 +114,8 @@ void main() {
     double top(String text) => tester.getTopLeft(find.text(text).first).dy;
     for (final text in [
       'Enable Vision Match',
-      'Face recognition, detection, hand gestures and presence detection. '
-          'Needs Ground Control.',
+      'Face Detection, Hand Gestures and Face Recognition. Needs Ground '
+          'Control.',
       'Face Detection',
       'Enable Face Detection',
       'Run face detection on Ground Control. Disable to run on-device.',

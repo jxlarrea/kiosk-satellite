@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "Тривалість утримання",
   "settingHandGestureHoldSecondsDescription": "Утримуйте той самий жест пальцями протягом цього часу перед виконанням дії. Збільште для зменшення випадкових спрацьовувань.",
   "gestureHoldInstant": "Миттєво",
-  "gestureHoldSeconds": "{seconds} с"
+  "gestureHoldSeconds": "{seconds} с",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "Жести пальцями для",
+  "settingGesturesFaceWhoDescription": "Якщо вибрано «Вибрані люди», жести «Показати пальці» спрацьовують лише тоді, коли в кіоску впізнано одну з людей, вибраних нижче.",
+  "gesturesFaceWhoOptionAnyone": "Будь-хто",
+  "gesturesFaceWhoOptionPeople": "Вибрані люди",
+  "settingGesturesFacePeopleTitle": "Люди",
+  "settingGesturesFacePeopleDescription": "Виберіть, хто може використовувати жести пальцями. Якщо нікого не вибрано, це може будь-хто впізнаний."
 }

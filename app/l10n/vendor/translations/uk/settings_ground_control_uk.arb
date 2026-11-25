@@ -13,7 +13,7 @@
   "settingVisionMatchFaceDetectionTitle": "Увімкнути розпізнавання обличчя",
   "settingVisionMatchHandGesturesTitle": "Увімкнути жести руками",
   "visionMatchFeaturesHint": "Розпізнавання та виявлення облич, жести руками та виявлення присутності",
-  "settingVisionMatchEnabledDescriptionGroundControl": "Розпізнавання та виявлення облич, жести руками та виявлення присутності. Потрібен Ground Control.",
+  "settingVisionMatchEnabledDescriptionGroundControl": "Виявлення облич, жести руками та впізнавання облич. Потрібен Ground Control.",
   "settingVisionMatchFaceDetectionDescriptionGroundControl": "Виконувати розпізнавання обличчя на Ground Control. Вимкніть, щоб виконувати на пристрої.",
   "settingVisionMatchHandGesturesDescriptionGroundControl": "Виконувати розпізнавання жестів долонею та пальцями на Ground Control. Вимкніть, щоб виконувати на пристрої.",
   "groundControlWaitingApproval": "Очікує схвалення",
@@ -56,5 +56,8 @@
   "settingVisionMatchCardPositionDescription": "Кут екрана, де з'являються обидві картки. Поки показано попередній перегляд камери, вони з'являються поруч із ним.",
   "recognitionCardPinSkipped": "PIN-код пропущено",
   "recognitionCardLockdownOff": "Режим блокування вимкнено",
-  "recognitionCardVoiceConfirmed": "Голос підтверджено"
+  "recognitionCardVoiceConfirmed": "Голос підтверджено",
+  "settingVisionMatchPresenceSensorsTitle": "Датчики присутності",
+  "settingVisionMatchPresenceSensorsDescription": "Додає до Home Assistant датчики Presence і Looking at the kiosk. Камера залишається увімкненою, а обличчя шукаються щоразу, коли щось рухається, навіть із вимкненим екраном.",
+  "settingVisionMatchLinkGestureWhoDescription": "Жести > Ground Control Vision Match"
 }

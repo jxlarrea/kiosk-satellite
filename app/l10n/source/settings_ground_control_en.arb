@@ -273,7 +273,7 @@
       ]
     }
   },
-  "settingVisionMatchEnabledDescriptionGroundControl": "Face recognition, detection, hand gestures and presence detection. Needs Ground Control.",
+  "settingVisionMatchEnabledDescriptionGroundControl": "Face Detection, Hand Gestures and Face Recognition. Needs Ground Control.",
   "@settingVisionMatchEnabledDescriptionGroundControl": {
     "context": "Settings > Ground Control > Vision Match",
     "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
@@ -718,6 +718,45 @@
     "x-locations": {
       "device": [
         "Kiosk screen > recognition card"
+      ]
+    }
+  },
+  "settingVisionMatchPresenceSensorsTitle": "Presence sensors",
+  "@settingVisionMatchPresenceSensorsTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting label: binary sensors in Home Assistant for someone in front of the kiosk and someone looking at it. Keep Ground Control, Vision Match, Face Recognition, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Detection > Presence sensors"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Detection > Presence sensors"
+      ]
+    }
+  },
+  "settingVisionMatchPresenceSensorsDescription": "Add the Presence and Looking at the kiosk sensors to Home Assistant. The camera stays on and faces are checked whenever something moves, even with the screen off.",
+  "@settingVisionMatchPresenceSensorsDescription": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting help. Presence and Looking at the kiosk are the names of the sensors in Home Assistant: keep them in English. Keep Ground Control, Vision Match, Face Recognition, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Detection > Presence sensors"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Detection > Presence sensors"
+      ]
+    }
+  },
+  "settingVisionMatchLinkGestureWhoDescription": "Gestures > Ground Control Vision Match",
+  "@settingVisionMatchLinkGestureWhoDescription": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Where the setting is, as a path of page names. Use the translated name of the Gestures page. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings"
       ]
     }
   }

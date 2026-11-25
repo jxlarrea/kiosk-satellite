@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "Tiempo de espera",
   "settingHandGestureHoldSecondsDescription": "Mantén el mismo gesto de los dedos durante este tiempo antes de ejecutar la acción. Auméntalo para reducir las activaciones accidentales.",
   "gestureHoldInstant": "Al instante",
-  "gestureHoldSeconds": "{seconds} s"
+  "gestureHoldSeconds": "{seconds} s",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "Gestos con los dedos para",
+  "settingGesturesFaceWhoDescription": "Con Personas elegidas, los gestos de Mostrar dedos solo se ejecutan mientras se reconoce en el kiosko a una de las personas elegidas abajo.",
+  "gesturesFaceWhoOptionAnyone": "Cualquiera",
+  "gesturesFaceWhoOptionPeople": "Personas elegidas",
+  "settingGesturesFacePeopleTitle": "Personas",
+  "settingGesturesFacePeopleDescription": "Elige quién puede usar los gestos con los dedos. Si no eliges a nadie, puede cualquier persona reconocida."
 }

@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "Durée de maintien",
   "settingHandGestureHoldSecondsDescription": "Maintenez le même geste des doigts pendant cette durée avant de lancer son action. Augmentez-la pour réduire les déclenchements accidentels.",
   "gestureHoldInstant": "Immédiat",
-  "gestureHoldSeconds": "{seconds} s"
+  "gestureHoldSeconds": "{seconds} s",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "Gestes des doigts pour",
+  "settingGesturesFaceWhoDescription": "Avec Personnes choisies, les gestes Montrer des doigts ne s'exécutent que lorsqu'une des personnes choisies ci-dessous est reconnue au kiosque.",
+  "gesturesFaceWhoOptionAnyone": "Tout le monde",
+  "gesturesFaceWhoOptionPeople": "Personnes choisies",
+  "settingGesturesFacePeopleTitle": "Personnes",
+  "settingGesturesFacePeopleDescription": "Choisissez qui peut utiliser les gestes des doigts. Si personne n'est choisi, toute personne reconnue le peut."
 }

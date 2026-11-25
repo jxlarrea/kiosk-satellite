@@ -8720,6 +8720,29 @@ class UiStringsDe extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Fingergesten für';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'Mit Ausgewählte Personen laufen „Finger zeigen“-Gesten nur, solange eine der unten ausgewählten Personen am Kiosk erkannt wird.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Alle';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Ausgewählte Personen';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'Personen';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Wähle, wer Fingergesten verwenden kann. Ist niemand ausgewählt, kann das jede erkannte Person.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Ground Control aktivieren';
 
   @override
@@ -8791,7 +8814,7 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Gesichtserkennung und -zuordnung, Handgesten und Anwesenheitserkennung. Benötigt Ground Control.';
+      'Gesichtserkennung, Handgesten und Gesichtswiedererkennung. Benötigt Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8915,6 +8938,17 @@ class UiStringsDe extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Stimme bestätigt';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Anwesenheitssensoren';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Fügt Home Assistant die Sensoren Presence und Looking at the kiosk hinzu. Die Kamera bleibt an und bei jeder Bewegung wird nach Gesichtern gesucht, auch bei ausgeschaltetem Bildschirm.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Gesten > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Eigene Seiten';

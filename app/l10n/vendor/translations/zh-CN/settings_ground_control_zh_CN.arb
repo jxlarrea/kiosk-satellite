@@ -13,7 +13,7 @@
   "settingVisionMatchFaceDetectionTitle": "启用人脸检测",
   "settingVisionMatchHandGesturesTitle": "启用隔空手势",
   "visionMatchFeaturesHint": "人脸识别与检测、隔空手势和存在检测",
-  "settingVisionMatchEnabledDescriptionGroundControl": "人脸识别与检测、隔空手势和存在检测。需要 Ground Control。",
+  "settingVisionMatchEnabledDescriptionGroundControl": "人脸检测、隔空手势和人脸识别。需要 Ground Control。",
   "settingVisionMatchFaceDetectionDescriptionGroundControl": "在 Ground Control 上运行人脸检测。关闭则在设备上运行。",
   "settingVisionMatchHandGesturesDescriptionGroundControl": "在 Ground Control 上运行手掌和手指手势检测。关闭则在设备上运行。",
   "groundControlWaitingApproval": "等待批准",
@@ -56,5 +56,8 @@
   "settingVisionMatchCardPositionDescription": "两种卡片显示在屏幕的哪个角落。显示摄像头预览时，卡片显示在预览旁边。",
   "recognitionCardPinSkipped": "已免输 PIN 码",
   "recognitionCardLockdownOff": "锁定模式已关闭",
-  "recognitionCardVoiceConfirmed": "声音已确认"
+  "recognitionCardVoiceConfirmed": "声音已确认",
+  "settingVisionMatchPresenceSensorsTitle": "存在传感器",
+  "settingVisionMatchPresenceSensorsDescription": "向 Home Assistant 添加 Presence 和 Looking at the kiosk 传感器。摄像头会保持开启，每当有物体移动时都会检测人脸，即使屏幕已关闭。",
+  "settingVisionMatchLinkGestureWhoDescription": "手势 > Ground Control Vision Match"
 }

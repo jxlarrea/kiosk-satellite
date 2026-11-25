@@ -8631,6 +8631,29 @@ class UiStringsNl extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Vingergebaren voor';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'Met Gekozen personen werken gebaren met Vingers tonen alleen terwijl een van de personen die hieronder zijn gekozen bij de kiosk wordt herkend.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Iedereen';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Gekozen personen';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'Personen';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Kies wie vingergebaren mag gebruiken. Is er niemand gekozen, dan mag iedereen die herkend wordt dat.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Ground Control inschakelen';
 
   @override
@@ -8702,7 +8725,7 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Gezichtsherkenning en -detectie, handgebaren en aanwezigheidsdetectie. Vereist Ground Control.';
+      'Gezichtsdetectie, handgebaren en gezichtsherkenning. Vereist Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8826,6 +8849,17 @@ class UiStringsNl extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Stem bevestigd';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Aanwezigheidssensoren';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Voegt de sensoren Presence en Looking at the kiosk toe aan Home Assistant. De camera blijft aan en bij elke beweging wordt naar gezichten gezocht, ook met het scherm uit.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Gebaren > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Eigen pagina\'s';

@@ -8678,6 +8678,29 @@ class UiStringsEs extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Gestos con los dedos para';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'Con Personas elegidas, los gestos de Mostrar dedos solo se ejecutan mientras se reconoce en el kiosko a una de las personas elegidas abajo.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Cualquiera';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Personas elegidas';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'Personas';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Elige quién puede usar los gestos con los dedos. Si no eliges a nadie, puede cualquier persona reconocida.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Activar Ground Control';
 
   @override
@@ -8749,7 +8772,7 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Reconocimiento y detección de rostros, gestos de la mano y detección de presencia. Necesita Ground Control.';
+      'Detección de rostros, gestos de la mano y reconocimiento facial. Necesita Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8874,6 +8897,17 @@ class UiStringsEs extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Voz confirmada';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Sensores de presencia';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Añade los sensores Presence y Looking at the kiosk a Home Assistant. La cámara queda encendida y se buscan rostros cada vez que algo se mueve, incluso con la pantalla apagada.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Gestos > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Páginas personalizadas';

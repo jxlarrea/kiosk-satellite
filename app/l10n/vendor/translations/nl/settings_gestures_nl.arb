@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "Duur van vasthouden",
   "settingHandGestureHoldSecondsDescription": "Houd hetzelfde vingergebaar gedurende deze tijd vast voordat de actie wordt uitgevoerd. Verhoog de duur om onbedoelde activering te beperken.",
   "gestureHoldInstant": "Direct",
-  "gestureHoldSeconds": "{seconds} s"
+  "gestureHoldSeconds": "{seconds} s",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "Vingergebaren voor",
+  "settingGesturesFaceWhoDescription": "Met Gekozen personen werken gebaren met Vingers tonen alleen terwijl een van de personen die hieronder zijn gekozen bij de kiosk wordt herkend.",
+  "gesturesFaceWhoOptionAnyone": "Iedereen",
+  "gesturesFaceWhoOptionPeople": "Gekozen personen",
+  "settingGesturesFacePeopleTitle": "Personen",
+  "settingGesturesFacePeopleDescription": "Kies wie vingergebaren mag gebruiken. Is er niemand gekozen, dan mag iedereen die herkend wordt dat."
 }

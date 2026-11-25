@@ -592,6 +592,10 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "top_right": "screensaverMediaTopRight",
     "bottom_left": "screensaverMediaBottomLeft",
     "bottom_right": "screensaverMediaBottomRight"
+  },
+  "gestures.face_who": {
+    "anyone": "gesturesFaceWhoOptionAnyone",
+    "people": "gesturesFaceWhoOptionPeople"
   }
 };
 const settingPlaceholderMessageIds = <String, String>{

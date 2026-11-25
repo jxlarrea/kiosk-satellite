@@ -211,5 +211,6 @@ export const gestureTextMessageIds = {
   "Open Music Library": "gestureOpenMusicLibrary",
   "Open the alarm list": "gestureOpenAlarmList",
   "Open the timers": "gestureOpenTimers",
-  "Open the next alarm": "gestureOpenNextAlarm"
+  "Open the next alarm": "gestureOpenNextAlarm",
+  "Ground Control Vision Match": "gestureGroundControlVisionMatch"
 };

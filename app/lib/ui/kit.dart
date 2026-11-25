@@ -1060,9 +1060,13 @@ class DropdownRow<T> extends StatelessWidget {
     required this.options,
     required this.onChanged,
     this.loading = false,
+    this.titleWidget,
   });
 
   final String title;
+
+  /// Drawn in place of [title], such as a title with the GC tag.
+  final Widget? titleWidget;
 
   /// Null leaves the row without a description line.
   final String? description;
@@ -1097,13 +1101,13 @@ class DropdownRow<T> extends StatelessWidget {
     );
     if (!tight) {
       return ListTile(
-        title: Text(title),
+        title: titleWidget ?? Text(title),
         subtitle: description == null ? null : Text(description),
         trailing: dropdown,
       );
     }
     return ListTile(
-      title: Text(title),
+      title: titleWidget ?? Text(title),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

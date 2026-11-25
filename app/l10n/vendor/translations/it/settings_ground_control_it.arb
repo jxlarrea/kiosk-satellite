@@ -56,5 +56,8 @@
   "settingVisionMatchCardPositionDescription": "L'angolo dello schermo in cui compaiono entrambe le schede. Mentre è visibile l'anteprima della fotocamera, compaiono accanto a essa.",
   "recognitionCardPinSkipped": "PIN saltato",
   "recognitionCardLockdownOff": "Modalità blocco disattivata",
-  "recognitionCardVoiceConfirmed": "Voce confermata"
+  "recognitionCardVoiceConfirmed": "Voce confermata",
+  "settingVisionMatchPresenceSensorsTitle": "Sensori di presenza",
+  "settingVisionMatchPresenceSensorsDescription": "Aggiunge a Home Assistant i sensori Presence e Looking at the kiosk. La fotocamera resta accesa e i volti vengono cercati a ogni movimento, anche a schermo spento.",
+  "settingVisionMatchLinkGestureWhoDescription": "Gesti > Ground Control Vision Match"
 }

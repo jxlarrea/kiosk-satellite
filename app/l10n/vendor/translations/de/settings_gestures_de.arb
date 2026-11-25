@@ -21,5 +21,12 @@
   "settingHandGestureHoldSecondsTitle": "Haltedauer",
   "settingHandGestureHoldSecondsDescription": "Halte dieselbe Fingergeste so lange, bevor die Aktion ausgeführt wird. Erhöhe die Dauer, um versehentliches Auslösen zu reduzieren.",
   "gestureHoldInstant": "Sofort",
-  "gestureHoldSeconds": "{seconds} s"
+  "gestureHoldSeconds": "{seconds} s",
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingGesturesFaceWhoTitle": "Fingergesten für",
+  "settingGesturesFaceWhoDescription": "Mit Ausgewählte Personen laufen „Finger zeigen“-Gesten nur, solange eine der unten ausgewählten Personen am Kiosk erkannt wird.",
+  "gesturesFaceWhoOptionAnyone": "Alle",
+  "gesturesFaceWhoOptionPeople": "Ausgewählte Personen",
+  "settingGesturesFacePeopleTitle": "Personen",
+  "settingGesturesFacePeopleDescription": "Wähle, wer Fingergesten verwenden kann. Ist niemand ausgewählt, kann das jede erkannte Person."
 }

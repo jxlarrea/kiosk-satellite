@@ -32250,6 +32250,97 @@
       }
     }
   },
+  "gestureGroundControlVisionMatch": "Ground Control Vision Match",
+  "@gestureGroundControlVisionMatch": {
+    "context": "Settings > Gestures",
+    "description": "Group heading for the settings that use Vision Match on Ground Control. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures"
+      ],
+      "remoteAdmin": [
+        "Gestures"
+      ]
+    }
+  },
+  "settingGesturesFaceWhoTitle": "Жесты пальцами для",
+  "@settingGesturesFaceWhoTitle": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Setting label: whose raised fingers run Show fingers gestures.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingGesturesFaceWhoDescription": "При варианте «Выбранные люди» жесты «Показ пальцев» срабатывают, только пока у киоска распознан один из людей, выбранных ниже.",
+  "@settingGesturesFaceWhoDescription": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Setting help. Use the same name for the Show fingers gesture as elsewhere in the Gestures page.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match > Finger gestures for"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match > Finger gestures for"
+      ]
+    }
+  },
+  "gesturesFaceWhoOptionAnyone": "Все",
+  "@gesturesFaceWhoOptionAnyone": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Option of Finger gestures for: anyone can run them.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match > Finger gestures for"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match > Finger gestures for"
+      ]
+    }
+  },
+  "gesturesFaceWhoOptionPeople": "Выбранные люди",
+  "@gesturesFaceWhoOptionPeople": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Option of Finger gestures for: only the people picked under People.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match > Finger gestures for"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match > Finger gestures for"
+      ]
+    }
+  },
+  "settingGesturesFacePeopleTitle": "Люди",
+  "@settingGesturesFacePeopleTitle": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Setting label: the people who can run finger gestures.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingGesturesFacePeopleDescription": "Выберите, кто может использовать жесты пальцами. Если никто не выбран, это может любой распознанный человек.",
+  "@settingGesturesFacePeopleDescription": {
+    "context": "Settings > Gestures > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Gestures > Ground Control Vision Match > People"
+      ],
+      "remoteAdmin": [
+        "Gestures > Ground Control Vision Match > People"
+      ]
+    }
+  },
   "settingGroundControlEnabledTitle": "Включить Ground Control",
   "@settingGroundControlEnabledTitle": {
     "context": "Settings > Ground Control",
@@ -32523,7 +32614,7 @@
       ]
     }
   },
-  "settingVisionMatchEnabledDescriptionGroundControl": "Распознавание и определение лиц, жесты рукой и определение присутствия. Нужен Ground Control.",
+  "settingVisionMatchEnabledDescriptionGroundControl": "Определение лиц, жесты рукой и распознавание лиц. Нужен Ground Control.",
   "@settingVisionMatchEnabledDescriptionGroundControl": {
     "context": "Settings > Ground Control > Vision Match",
     "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",
@@ -32968,6 +33059,45 @@
     "x-locations": {
       "device": [
         "Kiosk screen > recognition card"
+      ]
+    }
+  },
+  "settingVisionMatchPresenceSensorsTitle": "Датчики присутствия",
+  "@settingVisionMatchPresenceSensorsTitle": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting label: binary sensors in Home Assistant for someone in front of the kiosk and someone looking at it. Keep Ground Control, Vision Match, Face Recognition, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Detection > Presence sensors"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Detection > Presence sensors"
+      ]
+    }
+  },
+  "settingVisionMatchPresenceSensorsDescription": "Добавляет в Home Assistant датчики Presence и Looking at the kiosk. Камера остается включенной, и лица ищутся при любом движении, даже при выключенном экране.",
+  "@settingVisionMatchPresenceSensorsDescription": {
+    "context": "Settings > Ground Control > Vision Match",
+    "description": "Setting help. Presence and Looking at the kiosk are the names of the sensors in Home Assistant: keep them in English. Keep Ground Control, Vision Match, Face Recognition, Kiosk Satellite and Home Assistant unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Face Detection > Presence sensors"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Face Detection > Presence sensors"
+      ]
+    }
+  },
+  "settingVisionMatchLinkGestureWhoDescription": "Жесты > Ground Control Vision Match",
+  "@settingVisionMatchLinkGestureWhoDescription": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Where the setting is, as a path of page names. Use the translated name of the Gestures page. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings"
       ]
     }
   },

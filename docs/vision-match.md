@@ -26,6 +26,7 @@ Vision Match runs on [Ground Control](ground-control.md), a Home Assistant app o
 | Enable Vision Match | off | Runs the features below on Ground Control. Needs the camera and Ground Control. |
 | **Face Detection** | | |
 | Enable Face Detection | on | Runs Face Detection on Ground Control. When it is off, Face Detection runs on the device. |
+| Presence sensors | off | Adds the **Presence** and **Looking at the kiosk** binary sensors to Home Assistant. See [Presence Sensors](#presence-sensors). |
 | **Face Recognition** | | |
 | Enable Face Recognition | on | Shows the name of the person looking at the kiosk in the **Face** sensor. Needs Face Detection on Ground Control. |
 | Confirm voices with faces | off | Accepts a voice that is close to a person's voiceprint but under the recognition threshold when that person's face is recognized at the kiosk. Needs Voice Match. See [Confirm Voices With Faces](#confirm-voices-with-faces). |
@@ -37,7 +38,7 @@ Vision Match runs on [Ground Control](ground-control.md), a Home Assistant app o
 | **Hand Gestures** | | |
 | Enable Hand Gestures | on | Runs palm and finger gesture detection on Ground Control. When it is off, gesture detection runs on the device. |
 | **Used in other settings** | | |
-| Detect faces, Skip the PIN for, Disable Lockdown Mode for, Turn Lockdown Mode back on | | The settings on other pages that use Face Recognition, with their values. Tap one to go to that setting. See [Settings That Work With Ground Control](ground-control.md#settings-that-work-with-ground-control). |
+| Detect faces, Skip the PIN for, Disable Lockdown Mode for, Turn Lockdown Mode back on, Finger gestures for | | The settings on other pages that use Face Recognition, with their values. Tap one to go to that setting. See [Settings That Work With Ground Control](ground-control.md#settings-that-work-with-ground-control). |
 
 Choose the model for each feature in Ground Control under **Settings > Vision Match**. Each feature has a Light and an Accurate model. On an NVIDIA GPU every feature uses Accurate. On a CPU, Face Detection and Hand Gestures use Light. Face Recognition uses Accurate on an x86 CPU or an Apple M-series chip and Light on other ARM CPUs. See [Vision Models](https://github.com/jxlarrea/kiosk-satellite-ground-control/blob/main/docs/vision-match.md#vision-models).
 
@@ -57,6 +58,21 @@ A face looks at the kiosk when the head is turned 30 degrees or less from the ca
 
 On an Echo Show 5, running Face Detection on Ground Control frees the CPU time the model used, which was about a tenth of a second for each face look.
 
+## Presence Sensors
+
+With **Presence sensors** on, the kiosk adds two binary sensors to Home Assistant:
+
+| Sensor | What it shows |
+| --- | --- |
+| Presence | On while someone is in front of the kiosk. A face counts whether it looks at the screen or is turned away. A raised hand counts too while Show fingers gestures are set up. It turns off 30 seconds after the last look that found someone. |
+| Looking at the kiosk | On while a face looks at the screen, the same faces that dismiss the screensaver. It turns off 3 seconds after the last one. |
+
+With Presence, someone standing still is told apart from an empty room. The **Motion** sensor can't do that. A light changing or a pet walking by doesn't turn Presence on. Use it for lights or climate in the room. Looking at the kiosk is useful for automations that should only run when someone is actually looking, like showing a dashboard view.
+
+- **Looks still start with motion.** Once a face is seen, looks keep coming while it stays in view, so someone standing still stays present. Someone who comes in without being seen by the camera, like behind it, doesn't count.
+- **The camera stays on.** Faces are checked whenever something moves, even with the screen off and with no screensaver setting that uses faces. That adds looks to Ground Control. Presence sensors is off by default for this reason.
+- **It needs Face Detection on Ground Control.** The sensors use Ground Control's looks only. A device that runs Face Detection on its own doesn't get them.
+
 ## Hand Gestures
 
 The finger count is right more often, including in dim light and for hands a few meters away. On kiosk frames from 1 to 3 m, it was right in 91 to 96% of frames, compared to 28% with the models on the device. A finger reading counts once two hand looks in a row give the same count.
@@ -75,6 +91,7 @@ With Face Recognition on, these settings on other pages can act on who is at the
 | --- | --- | --- |
 | Detect faces | **Settings > Screensaver > Face Detection** | Only the chosen people dismiss or postpone the screensaver. See [Screensavers](screensavers.md#ground-control-vision-match). |
 | Skip the PIN for | **Settings > Kiosk Mode** | The menu opens after the exit gesture without the PIN for the chosen people. See [Kiosk Mode](kiosk.md#ground-control-vision-match). |
+| Finger gestures for | **Settings > Gestures** | Show fingers gestures run only while one of the chosen people is recognized. See [Show Fingers](gestures.md#show-fingers). |
 | Disable Lockdown Mode for | The Lockdown Mode page | Lockdown Mode is turned off when one of the chosen people is recognized. **Turn Lockdown Mode back on** turns it back on once they leave. See [Lockdown Mode](kiosk.md#ground-control-vision-match-on-the-lockdown-mode-page). |
 
 The kiosk also fires a [face event](events.md#face) in Home Assistant when someone recognized arrives at the kiosk and when they leave.

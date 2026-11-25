@@ -14931,6 +14931,48 @@ abstract class UiStrings {
   /// **'{seconds} s'**
   String gestureHoldSeconds(String seconds);
 
+  /// Group heading for the settings that use Vision Match on Ground Control. Ground Control and Vision Match are names: keep them unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground Control Vision Match'**
+  String get gestureGroundControlVisionMatch;
+
+  /// Setting label: whose raised fingers run Show fingers gestures.
+  ///
+  /// In en, this message translates to:
+  /// **'Finger gestures for'**
+  String get settingGesturesFaceWhoTitle;
+
+  /// Setting help. Use the same name for the Show fingers gesture as elsewhere in the Gestures page.
+  ///
+  /// In en, this message translates to:
+  /// **'With Chosen people, Show fingers gestures run only while one of the people picked below is recognized at the kiosk.'**
+  String get settingGesturesFaceWhoDescription;
+
+  /// Option of Finger gestures for: anyone can run them.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone'**
+  String get gesturesFaceWhoOptionAnyone;
+
+  /// Option of Finger gestures for: only the people picked under People.
+  ///
+  /// In en, this message translates to:
+  /// **'Chosen people'**
+  String get gesturesFaceWhoOptionPeople;
+
+  /// Setting label: the people who can run finger gestures.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get settingGesturesFacePeopleTitle;
+
+  /// Setting help.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose who can run finger gestures. If nobody is chosen, anyone recognized can.'**
+  String get settingGesturesFacePeopleDescription;
+
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged.
   ///
   /// In en, this message translates to:
@@ -15060,7 +15102,7 @@ abstract class UiStrings {
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
   ///
   /// In en, this message translates to:
-  /// **'Face recognition, detection, hand gestures and presence detection. Needs Ground Control.'**
+  /// **'Face Detection, Hand Gestures and Face Recognition. Needs Ground Control.'**
   String get settingVisionMatchEnabledDescriptionGroundControl;
 
   /// Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.
@@ -15272,6 +15314,24 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Voice confirmed'**
   String get recognitionCardVoiceConfirmed;
+
+  /// Setting label: binary sensors in Home Assistant for someone in front of the kiosk and someone looking at it. Keep Ground Control, Vision Match, Face Recognition, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Presence sensors'**
+  String get settingVisionMatchPresenceSensorsTitle;
+
+  /// Setting help. Presence and Looking at the kiosk are the names of the sensors in Home Assistant: keep them in English. Keep Ground Control, Vision Match, Face Recognition, Kiosk Satellite and Home Assistant unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the Presence and Looking at the kiosk sensors to Home Assistant. The camera stays on and faces are checked whenever something moves, even with the screen off.'**
+  String get settingVisionMatchPresenceSensorsDescription;
+
+  /// Where the setting is, as a path of page names. Use the translated name of the Gestures page. Ground Control and Vision Match are names: keep them unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Gestures > Ground Control Vision Match'**
+  String get settingVisionMatchLinkGestureWhoDescription;
 
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///

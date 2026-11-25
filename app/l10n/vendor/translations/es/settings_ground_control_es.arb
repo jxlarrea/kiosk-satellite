@@ -13,7 +13,7 @@
   "settingVisionMatchFaceDetectionTitle": "Activar detección de rostros",
   "settingVisionMatchHandGesturesTitle": "Activar gestos de la mano",
   "visionMatchFeaturesHint": "Reconocimiento y detección de rostros, gestos de la mano y detección de presencia",
-  "settingVisionMatchEnabledDescriptionGroundControl": "Reconocimiento y detección de rostros, gestos de la mano y detección de presencia. Necesita Ground Control.",
+  "settingVisionMatchEnabledDescriptionGroundControl": "Detección de rostros, gestos de la mano y reconocimiento facial. Necesita Ground Control.",
   "settingVisionMatchFaceDetectionDescriptionGroundControl": "Ejecuta la detección de rostros en Ground Control. Desactívalo para ejecutarla en el dispositivo.",
   "settingVisionMatchHandGesturesDescriptionGroundControl": "Ejecuta la detección de gestos de la palma y los dedos en Ground Control. Desactívalo para ejecutarla en el dispositivo.",
   "groundControlWaitingApproval": "Esperando aprobación",
@@ -56,5 +56,8 @@
   "settingVisionMatchCardPositionDescription": "La esquina de la pantalla donde aparecen ambas tarjetas. Mientras se muestra la vista previa de la cámara, aparecen junto a ella.",
   "recognitionCardPinSkipped": "PIN omitido",
   "recognitionCardLockdownOff": "Modo de bloqueo desactivado",
-  "recognitionCardVoiceConfirmed": "Voz confirmada"
+  "recognitionCardVoiceConfirmed": "Voz confirmada",
+  "settingVisionMatchPresenceSensorsTitle": "Sensores de presencia",
+  "settingVisionMatchPresenceSensorsDescription": "Añade los sensores Presence y Looking at the kiosk a Home Assistant. La cámara queda encendida y se buscan rostros cada vez que algo se mueve, incluso con la pantalla apagada.",
+  "settingVisionMatchLinkGestureWhoDescription": "Gestos > Ground Control Vision Match"
 }

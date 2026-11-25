@@ -8537,6 +8537,29 @@ class UiStringsEn extends UiStrings {
   }
 
   @override
+  String get gestureGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingGesturesFaceWhoTitle => 'Finger gestures for';
+
+  @override
+  String get settingGesturesFaceWhoDescription =>
+      'With Chosen people, Show fingers gestures run only while one of the people picked below is recognized at the kiosk.';
+
+  @override
+  String get gesturesFaceWhoOptionAnyone => 'Anyone';
+
+  @override
+  String get gesturesFaceWhoOptionPeople => 'Chosen people';
+
+  @override
+  String get settingGesturesFacePeopleTitle => 'People';
+
+  @override
+  String get settingGesturesFacePeopleDescription =>
+      'Choose who can run finger gestures. If nobody is chosen, anyone recognized can.';
+
+  @override
   String get settingGroundControlEnabledTitle => 'Enable Ground Control';
 
   @override
@@ -8608,7 +8631,7 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Face recognition, detection, hand gestures and presence detection. Needs Ground Control.';
+      'Face Detection, Hand Gestures and Face Recognition. Needs Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
@@ -8731,6 +8754,17 @@ class UiStringsEn extends UiStrings {
 
   @override
   String get recognitionCardVoiceConfirmed => 'Voice confirmed';
+
+  @override
+  String get settingVisionMatchPresenceSensorsTitle => 'Presence sensors';
+
+  @override
+  String get settingVisionMatchPresenceSensorsDescription =>
+      'Add the Presence and Looking at the kiosk sensors to Home Assistant. The camera stays on and faces are checked whenever something moves, even with the screen off.';
+
+  @override
+  String get settingVisionMatchLinkGestureWhoDescription =>
+      'Gestures > Ground Control Vision Match';
 
   @override
   String get haCustomPages => 'Custom Pages';

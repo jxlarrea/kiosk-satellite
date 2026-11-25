@@ -193,6 +193,17 @@ class EspEntitySurface {
       _settings.get(defs.visionMatchFaceDetection) &&
       _settings.get(defs.visionMatchFaceRecognition);
 
+  /// Someone in front of the kiosk and someone looking at it, from Ground
+  /// Control's face looks (Vision Match > Presence sensors).
+  bool get _presenceSensors =>
+      _settings.get(defs.groundControlEnabled) &&
+      _settings.get(defs.cameraEnabled) &&
+      _settings.get(defs.visionMatchEnabled) &&
+      _settings.get(defs.visionMatchFaceDetection) &&
+      _settings.get(defs.visionMatchPresenceSensors);
+  bool _present = false;
+  bool _looking = false;
+
   bool get _speakerSensor =>
       _voiceNative &&
       _settings.get(defs.groundControlEnabled) &&
@@ -1001,6 +1012,25 @@ class EspEntitySurface {
           'objectId': 'people_in_view',
           'name': 'People in view',
           'icon': 'mdi:account-group',
+        },
+      // Someone in front of the kiosk, from Ground Control's face looks: a
+      // face turned away counts, and a raised hand. Occupancy, like the
+      // Portal's Person sensor.
+      if (_presenceSensors)
+        {
+          'type': 'binary_sensor',
+          'objectId': 'presence',
+          'name': 'Presence',
+          'deviceClass': 'occupancy',
+        },
+      // Someone looking at the screen: a face turned 30 degrees or less
+      // from the camera.
+      if (_presenceSensors)
+        {
+          'type': 'binary_sensor',
+          'objectId': 'looking',
+          'name': 'Looking at the kiosk',
+          'icon': 'mdi:eye',
         },
       // Someone in view of the device's own person sensor (discussion
       // #353): occupancy, since it reports people at any angle, not a
@@ -2261,6 +2291,16 @@ class EspEntitySurface {
       }),
     );
     _subs.add(
+      bus.on<VisionPresenceChanged>().listen((e) {
+        _present = e.present;
+        _looking = e.looking;
+        if (_presenceSensors) {
+          _send('presence', e.present);
+          _send('looking', e.looking);
+        }
+      }),
+    );
+    _subs.add(
       bus.on<VoiceTimersChanged>().listen((e) {
         if (_voiceNative) unawaited(_sendTimers(e.timers));
       }),
@@ -2965,6 +3005,10 @@ class EspEntitySurface {
     if (_faceSensor) {
       await _send('face', _face);
       await _send('people_in_view', _faces);
+    }
+    if (_presenceSensors) {
+      await _send('presence', _present);
+      await _send('looking', _looking);
     }
   }
 
