@@ -14928,10 +14928,15 @@
     "provenance": "a9c13469b8478f83914e3db126b0efe3401a55a2955d95208ceb573065d33a10"
   },
   "settingVisionMatchEnabledDescriptionGroundControl": {
-    "source": "41a2d3980c9612907371f501c545c0413ef04d36be810985271c0b0fb3b473bc",
-    "translation": "503c08333ca4228475bb961a3c6edbd9d2f423437cb22a8eb0052a6c77b91c8f",
+    "source": "7edaf1e9b94000538af8e1e30d37c01af5bd7c8b4cd803c9d7596dab485ef5a2",
+    "translation": "cabaf3f51ead22d2fe999f1bde0b598c58a91ea719329cd0cf8016b1397b67df",
     "author": "spita90",
-    "provenance": "a9c13469b8478f83914e3db126b0efe3401a55a2955d95208ceb573065d33a10"
+    "provenance": "a9c13469b8478f83914e3db126b0efe3401a55a2955d95208ceb573065d33a10",
+    "maintainerCorrection": {
+      "reviewer": "Xavier Larrea",
+      "originalTranslation": "503c08333ca4228475bb961a3c6edbd9d2f423437cb22a8eb0052a6c77b91c8f",
+      "reason": "Follow the English source, which no longer mentions presence detection"
+    }
   },
   "settingVisionMatchFaceDetectionDescriptionGroundControl": {
     "source": "591f67f49bedc177419f96d7c3725d5ff087a8d1a8be40791cd776aca195cc1e",

@@ -21,7 +21,7 @@
   "settingVisionMatchFaceDetectionTitle": "Abilita il rilevamento dei volti",
   "settingVisionMatchHandGesturesTitle": "Abilita i gesti della mano",
   "visionMatchFeaturesHint": "Riconoscimento e rilevamento dei volti, gesti della mano e rilevamento della presenza",
-  "settingVisionMatchEnabledDescriptionGroundControl": "Riconoscimento e rilevamento dei volti, gesti della mano e rilevamento della presenza. Richiede Ground Control.",
+  "settingVisionMatchEnabledDescriptionGroundControl": "Rilevamento dei volti, gesti della mano e riconoscimento facciale. Richiede Ground Control.",
   "settingVisionMatchFaceDetectionDescriptionGroundControl": "Esegue il rilevamento dei volti su Ground Control. Se disattivato, viene eseguito sul dispositivo.",
   "settingVisionMatchHandGesturesDescriptionGroundControl": "Esegue il rilevamento dei gesti del palmo e delle dita su Ground Control. Se disattivato, viene eseguito sul dispositivo.",
   "settingVisionMatchFaceRecognitionTitle": "Abilita il riconoscimento facciale",

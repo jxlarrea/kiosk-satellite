@@ -32614,7 +32614,7 @@
       ]
     }
   },
-  "settingVisionMatchEnabledDescriptionGroundControl": "Face Detection, Hand Gestures and Face Recognition. Needs Ground Control.",
+  "settingVisionMatchEnabledDescriptionGroundControl": "Rilevamento dei volti, gesti della mano e riconoscimento facciale. Richiede Ground Control.",
   "@settingVisionMatchEnabledDescriptionGroundControl": {
     "context": "Settings > Ground Control > Vision Match",
     "description": "Translate the visible label or help. Keep Ground Control, Voice Match, Voice Satellite, Kiosk Satellite and Home Assistant unchanged. Vision Match is the feature's name, so it stays as it is.",

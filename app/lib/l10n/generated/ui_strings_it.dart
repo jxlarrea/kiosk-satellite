@@ -8749,7 +8749,7 @@ class UiStringsIt extends UiStrings {
 
   @override
   String get settingVisionMatchEnabledDescriptionGroundControl =>
-      'Face Detection, Hand Gestures and Face Recognition. Needs Ground Control.';
+      'Rilevamento dei volti, gesti della mano e riconoscimento facciale. Richiede Ground Control.';
 
   @override
   String get settingVisionMatchFaceDetectionDescriptionGroundControl =>
