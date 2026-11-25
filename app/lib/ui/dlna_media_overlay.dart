@@ -510,6 +510,7 @@ class _DlnaPlayer extends StatefulWidget {
 class _DlnaPlayerState extends State<_DlnaPlayer> {
   DlnaPlayback? _controller;
   Timer? _progress;
+  Timer? _liveEnd;
   String? _failure;
 
   @override
@@ -596,14 +597,30 @@ class _DlnaPlayerState extends State<_DlnaPlayer> {
       _fail(v.errorDescription ?? 'unknown player error');
       return;
     }
-    // Completion: position pinned at duration and not playing.
-    if (v.isInitialized &&
-        !v.isPlaying &&
-        v.duration > Duration.zero &&
-        v.position >= v.duration) {
-      widget.dlna.onPlaybackEnded(widget.media.uri);
+    switch (_endOf(v)) {
+      case DlnaEnd.no:
+        _liveEnd?.cancel();
+        _liveEnd = null;
+      case DlnaEnd.now:
+        widget.dlna.onPlaybackEnded(widget.media.uri);
+      case DlnaEnd.ifStillStopped:
+        // A rebuffer reports buffering right after it stops playing, which
+        // cancels this. A closed stream stays stopped.
+        _liveEnd ??= Timer(const Duration(seconds: 3), () {
+          _liveEnd = null;
+          final now = _controller?.value;
+          if (mounted && now != null && _endOf(now) == DlnaEnd.ifStillStopped) {
+            widget.dlna.onPlaybackEnded(widget.media.uri);
+          }
+        });
     }
   }
+
+  DlnaEnd _endOf(VideoPlayerValue v) => dlnaEndOf(
+    v,
+    paused: widget.paused,
+    video: _controller is DlnaVideoPlayback,
+  );
 
   void _applyVolume() {
     final v = widget.dlna.muted.value
@@ -635,6 +652,7 @@ class _DlnaPlayerState extends State<_DlnaPlayer> {
     widget.mediaGain.removeListener(_applyVolume);
     widget.dlna.seekTo.removeListener(_applySeek);
     _progress?.cancel();
+    _liveEnd?.cancel();
     _controller?.removeListener(_onPlayerEvent);
     _controller?.dispose();
     super.dispose();

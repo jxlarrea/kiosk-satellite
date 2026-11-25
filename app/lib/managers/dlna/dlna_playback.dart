@@ -13,6 +13,42 @@ abstract interface class DlnaPlayback
   Future<void> dispose();
 }
 
+/// What a player's state says about the media ending.
+enum DlnaEnd {
+  /// Still playing, buffering, paused by the controller, or live audio.
+  no,
+
+  /// Media with a length reached its end.
+  now,
+
+  /// A live video stream stopped without buffering. A stream that closed
+  /// stays this way, so end it if it is still stopped a moment later.
+  ifStillStopped,
+}
+
+/// A live stream has no length. ExoPlayer reports C.TIME_UNSET for it,
+/// which video_player turns into a 1 ms duration (its millisecond to
+/// microsecond multiply overflows) and then clamps the position to. Treat
+/// that as unknown, or every rebuffer looks like the end of the media
+/// (issue #1604). The kiosk's audio player reports 0 for a live stream.
+bool hasUnknownLength(VideoPlayerValue v) =>
+    v.duration <= const Duration(milliseconds: 1);
+
+DlnaEnd dlnaEndOf(
+  VideoPlayerValue v, {
+  required bool paused,
+  required bool video,
+}) {
+  if (!v.isInitialized || v.isPlaying) return DlnaEnd.no;
+  if (!hasUnknownLength(v)) {
+    return v.position >= v.duration ? DlnaEnd.now : DlnaEnd.no;
+  }
+  // The audio player reports no buffering state, so a live audio stream
+  // only ends on Stop, as before.
+  if (!video || paused || v.isBuffering) return DlnaEnd.no;
+  return DlnaEnd.ifStillStopped;
+}
+
 class DlnaVideoPlayback implements DlnaPlayback {
   DlnaVideoPlayback(this.controller);
 

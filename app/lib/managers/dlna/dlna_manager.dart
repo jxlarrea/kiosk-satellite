@@ -942,6 +942,7 @@ class DlnaManager extends Manager {
 
   void onPlaybackEnded(String uri) {
     if (media.value?.uri != uri) return;
+    log.info(name, 'media ended');
     stopPlayback();
   }
 

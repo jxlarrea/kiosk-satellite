@@ -16,7 +16,7 @@ Kiosk Satellite can act as a fully functional DLNA media renderer. By enabling a
 | Video | Supports HLS camera streams from Home Assistant, MP4/MKV/WebM files, and MJPEG cameras. The app uses the native platform player, so codec support exactly matches your specific Android device. |
 | Audio | Supports MP3, FLAC, AAC, OGG, and WAV files, displaying a title card while playing. If you enable **Keep audio in the background**, audio will play without interrupting the screen at all. Your dashboard or screensaver stays exactly as it was, which is perfect for TTS announcements or background music. |
 
-Playback fully integrates with Home Assistant. Play, pause, seek, stop, volume, and mute controls all work directly from the entity. A quick tap on the kiosk screen dismisses the media and reports a "stop" state back to Home Assistant. Media that finishes playing dismisses itself automatically, and a loading screen hides the buffering phase of stream startups. While media is actively playing on screen, the screensaver pauses and only returns once playback finishes.
+Playback fully integrates with Home Assistant. Play, pause, seek, stop, volume, and mute controls all work directly from the entity. A quick tap on the kiosk screen dismisses the media and reports a "stop" state back to Home Assistant. Media that finishes playing dismisses itself automatically. Live streams such as TV from an HDHomeRun tuner keep playing through short network stalls and close only when the stream itself ends. A loading screen hides the buffering phase of stream startups. While media is actively playing on screen, the screensaver pauses and only returns once playback finishes.
 
 ## Automation Examples
 

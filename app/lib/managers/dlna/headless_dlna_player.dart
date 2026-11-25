@@ -109,11 +109,7 @@ class HeadlessDlnaPlayer {
       _dlna.reportPlaybackFailure(uri, v.errorDescription ?? 'player error');
       return;
     }
-    // Completion: position pinned at duration and not playing.
-    if (v.isInitialized &&
-        !v.isPlaying &&
-        v.duration > Duration.zero &&
-        v.position >= v.duration) {
+    if (dlnaEndOf(v, paused: false, video: false) == DlnaEnd.now) {
       _dlna.onPlaybackEnded(uri);
     }
   }
