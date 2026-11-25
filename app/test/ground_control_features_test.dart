@@ -128,6 +128,11 @@ void main() {
     }
     expect(top('Face Detection'), greaterThan(top('Enable Vision Match')));
     expect(top('Hand Gestures'), greaterThan(top('Enable Face Detection')));
+    // Used in other settings is the last group on the page.
+    expect(
+      top('Used in other settings'),
+      greaterThan(top('Enable Hand Gestures')),
+    );
     expect(container.settings.get(defs.visionMatchFaceDetection), isTrue);
     expect(container.settings.get(defs.visionMatchHandGestures), isTrue);
     expect(tester.takeException(), isNull);
