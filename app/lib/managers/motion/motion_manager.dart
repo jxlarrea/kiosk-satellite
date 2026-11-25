@@ -1259,6 +1259,7 @@ class MotionManager extends Manager {
     final deviceName = s.get(defs.deviceName).trim();
     log.info(name, 'face capture for ${e.name} starting');
     faceEnrollment.value = state;
+    _holdForEnroll(true);
     _enrollSocket = FaceEnrollSocket.open(
       baseUrl: url,
       token: s.get(defs.haToken),
@@ -1359,9 +1360,28 @@ class MotionManager extends Manager {
     }
   }
 
+  /// The capture's screen covers the display and is read from a step
+  /// away: the screensaver goes, and its dimmed brightness with it, and
+  /// stays away until the capture ends. Only the idle clock stands still,
+  /// so music and the wake word carry on.
+  void _holdForEnroll(bool held) {
+    unawaited(
+      commands.execute('holdScreensaver', {
+        'holder': 'face_enroll',
+        'held': held,
+      }),
+    );
+    if (!held || Headless.active) return;
+    unawaited(() async {
+      await commands.execute('stopScreensaver', const {});
+      await commands.execute('bringToFront', const {});
+    }());
+  }
+
   void _endFaceEnroll(FaceEnrollState result) {
     final socket = _enrollSocket;
     _enrollSocket = null;
+    if (socket != null) _holdForEnroll(false);
     unawaited(socket?.close());
     faceEnrollment.value = result;
     _enrollClear?.cancel();

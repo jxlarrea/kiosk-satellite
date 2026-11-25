@@ -65,7 +65,7 @@ Each person's face is enrolled once through a kiosk's camera, in a guided captur
 3. Now a little to the other side.
 4. Take a step back.
 
-Under the view, the kiosk says what to fix: no face in view, only one person in view, come closer, turn more or less, too dark. A different face is left out. **Stop** ends it early, and the pictures from a finished first step are kept. Ground Control keeps only small pictures of the face, never the frames.
+Under the view, the kiosk says what to fix: no face in view, only one person in view, come closer, turn more or less, too dark. A different face is left out. **Stop** ends it early, and the pictures from a finished first step are kept. A capture started while the screensaver is up dismisses it, so the screen is at its normal brightness, and the screensaver waits until the capture ends. Ground Control keeps only small pictures of the face, never the frames.
 
 ## Status
 
