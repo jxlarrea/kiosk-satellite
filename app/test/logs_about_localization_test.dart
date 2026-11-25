@@ -84,12 +84,14 @@ void main() {
   for (final tag in [
     'fr',
     if (UiStrings.supportedLocales.contains(const Locale('de'))) 'de',
+    'it',
     'nl',
     'uk',
   ]) {
     final credit = {
       'de': 'Dee-san',
       'fr': 'Limoniak',
+      'it': 'spita90',
       'nl': 'rononline',
       'uk': 'kdinya',
     }[tag]!;
@@ -152,7 +154,10 @@ void main() {
         language.value = Locale(tag);
         await tester.pumpAndSettle();
         expect(find.text(title), findsOneWidget);
-        await tester.tap(find.widgetWithText(TextButton, credit));
+        final profile = find.widgetWithText(TextButton, credit);
+        await tester.ensureVisible(profile);
+        await tester.pumpAndSettle();
+        await tester.tap(profile);
         await tester.pumpAndSettle();
         expect(
           container.browser.overlayUrl.value,

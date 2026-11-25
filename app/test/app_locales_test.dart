@@ -93,8 +93,13 @@ void main() {
     expect(cn.scriptCode ?? cn.countryCode, isNotNull);
   });
 
+  testWidgets('An Italian device resolves to Italian', (tester) async {
+    final it = await resolve(tester, const Locale('it', 'IT'));
+    expect(it.languageCode, 'it');
+  });
+
   testWidgets('Other languages fall back to English as before', (tester) async {
-    expect(await resolve(tester, const Locale('it', 'IT')), const Locale('en'));
+    expect(await resolve(tester, const Locale('pt', 'BR')), const Locale('en'));
     expect(await resolve(tester, const Locale('sv')), const Locale('en'));
   });
 

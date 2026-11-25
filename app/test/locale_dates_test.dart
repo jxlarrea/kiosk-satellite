@@ -36,6 +36,7 @@ void main() {
       expect(appDateLocale('nl', 'en_US'), 'nl');
       expect(appDateLocale('en', 'de_DE'), 'en');
       expect(appDateLocale('zh-CN', 'en_US'), 'zh_CN');
+      expect(appDateLocale('it', 'en_US'), 'it');
     });
 
     test('a device in the same language keeps its region', () {
@@ -47,7 +48,9 @@ void main() {
 
     test('a device language the app does not offer keeps the dates', () {
       expect(appDateLocale('en', 'cs_CZ'), 'cs');
-      expect(appDateLocale('en', 'it_IT'), 'it');
+      expect(appDateLocale('en', 'sv_SE'), 'sv');
+      // Italian is offered, so an Italian device keeps the app language.
+      expect(appDateLocale('en', 'it_IT'), 'en');
       expect(appDateLocale('de', 'pt_BR'), 'pt_BR');
       // Chinese is offered, so a Taiwanese device keeps the app language.
       expect(appDateLocale('en', 'zh_TW'), 'en');
