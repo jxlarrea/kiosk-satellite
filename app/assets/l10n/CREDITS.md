@@ -4,6 +4,7 @@
 - Xavier Larrea (en)
 - Xavier Larrea (es)
 - Limoniak (fr)
+- spita90 (it)
 - rononline (nl)
 - ThePnx (pl)
 - Iaroslav Iadryshnikov (ru)

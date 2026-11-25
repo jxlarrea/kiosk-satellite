@@ -1,0 +1,10 @@
+{
+  "@@locale": "it",
+  "settingDlnaEnabledTitle": "Abilita il ricevitore DLNA",
+  "settingDlnaEnabledDescription": "Mostra immagini e riproduce contenuti inviati da Home Assistant o da qualsiasi app DLNA. Il dispositivo compare come lettore multimediale con il nome del dispositivo.",
+  "settingDlnaAudioBackgroundTitle": "Mantieni l'audio in background",
+  "settingDlnaAudioBackgroundDescription": "L'audio ricevuto viene riprodotto senza occupare lo schermo.",
+  "settingDlnaPortTitle": "Porta del server",
+  "settingDlnaPortDescription": "La porta usata dal ricevitore, compilata al suo avvio. Modificala per spostare il ricevitore, oppure cancellala per fargliene scegliere un'altra.",
+  "settingDlnaPortPlaceholder": "Impostata all'avvio del ricevitore"
+}

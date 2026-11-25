@@ -1,0 +1,12 @@
+{
+  "@@locale": "it",
+  "logsWebConsole": "Console web",
+  "logsDock": "Aggancia sopra la pagina attiva",
+  "logsNoOutput": "Ancora nessun output nella console",
+  "logsShareSubject": "Registro della console di Kiosk Satellite",
+  "logsInput": "Esegui JavaScript nella pagina",
+  "logsInputHistory": "Esegui JavaScript nella pagina (Invio per eseguire, Su/Giù per la cronologia)",
+  "logsRun": "Esegui",
+  "logsEvaluationFailed": "esecuzione non riuscita",
+  "logsDeviceUnreachable": "dispositivo non raggiungibile"
+}

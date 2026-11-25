@@ -24,6 +24,12 @@ export const localizationCredits = {
       "login": "Limoniak"
     }
   ],
+  "it": [
+    {
+      "name": "spita90",
+      "login": "spita90"
+    }
+  ],
   "nl": [
     {
       "name": "rononline",
@@ -55,4 +61,4 @@ export const localizationCredits = {
     }
   ]
 };
-export const localizationLanguageNames = {"de": "Deutsch", "en": "English", "es": "Español", "fr": "Français", "nl": "Nederlands", "pl": "Polski", "ru": "Русский", "uk": "Українська", "zh-CN": "简体中文"};
+export const localizationLanguageNames = {"de": "Deutsch", "en": "English", "es": "Español", "fr": "Français", "it": "Italiano", "nl": "Nederlands", "pl": "Polski", "ru": "Русский", "uk": "Українська", "zh-CN": "简体中文"};

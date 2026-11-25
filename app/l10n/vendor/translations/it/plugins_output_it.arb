@@ -1,0 +1,14 @@
+{
+  "@@locale": "it",
+  "pluginCharts": "Grafici",
+  "pluginReadings": "Letture",
+  "pluginWaitingForSamples": "In attesa di campioni",
+  "pluginLatest": "Più recente",
+  "pluginSelected": "Selezionato",
+  "pluginNoDataYet": "Ancora nessun dato",
+  "pluginTapOrDragToInspectSamplesDoubleTapTo": "Tocca o trascina per esaminare i campioni. Tocca due volte per seguire il più recente.",
+  "pluginNoData": "Nessun dato",
+  "pluginOn": "Attivo",
+  "pluginEmpty": "Vuoto",
+  "pluginChartKeyboardHelp": "Usa i tasti freccia per esaminare i campioni e Fine per il più recente."
+}

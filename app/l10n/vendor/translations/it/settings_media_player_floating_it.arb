@@ -1,0 +1,15 @@
+{
+  "@@locale": "it",
+  "settingSendspinShowPlayerTitle": "Mostra il lettore mobile",
+  "settingSendspinShowPlayerDescription": "Durante la riproduzione di musica, mostra sopra la plancia una piccola finestra con copertina, informazioni sul brano e avanzamento. Trascinala dove vuoi: la posizione viene ricordata.",
+  "settingSendspinPlayerSizeTitle": "Dimensione del lettore",
+  "settingSendspinPlayerSizeDescription": "Compatto è una piccola finestra poco invadente con il brano in riproduzione. Grande aggiunge i pulsanti precedente, riproduci/pausa e successivo, dimensionati per il tocco, che controllano l'intero gruppo di riproduzione.",
+  "settingSendspinPausedHideMinutesTitle": "Nascondi il lettore in pausa dopo",
+  "settingSendspinPausedHideMinutesDescription": "Per quanto tempo un lettore in pausa resta sullo schermo. Vale sia per il lettore mobile sia per la vista In riproduzione.",
+  "settingSendspinDismissKeepsPlayingTitle": "Continua la riproduzione alla chiusura",
+  "settingSendspinDismissKeepsPlayingDescription": "Scorrere via il lettore mobile lo nasconde senza fermare la musica.",
+  "mediaFloatingPage": "Lettore mobile",
+  "mediaFloatingHint": "La piccola finestra sopra la plancia",
+  "mediaCompact": "Compatto",
+  "mediaLargeControls": "Grande con controlli"
+}

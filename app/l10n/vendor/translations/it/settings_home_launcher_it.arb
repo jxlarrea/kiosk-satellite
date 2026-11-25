@@ -1,0 +1,7 @@
+{
+  "@@locale": "it",
+  "settingHomeLauncherEnabledTitle": "Usa come schermata Home",
+  "settingHomeLauncherEnabledDescription": "Registra Kiosk Satellite come schermata Home del dispositivo: il kiosk si avvia all'accensione e ogni pressione del tasto Home riporta al kiosk. Si disattiva da solo e ripristina il launcher precedente se l'app non riesce ad avviarsi più volte di seguito.",
+  "settingHomeKeepPinningTitle": "Mantieni il blocco app sullo schermo",
+  "settingHomeKeepPinningDescription": "Mantiene il blocco app sullo schermo anche quando Kiosk Satellite è la schermata Home. Disattiva i tasti App recenti e Indietro a livello di sistema, ma fa ricomparire la finestra di conferma del blocco sui dispositivi in cui l'app non è proprietaria del dispositivo."
+}

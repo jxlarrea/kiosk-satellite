@@ -1,0 +1,21 @@
+{
+  "@@locale": "it",
+  "kioskBackClose": "Premi di nuovo Indietro per chiudere l'app",
+  "kioskBackAgain": "Premi di nuovo Indietro per tornare indietro",
+  "kioskHoldOn": "Modalità pausa attivata",
+  "kioskHoldOff": "Modalità pausa disattivata",
+  "kioskHoldNotice": "La vista corrente resta visualizzata finché non disattivi la modalità.",
+  "kioskDownloadComplete": "Download completato",
+  "kioskDownloadFailed": "Download non riuscito",
+  "kioskDownload": "Download",
+  "kioskDownloading": "Download in corso",
+  "kioskOpen": "Apri",
+  "kioskTip": "Suggerimento",
+  "kioskMenuHint": "Scorri dal bordo sinistro per aprire il menu.",
+  "kioskUnknownLink": "Link del kiosk sconosciuto",
+  "kioskOpenAppFailed": "Impossibile aprire l'app",
+  "kioskWebViewMissing": "Android System WebView non è installato",
+  "kioskWebViewMissingHelp": "Questo dispositivo non ha un fornitore WebView, quindi Home Assistant non può essere mostrato. Installa Android System WebView o Chrome, poi riavvia Kiosk Satellite.",
+  "kioskDuraSpeedBlocking": "DuraSpeed sta bloccando la plancia",
+  "kioskDuraSpeedBlockingHelp": "Il DuraSpeed di questo tablet impedisce l'avvio del motore di rendering della plancia e alcuni tablet non offrono una pagina di impostazioni per gestirlo. Disattivalo una volta tramite adb, poi riavvia Kiosk Satellite:"
+}

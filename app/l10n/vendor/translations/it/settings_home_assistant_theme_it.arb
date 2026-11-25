@@ -1,0 +1,17 @@
+{
+  "@@locale": "it",
+  "settingHaThemeTitle": "Tema",
+  "settingHaThemeDescription": "Chiaro o scuro per la plancia di Home Assistant, impostabile anche dall'entità Tema in Home Assistant. Automatico segue le impostazioni qui sotto.",
+  "settingThemeMatchAppTitle": "Sincronizza i temi di Home Assistant con Kiosk Satellite",
+  "settingThemeMatchAppDescription": "Adatta automaticamente il tema di Home Assistant all'interfaccia di Kiosk Satellite.",
+  "settingThemeAutoTitle": "Adatta il tema all'ora del giorno",
+  "settingThemeAutoDescription": "Alterna Home Assistant tra chiaro e scuro secondo una programmazione. Mantiene il tema selezionato, cambiandone solo la variante chiara o scura.",
+  "settingThemeDarkAtTitle": "Tema scuro alle",
+  "settingThemeDarkAtDescription": "Ora locale in cui passare al tema scuro.",
+  "settingThemeLightAtTitle": "Tema chiaro alle",
+  "settingThemeLightAtDescription": "Ora locale in cui tornare al tema chiaro.",
+  "settingThemeAutoAppTitle": "Cambia anche il tema dell'app",
+  "settingThemeAutoAppDescription": "Cambia il tema di Kiosk Satellite (menu, impostazioni) insieme al cambio programmato di Home Assistant.",
+  "haThemeHint": "Segue l'app o alterna chiaro e scuro secondo una programmazione",
+  "haThemeAuto": "Automatico"
+}

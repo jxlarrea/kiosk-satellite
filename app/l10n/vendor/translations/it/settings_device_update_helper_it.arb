@@ -1,0 +1,15 @@
+{
+  "@@locale": "it",
+  "deviceHelperPage": "Assistente aggiornamenti facoltativo",
+  "deviceHelperStatus": "Stato dell'assistente",
+  "deviceHelperError": "Impossibile verificare l'assistente aggiornamenti.",
+  "deviceHelperUnneeded": "Android ora può installare gli aggiornamenti in modo silenzioso. L'assistente non è necessario.",
+  "deviceHelperIntro": "Al momento questo dispositivo richiede una conferma sullo schermo per installare gli aggiornamenti tramite Android. L'assistente facoltativo consente a Kiosk Satellite di installare gli aggiornamenti senza alcun tocco.",
+  "deviceHelperBusy": "Installazione di un aggiornamento in corso.",
+  "deviceHelperReady": "Pronto. Gli aggiornamenti si installano senza conferma.",
+  "deviceHelperUnavailable": "Non disponibile. Avvia l'assistente tramite ADB per abilitare gli aggiornamenti senza conferma.",
+  "deviceHelperLifetime": "L'assistente resta attivo dopo i riavvii e gli aggiornamenti dell'app, ma si arresta al riavvio del dispositivo. Esegui il comando da un computer con ADB per avviarlo di nuovo. Dopodiché puoi scollegare il computer.",
+  "deviceHelperStart": "Avvia tramite ADB",
+  "deviceHelperGuide": "Guida alla configurazione",
+  "deviceHelperGuideHelp": "Leggi le istruzioni e i requisiti dell'assistente aggiornamenti."
+}

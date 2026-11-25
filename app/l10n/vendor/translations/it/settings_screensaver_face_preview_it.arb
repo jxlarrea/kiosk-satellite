@@ -1,0 +1,13 @@
+{
+  "@@locale": "it",
+  "settingFacePreviewTitle": "Mostra l'anteprima della fotocamera",
+  "settingFacePreviewDescription": "Mostra per qualche secondo una piccola vista rotonda in diretta della fotocamera in un angolo dello schermo quando un volto riattiva il kiosk.",
+  "settingFacePreviewSecondsTitle": "Durata dell'anteprima",
+  "settingFacePreviewSecondsDescription": "Per quanto tempo l'anteprima resta sullo schermo.",
+  "settingFacePreviewScaleTitle": "Dimensione dell'anteprima",
+  "settingFacePreviewScaleDescription": "Adatta la dimensione dell'anteprima a quella dello schermo.",
+  "settingFacePreviewPositionTitle": "Posizione dell'anteprima",
+  "settingFacePreviewPositionDescription": "L'angolo in cui compare l'anteprima.",
+  "screensaverDetectionPreviewSection": "Anteprima della fotocamera",
+  "facePreviewRecognized": "Riconosciuto"
+}

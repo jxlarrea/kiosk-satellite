@@ -1,0 +1,10 @@
+{
+  "@@locale": "it",
+  "logsEntries": "{count} voci",
+  "logsCopyLog": "Copia registro",
+  "logsShareLog": "Condividi registro",
+  "logsCopied": "Copiato",
+  "logsCopyFailed": "Impossibile copiare",
+  "logsOnClipboard": "Il registro è stato copiato negli appunti.",
+  "logsConsoleOnClipboard": "Il registro della console è stato copiato negli appunti."
+}

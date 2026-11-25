@@ -1,0 +1,19 @@
+{
+  "@@locale": "it",
+  "settingEsphomeEnabledTitle": "Abilita ESPHome",
+  "settingEsphomeEnabledDescription": "Presenta questo kiosk a Home Assistant come dispositivo ESPHome, con i suoi sensori e controlli come entità native. Viene rilevato automaticamente.",
+  "settingEsphomeEntitiesTitle": "Esponi le entità del kiosk",
+  "settingEsphomeEntitiesDescription": "Espone i sensori e i controlli di questo dispositivo come entità ESPHome.",
+  "settingEsphomeExcludedEntitiesTitle": "Entità escluse",
+  "settingEsphomeExcludedEntitiesDescription": "Scegli le entità da escludere da Home Assistant. Tutte le altre entità disponibili vengono esposte. Il salvataggio riconnette ESPHome.",
+  "settingEsphomeNodeNameTitle": "Nome del nodo",
+  "settingEsphomeNodeNameDescription": "Identifica questo kiosk sulla rete, e Home Assistant ne ricava i nomi delle sue azioni. Rinominarlo rinomina anche quelle azioni.",
+  "settingEsphomeNodeNamePlaceholder": "Impostato al primo avvio",
+  "settingBtproxyKeyTitle": "Chiave di crittografia",
+  "settingBtproxyKeyDescription": "Incolla questa chiave in Home Assistant quando ti chiede la chiave di crittografia. Viene generata automaticamente al primo avvio.",
+  "settingBtproxyKeyPlaceholder": "Generata al primo avvio",
+  "settingBtproxyPortTitle": "Porta dell'API",
+  "settingBtproxyPortDescription": "La porta a cui si connette Home Assistant. Lascia vuoto per usare la porta standard di ESPHome, 6053.",
+  "esphomeStartFailed": "Avvio del server ESPHome non riuscito: {error}",
+  "esphomeExcludedInvalid": "Scegli un elenco di ID di entità."
+}

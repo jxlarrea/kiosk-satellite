@@ -1,0 +1,13 @@
+{
+  "@@locale": "it",
+  "settingEsphomeRealMacTitle": "Usa l'indirizzo MAC Wi-Fi reale",
+  "settingEsphomeRealMacDescription": "Home Assistant collega questo kiosk allo stesso dispositivo già rilevato dalle tue integrazioni di rete. Modificare questa opzione crea un nuovo dispositivo ESPHome in Home Assistant.",
+  "settingEsphomeMacOverrideTitle": "Indirizzo MAC Wi-Fi personalizzato",
+  "settingEsphomeMacOverrideDescription": "Poiché non è possibile ricavare l'indirizzo MAC, puoi inserirne uno tuo in questo campo. Modificarlo crea un nuovo dispositivo ESPHome in Home Assistant.",
+  "esphomeAdvanced": "Impostazioni avanzate",
+  "esphomeAdvancedHelp": "Indirizzo MAC Wi-Fi reale o personalizzato",
+  "esphomeMacInvalid": "Inserisci un indirizzo MAC valido.",
+  "esphomeMacHardware": "Indirizzo comunicato: {mac}.",
+  "esphomeMacManual": "Indirizzo comunicato: {mac}, inserito qui sotto.",
+  "esphomeMacUnavailable": "Android non rivela l'indirizzo hardware di questo dispositivo."
+}

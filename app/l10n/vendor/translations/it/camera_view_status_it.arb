@@ -1,0 +1,18 @@
+{
+  "@@locale": "it",
+  "cameraViewerTitle": "Vista telecamere",
+  "cameraViewerConnecting": "Connessione...",
+  "cameraViewerReconnecting": "Riconnessione...",
+  "cameraViewerTrying": "Tentativo con {transport}...",
+  "cameraViewerCannotDecode": "Questo dispositivo non può decodificare {codec}",
+  "cameraViewerCannotPlay": "Questo dispositivo non può riprodurre flussi {transport}",
+  "cameraViewerCannotDecodeStream": "Questo dispositivo non può decodificare questo flusso",
+  "cameraViewerHaRetry": "Impossibile raggiungere Home Assistant. Nuovo tentativo tra {seconds} s",
+  "cameraViewerServerRetry": "Impossibile raggiungere il server delle telecamere. Nuovo tentativo tra {seconds} s",
+  "cameraViewerConnectionRetry": "Connessione non riuscita. Nuovo tentativo tra {seconds} s",
+  "cameraViewerStartRetry": "Il server delle telecamere non è riuscito ad avviare questo flusso. Nuovo tentativo...",
+  "cameraViewerStartDelayedRetry": "Il server delle telecamere non è riuscito ad avviare questo flusso. Nuovo tentativo tra {seconds} s",
+  "cameraViewerMissingRetry": "Flusso non trovato sul server delle telecamere. Nuovo tentativo tra {seconds} s",
+  "cameraViewerLoginRetry": "Il server delle telecamere ha rifiutato l'accesso. Nuovo tentativo tra {seconds} s",
+  "cameraViewerMissing": "Flusso mancante in Go2RTC"
+}

@@ -1,0 +1,11 @@
+{
+  "@@locale": "it",
+  "setupWelcome": "Benvenuto",
+  "setupConnect": "Connessione",
+  "setupConnectSummary": "URL e token di Home Assistant",
+  "setupDashboard": "Plancia",
+  "setupDashboardSummary": "Cosa mostra il kiosk",
+  "setupRecommendedSummary": "Impostazioni consigliate",
+  "setupPermissions": "Autorizzazioni",
+  "setupPermissionsSummary": "Cosa serve alla configurazione"
+}

@@ -1,0 +1,16 @@
+{
+  "@@locale": "it",
+  "settingDisableCacheTitle": "Disabilita la cache",
+  "settingDisableCacheDescription": "Carica sempre dalla rete e scarta i dati della pagina in cache al caricamento, così una plancia ripubblicata è sempre aggiornata. Rallenta: consideralo uno strumento di sviluppo.",
+  "settingAllowMixedContentTitle": "Consenti contenuti misti",
+  "settingAllowMixedContentDescription": "Consente alle pagine HTTPS di caricare risorse HTTP non sicure. Utile quando in una plancia https:// Home Assistant inserisce anche contenuti http:// non sicuri.",
+  "settingIgnoreSslErrorsTitle": "Ignora errori SSL",
+  "settingIgnoreSslErrorsDescription": "Accetta certificati non attendibili o autofirmati. Da usare solo sulla tua rete, perché disattiva la verifica dei certificati.",
+  "settingBrowserUserAgentTitle": "User agent personalizzato",
+  "settingBrowserUserAgentDescription": "Inviato ai siti web al posto dello user agent predefinito. Lascia vuoto per usare quello predefinito.",
+  "webGeolocationSection": "Geolocalizzazione HTML5",
+  "settingWebGeolocationTitle": "Abilita l'accesso alla geolocalizzazione",
+  "settingWebGeolocationDescription": "Consente alle pagine di leggere la posizione del dispositivo, ad esempio per un radar meteo o una mappa. Solo le pagine caricate tramite HTTPS possono richiederla.",
+  "webGeolocationPermissionHeld": "Le pagine possono leggere la posizione del dispositivo.",
+  "webGeolocationPermissionMissing": "Senza questa autorizzazione le pagine non possono leggere la posizione del dispositivo."
+}

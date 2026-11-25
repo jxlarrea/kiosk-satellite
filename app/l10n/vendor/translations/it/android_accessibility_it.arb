@@ -1,0 +1,4 @@
+{
+  "@@locale": "it",
+  "androidAccessibilityHelp": "Chiude l'area notifiche e la schermata delle app recenti ogni volta che si aprono mentre la modalità kiosk o la modalità blocco protegge lo schermo. Kiosk Satellite non legge alcun contenuto dello schermo."
+}

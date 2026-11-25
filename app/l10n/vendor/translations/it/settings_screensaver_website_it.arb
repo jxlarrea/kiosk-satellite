@@ -1,0 +1,10 @@
+{
+  "@@locale": "it",
+  "settingScreensaverWebsiteUrlTitle": "URL del sito web",
+  "settingScreensaverWebsiteUrlDescription": "Una pagina da mostrare a schermo intero. Deve consentire l'incorporamento.",
+  "settingScreensaverWebsiteZoomTitle": "Livello di zoom",
+  "settingScreensaverWebsiteZoomDescription": "Ridimensiona l'intera WebView del salvaschermo esterno.",
+  "settingScreensaverWebsiteDoubleTapTitle": "Doppio tocco per chiudere",
+  "settingScreensaverWebsiteDoubleTapDescription": "Un tocco singolo interagisce con il sito web invece di chiudere il salvaschermo.",
+  "screensaverWebsiteSection": "Salvaschermo sito web"
+}

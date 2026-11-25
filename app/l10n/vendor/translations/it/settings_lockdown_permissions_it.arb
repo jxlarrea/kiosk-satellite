@@ -1,0 +1,6 @@
+{
+  "@@locale": "it",
+  "lockdownOverlayHeld": "La protezione della modalità blocco può coprire l'intero schermo.",
+  "lockdownOverlayMissing": "Senza questa autorizzazione la protezione copre solo l'app. La schermata per concederla compare sul tablet.",
+  "lockdownPermissionsSearch": "Le autorizzazioni su cui si basano le protezioni della modalità blocco."
+}

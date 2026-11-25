@@ -1,0 +1,6 @@
+{
+  "@@locale": "it",
+  "remoteLogin": "Accedi",
+  "remoteInvalidPassword": "Password errata",
+  "remoteLoginThrottled": "Troppi tentativi. Attendi 5 minuti e riprova."
+}

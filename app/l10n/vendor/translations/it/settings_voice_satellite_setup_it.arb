@@ -1,0 +1,12 @@
+{
+  "@@locale": "it",
+  "voiceDisconnected": "Home Assistant non connesso",
+  "voiceValidate": "Verifica prima la connessione in Configurazione di Home Assistant.",
+  "voiceChecking": "Ricerca di Voice Satellite…",
+  "voiceMissing": "Voice Satellite non è installato in Home Assistant",
+  "voiceInstallHelp": "Voice Satellite trasforma questo kiosk in un assistente vocale completo e a mani libere per Home Assistant: rilevamento della parola di attivazione, conversazioni, timer e annunci, direttamente sulla plancia.\n\nÈ disponibile nel repository predefinito di HACS. Installalo nella tua istanza di Home Assistant, poi torna qui.",
+  "voiceLearnMore": "Scopri di più su ",
+  "voiceGithub": "Voice Satellite su GitHub",
+  "voiceHacs": "Apri il repository HACS",
+  "voiceLoading": "Caricamento dei controlli di Voice Satellite…"
+}

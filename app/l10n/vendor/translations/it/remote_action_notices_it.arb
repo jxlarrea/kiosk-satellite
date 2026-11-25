@@ -1,0 +1,8 @@
+{
+  "@@locale": "it",
+  "remoteDisableTitle": "Disattivare l'amministrazione remota?",
+  "remoteDisableHelp": "ATTENZIONE: non potrai più accedere a questa pagina. Per riattivarla, usa il dispositivo o l'interruttore Amministrazione remota in Home Assistant.",
+  "remoteDisableConfirm": "Disattiva",
+  "remoteCopyHelp": "Seleziona la chiave e copiala manualmente.",
+  "remoteSaveSettingFailed": "Impossibile salvare questa impostazione. Riprova."
+}

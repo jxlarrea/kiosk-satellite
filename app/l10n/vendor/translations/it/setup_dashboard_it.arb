@@ -1,0 +1,8 @@
+{
+  "@@locale": "it",
+  "setupChooseDashboard": "Scegli una plancia",
+  "setupDashboardHelp": "È ciò che il kiosk mostrerà all'avvio.",
+  "setupSelectDashboard": "Seleziona una plancia",
+  "setupSelectDashboardHelp": "Scegli la plancia che il kiosk mostrerà. Puoi cambiarla in seguito in Impostazioni.",
+  "setupHeadlessGrants": "Questo dispositivo non ha uno schermo, quindi Android non può richiederle sul dispositivo stesso. Concedile una per una tramite adb, poi termina qui."
+}

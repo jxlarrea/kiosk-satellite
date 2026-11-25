@@ -1,0 +1,10 @@
+{
+  "@@locale": "it",
+  "settingAudioMicDeviceTitle": "Microfono",
+  "settingAudioMicDeviceDescription": "Il microfono usato dal rilevamento della parola di attivazione e dalle interazioni vocali.",
+  "settingAudioSpeakerDeviceTitle": "Altoparlante",
+  "settingAudioSpeakerDeviceDescription": "Uscita per i suoni di Voice Satellite; la riproduzione multimediale segue l'uscita audio di sistema.",
+  "screenAudioDevices": "Dispositivi audio",
+  "screenAudioSelectedDevice": "Dispositivo selezionato",
+  "screenAudioDisconnected": "{name} (non connesso)"
+}

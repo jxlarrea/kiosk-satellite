@@ -1,0 +1,7 @@
+{
+  "@@locale": "it",
+  "kioskPinTitle": "PIN del kiosk",
+  "kioskPinHint": "PIN",
+  "kioskWrongPin": "PIN errato",
+  "kioskUnlock": "Sblocca"
+}

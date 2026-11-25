@@ -1,0 +1,15 @@
+{
+  "@@locale": "it",
+  "settingScreensaverGlanceEnabledTitle": "A colpo d'occhio",
+  "settingScreensaverGlanceEnabledDescription": "Mostra sul salvaschermo una riga con gli stati delle entità di Home Assistant.",
+  "settingScreensaverGlanceEntitiesTitle": "Entità",
+  "settingScreensaverGlanceEntitiesDescription": "Fino a quattro entità da mostrare, ognuna con un nome personalizzato facoltativo.",
+  "settingScreensaverGlanceNowPlayingTitle": "Mostra nella schermata In riproduzione",
+  "settingScreensaverGlanceNowPlayingDescription": "Mostra la riga nella vista a schermo intero In riproduzione. Resta nascosta mentre sono visibili i testi.",
+  "screensaverOverlayShowing": "Visibili",
+  "screensaverOverlayNone": "Ancora nessuna",
+  "screensaverOverlayGlancePage": "A colpo d'occhio",
+  "screensaverOverlayGlanceHint": "Entità mostrate sopra il salvaschermo",
+  "glanceUnavailable": "Non disponibile",
+  "glanceUnknown": "Sconosciuto"
+}

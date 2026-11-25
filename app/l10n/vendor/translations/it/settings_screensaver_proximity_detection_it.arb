@@ -1,0 +1,14 @@
+{
+  "@@locale": "it",
+  "settingScreensaverDismissOnProximityTitle": "Chiudi al rilevamento di prossimità",
+  "settingScreensaverDismissOnProximityDescription": "Osserva il sensore di prossimità mentre è attivo il salvaschermo e riattiva lo schermo quando qualcosa si avvicina al dispositivo. Un dispositivo che ha solo sensori pensati per le chiamate (\"palm\", \"touch\") non funzionerà.",
+  "settingScreensaverDismissOnProximityScreenOffOnlyTitle": "Solo a schermo spento",
+  "settingScreensaverDismissOnProximityScreenOffOnlyDescription": "Mantiene visibile il salvaschermo quando qualcosa si avvicina a schermo acceso. Quando lo schermo è spento, il rilevamento riattiva la plancia. Il tocco chiude comunque il salvaschermo.",
+  "settingScreensaverPostponeOnProximityTitle": "Posticipa il salvaschermo al rilevamento di prossimità",
+  "settingScreensaverPostponeOnProximityDescription": "Ritarda l'attivazione del salvaschermo finché qualcosa è vicino al sensore.",
+  "screensaverDetectionProximityPage": "Rilevamento di prossimità",
+  "screensaverDetectionProximityHint": "Chiude o posticipa il salvaschermo tramite il sensore di prossimità",
+  "screensaverDetectionNoProximity": "Non disponibile su questo dispositivo: non ha un sensore di prossimità.",
+  "screensaverDetectionSensor": "Sensore",
+  "screensaverDetectionSensorHelp": "Ciò che il dispositivo indica come sensore di prossimità. Un sensore pensato per le chiamate chiamato \"palm\" o \"touch\" non funzionerà."
+}

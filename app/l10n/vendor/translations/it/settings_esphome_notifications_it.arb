@@ -1,0 +1,19 @@
+{
+  "@@locale": "it",
+  "settingNotificationsTransparencyTitle": "Trasparenza",
+  "settingNotificationsTransparencyDescription": "Lascia intravedere lo schermo sottostante attraverso le schede delle notifiche. Testo e icone restano opachi.",
+  "settingNotificationsBlurTitle": "Sfocatura dello sfondo",
+  "settingNotificationsBlurDescription": "Sfoca ciò che si vede attraverso una scheda di notifica trasparente. Nota: la sfocatura non può essere applicata sopra la superficie della plancia di Home Assistant.",
+  "settingNotificationsChimeFileTitle": "Suono di notifica",
+  "settingNotificationsChimeFileDescription": "I file audio vengono letti da Android/data/me.jxl.kiosk_satellite/files/sounds sul dispositivo, cartella raggiungibile anche da Gestione file.",
+  "settingNotificationsVolumeTitle": "Volume delle notifiche",
+  "settingNotificationsVolumeDescription": "Il volume del suono di notifica, separato dal volume dei contenuti multimediali e da quello dell'assistente.",
+  "esphomeNotifications": "Notifiche",
+  "esphomeNotificationsHelp": "Trasparenza, sfocatura, suono di notifica, notifica di prova",
+  "esphomeAppearance": "Aspetto",
+  "esphomeSound": "Suono",
+  "esphomeNotificationTest": "Notifica di prova",
+  "esphomeNotificationHelp": "Le notifiche vengono inviate da Home Assistant con l'azione {action}. Prova ne mostra una sopra la plancia.",
+  "esphomeNotificationBody": "Ecco come appare e come suona una notifica di Home Assistant.",
+  "esphomeNotificationSearch": "L'azione di Home Assistant che invia le notifiche e un pulsante per mostrarne una."
+}

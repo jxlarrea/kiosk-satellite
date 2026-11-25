@@ -1,0 +1,16 @@
+{
+  "@@locale": "it",
+  "settingScreensaverGlanceScaleTitle": "Dimensione della riga",
+  "settingScreensaverGlanceScaleDescription": "Adatta la dimensione della riga a quella dello schermo.",
+  "settingScreensaverGlanceFontTitle": "Tipo di carattere",
+  "settingScreensaverGlanceFontDescription": "Il carattere usato per il testo della riga.",
+  "settingScreensaverGlanceFontWeightTitle": "Spessore del carattere",
+  "settingScreensaverGlanceFontWeightDescription": "Lo spessore del testo della riga. Predefinito usa lo spessore proprio di ogni riga: normale per i nomi, semigrassetto per i valori.",
+  "settingScreensaverGlanceHideNamesTitle": "Nascondi i nomi",
+  "settingScreensaverGlanceHideNamesDescription": "Mostra solo l'icona e il valore, con il valore più grande.",
+  "settingScreensaverGlanceBwIconsTitle": "Icone monocromatiche",
+  "settingScreensaverGlanceBwIconsDescription": "Mostra tutte le icone in grigio neutro invece che nel colore del loro stato.",
+  "settingScreensaverGlanceTextOnlyTitle": "Stile testo fluttuante",
+  "settingScreensaverGlanceTextOnlyDescription": "Mostra le entità come testo fluttuante invece che in riquadri.",
+  "screensaverOverlayAppearance": "Aspetto"
+}

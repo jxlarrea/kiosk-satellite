@@ -1,0 +1,17 @@
+{
+  "@@locale": "it",
+  "kioskHomeScreen": "Schermata Home",
+  "kioskCheckingDevice": "Controllo del dispositivo...",
+  "kioskFireOs": "Fire OS non consente di sostituire il proprio launcher.",
+  "kioskUnsupported": "Questo dispositivo non consente di cambiare la schermata Home.",
+  "kioskRecovered": "Disattivato automaticamente dopo ripetuti avvii non riusciti; è stato ripristinato il launcher precedente. Riattiva l'interruttore per riprovare.",
+  "kioskHeld": "Kiosk Satellite è la schermata Home. Il kiosk si avvia all'accensione e ogni pressione del tasto Home riporta al kiosk.",
+  "kioskDisabled": "Non è la schermata Home. Attiva Usa come schermata Home qui sopra.",
+  "kioskWaiting": "Non è ancora la schermata Home attuale: il dispositivo attende una conferma.",
+  "kioskOpenHomeSettings": "Apri le impostazioni Home",
+  "kioskSetDefault": "Imposta come predefinita",
+  "kioskActive": "Attivo",
+  "kioskNotHome": "Non è la schermata Home.",
+  "kioskWaitingRemote": "In attesa di una conferma sul dispositivo: lì si aprono la finestra di sistema o le impostazioni Home.",
+  "kioskSetDevice": "Imposta sul dispositivo"
+}

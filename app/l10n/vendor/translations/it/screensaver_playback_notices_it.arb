@@ -1,0 +1,16 @@
+{
+  "@@locale": "it",
+  "screensaverNoPhotos": "Nessuna foto selezionata. Scegline alcune in Impostazioni.",
+  "screensaverNoFolder": "Nessuna cartella selezionata. Scegline una in Impostazioni.",
+  "screensaverFolderEmpty": "Nessuna foto o video in {folder}",
+  "screensaverFolderUnreadable": "Impossibile leggere {folder}. Hai concesso l'autorizzazione per i contenuti multimediali?",
+  "screensaverReadPhotosFailed": "Impossibile leggere le foto.",
+  "screensaverImmichNotReady": "Immich non è connesso. Verificalo in Impostazioni.",
+  "screensaverNoMediaMatch": "Nessun contenuto multimediale corrisponde all'origine e ai filtri.",
+  "screensaverNoMediaSource": "Nessun contenuto multimediale nell'origine selezionata.",
+  "screensaverImmichUnreachable": "Impossibile raggiungere il server Immich.",
+  "screensaverRetryNotice": "{error} Nuovo tentativo automatico in corso.",
+  "screensaverVideosTooLarge": "Tutti i video di questa playlist sono troppo grandi per essere riprodotti su questo dispositivo.",
+  "screensaverUrlNotSet": "Nessuna URL dell'immagine impostata. Aggiungine una in Impostazioni.",
+  "screensaverUrlLoadFailed": "Impossibile caricare l'immagine."
+}

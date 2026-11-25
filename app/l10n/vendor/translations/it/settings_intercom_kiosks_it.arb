@@ -1,0 +1,15 @@
+{
+  "@@locale": "it",
+  "intercomKiosks": "Kiosk",
+  "intercomRosterHelp": "Kiosk rilevati e membri della flotta salvati. Un kiosk è pronto quando è raggiungibile, ha l'interfono attivo, la stessa chiave e le stesse impostazioni di crittografia.",
+  "intercomNoOther": "Nessun altro kiosk trovato",
+  "intercomRosterDeviceHelp": "Qui compaiono i kiosk con Amministrazione remota e Trova altri kiosk attivi.",
+  "intercomNoneHeard": "Nessun kiosk trovato",
+  "intercomRosterRemoteHelp": "I kiosk compaiono tramite il rilevamento in rete o perché salvati come membri della flotta. Amministrazione remota e Trova altri kiosk devono essere attivi.",
+  "intercomReady": "Pronto",
+  "intercomOff": "Interfono disattivato",
+  "intercomDifferentKey": "Chiave diversa",
+  "intercomUnreachable": "Non raggiungibile",
+  "intercomOffline": "Offline",
+  "intercomChecking": "Controllo…"
+}

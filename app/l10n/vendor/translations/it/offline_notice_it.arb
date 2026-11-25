@@ -1,0 +1,9 @@
+{
+  "@@locale": "it",
+  "offlineDashboard": "Plancia non disponibile",
+  "offlineNetwork": "Nessuna connessione di rete",
+  "offlinePageHelp": "Impossibile caricare la pagina.",
+  "offlineNetworkHelp": "La plancia tornerà disponibile non appena la rete sarà di nuovo attiva.",
+  "offlineLost": "Connessione di rete persa",
+  "offlineRestored": "Connessione di rete ripristinata"
+}

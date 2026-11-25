@@ -1,0 +1,11 @@
+{
+  "@@locale": "it",
+  "logsSystemLog": "Registro di sistema Android per questa app (qui compaiono gli arresti anomali)",
+  "logsErrors": "Errori e arresti anomali",
+  "logsWarnings": "Avvisi",
+  "logsInfo": "Info e debug",
+  "logsNoMatches": "Nessuna riga corrispondente. Abilita altri tipi qui sopra per vedere il registro completo.",
+  "logsUnavailable": "logcat non disponibile",
+  "logsReadFailed": "Impossibile leggere logcat: {error}",
+  "logsUnknown": "sconosciuto"
+}

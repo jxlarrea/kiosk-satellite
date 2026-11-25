@@ -1,0 +1,18 @@
+{
+  "@@locale": "it",
+  "mediaPickPlayer": "Scegli un lettore",
+  "mediaMaPlayer": "Lettore di Music Assistant",
+  "mediaHaPlayer": "Lettore multimediale di Home Assistant",
+  "mediaSonosRoom": "Stanza Sonos",
+  "mediaSearchPlayers": "Cerca lettori",
+  "mediaOffline": "Offline",
+  "mediaOfflineName": "{name} (offline)",
+  "mediaSetUpMa": "Configura Music Assistant per elencarne i lettori.",
+  "mediaSetUpHa": "Connetti Home Assistant per elencarne i lettori multimediali.",
+  "mediaSetUpSonos": "Nessun altoparlante Sonos ancora noto. Cercane o aggiungine uno nella pagina Sonos.",
+  "mediaHaFailed": "Home Assistant non ha risposto: {error}",
+  "mediaSaveFailed": "Impossibile salvare il lettore.",
+  "mediaSelectFailed": "Impossibile selezionare il lettore",
+  "mediaNotificationAccessRemote": "Senza questa autorizzazione Android non elenca alcuna sessione multimediale, quindi In riproduzione non può seguire le app in riproduzione su questo dispositivo. La schermata per concederla compare sul tablet.",
+  "mediaLocalMediaSession": "Sessione multimediale locale"
+}

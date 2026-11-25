@@ -50,6 +50,7 @@ try:
         languages = [("English", "jxlarrea"), ("Español", "jxlarrea"), ("Français", "Limoniak")]
         if german:
             languages.insert(0, ("Deutsch", "Dee-san"))
+        languages.append(("Italiano", "spita90"))
         languages.append(("Nederlands", "rononline"))
         languages.append(("Polski", "ThePnx"))
         languages.append(("Русский", "MrYadro"))
@@ -71,6 +72,7 @@ try:
             locales.append(("es", "Créditos de traducción"))
         if german:
             locales.append(("de", "Mitwirkende an der Übersetzung"))
+        locales.append(("it", "Crediti della traduzione"))
         locales.append(("nl", "Vertalers"))
         locales.append(("pl", "Autorzy tłumaczeń"))
         locales.append(("ru", "Авторы локализации"))

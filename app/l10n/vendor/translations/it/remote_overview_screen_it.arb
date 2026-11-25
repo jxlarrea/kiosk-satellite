@@ -1,0 +1,12 @@
+{
+  "@@locale": "it",
+  "overviewNoScreenshot": "Nessuno screenshot",
+  "overviewStill": "Fermo immagine",
+  "overviewLive": "In diretta",
+  "overviewFullSize": "Dimensione originale",
+  "overviewLiveInterval": "In diretta, ogni 5 secondi",
+  "overviewTaken": "Acquisito {age}",
+  "overviewCameraViewNamed": "Vista telecamere: {name}",
+  "overviewCameraView": "Vista telecamere",
+  "overviewScreenOffState": "Schermo spento"
+}

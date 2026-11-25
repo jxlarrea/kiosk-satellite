@@ -1,0 +1,8 @@
+{
+  "@@locale": "it",
+  "mediaNothingQueued": "Niente in coda",
+  "mediaChapters": "Capitoli",
+  "mediaNowPlaying": "In riproduzione",
+  "mediaUpNext": "A seguire",
+  "mediaUnnamedChapter": "Capitolo {number}"
+}

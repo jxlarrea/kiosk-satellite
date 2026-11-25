@@ -1,0 +1,21 @@
+{
+  "@@locale": "it",
+  "settingLockdownEnabledTitle": "Abilita la modalità blocco",
+  "settingLockdownEnabledDescription": "Disabilita le interazioni con lo schermo finché non viene disattivata da Home Assistant o con il gesto di uscita.",
+  "settingLockdownAutoUnlockMinutesTitle": "Sblocca automaticamente dopo",
+  "settingLockdownAutoUnlockMinutesDescription": "Disattiva la modalità blocco dopo questo tempo quando viene avviata dal menu del kiosk. Imposta 0 per restare bloccato.",
+  "settingLockdownBlackoutTitle": "Schermo nero",
+  "settingLockdownBlackoutDescription": "Rende nero lo schermo durante il blocco.",
+  "settingLockdownAllowScreensaverTitle": "Consenti il salvaschermo",
+  "settingLockdownAllowScreensaverDescription": "Consente al salvaschermo di funzionare durante il blocco. L'impostazione Chiudi al rilevamento del movimento resta disattivata finché il blocco non viene rimosso.",
+  "settingLockdownExitGestureTitle": "Gesto di uscita dalla modalità blocco",
+  "settingLockdownExitGestureDescription": "Una serie di tocchi rapidi in qualsiasi punto disattiva la modalità blocco, dopo il PIN del kiosk se impostato. Le varianti con pressione prolungata richiedono di tenere premuto l'ultimo tocco. Se disabilitato, solo l'amministrazione remota o Home Assistant possono disattivarla.",
+  "lockdownGestureNone": "Disabilitato (solo da remoto)",
+  "lockdownExplanation": "La modalità blocco rende la plancia non interattiva, attiva tutte le protezioni della modalità kiosk senza modificarne le impostazioni e silenzia il rilevamento della parola di attivazione finché è attiva. Con la protezione dell'interfaccia di sistema abilitata (sopra), vengono bloccate anche l'area notifiche e le app recenti. Home Assistant riceve un interruttore Modalità blocco tramite ESPHome.",
+  "lockdownSearch": "Protezione tattile configurabile solo da remoto. Si configura dall'interfaccia di amministrazione remota; le sue autorizzazioni sono in Autorizzazioni di sistema richieste.",
+  "settingLockdownFaceDisableTitle": "Disattiva la modalità blocco per",
+  "settingLockdownFaceDisableDescription": "Con Persone scelte, la modalità blocco viene disattivata quando una delle persone scelte qui sotto viene riconosciuta davanti al kiosk. Lascia su Nessuno se blocchi lo schermo per pulirlo.",
+  "settingLockdownFacePeopleDescription": "Scegli per chi viene disattivata la modalità blocco. Se non scegli nessuno, viene disattivata per chiunque venga riconosciuto.",
+  "settingLockdownFaceRelockTitle": "Riattiva la modalità blocco",
+  "settingLockdownFaceRelockDescription": "Riattiva la modalità blocco 10 secondi dopo che nessuna delle persone scelte è più inquadrata."
+}

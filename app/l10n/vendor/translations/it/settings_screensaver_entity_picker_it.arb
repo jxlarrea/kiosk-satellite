@@ -1,0 +1,13 @@
+{
+  "@@locale": "it",
+  "screensaverOverlayEntity": "Entità",
+  "screensaverOverlayNotSet": "Non impostata",
+  "screensaverOverlayName": "Nome",
+  "screensaverOverlayNameHelp": "Lascia vuoto per usare il nome di Home Assistant.",
+  "screensaverOverlayValue": "Valore mostrato",
+  "screensaverOverlayState": "Stato",
+  "screensaverOverlayEntityRequired": "Scegli un'entità.",
+  "screensaverOverlaySearching": "Ricerca in corso…",
+  "screensaverOverlayUnreachable": "Impossibile raggiungere Home Assistant",
+  "screensaverOverlayNoAnswer": "Il dispositivo non ha risposto."
+}

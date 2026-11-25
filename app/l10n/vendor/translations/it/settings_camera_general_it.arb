@@ -1,0 +1,22 @@
+{
+  "@@locale": "it",
+  "settingCameraEnabledTitle": "Abilita la fotocamera",
+  "settingCameraEnabledDescription": "L'uso della fotocamera aumenta il carico della CPU e il calore, il che può ridurre la durata della batteria e del dispositivo.",
+  "settingCameraDeviceTitle": "Fotocamera",
+  "settingCameraDeviceDescription": "La fotocamera da usare.",
+  "settingCameraSnapshotResolutionTitle": "Risoluzione delle istantanee",
+  "settingCameraSnapshotResolutionDescription": "Una risoluzione più alta offre immagini più nitide ma richiede più CPU e larghezza di banda.",
+  "settingCameraDisableDetectionSnapshotsTitle": "Disabilita le istantanee al rilevamento",
+  "settingCameraDisableDetectionSnapshotsDescription": "Impedisce le istantanee automatiche attivate dal rilevamento. Il rilevamento di movimento, volti, presenza e gesti continua a funzionare. Le richieste manuali e le Istantanee continue possono comunque acquisire immagini.",
+  "settingCameraSnapshotsTitle": "Istantanee continue",
+  "settingCameraSnapshotsDescription": "Pubblica una nuova istantanea della fotocamera in Home Assistant a intervalli regolari.",
+  "settingCameraSnapshotIntervalTitle": "Intervallo delle istantanee",
+  "settingCameraSnapshotIntervalDescription": "Secondi tra un'istantanea e l'altra.",
+  "cameraFront": "Anteriore",
+  "cameraBack": "Posteriore",
+  "cameraExternal": "Esterna",
+  "cameraOnlyCamera": "L'unica fotocamera di questo dispositivo.",
+  "cameraFlashlightHeading": "Torcia",
+  "settingCameraFlashlightTitle": "Accendi la torcia",
+  "settingCameraFlashlightDescription": "Usa il flash della fotocamera come luce fissa."
+}

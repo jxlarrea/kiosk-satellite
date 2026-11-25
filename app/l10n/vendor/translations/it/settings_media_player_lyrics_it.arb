@@ -1,0 +1,13 @@
+{
+  "@@locale": "it",
+  "settingSendspinLyricsEnabledTitle": "Abilita i testi",
+  "settingSendspinLyricsEnabledDescription": "Testi sincronizzati nella vista In riproduzione, per ogni sorgente del lettore.",
+  "settingSendspinLyricsSourceTitle": "Sorgente dei testi",
+  "settingSendspinLyricsSourceDescription": "Da dove provengono i testi. Music Assistant richiede l'indirizzo del server e il token nella sua pagina.",
+  "settingSendspinLyricsFallbackTitle": "Usa Music Assistant come riserva",
+  "settingSendspinLyricsFallbackDescription": "Se LRCLIB non è raggiungibile, i testi vengono chiesti a Music Assistant. Richiede la connessione a Music Assistant.",
+  "settingSendspinLyricsOffsetTitle": "Sincronizzazione dei testi",
+  "settingSendspinLyricsOffsetDescription": "Sposta i testi rispetto alla musica. Un valore positivo mostra ogni riga prima, uno negativo dopo. Utile per i brani in cui i testi risultano sempre sfasati.",
+  "mediaLyricsPage": "Testi",
+  "mediaLyricsHint": "Testi sincronizzati, sorgente e sincronizzazione"
+}

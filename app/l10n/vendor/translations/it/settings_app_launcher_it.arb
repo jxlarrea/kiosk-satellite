@@ -1,0 +1,12 @@
+{
+  "@@locale": "it",
+  "settingLauncherEnabledTitle": "Abilita Launcher app",
+  "settingLauncherEnabledDescription": "Apre dal kiosk una selezione di app installate.",
+  "settingLauncherAppsDescription": "Le app offerte dal launcher.",
+  "settingLauncherAutoReturnTitle": "Torna automaticamente",
+  "settingLauncherAutoReturnDescription": "Torna al kiosk quando l'altra app resta inutilizzata per un po'.",
+  "settingLauncherAutoReturnSecondsTitle": "Torna dopo (secondi)",
+  "settingLauncherAutoReturnSecondsDescription": "Tempo senza tocchi nell'altra app prima che il kiosk ritorni.",
+  "settingLauncherAutoReturnHoldTitle": "Attendi durante riproduzioni e chiamate",
+  "settingLauncherAutoReturnHoldDescription": "Non torna durante video, musica o chiamate."
+}

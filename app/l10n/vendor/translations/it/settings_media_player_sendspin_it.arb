@@ -1,0 +1,19 @@
+{
+  "@@locale": "it",
+  "settingSendspinEnabledTitle": "Abilita il lettore Sendspin",
+  "settingSendspinEnabledDescription": "Trasforma questo dispositivo in un lettore Sendspin sincronizzato. Compare in Music Assistant con il nome del dispositivo, in sincronia con tutti gli altri altoparlanti Sendspin.",
+  "settingSendspinServerTitle": "Server",
+  "settingSendspinServerDescription": "Indirizzo del server Sendspin, ad esempio 192.168.1.10:8927. Lascia vuoto per trovare automaticamente il server in rete.",
+  "settingSendspinCodecTitle": "Codec audio preferito",
+  "settingSendspinCodecDescription": "FLAC è senza perdita ed è ideale su Wi-Fi o Ethernet. Il server fa la scelta finale tra quelli offerti da questo dispositivo.",
+  "settingSendspinSyncOffsetTitle": "Regolazione della sincronizzazione audio (ms)",
+  "settingSendspinSyncOffsetDescription": "Un valore negativo fa suonare prima questo dispositivo, per gli altoparlanti in ritardo rispetto al gruppo (Bluetooth). Regola a orecchio; si applica in tempo reale.",
+  "settingSendspinGroupVolumeDescription": "Quando questo dispositivo riproduce in un gruppo, il cursore del volume imposta il volume dell'intero gruppo. Se disattivato, solo quello di questo dispositivo. Richiede la connessione a Music Assistant.",
+  "settingSendspinMasterVolumeTitle": "Controlla il volume del dispositivo",
+  "settingSendspinMasterVolumeDescription": "Music Assistant imposta il volume regolato dai tasti del volume, anziché il volume multimediale. Anche i suoni dell'assistente vocale lo seguono.",
+  "mediaSendspinPage": "Lettore Sendspin",
+  "mediaSendspinHint": "Rendi questo dispositivo un lettore Music Assistant sincronizzato",
+  "mediaFlac": "FLAC (senza perdita)",
+  "mediaOpus": "Opus (efficiente)",
+  "mediaPcm": "PCM (non compresso)"
+}

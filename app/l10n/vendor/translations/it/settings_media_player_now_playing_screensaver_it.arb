@@ -1,0 +1,16 @@
+{
+  "@@locale": "it",
+  "settingSendspinFullscreenTitle": "\"In riproduzione\" al posto del salvaschermo",
+  "settingSendspinFullscreenDescription": "Durante la riproduzione di musica, il salvaschermo diventa una vista In riproduzione a schermo intero con la copertina. Se non c'è nulla in riproduzione, viene eseguito il salvaschermo normale.",
+  "settingSendspinFullscreenSplitTitle": "Mostra accanto al salvaschermo",
+  "settingSendspinFullscreenSplitDescription": "Mantiene il salvaschermo visibile accanto a In riproduzione. Sugli schermi verticali il salvaschermo viene messo sopra il lettore. Sugli schermi piccoli resta il lettore a schermo intero.",
+  "settingSendspinFullscreenPhotoFillTitle": "Riempi lo schermo",
+  "settingSendspinFullscreenPhotoFillDescription": "Sostituisce l'impostazione di riempimento delle foto mentre il salvaschermo condivide lo schermo con In riproduzione. Predefinito usa l'impostazione di ciascun salvaschermo. Disattivato mantiene l'intera foto tra bande nere. Intelligente ingrandisce le foto con proporzioni vicine a quelle dello schermo e inquadra le altre su uno sfondo sfocato. Sempre ingrandisce ogni foto, tagliando ciò che non entra.",
+  "settingSendspinFullscreenOverrideBrightnessTitle": "Sostituisci la luminosità del salvaschermo",
+  "settingSendspinFullscreenOverrideBrightnessDescription": "Usa la luminosità normale dello schermo invece di quella del salvaschermo mentre In riproduzione è affiancata a un salvaschermo. Sostituisce anche la luminosità dei salvaschermo programmati.",
+  "mediaScreensaverHeading": "Salvaschermo",
+  "mediaDefaultFill": "Predefinito",
+  "mediaFillOff": "Disattivato",
+  "mediaFillSmart": "Intelligente",
+  "mediaFillAlways": "Sempre"
+}

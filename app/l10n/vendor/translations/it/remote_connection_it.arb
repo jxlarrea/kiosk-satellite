@@ -1,0 +1,11 @@
+{
+  "@@locale": "it",
+  "remoteReconnecting": "Riconnessione…",
+  "remoteConnectionLost": "La connessione con {name} si è interrotta. Questa pagina riprenderà da sola quando la connessione sarà ripristinata.",
+  "remoteConnectionLostUnnamed": "La connessione con il kiosk si è interrotta. Questa pagina riprenderà da sola quando la connessione sarà ripristinata.",
+  "remoteReloadPage": "Ricarica la pagina",
+  "remoteUpdated": "Kiosk Satellite è stato aggiornato",
+  "remoteUpdatedHelp": "Il dispositivo ora usa la versione {version}{build}. Questa pagina appartiene alla versione precedente e verrà ricaricata tra {seconds} s.",
+  "remoteBuild": " (build {build})",
+  "remoteReloadNow": "Ricarica ora"
+}

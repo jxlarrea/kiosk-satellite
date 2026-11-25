@@ -1,0 +1,9 @@
+{
+  "@@locale": "it",
+  "mediaCacheTitle": "Cache delle copertine",
+  "mediaCacheReadFailed": "Impossibile leggere la dimensione della cache.",
+  "mediaCacheClearFailed": "Impossibile svuotare la cache.",
+  "mediaCacheChecking": "Controllo della dimensione della cache...",
+  "mediaCacheClearing": "Svuotamento...",
+  "mediaCacheUsage": "{used} usati su {limit}. Le miniature della coda vengono salvate automaticamente nella cache."
+}

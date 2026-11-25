@@ -1,0 +1,17 @@
+{
+  "@@locale": "it",
+  "esphomeLocation": "Posizione",
+  "esphomeLocationSearch": "L'autorizzazione Posizione necessaria ai sensori di posizione.",
+  "esphomeBluetoothSearch": "L'autorizzazione Dispositivi nelle vicinanze necessaria al proxy Bluetooth per la scansione.",
+  "esphomeLocationMissing": "Senza questa autorizzazione il ricevitore GPS non può essere letto e i sensori di posizione restano sconosciuti.",
+  "esphomeLocationServicesOff": "La posizione è disattivata nelle impostazioni del dispositivo, quindi il ricevitore non fornisce nulla.",
+  "esphomeLocationApproximate": "È consentita solo la posizione approssimativa, ma il ricevitore GPS richiede la posizione precisa.",
+  "esphomeLocationGranted": "I sensori di posizione possono leggere il ricevitore GPS.",
+  "esphomeBluetoothGranted": "Il proxy può cercare i dispositivi Bluetooth nelle vicinanze.",
+  "esphomeBluetoothMissing": "Senza questa autorizzazione il proxy non può cercare dispositivi.",
+  "esphomeBluetoothLocationMissing": "Android fornisce i risultati della scansione Bluetooth, beacon inclusi, solo se l'autorizzazione Posizione è concessa. Il proxy non legge mai la posizione del dispositivo.",
+  "esphomeBluetoothLocationOff": "La posizione è disattivata nelle impostazioni del dispositivo, quindi la scansione Bluetooth non trova nulla.",
+  "esphomeBluetoothBeacons": "La scansione Bluetooth può rilevare i beacon.",
+  "esphomeSent": "Inviato",
+  "esphomeNotsaved": "Non salvato"
+}

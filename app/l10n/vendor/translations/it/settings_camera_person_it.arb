@@ -1,0 +1,7 @@
+{
+  "@@locale": "it",
+  "settingPersonSensorTitle": "Abilita il sensore di persone",
+  "settingPersonSensorDescription": "Espone il sensore di persone del dispositivo a Home Assistant come sensore di occupazione. Richiede l'autorizzazione Accesso ai registri qui sotto.",
+  "cameraPersonPage": "Sensore di persone",
+  "cameraPersonHint": "Sensore di occupazione di Home Assistant basato sul sensore di persone del dispositivo"
+}

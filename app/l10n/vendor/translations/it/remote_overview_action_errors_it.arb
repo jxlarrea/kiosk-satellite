@@ -1,0 +1,10 @@
+{
+  "@@locale": "it",
+  "deviceScreenOffPermission": "Per spegnere lo schermo serve un'autorizzazione da concedere una sola volta. Il tablet sta mostrando la schermata di autorizzazione \"amministratore del dispositivo\". Approvala lì, poi riprova.",
+  "deviceAdminInactive": "L'autorizzazione di amministratore del dispositivo non è attiva.",
+  "deviceRestartOverlay": "Per riavviare serve l'autorizzazione \"Mostra sopra altre app\", altrimenti l'app non può riaprirsi da sola. La schermata di autorizzazione si sta aprendo sul dispositivo: concedila lì e riprova.",
+  "deviceRebootPermission": "Per riavviare il dispositivo, Kiosk Satellite deve essere configurato come proprietario del dispositivo oppure serve una connessione Shizuku autorizzata.",
+  "deviceRestartAndroidOnly": "Il riavvio è disponibile solo su Android.",
+  "deviceRestartShizukuRefused": "Shizuku ha rifiutato il riavvio",
+  "deviceRestartFailed": "Riavvio non riuscito: {error}"
+}

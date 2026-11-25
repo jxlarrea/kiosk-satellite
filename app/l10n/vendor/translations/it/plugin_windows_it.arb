@@ -1,0 +1,7 @@
+{
+  "@@locale": "it",
+  "pluginCloseWindow": "Chiudi {name}",
+  "pluginScanTitle": "Scansiona un codice",
+  "pluginScanHelp": "Tieni il codice all'interno della cornice.",
+  "pluginScanSource": "Richiesto da {name}"
+}

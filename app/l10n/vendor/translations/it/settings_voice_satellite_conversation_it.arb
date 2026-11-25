@@ -1,0 +1,17 @@
+{
+  "@@locale": "it",
+  "settingVoiceShowCommandTitle": "Mostra ciò che hai detto",
+  "settingVoiceShowCommandDescription": "Il tuo comando sopra la risposta.",
+  "settingVoiceShowAnswerTitle": "Mostra la risposta",
+  "settingVoiceShowAnswerDescription": "La risposta mentre viene pronunciata.",
+  "settingVoiceShowToolsTitle": "Mostra l'uso degli strumenti",
+  "settingVoiceShowToolsDescription": "Una riga per ogni azione compiuta dall'assistente.",
+  "settingVoiceHideSentimentTagsTitle": "Nascondi i tag delle emozioni",
+  "settingVoiceHideSentimentTagsDescription": "Omette i tag come [happy] che alcuni assistenti aggiungono.",
+  "settingVoiceAnswerLingerTitle": "Mantieni la risposta sullo schermo",
+  "settingVoiceAnswerLingerDescription": "Dopo che la risposta è stata pronunciata.",
+  "settingVoiceResultsLingerTitle": "Mantieni i risultati sullo schermo",
+  "settingVoiceResultsLingerDescription": "Immagini, meteo e altri risultati. Con 0 restano finché non li chiudi.",
+  "settingVoiceAnnouncementLingerTitle": "Durata degli annunci",
+  "settingVoiceAnnouncementLingerDescription": "Dopo che un annuncio è stato pronunciato."
+}

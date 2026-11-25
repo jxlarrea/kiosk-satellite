@@ -1,0 +1,23 @@
+{
+  "@@locale": "it",
+  "settingScreensaverWidgetsEnabledTitle": "Abilita i widget del salvaschermo",
+  "settingScreensaverWidgetsEnabledDescription": "Piccoli elementi sovrapposti negli angoli del salvaschermo.",
+  "settingScreensaverWidgetsTitle": "Widget",
+  "settingScreensaverWidgetsDescription": "Piccoli elementi sovrapposti negli angoli del salvaschermo.",
+  "settingScreensaverWidgetScaleTitle": "Scala globale dei widget",
+  "settingScreensaverWidgetScaleDescription": "Ridimensiona tutti i widget insieme per adattarli meglio allo schermo. Ogni widget mantiene la propria scala rispetto agli altri.",
+  "settingScreensaverWidgetFontTitle": "Tipo di carattere globale",
+  "settingScreensaverWidgetFontDescription": "Il carattere usato da tutti i widget. Ogni widget può sceglierne uno proprio.",
+  "settingScreensaverWidgetFontWeightTitle": "Spessore globale del carattere",
+  "settingScreensaverWidgetFontWeightDescription": "Lo spessore del testo di tutti i widget. Predefinito usa lo spessore proprio di ogni riga. Ogni widget può sceglierne uno proprio.",
+  "settingScreensaverWidgetTextShadowTitle": "Ombra del testo",
+  "settingScreensaverWidgetTextShadowDescription": "Aggiunge un'ombra al testo dei widget per renderlo leggibile sulle foto.",
+  "settingScreensaverVignetteStrengthTitle": "Intensità della vignettatura",
+  "settingScreensaverVignetteStrengthDescription": "L'intensità dell'ombreggiatura dietro i widget, per renderli leggibili sulle foto chiare. 0 la disattiva.",
+  "screensaverOverlayWidgetsEmpty": "Ancora nessun widget",
+  "screensaverOverlayShow": "Mostra questo widget",
+  "screensaverOverlayRemove": "Rimuovi il widget",
+  "screensaverOverlayAdd": "Aggiungi widget",
+  "screensaverOverlayAddHelp": "Un piccolo orologio, il meteo, la batteria o un'entità in un angolo.",
+  "screensaverOverlayWidgetsHint": "Elementi negli angoli e loro scala"
+}

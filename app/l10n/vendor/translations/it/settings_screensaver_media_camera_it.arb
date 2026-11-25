@@ -1,0 +1,20 @@
+{
+  "@@locale": "it",
+  "settingScreensaverCameraViewsTitle": "Viste telecamere",
+  "settingScreensaverCameraViewsDescription": "Le viste telecamere mostrate dal salvaschermo, in questo ordine.",
+  "settingScreensaverCameraViewSecondsTitle": "Secondi per vista telecamere",
+  "settingScreensaverCameraViewSecondsDescription": "Per quanto tempo ogni vista resta sullo schermo prima della successiva. Con una sola vista selezionata non c'è rotazione.",
+  "settingScreensaverCameraMuteTitle": "Disattiva l'audio di tutte le viste",
+  "settingScreensaverCameraMuteDescription": "Mantiene ogni vista senza audio, anche con una sola telecamera.",
+  "screensaverMediaCameraPage": "Salvaschermo Flussi delle telecamere",
+  "screensaverMediaCameraHint": "Viste da mostrare, secondi per vista, audio",
+  "screensaverMediaNoCameras": "Nessuna vista telecamere contiene ancora telecamere. Aggiungine una in Flussi delle telecamere.",
+  "screensaverMediaNoCamerasRemote": "Nessuna vista telecamere contiene ancora telecamere",
+  "screensaverMediaAddCameras": "Aggiungine una in Flussi delle telecamere.",
+  "screensaverMediaNoViews": "Ancora nessuna. Scegli le viste che il salvaschermo mostra a rotazione.",
+  "screensaverMediaRotation": "In rotazione (trascina per riordinare)",
+  "screensaverMediaAvailable": "Disponibili",
+  "screensaverMediaOneCamera": "{count} telecamera",
+  "screensaverMediaCameras": "{count} telecamere",
+  "screensaverMediaPosition": "Posizione {index} · {cameras}"
+}

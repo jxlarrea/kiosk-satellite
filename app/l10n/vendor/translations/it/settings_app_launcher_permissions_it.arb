@@ -1,0 +1,12 @@
+{
+  "@@locale": "it",
+  "launcherOverlayHeld": "Kiosk Satellite può tornare da solo in primo piano e rilevare i tocchi nell'altra app.",
+  "launcherOverlayMissing": "Senza questa autorizzazione il kiosk non può tornare da solo e i tocchi nell'altra app non vengono rilevati.",
+  "launcherOverlayRemote": "Senza questa autorizzazione il kiosk non può tornare da solo e i tocchi nell'altra app non vengono rilevati. La schermata di autorizzazione compare sul tablet.",
+  "launcherBatteryMissing": "Android può sospendere l'app mentre l'altra è in primo piano e, con il timer sospeso, il kiosk non torna mai.",
+  "launcherBatteryRemote": "Android può sospendere l'app mentre l'altra è in primo piano e, con il timer sospeso, il kiosk non torna mai. La finestra di autorizzazione compare sul tablet.",
+  "launcherNotificationAccessHeld": "Il kiosk non torna mentre un'altra app riproduce video o musica.",
+  "launcherNotificationAccessMissing": "Senza questa autorizzazione il kiosk non può sapere quando sono in riproduzione video o musica e torna comunque.",
+  "launcherNotificationAccessRemote": "Senza questa autorizzazione il kiosk non può sapere quando sono in riproduzione video o musica e torna comunque. La schermata di autorizzazione compare sul tablet.",
+  "launcherPermissionsSearch": "Le autorizzazioni su cui si basa Torna automaticamente."
+}

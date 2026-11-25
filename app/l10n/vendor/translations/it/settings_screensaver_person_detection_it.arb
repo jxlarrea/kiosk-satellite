@@ -1,0 +1,22 @@
+{
+  "@@locale": "it",
+  "settingScreensaverDismissOnPersonTitle": "Chiudi al rilevamento di una persona",
+  "settingScreensaverDismissOnPersonDescription": "Legge il sensore di persone del dispositivo mentre è attivo il salvaschermo e riattiva lo schermo quando qualcuno si trova davanti. Richiede l'autorizzazione Accesso ai registri qui sotto.",
+  "settingScreensaverDismissOnPersonScreenOffOnlyTitle": "Solo a schermo spento",
+  "settingScreensaverDismissOnPersonScreenOffOnlyDescription": "Mantiene visibile il salvaschermo quando arriva qualcuno a schermo acceso. Quando lo schermo è spento, il rilevamento riattiva la plancia. Il tocco chiude comunque il salvaschermo.",
+  "settingScreensaverPostponeOnPersonTitle": "Posticipa il salvaschermo al rilevamento di una persona",
+  "settingScreensaverPostponeOnPersonDescription": "Ritarda l'attivazione del salvaschermo finché qualcuno si trova davanti al dispositivo.",
+  "screensaverDetectionPersonPage": "Rilevamento delle persone",
+  "screensaverDetectionPersonHint": "Chiude o posticipa il salvaschermo tramite il sensore di persone del dispositivo",
+  "screensaverDetectionOccupancy": "Presenza",
+  "screensaverDetectionStatusUnavailable": "Stato non disponibile.",
+  "screensaverDetectionOff": "Disattivato.",
+  "screensaverDetectionStarting": "Avvio...",
+  "screensaverDetectionWaiting": "In attesa del primo segnale. Il sensore invia un segnale ogni 30 secondi mentre c'è qualcuno davanti.",
+  "screensaverDetectionLastHeartbeat": "Ultimo segnale {ago}.",
+  "screensaverDetectionSecondsAgo": "{count} s fa",
+  "screensaverDetectionMinutesAgo": "{count} min fa",
+  "screensaverDetectionHoursAgo": "{count} h fa",
+  "screensaverDetectionDetected": "Persona rilevata",
+  "screensaverDetectionClear": "Nessuna persona"
+}

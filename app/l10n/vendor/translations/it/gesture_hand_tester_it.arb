@@ -1,0 +1,20 @@
+{
+  "@@locale": "it",
+  "gestureTester": "Test dei gesti della mano",
+  "gestureOpenTester": "Apri il test",
+  "gestureCameraFirst": "Prima attiva la fotocamera nelle impostazioni Fotocamera.",
+  "gestureTesterHelp": "Osserva quali dita rileva la fotocamera, per capire come tenere la mano.",
+  "gestureHandHelp": "Tieni la mano sollevata all'altezza della spalla, con il palmo verso la fotocamera e le dita aperte. Piega del tutto un dito per escluderlo dal conteggio. Piega il pollice sul palmo per mostrare quattro: il pollice conta solo con la mano aperta.",
+  "gestureTesterPaused": "I gesti non si attivano mentre il test è aperto.",
+  "gestureShowHand": "Mostra una mano alla fotocamera.",
+  "gestureTesterTrigger": "Attiva: {action}",
+  "gestureNoCount": "Nessun gesto usa questo numero di dita.",
+  "gestureNoHand": "Nessuna mano inquadrata",
+  "gestureReadingHand": "Lettura della mano",
+  "gestureNoFingers": "Nessun dito alzato",
+  "gestureHandsCount": "{count} mani inquadrate, viene letta la più grande.",
+  "gestureTesterSearch": "Mostra in tempo reale le dita rilevate dalla fotocamera.",
+  "gestureHoldConfirmed": "Mantenimento confermato",
+  "gestureHoldProgress": "Avanzamento del mantenimento: {progress}",
+  "gestureTesterHoldDuration": "Durata del mantenimento: {duration}"
+}

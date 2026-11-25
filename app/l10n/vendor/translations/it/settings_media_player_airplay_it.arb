@@ -1,0 +1,13 @@
+{
+  "@@locale": "it",
+  "settingAirplayEnabledTitle": "Abilita il ricevitore AirPlay",
+  "settingAirplayEnabledDescription": "Il dispositivo compare come altoparlante AirPlay nel menu AirPlay di un iPhone, iPad o Mac.",
+  "settingAirplayNameTitle": "Nome dell'altoparlante",
+  "settingAirplayNameDescription": "Il nome nel menu AirPlay. Se vuoto, viene usato il nome del dispositivo.",
+  "settingAirplaySenderVolumeTitle": "Segui il volume del mittente",
+  "settingAirplaySenderVolumeDescription": "Il controllo del volume su iPhone, iPad o Mac cambia il volume di questo dispositivo. Se disattivato, conta solo il volume di questo dispositivo.",
+  "settingAirplaySyncOffsetDescription": "Un valore negativo fa suonare prima questo dispositivo, per allineare l'audio al video sul mittente. Si applica in tempo reale.",
+  "settingAirplayTakeoverTitle": "Consenti a un altro mittente di subentrare",
+  "settingAirplayTakeoverDescription": "Un secondo iPhone, iPad o Mac può subentrare mentre un altro è in riproduzione. Se disattivato, deve attendere che il primo si disconnetta.",
+  "mediaAirplayHint": "Riproduci l'audio da un iPhone, iPad o Mac"
+}

@@ -1,0 +1,17 @@
+{
+  "@@locale": "it",
+  "gestureHaServiceKind": "Servizio di Home Assistant",
+  "gestureHaScriptKind": "Script di Home Assistant",
+  "gestureHaAutomationKind": "Automazione di Home Assistant",
+  "gestureHaEventKind": "Evento di Home Assistant",
+  "gestureRan": "{value} eseguito",
+  "gestureRunFailed": "Impossibile eseguire {value}",
+  "gestureCalled": "{value} chiamato",
+  "gestureCallFailed": "Impossibile chiamare {value}",
+  "gestureTriggered": "{value} attivato",
+  "gestureTriggerFailed": "Impossibile attivare {value}",
+  "gestureFired": "Evento {value} generato",
+  "gestureFireFailed": "Impossibile generare l'evento {value}",
+  "gestureDone": "Fatto",
+  "gestureFailed": "Non riuscito"
+}

@@ -1,0 +1,6 @@
+{
+  "@@locale": "it",
+  "setupServiceHelp": "Mantiene attiva l'app quando lo schermo è spento o un'altra app è in primo piano, così la connessione a Home Assistant e altre funzionalità come il rilevamento del movimento e il proxy Bluetooth restano attive. Le autorizzazioni qui sotto sono facoltative ma consigliate: ognuna aiuta l'app a restare attiva a schermo spento.",
+  "setupBatteryMissing": "Android potrebbe sospendere l'app quando lo schermo è spento, interrompendo anche la connessione a Home Assistant.",
+  "setupOverlayMissing": "Senza questa autorizzazione il servizio non può riavviare il kiosk dopo un arresto anomalo."
+}

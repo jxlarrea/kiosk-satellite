@@ -1,0 +1,12 @@
+{
+  "@@locale": "it",
+  "settingMediaVolumeTitle": "Volume dei contenuti multimediali",
+  "settingMediaVolumeDescription": "Musica e video vengono riprodotti a questa percentuale del volume principale. Il volume del lettore Sendspin in Music Assistant sposta questo cursore.",
+  "settingAssistantVolumeTitle": "Volume dell'assistente",
+  "settingAssistantVolumeDescription": "Risposte vocali e segnali acustici vengono riprodotti a questa percentuale del volume principale, indipendentemente dal volume dei contenuti multimediali.",
+  "settingIntercomVolumeTitle": "Volume dell'interfono",
+  "settingIntercomVolumeDescription": "La voce e gli annunci dell'altro kiosk vengono riprodotti a questa percentuale del volume principale.",
+  "screenAudioVolume": "Volume audio",
+  "screenAudioMasterVolume": "Volume principale",
+  "screenAudioMasterHelp": "Il volume del dispositivo. I volumi di contenuti multimediali, interfono e assistente si regolano in proporzione a questo."
+}

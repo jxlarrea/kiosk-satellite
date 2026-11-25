@@ -1,0 +1,21 @@
+{
+  "@@locale": "it",
+  "settingIntercomAnswerModeTitle": "Modalità di risposta",
+  "settingIntercomAnswerModeDescription": "Squilla chiede di rispondere sullo schermo. Rispondi automaticamente apre la chiamata dopo un segnale acustico.",
+  "settingIntercomRingSecondsTitle": "Durata dello squillo",
+  "settingIntercomRingSecondsDescription": "Per quanto tempo squilla una chiamata prima di essere considerata persa.",
+  "settingIntercomRingSoundTitle": "Suoneria",
+  "settingIntercomRingSoundVolumeDescription": "Viene riprodotta al volume della suoneria.",
+  "settingIntercomRingVolumeTitle": "Volume della suoneria",
+  "settingIntercomRingVolumeDescription": "Quanto è forte lo squillo di una chiamata, indipendentemente dal volume multimediale.",
+  "settingIntercomAcceptAnnouncementsTitle": "Accetta gli annunci",
+  "settingIntercomAcceptAnnouncementsDescription": "Riproduce gli annunci inviati a tutti dagli altri kiosk.",
+  "intercomOptionAnswerRing": "Squilla",
+  "intercomOptionAnswerAuto": "Rispondi automaticamente",
+  "intercomOptionAnswerDnd": "Non disturbare",
+  "intercomOptionAnswer15": "15 secondi",
+  "intercomOptionAnswer30": "30 secondi",
+  "intercomOptionAnswer45": "45 secondi",
+  "intercomOptionAnswer60": "60 secondi",
+  "intercomAnswerSection": "Risposta"
+}

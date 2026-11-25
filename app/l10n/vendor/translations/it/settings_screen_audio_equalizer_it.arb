@@ -1,0 +1,19 @@
+{
+  "@@locale": "it",
+  "settingEqualizerEnabledTitle": "Abilita l'equalizzatore",
+  "settingEqualizerEnabledDescription": "Modella il suono di musica, assistente, segnali acustici e interfono. I suoni dei video e della plancia non vengono equalizzati.",
+  "settingEqualizerBand1Title": "100 Hz",
+  "settingEqualizerBand1Description": "Bassi. Se li aumenti, gli altoparlanti piccoli distorcono presto.",
+  "settingEqualizerBand2Title": "300 Hz",
+  "settingEqualizerBand2Description": "Medio-bassi. Attenuandoli si elimina un suono inscatolato o rimbombante.",
+  "settingEqualizerBand3Title": "1 kHz",
+  "settingEqualizerBand3Description": "Medi, dove si concentra gran parte della voce.",
+  "settingEqualizerBand4Title": "3 kHz",
+  "settingEqualizerBand4Description": "Medio-alti. Aumentandoli il parlato diventa più chiaro.",
+  "settingEqualizerBand5Title": "10 kHz",
+  "settingEqualizerBand5Description": "Alti.",
+  "settingEqualizerPreampTitle": "Preamplificatore automatico",
+  "settingEqualizerPreampDescription": "Abbassa il livello in base all'aumento più alto, così l'altoparlante non distorce e la cancellazione dell'eco continua a funzionare.",
+  "screenAudioEqualizer": "Equalizzatore",
+  "screenAudioEqualizerHint": "Bassi, medi, alti, preamplificatore"
+}

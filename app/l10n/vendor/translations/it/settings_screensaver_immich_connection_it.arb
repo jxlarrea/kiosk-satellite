@@ -1,0 +1,22 @@
+{
+  "@@locale": "it",
+  "settingScreensaverImmichUrlTitle": "Indirizzo del server",
+  "settingScreensaverImmichUrlDescription": "L'indirizzo del tuo server Immich, con la porta.",
+  "settingScreensaverImmichApiKeyTitle": "Chiave API",
+  "settingScreensaverImmichApiKeyDescription": "Si crea in Immich in Impostazioni account → Chiavi API.",
+  "screensaverMediaImmichPage": "Salvaschermo Contenuti multimediali Immich",
+  "screensaverMediaImmichHint": "Server, contenuti multimediali, presentazione, metadati, filtri",
+  "screensaverMediaServerConnection": "Connessione al server",
+  "screensaverMediaValidateFailedLog": "Verifica non riuscita. Controlla nel registro dell'app quale chiamata non è riuscita.",
+  "screensaverMediaValidateFailed": "Verifica non riuscita.",
+  "screensaverMediaNoAnswer": "Il dispositivo non ha risposto.",
+  "screensaverMediaAddressFirst": "Inserisci prima l'indirizzo del server.",
+  "screensaverMediaKeyFirst": "Inserisci prima una chiave API.",
+  "screensaverMediaBadAddress": "L'indirizzo del server non è un URL valido.",
+  "screensaverMediaKeyRejected": "La chiave API è stata rifiutata.",
+  "screensaverMediaScopeMissing": "Alla chiave API manca l'autorizzazione {scope}.",
+  "screensaverMediaPermissionMissing": "Alla chiave API manca un'autorizzazione: {error}",
+  "screensaverMediaServerError": "Il server ha risposto {status}: {error}",
+  "screensaverMediaUnreachable": "Impossibile raggiungere {url}.",
+  "screensaverMediaTalkError": "Impossibile comunicare con il server: {error}"
+}

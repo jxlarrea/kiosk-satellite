@@ -1,0 +1,6 @@
+{
+  "@@locale": "it",
+  "fleetSwitchKiosk": "Cambia kiosk",
+  "fleetKiosksOnThisNetworkWithTheRemoteAdminOn": "Kiosk rilevati e membri salvati della flotta. Selezionandone uno, la sua amministrazione remota si apre qui, in questa stessa pagina.",
+  "fleetNoOtherKioskFoundOnThisNetworkAKioskDetail": "Nessun altro kiosk trovato. I kiosk compaiono tramite il rilevamento in rete o perché salvati come membri della flotta."
+}

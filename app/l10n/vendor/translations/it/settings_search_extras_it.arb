@@ -1,0 +1,21 @@
+{
+  "@@locale": "it",
+  "searchInstallApk": "Carica un APK di Kiosk Satellite tramite l'amministrazione remota e installalo.",
+  "searchPermissionsHelp": "Tutte le autorizzazioni Android che l'app può usare, con il loro stato: microfono, fotocamera, notifiche, batteria senza restrizioni, mostra sopra altre app, modifica delle impostazioni di sistema, protezione dell'interfaccia di sistema, amministratore del dispositivo, accesso a tutti i file, accesso ai dati di utilizzo e posizione.",
+  "searchServiceStatus": "Stato del servizio",
+  "searchServiceHelp": "Indica se il Servizio Kiosk Satellite è in esecuzione e cosa mantiene attivo.",
+  "searchServicePermissions": "Le autorizzazioni di cui ha bisogno il Servizio Kiosk Satellite.",
+  "searchIntercomKiosks": "I kiosk conosciuti e se ognuno può ricevere una chiamata.",
+  "searchHaValidate": "Verifica l'URL e il token con il tuo Home Assistant.",
+  "searchHaProxy": "Rende disponibile un Home Assistant in semplice HTTP tramite un proxy sicuro all'interno dell'app.",
+  "searchHaDashboard": "Scegli la plancia e la vista mostrate dal kiosk.",
+  "searchKioskPermissions": "Le autorizzazioni su cui si basano le protezioni del kiosk e della modalità blocco.",
+  "searchHomeStatus": "Stato della schermata Home",
+  "searchHomeHelp": "Indica se Kiosk Satellite è la schermata Home del dispositivo e dove completare l'impostazione come predefinita.",
+  "searchMasterVolume": "Il volume del dispositivo su cui si basano i cursori del volume multimediale e dell'assistente.",
+  "searchSmallClock": "Un widget orologio in un angolo del salvaschermo.",
+  "searchBattery": "Un widget batteria in un angolo del salvaschermo: la carica di questo dispositivo.",
+  "searchWeatherForecast": "Un widget delle previsioni in un angolo del salvaschermo: i prossimi giorni, con massime e minime.",
+  "searchPersonPermission": "L'autorizzazione di accesso ai registri richiesta dal sensore di persone del dispositivo.",
+  "searchSonosSpeakers": "Gli altoparlanti Sonos noti a questo dispositivo, una ricerca nella rete e un campo per l'indirizzo."
+}

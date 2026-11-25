@@ -1,0 +1,19 @@
+{
+  "@@locale": "it",
+  "settingCameraAllowH265Title": "Consenti flussi H.265",
+  "settingCameraAllowH265Description": "Riproduce i flussi H.265 delle telecamere così come sono. Un dispositivo che non può decodificare H.265 mostra invece un'immagine vuota.",
+  "settingCameraPreferMseTitle": "Preferisci MSE a WebRTC",
+  "settingCameraPreferMseDescription": "Usa prima MSE per le telecamere Go2RTC. Per i dispositivi che non riproducono WebRTC; aggiunge uno o due secondi di ritardo.",
+  "settingCameraPreferHlsTitle": "Preferisci HLS a WebRTC",
+  "settingCameraPreferHlsDescription": "Usa prima HLS per le telecamere di Home Assistant. Per i dispositivi che non riproducono WebRTC; aggiunge qualche secondo di ritardo.",
+  "settingCameraSingleAudioTitle": "Riproduci l'audio con una sola telecamera",
+  "settingCameraSingleAudioDescription": "Riproduce l'audio della telecamera quando sullo schermo c'è una sola telecamera. Le griglie con più telecamere restano senza audio.",
+  "settingCameraPinchZoomTitle": "Pizzica per ingrandire una sola telecamera",
+  "settingCameraPinchZoomDescription": "Ingrandisce l'immagine con due dita quando sullo schermo c'è una sola telecamera. Trascina per spostarti, tocca due volte per ripristinare.",
+  "settingCameraAutoDismissSecondsTitle": "Chiudi automaticamente dopo",
+  "settingCameraAutoDismissCompassDescription": "Chiude una vista telecamere aperta dopo questo tempo. Con 0 resta aperta. Non influisce sul salvaschermo delle telecamere. Nella disposizione Compass si applica invece Torna al centro.",
+  "cameraStreamsPlayback": "Riproduzione",
+  "cameraStreamsOff": "Disattivato",
+  "cameraStreamsSeconds": "{seconds} s",
+  "cameraStreamsGridHelp": "Le griglie con più telecamere mostrano solo il video. Sui dispositivi poco potenti, usa nelle viste flussi Go2RTC a risoluzione più bassa e, se vuoi, imposta un flusso separato per lo schermo intero."
+}

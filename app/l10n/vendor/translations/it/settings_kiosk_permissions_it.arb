@@ -1,0 +1,11 @@
+{
+  "@@locale": "it",
+  "kioskForeground": "Kiosk Satellite può tornare da solo in primo piano.",
+  "kioskOverlayMissing": "Senza questa autorizzazione il kiosk non può tornare in primo piano e la protezione della modalità blocco copre solo l'app.",
+  "kioskGuardHeld": "L'area notifiche e la schermata delle app recenti si chiudono da sole mentre lo schermo è protetto.",
+  "kioskGuardMissing": "Senza questa autorizzazione l'area notifiche e le app recenti restano accessibili. Abilita Kiosk Satellite in Accessibilità.",
+  "kioskOverlayRemote": "Senza questa autorizzazione il kiosk non può tornare in primo piano. La schermata per concederla compare sul tablet.",
+  "kioskGuardRemote": "Senza questa autorizzazione l'area notifiche e le app recenti restano accessibili. Abilita Kiosk Satellite in Accessibilità sul tablet.",
+  "kioskGrantDevice": "Concedi sul dispositivo",
+  "kioskOpenSettingsDevice": "Apri le impostazioni sul dispositivo"
+}

@@ -1,0 +1,9 @@
+{
+  "@@locale": "it",
+  "settingBrowserInjectJsTitle": "Inserisci JavaScript nella plancia di HA",
+  "settingBrowserInjectJsDescription": "Esegue questo codice JavaScript dopo ogni caricamento della pagina della plancia. Utile per nascondere elementi che distraggono o modificare una plancia che non controlli.",
+  "settingBrowserInjectJsExternalTitle": "Inserisci JavaScript nelle pagine esterne",
+  "settingBrowserInjectJsExternalDescription": "Esegue questo codice JavaScript dopo il caricamento di ogni pagina esterna: pagine aperte da un link della plancia, pagine della rotazione della plancia e salvaschermo sito web. La pagina di Music Assistant non viene toccata.",
+  "browserInjectJsPlaceholder": "// Esempio: nascondi un elemento che distrae\ndocument.querySelector('#banner').style.display = 'none';",
+  "browserInjectJsExternalPlaceholder": "// Esempio: ingrandisci un sito che ignora il livello di zoom della plancia\ndocument.documentElement.style.zoom = '1.25';"
+}

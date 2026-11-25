@@ -1,0 +1,23 @@
+{
+  "@@locale": "it",
+  "settingAnnouncementsEnabledTitle": "Abilita gli annunci",
+  "settingAnnouncementsEnabledDescription": "Riproduce gli annunci che Home Assistant invia con l'azione announce.",
+  "esphomeTtsSection": "Sintesi vocale",
+  "settingAnnouncementsTtsEngineTitle": "Motore di sintesi vocale",
+  "settingAnnouncementsTtsEngineDescription": "L'entità di sintesi vocale di Home Assistant che pronuncia gli annunci.",
+  "settingAnnouncementsTtsLanguageTitle": "Lingua",
+  "settingAnnouncementsTtsLanguageDescription": "La lingua in cui vengono pronunciati gli annunci.",
+  "settingAnnouncementsTtsVoiceTitle": "Voce",
+  "settingAnnouncementsTtsVoiceDescription": "La voce che pronuncia gli annunci.",
+  "esphomeTtsFirst": "Primo disponibile",
+  "esphomeTtsDefault": "Predefinita",
+  "settingAnnouncementsChimeTitle": "Segnale acustico prima dell'annuncio",
+  "settingAnnouncementsChimeDescription": "Riproduce un segnale acustico prima dell'annuncio.",
+  "settingAnnouncementsChimeFileTitle": "Suono del segnale acustico",
+  "settingAnnouncementsChimeFileDescription": "Viene riprodotto allo stesso volume dell'annuncio.",
+  "esphomeAnnouncements": "Annunci",
+  "esphomeAnnouncementsHelp": "Annunci vocali da Home Assistant",
+  "esphomeChime": "Segnale acustico",
+  "esphomeTtsUnavailable": "Impossibile raggiungere Home Assistant",
+  "esphomeTtsNoVoices": "Nessuna voce da scegliere"
+}

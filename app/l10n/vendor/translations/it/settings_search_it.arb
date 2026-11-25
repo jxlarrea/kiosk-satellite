@@ -1,0 +1,7 @@
+{
+  "@@locale": "it",
+  "settingsSearchHint": "Cerca nelle impostazioni",
+  "settingsSearchClear": "Cancella la ricerca",
+  "settingsSearchResults": "Risultati della ricerca",
+  "settingsSearchEmpty": "Nessuna impostazione corrisponde a \"{query}\"."
+}

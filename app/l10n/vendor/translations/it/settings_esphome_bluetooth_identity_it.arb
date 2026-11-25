@@ -1,0 +1,23 @@
+{
+  "@@locale": "it",
+  "esphomeIdentityBthome": "Sensore BTHome",
+  "esphomeIdentityXiaomi": "Sensore Xiaomi",
+  "esphomeIdentityQingping": "Sensore Qingping",
+  "esphomeIdentityGoogleNest": "Dispositivo Google/Nest",
+  "esphomeIdentityEddystone": "Beacon Eddystone",
+  "esphomeIdentityGoogleFastPair": "Dispositivo Google Fast Pair",
+  "esphomeIdentityAppleFindMy": "Dispositivo Apple Dov'è",
+  "esphomeIdentityExposure": "Notifica di esposizione (telefono)",
+  "esphomeIdentityAugustYale": "Serratura August/Yale",
+  "esphomeIdentityAmazon": "Dispositivo Amazon",
+  "esphomeIdentityTile": "Localizzatore Tile",
+  "esphomeIdentityInput": "Dispositivo di input (telecomando/tastiera)",
+  "esphomeIdentityHeartRate": "Sensore di frequenza cardiaca",
+  "esphomeIdentityEnvironmental": "Sensore ambientale",
+  "esphomeIdentityApple": "Dispositivo Apple",
+  "esphomeIdentityWindows": "PC Windows",
+  "esphomeIdentitySamsung": "Dispositivo Samsung",
+  "esphomeIdentityGoogle": "Dispositivo Google",
+  "esphomeIdentityUnknown": "Dispositivo sconosciuto",
+  "esphomeIdentityVendor": "Dispositivo {vendor}"
+}

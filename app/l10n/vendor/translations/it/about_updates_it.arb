@@ -1,0 +1,19 @@
+{
+  "@@locale": "it",
+  "aboutCheckNow": "Cerca aggiornamenti ora",
+  "aboutChecking": "Ricerca…",
+  "aboutCheckFailed": "Ricerca aggiornamenti non riuscita. Il dispositivo riesce a raggiungere GitHub?",
+  "aboutOverlayMissing": "Autorizzazione \"Mostra sopra altre app\" mancante",
+  "aboutOverlayHelp": "Senza questa autorizzazione l'app non può riaprirsi dopo l'aggiornamento. La schermata per concederla compare sul tablet.",
+  "aboutDownloadProgress": "Download… {percent}%",
+  "aboutDownloadFailed": "Aggiornamento non riuscito: {error}",
+  "aboutAlreadyCurrent": "Già aggiornato",
+  "aboutInstallHelp": "Il download avviene sul tablet; l'installazione va confermata sullo schermo del tablet.",
+  "aboutSystem": "Sistema",
+  "aboutSystemVersion": "Versione della ROM",
+  "aboutSystemVerifying": "Verifica…",
+  "aboutSystemInstalling": "Installazione…",
+  "aboutSystemRestartHelp": "Il dispositivo si riavvia due volte per installare l'aggiornamento e resta offline per qualche minuto.",
+  "aboutSystemManual": "Nuova immagine disponibile",
+  "aboutSystemManualHelp": "La versione {version} della nuova immagine per Echo Dot si installa a mano, non come aggiornamento."
+}

@@ -1,0 +1,11 @@
+{
+  "@@locale": "it",
+  "setupQrFlipCamera": "Cambia fotocamera",
+  "setupQrCameraFailed": "Impossibile avviare la fotocamera.",
+  "setupQrTitle": "Scansiona il codice QR del token",
+  "setupQrHelp": "Compare accanto a un token appena creato nel tuo profilo di Home Assistant.",
+  "setupQrFlashOff": "Spegni la torcia",
+  "setupQrFlashOn": "Accendi la torcia",
+  "setupQrScreenLightOff": "Spegni la luce dello schermo",
+  "setupQrScreenLightOn": "Accendi la luce dello schermo"
+}

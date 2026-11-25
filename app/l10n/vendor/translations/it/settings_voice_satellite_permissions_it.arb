@@ -1,0 +1,14 @@
+{
+  "@@locale": "it",
+  "voiceMicHeld": "Il rilevamento della parola di attivazione può sentirti.",
+  "voiceMicBlocked": "Bloccata. Android non la chiederà più, quindi consentila nelle impostazioni dell'app.",
+  "voiceMicMissing": "Senza questa autorizzazione, niente ascolta la parola di attivazione.",
+  "voiceForegroundHeld": "Kiosk Satellite può passare in primo piano quando ti sente.",
+  "voiceForegroundMissing": "Senza questa autorizzazione, la parola di attivazione viene sentita ma non succede nulla.",
+  "voiceNotificationHeld": "La notifica permanente che consente l'ascolto in background.",
+  "voiceNotificationMissing": "Necessaria perché l'ascolto in background funzioni in modo affidabile.",
+  "voiceBatteryHeld": "Android lascerà in esecuzione l'ascolto.",
+  "voiceBatteryMissing": "Senza questa autorizzazione, l'ascolto viene interrotto dopo alcune ore.",
+  "voicePermissionDirections": "Concedile sul dispositivo stesso: scorri dal bordo sinistro → Impostazioni → Voice Satellite → Autorizzazioni di sistema richieste.",
+  "voicePermissionsSearch": "Il microfono e le altre autorizzazioni necessarie per il rilevamento della parola di attivazione."
+}

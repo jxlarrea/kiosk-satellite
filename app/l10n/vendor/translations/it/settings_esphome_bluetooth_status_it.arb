@@ -1,0 +1,13 @@
+{
+  "@@locale": "it",
+  "esphomeNearby": "Dispositivi nelle vicinanze",
+  "esphomeNearbySearch": "I dispositivi Bluetooth rilevati da questo kiosk, con il nome quando è noto.",
+  "esphomeNearbyEmpty": "Ancora nessun dispositivo rilevato.",
+  "esphomeNearbyWaiting": "Ancora nessun dispositivo rilevato. I dispositivi compaiono qui quando il proxy inizia la scansione.",
+  "esphomeRotating": "(indirizzo variabile)",
+  "esphomeNearbyCount": "Mostrati i primi {count} di {total}.",
+  "esphomeSlots": "Tramite questo proxy si possono connettere fino a {count} dispositivi contemporaneamente. Home Assistant instrada gli altri dispositivi tramite altri proxy.",
+  "esphomeSecondsAgo": "{count} s fa",
+  "esphomeMinutesAgo": "{count} min fa",
+  "esphomeHoursAgo": "{count} h fa"
+}

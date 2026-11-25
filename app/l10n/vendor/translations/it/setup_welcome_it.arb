@@ -1,0 +1,23 @@
+{
+  "@@locale": "it",
+  "setupRemoteHeading": "Amministrazione remota",
+  "setupTitle": "Configura\nKiosk Satellite",
+  "setupWelcomeLead": "Trasforma questo tablet in un kiosk per Home Assistant. La configurazione richiede un paio di minuti e questa procedura guidata ti accompagna passo passo.",
+  "setupDeviceName": "Nome del dispositivo",
+  "setupDeviceNameHelp": "Il nome di questo kiosk in Home Assistant, nell'amministrazione remota e sulla rete. Puoi cambiarlo quando vuoi in Impostazioni, Dispositivo.",
+  "setupEnableRemote": "Abilita l'amministrazione remota",
+  "setupEnableRemoteHelp": "Continua a gestire questo kiosk da un browser web dopo la configurazione: da lì incollare il token di accesso di Home Assistant è molto più facile.",
+  "setupRemotePassword": "Password di amministrazione remota",
+  "setupRestoreHeading": "Ripristina backup",
+  "setupRestore": "Ripristina da file di configurazione",
+  "setupRestoreHelp": "Importa una configurazione esportata da Kiosk Satellite e salta il resto di questa procedura guidata. Vengono importati impostazioni, plancia e accesso.",
+  "setupServicePermissions": "Autorizzazioni consigliate per il servizio",
+  "setupPasswordShort": "Password troppo corta",
+  "setupPasswordMinimum": "Usa almeno 4 caratteri.",
+  "setupRemoteAddress": "Puoi continuare questa configurazione da remoto con un browser web all'indirizzo {address}, che l'interruttore qui sopra sia attivo o no.",
+  "remoteWelcomeTitle": "Benvenuto in Kiosk Satellite",
+  "remoteWelcomePassword": "Questo tablet è in attesa di configurazione. Per prima cosa, proteggi questa amministrazione remota con una password.",
+  "remoteWelcomeReady": "Questo tablet è in attesa di configurazione. La password di amministrazione remota è già impostata; per cambiarla, digitane una nuova qui.",
+  "remoteInitialPassword": "Password di amministrazione (min. 4 caratteri)",
+  "remoteNewPassword": "Nuova password di amministrazione (lascia vuoto per mantenere quella attuale)"
+}

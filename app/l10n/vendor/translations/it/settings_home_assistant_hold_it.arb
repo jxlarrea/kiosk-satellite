@@ -1,0 +1,12 @@
+{
+  "@@locale": "it",
+  "settingHaHoldModeTitle": "Modalità pausa",
+  "settingHaHoldModeDescription": "Mantiene la vista attuale sullo schermo: il salvaschermo, la rotazione delle viste della plancia e il timer di ritorno alla vista iniziale restano in pausa finché non viene disattivata.",
+  "settingHaHoldReleaseMinutesTitle": "Termina la pausa automaticamente dopo",
+  "settingHaHoldReleaseMinutesDescription": "Disattiva da sola la modalità pausa dopo il tempo impostato. Imposta 0 per mantenerla finché non la disattivi manualmente.",
+  "haHoldHint": "Blocca la vista attuale, fine automatica, voce di menu",
+  "haNever": "Mai",
+  "haMinutes": "{minutes} min",
+  "haHours": "{hours} h",
+  "haHoursMinutes": "{hours} h {minutes} min"
+}

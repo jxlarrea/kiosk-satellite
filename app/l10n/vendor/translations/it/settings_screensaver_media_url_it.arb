@@ -1,0 +1,8 @@
+{
+  "@@locale": "it",
+  "settingScreensaverUrlImageDescription": "L'indirizzo di un'immagine, che il dispositivo scarica di nuovo a ogni cambio di immagine.",
+  "settingScreensaverUrlIntervalDescription": "Per quanto tempo viene mostrata ogni foto prima del download successivo.",
+  "screensaverMediaUrlPage": "Salvaschermo URL dell'immagine",
+  "screensaverMediaUrlPageHint": "URL, durata, transizione, metadati",
+  "screensaverMediaUrlMetadata": "Metadati dell'URL dell'immagine"
+}

@@ -1,0 +1,12 @@
+{
+  "@@locale": "it",
+  "settingHaReturnHomeEnabledTitle": "Torna alla vista iniziale della plancia",
+  "settingHaReturnHomeEnabledDescription": "Torna alla plancia configurata sopra dopo un periodo di inattività.",
+  "settingHaReturnHomeSecondsTitle": "Torna dopo (secondi)",
+  "settingHaReturnHomeSecondsDescription": "Periodo di inattività prima che il kiosk torni indietro.",
+  "haReturnHint": "Torna alla vista iniziale dopo un periodo di inattività",
+  "haReturnDisabled": "Disattivato mentre la rotazione delle viste della plancia è attiva.",
+  "haReturnNoPath": "La plancia configurata non ha un percorso di vista a cui tornare.",
+  "haReturnPath": "Torna a \"{path}\" allo scadere del tempo.",
+  "haReturnCompass": "Con la navigazione Compass, ogni vista della plancia nel layout torna, allo scadere del tempo, alla vista scelta per essa."
+}

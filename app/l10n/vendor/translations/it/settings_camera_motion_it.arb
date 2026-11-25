@@ -1,0 +1,15 @@
+{
+  "@@locale": "it",
+  "settingMotionSensorTitle": "Sensore di movimento",
+  "settingMotionSensorDescription": "Espone il movimento come sensore di Home Assistant. ATTENZIONE: mantiene la fotocamera sempre attiva, anche a schermo spento.",
+  "settingMotionSensorOffDelayTitle": "Azzera dopo",
+  "settingMotionSensorOffDelayDescription": "Secondi senza movimento prima che il sensore smetta di segnalare movimento.",
+  "settingMotionFpsTitle": "Frequenza fotogrammi per il movimento",
+  "settingMotionFpsDescription": "Fotogrammi al secondo in cui la fotocamera controlla il movimento. Valori più bassi pesano meno sulla CPU; 2 basta per notare qualcuno che si avvicina.",
+  "settingMotionStartDelayTitle": "Ritardo all'avvio",
+  "settingMotionStartDelayDescription": "Ignora il movimento per questo tempo dopo l'avvio della fotocamera, per i dispositivi la cui fotocamera si muove fisicamente quando si apre.",
+  "settingMotionSensitivityTitle": "Sensibilità al movimento",
+  "settingMotionSensitivityDescription": "Valori più alti fanno scattare il sensore con movimenti più piccoli. 1 richiede un grande cambiamento nell'inquadratura; 100 reagisce al minimo movimento.",
+  "cameraMotionPage": "Sensore di movimento",
+  "cameraMotionHint": "Sensore di movimento di Home Assistant e impostazioni di rilevamento condivise"
+}

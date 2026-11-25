@@ -1,0 +1,8 @@
+{
+  "@@locale": "it",
+  "setupPasswordFirst": "Imposta prima la password di amministrazione",
+  "setupPasswordBeforeImport": "Digita una password di amministrazione qui sopra (almeno 4 caratteri), poi importa il backup.",
+  "setupPasswordFailed": "Impossibile impostare la password",
+  "setupPasswordExists": "È già impostata una password",
+  "setupPasswordExistsHelp": "Accedi con la password impostata sul tablet per continuare qui. Ricaricamento…"
+}

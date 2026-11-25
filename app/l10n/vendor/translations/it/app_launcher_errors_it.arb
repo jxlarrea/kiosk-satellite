@@ -1,0 +1,5 @@
+{
+  "@@locale": "it",
+  "launcherErrorAndroidOnly": "l'elenco delle app è disponibile solo su Android",
+  "launcherErrorListDetail": "impossibile elencare le app: {error}"
+}

@@ -1,0 +1,10 @@
+{
+  "@@locale": "it",
+  "launcherNoneHelp": "Ancora nessuna. Scegli le app da proporre nel launcher.",
+  "launcherNone": "Ancora nessuna",
+  "launcherListFailed": "Impossibile elencare le app",
+  "launcherListError": "Impossibile elencare le app: {error}",
+  "launcherListingFailed": "elenco non riuscito",
+  "launcherEmpty": "Nessuna app avviabile trovata.",
+  "launcherSearchApps": "Cerca app"
+}

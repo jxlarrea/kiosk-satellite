@@ -1,0 +1,18 @@
+{
+  "@@locale": "it",
+  "settingAutoReloadOnErrorTitle": "Ricarica automatica in caso di errore",
+  "settingAutoReloadOnErrorDescription": "Ripristina automaticamente dopo errori della pagina e arresti anomali dell'app.",
+  "settingPullToRefreshTitle": "Abilita trascina per aggiornare",
+  "settingPullToRefreshDescription": "Trascina verso il basso dalla parte superiore della pagina per ricaricarla. Disattivato per impostazione predefinita: su una plancia che scorre è facile trascinare per errore.",
+  "settingPullToRefreshClearCacheTitle": "Svuota la cache quando trascini per aggiornare",
+  "settingPullToRefreshClearCacheDescription": "Il trascinamento svuota anche la cache web e i modelli della parola di attivazione prima di ricaricare, così tutto torna aggiornato. L'accesso e i dati salvati delle pagine vengono conservati.",
+  "settingBrowserZoomTitle": "Livello di zoom",
+  "settingBrowserZoomDescription": "Ridimensiona l'intera pagina. Sopra 1x per tablet a parete visti da lontano; sotto 1x per far stare più plancia su uno schermo piccolo.",
+  "settingPinchToZoomTitle": "Abilita pizzica per ingrandire",
+  "settingPinchToZoomDescription": "Ingrandisce la pagina con un pizzico a due dita. Disattivato per impostazione predefinita, così la plancia del kiosk resta ferma in caso di tocchi accidentali.",
+  "settingDisableScrollingTitle": "Disabilita lo scorrimento",
+  "settingDisableScrollingDescription": "Blocca la pagina in posizione, così non può scorrere in nessuna direzione. Tocchi e pulsanti continuano a funzionare.",
+  "browserCrashPermissionHelp": "Senza questa autorizzazione il kiosk non può riaprirsi dopo un arresto anomalo.",
+  "browserCrashPermissionMissing": "Autorizzazione \"Mostra sopra altre app\" mancante",
+  "browserCrashPermissionRemoteHelp": "Senza questa autorizzazione il kiosk non può riaprirsi da solo dopo un arresto anomalo. La schermata per concederla compare sul tablet."
+}

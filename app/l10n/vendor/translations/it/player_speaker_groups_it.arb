@@ -1,0 +1,7 @@
+{
+  "@@locale": "it",
+  "mediaGroupLead": "Guida il gruppo",
+  "mediaGroupReadFailed": "Impossibile leggere il gruppo.",
+  "mediaGroupEmpty": "Nessun altro lettore con cui raggruppare.",
+  "mediaSpeakerSelection": "Selezione degli altoparlanti"
+}

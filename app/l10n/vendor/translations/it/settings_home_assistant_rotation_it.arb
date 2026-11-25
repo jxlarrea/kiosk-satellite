@@ -1,0 +1,18 @@
+{
+  "@@locale": "it",
+  "settingHaRotationEnabledTitle": "Abilita la rotazione delle viste della plancia",
+  "settingHaRotationEnabledDescription": "Scorre le viste selezionate della plancia in un ciclo continuo, mostrando ciascuna per il numero di secondi scelto.",
+  "settingHaRotationSecondsTitle": "Secondi per vista",
+  "settingHaRotationSecondsDescription": "Per quanto tempo ogni vista resta sullo schermo.",
+  "settingHaRotationPauseSecondsTitle": "Pausa della rotazione dopo un'interazione (secondi)",
+  "settingHaRotationPauseSecondsDescription": "Toccare lo schermo mette in pausa la rotazione per questo tempo, e ogni tocco fa ripartire il conto alla rovescia. Le interazioni vocali la mettono in pausa fino al loro termine. Con 0 la rotazione continua anche durante i tocchi.",
+  "settingHaRotationCrossfadeTitle": "Dissolvenza tra le viste",
+  "settingHaRotationCrossfadeDescription": "Dissolve verso lo sfondo e poi nella vista successiva invece di cambiare all'istante. Il passaggio a un'altra plancia o a una pagina esterna resta istantaneo.",
+  "settingHaRotationFadeSecondsTitle": "Durata della dissolvenza (secondi)",
+  "settingHaRotationFadeSecondsDescription": "Durata complessiva della dissolvenza in uscita e in entrata. Il caricamento della vista successiva può richiedere più tempo, soprattutto la prima volta che viene aperta.",
+  "haRotation": "Rotazione delle viste della plancia",
+  "haRotationHint": "Ciclo tra le viste, tempo di permanenza, dissolvenza",
+  "haExternalPages": "Pagine esterne",
+  "haFadeError": "Scegli una durata della dissolvenza tra 0,2 e 5 secondi.",
+  "haPauseRemoteHelp": "Un tocco mette in pausa la rotazione per questo tempo; ogni tocco fa ripartire il conteggio. Le interazioni vocali mettono sempre in pausa fino al loro termine. Con 0 la rotazione continua."
+}

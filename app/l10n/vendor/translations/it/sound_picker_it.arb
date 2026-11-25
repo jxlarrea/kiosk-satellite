@@ -1,0 +1,18 @@
+{
+  "@@locale": "it",
+  "intercomBuiltinRing": "Suoneria integrata",
+  "intercomBuiltinChime": "Segnale acustico integrato",
+  "intercomMissingFile": "{file} (mancante)",
+  "intercomAddSound": "Aggiungi un suono",
+  "intercomCopySoundHelp": "Copia un file audio da questo dispositivo nella cartella dei suoni.",
+  "intercomUploadSoundHelp": "Carica un file audio da questo computer nella cartella dei suoni.",
+  "intercomUpload": "Carica",
+  "intercomUploading": "Caricamento…",
+  "intercomUnsupportedSound": "Suono non supportato",
+  "intercomChooseSound": "Suono non supportato: scegli un file MP3, OGG, WAV, FLAC, M4A o AAC.",
+  "intercomCopyFailed": "Impossibile copiare il file",
+  "intercomUploadFailed": "Caricamento non riuscito: {error}",
+  "intercomSaveFailed": "Non salvato: {error}",
+  "intercomSoundFilename": "Inserisci un nome di file, non un percorso.",
+  "intercomSoundFormats": "Scegli un file MP3, OGG, WAV, FLAC, M4A o AAC."
+}

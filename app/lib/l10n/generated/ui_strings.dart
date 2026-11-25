@@ -9,6 +9,7 @@ import 'ui_strings_de.dart';
 import 'ui_strings_en.dart';
 import 'ui_strings_es.dart';
 import 'ui_strings_fr.dart';
+import 'ui_strings_it.dart';
 import 'ui_strings_nl.dart';
 import 'ui_strings_pl.dart';
 import 'ui_strings_ru.dart';
@@ -104,6 +105,7 @@ abstract class UiStrings {
     Locale('en'),
     Locale('es'),
     Locale('fr'),
+    Locale('it'),
     Locale('nl'),
     Locale('pl'),
     Locale('ru'),
@@ -30436,6 +30438,7 @@ class _UiStringsDelegate extends LocalizationsDelegate<UiStrings> {
     'en',
     'es',
     'fr',
+    'it',
     'nl',
     'pl',
     'ru',
@@ -30470,6 +30473,8 @@ UiStrings lookupUiStrings(Locale locale) {
       return UiStringsEs();
     case 'fr':
       return UiStringsFr();
+    case 'it':
+      return UiStringsIt();
     case 'nl':
       return UiStringsNl();
     case 'pl':
