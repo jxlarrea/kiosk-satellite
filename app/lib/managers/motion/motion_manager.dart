@@ -681,6 +681,20 @@ class MotionManager extends Manager {
     // the screensaver's stop, so the hold is up before the stop's
     // ScreensaverStateChanged runs [_sync].
     bus.on<FaceEnrollRequested>().listen(_startFaceEnroll);
+    // What a recognized face let through, for Ground Control's vision
+    // session.
+    bus.on<FacePinSkipped>().listen((e) {
+      _visionSocket?.outcome(
+        'pin_skipped',
+        extra: {'mode': e.lockdown ? 'lockdown' : 'kiosk', 'name': e.name},
+      );
+    });
+    bus.on<FaceLockdownChanged>().listen((e) {
+      _visionSocket?.outcome(
+        e.locked ? 'lockdown_on' : 'lockdown_off',
+        extra: {'name': ?e.name},
+      );
+    });
     bus.on<FaceEnrollStopRequested>().listen((_) {
       if (_enrolling) {
         log.info(name, 'face capture stopped from Ground Control');

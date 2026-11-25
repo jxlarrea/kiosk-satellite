@@ -12,5 +12,8 @@
   "settingLockdownExitGestureDescription": "Szybkie dotknięcia w dowolnym miejscu wyłączają tryb blokady, po podaniu PIN-u kiosku, jeśli został ustawiony. Warianty z przytrzymaniem wymagają przytrzymania ostatniego dotknięcia. Gdy gest jest wyłączony, tryb mogą wyłączyć tylko zdalna administracja lub Home Assistant.",
   "lockdownGestureNone": "Wyłączony (tylko zdalnie)",
   "lockdownExplanation": "Tryb blokady sprawia, że pulpit nie reaguje na interakcje, włącza wszystkie zabezpieczenia trybu kiosku bez zmiany jego ustawień i wycisza wykrywanie słowa wybudzającego na czas swojego działania. Przy włączonej ochronie interfejsu systemu (powyżej) blokowane są też obszar powiadomień i ostatnie aplikacje. Home Assistant otrzymuje przez ESPHome przełącznik trybu blokady.",
-  "lockdownSearch": "Osłona przed dotykiem sterowana tylko zdalnie. Skonfiguruj ją w interfejsie zdalnej administracji; jej uprawnienia znajdują się w sekcji „Wymagane uprawnienia systemowe”."
+  "lockdownSearch": "Osłona przed dotykiem sterowana tylko zdalnie. Skonfiguruj ją w interfejsie zdalnej administracji; jej uprawnienia znajdują się w sekcji „Wymagane uprawnienia systemowe”.",
+  "settingLockdownFaceSkipPinDescription": "Przy opcji Wybrane osoby gest wyjścia wyłącza tryb blokady bez PIN-u, gdy przed kioskiem rozpoznana jest jedna z osób wybranych poniżej.",
+  "settingLockdownFaceAutoTitle": "Blokuj i odblokowuj twarzami",
+  "settingLockdownFaceAutoDescription": "Wyłącza tryb blokady, gdy przed kioskiem rozpoznana jest jedna z osób wybranych powyżej, i włącza go ponownie 10 sekund po tym, jak żadnej nie widać. Nie włączaj tego, jeśli blokujesz ekran, aby go wyczyścić."
 }

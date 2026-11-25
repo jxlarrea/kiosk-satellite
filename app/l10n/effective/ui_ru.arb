@@ -32837,6 +32837,32 @@
       ]
     }
   },
+  "settingVisionMatchLinkKioskPinDescription": "Режим киоска > Ground Control Vision Match",
+  "@settingVisionMatchLinkKioskPinDescription": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Where the setting is, as a path of page names. Use the translated name of the Kiosk Mode page. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings"
+      ]
+    }
+  },
+  "settingVisionMatchLinkLockdownDescription": "Режим блокировки > Ground Control Vision Match",
+  "@settingVisionMatchLinkLockdownDescription": {
+    "context": "Settings > Ground Control > Vision Match > Used in other settings",
+    "description": "Where the setting is, as a path of page names. Use the translated name of the Lockdown Mode page. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Ground Control > Vision Match > Used in other settings"
+      ],
+      "remoteAdmin": [
+        "Ground Control > Vision Match > Used in other settings"
+      ]
+    }
+  },
   "haCustomPages": "Свои страницы",
   "@haCustomPages": {
     "context": "Settings:Home Assistant:Custom Pages",
@@ -36841,6 +36867,97 @@
       ]
     }
   },
+  "kioskGroundControlVisionMatch": "Ground Control Vision Match",
+  "@kioskGroundControlVisionMatch": {
+    "context": "Settings > Kiosk Mode",
+    "description": "Group heading for the settings that use Face Recognition on Ground Control. Ground Control and Vision Match are names: keep them unchanged.",
+    "x-locations": {
+      "device": [
+        "Settings > Kiosk Mode"
+      ],
+      "remoteAdmin": [
+        "Kiosk Mode"
+      ]
+    }
+  },
+  "settingKioskFaceSkipPinTitle": "Пропускать PIN для",
+  "@settingKioskFaceSkipPinTitle": {
+    "context": "Settings > Kiosk Mode > Ground Control Vision Match",
+    "description": "Setting label: who can open the menu without the kiosk PIN.",
+    "x-locations": {
+      "device": [
+        "Settings > Kiosk Mode > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Kiosk Mode > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingKioskFaceSkipPinDescription": "При варианте «Выбранные люди» меню открывается после жеста выхода без PIN, пока перед киоском распознан один из людей, выбранных ниже.",
+  "@settingKioskFaceSkipPinDescription": {
+    "context": "Settings > Kiosk Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Kiosk Mode > Ground Control Vision Match > Skip the PIN for"
+      ],
+      "remoteAdmin": [
+        "Kiosk Mode > Ground Control Vision Match > Skip the PIN for"
+      ]
+    }
+  },
+  "kioskFaceSkipPinNobody": "Никого",
+  "@kioskFaceSkipPinNobody": {
+    "context": "Settings > Kiosk Mode > Ground Control Vision Match",
+    "description": "Option of Skip the PIN for: the PIN is always asked.",
+    "x-locations": {
+      "device": [
+        "Settings > Kiosk Mode > Ground Control Vision Match > Skip the PIN for"
+      ],
+      "remoteAdmin": [
+        "Kiosk Mode > Ground Control Vision Match > Skip the PIN for"
+      ]
+    }
+  },
+  "kioskFaceSkipPinPeople": "Выбранные люди",
+  "@kioskFaceSkipPinPeople": {
+    "context": "Settings > Kiosk Mode > Ground Control Vision Match",
+    "description": "Option of Skip the PIN for: the people picked under People.",
+    "x-locations": {
+      "device": [
+        "Settings > Kiosk Mode > Ground Control Vision Match > Skip the PIN for"
+      ],
+      "remoteAdmin": [
+        "Kiosk Mode > Ground Control Vision Match > Skip the PIN for"
+      ]
+    }
+  },
+  "settingKioskFacePeopleTitle": "Люди",
+  "@settingKioskFacePeopleTitle": {
+    "context": "Settings > Kiosk Mode > Ground Control Vision Match",
+    "description": "Setting label: the people who can skip the PIN.",
+    "x-locations": {
+      "device": [
+        "Settings > Kiosk Mode > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Kiosk Mode > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingKioskFacePeopleDescription": "Выберите, кто может пропускать PIN. Если никто не выбран, это может любой распознанный человек.",
+  "@settingKioskFacePeopleDescription": {
+    "context": "Settings > Kiosk Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Kiosk Mode > Ground Control Vision Match > People"
+      ],
+      "remoteAdmin": [
+        "Kiosk Mode > Ground Control Vision Match > People"
+      ]
+    }
+  },
   "kioskForeground": "Kiosk Satellite может возвращаться на передний план.",
   "@kioskForeground": {
     "context": "Settings > Kiosk Mode > Required system permissions",
@@ -37864,6 +37981,45 @@
     "x-locations": {
       "device": [
         "Settings > Search > Lockdown Mode"
+      ]
+    }
+  },
+  "settingLockdownFaceSkipPinDescription": "При варианте «Выбранные люди» жест выхода выключает режим блокировки без PIN, пока перед киоском распознан один из людей, выбранных ниже.",
+  "@settingLockdownFaceSkipPinDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
+      ]
+    }
+  },
+  "settingLockdownFaceAutoTitle": "Блокировать и разблокировать по лицам",
+  "@settingLockdownFaceAutoTitle": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingLockdownFaceAutoDescription": "Выключает режим блокировки, пока перед киоском распознан один из людей, выбранных выше, и снова включает его через 10 секунд после того, как никого из них не видно. Не включайте это, если блокируете экран, чтобы его почистить.",
+  "@settingLockdownFaceAutoDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
       ]
     }
   },

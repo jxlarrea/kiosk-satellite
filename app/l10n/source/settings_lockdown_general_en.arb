@@ -129,5 +129,44 @@
         "Settings > Search > Lockdown Mode"
       ]
     }
+  },
+  "settingLockdownFaceSkipPinDescription": "With Chosen people, the exit gesture turns Lockdown Mode off without the PIN while one of the people picked below is recognized at the kiosk.",
+  "@settingLockdownFaceSkipPinDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
+      ]
+    }
+  },
+  "settingLockdownFaceAutoTitle": "Lock and unlock with faces",
+  "@settingLockdownFaceAutoTitle": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingLockdownFaceAutoDescription": "Turn Lockdown Mode off while one of the people above is recognized at the kiosk and back on 10 seconds after none is. Leave this off if you lock the screen to clean it.",
+  "@settingLockdownFaceAutoDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+      ]
+    }
   }
 }

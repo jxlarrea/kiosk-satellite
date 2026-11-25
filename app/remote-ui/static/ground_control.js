@@ -212,8 +212,13 @@ export function groundControlValueText(key) {
     return s.value ? t('groundControlValueOn', {}, 'On') : t('groundControlValueOff', {}, 'Off');
   }
   const label = s.optionLabels?.[s.value] || String(s.value ?? '');
-  if (key === 'screensaver.face_who' && s.value === 'people') {
-    const names = chosenPeople('screensaver.face_people').map((p) => p.name || p.id);
+  const peopleKey = {
+    'screensaver.face_who': 'screensaver.face_people',
+    'kiosk.face_skip_pin': 'kiosk.face_people',
+    'lockdown.face_skip_pin': 'lockdown.face_people',
+  }[key];
+  if (peopleKey && s.value === 'people') {
+    const names = chosenPeople(peopleKey).map((p) => p.name || p.id);
     if (names.length) return t('groundControlValuePeople', { option: label, names: names.join(', ') }, `${label}: ${names.join(', ')}`);
   }
   return label;

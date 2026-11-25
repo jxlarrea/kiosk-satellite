@@ -2450,6 +2450,10 @@ final _messages = <String, String Function(UiStrings)>{
   'groundControlTagTitle': (s) => s.groundControlTagTitle,
   'groundControlTagVision': (s) => s.groundControlTagVision,
   'groundControlTagVoice': (s) => s.groundControlTagVoice,
+  'settingVisionMatchLinkKioskPinDescription': (s) =>
+      s.settingVisionMatchLinkKioskPinDescription,
+  'settingVisionMatchLinkLockdownDescription': (s) =>
+      s.settingVisionMatchLinkLockdownDescription,
   'haCustomPages': (s) => s.haCustomPages,
   'haCustomPagesHintDashboard': (s) => s.haCustomPagesHintDashboard,
   'settingHaCustomPagesSocketTitle': (s) => s.settingHaCustomPagesSocketTitle,
@@ -2811,6 +2815,15 @@ final _messages = <String, String Function(UiStrings)>{
   'kioskGestureTaps5Hold': (s) => s.kioskGestureTaps5Hold,
   'kioskGestureTaps7Hold': (s) => s.kioskGestureTaps7Hold,
   'kioskGestureNone': (s) => s.kioskGestureNone,
+  'kioskGroundControlVisionMatch': (s) => s.kioskGroundControlVisionMatch,
+  'settingKioskFaceSkipPinTitle': (s) => s.settingKioskFaceSkipPinTitle,
+  'settingKioskFaceSkipPinDescription': (s) =>
+      s.settingKioskFaceSkipPinDescription,
+  'kioskFaceSkipPinNobody': (s) => s.kioskFaceSkipPinNobody,
+  'kioskFaceSkipPinPeople': (s) => s.kioskFaceSkipPinPeople,
+  'settingKioskFacePeopleTitle': (s) => s.settingKioskFacePeopleTitle,
+  'settingKioskFacePeopleDescription': (s) =>
+      s.settingKioskFacePeopleDescription,
   'kioskForeground': (s) => s.kioskForeground,
   'kioskOverlayMissing': (s) => s.kioskOverlayMissing,
   'kioskGuardHeld': (s) => s.kioskGuardHeld,
@@ -2930,6 +2943,11 @@ final _messages = <String, String Function(UiStrings)>{
   'lockdownGestureNone': (s) => s.lockdownGestureNone,
   'lockdownExplanation': (s) => s.lockdownExplanation,
   'lockdownSearch': (s) => s.lockdownSearch,
+  'settingLockdownFaceSkipPinDescription': (s) =>
+      s.settingLockdownFaceSkipPinDescription,
+  'settingLockdownFaceAutoTitle': (s) => s.settingLockdownFaceAutoTitle,
+  'settingLockdownFaceAutoDescription': (s) =>
+      s.settingLockdownFaceAutoDescription,
   'lockdownOverlayHeld': (s) => s.lockdownOverlayHeld,
   'lockdownOverlayMissing': (s) => s.lockdownOverlayMissing,
   'lockdownPermissionsSearch': (s) => s.lockdownPermissionsSearch,

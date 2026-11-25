@@ -2896,4 +2896,36 @@ const settingMessageIds = <String, Map<String, String>>{
     "title": "settingFacePreviewPersonTitle",
     "description": "settingVisionMatchLinkPreviewPersonDescription",
   },
+  "kiosk.face_skip_pin": {
+    "title": "settingKioskFaceSkipPinTitle",
+    "description": "settingKioskFaceSkipPinDescription",
+  },
+  "kiosk.face_people": {
+    "title": "settingKioskFacePeopleTitle",
+    "description": "settingKioskFacePeopleDescription",
+  },
+  "lockdown.face_skip_pin": {
+    "title": "settingKioskFaceSkipPinTitle",
+    "description": "settingLockdownFaceSkipPinDescription",
+  },
+  "lockdown.face_people": {
+    "title": "settingKioskFacePeopleTitle",
+    "description": "settingKioskFacePeopleDescription",
+  },
+  "lockdown.face_auto": {
+    "title": "settingLockdownFaceAutoTitle",
+    "description": "settingLockdownFaceAutoDescription",
+  },
+  "vision_match.link_kiosk_pin": {
+    "title": "settingKioskFaceSkipPinTitle",
+    "description": "settingVisionMatchLinkKioskPinDescription",
+  },
+  "vision_match.link_lockdown_pin": {
+    "title": "settingKioskFaceSkipPinTitle",
+    "description": "settingVisionMatchLinkLockdownDescription",
+  },
+  "vision_match.link_lockdown_auto": {
+    "title": "settingLockdownFaceAutoTitle",
+    "description": "settingVisionMatchLinkLockdownDescription",
+  },
 };

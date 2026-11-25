@@ -1520,6 +1520,112 @@ const lockdownExitGesture = SettingDef<String>(
   dependsOn: 'lockdown.enabled',
 );
 
+/// Kiosk Mode > Ground Control Vision Match: the menu opens after the exit
+/// gesture without the PIN while one of the chosen people is recognized at
+/// the kiosk.
+const kioskFaceSkipPin = SettingDef<String>(
+  key: 'kiosk.face_skip_pin',
+  type: SettingType.select,
+  defaultValue: 'nobody',
+  title: 'Skip the PIN for',
+  description:
+      'With Chosen people, the menu opens after the exit gesture without the '
+      'PIN while one of the people picked below is recognized at the kiosk.',
+  category: 'Kiosk',
+  section: 'Ground Control Vision Match',
+  options: ['nobody', 'people'],
+  optionLabels: {'nobody': 'Nobody', 'people': 'Chosen people'},
+  dependsOn: 'kiosk.enabled',
+  alsoDependsOn: 'vision_match.face_recognition',
+  groundControl: 'vision',
+);
+
+/// Who can skip the kiosk PIN, stored like [voiceMatchPeople]. With nobody
+/// chosen, anyone recognized.
+const kioskFacePeople = SettingDef<String>(
+  key: 'kiosk.face_people',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'People',
+  description:
+      'Choose who can skip the PIN. If nobody is chosen, anyone recognized '
+      'can.',
+  category: 'Kiosk',
+  section: 'Ground Control Vision Match',
+  dependsOn: 'kiosk.face_skip_pin',
+  dependsOnValue: 'people',
+  normalizer: normalizeVoiceMatchPeople,
+  groundControl: 'vision',
+);
+
+/// Lockdown Mode > Ground Control Vision Match: the lockdown exit gesture
+/// turns Lockdown Mode off without the PIN while one of the chosen people
+/// is recognized at the kiosk. Shown with Lockdown Mode off too, so Lock
+/// and unlock with faces can be turned on.
+const lockdownFaceSkipPin = SettingDef<String>(
+  key: 'lockdown.face_skip_pin',
+  type: SettingType.select,
+  defaultValue: 'nobody',
+  title: 'Skip the PIN for',
+  description:
+      'With Chosen people, the exit gesture turns Lockdown Mode off without '
+      'the PIN while one of the people picked below is recognized at the '
+      'kiosk.',
+  category: 'Lockdown',
+  section: 'Ground Control Vision Match',
+  options: ['nobody', 'people'],
+  optionLabels: {'nobody': 'Nobody', 'people': 'Chosen people'},
+  alsoDependsOn: 'vision_match.face_recognition',
+  groundControl: 'vision',
+);
+
+const lockdownFacePeople = SettingDef<String>(
+  key: 'lockdown.face_people',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'People',
+  description:
+      'Choose who can skip the PIN. If nobody is chosen, anyone recognized '
+      'can.',
+  category: 'Lockdown',
+  section: 'Ground Control Vision Match',
+  dependsOn: 'lockdown.face_skip_pin',
+  dependsOnValue: 'people',
+  normalizer: normalizeVoiceMatchPeople,
+  groundControl: 'vision',
+);
+
+/// Lockdown Mode follows the chosen people: off while one of them is
+/// recognized at the kiosk, on again [lockdownFaceRelock] after none is.
+/// Off by default: it unlocks for someone cleaning the screen.
+const lockdownFaceAuto = SettingDef<bool>(
+  key: 'lockdown.face_auto',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Lock and unlock with faces',
+  description:
+      'Turn Lockdown Mode off while one of the people above is recognized at '
+      'the kiosk and back on 10 seconds after none is. Leave this off if you '
+      'lock the screen to clean it.',
+  category: 'Lockdown',
+  section: 'Ground Control Vision Match',
+  dependsOn: 'lockdown.face_skip_pin',
+  dependsOnValue: 'people',
+  groundControl: 'vision',
+);
+
+/// How long after the last chosen person was recognized Lock and unlock
+/// with faces turns Lockdown Mode back on.
+const lockdownFaceRelock = Duration(seconds: 10);
+
+/// Whether one of the people stored in [peopleJson] (as [voiceMatchPeople])
+/// is in [inView], the Ground Control person ids Face Recognition names at
+/// the kiosk. With nobody stored, anyone recognized counts.
+bool chosenInView(Set<String> inView, String peopleJson) {
+  final chosen = {for (final p in decodeVoiceMatchPeople(peopleJson)) p.id};
+  return chosen.isEmpty ? inView.isNotEmpty : inView.any(chosen.contains);
+}
+
 // ── App Launcher ───────────────────────────────────────────────────────
 // The minimal app selector (issue #114): a dedicated kiosk that doubles as
 // a media player or alarm clock needs a sanctioned way into a few other
@@ -8423,6 +8529,53 @@ const visionMatchLinkPreviewPerson = SettingDef<String>(
   linksTo: 'face.preview_person',
 );
 
+const visionMatchLinkKioskPin = SettingDef<String>(
+  key: 'vision_match.link_kiosk_pin',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Skip the PIN for',
+  description: 'Kiosk Mode > Ground Control Vision Match',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Used in other settings',
+  dependsOn: 'vision_match.face_recognition',
+  linksTo: 'kiosk.face_skip_pin',
+);
+
+const visionMatchLinkLockdownPin = SettingDef<String>(
+  key: 'vision_match.link_lockdown_pin',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Skip the PIN for',
+  description: 'Lockdown Mode > Ground Control Vision Match',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Used in other settings',
+  dependsOn: 'vision_match.face_recognition',
+  linksTo: 'lockdown.face_skip_pin',
+);
+
+const visionMatchLinkLockdownAuto = SettingDef<String>(
+  key: 'vision_match.link_lockdown_auto',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Lock and unlock with faces',
+  description: 'Lockdown Mode > Ground Control Vision Match',
+  category: 'Ground Control',
+  subpage: 'Vision Match',
+  section: 'Used in other settings',
+  dependsOn: 'vision_match.face_recognition',
+  linksTo: 'lockdown.face_auto',
+);
+
+/// The People setting each Chosen people option lists, for the values on
+/// Vision Match > Used in other settings.
+const groundControlPeopleOf = {
+  'screensaver.face_who': screensaverFacePeople,
+  'kiosk.face_skip_pin': kioskFacePeople,
+  'lockdown.face_skip_pin': lockdownFacePeople,
+};
+
 /// Show fingers gestures, on Ground Control.
 const visionMatchHandGestures = SettingDef<bool>(
   key: 'vision_match.hand_gestures',
@@ -15065,12 +15218,17 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowTheme,
   kioskAllowApps,
   kioskAllowedApps,
+  kioskFaceSkipPin,
+  kioskFacePeople,
   lockdownEnabled,
   lockdownMenu,
   lockdownAutoUnlockMinutes,
   lockdownBlackout,
   lockdownAllowScreensaver,
   lockdownExitGesture,
+  lockdownFaceSkipPin,
+  lockdownFacePeople,
+  lockdownFaceAuto,
   homeLauncherEnabled,
   homeKeepPinning,
   launcherEnabled,
@@ -15507,6 +15665,9 @@ const List<SettingDef<Object>> allSettings = [
   visionMatchFaceConfirmsVoice,
   visionMatchLinkFaceWho,
   visionMatchLinkPreviewPerson,
+  visionMatchLinkKioskPin,
+  visionMatchLinkLockdownPin,
+  visionMatchLinkLockdownAuto,
   visionMatchHandGestures,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,

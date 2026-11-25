@@ -156,13 +156,21 @@ class VisionMatchSocket {
   }
 
   /// What the kiosk did with Ground Control's results, for its vision
-  /// session: `screensaver_dismissed`, `screensaver_postponed` or
-  /// `gesture` with the finger count and the action it ran.
-  void outcome(String what, {int? fingers, String? action}) {
+  /// session: `screensaver_dismissed`, `screensaver_postponed`, `gesture`
+  /// with the finger count and the action it ran, `pin_skipped` with the
+  /// mode (kiosk or lockdown) and the person, and `lockdown_off` with the
+  /// person or `lockdown_on`, in [extra].
+  void outcome(
+    String what, {
+    int? fingers,
+    String? action,
+    Map<String, Object?> extra = const {},
+  }) {
     final socket = _socket;
     if (!ready || socket == null) return;
     socket.sink.add(
       jsonEncode({
+        ...extra,
         'type': 'outcome',
         'what': what,
         'fingers': ?fingers,

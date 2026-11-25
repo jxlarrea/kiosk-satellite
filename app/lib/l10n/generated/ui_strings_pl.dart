@@ -8787,6 +8787,14 @@ class UiStringsPl extends UiStrings {
       'To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z Voice Match i jest widoczne tylko wtedy, gdy Voice Match jest włączony w Ustawienia > Ground Control > Voice Match.';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Tryb kiosku > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      'Tryb blokady > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => 'Własne strony';
 
   @override
@@ -9856,6 +9864,29 @@ class UiStringsPl extends UiStrings {
   String get kioskGestureNone => 'Wyłączony (tylko zdalna administracja)';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => 'Pomijaj PIN dla';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      'Przy opcji Wybrane osoby menu otwiera się po geście wyjścia bez PIN-u, gdy przed kioskiem rozpoznana jest jedna z osób wybranych poniżej.';
+
+  @override
+  String get kioskFaceSkipPinNobody => 'Nikt';
+
+  @override
+  String get kioskFaceSkipPinPeople => 'Wybrane osoby';
+
+  @override
+  String get settingKioskFacePeopleTitle => 'Osoby';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      'Wybierz, kto może pomijać PIN. Jeśli nikt nie jest wybrany, może to zrobić każda rozpoznana osoba.';
+
+  @override
   String get kioskForeground =>
       'Kiosk Satellite może samodzielnie wrócić na pierwszy plan.';
 
@@ -10146,6 +10177,17 @@ class UiStringsPl extends UiStrings {
   @override
   String get lockdownSearch =>
       'Osłona przed dotykiem sterowana tylko zdalnie. Skonfiguruj ją w interfejsie zdalnej administracji; jej uprawnienia znajdują się w sekcji „Wymagane uprawnienia systemowe”.';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      'Przy opcji Wybrane osoby gest wyjścia wyłącza tryb blokady bez PIN-u, gdy przed kioskiem rozpoznana jest jedna z osób wybranych poniżej.';
+
+  @override
+  String get settingLockdownFaceAutoTitle => 'Blokuj i odblokowuj twarzami';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      'Wyłącza tryb blokady, gdy przed kioskiem rozpoznana jest jedna z osób wybranych powyżej, i włącza go ponownie 10 sekund po tym, jak żadnej nie widać. Nie włączaj tego, jeśli blokujesz ekran, aby go wyczyścić.';
 
   @override
   String get lockdownOverlayHeld => 'Osłona blokady może zakryć cały ekran.';

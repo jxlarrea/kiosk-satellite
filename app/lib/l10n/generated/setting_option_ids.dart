@@ -578,6 +578,14 @@ const settingOptionMessageIds = <String, Map<String, String>>{
   "screensaver.face_who": {
     "anyone": "screensaverFaceWhoOptionAnyone",
     "people": "screensaverFaceWhoOptionPeople"
+  },
+  "kiosk.face_skip_pin": {
+    "nobody": "kioskFaceSkipPinNobody",
+    "people": "kioskFaceSkipPinPeople"
+  },
+  "lockdown.face_skip_pin": {
+    "nobody": "kioskFaceSkipPinNobody",
+    "people": "kioskFaceSkipPinPeople"
   }
 };
 const settingPlaceholderMessageIds = <String, String>{

@@ -12,5 +12,8 @@
   "settingLockdownExitGestureDescription": "Tik snel ergens op het scherm om de vergrendelingsmodus uit te schakelen, zo nodig na het invoeren van de kiosk-pincode. Bij varianten met vasthouden moet de laatste tik ingedrukt blijven. Als dit is uitgeschakeld, kan de modus alleen via beheer op afstand of Home Assistant worden beëindigd.",
   "lockdownGestureNone": "Uitgeschakeld (alleen op afstand)",
   "lockdownExplanation": "De vergrendelingsmodus maakt het dashboard niet-interactief, activeert alle beveiligingen van de kioskmodus zonder de kioskmodusinstellingen te wijzigen en dempt de wekwoorddetectie. Als de System UI-beveiliging hierboven is ingeschakeld, worden ook het meldingenpaneel en de recente apps geblokkeerd. Home Assistant krijgt via ESPHome een schakelaar voor de vergrendelingsmodus.",
-  "lockdownSearch": "Aanraakbeveiliging die alleen op afstand kan worden ingesteld. Configureer deze via beheer op afstand. De benodigde toestemmingen staan onder Vereiste systeemtoestemmingen."
+  "lockdownSearch": "Aanraakbeveiliging die alleen op afstand kan worden ingesteld. Configureer deze via beheer op afstand. De benodigde toestemmingen staan onder Vereiste systeemtoestemmingen.",
+  "settingLockdownFaceSkipPinDescription": "Met Gekozen personen schakelt het afsluitgebaar de vergrendelingsmodus uit zonder pincode zolang een van de hieronder gekozen personen bij de kiosk wordt herkend.",
+  "settingLockdownFaceAutoTitle": "Vergrendelen en ontgrendelen met gezichten",
+  "settingLockdownFaceAutoDescription": "Schakelt de vergrendelingsmodus uit zolang een van de personen hierboven bij de kiosk wordt herkend en 10 seconden nadat er geen meer is weer in. Laat dit uit als je het scherm vergrendelt om het schoon te maken."
 }

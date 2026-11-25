@@ -12,5 +12,8 @@
   "settingLockdownExitGestureDescription": "在任意位置快速点击可退出锁定模式。设置了 Kiosk PIN 码时，还需输入 PIN 码。选择带长按的手势时，最后一次点击需保持按住。禁用退出手势后，只能通过远程管理或 Home Assistant 退出。",
   "lockdownGestureNone": "禁用（仅远程）",
   "lockdownExplanation": "锁定模式开启后，仪表盘不再响应触控操作，并暂停唤醒词检测。它会启用所有 Kiosk 模式保护措施，原有 Kiosk 模式设置不变。开启上方的“系统界面保护”后，也无法打开通知栏和最近任务。Home Assistant 可通过 ESPHome 提供的开关控制锁定模式。",
-  "lockdownSearch": "禁止触控操作的保护界面，仅可在远程管理中设置。所需权限位于“所需系统权限”。"
+  "lockdownSearch": "禁止触控操作的保护界面，仅可在远程管理中设置。所需权限位于“所需系统权限”。",
+  "settingLockdownFaceSkipPinDescription": "选择“指定人员”时，只要在 Kiosk 前识别到下方选中的某个人，退出手势无需 PIN 码即可关闭锁定模式。",
+  "settingLockdownFaceAutoTitle": "通过人脸锁定和解锁",
+  "settingLockdownFaceAutoDescription": "在 Kiosk 前识别到上方的某个人时关闭锁定模式，在没有识别到任何一人 10 秒后重新开启。如果你锁定屏幕是为了清洁屏幕，请不要开启此项。"
 }

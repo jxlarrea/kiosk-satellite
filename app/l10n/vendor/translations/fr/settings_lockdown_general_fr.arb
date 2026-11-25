@@ -12,5 +12,8 @@
   "settingLockdownExitGestureDescription": "Des appuis rapides n'importe où désactivent le mode verrouillage, après le code PIN du kiosque s'il en existe un. Les variantes avec maintien nécessitent de maintenir le dernier appui. Si le geste est désactivé, le verrouillage ne peut être levé que depuis l'administration à distance ou Home Assistant.",
   "lockdownGestureNone": "Désactivé (à distance uniquement)",
   "lockdownExplanation": "Le mode verrouillage rend le tableau de bord non interactif, arme toutes les protections du mode kiosque sans modifier vos paramètres de mode kiosque, et coupe la détection du mot de réveil tant qu'il est activé. Avec la protection de l'interface système activée (ci-dessus), le panneau de notifications et l'écran des applications récentes sont également bloqués. Home Assistant reçoit un interrupteur Mode verrouillage via ESPHome.",
-  "lockdownSearch": "Bouclier tactile configurable depuis l'administration à distance. Ses autorisations se trouvent sous Autorisations système requises."
+  "lockdownSearch": "Bouclier tactile configurable depuis l'administration à distance. Ses autorisations se trouvent sous Autorisations système requises.",
+  "settingLockdownFaceSkipPinDescription": "Avec Personnes choisies, le geste de sortie désactive le mode verrouillage sans code PIN tant qu'une des personnes choisies ci-dessous est reconnue devant le kiosque.",
+  "settingLockdownFaceAutoTitle": "Verrouiller et déverrouiller avec les visages",
+  "settingLockdownFaceAutoDescription": "Désactive le mode verrouillage tant qu'une des personnes ci-dessus est reconnue devant le kiosque et le réactive 10 secondes après qu'il n'y en a plus aucune. Laissez désactivé si vous verrouillez l'écran pour le nettoyer."
 }

@@ -162,6 +162,84 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   bool get pinRequired => _settings.get(defs.kioskPin).isNotEmpty;
   bool pinMatches(String pin) => pin == _settings.get(defs.kioskPin);
 
+  // ── Ground Control Vision Match ──
+
+  /// Everyone Face Recognition names at the kiosk, by Ground Control person
+  /// id, and their names.
+  Map<String, String> _facesInView = const {};
+  StreamSubscription<FaceInViewChanged>? _facesSubscription;
+
+  /// Whether a chosen person was in view when Lock and unlock with faces
+  /// last looked, so a lock from Home Assistant holds until someone chosen
+  /// arrives again.
+  bool _chosenWasHere = false;
+  Timer? _faceRelockTimer;
+
+  /// Whether Skip the PIN for lets the exit gesture through without the PIN
+  /// now: Chosen people and one of them recognized at the kiosk. Says so in
+  /// the log and to Ground Control's vision session when it does.
+  bool faceSkipsPin({required bool lockdown}) {
+    final rule = lockdown ? defs.lockdownFaceSkipPin : defs.kioskFaceSkipPin;
+    final people = lockdown ? defs.lockdownFacePeople : defs.kioskFacePeople;
+    if (!_settings.visible(rule) || _settings.get(rule) != 'people') {
+      return false;
+    }
+    final who = _chosenHere(people);
+    if (who == null) return false;
+    log.info(
+      name,
+      '${lockdown ? 'lockdown' : 'kiosk'} PIN skipped: $who is at the kiosk',
+    );
+    bus.publish(FacePinSkipped(lockdown: lockdown, name: who));
+    return true;
+  }
+
+  /// The name of a chosen person in view under [people], or null.
+  String? _chosenHere(defs.SettingDef<String> people) {
+    final json = _settings.get(people);
+    if (!defs.chosenInView(_facesInView.keys.toSet(), json)) return null;
+    final chosen = {for (final p in defs.decodeVoiceMatchPeople(json)) p.id};
+    final id = _facesInView.keys.firstWhere(
+      (id) => chosen.isEmpty || chosen.contains(id),
+    );
+    return _facesInView[id];
+  }
+
+  /// Lock and unlock with faces: Lockdown Mode off when a chosen person
+  /// arrives, on again [defs.lockdownFaceRelock] after none is in view.
+  void _followFaces() {
+    final on =
+        _settings.visible(defs.lockdownFaceAuto) &&
+        _settings.get(defs.lockdownFaceAuto);
+    if (!on) {
+      _faceRelockTimer?.cancel();
+      _faceRelockTimer = null;
+      _chosenWasHere = false;
+      return;
+    }
+    final who = _chosenHere(defs.lockdownFacePeople);
+    if (who != null) {
+      _faceRelockTimer?.cancel();
+      _faceRelockTimer = null;
+      if (!_chosenWasHere && lockdownActive) {
+        log.info(name, 'lockdown off: $who is at the kiosk');
+        bus.publish(FaceLockdownChanged(locked: false, name: who));
+        unawaited(_settings.set(defs.lockdownEnabled, false));
+      }
+    } else if (!lockdownActive && _faceRelockTimer == null) {
+      _faceRelockTimer = Timer(defs.lockdownFaceRelock, () {
+        _faceRelockTimer = null;
+        if (lockdownActive || _chosenHere(defs.lockdownFacePeople) != null) {
+          return;
+        }
+        log.info(name, 'lockdown on: nobody chosen is at the kiosk');
+        bus.publish(const FaceLockdownChanged(locked: true));
+        unawaited(_settings.set(defs.lockdownEnabled, true));
+      });
+    }
+    _chosenWasHere = who != null;
+  }
+
   /// Whether the System UI guard (the accessibility service that closes
   /// the notification shade and recents while protections hold) is enabled
   /// in Android's Accessibility settings.
@@ -729,7 +807,20 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       _armReclaim();
     });
 
+    _facesSubscription = bus.on<FaceInViewChanged>().listen((e) {
+      _facesInView = {
+        for (final p in e.people) p.id: p.name,
+        if (e.id != null) e.id!: e.name,
+      };
+      _followFaces();
+    });
     _settingsSubscription = bus.on<SettingChanged>().listen((event) {
+      if (event.key == defs.lockdownEnabled.key ||
+          event.key.startsWith('lockdown.face_') ||
+          event.key.startsWith('vision_match.') ||
+          event.key == defs.groundControlEnabled.key) {
+        _followFaces();
+      }
       if (event.key == defs.uiLanguage.key && pushFlags) {
         unawaited(_invoke<void>('lockShieldText', {'text': _lockShieldText}));
       }
@@ -971,6 +1062,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
 
   @override
   Future<void> dispose() async {
+    _faceRelockTimer?.cancel();
+    await _facesSubscription?.cancel();
     await _settingsSubscription?.cancel();
     if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
     _reclaimTimer?.cancel();

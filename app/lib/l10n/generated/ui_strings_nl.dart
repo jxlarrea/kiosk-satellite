@@ -8791,6 +8791,14 @@ class UiStringsNl extends UiStrings {
       'Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt Voice Match en is alleen zichtbaar zolang Voice Match aan staat onder Instellingen > Ground Control > Voice Match.';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Kioskmodus > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      'Vergrendelingsmodus > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => 'Eigen pagina\'s';
 
   @override
@@ -9859,6 +9867,29 @@ class UiStringsNl extends UiStrings {
   String get kioskGestureNone => 'Uitgeschakeld (alleen beheer op afstand)';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => 'Pincode overslaan voor';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      'Met Gekozen personen opent het menu na het afsluitgebaar zonder pincode zolang een van de hieronder gekozen personen bij de kiosk wordt herkend.';
+
+  @override
+  String get kioskFaceSkipPinNobody => 'Niemand';
+
+  @override
+  String get kioskFaceSkipPinPeople => 'Gekozen personen';
+
+  @override
+  String get settingKioskFacePeopleTitle => 'Personen';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      'Kies wie de pincode mag overslaan. Is er niemand gekozen, dan mag iedereen die herkend wordt dat.';
+
+  @override
   String get kioskForeground =>
       'Kiosk Satellite kan zichzelf weer naar de voorgrond brengen.';
 
@@ -10150,6 +10181,18 @@ class UiStringsNl extends UiStrings {
   @override
   String get lockdownSearch =>
       'Aanraakbeveiliging die alleen op afstand kan worden ingesteld. Configureer deze via beheer op afstand. De benodigde toestemmingen staan onder Vereiste systeemtoestemmingen.';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      'Met Gekozen personen schakelt het afsluitgebaar de vergrendelingsmodus uit zonder pincode zolang een van de hieronder gekozen personen bij de kiosk wordt herkend.';
+
+  @override
+  String get settingLockdownFaceAutoTitle =>
+      'Vergrendelen en ontgrendelen met gezichten';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      'Schakelt de vergrendelingsmodus uit zolang een van de personen hierboven bij de kiosk wordt herkend en 10 seconden nadat er geen meer is weer in. Laat dit uit als je het scherm vergrendelt om het schoon te maken.';
 
   @override
   String get lockdownOverlayHeld =>

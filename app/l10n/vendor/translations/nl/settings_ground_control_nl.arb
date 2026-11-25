@@ -45,5 +45,7 @@
   "groundControlTagHint": "Een Ground Control-instelling. Meer informatie",
   "groundControlTagTitle": "Een Ground Control-instelling",
   "groundControlTagVision": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt gezichtsherkenning en is alleen zichtbaar zolang gezichtsherkenning aan staat onder Instellingen > Ground Control > Vision Match.",
-  "groundControlTagVoice": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt Voice Match en is alleen zichtbaar zolang Voice Match aan staat onder Instellingen > Ground Control > Voice Match."
+  "groundControlTagVoice": "Deze instelling heeft Kiosk Satellite Ground Control nodig. Ground Control is een aparte app die op een computer bij je thuis draait. De instelling gebruikt Voice Match en is alleen zichtbaar zolang Voice Match aan staat onder Instellingen > Ground Control > Voice Match.",
+  "settingVisionMatchLinkKioskPinDescription": "Kioskmodus > Ground Control Vision Match",
+  "settingVisionMatchLinkLockdownDescription": "Vergrendelingsmodus > Ground Control Vision Match"
 }

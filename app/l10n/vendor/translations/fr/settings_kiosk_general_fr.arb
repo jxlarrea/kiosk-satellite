@@ -26,5 +26,12 @@
   "kioskGestureTaps7": "7 appuis rapides",
   "kioskGestureTaps5Hold": "5 appuis rapides, en maintenant le dernier",
   "kioskGestureTaps7Hold": "7 appuis rapides, en maintenant le dernier",
-  "kioskGestureNone": "Désactivé (administration à distance uniquement)"
+  "kioskGestureNone": "Désactivé (administration à distance uniquement)",
+  "kioskGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingKioskFaceSkipPinTitle": "Ignorer le code PIN pour",
+  "settingKioskFaceSkipPinDescription": "Avec Personnes choisies, le menu s'ouvre après le geste de sortie sans code PIN tant qu'une des personnes choisies ci-dessous est reconnue devant le kiosque.",
+  "kioskFaceSkipPinNobody": "Personne",
+  "kioskFaceSkipPinPeople": "Personnes choisies",
+  "settingKioskFacePeopleTitle": "Personnes",
+  "settingKioskFacePeopleDescription": "Choisissez qui peut ignorer le code PIN. Si personne n'est choisi, toute personne reconnue le peut."
 }

@@ -1629,15 +1629,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       case 'recognized':
         return _facesInView.isNotEmpty;
       case 'people':
-        final chosen = {
-          for (final p in defs.decodeVoiceMatchPeople(
-            _settings.get(defs.screensaverFacePeople),
-          ))
-            p.id,
-        };
-        return chosen.isEmpty
-            ? _facesInView.isNotEmpty
-            : _facesInView.any(chosen.contains);
+        return defs.chosenInView(
+          _facesInView,
+          _settings.get(defs.screensaverFacePeople),
+        );
       default:
         return true;
     }

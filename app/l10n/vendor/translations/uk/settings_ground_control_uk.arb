@@ -45,5 +45,7 @@
   "groundControlTagHint": "Налаштування Ground Control. Докладніше",
   "groundControlTagTitle": "Налаштування Ground Control",
   "groundControlTagVision": "Цьому налаштуванню потрібен Kiosk Satellite Ground Control. Ground Control є окремим застосунком, що працює на комп'ютері у вас удома. Налаштування використовує впізнавання облич і показується лише тоді, коли впізнавання облич увімкнено в Налаштування > Ground Control > Vision Match.",
-  "groundControlTagVoice": "Цьому налаштуванню потрібен Kiosk Satellite Ground Control. Ground Control є окремим застосунком, що працює на комп'ютері у вас удома. Налаштування використовує Voice Match і показується лише тоді, коли Voice Match увімкнено в Налаштування > Ground Control > Voice Match."
+  "groundControlTagVoice": "Цьому налаштуванню потрібен Kiosk Satellite Ground Control. Ground Control є окремим застосунком, що працює на комп'ютері у вас удома. Налаштування використовує Voice Match і показується лише тоді, коли Voice Match увімкнено в Налаштування > Ground Control > Voice Match.",
+  "settingVisionMatchLinkKioskPinDescription": "Режим кіоска > Ground Control Vision Match",
+  "settingVisionMatchLinkLockdownDescription": "Повне блокування > Ground Control Vision Match"
 }

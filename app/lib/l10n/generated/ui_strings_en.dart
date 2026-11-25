@@ -8696,6 +8696,14 @@ class UiStringsEn extends UiStrings {
       'This setting needs Kiosk Satellite Ground Control. Ground Control is a separate app that runs on a computer in your home. The setting uses Voice Match and only shows while Voice Match is on in Settings > Ground Control > Voice Match.';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Kiosk Mode > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      'Lockdown Mode > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => 'Custom Pages';
 
   @override
@@ -9749,6 +9757,29 @@ class UiStringsEn extends UiStrings {
   String get kioskGestureNone => 'Disabled (remote admin only)';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => 'Skip the PIN for';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      'With Chosen people, the menu opens after the exit gesture without the PIN while one of the people picked below is recognized at the kiosk.';
+
+  @override
+  String get kioskFaceSkipPinNobody => 'Nobody';
+
+  @override
+  String get kioskFaceSkipPinPeople => 'Chosen people';
+
+  @override
+  String get settingKioskFacePeopleTitle => 'People';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      'Choose who can skip the PIN. If nobody is chosen, anyone recognized can.';
+
+  @override
   String get kioskForeground =>
       'Kiosk Satellite can bring itself back in the foreground.';
 
@@ -10037,6 +10068,17 @@ class UiStringsEn extends UiStrings {
   @override
   String get lockdownSearch =>
       'Remote-only touch shield. Set it up from the Remote Admin UI; its grants live under Required system permissions.';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      'With Chosen people, the exit gesture turns Lockdown Mode off without the PIN while one of the people picked below is recognized at the kiosk.';
+
+  @override
+  String get settingLockdownFaceAutoTitle => 'Lock and unlock with faces';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      'Turn Lockdown Mode off while one of the people above is recognized at the kiosk and back on 10 seconds after none is. Leave this off if you lock the screen to clean it.';
 
   @override
   String get lockdownOverlayHeld =>

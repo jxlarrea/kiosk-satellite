@@ -8880,6 +8880,14 @@ class UiStringsDe extends UiStrings {
       'Diese Einstellung braucht Kiosk Satellite Ground Control. Ground Control ist eine eigene App, die auf einem Computer bei dir zu Hause läuft. Die Einstellung nutzt Voice Match und wird nur angezeigt, solange Voice Match unter Einstellungen > Ground Control > Voice Match aktiviert ist.';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Kioskmodus > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      'Sperrmodus > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => 'Eigene Seiten';
 
   @override
@@ -9958,6 +9966,29 @@ class UiStringsDe extends UiStrings {
   String get kioskGestureNone => 'Deaktiviert (nur Fernverwaltung)';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => 'PIN überspringen für';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      'Mit Ausgewählte Personen öffnet sich das Menü nach der Exit-Geste ohne PIN, solange eine der unten ausgewählten Personen am Kiosk erkannt wird.';
+
+  @override
+  String get kioskFaceSkipPinNobody => 'Niemand';
+
+  @override
+  String get kioskFaceSkipPinPeople => 'Ausgewählte Personen';
+
+  @override
+  String get settingKioskFacePeopleTitle => 'Personen';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      'Wähle, wer die PIN überspringen kann. Ist niemand ausgewählt, kann das jede erkannte Person.';
+
+  @override
   String get kioskForeground =>
       'Kiosk Satellite kann wieder in den Vordergrund wechseln.';
 
@@ -10250,6 +10281,18 @@ class UiStringsDe extends UiStrings {
   @override
   String get lockdownSearch =>
       'Berührungssperre, die über die Fernverwaltung konfiguriert wird. Die erforderlichen Berechtigungen findest du unter „Erforderliche Systemberechtigungen“.';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      'Mit Ausgewählte Personen schaltet die Exit-Geste den Sperrmodus ohne PIN aus, solange eine der unten ausgewählten Personen am Kiosk erkannt wird.';
+
+  @override
+  String get settingLockdownFaceAutoTitle =>
+      'Mit Gesichtern sperren und entsperren';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      'Schaltet den Sperrmodus aus, solange eine der oben ausgewählten Personen am Kiosk erkannt wird, und 10 Sekunden nachdem keine mehr erkannt wird wieder ein. Lass das aus, wenn du den Bildschirm zum Reinigen sperrst.';
 
   @override
   String get lockdownOverlayHeld =>

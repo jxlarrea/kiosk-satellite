@@ -8838,6 +8838,14 @@ class UiStringsEs extends UiStrings {
       'Este ajuste necesita Kiosk Satellite Ground Control. Ground Control es una aplicación aparte que se ejecuta en un ordenador de tu casa. El ajuste usa Voice Match y solo aparece mientras Voice Match está activado en Configuración > Ground Control > Voice Match.';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Modo kiosko > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      'Modo de bloqueo > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => 'Páginas personalizadas';
 
   @override
@@ -9918,6 +9926,29 @@ class UiStringsEs extends UiStrings {
   String get kioskGestureNone => 'Desactivado (solo administración remota)';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => 'Omitir el PIN para';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      'Con Personas elegidas, el menú se abre tras el gesto de salida sin el PIN mientras se reconoce en el kiosko a una de las personas elegidas abajo.';
+
+  @override
+  String get kioskFaceSkipPinNobody => 'Nadie';
+
+  @override
+  String get kioskFaceSkipPinPeople => 'Personas elegidas';
+
+  @override
+  String get settingKioskFacePeopleTitle => 'Personas';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      'Elige quién puede omitir el PIN. Si no eliges a nadie, puede cualquier persona reconocida.';
+
+  @override
   String get kioskForeground => 'Kiosk Satellite puede volver al primer plano.';
 
   @override
@@ -10210,6 +10241,18 @@ class UiStringsEs extends UiStrings {
   @override
   String get lockdownSearch =>
       'Bloqueo táctil que se configura desde la administración remota. Sus permisos están en Permisos del sistema necesarios.';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      'Con Personas elegidas, el gesto de salida desactiva el modo de bloqueo sin el PIN mientras se reconoce en el kiosko a una de las personas elegidas abajo.';
+
+  @override
+  String get settingLockdownFaceAutoTitle =>
+      'Bloquear y desbloquear con rostros';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      'Desactiva el modo de bloqueo mientras se reconoce en el kiosko a una de las personas de arriba y vuelve a activarlo 10 segundos después de que no haya ninguna. Déjalo desactivado si bloqueas la pantalla para limpiarla.';
 
   @override
   String get lockdownOverlayHeld => 'El bloqueo puede cubrir toda la pantalla.';

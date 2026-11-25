@@ -138,11 +138,10 @@ String groundControlValueText(
     '$value',
     def.optionLabels?['$value'] ?? '$value',
   );
-  if (def.key == screensaverFaceWho.key && value == 'people') {
+  final people = groundControlPeopleOf[def.key];
+  if (people != null && value == 'people') {
     final names = [
-      for (final p in decodeVoiceMatchPeople(
-        settings.get(screensaverFacePeople),
-      ))
+      for (final p in decodeVoiceMatchPeople(settings.get(people)))
         p.name.isEmpty ? p.id : p.name,
     ];
     return names.isEmpty

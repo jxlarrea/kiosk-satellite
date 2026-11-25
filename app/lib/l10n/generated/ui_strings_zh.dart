@@ -8337,6 +8337,14 @@ class UiStringsZh extends UiStrings {
       '此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启 Voice Match 时显示。';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Kiosk 模式 > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      '锁定模式 > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => '自定义网页';
 
   @override
@@ -9328,6 +9336,29 @@ class UiStringsZh extends UiStrings {
   String get kioskGestureNone => '禁用（仅远程管理）';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => '以下人员免输 PIN 码';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      '选择“指定人员”时，只要在 Kiosk 前识别到下方选中的某个人，执行退出手势后无需 PIN 码即可打开菜单。';
+
+  @override
+  String get kioskFaceSkipPinNobody => '无人';
+
+  @override
+  String get kioskFaceSkipPinPeople => '指定人员';
+
+  @override
+  String get settingKioskFacePeopleTitle => '人员';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      '选择谁可以免输 PIN 码。如果没有选择任何人，任何已识别的人都可以。';
+
+  @override
   String get kioskForeground => 'Kiosk Satellite 可以自行返回前台。';
 
   @override
@@ -9583,6 +9614,17 @@ class UiStringsZh extends UiStrings {
 
   @override
   String get lockdownSearch => '禁止触控操作的保护界面，仅可在远程管理中设置。所需权限位于“所需系统权限”。';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      '选择“指定人员”时，只要在 Kiosk 前识别到下方选中的某个人，退出手势无需 PIN 码即可关闭锁定模式。';
+
+  @override
+  String get settingLockdownFaceAutoTitle => '通过人脸锁定和解锁';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      '在 Kiosk 前识别到上方的某个人时关闭锁定模式，在没有识别到任何一人 10 秒后重新开启。如果你锁定屏幕是为了清洁屏幕，请不要开启此项。';
 
   @override
   String get lockdownOverlayHeld => '锁定保护层可覆盖整个屏幕。';
@@ -24806,6 +24848,14 @@ class UiStringsZhCn extends UiStringsZh {
       '此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启 Voice Match 时显示。';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Kiosk 模式 > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      '锁定模式 > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => '自定义网页';
 
   @override
@@ -25797,6 +25847,29 @@ class UiStringsZhCn extends UiStringsZh {
   String get kioskGestureNone => '禁用（仅远程管理）';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => '以下人员免输 PIN 码';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      '选择“指定人员”时，只要在 Kiosk 前识别到下方选中的某个人，执行退出手势后无需 PIN 码即可打开菜单。';
+
+  @override
+  String get kioskFaceSkipPinNobody => '无人';
+
+  @override
+  String get kioskFaceSkipPinPeople => '指定人员';
+
+  @override
+  String get settingKioskFacePeopleTitle => '人员';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      '选择谁可以免输 PIN 码。如果没有选择任何人，任何已识别的人都可以。';
+
+  @override
   String get kioskForeground => 'Kiosk Satellite 可以自行返回前台。';
 
   @override
@@ -26052,6 +26125,17 @@ class UiStringsZhCn extends UiStringsZh {
 
   @override
   String get lockdownSearch => '禁止触控操作的保护界面，仅可在远程管理中设置。所需权限位于“所需系统权限”。';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      '选择“指定人员”时，只要在 Kiosk 前识别到下方选中的某个人，退出手势无需 PIN 码即可关闭锁定模式。';
+
+  @override
+  String get settingLockdownFaceAutoTitle => '通过人脸锁定和解锁';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      '在 Kiosk 前识别到上方的某个人时关闭锁定模式，在没有识别到任何一人 10 秒后重新开启。如果你锁定屏幕是为了清洁屏幕，请不要开启此项。';
 
   @override
   String get lockdownOverlayHeld => '锁定保护层可覆盖整个屏幕。';

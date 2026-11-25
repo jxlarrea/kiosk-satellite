@@ -3183,15 +3183,18 @@ class _CategoryContentState extends State<_CategoryContent> {
         id: voiceMatchPeople.key,
         child: VoiceMatchPeopleRow(container: container),
       ),
-    // Detect faces on Chosen people: the same picker.
-    if (widget.category == 'Screensaver')
-      screensaverFacePeople.key: SearchLandingTarget(
-        id: screensaverFacePeople.key,
-        child: VoiceMatchPeopleRow(
-          container: container,
-          def: screensaverFacePeople,
+    // The Ground Control Vision Match groups' People on Chosen people:
+    // the same picker.
+    for (final people in const [
+      (category: 'Screensaver', def: screensaverFacePeople),
+      (category: 'Kiosk', def: kioskFacePeople),
+      (category: 'Lockdown', def: lockdownFacePeople),
+    ])
+      if (widget.category == people.category)
+        people.def.key: SearchLandingTarget(
+          id: people.def.key,
+          child: VoiceMatchPeopleRow(container: container, def: people.def),
         ),
-      ),
     if (widget.category == 'Voice Satellite')
       voiceTtsOutput.key: SearchLandingTarget(
         id: voiceTtsOutput.key,

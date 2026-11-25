@@ -26,5 +26,12 @@
   "kioskGestureTaps7": "7 schnelle Tipper",
   "kioskGestureTaps5Hold": "5 schnelle Tipper, den letzten halten",
   "kioskGestureTaps7Hold": "7 schnelle Tipper, den letzten halten",
-  "kioskGestureNone": "Deaktiviert (nur Fernverwaltung)"
+  "kioskGestureNone": "Deaktiviert (nur Fernverwaltung)",
+  "kioskGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingKioskFaceSkipPinTitle": "PIN überspringen für",
+  "settingKioskFaceSkipPinDescription": "Mit Ausgewählte Personen öffnet sich das Menü nach der Exit-Geste ohne PIN, solange eine der unten ausgewählten Personen am Kiosk erkannt wird.",
+  "kioskFaceSkipPinNobody": "Niemand",
+  "kioskFaceSkipPinPeople": "Ausgewählte Personen",
+  "settingKioskFacePeopleTitle": "Personen",
+  "settingKioskFacePeopleDescription": "Wähle, wer die PIN überspringen kann. Ist niemand ausgewählt, kann das jede erkannte Person."
 }

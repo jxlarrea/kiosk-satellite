@@ -26,5 +26,12 @@
   "kioskGestureTaps7": "7 швидких дотиків",
   "kioskGestureTaps5Hold": "5 швидких дотиків з утриманням останнього",
   "kioskGestureTaps7Hold": "7 швидких дотиків з утриманням останнього",
-  "kioskGestureNone": "Вимкнено (лише віддалений адміністратор)"
+  "kioskGestureNone": "Вимкнено (лише віддалений адміністратор)",
+  "kioskGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingKioskFaceSkipPinTitle": "Пропускати PIN-код для",
+  "settingKioskFaceSkipPinDescription": "Якщо вибрано «Вибрані люди», меню відкривається після жесту виходу без PIN-коду, поки перед кіоском впізнано одну з людей, вибраних нижче.",
+  "kioskFaceSkipPinNobody": "Нікого",
+  "kioskFaceSkipPinPeople": "Вибрані люди",
+  "settingKioskFacePeopleTitle": "Люди",
+  "settingKioskFacePeopleDescription": "Виберіть, хто може пропускати PIN-код. Якщо нікого не вибрано, це може будь-хто впізнаний."
 }

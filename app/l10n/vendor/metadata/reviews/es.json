@@ -26168,5 +26168,65 @@
     "source": "2f2108060d097da708a4aba79a43115a942dc08550b3d945aec10ef985799fc7",
     "translation": "014fe7e523edfa87affff9cc687733684ac49725c154c3d26ec3fce54784160b",
     "author": "Xavier Larrea"
+  },
+  "settingKioskFacePeopleTitle": {
+    "source": "b98570e3ef8882b92f4fcd0fde58006ff27d5e2af80c5b65300af685d63f8fb9",
+    "translation": "fa2ea3fb081cf5c5062880c8b4d3982b3f8eada09692c7b193ef7ff250f4c993",
+    "author": "Xavier Larrea"
+  },
+  "settingLockdownFaceAutoTitle": {
+    "source": "ac83cfe72038c997733effd19bb8113184ac10a25309a40078281366206738b7",
+    "translation": "7768764b8c349f34282fdbc319ba9c8ba45f6bc641784d6d3b78a020a359e11b",
+    "author": "Xavier Larrea"
+  },
+  "settingVisionMatchLinkLockdownDescription": {
+    "source": "c15612a087fedd3e9b0b96b560363d0f7ccdf8c45ff75344c4911749f20b931d",
+    "translation": "f16f1d55fbd3f8cfa75afd9011467b5e902e5ac3d09696f0b608ab7cee3c3045",
+    "author": "Xavier Larrea"
+  },
+  "kioskGroundControlVisionMatch": {
+    "source": "0ef6e78cba1f499612497e96a4476a10185dc2bdb8f2b367b64a862dd7d8fcba",
+    "translation": "014fe7e523edfa87affff9cc687733684ac49725c154c3d26ec3fce54784160b",
+    "author": "Xavier Larrea"
+  },
+  "settingLockdownFaceAutoDescription": {
+    "source": "335cbefa5b18872b6956433f2e922d0d469ca2969052bbcefc37d87d4e20f9e3",
+    "translation": "f02d40f715553feb491e687a75f011b5d33ec5f462a7cd2a58d3e1795ad7f1a6",
+    "author": "Xavier Larrea"
+  },
+  "kioskFaceSkipPinPeople": {
+    "source": "2250bade376d92eaac54318f23e9167a802422f97fa9d9f193da28685f8cb80b",
+    "translation": "495aa2a5f1d1b06327c21d6551f2fe406b676e14db86c6c4f57ecca6f1acfb2b",
+    "author": "Xavier Larrea"
+  },
+  "settingKioskFaceSkipPinTitle": {
+    "source": "576e8fc3a14491b4817ee62264180be6bf6a1cc19029b5f127d701a0264e5bc0",
+    "translation": "026e971d11ac22c29f8adfe0ab5423ee51976d2f95e6267a95006fee3539d816",
+    "author": "Xavier Larrea"
+  },
+  "settingKioskFaceSkipPinDescription": {
+    "source": "9c535b00e1ae895578494dfd2ed70dfc95d58c5baef6d17a51c5f935dc6365d7",
+    "translation": "838df0102b8b33c46d266d49084a9c49f163d43946bec2cd67e037d8f1d0fe71",
+    "author": "Xavier Larrea"
+  },
+  "settingLockdownFaceSkipPinDescription": {
+    "source": "43dcb1835169d05277d5182b0f85cddeb9abfec4d7ab96b63e0228d62c5e7573",
+    "translation": "7e249387caf1bdbb869405916083a696f5c4abc5120413035f1c38bd0c8e6889",
+    "author": "Xavier Larrea"
+  },
+  "kioskFaceSkipPinNobody": {
+    "source": "3682f933608a13b4ed980eb5309de584453a9adfe62fb134b7d131cffd70ca18",
+    "translation": "207555e3b91e1c32be8de5ca8d324d8e6266b67806583cfbd8b1984a0b9c6c49",
+    "author": "Xavier Larrea"
+  },
+  "settingKioskFacePeopleDescription": {
+    "source": "b126e09c5e5eb846464088fafe5dc1c62c5e25eabe7e1f1b88af465838e62312",
+    "translation": "eac94bc05cb400367346c61a61d3773f9a79581aaa1fbcc869b1eb44b6801ba7",
+    "author": "Xavier Larrea"
+  },
+  "settingVisionMatchLinkKioskPinDescription": {
+    "source": "d47283e683bad2019af05593fddcb1c7f4de65b8e861891d309f127b13f08f12",
+    "translation": "90e452981fce1d192aeda45b6c0c89431be3b63dbd84184458660e2dff86bd6e",
+    "author": "Xavier Larrea"
   }
 }

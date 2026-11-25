@@ -45,5 +45,7 @@
   "groundControlTagHint": "Ustawienie Ground Control. Więcej informacji",
   "groundControlTagTitle": "Ustawienie Ground Control",
   "groundControlTagVision": "To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z rozpoznawania twarzy i jest widoczne tylko wtedy, gdy rozpoznawanie twarzy jest włączone w Ustawienia > Ground Control > Vision Match.",
-  "groundControlTagVoice": "To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z Voice Match i jest widoczne tylko wtedy, gdy Voice Match jest włączony w Ustawienia > Ground Control > Voice Match."
+  "groundControlTagVoice": "To ustawienie wymaga Kiosk Satellite Ground Control. Ground Control to osobna aplikacja działająca na komputerze w Twoim domu. Ustawienie korzysta z Voice Match i jest widoczne tylko wtedy, gdy Voice Match jest włączony w Ustawienia > Ground Control > Voice Match.",
+  "settingVisionMatchLinkKioskPinDescription": "Tryb kiosku > Ground Control Vision Match",
+  "settingVisionMatchLinkLockdownDescription": "Tryb blokady > Ground Control Vision Match"
 }

@@ -26,5 +26,12 @@
   "kioskGestureTaps7": "7 szybkich dotknięć",
   "kioskGestureTaps5Hold": "5 szybkich dotknięć z przytrzymaniem ostatniego",
   "kioskGestureTaps7Hold": "7 szybkich dotknięć z przytrzymaniem ostatniego",
-  "kioskGestureNone": "Wyłączony (tylko zdalna administracja)"
+  "kioskGestureNone": "Wyłączony (tylko zdalna administracja)",
+  "kioskGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingKioskFaceSkipPinTitle": "Pomijaj PIN dla",
+  "settingKioskFaceSkipPinDescription": "Przy opcji Wybrane osoby menu otwiera się po geście wyjścia bez PIN-u, gdy przed kioskiem rozpoznana jest jedna z osób wybranych poniżej.",
+  "kioskFaceSkipPinNobody": "Nikt",
+  "kioskFaceSkipPinPeople": "Wybrane osoby",
+  "settingKioskFacePeopleTitle": "Osoby",
+  "settingKioskFacePeopleDescription": "Wybierz, kto może pomijać PIN. Jeśli nikt nie jest wybrany, może to zrobić każda rozpoznana osoba."
 }

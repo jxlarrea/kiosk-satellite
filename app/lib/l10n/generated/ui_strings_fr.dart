@@ -8835,6 +8835,14 @@ class UiStringsFr extends UiStrings {
       'Ce paramètre nécessite Kiosk Satellite Ground Control. Ground Control est une application distincte qui tourne sur un ordinateur de votre maison. Le paramètre utilise Voice Match et ne s\'affiche que lorsque Voice Match est activé dans Paramètres > Ground Control > Voice Match.';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Mode kiosque > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      'Mode verrouillage > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => 'Pages personnalisées';
 
   @override
@@ -9915,6 +9923,29 @@ class UiStringsFr extends UiStrings {
       'Désactivé (administration à distance uniquement)';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => 'Ignorer le code PIN pour';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      'Avec Personnes choisies, le menu s\'ouvre après le geste de sortie sans code PIN tant qu\'une des personnes choisies ci-dessous est reconnue devant le kiosque.';
+
+  @override
+  String get kioskFaceSkipPinNobody => 'Personne';
+
+  @override
+  String get kioskFaceSkipPinPeople => 'Personnes choisies';
+
+  @override
+  String get settingKioskFacePeopleTitle => 'Personnes';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      'Choisissez qui peut ignorer le code PIN. Si personne n\'est choisi, toute personne reconnue le peut.';
+
+  @override
   String get kioskForeground =>
       'Kiosk Satellite peut se remettre lui-même au premier plan.';
 
@@ -10209,6 +10240,18 @@ class UiStringsFr extends UiStrings {
   @override
   String get lockdownSearch =>
       'Bouclier tactile configurable depuis l\'administration à distance. Ses autorisations se trouvent sous Autorisations système requises.';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      'Avec Personnes choisies, le geste de sortie désactive le mode verrouillage sans code PIN tant qu\'une des personnes choisies ci-dessous est reconnue devant le kiosque.';
+
+  @override
+  String get settingLockdownFaceAutoTitle =>
+      'Verrouiller et déverrouiller avec les visages';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      'Désactive le mode verrouillage tant qu\'une des personnes ci-dessus est reconnue devant le kiosque et le réactive 10 secondes après qu\'il n\'y en a plus aucune. Laissez désactivé si vous verrouillez l\'écran pour le nettoyer.';
 
   @override
   String get lockdownOverlayHeld =>

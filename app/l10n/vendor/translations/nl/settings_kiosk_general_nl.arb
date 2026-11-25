@@ -26,5 +26,12 @@
   "kioskGestureTaps7": "7 snelle tikken",
   "kioskGestureTaps5Hold": "5 snelle tikken, laatste vasthouden",
   "kioskGestureTaps7Hold": "7 snelle tikken, laatste vasthouden",
-  "kioskGestureNone": "Uitgeschakeld (alleen beheer op afstand)"
+  "kioskGestureNone": "Uitgeschakeld (alleen beheer op afstand)",
+  "kioskGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingKioskFaceSkipPinTitle": "Pincode overslaan voor",
+  "settingKioskFaceSkipPinDescription": "Met Gekozen personen opent het menu na het afsluitgebaar zonder pincode zolang een van de hieronder gekozen personen bij de kiosk wordt herkend.",
+  "kioskFaceSkipPinNobody": "Niemand",
+  "kioskFaceSkipPinPeople": "Gekozen personen",
+  "settingKioskFacePeopleTitle": "Personen",
+  "settingKioskFacePeopleDescription": "Kies wie de pincode mag overslaan. Is er niemand gekozen, dan mag iedereen die herkend wordt dat."
 }

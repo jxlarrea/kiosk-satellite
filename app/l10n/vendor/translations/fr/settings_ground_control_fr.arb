@@ -45,5 +45,7 @@
   "groundControlTagHint": "Un paramètre Ground Control. En savoir plus",
   "groundControlTagTitle": "Un paramètre Ground Control",
   "groundControlTagVision": "Ce paramètre nécessite Kiosk Satellite Ground Control. Ground Control est une application distincte qui tourne sur un ordinateur de votre maison. Le paramètre utilise la reconnaissance faciale et ne s'affiche que lorsque la reconnaissance faciale est activée dans Paramètres > Ground Control > Vision Match.",
-  "groundControlTagVoice": "Ce paramètre nécessite Kiosk Satellite Ground Control. Ground Control est une application distincte qui tourne sur un ordinateur de votre maison. Le paramètre utilise Voice Match et ne s'affiche que lorsque Voice Match est activé dans Paramètres > Ground Control > Voice Match."
+  "groundControlTagVoice": "Ce paramètre nécessite Kiosk Satellite Ground Control. Ground Control est une application distincte qui tourne sur un ordinateur de votre maison. Le paramètre utilise Voice Match et ne s'affiche que lorsque Voice Match est activé dans Paramètres > Ground Control > Voice Match.",
+  "settingVisionMatchLinkKioskPinDescription": "Mode kiosque > Ground Control Vision Match",
+  "settingVisionMatchLinkLockdownDescription": "Mode verrouillage > Ground Control Vision Match"
 }

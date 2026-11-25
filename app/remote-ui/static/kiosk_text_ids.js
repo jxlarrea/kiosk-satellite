@@ -165,5 +165,6 @@ export const kioskTextMessageIds = {
   "This tablet's DuraSpeed keeps the dashboard's renderer from starting, and some tablets give it no settings page. Turn it off once over adb, then restart Kiosk Satellite:": "kioskDuraSpeedBlockingHelp",
   "Allowed Apps": "settingKioskAllowedAppsTitle",
   "The launcher apps offered while kiosk mode is on.": "settingKioskAllowedAppsDescription",
-  "Add apps in Settings > App Launcher first.": "kioskAllowedAppsEmpty"
+  "Add apps in Settings > App Launcher first.": "kioskAllowedAppsEmpty",
+  "Ground Control Vision Match": "kioskGroundControlVisionMatch"
 };

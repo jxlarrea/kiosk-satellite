@@ -26,5 +26,12 @@
   "kioskGestureTaps7": "快速点击 7 次",
   "kioskGestureTaps5Hold": "快速点击 5 次，最后一次保持按住",
   "kioskGestureTaps7Hold": "快速点击 7 次，最后一次保持按住",
-  "kioskGestureNone": "禁用（仅远程管理）"
+  "kioskGestureNone": "禁用（仅远程管理）",
+  "kioskGroundControlVisionMatch": "Ground Control Vision Match",
+  "settingKioskFaceSkipPinTitle": "以下人员免输 PIN 码",
+  "settingKioskFaceSkipPinDescription": "选择“指定人员”时，只要在 Kiosk 前识别到下方选中的某个人，执行退出手势后无需 PIN 码即可打开菜单。",
+  "kioskFaceSkipPinNobody": "无人",
+  "kioskFaceSkipPinPeople": "指定人员",
+  "settingKioskFacePeopleTitle": "人员",
+  "settingKioskFacePeopleDescription": "选择谁可以免输 PIN 码。如果没有选择任何人，任何已识别的人都可以。"
 }

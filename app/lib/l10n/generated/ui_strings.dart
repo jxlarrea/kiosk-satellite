@@ -15205,6 +15205,18 @@ abstract class UiStrings {
   /// **'This setting needs Kiosk Satellite Ground Control. Ground Control is a separate app that runs on a computer in your home. The setting uses Voice Match and only shows while Voice Match is on in Settings > Ground Control > Voice Match.'**
   String get groundControlTagVoice;
 
+  /// Where the setting is, as a path of page names. Use the translated name of the Kiosk Mode page. Ground Control and Vision Match are names: keep them unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Kiosk Mode > Ground Control Vision Match'**
+  String get settingVisionMatchLinkKioskPinDescription;
+
+  /// Where the setting is, as a path of page names. Use the translated name of the Lockdown Mode page. Ground Control and Vision Match are names: keep them unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Lockdown Mode > Ground Control Vision Match'**
+  String get settingVisionMatchLinkLockdownDescription;
+
   /// Name of the settings page and of the dashboard picker entry that lists a person's own HTML pages hosted in Home Assistant.
   ///
   /// In en, this message translates to:
@@ -17035,6 +17047,48 @@ abstract class UiStrings {
   /// **'Disabled (remote admin only)'**
   String get kioskGestureNone;
 
+  /// Group heading for the settings that use Face Recognition on Ground Control. Ground Control and Vision Match are names: keep them unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground Control Vision Match'**
+  String get kioskGroundControlVisionMatch;
+
+  /// Setting label: who can open the menu without the kiosk PIN.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip the PIN for'**
+  String get settingKioskFaceSkipPinTitle;
+
+  /// Setting help.
+  ///
+  /// In en, this message translates to:
+  /// **'With Chosen people, the menu opens after the exit gesture without the PIN while one of the people picked below is recognized at the kiosk.'**
+  String get settingKioskFaceSkipPinDescription;
+
+  /// Option of Skip the PIN for: the PIN is always asked.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get kioskFaceSkipPinNobody;
+
+  /// Option of Skip the PIN for: the people picked under People.
+  ///
+  /// In en, this message translates to:
+  /// **'Chosen people'**
+  String get kioskFaceSkipPinPeople;
+
+  /// Setting label: the people who can skip the PIN.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get settingKioskFacePeopleTitle;
+
+  /// Setting help.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose who can skip the PIN. If nobody is chosen, anyone recognized can.'**
+  String get settingKioskFacePeopleDescription;
+
   /// Label or guidance in this section.
   ///
   /// In en, this message translates to:
@@ -17532,6 +17586,24 @@ abstract class UiStrings {
   /// In en, this message translates to:
   /// **'Remote-only touch shield. Set it up from the Remote Admin UI; its grants live under Required system permissions.'**
   String get lockdownSearch;
+
+  /// Setting help.
+  ///
+  /// In en, this message translates to:
+  /// **'With Chosen people, the exit gesture turns Lockdown Mode off without the PIN while one of the people picked below is recognized at the kiosk.'**
+  String get settingLockdownFaceSkipPinDescription;
+
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock and unlock with faces'**
+  String get settingLockdownFaceAutoTitle;
+
+  /// Setting help.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn Lockdown Mode off while one of the people above is recognized at the kiosk and back on 10 seconds after none is. Leave this off if you lock the screen to clean it.'**
+  String get settingLockdownFaceAutoDescription;
 
   /// Granted overlay permission status.
   ///

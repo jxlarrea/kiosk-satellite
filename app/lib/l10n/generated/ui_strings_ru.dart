@@ -8751,6 +8751,14 @@ class UiStringsRu extends UiStrings {
       'Этой настройке нужен Kiosk Satellite Ground Control. Ground Control является отдельным приложением, которое работает на компьютере у вас дома. Настройка использует Voice Match и показывается, только пока Voice Match включён в разделе Настройки > Ground Control > Voice Match.';
 
   @override
+  String get settingVisionMatchLinkKioskPinDescription =>
+      'Режим киоска > Ground Control Vision Match';
+
+  @override
+  String get settingVisionMatchLinkLockdownDescription =>
+      'Режим блокировки > Ground Control Vision Match';
+
+  @override
   String get haCustomPages => 'Свои страницы';
 
   @override
@@ -9818,6 +9826,29 @@ class UiStringsRu extends UiStrings {
       'Выключено (только удалённое администрирование)';
 
   @override
+  String get kioskGroundControlVisionMatch => 'Ground Control Vision Match';
+
+  @override
+  String get settingKioskFaceSkipPinTitle => 'Пропускать PIN для';
+
+  @override
+  String get settingKioskFaceSkipPinDescription =>
+      'При варианте «Выбранные люди» меню открывается после жеста выхода без PIN, пока перед киоском распознан один из людей, выбранных ниже.';
+
+  @override
+  String get kioskFaceSkipPinNobody => 'Никого';
+
+  @override
+  String get kioskFaceSkipPinPeople => 'Выбранные люди';
+
+  @override
+  String get settingKioskFacePeopleTitle => 'Люди';
+
+  @override
+  String get settingKioskFacePeopleDescription =>
+      'Выберите, кто может пропускать PIN. Если никто не выбран, это может любой распознанный человек.';
+
+  @override
   String get kioskForeground =>
       'Kiosk Satellite может возвращаться на передний план.';
 
@@ -10108,6 +10139,18 @@ class UiStringsRu extends UiStrings {
   @override
   String get lockdownSearch =>
       'Щит от касаний, настраиваемый только удалённо. Настраивается из интерфейса удалённого администрирования; его разрешения находятся в разделе «Необходимые системные разрешения».';
+
+  @override
+  String get settingLockdownFaceSkipPinDescription =>
+      'При варианте «Выбранные люди» жест выхода выключает режим блокировки без PIN, пока перед киоском распознан один из людей, выбранных ниже.';
+
+  @override
+  String get settingLockdownFaceAutoTitle =>
+      'Блокировать и разблокировать по лицам';
+
+  @override
+  String get settingLockdownFaceAutoDescription =>
+      'Выключает режим блокировки, пока перед киоском распознан один из людей, выбранных выше, и снова включает его через 10 секунд после того, как никого из них не видно. Не включайте это, если блокируете экран, чтобы его почистить.';
 
   @override
   String get lockdownOverlayHeld => 'Щит блокировки может покрыть весь экран.';

@@ -850,6 +850,26 @@ class FaceEnrollRequested extends AppEvent {
   final String? color;
 }
 
+/// Skip the PIN for let an exit gesture through without the kiosk PIN
+/// because [name], one of the chosen people, was recognized at the kiosk.
+/// Reported to Ground Control's vision session.
+class FacePinSkipped extends AppEvent {
+  const FacePinSkipped({required this.lockdown, required this.name});
+
+  /// The lockdown exit gesture, not the kiosk one.
+  final bool lockdown;
+  final String name;
+}
+
+/// Lock and unlock with faces turned Lockdown Mode off because [name] was
+/// recognized at the kiosk, or on because nobody chosen was. Reported to
+/// Ground Control's vision session.
+class FaceLockdownChanged extends AppEvent {
+  const FaceLockdownChanged({required this.locked, this.name});
+  final bool locked;
+  final String? name;
+}
+
 /// Ground Control asked this kiosk to stop its face capture early, as its
 /// own Stop does.
 class FaceEnrollStopRequested extends AppEvent {

@@ -1704,7 +1704,8 @@ class _KioskScreenState extends State<KioskScreen>
     // the Activity otherwise. The PIN dialog lives underneath that
     // overlay, so it lets touches through for the prompt's duration.
     if (c.kiosk.lockdownActive) {
-      if (c.kiosk.pinRequired) {
+      // Skip the PIN for: a chosen person recognized at the kiosk.
+      if (c.kiosk.pinRequired && !c.kiosk.faceSkipsPin(lockdown: true)) {
         await c.kiosk.setLockShieldPassThrough(true);
         final ok = await _askPin();
         await c.kiosk.setLockShieldPassThrough(false);
@@ -1713,7 +1714,7 @@ class _KioskScreenState extends State<KioskScreen>
       await c.settings.set(defs.lockdownEnabled, false);
       return;
     }
-    if (c.kiosk.pinRequired) {
+    if (c.kiosk.pinRequired && !c.kiosk.faceSkipsPin(lockdown: false)) {
       final ok = await _askPin();
       if (!ok || !mounted) return;
     }
@@ -1735,7 +1736,7 @@ class _KioskScreenState extends State<KioskScreen>
   /// the full Menu. Under lockdown the shield takes every touch, so this
   /// is never reached there.
   Future<void> _unlockMenu() async {
-    if (c.kiosk.pinRequired) {
+    if (c.kiosk.pinRequired && !c.kiosk.faceSkipsPin(lockdown: false)) {
       final ok = await _askPin();
       if (!ok || !mounted) return;
     }

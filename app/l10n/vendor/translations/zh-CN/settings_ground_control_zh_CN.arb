@@ -45,5 +45,7 @@
   "groundControlTagHint": "Ground Control 设置。了解详情",
   "groundControlTagTitle": "Ground Control 设置",
   "groundControlTagVision": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用人脸识别，仅在“设置 > Ground Control > Vision Match”中开启人脸识别时显示。",
-  "groundControlTagVoice": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启 Voice Match 时显示。"
+  "groundControlTagVoice": "此设置需要 Kiosk Satellite Ground Control。Ground Control 是一款在你家中电脑上运行的独立应用。此设置使用 Voice Match，仅在“设置 > Ground Control > Voice Match”中开启 Voice Match 时显示。",
+  "settingVisionMatchLinkKioskPinDescription": "Kiosk 模式 > Ground Control Vision Match",
+  "settingVisionMatchLinkLockdownDescription": "锁定模式 > Ground Control Vision Match"
 }
