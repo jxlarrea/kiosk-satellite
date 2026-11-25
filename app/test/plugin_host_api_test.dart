@@ -2141,6 +2141,134 @@ void main() {
       ...PluginHostApi.eventNames,
       ...PluginHostApi.noiseEventNames,
       ...PluginHostApi.voiceTextEventNames,
+      ...PluginHostApi.faceEventNames,
+    });
+  });
+
+  group('Face Recognition', () {
+    const ana = {
+      'enabled': true,
+      'name': 'Ana',
+      'person': 'person.ana',
+      'color': '#3366ff',
+      'people': [
+        {'name': 'Ana', 'person': 'person.ana', 'color': '#3366ff'},
+        {'name': 'Leo', 'person': '', 'color': null},
+      ],
+      'present': true,
+      'looking': true,
+    };
+
+    Future<void> settle([int ms = 150]) =>
+        Future<void>.delayed(Duration(milliseconds: ms));
+
+    setUp(() {
+      register(
+        'faceRecognitionState',
+        (_) async => const CommandResult.ok(ana),
+      );
+    });
+
+    test('who is at the kiosk needs its own capability', () async {
+      final plain = (await read('getHostApi'))['data'] as Map;
+      expect(plain['commands'], isNot(contains('getFaceRecognition')));
+      expect(plain['events'], isNot(contains('face.recognition')));
+      expect((await read('getFaceRecognition'))['ok'], false);
+      subscribe('face.recognition');
+      subscribe('face.arrival');
+      bus.publish(const FaceRecognitionChanged(ana));
+      bus.publish(
+        const FaceArrivalReported(
+          type: 'arrived',
+          name: 'Ana',
+          person: 'person.ana',
+        ),
+      );
+      await settle();
+      expect(sent, isEmpty);
+
+      api.open({
+        ...session,
+        'capabilities': ['host.read', 'face.recognition'],
+      });
+      final catalog = (await read('getHostApi'))['data'] as Map;
+      expect(catalog['capabilities'], ['host.read', 'face.recognition']);
+      expect(catalog['commands'], contains('getFaceRecognition'));
+      expect(
+        catalog['events'],
+        containsAll(['face.recognition', 'face.arrival']),
+      );
+      expect((await read('getFaceRecognition'))['data'], ana);
+
+      // Without host.read the capability opens nothing.
+      api.open({
+        ...session,
+        'capabilities': ['host.control', 'face.recognition'],
+      });
+      expect((await read('getFaceRecognition'))['ok'], false);
+    });
+
+    test('changes and arrivals reach a subscribed plugin, each arrival on '
+        'its own', () async {
+      api.open({
+        ...session,
+        'capabilities': ['host.read', 'face.recognition'],
+      });
+      subscribe('face.recognition');
+      subscribe('face.arrival');
+      bus.publish(const FaceRecognitionChanged(ana));
+      bus.publish(
+        const FaceArrivalReported(
+          type: 'arrived',
+          name: 'Ana',
+          person: 'person.ana',
+        ),
+      );
+      bus.publish(
+        const FaceArrivalReported(type: 'left', name: 'Leo', person: ''),
+      );
+      await settle();
+      final state = sent.firstWhere((e) => e['event'] == 'face.recognition');
+      expect((state['payload'] as Map)['name'], 'Ana');
+      expect((state['payload'] as Map)['people'], hasLength(2));
+      final arrivals = [
+        for (final e in sent)
+          if (e['event'] == 'face.arrival') e['payload'] as Map,
+      ];
+      expect(arrivals.map((a) => a['event']), ['arrived', 'left']);
+      expect(arrivals.first['person'], 'person.ana');
+    });
+
+    test('only the documented fields go out', () {
+      final state = PluginHostApi.faceRecognition({
+        ...ana,
+        'id': 'gc-secret-id',
+        'score': 0.9,
+        'color': 'red',
+        'people': [
+          for (var i = 0; i < 20; i++)
+            {'name': 'P$i', 'person': 'person.p$i', 'id': 'x$i'},
+        ],
+        'present': 'yes',
+      })!;
+      expect(state.keys, [
+        'enabled',
+        'name',
+        'person',
+        'color',
+        'people',
+        'present',
+        'looking',
+      ]);
+      expect(state['color'], isNull);
+      expect(state['present'], isNull);
+      expect(state['people'], hasLength(PluginHostApi.maxFacesInView));
+      expect((state['people'] as List).first, {
+        'name': 'P0',
+        'person': 'person.p0',
+        'color': null,
+      });
+      expect(PluginHostApi.faceRecognition('nope'), isNull);
     });
   });
 }

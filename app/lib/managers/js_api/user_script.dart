@@ -100,6 +100,7 @@ String buildKioskSatelliteScript({
 
     getMotionEnabled: function () { return call('getMotionEnabled'); },
     getFaceEnabled: function () { return call('getFaceEnabled'); },
+    getFaceRecognition: function () { return call('getFaceRecognition'); },
     getProximityEnabled: function () { return call('getProximityEnabled'); },
 
     setWakeWordConfig: function (config) { return call('setWakeWordConfig', config); },

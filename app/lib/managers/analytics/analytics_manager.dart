@@ -762,6 +762,52 @@ class AnalyticsManager extends Manager {
             ? 'anyone'
             : (picked ? 'people' : 'enrolled');
       }
+      // Vision Match: the switch, each feature it runs on Ground Control
+      // and, with Face Recognition on, the settings that act on faces. A
+      // feature under a switch that is off is left out. Who was chosen
+      // stays on the kiosk.
+      final visionMatch = s.get(defs.visionMatchEnabled);
+      groundControl['vision_match_enabled'] = visionMatch;
+      if (visionMatch) {
+        final faces = s.get(defs.visionMatchFaceDetection);
+        groundControl['vision_match_face_detection'] = faces;
+        groundControl['vision_match_hand_gestures'] = s.get(
+          defs.visionMatchHandGestures,
+        );
+        if (faces) {
+          groundControl['vision_match_presence_sensors'] = s.get(
+            defs.visionMatchPresenceSensors,
+          );
+          final recognition = s.get(defs.visionMatchFaceRecognition);
+          groundControl['vision_match_face_recognition'] = recognition;
+          if (recognition) {
+            groundControl['vision_match_confirm_voices'] =
+                voiceMatch && s.get(defs.visionMatchFaceConfirmsVoice);
+            groundControl['vision_match_show_arrivals'] = s.get(
+              defs.visionMatchShowArrivals,
+            );
+            groundControl['vision_match_show_actions'] = s.get(
+              defs.visionMatchShowActions,
+            );
+            // anyone or people for Detect faces and Finger gestures for,
+            // nobody or people for Skip the PIN for and Disable Lockdown
+            // Mode for.
+            groundControl['vision_match_screensaver_faces'] = s.get(
+              defs.screensaverFaceWho,
+            );
+            groundControl['vision_match_skip_pin'] = s.get(
+              defs.kioskFaceSkipPin,
+            );
+            final lockdownOff = s.get(defs.lockdownFaceDisable);
+            groundControl['vision_match_lockdown_off'] = lockdownOff;
+            groundControl['vision_match_lockdown_relock'] =
+                lockdownOff == 'people' && s.get(defs.lockdownFaceRelock);
+            groundControl['vision_match_finger_gestures'] = s.get(
+              defs.gesturesFaceWho,
+            );
+          }
+        }
+      }
     }
 
     // Who installs updates: Android itself for a device owner, the ADB

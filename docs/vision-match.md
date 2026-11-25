@@ -96,6 +96,10 @@ With Face Recognition on, these settings on other pages can act on who is at the
 
 The kiosk also fires a [face event](events.md#face) in Home Assistant when someone recognized arrives at the kiosk and when they leave.
 
+### Plugins and Pages
+
+Plugins that declare the `face.recognition` capability can read who is at the kiosk, everyone recognized in view and when someone arrives or leaves. See [Who is at the kiosk](https://github.com/jxlarrea/kiosk-satellite-plugins/blob/main/docs/ks-api.md#who-is-at-the-kiosk). Pages on Home Assistant and custom pages get the same through the [JavaScript API](js-api.md#face-recognition). Any other site loaded in the kiosk doesn't.
+
 ### Enrolling a Face
 
 Each person's face is enrolled once with a guided capture through a kiosk's camera. It takes about half a minute. To start it, choose **Enroll a face** on the Vision Match page and pick the person. You can also start it from the person's page in the Ground Control app. The kiosk shows its camera's view and the steps:

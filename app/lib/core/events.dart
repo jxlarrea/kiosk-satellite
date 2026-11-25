@@ -870,6 +870,37 @@ class FaceLeft extends AppEvent {
   final String name;
 }
 
+/// Who Face Recognition sees at the kiosk changed, in the shape plugins
+/// with the face.recognition capability and Home Assistant and custom
+/// pages read it (GroundControlManager.faceRecognitionState). No
+/// wireName: the JS API hands it only to the pages allowed to see it.
+class FaceRecognitionChanged extends AppEvent {
+  const FaceRecognitionChanged(this.state);
+  final Map<String, Object?> state;
+}
+
+/// [FaceArrived] or [FaceLeft] with the person's Home Assistant person,
+/// as the `esphome.kiosk_satellite_face` event carries them, for plugins
+/// and pages. [type] is `arrived` or `left`. No wireName, like
+/// [FaceRecognitionChanged].
+class FaceArrivalReported extends AppEvent {
+  const FaceArrivalReported({
+    required this.type,
+    required this.name,
+    required this.person,
+  });
+  final String type;
+  final String name;
+  final String person;
+
+  @override
+  Map<String, Object?> toJson() => {
+    'event': type,
+    'name': name,
+    'person': person,
+  };
+}
+
 /// Ground Control asked this kiosk to enroll a person's face, or someone
 /// started it here: the guided capture opens.
 class FaceEnrollRequested extends AppEvent {

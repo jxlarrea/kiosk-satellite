@@ -262,6 +262,7 @@ class GroundControlManager extends Manager {
   Future<void> init() async {
     _subs.add(
       bus.on<SettingChanged>().listen((e) {
+        if (_faceRecognitionKeys.contains(e.key)) _faceRecognitionChanged();
         if (_featureKeys.contains(e.key)) {
           _sendSettings();
           return;
@@ -290,6 +291,18 @@ class GroundControlManager extends Manager {
       )
       ..add(bus.on<FaceLeft>().listen((e) => _faceEvent('left', e.id, e.name)))
       ..add(
+        bus.on<FaceInViewChanged>().listen((e) {
+          _inView = e;
+          _faceRecognitionChanged();
+        }),
+      )
+      ..add(
+        bus.on<VisionPresenceChanged>().listen((e) {
+          _presence = e;
+          _faceRecognitionChanged();
+        }),
+      )
+      ..add(
         bus.on<FacePinSkipped>().listen(
           (e) => _faceEvent('pin_skipped', e.id, e.name, {
             'mode': e.lockdown ? 'lockdown' : 'kiosk',
@@ -309,6 +322,17 @@ class GroundControlManager extends Manager {
             'its address and version, and who is enrolled',
         quiet: true,
         handler: (_) async => CommandResult.ok(describe()),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'faceRecognitionState',
+        description:
+            'Kiosk Satellite Face Recognition: who is at the kiosk, everyone '
+            'recognized in view and, with Presence sensors on, whether '
+            'someone is in front of the kiosk and looking at it',
+        quiet: true,
+        handler: (_) async => CommandResult.ok(faceRecognitionState()),
       ),
     );
     commands.register(
@@ -365,6 +389,63 @@ class GroundControlManager extends Manager {
     );
   }
 
+  /// The latest of who Face Recognition sees and of the Presence sensors.
+  FaceInViewChanged _inView = const FaceInViewChanged();
+  VisionPresenceChanged? _presence;
+  String? _faceRecognitionSent;
+
+  /// The settings [faceRecognitionState] follows.
+  static final _faceRecognitionKeys = {
+    defs.groundControlEnabled.key,
+    defs.cameraEnabled.key,
+    defs.visionMatchEnabled.key,
+    defs.visionMatchFaceDetection.key,
+    defs.visionMatchFaceRecognition.key,
+    defs.visionMatchPresenceSensors.key,
+  };
+
+  /// What plugins with the face.recognition capability and Home Assistant
+  /// and custom pages read of Face Recognition: whether it runs, the person
+  /// at the kiosk (empty name when nobody known is in view), everyone
+  /// recognized in view with the person at the kiosk first, and the
+  /// Presence and Looking at the kiosk sensors, null while Presence sensors
+  /// is off. Ground Control's person ids stay private: the Home Assistant
+  /// person is the key to act on.
+  Map<String, Object?> faceRecognitionState() {
+    final s = _settings;
+    final on = faceRecognition;
+    final sensors =
+        s.get(defs.groundControlEnabled) &&
+        s.get(defs.cameraEnabled) &&
+        s.get(defs.visionMatchEnabled) &&
+        s.get(defs.visionMatchFaceDetection) &&
+        s.get(defs.visionMatchPresenceSensors);
+    final view = on ? _inView : const FaceInViewChanged();
+    String person(String? id) => thingsOf(id, people)['person'] ?? '';
+    final id = view.id;
+    return {
+      'enabled': on,
+      'name': id == null ? '' : view.name,
+      'person': person(id),
+      'color': id == null ? null : view.color ?? view.colors[id],
+      'people': [
+        for (final p in view.people)
+          {'name': p.name, 'person': person(p.id), 'color': view.colors[p.id]},
+      ],
+      'present': sensors ? _presence?.present ?? false : null,
+      'looking': sensors ? _presence?.looking ?? false : null,
+    };
+  }
+
+  /// Publishes [FaceRecognitionChanged] when what it reports moved.
+  void _faceRecognitionChanged() {
+    final state = faceRecognitionState();
+    final value = jsonEncode(state);
+    if (value == _faceRecognitionSent) return;
+    _faceRecognitionSent = value;
+    bus.publish(FaceRecognitionChanged(state));
+  }
+
   /// Face Recognition on Home Assistant's bus as
   /// `esphome.kiosk_satellite_face`, for automations: someone arrived or
   /// left on the arrival card's rule, or the PIN was skipped or Lockdown
@@ -376,14 +457,18 @@ class GroundControlManager extends Manager {
     String who, [
     Map<String, Object?> extra = const {},
   ]) {
+    final person = thingsOf(id, people)['person'] ?? '';
     bus.publish(
       HaEventRequested('kiosk_satellite_face', {
         'event_type': type,
         'name': who,
-        'person': thingsOf(id, people)['person'] ?? '',
+        'person': person,
         ...extra,
       }),
     );
+    if (type == 'arrived' || type == 'left') {
+      bus.publish(FaceArrivalReported(type: type, name: who, person: person));
+    }
   }
 
   /// Tell the service when an enrollment it asked for did not start or
@@ -621,6 +706,7 @@ class GroundControlManager extends Manager {
         ];
         // A person may have been linked to another Home Assistant person.
         _pictures.clear();
+        _faceRecognitionChanged();
         version = '${msg['version'] ?? version}';
         model = '${msg['model'] ?? model}';
         final path = msg['app_path'];

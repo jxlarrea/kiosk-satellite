@@ -44,6 +44,11 @@ class JsApiManager extends Manager {
   PageHaSockets? _haSockets;
   final _browserMicrophones = <String>{};
 
+  /// The origins that may learn who Face Recognition sees at the kiosk
+  /// (BrowserManager.faceRecognitionOrigins). Set by the composition root.
+  /// Without it no page does.
+  Set<String> Function()? faceRecognitionOrigins;
+
   /// Methods pages may call, mapped to registry command names. Anything not
   /// listed here is not reachable from page JS regardless of registry
   /// contents (pages are less trusted than the authenticated remote API).
@@ -143,7 +148,21 @@ class JsApiManager extends Manager {
     bus.on<PipelineMicLevel>().listen(
       (e) => _dispatchToPage('pipeline-level', e.toJson()),
     );
+    // Who is at the kiosk, explicit like the pipeline: only Home
+    // Assistant and custom pages hear it, and never the remote admin feed
+    // through a wireName.
+    bus.on<FaceRecognitionChanged>().listen(
+      (e) =>
+          _dispatchToPage('face-recognition', e.state, origins: _faceOrigins()),
+    );
+    bus.on<FaceArrivalReported>().listen(
+      (e) =>
+          _dispatchToPage('face-arrival', e.toJson(), origins: _faceOrigins()),
+    );
   }
+
+  /// The origins allowed to hear Face Recognition, empty without a source.
+  Set<String> _faceOrigins() => faceRecognitionOrigins?.call() ?? const {};
 
   /// The script the UI layer injects at document start.
   UserScript buildUserScript(String os) => UserScript(
@@ -158,8 +177,12 @@ class JsApiManager extends Manager {
     _haSockets?.run = _runInPage;
     controller.addJavaScriptHandler(
       handlerName: 'ksApi',
-      callback: (args) => identical(_controller?.platform, controller.platform)
-          ? _onCall(args)
+      callback: (JavaScriptHandlerFunctionData data) =>
+          identical(_controller?.platform, controller.platform)
+          ? _onCall(
+              data.args,
+              origin: data.isMainFrame ? data.origin.toString() : null,
+            )
           : null,
     );
     // The managed Home Assistant connection, on a handler of its own: its
@@ -278,9 +301,24 @@ class JsApiManager extends Manager {
   /// The ksApi handler body, reachable for tests (attach needs a live
   /// WebView controller).
   @visibleForTesting
-  Future<Object?> handleCall(List<dynamic> args) => _onCall(args);
+  Future<Object?> handleCall(List<dynamic> args, {String? origin}) =>
+      _onCall(args, origin: origin);
 
-  Future<Object?> _onCall(List<dynamic> args) async {
+  /// Whether the top document on [origin] may learn who is at the kiosk.
+  bool _mayKnowFaces(String? origin) {
+    if (origin == null) return false;
+    final uri = Uri.tryParse(origin);
+    if (uri == null ||
+        !(uri.isScheme('http') || uri.isScheme('https')) ||
+        uri.host.isEmpty) {
+      return false;
+    }
+    return _faceOrigins().contains(uri.origin);
+  }
+
+  /// [origin] is the calling document's when it is the top one, null for
+  /// a frame inside it.
+  Future<Object?> _onCall(List<dynamic> args, {String? origin}) async {
     if (args.isEmpty || args.first is! String) return null;
     final method = args.first as String;
     final params = args.length > 1 && args[1] is Map
@@ -290,6 +328,14 @@ class JsApiManager extends Manager {
     if (method == 'remoteSettingsChanged') {
       bus.publish(const RemoteStatusChanged('voice'));
       return true;
+    }
+
+    // Who is at the kiosk, for Home Assistant and custom pages only. Any
+    // other page, and any frame inside one, reads null.
+    if (method == 'getFaceRecognition') {
+      if (!_mayKnowFaces(origin)) return null;
+      final result = await commands.execute('faceRecognitionState', const {});
+      return result.ok ? result.data : null;
     }
 
     if (method == 'browserMicrophone') {
@@ -335,13 +381,25 @@ class JsApiManager extends Manager {
     return result.data ?? true;
   }
 
-  void _dispatchToPage(String wireName, Map<String, Object?> detail) {
+  /// With [origins], the event reaches the page only while the document
+  /// that runs it is on one of them, checked in the page itself, so a
+  /// navigation between the check and the delivery cannot leak it.
+  void _dispatchToPage(
+    String wireName,
+    Map<String, Object?> detail, {
+    Set<String>? origins,
+  }) {
     final controller = _controller;
     if (controller == null) return;
-    final js =
+    if (origins != null && origins.isEmpty) return;
+    final dispatch =
         'window.dispatchEvent(new CustomEvent('
         '${jsonEncode('kiosksatellite:$wireName')}, '
         '{detail: ${jsonEncode(detail)}}));';
+    final js = origins == null
+        ? dispatch
+        : 'if (${jsonEncode(origins.toList())}.indexOf(location.origin) >= 0) '
+              '{ $dispatch }';
     controller.evaluateJavascript(source: js).catchError((Object e) {
       log.debug(name, 'event dispatch failed: $e');
       return null;

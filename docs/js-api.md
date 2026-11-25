@@ -77,6 +77,32 @@ Every method returns a `Promise`. To match the defensive coding style of Voice S
 | `getFaceEnabled()` | `boolean` | Returns whether camera face detection is on. This reads false if "Dismiss on motion" takes precedence. |
 | `getProximityEnabled()` | `boolean` | Returns whether proximity sensor detection is on. This always returns false on devices lacking the physical sensor. |
 
+### Face Recognition
+
+| Method | Returns | Description |
+|---|---|---|
+| `getFaceRecognition()` | Object or `null` | Who [Face Recognition](vision-match.md#face-recognition) sees at the kiosk. Only pages on Home Assistant and [custom pages](custom-pages.md) get it. Any other site, and any frame inside a page, gets `null`. |
+
+`getFaceRecognition()` answers:
+
+| Field | Type | Description |
+|---|---|---|
+| `enabled` | `boolean` | Face Recognition is on. Everything else is empty or `null` while it is off. |
+| `name` | `string` | The person at the kiosk, as named in Ground Control. Empty when nobody known is in view. The same name as the **Face** sensor. |
+| `person` | `string` | Their Home Assistant person, such as `person.ana`, or empty. |
+| `color` | `string \| null` | Their color in Ground Control as `#RRGGBB`. |
+| `people` | `[{name, person, color}]` | Everyone recognized in view, the person at the kiosk first. The same people as the **People in view** sensor. |
+| `present` | `boolean \| null` | Someone is in front of the kiosk, looking at it or not. `null` while **Presence sensors** is off. |
+| `looking` | `boolean \| null` | A face looks at the screen. `null` while **Presence sensors** is off. |
+
+`kiosksatellite:face-recognition` carries the same object whenever it changes. `kiosksatellite:face-arrival` fires when someone recognized arrives at the kiosk and when they leave, on the same rule as the [face event](events.md#face) in Home Assistant. Both reach only the pages that `getFaceRecognition()` answers. A photo of an enrolled person can be recognized as them, so don't use these to unlock anything. See [Face Recognition Is Not Security](vision-match.md#face-recognition-is-not-security).
+
+```javascript
+window.addEventListener('kiosksatellite:face-arrival', (e) => {
+  if (e.detail.event === 'arrived') greet(e.detail.name);
+});
+```
+
 Motion events report via the `kiosksatellite:motion` event (detailed below). Faces report via `kiosksatellite:face`, and the proximity sensor reports via `kiosksatellite:proximity`. Enabling or configuring these detection methods is handled strictly in the app or remote admin settings, not by the web page.
 
 ### Wake Word
@@ -198,6 +224,8 @@ The API dispatches `CustomEvent`s directly on the `window` object:
 | `kiosksatellite:wakeword` | `{model, phrase}` | The native engine detected the wake word. Native microphone capture is **already fully stopped** when this fires, meaning the page may open `getUserMedia` immediately if it needs to. |
 | `kiosksatellite:motion` | `{}` | Camera motion was detected (rate-limited to 1 per second). |
 | `kiosksatellite:face` | `{}` | Someone is looking directly at the kiosk. Triggers when a camera facing face reaches the configured Face sensitivity threshold while Dismiss on face is actively watching (rate-limited to 1 per second). |
+| `kiosksatellite:face-recognition` | the `getFaceRecognition()` shape | Who Face Recognition sees at the kiosk changed. Home Assistant and custom pages only. See [Face Recognition](#face-recognition). |
+| `kiosksatellite:face-arrival` | `{event, name, person}` | Someone recognized arrived at the kiosk (`event` is `arrived`) or left it (`left`). Home Assistant and custom pages only. See [Face Recognition](#face-recognition). |
 | `kiosksatellite:proximity` | `{held}` | An object came close to the proximity sensor while Dismiss on proximity had it watching. Repeats every 5 seconds while the object remains close. `held` is `true` on repeat events and `false` on the initial approach. |
 | `kiosksatellite:person` | `{held}` | Someone is visible to the device's own person sensor (currently supported on Meta Portals) while Enable person sensor or Dismiss on person is on. Repeats every 2 seconds while they remain in view. `held` is `true` on repeat events and `false` upon arrival. |
 | `kiosksatellite:screenon` / `:screenoff` | `{}` | The screen power state changed. |

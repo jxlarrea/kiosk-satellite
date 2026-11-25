@@ -2047,6 +2047,28 @@ class BrowserManager extends Manager with WidgetsBindingObserver {
   bool isCustomPageOrigin(Uri url) =>
       url.hasAuthority && customPageOrigins.contains(url.origin);
 
+  /// The origins whose pages may learn who Face Recognition sees at the
+  /// kiosk through the JS API: Home Assistant's, its loopback form while
+  /// the secure context proxy is on, and the servers of the custom pages.
+  /// Any other site on screen, an external start URL included, never does.
+  Set<String> get faceRecognitionOrigins {
+    String? origin(String url) {
+      final uri = Uri.tryParse(url.trim());
+      return uri != null &&
+              (uri.isScheme('http') || uri.isScheme('https')) &&
+              uri.host.isNotEmpty
+          ? uri.origin
+          : null;
+    }
+
+    final base = _settings.get(defs.haUrl).trim();
+    return {
+      ?origin(base),
+      if (base.isNotEmpty) ?origin(urlMapper?.call(base) ?? base),
+      ...customPageOrigins,
+    };
+  }
+
   /// Whether [url] is a custom page, in Home Assistant or on another
   /// server.
   bool isCustomPage(String url) {

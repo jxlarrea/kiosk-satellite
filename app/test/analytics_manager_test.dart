@@ -1018,6 +1018,7 @@ void main() {
         'gc_people',
         'voice_match_enabled',
         'voice_match_policy',
+        'vision_match_enabled',
       ]) {
         expect(u.containsKey(k), isFalse, reason: k);
       }
@@ -1054,6 +1055,57 @@ void main() {
       expect(text, isNot(contains('192.168.1.10')));
     });
 
+    test('Vision Match reports the features it runs and how faces are '
+        'used, never who was chosen', () async {
+      final u = await usage({
+        'ks.ground_control.enabled': true,
+        'ks.vision_match.enabled': true,
+        'ks.vision_match.presence_sensors': true,
+        'ks.vision_match.show_actions': false,
+        'ks.screensaver.face_who': 'people',
+        'ks.screensaver.face_people': jsonEncode([
+          {'id': 'p1', 'name': 'Alice'},
+        ]),
+        'ks.kiosk.face_skip_pin': 'people',
+        'ks.lockdown.face_disable': 'people',
+        'ks.lockdown.face_relock': true,
+      });
+      expect(u['vision_match_enabled'], isTrue);
+      expect(u['vision_match_face_detection'], isTrue);
+      expect(u['vision_match_hand_gestures'], isTrue);
+      expect(u['vision_match_presence_sensors'], isTrue);
+      expect(u['vision_match_face_recognition'], isTrue);
+      // Needs Voice Match, which is off.
+      expect(u['vision_match_confirm_voices'], isFalse);
+      expect(u['vision_match_show_arrivals'], isTrue);
+      expect(u['vision_match_show_actions'], isFalse);
+      expect(u['vision_match_screensaver_faces'], 'people');
+      expect(u['vision_match_skip_pin'], 'people');
+      expect(u['vision_match_lockdown_off'], 'people');
+      expect(u['vision_match_lockdown_relock'], isTrue);
+      expect(u['vision_match_finger_gestures'], 'anyone');
+      expect(jsonEncode(u), isNot(contains('Alice')));
+    });
+
+    test('Vision Match leaves out what Face Detection being off turns '
+        'off', () async {
+      final u = await usage({
+        'ks.ground_control.enabled': true,
+        'ks.vision_match.enabled': true,
+        'ks.vision_match.face_detection': false,
+      });
+      expect(u['vision_match_face_detection'], isFalse);
+      expect(u['vision_match_hand_gestures'], isTrue);
+      for (final k in [
+        'vision_match_presence_sensors',
+        'vision_match_face_recognition',
+        'vision_match_show_arrivals',
+        'vision_match_skip_pin',
+      ]) {
+        expect(u.containsKey(k), isFalse, reason: k);
+      }
+    });
+
     test('a kiosk that never connected leaves out what Ground Control '
         'runs', () async {
       gcState = {'enabled': true, 'status': 'searching', 'version': ''};
@@ -1065,6 +1117,8 @@ void main() {
       expect(u.containsKey('voice_match_model'), isFalse);
       expect(u['voice_match_enabled'], isFalse);
       expect(u.containsKey('voice_match_policy'), isFalse);
+      expect(u['vision_match_enabled'], isFalse);
+      expect(u.containsKey('vision_match_face_detection'), isFalse);
     });
 
     test('an older Ground Control leaves out how it is installed', () async {

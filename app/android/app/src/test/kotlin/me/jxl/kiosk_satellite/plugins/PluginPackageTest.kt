@@ -266,6 +266,13 @@ class PluginPackageTest {
         rejects { PluginManifest(caps("host.control", "voice.text")) }
         for (event in listOf("voice.text", "voice.level", "voice.overlay", "voice.skin", "voice.appearance")) assertTrue(PluginHostPolicy.validEvent(event))
     }
+    @Test fun faceRecognitionIsAHostRead() {
+        fun caps(vararg names: String) = manifest().put("capabilities", org.json.JSONArray(names.toList()))
+        assertTrue("face.recognition" in PluginManifest(caps("host.read", "face.recognition")).capabilities)
+        rejects { PluginManifest(caps("face.recognition")) }
+        rejects { PluginManifest(caps("host.control", "face.recognition")) }
+        for (event in listOf("face.recognition", "face.arrival")) assertTrue(PluginHostPolicy.validEvent(event))
+    }
     @Test fun screensaverModeStandsOnItsOwn() {
         fun caps(vararg names: String) = manifest().put("capabilities", org.json.JSONArray(names.toList()))
         assertEquals(setOf("screensaver.mode"), PluginManifest(caps("screensaver.mode")).capabilities)
