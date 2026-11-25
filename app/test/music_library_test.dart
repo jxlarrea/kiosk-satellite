@@ -129,6 +129,8 @@ void main() {
           'recently_added_albums',
         ]);
         expect(shelves.first.items.single.title, 'recently_played');
+        // Recently played wears the app's translated title.
+        expect(shelves.map((s) => s.key), ['recent', null]);
         final asked = [
           for (final (command, args) in ma.calls)
             if (command == 'music/recommendations/items') args,

@@ -145,7 +145,13 @@ class MaLibrarySource extends LibrarySource {
         shelves.add(
           row == genresRow
               ? LibraryShelf(key: 'genres', items: filled[i])
-              : LibraryShelf(title: '${row['name'] ?? ''}', items: filled[i]),
+              : LibraryShelf(
+                  // The server names Recently played in English, so the
+                  // app's own translated title replaces it.
+                  key: row['uri'] == recentlyPlayedRow ? 'recent' : null,
+                  title: '${row['name'] ?? ''}',
+                  items: filled[i],
+                ),
         );
       }
     } on LibraryError {
@@ -242,6 +248,10 @@ class MaLibrarySource extends LibrarySource {
   @visibleForTesting
   static const genresRow = <String, Object?>{'uri': 'genres'};
 
+  /// Music Assistant's Recently played row, shown under the app's own
+  /// title.
+  static const recentlyPlayedRow = 'library://folder/recently_played';
+
   /// The recommendation rows Music Assistant's Discover page shows, in
   /// its order, resolved the way the page resolves them: In progress and
   /// Recently played first, the rest as the server lists them and Browse
@@ -261,7 +271,7 @@ class MaLibrarySource extends LibrarySource {
     final available = <String>[
       for (final id in const [
         'library://folder/in_progress',
-        'library://folder/recently_played',
+        recentlyPlayedRow,
       ])
         if (byId.containsKey(id)) id,
     ];
