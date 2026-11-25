@@ -9,7 +9,7 @@ Home Assistant only fires device events under `esphome.`, hence the prefix. Ever
 | [`esphome.kiosk_satellite_voice`](#voice-satellite) | Voice Satellite interactions |
 | [`esphome.kiosk_satellite_timer`](#timers) | Voice Satellite timers |
 | [`esphome.kiosk_satellite_speaker`](#speaker) | Who is talking, with [Voice Match](voice-match.md) |
-| [`esphome.kiosk_satellite_face`](#face) | Who arrives at and leaves the kiosk, with [Face Recognition](ground-control.md#face-recognition) |
+| [`esphome.kiosk_satellite_face`](#face) | Who arrives at and leaves the kiosk, with [Face Recognition](vision-match.md#face-recognition) |
 | [`esphome.kiosk_satellite_intercom`](#intercom) | Intercom calls and announcements |
 | [`esphome.kiosk_satellite_alarm`](#alarms) | Alarms |
 | [`esphome.kiosk_satellite_notification`](#notifications) | Notification cards leaving the screen |
@@ -101,7 +101,7 @@ actions:
 
 ## Face
 
-With [Face Recognition](ground-control.md#face-recognition) on, the kiosk fires this event when someone recognized arrives at the kiosk or leaves it, and when the PIN is skipped or Lockdown Mode is turned off because they were recognized. An arrival fires once. It fires again for the same person only after they have been out of view for a minute, which is also when `left` fires. Nothing fires when a face turns away for a moment or a second person walks past. The event fires whether or not the [recognition cards](ground-control.md#recognition-cards) show.
+With [Face Recognition](vision-match.md#face-recognition) on, the kiosk fires this event when someone recognized arrives at the kiosk or leaves it, and when the PIN is skipped or Lockdown Mode is turned off because they were recognized. An arrival fires once. It fires again for the same person only after they have been out of view for a minute, which is also when `left` fires. Nothing fires when a face turns away for a moment or a second person walks past. The event fires whether or not the [recognition cards](vision-match.md#recognition-cards) show.
 
 ```yaml
 event_type: esphome.kiosk_satellite_face
@@ -139,7 +139,7 @@ actions:
       entity_id: light.kitchen
 ```
 
-A photo of an enrolled person can be recognized as them. Don't use this event to unlock doors or disarm an alarm. See [Face Recognition Is Not Security](ground-control.md#face-recognition-is-not-security).
+A photo of an enrolled person can be recognized as them. Don't use this event to unlock doors or disarm an alarm. See [Face Recognition Is Not Security](vision-match.md#face-recognition-is-not-security).
 
 ## Timers
 

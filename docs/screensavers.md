@@ -439,7 +439,7 @@ Under [Lockdown Mode](kiosk.md), face events will neither dismiss nor postpone s
 
 ### Ground Control Vision Match
 
-With [Face Recognition](ground-control.md#face-recognition) on Ground Control, the **Ground Control Vision Match** group on the Face Detection page sets whose face dismisses or postpones the screensaver. It works like **Answer** on the Voice Match page.
+With [Face Recognition](vision-match.md#face-recognition) on Ground Control, the **Ground Control Vision Match** group on the Face Detection page sets whose face dismisses or postpones the screensaver. It works like **Answer** on the Voice Match page.
 
 | Setting | What it does |
 | --- | --- |
@@ -460,7 +460,7 @@ A face counts once Ground Control recognizes it. That takes a look or two, so th
 
 The preview triggers exclusively when a face dismisses an active screensaver; it does not display for postpone events. The camera stream remains active during the preview window and releases immediately afterward unless Postpone screensaver on face is enabled. Enabling Camera Preview increases the analysis resolution from 320x240 to 640x480 to improve preview image clarity.
 
-With Face Recognition on Ground Control, a ring in the recognized person's color appears around the preview and their card slides out beside it. **Show arrivals** and **Show face actions** under **Settings > Ground Control > Vision Match** decide which cards show. See [Recognition Cards](ground-control.md#recognition-cards).
+With Face Recognition on Ground Control, a ring in the recognized person's color appears around the preview and their card slides out beside it. **Show arrivals** and **Show face actions** under **Settings > Ground Control > Vision Match** decide which cards show. See [Recognition Cards](vision-match.md#recognition-cards).
 
 ## Proximity Detection
 

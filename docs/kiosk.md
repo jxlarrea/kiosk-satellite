@@ -31,16 +31,16 @@ To change the order of the tiles, open **Settings > App Launcher > Apps** and dr
 
 ### Ground Control Vision Match
 
-With [Face Recognition](ground-control.md#face-recognition) on Ground Control, the **Ground Control Vision Match** group on the Kiosk Mode page lets chosen people open the menu without the PIN. It only does something when a **Kiosk mode PIN** is set.
+With [Face Recognition](vision-match.md#face-recognition) on Ground Control, the **Ground Control Vision Match** group on the Kiosk Mode page lets chosen people open the menu without the PIN. It only does something when a **Kiosk mode PIN** is set.
 
 | Setting | What it does |
 | --- | --- |
 | Skip the PIN for | **Nobody**, the default, always asks for the PIN. With **Chosen people**, the menu opens after the exit gesture without the PIN while one of the people picked under **People** is recognized at the kiosk. Everyone else still gets the PIN. |
 | People | Shown on Chosen people. Pick people from Ground Control in the same list as Voice Match's **People**. If nobody is picked, anyone recognized skips the PIN. |
 
-The exit gesture is still needed. Whoever does it is usually looking at the screen, and a face counts for 3 seconds after it was last seen. A photo of a chosen person would probably skip the PIN too, so don't rely on it to keep anyone out. See [Face Recognition Is Not Security](ground-control.md#face-recognition-is-not-security). Ground Control's vision session shows each time the PIN was skipped and for whom.
+The exit gesture is still needed. Whoever does it is usually looking at the screen, and a face counts for 3 seconds after it was last seen. A photo of a chosen person would probably skip the PIN too, so don't rely on it to keep anyone out. See [Face Recognition Is Not Security](vision-match.md#face-recognition-is-not-security). Ground Control's vision session shows each time the PIN was skipped and for whom.
 
-When the PIN is skipped, a small **PIN skipped** card with the person's picture shows so they know their face was used. Turn it off with **Show face actions** under [Recognition Cards](ground-control.md#recognition-cards).
+When the PIN is skipped, a small **PIN skipped** card with the person's picture shows so they know their face was used. Turn it off with **Show face actions** under [Recognition Cards](vision-match.md#recognition-cards).
 
 ### Staying in Front
 
@@ -81,7 +81,7 @@ Because only one exit gesture can be armed at any given time (the lockdown gestu
 
 ### Ground Control Vision Match on the Lockdown Mode page
 
-With [Face Recognition](ground-control.md#face-recognition) on Ground Control, the Lockdown Mode page has its own **Ground Control Vision Match** group. It shows with Lockdown Mode off too.
+With [Face Recognition](vision-match.md#face-recognition) on Ground Control, the Lockdown Mode page has its own **Ground Control Vision Match** group. It shows with Lockdown Mode off too.
 
 | Setting | What it does |
 | --- | --- |
@@ -89,7 +89,7 @@ With [Face Recognition](ground-control.md#face-recognition) on Ground Control, t
 | People | Shown on Chosen people. If nobody is picked, Lockdown Mode is turned off for anyone recognized. |
 | Turn Lockdown Mode back on | Shown on Chosen people. Off by default. Turns Lockdown Mode back on 10 seconds after none of the chosen people are in view. |
 
-With both on, the screen stays locked for everyone else, including guests and children. Like the PIN, it can be fooled by a photo. See [Face Recognition Is Not Security](ground-control.md#face-recognition-is-not-security). Leave **Disable Lockdown Mode for** on Nobody if you lock the screen to clean it, since your own face could unlock it while you clean. A lock from Home Assistant or the remote admin holds while a chosen person stays in front of the kiosk. It only lifts the next time one of them arrives. While that lock holds, the exit gesture skips the kiosk PIN for them. If someone unlocks with the exit gesture while nobody chosen is in view, Lockdown Mode comes back on 10 seconds later when **Turn Lockdown Mode back on** is on.
+With both on, the screen stays locked for everyone else, including guests and children. Like the PIN, it can be fooled by a photo. See [Face Recognition Is Not Security](vision-match.md#face-recognition-is-not-security). Leave **Disable Lockdown Mode for** on Nobody if you lock the screen to clean it, since your own face could unlock it while you clean. A lock from Home Assistant or the remote admin holds while a chosen person stays in front of the kiosk. It only lifts the next time one of them arrives. While that lock holds, the exit gesture skips the kiosk PIN for them. If someone unlocks with the exit gesture while nobody chosen is in view, Lockdown Mode comes back on 10 seconds later when **Turn Lockdown Mode back on** is on.
 
 When a face turns Lockdown Mode off, a small **Lockdown Mode off** card with the person's picture shows, as it does for a skipped PIN. Ground Control's vision session shows each time Lockdown Mode was turned off or on this way.
 

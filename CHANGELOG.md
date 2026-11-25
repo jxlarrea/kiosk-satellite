@@ -21,6 +21,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Kiosk actions in Ground Control's vision sessions.** With Vision Match on, the kiosk reports to Ground Control when a face dismissed or postponed the screensaver. It also reports each finger gesture and the action it ran. Each frame also includes its encode time and the round trip time of the frame before it. Ground Control shows them on its vision session pages. The kiosk also sends Ground Control its Vision Match settings, its Dismiss on face and Postpone on face settings and how many finger gestures are set up. Ground Control shows them on the kiosk's page.
 
 ### Changed
+- **A Vision Match docs page.** Vision Match has its own page in the docs, like Voice Match. It covers setup, every setting, Face Detection, Hand Gestures, Face Recognition with the settings that act on faces, enrolling a face, Confirm voices with faces and the recognition cards. The Ground Control page now only covers the connection and links to it. See [Vision Match](docs/vision-match.md).
 - **Voice Match moved to the Ground Control page.** Its settings are now under **Settings > Ground Control > Voice Match** instead of **Settings > Voice Satellite > Ground Control Voice Match**. With Fleet Management, they now sync with the Ground Control category instead of Voice Satellite.
 
 ### Fixed
