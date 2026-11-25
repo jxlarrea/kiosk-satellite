@@ -119,6 +119,13 @@ export function wizardRender() {
     row.append(disc, text);
     rail.appendChild(row);
   });
+  // setupTitle breaks the action from the product name with a newline.
+  const brand = $('#wizardBrandTitle');
+  brand.textContent = '';
+  t('setupTitle').split('\n').forEach((line, n) => {
+    if (n > 0) brand.appendChild(document.createElement('br'));
+    brand.appendChild(document.createTextNode(line));
+  });
   $('#wizardError').textContent = '';
   $('#wizardBack').textContent = t('commonBack');
   $('#wizardBack').classList.toggle('hidden', wizard.i === 0);
