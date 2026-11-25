@@ -13,7 +13,9 @@
   "lockdownGestureNone": "Uitgeschakeld (alleen op afstand)",
   "lockdownExplanation": "De vergrendelingsmodus maakt het dashboard niet-interactief, activeert alle beveiligingen van de kioskmodus zonder de kioskmodusinstellingen te wijzigen en dempt de wekwoorddetectie. Als de System UI-beveiliging hierboven is ingeschakeld, worden ook het meldingenpaneel en de recente apps geblokkeerd. Home Assistant krijgt via ESPHome een schakelaar voor de vergrendelingsmodus.",
   "lockdownSearch": "Aanraakbeveiliging die alleen op afstand kan worden ingesteld. Configureer deze via beheer op afstand. De benodigde toestemmingen staan onder Vereiste systeemtoestemmingen.",
-  "settingLockdownFaceSkipPinDescription": "Met Gekozen personen schakelt het afsluitgebaar de vergrendelingsmodus uit zonder pincode zolang een van de hieronder gekozen personen bij de kiosk wordt herkend.",
-  "settingLockdownFaceAutoTitle": "Vergrendelen en ontgrendelen met gezichten",
-  "settingLockdownFaceAutoDescription": "Schakelt de vergrendelingsmodus uit zolang een van de personen hierboven bij de kiosk wordt herkend en 10 seconden nadat er geen meer is weer in. Laat dit uit als je het scherm vergrendelt om het schoon te maken."
+  "settingLockdownFaceDisableTitle": "Vergrendelingsmodus uitschakelen voor",
+  "settingLockdownFaceDisableDescription": "Met Gekozen personen wordt de vergrendelingsmodus uitgeschakeld wanneer een van de hieronder gekozen personen bij de kiosk wordt herkend. Laat dit op Niemand staan als je het scherm vergrendelt om het schoon te maken.",
+  "settingLockdownFacePeopleDescription": "Kies voor wie de vergrendelingsmodus wordt uitgeschakeld. Is er niemand gekozen, dan wordt hij uitgeschakeld voor iedereen die herkend wordt.",
+  "settingLockdownFaceRelockTitle": "Vergrendelingsmodus weer inschakelen",
+  "settingLockdownFaceRelockDescription": "Schakelt de vergrendelingsmodus 10 seconden nadat geen van de gekozen personen meer in beeld is weer in."
 }

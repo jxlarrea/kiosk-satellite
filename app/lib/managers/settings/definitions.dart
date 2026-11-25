@@ -1558,19 +1558,19 @@ const kioskFacePeople = SettingDef<String>(
   groundControl: 'vision',
 );
 
-/// Lockdown Mode > Ground Control Vision Match: the lockdown exit gesture
-/// turns Lockdown Mode off without the PIN while one of the chosen people
-/// is recognized at the kiosk. Shown with Lockdown Mode off too, so Lock
-/// and unlock with faces can be turned on.
-const lockdownFaceSkipPin = SettingDef<String>(
-  key: 'lockdown.face_skip_pin',
+/// Lockdown Mode > Ground Control Vision Match: Lockdown Mode is turned off
+/// when one of the chosen people arrives at the kiosk, and the exit gesture
+/// skips the kiosk PIN while one of them is there. Shown with Lockdown Mode
+/// off too, since it acts on a lock from Home Assistant.
+const lockdownFaceDisable = SettingDef<String>(
+  key: 'lockdown.face_disable',
   type: SettingType.select,
   defaultValue: 'nobody',
-  title: 'Skip the PIN for',
+  title: 'Disable Lockdown Mode for',
   description:
-      'With Chosen people, the exit gesture turns Lockdown Mode off without '
-      'the PIN while one of the people picked below is recognized at the '
-      'kiosk.',
+      'With Chosen people, Lockdown Mode is turned off when one of the people '
+      'picked below is recognized at the kiosk. Leave this on Nobody if you '
+      'lock the screen to clean it.',
   category: 'Lockdown',
   section: 'Ground Control Vision Match',
   options: ['nobody', 'people'],
@@ -1585,38 +1585,36 @@ const lockdownFacePeople = SettingDef<String>(
   defaultValue: '[]',
   title: 'People',
   description:
-      'Choose who can skip the PIN. If nobody is chosen, anyone recognized '
-      'can.',
+      'Choose who Lockdown Mode is turned off for. If nobody is chosen, it is '
+      'turned off for anyone recognized.',
   category: 'Lockdown',
   section: 'Ground Control Vision Match',
-  dependsOn: 'lockdown.face_skip_pin',
+  dependsOn: 'lockdown.face_disable',
   dependsOnValue: 'people',
   normalizer: normalizeVoiceMatchPeople,
   groundControl: 'vision',
 );
 
-/// Lockdown Mode follows the chosen people: off while one of them is
-/// recognized at the kiosk, on again [lockdownFaceRelock] after none is.
-/// Off by default: it unlocks for someone cleaning the screen.
-const lockdownFaceAuto = SettingDef<bool>(
-  key: 'lockdown.face_auto',
+/// Lockdown Mode on again [lockdownFaceRelockAfter] after none of the
+/// chosen people is in view. Off by default.
+const lockdownFaceRelock = SettingDef<bool>(
+  key: 'lockdown.face_relock',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Lock and unlock with faces',
+  title: 'Turn Lockdown Mode back on',
   description:
-      'Turn Lockdown Mode off while one of the people above is recognized at '
-      'the kiosk and back on 10 seconds after none is. Leave this off if you '
-      'lock the screen to clean it.',
+      'Turn Lockdown Mode back on 10 seconds after none of the chosen people '
+      'are in view.',
   category: 'Lockdown',
   section: 'Ground Control Vision Match',
-  dependsOn: 'lockdown.face_skip_pin',
+  dependsOn: 'lockdown.face_disable',
   dependsOnValue: 'people',
   groundControl: 'vision',
 );
 
-/// How long after the last chosen person was recognized Lock and unlock
-/// with faces turns Lockdown Mode back on.
-const lockdownFaceRelock = Duration(seconds: 10);
+/// How long after the last chosen person was in view Turn Lockdown Mode
+/// back on locks again.
+const lockdownFaceRelockAfter = Duration(seconds: 10);
 
 /// Whether one of the people stored in [peopleJson] (as [voiceMatchPeople])
 /// is in [inView], the Ground Control person ids Face Recognition names at
@@ -8542,30 +8540,30 @@ const visionMatchLinkKioskPin = SettingDef<String>(
   linksTo: 'kiosk.face_skip_pin',
 );
 
-const visionMatchLinkLockdownPin = SettingDef<String>(
-  key: 'vision_match.link_lockdown_pin',
+const visionMatchLinkLockdownDisable = SettingDef<String>(
+  key: 'vision_match.link_lockdown_disable',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Skip the PIN for',
+  title: 'Disable Lockdown Mode for',
   description: 'Lockdown Mode > Ground Control Vision Match',
   category: 'Ground Control',
   subpage: 'Vision Match',
   section: 'Used in other settings',
   dependsOn: 'vision_match.face_recognition',
-  linksTo: 'lockdown.face_skip_pin',
+  linksTo: 'lockdown.face_disable',
 );
 
-const visionMatchLinkLockdownAuto = SettingDef<String>(
-  key: 'vision_match.link_lockdown_auto',
+const visionMatchLinkLockdownRelock = SettingDef<String>(
+  key: 'vision_match.link_lockdown_relock',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Lock and unlock with faces',
+  title: 'Turn Lockdown Mode back on',
   description: 'Lockdown Mode > Ground Control Vision Match',
   category: 'Ground Control',
   subpage: 'Vision Match',
   section: 'Used in other settings',
   dependsOn: 'vision_match.face_recognition',
-  linksTo: 'lockdown.face_auto',
+  linksTo: 'lockdown.face_relock',
 );
 
 /// The People setting each Chosen people option lists, for the values on
@@ -8573,7 +8571,7 @@ const visionMatchLinkLockdownAuto = SettingDef<String>(
 const groundControlPeopleOf = {
   'screensaver.face_who': screensaverFacePeople,
   'kiosk.face_skip_pin': kioskFacePeople,
-  'lockdown.face_skip_pin': lockdownFacePeople,
+  'lockdown.face_disable': lockdownFacePeople,
 };
 
 /// Show fingers gestures, on Ground Control.
@@ -15226,9 +15224,9 @@ const List<SettingDef<Object>> allSettings = [
   lockdownBlackout,
   lockdownAllowScreensaver,
   lockdownExitGesture,
-  lockdownFaceSkipPin,
+  lockdownFaceDisable,
   lockdownFacePeople,
-  lockdownFaceAuto,
+  lockdownFaceRelock,
   homeLauncherEnabled,
   homeKeepPinning,
   launcherEnabled,
@@ -15666,8 +15664,8 @@ const List<SettingDef<Object>> allSettings = [
   visionMatchLinkFaceWho,
   visionMatchLinkPreviewPerson,
   visionMatchLinkKioskPin,
-  visionMatchLinkLockdownPin,
-  visionMatchLinkLockdownAuto,
+  visionMatchLinkLockdownDisable,
+  visionMatchLinkLockdownRelock,
   visionMatchHandGestures,
   voiceWakeWordSensitivity,
   voiceWakeWordFineTune,

@@ -17587,23 +17587,35 @@ abstract class UiStrings {
   /// **'Remote-only touch shield. Set it up from the Remote Admin UI; its grants live under Required system permissions.'**
   String get lockdownSearch;
 
+  /// Setting label.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable Lockdown Mode for'**
+  String get settingLockdownFaceDisableTitle;
+
   /// Setting help.
   ///
   /// In en, this message translates to:
-  /// **'With Chosen people, the exit gesture turns Lockdown Mode off without the PIN while one of the people picked below is recognized at the kiosk.'**
-  String get settingLockdownFaceSkipPinDescription;
+  /// **'With Chosen people, Lockdown Mode is turned off when one of the people picked below is recognized at the kiosk. Leave this on Nobody if you lock the screen to clean it.'**
+  String get settingLockdownFaceDisableDescription;
+
+  /// Setting help.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose who Lockdown Mode is turned off for. If nobody is chosen, it is turned off for anyone recognized.'**
+  String get settingLockdownFacePeopleDescription;
 
   /// Setting label.
   ///
   /// In en, this message translates to:
-  /// **'Lock and unlock with faces'**
-  String get settingLockdownFaceAutoTitle;
+  /// **'Turn Lockdown Mode back on'**
+  String get settingLockdownFaceRelockTitle;
 
   /// Setting help.
   ///
   /// In en, this message translates to:
-  /// **'Turn Lockdown Mode off while one of the people above is recognized at the kiosk and back on 10 seconds after none is. Leave this off if you lock the screen to clean it.'**
-  String get settingLockdownFaceAutoDescription;
+  /// **'Turn Lockdown Mode back on 10 seconds after none of the chosen people are in view.'**
+  String get settingLockdownFaceRelockDescription;
 
   /// Granted overlay permission status.
   ///

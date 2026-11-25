@@ -10242,16 +10242,23 @@ class UiStringsFr extends UiStrings {
       'Bouclier tactile configurable depuis l\'administration à distance. Ses autorisations se trouvent sous Autorisations système requises.';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      'Avec Personnes choisies, le geste de sortie désactive le mode verrouillage sans code PIN tant qu\'une des personnes choisies ci-dessous est reconnue devant le kiosque.';
+  String get settingLockdownFaceDisableTitle =>
+      'Désactiver le mode verrouillage pour';
 
   @override
-  String get settingLockdownFaceAutoTitle =>
-      'Verrouiller et déverrouiller avec les visages';
+  String get settingLockdownFaceDisableDescription =>
+      'Avec Personnes choisies, le mode verrouillage est désactivé quand une des personnes choisies ci-dessous est reconnue devant le kiosque. Laissez Personne si vous verrouillez l\'écran pour le nettoyer.';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      'Désactive le mode verrouillage tant qu\'une des personnes ci-dessus est reconnue devant le kiosque et le réactive 10 secondes après qu\'il n\'y en a plus aucune. Laissez désactivé si vous verrouillez l\'écran pour le nettoyer.';
+  String get settingLockdownFacePeopleDescription =>
+      'Choisissez pour qui le mode verrouillage est désactivé. Si personne n\'est choisi, il est désactivé pour toute personne reconnue.';
+
+  @override
+  String get settingLockdownFaceRelockTitle => 'Réactiver le mode verrouillage';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      'Réactive le mode verrouillage 10 secondes après qu\'aucune des personnes choisies n\'est plus visible.';
 
   @override
   String get lockdownOverlayHeld =>

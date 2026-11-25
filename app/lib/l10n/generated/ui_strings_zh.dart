@@ -9616,15 +9616,22 @@ class UiStringsZh extends UiStrings {
   String get lockdownSearch => '禁止触控操作的保护界面，仅可在远程管理中设置。所需权限位于“所需系统权限”。';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      '选择“指定人员”时，只要在 Kiosk 前识别到下方选中的某个人，退出手势无需 PIN 码即可关闭锁定模式。';
+  String get settingLockdownFaceDisableTitle => '以下人员可关闭锁定模式';
 
   @override
-  String get settingLockdownFaceAutoTitle => '通过人脸锁定和解锁';
+  String get settingLockdownFaceDisableDescription =>
+      '选择“指定人员”时，在 Kiosk 前识别到下方选中的某个人后会关闭锁定模式。如果你锁定屏幕是为了清洁屏幕，请保持“无人”。';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      '在 Kiosk 前识别到上方的某个人时关闭锁定模式，在没有识别到任何一人 10 秒后重新开启。如果你锁定屏幕是为了清洁屏幕，请不要开启此项。';
+  String get settingLockdownFacePeopleDescription =>
+      '选择为谁关闭锁定模式。如果没有选择任何人，识别到任何人都会关闭锁定模式。';
+
+  @override
+  String get settingLockdownFaceRelockTitle => '重新开启锁定模式';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      '在看不到任何指定人员 10 秒后重新开启锁定模式。';
 
   @override
   String get lockdownOverlayHeld => '锁定保护层可覆盖整个屏幕。';
@@ -26127,15 +26134,22 @@ class UiStringsZhCn extends UiStringsZh {
   String get lockdownSearch => '禁止触控操作的保护界面，仅可在远程管理中设置。所需权限位于“所需系统权限”。';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      '选择“指定人员”时，只要在 Kiosk 前识别到下方选中的某个人，退出手势无需 PIN 码即可关闭锁定模式。';
+  String get settingLockdownFaceDisableTitle => '以下人员可关闭锁定模式';
 
   @override
-  String get settingLockdownFaceAutoTitle => '通过人脸锁定和解锁';
+  String get settingLockdownFaceDisableDescription =>
+      '选择“指定人员”时，在 Kiosk 前识别到下方选中的某个人后会关闭锁定模式。如果你锁定屏幕是为了清洁屏幕，请保持“无人”。';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      '在 Kiosk 前识别到上方的某个人时关闭锁定模式，在没有识别到任何一人 10 秒后重新开启。如果你锁定屏幕是为了清洁屏幕，请不要开启此项。';
+  String get settingLockdownFacePeopleDescription =>
+      '选择为谁关闭锁定模式。如果没有选择任何人，识别到任何人都会关闭锁定模式。';
+
+  @override
+  String get settingLockdownFaceRelockTitle => '重新开启锁定模式';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      '在看不到任何指定人员 10 秒后重新开启锁定模式。';
 
   @override
   String get lockdownOverlayHeld => '锁定保护层可覆盖整个屏幕。';

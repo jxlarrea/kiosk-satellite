@@ -169,17 +169,18 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   Map<String, String> _facesInView = const {};
   StreamSubscription<FaceInViewChanged>? _facesSubscription;
 
-  /// Whether a chosen person was in view when Lock and unlock with faces
+  /// Whether a chosen person was in view when Disable Lockdown Mode for
   /// last looked, so a lock from Home Assistant holds until someone chosen
   /// arrives again.
   bool _chosenWasHere = false;
   Timer? _faceRelockTimer;
 
-  /// Whether Skip the PIN for lets the exit gesture through without the PIN
-  /// now: Chosen people and one of them recognized at the kiosk. Says so in
-  /// the log and to Ground Control's vision session when it does.
+  /// Whether the exit gesture skips the kiosk PIN now: Skip the PIN for
+  /// (Kiosk Mode) or Disable Lockdown Mode for (Lockdown Mode) on Chosen
+  /// people, and one of them recognized at the kiosk. Says so in the log
+  /// and to Ground Control's vision session when it does.
   bool faceSkipsPin({required bool lockdown}) {
-    final rule = lockdown ? defs.lockdownFaceSkipPin : defs.kioskFaceSkipPin;
+    final rule = lockdown ? defs.lockdownFaceDisable : defs.kioskFaceSkipPin;
     final people = lockdown ? defs.lockdownFacePeople : defs.kioskFacePeople;
     if (!_settings.visible(rule) || _settings.get(rule) != 'people') {
       return false;
@@ -205,15 +206,22 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     return _facesInView[id];
   }
 
-  /// Lock and unlock with faces: Lockdown Mode off when a chosen person
-  /// arrives, on again [defs.lockdownFaceRelock] after none is in view.
+  /// Disable Lockdown Mode for: Lockdown Mode off when a chosen person
+  /// arrives. With Turn Lockdown Mode back on, on again
+  /// [defs.lockdownFaceRelockAfter] after none is in view.
   void _followFaces() {
     final on =
-        _settings.visible(defs.lockdownFaceAuto) &&
-        _settings.get(defs.lockdownFaceAuto);
-    if (!on) {
+        _settings.visible(defs.lockdownFaceDisable) &&
+        _settings.get(defs.lockdownFaceDisable) == 'people';
+    final relock =
+        on &&
+        _settings.visible(defs.lockdownFaceRelock) &&
+        _settings.get(defs.lockdownFaceRelock);
+    if (!relock) {
       _faceRelockTimer?.cancel();
       _faceRelockTimer = null;
+    }
+    if (!on) {
       _chosenWasHere = false;
       return;
     }
@@ -226,8 +234,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
         bus.publish(FaceLockdownChanged(locked: false, name: who));
         unawaited(_settings.set(defs.lockdownEnabled, false));
       }
-    } else if (!lockdownActive && _faceRelockTimer == null) {
-      _faceRelockTimer = Timer(defs.lockdownFaceRelock, () {
+    } else if (relock && !lockdownActive && _faceRelockTimer == null) {
+      _faceRelockTimer = Timer(defs.lockdownFaceRelockAfter, () {
         _faceRelockTimer = null;
         if (lockdownActive || _chosenHere(defs.lockdownFacePeople) != null) {
           return;

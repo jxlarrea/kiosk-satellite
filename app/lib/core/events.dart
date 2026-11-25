@@ -861,9 +861,9 @@ class FacePinSkipped extends AppEvent {
   final String name;
 }
 
-/// Lock and unlock with faces turned Lockdown Mode off because [name] was
-/// recognized at the kiosk, or on because nobody chosen was. Reported to
-/// Ground Control's vision session.
+/// Disable Lockdown Mode for turned Lockdown Mode off because [name] was
+/// recognized at the kiosk, or Turn Lockdown Mode back on turned it on
+/// because nobody chosen was. Reported to Ground Control's vision session.
 class FaceLockdownChanged extends AppEvent {
   const FaceLockdownChanged({required this.locked, this.name});
   final bool locked;

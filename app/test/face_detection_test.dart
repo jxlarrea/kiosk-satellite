@@ -428,6 +428,35 @@ void main() {
       await bus.dispose();
     });
 
+    test('a face that skips the kiosk PIN or turns Lockdown Mode off shows '
+        'the preview with the name card, the switch off', () async {
+      await build({
+        'ks.camera.enabled': true,
+        'ks.ground_control.enabled': true,
+        'ks.vision_match.enabled': true,
+        'ks.vision_match.face_detection': true,
+        'ks.vision_match.face_recognition': true,
+        'ks.kiosk.enabled': true,
+        'ks.kiosk.face_skip_pin': 'people',
+      });
+      await pump();
+      expect(lastArgs?['preview'], isTrue);
+      expect(motion.previewNamed, isFalse);
+      bus.publish(const FacePinSkipped(lockdown: false, name: 'Ana'));
+      await pump();
+      expect(controlCalls.map((c) => c.method), contains('showPreview'));
+      expect(motion.previewNamed, isTrue);
+
+      // Lockdown Mode turned back on shows nothing.
+      controlCalls.clear();
+      bus.publish(const FaceLockdownChanged(locked: true));
+      await pump();
+      expect(controlCalls.where((c) => c.method == 'showPreview'), isEmpty);
+      await motion.dispose();
+      await settings.dispose();
+      await bus.dispose();
+    });
+
     test('with the switch off a face dismissal changes nothing', () async {
       await build(faceOnly);
       bus.publish(const ScreensaverStateChanged(active: true));

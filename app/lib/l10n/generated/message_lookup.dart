@@ -2943,11 +2943,14 @@ final _messages = <String, String Function(UiStrings)>{
   'lockdownGestureNone': (s) => s.lockdownGestureNone,
   'lockdownExplanation': (s) => s.lockdownExplanation,
   'lockdownSearch': (s) => s.lockdownSearch,
-  'settingLockdownFaceSkipPinDescription': (s) =>
-      s.settingLockdownFaceSkipPinDescription,
-  'settingLockdownFaceAutoTitle': (s) => s.settingLockdownFaceAutoTitle,
-  'settingLockdownFaceAutoDescription': (s) =>
-      s.settingLockdownFaceAutoDescription,
+  'settingLockdownFaceDisableTitle': (s) => s.settingLockdownFaceDisableTitle,
+  'settingLockdownFaceDisableDescription': (s) =>
+      s.settingLockdownFaceDisableDescription,
+  'settingLockdownFacePeopleDescription': (s) =>
+      s.settingLockdownFacePeopleDescription,
+  'settingLockdownFaceRelockTitle': (s) => s.settingLockdownFaceRelockTitle,
+  'settingLockdownFaceRelockDescription': (s) =>
+      s.settingLockdownFaceRelockDescription,
   'lockdownOverlayHeld': (s) => s.lockdownOverlayHeld,
   'lockdownOverlayMissing': (s) => s.lockdownOverlayMissing,
   'lockdownPermissionsSearch': (s) => s.lockdownPermissionsSearch,

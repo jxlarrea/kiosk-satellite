@@ -37984,21 +37984,8 @@
       ]
     }
   },
-  "settingLockdownFaceSkipPinDescription": "Якщо вибрано «Вибрані люди», жест виходу вимикає повне блокування без PIN-коду, поки перед кіоском впізнано одну з людей, вибраних нижче.",
-  "@settingLockdownFaceSkipPinDescription": {
-    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
-    "description": "Setting help.",
-    "x-locations": {
-      "device": [
-        "Settings > Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
-      ],
-      "remoteAdmin": [
-        "Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
-      ]
-    }
-  },
-  "settingLockdownFaceAutoTitle": "Блокувати й розблоковувати за обличчями",
-  "@settingLockdownFaceAutoTitle": {
+  "settingLockdownFaceDisableTitle": "Вимикати режим блокування для",
+  "@settingLockdownFaceDisableTitle": {
     "context": "Settings > Lockdown Mode > Ground Control Vision Match",
     "description": "Setting label.",
     "x-locations": {
@@ -38010,16 +37997,55 @@
       ]
     }
   },
-  "settingLockdownFaceAutoDescription": "Вимикає повне блокування, поки перед кіоском впізнано одну з людей, вибраних вище, і знову вмикає його через 10 секунд після того, як нікого з них не видно. Не вмикайте це, якщо блокуєте екран, щоб його почистити.",
-  "@settingLockdownFaceAutoDescription": {
+  "settingLockdownFaceDisableDescription": "Якщо вибрано «Вибрані люди», режим блокування вимикається, коли перед кіоском впізнано одну з людей, вибраних нижче. Залиште «Нікого», якщо блокуєте екран, щоб його почистити.",
+  "@settingLockdownFaceDisableDescription": {
     "context": "Settings > Lockdown Mode > Ground Control Vision Match",
     "description": "Setting help.",
     "x-locations": {
       "device": [
-        "Settings > Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+        "Settings > Lockdown Mode > Ground Control Vision Match > Disable Lockdown Mode for"
       ],
       "remoteAdmin": [
-        "Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+        "Lockdown Mode > Ground Control Vision Match > Disable Lockdown Mode for"
+      ]
+    }
+  },
+  "settingLockdownFacePeopleDescription": "Виберіть, для кого вимикається режим блокування. Якщо нікого не вибрано, він вимикається для будь-кого впізнаного.",
+  "@settingLockdownFacePeopleDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > People"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > People"
+      ]
+    }
+  },
+  "settingLockdownFaceRelockTitle": "Знову вмикати режим блокування",
+  "@settingLockdownFaceRelockTitle": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingLockdownFaceRelockDescription": "Знову вмикає режим блокування через 10 секунд після того, як нікого з вибраних людей не видно.",
+  "@settingLockdownFaceRelockDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > Turn Lockdown Mode back on"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > Turn Lockdown Mode back on"
       ]
     }
   },

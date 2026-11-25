@@ -10164,16 +10164,22 @@ class UiStringsUk extends UiStrings {
       'Дистанційний сенсорний щит. Налаштуйте його у вебінтерфейсі віддаленого адміністратора; його дозволи знаходяться в обовʼязкових системних дозволах.';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      'Якщо вибрано «Вибрані люди», жест виходу вимикає повне блокування без PIN-коду, поки перед кіоском впізнано одну з людей, вибраних нижче.';
+  String get settingLockdownFaceDisableTitle => 'Вимикати режим блокування для';
 
   @override
-  String get settingLockdownFaceAutoTitle =>
-      'Блокувати й розблоковувати за обличчями';
+  String get settingLockdownFaceDisableDescription =>
+      'Якщо вибрано «Вибрані люди», режим блокування вимикається, коли перед кіоском впізнано одну з людей, вибраних нижче. Залиште «Нікого», якщо блокуєте екран, щоб його почистити.';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      'Вимикає повне блокування, поки перед кіоском впізнано одну з людей, вибраних вище, і знову вмикає його через 10 секунд після того, як нікого з них не видно. Не вмикайте це, якщо блокуєте екран, щоб його почистити.';
+  String get settingLockdownFacePeopleDescription =>
+      'Виберіть, для кого вимикається режим блокування. Якщо нікого не вибрано, він вимикається для будь-кого впізнаного.';
+
+  @override
+  String get settingLockdownFaceRelockTitle => 'Знову вмикати режим блокування';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      'Знову вмикає режим блокування через 10 секунд після того, як нікого з вибраних людей не видно.';
 
   @override
   String get lockdownOverlayHeld =>

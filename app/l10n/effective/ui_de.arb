@@ -37984,21 +37984,8 @@
       ]
     }
   },
-  "settingLockdownFaceSkipPinDescription": "Mit Ausgewählte Personen schaltet die Exit-Geste den Sperrmodus ohne PIN aus, solange eine der unten ausgewählten Personen am Kiosk erkannt wird.",
-  "@settingLockdownFaceSkipPinDescription": {
-    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
-    "description": "Setting help.",
-    "x-locations": {
-      "device": [
-        "Settings > Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
-      ],
-      "remoteAdmin": [
-        "Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
-      ]
-    }
-  },
-  "settingLockdownFaceAutoTitle": "Mit Gesichtern sperren und entsperren",
-  "@settingLockdownFaceAutoTitle": {
+  "settingLockdownFaceDisableTitle": "Sperrmodus ausschalten für",
+  "@settingLockdownFaceDisableTitle": {
     "context": "Settings > Lockdown Mode > Ground Control Vision Match",
     "description": "Setting label.",
     "x-locations": {
@@ -38010,16 +37997,55 @@
       ]
     }
   },
-  "settingLockdownFaceAutoDescription": "Schaltet den Sperrmodus aus, solange eine der oben ausgewählten Personen am Kiosk erkannt wird, und 10 Sekunden nachdem keine mehr erkannt wird wieder ein. Lass das aus, wenn du den Bildschirm zum Reinigen sperrst.",
-  "@settingLockdownFaceAutoDescription": {
+  "settingLockdownFaceDisableDescription": "Mit Ausgewählte Personen wird der Sperrmodus ausgeschaltet, wenn eine der unten ausgewählten Personen am Kiosk erkannt wird. Lass das auf Niemand, wenn du den Bildschirm zum Reinigen sperrst.",
+  "@settingLockdownFaceDisableDescription": {
     "context": "Settings > Lockdown Mode > Ground Control Vision Match",
     "description": "Setting help.",
     "x-locations": {
       "device": [
-        "Settings > Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+        "Settings > Lockdown Mode > Ground Control Vision Match > Disable Lockdown Mode for"
       ],
       "remoteAdmin": [
-        "Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+        "Lockdown Mode > Ground Control Vision Match > Disable Lockdown Mode for"
+      ]
+    }
+  },
+  "settingLockdownFacePeopleDescription": "Wähle, für wen der Sperrmodus ausgeschaltet wird. Ist niemand ausgewählt, wird er für jede erkannte Person ausgeschaltet.",
+  "@settingLockdownFacePeopleDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > People"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > People"
+      ]
+    }
+  },
+  "settingLockdownFaceRelockTitle": "Sperrmodus wieder einschalten",
+  "@settingLockdownFaceRelockTitle": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingLockdownFaceRelockDescription": "Schaltet den Sperrmodus 10 Sekunden, nachdem keine der ausgewählten Personen mehr zu sehen ist, wieder ein.",
+  "@settingLockdownFaceRelockDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > Turn Lockdown Mode back on"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > Turn Lockdown Mode back on"
       ]
     }
   },

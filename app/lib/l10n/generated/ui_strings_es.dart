@@ -10243,16 +10243,24 @@ class UiStringsEs extends UiStrings {
       'Bloqueo táctil que se configura desde la administración remota. Sus permisos están en Permisos del sistema necesarios.';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      'Con Personas elegidas, el gesto de salida desactiva el modo de bloqueo sin el PIN mientras se reconoce en el kiosko a una de las personas elegidas abajo.';
+  String get settingLockdownFaceDisableTitle =>
+      'Desactivar el modo de bloqueo para';
 
   @override
-  String get settingLockdownFaceAutoTitle =>
-      'Bloquear y desbloquear con rostros';
+  String get settingLockdownFaceDisableDescription =>
+      'Con Personas elegidas, el modo de bloqueo se desactiva cuando se reconoce en el kiosko a una de las personas elegidas abajo. Déjalo en Nadie si bloqueas la pantalla para limpiarla.';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      'Desactiva el modo de bloqueo mientras se reconoce en el kiosko a una de las personas de arriba y vuelve a activarlo 10 segundos después de que no haya ninguna. Déjalo desactivado si bloqueas la pantalla para limpiarla.';
+  String get settingLockdownFacePeopleDescription =>
+      'Elige para quién se desactiva el modo de bloqueo. Si no eliges a nadie, se desactiva para cualquier persona reconocida.';
+
+  @override
+  String get settingLockdownFaceRelockTitle =>
+      'Volver a activar el modo de bloqueo';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      'Vuelve a activar el modo de bloqueo 10 segundos después de que ninguna de las personas elegidas esté a la vista.';
 
   @override
   String get lockdownOverlayHeld => 'El bloqueo puede cubrir toda la pantalla.';

@@ -215,7 +215,7 @@ export function groundControlValueText(key) {
   const peopleKey = {
     'screensaver.face_who': 'screensaver.face_people',
     'kiosk.face_skip_pin': 'kiosk.face_people',
-    'lockdown.face_skip_pin': 'lockdown.face_people',
+    'lockdown.face_disable': 'lockdown.face_people',
   }[key];
   if (peopleKey && s.value === 'people') {
     const names = chosenPeople(peopleKey).map((p) => p.name || p.id);

@@ -10179,15 +10179,22 @@ class UiStringsPl extends UiStrings {
       'Osłona przed dotykiem sterowana tylko zdalnie. Skonfiguruj ją w interfejsie zdalnej administracji; jej uprawnienia znajdują się w sekcji „Wymagane uprawnienia systemowe”.';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      'Przy opcji Wybrane osoby gest wyjścia wyłącza tryb blokady bez PIN-u, gdy przed kioskiem rozpoznana jest jedna z osób wybranych poniżej.';
+  String get settingLockdownFaceDisableTitle => 'Wyłączaj tryb blokady dla';
 
   @override
-  String get settingLockdownFaceAutoTitle => 'Blokuj i odblokowuj twarzami';
+  String get settingLockdownFaceDisableDescription =>
+      'Przy opcji Wybrane osoby tryb blokady wyłącza się, gdy przed kioskiem zostanie rozpoznana jedna z osób wybranych poniżej. Zostaw Nikt, jeśli blokujesz ekran, aby go wyczyścić.';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      'Wyłącza tryb blokady, gdy przed kioskiem rozpoznana jest jedna z osób wybranych powyżej, i włącza go ponownie 10 sekund po tym, jak żadnej nie widać. Nie włączaj tego, jeśli blokujesz ekran, aby go wyczyścić.';
+  String get settingLockdownFacePeopleDescription =>
+      'Wybierz, dla kogo tryb blokady jest wyłączany. Jeśli nikt nie jest wybrany, wyłącza się dla każdej rozpoznanej osoby.';
+
+  @override
+  String get settingLockdownFaceRelockTitle => 'Ponownie włączaj tryb blokady';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      'Ponownie włącza tryb blokady 10 sekund po tym, jak żadna z wybranych osób nie jest widoczna.';
 
   @override
   String get lockdownOverlayHeld => 'Osłona blokady może zakryć cały ekran.';

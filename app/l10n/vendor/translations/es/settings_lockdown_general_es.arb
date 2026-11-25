@@ -13,7 +13,9 @@
   "lockdownGestureNone": "Desactivado (solo de forma remota)",
   "lockdownExplanation": "El modo de bloqueo desactiva las interacciones con el panel de control, activa todas las protecciones del modo kiosko sin cambiar su configuración y silencia la detección de la palabra de activación mientras está activo. Con la protección de la interfaz del sistema activada arriba, también se bloquean el panel de notificaciones y las aplicaciones recientes. Home Assistant recibe un interruptor del modo de bloqueo a través de ESPHome.",
   "lockdownSearch": "Bloqueo táctil que se configura desde la administración remota. Sus permisos están en Permisos del sistema necesarios.",
-  "settingLockdownFaceSkipPinDescription": "Con Personas elegidas, el gesto de salida desactiva el modo de bloqueo sin el PIN mientras se reconoce en el kiosko a una de las personas elegidas abajo.",
-  "settingLockdownFaceAutoTitle": "Bloquear y desbloquear con rostros",
-  "settingLockdownFaceAutoDescription": "Desactiva el modo de bloqueo mientras se reconoce en el kiosko a una de las personas de arriba y vuelve a activarlo 10 segundos después de que no haya ninguna. Déjalo desactivado si bloqueas la pantalla para limpiarla."
+  "settingLockdownFaceDisableTitle": "Desactivar el modo de bloqueo para",
+  "settingLockdownFaceDisableDescription": "Con Personas elegidas, el modo de bloqueo se desactiva cuando se reconoce en el kiosko a una de las personas elegidas abajo. Déjalo en Nadie si bloqueas la pantalla para limpiarla.",
+  "settingLockdownFacePeopleDescription": "Elige para quién se desactiva el modo de bloqueo. Si no eliges a nadie, se desactiva para cualquier persona reconocida.",
+  "settingLockdownFaceRelockTitle": "Volver a activar el modo de bloqueo",
+  "settingLockdownFaceRelockDescription": "Vuelve a activar el modo de bloqueo 10 segundos después de que ninguna de las personas elegidas esté a la vista."
 }

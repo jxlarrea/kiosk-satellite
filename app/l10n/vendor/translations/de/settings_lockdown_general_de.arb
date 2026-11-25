@@ -13,7 +13,9 @@
   "lockdownGestureNone": "Deaktiviert (nur per Fernverwaltung)",
   "lockdownExplanation": "Der Sperrmodus deaktiviert die Interaktion mit dem Dashboard, aktiviert alle Schutzfunktionen des Kioskmodus, ohne deren Konfiguration zu ändern, und unterdrückt die Aktivierungswort-Erkennung, solange er aktiv ist. Wenn der Schutz der Systemoberfläche oben aktiviert ist, werden zusätzlich die Benachrichtigungsleiste und die Übersicht der zuletzt verwendeten Apps gesperrt. Home Assistant erhält über ESPHome einen Schalter für den Sperrmodus.",
   "lockdownSearch": "Berührungssperre, die über die Fernverwaltung konfiguriert wird. Die erforderlichen Berechtigungen findest du unter „Erforderliche Systemberechtigungen“.",
-  "settingLockdownFaceSkipPinDescription": "Mit Ausgewählte Personen schaltet die Exit-Geste den Sperrmodus ohne PIN aus, solange eine der unten ausgewählten Personen am Kiosk erkannt wird.",
-  "settingLockdownFaceAutoTitle": "Mit Gesichtern sperren und entsperren",
-  "settingLockdownFaceAutoDescription": "Schaltet den Sperrmodus aus, solange eine der oben ausgewählten Personen am Kiosk erkannt wird, und 10 Sekunden nachdem keine mehr erkannt wird wieder ein. Lass das aus, wenn du den Bildschirm zum Reinigen sperrst."
+  "settingLockdownFaceDisableTitle": "Sperrmodus ausschalten für",
+  "settingLockdownFaceDisableDescription": "Mit Ausgewählte Personen wird der Sperrmodus ausgeschaltet, wenn eine der unten ausgewählten Personen am Kiosk erkannt wird. Lass das auf Niemand, wenn du den Bildschirm zum Reinigen sperrst.",
+  "settingLockdownFacePeopleDescription": "Wähle, für wen der Sperrmodus ausgeschaltet wird. Ist niemand ausgewählt, wird er für jede erkannte Person ausgeschaltet.",
+  "settingLockdownFaceRelockTitle": "Sperrmodus wieder einschalten",
+  "settingLockdownFaceRelockDescription": "Schaltet den Sperrmodus 10 Sekunden, nachdem keine der ausgewählten Personen mehr zu sehen ist, wieder ein."
 }

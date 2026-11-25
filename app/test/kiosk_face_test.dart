@@ -10,8 +10,7 @@ import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Kiosk Mode and Lockdown Mode > Ground Control Vision Match: Skip the PIN
-/// for the chosen people recognized at the kiosk, and Lock and unlock with
-/// faces.
+/// for, Disable Lockdown Mode for and Turn Lockdown Mode back on.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -97,7 +96,7 @@ void main() {
 
     test('with nobody chosen, anyone recognized skips it', () {
       fakeAsync((async) {
-        build(async, {'ks.lockdown.face_skip_pin': 'people'});
+        build(async, {'ks.lockdown.face_disable': 'people'});
         see(async, [leo]);
         expect(kiosk.faceSkipsPin(lockdown: true), isTrue);
       });
@@ -116,17 +115,44 @@ void main() {
     });
   });
 
-  group('Lock and unlock with faces', () {
-    Map<String, Object> auto() => {
-      'ks.lockdown.face_skip_pin': 'people',
+  group('Disable Lockdown Mode for', () {
+    Map<String, Object> chosen({bool relock = false}) => {
+      'ks.lockdown.face_disable': 'people',
       'ks.lockdown.face_people': chosenAna,
-      'ks.lockdown.face_auto': true,
+      if (relock) 'ks.lockdown.face_relock': true,
     };
 
-    test('locks 10 s after nobody chosen is in view and unlocks when a '
-        'chosen person arrives', () {
+    test('turns Lockdown Mode off when a chosen person arrives', () {
       fakeAsync((async) {
-        build(async, auto());
+        build(async, {...chosen(), 'ks.lockdown.enabled': true});
+        final changes = <FaceLockdownChanged>[];
+        bus.on<FaceLockdownChanged>().listen(changes.add);
+        see(async, [leo]);
+        expect(settings.get(defs.lockdownEnabled), isTrue);
+        see(async, [leo, ana]);
+        expect(settings.get(defs.lockdownEnabled), isFalse);
+        expect(changes.single.locked, isFalse);
+        expect(changes.single.name, 'Ana');
+        // Without Turn Lockdown Mode back on it stays off after Ana leaves.
+        see(async, []);
+        async.elapse(const Duration(seconds: 30));
+        expect(settings.get(defs.lockdownEnabled), isFalse);
+      });
+    });
+
+    test('Nobody, the default, leaves Lockdown Mode on', () {
+      fakeAsync((async) {
+        build(async, {'ks.lockdown.enabled': true});
+        see(async, [ana]);
+        expect(settings.get(defs.lockdownEnabled), isTrue);
+        expect(kiosk.faceSkipsPin(lockdown: true), isFalse);
+      });
+    });
+
+    test('Turn Lockdown Mode back on locks 10 s after nobody chosen is in '
+        'view', () {
+      fakeAsync((async) {
+        build(async, chosen(relock: true));
         see(async, []);
         async.elapse(const Duration(seconds: 9));
         expect(settings.get(defs.lockdownEnabled), isFalse);
@@ -148,27 +174,20 @@ void main() {
 
     test('a lock from Home Assistant holds while a chosen person stays', () {
       fakeAsync((async) {
-        build(async, auto());
+        build(async, chosen(relock: true));
         see(async, [ana]);
         settings.set(defs.lockdownEnabled, true);
         async.flushMicrotasks();
         see(async, [ana]);
         async.elapse(const Duration(seconds: 30));
         expect(settings.get(defs.lockdownEnabled), isTrue);
+        // The exit gesture skips the PIN for her meanwhile.
+        expect(kiosk.faceSkipsPin(lockdown: true), isTrue);
       });
     });
 
-    test('off by default', () {
-      fakeAsync((async) {
-        build(async, {
-          'ks.lockdown.face_skip_pin': 'people',
-          'ks.lockdown.face_people': chosenAna,
-        });
-        see(async, []);
-        async.elapse(const Duration(seconds: 30));
-        expect(settings.get(defs.lockdownEnabled), isFalse);
-        expect(defs.lockdownFaceAuto.defaultValue, isFalse);
-      });
+    test('Turn Lockdown Mode back on is off by default', () {
+      expect(defs.lockdownFaceRelock.defaultValue, isFalse);
     });
   });
 }

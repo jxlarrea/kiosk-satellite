@@ -2903,28 +2903,28 @@
     "title": "settingKioskFacePeopleTitle",
     "description": "settingKioskFacePeopleDescription"
   },
-  "lockdown.face_skip_pin": {
-    "title": "settingKioskFaceSkipPinTitle",
-    "description": "settingLockdownFaceSkipPinDescription"
+  "lockdown.face_disable": {
+    "title": "settingLockdownFaceDisableTitle",
+    "description": "settingLockdownFaceDisableDescription"
   },
   "lockdown.face_people": {
     "title": "settingKioskFacePeopleTitle",
-    "description": "settingKioskFacePeopleDescription"
+    "description": "settingLockdownFacePeopleDescription"
   },
-  "lockdown.face_auto": {
-    "title": "settingLockdownFaceAutoTitle",
-    "description": "settingLockdownFaceAutoDescription"
+  "lockdown.face_relock": {
+    "title": "settingLockdownFaceRelockTitle",
+    "description": "settingLockdownFaceRelockDescription"
   },
   "vision_match.link_kiosk_pin": {
     "title": "settingKioskFaceSkipPinTitle",
     "description": "settingVisionMatchLinkKioskPinDescription"
   },
-  "vision_match.link_lockdown_pin": {
-    "title": "settingKioskFaceSkipPinTitle",
+  "vision_match.link_lockdown_disable": {
+    "title": "settingLockdownFaceDisableTitle",
     "description": "settingVisionMatchLinkLockdownDescription"
   },
-  "vision_match.link_lockdown_auto": {
-    "title": "settingLockdownFaceAutoTitle",
+  "vision_match.link_lockdown_relock": {
+    "title": "settingLockdownFaceRelockTitle",
     "description": "settingVisionMatchLinkLockdownDescription"
   }
 }

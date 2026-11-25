@@ -10283,16 +10283,22 @@ class UiStringsDe extends UiStrings {
       'Berührungssperre, die über die Fernverwaltung konfiguriert wird. Die erforderlichen Berechtigungen findest du unter „Erforderliche Systemberechtigungen“.';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      'Mit Ausgewählte Personen schaltet die Exit-Geste den Sperrmodus ohne PIN aus, solange eine der unten ausgewählten Personen am Kiosk erkannt wird.';
+  String get settingLockdownFaceDisableTitle => 'Sperrmodus ausschalten für';
 
   @override
-  String get settingLockdownFaceAutoTitle =>
-      'Mit Gesichtern sperren und entsperren';
+  String get settingLockdownFaceDisableDescription =>
+      'Mit Ausgewählte Personen wird der Sperrmodus ausgeschaltet, wenn eine der unten ausgewählten Personen am Kiosk erkannt wird. Lass das auf Niemand, wenn du den Bildschirm zum Reinigen sperrst.';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      'Schaltet den Sperrmodus aus, solange eine der oben ausgewählten Personen am Kiosk erkannt wird, und 10 Sekunden nachdem keine mehr erkannt wird wieder ein. Lass das aus, wenn du den Bildschirm zum Reinigen sperrst.';
+  String get settingLockdownFacePeopleDescription =>
+      'Wähle, für wen der Sperrmodus ausgeschaltet wird. Ist niemand ausgewählt, wird er für jede erkannte Person ausgeschaltet.';
+
+  @override
+  String get settingLockdownFaceRelockTitle => 'Sperrmodus wieder einschalten';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      'Schaltet den Sperrmodus 10 Sekunden, nachdem keine der ausgewählten Personen mehr zu sehen ist, wieder ein.';
 
   @override
   String get lockdownOverlayHeld =>

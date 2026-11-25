@@ -40,6 +40,8 @@ With [Face Recognition](ground-control.md#face-recognition) on Ground Control, t
 
 The exit gesture is still needed. Whoever does it is usually looking at the screen, and a face counts for 3 seconds after it was last seen. Face Recognition doesn't check that it sees a real face, so a photo of a chosen person would probably skip the PIN too. Don't rely on it to keep anyone out. Ground Control's vision session shows each time the PIN was skipped and for whom.
 
+When the PIN is skipped, the camera preview shows with the person's name for a few seconds so they know their face was recognized. This happens even with **Show camera preview** off. Its size, corner and duration come from the **Camera Preview** settings under **Settings > Screensaver > Face Detection**.
+
 ### Staying in Front
 
 The **Disable home button** feature relies on Android screen pinning. On a device that is not fully managed by an MDM, Android will present an "App is pinned" consent dialog the very first time it activates. Simply answer **Got it** once, and all future pins will occur silently. On certain devices, this dialog aggressively returns on every single boot. Configuring the [Home Launcher](home-launcher.md) permanently solves this annoyance, because when the kiosk acts as the true home screen, the pin is bypassed entirely and the home button naturally lands on the kiosk. 
@@ -83,11 +85,13 @@ With [Face Recognition](ground-control.md#face-recognition) on Ground Control, t
 
 | Setting | What it does |
 | --- | --- |
-| Skip the PIN for | **Nobody**, the default, always asks for the PIN. With **Chosen people**, the lockdown exit gesture turns Lockdown Mode off without the PIN while one of the people picked under **People** is recognized at the kiosk. |
-| People | Shown on Chosen people. If nobody is picked, anyone recognized counts. |
-| Lock and unlock with faces | Shown on Chosen people. Off by default. Turns Lockdown Mode off when one of the chosen people is recognized at the kiosk and back on 10 seconds after none is. |
+| Disable Lockdown Mode for | **Nobody**, the default, leaves Lockdown Mode alone. With **Chosen people**, Lockdown Mode is turned off when one of the people picked under **People** is recognized at the kiosk. |
+| People | Shown on Chosen people. If nobody is picked, Lockdown Mode is turned off for anyone recognized. |
+| Turn Lockdown Mode back on | Shown on Chosen people. Off by default. Turns Lockdown Mode back on 10 seconds after none of the chosen people are in view. |
 
-With **Lock and unlock with faces** on, the screen stays locked for everyone else. That includes guests and children. Leave it off if you lock the screen to clean it, since your own face would unlock it while you clean. A lock from Home Assistant or the remote admin holds while a chosen person stays in front of the kiosk. It only lifts the next time one of them arrives. If someone unlocks with the exit gesture while nobody chosen is in view, Lockdown Mode comes back on 10 seconds later. Ground Control's vision session shows each time Lockdown Mode was turned off or on this way.
+With both on, the screen stays locked for everyone else, including guests and children. Leave **Disable Lockdown Mode for** on Nobody if you lock the screen to clean it, since your own face could unlock it while you clean. A lock from Home Assistant or the remote admin holds while a chosen person stays in front of the kiosk. It only lifts the next time one of them arrives. While that lock holds, the exit gesture skips the kiosk PIN for them. If someone unlocks with the exit gesture while nobody chosen is in view, Lockdown Mode comes back on 10 seconds later when **Turn Lockdown Mode back on** is on.
+
+When a face turns Lockdown Mode off, the camera preview shows with the person's name for a few seconds, as it does for a skipped PIN. Ground Control's vision session shows each time Lockdown Mode was turned off or on this way.
 
 ## Required System Permissions
 

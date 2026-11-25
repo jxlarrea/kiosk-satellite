@@ -165,9 +165,12 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
     final height = (turned ? image.width : image.height).toDouble();
     // Show who is recognized: a ring in their color around the preview and
     // their name sliding out from behind it, toward the middle of the screen.
+    // A face that skipped the PIN or turned Lockdown Mode off always shows
+    // the name card.
     final showPerson =
-        settings.get(defs.facePreviewPerson) &&
-        settings.visible(defs.facePreviewPerson);
+        widget.motion.previewNamed ||
+        (settings.get(defs.facePreviewPerson) &&
+            settings.visible(defs.facePreviewPerson));
     final named = showPerson && _named && _shown;
     final person = _person;
     final color = personColor(

@@ -37984,21 +37984,8 @@
       ]
     }
   },
-  "settingLockdownFaceSkipPinDescription": "Met Gekozen personen schakelt het afsluitgebaar de vergrendelingsmodus uit zonder pincode zolang een van de hieronder gekozen personen bij de kiosk wordt herkend.",
-  "@settingLockdownFaceSkipPinDescription": {
-    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
-    "description": "Setting help.",
-    "x-locations": {
-      "device": [
-        "Settings > Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
-      ],
-      "remoteAdmin": [
-        "Lockdown Mode > Ground Control Vision Match > Skip the PIN for"
-      ]
-    }
-  },
-  "settingLockdownFaceAutoTitle": "Vergrendelen en ontgrendelen met gezichten",
-  "@settingLockdownFaceAutoTitle": {
+  "settingLockdownFaceDisableTitle": "Vergrendelingsmodus uitschakelen voor",
+  "@settingLockdownFaceDisableTitle": {
     "context": "Settings > Lockdown Mode > Ground Control Vision Match",
     "description": "Setting label.",
     "x-locations": {
@@ -38010,16 +37997,55 @@
       ]
     }
   },
-  "settingLockdownFaceAutoDescription": "Schakelt de vergrendelingsmodus uit zolang een van de personen hierboven bij de kiosk wordt herkend en 10 seconden nadat er geen meer is weer in. Laat dit uit als je het scherm vergrendelt om het schoon te maken.",
-  "@settingLockdownFaceAutoDescription": {
+  "settingLockdownFaceDisableDescription": "Met Gekozen personen wordt de vergrendelingsmodus uitgeschakeld wanneer een van de hieronder gekozen personen bij de kiosk wordt herkend. Laat dit op Niemand staan als je het scherm vergrendelt om het schoon te maken.",
+  "@settingLockdownFaceDisableDescription": {
     "context": "Settings > Lockdown Mode > Ground Control Vision Match",
     "description": "Setting help.",
     "x-locations": {
       "device": [
-        "Settings > Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+        "Settings > Lockdown Mode > Ground Control Vision Match > Disable Lockdown Mode for"
       ],
       "remoteAdmin": [
-        "Lockdown Mode > Ground Control Vision Match > Lock and unlock with faces"
+        "Lockdown Mode > Ground Control Vision Match > Disable Lockdown Mode for"
+      ]
+    }
+  },
+  "settingLockdownFacePeopleDescription": "Kies voor wie de vergrendelingsmodus wordt uitgeschakeld. Is er niemand gekozen, dan wordt hij uitgeschakeld voor iedereen die herkend wordt.",
+  "@settingLockdownFacePeopleDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > People"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > People"
+      ]
+    }
+  },
+  "settingLockdownFaceRelockTitle": "Vergrendelingsmodus weer inschakelen",
+  "@settingLockdownFaceRelockTitle": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting label.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match"
+      ]
+    }
+  },
+  "settingLockdownFaceRelockDescription": "Schakelt de vergrendelingsmodus 10 seconden nadat geen van de gekozen personen meer in beeld is weer in.",
+  "@settingLockdownFaceRelockDescription": {
+    "context": "Settings > Lockdown Mode > Ground Control Vision Match",
+    "description": "Setting help.",
+    "x-locations": {
+      "device": [
+        "Settings > Lockdown Mode > Ground Control Vision Match > Turn Lockdown Mode back on"
+      ],
+      "remoteAdmin": [
+        "Lockdown Mode > Ground Control Vision Match > Turn Lockdown Mode back on"
       ]
     }
   },

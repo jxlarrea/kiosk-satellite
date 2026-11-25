@@ -583,7 +583,7 @@ const settingOptionMessageIds = <String, Map<String, String>>{
     "nobody": "kioskFaceSkipPinNobody",
     "people": "kioskFaceSkipPinPeople"
   },
-  "lockdown.face_skip_pin": {
+  "lockdown.face_disable": {
     "nobody": "kioskFaceSkipPinNobody",
     "people": "kioskFaceSkipPinPeople"
   }

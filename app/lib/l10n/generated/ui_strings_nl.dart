@@ -10183,16 +10183,24 @@ class UiStringsNl extends UiStrings {
       'Aanraakbeveiliging die alleen op afstand kan worden ingesteld. Configureer deze via beheer op afstand. De benodigde toestemmingen staan onder Vereiste systeemtoestemmingen.';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      'Met Gekozen personen schakelt het afsluitgebaar de vergrendelingsmodus uit zonder pincode zolang een van de hieronder gekozen personen bij de kiosk wordt herkend.';
+  String get settingLockdownFaceDisableTitle =>
+      'Vergrendelingsmodus uitschakelen voor';
 
   @override
-  String get settingLockdownFaceAutoTitle =>
-      'Vergrendelen en ontgrendelen met gezichten';
+  String get settingLockdownFaceDisableDescription =>
+      'Met Gekozen personen wordt de vergrendelingsmodus uitgeschakeld wanneer een van de hieronder gekozen personen bij de kiosk wordt herkend. Laat dit op Niemand staan als je het scherm vergrendelt om het schoon te maken.';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      'Schakelt de vergrendelingsmodus uit zolang een van de personen hierboven bij de kiosk wordt herkend en 10 seconden nadat er geen meer is weer in. Laat dit uit als je het scherm vergrendelt om het schoon te maken.';
+  String get settingLockdownFacePeopleDescription =>
+      'Kies voor wie de vergrendelingsmodus wordt uitgeschakeld. Is er niemand gekozen, dan wordt hij uitgeschakeld voor iedereen die herkend wordt.';
+
+  @override
+  String get settingLockdownFaceRelockTitle =>
+      'Vergrendelingsmodus weer inschakelen';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      'Schakelt de vergrendelingsmodus 10 seconden nadat geen van de gekozen personen meer in beeld is weer in.';
 
   @override
   String get lockdownOverlayHeld =>

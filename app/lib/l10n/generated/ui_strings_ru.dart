@@ -10141,16 +10141,24 @@ class UiStringsRu extends UiStrings {
       'Щит от касаний, настраиваемый только удалённо. Настраивается из интерфейса удалённого администрирования; его разрешения находятся в разделе «Необходимые системные разрешения».';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      'При варианте «Выбранные люди» жест выхода выключает режим блокировки без PIN, пока перед киоском распознан один из людей, выбранных ниже.';
+  String get settingLockdownFaceDisableTitle =>
+      'Выключать режим блокировки для';
 
   @override
-  String get settingLockdownFaceAutoTitle =>
-      'Блокировать и разблокировать по лицам';
+  String get settingLockdownFaceDisableDescription =>
+      'При варианте «Выбранные люди» режим блокировки выключается, когда перед киоском распознан один из людей, выбранных ниже. Оставьте «Никого», если блокируете экран, чтобы его почистить.';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      'Выключает режим блокировки, пока перед киоском распознан один из людей, выбранных выше, и снова включает его через 10 секунд после того, как никого из них не видно. Не включайте это, если блокируете экран, чтобы его почистить.';
+  String get settingLockdownFacePeopleDescription =>
+      'Выберите, для кого выключается режим блокировки. Если никто не выбран, он выключается для любого распознанного человека.';
+
+  @override
+  String get settingLockdownFaceRelockTitle =>
+      'Снова включать режим блокировки';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      'Снова включает режим блокировки через 10 секунд после того, как никого из выбранных людей не видно.';
 
   @override
   String get lockdownOverlayHeld => 'Щит блокировки может покрыть весь экран.';

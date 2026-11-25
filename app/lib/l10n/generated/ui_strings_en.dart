@@ -10070,15 +10070,22 @@ class UiStringsEn extends UiStrings {
       'Remote-only touch shield. Set it up from the Remote Admin UI; its grants live under Required system permissions.';
 
   @override
-  String get settingLockdownFaceSkipPinDescription =>
-      'With Chosen people, the exit gesture turns Lockdown Mode off without the PIN while one of the people picked below is recognized at the kiosk.';
+  String get settingLockdownFaceDisableTitle => 'Disable Lockdown Mode for';
 
   @override
-  String get settingLockdownFaceAutoTitle => 'Lock and unlock with faces';
+  String get settingLockdownFaceDisableDescription =>
+      'With Chosen people, Lockdown Mode is turned off when one of the people picked below is recognized at the kiosk. Leave this on Nobody if you lock the screen to clean it.';
 
   @override
-  String get settingLockdownFaceAutoDescription =>
-      'Turn Lockdown Mode off while one of the people above is recognized at the kiosk and back on 10 seconds after none is. Leave this off if you lock the screen to clean it.';
+  String get settingLockdownFacePeopleDescription =>
+      'Choose who Lockdown Mode is turned off for. If nobody is chosen, it is turned off for anyone recognized.';
+
+  @override
+  String get settingLockdownFaceRelockTitle => 'Turn Lockdown Mode back on';
+
+  @override
+  String get settingLockdownFaceRelockDescription =>
+      'Turn Lockdown Mode back on 10 seconds after none of the chosen people are in view.';
 
   @override
   String get lockdownOverlayHeld =>
