@@ -29,10 +29,15 @@ class FacePreviewOverlay extends StatefulWidget {
     super.key,
     required this.motion,
     required this.settings,
+    this.pictureOf,
   });
 
   final MotionManager motion;
   final SettingsManager settings;
+
+  /// The recognized person's Home Assistant picture, by Ground Control
+  /// person id, for the name card ([GroundControlManager.pictureOf]).
+  final Future<String?> Function(String personId)? pictureOf;
 
   /// The circle's diameter at 100% scaling.
   static const double baseDiameter = 180;
@@ -116,14 +121,26 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
   /// fade-out so its name doesn't blank while it goes.
   FaceInViewChanged? _person;
   bool _named = false;
+  String? _picture;
 
   void _onPerson() {
     final person = widget.motion.atKiosk.value;
     if (!mounted) return;
+    final changed = person != null && person.id != _person?.id;
     setState(() {
       if (person != null) _person = person;
+      if (changed) _picture = null;
       _named = person != null;
     });
+    final id = person?.id;
+    final look = widget.pictureOf;
+    if (changed && id != null && look != null) {
+      unawaited(
+        look(id).then((url) {
+          if (mounted && _person?.id == id) setState(() => _picture = url);
+        }),
+      );
+    }
   }
 
   void _faded() {
@@ -241,6 +258,8 @@ class _FacePreviewOverlayState extends State<FacePreviewOverlay> {
                 duration: Duration(milliseconds: named ? 260 : 180),
                 child: _NameCard(
                   name: person.name,
+                  picture: _picture,
+                  token: settings.get(defs.haToken),
                   color: color,
                   height: cardHeight,
                   clear: box / 2 + 12 * scale,
@@ -322,6 +341,8 @@ class _RingPainter extends CustomPainter {
 class _NameCard extends StatelessWidget {
   const _NameCard({
     required this.name,
+    required this.picture,
+    required this.token,
     required this.color,
     required this.height,
     required this.clear,
@@ -330,6 +351,11 @@ class _NameCard extends StatelessWidget {
   });
 
   final String name;
+
+  /// The person's Home Assistant picture, drawn inside a ring of their
+  /// color in place of the initial. Null for none.
+  final String? picture;
+  final String token;
   final Color color;
   final double height;
   final double clear;
@@ -369,11 +395,7 @@ class _NameCard extends StatelessWidget {
         ),
       ],
     );
-    final dot = Container(
-      width: disc,
-      height: disc,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    final letter = Center(
       child: Text(
         initial,
         style: TextStyle(
@@ -382,6 +404,23 @@ class _NameCard extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+    final url = picture;
+    final dot = Container(
+      width: disc,
+      height: disc,
+      padding: url == null ? null : EdgeInsets.all(2.5 * scale),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      child: url == null
+          ? letter
+          : ClipOval(
+              child: Image.network(
+                url,
+                fit: BoxFit.cover,
+                headers: {'Authorization': 'Bearer $token'},
+                errorBuilder: (_, _, _) => letter,
+              ),
+            ),
     );
     final gap = SizedBox(width: 14 * scale);
     return Container(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/command_registry.dart';
@@ -76,6 +77,51 @@ class GroundControlManager extends Manager {
   String version = '';
   String model = '';
   List<Map<String, Object?>> people = const [];
+
+  /// Ground Control person id to their Home Assistant picture's address,
+  /// or null for a person without one, looked up once.
+  final _pictures = <String, Future<String?>>{};
+
+  /// The picture of the Home Assistant person a Ground Control person is
+  /// linked to (their Person under What's theirs), as an address to load
+  /// with the Home Assistant token. Null when they have none.
+  Future<String?> pictureOf(String personId) =>
+      _pictures[personId] ??= _lookUpPicture(personId);
+
+  Future<String?> _lookUpPicture(String personId) async {
+    final person = people.where((p) => p['id'] == personId).firstOrNull;
+    final things = person?['things'];
+    final entity = things is Map ? things['person'] : null;
+    final base = _settings
+        .get(defs.haUrl)
+        .trim()
+        .replaceFirst(RegExp(r'/+$'), '');
+    final token = _settings.get(defs.haToken);
+    if (entity is! String || entity.isEmpty || base.isEmpty || token.isEmpty) {
+      return null;
+    }
+    try {
+      final r = await http
+          .get(
+            Uri.parse('$base/api/states/$entity'),
+            headers: {'Authorization': 'Bearer $token'},
+          )
+          .timeout(const Duration(seconds: 10));
+      if (r.statusCode != 200) return null;
+      final attrs = (jsonDecode(r.body) as Map)['attributes'];
+      final picture = attrs is Map ? attrs['entity_picture'] : null;
+      if (picture is! String || picture.isEmpty) return null;
+      if (picture.startsWith('http://') || picture.startsWith('https://')) {
+        return picture;
+      }
+      return '$base${picture.startsWith('/') ? '' : '/'}$picture';
+    } on Object catch (e) {
+      log.debug(name, 'no picture for $entity: $e');
+      // Try again next time: Home Assistant may have been away.
+      _pictures.remove(personId);
+      return null;
+    }
+  }
 
   ({String? id, String name, String? by})? _speaking;
 
@@ -533,6 +579,8 @@ class GroundControlManager extends Manager {
           for (final p in (msg['people'] as List? ?? const []))
             if (p is Map) p.cast<String, Object?>(),
         ];
+        // A person may have been linked to another Home Assistant person.
+        _pictures.clear();
         version = '${msg['version'] ?? version}';
         model = '${msg['model'] ?? model}';
         final path = msg['app_path'];

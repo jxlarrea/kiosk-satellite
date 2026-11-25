@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/motion/motion_manager.dart';
 import 'package:kiosk_satellite/managers/motion/native_motion.dart';
@@ -53,6 +54,7 @@ void main() {
   Future<void> build(
     WidgetTester tester, {
     Map<String, Object> initial = const {},
+    Future<String?> Function(String personId)? pictureOf,
   }) async {
     SharedPreferences.setMockInitialValues(initial);
     final bus = EventBus();
@@ -67,7 +69,11 @@ void main() {
         home: Stack(
           children: [
             const SizedBox.expand(),
-            FacePreviewOverlay(motion: motion, settings: settings),
+            FacePreviewOverlay(
+              motion: motion,
+              settings: settings,
+              pictureOf: pictureOf,
+            ),
           ],
         ),
       ),
@@ -171,5 +177,47 @@ void main() {
     expect(defs.facePreviewSeconds.defaultValue, 5);
     expect(defs.facePreviewScale.defaultValue, 100);
     expect(defs.facePreviewPosition.defaultValue, 'top_right');
+  });
+
+  testWidgets('the name card shows the recognized person\'s Home Assistant '
+      'picture', (tester) async {
+    final asked = <String>[];
+    await build(
+      tester,
+      initial: {
+        'ks.camera.enabled': true,
+        'ks.ground_control.enabled': true,
+        'ks.vision_match.enabled': true,
+        'ks.vision_match.face_detection': true,
+        'ks.vision_match.face_recognition': true,
+        'ks.screensaver.dismiss_on_face': true,
+        'ks.face.preview': true,
+      },
+      pictureOf: (id) async {
+        asked.add(id);
+        return 'http://ha.local/api/image/serve/ana/512x512';
+      },
+    );
+    await push(tester, FacePreviewFrame(jpeg: png, rotation: 0, mirror: false));
+    motion.atKiosk.value = const FaceInViewChanged(
+      id: 'ana',
+      name: 'Ana',
+      color: '#56814F',
+      people: [(id: 'ana', name: 'Ana')],
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pumpAndSettle();
+    expect(asked, ['ana']);
+    expect(find.text('Ana'), findsOneWidget);
+    final pictures = find.byWidgetPredicate(
+      (w) =>
+          w is Image &&
+          w.image is NetworkImage &&
+          (w.image as NetworkImage).url ==
+              'http://ha.local/api/image/serve/ana/512x512',
+    );
+    expect(pictures, findsOneWidget);
   });
 }

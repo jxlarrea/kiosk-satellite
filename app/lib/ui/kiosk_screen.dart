@@ -2186,7 +2186,11 @@ class _KioskScreenState extends State<KioskScreen>
                     // The camera preview a face wake leaves behind
                     // (discussion #371): over the screensaver, whose fade
                     // out it appears through, and answering no touch.
-                    FacePreviewOverlay(motion: c.motion, settings: c.settings),
+                    FacePreviewOverlay(
+                      motion: c.motion,
+                      settings: c.settings,
+                      pictureOf: c.groundControl.pictureOf,
+                    ),
                     // The black timeout cover while a voice turn shows: the
                     // turn draws over it (issue #746). Outside a turn it
                     // sits above everything below.

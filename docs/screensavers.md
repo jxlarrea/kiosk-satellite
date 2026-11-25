@@ -454,7 +454,7 @@ A face counts once Ground Control recognizes it. That takes a look or two, so th
 
 | Setting | What it does |
 | --- | --- |
-| Show who is recognized | With Face Recognition on Ground Control, a ring in the person's color appears around the preview and a card with their name slides out beside it. On by default. When several people are in view, the preview shows the one with the highest score. |
+| Show who is recognized | With Face Recognition on Ground Control, a ring in the person's color appears around the preview and a card with their name slides out beside it. The card shows their picture when they are linked to a Home Assistant person on Ground Control's People page, or the first letter of their name otherwise. On by default. When several people are in view, the preview shows the one with the highest score. |
 | Preview duration | Controls preview display time from 3 to 10 seconds (5 seconds default). |
 | Preview scaling | Scales preview size from 50% to 150% of default. |
 | Preview position | Selects the display corner for the preview overlay (top-right default). |
